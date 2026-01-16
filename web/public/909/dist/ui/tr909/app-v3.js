@@ -828,6 +828,8 @@ function setupControls() {
     const swingValue = document.getElementById('swing-value');
     const flamInput = document.getElementById('flam');
     const flamValue = document.getElementById('flam-value');
+    const volumeInput = document.getElementById('volume');
+    const volumeValue = document.getElementById('volume-value');
 
     // Track what was selected before (for action:save to restore)
     let previousPatternValue = '';
@@ -979,6 +981,14 @@ function setupControls() {
         engine.setFlam(flam);
         if (flamValue) {
             flamValue.textContent = `${flamInput.value}%`;
+        }
+    });
+    // Volume control
+    volumeInput?.addEventListener('input', () => {
+        const volume = Number(volumeInput.value) / 100;
+        engine.masterGain.gain.value = volume;
+        if (volumeValue) {
+            volumeValue.textContent = `${volumeInput.value}%`;
         }
     });
     // Global Accent control

@@ -27,6 +27,8 @@ import { Ducker } from './effects/ducker.js';
 import { EQ } from './effects/eq.js';
 import { Reverb } from './effects/reverb.js';
 import { EffectSend } from './effect-send.js';
+import { SendBus } from './send-bus.js';
+import { VoiceChannel } from './voice-channel.js';
 
 /**
  * Channel wrapper for an instrument with effects chain
@@ -38,10 +40,15 @@ class Channel {
     this.engine = engine;
     this.context = session.context;
     this.effects = [];
+    this._sends = new Map(); // SendBus name -> { bus, gain }
 
     // Channel gain (for volume control)
     this._gain = this.context.createGain();
     this._gain.gain.value = 1;
+
+    // Post-fader point for sends
+    this._postFader = this.context.createGain();
+    this._postFader.gain.value = 1;
 
     // Output node (end of effects chain)
     this._output = this._gain;
@@ -55,8 +62,9 @@ class Channel {
       engine.output.connect(this._gain);
     }
 
-    // Connect to master
-    this._gain.connect(session._masterInput);
+    // Connect gain -> postFader -> master
+    this._gain.connect(this._postFader);
+    this._postFader.connect(session._masterInput);
   }
 
   /**
@@ -95,6 +103,50 @@ class Channel {
       return this.engine.compressor;
     }
     return this.engine.masterGain || this._gain;
+  }
+
+  /**
+   * Send this channel to a send bus
+   * @param {string} busName - Name of the send bus
+   * @param {number} level - Send level (0-1)
+   * @returns {GainNode} The send gain node
+   */
+  sendTo(busName, level = 0.5) {
+    const bus = this.session.getSend(busName);
+    if (!bus) {
+      throw new Error(`Channel: unknown send bus "${busName}"`);
+    }
+
+    // Create send gain and connect from post-fader
+    const sendGain = bus.createSend(level, this.name);
+    this._postFader.connect(sendGain);
+
+    // Track for later adjustment
+    this._sends.set(busName, { bus, gain: sendGain });
+
+    return sendGain;
+  }
+
+  /**
+   * Get send level to a bus
+   * @param {string} busName - Bus name
+   * @returns {number|null}
+   */
+  getSendLevel(busName) {
+    const send = this._sends.get(busName);
+    return send ? send.gain.gain.value : null;
+  }
+
+  /**
+   * Set send level to a bus
+   * @param {string} busName - Bus name
+   * @param {number} level - Send level (0-1)
+   */
+  setSendLevel(busName, level) {
+    const send = this._sends.get(busName);
+    if (send) {
+      send.gain.gain.value = Math.max(0, Math.min(1, level));
+    }
   }
 
   /**
@@ -357,6 +409,8 @@ export class Session {
     this.context = options.context ?? new AudioContext();
     this._bpm = options.bpm ?? 120;
     this._channels = new Map();
+    this._sends = new Map();         // Send buses
+    this._voiceChannels = new Map(); // Individual voice channels
 
     // Master bus
     this.master = new MasterBus(this);
@@ -422,6 +476,115 @@ export class Session {
    */
   getChannels() {
     return [...this._channels.keys()];
+  }
+
+  // ==================== SEND BUSES ====================
+
+  /**
+   * Create a send bus
+   * @param {string} name - Bus name (e.g., 'reverb', 'delay')
+   * @param {Object} [options] - Options for initial effect
+   * @param {string} [options.effect] - Effect type to add ('reverb', 'eq')
+   * @param {Object} [options.params] - Effect parameters
+   * @returns {Promise<SendBus>}
+   */
+  async createSend(name, options = {}) {
+    if (this._sends.has(name)) {
+      console.warn(`Session: send bus "${name}" already exists, returning existing`);
+      return this._sends.get(name);
+    }
+
+    const bus = new SendBus(this.context, name);
+
+    // Add effect if specified
+    if (options.effect) {
+      await bus.createEffect(options.effect, options.params || {});
+    }
+
+    // Connect bus output to master
+    bus.output.connect(this._masterInput);
+
+    this._sends.set(name, bus);
+    return bus;
+  }
+
+  /**
+   * Get a send bus by name
+   * @param {string} name - Bus name
+   * @returns {SendBus|null}
+   */
+  getSend(name) {
+    return this._sends.get(name) || null;
+  }
+
+  /**
+   * Get all send bus names
+   */
+  getSends() {
+    return [...this._sends.keys()];
+  }
+
+  // ==================== VOICE CHANNELS ====================
+
+  /**
+   * Route an individual voice through its own channel
+   * This disconnects the voice from its parent engine and gives it independent routing
+   *
+   * @param {string} engineChannelName - Name of the engine's channel (e.g., 'drums')
+   * @param {string} voiceId - Voice ID in the engine (e.g., 'kick')
+   * @param {string} [channelName] - Name for the voice channel (defaults to voiceId)
+   * @returns {VoiceChannel}
+   */
+  addVoice(engineChannelName, voiceId, channelName = null) {
+    const name = channelName || voiceId;
+
+    if (this._voiceChannels.has(name)) {
+      console.warn(`Session: voice channel "${name}" already exists, replacing`);
+      this._voiceChannels.get(name).dispose();
+    }
+
+    // Get the engine channel
+    const engineChannel = this._channels.get(engineChannelName);
+    if (!engineChannel) {
+      throw new Error(`Session: unknown channel "${engineChannelName}"`);
+    }
+
+    // Get the voice from the engine
+    const voice = engineChannel.engine.voices?.get(voiceId);
+    if (!voice) {
+      throw new Error(`Session: voice "${voiceId}" not found in "${engineChannelName}"`);
+    }
+
+    // Create voice channel
+    const voiceChannel = new VoiceChannel(this.context, voice, name, {
+      disconnectFromParent: true,
+    });
+
+    // Connect to master
+    voiceChannel.output.connect(this._masterInput);
+
+    this._voiceChannels.set(name, voiceChannel);
+    return voiceChannel;
+  }
+
+  /**
+   * Get a voice channel by name
+   * @param {string} name - Voice channel name
+   * @returns {VoiceChannel}
+   */
+  voice(name) {
+    const vc = this._voiceChannels.get(name);
+    if (!vc) {
+      throw new Error(`Session: unknown voice channel "${name}"`);
+    }
+    return vc;
+  }
+
+  /**
+   * Get all voice channel names
+   */
+  getVoiceChannels() {
+    return [...this._voiceChannels.keys()];
   }
 
   /**
@@ -970,6 +1133,8 @@ export class Session {
    */
   dispose() {
     this.stop();
+    this._voiceChannels.forEach(vc => vc.dispose());
+    this._sends.forEach(bus => bus.dispose());
     this._channels.forEach(ch => ch.dispose());
     this.master.dispose();
     if (this.context.state !== 'closed') {
@@ -978,5 +1143,5 @@ export class Session {
   }
 }
 
-export { EffectSend };
+export { EffectSend, SendBus, VoiceChannel };
 export default Session;

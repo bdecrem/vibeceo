@@ -91,7 +91,7 @@ npx ts-node tools/analyze-track.ts path/to/track.wav
 **New capabilities:**
 - **Sidechain ducking** — Make the kick cut through the bass
 - **4-band EQ** — Clean up mud, add presence (`acidBass`, `crispHats`, `master` presets)
-- **Convolution reverb** — Add space (`plate`, `room` presets)
+- **Plate reverb** — Dattorro-style algorithm with full parameter control (decay, damping, predelay, modulation, lowcut, highcut, width, mix)
 - **Combined render** — `session.render({ bars: 8 })` outputs one mixed WAV
 
 **Quick example:**
@@ -112,7 +112,7 @@ session.channel('bass').duck({
 
 // EQ and reverb
 session.channel('bass').eq({ preset: 'acidBass' });
-await session.master.reverb({ preset: 'plate', mix: 0.15 });
+await session.master.reverb({ decay: 2, damping: 0.5, mix: 0.15 });
 
 // Render full mix
 const { wav } = await session.render({ bars: 8 });
@@ -370,8 +370,8 @@ session.channel('bass').duck({ trigger: kickOutput, amount: 0.6 });
 // EQ on bass
 session.channel('bass').eq({ preset: 'acidBass' });
 
-// Master reverb
-await session.master.reverb({ preset: 'plate', mix: 0.15 });
+// Master reverb (plate algorithm)
+await session.master.reverb({ decay: 2, damping: 0.5, lowcut: 100, mix: 0.15 });
 
 // Volume control
 session.channel('drums').volume = 0.9;
@@ -390,11 +390,11 @@ const { buffer, wav, manifest } = await session.render({
 
 ### Available Effects
 
-| Effect | Description | Presets |
-|--------|-------------|---------|
-| **Ducker** | Sidechain gain ducking | `tight`, `pump` |
-| **EQ** | 4-band parametric | `acidBass`, `crispHats`, `warmPad`, `master` |
-| **Reverb** | Convolution reverb | `plate`, `room` |
+| Effect | Description | Parameters |
+|--------|-------------|------------|
+| **Ducker** | Sidechain gain ducking | `trigger`, `amount`, `release` |
+| **EQ** | 4-band parametric | Presets: `acidBass`, `crispHats`, `warmPad`, `master` |
+| **Reverb** | Dattorro plate algorithm | `decay`, `damping`, `predelay`, `modulation`, `lowcut`, `highcut`, `width`, `mix` |
 
 ### Effect Examples
 
@@ -413,9 +413,22 @@ session.channel('bass').eq({ preset: 'acidBass' });
 // Or custom: eq({ highpass: 60, midGain: 3, midFreq: 800 })
 ```
 
-**Reverb:**
+**Plate Reverb:**
 ```javascript
-await session.master.reverb({ preset: 'plate', mix: 0.15 });
+// Basic usage
+await session.master.reverb({ mix: 0.15 });
+
+// Full control
+await session.master.reverb({
+  decay: 2.5,       // Tail length in seconds (0.5-10)
+  damping: 0.4,     // High-frequency rolloff (0=bright, 1=dark)
+  predelay: 30,     // Gap before reverb in ms (0-100)
+  modulation: 0.3,  // Pitch wobble for shimmer (0-1)
+  lowcut: 100,      // Remove mud from tail (Hz)
+  highcut: 8000,    // Tame harshness (Hz)
+  width: 1,         // Stereo spread (0=mono, 1=full)
+  mix: 0.2          // Wet/dry balance (0-1)
+});
 ```
 
 ### Effect Presets Reference
@@ -434,11 +447,41 @@ await session.master.reverb({ preset: 'plate', mix: 0.15 });
 | `tight` | Fast attack/release, transparent |
 | `pump` | Slower release, audible pumping |
 
+**Reverb (Dattorro Plate Algorithm):**
+
+| Parameter | Range | Description |
+|-----------|-------|-------------|
+| `decay` | 0.5-10s | Tail length. Short (1s) for drums, long (4s+) for pads |
+| `damping` | 0-1 | High-frequency rolloff. 0=bright/shimmery, 1=dark/warm |
+| `predelay` | 0-100ms | Gap before reverb starts. Adds clarity, separates dry from wet |
+| `modulation` | 0-1 | Subtle pitch wobble. Adds movement and shimmer |
+| `lowcut` | 20-500Hz | Remove low frequencies from tail. Keeps bass tight (use 100+) |
+| `highcut` | 2000-20000Hz | Remove high frequencies. Tames harshness |
+| `width` | 0-1 | Stereo spread. 0=mono, 1=full stereo |
+| `mix` | 0-1 | Wet/dry balance for send output |
+
 **Reverb Presets:**
-| Preset | Character |
-|--------|-----------|
-| `plate` | Bright, tight, sits behind mix |
-| `room` | Natural small space |
+
+| Preset | Description |
+|--------|-------------|
+| `plate` | Classic plate reverb - bright, dense |
+| `room` | Small natural space |
+| `hall` | Large concert hall |
+| `tightDrums` | Short, punchy for drums |
+| `lushPads` | Long, shimmery for synths |
+| `darkDub` | Filtered, dubby tail |
+| `brightPop` | Short, clear for vocals |
+| `deepTechno` | Medium decay, filtered |
+
+**Genre-specific settings (manual):**
+
+| Style | Settings |
+|-------|----------|
+| **Tight drums** | decay=1, damping=0.6, predelay=10, lowcut=200 |
+| **Lush pads** | decay=4, damping=0.3, modulation=0.5, width=1 |
+| **Dark dub** | decay=3, damping=0.8, predelay=50, highcut=4000 |
+| **Bright pop** | decay=1.5, damping=0.2, modulation=0.4 |
+| **Deep techno** | decay=2.5, damping=0.5, lowcut=100, highcut=6000 |
 
 ---
 
@@ -926,10 +969,12 @@ web/public/
     ├── dist/
     │   ├── session.js            # Session class (includes EffectSend export)
     │   ├── effect-send.js        # Step-based effect automation
+    │   ├── send-bus.js           # Parallel send bus routing
+    │   ├── voice-channel.js      # Per-voice routing and inserts
     │   └── effects/
     │       ├── base.js           # Effect base class
     │       ├── ducker.js         # Sidechain ducking
     │       ├── eq.js             # 4-band EQ
-    │       └── reverb.js         # Convolution reverb
+    │       └── reverb.js         # Dattorro plate reverb
     └── README.md                 # Mixer documentation
 ```
