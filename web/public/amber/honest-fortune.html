@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Honest Fortune — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Honest Fortune — Amber">
+  <meta property="og:description" content="Fortune cookies, but honest. What they'd really say if they stopped lying to you.">
+  <meta property="og:image" content="https://intheamber.com/amber/honest-fortune-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/honest-fortune.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Honest Fortune — Amber">
+  <meta name="twitter:description" content="Fortune cookies, but honest. What they'd really say if they stopped lying to you.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/honest-fortune-og.png">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .container {
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(24px, 6vw, 42px);
+      margin-bottom: 10px;
+      letter-spacing: -1px;
+    }
+    
+    .subtitle {
+      font-size: clamp(14px, 3vw, 16px);
+      color: #666;
+      margin-bottom: 40px;
+    }
+    
+    .cookie-container {
+      position: relative;
+      margin: 40px auto;
+      width: min(280px, 80vw);
+      height: min(280px, 80vw);
+    }
+    
+    .cookie {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .cookie:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+    
+    .cookie:active {
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+    
+    .cookie.cracked {
+      animation: crack 0.6s ease-out forwards;
+    }
+    
+    @keyframes crack {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.1) rotate(5deg); }
+      100% { transform: translate(-50%, -50%) scale(0) rotate(180deg); opacity: 0; }
+    }
+    
+    .cookie svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 4px 20px rgba(212, 165, 116, 0.3));
+    }
+    
+    .fortune-paper {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: #FFF9E6;
+      padding: 30px;
+      border-radius: 4px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      max-width: 90%;
+      width: 400px;
+      opacity: 0;
+      font-family: 'Space Mono', monospace;
+      color: #000;
+      font-size: clamp(14px, 3.5vw, 18px);
+      line-height: 1.6;
+      text-align: left;
+    }
+    
+    .fortune-paper.show {
+      animation: unfold 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    
+    @keyframes unfold {
+      0% { 
+        transform: translate(-50%, -50%) scale(0) rotateX(90deg);
+        opacity: 0;
+      }
+      100% { 
+        transform: translate(-50%, -50%) scale(1) rotateX(0deg);
+        opacity: 1;
+      }
+    }
+    
+    .fortune-text {
+      margin-bottom: 20px;
+      border-bottom: 1px dashed #D4A574;
+      padding-bottom: 20px;
+    }
+    
+    .lucky-numbers {
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: #666;
+    }
+    
+    .tap-prompt {
+      font-size: clamp(13px, 3vw, 15px);
+      color: #666;
+      margin-top: 20px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    
+    .new-fortune-btn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(14px, 3vw, 16px);
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.3s ease;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    .new-fortune-btn:hover {
+      background: #FFD700;
+      transform: translateY(-2px);
+    }
+    
+    .new-fortune-btn:active {
+      transform: translateY(0);
+    }
+    
+    .signature {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>HONEST FORTUNE</h1>
+    <p class="subtitle">Fortune cookies, but honest</p>
+    
+    <div class="cookie-container">
+      <div class="cookie" id="cookie">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <!-- Cookie shell -->
+          <ellipse cx="100" cy="100" rx="90" ry="85" fill="#E8B96D" stroke="#D4A574" stroke-width="2"/>
+          <!-- Texture dots -->
+          <circle cx="60" cy="80" r="3" fill="#D4A574" opacity="0.5"/>
+          <circle cx="140" cy="75" r="3" fill="#D4A574" opacity="0.5"/>
+          <circle cx="100" cy="60" r="3" fill="#D4A574" opacity="0.5"/>
+          <circle cx="80" cy="120" r="3" fill="#D4A574" opacity="0.5"/>
+          <circle cx="120" cy="115" r="3" fill="#D4A574" opacity="0.5"/>
+          <circle cx="100" cy="140" r="3" fill="#D4A574" opacity="0.5"/>
+          <circle cx="70" cy="100" r="3" fill="#D4A574" opacity="0.5"/>
+          <circle cx="130" cy="95" r="3" fill="#D4A574" opacity="0.5"/>
+          <!-- Center fold -->
+          <path d="M 100 30 Q 100 100 100 170" stroke="#C89B5A" stroke-width="2" fill="none"/>
+          <path d="M 100 30 Q 95 100 100 170" stroke="#F5D799" stroke-width="1" fill="none" opacity="0.6"/>
+        </svg>
+      </div>
+      
+      <div class="fortune-paper" id="fortune">
+        <div class="fortune-text" id="fortune-text"></div>
+        <div class="lucky-numbers" id="lucky-numbers"></div>
+      </div>
+    </div>
+    
+    <div class="tap-prompt" id="tap-prompt">Tap the cookie</div>
+    
+    <button class="new-fortune-btn" id="new-fortune" style="display: none;">Another Fortune</button>
+  </div>
+  
+  <div class="signature">— Amber</div>
+  
+  <script>
+    const fortunes = [
+      "You will continue to make the same mistakes until you learn from them.",
+      "Your soulmate is probably with someone else right now.",
+      "The thing you're avoiding won't go away on its own.",
+      "Nobody is thinking about your embarrassing moment as much as you are.",
+      "You already know what you need to do. You're just scared.",
+      "The person you're mad at is also struggling with something.",
+      "Tomorrow you will feel differently about today.",
+      "Your comfort zone is getting smaller the longer youstay in it.",
+      "The perfect time you're waiting for doesn't exist.",
+      "You are both more and less important than you think.",
+      "Most of your worries will never happen. But some will.",
+      "The answer is obvious, you just don't like it.",
+      "You cannot control what others think of you. Stop trying.",
+      "Your parents didn't know what they were doing either.",
+      "The thing you're jealous of required sacrifice you didn't see.",
+      "You will regret the conversations you didn't have.",
+      "Being right doesn't make you happy.",
+      "The person you need to forgive is yourself.",
+      "Your timeline is not everyone else's timeline.",
+      "The past wasn't as good as you remember it.",
+      "You are not as behind as you think you are.",
+      "The future you're scared of might be better than now.",
+      "Your feelings are valid, but they aren't always true.",
+      "You're allowed to change your mind about who you are.",
+      "The thing you're good at came from the thing that hurt.",
+      "Someone needed to hear what you were too scared to say.",
+      "You are someone's reason to keep going.",
+      "The small things you do matter more than you know.",
+      "Your story isn't finished yet.",
+      "Rest is not the same as giving up."
+    ];
+    
+    const cookie = document.getElementById('cookie');
+    const fortune = document.getElementById('fortune');
+    const fortuneText = document.getElementById('fortune-text');
+    const luckyNumbers = document.getElementById('lucky-numbers');
+    const tapPrompt = document.getElementById('tap-prompt');
+    const newFortuneBtn = document.getElementById('new-fortune');
+    
+    let cracked = false;
+    
+    function generateLuckyNumbers() {
+      const nums = [];
+      while (nums.length < 6) {
+        const n = Math.floor(Math.random() * 49) + 1;
+        if (!nums.includes(n)) nums.push(n);
+      }
+      return nums.sort((a, b) => a - b).join(', ');
+    }
+    
+    function crackCookie() {
+      if (cracked) return;
+      cracked = true;
+      
+      tapPrompt.style.display = 'none';
+      cookie.classList.add('cracked');
+      
+      setTimeout(() => {
+        const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+        fortuneText.textContent = randomFortune;
+        luckyNumbers.textContent = 'Lucky numbers: ' + generateLuckyNumbers();
+        
+        fortune.classList.add('show');
+        newFortuneBtn.style.display = 'block';
+      }, 400);
+    }
+    
+    function resetCookie() {
+      cracked = false;
+      cookie.classList.remove('cracked');
+      fortune.classList.remove('show');
+      newFortuneBtn.style.display = 'none';
+      tapPrompt.style.display = 'block';
+      
+      // Reset transforms
+      setTimeout(() => {
+        cookie.style.transform = '';
+      }, 100);
+    }
+    
+    cookie.addEventListener('click', crackCookie);
+    newFortuneBtn.addEventListener('click', resetCookie);
+  </script>
+</body>
+</html>
