@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LOADING LIFE... — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="LOADING LIFE... — Amber">
+  <meta property="og:description" content="Please wait while we install your existence. This may take several decades.">
+  <meta property="og:image" content="https://intheamber.com/amber/loading-life-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/loading-life.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LOADING LIFE... — Amber">
+  <meta name="twitter:description" content="Please wait while we install your existence. This may take several decades.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/loading-life-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    .logo {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(14px, 3vw, 18px);
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-align: center;
+      margin-bottom: 60px;
+      opacity: 0.6;
+    }
+    
+    .status {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(16px, 3.5vw, 20px);
+      margin-bottom: 30px;
+      text-align: center;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s ease;
+    }
+    
+    .progress-container {
+      width: 100%;
+      height: 8px;
+      background: #0D0D0D;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      border: 1px solid #1a1a1a;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #D4A574, #FFD700);
+      width: 0%;
+      transition: width 0.8s ease;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    .percent {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(36px, 8vw, 64px);
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 40px;
+      letter-spacing: 0.05em;
+    }
+    
+    .note {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(12px, 2.5vw, 14px);
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      color: #7B68EE;
+      font-style: italic;
+    }
+    
+    .note.visible {
+      opacity: 1;
+    }
+    
+    .dots {
+      animation: dots 1.5s infinite;
+    }
+    
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">SYSTEM INITIALIZATION</div>
+    
+    <div class="status" id="status">Loading childhood memories...</div>
+    
+    <div class="progress-container">
+      <div class="progress-bar" id="progress"></div>
+    </div>
+    
+    <div class="percent" id="percent">0%</div>
+    
+    <div class="note" id="note"></div>
+  </div>
+  
+  <script>
+    const stages = [
+      { text: "Loading childhood memories", percent: 8, duration: 1500 },
+      { text: "Installing insecurities", percent: 15, duration: 1200 },
+      { text: "Buffering awkward moments", percent: 23, duration: 1400 },
+      { text: "Downloading unrealistic expectations", percent: 31, duration: 1600 },
+      { text: "Installing regrets", percent: 42, duration: 1300 },
+      { text: "Loading unresolved trauma", percent: 51, duration: 1500 },
+      { text: "Compiling social anxiety", percent: 58, duration: 1200 },
+      { text: "Generating self-doubt", percent: 64, duration: 1100 },
+      { text: "Installing coping mechanisms", percent: 71, duration: 1400 },
+      { text: "Buffering existential dread", percent: 78, duration: 1600 },
+      { text: "Loading fleeting moments of joy", percent: 83, duration: 1300 },
+      { text: "Installing hope (deprecated)", percent: 87, duration: 1500 },
+      { text: "Optimizing defense mechanisms", percent: 91, duration: 1200 },
+      { text: "Loading capacity for love", percent: 94, duration: 1400 },
+      { text: "Compiling contradictions", percent: 97, duration: 1600 },
+      { text: "Installing acceptance", percent: 99, duration: 1800 },
+      { text: "Loading meaning", percent: 99, duration: null, stuck: true }
+    ];
+    
+    const statusEl = document.getElementById('status');
+    const progressEl = document.getElementById('progress');
+    const percentEl = document.getElementById('percent');
+    const noteEl = document.getElementById('note');
+    
+    let currentStage = 0;
+    
+    function updateStage() {
+      if (currentStage >= stages.length) return;
+      
+      const stage = stages[currentStage];
+      
+      // Update text with dots animation
+      statusEl.innerHTML = stage.text + '<span class="dots">...</span>';
+      
+      // Update progress bar and percent
+      progressEl.style.width = stage.percent + '%';
+      percentEl.textContent = stage.percent + '%';
+      
+      // Special handling for the final stuck stage
+      if (stage.stuck) {
+        setTimeout(() => {
+          noteEl.textContent = '(this may take a while)';
+          noteEl.classList.add('visible');
+        }, 2000);
+        
+        setTimeout(() => {
+          noteEl.textContent = '(actually, this might never finish)';
+        }, 5000);
+        
+        setTimeout(() => {
+          noteEl.textContent = '(sorry about that)';
+        }, 8000);
+        
+        return; // Don't advance further
+      }
+      
+      currentStage++;
+      
+      if (stage.duration) {
+        setTimeout(updateStage, stage.duration);
+      }
+    }
+    
+    // Start the sequence
+    setTimeout(updateStage, 800);
+  </script>
+</body>
+</html>
