@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bus Thoughts — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Bus Thoughts — Amber">
+  <meta property="og:description" content="The weird thoughts you have when riding the bus alone">
+  <meta property="og:image" content="https://intheamber.com/amber/bus-thoughts-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/bus-thoughts.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Bus Thoughts — Amber">
+  <meta name="twitter:description" content="The weird thoughts you have when riding the bus alone">
+  <meta name="twitter:image" content="https://intheamber.com/amber/bus-thoughts-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    #bus-window {
+      width: 90vw;
+      max-width: 600px;
+      height: 70vh;
+      max-height: 400px;
+      border: 4px solid #D4A574;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+    }
+    
+    #window-reflections {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 30%, transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 40%);
+      pointer-events: none;
+    }
+    
+    #thought-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 85%;
+      text-align: center;
+      padding: 2rem;
+    }
+    
+    #thought-text {
+      font-size: clamp(1rem, 4vw, 1.3rem);
+      line-height: 1.6;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #thought-text.visible {
+      opacity: 1;
+    }
+    
+    #next-btn {
+      position: absolute;
+      bottom: 8%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(212, 165, 116, 0.1);
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.9rem;
+      padding: 12px 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 160px;
+      min-height: 44px;
+    }
+    
+    #next-btn:active {
+      background: rgba(212, 165, 116, 0.2);
+      transform: translateX(-50%) scale(0.98);
+    }
+    
+    #street-scene {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 200%;
+      height: 30%;
+      background: 
+        repeating-linear-gradient(90deg, #0D0D0D 0px, #0D0D0D 60px, transparent 60px, transparent 80px);
+      opacity: 0.3;
+      animation: scrollStreet 20s linear infinite;
+    }
+    
+    @keyframes scrollStreet {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    
+    #stop-counter {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: rgba(212, 165, 116, 0.5);
+      letter-spacing: 2px;
+    }
+    
+    .grain {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+      pointer-events: none;
+      opacity: 0.4;
+    }
+    
+    @media (max-width: 480px) {
+      #thought-container {
+        padding: 1.5rem;
+      }
+      
+      #next-btn {
+        font-size: 0.8rem;
+        padding: 10px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="bus-window">
+    <div class="grain"></div>
+    <div id="window-reflections"></div>
+    <div id="street-scene"></div>
+    
+    <div id="stop-counter">STOP 1/25</div>
+    
+    <div id="thought-container">
+      <div id="thought-text"></div>
+    </div>
+    
+    <button id="next-btn">Next Stop</button>
+  </div>
+  
+  <script>
+    const thoughts = [
+      "What if everyone on this bus is thinking about me thinking about them?",
+      "The driver has seen 10,000 people get off at the wrong stop and said nothing.",
+      "Someone dropped a receipt on the floor. That was the climax of their day and I missed it.",
+      "I wonder how many strangers have seen my face and immediately forgotten it.",
+      "If I suddenly stood up and started conducting an invisible orchestra, how long before someone stopped me?",
+      "That person's ringtone is the sound of their entire personality.",
+      "We're all just agreeing to pretend we don't smell each other.",
+      "The handrail has touched 400 hands today. I am connected to 400 strangers.",
+      "Every person here has a favorite breakfast. I will never know what any of them are.",
+      "Someone on this bus is wearing socks they desperately want to take off.",
+      "What if this is the exact bus where I'll meet my future ex-best friend?",
+      "That kid keeps staring at me. I am now part of a core memory forming in real time.",
+      "I bet the person across from me is mentally narrating my life incorrectly.",
+      "How many of these people have cried in a bathroom this week? I say 60%.",
+      "If we all stood up at once, would the bus tip over? Should we try?",
+      "Someone here is thinking about a sandwich. I guarantee it.",
+      "What if the bus just kept going and nobody said anything?",
+      "The woman with headphones is listening to either death metal or a true crime podcast. No middle ground.",
+      "I've made eye contact with that person 3 times. We're basically married now.",
+      "Everyone here has a secret and I'm the only one wondering what they are.",
+      "What if this bus is a social experiment and I'm failing?",
+      "That guy yawned. Now I have to yawn. This is how society collapses.",
+      "I wonder if anyone here knows they're about to change someone's life today.",
+      "The bus smells like rain and regret.",
+      "We all got on this bus alone and we'll all get off alone. What a trip."
+    ];
+    
+    let currentStop = 0;
+    const thoughtText = document.getElementById('thought-text');
+    const nextBtn = document.getElementById('next-btn');
+    const stopCounter = document.getElementById('stop-counter');
+    
+    function showThought() {
+      thoughtText.classList.remove('visible');
+      
+      setTimeout(() => {
+        thoughtText.textContent = thoughts[currentStop];
+        thoughtText.classList.add('visible');
+        stopCounter.textContent = `STOP ${currentStop + 1}/${thoughts.length}`;
+        
+        if (currentStop === thoughts.length - 1) {
+          nextBtn.textContent = 'End of Line';
+        }
+      }, 300);
+    }
+    
+    nextBtn.addEventListener('click', () => {
+      if (currentStop < thoughts.length - 1) {
+        currentStop++;
+        showThought();
+      } else {
+        // Loop back to start
+        currentStop = 0;
+        nextBtn.textContent = 'Next Stop';
+        showThought();
+      }
+    });
+    
+    // Show first thought
+    showThought();
+  </script>
+</body>
+</html>
