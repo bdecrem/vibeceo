@@ -279,7 +279,7 @@ export function restoreSession(project) {
     bars: project.session?.bars || 2,
     swing: project.session?.swing || 0,
     // R9D9 (drums)
-    drumKit: project.session?.drumKit || 'default',
+    drumKit: project.session?.drumKit || 'bart-deep',
     drumPattern: project.session?.drumPattern || {},
     drumParams: project.session?.drumParams || {},
     drumFlam: project.session?.drumFlam || 0,

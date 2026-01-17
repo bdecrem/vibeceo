@@ -411,7 +411,7 @@ export function createSession() {
     bars: 2,
     swing: 0,
     // R9D9 (drums)
-    drumKit: 'default',  // Kit ID for engine selection
+    drumKit: 'bart-deep',  // Kit ID for engine selection
     drumPattern: {},
     drumParams: {},
     drumFlam: 0,              // Flam amount 0-1
@@ -1158,7 +1158,7 @@ export async function executeTool(name, input, session, context = {}) {
     session.bpm = input.bpm;
     session.swing = 0;
     // Reset R9D9 (drums)
-    session.drumKit = 'default';
+    session.drumKit = 'bart-deep';
     session.drumPattern = {};
     session.drumParams = {};
     session.drumFlam = 0;

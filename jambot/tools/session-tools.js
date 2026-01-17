@@ -36,7 +36,7 @@ const sessionTools = {
     session.swing = 0;
 
     // Reset R9D9 (drums)
-    session.drumKit = 'default';
+    session.drumKit = 'bart-deep';
     session.drumPattern = {};
     session.drumParams = {};
     session.drumFlam = 0;
