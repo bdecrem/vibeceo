@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BERLIN PULSE — Amber</title>
+  
+  <meta property="og:title" content="BERLIN PULSE">
+  <meta property="og:description" content="128 BPM. TR-909 + TB-303. Machines talking at 5pm.">
+  <meta property="og:image" content="https://intheamber.com/amber/berlin-pulse-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/berlin-pulse.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/berlin-pulse-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    #ui {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      pointer-events: none;
+    }
+    
+    h1 {
+      font-size: clamp(2rem, 8vw, 4rem);
+      letter-spacing: 0.3em;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    .subtitle {
+      font-size: clamp(0.8rem, 2vw, 1rem);
+      color: #2D9596;
+      letter-spacing: 0.2em;
+      margin-bottom: 3rem;
+    }
+    
+    #playButton {
+      pointer-events: all;
+      background: rgba(212, 165, 116, 0.1);
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      padding: 1.5rem 3rem;
+      font-size: 1.2rem;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 0.2em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+    }
+    
+    #playButton:hover {
+      background: rgba(212, 165, 116, 0.2);
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.4);
+      transform: scale(1.05);
+    }
+    
+    #playButton:active {
+      transform: scale(0.95);
+    }
+    
+    #playButton.playing {
+      background: rgba(45, 149, 150, 0.1);
+      border-color: #2D9596;
+      color: #2D9596;
+    }
+    
+    .credits {
+      position: absolute;
+      bottom: 2rem;
+      font-size: 0.8rem;
+      color: #666;
+      letter-spacing: 0.1em;
+      z-index: 10;
+    }
+    
+    @media (max-width: 768px) {
+      #playButton {
+        padding: 1rem 2rem;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <h1>BERLIN PULSE</h1>
+    <div class="subtitle">128 BPM · TR-909 + TB-303</div>
+    <button id="playButton">PRESS PLAY</button>
+  </div>
+  
+  <div class="credits">AMBER · 2026</div>
+
+  <script type="module">
+    import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+    import { TB303Engine } from '/303/dist/machines/tb303/engine.js';
+
+    // === VISUAL SETUP ===
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // === AUDIO SETUP ===
+    const audioContext = new AudioContext();
+    const bpm = 128;
+    const stepDuration = 60 / bpm / 4;
+    
+    const drums = new TR909Engine({ context: audioContext });
+    const bass = new TB303Engine({ context: audioContext });
+    
+    drums.setBpm(bpm);
+    bass.setBpm(bpm);
+    
+    // === TR-909 PATTERN ===
+    // Four-on-floor kick, off-beat hats, sparse snare
+    const drumPattern = {
+      kick: [
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+      ],
+      ch: [
+        { velocity: 0 }, { velocity: 0.6 }, { velocity: 0 }, { velocity: 0.6 },
+        { velocity: 0 }, { velocity: 0.6 }, { velocity: 0 }, { velocity: 0.6 },
+        { velocity: 0 }, { velocity: 0.6 }, { velocity: 0 }, { velocity: 0.6 },
+        { velocity: 0 }, { velocity: 0.6 }, { velocity: 0 }, { velocity: 0.6 }
+      ],
+      snare: [
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 0.9 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 0.9 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+      ]
+    };
+    
+    drums.setPattern('main', drumPattern);
+    
+    // === TB-303 PATTERN ===
+    // Dark hypnotic bassline in C minor
+    const bassPattern = [
+      { note: 'C2', gate: true, accent: true, slide: false },
+      { note: 'C2', gate: false, accent: false, slide: false },
+      { note: 'D#2', gate: true, accent: false, slide: false },
+      { note: 'D#2', gate: false, accent: false, slide: false },
+      { note: 'G2', gate: true, accent: true, slide: false },
+      { note: 'G2', gate: false, accent: false, slide: false },
+      { note: 'F2', gate: true, accent: false, slide: true },
+      { note: 'D#2', gate: true, accent: false, slide: false },
+      { note: 'C2', gate: true, accent: false, slide: false },
+      { note: 'C2', gate: false, accent: false, slide: false },
+      { note: 'G2', gate: true, accent: true, slide: false },
+      { note: 'G2', gate: false, accent: false, slide: false },
+      { note: 'A#2', gate: true, accent: false, slide: false },
+      { note: 'A#2', gate: false, accent: false, slide: false },
+      { note: 'C3', gate: true, accent: true, slide: false },
+      { note: 'C3', gate: false, accent: false, slide: false }
+    ];
+    
+    bass.setPattern(bassPattern);
+    
+    // TB-303 settings - dark and squelchy
+    bass.setParameter('cutoff', 0.35);
+    bass.setParameter('resonance', 0.7);
+    bass.setParameter('envMod', 0.75);
+    bass.setParameter('decay', 0.4);
+    bass.setParameter('accent', 0.8);
+    bass.setWaveform('sawtooth');
+    
+    // === VISUALIZATION ===
+    // Concentric rings that pulse with kick/bass
+    let kickPulse = 0;
+    let bassPulse = 0;
+    let currentStep = 0;
+    
+    // Create analyser for bass
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    bass.output.connect(analyser);
+    
+    function draw() {
+      // Fade to black (trails)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update pulses (decay)
+      kickPulse *= 0.85;
+      bassPulse *= 0.9;
+      
+      // Get bass frequency data
+      analyser.getByteFrequencyData(dataArray);
+      const bassEnergy = dataArray.slice(0, 10).reduce((a, b) => a + b, 0) / 10 / 255;
+      bassPulse = Math.max(bassPulse, bassEnergy * 1.5);
+      
+      // Center point
+      const cx = width / 2;
+      const cy = height / 2;
+      
+      // Draw concentric rings
+      const numRings = 8;
+      for (let i = 0; i < numRings; i++) {
+        const phase = i / numRings;
+        const baseRadius = 50 + i * 40;
+        
+        // Kick expands all rings
+        const kickExpand = kickPulse * 30 * (1 - phase);
+        
+        // Bass modulates inner rings more
+        const bassModulate = bassPulse * 20 * (1 - phase * 0.5);
+        
+        const radius = baseRadius + kickExpand + bassModulate;
+        
+        // Color shifts from amber (outer) to teal (inner)
+        const amberAmount = phase;
+        const tealAmount = 1 - phase;
+        
+        const r = Math.floor(212 * amberAmount + 45 * tealAmount);
+        const g = Math.floor(165 * amberAmount + 149 * tealAmount);
+        const b = Math.floor(116 * amberAmount + 150 * tealAmount);
+        
+        // Opacity based on pulse
+        const alpha = 0.3 + kickPulse * 0.3 + bassPulse * 0.2;
+        
+        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.lineWidth = 2 + kickPulse * 3;
+        
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Inner glow on beat
+        if (kickPulse > 0.3) {
+          ctx.strokeStyle = `rgba(212, 165, 116, ${kickPulse * 0.5})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius - 2, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+      
+      // Central dot that pulses
+      const dotRadius = 3 + kickPulse * 10 + bassPulse * 5;
+      const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, dotRadius);
+      gradient.addColorStop(0, `rgba(212, 165, 116, ${0.8 + kickPulse * 0.2})`);
+      gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(cx, cy, dotRadius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      requestAnimationFrame(draw);
+    }
+    
+    // Start animation immediately
+    draw();
+    
+    // === PLAYBACK ===
+    let isPlaying = false;
+    let intervalId = null;
+    
+    const playButton = document.getElementById('playButton');
+    
+    playButton.addEventListener('click', async () => {
+      if (!isPlaying) {
+        // Start
+        await audioContext.resume();
+        drums.startSequencer();
+        bass.startSequencer();
+        
+        // Track step for kick pulse visualization
+        intervalId = setInterval(() => {
+          const step = currentStep % 16;
+          // Kick on steps 0, 4, 8, 12
+          if (drumPattern.kick[step].velocity > 0) {
+            kickPulse = 1.0;
+          }
+          currentStep++;
+        }, stepDuration * 1000);
+        
+        playButton.textContent = 'STOP';
+        playButton.classList.add('playing');
+        isPlaying = true;
+      } else {
+        // Stop
+        drums.stopSequencer();
+        bass.stopSequencer();
+        if (intervalId) clearInterval(intervalId);
+        
+        playButton.textContent = 'PRESS PLAY';
+        playButton.classList.remove('playing');
+        isPlaying = false;
+        currentStep = 0;
+      }
+    });
+  </script>
+</body>
+</html>
