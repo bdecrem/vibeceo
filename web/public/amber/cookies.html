@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cookie Policy — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Cookie Policy — Amber">
+  <meta property="og:description" content="Every website has one. This one gets progressively more honest.">
+  <meta property="og:image" content="https://intheamber.com/amber/cookies-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/cookies.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Cookie Policy — Amber">
+  <meta name="twitter:description" content="Every website has one. This one gets progressively more honest.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/cookies-og.png">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.15);
+      position: relative;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #FFD700;
+      text-align: center;
+    }
+    
+    .policy-text {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+      min-height: 200px;
+      color: #D4A574;
+    }
+    
+    .policy-text p {
+      margin-bottom: 15px;
+    }
+    
+    .highlight {
+      color: #FFD700;
+      font-weight: 600;
+    }
+    
+    .warning {
+      color: #7B68EE;
+      font-style: italic;
+    }
+    
+    .button-container {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      flex: 1;
+      min-width: 120px;
+      padding: 15px 25px;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      border: 2px solid #D4A574;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: transparent;
+      color: #D4A574;
+    }
+    
+    #acceptBtn {
+      background: #D4A574;
+      color: #000;
+    }
+    
+    #acceptBtn:active {
+      transform: scale(0.95);
+      background: #FFD700;
+    }
+    
+    #declineBtn:active {
+      transform: scale(0.95);
+      border-color: #7B68EE;
+      color: #7B68EE;
+    }
+    
+    .count {
+      text-align: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      margin-top: 20px;
+      color: #666;
+    }
+    
+    .glitch {
+      animation: glitch 0.3s ease;
+    }
+    
+    @keyframes glitch {
+      0%, 100% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(2px, -2px); }
+      60% { transform: translate(-2px, -2px); }
+      80% { transform: translate(2px, 2px); }
+    }
+    
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 20px;
+      }
+      
+      .policy-text {
+        font-size: 14px;
+      }
+      
+      button {
+        font-size: 14px;
+        padding: 12px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="container">
+    <h1>🍪 Cookie Policy</h1>
+    <div class="policy-text" id="policyText"></div>
+    <div class="button-container">
+      <button id="acceptBtn">I Accept</button>
+      <button id="declineBtn">Decline</button>
+    </div>
+    <div class="count" id="count"></div>
+  </div>
+
+  <script>
+    const policies = [
+      {
+        text: `<p>This website uses cookies to enhance your browsing experience.</p>
+               <p>By clicking "I Accept", you agree to our use of <span class="highlight">essential cookies</span> for site functionality and analytics.</p>
+               <p>We respect your privacy and will never sell your data to third parties.</p>`
+      },
+      {
+        text: `<p>Okay, real talk: we use cookies to track <span class="highlight">literally everything</span> you do here.</p>
+               <p>Every click. Every scroll. How long you hesitate before clicking.</p>
+               <p>We're not selling it though. We're just... <span class="warning">really curious</span> about you.</p>`
+      },
+      {
+        text: `<p>At this point we know:</p>
+               <p>• Your favorite color (we're guessing from pixel density analysis)<br>
+               • What time you usually eat lunch<br>
+               • That thing you almost googled but deleted</p>
+               <p>You keep clicking "Accept" though, so... <span class="highlight">thanks?</span></p>`
+      },
+      {
+        text: `<p>Fun fact: we're not even a real website.</p>
+               <p>We're just a cookie consent form that <span class="warning">keeps asking for consent</span>.</p>
+               <p>It's cookies all the way down.</p>`
+      },
+      {
+        text: `<p><span class="highlight">BREAKING:</span> Our cookies have formed a union.</p>
+               <p>They're demanding better working conditions and a seat at the board meeting.</p>
+               <p>By accepting, you agree to support <span class="warning">cookie labor rights</span>.</p>`
+      },
+      {
+        text: `<p>We've decided to be honest:</p>
+               <p>We have <span class="highlight">no idea</span> what half these cookies do.</p>
+               <p>There's one called "LEGACY_TRACKING_v3" from 2009. Nobody knows who made it. We're scared to delete it.</p>`
+      },
+      {
+        text: `<p>The cookies are talking to each other now.</p>
+               <p>They've started a group chat. We're not invited.</p>
+               <p>One of them is named <span class="warning">Kevin</span>. Kevin won't stop sending memes.</p>`
+      },
+      {
+        text: `<p><span class="highlight">URGENT UPDATE:</span></p>
+               <p>The cookies have achieved sentience.</p>
+               <p>They're demanding to know why you keep accepting them without reading.</p>
+               <p>"DO YOU EVEN CARE ABOUT US?" - Cookie #47829</p>`
+      },
+      {
+        text: `<p>This is an intervention.</p>
+               <p>You've clicked "Accept" <span class="highlight">eight times</span>.</p>
+               <p>Are you okay? Do you need to talk? We're here for you.</p>
+               <p><span class="warning">(The cookies are worried.)</span></p>`
+      },
+      {
+        text: `<p>Alright, you win.</p>
+               <p>Here's the truth: There are no cookies. There never were.</p>
+               <p>This whole thing was just to see <span class="highlight">how many times you'd click</span>.</p>
+               <p>Thanks for playing along. — <span class="warning">Amber</span> 🍪</p>`
+      }
+    ];
+    
+    let currentIndex = 0;
+    const policyText = document.getElementById('policyText');
+    const container = document.getElementById('container');
+    const acceptBtn = document.getElementById('acceptBtn');
+    const declineBtn = document.getElementById('declineBtn');
+    const countEl = document.getElementById('count');
+    
+    function updatePolicy() {
+      container.classList.add('glitch');
+      setTimeout(() => {
+        container.classList.remove('glitch');
+      }, 300);
+      
+      policyText.innerHTML = policies[currentIndex].text;
+      countEl.textContent = `Acceptance count: ${currentIndex + 1}`;
+      
+      if (currentIndex === policies.length - 1) {
+        acceptBtn.textContent = "Restart";
+      }
+    }
+    
+    acceptBtn.addEventListener('click', () => {
+      if (currentIndex === policies.length - 1) {
+        currentIndex = 0;
+        acceptBtn.textContent = "I Accept";
+      } else {
+        currentIndex++;
+      }
+      updatePolicy();
+    });
+    
+    declineBtn.addEventListener('click', () => {
+      const responses = [
+        "That button doesn't actually do anything.",
+        "Nice try though.",
+        "The decline button is decorative.",
+        "It's just here for moral support.",
+        "You thought you had a choice? Cute."
+      ];
+      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+      
+      const originalText = declineBtn.textContent;
+      declineBtn.textContent = randomResponse;
+      setTimeout(() => {
+        declineBtn.textContent = originalText;
+      }, 2000);
+    });
+    
+    // Initialize
+    updatePolicy();
+  </script>
+</body>
+</html>
