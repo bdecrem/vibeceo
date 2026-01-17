@@ -1157,10 +1157,17 @@ export async function executeTool(name, input, session, context = {}) {
   if (name === "create_session") {
     session.bpm = input.bpm;
     session.swing = 0;
-    // Reset R9D9 (drums)
+    // Reset R9D9 (drums) - load default kit with its parameters
+    const defaultKit = TR909_KITS.find(k => k.id === 'bart-deep');
     session.drumKit = 'bart-deep';
     session.drumPattern = {};
     session.drumParams = {};
+    // Load default kit's voice parameters so agent knows the values
+    if (defaultKit?.voiceParams) {
+      for (const [voice, params] of Object.entries(defaultKit.voiceParams)) {
+        session.drumParams[voice] = { ...params };
+      }
+    }
     session.drumFlam = 0;
     session.drumPatternLength = 16;
     session.drumScale = '16th';

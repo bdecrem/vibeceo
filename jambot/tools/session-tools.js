@@ -5,6 +5,10 @@
  */
 
 import { registerTools } from './index.js';
+import { TR909_KITS } from '../../web/public/909/dist/machines/tr909/presets.js';
+
+// Default kit to load on session creation
+const DEFAULT_DRUM_KIT = 'bart-deep';
 
 // Helper: Create empty bass pattern (16 steps)
 export function createEmptyBassPattern() {
@@ -35,11 +39,19 @@ const sessionTools = {
     session.bpm = input.bpm;
     session.swing = 0;
 
-    // Reset R9D9 (drums)
-    session.drumKit = 'bart-deep';
+    // Reset R9D9 (drums) - load default kit with its parameters
+    session.drumKit = DEFAULT_DRUM_KIT;
     session.drumPattern = {};
     session.drumParams = {};
     session.drumFlam = 0;
+
+    // Load default kit's voice parameters so agent knows the values
+    const kit = TR909_KITS.find(k => k.id === DEFAULT_DRUM_KIT);
+    if (kit?.voiceParams) {
+      for (const [voice, params] of Object.entries(kit.voiceParams)) {
+        session.drumParams[voice] = { ...params };
+      }
+    }
     session.drumPatternLength = 16;
     session.drumScale = '16th';
     session.drumGlobalAccent = 1;
