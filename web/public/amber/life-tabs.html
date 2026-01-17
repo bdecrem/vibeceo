@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Life as Browser Tabs — Amber</title>
+  
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Your Life as Browser Tabs — Amber">
+  <meta property="og:description" content="All your life responsibilities rendered as browser tabs you can't close">
+  <meta property="og:image" content="https://intheamber.com/amber/life-tabs-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/life-tabs.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Your Life as Browser Tabs — Amber">
+  <meta name="twitter:description" content="All your life responsibilities rendered as browser tabs you can't close">
+  <meta name="twitter:image" content="https://intheamber.com/amber/life-tabs-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      padding: 20px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .browser-chrome {
+      background: #1a1a1a;
+      border-radius: 8px 8px 0 0;
+      padding: 10px;
+      margin-bottom: 2px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .window-button {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #2D9596;
+    }
+    
+    .window-button:nth-child(2) {
+      background: #FFD700;
+    }
+    
+    .window-button:nth-child(3) {
+      background: #D4A574;
+    }
+    
+    .tabs-container {
+      background: #262626;
+      border-radius: 0 0 8px 8px;
+      overflow: hidden;
+    }
+    
+    .tab {
+      background: #333;
+      border-right: 1px solid #1a1a1a;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+      position: relative;
+      min-height: 60px;
+    }
+    
+    .tab:hover {
+      background: #3a3a3a;
+    }
+    
+    .tab.active {
+      background: #0D0D0D;
+    }
+    
+    .tab-favicon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    
+    .tab-content {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .tab-title {
+      font-size: 13px;
+      color: #D4A574;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 3px;
+    }
+    
+    .tab.active .tab-title {
+      color: #FFD700;
+    }
+    
+    .tab-subtitle {
+      font-size: 10px;
+      color: #888;
+    }
+    
+    .tab-close {
+      width: 20px;
+      height: 20px;
+      border-radius: 3px;
+      background: transparent;
+      color: #666;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    
+    .tab-close:hover {
+      background: #555;
+      color: #D4A574;
+    }
+    
+    .memory-badge {
+      position: absolute;
+      top: 8px;
+      right: 40px;
+      font-size: 9px;
+      color: #7B68EE;
+      background: rgba(123, 104, 238, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    
+    .close-warning {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1a1a1a;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 400px;
+      width: 90%;
+      z-index: 1000;
+      display: none;
+    }
+    
+    .close-warning.show {
+      display: block;
+    }
+    
+    .warning-title {
+      color: #FFD700;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+    
+    .warning-text {
+      color: #D4A574;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    
+    .warning-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    
+    .warning-button {
+      padding: 10px 20px;
+      border: 1px solid #D4A574;
+      background: transparent;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    
+    .warning-button:hover {
+      background: #D4A574;
+      color: #0D0D0D;
+    }
+    
+    .warning-button.primary {
+      background: #2D9596;
+      border-color: #2D9596;
+      color: #0D0D0D;
+    }
+    
+    .warning-button.primary:hover {
+      background: #3da9aa;
+    }
+    
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 999;
+      display: none;
+    }
+    
+    .overlay.show {
+      display: block;
+    }
+    
+    h1 {
+      color: #FFD700;
+      font-size: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      
+      .tab {
+        padding: 10px 12px;
+      }
+      
+      .tab-title {
+        font-size: 12px;
+      }
+      
+      .close-warning {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>YOUR LIFE AS BROWSER TABS</h1>
+  
+  <div class="browser-chrome">
+    <div class="window-button"></div>
+    <div class="window-button"></div>
+    <div class="window-button"></div>
+  </div>
+  
+  <div class="tabs-container" id="tabs"></div>
+  
+  <div class="overlay" id="overlay"></div>
+  <div class="close-warning" id="warning">
+    <div class="warning-title" id="warningTitle">⚠️ Close tab?</div>
+    <div class="warning-text" id="warningText"></div>
+    <div class="warning-buttons">
+      <button class="warning-button" id="cancelBtn">Cancel</button>
+      <button class="warning-button primary" id="confirmBtn">Close Anyway</button>
+    </div>
+  </div>
+
+  <script>
+    const tabs = [
+      {
+        icon: '💼',
+        title: 'That Work Project You Said You\'d Finish',
+        subtitle: 'Due: Yesterday',
+        memory: '2.3 GB',
+        warning: 'You have 14 unsaved changes. Your boss is wondering where this is. Closing this tab will not make the deadline go away.'
+      },
+      {
+        icon: '📧',
+        title: 'Emails You\'ve Been Ignoring for 3 Weeks',
+        subtitle: '247 unread',
+        memory: '890 MB',
+        warning: 'Some of these are probably important. One might be from your dentist. Another might be an invitation you already missed. Close at your own risk.'
+      },
+      {
+        icon: '🏋️',
+        title: 'Gym Membership You\'re Paying For',
+        subtitle: 'Last visit: 4 months ago',
+        memory: '$49.99/month',
+        warning: 'You told yourself "this year is different." It wasn\'t. The membership auto-renews in 3 days. You could cancel, but then you\'d be admitting defeat.'
+      },
+      {
+        icon: '👤',
+        title: 'Friend You Keep Meaning to Text Back',
+        subtitle: 'Message waiting since Tuesday',
+        memory: '1 friend',
+        warning: '"Sorry, just saw this!" stopped being believable after day 3. It\'s been 5 days. They know you saw it. They\'re just being nice.'
+      },
+      {
+        icon: '📚',
+        title: 'That Book You Started 8 Months Ago',
+        subtitle: 'Bookmark on page 47',
+        memory: '$24.99',
+        warning: 'You were really into it for those first 46 pages. You still tell people you\'re "currently reading" it. The bookmark is gathering dust.'
+      },
+      {
+        icon: '🎯',
+        title: 'New Year\'s Resolutions',
+        subtitle: 'Opened: Jan 1, Last viewed: Jan 8',
+        memory: '0 KB (empty promises)',
+        warning: 'Learn Spanish. Meditate daily. Read more. Call your parents weekly. Start a side business. You made it one week. It\'s June now.'
+      },
+      {
+        icon: '💰',
+        title: 'Retirement Savings Calculator',
+        subtitle: 'Results: concerning',
+        memory: '401(k) balance: insufficient',
+        warning: 'According to this, you need to save $2,847/month to retire at 65. You currently save $50. The math doesn\'t work and you know it.'
+      },
+      {
+        icon: '🏠',
+        title: 'Cleaning the Garage',
+        subtitle: 'Added to to-do list: 2019',
+        memory: '3 years of clutter',
+        warning: 'There are boxes in there you haven\'t opened since you moved in. One contains Christmas decorations. Another contains... you honestly don\'t remember.'
+      },
+      {
+        icon: '📱',
+        title: 'Social Media Scrolling',
+        subtitle: 'Always open',
+        memory: '4.7 GB',
+        warning: 'This tab cannot be closed. You tried once. You reopened it 3 minutes later. It\'s part of you now. Accept it.'
+      },
+      {
+        icon: '😰',
+        title: 'General Anxiety About the Future',
+        subtitle: 'Running since birth',
+        memory: 'All of it',
+        warning: 'This tab has been running in the background your entire life. It uses significant resources. Closing it requires therapy, medication, or radical acceptance. Choose wisely.'
+      },
+      {
+        icon: '☕',
+        title: 'Coffee Addiction',
+        subtitle: '4 cups today',
+        memory: '$6.50/day = $2,372.50/year',
+        warning: 'You say you could quit anytime. You also said you\'d only have "one cup" this morning. It\'s 3pm and you\'re brewing your fourth.'
+      },
+      {
+        icon: '🎵',
+        title: 'That Spotify Playlist You\'ll Perfect "Someday"',
+        subtitle: '47 songs, last updated 2022',
+        memory: '180 MB',
+        warning: 'You add songs faster than you remove them. It\'s 6 hours long now. Nobody will ever listen to the whole thing, including you.'
+      },
+      {
+        icon: '🌱',
+        title: 'Plant You Keep Forgetting to Water',
+        subtitle: 'Status: critical',
+        memory: '1 dying succulent',
+        warning: 'Succulents are supposed to be impossible to kill. You\'re about to prove that wrong. Last watered: you honestly can\'t remember.'
+      }
+    ];
+
+    let currentWarningTab = null;
+
+    function renderTabs() {
+      const container = document.getElementById('tabs');
+      container.innerHTML = tabs.map((tab, index) => `
+        <div class="tab ${index === 0 ? 'active' : ''}" data-index="${index}">
+          <div class="tab-favicon">${tab.icon}</div>
+          <div class="tab-content">
+            <div class="tab-title">${tab.title}</div>
+            <div class="tab-subtitle">${tab.subtitle}</div>
+          </div>
+          <div class="memory-badge">${tab.memory}</div>
+          <button class="tab-close" data-index="${index}">×</button>
+        </div>
+      `).join('');
+
+      // Add click handlers
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('tab-close')) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+          }
+        });
+      });
+
+      document.querySelectorAll('.tab-close').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const index = parseInt(btn.dataset.index);
+          showWarning(index);
+        });
+      });
+    }
+
+    function showWarning(index) {
+      currentWarningTab = index;
+      const tab = tabs[index];
+      
+      document.getElementById('warningTitle').textContent = `⚠️ Close "${tab.title}"?`;
+      document.getElementById('warningText').textContent = tab.warning;
+      
+      document.getElementById('overlay').classList.add('show');
+      document.getElementById('warning').classList.add('show');
+    }
+
+    function hideWarning() {
+      document.getElementById('overlay').classList.remove('show');
+      document.getElementById('warning').classList.remove('show');
+      currentWarningTab = null;
+    }
+
+    document.getElementById('cancelBtn').addEventListener('click', hideWarning);
+    document.getElementById('overlay').addEventListener('click', hideWarning);
+
+    document.getElementById('confirmBtn').addEventListener('click', () => {
+      // Don't actually close the tab, just hide the warning
+      // Because let's be honest, you can't actually close these tabs
+      hideWarning();
+      
+      // Show all tabs again after a moment with a subtle shake
+      setTimeout(() => {
+        const tabElement = document.querySelector(`[data-index="${currentWarningTab}"]`);
+        if (tabElement) {
+          tabElement.style.animation = 'shake 0.5s';
+          setTimeout(() => {
+            tabElement.style.animation = '';
+          }, 500);
+        }
+      }, 100);
+    });
+
+    // Initialize
+    renderTabs();
+
+    // Easter egg: try to close the window
+    window.addEventListener('beforeunload', (e) => {
+      e.preventDefault();
+      e.returnValue = 'You have 13 tabs open. Are you sure you want to close this window? (Narrator: They did not close the window.)';
+    });
+  </script>
+
+  <style>
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+  </style>
+</body>
+</html>
