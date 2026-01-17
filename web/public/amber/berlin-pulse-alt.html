@@ -148,7 +148,15 @@
         // iOS requires user interaction to start audio context
         function initAudio() {
             if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                audioContext = new AudioCtx();
+
+                // iOS Safari requires playing a silent buffer first
+                const silentBuffer = audioContext.createBuffer(1, 1, 22050);
+                const source = audioContext.createBufferSource();
+                source.buffer = silentBuffer;
+                source.connect(audioContext.destination);
+                source.start(0);
             }
             if (audioContext.state === 'suspended') {
                 audioContext.resume();
@@ -160,11 +168,12 @@
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
 
+            // iOS needs setTargetAtTime instead of exponentialRamp for reliable playback
             osc.frequency.setValueAtTime(150, time);
-            osc.frequency.exponentialRampToValueAtTime(40, time + 0.5);
+            osc.frequency.setTargetAtTime(40, time, 0.1);
 
             gain.gain.setValueAtTime(1, time);
-            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+            gain.gain.setTargetAtTime(0.001, time, 0.15);
 
             osc.connect(gain);
             gain.connect(audioContext.destination);
@@ -173,7 +182,7 @@
             osc.stop(time + 0.5);
         }
 
-        // Hi-hat synth
+        // Hi-hat synth using noise-like oscillators
         function playHihat(time, closed = true) {
             const osc1 = audioContext.createOscillator();
             const osc2 = audioContext.createOscillator();
@@ -192,11 +201,11 @@
             filter.type = 'highpass';
             filter.frequency.value = 7000;
 
-            const duration = closed ? 0.05 : 0.15;
-            const volume = closed ? 0.3 : 0.15;
+            const duration = closed ? 0.08 : 0.2;
+            const volume = closed ? 0.25 : 0.12;
 
             gain.gain.setValueAtTime(volume, time);
-            gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+            gain.gain.setTargetAtTime(0.001, time, duration * 0.3);
 
             osc1.connect(filter);
             osc2.connect(filter);
@@ -207,12 +216,12 @@
             osc1.start(time);
             osc2.start(time);
             osc3.start(time);
-            osc1.stop(time + duration);
-            osc2.stop(time + duration);
-            osc3.stop(time + duration);
+            osc1.stop(time + duration + 0.1);
+            osc2.stop(time + duration + 0.1);
+            osc3.stop(time + duration + 0.1);
         }
 
-        // Bass synth (sub bass)
+        // Bass synth (sub bass) - iOS compatible
         function playBass(time, note = 55) {
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
@@ -223,19 +232,19 @@
 
             filter.type = 'lowpass';
             filter.frequency.setValueAtTime(200, time);
-            filter.frequency.exponentialRampToValueAtTime(800, time + 0.1);
-            filter.frequency.exponentialRampToValueAtTime(200, time + 0.4);
-            filter.Q.value = 8;
+            filter.frequency.setTargetAtTime(700, time, 0.05);
+            filter.frequency.setTargetAtTime(200, time + 0.15, 0.1);
+            filter.Q.value = 6;
 
-            gain.gain.setValueAtTime(0.4, time);
-            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+            gain.gain.setValueAtTime(0.35, time);
+            gain.gain.setTargetAtTime(0.001, time, 0.15);
 
             osc.connect(filter);
             filter.connect(gain);
             gain.connect(audioContext.destination);
 
             osc.start(time);
-            osc.stop(time + 0.5);
+            osc.stop(time + 0.6);
         }
 
         // Pattern sequencer
@@ -329,23 +338,33 @@
         animate();
 
         // Play/Stop control
-        document.getElementById('playBtn').addEventListener('click', function() {
+        function togglePlay(btn) {
             if (!isPlaying) {
                 initAudio();
                 isPlaying = true;
                 currentBeat = 0;
                 nextNoteTime = audioContext.currentTime;
                 scheduler();
-                this.textContent = 'STOP';
-                this.classList.add('active');
+                btn.textContent = 'STOP';
+                btn.classList.add('active');
             } else {
                 isPlaying = false;
                 if (schedulerTimer) {
                     clearTimeout(schedulerTimer);
                 }
-                this.textContent = 'START';
-                this.classList.remove('active');
+                btn.textContent = 'START';
+                btn.classList.remove('active');
             }
+        }
+
+        const playBtn = document.getElementById('playBtn');
+        let lastTap = 0;
+        playBtn.addEventListener('click', function(e) {
+            // Debounce to prevent double-fire from touch+click
+            const now = Date.now();
+            if (now - lastTap < 300) return;
+            lastTap = now;
+            togglePlay(this);
         });
 
         // BPM pulse animation
