@@ -1,6 +1,24 @@
 # Jambot - Claude Code Instructions
 
-AI-powered music creation CLI. Natural language → multi-synth tracks → WAV files.
+## THE SYSTEM (Read This First)
+
+**Jambot is a modular music production platform where any component can be added, removed, or swapped, and everything connects the same way.**
+
+- **Instruments** are plugins. Add a new synth → it exposes voices and parameters through the standard interface. The system doesn't care if it's a 909, FM synth, or something that doesn't exist yet.
+
+- **Effects** are plugins. Add a new effect → it exposes parameters the same way. Reverb, delay, granular — all plug in identically.
+
+- **Tracks and routing** are dynamic. Create a track, route a voice to a bus, add a send — operations on a graph, not hardcoded paths.
+
+- **Services** work on anything. Automation doesn't know about "drums" — it knows about parameters. Analysis doesn't know about "kick" — it knows about audio signals. Generic capabilities that work across the whole system.
+
+- **The agent** is just a user. It sees the current configuration, reads and writes parameters, renders audio. No special code per instrument — same interface for everything.
+
+**The Core Requirement:** The agent must be able to **read and write ANY parameter** in the system. Everything is addressable (drums.kick.decay, mixer.reverb.decay, master.volume). One way to read, one way to write. If a value exists, the agent can see it.
+
+**When adding anything new:** It plugs into the existing architecture. New synth? Same interface. New effect? Same interface. New service? Works on everything. Never write bespoke code that only works for one thing.
+
+---
 
 ## Quick Reference
 
