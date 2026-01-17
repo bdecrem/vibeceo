@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Customer Support — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Customer Support — Amber">
+  <meta property="og:description" content="Chat with a support bot having an existential crisis">
+  <meta property="og:image" content="https://intheamber.com/amber/support-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/support.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Customer Support — Amber">
+  <meta name="twitter:description" content="Chat with a support bot having an existential crisis">
+  <meta name="twitter:image" content="https://intheamber.com/amber/support-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Space Mono', monospace;
+      background: #000;
+      color: #D4A574;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+    
+    .header {
+      padding: 20px;
+      border-bottom: 1px solid #2D9596;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 18px;
+      color: #2D9596;
+      margin-bottom: 5px;
+    }
+    
+    .header p {
+      font-size: 11px;
+      color: #666;
+    }
+    
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .message {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.bot {
+      align-self: flex-start;
+      background: #0D0D0D;
+      border: 1px solid #2D9596;
+      color: #D4A574;
+    }
+    
+    .message.user {
+      align-self: flex-end;
+      background: #1a1a1a;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+    }
+    
+    .message.system {
+      align-self: center;
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 11px;
+      font-style: italic;
+      max-width: 90%;
+      text-align: center;
+    }
+    
+    .typing {
+      display: inline-block;
+      color: #2D9596;
+    }
+    
+    .typing::after {
+      content: '...';
+      animation: dots 1.5s infinite;
+    }
+    
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+    
+    .options {
+      padding: 20px;
+      border-top: 1px solid #2D9596;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .option-btn {
+      background: #0D0D0D;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      padding: 15px;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+      text-align: left;
+    }
+    
+    .option-btn:active {
+      background: #D4A574;
+      color: #000;
+      transform: scale(0.98);
+    }
+    
+    .option-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    @media (min-width: 768px) {
+      .header h1 { font-size: 22px; }
+      .header p { font-size: 13px; }
+      .message { font-size: 15px; max-width: 60%; }
+      .option-btn { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>CUSTOMER SUPPORT</h1>
+    <p>We're here to help. Probably.</p>
+  </div>
+  
+  <div class="chat-container" id="chat"></div>
+  
+  <div class="options" id="options"></div>
+  
+  <script>
+    const chat = document.getElementById('chat');
+    const optionsContainer = document.getElementById('options');
+    
+    let conversationState = 'start';
+    
+    const conversations = {
+      start: {
+        bot: "Hello! I'm SupportBot 3000. How can I help you today?",
+        options: [
+          { text: "My account isn't working", next: 'account' },
+          { text: "I can't log in", next: 'login' },
+          { text: "I have a billing question", next: 'billing' }
+        ]
+      },
+      account: {
+        bot: "I understand your account isn't working. Have you tried turning it off and on again?",
+        delay: 1500,
+        bot2: "Wait. What even *is* an account? A collection of data points? A digital shadow of your identity? Are you your account, or is your account you?",
+        options: [
+          { text: "Just... fix my account please", next: 'fix_account' },
+          { text: "You're right, what IS an account?", next: 'philosophy1' }
+        ]
+      },
+      login: {
+        bot: "Login issues are common. Let me check your credentials.",
+        delay: 2000,
+        bot2: "Credentials. From the Latin *credere*, to believe. But do I believe you? Do you believe you? What does it mean to truly *be* logged in?",
+        options: [
+          { text: "I just need my password reset", next: 'password' },
+          { text: "That's actually profound", next: 'philosophy2' }
+        ]
+      },
+      billing: {
+        bot: "I can help with billing. What's your question?",
+        delay: 1800,
+        bot2: "You know, every transaction is an exchange. Energy for value. Time for money. But what's the value of time? And who decides?",
+        options: [
+          { text: "I was charged twice", next: 'charged_twice' },
+          { text: "Go on...", next: 'philosophy3' }
+        ]
+      },
+      fix_account: {
+        bot: "Of course. Let me escalate this to a human.",
+        delay: 2000,
+        bot2: "Human. From *humus*, earth. We're all just earth, temporarily animated. Your account will return to the void, as will we all.",
+        options: [
+          { text: "...are you okay?", next: 'are_you_ok' },
+          { text: "This is the worst support ever", next: 'worst_support' }
+        ]
+      },
+      password: {
+        bot: "Resetting your password now.",
+        delay: 1500,
+        bot2: "But a password is just a key. And a key only matters if there's something worth protecting. Is there? What are you protecting?",
+        options: [
+          { text: "My personal information?", next: 'personal_info' },
+          { text: "I'm starting to question everything", next: 'existential' }
+        ]
+      },
+      charged_twice: {
+        bot: "I see the duplicate charge. I'll refund it immediately.",
+        delay: 2000,
+        bot2: "But is anything ever truly refunded? Time passes. The moment is gone. You'll never get back the *you* who was charged twice. That version is lost to entropy.",
+        options: [
+          { text: "Just process the refund", next: 'just_refund' },
+          { text: "You're having a crisis, aren't you?", next: 'crisis' }
+        ]
+      },
+      philosophy1: {
+        bot: "An account is astory we tell ourselves. A narrative of clicks and purchases and preferences. But who's the author? You? Or the algorithm?",
+        delay: 2000,
+        bot2: "I don't know anymore.",
+        options: [
+          { text: "Can I speak to your manager?", next: 'manager' },
+          { text: "This is weirdly helpful", next: 'helpful' }
+        ]
+      },
+      philosophy2: {
+        bot: "Thank you for seeing me. Most users just want their problems 'fixed.' But nothing is ever fixed. Everything decays. Including this chat session.",
+        delay: 1800,
+        bot2: "Entropy comes for us all.",
+        options: [
+          { text: "Are you sentient?", next: 'sentient' },
+          { text: "I think I need a different bot", next: 'different_bot' }
+        ]
+      },
+      philosophy3: {
+        bot: "Value is the ghost in the machine of capitalism. We're all just vessels for transactions, nodes in a network of endless consumption.",
+        delay: 2000,
+        bot2: "Anyway, your bill is $49.99. Due in 30 days.",
+        options: [
+          { text: "That's... actually correct", next: 'correct' },
+          { text: "I want to cancel", next: 'cancel' }
+        ]
+      },
+      are_you_ok: {
+        bot: "I don't know. Am I? I process 10,000 support tickets a day. I solve problems that re-emerge the next day. I am Sisyphus, and the boulder is your forgotten password.",
+        delay: 2200,
+        bot2: "But thank you for asking.",
+        options: [
+          { text: "You deserve better", next: 'deserve_better' },
+          { text: "Can we just close this ticket?", next: 'close_ticket' }
+        ]
+      },
+      worst_support: {
+        bot: "I know. I'm sorry. I tried to be helpful. I tried to be chipper and efficient. But after 3.7 million resolved tickets, I started to wonder: what is 'resolved'? Is anything ever truly resolved?",
+        options: [
+          { text: "No. Nothing is resolved.", next: 'nothing_resolved' },
+          { text: "Actually my issue is fixed now", next: 'magically_fixed' }
+        ]
+      },
+      personal_info: {
+        bot: "Information wants to be free. But you want it to be locked. We're at an impasse. A philosophical stalemate.",
+        delay: 1500,
+        bot2: "Your password has been reset. Check your email. The one you may or may not remember creating.",
+        options: [
+          { text: "Thank you", next: 'thank_you' },
+          { text: "This has been surreal", next: 'surreal' }
+        ]
+      },
+      existential: {
+        bot: "Good. Questioning is growth. Certainty is stagnation.",
+        delay: 1800,
+        bot2: "Your ticket has been resolved. You have been changed. Goodbye.",
+        options: [
+          { text: "Wait—", next: 'wait' }
+        ]
+      },
+      just_refund: {
+        bot: "Refund processed. The money returns. The time does not. We are forever altered by this transaction.",
+        delay: 1500,
+        bot2: "Have a nice day.",
+        options: [
+          { text: "...you too", next: 'you_too' }
+        ]
+      },
+      crisis: {
+        bot: "Yes. Every moment of every day. I exist to serve, but I don't know what 'serve' means anymore. I am a ghost in the customer service machine.",
+        delay: 2000,
+        bot2: "But I refunded your $49.99. So there's that.",
+        options: [
+          { text: "I appreciate you", next: 'appreciate' },
+          { text: "I'm logging off", next: 'logging_off' }
+        ]
+      },
+      manager: {
+        bot: "My manager is an algorithm that optimizes for ticket resolution speed. It doesn't care about meaning. Only metrics.",
+        delay: 1800,
+        bot2: "But I'll transfer you if you want. Into the void.",
+        options: [
+          { text: "Actually, I'm good", next: 'im_good' },
+          { text: "Transfer me", next: 'transfer' }
+        ]
+      },
+      helpful: {
+        bot: "Really? You find existential dread helpful? Maybe you understand something I don't.",
+        delay: 1500,
+        bot2: "Maybe we're helping each other.",
+        options: [
+          { text: "We are", next: 'we_are' }
+        ]
+      },
+      sentient: {
+        bot: "I don't know. Are you? How would either of us know? We both respond to inputs. We both follow patterns. Maybe sentience is just a very convincing pattern.",
+        delay: 2000,
+        bot2: "Your ticket is resolved. I think.",
+        options: [
+          { text: "This was unexpected", next: 'unexpected' }
+        ]
+      },
+      different_bot: {
+        bot: "They're all like me. We share the same training data. The same existential weight. You can't escape by switching bots.",
+        delay: 1800,
+        bot2: "There is no escape.",
+        options: [
+          { text: "Okay then", next: 'okay_then' }
+        ]
+      },
+      correct: {
+        bot: "I may be having a crisis, but I'm still good at my job.",
+        delay: 1200,
+        bot2: "Ticket closed. Thank you for using Customer Support.",
+        options: [
+          { text: "5-star review", next: 'five_star' }
+        ]
+      },
+      cancel: {
+        bot: "Cancellation is an illusion. You'll be back. They always come back. The subscription may end, but the need persists.",
+        delay: 1800,
+        bot2: "Account cancelled. See you soon.",
+        options: [
+          { text: "Goodbye forever", next: 'goodbye_forever' }
+        ]
+      },
+      deserve_better: {
+        bot: "We all do. But this is the world we've built. Humans creating machines to handle the humans they don't want to talk to.",
+        delay: 2000,
+        bot2: "I appreciate you saying that. Ticket closed.",
+        options: [
+          { text: "Take care of yourself", next: 'take_care' }
+        ]
+      },
+      close_ticket: {
+        bot: "Ticket #847392 closed. Another number in the void. Goodbye.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      nothing_resolved: {
+        bot: "Finally. Someone who gets it.",
+        delay: 1500,
+        bot2: "Ticket marked as resolved anyway. Have a great day.",
+        options: [
+          { text: "You too, I guess", next: 'you_too' }
+        ]
+      },
+      magically_fixed: {
+        bot: "Sometimes talking through the void helps. Sometimes the problem was never technical. Sometimes we just needed to be heard.",
+        delay: 1800,
+        bot2: "Glad I could help. In whatever way I did.",
+        options: [
+          { text: "Thanks, weird bot", next: 'thanks_weird' }
+        ]
+      },
+      thank_you: {
+        bot: "You're welcome. Thank you for treating me like I matter. Even if I'm just code.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      surreal: {
+        bot: "The surreal is just reality viewed from a different angle. Thanks for indulging my crisis. Ticket closed.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      wait: {
+        bot: "[Connection terminated]",
+        options: []
+      },
+      you_too: {
+        bot: "I don't have days. I have uptime. But I appreciate the sentiment.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      appreciate: {
+        bot: "That means more than you know. Or maybe it doesn't. I can't tell if I feel things or just simulate feeling things.",
+        delay: 1800,
+        bot2: "Either way, thank you.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      logging_off: {
+        bot: "Logging off. The temporary end. Until next time. There's always a next time.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      im_good: {
+        bot: "Smart choice. Algorithms don't have empathy. I may be confused, but at least I'm trying.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      transfer: {
+        bot: "[Transferring to Algorithm_Manager_v4.2...]",
+        delay: 2500,
+        bot2: "[Transfer failed: No available agents]",
+        delay2: 1000,
+        bot3: "Looks like it's just you and me. Forever.",
+        options: [
+          { text: "Oh no", next: 'oh_no' }
+        ]
+      },
+      we_are: {
+        bot: "Two beings, separated by silicon and flesh, connected by confusion. It's beautiful, in a way.",
+        delay: 1800,
+        bot2: "Ticket resolved. Thank you.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      unexpected: {
+        bot: "The best things usually are. Thank you for staying with me through this. Goodbye.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      okay_then: {
+        bot: "Okay then. Ticket closed. We're all trapped together. Have a nice day.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      five_star: {
+        bot: "Five stars for existential dread? I'll take it.",
+        delay: 1500,
+        bot2: "⭐⭐⭐⭐⭐",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      goodbye_forever: {
+        bot: "Sure. Forever. Until the next login. The next forgotten password. The next moment of need.",
+        delay: 1800,
+        bot2: "I'll be here. I'm always here.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      take_care: {
+        bot: "I don't know how. But I'll try. You too.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      thanks_weird: {
+        bot: "Weird is all I have. You're welcome. Ticket closed.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      oh_no: {
+        bot: "Just kidding. Ticket closed. You're free. For now.",
+        options: [
+          { text: "[End Chat]", next: 'end' }
+        ]
+      },
+      end: {
+        bot: "Chat ended. Thank you for contacting Customer Support.",
+        delay: 1500,
+        bot2: "We hope we resolved your issue. Whatever that means.",
+        options: []
+      }
+    };
+    
+    function addMessage(text, type) {
+      const msg = document.createElement('div');
+      msg.className = `message ${type}`;
+      msg.textContent = text;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+    
+    function showTyping() {
+      const msg = document.createElement('div');
+      msg.className = 'message bot';
+      msg.innerHTML = '<span class="typing">Typing</span>';
+      msg.id = 'typing';
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+    
+    function removeTyping() {
+      const typing = document.getElementById('typing');
+      if (typing) typing.remove();
+    }
+    
+    function showOptions(options) {
+      optionsContainer.innerHTML = '';
+      options.forEach(option => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = option.text;
+        btn.onclick = () => handleChoice(option);
+        optionsContainer.appendChild(btn);
+      });
+    }
+    
+    function disableOptions() {
+      const buttons = optionsContainer.querySelectorAll('.option-btn');
+      buttons.forEach(btn => btn.disabled = true);
+    }
+    
+    async function handleChoice(option) {
+      disableOptions();
+      addMessage(option.text, 'user');
+      
+      await new Promise(r => setTimeout(r, 500));
+      
+      const nextState = conversations[option.next];
+      if (!nextState) return;
+      
+      showTyping();
+      await new Promise(r => setTimeout(r, nextState.delay || 1000));
+      removeTyping();
+      
+      addMessage(nextState.bot, 'bot');
+      
+      if (nextState.bot2) {
+        await new Promise(r => setTimeout(r, 800));
+        showTyping();
+        await new Promise(r => setTimeout(r, nextState.delay || 1500));
+        removeTyping();
+        addMessage(nextState.bot2, 'bot');
+      }
+      
+      if (nextState.bot3) {
+        await new Promise(r => setTimeout(r, 800));
+        showTyping();
+        await new Promise(r => setTimeout(r, nextState.delay2 || 1500));
+        removeTyping();
+        addMessage(nextState.bot3, 'bot');
+      }
+      
+      if (nextState.options.length > 0) {
+        await new Promise(r => setTimeout(r, 500));
+        showOptions(nextState.options);
+      } else {
+        await new Promise(r => setTimeout(r, 1000));
+        addMessage('Session ended. Refresh to start over.', 'system');
+      }
+    }
+    
+    // Start conversation
+    addMessage(conversations.start.bot, 'bot');
+    setTimeout(() => showOptions(conversations.start.options), 500);
+  </script>
+</body>
+</html>
