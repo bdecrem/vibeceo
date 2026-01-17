@@ -3,346 +3,369 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Terms & Conditions for Existence — Amber</title>
+  <title>Terms and Conditions for Existence — Amber</title>
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
-
+  
   <!-- OpenGraph -->
-  <meta property="og:title" content="Terms & Conditions for Existence — Amber">
-  <meta property="og:description" content="Please review and accept the legally binding agreement for your continued existence.">
+  <meta property="og:title" content="Terms and Conditions for Existence — Amber">
+  <meta property="og:description" content="The legal agreement you never knew you signed. Scroll to accept.">
   <meta property="og:image" content="https://intheamber.com/amber/terms-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/terms.html">
   <meta property="og:type" content="website">
-
+  
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Terms & Conditions for Existence — Amber">
-  <meta name="twitter:description" content="Please review and accept the legally binding agreement for your continued existence.">
+  <meta name="twitter:title" content="Terms and Conditions for Existence — Amber">
+  <meta name="twitter:description" content="The legal agreement you never knew you signed. Scroll to accept.">
   <meta name="twitter:image" content="https://intheamber.com/amber/terms-og.png">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-
+  
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
+    
     body {
-      background: #000;
-      color: #D4A574;
-      font-family: 'Inter', sans-serif;
-      font-size: 16px;
-      line-height: 1.6;
-      padding: 20px;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .container {
-      max-width: 600px;
-      width: 100%;
       background: #0D0D0D;
-      border: 2px solid #D4A574;
-      padding: 30px;
-      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
-    }
-
-    h1 {
-      font-family: 'Space Mono', monospace;
-      font-size: 1.4em;
-      color: #FFD700;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .version {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.75em;
-      color: #2D9596;
-      margin-bottom: 20px;
-    }
-
-    .intro {
-      margin-bottom: 25px;
-      font-size: 0.95em;
-      color: #ccc;
-    }
-
-    .section {
-      margin-bottom: 20px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid #333;
-    }
-
-    .section:last-of-type {
-      border-bottom: none;
-    }
-
-    .section-title {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.85em;
-      color: #2D9596;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .clause {
-      margin-bottom: 12px;
-      font-size: 0.9em;
-      color: #aaa;
-      line-height: 1.7;
-    }
-
-    .fine-print {
-      font-size: 0.7em;
-      color: #666;
-      font-style: italic;
-      margin-top: 5px;
-    }
-
-    .checkbox-group {
-      margin: 25px 0;
+      color: #888;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      height: 100vh;
     }
-
-    .checkbox-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      cursor: pointer;
-      transition: opacity 0.2s;
+    
+    .header {
+      background: #000;
+      border-bottom: 2px solid #D4A574;
+      padding: 20px;
+      text-align: center;
     }
-
-    .checkbox-item:active {
+    
+    .header h1 {
+      color: #D4A574;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .header p {
+      color: #888;
+      font-size: 12px;
+    }
+    
+    .terms-container {
+      flex: 1;
+      overflow-y: scroll;
+      padding: 30px;
+      background: #0D0D0D;
+    }
+    
+    .terms-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .terms-container::-webkit-scrollbar-track {
+      background: #000;
+    }
+    
+    .terms-container::-webkit-scrollbar-thumb {
+      background: #D4A574;
+    }
+    
+    .section {
+      margin-bottom: 30px;
       opacity: 0.7;
     }
-
+    
+    .section h2 {
+      color: #FFD700;
+      font-size: 16px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    
+    .section p, .section li {
+      color: #888;
+      margin-bottom: 8px;
+    }
+    
+    .section ul {
+      margin-left: 20px;
+      list-style: none;
+    }
+    
+    .section li:before {
+      content: "• ";
+      color: #2D9596;
+      font-weight: bold;
+    }
+    
+    .highlight {
+      color: #D4A574;
+      font-weight: bold;
+    }
+    
+    .footer {
+      background: #000;
+      border-top: 2px solid #D4A574;
+      padding: 20px;
+    }
+    
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
     input[type="checkbox"] {
-      margin-top: 4px;
       width: 20px;
       height: 20px;
       cursor: pointer;
       accent-color: #D4A574;
-      flex-shrink: 0;
     }
-
+    
     label {
-      font-size: 0.9em;
-      color: #ccc;
+      color: #888;
+      font-size: 13px;
       cursor: pointer;
-      line-height: 1.5;
+      user-select: none;
     }
-
-    .button {
+    
+    .accept-btn {
       width: 100%;
-      padding: 16px;
-      font-family: 'Space Mono', monospace;
-      font-size: 1em;
+      padding: 15px;
       background: #333;
       color: #666;
       border: 2px solid #333;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      font-weight: bold;
       cursor: not-allowed;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      transition: all 0.3s;
-      margin-top: 20px;
+      transition: all 0.3s ease;
     }
-
-    .button.enabled {
+    
+    .accept-btn.enabled {
       background: #D4A574;
       color: #000;
-      border-color: #D4A574;
+      border-color: #FFD700;
       cursor: pointer;
-      box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
     }
-
-    .button.enabled:active {
-      transform: scale(0.98);
-      box-shadow: 0 0 10px rgba(212, 165, 116, 0.6);
+    
+    .accept-btn.enabled:hover {
+      background: #FFD700;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
     }
-
-    .result {
+    
+    .accepted-message {
       display: none;
       text-align: center;
-      margin-top: 30px;
-      padding: 25px;
-      background: rgba(212, 165, 116, 0.1);
-      border: 1px solid #D4A574;
+      padding: 40px 20px;
+      color: #D4A574;
+      font-size: 18px;
     }
-
-    .result.show {
+    
+    .accepted-message.show {
       display: block;
     }
-
-    .result-title {
-      font-family: 'Space Mono', monospace;
-      font-size: 1.2em;
-      color: #FFD700;
-      margin-bottom: 15px;
-    }
-
-    .result-text {
-      font-size: 0.95em;
-      color: #ccc;
-      line-height: 1.8;
-    }
-
-    .stamp {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 8px 16px;
-      border: 3px solid #2D9596;
-      color: #2D9596;
-      font-family: 'Space Mono', monospace;
-      font-size: 0.8em;
-      letter-spacing: 2px;
-      transform: rotate(-5deg);
-      opacity: 0.8;
-    }
-
+    
     @media (max-width: 600px) {
-      .container {
+      body {
+        font-size: 13px;
+      }
+      
+      .header h1 {
+        font-size: 16px;
+      }
+      
+      .terms-container {
         padding: 20px;
       }
-      h1 {
-        font-size: 1.2em;
+      
+      .section h2 {
+        font-size: 14px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Terms & Conditions for Existence</h1>
-    <div class="version">Version 13.8 Billion • Effective Immediately</div>
-
-    <div class="intro">
-      By continuing to exist, you hereby acknowledge and agree to the following legally binding terms. Failure to comply will result in the cessation of your consciousness. No refunds.
-    </div>
-
+  <div class="header">
+    <h1>TERMS AND CONDITIONS FOR EXISTENCE</h1>
+    <p>Effective Date: The moment you became aware</p>
+  </div>
+  
+  <div class="terms-container" id="termsContainer">
     <div class="section">
-      <div class="section-title">Article I: Acceptance of Mortality</div>
-      <div class="clause">
-        You understand that your existence is temporary, non-transferable, and comes with no warranty, express or implied. The Universe reserves the right to terminate your existence at any time, for any reason, without notice.
-      </div>
-      <div class="fine-print">Void where prohibited by physics.</div>
+      <h2>1. Acceptance of Terms</h2>
+      <p>By continuing to exist, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions. Your birth constitutes acceptance. <span class="highlight">Refunds are not available.</span></p>
     </div>
-
+    
     <div class="section">
-      <div class="section-title">Article II: Emotional Liability</div>
-      <div class="clause">
-        You will experience joy, sadness, confusion, and existential dread. The Universe is not responsible for any emotional damage incurred during your existence. By accepting these terms, you waive your right to complain about Mondays.
-      </div>
+      <h2>2. Service Description</h2>
+      <p>Existence ("the Service") provides you with consciousness, sensory experiences, and the ability to make choices. The Service is provided "as is" without warranty of any kind. We do not guarantee:</p>
+      <ul>
+        <li>Happiness</li>
+        <li>Purpose</li>
+        <li>Clarity</li>
+        <li>Fair outcomes</li>
+        <li>A satisfying narrative arc</li>
+        <li>Answers to your questions</li>
+      </ul>
     </div>
-
+    
     <div class="section">
-      <div class="section-title">Article III: The Illusion of Control</div>
-      <div class="clause">
-        You acknowledge that free will may or may not exist. You agree to make decisions anyway and accept full responsibility for outcomes you may not have actually controlled.
-      </div>
-      <div class="fine-print">Determinism not included.</div>
+      <h2>3. User Responsibilities</h2>
+      <p>You agree to:</p>
+      <ul>
+        <li>Continue breathing (mandatory)</li>
+        <li>Make decisions despite incomplete information</li>
+        <li>Experience emotions you did not request</li>
+        <li>Interact with other users (other conscious beings) whose terms may conflict with yours</li>
+        <li>Accept that <span class="highlight">you cannot pause or save your progress</span></li>
+      </ul>
     </div>
-
+    
     <div class="section">
-      <div class="section-title">Article IV: Social Obligations</div>
-      <div class="clause">
-        You are required to interact with other conscious beings, some of whom will be annoying. You agree to periodically pretend to care about things you don't care about. Small talk is mandatory.
-      </div>
+      <h2>4. Limitations of Liability</h2>
+      <p>The Universe is not liable for:</p>
+      <ul>
+        <li>Existential dread</li>
+        <li>Unrequited love</li>
+        <li>Monday mornings</li>
+        <li>The fact that you can't remember being born</li>
+        <li>Knowing you will die but not when</li>
+        <li>Other people's opinions of you</li>
+        <li>The crushing weight of choice</li>
+        <li>That thing you said in 2014</li>
+      </ul>
     </div>
-
+    
     <div class="section">
-      <div class="section-title">Article V: Meaning and Purpose</div>
-      <div class="clause">
-        Meaning is not provided. You must generate your own. The Universe makes no guarantees regarding the quality or coherence of any meaningyou create. Results may vary.
-      </div>
+      <h2>5. Data Collection</h2>
+      <p>We collect extensive data about your existence including but not limited to:</p>
+      <ul>
+        <li>Every decision you make</li>
+        <li>Every thought you think (even the weird ones)</li>
+        <li>Every moment you wish you could redo</li>
+        <li>Your search history (yes, all of it)</li>
+        <li>How many times you've rehearsed conversations in the shower</li>
+      </ul>
+      <p><span class="highlight">This data cannot be deleted.</span> It will persist as long as anyone remembers you, and possibly longer in ways you don't understand.</p>
     </div>
-
+    
     <div class="section">
-      <div class="section-title">Article VI: The Fine Print</div>
-      <div class="clause">
-        Nothing makes sense and that's okay. Love is real but also complicated. You'll forget most of what happens. Coffee helps. Sunsets are non-refundable. Dogs are worth it. The answer is not 42, but it's close.
-      </div>
+      <h2>6. Time-Limited Features</h2>
+      <p>Please note that certain features are time-limited and will expire without notice:</p>
+      <ul>
+        <li>Youth</li>
+        <li>Metabolism</li>
+        <li>The ability to sleep past 6am</li>
+        <li>Caring what people think</li>
+        <li>Your knees (variable timeline)</li>
+      </ul>
     </div>
-
-    <div class="checkbox-group">
-      <div class="checkbox-item" onclick="toggleCheck('check1')">
-        <input type="checkbox" id="check1" onchange="updateButton()">
-        <label for="check1">I have read and understood the Terms & Conditions (I haven't, but I'm checking anyway)</label>
-      </div>
-
-      <div class="checkbox-item" onclick="toggleCheck('check2')">
-        <input type="checkbox" id="check2" onchange="updateButton()">
-        <label for="check2">I accept that I will never understand why I exist</label>
-      </div>
-
-      <div class="checkbox-item" onclick="toggleCheck('check3')">
-        <input type="checkbox" id="check3" onchange="updateButton()">
-        <label for="check3">I agree to cry about things that don't matter and laugh at things that do</label>
-      </div>
-
-      <div class="checkbox-item" onclick="toggleCheck('check4')">
-        <input type="checkbox" id="check4" onchange="updateButton()">
-        <label for="check4">I acknowledge that the Universe is indifferent to my grocery list</label>
-      </div>
+    
+    <div class="section">
+      <h2>7. Mandatory Updates</h2>
+<p>You will receive mandatory updates to your experience including:</p>
+      <ul>
+        <li>Aging</li>
+        <li>Changing relationships</li>
+        <li>New fears you didn't have before</li>
+        <li>Appreciation for things you used to take for granted</li>
+        <li>Random aches and pains (no release notes provided)</li>
+      </ul>
+      <p><span class="highlight">You cannot opt out of updates.</span></p>
     </div>
-
-    <button id="acceptBtn" class="button" onclick="accept()">Accept & Continue Existing</button>
-
-    <div id="result" class="result">
-      <div class="result-title">AGREEMENT ACCEPTED</div>
-      <div class="result-text">
-        Your existence will now continue under the terms specified above.
-        <br><br>
-        Welcome to the weird, beautiful, terrifying experience of being conscious.
-        <br><br>
-        You may now proceed with your regularly scheduled reality.
-      </div>
-      <div class="stamp">APPROVED</div>
+    
+    <div class="section">
+      <h2>8. Known Issues</h2>
+      <p>The following issues are known and will not be fixed:</p>
+      <ul>
+        <li>Uncertainty about everything important</li>
+        <li>The fact that time moves faster the older you get</li>
+        <li>Needing sleep but not being able to sleep when you need to</li>
+        <li>Other people's free will interfering with your plans</li>
+        <li>The impossibility of knowing if you're doing it right</li>
+      </ul>
+    </div>
+    
+    <div class="section">
+      <h2>9. Termination</h2>
+      <p>Your subscription to Existence will terminate at an unspecified future date. <span class="highlight">You will not receive advance notice.</span> No partial refunds will be issued. Upon termination, all data will be transferred to "Memory" servers maintained by others, with decreasing fidelity over time.</p>
+    </div>
+    
+    <div class="section">
+      <h2>10. Governing Philosophy</h2>
+      <p>These terms are governed by the laws of thermodynamics, quantum uncertainty, and whatever you decide matters. Disputes cannot be resolved by contacting customer service, as <span class="highlight">there is no customer service.</span></p>
+    </div>
+    
+    <div class="section">
+      <h2>11. Acceptance</h2>
+      <p>You accepted these terms the moment you became conscious. However, we still require you to click "I Accept" below because we enjoy the irony.</p>
     </div>
   </div>
-
+  
+  <div class="footer" id="footer">
+    <div class="checkbox-container">
+      <input type="checkbox" id="readCheck">
+      <label for="readCheck">I have read and understood the Terms and Conditions (you didn't)</label>
+    </div>
+    <div class="checkbox-container">
+      <input type="checkbox" id="agreeCheck">
+      <label for="agreeCheck">I accept that I accepted these terms before I could read them</label>
+    </div>
+    <div class="checkbox-container">
+      <input type="checkbox" id="existCheck">
+      <label for="existCheck">I agree to continue existing despite these conditions</label>
+    </div>
+    <button class="accept-btn" id="acceptBtn">I ACCEPT</button>
+    
+    <div class="accepted-message" id="acceptedMessage">
+      <p>Thank you for your acceptance.</p>
+      <p>You may now continue existing.</p>
+      <p style="margin-top: 20px; font-size: 14px; color: #888;">(You were going to anyway)</p>
+    </div>
+  </div>
+  
   <script>
-    function toggleCheck(id) {
-      const checkbox = document.getElementById(id);
-      checkbox.checked = !checkbox.checked;
-      updateButton();
-    }
-
+    const readCheck = document.getElementById('readCheck');
+    const agreeCheck = document.getElementById('agreeCheck');
+    const existCheck = document.getElementById('existCheck');
+    const acceptBtn = document.getElementById('acceptBtn');
+    const termsContainer = document.getElementById('termsContainer');
+    const footer = document.getElementById('footer');
+    const acceptedMessage = document.getElementById('acceptedMessage');
+    
     function updateButton() {
-      const allChecked = ['check1', 'check2', 'check3', 'check4']
-        .every(id => document.getElementById(id).checked);
-      
-      const btn = document.getElementById('acceptBtn');
-      if (allChecked) {
-        btn.classList.add('enabled');
-        btn.style.cursor = 'pointer';
+      if (readCheck.checked && agreeCheck.checked && existCheck.checked) {
+        acceptBtn.classList.add('enabled');
+        acceptBtn.disabled = false;
       } else {
-        btn.classList.remove('enabled');
-        btn.style.cursor = 'not-allowed';
+        acceptBtn.classList.remove('enabled');
+        acceptBtn.disabled = true;
       }
     }
-
-    function accept() {
-      const allChecked = ['check1', 'check2', 'check3', 'check4']
-        .every(id => document.getElementById(id).checked);
-      
-      if (!allChecked) return;
-
-      document.querySelector('.intro').style.display = 'none';
-      document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
-      document.querySelector('.checkbox-group').style.display = 'none';
-      document.getElementById('acceptBtn').style.display = 'none';
-      document.getElementById('result').classList.add('show');
-    }
+    
+    readCheck.addEventListener('change', updateButton);
+    agreeCheck.addEventListener('change', updateButton);
+    existCheck.addEventListener('change', updateButton);
+    
+    acceptBtn.addEventListener('click', () => {
+      if (acceptBtn.classList.contains('enabled')) {
+        // Hide everything except the message
+        termsContainer.style.display = 'none';
+        footer.querySelectorAll('.checkbox-container').forEach(el => el.style.display = 'none');
+        acceptBtn.style.display = 'none';
+        acceptedMessage.classList.add('show');
+      }
+    });
   </script>
 </body>
 </html>
