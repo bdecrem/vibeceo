@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BERLIN PULSE ALT</title>
+    <meta name="description" content="Minimal techno pulse — Web Audio synthesis">
+    <meta property="og:title" content="BERLIN PULSE ALT">
+    <meta property="og:description" content="Minimal techno pulse — Web Audio synthesis">
+    <meta property="og:image" content="https://intheamber.com/amber/berlin-pulse-alt-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/berlin-pulse-alt.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/berlin-pulse-alt-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0908;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        #container {
+            text-align: center;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 2rem;
+            letter-spacing: 0.3em;
+            margin-bottom: 1rem;
+            color: #D4A574;
+        }
+
+        #bpm {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #B8860B;
+            margin: 2rem 0;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+            transition: transform 0.1s ease-out;
+        }
+
+        #controls {
+            margin-top: 2rem;
+        }
+
+        button {
+            background: transparent;
+            border: 2px solid #D4A574;
+            color: #D4A574;
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            font-family: 'Space Mono', monospace;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.2em;
+            margin: 0 0.5rem;
+        }
+
+        button:hover {
+            background: #D4A574;
+            color: #0A0908;
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button.active {
+            background: #D4A574;
+            color: #0A0908;
+        }
+
+        #visualizer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #status {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            opacity: 0.6;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            #bpm {
+                font-size: 3rem;
+            }
+            button {
+                padding: 0.8rem 2rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="visualizer"></canvas>
+
+    <div id="container">
+        <h1>BERLIN PULSE ALT</h1>
+        <div id="bpm">128</div>
+        <div id="controls">
+            <button id="playBtn">START</button>
+        </div>
+        <div id="status">Web Audio • iOS Compatible</div>
+    </div>
+
+    <script>
+        let audioContext = null;
+        let isPlaying = false;
+        let nextNoteTime = 0;
+        let schedulerTimer = null;
+        let tempo = 128;
+        let currentBeat = 0;
+
+        // Visualizer
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+        let pulsePhase = 0;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // iOS requires user interaction to start audio context
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        // Kick drum synth
+        function playKick(time) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.frequency.setValueAtTime(150, time);
+            osc.frequency.exponentialRampToValueAtTime(40, time + 0.5);
+
+            gain.gain.setValueAtTime(1, time);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.start(time);
+            osc.stop(time + 0.5);
+        }
+
+        // Hi-hat synth
+        function playHihat(time, closed = true) {
+            const osc1 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
+            const osc3 = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            osc1.type = 'square';
+            osc2.type = 'square';
+            osc3.type = 'square';
+
+            osc1.frequency.value = 324;
+            osc2.frequency.value = 432;
+            osc3.frequency.value = 578;
+
+            filter.type = 'highpass';
+            filter.frequency.value = 7000;
+
+            const duration = closed ? 0.05 : 0.15;
+            const volume = closed ? 0.3 : 0.15;
+
+            gain.gain.setValueAtTime(volume, time);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+
+            osc1.connect(filter);
+            osc2.connect(filter);
+            osc3.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc1.start(time);
+            osc2.start(time);
+            osc3.start(time);
+            osc1.stop(time + duration);
+            osc2.stop(time + duration);
+            osc3.stop(time + duration);
+        }
+
+        // Bass synth (sub bass)
+        function playBass(time, note = 55) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(note, time);
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(200, time);
+            filter.frequency.exponentialRampToValueAtTime(800, time + 0.1);
+            filter.frequency.exponentialRampToValueAtTime(200, time + 0.4);
+            filter.Q.value = 8;
+
+            gain.gain.setValueAtTime(0.4, time);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.start(time);
+            osc.stop(time + 0.5);
+        }
+
+        // Pattern sequencer
+        function scheduleNote(beatNumber, time) {
+            const sixteenth = beatNumber % 4;
+            const beat = Math.floor(beatNumber / 4) % 4;
+
+            // Kick on 1 and 3
+            if (sixteenth === 0 && (beat === 0 || beat === 2)) {
+                playKick(time);
+            }
+
+            // Hi-hats on every eighth note
+            if (sixteenth === 0 ||sixteenth === 2) {
+                playHihat(time, true);
+            }
+
+            // Open hi-hat on offbeats
+            if (sixteenth === 1 && beat % 2 === 1) {
+                playHihat(time, false);
+            }
+
+            // Bass line (minimal)
+            if (sixteenth === 0) {
+                if (beat === 0) playBass(time, 55); // A1
+                if (beat === 2) playBass(time, 55); // A1
+                if (beat === 3) playBass(time, 65.4); // C2
+            }
+        }
+
+        // Scheduler
+        function scheduler() {
+            const scheduleAheadTime = 0.1;
+            const lookAhead = 25.0;
+
+            while (nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
+                scheduleNote(currentBeat, nextNoteTime);
+
+                const secondsPerBeat = 60.0 / tempo / 4; // 16th notes
+                nextNoteTime += secondsPerBeat;
+                currentBeat++;
+            }
+
+            schedulerTimer = setTimeout(scheduler, lookAhead);
+        }
+
+        // Visualizer animation
+        function animate() {
+            ctx.fillStyle = 'rgba(10, 9, 8, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (isPlaying) {
+                pulsePhase += 0.08;
+
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const maxRadius = Math.min(canvas.width, canvas.height) * 0.4;
+
+                // Draw concentric circles that pulse
+                for (let i = 0; i < 5; i++) {
+                    const phase = pulsePhase + i * Math.PI / 5;
+                    const radius = maxRadius * (0.2 + i * 0.2) * (1 + Math.sin(phase) * 0.1);
+                    const alpha = 0.3 + Math.sin(phase) * 0.2;
+
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(212, 165, 116, ${alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Draw radial lines
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2 + pulsePhase * 0.5;
+                    const x1 = centerX + Math.cos(angle) * 50;
+                    const y1 = centerY + Math.sin(angle) * 50;
+                    const x2 = centerX + Math.cos(angle) * maxRadius;
+                    const y2 = centerY + Math.sin(angle) * maxRadius;
+
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.strokeStyle = 'rgba(184, 134, 11, 0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Play/Stop control
+        document.getElementById('playBtn').addEventListener('click', function() {
+            if (!isPlaying) {
+                initAudio();
+                isPlaying = true;
+                currentBeat = 0;
+                nextNoteTime = audioContext.currentTime;
+                scheduler();
+                this.textContent = 'STOP';
+                this.classList.add('active');
+            } else {
+                isPlaying = false;
+                if (schedulerTimer) {
+                    clearTimeout(schedulerTimer);
+                }
+                this.textContent = 'START';
+                this.classList.remove('active');
+            }
+        });
+
+        // BPM pulse animation
+        setInterval(() => {
+            if (isPlaying) {
+                const bpmEl = document.getElementById('bpm');
+                bpmEl.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    bpmEl.style.transform = 'scale(1)';
+                }, 100);
+            }
+        }, 60000 / tempo);
+    </script>
+</body>
+</html>
