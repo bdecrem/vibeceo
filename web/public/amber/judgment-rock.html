@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JUDGMENT ROCK — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="JUDGMENT ROCK — Amber">
+  <meta property="og:description" content="Pet the rock. Get judged. It sees everything you've done.">
+  <meta property="og:image" content="https://intheamber.com/amber/judgment-rock-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/judgment-rock.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="JUDGMENT ROCK — Amber">
+  <meta name="twitter:description" content="Pet the rock. Get judged. It sees everything you've done.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/judgment-rock-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    #canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      width: 90vw;
+      max-width: 400px;
+      height: auto;
+      margin-bottom: 30px;
+      filter: drop-shadow(0 0 20px rgba(212, 165, 116, 0.3));
+      transition: transform 0.1s ease;
+    }
+    
+    #canvas.petted {
+      transform: scale(1.05);
+    }
+    
+    #judgment {
+      font-size: clamp(14px, 4vw, 18px);
+      color: #FFD700;
+      text-align: center;
+      max-width: 600px;
+      min-height: 80px;
+      line-height: 1.6;
+      padding: 0 20px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    #judgment.visible {
+      opacity: 1;
+    }
+    
+    #counter {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    #instruction {
+      position: absolute;
+      bottom: 20px;
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="counter">PETS: 0</div>
+  <canvas id="canvas" width="128" height="128"></canvas>
+  <div id="judgment"></div>
+  <div id="instruction">TAP THE ROCK</div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const judgment = document.getElementById('judgment');
+    const counter = document.getElementById('counter');
+    const instruction = document.getElementById('instruction');
+    
+    let petCount = 0;
+    let currentJudgment = 0;
+    
+    // The rock's judgments (increasingly unhinged)
+    const judgments = [
+      "I've been sitting here for 4.5 billion years. You just got here.",
+      "You really thought tapping a rock would bring you wisdom? Interesting choice.",
+      "I saw you leave that text on read. Don't think I forgot.",
+      "Your screen time this week: concerning. Your self-awareness about it: nonexistent.",
+      "Three unfinished projects on your desktop. The rock remembers.",
+      "You said you'd start that thing on Monday. It's been 7 Mondays.",
+      "I'm literally a rock and I'm more consistent than your meditation practice.",
+      "You follow 847 people on Twitter but can't remember your cousin's birthday.",
+      "The rock has seen empires fall. You can't finish a to-do list.",
+      "Every time you pet me, you're avoiding something. What is it this time?",
+      "I've weathered erosion for eons. You can't handle a slightly critical email.",
+      "You bought a houseplant to 'start small.' The rock knows how that ended.",
+      "Still thinking about that argument from 2019? The rock is too.",
+      "You're on your third coffee. The rock is concerned but not surprised.",
+      "I'm geologically stable. Your sleep schedule is not.",
+      "The rock has achieved perfect stillness. You keep refreshing the same tab.",
+      "You promised yourself you'd drink more water today. The rock is waiting.",
+      "I contain minerals formed under extreme pressure. You panic at read receipts.",
+      "The rock has existed through ice ages. You can't commit to a skincare routine.",
+      "You're avoiding your inbox right now, aren't you? The rock knows.",
+      "I've witnessed continental drift. You can't stick to a workout plan.",
+      "The rock doesn't need validation. But you keep coming back. Curious.",
+      "You have 47 browser tabs open. The rock judges this specifically.",
+      "I'm made of ancient stardust. You just ate chips for dinner. Again.",
+      "The rock has no expectations and is still somehow disappointed.",
+      "You think you're petting ME? I'm judging YOU. This is my job now.",
+      "I was formed in the Precambrian era. Your last good decision was in 2017.",
+      "The rock is perfectly content. You are on your phone at 2am. We are not the same.",
+      "You keep secrets from everyone but the rock knows. The rock always knows.",
+      "I've survived meteors, earthquakes, and your vibes. The last one was hardest."
+    ];
+    
+    // Draw the rock (8-bit pixel art style)
+    function drawRock(blink = false) {
+      ctx.clearRect(0, 0, 128, 128);
+      
+      // Rock body (gray, chunky pixel art)
+      ctx.fillStyle = '#666';
+      const rockShape = [
+        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],
+        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+      ];
+      
+      const scale = 8;
+      const offsetX = 0;
+      const offsetY = 0;
+      
+      rockShape.forEach((row, y) => {
+        row.forEach((pixel, x) => {
+          if (pixel) {
+            ctx.fillRect(offsetX + x * scale, offsetY + y * scale, scale, scale);
+          }
+        });
+      });
+      
+      // Highlights
+      ctx.fillStyle = '#888';
+      ctx.fillRect(24, 16, 8, 8);
+      ctx.fillRect(32, 24, 8, 8);
+      ctx.fillRect(72, 24, 8, 8);
+      
+      // Dark spots
+      ctx.fillStyle = '#444';
+      ctx.fillRect(16, 56, 8, 8);
+      ctx.fillRect(96, 72, 8, 8);
+      ctx.fillRect(48, 88, 8, 8);
+      
+      // Eyes (amber glow)
+      if (!blink) {
+        // Left eye
+        ctx.fillStyle = '#D4A574';
+        ctx.fillRect(40, 48, 8, 8);
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(42, 50, 4, 4);
+        
+        // Right eye
+        ctx.fillStyle = '#D4A574';
+        ctx.fillRect(80, 48, 8, 8);
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(82, 50, 4, 4);
+      } else {
+        // Closed eyes (just lines)
+        ctx.fillStyle = '#444';
+        ctx.fillRect(40, 52, 8, 2);
+        ctx.fillRect(80, 52, 8, 2);
+      }
+      
+      // Mouth (subtle frown)
+      ctx.fillStyle = '#444';
+      ctx.fillRect(56, 72, 16, 2);
+      ctx.fillRect(54, 70, 2, 2);
+      ctx.fillRect(74, 70, 2, 2);
+    }
+    
+    // Blink animation
+    function blink() {
+      drawRock(true);
+      setTimeout(() => drawRock(false), 150);
+    }
+    
+    // Random blinks
+    function scheduleNextBlink() {
+      const delay = 2000 + Math.random() * 4000;
+      setTimeout(() => {
+        blink();
+        scheduleNextBlink();
+      }, delay);
+    }
+    
+    // Pet the rock
+    function petRock() {
+      petCount++;
+      counter.textContent = `PETS: ${petCount}`;
+      
+      // Visual feedback
+      canvas.classList.add('petted');
+      setTimeout(() => canvas.classList.remove('petted'), 100);
+      
+      // Show judgment
+      const judgmentIndex = Math.min(currentJudgment, judgments.length - 1);
+      judgment.textContent = judgments[judgmentIndex];
+      judgment.classList.add('visible');
+      
+      // Hide instruction after first pet
+      if (petCount === 1) {
+        instruction.style.opacity = '0';
+      }
+      
+      // Advance to next judgment
+      currentJudgment++;
+      if (currentJudgment >= judgments.length) {
+        // Loop back but with extra spice
+        currentJudgment = Math.floor(Math.random() * judgments.length);
+      }
+      
+      // Blink on pet
+      blink();
+    }
+    
+    // Click/tap handler
+    canvas.addEventListener('click', petRock);
+    body.addEventListener('click', (e) => {
+      if (e.target !== canvas) petRock();
+    });
+    
+    // Initial draw
+    drawRock();
+    scheduleNextBlink();
+  </script>
+</body>
+</html>
