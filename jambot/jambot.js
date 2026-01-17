@@ -641,7 +641,7 @@ export const TOOLS = [
   },
   {
     name: "automate_drums",
-    description: "Add per-step parameter automation to a drum voice. This is 'knob mashing' - dynamic parameter changes over time. Provide an array of 16 values for the parameter, one per step. Use null to keep the default value for that step.",
+    description: "Add per-step parameter automation to a drum voice. This is 'knob mashing' - dynamic parameter changes over time. Provide an array of 16 values for the parameter, one per step. Use null to keep the default value for that step. Uses SAME UNITS as tweak_drums: decay/attack/tone/sweep/snappy are 0-100, level is dB (-60 to +6), tune is semitones (±12).",
     input_schema: {
       type: "object",
       properties: {
@@ -657,11 +657,31 @@ export const TOOLS = [
         },
         values: {
           type: "array",
-          description: "Array of 16 values (one per step). Use null to keep default. Example: [0.1, 0.2, 0.5, null, 0.8, ...] for rapid decay changes.",
+          description: "Array of 16 values (one per step). Use null to keep default. Same units as tweak_drums. Example for decay: [20, 80, 30, 90, null, 50, ...] where 0=tight, 100=loose.",
           items: { type: ["number", "null"] }
         }
       },
       required: ["voice", "param", "values"]
+    }
+  },
+  {
+    name: "clear_automation",
+    description: "Clear automation from a drum voice. Use this before saving a pattern that should NOT have knob-mashing. Call without params to clear ALL automation.",
+    input_schema: {
+      type: "object",
+      properties: {
+        voice: {
+          type: "string",
+          enum: ["kick", "snare", "clap", "ch", "oh", "ltom", "mtom", "htom", "rimshot", "crash", "ride"],
+          description: "Which drum voice to clear automation from. Omit to clear all voices."
+        },
+        param: {
+          type: "string",
+          enum: ["decay", "tune", "tone", "level", "attack", "sweep", "snappy"],
+          description: "Which parameter to clear. Omit to clear all params for the voice."
+        }
+      },
+      required: []
     }
   },
   {
@@ -1665,6 +1685,35 @@ export async function executeTool(name, input, session, context = {}) {
 
     const activeSteps = automationValues.filter(v => v !== null).length;
     return `R9D9 ${voice} ${param} automation: ${activeSteps}/16 steps`;
+  }
+
+  // R9D9 - Clear automation
+  if (name === "clear_automation") {
+    const { voice, param } = input;
+
+    if (!voice) {
+      // Clear ALL automation
+      session.drumAutomation = {};
+      return `Cleared all drum automation`;
+    }
+
+    if (!session.drumAutomation[voice]) {
+      return `No automation on ${voice} to clear`;
+    }
+
+    if (!param) {
+      // Clear all params for this voice
+      delete session.drumAutomation[voice];
+      return `Cleared all automation on ${voice}`;
+    }
+
+    // Clear specific param
+    delete session.drumAutomation[voice][param];
+    // Clean up empty voice object
+    if (Object.keys(session.drumAutomation[voice]).length === 0) {
+      delete session.drumAutomation[voice];
+    }
+    return `Cleared ${voice} ${param} automation`;
   }
 
   // R3D3 - Add bass
@@ -3093,11 +3142,20 @@ async function renderSession(session, bars, filename) {
       const drumSectionKey = hasArrangement ? arrangementPlan.find(s => currentBar >= s.barStart && currentBar < s.barEnd) : null;
       if (drumSectionKey !== lastDrumSection) {
         lastDrumSection = drumSectionKey;
-        // FIRST: Reset all voice levels to default (0dB = unity gain) so mutes don't carry over
-        for (const voiceName of voiceNames) {
-          try {
-            drums.setVoiceParam(voiceName, 'level', 1);  // 1 = unity gain (0dB)
-          } catch (e) { /* Ignore */ }
+        // FIRST: Reset ALL voice params to defaults so automation/tweaks don't carry over
+        // This ensures pattern B with no automation doesn't inherit pattern A's knob-mashed values
+        if (drums.getVoiceParameterDescriptors) {
+          const descriptors = drums.getVoiceParameterDescriptors();
+          for (const voiceName of voiceNames) {
+            const voiceDesc = descriptors[voiceName];
+            if (voiceDesc) {
+              for (const param of voiceDesc) {
+                try {
+                  drums.setVoiceParam(voiceName, param.id, param.defaultValue);
+                } catch (e) { /* Ignore */ }
+              }
+            }
+          }
         }
         // THEN: Apply this pattern's params (convert from producer to engine units)
         for (const [voiceName, voiceParams] of Object.entries(drumData.params || {})) {
@@ -3127,12 +3185,16 @@ async function renderSession(session, bars, filename) {
           const voice = drums.voices.get(name);
           if (voice) {
             // Apply automation for this step (knob mashing)
+            // Automation values are in producer units (0-100, dB, etc.) - convert to engine units
             const voiceAutomation = drumData.automation?.[name];
             if (voiceAutomation) {
               for (const [paramId, stepValues] of Object.entries(voiceAutomation)) {
                 const autoValue = stepValues[drumStep];
                 if (autoValue !== null && autoValue !== undefined) {
-                  voice[paramId] = autoValue;  // Direct property set for immediate effect
+                  // Convert from producer units to engine units
+                  const def = getParamDef('r9d9', name, paramId);
+                  const engineValue = def ? toEngine(autoValue, def) : autoValue;
+                  voice[paramId] = engineValue;
                 }
               }
             }
