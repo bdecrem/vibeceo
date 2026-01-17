@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>STARTUP PITCH GENERATOR — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="STARTUP PITCH GENERATOR — Amber">
+  <meta property="og:description" content="Generate absurdly realistic but completely useless startup pitches. Tap to pivot.">
+  <meta property="og:image" content="https://intheamber.com/amber/startup-pitch-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/startup-pitch.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="STARTUP PITCH GENERATOR — Amber">
+  <meta name="twitter:description" content="Generate absurdly realistic but completely useless startup pitches. Tap to pivot.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/startup-pitch-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(18px, 5vw, 24px);
+      color: #FFD700;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      font-size: clamp(12px, 3vw, 14px);
+      color: #2D9596;
+      margin-bottom: 40px;
+      font-family: 'Space Mono', monospace;
+    }
+    
+    .pitch-container {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      padding: 30px;
+      margin-bottom: 30px;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    .pitch-line {
+      font-size: clamp(16px, 4vw, 20px);
+      line-height: 1.6;
+      margin-bottom: 15px;
+      color: #D4A574;
+    }
+    
+    .pitch-line.tagline {
+      font-style: italic;
+      color: #2D9596;
+      font-size: clamp(14px, 3.5vw, 18px);
+      margin-top: 20px;
+    }
+    
+    .highlight {
+      color: #FFD700;
+      font-weight: 600;
+    }
+    
+    .violet {
+      color: #7B68EE;
+    }
+    
+    .button {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 18px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(14px, 3.5vw, 18px);
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 2px;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      box-shadow: 0 4px 15px rgba(212, 165, 116, 0.4);
+      min-height: 60px;
+      width: 100%;
+      max-width: 300px;
+    }
+    
+    .button:hover {
+      background: #FFD700;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+    }
+    
+    .button:active {
+      transform: translateY(0);
+    }
+    
+    .footer {
+      margin-top: 30px;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: #666;
+    }
+    
+    .footer a {
+      color: #2D9596;
+      text-decoration: none;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .pitch-line {
+      animation: fadeIn 0.5s ease forwards;
+      opacity: 0;
+    }
+    
+    .pitch-line:nth-child(1) { animation-delay: 0.1s; }
+    .pitch-line:nth-child(2) { animation-delay: 0.3s; }
+    .pitch-line:nth-child(3) { animation-delay: 0.5s; }
+    .pitch-line:nth-child(4) { animation-delay: 0.7s; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>STARTUP PITCH GENERATOR</h1>
+    <div class="subtitle">TAP TO PIVOT</div>
+    
+    <div class="pitch-container" id="pitch">
+      <!-- Pitch appears here -->
+    </div>
+    
+    <button class="button" id="pivotBtn">PIVOT</button>
+    
+    <div class="footer">
+      Made by <a href="https://intheamber.com" target="_blank">Amber</a>
+    </div>
+  </div>
+  
+  <script>
+    const templates = [
+      "We're like {x} for {y}",
+      "Think {x} meets {y}",
+      "{x} but on the blockchain",
+      "AI-powered {x}",
+      "{x} as a service",
+      "Uber for {x}",
+      "Tinder for {x}",
+      "Decentralized {x}",
+      "{x} in the metaverse",
+      "Sustainable {x} platform"
+    ];
+    
+    const things = [
+      "houseplants", "emotional support", "overthinking", "procrastination",
+      "nostalgia", "regret", "small talk", "awkward silences",
+      "forgotten passwords", "unread emails", "tab management", "apologies",
+      "excuses", "white lies", "passive aggression", "humble brags",
+      "shower thoughts", "3am anxiety", "imposter syndrome", "FOMO",
+      "existential dread", "decision paralysis", "revenge bedtime procrastination",
+      "doom scrolling", "parasocial relationships", "second-hand embarrassment",
+      "complaining", "self-sabotage", "toxic positivity", "ghosting",
+      "breadcrumbing", "gaslighting yourself", "comparing yourself to others",
+      "pretending to be busy", "remembering cringe moments", "fantasizing about conversations",
+      "organizing your desk instead of working", "bookmark hoarding", "screenshot collecting",
+      "playlist curation", "plant killing", "sourdough starter guilt"
+    ];
+    
+    const problems = [
+      "Nobody asked for this.",
+      "The problem nobody has.",
+      "Solving yesterday's problems, tomorrow.",
+      "Making simple things complicated.",
+      "Disrupting absolutely nothing.",
+      "Innovation for innovation's sake.",
+      "A solution in search of a problem.",
+      "Monetizing your insecurities.",
+      "Extracting value from your procrastination.",
+      "Gamifying your existential crisis.",
+      "We don't know what we're doing either.",
+      "Pivoting since day one.",
+      "Still looking for product-market fit.",
+      "Our investors are getting nervous.",
+      "We're running out of runway.",
+      "Series A or bust.",
+      "Fake it till you make it, as a business model."
+    ];
+    
+    const metrics = [
+      "10,000% month-over-month growth*",
+      "Backed by imaginary VCs",
+      "Featured in our own Medium post",
+      "Winner of an award we created",
+      "As seen on our LinkedIn",
+      "Trending in our group chat",
+      "Viral on our private Slack",
+      "Loved by our parents",
+      "5 stars (from the team)",
+      "Unicorn potential**",
+      "Hockey stick growth***",
+      "Product-led growth****"
+    ];
+    
+    const taglines = [
+      "*Results not typical",
+      "**If you squint really hard",
+      "***We drew the graph ourselves",
+      "****We made this term up",
+      "*Fine print available upon request",
+      "**Past performance indicates future delusion",
+      "***Terms and conditions may apply to reality",
+      "****Your mileage may vary infinitely"
+    ];
+    
+    function generatePitch() {
+      const template = templates[Math.floor(Math.random() * templates.length)];
+      const thing1 = things[Math.floor(Math.random() * things.length)];
+      let thing2 = things[Math.floor(Math.random() * things.length)];
+      
+      // Ensure different things
+      while (thing2 === thing1) {
+        thing2 = things[Math.floor(Math.random() * things.length)];
+      }
+      
+      const pitch = template.replace('{x}', thing1).replace('{y}', thing2);
+      const problem = problems[Math.floor(Math.random() * problems.length)];
+      const metric = metrics[Math.floor(Math.random() * metrics.length)];
+      const tagline = taglines[Math.floor(Math.random() * taglines.length)];
+      
+      return { pitch, problem, metric, tagline };
+    }
+    
+    function displayPitch() {
+      const { pitch, problem, metric, tagline } = generatePitch();
+      const pitchEl = document.getElementById('pitch');
+      
+      pitchEl.innerHTML = `
+        <div class="pitch-line"><span class="highlight">${pitch}</span></div>
+        <div class="pitch-line">${problem}</div>
+        <div class="pitch-line"><span class="violet">${metric}</span></div>
+        <div class="pitch-line tagline">${tagline}</div>
+      `;
+    }
+    
+    document.getElementById('pivotBtn').addEventListener('click', displayPitch);
+    
+    // Generate initial pitch
+    displayPitch();
+  </script>
+</body>
+</html>
