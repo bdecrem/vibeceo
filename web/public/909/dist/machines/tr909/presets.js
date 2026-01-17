@@ -210,6 +210,7 @@ export const TR909_PRESETS = [
 ];
 
 // === KITS (sound design: engine + voice parameters) ===
+// All voiceParams use PRODUCER UNITS (dB, 0-100, semitones) - converted at render time
 export const TR909_KITS = [
     {
         id: 'default',
@@ -221,10 +222,10 @@ export const TR909_KITS = [
     {
         id: 'bart-deep',
         name: 'Bart Deep',
-        description: 'E1 Classic with decay 0.55',
+        description: 'E1 engine, medium decay for deep sub',
         engine: 'E1',
         voiceParams: {
-            kick: { decay: 0.55 },
+            kick: { decay: 55 },  // 0-100: medium-long decay
         },
     },
     {
@@ -233,8 +234,8 @@ export const TR909_KITS = [
         description: 'More attack, snappy response',
         engine: 'E2',
         voiceParams: {
-            kick: { tune: 0, decay: 0.4, attack: 0.6, level: 1 },
-            snare: { tune: 0.2, level: 1 },
+            kick: { tune: 0, decay: 40, attack: 60, level: 6 },   // tight decay, clicky attack, +6dB
+            snare: { tune: 2, level: 0 },                         // +2 semitones, unity gain
         },
     },
     {
@@ -243,7 +244,7 @@ export const TR909_KITS = [
         description: 'Long decay, deep sub',
         engine: 'E2',
         voiceParams: {
-            kick: { tune: -0.2, decay: 0.8, attack: 0.3, level: 1 },
+            kick: { tune: -2, decay: 80, attack: 30, level: 6 },  // tuned down, long decay, soft attack
         },
     },
     {

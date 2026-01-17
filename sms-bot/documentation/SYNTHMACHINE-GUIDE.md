@@ -91,6 +91,7 @@ npx ts-node tools/analyze-track.ts path/to/track.wav
 **New capabilities:**
 - **Sidechain ducking** — Make the kick cut through the bass
 - **4-band EQ** — Clean up mud, add presence (`acidBass`, `crispHats`, `master` presets)
+- **Resonant filter** — Lowpass/highpass/bandpass with resonance for sweeps and effects (`dubDelay`, `telephone`, `lofi` presets)
 - **Plate reverb** — Dattorro-style algorithm with full parameter control (decay, damping, predelay, modulation, lowcut, highcut, width, mix)
 - **Combined render** — `session.render({ bars: 8 })` outputs one mixed WAV
 
@@ -394,6 +395,7 @@ const { buffer, wav, manifest } = await session.render({
 |--------|-------------|------------|
 | **Ducker** | Sidechain gain ducking | `trigger`, `amount`, `release` |
 | **EQ** | 4-band parametric | Presets: `acidBass`, `crispHats`, `warmPad`, `master` |
+| **Filter** | Resonant filter (LP/HP/BP) | `mode`, `cutoff`, `resonance`. Presets: `dubDelay`, `telephone`, `lofi`, `darkRoom`, `airFilter`, `thinOut` |
 | **Reverb** | Dattorro plate algorithm | `decay`, `damping`, `predelay`, `modulation`, `lowcut`, `highcut`, `width`, `mix` |
 
 ### Effect Examples
@@ -411,6 +413,22 @@ session.channel('bass').duck({
 ```javascript
 session.channel('bass').eq({ preset: 'acidBass' });
 // Or custom: eq({ highpass: 60, midGain: 3, midFreq: 800 })
+```
+
+**Resonant Filter:**
+```javascript
+// Preset - classic dub lowpass
+session.channel('bass').filter({ preset: 'dubDelay' });
+
+// Custom - lowpass sweep
+session.channel('drums').filter({
+  mode: 'lowpass',     // 'lowpass', 'highpass', or 'bandpass'
+  cutoff: 2000,        // Frequency in Hz
+  resonance: 40        // 0-100 (maps to Q 0.5-20)
+});
+
+// Telephone effect
+session.channel('lead').filter({ preset: 'telephone' });
 ```
 
 **Plate Reverb:**
@@ -440,6 +458,16 @@ await session.master.reverb({
 | `crispHats` | Highpass 200Hz, +2dB presence at 5kHz |
 | `warmPad` | Low-end warmth, smooth highs |
 | `master` | Gentle 30Hz lowcut, +1dB air at 12kHz |
+
+**Filter Presets:**
+| Preset | Mode | Cutoff | Resonance | Use Case |
+|--------|------|--------|-----------|----------|
+| `dubDelay` | lowpass | 800Hz | 30 | Classic dub lowpass, warm and muffled |
+| `telephone` | bandpass | 1500Hz | 50 | Radio/telephone effect |
+| `lofi` | lowpass | 3000Hz | 10 | Lo-fi tape warmth |
+| `darkRoom` | lowpass | 400Hz | 40 | Dark, muffled, distant |
+| `airFilter` | highpass | 500Hz | 20 | Remove low rumble with character |
+| `thinOut` | highpass | 1000Hz | 30 | Thin, distant sound |
 
 **Ducker Presets:**
 | Preset | Character |

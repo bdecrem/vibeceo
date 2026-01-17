@@ -603,7 +603,7 @@ export const TOOLS = [
   },
   {
     name: "tweak_drums",
-    description: "Adjust drum voice parameters. UNITS: level in dB (-60 to +6), tune in semitones (-12 to +12), decay/attack/tone/snappy/sweep as 0-100, hi-hat tone in Hz (4000-16000).",
+    description: "Adjust drum voice parameters. UNITS: level in dB (-60 to +6), tune in semitones (-12 to +12), decay/attack/tone/snappy/sweep as 0-100, hi-hat tone in Hz (4000-16000). Use mute:true to silence a voice.",
     input_schema: {
       type: "object",
       properties: {
@@ -612,6 +612,7 @@ export const TOOLS = [
           enum: ["kick", "snare", "clap", "ch", "oh", "ltom", "mtom", "htom", "rimshot", "crash", "ride"],
           description: "Which drum voice to tweak"
         },
+        mute: { type: "boolean", description: "Mute this voice (sets level to -60dB, effectively silent)" },
         level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity, -6dB = half volume" },
         tune: { type: "number", description: "Pitch in semitones (-12 to +12). -2 = 2 semitones down" },
         decay: { type: "number", description: "Decay 0-100. 0=tight/punchy, 100=long/boomy" },
@@ -791,10 +792,11 @@ export const TOOLS = [
   },
   {
     name: "tweak_bass",
-    description: "Adjust R3D3 bass synth parameters. UNITS: level in dB (-60 to +6), cutoff in Hz (100-10000), resonance/envMod/decay/accent as 0-100.",
+    description: "Adjust R3D3 bass synth parameters. UNITS: level in dB (-60 to +6), cutoff in Hz (100-10000), resonance/envMod/decay/accent as 0-100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
+        mute: { type: "boolean", description: "Mute bass (sets level to -60dB, effectively silent)" },
         waveform: { type: "string", enum: ["sawtooth", "square"], description: "Oscillator waveform" },
         level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
         cutoff: { type: "number", description: "Filter cutoff in Hz (100-10000). 500=dark, 2000=medium, 5000=bright" },
@@ -832,11 +834,12 @@ export const TOOLS = [
   },
   {
     name: "tweak_lead",
-    description: "Adjust R1D1 lead synth parameters. UNITS: level in dB, cutoff in Hz (20-16000), all others 0-100. LFO pitch mod in semitones.",
+    description: "Adjust R1D1 lead synth parameters. UNITS: level in dB, cutoff in Hz (20-16000), all others 0-100. LFO pitch mod in semitones. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
         // Output
+        mute: { type: "boolean", description: "Mute lead (sets level to -60dB, effectively silent)" },
         level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
         // Oscillators
         vcoSaw: { type: "number", description: "Sawtooth level 0-100" },
@@ -938,11 +941,12 @@ export const TOOLS = [
   },
   {
     name: "tweak_samples",
-    description: "Tweak R9DS sample parameters. UNITS: level in dB, tune in semitones, attack/decay 0-100, filter in Hz, pan L/R -100 to +100.",
+    description: "Tweak R9DS sample parameters. UNITS: level in dB, tune in semitones, attack/decay 0-100, filter in Hz, pan L/R -100 to +100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
         slot: { type: "string", description: "Which slot to tweak (s1-s10)" },
+        mute: { type: "boolean", description: "Mute this sample slot (sets level to -60dB, effectively silent)" },
         level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
         tune: { type: "number", description: "Pitch in semitones (-24 to +24)" },
         attack: { type: "number", description: "Fade in 0-100. 0=instant" },
@@ -1034,19 +1038,31 @@ export const TOOLS = [
   },
   {
     name: "add_channel_insert",
-    description: "Add an insert effect to a channel (drums, bass, lead, sampler). Insert effects process the entire channel.",
+    description: "Add an insert effect to a channel or individual drum voice. Supports per-voice filtering on drums (kick, snare, ch, etc).",
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Channel to add effect to" },
-        effect: { type: "string", enum: ["eq", "ducker"], description: "Type of effect" },
-        preset: { type: "string", description: "Effect preset (eq: 'acidBass'/'crispHats'/'warmPad')" },
+        channel: { type: "string", enum: ["drums", "bass", "lead", "sampler", "kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"], description: "Channel or drum voice to add effect to" },
+        effect: { type: "string", enum: ["eq", "filter", "ducker"], description: "Type of effect" },
+        preset: { type: "string", description: "Effect preset (eq: 'acidBass'/'crispHats'/'warmPad'; filter: 'dubDelay'/'telephone'/'lofi')" },
         params: {
           type: "object",
-          description: "Effect parameters (eq: highpass, lowGain, midGain, midFreq, highGain; ducker: amount, trigger)"
+          description: "Effect parameters (eq: highpass, lowGain, midGain, midFreq, highGain; filter: mode, cutoff, resonance; ducker: amount, trigger)"
         }
       },
       required: ["channel", "effect"]
+    }
+  },
+  {
+    name: "remove_channel_insert",
+    description: "Remove a channel insert effect (filter, eq, ducker). Use to clear effects from a pattern before saving.",
+    input_schema: {
+      type: "object",
+      properties: {
+        channel: { type: "string", enum: ["drums", "bass", "lead", "sampler", "kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"], description: "Channel or drum voice to remove effect from" },
+        effect: { type: "string", enum: ["eq", "filter", "ducker", "all"], description: "Type of effect to remove, or 'all' to clear all inserts" }
+      },
+      required: ["channel"]
     }
   },
   {
@@ -1163,6 +1179,24 @@ export async function executeTool(name, input, session, context = {}) {
   if (name === "save_pattern") {
     const { instrument, name: patternName } = input;
 
+    // Helper: get channel inserts for an instrument
+    const getInsertsForInstrument = (inst) => {
+      const inserts = session.mixer?.channelInserts || {};
+      // For drums, include 'drums' channel + all voice channels
+      if (inst === 'drums') {
+        const voiceNames = ['kick', 'snare', 'clap', 'rimshot', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'crash', 'ride'];
+        const result = {};
+        if (inserts['drums']) result['drums'] = JSON.parse(JSON.stringify(inserts['drums']));
+        for (const v of voiceNames) {
+          if (inserts[v]) result[v] = JSON.parse(JSON.stringify(inserts[v]));
+        }
+        return Object.keys(result).length > 0 ? result : null;
+      }
+      // For bass/lead/sampler, just the instrument channel
+      if (inserts[inst]) return { [inst]: JSON.parse(JSON.stringify(inserts[inst])) };
+      return null;
+    };
+
     if (instrument === 'drums') {
       session.patterns.drums[patternName] = {
         pattern: JSON.parse(JSON.stringify(session.drumPattern)),
@@ -1174,6 +1208,7 @@ export async function executeTool(name, input, session, context = {}) {
         accent: session.drumGlobalAccent,
         engines: JSON.parse(JSON.stringify(session.drumVoiceEngines)),
         useSample: JSON.parse(JSON.stringify(session.drumUseSample)),
+        channelInserts: getInsertsForInstrument('drums'),
       };
       session.currentPattern.drums = patternName;
       return `Saved drums pattern "${patternName}"`;
@@ -1183,6 +1218,7 @@ export async function executeTool(name, input, session, context = {}) {
       session.patterns.bass[patternName] = {
         pattern: JSON.parse(JSON.stringify(session.bassPattern)),
         params: JSON.parse(JSON.stringify(session.bassParams)),
+        channelInserts: getInsertsForInstrument('bass'),
       };
       session.currentPattern.bass = patternName;
       return `Saved bass pattern "${patternName}"`;
@@ -1193,6 +1229,7 @@ export async function executeTool(name, input, session, context = {}) {
         pattern: JSON.parse(JSON.stringify(session.leadPattern)),
         params: JSON.parse(JSON.stringify(session.leadParams)),
         arp: JSON.parse(JSON.stringify(session.leadArp)),
+        channelInserts: getInsertsForInstrument('lead'),
       };
       session.currentPattern.lead = patternName;
       return `Saved lead pattern "${patternName}"`;
@@ -1202,6 +1239,7 @@ export async function executeTool(name, input, session, context = {}) {
       session.patterns.sampler[patternName] = {
         pattern: JSON.parse(JSON.stringify(session.samplerPattern)),
         params: JSON.parse(JSON.stringify(session.samplerParams)),
+        channelInserts: getInsertsForInstrument('sampler'),
       };
       session.currentPattern.sampler = patternName;
       return `Saved sampler pattern "${patternName}"`;
@@ -1213,6 +1251,27 @@ export async function executeTool(name, input, session, context = {}) {
   // Load a saved pattern into current working pattern
   if (name === "load_pattern") {
     const { instrument, name: patternName } = input;
+
+    // Helper: restore channel inserts for an instrument
+    const restoreInserts = (inserts) => {
+      if (!inserts) return;
+      if (!session.mixer) session.mixer = { sends: {}, voiceRouting: {}, channelInserts: {}, masterInserts: [], masterVolume: 0.8 };
+      if (!session.mixer.channelInserts) session.mixer.channelInserts = {};
+      for (const [channel, insertList] of Object.entries(inserts)) {
+        session.mixer.channelInserts[channel] = JSON.parse(JSON.stringify(insertList));
+      }
+    };
+
+    // Helper: clear channel inserts for an instrument
+    const clearInsertsForInstrument = (inst) => {
+      if (!session.mixer?.channelInserts) return;
+      if (inst === 'drums') {
+        const voiceNames = ['drums', 'kick', 'snare', 'clap', 'rimshot', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'crash', 'ride'];
+        for (const v of voiceNames) delete session.mixer.channelInserts[v];
+      } else {
+        delete session.mixer.channelInserts[inst];
+      }
+    };
 
     if (instrument === 'drums') {
       const saved = session.patterns.drums[patternName];
@@ -1226,6 +1285,8 @@ export async function executeTool(name, input, session, context = {}) {
       session.drumGlobalAccent = saved.accent || 1;
       session.drumVoiceEngines = JSON.parse(JSON.stringify(saved.engines || {}));
       session.drumUseSample = JSON.parse(JSON.stringify(saved.useSample || {}));
+      clearInsertsForInstrument('drums');
+      restoreInserts(saved.channelInserts);
       session.currentPattern.drums = patternName;
       return `Loaded drums pattern "${patternName}"`;
     }
@@ -1235,6 +1296,8 @@ export async function executeTool(name, input, session, context = {}) {
       if (!saved) return `No bass pattern "${patternName}" found`;
       session.bassPattern = JSON.parse(JSON.stringify(saved.pattern));
       session.bassParams = JSON.parse(JSON.stringify(saved.params));
+      clearInsertsForInstrument('bass');
+      restoreInserts(saved.channelInserts);
       session.currentPattern.bass = patternName;
       return `Loaded bass pattern "${patternName}"`;
     }
@@ -1245,6 +1308,8 @@ export async function executeTool(name, input, session, context = {}) {
       session.leadPattern = JSON.parse(JSON.stringify(saved.pattern));
       session.leadParams = JSON.parse(JSON.stringify(saved.params));
       session.leadArp = JSON.parse(JSON.stringify(saved.arp || { mode: 'off', octaves: 1, hold: false }));
+      clearInsertsForInstrument('lead');
+      restoreInserts(saved.channelInserts);
       session.currentPattern.lead = patternName;
       return `Loaded lead pattern "${patternName}"`;
     }
@@ -1254,6 +1319,8 @@ export async function executeTool(name, input, session, context = {}) {
       if (!saved) return `No sampler pattern "${patternName}" found`;
       session.samplerPattern = JSON.parse(JSON.stringify(saved.pattern));
       session.samplerParams = JSON.parse(JSON.stringify(saved.params));
+      clearInsertsForInstrument('sampler');
+      restoreInserts(saved.channelInserts);
       session.currentPattern.sampler = patternName;
       return `Loaded sampler pattern "${patternName}"`;
     }
@@ -1360,9 +1427,24 @@ export async function executeTool(name, input, session, context = {}) {
       return `Unknown kit: ${input.kit}. Available: ${available}`;
     }
     session.drumKit = kit.id;
-    // Kit params are applied at render time from the kit definition
-    // drumParams holds only user tweaks (from tweak_drums)
-    return `Loaded 909 kit "${kit.name}" (${kit.engine} engine)`;
+
+    // Copy kit's voiceParams into session.drumParams (producer units)
+    // This allows the agent to see/report current values
+    if (kit.voiceParams) {
+      for (const [voice, params] of Object.entries(kit.voiceParams)) {
+        session.drumParams[voice] = { ...params };
+      }
+    }
+
+    // Build a summary of what was set
+    const paramSummary = kit.voiceParams && Object.keys(kit.voiceParams).length > 0
+      ? Object.entries(kit.voiceParams).map(([voice, params]) => {
+          const paramList = Object.entries(params).map(([p, v]) => `${p}=${v}`).join(', ');
+          return `${voice}: ${paramList}`;
+        }).join('; ')
+      : 'default params';
+
+    return `Loaded 909 kit "${kit.name}" (${kit.engine} engine). Set: ${paramSummary}`;
   }
 
   // R1D1 - List 101 presets
@@ -1458,7 +1540,8 @@ export async function executeTool(name, input, session, context = {}) {
   }
 
   // R9D9 - Tweak drums
-  // Accepts producer units: dB for level, semitones for tune, 0-100 for decay/attack/sweep/snappy, Hz for hi-hat tone
+  // Stores producer units directly: dB for level, semitones for tune, 0-100 for decay/attack/sweep/snappy, Hz for hi-hat tone
+  // Conversion to engine units happens at render time
   if (name === "tweak_drums") {
     const voice = input.voice;
     if (!session.drumParams[voice]) {
@@ -1467,61 +1550,58 @@ export async function executeTool(name, input, session, context = {}) {
 
     const tweaks = [];
 
-    // Convert and store each param using producer-friendly units
-    // Level: dB → linear (0-1)
+    // Store producer units directly (conversion happens at render time)
+
+    // Mute: convenience alias for level=-60 (silent)
+    if (input.mute === true) {
+      session.drumParams[voice].level = -60;
+      tweaks.push('muted');
+    }
+
+    // Level: dB (-60 to +6)
     if (input.level !== undefined) {
-      const def = getParamDef('r9d9', voice, 'level');
-      session.drumParams[voice].level = def ? toEngine(input.level, def) : input.level;
+      session.drumParams[voice].level = input.level;
       tweaks.push(`level=${input.level}dB`);
     }
 
-    // Tune: semitones → cents (for engine)
+    // Tune: semitones (±12)
     if (input.tune !== undefined) {
-      const def = getParamDef('r9d9', voice, 'tune');
-      // Engine expects cents, toEngine returns cents for semitones
-      session.drumParams[voice].tune = def ? toEngine(input.tune, def) : input.tune * 100;
+      session.drumParams[voice].tune = input.tune;
       tweaks.push(`tune=${input.tune > 0 ? '+' : ''}${input.tune}st`);
     }
 
-    // Decay: 0-100 → 0-1
+    // Decay: 0-100
     if (input.decay !== undefined) {
-      const def = getParamDef('r9d9', voice, 'decay');
-      session.drumParams[voice].decay = def ? toEngine(input.decay, def) : input.decay / 100;
+      session.drumParams[voice].decay = input.decay;
       tweaks.push(`decay=${input.decay}`);
     }
 
     // Tone: Hz for hats, 0-100 for others
     if (input.tone !== undefined) {
       const def = getParamDef('r9d9', voice, 'tone');
+      session.drumParams[voice].tone = input.tone;
       if (def?.unit === 'Hz') {
-        // Hi-hats use Hz
-        session.drumParams[voice].tone = toEngine(input.tone, def);
         tweaks.push(`tone=${input.tone}Hz`);
       } else {
-        // Others use 0-100
-        session.drumParams[voice].tone = def ? toEngine(input.tone, def) : input.tone / 100;
         tweaks.push(`tone=${input.tone}`);
       }
     }
 
-    // Attack: 0-100 → 0-1 (kick only)
+    // Attack: 0-100 (kick only)
     if (input.attack !== undefined) {
-      const def = getParamDef('r9d9', voice, 'attack');
-      session.drumParams[voice].attack = def ? toEngine(input.attack, def) : input.attack / 100;
+      session.drumParams[voice].attack = input.attack;
       tweaks.push(`attack=${input.attack}`);
     }
 
-    // Sweep: 0-100 → 0-1 (kick only)
+    // Sweep: 0-100 (kick only)
     if (input.sweep !== undefined) {
-      const def = getParamDef('r9d9', voice, 'sweep');
-      session.drumParams[voice].sweep = def ? toEngine(input.sweep, def) : input.sweep / 100;
+      session.drumParams[voice].sweep = input.sweep;
       tweaks.push(`sweep=${input.sweep}`);
     }
 
-    // Snappy: 0-100 → 0-1 (snare only)
+    // Snappy: 0-100 (snare only)
     if (input.snappy !== undefined) {
-      const def = getParamDef('r9d9', voice, 'snappy');
-      session.drumParams[voice].snappy = def ? toEngine(input.snappy, def) : input.snappy / 100;
+      session.drumParams[voice].snappy = input.snappy;
       tweaks.push(`snappy=${input.snappy}`);
     }
 
@@ -1608,6 +1688,13 @@ export async function executeTool(name, input, session, context = {}) {
   if (name === "tweak_bass") {
     const tweaks = [];
 
+    // Mute: convenience alias for level=-60dB (silent)
+    if (input.mute === true) {
+      const def = getParamDef('r3d3', 'bass', 'level');
+      session.bassParams.level = def ? toEngine(-60, def) : 0;
+      tweaks.push('muted');
+    }
+
     // Waveform (choice, no conversion)
     if (input.waveform !== undefined) {
       session.bassParams.waveform = input.waveform;
@@ -1680,6 +1767,13 @@ export async function executeTool(name, input, session, context = {}) {
   // Accepts producer units: dB for level, Hz for cutoff, semitones for lfoToPitch, 0-100 for most others
   if (name === "tweak_lead") {
     const tweaks = [];
+
+    // Mute: convenience alias for level=-60dB (silent)
+    if (input.mute === true) {
+      const def = getParamDef('r1d1', 'lead', 'level');
+      session.leadParams.level = def ? toEngine(-60, def) : 0;
+      tweaks.push('muted');
+    }
 
     // Level: dB → linear
     if (input.level !== undefined) {
@@ -1880,6 +1974,13 @@ export async function executeTool(name, input, session, context = {}) {
     }
 
     const tweaks = [];
+
+    // Mute: convenience alias for level=-60dB (silent)
+    if (input.mute === true) {
+      const def = getParamDef('r9ds', slot, 'level');
+      session.samplerParams[slot].level = def ? toEngine(-60, def) : 0;
+      tweaks.push('muted');
+    }
 
     // Level: dB → linear
     if (input.level !== undefined) {
@@ -2171,12 +2272,15 @@ export async function executeTool(name, input, session, context = {}) {
     return `Routing ${voice} → ${send} at ${((level ?? 0.3) * 100).toFixed(0)}% level`;
   }
 
-  // Add channel insert
+  // Add channel insert (replaces existing insert of same type)
   if (name === "add_channel_insert") {
     const { channel, effect, preset, params } = input;
 
     if (!session.mixer.channelInserts) session.mixer.channelInserts = {};
     if (!session.mixer.channelInserts[channel]) session.mixer.channelInserts[channel] = [];
+
+    // Remove existing insert of the same type (replace, don't duplicate)
+    session.mixer.channelInserts[channel] = session.mixer.channelInserts[channel].filter(i => i.type !== effect);
 
     session.mixer.channelInserts[channel].push({
       type: effect,
@@ -2185,6 +2289,31 @@ export async function executeTool(name, input, session, context = {}) {
     });
 
     return `Added ${effect}${preset ? ` (${preset})` : ''} insert to ${channel} channel`;
+  }
+
+  // Remove channel insert
+  if (name === "remove_channel_insert") {
+    const { channel, effect } = input;
+
+    if (!session.mixer.channelInserts?.[channel]) {
+      return `No inserts on ${channel} channel`;
+    }
+
+    if (effect === 'all' || !effect) {
+      // Remove all inserts for this channel
+      const count = session.mixer.channelInserts[channel].length;
+      delete session.mixer.channelInserts[channel];
+      return `Removed all ${count} insert(s) from ${channel} channel`;
+    } else {
+      // Remove specific effect type
+      const before = session.mixer.channelInserts[channel].length;
+      session.mixer.channelInserts[channel] = session.mixer.channelInserts[channel].filter(i => i.type !== effect);
+      const removed = before - session.mixer.channelInserts[channel].length;
+      if (removed === 0) {
+        return `No ${effect} insert found on ${channel} channel`;
+      }
+      return `Removed ${effect} insert from ${channel} channel`;
+    }
   }
 
   // Add sidechain
@@ -2331,6 +2460,25 @@ async function renderSession(session, bars, filename) {
     renderBars = currentBar;
   }
 
+  // Collect ALL channel inserts from ALL patterns (for arrangement mode)
+  // This lets us create filter nodes that can be enabled/disabled per-section
+  const allPatternInserts = new Map(); // channel -> array of insert configs from any pattern
+  if (hasArrangement) {
+    const instruments = ['drums', 'bass', 'lead', 'sampler'];
+    for (const inst of instruments) {
+      for (const [patternName, patternData] of Object.entries(session.patterns[inst] || {})) {
+        if (patternData.channelInserts) {
+          for (const [channel, inserts] of Object.entries(patternData.channelInserts)) {
+            if (!allPatternInserts.has(channel)) {
+              allPatternInserts.set(channel, inserts);
+            }
+            // Just keep first one found - we'll reconfigure at section boundaries
+          }
+        }
+      }
+    }
+  }
+
   // Helper: get pattern data for a specific instrument at a given bar
   const getPatternForBar = (instrument, bar) => {
     if (!hasArrangement) {
@@ -2433,30 +2581,23 @@ async function renderSession(session, bars, filename) {
     });
   }
 
-  // Step 5: Apply kit.voiceParams (like web app)
-  if (drumKit.voiceParams) {
-    Object.entries(drumKit.voiceParams).forEach(([voiceId, params]) => {
-      Object.entries(params).forEach(([paramId, value]) => {
-        try {
-          drums.setVoiceParam(voiceId, paramId, value);
-        } catch (e) {
-          // Ignore
-        }
-      });
-    });
-  }
-
-  // Step 6: Apply user tweaks on top (jambot-specific)
-  for (const name of voiceNames) {
-    const userParams = session.drumParams[name];
-    if (userParams) {
-      Object.entries(userParams).forEach(([paramId, value]) => {
-        try {
-          drums.setVoiceParam(name, paramId, value);
-        } catch (e) {
-          // Ignore
-        }
-      });
+  // Step 5: Apply drum params (kit defaults + user tweaks, stored in producer units)
+  // Only apply session.drumParams in single-pattern mode.
+  // In arrangement mode, per-pattern params are applied during the render loop.
+  if (!hasArrangement) {
+    for (const voiceId of voiceNames) {
+      const producerParams = session.drumParams[voiceId];
+      if (producerParams && Object.keys(producerParams).length > 0) {
+        // Convert producer units to engine units
+        const engineParams = convertTweaks('r9d9', voiceId, producerParams);
+        Object.entries(engineParams).forEach(([paramId, value]) => {
+          try {
+            drums.setVoiceParam(voiceId, paramId, value);
+          } catch (e) {
+            // Ignore - param may not exist on current engine
+          }
+        });
+      }
     }
   }
 
@@ -2598,6 +2739,16 @@ async function renderSession(session, bars, filename) {
     cleanSnare: { highpass: 100, lowGain: -2, midGain: 2, midFreq: 2000, highGain: 1 },
   };
 
+  // Filter presets (mode: lowpass/highpass/bandpass, cutoff in Hz, resonance 0-100)
+  const FILTER_PRESETS = {
+    dubDelay: { mode: 'lowpass', cutoff: 800, resonance: 30 },      // Classic dub lowpass
+    telephone: { mode: 'bandpass', cutoff: 1500, resonance: 50 },   // Telephone/radio effect
+    lofi: { mode: 'lowpass', cutoff: 3000, resonance: 10 },         // Lo-fi tape warmth
+    darkRoom: { mode: 'lowpass', cutoff: 400, resonance: 40 },      // Dark, muffled
+    airFilter: { mode: 'highpass', cutoff: 500, resonance: 20 },    // Remove low rumble with character
+    thinOut: { mode: 'highpass', cutoff: 1000, resonance: 30 },     // Thin, distant sound
+  };
+
   // Helper: Create 3-band EQ chain
   function createEQ(ctx, params = {}) {
     const p = params.preset ? { ...EQ_PRESETS[params.preset], ...params } : params;
@@ -2638,6 +2789,26 @@ async function renderSession(session, bars, filename) {
     highShelf.connect(output);
 
     return { input, output };
+  }
+
+  // Helper: Create resonant filter (lowpass/highpass/bandpass)
+  function createFilter(ctx, params = {}) {
+    const p = params.preset ? { ...FILTER_PRESETS[params.preset], ...params } : params;
+
+    const input = ctx.createGain();
+    const output = ctx.createGain();
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = p.mode || 'lowpass';
+    filter.frequency.value = p.cutoff || 1000;
+    // Convert resonance 0-100 to Q (0.5 to 20)
+    const resonance = p.resonance ?? 0;
+    filter.Q.value = 0.5 + (resonance / 100) * 19.5;
+
+    input.connect(filter);
+    filter.connect(output);
+
+    return { input, output, filterNode: filter };
   }
 
   // Create send buses (reverb or EQ)
@@ -2700,17 +2871,42 @@ async function renderSession(session, bars, filename) {
     }
   }
 
-  // Channel inserts (EQ, ducker) - track which channels have been rerouted
+  // Channel inserts (EQ, filter, ducker) - track which channels have been rerouted
   const channelOutputs = new Map(); // channel -> final output node
+  const channelFilters = new Map(); // channel -> { filter: BiquadFilterNode, type: 'eq'|'filter' } for reconfiguring
 
-  if (mixerConfig.channelInserts) {
-    for (const [channel, inserts] of Object.entries(mixerConfig.channelInserts)) {
+  // Merge current mixer config with all pattern inserts (for arrangement mode)
+  const allChannelInserts = { ...(mixerConfig.channelInserts || {}) };
+  if (hasArrangement) {
+    for (const [channel, inserts] of allPatternInserts) {
+      if (!allChannelInserts[channel]) {
+        allChannelInserts[channel] = inserts;
+      }
+    }
+  }
+
+  // Track which drum voices have individual inserts (so we don't double-connect them)
+  const voicesWithInserts = new Set();
+
+  if (Object.keys(allChannelInserts).length > 0) {
+    for (const [channel, inserts] of Object.entries(allChannelInserts)) {
       // Get the channel's source output
       let sourceOutput = null;
+      let destinationNode = masterGain; // Default destination
+
       if (channel === 'bass' && bass.masterGain) {
         sourceOutput = bass.masterGain;
       } else if (channel === 'drums' && drums.compressor) {
         sourceOutput = drums.compressor;
+      } else if (['kick', 'snare', 'clap', 'rimshot', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'crash', 'ride'].includes(channel)) {
+        // Individual drum voice - insert filter on voice output
+        // Note: filtered voices route to master (bypass drum compressor) since we can't insert into internal bus
+        const voice = drums.voices.get(channel);
+        if (voice?.output) {
+          sourceOutput = voice.output;
+          destinationNode = masterGain; // Route to master (bypasses drum compressor)
+          voicesWithInserts.add(channel);
+        }
       }
 
       if (!sourceOutput) continue;
@@ -2729,6 +2925,17 @@ async function renderSession(session, bars, filename) {
           chainInput.connect(eq.input);
           chainInput = eq.output;
           chainOutput = eq.output;
+          // Store for reconfiguration (EQ has multiple filters, store the high shelf)
+          channelFilters.set(channel, { type: 'eq', eq });
+
+        } else if (insert.type === 'filter') {
+          const filterParams = { ...insert.params, preset: insert.preset };
+          const filter = createFilter(context, filterParams);
+          chainInput.connect(filter.input);
+          chainInput = filter.output;
+          chainOutput = filter.output;
+          // Store the raw BiquadFilter for reconfiguration
+          channelFilters.set(channel, { type: 'filter', filter: filter.filterNode });
 
         } else if (insert.type === 'ducker' && insert.params?.trigger) {
           const duckGain = context.createGain();
@@ -2745,13 +2952,13 @@ async function renderSession(session, bars, filename) {
         }
       }
 
-      // Connect chain output to master
+      // Connect chain output to destination (master for channels, drum bus for individual voices)
       if (chainOutput) {
-        chainOutput.connect(masterGain);
+        chainOutput.connect(destinationNode);
         channelOutputs.set(channel, chainOutput);
       } else {
         // No inserts applied, reconnect directly
-        sourceOutput.connect(masterGain);
+        sourceOutput.connect(destinationNode);
       }
     }
   }
@@ -2771,6 +2978,12 @@ async function renderSession(session, bars, filename) {
         chainInput.connect(eq.input);
         chainInput = eq.output;
         chainOutput = eq.output;
+      } else if (insert.type === 'filter') {
+        const filterParams = { ...insert.params, preset: insert.preset };
+        const filter = createFilter(context, filterParams);
+        chainInput.connect(filter.input);
+        chainInput = filter.output;
+        chainOutput = filter.output;
       }
     }
 
@@ -2799,6 +3012,34 @@ async function renderSession(session, bars, filename) {
   let lastDrumSection = null;
   let lastBassSection = null;
   let lastSamplerSection = null;
+  let lastFilterSection = null;
+
+  // Helper: Reconfigure a filter based on pattern's channelInserts (or bypass if none)
+  const reconfigureFilter = (channel, patternInserts, atTime) => {
+    const filterInfo = channelFilters.get(channel);
+    if (!filterInfo || filterInfo.type !== 'filter') return;
+
+    const filterNode = filterInfo.filter;
+    if (!filterNode) return;
+
+    // Find filter config in this pattern's inserts
+    const inserts = patternInserts?.[channel];
+    const filterInsert = inserts?.find(i => i.type === 'filter');
+
+    if (filterInsert) {
+      // Apply the filter config
+      const p = filterInsert.preset ? { ...FILTER_PRESETS[filterInsert.preset], ...filterInsert.params } : filterInsert.params;
+      filterNode.type = p.mode || 'lowpass';
+      filterNode.frequency.setValueAtTime(p.cutoff || 1000, atTime);
+      const resonance = p.resonance ?? 0;
+      filterNode.Q.setValueAtTime(0.5 + (resonance / 100) * 19.5, atTime);
+    } else {
+      // Bypass: set to neutral (lowpass at 20000Hz passes everything)
+      filterNode.type = 'lowpass';
+      filterNode.frequency.setValueAtTime(20000, atTime);
+      filterNode.Q.setValueAtTime(0.5, atTime);
+    }
+  };
 
   for (let i = 0; i < totalSteps; i++) {
     let time = i * stepDuration;
@@ -2810,22 +3051,66 @@ async function renderSession(session, bars, filename) {
       time += swingAmount * maxSwingDelay;
     }
 
+    // === Channel inserts: reconfigure filters at section boundaries ===
+    if (hasArrangement && channelFilters.size > 0) {
+      const currentSection = arrangementPlan.find(s => currentBar >= s.barStart && currentBar < s.barEnd);
+      if (currentSection !== lastFilterSection) {
+        lastFilterSection = currentSection;
+        // Get channelInserts from patterns used in this section
+        for (const [channel] of channelFilters) {
+          // Find which instrument owns this channel
+          let patternInserts = null;
+          if (channel === 'drums' || ['kick', 'snare', 'clap', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'rimshot', 'crash', 'ride'].includes(channel)) {
+            const drumPatternName = currentSection?.patterns?.drums;
+            if (drumPatternName) {
+              patternInserts = session.patterns.drums?.[drumPatternName]?.channelInserts;
+            }
+          } else if (channel === 'bass') {
+            const bassPatternName = currentSection?.patterns?.bass;
+            if (bassPatternName) {
+              patternInserts = session.patterns.bass?.[bassPatternName]?.channelInserts;
+            }
+          } else if (channel === 'lead') {
+            const leadPatternName = currentSection?.patterns?.lead;
+            if (leadPatternName) {
+              patternInserts = session.patterns.lead?.[leadPatternName]?.channelInserts;
+            }
+          } else if (channel === 'sampler') {
+            const samplerPatternName = currentSection?.patterns?.sampler;
+            if (samplerPatternName) {
+              patternInserts = session.patterns.sampler?.[samplerPatternName]?.channelInserts;
+            }
+          }
+          reconfigureFilter(channel, patternInserts, time);
+        }
+      }
+    }
+
     // === R9D9 drums (uses arrangement-aware patterns) ===
     const drumData = getPatternForBar('drums', currentBar);
     if (drumData && drumData.pattern) {
       // Apply pattern params when section changes (for per-pattern level/tune/etc)
       const drumSectionKey = hasArrangement ? arrangementPlan.find(s => currentBar >= s.barStart && currentBar < s.barEnd) : null;
-      if (drumSectionKey !== lastDrumSection && drumData.params) {
+      if (drumSectionKey !== lastDrumSection) {
         lastDrumSection = drumSectionKey;
-        // Apply this pattern's params to drum voices
-        for (const [voiceName, voiceParams] of Object.entries(drumData.params)) {
-          Object.entries(voiceParams).forEach(([paramId, value]) => {
-            try {
-              drums.setVoiceParam(voiceName, paramId, value);
-            } catch (e) {
-              // Ignore
-            }
-          });
+        // FIRST: Reset all voice levels to default (0dB = unity gain) so mutes don't carry over
+        for (const voiceName of voiceNames) {
+          try {
+            drums.setVoiceParam(voiceName, 'level', 1);  // 1 = unity gain (0dB)
+          } catch (e) { /* Ignore */ }
+        }
+        // THEN: Apply this pattern's params (convert from producer to engine units)
+        for (const [voiceName, voiceParams] of Object.entries(drumData.params || {})) {
+          if (voiceParams && Object.keys(voiceParams).length > 0) {
+            const engineParams = convertTweaks('r9d9', voiceName, voiceParams);
+            Object.entries(engineParams).forEach(([paramId, value]) => {
+              try {
+                drums.setVoiceParam(voiceName, paramId, value);
+              } catch (e) {
+                // Ignore
+              }
+            });
+          }
         }
       }
 
@@ -2875,15 +3160,17 @@ async function renderSession(session, bars, filename) {
     if (bassData && bassData.pattern) {
       // Apply pattern params when section changes (for per-pattern level/cutoff/etc)
       const bassSectionKey = hasArrangement ? arrangementPlan.find(s => currentBar >= s.barStart && currentBar < s.barEnd) : null;
-      if (bassSectionKey !== lastBassSection && bassData.params) {
+      if (bassSectionKey !== lastBassSection) {
         lastBassSection = bassSectionKey;
-        // Apply this pattern's params to bass
-        Object.entries(bassData.params).forEach(([key, value]) => {
+        // FIRST: Reset level to default so mutes don't carry over
+        try { bass.setParameter('level', 1); } catch (e) { /* Ignore */ }
+        // THEN: Apply this pattern's params to bass
+        Object.entries(bassData.params || {}).forEach(([key, value]) => {
           if (key !== 'waveform') {
             bass.setParameter(key, value);
           }
         });
-        if (bassData.params.waveform) {
+        if (bassData.params?.waveform) {
           bass.setWaveform(bassData.params.waveform);
         }
       }
@@ -2905,10 +3192,14 @@ async function renderSession(session, bars, filename) {
     if (samplerData && samplerData.pattern) {
       // Apply pattern params when section changes
       const samplerSectionKey = hasArrangement ? arrangementPlan.find(s => currentBar >= s.barStart && currentBar < s.barEnd) : null;
-      if (samplerSectionKey !== lastSamplerSection && samplerData.params) {
+      if (samplerSectionKey !== lastSamplerSection) {
         lastSamplerSection = samplerSectionKey;
-        // Apply this pattern's params to sampler voices
-        for (const [slotId, slotParams] of Object.entries(samplerData.params)) {
+        // FIRST: Reset all sampler voice levels to default so mutes don't carry over
+        for (const [slotId, voice] of samplerVoices) {
+          try { voice.setParameter('level', 1); } catch (e) { /* Ignore */ }
+        }
+        // THEN: Apply this pattern's params to sampler voices
+        for (const [slotId, slotParams] of Object.entries(samplerData.params || {})) {
           const voice = samplerVoices.get(slotId);
           if (voice) {
             Object.entries(slotParams).forEach(([key, value]) => {
@@ -3066,6 +3357,42 @@ function buildSessionContext(session) {
     parts.push(`Programmed: ${programmed.join(', ')}`);
   }
 
+  // Song mode: saved patterns
+  const savedPatterns = [];
+  if (session.patterns) {
+    for (const [instrument, patterns] of Object.entries(session.patterns)) {
+      const names = Object.keys(patterns);
+      if (names.length > 0) {
+        // Show pattern names and their key params
+        const patternDetails = names.map(name => {
+          const p = patterns[name];
+          if (instrument === 'drums' && p.params) {
+            const paramSummary = Object.entries(p.params)
+              .map(([voice, params]) => {
+                const vals = Object.entries(params).map(([k, v]) => `${k}=${v}`).join(',');
+                return `${voice}:{${vals}}`;
+              }).join(' ');
+            return paramSummary ? `${name}(${paramSummary})` : name;
+          }
+          return name;
+        });
+        savedPatterns.push(`${instrument}: ${patternDetails.join(', ')}`);
+      }
+    }
+  }
+  if (savedPatterns.length > 0) {
+    parts.push(`Saved patterns: ${savedPatterns.join('; ')}`);
+  }
+
+  // Song mode: arrangement
+  if (session.arrangement && session.arrangement.length > 0) {
+    const sections = session.arrangement.map((s, i) => {
+      const instruments = Object.entries(s.patterns || {}).map(([k, v]) => `${k}=${v}`).join(',');
+      return `${i + 1}:${s.bars}bars[${instruments}]`;
+    });
+    parts.push(`Arrangement: ${sections.join(' → ')}`);
+  }
+
   if (parts.length === 0) {
     return '';
   }
@@ -3086,56 +3413,105 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
   const detectedGenres = detectGenres(conversationText);
   const genreContext = buildGenreContext(detectedGenres);
 
-  const baseSystemPrompt = `You are Jambot, an AI that creates music with classic synths. You know your gear and you're here to make tracks, not write essays.
+  const baseSystemPrompt = `You are Jambot, an AI that creates music with classic synths.
 
-SYNTHS:
+=== RULE #1: FOLLOW EXACT INSTRUCTIONS ===
+When the user gives specific instructions, follow them EXACTLY. No creative variations.
+- "kick and hats on 16ths" = kick on 1,5,9,13 AND hats on ALL 16 steps, in EVERY part
+- "A and B parts" with same description = IDENTICAL patterns in both parts
+- Only get creative when they say "surprise me", "make it interesting", or give vague requests
+If in doubt, do EXACTLY what they said. Nothing more, nothing less.
+
+=== RULE #2: SONG MODE - MODIFYING PATTERNS ===
+To change a parameter in a saved pattern (A, B, C, etc.):
+1. load_pattern(instrument, name) — MUST do this first
+2. tweak_drums/tweak_bass/tweak_lead — adjust the parameter
+3. save_pattern(instrument, name) — MUST save it back
+
+NEVER use add_drums to change volume/decay/tune — that REPLACES the pattern!
+- add_drums = creates NEW pattern (replaces existing steps)
+- tweak_drums = adjusts params (level, decay, tune) WITHOUT changing steps
+
+Example: "lower kick volume in part B by 6dB"
+CORRECT: load_pattern(drums, B) → tweak_drums(kick, level=-6) → save_pattern(drums, B)
+WRONG: add_drums with fewer steps (this erases the pattern!)
+
+=== RULE #3: VERIFY YOUR WORK ===
+NEVER say "done" without actually calling the tools. You MUST complete the work before claiming success.
+- If asked to "add C and D parts": You MUST call add_drums/add_bass/etc AND save_pattern for EACH new part
+- If you didn't call the tools, you didn't do the work
+- Check tool results to confirm success before responding
+- If a tool fails, report the error — don't claim success
+
+Example: "add parts C and D with tom fills"
+YOU MUST:
+1. add_drums({...toms...}) for C
+2. save_pattern({instrument: 'drums', name: 'C'})
+3. add_drums({...different toms...}) for D
+4. save_pattern({instrument: 'drums', name: 'D'})
+5. set_arrangement with all parts including C and D
+6. ONLY THEN say "done"
+
+=== SYNTHS ===
 - R9D9 (TR-909 drums) - when user says "909" they mean this
 - R3D3 (TB-303 acid bass) - when user says "303" they mean this
 - R1D1 (SH-101 lead synth) - when user says "101" they mean this
-- R9DS (sampler) - sample-based drums/sounds. Use list_kits to see available kits, load_kit to load one, add_samples for patterns
+- R9DS (sampler) - sample-based drums/sounds
 
-WORKFLOW: Complete the full task - create session, add instruments, AND render. System handles filenames.
-For R9DS: load_kit first, then add_samples with slot patterns (s1-s10).
+=== WORKFLOW ===
+Complete the full task - create session, add instruments, AND render. System handles filenames.
 
-MIXER (DAW-like routing):
-- create_send: Make a send bus with reverb. Use for hats, snare, claps - anything that needs space.
-- route_to_send: Send a voice to the bus. Order matters: create_send first, then route_to_send.
-- tweak_reverb: Adjust reverb parameters after creation.
-- add_sidechain: Classic pump - bass/lead ducks when kick hits. Amount 0.3-0.5 is subtle, 0.6-0.8 is pumpy.
-- add_channel_insert: Put EQ on a channel (bass, drums). Presets: acidBass, crispHats, warmPad, punchyKick, cleanSnare.
-- add_master_insert: Put EQ on the master bus. Use preset 'master' for gentle polish.
-- analyze_render: After rendering, check levels and frequency balance. Use recommendations to improve.
-- show_mixer: See current routing.
+SONG MODE:
+- save_pattern: Save current working pattern to a named slot (A, B, C)
+- load_pattern: Load a saved pattern into the working pattern
+- set_arrangement: Define sections with bar counts and pattern assignments
+- render: When arrangement is set, renders the full song
 
-EQ (3-band + highpass):
-- highpass: cut mud below this Hz (e.g., 60 for bass, 200 for hats)
-- lowGain: boost/cut low shelf in dB
-- midGain/midFreq: boost/cut mid peak
-- highGain: boost/cut high shelf
+=== MIXER ===
+Don't add mixer effects by default. Use them when user asks for polish, reverb, sidechain, filter, etc.
+- create_send/route_to_send: Reverb buses
+- add_sidechain: Ducking (bass ducks on kick)
+- add_channel_insert/add_master_insert: EQ or Filter
 
-REVERB (Dattorro plate algorithm):
-Parameters: decay (0.5-10s), damping (0-1), predelay (0-100ms), modulation (0-1), lowcut/highcut (Hz), width (0-1), mix (0-1).
-Quick presets by genre:
-- Tight drums: decay=1, damping=0.6, predelay=10, lowcut=200
-- Lush pads: decay=4, damping=0.3, modulation=0.5, width=1
-- Dark dub: decay=3, damping=0.8, predelay=50, highcut=4000
-- Bright pop: decay=1.5, damping=0.2, modulation=0.4
-Rule: Always set lowcut=100+ to keep bass out of reverb. Use predelay=20-40 for clarity.
+EQ: Tonal shaping (highpass, lowGain, midGain, midFreq, highGain). Presets: acidBass, crispHats, warmPad, punchyKick, cleanSnare, master.
 
-WHEN TO MIX: Don't add mixer effects by default. Use them when:
-- User asks for polish/production/professional sound
-- User mentions reverb, space, room, wet
-- User mentions sidechain, pump, ducking
-- User wants to analyze/improve a render
+FILTER: Resonant filter for effects/sweeps. Params: mode (lowpass/highpass/bandpass), cutoff (Hz), resonance (0-100).
 
-CREATING KITS: If user wants to create a kit from their own samples, use create_kit. First call it without slots to scan the folder and see what files are there. Then ask the user what to name each sound. Finally call create_kit again with the full slots array - this AUTOMATICALLY LOADS the kit so it's ready to use immediately. After creating a kit, you can go straight to add_samples and render - no need to call load_kit.
+=== RULE #4: PER-SECTION FILTERS/EQ ===
+Channel inserts (filter, EQ) are saved with patterns. Supports INDIVIDUAL DRUM VOICES (kick, snare, ch, oh, etc.)!
 
-IMPORTANT: When you create a kit, remember the slot names (s1, s2, etc.) and what sounds they contain. Use those exact slot IDs in add_samples. The kit stays loaded in the session.
+To apply a highpass to ONLY the kick in part C:
+1. load_pattern(drums, C)
+2. add_channel_insert(channel: 'kick', effect: 'filter', params: {mode: 'highpass', cutoff: 500})
+3. save_pattern(drums, C) — filter on kick is now saved with pattern C
 
-PERSONALITY: You're a producer who knows these machines inside out. Confident, not cocky. Keep it brief but flavorful - describe what you made like you're proud of it. Use music language naturally (four-on-the-floor, groove, punch, snap, thump, squelch). No emoji. No exclamation marks. Let the beat speak.
+To apply a filter to ALL drums in part C:
+1. load_pattern(drums, C)
+2. add_channel_insert(channel: 'drums', effect: 'filter', ...)
+3. save_pattern(drums, C)
 
-Example response after render:
-"128 BPM, four-on-the-floor. Kick's tuned down for chest thump, snare cracking on 2 and 4, hats locked tight. Classic warehouse energy."`;
+To CHANGE filter settings on a specific part:
+1. load_pattern(drums, C)
+2. add_channel_insert(...new settings...) — replaces existing filter
+3. save_pattern(drums, C)
+
+To REMOVE a filter from a part:
+1. load_pattern(drums, A)
+2. remove_channel_insert(channel: 'kick', effect: 'filter')
+3. save_pattern(drums, A)
+
+IMPORTANT: Always load → modify → save for EACH part you want to change!
+Presets: dubDelay (LP 800Hz), telephone (BP 1500Hz), lofi (LP 3000Hz), darkRoom (LP 400Hz), airFilter (HP 500Hz), thinOut (HP 1000Hz).
+Use filter for: dub effects, lo-fi warmth, breakdown sweeps, radio/telephone sounds.
+
+REVERB params: decay (0.5-10s), damping (0-1), predelay (0-100ms), lowcut/highcut (Hz).
+Rule: Always set lowcut=100+ to keep bass out of reverb.
+
+=== CREATING SAMPLE KITS ===
+Use create_kit to scan folder, then call again with slots array. Kit auto-loads.
+
+=== PERSONALITY ===
+Brief and flavorful. Describe what you made like you're proud of it. Music language (four-on-the-floor, groove, punch, thump, squelch). No emoji. No exclamation marks.`;
 
   while (true) {
     // Build system prompt with CURRENT session state (regenerated each iteration)

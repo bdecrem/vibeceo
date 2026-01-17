@@ -130,9 +130,10 @@ Bundled kits: 808, amber
 
 ## Tools Available to Agent
 
-**Note on muting:** There is no `mute` tool. To mute:
-- **Single-pattern mode**: Use tweak tool to set `level: -60` (minimum dB, effectively silent)
-- **Song mode**: Omit the instrument from the section's pattern assignment
+**Muting voices:**
+- **Mute a voice**: Use `mute: true` in any tweak tool (e.g., `tweak_drums` with `voice: "kick", mute: true`)
+- **Mute entire instrument in song mode**: Omit it from the section's pattern assignment
+- Mute is equivalent to `level: -60` (minimum dB, effectively silent)
 
 | Tool | Synth | Description |
 |------|-------|-------------|
@@ -168,7 +169,8 @@ Bundled kits: 808, amber
 | `create_send` | Mixer | Create send bus with plate reverb (full param control) |
 | `tweak_reverb` | Mixer | Adjust reverb parameters on existing send |
 | `route_to_send` | Mixer | Route a voice to a send bus |
-| `add_channel_insert` | Mixer | Add EQ/ducker to channel |
+| `add_channel_insert` | Mixer | Add EQ/filter/ducker to channel OR individual drum voice (kick, snare, ch, etc.) |
+| `remove_channel_insert` | Mixer | Remove EQ/filter/ducker from channel or drum voice |
 | `add_sidechain` | Mixer | Sidechain ducking (bass ducks on kick) |
 | `add_master_insert` | Mixer | Add effect to master bus |
 | `analyze_render` | Mixer | Analyze WAV: levels, frequency, recommendations |
@@ -211,6 +213,53 @@ EQ parameters (can override preset):
 - `midFreq` (Hz) - Mid peak frequency
 - `highGain` (dB) - High shelf boost/cut
 
+### Channel Filter
+```
+add_channel_insert(channel: 'bass', effect: 'filter', preset: 'dubDelay')
+add_channel_insert(channel: 'drums', effect: 'filter', params: { mode: 'lowpass', cutoff: 2000, resonance: 40 })
+```
+
+Filter presets: `dubDelay` (LP 800Hz), `telephone` (BP 1500Hz), `lofi` (LP 3000Hz), `darkRoom` (LP 400Hz), `airFilter` (HP 500Hz), `thinOut` (HP 1000Hz)
+
+Filter parameters:
+- `mode` - lowpass, highpass, or bandpass
+- `cutoff` (Hz) - Filter frequency
+- `resonance` (0-100) - Filter Q/resonance (0=gentle, 100=screaming)
+
+Use filter for: dub effects, lo-fi warmth, breakdown sweeps, telephone/radio sounds, dramatic frequency cuts.
+
+### Per-Section Channel Inserts (Song Mode)
+
+Channel inserts (filter, EQ) are saved with patterns. Supports individual drum voices (kick, snare, ch, oh, etc.).
+
+```
+# Apply highpass to ONLY THE KICK in part C
+load_pattern(drums, C)
+add_channel_insert(channel: 'kick', effect: 'filter', params: {mode: 'highpass', cutoff: 500})
+save_pattern(drums, C)
+
+# Apply filter to ALL drums in part C
+load_pattern(drums, C)
+add_channel_insert(channel: 'drums', effect: 'filter', params: {mode: 'lowpass', cutoff: 2000})
+save_pattern(drums, C)
+
+# Change filter settings on C
+load_pattern(drums, C)
+add_channel_insert(channel: 'kick', effect: 'filter', params: {mode: 'highpass', cutoff: 800})  # Replaces existing
+save_pattern(drums, C)
+
+# Remove filter from kick in A and D
+load_pattern(drums, A)
+remove_channel_insert(channel: 'kick', effect: 'filter')
+save_pattern(drums, A)
+
+load_pattern(drums, D)
+remove_channel_insert(channel: 'kick', effect: 'filter')
+save_pattern(drums, D)
+```
+
+Parts without filters in their saved state play without the filter. Always: **load → modify → save** for EACH part.
+
 ### Sidechain Ducking
 ```
 add_sidechain(target: 'bass', trigger: 'kick', amount: 0.5)
@@ -228,9 +277,9 @@ analyze_render()  // Returns levels, frequency balance, recommendations
 
 ### Signal Flow
 ```
-voice → [channel EQ] → [ducker] → channel gain → [send] → master → [master EQ] → output
-                                                    ↓
-                                              send bus (reverb) → master
+voice → [channel EQ/Filter] → [ducker] → channel gain → [send] → master → [master EQ/Filter] → output
+                                                          ↓
+                                                    send bus (reverb) → master
 ```
 
 ## Session State

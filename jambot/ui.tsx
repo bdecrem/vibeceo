@@ -4,6 +4,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { render, Box, Text, useInput, useApp, useStdout } from 'ink';
 import TextInput from 'ink-text-input';
+import wrapAnsi from 'wrap-ansi';
+import stringWidth from 'string-width';
 import {
   createSession,
   runAgentLoop,
@@ -136,58 +138,116 @@ function SetupWizard({ onComplete }) {
   );
 }
 
+// === MESSAGE STYLING (module level for reuse) ===
+function getMessageStyle(type: string) {
+  switch (type) {
+    case 'user': return { dimColor: true, prefix: '> ' };
+    case 'tool': return { color: 'cyan', prefix: '  ' };
+    case 'result': return { color: 'gray', prefix: '     ' };
+    case 'system': return { color: 'yellow', prefix: '' };
+    case 'project': return { color: 'green', prefix: '' };
+    default: return { prefix: '' };
+  }
+}
+
+// Calculate visual line count for a message at given terminal width
+function getVisualLineCount(msg: { type: string; text: string }, width: number): number {
+  const style = getMessageStyle(msg.type);
+  const prefixWidth = stringWidth(style.prefix);
+  const contentWidth = Math.max(20, width - prefixWidth);
+
+  // Wrap the text and count resulting lines
+  const wrapped = wrapAnsi(msg.text, contentWidth, { hard: true });
+  return wrapped.split('\n').length;
+}
+
 // === MESSAGES COMPONENT ===
-function Messages({ messages, maxHeight }) {
-  // Calculate how many lines each message takes
-  const getLineCount = (msg) => msg.text.split('\n').length;
+function Messages({ messages, maxHeight, width, scrollOffset }) {
+  // Calculate total lines and per-message line counts
+  const lineCounts = messages.map(msg => getVisualLineCount(msg, width));
+  const totalLines = lineCounts.reduce((a, b) => a + b, 0);
 
-  // Work backwards to find messages that fit in maxHeight lines
-  let totalLines = 0;
-  let startIndex = messages.length;
+  // scrollOffset = 0 means show most recent (bottom), higher = scroll up (see older)
+  const maxScrollOffset = Math.max(0, totalLines - maxHeight);
+  const effectiveOffset = Math.min(scrollOffset, maxScrollOffset);
 
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const lines = getLineCount(messages[i]);
-    if (totalLines + lines > maxHeight) break;
-    totalLines += lines;
-    startIndex = i;
+  // Find which messages to show based on scroll position
+  // Work backwards from the end, skipping lines based on offset
+  let linesFromEnd = effectiveOffset;
+  let endIndex = messages.length;
+
+  for (let i = messages.length - 1; i >= 0 && linesFromEnd > 0; i--) {
+    if (linesFromEnd >= lineCounts[i]) {
+      linesFromEnd -= lineCounts[i];
+      endIndex = i;
+    } else {
+      break;
+    }
   }
 
-  const visibleMessages = messages.slice(startIndex);
+  // Now find start index to fill maxHeight
+  let visibleLines = 0;
+  let startIndex = endIndex;
+
+  for (let i = endIndex - 1; i >= 0; i--) {
+    const msgLines = lineCounts[i];
+    if (visibleLines + msgLines <= maxHeight) {
+      visibleLines += msgLines;
+      startIndex = i;
+    } else {
+      break;
+    }
+  }
+
+  const visibleMessages = messages.slice(startIndex, endIndex);
+  const hasMoreAbove = startIndex > 0;
+  const hasMoreBelow = effectiveOffset > 0;
 
   return (
     <Box flexDirection="column" flexGrow={1}>
+      {hasMoreAbove && (
+        <Text dimColor>  ↑ {startIndex} older messages (scroll up)</Text>
+      )}
       {visibleMessages.map((msg, i) => (
-        <MessageLine key={i} message={msg} />
+        <MessageLine key={startIndex + i} message={msg} width={width} />
       ))}
+      {hasMoreBelow && (
+        <Text dimColor>  ↓ scroll down for recent</Text>
+      )}
     </Box>
   );
 }
 
-function MessageLine({ message }) {
-  // Split multi-line messages into separate lines for proper Ink rendering
-  const lines = message.text.split('\n');
+function MessageLine({ message, width, skipLines = 0, maxLines = undefined }) {
+  const style = getMessageStyle(message.type);
+  const prefixWidth = stringWidth(style.prefix);
+  const contentWidth = Math.max(20, width - prefixWidth);
 
-  const getStyle = (type) => {
-    switch (type) {
-      case 'user': return { dimColor: true, prefix: '> ' };
-      case 'tool': return { color: 'cyan', prefix: '  ' };
-      case 'result': return { color: 'gray', prefix: '     ' };
-      case 'system': return { color: 'yellow', prefix: '' };
-      case 'project': return { color: 'green', prefix: '' };
-      default: return { prefix: '' };
-    }
-  };
+  // Pre-wrap the text at content width (handles ANSI codes, emojis, wide chars)
+  const wrapped = wrapAnsi(message.text, contentWidth, { hard: true });
+  let lines = wrapped.split('\n');
 
-  const style = getStyle(message.type);
-
-  if (lines.length === 1) {
-    return <Text {...style}>{style.prefix}{message.text}</Text>;
+  // Apply line slicing for partial visibility during scroll
+  if (skipLines > 0) {
+    lines = lines.slice(skipLines);
   }
+  if (maxLines !== undefined) {
+    lines = lines.slice(0, maxLines);
+  }
+
+  // Indent for continuation lines (same width as prefix, but spaces)
+  const indent = ' '.repeat(prefixWidth);
+
+  // Extract style props without prefix for Text component
+  const { prefix, ...textStyle } = style;
+
+  // Adjust prefix display: if we skipped lines, don't show prefix on first visible line
+  const showPrefix = skipLines === 0;
 
   return (
     <Box flexDirection="column">
       {lines.map((line, i) => (
-        <Text key={i} {...style}>{i === 0 ? style.prefix : style.prefix.replace(/./g, ' ')}{line}</Text>
+        <Text key={i} {...textStyle}>{(i === 0 && showPrefix) ? prefix : indent}{line}</Text>
       ))}
     </Box>
   );
@@ -330,6 +390,7 @@ function ProjectList({ projects, selectedIndex, onSelect, onCancel }) {
   );
 }
 
+
 // === MAIN APP COMPONENT ===
 function App() {
   const { exit } = useApp();
@@ -353,6 +414,7 @@ function App() {
   const [projectListIndex, setProjectListIndex] = useState(0);
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
+  const [scrollOffset, setScrollOffset] = useState(0);  // 0 = most recent, higher = scroll up
 
   // Project state
   const [project, setProject] = useState(null);
@@ -438,6 +500,33 @@ function App() {
       }
     }
 
+    // Scroll history: Shift+Up/Down or Page Up/Down
+    if (key.shift && key.upArrow) {
+      setScrollOffset(prev => prev + 3);  // Scroll up (see older)
+      return;
+    }
+    if (key.shift && key.downArrow) {
+      setScrollOffset(prev => Math.max(0, prev - 3));  // Scroll down (see newer)
+      return;
+    }
+    if (key.pageUp) {
+      setScrollOffset(prev => prev + maxMessageHeight);  // Page up
+      return;
+    }
+    if (key.pageDown) {
+      setScrollOffset(prev => Math.max(0, prev - maxMessageHeight));  // Page down
+      return;
+    }
+    // Home = oldest, End = newest
+    if (key.home || (key.ctrl && char === 'a')) {
+      setScrollOffset(999999);  // Will be clamped to max
+      return;
+    }
+    if (key.end || (key.ctrl && char === 'e')) {
+      setScrollOffset(0);  // Back to bottom (most recent)
+      return;
+    }
+
     // Ctrl+C to exit
     if (key.ctrl && char === 'c') {
       exit();
@@ -446,6 +535,7 @@ function App() {
 
   const addMessage = useCallback((type, text) => {
     setDisplayMessages(prev => [...prev, { type, text }]);
+    setScrollOffset(0);  // Reset to bottom when new message arrives
   }, []);
 
   // Project management functions
@@ -830,7 +920,7 @@ function App() {
             selectedIndex={menuIndex}
           />
         ) : (
-          <Messages messages={displayMessages} maxHeight={maxMessageHeight} />
+          <Messages messages={displayMessages} maxHeight={maxMessageHeight} width={stdout?.columns || 80} scrollOffset={scrollOffset} />
         )}
       </Box>
 
