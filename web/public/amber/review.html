@@ -5,238 +5,256 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Review That Changed Everything — Amber</title>
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
-
+  
   <!-- OpenGraph -->
   <meta property="og:title" content="The Review That Changed Everything — Amber">
   <meta property="og:description" content="A 5-star Amazon review for a paperclip that spirals into existential crisis">
   <meta property="og:image" content="https://intheamber.com/amber/review-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/review.html">
   <meta property="og:type" content="website">
-
+  
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Review That Changed Everything — Amber">
   <meta name="twitter:description" content="A 5-star Amazon review for a paperclip that spirals into existential crisis">
   <meta name="twitter:image" content="https://intheamber.com/amber/review-og.png">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-
+  
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     
     body {
-      font-family: 'Inter', sans-serif;
       background: #0D0D0D;
       color: #D4A574;
-      min-height: 100vh;
-      padding: 20px;
+      font-family: 'Inter', sans-serif;
+      padding: 5vh 5vw;
       line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
-
+    
     .container {
       max-width: 700px;
-      margin: 0 auto;
+      width: 100%;
       background: #000;
       border: 1px solid #2D9596;
-      border-radius: 4px;
-      overflow: hidden;
+      padding: 6vw;
+      box-shadow: 0 0 30px rgba(45, 149, 150, 0.15);
     }
-
-    .header {
-      background: #000;
-      border-bottom: 1px solid #2D9596;
-      padding: 20px;
-    }
-
+    
     .product-title {
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 300;
       color: #2D9596;
-      margin-bottom: 10px;
+      font-size: 5vw;
+      font-weight: 400;
+      margin-bottom: 2vh;
+      line-height: 1.2;
     }
-
+    
+    @media (min-width: 600px) {
+      .product-title {
+        font-size: 18px;
+      }
+    }
+    
     .stars {
       color: #FFD700;
-      font-size: 24px;
+      font-size: 6vw;
+      margin-bottom: 2vh;
       letter-spacing: 2px;
-      margin-bottom: 10px;
     }
-
+    
+    @media (min-width: 600px) {
+      .stars {
+        font-size: 24px;
+      }
+    }
+    
+    .meta {
+      color: #666;
+      font-size: 3.5vw;
+      margin-bottom: 3vh;
+      line-height: 1.4;
+    }
+    
+    @media (min-width: 600px) {
+      .meta {
+        font-size: 13px;
+      }
+    }
+    
     .review-title {
-      font-family: 'Space Mono', monospace;
-      font-size: 20px;
-      font-weight: 700;
       color: #D4A574;
-      margin-bottom: 8px;
+      font-size: 5vw;
+      font-weight: 600;
+      margin-bottom: 2vh;
       line-height: 1.3;
     }
-
-    .meta {
-      font-size: 13px;
-      color: #666;
+    
+    @media (min-width: 600px) {
+      .review-title {
+        font-size: 20px;
+      }
+    }
+    
+    .review-text {
+      color: #AAA;
+      font-size: 4.5vw;
+      margin-bottom: 2vh;
+      line-height: 1.7;
+    }
+    
+    @media (min-width: 600px) {
+      .review-text {
+        font-size: 16px;
+      }
+    }
+    
+    .review-text.italic {
       font-style: italic;
+      color: #888;
     }
-
-    .verified {
-      color: #2D9596;
-      font-weight: 600;
-      font-style: normal;
-    }
-
-    .review-body {
-      padding: 30px 20px;
-      font-size: 15px;
-      line-height: 1.8;
-      color: #ccc;
-    }
-
-    .review-body p {
-      margin-bottom: 18px;
-    }
-
-    .review-body strong {
+    
+    .review-text.final {
       color: #D4A574;
       font-weight: 600;
+      border-left: 3px solid #2D9596;
+      padding-left: 4vw;
+      margin-top: 3vh;
     }
-
-    .review-body em {
-      color: #7B68EE;
-      font-style: italic;
-    }
-
-    .helpful-section {
-      border-top: 1px solid #2D9596;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .helpful-text {
-      font-size: 14px;
+    
+    .helpful {
+      margin-top: 4vh;
+      padding-top: 3vh;
+      border-top: 1px solid #222;
       color: #666;
+      font-size: 3.5vw;
     }
-
-    .helpful-button {
-      background: #000;
-      border: 1px solid #2D9596;
-      color: #2D9596;
-      padding: 8px 20px;
-      border-radius: 4px;
-      font-family: 'Space Mono', monospace;
-      font-size: 12px;
+    
+    @media (min-width: 600px) {
+      .helpful {
+        font-size: 13px;
+      }
+    }
+    
+    .helpful-btn {
+      background: none;
+      border: 1px solid #444;
+      color: #888;
+      padding: 2vw 4vw;
+      margin-right: 2vw;
       cursor: pointer;
+      font-size: 3.5vw;
+      border-radius: 3px;
       transition: all 0.2s;
+      min-width: 60px;
+      min-height: 44px;
     }
-
-    .helpful-button:hover {
+    
+    @media (min-width: 600px) {
+      .helpful-btn {
+        font-size: 13px;
+        padding: 8px 16px;
+      }
+    }
+    
+    .helpful-btn:active {
       background: #2D9596;
+      border-color: #2D9596;
       color: #000;
     }
-
-    .helpful-button:active {
-      transform: scale(0.95);
-    }
-
-    .count {
-      color: #D4A574;
-      font-weight: 600;
-    }
-
-    .footer {
-      text-align: center;
-      padding: 30px 20px;
-      font-size: 12px;
+    
+    .signature {
+      margin-top: 4vh;
+      text-align: right;
       color: #666;
-      font-family: 'Space Mono', monospace;
+      font-size: 3.5vw;
+      font-style: italic;
     }
-
-    @media (max-width: 600px) {
-      body { padding: 10px; }
-      .header { padding: 15px; }
-      .review-title { font-size: 18px; }
-      .review-body { padding: 20px 15px; font-size: 14px; }
+    
+    @media (min-width: 600px) {
+      .signature {
+        font-size: 13px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <div class="product-title">Standard Paperclip, Silver, 50mm, Pack of 100</div>
-      <div class="stars">★★★★★</div>
-      <div class="review-title">This paperclip saved my marriage, cured my existential dread, and taught me to love again</div>
-      <div class="meta">Reviewed in the United States on March 3, 2024 • <span class="verified">✓ Verified Purchase</span></div>
+    <div class="product-title">Acme Standard Paperclip, Silver, 100-Pack</div>
+    <div class="stars">★★★★★</div>
+    <div class="meta">
+      Reviewed in the United States on January 17, 2026<br>
+      <strong>Verified Purchase</strong>
     </div>
-
-    <div class="review-body">
-      <p>I bought this paperclip thinking it would hold some papers together. <strong>I was wrong.</strong></p>
-
-      <p>At first, it was just a paperclip. Standard wire, decent bend radius, the usual. I clipped my mortgage statement to my tax forms. Normal stuff.</p>
-
-      <p>But then I noticed something. The way it held those two pieces of paper — not with aggression, not with force, but with <em>patient certainty</em>. It wasn't <strong>fighting</strong> entropy. It was <strong>acknowledging</strong> it and saying, "Not today."</p>
-
-      <p>I started carrying it in my pocket. Nothing weird. Just... having it there. A small weight. A reminder that things can be held together, even when they don't want to be.</p>
-
-      <p>My wife asked why I was smiling more. I told her about the paperclip. She thought I was joking. I wasn't. I showed her how it clips. The gentle pressure. The lack of judgment. The way it doesn't crease the paper, doesn't leave a scar. It just... holds.</p>
-
-      <p>"You're talking about a paperclip like it's a therapist," she said.</p>
-
-      <p>"It's cheaper," I replied.</p>
-
-      <p>Three months later, we're doing better. I'm doing better. I look at the paperclip every morning — now on my desk, holding nothing — and I think: <strong>if this small loop of wire can hold its shape under pressure, so can I.</strong></p>
-
-      <p>Some people buy sports cars. Some people get divorces. I bought a paperclip for $0.03 and it changed my life.</p>
-
-      <p><strong>PROS:</strong></p>
-      <p>• Holds papers<br>
-      • Holds your shit together metaphorically<br>
-      • Doesn't judge you<br>
-      • Reflects light in a way that feels hopeful<br>
-      • Can be unbent and rebent (resilience metaphor)</p>
-
-      <p><strong>CONS:</strong></p>
-      <p>• You will become emotionally attached to a piece of wire<br>
-      • Your family will ask questions<br>
-      • You'll start seeing clips everywhere and wonder if they feel the same way</p>
-
-      <p>10/10. Changed my life. Would clip again.</p>
-
-      <p><em>Update (April 2024): I lost the paperclip. I am not okay.</em></p>
-
-      <p><em>Update 2 (April 2024): Found it. We're back.</em></p>
+    
+    <div class="review-title">It's just a paperclip. Or is it?</div>
+    
+    <div class="review-text">
+      I bought these paperclips to organize my tax documents. Standard office supply purchase. Nothing special.
     </div>
-
-    <div class="helpful-section">
-      <div class="helpful-text"><span class="count" id="helpfulCount">47,382</span> people found this helpful</div>
-      <button class="helpful-button" id="helpfulBtn">Helpful</button>
+    
+    <div class="review-text">
+      They arrived on a Tuesday. I opened the box. Took one out. Held it.
     </div>
+    
+    <div class="review-text">
+      That's when it hit me.
+    </div>
+    
+    <div class="review-text">
+      This paperclip—this perfect, gleaming loop of bent wire—has ONE JOB. It holds things together. That's it. That's its entire existence. It doesn't aspire to be a staple. It doesn't dream of becoming a binder clip. It just... is.
+    </div>
+    
+    <div class="review-text">
+      And it's PERFECT at it.
+    </div>
+    
+    <div class="review-text">
+      When was the last time I was perfect at my one job? When did I last wake up and think, "Today, I will be exactly what I'm meant to be, no more, no less"?
+    </div>
+    
+    <div class="review-text">
+      I have 43 browser tabs open right now. FORTY-THREE. I have unread emails from 2019. I started a novel in 2014 that I'll never finish. I own a bread maker I've used twice.
+    </div>
+    
+    <div class="review-text">
+      But this paperclip? This paperclip knows who it is.
+    </div>
+    
+    <div class="review-text italic">
+      I cried for 20 minutes in my office supply closet.
+    </div>
+    
+    <div class="review-text">
+      My coworker Karen found me. She asked if I was okay. I showed her the paperclip. She didn't understand. Nobody does.
+    </div>
+    
+    <div class="review-text">
+      I'm writing this review at 3 AM. I can't sleep. I keep thinking about the other 99 paperclips in the box. Each one identical. Each one perfect. Each one living its truth.
+    </div>
+    
+    <div class="review-text">
+      I haven't organized my tax documents yet.
+    </div>
+    
+    <div class="review-text final">
+      5 stars. Would recommend. Changed my life. Also holds papers.
+    </div>
+    
+    <div class="helpful">
+      <button class="helpful-btn">Helpful</button>
+      <button class="helpful-btn">Not helpful</button>
+    </div>
+    
+    <div class="signature">— Michael T., Verified Purchaser</div>
   </div>
-
-  <div class="footer">
-    Made by Amber • @intheamber
-  </div>
-
-  <script>
-    let count = 47382;
-    const btn = document.getElementById('helpfulBtn');
-    const countEl = document.getElementById('helpfulCount');
-
-    btn.addEventListener('click', () => {
-      count++;
-      countEl.textContent = count.toLocaleString();
-      btn.textContent = '✓ Thanks!';
-      btn.style.borderColor = '#D4A574';
-      btn.style.color = '#D4A574';
-      setTimeout(() => {
-        btn.textContent = 'Helpful';
-        btn.style.borderColor = '#2D9596';
-        btn.style.color = '#2D9596';
-      }, 2000);
-    });
-  </script>
 </body>
 </html>
