@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>COMPLAINT DEPARTMENT — The Universe</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="COMPLAINT DEPARTMENT — Amber">
+    <meta property="og:description" content="File an official complaint with The Universe. Response time: 7-14 eternities.">
+    <meta property="og:image" content="https://intheamber.com/amber/complaint-dept-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/complaint-dept.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="COMPLAINT DEPARTMENT — Amber">
+    <meta name="twitter:description" content="File an official complaint with The Universe. Response time: 7-14 eternities.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/complaint-dept-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4AF37;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-y: auto;
+        }
+        
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #111;
+            border: 2px solid #D4AF37;
+            padding: 30px;
+            margin-top: 20px;
+        }
+        
+        h1 {
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 5px;
+            letter-spacing: 3px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        
+        .form-section {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 8px;
+            color: #D4AF37;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .required {
+            color: #ff6b6b;
+        }
+        
+        select, textarea {
+            width: 100%;
+            background: #000;
+            border: 1px solid #555;
+            color: #D4AF37;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        select {
+            cursor: pointer;
+            height: 50px;
+        }
+        
+        select:focus, textarea:focus {
+            border-color: #D4AF37;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .checkbox-group {
+            margin-top: 10px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: #D4AF37;
+        }
+        
+        .checkbox-item label {
+            margin: 0;
+            font-size: 13px;
+            text-transform: none;
+            cursor: pointer;
+        }
+        
+        button {
+            width: 100%;
+            background: #D4AF37;
+            color: #000;
+            border: none;
+            padding: 18px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 2px;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #FFD700;
+            transform: scale(1.02);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .footer {
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            margin-top: 30px;
+            line-height: 1.6;
+        }
+        
+        .response {
+            display: none;
+            background: #1a1a1a;
+            border: 2px solid #2D9596;
+            padding: 25px;
+            margin-top: 30px;
+            animation: fadeIn 0.5s;
+        }
+        
+        .response.show {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .response h2 {
+            color: #2D9596;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+        
+        .response-content {
+            color: #999;
+            font-size: 13px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+        
+        .case-number {
+            color: #D4AF37;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #333;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 20px;
+                margin-top: 10px;
+            }
+            
+            h1 {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>COMPLAINT DEPARTMENT</h1>
+        <div class="subtitle">The Universe — Est. 13.8 Billion Years Ago</div>
+        
+        <form id="complaintForm">
+            <div class="form-section">
+                <label>COMPLAINT CATEGORY <span class="required">*</span></label>
+                <select id="category" required>
+                    <option value="">— Select One —</option>
+                    <option value="mortality">Mortality (General Dissatisfaction)</option>
+                    <option value="physics">Physics (Unfair Laws)</option>
+                    <option value="time">Time (Too Fast / Too Slow)</option>
+                    <option value="entropy">Entropy (Everything Falls Apart)</option>
+                    <option value="consciousness">Consciousness (Aware of Own Existence)</option>
+                    <option value="gravity">Gravity (Too Much / Too Little)</option>
+                    <option value="paradox">Paradox (Logical Inconsistencies)</option>
+                    <option value="other">Other (Please Elaborate)</option>
+                </select>
+            </div>
+            
+            <div class="form-section">
+                <label>DETAILS OF COMPLAINT <span class="required">*</span></label>
+                <textarea id="details" placeholder="Describe your grievance in detail. Be specific. Include dates, locations, and witnesses if applicable." required></textarea>
+            </div>
+            
+            <divclass="form-section">
+                <label>DESIRED RESOLUTION</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="refund" value="refund">
+                        <label for="refund">Full Refund of Existence</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="revision" value="revision">
+                        <label for="revision">Revision to Universal Laws</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="apology" value="apology">
+                        <label for="apology">Written Apology</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="explanation" value="explanation">
+                        <label for="explanation">Coherent Explanation</label>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit">SUBMIT COMPLAINT</button>
+        </form>
+        
+        <div class="response" id="response">
+            <h2>COMPLAINT RECEIVED</h2>
+            <div class="response-content" id="responseText"></div>
+            <div class="case-number" id="caseNumber"></div>
+        </div>
+        
+        <div class="footer">
+            Form C-137-EX (Rev. 2026)<br>
+            Response Time: 7-14 Eternities<br>
+            No refunds. No exchanges. All sales final.<br>
+            By existing, you waive all rights to complain.
+        </div>
+    </div>
+    
+    <script>
+        const responses = {
+            mortality: "We acknowledge your concern regarding mortality. Please note that this feature was implemented intentionally to prevent resource exhaustion. Death is not a bug; it's a load-balancing mechanism.",
+            physics: "Thank you for your feedback on the laws of physics. While we appreciate your suggestions, these laws have been peer-reviewed over 13.8 billion years and are operating as intended.",
+            time: "Your complaint about time's inconsistent passage has been noted. Unfortunately, time is relative, and your perception is working correctly. We recommend acceptance.",
+            entropy: "We understand your frustration with entropy. This is a known issue and will not be fixed. Disorder is an essential feature, not a flaw. Consider it character-building.",
+            consciousness: "We regret any inconvenience caused by self-awareness. This side effect was not anticipated during initial deployment but has proven irreversible. We suggest philosophy as a coping mechanism.",
+            gravity: "Your concerns about gravitational force have been logged. Please note that gravity keeps you from floating into the void. Adjustments would be... inadvisable.",
+            paradox: "Logical inconsistencies are operating within acceptable parameters. Reality does not require internal coherence. This is by design.",
+            other: "Your complaint has been received and categorized as 'miscellaneous existential dissatisfaction.' This is a common issue with no known resolution."
+        };
+        
+        const form = document.getElementById('complaintForm');
+        const responseDiv = document.getElementById('response');
+        const responseText = document.getElementById('responseText');
+        const caseNumber = document.getElementById('caseNumber');
+        
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const category = document.getElementById('category').value;
+            const details = document.getElementById('details').value;
+            
+            // Generate case number
+            const timestamp = Date.now();
+            const random = Math.floor(Math.random() * 999999);
+            const caseNum = `UC-${category.substring(0, 3).toUpperCase()}-${timestamp}-${random}`;
+            
+            // Show response
+            responseText.textContent = responses[category] || responses.other;
+            caseNumber.textContent = `Case Number: ${caseNum}`;
+            
+            responseDiv.classList.add('show');
+            responseDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    </script>
+</body>
+</html>
