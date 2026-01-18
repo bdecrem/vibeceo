@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Post-It From God — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Post-It From God — Amber">
+  <meta property="og:description" content="A sticky note from the universe with weirdly specific observations about your life">
+  <meta property="og:image" content="https://intheamber.com/amber/postit-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/postit.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Post-It From God — Amber">
+  <meta name="twitter:description" content="A sticky note from the universe with weirdly specific observations about your life">
+  <meta name="twitter:image" content="https://intheamber.com/amber/postit-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #FFB000;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .postit {
+      background: linear-gradient(135deg, #FFE87C 0%, #FFEB99 100%);
+      width: min(400px, 90vw);
+      min-height: 300px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(255, 176, 0, 0.3);
+      position: relative;
+      transform: rotate(-2deg);
+      transition: transform 0.3s ease;
+    }
+    
+    .postit:hover {
+      transform: rotate(0deg) scale(1.02);
+    }
+    
+    .postit::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: rgba(255, 200, 0, 0.2);
+    }
+    
+    .header {
+      font-size: clamp(14px, 3vw, 16px);
+      color: #333;
+      margin-bottom: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+    
+    .message {
+      font-size: clamp(16px, 3.5vw, 20px);
+      color: #1a1a1a;
+      line-height: 1.6;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align: left;
+      margin-bottom: 25px;
+      min-height: 180px;
+    }
+    
+    .signature {
+      font-size: clamp(14px, 3vw, 18px);
+      color: #333;
+      text-align: right;
+      font-style: italic;
+      margin-top: 20px;
+    }
+    
+    .button {
+      background: #FFB000;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: clamp(14px, 3vw, 16px);
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      margin-top: 30px;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(255, 176, 0, 0.4);
+      transition: all 0.2s ease;
+      min-width: 200px;
+      min-height: 44px;
+    }
+    
+    .button:hover {
+      background: #FFC933;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 176, 0, 0.6);
+    }
+    
+    .button:active {
+      transform: translateY(0);
+    }
+    
+    .credit {
+      color: #666;
+      font-size: clamp(12px, 2.5vw, 14px);
+      margin-top: 40px;
+      text-align: center;
+    }
+    
+    .credit a {
+      color: #FFB000;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="postit">
+    <div class="header">📝 MESSAGE FROM THE UNIVERSE</div>
+    <div class="message" id="message"></div>
+    <div class="signature">— God (or whatever)</div>
+  </div>
+  
+  <button class="button" id="newNote">NEW NOTE</button>
+  
+  <div class="credit">
+    made by <a href="https://intheamber.com">amber</a>
+  </div>
+
+  <script>
+    const messages = [
+      "Hey! Just wanted to say I noticed you've been overthinking that thing again. You know which thing. The one that keeps you up at 3am. Yeah, that one. Maybe let it go? Just a thought.",
+      
+      "I saw you pretending to listen while actually planning what you're going to say next. I do that too sometimes. We're not so different, you and me.",
+      
+      "Quick reminder: That embarrassing thing you did seven years ago? Nobody else remembers it. Well, I do. But I'm not judging. Much.",
+      
+      "You know that feeling you get when you're about to fall asleep and suddenly remember something cringey? I don't cause those. That's all you, buddy.",
+      
+      "I noticed you've been waiting for a sign. This is it. This sticky note. You're welcome.",
+      
+      "Fun fact: 73% of your worries never happen. The other 27%? Well... we'll cross that bridge when we get there.",
+      
+      "Your coffee-to-existential-crisis ratio is getting concerning. Maybe alternate? Coffee, crisis, coffee, crisis. Balance.",
+      
+      "I saw you doom-scrolling at 2am again. I'm not mad, just disappointed. (Kidding, I'm not your mom. Or am I?)",
+      
+      "Remember: You're doing better than you think. Except for that one thing. You know which one.",
+      
+      "Pro tip: That thing you're procrastinating on? Future You is already annoyed. Don't let Future You down. They're counting on you.",
+      
+      "I notice you apologize for existing sometimes. Please stop. I literally made you exist. I knew what I was doing. Probably.",
+      
+      "Your inner monologue has been very loud lately. Can you maybe... turn down the volume? I'm trying to concentrate up here.",
+      
+      "You keep asking 'why?' about everything. Here's a secret: Sometimes there is no why. Sometimes it just IS. Mind-blowing, right?",
+      
+      "Fun observation: You worry about what everyone thinks, but everyone is too busy worrying about what YOU think. It's worries all the way down.",
+      
+      "That gut feeling you've been ignoring? Yeah, that's me trying to help. Maybe listen occasionally? Just spitballing here.",
+      
+      "I saw you staring at your phone waiting for a text. They're staring at their phone waiting for YOUR text. Classic deadlock situation.",
+      
+      "Friendly reminder: Comparing yourself to others is like comparing your blooper reel to their highlight reel. Not fair to you.",
+      
+      "You know that weird dream you had? Yeah, even I don't know what that was about. Your brain is wild.",
+      
+      "I notice you're being too hard on yourself again. Cut it out. If you talked to your friends the way you talk to yourself, you'd have no friends.",
+      
+      "That thing you think makes you weird? That's literally your most interesting quality. Lean into it.",
+      
+      "You keep waiting for the 'right time.' Plot twist: It's always now. The right time is now. Even now. Still now. See?",
+      
+      "I saw you delete and rewrite that text 47 times. Just send it. Or don't. Either way, stop torturing yourself.",
+      
+      "You're more resilient than you think. I should know. I've been watching your whole playthrough. You've handled worse.",
+      
+      "Quick question: Why do you care so much about people who don't think about you at all? Genuine question. Still figuring that one out.",
+      
+      "That person you're mad at? They're probably not losing sleep over it. But you are. See the problem?"
+    ];
+    
+    function getRandomMessage() {
+      return messages[Math.floor(Math.random() * messages.length)];
+    }
+    
+    function showMessage(){
+      const messageEl = document.getElementById('message');
+      messageEl.style.opacity = '0';
+      
+      setTimeout(() => {
+        messageEl.textContent = getRandomMessage();
+        messageEl.style.transition = 'opacity 0.5s ease';
+        messageEl.style.opacity = '1';
+      }, 300);
+    }
+    
+    document.getElementById('newNote').addEventListener('click', showMessage);
+    
+    // Show initial message
+    showMessage();
+  </script>
+</body>
+</html>
