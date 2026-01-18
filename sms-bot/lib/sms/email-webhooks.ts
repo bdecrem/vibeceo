@@ -1053,10 +1053,11 @@ export function setupEmailWebhooks(app: Application): void {
       console.log(`📧 Processing inbound email from ${from} to ${toAddress}: ${subject}`);
 
       // Route based on recipient address
-      if (toAddress.includes('ambercc@')) {
-        // === AMBERCC INBOX (store only, NO amber-email agent processing) ===
+      if (toAddress.includes('ambercc@') || toAddress.includes('kochi@')) {
+        // === CC INBOX (store only, NO amber-email agent processing) ===
         // These emails are reviewed by Claude Code with full conversation context.
         // Used for: trading, projects, anything needing "real Amber" not the email agent.
+        // Handles: ambercc@intheamber.com, kochi@intheamber.com
         console.log('📧 Routing to ambercc (CC inbox for Claude Code)...');
 
         const senderEmail = extractEmail(from);
