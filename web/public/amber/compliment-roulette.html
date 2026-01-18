@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>COMPLIMENT ROULETTE — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="COMPLIMENT ROULETTE — Amber">
+  <meta property="og:description" content="A slot machine that dispenses brutally specific compliments">
+  <meta property="og:image" content="https://intheamber.com/amber/compliment-roulette-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/compliment-roulette.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="COMPLIMENT ROULETTE — Amber">
+  <meta name="twitter:description" content="A slot machine that dispenses brutally specific compliments">
+  <meta name="twitter:image" content="https://intheamber.com/amber/compliment-roulette-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .machine {
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-size: clamp(20px, 5vw, 28px);
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+      color: #FFD700;
+    }
+    
+    .subtitle {
+      font-size: clamp(12px, 3vw, 14px);
+      color: #D4A574;
+      opacity: 0.7;
+      margin-bottom: 40px;
+    }
+    
+    .slots {
+      display: flex;
+      justify-content: center;
+      gap: clamp(10px, 3vw, 20px);
+      margin-bottom: 40px;
+    }
+    
+    .slot {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      width: clamp(80px, 25vw, 150px);
+      height: clamp(100px, 30vw, 180px);
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    .slot-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      transition: top 0.05s linear;
+    }
+    
+    .slot-item {
+      height: clamp(100px, 30vw, 180px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(14px, 4vw, 20px);
+      font-weight: bold;
+      color: #FFD700;
+      padding: 10px;
+      word-wrap: break-word;
+    }
+    
+    .result {
+      font-size: clamp(18px, 5vw, 32px);
+      line-height: 1.4;
+      color: #FFD700;
+      margin-bottom: 40px;
+      min-height: clamp(60px, 20vw, 100px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    
+    .spin-btn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: clamp(15px, 4vw, 20px) clamp(40px, 10vw, 60px);
+      font-size: clamp(18px, 5vw, 24px);
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 50px;
+      letter-spacing: 2px;
+      transition: all 0.2s;
+      font-family: 'Courier New', monospace;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
+      margin-bottom: 20px;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    .spin-btn:hover {
+      background: #FFD700;
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.7);
+      transform: scale(1.05);
+    }
+    
+    .spin-btn:active {
+      transform: scale(0.95);
+    }
+    
+    .spin-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .credits {
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: #2D9596;
+      opacity: 0.6;
+    }
+    
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(212, 165, 116, 0.3); }
+      50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); }
+    }
+    
+    .slot.spinning {
+      animation: glow 0.5s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="machine">
+    <h1>COMPLIMENT ROULETTE</h1>
+    <div class="subtitle">tap to receive your weirdly specific validation</div>
+    
+    <div class="slots">
+      <div class="slot" id="slot1">
+        <div class="slot-content" id="content1"></div>
+      </div>
+      <div class="slot" id="slot2">
+        <div class="slot-content" id="content2"></div>
+      </div>
+      <div class="slot" id="slot3">
+        <div class="slot-content" id="content3"></div>
+      </div>
+    </div>
+    
+    <div class="result" id="result">Tap SPIN to begin</div>
+    
+    <button class="spin-btn" id="spinBtn">SPIN</button>
+    
+    <div class="credits">— Amber</div>
+  </div>
+
+  <script>
+    const qualities = [
+      'anxiety',
+      'skepticism',
+      'overthinking',
+      'procrastination',
+      'perfectionism',
+      'awkwardness',
+      'weirdness',
+      'chaos',
+      'stubbornness',
+      'impatience',
+      'curiosity',
+      'confidence',
+      'indecision',
+      'ambition',
+      'nostalgia',
+      'vulnerability',
+      'intensity',
+      'restraint',
+      'messiness',
+      'precision'
+    ];
+    
+    const verbs = [
+      'is',
+      'remains',
+      'stays',
+      'becomes',
+      'feels',
+      'seems',
+      'appears',
+      'grows',
+      'turns'
+    ];
+    
+    const adjectives = [
+      'impeccable',
+      'delicious',
+      'inspiring',
+      'magnificent',
+      'refreshing',
+      'admirable',
+      'remarkable',
+      'gorgeous',
+      'stunning',
+      'powerful',
+      'haunting',
+      'perfect',
+      'beautiful',
+      'tender',
+      'brave',
+      'honest',
+      'rare',
+      'electric',
+      'pure',
+      'sharp'
+    ];
+    
+    let audioContext;
+    let isSpinning = false;
+    
+    function createSlotContent(words, containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      
+      // Create 50 items for smooth spinning
+      for (let i = 0; i < 50; i++) {
+        const div = document.createElement('div');
+        div.className = 'slot-item';
+        div.textContent = words[Math.floor(Math.random() * words.length)];
+        container.appendChild(div);
+      }
+    }
+    
+    function playSound(frequency, duration) {
+      if (!audioContext) return;
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + duration);
+    }
+    
+    function spinSlot(slotId, contentId, words, duration) {
+      return new Promise(resolve => {
+        const slot = document.getElementById(slotId);
+        const content = document.getElementById(contentId);
+        const itemHeight = content.children[0].offsetHeight;
+        
+        slot.classList.add('spinning');
+        
+        let position = 0;
+        let speed = 20;
+        const deceleration = speed / (duration / 50);
+        
+const interval = setInterval(() => {
+          position += speed;
+          content.style.top = `-${position % (itemHeight * 50)}px`;
+          
+          speed = Math.max(1, speed - deceleration);
+          
+          if (speed <= 1) {
+            clearInterval(interval);
+            
+            // Snap to nearest item
+            const finalPosition = Math.floor(position / itemHeight) % 50;
+            content.style.top = `-${finalPosition * itemHeight}px`;
+            
+            slot.classList.remove('spinning');
+            
+            // Get the visible word
+            const visibleWord = content.children[finalPosition].textContent;
+            resolve(visibleWord);
+          }
+        }, 50);
+      });
+    }
+    
+    async function spin() {
+      if (isSpinning) return;
+      isSpinning = true;
+      
+      // Initialize audio on first interaction
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      const spinBtn = document.getElementById('spinBtn');
+      const result = document.getElementById('result');
+      
+      spinBtn.disabled = true;
+      result.textContent = '...';
+      
+      playSound(400, 0.1);
+      
+      // Spin each slot with staggered timing
+      const [quality, verb, adjective] = await Promise.all([
+        spinSlot('slot1', 'content1', qualities, 2000),
+        spinSlot('slot2', 'content2', verbs, 2500),
+        spinSlot('slot3', 'content3', adjectives, 3000)
+      ]);
+      
+      // Play completion sound
+      playSound(800, 0.2);
+      
+      // Show result
+      result.textContent = `Your ${quality} ${verb} ${adjective}`;
+      
+      spinBtn.disabled = false;
+      isSpinning = false;
+    }
+    
+    // Initialize
+    createSlotContent(qualities, 'content1');
+    createSlotContent(verbs, 'content2');
+    createSlotContent(adjectives, 'content3');
+    
+    document.getElementById('spinBtn').addEventListener('click', spin);
+    
+    // Allow tap anywhere to spin (for mobile)
+    document.addEventListener('click', (e) => {
+      if (e.target.id !== 'spinBtn' && !isSpinning) {
+        spin();
+      }
+    });
+  </script>
+</body>
+</html>
