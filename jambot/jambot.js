@@ -33,6 +33,9 @@ import { listProjects } from './project.js';
 // Producer-friendly parameter converters
 import { convertTweaks, toEngine, getParamDef, formatValue } from './params/converters.js';
 
+// Tool registry (replaces inline executeTool)
+import { executeTool } from './tools/index.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // === PLATE REVERB GENERATOR ===
@@ -1152,8 +1155,10 @@ export const SLASH_COMMANDS = [
 ];
 
 // === TOOL EXECUTION ===
+// DEPRECATED: Now using tools/index.js registry system
+// This inline function is kept for reference but not exported
 // context is optional: { renderPath, onRender }
-export async function executeTool(name, input, session, context = {}) {
+async function _legacyExecuteTool(name, input, session, context = {}) {
   if (name === "create_session") {
     session.bpm = input.bpm;
     session.swing = 0;
@@ -1960,7 +1965,7 @@ export async function executeTool(name, input, session, context = {}) {
       for (const slot of kit.slots) {
         if (!session.samplerParams[slot.id]) {
           session.samplerParams[slot.id] = {
-            level: 0.8,
+            level: 0.5,  // 0dB unity gain (normalized: 0.5 = 0dB, 1.0 = +6dB)
             tune: 0,
             attack: 0,
             decay: 1,
@@ -2026,7 +2031,7 @@ export async function executeTool(name, input, session, context = {}) {
   if (name === "tweak_samples") {
     const slot = input.slot;
     if (!session.samplerParams[slot]) {
-      session.samplerParams[slot] = { level: 0.8, tune: 0, attack: 0, decay: 1, filter: 1, pan: 0 };
+      session.samplerParams[slot] = { level: 0.5, tune: 0, attack: 0, decay: 1, filter: 1, pan: 0 };  // 0.5 = 0dB unity
     }
 
     const tweaks = [];
@@ -2230,7 +2235,7 @@ export async function executeTool(name, input, session, context = {}) {
     // Initialize params for each slot
     for (const slot of newKit.slots) {
       session.samplerParams[slot.id] = {
-        level: 0.8,
+        level: 0.5,  // 0dB unity gain (normalized: 0.5 = 0dB, 1.0 = +6dB)
         tune: 0,
         attack: 0,
         decay: 1,
@@ -2605,11 +2610,32 @@ async function renderSession(session, bars, filename) {
   masterGain.gain.value = 0.8;
   masterGain.connect(context.destination);
 
+  // Create per-instrument output gain nodes (for node-level mixing)
+  const drumsGain = context.createGain();
+  const drumsLevel = session.get('drums.level') ?? 0;  // dB, default 0 = unity
+  drumsGain.gain.value = Math.pow(10, drumsLevel / 20);
+  drumsGain.connect(masterGain);
+
+  const bassGain = context.createGain();
+  const bassLevel = session.get('bass.level') ?? 0;  // dB, default 0 = unity
+  bassGain.gain.value = Math.pow(10, bassLevel / 20);
+  bassGain.connect(masterGain);
+
+  const leadGain = context.createGain();
+  const leadLevel = session.get('lead.level') ?? 0;  // dB, default 0 = unity
+  leadGain.gain.value = Math.pow(10, leadLevel / 20);
+  leadGain.connect(masterGain);
+
+  const samplerGain = context.createGain();
+  const samplerLevel = session.get('sampler.level') ?? 0;  // dB, default 0 = unity
+  samplerGain.gain.value = Math.pow(10, samplerLevel / 20);
+  samplerGain.connect(masterGain);
+
   // === R9D9 (Drums) ===
   // Get kit - EXACTLY like web app's loadKit()
   const drumKit = TR909_KITS.find(k => k.id === session.drumKit) || TR909_KITS[0];
   const drums = new TR909Engine({ context });
-  drums.connectOutput(masterGain);  // Route through mixer
+  drums.connectOutput(drumsGain);  // Route through node gain
 
   // Step 1: Reset all per-voice engines to defaults (like web app)
   if (drums.resetAllVoiceEngines) {
@@ -2688,7 +2714,7 @@ async function renderSession(session, bars, filename) {
 
   // === R3D3 (Bass) ===
   const bass = new TB303Engine({ context, engine: 'E1' });
-  bass.connectOutput(masterGain);  // Route through mixer
+  bass.connectOutput(bassGain);  // Route through node gain
   const bassVoice = bass.voices.get('bass');
   // Apply bass params
   if (session.bassParams.waveform) {
@@ -2761,7 +2787,12 @@ async function renderSession(session, bars, filename) {
         const voice = new SampleVoice(slot.id, context);
         // Decode the buffer (it's raw WAV bytes, need to convert to AudioBuffer)
         try {
-          const audioBuffer = await context.decodeAudioData(slot.buffer.slice(0));
+          // Convert Node.js Buffer to ArrayBuffer for decodeAudioData
+          const arrayBuffer = slot.buffer.buffer.slice(
+            slot.buffer.byteOffset,
+            slot.buffer.byteOffset + slot.buffer.byteLength
+          );
+          const audioBuffer = await context.decodeAudioData(arrayBuffer);
           voice.setBuffer(audioBuffer);
           voice.setMeta(slot.name, slot.short);
           // Apply params
@@ -2771,7 +2802,7 @@ async function renderSession(session, bars, filename) {
               voice.setParameter(key, value);
             });
           }
-          voice.connect(masterGain);
+          voice.connect(samplerGain);  // Route through node gain
           samplerVoices.set(slot.id, voice);
         } catch (e) {
           console.warn(`Could not decode sample for ${slot.id}:`, e.message);
@@ -3306,6 +3337,9 @@ async function renderSession(session, bars, filename) {
     // Mix in pre-rendered lead buffers at their respective positions
     const samplesPerBar = (60 / session.bpm) * 4 * sampleRate;  // 4 beats per bar
 
+    // Get lead output level as linear gain
+    const leadMixLevel = leadGain.gain.value;
+
     for (const { buffer: leadBuffer, startBar } of leadBuffers) {
       const startSample = Math.floor(startBar * samplesPerBar);
       const mixLength = Math.min(buffer.length - startSample, leadBuffer.length);
@@ -3314,7 +3348,7 @@ async function renderSession(session, bars, filename) {
         const mainData = buffer.getChannelData(ch);
         const leadData = leadBuffer.getChannelData(ch % leadBuffer.numberOfChannels);
         for (let i = 0; i < mixLength; i++) {
-          mainData[startSample + i] += leadData[i] * 0.8;  // Mix at 80% level
+          mainData[startSample + i] += leadData[i] * leadMixLevel;  // Apply node-level gain
         }
       }
     }
@@ -3613,8 +3647,11 @@ Brief and flavorful. Describe what you made like you're proud of it. Music langu
         if (block.type === "tool_use") {
           callbacks.onTool?.(block.name, block.input);
 
-          // Get render path from context callback if this is a render
-          let toolContext = { ...context };
+          // Build tool context with render capabilities
+          let toolContext = {
+            ...context,
+            renderSession,  // Pass renderSession function to tools
+          };
           if (block.name === 'render' && context.getRenderPath) {
             toolContext.renderPath = context.getRenderPath();
           }

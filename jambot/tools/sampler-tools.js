@@ -43,7 +43,7 @@ const samplerTools = {
       for (const slot of kit.slots) {
         if (!session.samplerParams[slot.id]) {
           session.samplerParams[slot.id] = {
-            level: 0.8,
+            level: 0.5,  // 0dB unity gain (normalized: 0.5 = 0dB, 1.0 = +6dB)
             tune: 0,
             attack: 0,
             decay: 1,
@@ -112,7 +112,7 @@ const samplerTools = {
   tweak_samples: async (input, session, context) => {
     const slot = input.slot;
     if (!session.samplerParams[slot]) {
-      session.samplerParams[slot] = { level: 0.8, tune: 0, attack: 0, decay: 1, filter: 1, pan: 0 };
+      session.samplerParams[slot] = { level: 0.5, tune: 0, attack: 0, decay: 1, filter: 1, pan: 0 };  // 0.5 = 0dB unity
     }
 
     const tweaks = [];
@@ -173,6 +173,36 @@ const samplerTools = {
     const slotName = slotMeta ? slotMeta.name : slot;
 
     return `R9DS ${slotName}: ${tweaks.join(', ')}`;
+  },
+
+  /**
+   * Show current sampler state (loaded kit, slots, pattern)
+   */
+  show_sampler: async (input, session, context) => {
+    const kit = session.samplerKit;
+
+    if (!kit) {
+      return 'R9DS: No kit loaded. Use load_kit to load one.';
+    }
+
+    const lines = ['R9DS SAMPLER:', ''];
+    lines.push(`Kit: ${kit.name} (${kit.id})`);
+    lines.push('');
+    lines.push('Slots:');
+
+    for (const slot of kit.slots) {
+      const pattern = session.samplerPattern[slot.id] || [];
+      const hits = pattern.filter(s => s?.velocity > 0).length;
+      const params = session.samplerParams[slot.id] || {};
+      const level = params.level !== undefined ? `${params.level}dB` : '0dB';
+
+      let info = `  ${slot.id}: ${slot.name} (${slot.short})`;
+      if (hits > 0) info += ` — ${hits} hits`;
+      if (params.level !== undefined && params.level !== 0) info += ` @ ${level}`;
+      lines.push(info);
+    }
+
+    return lines.join('\n');
   },
 
   /**
@@ -317,7 +347,7 @@ const samplerTools = {
     // Initialize params for each slot
     for (const slot of newKit.slots) {
       session.samplerParams[slot.id] = {
-        level: 0.8,
+        level: 0.5,  // 0dB unity gain (normalized: 0.5 = 0dB, 1.0 = +6dB)
         tune: 0,
         attack: 0,
         decay: 1,

@@ -9,7 +9,8 @@ export class SampleVoice {
     this.short = '';
 
     // Parameters with defaults
-    this.level = 0.8;
+    // level is normalized 0-1 where 0.5 = 0dB (unity), 1.0 = +6dB
+    this.level = 0.5;   // 0dB unity gain
     this.tune = 0;      // semitones (-12 to +12)
     this.attack = 0;    // 0-1 (0 = instant)
     this.decay = 1;     // 0-1 (1 = full sample length)
@@ -26,7 +27,7 @@ export class SampleVoice {
     this.pannerNode.pan.value = 0;
 
     this.gainNode = context.createGain();
-    this.gainNode.gain.value = this.level;
+    this.gainNode.gain.value = this.level * 2.0;  // Scale: 0.5 normalized = 1.0 gain (0dB)
 
     // Chain
     this.filterNode.connect(this.pannerNode);
@@ -56,8 +57,10 @@ export class SampleVoice {
   setParameter(id, value) {
     switch (id) {
       case 'level':
+        // value is normalized 0-1 where 1.0 = +6dB (2.0 linear gain)
+        // So we scale: 0.5 normalized = 0dB = 1.0 linear, 1.0 normalized = +6dB = 2.0 linear
         this.level = Math.max(0, Math.min(1, value));
-        this.gainNode.gain.value = this.level;
+        this.gainNode.gain.value = this.level * 2.0;  // Convert to actual linear gain
         break;
       case 'tune':
         this.tune = Math.max(-12, Math.min(12, value));

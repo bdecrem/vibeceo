@@ -193,16 +193,36 @@ const mixerTools = {
    * Display current mixer configuration
    */
   show_mixer: async (input, session, context) => {
-    if (!session.mixer || (
-      Object.keys(session.mixer.sends || {}).length === 0 &&
-      Object.keys(session.mixer.voiceRouting || {}).length === 0 &&
-      Object.keys(session.mixer.channelInserts || {}).length === 0 &&
-      (session.mixer.masterInserts || []).length === 0
-    )) {
-      return 'Mixer is empty. Use create_send, route_to_send, add_channel_insert, or add_sidechain to configure.';
-    }
-
     const lines = ['MIXER CONFIGURATION:', ''];
+
+    // Node output levels
+    const drums = session.get('drums.level') ?? 0;
+    const bass = session.get('bass.level') ?? 0;
+    const lead = session.get('lead.level') ?? 0;
+    const sampler = session.get('sampler.level') ?? 0;
+
+    const formatLevel = (dB) => {
+      if (dB === 0) return '0dB';
+      return dB > 0 ? `+${dB}dB` : `${dB}dB`;
+    };
+
+    lines.push('OUTPUT LEVELS:');
+    lines.push(`  drums: ${formatLevel(drums)}  bass: ${formatLevel(bass)}  lead: ${formatLevel(lead)}  sampler: ${formatLevel(sampler)}`);
+    lines.push('');
+
+    // Check if mixer has any other config
+    const hasConfig = session.mixer && (
+      Object.keys(session.mixer.sends || {}).length > 0 ||
+      Object.keys(session.mixer.voiceRouting || {}).length > 0 ||
+      Object.keys(session.mixer.channelInserts || {}).length > 0 ||
+      (session.mixer.masterInserts || []).length > 0
+    );
+
+    if (!hasConfig) {
+      lines.push('Use tweak({ path: "drums.level", value: -3 }) to adjust levels.');
+      lines.push('Use create_send, add_channel_insert, or add_sidechain for more routing.');
+      return lines.join('\n');
+    }
 
     // Sends
     const sends = Object.entries(session.mixer.sends || {});

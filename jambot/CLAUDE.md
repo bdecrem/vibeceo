@@ -175,6 +175,7 @@ Bundled kits: 808, amber
 | `load_kit` | R9DS | Load a kit by ID (e.g., "808", "amber") |
 | `add_samples` | R9DS | Program sample hits on steps (slot, step, velocity) |
 | `tweak_samples` | R9DS | level (dB), tune (semitones), attack/decay (0-100), filter (Hz), pan (-100 to +100) |
+| `show_sampler` | R9DS | Show current kit, slots, and pattern (what's loaded now) |
 | `set_swing` | — | Groove amount 0-100% |
 | `render` | — | Mix all synths to WAV file (uses arrangement if set) |
 | `save_pattern` | Song | Save current pattern for an instrument to a named slot (A, B, C...) |
@@ -293,11 +294,30 @@ add_master_insert(effect: 'eq', preset: 'master')
 analyze_render()  // Returns levels, frequency balance, recommendations
 ```
 
+### Node Output Levels (Mixer)
+
+Each instrument has a node-level output gain for balancing the mix:
+
+```
+tweak({ path: 'drums.level', value: -3 })    // Drums down 3dB
+tweak({ path: 'sampler.level', value: 0 })   // Sampler at unity
+tweak({ path: 'bass.level', value: -6 })     // Bass down 6dB
+tweak({ path: 'lead.level', value: -3 })     // Lead down 3dB
+```
+
+Use `show_mixer` to see current output levels:
+```
+OUTPUT LEVELS:
+  drums: 0dB  bass: -3dB  lead: -6dB  sampler: +2dB
+```
+
+Note: For multi-voice instruments (drums, sampler), this is separate from per-voice levels (`drums.kick.level`, `sampler.s1.level`). For single-voice instruments (bass, lead), this IS the voice level.
+
 ### Signal Flow
 ```
-voice → [channel EQ/Filter] → [ducker] → channel gain → [send] → master → [master EQ/Filter] → output
-                                                          ↓
-                                                    send bus (reverb) → master
+voice → [voice level] → [channel EQ/Filter] → [ducker] → node level → [send] → master → [master EQ/Filter] → output
+                                                                         ↓
+                                                                   send bus (reverb) → master
 ```
 
 ## Session State

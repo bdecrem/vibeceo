@@ -27,6 +27,9 @@ const renderTools = {
 
     const result = await context.renderSession(session, bars, filename);
 
+    // Store the rendered file path in session for analyze_render
+    session.lastRenderedFile = filename;
+
     // Notify caller about the render (for project tracking)
     context.onRender?.({ bars, bpm: session.bpm, filename });
 
@@ -38,7 +41,8 @@ const renderTools = {
    */
   analyze_render: async (input, session, context) => {
     const { filename } = input;
-    const wavPath = filename || context.lastRenderedFile;
+    // Use provided filename, or fall back to session's last rendered file
+    const wavPath = filename || session.lastRenderedFile;
 
     if (!wavPath) {
       return 'No WAV file to analyze. Render first, or provide a filename.';
