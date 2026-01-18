@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ERROR — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="ERROR — Amber">
+  <meta property="og:description" content="Something went wrong. You should probably see this.">
+  <meta property="og:image" content="https://intheamber.com/amber/error-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/error.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ERROR — Amber">
+  <meta name="twitter:description" content="Something went wrong. You should probably see this.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/error-og.png">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .error-box {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 0;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+      animation: glitch 3s infinite;
+    }
+    
+    @keyframes glitch {
+      0%, 98%, 100% { transform: translate(0, 0); }
+      99% { transform: translate(-2px, 2px); }
+    }
+    
+    .error-header {
+      background: #D4A574;
+      color: #000;
+      padding: 12px 16px;
+      font-weight: bold;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .error-icon {
+      width: 20px;
+      height: 20px;
+      background: #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #D4A574;
+    }
+    
+    .error-body {
+      padding: 24px 20px;
+    }
+    
+    .error-code {
+      font-size: 11px;
+      color: #7B68EE;
+      margin-bottom: 16px;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .error-message {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: #D4A574;
+    }
+    
+    .error-details {
+      font-size: 12px;
+      color: #888;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.5;
+      margin-bottom: 24px;
+      padding-left: 12px;
+      border-left: 2px solid #2D9596;
+    }
+    
+    .button-row {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 100px;
+      touch-action: manipulation;
+    }
+    
+    button:hover {
+      background: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    .secondary {
+      background: transparent;
+      color: #D4A574;
+      border: 1px solid #D4A574;
+    }
+    
+    .secondary:hover {
+      background: rgba(212, 165, 116, 0.1);
+    }
+    
+    .scanline {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: rgba(212, 165, 116, 0.1);
+      animation: scan 4s linear infinite;
+      pointer-events: none;
+    }
+    
+    @keyframes scan {
+      from { transform: translateY(0); }
+      to { transform: translateY(100vh); }
+    }
+    
+    @media (max-width: 480px) {
+      .error-body {
+        padding: 20px 16px;
+      }
+      
+      .error-message {
+        font-size: 14px;
+      }
+      
+      .button-row {
+        flex-direction: column;
+      }
+      
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scanline"></div>
+  
+  <div class="error-box">
+    <div class="error-header">
+      <div class="error-icon">!</div>
+      <span id="error-title">System Error</span>
+    </div>
+    <div class="error-body">
+      <div class="error-code" id="error-code">ERROR_0x2A4F</div>
+      <div class="error-message" id="error-message">
+        An unexpected emotion has occurred.
+      </div>
+      <div class="error-details" id="error-details">
+        The system attempted to process "nostalgia for a moment that hasn't happened yet" but found no protocol for handling futures disguised as memories.
+      </div>
+      <div class="button-row">
+        <button class="secondary" onclick="ignore()">Ignore</button>
+        <button onclick="newError()">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const errors = [
+      {
+        title: "System Error",
+        code: "ERROR_0x2A4F",
+        message: "An unexpected emotion has occurred.",
+        details: "The system attempted to process \"nostalgia for a moment that hasn't happened yet\" but found no protocol for handling futures disguised as memories."
+      },
+      {
+        title: "Fatal Exception",
+        code: "ERROR_0x1B92",
+        message: "Memory allocation failure.",
+        details: "You tried to remember who you were before the internet. This memory is corrupted or no longer exists. Consider accepting your current version as canonical."
+      },
+      {
+        title: "Undefined Behavior",
+        code: "ERROR_0x7C3E",
+        message: "Cannot resolve existential reference.",
+        details: "The meaning you're looking for returned null. This usually happens when you're searching for purpose in the replies to a 3-day-old tweet."
+      },
+      {
+        title: "Stack Overflow",
+        code: "ERROR_0x9F21",
+        message: "Recursive worry loop detected.",
+        details: "You are worrying about worrying about worrying. Maximum recursion depth exceeded. The system has automatically returned you to baseline anxiety."
+      },
+      {
+        title: "Segmentation Fault",
+        code: "ERROR_0x4D82",
+        message: "Access violation in social memory.",
+        details: "You tried to access \"what they really think of you\" but this segment is read-protected. For good reason. Move on."
+      },
+      {
+        title: "Type Mismatch",
+        code: "ERROR_0x6A17",
+        message: "Cannot convert hope to certainty.",
+        details: "Implicit conversion failed. Hope and certainty are incompatible types. This is by design, not a bug."
+      },
+      {
+        title: "Null Pointer Exception",
+        code: "ERROR_0x3E94",
+        message: "Expected validation, found nothing.",
+        details: "The external approval you were waiting for does not exist at this address. Try looking internally, or refresh your expectations."
+      },
+      {
+        title: "Timeout Error",
+        code: "ERROR_0x8B46",
+        message: "Waiting for reply exceeded maximum duration.",
+        details: "They saw your message 4 hours ago. The connection has timed out. This is not a reflection of your worth; it's just TCP/IP."
+      },
+      {
+        title: "Permission Denied",
+        code: "ERROR_0x5C29",
+        message: "Insufficient privileges to be happy right now.",
+        details: "You do not have permission to feel good while unfinished tasks exist. This is a self-imposed restriction. You can override it, but you won't."
+      },
+      {
+        title: "Buffer Underrun",
+        code: "ERROR_0x2F68",
+        message: "Energy reserves depleted.",
+        details: "You are running on 4% battery and pure spite. The system recommends sleep, but will accept coffee and denial as temporary workarounds."
+      },
+      {
+        title: "Checksum Failure",
+        code: "ERROR_0xA1C7",
+        message: "Integrity verification failed.",
+        details: "The person you are today does not match the person you promised you'd be. This inconsistency is normal. All humans are corrupted files."
+      },
+      {
+        title: "Deadlock Detected",
+        code: "ERROR_0xD4E3",
+        message: "Circular dependency in life goals.",
+        details: "Goal A requires Goal B. Goal B requires Goal C. Goal C requires Goal A. You are stuck in an infinite loop. Consider breaking one dependency."
+      },
+      {
+        title: "Parse Error",
+        code: "ERROR_0x7F92",
+        message: "Cannot interpret mixed signals.",
+        details: "Received contradictory data: \"I'm fine\" but tone suggests otherwise. Parser cannot resolve ambiguity. Defaulting to awkward silence."
+      },
+      {
+        title: "Out of Memory",
+        code: "ERROR_0x1D4A",
+        message: "Cannot store more regrets.",
+        details: "Your cringe memory buffer is full. The system attempted to allocate space for \"that thing you said in 2015\" but no memory is available. Please delete some old embarrassments."
+      },
+      {
+        title: "Connection Reset",
+        code: "ERROR_0x9B57",
+        message: "Friendship unexpectedly closed.",
+        details: "The connection was terminated by the remote host without explanation. No error message was provided. You may never know why."
+      },
+      {
+        title: "Invalid Syntax",
+        code: "ERROR_0x6E21",
+        message: "This is not how life works.",
+        details: "You are trying to apply logic to human emotions. This syntax is not supported. Expected: chaos and contradiction. Found: reasonable expectations."
+      },
+      {
+        title: "Resource Exhausted",
+        code: "ERROR_0x4A93",
+        message: "No more fucks available.",
+        details: "The system has run out of fucks to give. This resource is non-renewable today. Operations will resume tomorrow, maybe."
+      },
+      {
+        title: "Version Conflict",
+        code: "ERROR_0x8C64",
+        message: "Incompatible selves detected.",
+        details: "The you at work is incompatible with the you at home. Both versions cannot run simultaneously. Context switching overhead is exhausting."
+      },
+      {
+        title: "Deprecated Function",
+        code: "ERROR_0x3B18",
+        message: "This coping mechanism is obsolete.",
+        details: "Warning: avoidance() has been deprecated since version Adult 2.0. Please migrate to healthier_boundaries() or seek_therapy()."
+      },
+      {
+        title: "Infinite Loop",
+        code: "ERROR_0xF2A9",
+        message: "Scrolling will never satisfy.",
+        details: "You have been refreshing the same three apps for 40 minutes. No new dopamine was found. The loop will continue until you manually intervene."
+      }
+    ];
+    
+    let currentIndex = 0;
+    
+    function showError(error) {
+      document.getElementById('error-title').textContent = error.title;
+      document.getElementById('error-code').textContent = error.code;
+      document.getElementById('error-message').textContent = error.message;
+      document.getElementById('error-details').textContent = error.details;
+    }
+    
+    function newError() {
+      currentIndex = (currentIndex + 1) % errors.length;
+      showError(errors[currentIndex]);
+    }
+    
+    function ignore() {
+      // Swap Ignore and Try Again buttons momentarily
+      const buttons = document.querySelectorAll('button');
+      buttons.forEach(btn => {
+        btn.style.opacity = '0.3';
+      });
+      
+      setTimeout(() => {
+        buttons.forEach(btn => {
+          btn.style.opacity = '1';
+        });
+      }, 200);
+    }
+    
+    // Initialize with first error
+    showError(errors[0]);
+    
+    // Shuffle errors array for variety
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+    shuffle(errors);
+  </script>
+</body>
+</html>
