@@ -169,6 +169,12 @@
             margin-left: 10px;
         }
 
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
         .density-sets {
             display: flex;
             gap: 10px;
@@ -176,7 +182,7 @@
             margin-top: 15px;
         }
 
-        .density-btn {
+        .density-btn, .action-btn {
             font-family: 'Space Mono', monospace;
             font-size: 0.7em;
             padding: 8px 12px;
@@ -189,7 +195,7 @@
             letter-spacing: 1px;
         }
 
-        .density-btn:hover {
+        .density-btn:hover, .action-btn:hover {
             border-color: #D4A574;
             color: #D4A574;
         }
@@ -198,6 +204,17 @@
             border-color: #D4A574;
             background: rgba(212, 165, 116, 0.1);
             color: #D4A574;
+        }
+
+        .action-btn {
+            border-color: #2D9596;
+            color: #2D9596;
+        }
+
+        .action-btn:hover {
+            border-color: #2D9596;
+            background: rgba(45, 149, 150, 0.1);
+            color: #2D9596;
         }
 
         .info {
@@ -243,6 +260,10 @@
                     <label>Brush Size <span class="value-display" id="brushDisplay">20</span></label>
                     <input type="range" id="brushSize" min="5" max="50" value="20">
                 </div>
+                <div class="action-buttons">
+                    <button class="action-btn" id="generateBtn">Generate Random</button>
+                    <button class="action-btn" id="clearBtn">Clear</button>
+                </div>
                 <div class="density-sets">
                     <button class="density-btn active" data-set="standard">Standard</button>
                     <button class="density-btn" data-set="blocks">Blocks</button>
@@ -255,6 +276,7 @@
             <canvas id="densityCanvas" width="400" height="400"></canvas>
             <div class="info">
                 Click and drag to draw<br>
+                Or generate random patterns<br>
                 Each pixel has a brightness value
             </div>
         </div>
@@ -293,9 +315,14 @@
         let brushSize = 20;
         let isDrawing = false;
 
-        // Initialize canvas
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Initialize with blank canvas
+        function clearCanvas() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            render();
+        }
+
+        clearCanvas();
 
         // Drawing
         canvas.addEventListener('mousedown', (e) => {
@@ -363,6 +390,85 @@
             shapeCanvas.textContent = ascii;
         }
 
+        // Random pattern generator
+        function generateRandom() {
+            clearCanvas();
+            
+            const patterns = [
+                // Spiral
+                () => {
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+                    for (let angle = 0; angle < Math.PI * 4; angle += 0.1) {
+                        const radius = angle * 10;
+                        const x = centerX + Math.cos(angle) * radius;
+                        const y = centerY + Math.sin(angle) * radius;
+                        drawDot(x, y, 15);
+                    }
+                },
+                // Concentric circles
+                () => {
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+                    for (let r = 30; r < 200; r += 30) {
+                        for (let angle = 0; angle < Math.PI * 2; angle += 0.2) {
+const x = centerX + Math.cos(angle) * r;
+                            const y = centerY + Math.sin(angle) * r;
+                            drawDot(x, y, 12);
+                        }
+                    }
+                },
+                // Wave
+                () => {
+                    for (let x = 0; x < canvas.width; x += 5) {
+                        const y = canvas.height / 2 + Math.sin(x * 0.05) * 100;
+                        drawDot(x, y, 20);
+                    }
+                },
+                // Grid
+                () => {
+                    for (let x = 50; x < canvas.width; x += 50) {
+                        for (let y = 50; y < canvas.height; y += 50) {
+                            drawDot(x, y, Math.random() * 30 + 10);
+                        }
+                    }
+                },
+                // Scatter
+                () => {
+                    for (let i = 0; i < 30; i++) {
+                        const x = Math.random() * canvas.width;
+                        const y = Math.random() * canvas.height;
+                        const size = Math.random() * 40 + 10;
+                        drawDot(x, y, size);
+                    }
+                },
+                // Flower
+                () => {
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+                    for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+                        const radius = 80 + Math.sin(angle * 5) * 40;
+                        const x = centerX + Math.cos(angle) * radius;
+                        const y = centerY + Math.sin(angle) * radius;
+                        drawDot(x, y, 15);
+                    }
+                }
+            ];
+            
+            const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+            pattern();
+            render();
+        }
+
+        function drawDot(x, y, size) {
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+            gradient.addColorStop(0, 'rgba(212, 165, 116, 0.8)');
+            gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x - size, y - size, size * 2, size * 2);
+        }
+
         // Controls
         document.getElementById('resolution').addEventListener('input', (e) => {
             resolution = parseInt(e.target.value);
@@ -375,6 +481,9 @@
             document.getElementById('brushDisplay').textContent = brushSize;
         });
 
+        document.getElementById('generateBtn').addEventListener('click', generateRandom);
+        document.getElementById('clearBtn').addEventListener('click', clearCanvas);
+
         // Density set buttons
         document.querySelectorAll('.density-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -385,30 +494,6 @@
                 render();
             });
         });
-
-        // Initial render
-        render();
-
-        // Draw initial pattern
-        setTimeout(() => {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            
-            for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
-                const radius = 80 + Math.sin(angle * 3) * 30;
-                const x = centerX + Math.cos(angle) * radius;
-                const y = centerY + Math.sin(angle) * radius;
-                
-                const gradient = ctx.createRadialGradient(x, y, 0, x, y, 15);
-                gradient.addColorStop(0, 'rgba(212, 165, 116, 0.8)');
-                gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
-                
-                ctx.fillStyle = gradient;
-                ctx.fillRect(x - 15, y - 15, 30, 30);
-            }
-            
-            render();
-        }, 100);
     </script>
 </body>
 </html>
