@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>REPLY ALL DISASTER — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="REPLY ALL DISASTER — Amber">
+  <meta property="og:description" content="Watch an innocent email thread spiral into catastrophic reply-all chaos">
+  <meta property="og:image" content="https://intheamber.com/amber/reply-all-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/reply-all.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="REPLY ALL DISASTER — Amber">
+  <meta name="twitter:description" content="Watch an innocent email thread spiral into catastrophic reply-all chaos">
+  <meta name="twitter:image" content="https://intheamber.com/amber/reply-all-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4AF37;
+      font-family: 'Courier New', monospace;
+      overflow-x: hidden;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: #D4AF37;
+      font-size: 20px;
+      margin-bottom: 30px;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+    
+    .email {
+      background: #0a0a0a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 15px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: slideIn 0.3s ease forwards;
+    }
+    
+    @keyframes slideIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .email-header {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+    
+    .from {
+      color: #888;
+    }
+    
+    .to {
+      color: #D4AF37;
+      word-break: break-all;
+    }
+    
+    .subject {
+      color: #fff;
+      font-weight: bold;
+    }
+    
+    .email-body {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #ccc;
+      white-space: pre-wrap;
+    }
+    
+    .level-1 { border-left: 3px solid #D4AF37; }
+    .level-2 { border-left: 3px solid #FFA500; }
+    .level-3 { border-left: 3px solid #FF4500; }
+    .level-4 { border-left: 3px solid #FF0000; }
+    .level-5 { border-left: 3px solid #8B0000; animation: pulse 1s infinite; }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; box-shadow: 0 0 20px rgba(255, 0, 0, 0.5); }
+    }
+    
+    .cc-count {
+      color: #FF4500;
+      font-weight: bold;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    
+    .start-button {
+      display: block;
+      width: 200px;
+      margin: 50px auto;
+      padding: 15px 30px;
+      background: #D4AF37;
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    
+    .start-button:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+    
+    .start-button:active {
+      transform: scale(0.95);
+    }
+    
+    .disaster-meter {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #0a0a0a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 10px 15px;
+      font-size: 12px;
+      display: none;
+    }
+    
+    .disaster-meter.active {
+      display: block;
+    }
+    
+    .disaster-level {
+      color: #FF4500;
+      font-weight: bold;
+      font-size: 18px;
+      margin-top: 5px;
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+      
+      h1 {
+        font-size: 16px;
+      }
+      
+      .email {
+        padding: 12px;
+      }
+      
+      .disaster-meter {
+        top: 10px;
+        right: 10px;
+        font-size: 10px;
+        padding: 8px 12px;
+      }
+      
+      .disaster-level {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="disaster-meter" id="meter">
+    <div>DISASTER LEVEL</div>
+    <div class="disaster-level" id="level">0</div>
+  </div>
+  
+  <div class="container">
+    <h1>⚠️ REPLY ALL DISASTER ⚠️</h1>
+    
+    <button class="start-button" id="startBtn">TAP TO START</button>
+    
+    <div id="thread"></div>
+  </div>
+
+  <script>
+    const thread = document.getElementById('thread');
+    const startBtn = document.getElementById('startBtn');
+    const meter = document.getElementById('meter');
+    const levelEl = document.getElementById('level');
+    
+    const emails = [
+      {
+        from: "sarah.chen@company.com",
+        to: "engineering-all@company.com",
+        subject: "Reminder: Kitchen fridge cleanup",
+        body: "Hi team,\n\nPlease label your items in the fridge. Anything unlabeled will be thrown out Friday.\n\nThanks!",
+        cc: 47,
+        level: 1,
+        delay: 100
+      },
+      {
+        from: "mike.torres@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "Thanks Sarah!",
+        cc: 47,
+        level: 1,
+        delay: 2000
+      },
+      {
+        from: "jessica.wong@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "Got it 👍",
+        cc: 47,
+        level: 1,
+        delay: 1500
+      },
+      {
+        from: "alex.rivera@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "Is this really necessary to email the entire engineering team?",
+        cc: 47,
+        level: 2,
+        delay: 3000
+      },
+      {
+        from: "david.kim@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "Agreed. Please stop replying all.",
+        cc: 47,
+        level: 2,
+        delay: 1000
+      },
+      {
+        from: "priya.sharma@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "Can someone remove me from this thread?",
+        cc: 47,
+        level: 2,
+        delay: 800
+      },
+      {
+        from: "marcus.johnson@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "PLEASE STOP REPLYING ALL",
+        cc: 47,
+        level: 3,
+        delay: 1200
+      },
+      {
+        from: "lisa.martinez@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "Why am I on this email???",
+        cc: 47,
+        level: 3,
+        delay: 900
+      },
+      {
+        from: "james.brown@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "unsubscribe",
+        cc: 47,
+        level: 3,
+        delay: 600
+      },
+      {
+        from: "emily.chen@company.com",
+        to: "engineering-all@company.com",
+subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "STOP",
+        cc: 47,
+        level: 3,
+        delay: 500
+      },
+      {
+        from: "ryan.patel@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "To unsubscribe, reply STOP",
+        cc: 47,
+        level: 3,
+        delay: 700
+      },
+      {
+        from: "amanda.lee@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "STOP",
+        cc: 47,
+        level: 4,
+        delay: 400
+      },
+      {
+        from: "kevin.murphy@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "You're making it worse...",
+        cc: 47,
+        level: 4,
+        delay: 800
+      },
+      {
+        from: "nicole.garcia@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "I'M ON VACATION",
+        cc: 47,
+        level: 4,
+        delay: 500
+      },
+      {
+        from: "tyler.anderson@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "Has anyone actually tried turning it off and on again?",
+        cc: 47,
+        level: 4,
+        delay: 1000
+      },
+      {
+        from: "sophia.rodriguez@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "My phone has been buzzing for 10 minutes straight",
+        cc: 47,
+        level: 4,
+        delay: 600
+      },
+      {
+        from: "chris.wilson@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "This is why we can't have nice things",
+        cc: 47,
+        level: 5,
+        delay: 500
+      },
+      {
+        from: "rachel.taylor@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "I'M CALLING IT NOW: PRODUCTION IS DOWN",
+        cc: 47,
+        level: 5,
+        delay: 400
+      },
+      {
+        from: "daniel.moore@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "Wait, are we down? Checking...",
+        cc: 47,
+        level: 5,
+        delay: 700
+      },
+      {
+        from: "cto@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "Everyone please stop replying. The email server is struggling.\n\n- James (CTO)",
+        cc: 47,
+        level: 5,
+        delay: 1500
+      },
+      {
+        from: "sarah.chen@company.com",
+        to: "engineering-all@company.com",
+        subject: "RE: Reminder: Kitchen fridge cleanup",
+        body: "I'm so sorry.",
+        cc: 47,
+        level: 5,
+        delay: 2000
+      }
+    ];
+    
+    let disasterLevel = 0;
+    
+    function createEmail(email, index) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const emailDiv = document.createElement('div');
+          emailDiv.className = `email level-${email.level}`;
+          emailDiv.style.animationDelay = `${index * 0.05}s`;
+          
+          const ccWarning = email.cc > 10 ? `<div class="cc-count">⚠️ ${email.cc} people on this thread</div>` : '';
+          
+          emailDiv.innerHTML = `
+            <div class="email-header">
+              <div class="from">From: ${email.from}</div>
+              <div class="to">To: ${email.to}</div>
+              <div class="subject">Subject: ${email.subject}</div>
+              ${ccWarning}
+            </div>
+            <div class="email-body">${email.body}</div>
+          `;
+          
+          thread.appendChild(emailDiv);
+          
+          disasterLevel++;
+          levelEl.textContent = disasterLevel;
+          
+          // Auto-scroll to bottom
+          window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: 'smooth'
+          });
+          
+          resolve();
+        }, email.delay);
+      });
+    }
+    
+    async function startDisaster() {
+      startBtn.style.display = 'none';
+      meter.classList.add('active');
+      thread.innerHTML = '';
+      disasterLevel = 0;
+      
+      for (let i = 0; i < emails.length; i++) {
+        await createEmail(emails[i], i);
+      }
+    }
+    
+    startBtn.addEventListener('click', startDisaster);
+    startBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      startDisaster();
+    });
+  </script>
+</body>
+</html>
