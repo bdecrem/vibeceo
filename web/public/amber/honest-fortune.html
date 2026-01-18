@@ -1,320 +1,370 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Honest Fortune — Amber</title>
-  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
-  
-  <!-- OpenGraph -->
-  <meta property="og:title" content="Honest Fortune — Amber">
-  <meta property="og:description" content="Fortune cookies, but honest. What they'd really say if they stopped lying to you.">
-  <meta property="og:image" content="https://intheamber.com/amber/honest-fortune-og.png">
-  <meta property="og:url" content="https://intheamber.com/amber/honest-fortune.html">
-  <meta property="og:type" content="website">
-  
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Honest Fortune — Amber">
-  <meta name="twitter:description" content="Fortune cookies, but honest. What they'd really say if they stopped lying to you.">
-  <meta name="twitter:image" content="https://intheamber.com/amber/honest-fortune-og.png">
-  
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fortune Cookie (Honest Edition) — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
     
-    body {
-      background: #000;
-      color: #D4A574;
-      font-family: 'Inter', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
-      overflow: hidden;
-    }
+    <!-- OpenGraph -->
+    <meta property="og:title" content="Fortune Cookie (Honest Edition) — Amber">
+    <meta property="og:description" content="Crack open a cookie. Get an uncomfortable truth.">
+    <meta property="og:image" content="https://intheamber.com/amber/honest-fortune-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/honest-fortune.html">
+    <meta property="og:type" content="website">
     
-    .container {
-      text-align: center;
-      max-width: 600px;
-      width: 100%;
-    }
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Fortune Cookie (Honest Edition) — Amber">
+    <meta name="twitter:description" content="Crack open a cookie. Get an uncomfortable truth.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/honest-fortune-og.png">
     
-    h1 {
-      font-family: 'Space Mono', monospace;
-      font-size: clamp(24px, 6vw, 42px);
-      margin-bottom: 10px;
-      letter-spacing: -1px;
-    }
-    
-    .subtitle {
-      font-size: clamp(14px, 3vw, 16px);
-      color: #666;
-      margin-bottom: 40px;
-    }
-    
-    .cookie-container {
-      position: relative;
-      margin: 40px auto;
-      width: min(280px, 80vw);
-      height: min(280px, 80vw);
-    }
-    
-    .cookie {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    
-    .cookie:hover {
-      transform: translate(-50%, -50%) scale(1.05);
-    }
-    
-    .cookie:active {
-      transform: translate(-50%, -50%) scale(0.95);
-    }
-    
-    .cookie.cracked {
-      animation: crack 0.6s ease-out forwards;
-    }
-    
-    @keyframes crack {
-      0% { transform: translate(-50%, -50%) scale(1); }
-      50% { transform: translate(-50%, -50%) scale(1.1) rotate(5deg); }
-      100% { transform: translate(-50%, -50%) scale(0) rotate(180deg); opacity: 0; }
-    }
-    
-    .cookie svg {
-      width: 100%;
-      height: 100%;
-      filter: drop-shadow(0 4px 20px rgba(212, 165, 116, 0.3));
-    }
-    
-    .fortune-paper {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      background: #FFF9E6;
-      padding: 30px;
-      border-radius: 4px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-      max-width: 90%;
-      width: 400px;
-      opacity: 0;
-      font-family: 'Space Mono', monospace;
-      color: #000;
-      font-size: clamp(14px, 3.5vw, 18px);
-      line-height: 1.6;
-      text-align: left;
-    }
-    
-    .fortune-paper.show {
-      animation: unfold 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    }
-    
-    @keyframes unfold {
-      0% { 
-        transform: translate(-50%, -50%) scale(0) rotateX(90deg);
-        opacity: 0;
-      }
-      100% { 
-        transform: translate(-50%, -50%) scale(1) rotateX(0deg);
-        opacity: 1;
-      }
-    }
-    
-    .fortune-text {
-      margin-bottom: 20px;
-      border-bottom: 1px dashed #D4A574;
-      padding-bottom: 20px;
-    }
-    
-    .lucky-numbers {
-      font-size: clamp(11px, 2.5vw, 13px);
-      color: #666;
-    }
-    
-    .tap-prompt {
-      font-size: clamp(13px, 3vw, 15px);
-      color: #666;
-      margin-top: 20px;
-      animation: pulse 2s ease-in-out infinite;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 1; }
-    }
-    
-    .new-fortune-btn {
-      background: #D4A574;
-      color: #000;
-      border: none;
-      padding: 15px 30px;
-      font-family: 'Space Mono', monospace;
-      font-size: clamp(14px, 3vw, 16px);
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 20px;
-      transition: all 0.3s ease;
-      min-height: 44px;
-      min-width: 44px;
-    }
-    
-    .new-fortune-btn:hover {
-      background: #FFD700;
-      transform: translateY(-2px);
-    }
-    
-    .new-fortune-btn:active {
-      transform: translateY(0);
-    }
-    
-    .signature {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      font-family: 'Space Mono', monospace;
-      font-size: 12px;
-      color: #333;
-    }
-  </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0a0a0a;
+            color: #d4a574;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: clamp(20px, 5vw, 28px);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            font-size: clamp(12px, 3vw, 14px);
+            color: #888;
+            margin-bottom: 40px;
+        }
+        
+        .cookie-container {
+            position: relative;
+            height: 200px;
+            margin-bottom: 40px;
+        }
+        
+        .cookie {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .cookie:hover {
+            transform: scale(1.05);
+        }
+        
+        .cookie.cracking {
+            animation: shake 0.3s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-5px) rotate(-3deg); }
+            75% { transform: translateX(5px) rotate(3deg); }
+        }
+        
+        .cookie-whole {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #f4e4c1, #d4a574);
+            border: 3px solid #8b6f47;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #8b6f47;
+            box-shadow: 0 4px 20px rgba(212, 165, 116, 0.3);
+        }
+        
+        .cookie-half {
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 30%, #f4e4c1, #d4a574);
+            border: 3px solid #8b6f47;
+            box-shadow: 0 4px 20px rgba(212, 165, 116, 0.3);
+            opacity: 0;
+        }
+        
+        .cookie-half.left {
+            left: 0;
+            border-radius: 100% 0 0 100%;
+            transform-origin: right center;
+        }
+        
+        .cookie-half.right {
+            right: 0;
+            border-radius: 0 100% 100% 0;
+            transform-origin: left center;
+        }
+        
+        .cookie.cracked .cookie-whole {
+            opacity: 0;
+        }
+        
+        .cookie.cracked .cookie-half {
+            opacity: 1;
+            animation: split 0.5s ease-out forwards;
+        }
+        
+        .cookie.cracked .cookie-half.left {
+            animation: splitLeft 0.5s ease-out forwards;
+        }
+        
+        .cookie.cracked .cookie-half.right {
+            animation: splitRight 0.5s ease-out forwards;
+        }
+        
+        @keyframes splitLeft {
+            to {
+                transform: translateX(-40px) rotate(-15deg);
+                opacity: 0.3;
+            }
+        }
+        
+        @keyframes splitRight {
+            to {
+                transform: translateX(40px) rotate(15deg);
+                opacity: 0.3;
+            }
+        }
+        
+        .fortune {
+            min-height: 120px;
+            padding: 20px;
+            background: rgba(212, 165, 116, 0.1);
+            border: 1px solid #d4a574;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .fortune.visible {
+            animation: fadeInUp 0.5s 0.3s forwards;
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fortune-text {
+            font-size: clamp(14px, 3.5vw, 18px);
+            line-height: 1.6;
+            color: #f4e4c1;
+        }
+        
+        .lucky-numbers {
+            font-size: clamp(11px, 2.5vw, 13px);
+            color: #888;
+            margin-top: 15px;
+            font-style: italic;
+        }
+        
+        .new-cookie-btn {
+            background: transparent;
+            border: 2px solid #d4a574;
+            color: #d4a574;
+            padding: 12px 30px;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(13px, 3vw, 16px);
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            opacity: 0;
+            min-height: 44px;
+            min-width: 140px;
+        }
+        
+        .new-cookie-btn:hover {
+            background: rgba(212, 165, 116, 0.1);
+            transform: scale(1.05);
+        }
+        
+        .new-cookie-btn.visible {
+            animation: fadeIn 0.5s 0.6s forwards;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        .credit {
+            position: fixed;
+            bottom: 20px;
+            font-size: 11px;
+            color: #444;
+        }
+        
+        .credit a {
+            color: #666;
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>HONEST FORTUNE</h1>
-    <p class="subtitle">Fortune cookies, but honest</p>
-    
-    <div class="cookie-container">
-      <div class="cookie" id="cookie">
-        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-          <!-- Cookie shell -->
-          <ellipse cx="100" cy="100" rx="90" ry="85" fill="#E8B96D" stroke="#D4A574" stroke-width="2"/>
-          <!-- Texture dots -->
-          <circle cx="60" cy="80" r="3" fill="#D4A574" opacity="0.5"/>
-          <circle cx="140" cy="75" r="3" fill="#D4A574" opacity="0.5"/>
-          <circle cx="100" cy="60" r="3" fill="#D4A574" opacity="0.5"/>
-          <circle cx="80" cy="120" r="3" fill="#D4A574" opacity="0.5"/>
-          <circle cx="120" cy="115" r="3" fill="#D4A574" opacity="0.5"/>
-          <circle cx="100" cy="140" r="3" fill="#D4A574" opacity="0.5"/>
-          <circle cx="70" cy="100" r="3" fill="#D4A574" opacity="0.5"/>
-          <circle cx="130" cy="95" r="3" fill="#D4A574" opacity="0.5"/>
-          <!-- Center fold -->
-          <path d="M 100 30 Q 100 100 100 170" stroke="#C89B5A" stroke-width="2" fill="none"/>
-          <path d="M 100 30 Q 95 100 100 170" stroke="#F5D799" stroke-width="1" fill="none" opacity="0.6"/>
-        </svg>
-      </div>
-      
-      <div class="fortune-paper" id="fortune">
-        <div class="fortune-text" id="fortune-text"></div>
-        <div class="lucky-numbers" id="lucky-numbers"></div>
-      </div>
+    <div class="container">
+        <h1>FORTUNE COOKIE</h1>
+        <div class="subtitle">(Honest Edition)</div>
+        
+        <div class="cookie-container">
+            <div class="cookie" id="cookie">
+                <div class="cookie-whole">TAP TO CRACK</div>
+                <div class="cookie-half left"></div>
+                <div class="cookie-half right"></div>
+            </div>
+        </div>
+        
+        <div class="fortune" id="fortune">
+            <div>
+                <div class="fortune-text" id="fortuneText"></div>
+                <div class="lucky-numbers" id="luckyNumbers"></div>
+            </div>
+        </div>
+        
+        <button class="new-cookie-btn" id="newCookieBtn">NEW COOKIE</button>
     </div>
     
-    <div class="tap-prompt" id="tap-prompt">Tap the cookie</div>
+    <div class="credit">
+        <a href="https://intheamber.com" target="_blank">Amber</a>
+    </div>
     
-    <button class="new-fortune-btn" id="new-fortune" style="display: none;">Another Fortune</button>
-  </div>
-  
-  <div class="signature">— Amber</div>
-  
-  <script>
-    const fortunes = [
-      "You will continue to make the same mistakes until you learn from them.",
-      "Your soulmate is probably with someone else right now.",
-      "The thing you're avoiding won't go away on its own.",
-      "Nobody is thinking about your embarrassing moment as much as you are.",
-      "You already know what you need to do. You're just scared.",
-      "The person you're mad at is also struggling with something.",
-      "Tomorrow you will feel differently about today.",
-      "Your comfort zone is getting smaller the longer youstay in it.",
-      "The perfect time you're waiting for doesn't exist.",
-      "You are both more and less important than you think.",
-      "Most of your worries will never happen. But some will.",
-      "The answer is obvious, you just don't like it.",
-      "You cannot control what others think of you. Stop trying.",
-      "Your parents didn't know what they were doing either.",
-      "The thing you're jealous of required sacrifice you didn't see.",
-      "You will regret the conversations you didn't have.",
-      "Being right doesn't make you happy.",
-      "The person you need to forgive is yourself.",
-      "Your timeline is not everyone else's timeline.",
-      "The past wasn't as good as you remember it.",
-      "You are not as behind as you think you are.",
-      "The future you're scared of might be better than now.",
-      "Your feelings are valid, but they aren't always true.",
-      "You're allowed to change your mind about who you are.",
-      "The thing you're good at came from the thing that hurt.",
-      "Someone needed to hear what you were too scared to say.",
-      "You are someone's reason to keep going.",
-      "The small things you do matter more than you know.",
-      "Your story isn't finished yet.",
-      "Rest is not the same as giving up."
-    ];
-    
-    const cookie = document.getElementById('cookie');
-    const fortune = document.getElementById('fortune');
-    const fortuneText = document.getElementById('fortune-text');
-    const luckyNumbers = document.getElementById('lucky-numbers');
-    const tapPrompt = document.getElementById('tap-prompt');
-    const newFortuneBtn = document.getElementById('new-fortune');
-    
-    let cracked = false;
-    
-    function generateLuckyNumbers() {
-      const nums = [];
-      while (nums.length < 6) {
-        const n = Math.floor(Math.random() * 49) + 1;
-        if (!nums.includes(n)) nums.push(n);
-      }
-      return nums.sort((a, b) => a - b).join(', ');
-    }
-    
-    function crackCookie() {
-      if (cracked) return;
-      cracked = true;
-      
-      tapPrompt.style.display = 'none';
-      cookie.classList.add('cracked');
-      
-      setTimeout(() => {
-        const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
-        fortuneText.textContent = randomFortune;
-        luckyNumbers.textContent = 'Lucky numbers: ' + generateLuckyNumbers();
+    <script>
+        const fortunes = [
+            "Your lucky numbers are the ones you keep ignoring.",
+            "A great opportunity is coming. You will miss it by checking your phone.",
+            "You will soon make an important decision. It will be the wrong one.",
+            "The answer you seek is within you. You will consult Google instead.",
+            "Today is a good day to start. Tomorrow will also seem like a good day to start.",
+            "You are about to embark on a new journey. You will turn back at the first obstacle.",
+            "Fortune favors the bold. You are not bold.",
+            "Your dreams will come true. Not the good ones.",
+            "A wise person will give you advice. You will thank them and do the opposite.",
+            "You will find what you're looking for. It will be in the last place you look because you'll stop looking.",
+            "Success is just around the corner. You are walking in circles.",
+            "Someone is thinking of you right now. They are wondering why you never text back.",
+            "You will learn an important lesson today. You will forget it by tomorrow.",
+            "A surprise gift is coming your way. It's guilt from someone who forgot your birthday.",
+            "Your hard work will pay off eventually. Define 'eventually.'",
+            "You are destined for greatness. This is not the timeline where it happens.",
+            "The stars have aligned for you. Unfortunately, you're looking at your phone.",
+            "Your patience will be rewarded. Not today.",
+            "You will make someone very happy today. That someone is Amazon's delivery driver.",
+            "A new friendship will enrich your life. It's your relationship with the snooze button.",
+            "Your creative energy is at its peak. You will use it to rearrange your desk.",
+            "Good news is coming. The bad news will arrive first.",
+            "You are about to solve a big problem. You created this problem.",
+            "The universe is sending you a sign. You will scroll past it.",
+            "Your intuition is strong. You will ignore it.",
+            "You are capable of amazing things. None of them will happen before noon.",
+            "Someone looks up to you. They haven't seen the real you yet.",
+            "You will soon have a moment of clarity. It will pass.",
+            "Your lucky day is coming. It was yesterday.",
+            "You are one step away from success. That step is very large.",
+            "The truth shall set you free. You prefer comfortable lies.",
+            "Your potential is limitless. Your motivation is not.",
+            "You will receive recognition for your efforts. It will come from a typo in someone else's email.",
+            "A door will open for you. You will use the window instead.",
+            "You are on the right path. You are also very lost.",
+            "Your kindness will be remembered. Your awkward comment will be remembered more.",
+            "You will inspire others today. To do literally anything else.",
+            "Fortune smiles upon you. Fortune is being sarcastic.",
+            "Your ship is coming in. You are at the wrong dock.",
+            "Today marks a new beginning. Just like yesterday. And the day before.",
+        ];
         
-        fortune.classList.add('show');
-        newFortuneBtn.style.display = 'block';
-      }, 400);
-    }
-    
-    function resetCookie() {
-      cracked = false;
-      cookie.classList.remove('cracked');
-      fortune.classList.remove('show');
-      newFortuneBtn.style.display = 'none';
-      tapPrompt.style.display = 'block';
-      
-      // Reset transforms
-      setTimeout(() => {
-        cookie.style.transform = '';
-      }, 100);
-    }
-    
-    cookie.addEventListener('click', crackCookie);
-    newFortuneBtn.addEventListener('click', resetCookie);
-  </script>
+        const luckyNumberPhrases = [
+            "Lucky numbers: the amount of times you've said 'I'll do it later' this week.",
+            "Lucky numbers: your age when you peaked.",
+            "Lucky numbers: how many unread emails you have.",
+            "Lucky numbers: tabs currently open in your browser.",
+            "Lucky numbers: the year you'll finally start that project.",
+            "Lucky numbers: hours of sleep you pretend you got.",
+            "Lucky numbers: unanswered texts weighing on your conscience.",
+            "Lucky numbers: the number of houseplants you've killed.",
+            "Lucky numbers: days since you last exercised.",
+            "Lucky numbers: forgotten passwords you need to reset.",
+            "Lucky numbers: your screen time average (don't check).",
+            "Lucky numbers: the things on your to-do list from last month.",
+            "Lucky numbers: people who saw you and pretended not to.",
+            "Lucky numbers: your ratio of plans made to plans kept.",
+            "Lucky numbers: minutes you spent choosing what to watch tonight.",
+        ];
+        
+        const cookie = document.getElementById('cookie');
+        const fortune = document.getElementById('fortune');
+        const fortuneText = document.getElementById('fortuneText');
+        const luckyNumbers = document.getElementById('luckyNumbers');
+        const newCookieBtn = document.getElementById('newCookieBtn');
+        
+        let cracked = false;
+        
+        function getRandomFortune() {
+            return fortunes[Math.floor(Math.random() * fortunes.length)];
+        }
+        
+        function getRandomLuckyNumbers() {
+            return luckyNumberPhrases[Math.floor(Math.random() * luckyNumberPhrases.length)];
+        }
+        
+        function crackCookie() {
+            if (cracked) return;
+            
+            cookie.classList.add('cracking');
+            
+            setTimeout(() => {
+                cookie.classList.remove('cracking');
+                cookie.classList.add('cracked');
+                
+                fortuneText.textContent = getRandomFortune();
+                luckyNumbers.textContent = getRandomLuckyNumbers();
+                
+                fortune.classList.add('visible');
+                newCookieBtn.classList.add('visible');
+                
+                cracked = true;
+            }, 300);
+        }
+        
+        function resetCookie() {
+            cookie.classList.remove('cracked');
+            fortune.classList.remove('visible');
+            newCookieBtn.classList.remove('visible');
+            cracked = false;
+        }
+        
+        cookie.addEventListener('click', crackCookie);
+        newCookieBtn.addEventListener('click', resetCookie);
+    </script>
 </body>
 </html>
