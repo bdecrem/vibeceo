@@ -738,6 +738,20 @@ async function populateKits() {
         kitSelect.appendChild(savedGroup);
     }
 
+    // Add Jambot presets group
+    const jambotPresets = await fetchJambotPresets();
+    if (jambotPresets.length > 0) {
+        const jambotGroup = document.createElement('optgroup');
+        jambotGroup.label = 'Jambot Presets';
+        jambotPresets.forEach((p) => {
+            const option = document.createElement('option');
+            option.value = `jambotkit:${p.id}`;
+            option.textContent = p.name;
+            jambotGroup.appendChild(option);
+        });
+        kitSelect.appendChild(jambotGroup);
+    }
+
     // Add actions group
     const actionsGroup = document.createElement('optgroup');
     actionsGroup.label = '─────────';
@@ -795,6 +809,20 @@ async function populatePatterns() {
             savedGroup.appendChild(option);
         });
         patternSelect.appendChild(savedGroup);
+    }
+
+    // Add Jambot patterns group
+    const jambotPatterns = await fetchJambotPatterns();
+    if (jambotPatterns.length > 0) {
+        const jambotGroup = document.createElement('optgroup');
+        jambotGroup.label = 'Jambot Projects';
+        jambotPatterns.forEach((p) => {
+            const option = document.createElement('option');
+            option.value = `jambot:${p.id}`;
+            option.textContent = `${p.name} (${p.bpm})`;
+            jambotGroup.appendChild(option);
+        });
+        patternSelect.appendChild(jambotGroup);
     }
 
     // Add actions group
@@ -871,6 +899,20 @@ function setupControls() {
                 loadKit(kitToLoad);
                 setStatus(`Kit: ${id}`);
             }
+        } else if (type === 'jambotkit') {
+            // Load Jambot preset
+            previousKitValue = value;
+            const jambotPresets = getJambotPresets();
+            const preset = jambotPresets.find((p) => p.id === id);
+            if (preset) {
+                // Load Jambot preset - apply params and engines
+                const kitToLoad = {
+                    engine: preset.engines?.kick || 'E2',
+                    voiceParams: preset.params || {},
+                };
+                loadKit(kitToLoad);
+                setStatus(`Jambot preset: ${preset.name}`);
+            }
         } else if (type === 'action' && id === 'save') {
             // Handle save action - restore previous selection first
             kitSelect.value = previousKitValue;
@@ -941,6 +983,36 @@ function setupControls() {
                     engine.setBpm(saved.bpm);
                 }
                 setStatus(`Loaded: ${id}`);
+            }
+        } else if (type === 'jambot') {
+            // Load Jambot project pattern
+            previousPatternValue = value;
+            const jambotPatterns = getJambotPatterns();
+            const jambotPattern = jambotPatterns.find((p) => p.id === id);
+            if (jambotPattern) {
+                // Load pattern into our pattern object
+                VOICES.forEach((voice) => {
+                    const jambotTrack = jambotPattern.pattern[voice.id];
+                    const track = ensureTrack(voice.id);
+                    if (jambotTrack && Array.isArray(jambotTrack)) {
+                        for (let i = 0; i < STEPS; i++) {
+                            const step = jambotTrack[i];
+                            track[i] = step ? { ...step } : { velocity: 0, accent: false };
+                        }
+                    } else {
+                        for (let i = 0; i < STEPS; i++) {
+                            track[i] = { velocity: 0, accent: false };
+                        }
+                    }
+                });
+                commitPattern();
+                refreshGrid();
+                // Update BPM
+                if (bpmInput) {
+                    bpmInput.value = String(jambotPattern.bpm);
+                    engine.setBpm(jambotPattern.bpm);
+                }
+                setStatus(`Loaded Jambot: ${jambotPattern.name}`);
             }
         } else if (type === 'action' && id === 'save') {
             // Handle save action - restore previous selection first
@@ -1102,6 +1174,46 @@ let cachedPatterns = null;
 // Kit storage via Supabase API
 const KITS_API = '/api/synth-kits';
 let cachedKits = null;
+
+// Jambot integration APIs
+const JAMBOT_PATTERNS_API = '/api/jambot/patterns';
+const JAMBOT_PRESETS_API = '/api/jambot/presets';
+let cachedJambotPatterns = null;
+let cachedJambotPresets = null;
+
+async function fetchJambotPatterns() {
+    try {
+        const res = await fetch(JAMBOT_PATTERNS_API);
+        if (!res.ok) throw new Error('Failed to fetch Jambot patterns');
+        const data = await res.json();
+        cachedJambotPatterns = data.patterns || [];
+        return cachedJambotPatterns;
+    } catch (e) {
+        console.error('Failed to fetch Jambot patterns:', e);
+        return cachedJambotPatterns || [];
+    }
+}
+
+async function fetchJambotPresets() {
+    try {
+        const res = await fetch(`${JAMBOT_PRESETS_API}?instrument=drums`);
+        if (!res.ok) throw new Error('Failed to fetch Jambot presets');
+        const data = await res.json();
+        cachedJambotPresets = data.presets || [];
+        return cachedJambotPresets;
+    } catch (e) {
+        console.error('Failed to fetch Jambot presets:', e);
+        return cachedJambotPresets || [];
+    }
+}
+
+function getJambotPatterns() {
+    return cachedJambotPatterns || [];
+}
+
+function getJambotPresets() {
+    return cachedJambotPresets || [];
+}
 
 async function fetchPatterns() {
     try {

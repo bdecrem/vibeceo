@@ -262,17 +262,18 @@ export function getApiKeyPath() {
   return JAMBOT_ENV_FILE;
 }
 
-// === GENRE KNOWLEDGE ===
-let GENRES = {};
+// === PRODUCER LIBRARY (genres, artists, moods, techniques) ===
+let LIBRARY = {};
 try {
-  const genresPath = join(__dirname, 'genres.json');
-  GENRES = JSON.parse(readFileSync(genresPath, 'utf-8'));
+  const libraryPath = join(__dirname, 'library.json');
+  LIBRARY = JSON.parse(readFileSync(libraryPath, 'utf-8'));
 } catch (e) {
-  console.warn('Could not load genres.json:', e.message);
+  console.warn('Could not load library.json:', e.message);
 }
 
-// Map keywords/aliases to genre keys
-const GENRE_ALIASES = {
+// Map keywords/aliases to library keys (genres, artists, moods, etc.)
+const LIBRARY_ALIASES = {
+  // === GENRES ===
   // Classic / Old School House
   'classic house': 'classic_house',
   'old school house': 'classic_house',
@@ -331,51 +332,106 @@ const GENRE_ALIASES = {
   // Generic terms -> sensible defaults
   'techno': 'berlin_techno',
   'house': 'classic_house',
+
+  // === ARTISTS ===
+  'jeff mills': 'jeff_mills',
+  'mills': 'jeff_mills',
+  'the wizard': 'jeff_mills',
 };
 
-// Detect genres mentioned in text, return array of genre keys
-function detectGenres(text) {
+// Detect library entries mentioned in text (genres, artists, moods, etc.)
+function detectLibraryKeys(text) {
   const lower = text.toLowerCase();
   const found = new Set();
 
   // Sort aliases by length (longest first) to match "detroit techno" before "detroit"
-  const sortedAliases = Object.keys(GENRE_ALIASES).sort((a, b) => b.length - a.length);
+  const sortedAliases = Object.keys(LIBRARY_ALIASES).sort((a, b) => b.length - a.length);
 
   for (const alias of sortedAliases) {
     if (lower.includes(alias)) {
-      found.add(GENRE_ALIASES[alias]);
+      found.add(LIBRARY_ALIASES[alias]);
     }
   }
 
   return Array.from(found);
 }
 
-// Build genre context string for system prompt
-function buildGenreContext(genreKeys) {
-  if (!genreKeys.length) return '';
+// Build context string for system prompt from library entries
+function buildLibraryContext(keys) {
+  if (!keys.length) return '';
 
-  const sections = genreKeys.map(key => {
-    const g = GENRES[key];
-    if (!g) return '';
-    return `
-=== ${g.name.toUpperCase()} ===
-BPM: ${g.bpm[0]}-${g.bpm[1]} | Keys: ${g.keys.join(', ')} | Swing: ${g.swing}%
+  const sections = keys.map(key => {
+    const entry = LIBRARY[key];
+    if (!entry) return '';
 
-${g.description}
+    if (entry.type === 'genre') {
+      return `
+=== ${entry.name.toUpperCase()} (Genre) ===
+BPM: ${entry.bpm[0]}-${entry.bpm[1]} | Keys: ${entry.keys.join(', ')} | Swing: ${entry.swing}%
 
-${g.production}
+${entry.description}
+
+${entry.production}
 
 Reference settings:
-- Drums: ${JSON.stringify(g.drums)}
-- Bass: ${JSON.stringify(g.bass)}
-- Classic tracks: ${g.references.join(', ')}
+- Drums: ${JSON.stringify(entry.drums)}
+- Bass: ${JSON.stringify(entry.bass)}
+- Classic tracks: ${entry.references.join(', ')}
+`;
+    }
+
+    if (entry.type === 'artist') {
+      let artistSection = `
+=== ${entry.name.toUpperCase()} (Artist Style) ===
+BPM: ${entry.bpm[0]}-${entry.bpm[1]} | Swing: ${entry.swing}% | Base genre: ${entry.genre}
+
+${entry.description}
+
+Philosophy: ${entry.philosophy}
+
+Drum settings: ${JSON.stringify(entry.drums)}
+`;
+      if (entry.patterns) {
+        artistSection += `\nPattern archetypes:\n`;
+        for (const [id, p] of Object.entries(entry.patterns)) {
+          artistSection += `- ${p.name}: ${p.description}\n`;
+        }
+      }
+      if (entry.programmingPrinciples) {
+        artistSection += `\nProgramming principles:\n`;
+        for (const principle of entry.programmingPrinciples) {
+          artistSection += `- ${principle}\n`;
+        }
+      }
+      artistSection += `\nKeywords: ${entry.keywords.join(', ')}`;
+      artistSection += `\nReference tracks: ${entry.references.join(', ')}`;
+      return artistSection;
+    }
+
+    if (entry.type === 'mood') {
+      return `
+=== ${entry.name.toUpperCase()} (Mood) ===
+${entry.description || ''}
+Adjustments: ${JSON.stringify(entry.adjustments)}
+Keywords: ${entry.keywords?.join(', ') || ''}
+`;
+    }
+
+    // Default fallback for unknown types
+    return `
+=== ${entry.name?.toUpperCase() || key.toUpperCase()} ===
+${JSON.stringify(entry, null, 2)}
 `;
   }).filter(Boolean);
 
   if (!sections.length) return '';
 
-  return `\n\nGENRE KNOWLEDGE (use this to guide your choices):\n${sections.join('\n')}`;
+  return `\n\nPRODUCER KNOWLEDGE (use this to guide your choices):\n${sections.join('\n')}`;
 }
+
+// Legacy aliases for compatibility
+const detectGenres = detectLibraryKeys;
+const buildGenreContext = buildLibraryContext;
 
 // Make Web Audio available globally
 globalThis.OfflineAudioContext = OfflineAudioContext;
@@ -415,6 +471,7 @@ export function createSession() {
     swing: 0,
     // R9D9 (drums)
     drumKit: 'bart-deep',  // Kit ID for engine selection
+    drumLevel: 0,             // Node output level in dB (-60 to +6, 0 = unity)
     drumPattern: {},
     drumParams: {},
     drumFlam: 0,              // Flam amount 0-1
@@ -425,6 +482,7 @@ export function createSession() {
     drumUseSample: {},        // Sample mode for hats/cymbals { ch: true, oh: false, ... }
     drumAutomation: {},       // Per-step param automation { ch: { decay: [0.1, 0.2, ...], level: [...] }, ... }
     // R3D3 (bass)
+    bassLevel: 0,             // Node output level in dB (-60 to +6, 0 = unity)
     bassPattern: createEmptyBassPattern(),
     bassParams: {
       waveform: 'sawtooth',
@@ -436,6 +494,7 @@ export function createSession() {
       level: 0.8,
     },
     // R1D1 (lead)
+    leadLevel: 0,         // Node output level in dB (-60 to +6, 0 = unity)
     leadPreset: null,  // Preset ID for sound/pattern preset
     leadPattern: createEmptyLeadPattern(),
     leadParams: {
@@ -471,6 +530,7 @@ export function createSession() {
       hold: false,
     },
     // R9DS (sampler)
+    samplerLevel: 0,         // Node output level in dB (-60 to +6, 0 = unity)
     samplerKit: null,        // Currently loaded kit { id, name, slots }
     samplerPattern: {},      // { s1: [{step, vel}, ...], s2: [...], ... }
     samplerParams: {},       // { s1: { level, tune, attack, decay, filter, pan }, ... }
@@ -912,11 +972,11 @@ export const TOOLS = [
   },
   {
     name: "open_project",
-    description: "Open an existing project by name or folder. Use when user says 'open project X' or 'continue working on X'.",
+    description: "Open an existing project by name or folder. Use 'recent' or 'latest' to open the most recently modified project. Use when user says 'open project X', 'continue working on X', 'open my recent project', or 'continue where we left off'.",
     input_schema: {
       type: "object",
       properties: {
-        name: { type: "string", description: "Project name or folder name to search for" }
+        name: { type: "string", description: "Project name, folder name, or 'recent'/'latest' to open most recently modified" }
       },
       required: ["name"]
     }
@@ -1132,6 +1192,102 @@ export const TOOLS = [
       type: "object",
       properties: {},
       required: []
+    }
+  },
+  // === PRESET TOOLS (Generic) ===
+  {
+    name: "save_preset",
+    description: "Save current instrument settings as a user preset. Works for any instrument (drums, bass, lead, sampler). Presets are stored in ~/Documents/Jambot/presets/.",
+    input_schema: {
+      type: "object",
+      properties: {
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Which instrument to save preset for" },
+        id: { type: "string", description: "Preset ID (lowercase, hyphenated, e.g., 'my-deep-kick')" },
+        name: { type: "string", description: "Display name (e.g., 'My Deep Kick')" },
+        description: { type: "string", description: "Optional description of the preset's sound" }
+      },
+      required: ["instrument", "id", "name"]
+    }
+  },
+  {
+    name: "load_preset",
+    description: "Load a user preset for an instrument. Applies saved parameters to the current session.",
+    input_schema: {
+      type: "object",
+      properties: {
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Which instrument to load preset for" },
+        id: { type: "string", description: "Preset ID to load" }
+      },
+      required: ["instrument", "id"]
+    }
+  },
+  {
+    name: "list_presets",
+    description: "List available user presets. Can filter by instrument or show all.",
+    input_schema: {
+      type: "object",
+      properties: {
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Filter by instrument (optional, shows all if omitted)" }
+      },
+      required: []
+    }
+  },
+  // === GENERIC PARAMETER TOOLS (Unified System) ===
+  {
+    name: "get_param",
+    description: "Get any parameter value via unified path. Works for ALL instruments and parameters including engine settings. Examples: 'drums.snare.engine' → 'E2', 'drums.kick.decay' → 37, 'bass.cutoff' → 2000, 'drums.ch.useSample' → false",
+    input_schema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "Parameter path (e.g., 'drums.kick.decay', 'drums.snare.engine', 'bass.cutoff')" }
+      },
+      required: ["path"]
+    }
+  },
+  {
+    name: "tweak",
+    description: "Set any parameter value via unified path. Works for ALL instruments including engine settings. Examples: tweak drums.kick.decay to 50, tweak drums.snare.engine to 'E1', tweak bass.cutoff to 3000",
+    input_schema: {
+      type: "object",
+      properties: {
+        path: { type: "string", description: "Parameter path (e.g., 'drums.kick.decay', 'drums.snare.engine', 'bass.cutoff')" },
+        value: { description: "Value to set (number, string, or boolean depending on parameter)" }
+      },
+      required: ["path", "value"]
+    }
+  },
+  {
+    name: "tweak_multi",
+    description: "Set multiple parameters at once via unified paths.",
+    input_schema: {
+      type: "object",
+      properties: {
+        params: { type: "object", description: "Object mapping paths to values, e.g., { 'drums.kick.decay': 50, 'drums.snare.engine': 'E1' }" }
+      },
+      required: ["params"]
+    }
+  },
+  {
+    name: "list_params",
+    description: "List available parameters for a node (instrument). Shows all params with their types, ranges, and defaults.",
+    input_schema: {
+      type: "object",
+      properties: {
+        node: { type: "string", description: "Node to list params for (drums, bass, lead, sampler). Omit to list all available nodes." }
+      },
+      required: []
+    }
+  },
+  {
+    name: "get_state",
+    description: "Get current state of all parameters for a node, optionally filtered by voice.",
+    input_schema: {
+      type: "object",
+      properties: {
+        node: { type: "string", description: "Node to get state for (drums, bass, lead, sampler)" },
+        voice: { type: "string", description: "Optional: filter to specific voice (e.g., 'kick', 'snare')" }
+      },
+      required: ["node"]
     }
   }
 ];
@@ -1456,7 +1612,7 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
     const kit = TR909_KITS.find(k => k.id === input.kit);
     if (!kit) {
       const available = TR909_KITS.map(k => k.id).join(', ');
-      return `Unknown kit: ${input.kit}. Available: ${available}`;
+      return `Unknown 909 kit: ${input.kit}. Available: ${available}\n\nNote: If this is a saved user preset, use load_preset(instrument: 'drums', id: '${input.kit}') instead. Use list_presets(instrument: 'drums') to see saved presets.`;
     }
     session.drumKit = kit.id;
 
@@ -1929,11 +2085,22 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
       return "Cannot open projects in this context.";
     }
     const projects = listProjects();
+    if (projects.length === 0) {
+      return "No projects found. Create a beat and render to start a project.";
+    }
     const searchTerm = input.name.toLowerCase();
-    const found = projects.find(p =>
-      p.folderName.toLowerCase().includes(searchTerm) ||
-      p.name.toLowerCase().includes(searchTerm)
-    );
+
+    // Handle "recent" or "latest" keywords - open most recently modified
+    let found;
+    if (searchTerm === 'recent' || searchTerm === 'latest') {
+      found = projects[0]; // Already sorted by modified date, most recent first
+    } else {
+      found = projects.find(p =>
+        p.folderName.toLowerCase().includes(searchTerm) ||
+        p.name.toLowerCase().includes(searchTerm)
+      );
+    }
+
     if (!found) {
       const available = projects.slice(0, 5).map(p => p.folderName).join(', ');
       return `Project not found: "${input.name}". Recent projects: ${available}`;
@@ -2611,23 +2778,25 @@ async function renderSession(session, bars, filename) {
   masterGain.connect(context.destination);
 
   // Create per-instrument output gain nodes (for node-level mixing)
+  // Note: drumLevel/samplerLevel are in dB (-60 to +6), bassParams/leadParams.level are 0-1 engine values
   const drumsGain = context.createGain();
-  const drumsLevel = session.get('drums.level') ?? 0;  // dB, default 0 = unity
+  const drumsLevel = session.drumLevel ?? 0;  // dB, default 0 = unity
   drumsGain.gain.value = Math.pow(10, drumsLevel / 20);
   drumsGain.connect(masterGain);
 
   const bassGain = context.createGain();
-  const bassLevel = session.get('bass.level') ?? 0;  // dB, default 0 = unity
+  // Bass level is stored as engine value (0-1), but we'll treat session.bassLevel as dB if present
+  const bassLevel = session.bassLevel ?? 0;  // dB, default 0 = unity
   bassGain.gain.value = Math.pow(10, bassLevel / 20);
   bassGain.connect(masterGain);
 
   const leadGain = context.createGain();
-  const leadLevel = session.get('lead.level') ?? 0;  // dB, default 0 = unity
+  const leadLevel = session.leadLevel ?? 0;  // dB, default 0 = unity
   leadGain.gain.value = Math.pow(10, leadLevel / 20);
   leadGain.connect(masterGain);
 
   const samplerGain = context.createGain();
-  const samplerLevel = session.get('sampler.level') ?? 0;  // dB, default 0 = unity
+  const samplerLevel = session.samplerLevel ?? 0;  // dB, default 0 = unity
   samplerGain.gain.value = Math.pow(10, samplerLevel / 20);
   samplerGain.connect(masterGain);
 

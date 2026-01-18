@@ -11,6 +11,21 @@ import { R9D9_PARAMS, toEngine, fromEngine } from '../params/converters.js';
 // All TR-909 voices
 const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'rimshot', 'crash', 'ride'];
 
+// Default engine per voice (matches TR909Engine.VOICE_DEFAULTS)
+const VOICE_ENGINE_DEFAULTS = {
+  kick: 'E1',
+  snare: 'E2',
+  clap: 'E1',
+  rimshot: 'E2',
+  ltom: 'E2',
+  mtom: 'E2',
+  htom: 'E2',
+  ch: 'E1',
+  oh: 'E1',
+  crash: 'E2',
+  ride: 'E2',
+};
+
 export class DrumsNode extends InstrumentNode {
   /**
    * @param {Object} config - Configuration
@@ -58,6 +73,18 @@ export class DrumsNode extends InstrumentNode {
           param: paramName,
         });
       }
+
+      // Register engine and useSample for each voice
+      this.registerParam(`${voice}.engine`, {
+        options: ['E1', 'E2'],
+        default: VOICE_ENGINE_DEFAULTS[voice],
+        hint: 'synthesis engine (E1=classic, E2=enhanced)',
+      });
+      this.registerParam(`${voice}.useSample`, {
+        type: 'boolean',
+        default: false,
+        hint: 'use sample instead of synthesis',
+      });
     }
 
     // Register drum-specific params (not per-voice)
@@ -80,6 +107,19 @@ export class DrumsNode extends InstrumentNode {
     if (path === 'scale') return this._scale;
     if (path === 'globalAccent') return this._globalAccent * 100;
     if (path === 'kit') return this._kit;
+
+    // Handle voice engine selection
+    if (path.endsWith('.engine')) {
+      const voice = path.split('.')[0];
+      // Return explicit setting or default
+      return this._voiceEngines[voice] ?? VOICE_ENGINE_DEFAULTS[voice] ?? 'E2';
+    }
+
+    // Handle sample mode
+    if (path.endsWith('.useSample')) {
+      const voice = path.split('.')[0];
+      return this._useSample[voice] ?? false;
+    }
 
     // Voice params
     return this._params[path];
