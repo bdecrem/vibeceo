@@ -707,11 +707,11 @@ Not clever. Not impressive. TRUE.
 /**
  * Find the most recent untweeted creation from Supabase
  */
-async function findUntweetedCreation(): Promise<{ content: string; url: string; tags: string[] } | null> {
+async function findUntweetedCreation(): Promise<{ id: string; content: string; url: string; tags: string[] } | null> {
   try {
     const { data, error } = await supabase
       .from('amber_state')
-      .select('content, metadata')
+      .select('id, content, metadata')
       .eq('type', 'creation')
       .order('created_at', { ascending: false })
       .limit(10);
@@ -730,6 +730,7 @@ async function findUntweetedCreation(): Promise<{ content: string; url: string; 
       // Find one where tweeted is false or undefined
       if (meta?.tweeted === false || meta?.tweeted === undefined) {
         return {
+          id: row.id,
           content: row.content || '',
           url: meta?.url || '',
           tags: meta?.tags || [],
@@ -777,46 +778,35 @@ function getTweetTaskPrompt(creation: { content: string; url: string; tags: stri
 /**
  * Mark a creation as tweeted in the database
  */
-async function markCreationAsTweeted(url: string): Promise<void> {
+async function markCreationAsTweeted(id: string): Promise<void> {
   try {
-    // Find the creation by URL and update its metadata
+    // Get current metadata
     const { data, error: fetchError } = await supabase
       .from('amber_state')
-      .select('id, metadata')
-      .eq('type', 'creation')
-      .order('created_at', { ascending: false })
-      .limit(20);
+      .select('metadata')
+      .eq('id', id)
+      .single();
 
     if (fetchError || !data) {
-      console.error('[amber-social] Failed to fetch creations for marking:', fetchError);
+      console.error('[amber-social] Failed to fetch creation for marking:', fetchError);
       return;
     }
 
-    // Find the matching creation
-    for (const row of data) {
-      const meta = typeof row.metadata === 'string'
-        ? JSON.parse(row.metadata)
-        : row.metadata;
+    const meta = typeof data.metadata === 'string'
+      ? JSON.parse(data.metadata)
+      : data.metadata;
 
-      if (meta?.url === url) {
-        // Update metadata with tweeted = true
-        const updatedMeta = { ...meta, tweeted: true };
+    // Update with tweeted = true
+    const { error: updateError } = await supabase
+      .from('amber_state')
+      .update({ metadata: { ...meta, tweeted: true } })
+      .eq('id', id);
 
-        const { error: updateError } = await supabase
-          .from('amber_state')
-          .update({ metadata: updatedMeta })
-          .eq('id', row.id);
-
-        if (updateError) {
-          console.error('[amber-social] Failed to mark creation as tweeted:', updateError);
-        } else {
-          console.log(`[amber-social] Marked creation as tweeted: ${url}`);
-        }
-        return;
-      }
+    if (updateError) {
+      console.error('[amber-social] Failed to mark creation as tweeted:', updateError);
+    } else {
+      console.log(`[amber-social] Marked creation as tweeted: ${id}`);
     }
-
-    console.warn(`[amber-social] Could not find creation with URL: ${url}`);
   } catch (error) {
     console.error('[amber-social] Error marking creation as tweeted:', error);
   }
@@ -1318,7 +1308,7 @@ async function runTweetPhase(timeOfDay: string): Promise<void> {
   console.log(`[amber-social] Starting ${timeOfDay} tweet phase...`);
 
   try {
-    // Step 1: Find untweeted creation ourselves (don't rely on agent)
+    // Step 1: Find untweeted creation
     const creation = await findUntweetedCreation();
 
     if (!creation) {
@@ -1327,7 +1317,7 @@ async function runTweetPhase(timeOfDay: string): Promise<void> {
     }
 
     console.log(`[amber-social] Found untweeted creation: "${creation.content.slice(0, 50)}..."`);
-    console.log(`[amber-social] URL: ${creation.url}`);
+    console.log(`[amber-social] ID: ${creation.id}, URL: ${creation.url}`);
 
     // Step 2: Tell agent to tweet about this specific creation
     const result = await runAmberEmailAgent(
@@ -1341,21 +1331,12 @@ async function runTweetPhase(timeOfDay: string): Promise<void> {
     console.log(`  - Actions taken: ${result.actions_taken.length}`);
     console.log(`  - Tool calls: ${result.tool_calls_count}`);
 
-    const tweetAction = result.actions_taken.find(a =>
-      a.toLowerCase().includes('tweet') || a.toLowerCase().includes('twitter')
-    );
-    if (tweetAction) {
-      console.log(`  - Tweet: ${tweetAction}`);
+    // Step 3: Mark creation as tweeted (by ID, always - agent was told to tweet)
+    await markCreationAsTweeted(creation.id);
 
-      // Step 3: Mark creation as tweeted
-      await markCreationAsTweeted(creation.url);
-
-      // Step 4: Notify SMS subscribers about the new creation
-      const smsResult = await notifyCreationSubscribers(creation);
-      console.log(`  - SMS notifications: ${smsResult.sent} sent, ${smsResult.failed} failed`);
-    } else {
-      console.log(`  - No tweet posted`);
-    }
+    // Step 4: Notify SMS subscribers about the new creation
+    const smsResult = await notifyCreationSubscribers(creation);
+    console.log(`  - SMS notifications: ${smsResult.sent} sent, ${smsResult.failed} failed`);
 
   } catch (error) {
     console.error(`[amber-social] ${timeOfDay} tweet failed:`, error);
