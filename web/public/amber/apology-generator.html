@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Apology Generator — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="The Apology Generator — Amber">
+  <meta property="og:description" content="Generate overly formal corporate apologies for your absurd personal situations">
+  <meta property="og:image" content="https://intheamber.com/amber/apology-generator-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/apology-generator.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Apology Generator — Amber">
+  <meta name="twitter:description" content="Generate overly formal corporate apologies for your absurd personal situations">
+  <meta name="twitter:image" content="https://intheamber.com/amber/apology-generator-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #d4a574;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-size: clamp(24px, 6vw, 36px);
+      color: #d4a574;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    
+    .subtitle {
+      font-size: clamp(14px, 3vw, 16px);
+      color: #8b7355;
+      margin-bottom: 30px;
+      text-align: center;
+      line-height: 1.4;
+    }
+    
+    .apology-box {
+      background: rgba(212, 165, 116, 0.05);
+      border: 2px solid #d4a574;
+      padding: 30px;
+      margin-bottom: 30px;
+      min-height: 250px;
+      position: relative;
+      line-height: 1.8;
+      font-size: clamp(14px, 3.5vw, 16px);
+    }
+    
+    .letterhead {
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: #8b7355;
+      margin-bottom: 20px;
+      text-align: center;
+      border-bottom: 1px solid #8b7355;
+      padding-bottom: 10px;
+    }
+    
+    .signature {
+      margin-top: 30px;
+      font-size: clamp(12px, 3vw, 14px);
+      color: #8b7355;
+    }
+    
+    .generate-btn {
+      width: 100%;
+      padding: 20px;
+      background: #d4a574;
+      color: #000;
+      border: none;
+      font-family: 'Courier New', monospace;
+      font-size: clamp(16px, 4vw, 20px);
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      touch-action: manipulation;
+    }
+    
+    .generate-btn:hover {
+      background: #8b7355;
+      color: #d4a574;
+    }
+    
+    .generate-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .teal {
+      color: #2D9596;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>THE APOLOGY GENERATOR</h1>
+    <div class="subtitle">
+      Corporate-grade apologies for your personal failures
+    </div>
+    
+    <div class="apology-box" id="apologyBox">
+      <div class="letterhead">
+        DEPARTMENT OF INTERPERSONAL AFFAIRS<br>
+        DIVISION OF REMEDIAL COMMUNICATION
+      </div>
+      <div id="apologyText">
+        Tap below to generate your formal apology.
+      </div>
+    </div>
+    
+    <button class="generate-btn" id="generateBtn">
+      GENERATE APOLOGY
+    </button>
+  </div>
+
+  <script>
+    const situations = [
+      "existing at this particular moment in spacetime",
+      "breathing audibly during your important phone call",
+      "having feelings that were inconvenient for others",
+      "making eye contact when you were trying to avoid me",
+      "failing to read your mind accurately",
+      "taking up physical space in a shared environment",
+      "laughing at a joke you didn't find funny",
+      "not laughing at a joke you did find funny",
+      "having a different opinion than you expected",
+      "needing to eat food at regular intervals",
+      "asking a clarifying question",
+      "replying too quickly to your message",
+      "replying too slowly to your message",
+      "having a personality",
+      "being in the same room as your emotional breakdown",
+      "choosing the wrong emoji in my response",
+      "remembering something you'd prefer I'd forgotten",
+      "forgetting something you'd prefer I'd remembered",
+      "speaking during your pause for dramatic effect",
+      "not speaking when you wanted me to fill the silence"
+    ];
+    
+    const openings = [
+      "We regret to inform you that",
+      "It has come to our attention that",
+      "Upon internal review, we have determined that",
+      "After careful consideration of the incident,",
+      "Following a thorough investigation,",
+      "We acknowledge with deep regret that",
+      "It is with profound apologies that we note",
+      "Our records indicate that"
+    ];
+    
+    const impacts = [
+      "may have caused you mild to moderate discomfort",
+      "resulted in a suboptimal interpersonal experience",
+      "created an atmosphere of unnecessary awkwardness",
+      "disrupted the harmonic flow of your day",
+      "violated the unspoken social contract between us",
+      "generated feelings that were not pre-approved",
+      "introduced chaos into your carefully managed reality",
+      "failed to meet the minimum standards of human interaction",
+      "created a disturbance in your personal timeline",
+      "manifested in ways that were technically legal but spiritually questionable"
+    ];
+    
+    const actions = [
+      "We have implemented a comprehensive self-reflection protocol",
+      "Corrective measures have been initiated at the cellular level",
+      "We are undergoing mandatory training in being less like this",
+      "A full audit of our personality has been commissioned",
+      "We have consulted with external experts on how to be different",
+      "Immediate steps are being taken to reduce our presence",
+      "We are reviewing all policies regarding our existence",
+      "A task force has been assembled to address this matter"
+    ];
+    
+    const closings = [
+      "We remain committed to continuous improvement in all aspects of our being.",
+      "Your feedback is invaluable as we strive to be less ourselves.",
+      "We appreciate your patience during this period of personal remediation.",
+      "Thank you for bringing this to our attention.",
+      "We value our relationship and regret any damage caused.",
+      "Please accept our sincerest assurances that we are working on it.",
+      "We understand the impact this has had and take full responsibility for being us.",
+      "Your satisfaction with our existence is our highest priority."
+    ];
+    
+    const signatures = [
+      "The Management",
+      "Department of Personal Accountability",
+      "Office of Self-Flagellation",
+      "Bureau of Unnecessary Contrition",
+      "Division of Excessive Apologizing",
+      "The Person You Made Feel Bad",
+      "Customer Service (Me)",
+      "Human Resources (Also Me)"
+    ];
+    
+    function generateApology() {
+      const situation = situations[Math.floor(Math.random() * situations.length)];
+      const opening = openings[Math.floor(Math.random() * openings.length)];
+      const impact = impacts[Math.floor(Math.random() * impacts.length)];
+      const action = actions[Math.floor(Math.random() * actions.length)];
+      const closing = closings[Math.floor(Math.random() * closings.length)];
+      const signature = signatures[Math.floor(Math.random() * signatures.length)];
+      
+      const refNumber = Math.floor(Math.random() * 900000) + 100000;
+      const date = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      
+      return `
+        <div class="letterhead">
+          DEPARTMENT OF INTERPERSONAL AFFAIRS<br>
+          DIVISION OF REMEDIAL COMMUNICATION<br>
+          <span class="teal">Reference #${refNumber} — ${date}</span>
+        </div>
+        
+        <p style="margin-bottom: 20px;">
+          <strong>RE: Formal Apology</strong>
+        </p>
+        
+        <p style="margin-bottom: 15px;">
+          ${opening} the incident involving <span class="teal">${situation}</span> ${impact}.
+        </p>
+        
+        <p style="margin-bottom: 15px;">
+          ${action} to ensure this does not happen again. We understand the severity of this matter and take full responsibility for the inconvenience caused.
+        </p>
+        
+        <p style="margin-bottom: 15px;">
+          ${closing}
+        </p>
+        
+        <div class="signature">
+          Respectfully,<br>
+          <span class="teal">${signature}</span>
+        </div>
+      `;
+    }
+    
+    document.getElementById('generateBtn').addEventListener('click', () => {
+      const box = document.getElementById('apologyBox');
+      box.style.opacity = '0';
+      
+      setTimeout(() => {
+        box.innerHTML = generateApology();
+        box.style.opacity = '1';
+      }, 150);
+    });
+  </script>
+</body>
+</html>
