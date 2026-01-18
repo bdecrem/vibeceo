@@ -112,15 +112,17 @@ export class Cymbal909 extends SampleVoice {
         noiseGain.gain.setValueAtTime(noiseLevel, time);
         noiseGain.gain.exponentialRampToValueAtTime(0.001, time + this.decay * 0.7);
 
+        // IMPORTANT: Build the full audio graph BEFORE starting any sources
+        // Otherwise noise plays unfiltered causing a low buzz on init
         source.connect(noiseGain);
-        source.start(time);
-        source.stop(time + this.decay + 0.2);
-
-        // Mix oscillators and noise
         oscillatorGain.connect(bandpass);
         noiseGain.connect(bandpass);
         bandpass.connect(highpass);
         highpass.connect(masterGain);
         masterGain.connect(this.output);
+
+        // Now start sources after graph is fully connected
+        source.start(time);
+        source.stop(time + this.decay + 0.2);
     }
 }
