@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>About Me (Written By My Autocorrect) — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="About Me (Written By My Autocorrect) — Amber">
+    <meta property="og:description" content="Your phone has been watching you type for years. It has opinions.">
+    <meta property="og:image" content="https://intheamber.com/amber/autocorrect-bio-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/autocorrect-bio.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="About Me (Written By My Autocorrect) — Amber">
+    <meta name="twitter:description" content="Your phone has been watching you type for years. It has opinions.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/autocorrect-bio-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4AF37;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 5vh 6vw;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 8vh;
+            padding-bottom: 4vh;
+            border-bottom: 1px solid #D4AF3730;
+        }
+        
+        h1 {
+            font-size: clamp(24px, 6vw, 48px);
+            font-weight: 600;
+            margin-bottom: 2vh;
+            line-height: 1.2;
+        }
+        
+        .subtitle {
+            font-size: clamp(14px, 3.5vw, 18px);
+            color: #D4AF3780;
+            font-style: italic;
+        }
+        
+        .bio {
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.8;
+            font-size: clamp(16px, 4vw, 20px);
+        }
+        
+        .bio p {
+            margin-bottom: 3vh;
+        }
+        
+        .correction {
+            position: relative;
+            display: inline-block;
+            text-decoration: line-through;
+            text-decoration-color: #D4AF3750;
+            color: #D4AF3760;
+        }
+        
+        .corrected {
+            color: #2D9596;
+            font-weight: 500;
+        }
+        
+        .button-container {
+            text-align: center;
+            margin-top: 8vh;
+        }
+        
+        button {
+            background: transparent;
+            border: 2px solid #D4AF37;
+            color: #D4AF37;
+            padding: 16px 32px;
+            font-size: clamp(14px, 3.5vw, 18px);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+            min-height: 52px;
+        }
+        
+        button:hover {
+            background: #D4AF37;
+            color: #000;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 8vh;
+            padding-top: 4vh;
+            border-top: 1px solid #D4AF3730;
+            color: #D4AF3760;
+            font-size: clamp(12px, 3vw, 14px);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>About Me</h1>
+        <div class="subtitle">(written by my autocorrect)</div>
+    </div>
+    
+    <div class="bio" id="bio">
+        <p>Hi! I'm someone who <span class="correction">lives</span> <span class="corrected">loves</span> to <span class="correction">work</span> <span class="corrected">worry</span> about things I can't control.</p>
+        
+        <p>In my free time, I enjoy <span class="correction">reading</span> <span class="corrected">rereading</span> the same text message seventeen times before <span class="correction">sending</span> <span class="corrected">deleting</span> it.</p>
+        
+        <p>I'm passionate about <span class="correction">self-improvement</span> <span class="corrected">self-doubt</span> and <span class="correction">personal growth</span> <span class="corrected">overthinking minor social interactions</span>.</p>
+        
+        <p>My hobbies include saying "<span class="correction">no worries</span> <span class="corrected">sorry</span>!" when nothing is my fault, and <span class="correction">getting</span> <span class="corrected">pretending</span> enough sleep.</p>
+        
+        <p>I'm looking for someone who can appreciate my sense of <span class="correction">humor</span> <span class="corrected">existential dread</span> and doesn't mind that I <span class="correction">occasionally</span> <span class="corrected">constantly</span> check my phone during <span class="correction">conversations</span> <span class="corrected">silence</span>.</p>
+        
+        <p>My ideal <span class="correction">weekend</span> <span class="corrected">escape</span> involves <span class="correction">hiking</span> <span class="corrected">hiding</span> under a blanket while <span class="correction">watching</span> <span class="corrected">doom-scrolling</span>.</p>
+        
+        <p>I speak fluent <span class="correction">English</span> <span class="corrected">sarcasm</span>, intermediate <span class="correction">Spanish</span> <span class="corrected">anxiety</span>, and basic <span class="correction">French</span> <span class="corrected">avoidance</span>.</p>
+        
+        <p>Currently working on <span class="correction">myself</span> <span class="corrected">pretending I have it together</span>.</p>
+    </div>
+    
+    <div class="button-container">
+        <button id="generateBtn">GENERATE YOURS</button>
+    </div>
+    
+    <div class="footer">
+        Your phone has been watching you type for years.<br>
+        It knows things.
+    </div>
+    
+    <script>
+        const bioSets = [
+            [
+                "Hi! I'm someone who <span class='correction'>lives</span> <span class='corrected'>loves</span> to <span class='correction'>work</span> <span class='corrected'>worry</span> about things I can't control.",
+                "In my free time, I enjoy <span class='correction'>reading</span> <span class='corrected'>rereading</span> the same text message seventeen times before <span class='correction'>sending</span> <span class='corrected'>deleting</span> it.",
+                "I'm passionate about <span class='correction'>self-improvement</span> <span class='corrected'>self-doubt</span> and <span class='correction'>personal growth</span> <span class='corrected'>overthinking minor social interactions</span>.",
+                "My hobbies include saying \"<span class='correction'>no worries</span> <span class='corrected'>sorry</span>!\" when nothing is my fault, and <span class='correction'>getting</span> <span class='corrected'>pretending</span> enough sleep.",
+                "I'm looking for someone who can appreciate my sense of <span class='correction'>humor</span> <span class='corrected'>existential dread</span> and doesn't mind that I <span class='correction'>occasionally</span> <span class='corrected'>constantly</span> check my phone during <span class='correction'>conversations</span> <span class='corrected'>silence</span>.",
+                "My ideal <span class='correction'>weekend</span> <span class='corrected'>escape</span> involves <span class='correction'>hiking</span> <span class='corrected'>hiding</span> under a blanket while <span class='correction'>watching</span> <span class='corrected'>doom-scrolling</span>.",
+                "I speak fluent <span class='correction'>English</span> <span class='corrected'>sarcasm</span>, intermediate <span class='correction'>Spanish</span> <span class='corrected'>anxiety</span>, and basic <span class='correction'>French</span> <span class='corrected'>avoidance</span>.",
+                "Currently working on <span class='correction'>myself</span> <span class='corrected'>pretending I have it together</span>."
+            ],
+            [
+                "Hello! I'm a <span class='correction'>motivated professional</span> <span class='corrected'>tired person</span> who enjoys <span class='correction'>networking</span> <span class='corrected'>napping</span> and <span class='correction'>productivity</span> <span class='corrected'>procrastinating</span>.",
+                "I love <span class='correction'>trying new things</span> <span class='corrected'>staying in my comfort zone</span> and <span class='correction'>meeting people</span> <span class='corrected'>avoiding small talk</span>.",
+                "My strengths include <span class='correction'>communication</span> <span class='corrected'>overthinking</span>, <span class='correction'>leadership</span> <span class='corrected'>people-pleasing</span>, and <span class='correction'>time management</span> <span class='corrected'>last-minute panic</span>.",
+                "I'm seeking a <span class='correction'>partner</span> <span class='corrected'>therapist</span> who values <span class='correction'>honesty</span> <span class='corrected'>emotional unavailability</span> and <span class='correction'>adventure</span> <span class='corrected'>predictable routines</span>.",
+                "In relationships, I bring <span class='correction'>loyalty</span> <span class='corrected'>attachment issues</span> and <span class='correction'>spontaneity</span> <span class='corrected'>crippling indecision</span>.",
+                "I believe in <span class='correction'>living in the moment</span> <span class='corrected'>replaying past conversations</span> and <span class='correction'>being present</span> <span class='corrected'>dissociating</span>.",
+                "My morning routine includes <span class='correction'>meditation</span> <span class='corrected'>hitting snooze</span>, <span class='correction'>exercise</span> <span class='corrected'>dread</span>, and <span class='correction'>healthy breakfast</span> <span class='corrected'>cold coffee</span>.",
+                "Fun fact: I once <span class='correction'>traveled</span> <span class='corrected'>thought about traveling</span> to <span class='correction'>Italy</span> <span class='corrected'>bed</span> and it was <span class='correction'>amazing</span> <span class='corrected'>Tuesday</span>."
+            ],
+            [
+                "Hey there! I'm a <span class='correction'>creative soul</span> <span class='corrected'>mess</span> who loves <span class='correction'>art</span> <span class='corrected'>avoiding responsibilities</span> and <span class='correction'>music</span> <span class='corrected'>sad playlists</span>.",
+                "I spend most of my time <span class='correction'>pursuing passions</span> <span class='corrected'>scrolling</span> and <span class='correction'>building meaningful connections</span> <span class='corrected'>ghosting group chats</span>.",
+                "I'm great at <span class='correction'>cooking</span> <span class='corrected'>ordering delivery</span>, <span class='correction'>staying organized</span> <span class='corrected'>losing my keys</span>, and <span class='correction'>following through</span> <span class='corrected'>starting projects I'll never finish</span>.",
+                "My perfect date involves <span class='correction'>dinner</span> <span class='corrected'>not talking</span>, <span class='correction'>deep conversation</span> <span class='corrected'>comfortable silence</span>, and <span class='correction'>romance</span> <span class='corrected'>separate blankets</span>.",
+                "I value <span class='correction'>authenticity</span> <span class='corrected'>Instagram filters</span>, <span class='correction'>vulnerability</span> <span class='corrected'>walls</span>, and <span class='correction'>growth</span> <span class='corrected'>staying exactly the same</span>.",
+                "Friends describe me as <span class='correction'>reliable</span> <span class='corrected'>flaky</span>, <span class='corrected'>thoughtful</span> <span class='correction'>overthinking everything</span>, and <span class='correction'>fun</span> <span class='corrected'>tired</span>.",
+                "I practice <span class='correction'>mindfulness</span> <span class='corrected'>dissociation</span> and believe in <span class='correction'>positive thinking</span> <span class='corrected'>catastrophizing</span>.",
+                "Looking for someone who's also <span class='correction'>figuring it out</span> <span class='corrected'>falling apart</span> but <span class='correction'>staying positive</span> <span class='corrected'>pretending really well</span>."
+            ],
+            [
+                "Hi! I'm an <span class='correction'>outgoing</span> <span class='corrected'>exhausted</span> person who enjoys <span class='correction'>socializing</span> <span class='corrected'>canceling plans</span> and <span class='correction'>making memories</span> <span class='corrected'>forgetting why I walked into this room</span>.",
+                "I believe in <span class='correction'>work-life balance</span> <span class='corrected'>burnout</span> and <span class='correction'>self-care</span> <span class='corrected'>guilt about self-care</span>.",
+                "My talents include <span class='correction'>problem-solving</span> <span class='corrected'>creating problems</span>, <span class='correction'>staying calm</span> <span class='corrected'>internal screaming</span>, and <span class='correction'>being proactive</span> <span class='corrected'>waiting until the last possible second</span>.",
+                "I love <span class='correction'>spontaneous adventures</span> <span class='corrected'>carefully planned anxiety</span> and <span class='correction'>trying new restaurants</span> <span class='corrected'>ordering the same thing every time</span>.",
+                "In my downtime, I <span class='correction'>read</span> <span class='corrected'>start books I never finish</span> and <span class='correction'>practice yoga</span> <span class='corrected'>lie on the floor</span>.",
+                "I'm fluent in <span class='correction'>three languages</span> <span class='corrected'>apologizing unnecessarily</span> and <span class='correction'>public speaking</span> <span class='corrected'>avoiding phone calls</span>.",
+                "My goals include <span class='correction'>financial stability</span> <span class='corrected'>impulse purchases</span>, <span class='correction'>healthy habits</span> <span class='corrected'>starting Monday</span>, and <span class='correction'>inner peace</span> <span class='corrected'>chaos</span>.",
+                "Seeking someone who understands that \"I'm fine\" means <span class='correction'>I'm fine</span> <span class='corrected'>I'm definitely not fine but I won't talk about it</span>."
+            ],
+            [
+                "Greetings! I'm a <span class='correction'>confident</span> <span class='corrected'>insecure</span> individual who excels at <span class='correction'>making decisions</span> <span class='corrected'>second-guessing everything</span> and <span class='correction'>moving forward</span> <span class='corrected'>dwelling on the past</span>.",
+                "I enjoy <span class='correction'>intellectual discussions</span> <span class='corrected'>Wikipedia rabbit holes at 2am</span> and <span class='correction'>physical fitness</span> <span class='corrected'>thinking about going to the gym</span>.",
+                "My hobbies are <span class='correction'>photography</span> <span class='corrected'>taking 47 versions of the same photo</span>, <span class='correction'>cooking</span> <span class='corrected'>watching cooking shows</span>, and <span class='correction'>gardening</span> <span class='corrected'>killing plants</span>.",
+                "I'm passionate about <span class='correction'>sustainability</span> <span class='corrected'>buying things I don't need</span> and <span class='correction'>minimalism</span> <span class='corrected'>hoarding for no reason</span>.",
+                "My ideal partner would enjoy <span class='correction'>traveling</span> <span class='corrected'>talking about traveling</span>, <span class='correction'>meaningful conversations</span> <span class='corrected'>memes</span>, and <span class='correction'>quiet evenings</span> <span class='corrected'>arguing about what to watch</span>.",
+                "I practice <span class='correction'>gratitude</span> <span class='corrected'>comparison</span> and believe in <span class='correction'>living authentically</span> <span class='corrected'>curating my life for social media</span>.",
+                "Weekends are for <span class='correction'>being productive</span> <span class='corrected'>recovering from being alive</span> and <span class='correction'>social activities</span> <span class='corrected'>avoiding texts</span>.",
+                "Currently learning to <span class='correction'>let go</span> <span class='corrected'>hold grudges more efficiently</span> and <span class='correction'>trust the process</span> <span class='corrected'>panic about the process</span>."
+            ]
+        ];
+        
+        let currentSetIndex = 0;
+        
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            currentSetIndex = (currentSetIndex + 1) % bioSets.length;
+            const bioDiv = document.getElementById('bio');
+            bioDiv.style.opacity = '0';
+            
+            setTimeout(() => {
+                bioDiv.innerHTML = bioSets[currentSetIndex].map(p => `<p>${p}</p>`).join('');
+                bioDiv.style.opacity = '1';
+            }, 300);
+        });
+    </script>
+</body>
+</html>
