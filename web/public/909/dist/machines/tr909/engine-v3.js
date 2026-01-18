@@ -38,6 +38,8 @@ export class TR909Engine extends SynthEngine {
         this.voiceStates = new Map();
         // Voice parameter overrides (persists through render)
         this.voiceParams = new Map();
+        // Track if voices have been reinitialized after AudioContext resume
+        this._voicesReinitializedAfterResume = false;
         this.setupVoices();
         this.sequencer.onStep = (step, events) => {
             // Notify UI of step change
@@ -124,8 +126,19 @@ export class TR909Engine extends SynthEngine {
         this.sequencer.addPattern(id, pattern);
         this.sequencer.loadPattern(id);
     }
-    startSequencer() {
-        void this.start();
+    async startSequencer() {
+        // First resume AudioContext if suspended
+        await this.start();
+        // Force voice recreation on first play after page load
+        // This fixes a bug where voices created while context is suspended
+        // have invalid internal state causing a low buzz/DC offset
+        if (!this._voicesReinitializedAfterResume) {
+            this._voicesReinitializedAfterResume = true;
+            // Force setEngine to recreate all voices by temporarily resetting currentEngine
+            const currentEngine = this.currentEngine;
+            this.currentEngine = null;
+            this.setEngine(currentEngine);
+        }
         this.sequencer.start();
     }
     stopSequencer() {

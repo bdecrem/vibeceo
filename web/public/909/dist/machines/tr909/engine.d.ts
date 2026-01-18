@@ -32,7 +32,7 @@ export declare class TR909Engine extends SynthEngine {
      */
     loadRealSamples(): Promise<void>;
     setPattern(id: string, pattern: Pattern): void;
-    startSequencer(): void;
+    startSequencer(): Promise<void>;
     stopSequencer(): void;
     setBpm(bpm: number): void;
     setSwing(amount: number): void;
