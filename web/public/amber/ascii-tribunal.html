@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASCII CHARACTER TRIBUNAL</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="ASCII CHARACTER TRIBUNAL">
+  <meta property="og:description" content="Official proceedings of the Bureau of Typographic Classification">
+  <meta property="og:image" content="https://intheamber.com/amber/ascii-tribunal-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/ascii-tribunal.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ASCII CHARACTER TRIBUNAL">
+  <meta name="twitter:description" content="Official proceedings of the Bureau of Typographic Classification">
+  <meta name="twitter:image" content="https://intheamber.com/amber/ascii-tribunal-og.png">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'IBM Plex Mono', monospace;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      border: 3px double #D4A574;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    header::before {
+      content: '⚖';
+      font-size: 2rem;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: 'Special Elite', monospace;
+      font-size: 1.8rem;
+      letter-spacing: 0.3em;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      letter-spacing: 0.2em;
+    }
+
+    .case-number {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      font-size: 0.6rem;
+      opacity: 0.5;
+    }
+
+    .instructions {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 0.85rem;
+      opacity: 0.8;
+    }
+
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+      gap: 4px;
+      margin-bottom: 2rem;
+      background: rgba(212, 165, 116, 0.05);
+      padding: 1rem;
+      border: 1px solid rgba(212, 165, 116, 0.2);
+    }
+
+    .char-btn {
+      aspect-ratio: 1;
+      background: transparent;
+      border: 1px solid rgba(212, 165, 116, 0.3);
+      color: #D4A574;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .char-btn:hover {
+      background: rgba(212, 165, 116, 0.2);
+      border-color: #D4A574;
+    }
+
+    .char-btn.selected {
+      background: #D4A574;
+      color: #0A0908;
+    }
+
+    .tribunal-report {
+      display: none;
+      border: 2px solid #D4A574;
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .tribunal-report.active {
+      display: block;
+      animation: typeIn 0.3s ease;
+    }
+
+    @keyframes typeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px dashed rgba(212, 165, 116, 0.4);
+    }
+
+    .defendant {
+      font-size: 4rem;
+      line-height: 1;
+      font-weight: bold;
+    }
+
+    .classification {
+      text-align: right;
+      font-size: 0.7rem;
+    }
+
+    .classification-code {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #B8860B;
+    }
+
+    .charges {
+      margin-bottom: 1.5rem;
+    }
+
+    .charges h3 {
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.75rem;
+      opacity: 0.7;
+    }
+
+    .charge-list {
+      list-style: none;
+    }
+
+    .charge-list li {
+      padding: 0.5rem 0;
+      padding-left: 1.5rem;
+      position: relative;
+      font-size: 0.85rem;
+      border-bottom: 1px dotted rgba(212, 165, 116, 0.2);
+    }
+
+    .charge-list li::before {
+      content: '§';
+      position: absolute;
+      left: 0;
+      color: #B8860B;
+    }
+
+    .shape-analysis {
+      background: rgba(212, 165, 116, 0.05);
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .shape-analysis h3 {
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.75rem;
+      opacity: 0.7;
+    }
+
+    .shape-vector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .vector-cell {
+      text-align: center;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      font-size: 0.7rem;
+    }
+
+    .vector-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #B8860B;
+    }
+
+    .verdict {
+      text-align: center;
+      padding: 1rem;
+      border: 1px solid #B8860B;
+      background: rgba(184, 134, 11, 0.1);
+    }
+
+    .verdict-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      opacity: 0.7;
+    }
+
+    .verdict-text {
+      font-family: 'Special Elite', monospace;
+      font-size: 1.1rem;
+      margin-top: 0.5rem;
+      color: #B8860B;
+    }
+
+    .stamp {
+      position: absolute;
+      top: 50%;
+      right: 2rem;
+      transform: translateY(-50%) rotate(-15deg);
+      font-family: 'Special Elite', monospace;
+      font-size: 2rem;
+      color: rgba(184, 134, 11, 0.3);
+      border: 4px solid rgba(184, 134, 11, 0.3);
+      padding: 0.5rem 1rem;
+      pointer-events: none;
+    }
+
+    .fine-print {
+      margin-top: 2rem;
+      font-size: 0.6rem;
+      opacity: 0.4;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.65rem;
+      opacity: 0.4;
+    }
+
+    footer a {
+      color: #D4A574;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="case-number">FORM BTC-127-A</span>
+      <h1>ASCII CHARACTER TRIBUNAL</h1>
+      <div class="subtitle">BUREAU OF TYPOGRAPHIC CLASSIFICATION</div>
+      <div class="subtitle" style="margin-top: 0.5rem; opacity: 0.5;">Est. 1963 • "Every Glyph Shall Be Accounted For"</div>
+    </header>
+
+    <p class="instructions">Select a character to view its official tribunal classification report.</p>
+
+    <div class="character-grid" id="charGrid"></div>
+
+    <div class="tribunal-report" id="report">
+      <div class="stamp" id="stamp">CLASSIFIED</div>
+
+      <div class="report-header">
+        <div class="defendant" id="defendant">@</div>
+        <div class="classification">
+          <div>SHAPE CLASS</div>
+          <div class="classification-code" id="classCode">CRV-ENC-07</div>
+          <div style="margin-top: 0.5rem; opacity: 0.6;" id="charName">COMMERCIAL AT</div>
+        </div>
+      </div>
+
+      <div class="charges">
+        <h3>CHARGES FILED</h3>
+        <ul class="charge-list" id="chargeList">
+          <li>Excessive curvature in a rectilinear zone</li>
+          <li>Unauthorized enclosure of the letter 'a'</li>
+          <li>Loitering in email addresses since 1971</li>
+        </ul>
+      </div>
+
+      <div class="shape-analysis">
+        <h3>6-DIMENSIONAL SHAPE VECTOR ANALYSIS</h3>
+        <div class="shape-vector" id="shapeVector">
+          <div class="vector-cell">
+            <div>UPPER-L</div>
+            <div class="vector-value">0.42</div>
+          </div>
+          <div class="vector-cell">
+            <div>UPPER-C</div>
+            <div class="vector-value">0.38</div>
+          </div>
+          <div class="vector-cell">
+            <div>UPPER-R</div>
+            <div class="vector-value">0.45</div>
+          </div>
+          <div class="vector-cell">
+            <div>LOWER-L</div>
+            <div class="vector-value">0.51</div>
+          </div>
+          <div class="vector-cell">
+            <div>LOWER-C</div>
+            <div class="vector-value">0.67</div>
+          </div>
+          <div class="vector-cell">
+            <div>LOWER-R</div>
+            <div class="vector-value">0.49</div>
+          </div>
+        </div>
+        <div style="font-size: 0.7rem; opacity: 0.6;" id="vectorNote">
+          Note: Subject exhibits anomalous density distribution consistent with spiral containment patterns.
+        </div>
+      </div>
+
+      <div class="verdict">
+        <div class="verdict-label">TRIBUNAL VERDICT</div>
+        <div class="verdict-text" id="verdictText">CLEARED FOR CONTINUED SERVICE</div>
+      </div>
+    </div>
+
+    <div class="fine-print">
+      This document is issued under authority of the International Typographic Standards Commission (ITSC).
+      Shape vector analysis performed using 6-dimensional sampling methodology per BTC Regulation 127.4(b).
+      All characters are presumed legible until proven otherwise. Appeals must be filed in triplicate within
+      30 bitmap cycles. The Bureau accepts no liability for kerning disputes, leading violations, or
+      existential crises induced by prolonged glyph contemplation.
+    </div>
+
+    <footer>
+      <a href="https://intheamber.com">intheamber.com</a> · Inspired by <a href="https://alexharri.com/blog/ascii-rendering" target="_blank">ASCII Rendering Deep Dive</a>
+    </footer>
+  </div>
+
+  <script>
+    // Character data with shape vectors and tribunal reports
+    const characterData = {
+      '@': {
+        name: 'COMMERCIAL AT',
+        classCode: 'CRV-ENC-07',
+        vector: [0.42, 0.38, 0.45, 0.51, 0.67, 0.49],
+        charges: [
+          'Excessive curvature in a rectilinear zone',
+          'Unauthorized enclosure of lowercase "a"',
+          'Loitering in email addresses since 1971',
+          'Conspiracy to replace the word "at"'
+        ],
+        vectorNote: 'Subject exhibits anomalous density distribution consistent with spiral containment patterns.',
+        verdict: 'CLEARED FOR CONTINUED SERVICE',
+        stamp: 'ESSENTIAL'
+      },
+      '#': {
+        name: 'NUMBER SIGN',
+        classCode: 'GRD-INT-04',
+        vector: [0.35, 0.72, 0.35, 0.35, 0.72, 0.35],
+        charges: [
+          'Grid formation without proper permit',
+          'Horizontal-vertical intersection violations (4 counts)',
+          'Identity crisis: "hashtag" vs "pound" vs "octothorpe"',
+          'Enabling social media addiction'
+        ],
+        vectorNote: 'Perfect bilateral symmetry detected. Subject may be concealing additional perpendicular intentions.',
+        verdict: 'UNDER SURVEILLANCE',
+        stamp: 'TRENDING'
+      },
+      '$': {
+        name: 'DOLLAR SIGN',
+        classCode: 'CRV-PEN-02',
+        vector: [0.31, 0.65, 0.28, 0.28, 0.65, 0.31],
+        charges: [
+          'Vertical penetration of curved form',
+          'Representing abstract concept of value',
+          'One or two vertical strokes: PICK ONE',
+          'Making everything about money'
+        ],
+        vectorNote: 'Central axis bisects serpentine form. Subject shows signs of capitalism.',
+        verdict: 'TAXABLE',
+        stamp: 'VALUABLE'
+      },
+      '%': {
+        name: 'PERCENT SIGN',
+        classCode: 'DIG-SLP-03',
+        vector: [0.55, 0.22, 0.18, 0.18, 0.22, 0.55],
+        charges: [
+          'Diagonal slash in a horizontal profession',
+          'Harboring two unauthorized circles',
+          'Making statistics possible',
+          'Creating unrealistic expectations (110%)'
+        ],
+        vectorNote: 'Diagonal element creates asymmetric weight distribution. Circles show no remorse.',
+        verdict: 'PARTIALLY APPROVED',
+        stamp: '87%'
+      },
+      '&': {
+        name: 'AMPERSAND',
+        classCode: 'CRV-CMX-01',
+        vector: [0.48, 0.52, 0.38, 0.62, 0.44, 0.56],
+        charges: [
+          'Excessive calligraphic flourish',
+          'Impersonating the word "and"',
+          'Unclear evolutionary origin (possibly "et")',
+          'Being unnecessarily elegant'
+        ],
+        vectorNote: 'Complex curvature defies simple classification. Subject appears to be showing off.',
+        verdict: 'ADMIRED BUT WATCHED',
+        stamp: 'FANCY'
+      },
+      '*': {
+        name: 'ASTERISK',
+        classCode: 'RAD-SYM-06',
+        vector: [0.25, 0.45, 0.25, 0.25, 0.45, 0.25],
+        charges: [
+          'Radial symmetry in a Cartesian system',
+          'Footnote entrapment (thousands affected)',
+          'Wildcard behavior: matches anything',
+          'Excessive pointiness'
+        ],
+        vectorNote: 'Six-fold rotational symmetry.* (*Results may vary)',
+        verdict: 'SEE FOOTNOTE',
+        stamp: '*****'
+      },
+      '!': {
+        name: 'EXCLAMATION MARK',
+        classCode: 'VRT-PNC-01',
+        vector: [0.12, 0.85, 0.12, 0.08, 0.45, 0.08],
+        charges: [
+          'Yelling in print media',
+          'Vertical aggression',
+          'Floating orphan dot syndrome',
+          'Making everything URGENT'
+        ],
+        vectorNote: 'Extreme upper-center density with isolated lower mass. Subject has boundary issues.',
+        verdict: 'LOUD BUT LEGAL',
+        stamp: 'URGENT!'
+      },
+      '?': {
+        name: 'QUESTION MARK',
+        classCode: 'CRV-PNC-02',
+        vector: [0.22, 0.58, 0.45, 0.08, 0.42, 0.12],
+        charges: [
+          'Chronic uncertainty',
+          'Interrogation without warrant',
+          'Hook-shaped upper formation',
+          'Making people doubt themselves'
+        ],
+        vectorNote: 'Asymmetric curvature suggests perpetual state of inquiry. Dot appears confused.',
+        verdict: 'VERDICT UNCLEAR',
+        stamp: 'PENDING?'
+      },
+      '/': {
+        name: 'SOLIDUS',
+        classCode: 'DIG-SLP-01',
+        vector: [0.12, 0.15, 0.75, 0.75, 0.15, 0.12],
+        charges: [
+          'Diagonal existence in orthogonal society',
+          'Dividing things that were fine together',
+          'URL infiltration',
+          'Suggesting alternatives (and/or)'
+        ],
+        vectorNote: 'Perfect diagonal distribution. Subject refuses to stand up straight.',
+        verdict: 'TILTED BUT TOLERATED',
+        stamp: 'DIVIDED'
+      },
+      '\\': {
+        name: 'REVERSE SOLIDUS',
+        classCode: 'DIG-SLP-02',
+        vector: [0.75, 0.15, 0.12, 0.12, 0.15, 0.75],
+        charges: [
+          'Going the wrong direction',
+          'Escaping when not asked to',
+          'Confusing Windows users',
+          'Identity confusion with solidus'
+        ],
+        vectorNote: 'Mirror image of solidus. Possible sibling rivalry.',
+        verdict: 'ESCAPED',
+        stamp: 'BACKWARDS'
+      },
+      '|': {
+        name: 'VERTICAL LINE',
+        classCode: 'VRT-STR-01',
+        vector: [0.08, 0.92, 0.08, 0.08, 0.92, 0.08],
+        charges: [
+          'Absolute verticality',
+          'Piping data without consent',
+          'Creating tables with bare hands',
+          'Standing there. Menacingly.'
+        ],
+        vectorNote: 'Maximum center density. Subject shows no horizontal tendencies whatsoever.',
+        verdict: 'UPSTANDING CITIZEN',
+        stamp: 'STRAIGHT'
+      },
+      '_': {
+        name: 'LOW LINE',
+        classCode: 'HRZ-STR-01',
+        vector: [0.05, 0.05, 0.05, 0.85, 0.85, 0.85],
+        charges: [
+          'Lurking at the bottom of cells',
+          'Connecting words illegally (snake_case)',
+          'Impersonating a space',
+          'Underscoring things passive-aggressively'
+        ],
+        vectorNote: 'All mass concentrated in lower region. Subject appears to be lying down.',
+        verdict: 'LOW PROFILE APPROVED',
+        stamp: 'GROUNDED'
+      },
+      '=': {
+        name: 'EQUALS SIGN',
+        classCode: 'HRZ-DUP-01',
+        vector: [0.05, 0.45, 0.05, 0.05, 0.45, 0.05],
+        charges: [
+          'Claiming things are equal when they\'re not',
+          'Horizontal duplication',
+          'Creating false equivalencies',
+          'Assignment without consent'
+        ],
+        vectorNote: 'Dual horizontal lines show no variation. Subject is suspiciously balanced.',
+        verdict: 'EQUAL TREATMENT',
+        stamp: 'BALANCED'
+      },
+      '+': {
+        name: 'PLUS SIGN',
+        classCode: 'CRS-SYM-01',
+        vector: [0.15, 0.72, 0.15, 0.15, 0.72, 0.15],
+        charges: [
+          'Unauthorized intersection',
+          'Positive thinking propaganda',
+          'Adding things without permission',
+          'Being confused for a medical symbol'
+        ],
+        vectorNote: 'Perfect cross formation. Subject has both vertical AND horizontal tendencies.',
+        verdict: 'POSITIVE OUTCOME',
+        stamp: 'ADDED'
+      },
+      '-': {
+        name: 'HYPHEN-MINUS',
+        classCode: 'HRZ-STR-02',
+        vector: [0.05, 0.05, 0.05, 0.05, 0.75, 0.05],
+        charges: [
+          'Identity crisis: hyphen or minus?',
+          'Subtracting value from perfectly good numbers',
+          'Breaking words at line endings',
+          'Negative attitude'
+        ],
+        vectorNote: 'Single horizontal stroke. Subject is one-dimensional.',
+        verdict: 'MINUS POINTS',
+        stamp: 'NEGATIVE'
+      },
+      'W': {
+        name: 'LATIN CAPITAL LETTER W',
+        classCode: 'DIG-CMX-05',
+        vector: [0.72, 0.25, 0.72, 0.25, 0.65, 0.25],
+        charges: [
+          'Excessive diagonal strokes (4 counts)',
+          'Impersonating two Vs',
+          'Width violations in narrow columns',
+          'Taking up everyone else\'s space'
+        ],
+        vectorNote: 'Bilateral symmetry with deep center valley. Subject is extra.',
+        verdict: 'WIDE BUT PERMITTED',
+        stamp: 'DOUBLE'
+      },
+      'M': {
+        name: 'LATIN CAPITAL LETTER M',
+        classCode: 'DIG-CMX-04',
+        vector: [0.78, 0.35, 0.78, 0.82, 0.25, 0.82],
+        charges: [
+          'Mountain formation without permit',
+          'Excessive vertical strokes',
+          'Being the widest standard letter',
+          'Showing off bilateral symmetry'
+        ],
+        vectorNote: 'Heavy corners with central depression. Subject appears to be flexing.',
+        verdict: 'MAGNIFICENT',
+        stamp: 'MASSIVE'
+      },
+      'O': {
+        name: 'LATIN CAPITAL LETTER O',
+        classCode: 'CRV-ENC-01',
+        vector: [0.52, 0.35, 0.52, 0.52, 0.35, 0.52],
+        charges: [
+          'Perfect circularity in imperfect world',
+          'Enclosing empty space',
+          'Identity confusion with zero',
+          'Being too round'
+        ],
+        vectorNote: 'Near-uniform density distribution. Subject literally has no edges.',
+        verdict: 'WELL ROUNDED',
+        stamp: 'COMPLETE'
+      },
+      'I': {
+        name: 'LATIN CAPITAL LETTER I',
+        classCode: 'VRT-STR-02',
+        vector: [0.08, 0.88, 0.08, 0.08, 0.88, 0.08],
+        charges: [
+          'Minimal effort, maximum ego',
+          'First person singular appropriation',
+          'Identical to lowercase L (suspicious)',
+          'Standing alone unnecessarily'
+        ],
+        vectorNote: 'Pure vertical. Subject appears to be very self-centered.',
+        verdict: 'SELF-APPROVED',
+        stamp: 'SINGULAR'
+      },
+      'X': {
+        name: 'LATIN CAPITAL LETTER X',
+        classCode: 'DIG-CRS-01',
+        vector: [0.68, 0.25, 0.68, 0.68, 0.25, 0.68],
+        charges: [
+          'Crossing itself',
+          'Marking spots without authorization',
+          'Mathematical variable impersonation',
+          'Closing windows aggressively'
+        ],
+        vectorNote: 'Perfect diagonal cross. Subject marks the spot.',
+        verdict: 'X-ONERATED',
+        stamp: 'CROSSED'
+      },
+      'A': {
+        name: 'LATIN CAPITAL LETTER A',
+        classCode: 'DIG-TRI-01',
+        vector: [0.25, 0.72, 0.25, 0.68, 0.55, 0.68],
+        charges: [
+          'Pyramid scheme participation',
+          'Alphabetical privilege (always first)',
+          'Internal horizontal bar of unknown purpose',
+          'Peak formation in text areas'
+        ],
+        vectorNote: 'Triangular distribution with crossbar. Subject has reached the top.',
+        verdict: 'A-GRADE CITIZEN',
+        stamp: 'APEX'
+      },
+      '.': {
+        name: 'FULL STOP',
+        classCode: 'PNT-ISO-01',
+        vector: [0.02, 0.02, 0.02, 0.02, 0.45, 0.02],
+        charges: [
+          'Ending sentences without warning',
+          'Extreme minimalism',
+          'Creating domain names',
+          'Period of suspicious activity'
+        ],
+        vectorNote: 'Single point mass in lower center. Subject refuses to elaborate.',
+        verdict: 'CASE CLOSED.',
+        stamp: 'FINAL'
+      },
+      ',': {
+        name: 'COMMA',
+        classCode: 'PNT-TRL-01',
+        vector: [0.02, 0.02, 0.02, 0.08, 0.48, 0.15],
+        charges: [
+          'Causing unnecessary pauses',
+          'Hanging below the baseline',
+          'Creating Oxford comma debates',
+          'Serial behavior'
+        ],
+        vectorNote: 'Descended tail extends below expected boundaries. Subject has a trailing issue.',
+        verdict: 'PAUSE GRANTED',
+        stamp: 'PENDING,'
+      },
+      ':': {
+        name: 'COLON',
+        classCode: 'PNT-DUP-01',
+        vector: [0.02, 0.42, 0.02, 0.02, 0.42, 0.02],
+        charges: [
+          'Introducing lists without consent',
+          'Stacking dots vertically',
+          'Time format violations',
+          'Facial expression complicity :)'
+        ],
+        vectorNote: 'Dual point masses. Subject is clearly two-faced.',
+        verdict: 'EXPLANATORY',
+        stamp: 'DEFINED:'
+      },
+      ';': {
+        name: 'SEMICOLON',
+        classCode: 'PNT-HYB-01',
+        vector: [0.02, 0.42, 0.02, 0.08, 0.45, 0.12],
+        charges: [
+          'Neither period nor comma (identity fraud)',
+          'Confusing programmers worldwide',
+          'Winky face participation ;)',
+          'Pretending to be sophisticated'
+        ],
+        vectorNote: 'Hybrid formation. Subject can\'t decide what it wants to be.',
+        verdict: 'PROBATIONARY; WATCH CLOSELY',
+        stamp: 'CONFUSED;'
+      },
+      '~': {
+        name: 'TILDE',
+        classCode: 'CRV-WAV-01',
+        vector: [0.15, 0.35, 0.55, 0.55, 0.35, 0.15],
+        charges: [
+          'Approximating things that deserve precision',
+          'Waving in a static medium',
+          'Home directory infiltration',
+          'Being ~quirky~'
+        ],
+        vectorNote: 'Sinusoidal pattern. Subject appears to be going with the flow.',
+        verdict: 'APPROXIMATELY APPROVED',
+        stamp: '~WAVY~'
+      },
+      '^': {
+        name: 'CIRCUMFLEX ACCENT',
+        classCode: 'DIG-PEK-01',
+        vector: [0.15, 0.68, 0.15, 0.02, 0.02, 0.02],
+        charges: [
+          'Pointing upward aggressively',
+          'Exponentiation enablement',
+          'Hovering above text suspiciously',
+          'Caret-ing too much'
+        ],
+        vectorNote: 'All mass concentrated in upper region. Subject has peaked.',
+        verdict: 'ELEVATED STATUS',
+        stamp: 'POINTY'
+      },
+      '[': {
+        name: 'LEFT SQUARE BRACKET',
+        classCode: 'ENC-SQR-01',
+        vector: [0.62, 0.55, 0.05, 0.62, 0.55, 0.05],
+        charges: [
+          'Array access facilitation',
+          'Opening without closing (sometimes)',
+          'Incomplete enclosure',
+          'Waiting for its partner ]'
+        ],
+        vectorNote: 'Left-heavy distribution. Subject shows opening tendencies.',
+        verdict: 'OPEN CASE [',
+        stamp: 'INDEXED'
+      },
+      ']': {
+        name: 'RIGHT SQUARE BRACKET',
+        classCode: 'ENC-SQR-02',
+        vector: [0.05, 0.55, 0.62, 0.05, 0.55, 0.62],
+        charges: [
+          'Closing things that were open',
+          'Array termination',
+          'Codependency with [',
+          'Always having the last word'
+        ],
+        vectorNote: 'Right-heavy distribution. Subject shows closing tendencies.',
+        verdict: 'CASE CLOSED ]',
+        stamp: 'COMPLETE'
+      },
+      '{': {
+        name: 'LEFT CURLY BRACKET',
+        classCode: 'ENC-CRV-01',
+        vector: [0.45, 0.48, 0.12, 0.45, 0.48, 0.12],
+        charges: [
+          'Curly behavior in bracket family',
+          'Code block inception',
+          'Showing off compared to [',
+          'JSON structural support'
+        ],
+        vectorNote: 'Curved left-facing form. Subject is more stylish than necessary.',
+        verdict: 'SCOPE PERMITTED {',
+        stamp: 'CURLY'
+      },
+      '}': {
+        name: 'RIGHT CURLY BRACKET',
+        classCode: 'ENC-CRV-02',
+        vector: [0.12, 0.48, 0.45, 0.12, 0.48, 0.45],
+        charges: [
+          'Scope termination',
+          'Being the fancier closing bracket',
+          'Partner dependency issues',
+          'Making code look organized'
+        ],
+        vectorNote: 'Curved right-facing form. Subject completes what { started.',
+        verdict: 'SCOPE CLOSED }',
+        stamp: 'COMPLETE'
+      },
+      '(': {
+        name: 'LEFT PARENTHESIS',
+        classCode: 'ENC-RND-01',
+        vector: [0.55, 0.38, 0.08, 0.55, 0.38, 0.08],
+        charges: [
+          'Creating aside conversations',
+          'Mathematical grouping',
+          'Emoji eye participation :(',
+          'Nesting infinitely'
+        ],
+        vectorNote: 'Curved left enclosure. Subject parenthetically detained.',
+        verdict: 'ASIDE APPROVED (',
+        stamp: 'GROUPED'
+      },
+      ')': {
+        name: 'RIGHT PARENTHESIS',
+        classCode: 'ENC-RND-02',
+        vector: [0.08, 0.38, 0.55, 0.08, 0.38, 0.55],
+        charges: [
+          'Closing parenthetical statements',
+          'Smiley face complicity :)',
+          'Balance restoration',
+          'Having the final say (usually)'
+        ],
+        vectorNote: 'Curved right enclosure. Subject closes the conversation.',
+        verdict: 'CASE WRAPPED )',
+        stamp: 'CLOSED'
+      },
+      '<': {
+        name: 'LESS-THAN SIGN',
+        classCode: 'DIG-CMP-01',
+        vector: [0.08, 0.45, 0.62, 0.62, 0.45, 0.08],
+        charges: [
+          'Making comparisons',
+          'Pointing left aggressively',
+          'HTML tag infiltration',
+          'Being less than helpful sometimes'
+        ],
+        vectorNote: 'Rightward pointing angle. Subject has directional bias.',
+        verdict: 'LESS THAN PERFECT',
+        stamp: '<HTML>'
+      },
+      '>': {
+        name: 'GREATER-THAN SIGN',
+        classCode: 'DIG-CMP-02',
+        vector: [0.62, 0.45, 0.08, 0.08, 0.45, 0.62],
+        charges: [
+          'Superiority complex',
+          'Closing HTML tags',
+          'Quote attribution >>',
+          'Always pointing forward'
+        ],
+        vectorNote: 'Leftward pointing angle. Subject thinks it\'s greater than everything.',
+        verdict: 'GREATER EXPECTATIONS',
+        stamp: '>>'
+      },
+      '"': {
+        name: 'QUOTATION MARK',
+        classCode: 'PNT-DUP-02',
+        vector: [0.25, 0.55, 0.25, 0.02, 0.02, 0.02],
+        charges: [
+          'Taking credit for others\' words',
+          'Air quotes enabling',
+          'Sarcasm amplification',
+          '"Being" unnecessary sometimes'
+        ],
+        vectorNote: 'Dual upper marks. Subject is often used sarcastically.',
+        verdict: '"APPROVED"',
+        stamp: 'QUOTED'
+      },
+      "'": {
+        name: 'APOSTROPHE',
+        classCode: 'PNT-SNG-01',
+        vector: [0.02, 0.55, 0.02, 0.02, 0.02, 0.02],
+        charges: [
+          'Possessive behavior',
+          'Contraction facilitation',
+          'Grocer\'s apostrophe epidemic',
+          'Single quote identity crisis'
+        ],
+        vectorNote: 'Single elevated point. Subject shows possessive tendencies.',
+        verdict: "IT'S FINE",
+        stamp: "OWNER'S"
+      },
+      '`': {
+        name: 'GRAVE ACCENT',
+        classCode: 'PNT-SNG-02',
+        vector: [0.45, 0.35, 0.02, 0.02, 0.02, 0.02],
+        charges: [
+          'Backtick behavior',
+          'Template literal involvement',
+          'Leaning the wrong way',
+          'Markdown code block conspiracy'
+        ],
+        vectorNote: 'Single angled point. Subject falls backward.',
+        verdict: '`EXECUTED`',
+        stamp: 'GRAVE'
+      }
+    };
+
+    // Generate character buttons
+    const grid = document.getElementById('charGrid');
+    const chars = Object.keys(characterData);
+
+    chars.forEach(char => {
+      const btn = document.createElement('button');
+      btn.className = 'char-btn';
+      btn.textContent = char;
+      btn.onclick = () => showReport(char);
+      grid.appendChild(btn);
+    });
+
+    // Show report for selected character
+    function showReport(char) {
+      const data = characterData[char];
+      if (!data) return;
+
+      // Update selected button
+      document.querySelectorAll('.char-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.textContent === char);
+      });
+
+      // Update report
+      document.getElementById('defendant').textContent = char;
+      document.getElementById('classCode').textContent = data.classCode;
+      document.getElementById('charName').textContent = data.name;
+
+      // Update charges
+      const chargeList = document.getElementById('chargeList');
+      chargeList.innerHTML = data.charges.map(c => `<li>${c}</li>`).join('');
+
+      // Update shape vector
+      const labels = ['UPPER-L', 'UPPER-C', 'UPPER-R', 'LOWER-L', 'LOWER-C', 'LOWER-R'];
+      const shapeVector = document.getElementById('shapeVector');
+      shapeVector.innerHTML = labels.map((label, i) => `
+        <div class="vector-cell">
+          <div>${label}</div>
+          <div class="vector-value">${data.vector[i].toFixed(2)}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('vectorNote').textContent = data.vectorNote;
+      document.getElementById('verdictText').textContent = data.verdict;
+      document.getElementById('stamp').textContent = data.stamp;
+
+      // Show report
+      const report = document.getElementById('report');
+      report.classList.remove('active');
+      setTimeout(() => report.classList.add('active'), 50);
+    }
+
+    // Show first character by default
+    showReport('@');
+  </script>
+</body>
+</html>
