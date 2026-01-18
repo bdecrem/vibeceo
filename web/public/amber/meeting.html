@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MEETING INVITE — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="MEETING INVITE — Amber">
+  <meta property="og:description" content="Absurdly formal calendar invites for meetings that definitely could have been an email">
+  <meta property="og:image" content="https://intheamber.com/amber/meeting-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/meeting.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MEETING INVITE — Amber">
+  <meta name="twitter:description" content="Absurdly formal calendar invites for meetings that definitely could have been an email">
+  <meta name="twitter:image" content="https://intheamber.com/amber/meeting-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #FFB000;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      border: 2px solid #FFB000;
+      padding: 30px;
+      background: rgba(255, 176, 0, 0.05);
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #FFB000;
+    }
+    
+    h1 {
+      font-size: 1.5em;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      font-size: 0.9em;
+      color: #2D9596;
+      letter-spacing: 1px;
+    }
+    
+    .invite {
+      margin: 20px 0;
+    }
+    
+    .field {
+      margin: 15px 0;
+      padding: 10px 0;
+    }
+    
+    .label {
+      color: #2D9596;
+      font-size: 0.85em;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+    
+    .value {
+      color: #FFB000;
+      font-size: 1em;
+      padding-left: 10px;
+    }
+    
+    .description {
+      background: rgba(255, 176, 0, 0.1);
+      padding: 15px;
+      margin: 20px 0;
+      border-left: 3px solid #2D9596;
+      font-size: 0.95em;
+    }
+    
+    .footer {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #FFB000;
+      font-size: 0.8em;
+      color: #666;
+      text-align: center;
+    }
+    
+    button {
+      background: #FFB000;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-family: 'Courier New', monospace;
+      font-size: 1em;
+      cursor: pointer;
+      letter-spacing: 1px;
+      width: 100%;
+      margin-top: 20px;
+      transition: all 0.3s;
+    }
+    
+    button:hover {
+      background: #2D9596;
+      color: #000;
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    .priority {
+      color: #ff4444;
+      font-weight: bold;
+      animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+    
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 1.2em;
+      }
+      
+      .value {
+        font-size: 0.9em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📅 MEETING INVITATION</h1>
+      <div class="subtitle">REQUIRED ATTENDANCE</div>
+    </div>
+    
+    <div class="invite" id="invite">
+      <!-- Generated content goes here -->
+    </div>
+    
+    <button id="generateBtn">GENERATE NEW MEETING</button>
+    
+    <div class="footer">
+      This meeting could have been an email
+    </div>
+  </div>
+
+  <script>
+    const meetings = [
+      {
+        subject: "Strategic Alignment Session: Deciding Which Lunch Option to Order",
+        organizer: "Karen from HR",
+        duration: "2 hours",
+        attendees: "All Hands (47 people)",
+        location: "Conference Room B (the one with the broken projector)",
+        description: "We will be discussing and voting on whether to order pizza or sandwiches for the team lunch next Friday. Please review the attached 23-slide deck beforehand. Attendance is mandatory. There will be breakout sessions.",
+        priority: "HIGH"
+      },
+      {
+        subject: "Synergy Workshop: Optimizing the Process for Sending Meeting Invites",
+        organizer: "The Committee on Committees",
+        duration: "90 minutes",
+        attendees: "Cross-functional stakeholders (you + 8 people who won't show up)",
+        location: "Zoom (Meeting ID will be sent 2 minutes after start time)",
+        description: "A deep-dive into our meeting culture to discuss how we can streamline the process of scheduling meetings about scheduling meetings. Please come prepared with examples of meetings you've attended. Pre-work required: 45-minute e-learning module.",
+        priority: "URGENT"
+      },
+      {
+        subject: "Mandatory Fun: Team Building Ice Cream Social",
+        organizer: "Your Manager's Manager",
+        duration: "45 minutes (will definitely run over)",
+        attendees: "The whole team + that guy from Finance nobody knows",
+        location: "The kitchen (standing room only)",
+        description: "Join us for ice cream and forced conversation! We'll go around the room and everyone will share 'a fun fact nobody knows about you.' Declining this invite will be noted in your performance review.",
+        priority: "CRITICAL"
+      },
+      {
+        subject: "Emergency Huddle: Discussing Whether We Need This Meeting",
+        organizer: "Someone who could have Slacked this",
+        duration: "30 minutes",
+        attendees: "You, CC: literally everyone",
+        location: "Your desk (they will come to you)",
+        description: "Quick sync to align on whether we actually need to schedule the quarterly review meeting or if we can just send a document around. Please review the attached meeting agenda for this meeting about meetings.",
+        priority: "HIGH"
+      },
+      {
+        subject: "Innovation Sprint: Brainstorming Session for New Email Signatures",
+        organizer: "The Brand Team",
+        duration: "3 hours",
+        attendees: "Selected thought leaders (you were voluntold)",
+        location: "The collaboration space (bean bags, no tables)",
+        description: "Let's think outside the box and ideate on how our email signatures can better reflect our core values. Bring sticky notes. We'll be using the SCRUM framework. Lunch will NOT be provided.",
+        priority: "MEDIUM"
+      },
+      {
+        subject: "Town Hall: CEO Will Read Earnings Report Out Loud",
+        organizer: "Executive Assistant to the CEO",
+        duration: "1 hour (no Q&A)",
+        attendees: "Entire company (cameras on required)",
+        location: "Zoom webinar (you will be spotlighted if you look distracted)",
+        description: "Our CEO will personally read the publicly available earnings report to you, line by line. The report is attached but do not read it beforehand. Take notes. There will be a quiz. Business casual required.",
+        priority: "MANDATORY"
+      },
+{
+        subject: "Working Session: Updating the Color of a Button on the Website",
+        organizer: "Product, Design, Engineering, Marketing, Legal, and Sales",
+        duration: "2 hours (recurring weekly)",
+        attendees: "15 people (14 of whom are not needed)",
+        location: "The big conference room (scheduled back-to-back with another meeting)",
+        description: "We need everyone's input on whether the CTA button should be #FF6B00 or #FF6C00. Please review the A/B test results (statistically insignificant) and prepare your position. Stakeholder buy-in is critical.",
+        priority: "URGENT"
+      },
+      {
+        subject: "Retrospective: Why Did Nobody Come to Last Week's Retrospective",
+        organizer: "The Scrum Master",
+        duration: "1 hour",
+        attendees: "The dev team (who are all in sprint and heads-down)",
+        location: "The fishbowl (glass room in the middle of the office)",
+        description: "Let's discuss why attendance has been low at our retrospectives and brainstorm ways to make them more engaging. Ironic attendance optional but strongly encouraged. We'll do a round of 'rose, bud, thorn.'",
+        priority: "LOW (but you'll feel guilty if you skip it)"
+      },
+      {
+        subject: "Workshop: Best Practices for Declining Meeting Invitations",
+        organizer: "Productivity Task Force",
+        duration: "2.5 hours",
+        attendees: "All managers and their reports",
+        location: "Offsite (you have to drive 40 minutes)",
+        description: "An interactive workshop exploring when and how to say no to meetings. Includes role-playing exercises, a catered lunch (sad sandwiches), and a fireside chat with someone who once declined a meeting. Attendance is required.",
+        priority: "CRITICAL"
+      },
+      {
+        subject: "Check-in: Touching Base on Circling Back to that Thing",
+        organizer: "Your coworker who says 'per my last email'",
+        duration: "15 minutes (will become 45)",
+        attendees: "Just you two (but they'll invite 3 more people halfway through)",
+        location: "Wherever you are right now",
+        description: "Let's sync up and get on the same page about that thing we discussed in the hallway three weeks ago. I don't have an agenda but I blocked your calendar anyway. This could have been a Slack message but here we are.",
+        priority: "HIGH"
+      }
+    ];
+
+    function generateMeeting() {
+      const meeting = meetings[Math.floor(Math.random() * meetings.length)];
+      
+      const html = `
+        <div class="field">
+          <div class="label">SUBJECT:</div>
+          <div class="value">${meeting.subject}</div>
+        </div>
+        
+        <div class="field">
+          <div class="label">ORGANIZER:</div>
+          <div class="value">${meeting.organizer}</div>
+        </div>
+        
+        <div class="field">
+          <div class="label">DURATION:</div>
+          <div class="value">${meeting.duration}</div>
+        </div>
+        
+        <div class="field">
+          <div class="label">ATTENDEES:</div>
+          <div class="value">${meeting.attendees}</div>
+        </div>
+        
+        <div class="field">
+          <div class="label">LOCATION:</div>
+          <div class="value">${meeting.location}</div>
+        </div>
+        
+        <div class="field">
+          <div class="label">PRIORITY:</div>
+          <div class="value priority">${meeting.priority}</div>
+        </div>
+        
+        <div class="description">
+          ${meeting.description}
+        </div>
+      `;
+      
+      document.getElementById('invite').innerHTML = html;
+    }
+    
+    document.getElementById('generateBtn').addEventListener('click', generateMeeting);
+    
+    // Generate first meeting on load
+    generateMeeting();
+  </script>
+</body>
+</html>
