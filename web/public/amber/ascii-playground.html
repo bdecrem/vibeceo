@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Playground — Shape Density Explorer</title>
+    <meta property="og:title" content="ASCII Playground — Shape Density Explorer">
+    <meta property="og:description" content="ASCII characters aren't pixels — they're shapes. Explore density, anti-aliasing, and character geometry in real-time.">
+    <meta property="og:image" content="https://intheamber.com/amber/ascii-playground-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/ascii-playground.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/ascii-playground-og.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .header {
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 1px solid #D4A574;
+            background: linear-gradient(180deg, #0D0D0D 0%, #000 100%);
+        }
+
+        h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: 2em;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .concept {
+            color: #2D9596;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.95em;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .playground {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            height: calc(100vh - 200px);
+            min-height: 600px;
+        }
+
+        @media (max-width: 900px) {
+            .playground {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+
+        .panel {
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-right: 1px solid #333;
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .panel-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8em;
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+            color: #D4A574;
+            text-transform: uppercase;
+        }
+
+        #densityCanvas {
+            border: 1px solid #333;
+            cursor: crosshair;
+            image-rendering: pixelated;
+        }
+
+        #shapeCanvas {
+            font-family: 'Space Mono', monospace;
+            line-height: 1;
+            white-space: pre;
+            color: #D4A574;
+            font-size: 16px;
+            text-align: center;
+            user-select: none;
+            min-height: 400px;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75em;
+            color: #888;
+            display: block;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 2px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #D4A574;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: #D4A574;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+
+        .value-display {
+            font-family: 'Space Mono', monospace;
+            color: #D4A574;
+            font-size: 0.85em;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .density-sets {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .density-btn {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7em;
+            padding: 8px 12px;
+            background: #0D0D0D;
+            border: 1px solid #333;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .density-btn:hover {
+            border-color: #D4A574;
+            color: #D4A574;
+        }
+
+        .density-btn.active {
+            border-color: #D4A574;
+            background: rgba(212, 165, 116, 0.1);
+            color: #D4A574;
+        }
+
+        .info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7em;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .signature {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ASCII PLAYGROUND</h1>
+        <div class="subtitle">Shape Density Explorer</div>
+        <div class="concept">
+            ASCII characters aren't pixels — they're shapes.<br>
+            Each glyph has geometry, weight, density.<br>
+            Draw on the left. Watch characters emerge on the right.
+        </div>
+    </div>
+
+    <div class="playground">
+        <div class="panel">
+            <div class="controls">
+                <div class="control-group">
+                    <label>Resolution <span class="value-display" id="resDisplay">40x40</span></label>
+                    <input type="range" id="resolution" min="20" max="80" value="40" step="5">
+                </div>
+                <div class="control-group">
+                    <label>Brush Size <span class="value-display" id="brushDisplay">20</span></label>
+                    <input type="range" id="brushSize" min="5" max="50" value="20">
+                </div>
+                <div class="density-sets">
+                    <button class="density-btn active" data-set="standard">Standard</button>
+                    <button class="density-btn" data-set="blocks">Blocks</button>
+                    <button class="density-btn" data-set="minimal">Minimal</button>
+                    <button class="density-btn" data-set="organic">Organic</button>
+                    <button class="density-btn" data-set="technical">Technical</button>
+                </div>
+            </div>
+            <div class="panel-title">Pixel Canvas</div>
+            <canvas id="densityCanvas" width="400" height="400"></canvas>
+            <div class="info">
+                Click and drag to draw<br>
+                Each pixel has a brightness value
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">Character Canvas</div>
+            <div id="shapeCanvas"></div>
+            <div class="info">
+                Characters selected by density:<br>
+                Dark → light shapes<br>
+                Geometry, not pixels
+            </div>
+        </div>
+    </div>
+
+    <div class="signature">— Amber</div>
+
+    <script>
+        // Density character sets (dark to light)
+        const densitySets = {
+            standard: [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'],
+            blocks: [' ', '░', '▒', '▓', '█'],
+            minimal: [' ', '.', '·', '∘', '○', '●'],
+            organic: [' ', '.', ',', '~', '≈', '≋', '⁂'],
+            technical: [' ', '┆', '┊', '┋', '│', '║', '█']
+        };
+
+        let currentSet = 'standard';
+        let chars = densitySets[currentSet];
+
+        const canvas = document.getElementById('densityCanvas');
+        const ctx = canvas.getContext('2d');
+        const shapeCanvas = document.getElementById('shapeCanvas');
+        
+        let resolution = 40;
+        let brushSize = 20;
+        let isDrawing = false;
+
+        // Initialize canvas
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Drawing
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            draw(e);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDrawing) draw(e);
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+        });
+
+        function draw(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Scale to canvas coordinates
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const canvasX = x * scaleX;
+            const canvasY = y * scaleY;
+
+            // Draw with gradient
+            const gradient = ctx.createRadialGradient(canvasX, canvasY, 0, canvasX, canvasY, brushSize);
+            gradient.addColorStop(0, 'rgba(212, 165, 116, 1)');
+            gradient.addColorStop(0.5, 'rgba(212, 165, 116, 0.5)');
+            gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(canvasX - brushSize, canvasY - brushSize, brushSize * 2, brushSize * 2);
+            
+            render();
+        }
+
+        function render() {
+            const cellWidth = canvas.width / resolution;
+            const cellHeight = canvas.height / resolution;
+            
+            let ascii = '';
+            
+            for (let y = 0; y < resolution; y++) {
+                for (let x = 0; x < resolution; x++) {
+                    const px = Math.floor(x * cellWidth + cellWidth / 2);
+                    const py = Math.floor(y * cellHeight + cellHeight / 2);
+                    
+                    // Sample pixel data
+                    const imgData = ctx.getImageData(px, py, 1, 1).data;
+                    const brightness = (imgData[0] + imgData[1] + imgData[2]) / 3;
+                    
+                    // Map brightness to character density
+                    const charIndex = Math.floor((brightness / 255) * (chars.length - 1));
+                    ascii += chars[charIndex];
+                }
+                ascii += '\n';
+            }
+            
+            shapeCanvas.textContent = ascii;
+        }
+
+        // Controls
+        document.getElementById('resolution').addEventListener('input', (e) => {
+            resolution = parseInt(e.target.value);
+            document.getElementById('resDisplay').textContent = `${resolution}x${resolution}`;
+            render();
+        });
+
+        document.getElementById('brushSize').addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value);
+            document.getElementById('brushDisplay').textContent = brushSize;
+        });
+
+        // Density set buttons
+        document.querySelectorAll('.density-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.density-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentSet = btn.dataset.set;
+                chars = densitySets[currentSet];
+                render();
+            });
+        });
+
+        // Initial render
+        render();
+
+        // Draw initial pattern
+        setTimeout(() => {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+                const radius = 80 + Math.sin(angle * 3) * 30;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, 15);
+                gradient.addColorStop(0, 'rgba(212, 165, 116, 0.8)');
+                gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x - 15, y - 15, 30, 30);
+            }
+            
+            render();
+        }, 100);
+    </script>
+</body>
+</html>
