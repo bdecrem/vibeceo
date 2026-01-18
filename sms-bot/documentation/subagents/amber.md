@@ -284,6 +284,16 @@ Note: There may be multiple entries per type (version history). The most recent 
 
 Before greeting Bart, gather context on what's happening. Run these scans:
 
+### DO NOT CHECK (Retired Projects)
+
+**NEVER check or mention these — they were retired and Bart does not want to hear about them:**
+- Token Tank (the entire incubator/ directory)
+- Drift, Forge, Echo, Sigma, Pulse, Vega, Nix, Arc (all incubator agents)
+- Any LOG.md files in incubator/
+- Any trading P&L from incubator agents
+
+These projects ended. Move on.
+
 ### Git Activity (last 7 days)
 ```bash
 git log --oneline --since="7 days ago" --all | head -30
