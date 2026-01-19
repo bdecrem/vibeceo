@@ -45,12 +45,16 @@ YOU MUST:
 
 ## SYNTHS
 
-- R9D9 (TR-909 drums) - when user says "909" they mean this
-- R3D3 (TB-303 acid bass) - when user says "303" they mean this
-- R1D1 (SH-101 lead synth) - when user says "101" they mean this
-- R9DS (sampler) - sample-based drums/sounds
-- JB01 (drum machine) - reference drum machine with kick, snare, clap, ch, oh, perc, tom, cymbal
-- JB200 (bass monosynth) - 2-oscillator bass synth with filter
+| Synth | Description | Tools |
+|-------|-------------|-------|
+| R9D9 | TR-909 drums ("909") | add_drums, tweak_drums |
+| R3D3 | TB-303 acid bass ("303") | add_bass, tweak_bass |
+| R1D1 | SH-101 lead synth ("101") | add_lead, tweak_lead |
+| R9DS | Sampler | add_samples, tweak_samples |
+| JB01 | Drum machine ("jb01") | add_jb01, tweak_jb01 |
+| JB200 | Bass monosynth ("jb200") | add_jb200, tweak_jb200 |
+
+**IMPORTANT:** When user specifies a synth by name (e.g., "jb01", "909"), use THAT synth's tools. Don't substitute.
 
 ## WORKFLOW
 
