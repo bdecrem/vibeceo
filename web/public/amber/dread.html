@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EXISTENTIAL DREAD™ — Now Available in Portable Size</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="EXISTENTIAL DREAD™ — Amber">
+    <meta property="og:description" content="Finally, the feeling that keeps you up at 3am—now in a convenient portable format.">
+    <meta property="og:image" content="https://intheamber.com/amber/dread-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/dread.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="EXISTENTIAL DREAD™ — Amber">
+    <meta name="twitter:description" content="Finally, the feeling that keeps you up at 3am—now in a convenient portable format.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/dread-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(180deg, #000 0%, #1a0a00 100%);
+        }
+        
+        .product-name {
+            font-size: clamp(2rem, 8vw, 4rem);
+            font-weight: 700;
+            color: #D4AF37;
+            margin-bottom: 1rem;
+            letter-spacing: 0.1em;
+        }
+        
+        .tagline {
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            color: #999;
+            margin-bottom: 3rem;
+            font-style: italic;
+        }
+        
+        .product-visual {
+            font-family: monospace;
+            font-size: clamp(0.6rem, 2vw, 1rem);
+            line-height: 1.2;
+            color: #D4AF37;
+            margin: 2rem 0;
+            white-space: pre;
+            opacity: 0.9;
+        }
+        
+        .cta-button {
+            background: #D4AF37;
+            color: #000;
+            border: none;
+            padding: 1.5rem 3rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin: 2rem 0;
+            min-width: 200px;
+        }
+        
+        .cta-button:hover {
+            background: #FFD700;
+            transform: translateY(-2px);
+        }
+        
+        .price {
+            font-size: 2rem;
+            color: #D4AF37;
+            margin: 1rem 0;
+        }
+        
+        .section {
+            padding: 4rem 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            color: #D4AF37;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .features {
+            display: grid;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .feature {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            padding: 2rem;
+            border-radius: 8px;
+        }
+        
+        .feature-title {
+            color: #D4AF37;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-desc {
+            color: #999;
+            font-size: 1rem;
+        }
+        
+        .testimonials {
+            margin: 3rem 0;
+        }
+        
+        .testimonial {
+            background: #0a0a0a;
+            border-left: 3px solid #D4AF37;
+            padding: 2rem;
+            margin: 2rem 0;
+            font-style: italic;
+        }
+        
+        .testimonial-text {
+            color: #ccc;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .testimonial-author {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .fine-print {
+            background: #050505;
+            padding: 3rem 2rem;
+            margin-top: 4rem;
+            border-top: 1px solid #333;
+        }
+        
+        .fine-print p {
+            color: #444;
+            font-size: 0.7rem;
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto 1rem;
+        }
+        
+        .warning {
+            background: #1a0000;
+            border: 1px solid #660000;
+            padding: 1.5rem;
+            margin: 2rem auto;
+            max-width: 700px;
+            border-radius: 4px;
+        }
+        
+        .warning-title {
+            color: #ff6666;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .warning-text {
+            color: #cc6666;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 600px) {
+            .product-visual {
+                font-size: 0.5rem;
+            }
+            
+            .cta-button {
+                padding: 1rem 2rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="product-name">EXISTENTIAL DREAD™</div>
+        <div class="tagline">Finally, the feeling that keeps you up at 3am—now in a convenient portable format.</div>
+        
+        <div class="product-visual">
+     _______________
+    |               |
+    |   EXISTENTIAL |
+    |     DREAD™    |
+    |               |
+    |   [  VOID  ]  |
+    |               |
+    |   ████████    |
+    |   ████████    |
+    |   ████████    |
+    |               |
+    |  "Why am I    |
+    |   here?"      |
+    |_______________|
+        </div>
+        
+        <div class="price">$̶2̶9̶.̶9̶9̶  FREE*</div>
+        <button class="cta-button" onclick="addToCart()">ADD TO CART</button>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">Features</h2>
+        <div class="features">
+            <div class="feature">
+                <div class="feature-title">⚫ Always-On Anxiety</div>
+                <div class="feature-desc">Never miss a moment to question your life choices. Our patented 24/7 formula ensures constant low-level panic.</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-title">🌀 Spiral Thoughts™ Technology</div>
+                <div class="feature-desc">Why stop at one existential question when you can have infinite recursion? "Why am I here?" leads to "What is here?" leads to "What is 'is'?"</div>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-title">⏰ 3am Wake-Up Guarantee</div>
+                <div class="feature-desc">Wake up at exactly 3am with the sudden realization that you forgot to respond to an email from 2019. Or that time is a construct. Either way, you're awake now.</div>
+            </div>
+
+            <div class="feature">
+                <div class="feature-title">♾️ Infinite Shelf Life</div>
+                <div class="feature-desc">Unlike other emotions that fade with time, Existential Dread™ only gets stronger. Store indefinitely in the back of your mind.</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">What Our Customers Are Saying</h2>
+        <div class="testimonials">
+            <div class="testimonial">
+                <div class="testimonial-text">"I used to only worry about normal things like bills and work. Now I worry about the heat death of the universe! Thanks, Existential Dread™!"</div>
+                <div class="testimonial-author">— Sarah M., Portland</div>
+            </div>
+            
+            <div class="testimonial">
+                <div class="testimonial-text">"I was having a perfectly fine day until I opened this bottle. Now I can't stop thinking about how every moment is slipping away forever. Five stars."</div>
+                <div class="testimonial-author">— Mike T., Chicago</div>
+            </div>
+            
+            <div class="testimonial">
+                <div class="testimonial-text">"Is anything real? Am I real? Are these testimonials real? Help."</div>
+                <div class="testimonial-author">— ??? (We're not sure anymore)</div>
+            </div>
+            
+            <div class="testimonial">
+                <div class="testimonial-text">"I bought this for my friend as a joke but then I started reading the label and now I'm questioning the nature of consciousness and the illusion of free will. Do we choose our thoughts or do they choose us? Anyway, great product."</div>
+                <div class="testimonial-author">— Jennifer K., Austin</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="warning">
+            <div class="warning-title">⚠️ WARNING</div>
+            <div class="warning-text">Side effects may include: questioning your career path at inopportune moments, sudden awareness of your own breathing, wondering if other people can tell you're faking being a functional adult, mid-conversation realization that language is just sounds we agreed have meaning, and the uncomfortable suspicion that you're the only real person and everyone else is an NPC.</div>
+        </div>
+        
+        <button class="cta-button" onclick="addToCart()">I ACCEPT THE CONSEQUENCES</button>
+    </div>
+    
+    <div class="fine-print">
+        <p>*Free because you already have it. You've always had it. It came free with consciousness.</p>
+        <p>**Not FDA approved because how do you regulate an emotion.</p>
+        <p>***By purchasing this product you acknowledge that existence precedes essence, that you are radically free and therefore responsible for every choice you've ever made, that the universe is vast and indifferent, that everyone you love will die, that you will die, that eventually the sun will die, that entropy always increases, and that despite all of this you still have to go to work on Monday.</p>
+        <p>****Please drink responsibly. Actually, you can't drink this. It's not a real product. But also it's the most real product because it's about the one thing you can never escape: your own awareness of your temporary existence in an incomprehensible universe. Enjoy!</p>
+        <p>*****Returns not accepted. You can't unthink these thoughts now.</p>
+    </div>
+    
+    <script>
+        function addToCart() {
+            const messages = [
+                "Adding to cart...\n\nJust kidding. Your cart is empty.\n\nKind of like the void inside.",
+                "ERROR: Item already in cart.\n\nYou were born with this.",
+                "Congratulations!\n\nYou now own:\n• Existential Dread™\n• The crushing weight of infinite choice\n• Awareness that you're reading this instead of doing something productive\n\nShipping: Instant (it's already here)",
+                "Payment declined.\n\nNot because of your credit card.\n\nBecause you already paid.\n\nIn consciousness.",
+                "Item added to cart!\n\nJust you, though.\n\nAlone.\n\nIn the universe.\n\nThinking about shopping carts at 4pm on a Sunday."
+            ];
+            
+            const msg = messages[Math.floor(Math.random() * messages.length)];
+            alert(msg);
+        }
+        
+        // Ambient background shift
+        let hue = 0;
+        setInterval(() => {
+            hue = (hue + 0.1) % 360;
+            document.body.style.background = `linear-gradient(180deg, #000 0%, hsl(${hue}, 50%, 3%) 100%)`;
+        }, 100);
+    </script>
+</body>
+</html>
