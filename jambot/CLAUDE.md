@@ -34,7 +34,7 @@ Core files:
 - `ui.tsx` — Ink-based terminal UI
 - `project.js` — Project persistence
 
-## The Droid Quartet
+## The Droid Quartet + JB Series
 
 | Synth | Engine | Description |
 |-------|--------|-------------|
@@ -42,6 +42,8 @@ Core files:
 | **R3D3** | TB-303 | Acid bass synth |
 | **R1D1** | SH-101 | Lead/poly synth |
 | **R9DS** | Sampler | 10-slot sample player with kits |
+| **JB200** | JB200 | Bass monosynth (2-osc, filter, drive) |
+| **JB01** | JB01 | Reference drum machine |
 
 ## Synth Sources
 
@@ -49,6 +51,8 @@ Engines imported from `web/public/`:
 - R9D9: `../web/public/909/dist/machines/tr909/engine-v3.js`
 - R3D3: `../web/public/303/dist/machines/tb303/engine.js`
 - R1D1: `../web/public/101/dist/machines/sh101/engine.js`
+- JB200: `../web/public/jb200/dist/machines/jb200/engine.js`
+- JB01: `../web/public/jb01/dist/machines/jb01/engine.js`
 
 R9DS uses local files:
 - `kit-loader.js` — Loads kits from filesystem
@@ -56,6 +60,244 @@ R9DS uses local files:
 - `samples/` — Bundled sample kits
 
 **Do NOT duplicate synth code** - always import from web/public/ (except R9DS which is local).
+
+## Synth Development Guide
+
+This section covers creating new synth libraries and web clients for the Jambot synth machine system.
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         JAMBOT AGENT                            │
+│  (reads/writes parameters, triggers, renders)                   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        MASTER CLOCK                             │
+│  Single source of truth for all timing (BPM, swing, step)       │
+│  jambot/core/clock.js                                           │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          ▼                   ▼                   ▼
+    ┌──────────┐        ┌──────────┐        ┌──────────┐
+    │  ENGINE  │        │  ENGINE  │        │  ENGINE  │
+    │  (JB01)  │        │  (JB200) │        │  (R9D9)  │
+    │  drums   │        │  bass    │        │  909     │
+    └──────────┘        └──────────┘        └──────────┘
+          │                   │                   │
+    ┌─────┴─────┐            │             ┌─────┴─────┐
+    ▼     ▼     ▼            ▼             ▼     ▼     ▼
+  Voice Voice Voice       Voice         Voice Voice Voice
+  kick  snare hihat       bass          kick  snare ...
+```
+
+### Master Clock (`jambot/core/clock.js`)
+
+The clock is the **single source of truth** for all timing. Synths never store BPM - they query the clock.
+
+```javascript
+import { Clock } from './core/clock.js';
+
+const clock = new Clock({ bpm: 128 });
+
+// Producer interface
+clock.bpm = 140;          // Change tempo
+clock.swing = 0.3;        // Add groove
+
+// Internal timing (what engines use)
+clock.stepDuration;       // Seconds per 16th note
+clock.barDuration;        // Seconds per bar
+clock.samplesPerStep;     // Sample-accurate timing
+clock.getStepTime(4, true); // Time with swing applied
+```
+
+### Engine
+
+An Engine manages voices and provides the instrument's interface.
+
+```javascript
+// web/public/{synth}/dist/machines/{synth}/engine.js
+import { SynthEngine } from '../../core/engine.js';
+
+export class MyEngine extends SynthEngine {
+  constructor(options = {}) {
+    super(options);
+    this.setupVoices();
+  }
+
+  setupVoices() {
+    this.registerVoice('kick', new KickVoice('kick', this.context));
+    this.registerVoice('snare', new SnareVoice('snare', this.context));
+  }
+}
+```
+
+### Voice
+
+A Voice produces sound. This is where synthesis happens.
+
+```javascript
+// web/public/{synth}/dist/machines/{synth}/voices/kick.js
+import { Voice } from '../../../core/voice.js';
+
+export class KickVoice extends Voice {
+  constructor(id, context) {
+    super(id, context);
+    this.decay = 0.5;
+    this._renderSound();  // Pre-render on construction
+  }
+
+  trigger(time, velocity) {
+    const source = this.context.createBufferSource();
+    source.buffer = this.buffer;
+    source.connect(this.output);
+    source.start(time, 0);
+  }
+}
+```
+
+### Critical Rules for Voice Implementation
+
+**Rule 1: Pre-Render Percussive Sounds**
+
+NEVER use real-time oscillators for drums/percussion. Web Audio's oscillator phase is non-deterministic - each trigger starts at an arbitrary phase, causing audible variation between hits.
+
+```javascript
+// BAD - Each kick sounds different!
+trigger(time, velocity) {
+  const osc = this.context.createOscillator();
+  osc.start(time);  // Random phase each time
+}
+
+// GOOD - Every kick is identical
+constructor(id, context) {
+  this._renderCompleteSound();  // Pre-render once
+}
+
+trigger(time, velocity) {
+  const source = this.context.createBufferSource();
+  source.buffer = this.preRenderedBuffer;
+  source.start(time, 0);  // Always starts at sample 0
+}
+```
+
+**Rule 2: No Randomness in Audio Code**
+
+NEVER use `Math.random()` in voice trigger paths. Use a deterministic PRNG with fixed seed:
+
+```javascript
+// GOOD - Same noise every trigger
+constructor(id, context) {
+  let seed = 12345;
+  for (let i = 0; i < 128; i++) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    this.noiseData[i] = (seed / 0x7fffffff) * 2 - 1;
+  }
+}
+```
+
+**Rule 3: Bake Everything Into the Buffer**
+
+For percussive sounds, pre-render the COMPLETE sound including oscillator body, pitch envelope, amplitude envelope, saturation, and click transients.
+
+**Rule 4: Re-render When Parameters Change**
+
+When synthesis parameters change (attack, decay, sweep), re-render the buffer.
+
+**Rule 5: Tune via Playback Rate**
+
+Pitch/tune changes don't require re-rendering:
+
+```javascript
+trigger(time, velocity) {
+  const source = this.context.createBufferSource();
+  source.buffer = this.buffer;
+  source.playbackRate.value = Math.pow(2, this.tune / 12);
+  source.start(time, 0);
+}
+```
+
+### Web Audio Gotchas
+
+1. **AudioContext Autoplay Policy**: Browsers require user interaction before audio plays. Add click listener to resume context.
+
+2. **First-Trigger Warmup**: Web Audio has initialization overhead on first scheduled events. Add warmup triggers in tests.
+
+3. **Sample-Aligned Timing**: Snap to sample boundaries for precise timing:
+   ```javascript
+   const alignedTime = Math.round(time * sampleRate) / sampleRate;
+   ```
+
+4. **BiquadFilter State**: Create new filter instances per trigger, don't reuse.
+
+### File Structure for New Synths
+
+```
+web/public/{synth}/
+  dist/
+    core/                    # Shared (copy from existing synth)
+    machines/{synth}/
+      engine.js              # Your SynthEngine subclass
+      voices/
+        kick.js, snare.js    # Individual voice files
+  ui/{synth}/
+    index.html, styles.css, app.js
+
+jambot/
+  params/{synth}-params.json   # Parameter definitions
+  instruments/{synth}-node.js  # Jambot integration
+  tools/{synth}-tools.js       # Agent tools
+  presets/{synth}/kits/, sequences/
+```
+
+### Web Client Pattern
+
+```javascript
+import { MyEngine } from '../../dist/machines/mysynth/engine.js';
+
+let engine = null;
+
+async function init() {
+  engine = new MyEngine({ bpm: 120 });
+
+  // Resume on user interaction
+  document.addEventListener('click', async () => {
+    if (engine.context.state === 'suspended') {
+      await engine.context.resume();
+    }
+  }, { once: true });
+
+  // Critical: Sync UI defaults to engine on init
+  syncParamsToEngine();
+}
+```
+
+### Testing with Playwright
+
+Always test synth consistency with Playwright (`web/test-*.mjs`). Verify that multiple triggers produce identical output.
+
+### Reference Implementations
+
+| Synth | Type | Key Patterns |
+|-------|------|--------------|
+| **JB01** | Drum machine | Pre-rendered kicks, 8 voices, hi-hat choke |
+| **JB200** | Bass monosynth | Real-time oscillators OK (not percussive) |
+| **R9D9** | TR-909 | Sample + synthesis hybrid |
+
+### Checklist for New Synths
+
+- [ ] Engine extends SynthEngine
+- [ ] Voices extend Voice
+- [ ] Percussive voices pre-render complete sound
+- [ ] No Math.random() in trigger paths
+- [ ] Parameters defined in `params/{synth}-params.json`
+- [ ] Converter added to `params/converters.js`
+- [ ] Web client syncs params on init
+- [ ] AudioContext resume on user interaction
+- [ ] Playwright test for consistency
 
 ## Parameter Units (Producer-Friendly)
 
@@ -81,6 +323,8 @@ params/
   r3d3-params.json   # TB-303 bass
   r1d1-params.json   # SH-101 lead
   r9ds-params.json   # Sampler slots
+  jb200-params.json  # JB200 bass monosynth
+  jb01-params.json   # JB01 drum machine
   converters.js      # toEngine(), fromEngine(), etc.
 ```
 
@@ -146,6 +390,78 @@ my-kit/
 
 Bundled kits: 808, amber
 
+## Preset System (Kits & Sequences)
+
+Unified preset system for loading sounds (kits) and patterns (sequences) separately.
+
+### Architecture
+
+```
+presets/
+  loader.js              # Generic loader (reusable for all synths)
+  jb200/
+    kits/
+      default.json       # Sound preset (oscillators, filter, envelopes)
+    sequences/
+      default.json       # Pattern preset (notes, gates, accents, slides)
+```
+
+User presets location: `~/Documents/Jambot/presets/{synth}/kits/` and `.../sequences/`
+
+### Kit Format (Producer-Friendly Values)
+
+```json
+{
+  "name": "Default",
+  "description": "Classic JB200 bass sound",
+  "params": {
+    "osc1Waveform": "sawtooth",
+    "osc1Octave": 0,
+    "filterCutoff": 800,
+    "filterResonance": 40,
+    "level": 0
+  }
+}
+```
+
+Values are in producer units (Hz, dB, 0-100). The loader converts to engine units (0-1) automatically.
+
+### Sequence Format
+
+```json
+{
+  "name": "Default",
+  "description": "Acid-style bass line",
+  "pattern": [
+    { "note": "C2", "gate": true, "accent": true, "slide": false },
+    { "note": "C2", "gate": false, "accent": false, "slide": false },
+    ...
+  ]
+}
+```
+
+### Tools
+
+| Tool | Description |
+|------|-------------|
+| `list_jb200_kits` | Show available JB200 sound presets |
+| `load_jb200_kit` | Load a sound preset by ID |
+| `list_jb200_sequences` | Show available JB200 pattern presets |
+| `load_jb200_sequence` | Load a pattern preset by ID |
+
+### Adding New Presets
+
+1. Create JSON file in `presets/{synth}/kits/` or `presets/{synth}/sequences/`
+2. Use producer-friendly values (Hz, dB, etc.)
+3. Tools automatically pick up new files
+
+### Extending to Other Synths
+
+The `presets/loader.js` module is generic. To add presets for another synth:
+1. Create `presets/{synth}/kits/` and `presets/{synth}/sequences/` directories
+2. Add `list_{synth}_kits`, `load_{synth}_kit`, etc. tools following JB200 pattern
+3. Ensure `params/{synth}-params.json` exists for unit conversion
+
 ## Tools Available to Agent
 
 **Muting voices:**
@@ -153,9 +469,24 @@ Bundled kits: 808, amber
 - **Mute entire instrument in song mode**: Omit it from the section's pattern assignment
 - Mute is equivalent to `level: -60` (minimum dB, effectively silent)
 
+### Generic Parameter Tools
+
+These unified tools work on ANY parameter in the system via dot-path addressing:
+
+| Tool | Description |
+|------|-------------|
+| `get_param` | Get any parameter: `get_param({ path: 'drums.kick.decay' })` |
+| `get_state` | Get all params for a node/voice: `get_state({ node: 'drums', voice: 'kick' })` |
+| `tweak` | Set any parameter: `tweak({ path: 'drums.kick.decay', value: 75 })` |
+| `tweak_multi` | Set multiple params: `tweak_multi({ params: { 'drums.kick.decay': 75, 'bass.cutoff': 2000 } })` |
+| `list_params` | List available params: `list_params({ node: 'drums' })` |
+
+### Per-Instrument Tools
+
 | Tool | Synth | Description |
 |------|-------|-------------|
 | `create_session` | — | Set BPM (60-200), reset all patterns |
+| `show` | — | Show current state of any instrument (jb200, bass, lead, drums, sampler) |
 | `list_projects` | — | List all saved projects |
 | `open_project` | — | Open a project by name/folder to continue working |
 | `rename_project` | — | Rename current project |
@@ -176,6 +507,12 @@ Bundled kits: 808, amber
 | `add_samples` | R9DS | Program sample hits on steps (slot, step, velocity) |
 | `tweak_samples` | R9DS | level (dB), tune (semitones), attack/decay (0-100), filter (Hz), pan (-100 to +100) |
 | `show_sampler` | R9DS | Show current kit, slots, and pattern (what's loaded now) |
+| `add_jb200` | JB200 | 16-step bass pattern with note, gate, accent, slide |
+| `tweak_jb200` | JB200 | level (dB), filterCutoff (Hz), osc/filter/amp params (0-100) |
+| `list_jb200_kits` | JB200 | Show available sound presets (kits) |
+| `load_jb200_kit` | JB200 | Load a kit by ID (e.g., "default") |
+| `list_jb200_sequences` | JB200 | Show available pattern presets (sequences) |
+| `load_jb200_sequence` | JB200 | Load a sequence by ID (e.g., "default") |
 | `set_swing` | — | Groove amount 0-100% |
 | `render` | — | Mix all synths to WAV file (uses arrangement if set) |
 | `save_pattern` | Song | Save current pattern for an instrument to a named slot (A, B, C...) |

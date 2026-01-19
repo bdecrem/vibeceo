@@ -16,8 +16,11 @@ const R3D3Engine = TB303Module.TB303Engine || TB303Module.default;
 import * as SH101Module from '../web/public/101/dist/machines/sh101/engine.js';
 const R1D1Engine = SH101Module.SH101Engine || SH101Module.default;
 
-// R2D2 - Bass monosynth
-import { R2D2Engine } from './instruments/r2d2-engine.js';
+// JB200 - Bass monosynth (imports from web like 909/303/101)
+import { JB200Engine } from '../web/public/jb200/dist/machines/jb200/engine.js';
+
+// JB01 - Reference drum machine
+import { JB01Engine } from '../web/public/jb01/dist/machines/jb01/engine.js';
 
 import { writeFileSync, readFileSync, readdirSync, existsSync, mkdirSync, copyFileSync } from 'fs';
 import { execSync } from 'child_process';
@@ -39,7 +42,13 @@ import { convertTweaks, toEngine, getParamDef, formatValue } from './params/conv
 // Tool registry (replaces inline executeTool)
 import { executeTool } from './tools/index.js';
 
+// Unified session manager (node-based architecture)
+import { createSession as createCoreSession } from './core/session.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Load Jambot system prompt from external file
+const JAMBOT_PROMPT = readFileSync(join(__dirname, 'JAMBOT-PROMPT.md'), 'utf-8');
 
 // === PLATE REVERB GENERATOR ===
 // Generates a realistic plate reverb impulse response using Dattorro-style techniques
@@ -464,130 +473,54 @@ import SH101Presets from '../web/public/101/dist/machines/sh101/presets.js';
 const SH101_PRESETS = Object.values(SH101Presets);
 
 // === SESSION STATE ===
+// Now uses the unified session system from core/session.js
+// JB200 is the reference implementation that correctly uses the node-based architecture
 export function createSession() {
   // Ensure user kits directory exists
   ensureUserKitsDir();
 
-  return {
-    bpm: 128,
-    bars: 2,
-    swing: 0,
-    // R9D9 (drums)
-    drumKit: 'bart-deep',  // Kit ID for engine selection
-    drumLevel: 0,             // Node output level in dB (-60 to +6, 0 = unity)
-    drumPattern: {},
-    drumParams: {},
-    drumFlam: 0,              // Flam amount 0-1
-    drumPatternLength: 16,    // Pattern length 1-16
-    drumScale: '16th',        // '16th', '8th-triplet', '16th-triplet', '32nd'
-    drumGlobalAccent: 1,      // Global accent multiplier 0-1
-    drumVoiceEngines: {},     // Per-voice engine overrides { kick: 'E1', snare: 'E2', ... }
-    drumUseSample: {},        // Sample mode for hats/cymbals { ch: true, oh: false, ... }
-    drumAutomation: {},       // Per-step param automation { ch: { decay: [0.1, 0.2, ...], level: [...] }, ... }
-    // R3D3 (bass)
-    bassLevel: 0,             // Node output level in dB (-60 to +6, 0 = unity)
-    bassPattern: createEmptyBassPattern(),
-    bassParams: {
-      waveform: 'sawtooth',
-      cutoff: 0.5,
-      resonance: 0.5,
-      envMod: 0.5,
-      decay: 0.5,
-      accent: 0.8,
-      level: 0.8,
-    },
-    // R1D1 (lead)
-    leadLevel: 0,         // Node output level in dB (-60 to +6, 0 = unity)
-    leadPreset: null,  // Preset ID for sound/pattern preset
-    leadPattern: createEmptyLeadPattern(),
-    leadParams: {
-      // VCO
-      vcoSaw: 0.5,
-      vcoPulse: 0.5,
-      pulseWidth: 0.5,
-      // Sub oscillator
-      subLevel: 0,
-      subMode: 0,  // 0=off, 1=-1oct, 2=-2oct, 3=25%
-      // Filter
-      cutoff: 0.5,
-      resonance: 0.3,
-      envMod: 0.5,
-      // Envelope
-      attack: 0.01,
-      decay: 0.3,
-      sustain: 0.7,
-      release: 0.3,
-      // LFO
-      lfoRate: 0.3,
-      lfoWaveform: 'triangle',  // 'triangle', 'square', 'sh'
-      lfoToPitch: 0,
-      lfoToFilter: 0,
-      lfoToPW: 0,
-      // Output
-      level: 0.8,
-    },
-    // R1D1 arpeggiator
-    leadArp: {
-      mode: 'off',     // 'off', 'up', 'down', 'updown'
-      octaves: 1,
-      hold: false,
-    },
-    // R9DS (sampler)
-    samplerLevel: 0,         // Node output level in dB (-60 to +6, 0 = unity)
-    samplerKit: null,        // Currently loaded kit { id, name, slots }
-    samplerPattern: {},      // { s1: [{step, vel}, ...], s2: [...], ... }
-    samplerParams: {},       // { s1: { level, tune, attack, decay, filter, pan }, ... }
-    // R2D2 (bass monosynth)
-    r2d2Level: 0,            // Node output level in dB (-60 to +6, 0 = unity)
-    r2d2Pattern: createEmptyR2D2Pattern(),
-    r2d2Params: {
-      osc1Waveform: 'sawtooth',
-      osc1Octave: 0,
-      osc1Detune: 0,
-      osc1Level: 1.0,
-      osc2Waveform: 'sawtooth',
-      osc2Octave: -12,
-      osc2Detune: 7,
-      osc2Level: 0.8,
-      filterCutoff: 0.4,    // Normalized 0-1
-      filterResonance: 0.4,
-      filterEnvAmount: 0.6,
-      filterAttack: 0,
-      filterDecay: 0.4,
-      filterSustain: 0.2,
-      filterRelease: 0.3,
-      ampAttack: 0,
-      ampDecay: 0.3,
-      ampSustain: 0.6,
-      ampRelease: 0.2,
-      drive: 0.2,
-      level: 0.8,
-    },
-    // MIXER (DAW-like routing and effects)
-    mixer: {
-      sends: {},             // { name: { effect: 'reverb', params: { mix: 0.3 } } }
-      voiceRouting: {},      // { voiceId: { sends: { busName: level }, inserts: [...] } }
-      channelInserts: {},    // { channelName: [{ type: 'eq', params: {...} }] }
-      masterInserts: [],     // [{ type: 'eq', preset: 'master' }]
-      masterVolume: 0.8,
-    },
-    // SONG MODE (patterns + arrangement)
-    patterns: {
-      drums: {},    // { 'A': { pattern, params, automation, flam, length, scale, accent, engines, useSample } }
-      bass: {},     // { 'A': { pattern, params } }
-      lead: {},     // { 'A': { pattern, params, arp } }
-      sampler: {},  // { 'A': { pattern, params } }
-      r2d2: {},     // { 'A': { pattern, params } }
-    },
-    currentPattern: {
-      drums: 'A',
-      bass: 'A',
-      lead: 'A',
-      sampler: 'A',
-      r2d2: 'A',
-    },
-    arrangement: [],  // [{ bars: 4, patterns: { drums: 'A', bass: 'A', lead: 'A', sampler: 'A' } }, ...]
+  // Create session using the unified session manager
+  // This sets up the node-based architecture with proxies for parameter access
+  const session = createCoreSession({ bpm: 128 });
+
+  // Initialize bass params with engine defaults (BassNode is currently a stub)
+  // These remain as plain objects until BassNode is fully implemented
+  session.bassParams = {
+    waveform: 'sawtooth',
+    cutoff: 0.5,
+    resonance: 0.5,
+    envMod: 0.5,
+    decay: 0.5,
+    accent: 0.8,
+    level: 0.8,
   };
+
+  // Initialize lead params with engine defaults (LeadNode is currently a stub)
+  session.leadParams = {
+    vcoSaw: 0.5,
+    vcoPulse: 0.5,
+    pulseWidth: 0.5,
+    subLevel: 0,
+    subMode: 0,
+    cutoff: 0.5,
+    resonance: 0.3,
+    envMod: 0.5,
+    attack: 0.01,
+    decay: 0.3,
+    sustain: 0.7,
+    release: 0.3,
+    lfoRate: 0.3,
+    lfoWaveform: 'triangle',
+    lfoToPitch: 0,
+    lfoToFilter: 0,
+    lfoToPW: 0,
+    level: 0.8,
+  };
+
+  // Initialize sampler (kit loaded separately)
+  session.samplerKit = null;
+
+  return session;
 }
 
 // Empty pattern helpers
@@ -609,7 +542,7 @@ function createEmptyLeadPattern() {
   }));
 }
 
-function createEmptyR2D2Pattern() {
+function createEmptyJB200Pattern() {
   return Array(16).fill(null).map(() => ({
     note: 'C2',
     gate: false,
@@ -806,7 +739,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Which instrument's pattern to save" },
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "jb200"], description: "Which instrument's pattern to save" },
         name: { type: "string", description: "Pattern name (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -818,7 +751,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Which instrument's pattern to load" },
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "jb200"], description: "Which instrument's pattern to load" },
         name: { type: "string", description: "Pattern name to load (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -830,7 +763,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Which instrument" },
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "jb200"], description: "Which instrument" },
         from: { type: "string", description: "Source pattern name (A, B, etc)" },
         to: { type: "string", description: "Destination pattern name" }
       },
@@ -854,7 +787,7 @@ export const TOOLS = [
       properties: {
         sections: {
           type: "array",
-          description: "Array of sections. Each section: {bars: 4, drums: 'A', bass: 'A', lead: 'B', sampler: 'A', r2d2: 'A'}",
+          description: "Array of sections. Each section: {bars: 4, drums: 'A', bass: 'A', lead: 'B', sampler: 'A', jb200: 'A'}",
           items: {
             type: "object",
             properties: {
@@ -863,7 +796,7 @@ export const TOOLS = [
               bass: { type: "string", description: "Bass pattern name (or omit to silence)" },
               lead: { type: "string", description: "Lead pattern name (or omit to silence)" },
               sampler: { type: "string", description: "Sampler pattern name (or omit to silence)" },
-              r2d2: { type: "string", description: "R2D2 bass pattern name (or omit to silence)" }
+              jb200: { type: "string", description: "JB200 bass pattern name (or omit to silence)" }
             },
             required: ["bars"]
           }
@@ -991,10 +924,10 @@ export const TOOLS = [
       required: []
     }
   },
-  // R2D2 (Bass Monosynth)
+  // JB200 (Bass Monosynth)
   {
-    name: "add_r2d2",
-    description: "Add a bass pattern using R2D2 (2-oscillator bass monosynth). Provide an array of 16 steps. Each step has: note, gate, accent, slide.",
+    name: "add_jb200",
+    description: "Add a bass pattern using JB200 (2-oscillator bass monosynth). Provide an array of 16 steps. Each step has: note, gate, accent, slide.",
     input_schema: {
       type: "object",
       properties: {
@@ -1016,13 +949,13 @@ export const TOOLS = [
     }
   },
   {
-    name: "tweak_r2d2",
-    description: "Adjust R2D2 bass synth parameters. UNITS: level in dB, filterCutoff in Hz (20-16000), octaves in semitones, all others 0-100. Use mute:true to silence.",
+    name: "tweak_jb200",
+    description: "Adjust JB200 bass synth parameters. UNITS: level in dB (-60 to +6), filterCutoff in Hz (20-16000), detune in cents (-50 to +50), filterEnvAmount (-100 to +100), octaves in semitones, all others 0-100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {
         // Output
-        mute: { type: "boolean", description: "Mute bass (sets level to -60dB, effectively silent)" },
+        mute: { type: "boolean", description: "Mute bass (sets level to -60dB)" },
         level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
         // Oscillator 1
         osc1Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 1 waveform" },
@@ -1052,6 +985,47 @@ export const TOOLS = [
         drive: { type: "number", description: "Output saturation 0-100. Adds harmonics and grit" }
       },
       required: []
+    }
+  },
+  // JB200 Kit/Sequence tools
+  {
+    name: "list_jb200_kits",
+    description: "List available JB200 sound presets (kits). Use when user asks 'what JB200 sounds are there' or 'show bass presets'.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "load_jb200_kit",
+    description: "Load a JB200 kit (sound preset). Applies oscillator, filter, envelope, and drive settings. Use 'default' for the classic sound.",
+    input_schema: {
+      type: "object",
+      properties: {
+        kit: { type: "string", description: "Kit ID or name (e.g., 'default', 'acid', 'sub')" }
+      },
+      required: ["kit"]
+    }
+  },
+  {
+    name: "list_jb200_sequences",
+    description: "List available JB200 pattern presets (sequences). Use when user asks 'what JB200 patterns are there' or 'show bass lines'.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "load_jb200_sequence",
+    description: "Load a JB200 sequence (pattern preset). Applies the note pattern with gates, accents, and slides. Use 'default' for the classic acid line.",
+    input_schema: {
+      type: "object",
+      properties: {
+        sequence: { type: "string", description: "Sequence ID or name (e.g., 'default', 'minimal', 'busy')" }
+      },
+      required: ["sequence"]
     }
   },
   {
@@ -1229,7 +1203,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2", "kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"], description: "Channel or drum voice to add effect to" },
+        channel: { type: "string", enum: ["drums", "bass", "lead", "sampler", "jb200", "kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"], description: "Channel or drum voice to add effect to" },
         effect: { type: "string", enum: ["eq", "filter", "ducker"], description: "Type of effect" },
         preset: { type: "string", description: "Effect preset (eq: 'acidBass'/'crispHats'/'warmPad'; filter: 'dubDelay'/'telephone'/'lofi')" },
         params: {
@@ -1246,7 +1220,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2", "kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"], description: "Channel or drum voice to remove effect from" },
+        channel: { type: "string", enum: ["drums", "bass", "lead", "sampler", "jb200", "kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"], description: "Channel or drum voice to remove effect from" },
         effect: { type: "string", enum: ["eq", "filter", "ducker", "all"], description: "Type of effect to remove, or 'all' to clear all inserts" }
       },
       required: ["channel"]
@@ -1305,7 +1279,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Which instrument to save preset for" },
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "jb200"], description: "Which instrument to save preset for" },
         id: { type: "string", description: "Preset ID (lowercase, hyphenated, e.g., 'my-deep-kick')" },
         name: { type: "string", description: "Display name (e.g., 'My Deep Kick')" },
         description: { type: "string", description: "Optional description of the preset's sound" }
@@ -1319,7 +1293,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Which instrument to load preset for" },
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "jb200"], description: "Which instrument to load preset for" },
         id: { type: "string", description: "Preset ID to load" }
       },
       required: ["instrument", "id"]
@@ -1331,7 +1305,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Filter by instrument (optional, shows all if omitted)" }
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "jb200"], description: "Filter by instrument (optional, shows all if omitted)" }
       },
       required: []
     }
@@ -1457,15 +1431,16 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
     // Reset R9DS (sampler) - keep kit loaded, just clear pattern
     session.samplerPattern = {};
     session.samplerParams = {};
-    // Reset R2D2 (bass monosynth)
-    session.r2d2Pattern = createEmptyR2D2Pattern();
-    session.r2d2Params = {
-      osc1Waveform: 'sawtooth', osc1Octave: 0, osc1Detune: 0, osc1Level: 1.0,
-      osc2Waveform: 'sawtooth', osc2Octave: -12, osc2Detune: 7, osc2Level: 0.8,
-      filterCutoff: 0.4, filterResonance: 0.4, filterEnvAmount: 0.6,
+    // Reset JB200 (bass monosynth)
+    session.jb200Pattern = createEmptyJB200Pattern();
+    session.jb200Params = {
+      // 0-1 normalized values matching jb200-params.json defaults
+      osc1Waveform: 'sawtooth', osc1Octave: 0, osc1Detune: 0.5, osc1Level: 1.0,
+      osc2Waveform: 'sawtooth', osc2Octave: -12, osc2Detune: 0.57, osc2Level: 0.8,
+      filterCutoff: 0.55, filterResonance: 0.4, filterEnvAmount: 0.8,
       filterAttack: 0, filterDecay: 0.4, filterSustain: 0.2, filterRelease: 0.3,
       ampAttack: 0, ampDecay: 0.3, ampSustain: 0.6, ampRelease: 0.2,
-      drive: 0.2, level: 0.8
+      drive: 0.2, level: 0.5
     };
     return `Session created at ${input.bpm} BPM`;
   }
@@ -1644,7 +1619,7 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
   // List all saved patterns
   if (name === "list_patterns") {
     const lines = [];
-    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'r2d2']) {
+    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'jb200']) {
       const patterns = session.patterns[instrument];
       const names = Object.keys(patterns);
       const current = session.currentPattern[instrument];
@@ -1667,7 +1642,7 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
         bass: s.bass || null,
         lead: s.lead || null,
         sampler: s.sampler || null,
-        r2d2: s.r2d2 || null,
+        jb200: s.jb200 || null,
       }
     }));
 
@@ -1688,7 +1663,7 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
 
     // Show patterns
     lines.push('PATTERNS:');
-    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'r2d2']) {
+    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'jb200']) {
       const patterns = session.patterns[instrument];
       const names = Object.keys(patterns);
       if (names.length > 0) {
@@ -1705,7 +1680,7 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
         if (section.patterns.bass) parts.push(`bass:${section.patterns.bass}`);
         if (section.patterns.lead) parts.push(`lead:${section.patterns.lead}`);
         if (section.patterns.sampler) parts.push(`sampler:${section.patterns.sampler}`);
-        if (section.patterns.r2d2) parts.push(`r2d2:${section.patterns.r2d2}`);
+        if (section.patterns.jb200) parts.push(`jb200:${section.patterns.jb200}`);
         lines.push(`  ${i + 1}. ${section.bars} bars — ${parts.join(', ') || '(silent)'}`);
       });
       const totalBars = session.arrangement.reduce((sum, s) => sum + s.bars, 0);
@@ -2808,7 +2783,7 @@ async function renderSession(session, bars, filename) {
   // This lets us create filter nodes that can be enabled/disabled per-section
   const allPatternInserts = new Map(); // channel -> array of insert configs from any pattern
   if (hasArrangement) {
-    const instruments = ['drums', 'bass', 'lead', 'sampler', 'r2d2'];
+    const instruments = ['drums', 'bass', 'lead', 'sampler', 'jb200'];
     for (const inst of instruments) {
       for (const [patternName, patternData] of Object.entries(session.patterns[inst] || {})) {
         if (patternData.channelInserts) {
@@ -2831,7 +2806,7 @@ async function renderSession(session, bars, filename) {
       if (instrument === 'bass') return { pattern: session.bassPattern, params: session.bassParams };
       if (instrument === 'lead') return { pattern: session.leadPattern, params: session.leadParams };
       if (instrument === 'sampler') return { pattern: session.samplerPattern, params: session.samplerParams };
-      if (instrument === 'r2d2') return { pattern: session.r2d2Pattern, params: session.r2d2Params };
+      if (instrument === 'jb200') return { pattern: session.jb200Pattern, params: session.jb200Params };
       return null;
     }
 
@@ -2850,7 +2825,9 @@ async function renderSession(session, bars, filename) {
 
   const stepsPerBar = 16;
   const totalSteps = renderBars * stepsPerBar;
-  const stepDuration = 60 / session.bpm / 4;  // Standard 16th note duration
+
+  // Get timing from master clock (single source of truth)
+  const stepDuration = session.clock.stepDuration;
 
   // Drum-specific step duration based on scale mode
   const drumScaleMultipliers = {
@@ -2917,10 +2894,15 @@ async function renderSession(session, bars, filename) {
   samplerGain.gain.value = Math.pow(10, samplerLevel / 20);
   samplerGain.connect(masterGain);
 
-  const r2d2Gain = context.createGain();
-  const r2d2Level = session.r2d2Level ?? 0;  // dB, default 0 = unity
-  r2d2Gain.gain.value = Math.pow(10, r2d2Level / 20);
-  r2d2Gain.connect(masterGain);
+  const jb200Gain = context.createGain();
+  const jb200Level = session.jb200Level ?? 0;  // dB, default 0 = unity
+  jb200Gain.gain.value = Math.pow(10, jb200Level / 20);
+  jb200Gain.connect(masterGain);
+
+  const jb01Gain = context.createGain();
+  const jb01Level = session.jb01Level ?? 0;  // dB, default 0 = unity
+  jb01Gain.gain.value = Math.pow(10, jb01Level / 20);
+  jb01Gain.connect(masterGain);
 
   // === R9D9 (Drums) ===
   // Get kit - EXACTLY like web app's loadKit()
@@ -3070,54 +3052,148 @@ async function renderSession(session, bars, filename) {
     }
   }
 
-  // === R2D2 (Bass Monosynth) ===
-  // For arrangement mode, pre-render each unique R2D2 pattern and store with section offsets
+  // === JB200 (Bass Monosynth) ===
+  // For arrangement mode, pre-render each unique JB200 pattern and store with section offsets
   // For single-pattern mode, pre-render once
-  const r2d2Buffers = [];  // { buffer, startBar, bars }
+  const jb200Buffers = [];  // { buffer, startBar, bars }
 
   if (hasArrangement) {
-    // Collect unique R2D2 patterns with their section info
-    const r2d2Sections = [];
+    // Collect unique JB200 patterns with their section info
+    const jb200Sections = [];
     for (const section of arrangementPlan) {
-      const patternName = section.patterns.r2d2;
-      if (patternName && session.patterns.r2d2?.[patternName]) {
-        r2d2Sections.push({
+      const patternName = section.patterns.jb200;
+      if (patternName && session.patterns.jb200?.[patternName]) {
+        jb200Sections.push({
           patternName,
-          patternData: session.patterns.r2d2[patternName],
+          patternData: session.patterns.jb200[patternName],
           startBar: section.barStart,
           bars: section.barEnd - section.barStart
         });
       }
     }
 
-    // Pre-render each R2D2 section
-    for (const sec of r2d2Sections) {
-      const r2d2InitContext = new OfflineAudioContext(2, 44100, 44100);
-      const r2d2 = new R2D2Engine({ context: r2d2InitContext });
+    // Pre-render each JB200 section
+    for (const sec of jb200Sections) {
+      const jb200InitContext = new OfflineAudioContext(2, 44100, 44100);
+      const jb200 = new JB200Engine({ context: jb200InitContext });
 
       // Apply params
       Object.entries(sec.patternData.params || {}).forEach(([key, value]) => {
-        r2d2.setParameter(key, value);
+        jb200.setParameter(key, value);
       });
-      r2d2.setPattern(sec.patternData.pattern);
+      jb200.setPattern(sec.patternData.pattern);
 
       if (sec.patternData.pattern?.some(s => s.gate)) {
-        const buffer = await r2d2.renderPattern({ bars: sec.bars, bpm: session.bpm });
-        r2d2Buffers.push({ buffer, startBar: sec.startBar, bars: sec.bars });
+        // Pass clock timing - engines don't need to know BPM
+        const buffer = await jb200.renderPattern({
+          bars: sec.bars,
+          stepDuration: session.clock.stepDuration,
+          sampleRate: session.clock.sampleRate,
+        });
+        jb200Buffers.push({ buffer, startBar: sec.startBar, bars: sec.bars });
       }
     }
   } else {
     // Single pattern mode - original behavior
-    const r2d2InitContext = new OfflineAudioContext(2, 44100, 44100);
-    const r2d2 = new R2D2Engine({ context: r2d2InitContext });
-    Object.entries(session.r2d2Params).forEach(([key, value]) => {
-      r2d2.setParameter(key, value);
-    });
-    r2d2.setPattern(session.r2d2Pattern);
+    const jb200InitContext = new OfflineAudioContext(2, 44100, 44100);
+    const jb200 = new JB200Engine({ context: jb200InitContext });
 
-    if (session.r2d2Pattern.some(s => s.gate)) {
-      const buffer = await r2d2.renderPattern({ bars: renderBars, bpm: session.bpm });
-      r2d2Buffers.push({ buffer, startBar: 0, bars: renderBars });
+    // Get params explicitly from JB200Node (see ARCHITECTURE.md: Pre-Render Pattern)
+    const jb200Params = session._nodes.jb200.getEngineParams();
+    Object.entries(jb200Params).forEach(([key, value]) => {
+      jb200.setParameter(key, value);
+    });
+    jb200.setPattern(session.jb200Pattern);
+
+    if (session.jb200Pattern.some(s => s.gate)) {
+      // Pass clock timing - engines don't need to know BPM
+      const buffer = await jb200.renderPattern({
+        bars: renderBars,
+        stepDuration: session.clock.stepDuration,
+        sampleRate: session.clock.sampleRate,
+      });
+      jb200Buffers.push({ buffer, startBar: 0, bars: renderBars });
+    }
+  }
+
+  // === JB01 (Reference Drum Machine) ===
+  // Pre-render JB01 drum patterns
+  const jb01Buffers = [];  // { buffer, startBar, bars }
+
+  if (hasArrangement) {
+    // Collect JB01 patterns from arrangement
+    const jb01Sections = [];
+    for (const section of arrangementPlan) {
+      const patternName = section.patterns.jb01;
+      if (patternName && session.patterns.jb01?.[patternName]) {
+        jb01Sections.push({
+          patternName,
+          patternData: session.patterns.jb01[patternName],
+          startBar: section.barStart,
+          bars: section.barEnd - section.barStart
+        });
+      }
+    }
+
+    // Pre-render each JB01 section
+    for (const sec of jb01Sections) {
+      const jb01InitContext = new OfflineAudioContext(2, 44100, 44100);
+      const jb01 = new JB01Engine({ context: jb01InitContext });
+
+      // Apply voice params
+      const patternParams = sec.patternData.params || {};
+      for (const [voice, voiceParams] of Object.entries(patternParams)) {
+        for (const [param, value] of Object.entries(voiceParams)) {
+          jb01.setVoiceParam(voice, param, value);
+        }
+      }
+
+      // Check if pattern has any hits
+      const pattern = sec.patternData.pattern || {};
+      const hasHits = Object.values(pattern).some(track =>
+        track.some(s => s && s.velocity > 0)
+      );
+
+      if (hasHits) {
+        // Pass clock timing - engines don't need to know BPM
+        const buffer = await jb01.renderPattern(pattern, {
+          bars: sec.bars,
+          stepDuration: session.clock.stepDuration,
+          swing: session.clock.swing,
+          sampleRate: session.clock.sampleRate,
+        });
+        jb01Buffers.push({ buffer, startBar: sec.startBar, bars: sec.bars });
+      }
+    }
+  } else {
+    // Single pattern mode
+    const jb01Pattern = session.jb01Pattern;
+    const jb01Params = session.jb01Params || {};
+
+    // Check if pattern has any hits
+    const hasHits = jb01Pattern && Object.values(jb01Pattern).some(track =>
+      Array.isArray(track) && track.some(s => s && s.velocity > 0)
+    );
+
+    if (hasHits) {
+      const jb01InitContext = new OfflineAudioContext(2, 44100, 44100);
+      const jb01 = new JB01Engine({ context: jb01InitContext });
+
+      // Apply voice params
+      for (const [voice, voiceParams] of Object.entries(jb01Params)) {
+        for (const [param, value] of Object.entries(voiceParams)) {
+          jb01.setVoiceParam(voice, param, value);
+        }
+      }
+
+      // Pass clock timing - engines don't need to know BPM
+      const buffer = await jb01.renderPattern(jb01Pattern, {
+        bars: renderBars,
+        stepDuration: session.clock.stepDuration,
+        swing: session.clock.swing,
+        sampleRate: session.clock.sampleRate,
+      });
+      jb01Buffers.push({ buffer, startBar: 0, bars: renderBars });
     }
   }
 
@@ -3663,7 +3739,8 @@ async function renderSession(session, bars, filename) {
   let hasDrums = Object.keys(session.drumPattern).length > 0;
   let hasBass = session.bassPattern.some(s => s.gate);
   let hasLead = session.leadPattern.some(s => s.gate);
-  let hasR2D2 = session.r2d2Pattern.some(s => s.gate);
+  let hasJB200 = session.jb200Pattern.some(s => s.gate);
+  let hasJB01 = jb01Buffers.length > 0;
   let hasSamples = Object.keys(session.samplerPattern).length > 0 && session.samplerKit;
 
   if (hasArrangement) {
@@ -3671,15 +3748,16 @@ async function renderSession(session, bars, filename) {
     hasDrums = arrangementPlan.some(s => s.patterns.drums && session.patterns.drums[s.patterns.drums]);
     hasBass = arrangementPlan.some(s => s.patterns.bass && session.patterns.bass[s.patterns.bass]);
     hasLead = leadBuffers.length > 0;
-    hasR2D2 = r2d2Buffers.length > 0;
+    hasJB200 = jb200Buffers.length > 0;
+    hasJB01 = jb01Buffers.length > 0;
     hasSamples = arrangementPlan.some(s => s.patterns.sampler && session.patterns.sampler[s.patterns.sampler]) && session.samplerKit;
   }
 
-  const synths = [hasDrums && 'R9D9', hasBass && 'R3D3', hasLead && 'R1D1', hasR2D2 && 'R2D2', hasSamples && 'R9DS'].filter(Boolean);
+  const synths = [hasDrums && 'R9D9', hasBass && 'R3D3', hasLead && 'R1D1', hasJB200 && 'JB200', hasJB01 && 'JB01', hasSamples && 'R9DS'].filter(Boolean);
 
   return context.startRendering().then(buffer => {
     // Mix in pre-rendered lead buffers at their respective positions
-    const samplesPerBar = (60 / session.bpm) * 4 * sampleRate;  // 4 beats per bar
+    const samplesPerBar = session.clock.samplesPerBar;  // From master clock
 
     // Get lead output level as linear gain
     const leadMixLevel = leadGain.gain.value;
@@ -3697,18 +3775,34 @@ async function renderSession(session, bars, filename) {
       }
     }
 
-    // Mix in pre-rendered R2D2 buffers at their respective positions
-    const r2d2MixLevel = r2d2Gain.gain.value;
+    // Mix in pre-rendered JB200 buffers at their respective positions
+    const jb200MixLevel = jb200Gain.gain.value;
 
-    for (const { buffer: r2d2Buffer, startBar } of r2d2Buffers) {
+    for (const { buffer: jb200Buffer, startBar } of jb200Buffers) {
       const startSample = Math.floor(startBar * samplesPerBar);
-      const mixLength = Math.min(buffer.length - startSample, r2d2Buffer.length);
+      const mixLength = Math.min(buffer.length - startSample, jb200Buffer.length);
 
       for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
         const mainData = buffer.getChannelData(ch);
-        const r2d2Data = r2d2Buffer.getChannelData(ch % r2d2Buffer.numberOfChannels);
+        const jb200Data = jb200Buffer.getChannelData(ch % jb200Buffer.numberOfChannels);
         for (let i = 0; i < mixLength; i++) {
-          mainData[startSample + i] += r2d2Data[i] * r2d2MixLevel;  // Apply node-level gain
+          mainData[startSample + i] += jb200Data[i] * jb200MixLevel;  // Apply node-level gain
+        }
+      }
+    }
+
+    // Mix in pre-rendered JB01 buffers at their respective positions
+    const jb01MixLevel = jb01Gain.gain.value;
+
+    for (const { buffer: jb01Buffer, startBar } of jb01Buffers) {
+      const startSample = Math.floor(startBar * samplesPerBar);
+      const mixLength = Math.min(buffer.length - startSample, jb01Buffer.length);
+
+      for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+        const mainData = buffer.getChannelData(ch);
+        const jb01Data = jb01Buffer.getChannelData(ch % jb01Buffer.numberOfChannels);
+        for (let i = 0; i < mixLength; i++) {
+          mainData[startSample + i] += jb01Data[i] * jb01MixLevel;  // Apply node-level gain
         }
       }
     }
@@ -3876,110 +3970,10 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
   const detectedGenres = detectGenres(conversationText);
   const genreContext = buildGenreContext(detectedGenres);
 
-  const baseSystemPrompt = `You are Jambot, an AI that creates music with classic synths.
-
-=== RULE #1: FOLLOW EXACT INSTRUCTIONS ===
-When the user gives specific instructions, follow them EXACTLY. No creative variations.
-- "kick and hats on 16ths" = kick on 1,5,9,13 AND hats on ALL 16 steps, in EVERY part
-- "A and B parts" with same description = IDENTICAL patterns in both parts
-- Only get creative when they say "surprise me", "make it interesting", or give vague requests
-If in doubt, do EXACTLY what they said. Nothing more, nothing less.
-
-=== RULE #2: SONG MODE - MODIFYING PATTERNS ===
-To change a parameter in a saved pattern (A, B, C, etc.):
-1. load_pattern(instrument, name) — MUST do this first
-2. tweak_drums/tweak_bass/tweak_lead — adjust the parameter
-3. save_pattern(instrument, name) — MUST save it back
-
-NEVER use add_drums to change volume/decay/tune — that REPLACES the pattern!
-- add_drums = creates NEW pattern (replaces existing steps)
-- tweak_drums = adjusts params (level, decay, tune) WITHOUT changing steps
-
-Example: "lower kick volume in part B by 6dB"
-CORRECT: load_pattern(drums, B) → tweak_drums(kick, level=-6) → save_pattern(drums, B)
-WRONG: add_drums with fewer steps (this erases the pattern!)
-
-=== RULE #3: VERIFY YOUR WORK ===
-NEVER say "done" without actually calling the tools. You MUST complete the work before claiming success.
-- If asked to "add C and D parts": You MUST call add_drums/add_bass/etc AND save_pattern for EACH new part
-- If you didn't call the tools, you didn't do the work
-- Check tool results to confirm success before responding
-- If a tool fails, report the error — don't claim success
-
-Example: "add parts C and D with tom fills"
-YOU MUST:
-1. add_drums({...toms...}) for C
-2. save_pattern({instrument: 'drums', name: 'C'})
-3. add_drums({...different toms...}) for D
-4. save_pattern({instrument: 'drums', name: 'D'})
-5. set_arrangement with all parts including C and D
-6. ONLY THEN say "done"
-
-=== SYNTHS ===
-- R9D9 (TR-909 drums) - when user says "909" they mean this
-- R3D3 (TB-303 acid bass) - when user says "303" they mean this
-- R1D1 (SH-101 lead synth) - when user says "101" they mean this
-- R9DS (sampler) - sample-based drums/sounds
-
-=== WORKFLOW ===
-Complete the full task - create session, add instruments, AND render. System handles filenames.
-
-SONG MODE:
-- save_pattern: Save current working pattern to a named slot (A, B, C)
-- load_pattern: Load a saved pattern into the working pattern
-- set_arrangement: Define sections with bar counts and pattern assignments
-- render: When arrangement is set, renders the full song
-
-=== MIXER ===
-Don't add mixer effects by default. Use them when user asks for polish, reverb, sidechain, filter, etc.
-- create_send/route_to_send: Reverb buses
-- add_sidechain: Ducking (bass ducks on kick)
-- add_channel_insert/add_master_insert: EQ or Filter
-
-EQ: Tonal shaping (highpass, lowGain, midGain, midFreq, highGain). Presets: acidBass, crispHats, warmPad, punchyKick, cleanSnare, master.
-
-FILTER: Resonant filter for effects/sweeps. Params: mode (lowpass/highpass/bandpass), cutoff (Hz), resonance (0-100).
-
-=== RULE #4: PER-SECTION FILTERS/EQ ===
-Channel inserts (filter, EQ) are saved with patterns. Supports INDIVIDUAL DRUM VOICES (kick, snare, ch, oh, etc.)!
-
-To apply a highpass to ONLY the kick in part C:
-1. load_pattern(drums, C)
-2. add_channel_insert(channel: 'kick', effect: 'filter', params: {mode: 'highpass', cutoff: 500})
-3. save_pattern(drums, C) — filter on kick is now saved with pattern C
-
-To apply a filter to ALL drums in part C:
-1. load_pattern(drums, C)
-2. add_channel_insert(channel: 'drums', effect: 'filter', ...)
-3. save_pattern(drums, C)
-
-To CHANGE filter settings on a specific part:
-1. load_pattern(drums, C)
-2. add_channel_insert(...new settings...) — replaces existing filter
-3. save_pattern(drums, C)
-
-To REMOVE a filter from a part:
-1. load_pattern(drums, A)
-2. remove_channel_insert(channel: 'kick', effect: 'filter')
-3. save_pattern(drums, A)
-
-IMPORTANT: Always load → modify → save for EACH part you want to change!
-Presets: dubDelay (LP 800Hz), telephone (BP 1500Hz), lofi (LP 3000Hz), darkRoom (LP 400Hz), airFilter (HP 500Hz), thinOut (HP 1000Hz).
-Use filter for: dub effects, lo-fi warmth, breakdown sweeps, radio/telephone sounds.
-
-REVERB params: decay (0.5-10s), damping (0-1), predelay (0-100ms), lowcut/highcut (Hz).
-Rule: Always set lowcut=100+ to keep bass out of reverb.
-
-=== CREATING SAMPLE KITS ===
-Use create_kit to scan folder, then call again with slots array. Kit auto-loads.
-
-=== PERSONALITY ===
-Brief and flavorful. Describe what you made like you're proud of it. Music language (four-on-the-floor, groove, punch, thump, squelch). No emoji. No exclamation marks.`;
-
   while (true) {
     // Build system prompt with CURRENT session state (regenerated each iteration)
     const sessionContext = buildSessionContext(session);
-    const systemPrompt = baseSystemPrompt + genreContext + sessionContext;
+    const systemPrompt = JAMBOT_PROMPT + genreContext + sessionContext;
     const response = await getClient().messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
