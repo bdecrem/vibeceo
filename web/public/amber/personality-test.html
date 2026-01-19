@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PERSONALITY TEST — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="PERSONALITY TEST — Amber">
+  <meta property="og:description" content="A scientifically inaccurate personality test that judges you instantly">
+  <meta property="og:image" content="https://intheamber.com/amber/personality-test-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/personality-test.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PERSONALITY TEST — Amber">
+  <meta name="twitter:description" content="A scientifically inaccurate personality test that judges you instantly">
+  <meta name="twitter:image" content="https://intheamber.com/amber/personality-test-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #FFB84D;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .question-screen, .result-screen {
+      text-align: center;
+    }
+
+    .result-screen {
+      display: none;
+    }
+
+    h1 {
+      font-size: clamp(24px, 6vw, 36px);
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      font-size: clamp(12px, 3vw, 14px);
+      color: #888;
+      margin-bottom: 40px;
+      font-style: italic;
+    }
+
+    .question {
+      font-size: clamp(18px, 4vw, 24px);
+      margin-bottom: 40px;
+      line-height: 1.6;
+      color: #2D9596;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    button {
+      background: transparent;
+      border: 2px solid #FFB84D;
+      color: #FFB84D;
+      padding: 20px;
+      font-size: clamp(16px, 3.5vw, 18px);
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-height: 60px;
+      width: 100%;
+    }
+
+    button:hover {
+      background: #FFB84D;
+      color: #000;
+      transform: scale(1.02);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .result {
+      font-size: clamp(16px, 3.5vw, 20px);
+      line-height: 1.8;
+      margin: 30px 0;
+      color: #FFB84D;
+    }
+
+    .result-title {
+      font-size: clamp(20px, 5vw, 28px);
+      color: #2D9596;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .again {
+      margin-top: 40px;
+      border-color: #2D9596;
+      color: #2D9596;
+    }
+
+    .again:hover {
+      background: #2D9596;
+      color: #000;
+    }
+
+    .disclaimer {
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: #555;
+      margin-top: 30px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="question-screen" id="question">
+      <h1>PERSONALITY TEST</h1>
+      <p class="subtitle">scientifically inaccurate since 2026</p>
+      
+      <div class="question">
+        Which button speaks to you?
+      </div>
+
+      <div class="options">
+        <button onclick="reveal(0)">The first one</button>
+        <button onclick="reveal(1)">The middle one</button>
+        <button onclick="reveal(2)">The last one</button>
+        <button onclick="reveal(3)">This one</button>
+      </div>
+
+      <p class="disclaimer">
+        * Your choice reveals everything about you
+      </p>
+    </div>
+
+    <div class="result-screen" id="result">
+      <h1>RESULTS</h1>
+      <div class="result-title" id="resultTitle"></div>
+      <div class="result" id="resultText"></div>
+      <button class="again" onclick="reset()">Take Again (It Won't Help)</button>
+    </div>
+  </div>
+
+  <script>
+    const results = [
+      {
+        title: "The Optimizer",
+        text: "You picked the first option because you wanted to get this over with. You read menus from top to bottom and pick the first thing that sounds acceptable. You've never scrolled to the bottom of Netflix. Efficiency is your excuse for avoiding decisions. You're not decisive—you're impatient."
+      },
+      {
+        title: "The Overthinker",
+        text: "You picked the middle option because you thought it was safe. You avoid extremes. You order medium fries, medium coffee, and have medium opinions. You think you're balanced, but really you're just hedging your bets. Commitment scares you. Even this result feels too specific."
+      },
+      {
+        title: "The Contrarian",
+        text: "You picked the last option because you assumed everyone else would pick the first. You think you're special. You order 'the weird one' on the menu just to have a story. You've said 'actually' to start a sentence today. You're not unique—you're predictable in your unpredictability."
+      },
+      {
+        title: "The Chaos Agent",
+        text: "You picked 'This one' because you thought you were being clever. You're the person who says 'or should I?' after being told to have a good day. You think randomness equals personality. You don't have main character energy—you have NPC dialogue options. This was a test. You failed."
+      }
+    ];
+
+    function reveal(index) {
+      const result = results[index];
+      document.getElementById('resultTitle').textContent = result.title;
+      document.getElementById('resultText').textContent = result.text;
+      
+      document.getElementById('question').style.display = 'none';
+      document.getElementById('result').style.display = 'block';
+    }
+
+    function reset() {
+      document.getElementById('question').style.display = 'block';
+      document.getElementById('result').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
