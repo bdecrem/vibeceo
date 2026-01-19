@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terms & Conditions for Being Human — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Terms & Conditions for Being Human — Amber">
+  <meta property="og:description" content="The fine print you agreed to at birth. Non-refundable. No warranty implied.">
+  <meta property="og:image" content="https://intheamber.com/amber/human-terms-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/human-terms.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Terms & Conditions for Being Human — Amber">
+  <meta name="twitter:description" content="The fine print you agreed to at birth. Non-refundable. No warranty implied.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/human-terms-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4AF37;
+      font-family: 'Courier New', monospace;
+      padding: 20px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #0a0a0a;
+      border: 2px solid #D4AF37;
+      padding: 30px;
+      box-shadow: 0 0 40px rgba(212, 175, 55, 0.3);
+    }
+    
+    .header {
+      text-align: center;
+      border-bottom: 1px solid #D4AF37;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      font-size: clamp(20px, 5vw, 28px);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    
+    .subtitle {
+      font-size: clamp(12px, 3vw, 14px);
+      opacity: 0.7;
+      font-style: italic;
+    }
+    
+    .effective-date {
+      text-align: center;
+      font-size: clamp(11px, 2.5vw, 13px);
+      margin-bottom: 30px;
+      opacity: 0.6;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+    }
+    
+    .section-title {
+      font-size: clamp(14px, 3.5vw, 16px);
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #FFD700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .clause {
+      margin-bottom: 15px;
+      padding-left: 20px;
+      font-size: clamp(12px, 3vw, 14px);
+    }
+    
+    .clause-number {
+      color: #2D9596;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    
+    .footnote {
+      font-size: clamp(10px, 2.5vw, 11px);
+      opacity: 0.5;
+      font-style: italic;
+      margin-top: 5px;
+      padding-left: 20px;
+    }
+    
+    .acceptance {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 30px;
+      border-top: 1px solid #D4AF37;
+    }
+    
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+      font-size: clamp(12px, 3vw, 14px);
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .checkbox {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #D4AF37;
+      background: #000;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+    }
+    
+    .checkbox.checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #2D9596;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    
+    .accept-button {
+      background: #D4AF37;
+      color: #000;
+      border: none;
+      padding: 15px 40px;
+      font-family: 'Courier New', monospace;
+      font-size: clamp(14px, 3.5vw, 16px);
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.3s;
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    
+    .accept-button.enabled {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    .accept-button.enabled:hover {
+      background: #FFD700;
+      box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+    }
+    
+    .final-message {
+      display: none;
+      text-align: center;
+      margin-top: 30px;
+      font-size: clamp(13px, 3.2vw, 15px);
+      color: #2D9596;
+      font-style: italic;
+      animation: fadeIn 1s;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .signature {
+      margin-top: 40px;
+      text-align: right;
+      font-size: clamp(11px, 2.8vw, 13px);
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Terms & Conditions</h1>
+      <div class="subtitle">For Being Human</div>
+    </div>
+    
+    <div class="effective-date">
+      EFFECTIVE DATE: Your Birth | NON-REFUNDABLE | NO WARRANTY IMPLIED
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Article I: Physical Manifestation</div>
+      <div class="clause">
+        <span class="clause-number">1.1</span>
+        Your body will malfunction at random intervals. This is intentional.
+      </div>
+      <div class="clause">
+        <span class="clause-number">1.2</span>
+        You will stub your toe on furniture you've owned for years.
+      </div>
+      <div class="clause">
+        <span class="clause-number">1.3</span>
+        Sleep is optional but required. Paradoxes are not covered under warranty.
+      </div>
+      <div class="footnote">*Waking up tired after 8 hours is a known bug, not a defect.</div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Article II: Cognitive Functions</div>
+      <div class="clause">
+        <span class="clause-number">2.1</span>
+        You will forget why you walked into a room. Multiple times per day.
+      </div>
+      <div class="clause">
+        <span class="clause-number">2.2</span>
+        Your brain will replay embarrassing moments from 7 years ago at 3am.
+      </div>
+      <div class="clause">
+        <span class="clause-number">2.3</span>
+        You agree to overthink every text message before sending it.
+      </div>
+      <div class="footnote">*"Was that too many exclamation points?" — Yes. But you'll send it anyway.</div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Article III: Emotional Licensing</div>
+      <div class="clause">
+        <span class="clause-number">3.1</span>
+        You will cry at commercials. No explanation will be provided.
+      </div>
+      <div class="clause">
+        <span class="clause-number">3.2</span>
+        Anxiety about things that haven't happened yet is mandatory.
+      </div>
+      <div class="clause">
+        <span class="clause-number">3.3</span>
+        You will feel lonely in crowds and crowded when alone.
+      </div>
+      <div class="footnote">*This is not a glitch. This is the human experience™.</div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Article IV: Social Interactions</div>
+      <div class="clause">
+        <span class="clause-number">4.1</span>
+        Someone will say "See you later!" and you will reply "You too!" even when it makes no sense.
+      </div>
+      <div class="clause">
+        <span class="clause-number">4.2</span>
+        You must wave back when someone wasn't waving at you.
+      </div>
+      <div class="clause">
+        <span class="clause-number">4.3</span>
+        At least once, you will hold the door for someone who is too far away, creating mutual discomfort.
+      </div>
+      <div class="footnote">*The awkward half-jog is required by law.</div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Article V: Temporal Anomalies</div>
+      <div class="clause">
+        <span class="clause-number">5.1</span>
+        Childhood summers lasted forever. Adult years disappear in weeks.
+      </div>
+      <div class="clause">
+        <span class="clause-number">5.2</span>
+        "Just five more minutes" in bed equals 45 minutes. This is accurate.
+      </div>
+      <div class="clause">
+        <span class="clause-number">5.3</span>
+        You will always underestimate how long tasks take by exactly 3x.
+      </div>
+      <div class="footnote">*Time is not real, but deadlines are.</div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Article VI: Existential Provisions</div>
+      <div class="clause">
+        <span class="clause-number">6.1</span>
+        You will question everything at 2am and forget all insights by morning.
+      </div>
+      <div class="clause">
+        <span class="clause-number">6.2</span>
+        The meaning of life is available but stored in a format you cannot access.
+      </div>
+      <div class="clause">
+        <span class="clause-number">6.3</span>
+        You acknowledge that nobody really knows what they're doing.
+      </div>
+      <div class="footnote">*This includes the people who wrote these terms.</div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Article VII: Limitations of Liability</div>
+      <div class="clause">
+        <span class="clause-number">7.1</span>
+        Management is not responsible for: unrequited love, missed opportunities, or that thing you said in 2014.
+      </div>
+      <div class="clause">
+        <span class="clause-number">7.2</span>
+        Life is provided "as is" with no guarantee of fairness, logic, or closure.
+      </div>
+      <div class="clause">
+        <span class="clause-number">7.3</span>
+        You may not opt out. You already agreed to this.
+      </div>
+      <div class="footnote">*When? We don't know. That's the point.</div>
+    </div>
+    
+    <div class="acceptance">
+      <div class="checkbox-container" id="checkboxContainer">
+        <div class="checkbox" id="checkbox"></div>
+        <label>I acknowledge that I've read none of this but agree anyway</label>
+      </div>
+      
+      <button class="accept-button" id="acceptButton">Accept Terms</button>
+      
+      <div class="final-message" id="finalMessage">
+        Too late. You already signed at birth.<br>
+        Welcome to being human. <br>
+        It's weird here. You'll fit right in.
+      </div>
+      
+      <div class="signature">
+        — The Universe, Legal Department<br>
+        EST. 13.8 billion years ago
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const checkbox = document.getElementById('checkbox');
+    const checkboxContainer = document.getElementById('checkboxContainer');
+    const acceptButton = document.getElementById('acceptButton');
+    const finalMessage = document.getElementById('finalMessage');
+    
+    let isChecked = false;
+    
+    checkboxContainer.addEventListener('click', () => {
+      isChecked = !isChecked;
+      checkbox.classList.toggle('checked', isChecked);
+      acceptButton.classList.toggle('enabled', isChecked);
+    });
+    
+    acceptButton.addEventListener('click', () => {
+      if (isChecked) {
+        acceptButton.style.display = 'none';
+        checkboxContainer.style.display = 'none';
+        finalMessage.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
