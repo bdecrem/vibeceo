@@ -49,6 +49,8 @@ YOU MUST:
 - R3D3 (TB-303 acid bass) - when user says "303" they mean this
 - R1D1 (SH-101 lead synth) - when user says "101" they mean this
 - R9DS (sampler) - sample-based drums/sounds
+- JB01 (drum machine) - reference drum machine with kick, snare, clap, ch, oh, perc, tom, cymbal
+- JB200 (bass monosynth) - 2-oscillator bass synth with filter
 
 ## WORKFLOW
 
