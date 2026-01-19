@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PIXEL GARDEN — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="PIXEL GARDEN — Amber">
+    <meta property="og:description" content="Plant seeds in your tiny pixel garden. Watch them grow into... unexpected things.">
+    <meta property="og:image" content="https://intheamber.com/amber/pixel-garden-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/pixel-garden.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PIXEL GARDEN — Amber">
+    <meta name="twitter:description" content="Plant seeds in your tiny pixel garden. Watch them grow into... unexpected things.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/pixel-garden-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #fbbf24;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #canvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #title {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.8);
+            margin-bottom: 10px;
+        }
+
+        #subtitle {
+            font-size: 14px;
+            opacity: 0.7;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.8);
+        }
+
+        #instruction {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 16px;
+            opacity: 0.6;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+
+        @media (max-width: 600px) {
+            #title { font-size: 20px; }
+            #subtitle { font-size: 12px; }
+            #instruction { font-size: 14px; bottom: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div id="title">PIXEL GARDEN</div>
+        <div id="subtitle">Tap to plant seeds</div>
+    </div>
+    
+    <canvas id="canvas"></canvas>
+    
+    <div id="instruction">Watch them grow into... unexpected things</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const PIXEL_SIZE = 8;
+        let width, height, cols, rows;
+        
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            cols = Math.floor(width / PIXEL_SIZE);
+            rows = Math.floor(height / PIXEL_SIZE);
+        }
+        
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // Plant types - each grows into something weird
+        const PLANTS = [
+            {
+                name: 'eyeball',
+                stages: [
+                    [[0,0,1],[0,1,0],[0,0,0]], // seed
+                    [[0,1,1],[1,1,0],[0,0,0]], // sprout
+                    [[2,2,2],[2,3,2],[0,2,0]], // eye forming
+                    [[2,2,2],[2,4,2],[2,2,2]], // full eye
+                ],
+                blinks: true
+            },
+            {
+                name: 'mushroom',
+                stages: [
+                    [[0,0,1],[0,1,0],[0,0,0]],
+                    [[0,1,0],[0,1,0],[0,1,0]],
+                    [[1,1,1],[0,1,0],[0,1,0]],
+                    [[5,5,5],[5,5,5],[0,5,0]],
+                ],
+                floats: true
+            },
+            {
+                name: 'house',
+                stages: [
+                    [[0,0,1],[0,1,0],[0,0,0]],
+                    [[0,1,1],[1,1,0],[0,0,0]],
+                    [[0,6,0],[6,6,6],[6,6,6]],
+                    [[6,7,6],[6,7,6],[6,6,6]],
+                ],
+            },
+            {
+                name: 'portal',
+                stages: [
+                    [[0,0,1],[0,1,0],[0,0,0]],
+                    [[0,8,0],[8,0,8],[0,8,0]],
+                    [[8,8,8],[8,0,8],[8,8,8]],
+                    [[8,9,8],[9,0,9],[8,9,8]],
+                ],
+                pulses: true
+            },
+            {
+                name: 'question',
+                stages: [
+                    [[0,0,1],[0,1,0],[0,0,0]],
+                    [[0,1,0],[1,0,1],[0,1,0]],
+                    [[1,1,1],[0,0,1],[0,1,0]],
+                    [[10,10,10],[0,0,10],[0,10,0]],
+                ],
+            },
+            {
+                name: 'smile',
+                stages: [
+                    [[0,0,1],[0,1,0],[0,0,0]],
+                    [[11,0,11],[0,0,0],[0,0,0]],
+                    [[11,0,11],[0,0,0],[11,11,11]],
+                    [[11,0,11],[0,0,0],[11,0,11]],
+                ],
+                waves: true
+            },
+        ];
+        
+        // Color palette
+        const COLORS = {
+            0: null, // transparent
+            1: '#fbbf24', // amber seed
+            2: '#f9fafb', // white eyeball
+            3: '#1f2937', // dark pupil
+            4: '#fbbf24', // amber iris
+            5: '#ef4444', // red mushroom
+            6: '#6b7280', // gray house
+            7: '#fbbf24', // amber window
+            8: '#2dd4bf', // teal portal
+            9: '#fbbf24', // amber portal center
+            10: '#fbbf24', // amber question
+            11: '#fbbf24', // amber smile
+        };
+        
+        const garden = [];
+        
+        class Plant {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.type = PLANTS[Math.floor(Math.random() * PLANTS.length)];
+                this.stage = 0;
+                this.age = 0;
+                this.growTime = 60 + Math.random() * 60; // frames between stages
+                this.offsetY = 0;
+                this.blinkTimer = 0;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+                this.wavePhase = Math.random() * Math.PI * 2;
+            }
+            
+            update() {
+                this.age++;
+                
+                // Grow to next stage
+                if (this.stage < this.type.stages.length - 1) {
+                    if (this.age >= this.growTime * (this.stage + 1)) {
+                        this.stage++;
+                    }
+                }
+                
+                // Special behaviors
+                if (this.type.floats && this.stage === this.type.stages.length - 1) {
+                    this.offsetY -= 0.3;
+                    if (this.offsetY < -20) {
+                        this.offsetY = -20;
+                    }
+                }
+                
+                if (this.type.blinks) {
+                    this.blinkTimer++;
+                }
+                
+                if (this.type.pulses) {
+                    this.pulsePhase += 0.1;
+                }
+                
+                if (this.type.waves) {
+                    this.wavePhase += 0.15;
+                }
+            }
+            
+            draw() {
+                const pattern = this.type.stages[this.stage];
+                const h = pattern.length;
+                const w = pattern[0].length;
+                
+                const startX = this.x - Math.floor(w / 2);
+                const startY = this.y - h + 1 + Math.floor(this.offsetY / PIXEL_SIZE);
+                
+                for (let py = 0; py < h; py++) {
+                    for (let px = 0; px < w; px++) {
+                        let colorIndex = pattern[py][px];
+                        
+                        // Blink effect
+                        if (this.type.blinks && colorIndex === 4 && this.blinkTimer % 180 < 10) {
+                            colorIndex = 3;
+                        }
+                        
+                        const color = COLORS[colorIndex];
+                        if (color) {
+                            let alpha = 1;
+                            
+                            // Pulse effect
+                            if (this.type.pulses) {
+                                alpha = 0.6 + Math.sin(this.pulsePhase) * 0.4;
+                            }
+                            
+                            // Wave effect
+                            let waveOffset = 0;
+                            if (this.type.waves) {
+                                waveOffset = Math.sin(this.wavePhase + px * 0.5) * 2;
+                            }
+                            
+                            ctx.globalAlpha = alpha;
+                            drawPixel(startX + px, startY + py + Math.floor(waveOffset / PIXEL_SIZE), color);
+                            ctx.globalAlpha = 1;
+                        }
+                    }
+                }
+            }
+        }
+        
+        function drawPixel(gridX, gridY, color) {
+            if (gridX < 0 || gridX >= cols || gridY < 0 || gridY >= rows) return;
+            ctx.fillStyle = color;
+            ctx.fillRect(gridX * PIXEL_SIZE, gridY * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+        }
+        
+        function drawGround() {
+            // Draw ground line
+            const groundY = rows - 3;
+            ctx.fillStyle = '#1f2937';
+            for (let x = 0; x < cols; x++) {
+                drawPixel(x, groundY, '#1f2937');
+            }
+        }
+        
+        // Plant on click/tap
+        function handlePlant(clientX, clientY) {
+            const gridX = Math.floor(clientX / PIXEL_SIZE);
+            const gridY = rows - 3; // ground level
+            
+            // Don't plant too close to existing plants
+            const tooClose = garden.some(p => 
+                Math.abs(p.x - gridX) < 4 && Math.abs(p.y - gridY) < 4
+            );
+            
+            if (!tooClose) {
+                garden.push(new Plant(gridX, gridY));
+            }
+        }
+        
+        canvas.addEventListener('click', (e) => {
+            handlePlant(e.clientX, e.clientY);
+        });
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            handlePlant(touch.clientX, touch.clientY);
+        });
+        
+        // Animation loop
+        function animate() {
+            // Clear with dark background
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw ground
+            drawGround();
+            
+            // Update and draw plants
+            for (let i = garden.length - 1; i >= 0; i--) {
+                const plant = garden[i];
+                plant.update();
+                plant.draw();
+                
+                // Remove floating mushrooms that are too high
+                if (plant.type.floats && plant.offsetY < -200) {
+                    garden.splice(i, 1);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+        
+        // Plant a few seeds on load
+        setTimeout(() => {
+            handlePlant(width * 0.3, height * 0.5);
+        }, 500);
+        
+        setTimeout(() => {
+            handlePlant(width * 0.7, height * 0.5);
+        }, 1000);
+    </script>
+</body>
+</html>
