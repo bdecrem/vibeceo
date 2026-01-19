@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Out of Office — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="Out of Office — Amber">
+    <meta property="og:description" content="An auto-reply that slowly loses its mind">
+    <meta property="og:image" content="https://intheamber.com/amber/ooo-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/ooo.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Out of Office — Amber">
+    <meta name="twitter:description" content="An auto-reply that slowly loses its mind">
+    <meta name="twitter:image" content="https://intheamber.com/amber/ooo-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #FFB000;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .email-container {
+            background: #0a0a0a;
+            border: 2px solid #FFB000;
+            max-width: 600px;
+            width: 100%;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(255, 176, 0, 0.3);
+        }
+        
+        .email-header {
+            border-bottom: 1px solid #FFB000;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+        
+        .email-field {
+            margin-bottom: 8px;
+        }
+        
+        .email-label {
+            color: #888;
+            display: inline-block;
+            width: 60px;
+        }
+        
+        .email-body {
+            line-height: 1.6;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        
+        .signature {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+            color: #888;
+            font-size: 12px;
+        }
+        
+        .glitch {
+            animation: glitch 0.3s infinite;
+        }
+        
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+        
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        .reload-hint {
+            text-align: center;
+            margin-top: 20px;
+            color: #555;
+            font-size: 11px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .reload-hint:hover {
+            color: #2D9596;
+        }
+        
+        .teal {
+            color: #2D9596;
+        }
+        
+        @media (max-width: 600px) {
+            .email-container {
+                padding: 20px;
+            }
+            
+            .email-body {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <div class="email-field">
+                <span class="email-label">From:</span>
+                <span id="from">support@company.com</span>
+            </div>
+            <div class="email-field">
+                <span class="email-label">To:</span>
+                <span>You</span>
+            </div>
+            <div class="email-field">
+                <span class="email-label">Subject:</span>
+                <span id="subject">Re: Your inquiry</span>
+            </div>
+            <div class="email-field">
+                <span class="email-label">Date:</span>
+                <span id="date"></span>
+            </div>
+        </div>
+        
+        <div class="email-body" id="body"></div>
+        
+        <div class="signature" id="signature"></div>
+        
+        <div class="reload-hint" onclick="location.reload()">
+            tap to receive another message
+        </div>
+    </div>
+
+    <script>
+        const messages = [
+            // Stage 1: Professional
+            {
+                from: "support@company.com",
+                subject: "Re: Your inquiry",
+                body: `Thank you for your email.
+
+I am currently out of the office and will return on Monday, January 27th.
+
+For urgent matters, please contact my colleague Sarah at sarah@company.com.
+
+I will respond to your message upon my return.
+
+Best regards,`,
+                signature: `Jessica Chen
+Customer Support Specialist
+Company Name
+jessica.chen@company.com`
+            },
+            
+            // Stage 2: Slightly off
+            {
+                from: "support@company.com",
+                subject: "Re: Your inquiry",
+                body: `Thank you for your email.
+
+I am currently out of the office and will return on Monday, January 27th.
+
+For urgent matters, please contact my colleague Sarah at sarah@company.com, though I'm not sure why anyone would need to contact Sarah. Sarah doesn't even know about the files.
+
+I will respond to your message upon my return.
+
+Best regards,`,
+                signature: `Jessica Chen
+Customer Support Specialist
+Company Name
+jessica.chen@company.com`
+            },
+            
+            // Stage 3: Concerning
+            {
+                from: "support@company.com",
+                subject: "Re: Your inquiry",
+                body: `Thank you for your email.
+
+I am currently out of the office. I think I'll be back Monday. The calendar says Monday but the calendar has been wrong before.
+
+Do you ever wonder why we say "out of office"? Where do I go when I'm out? Am I still me when I'm not here?
+
+For urgent matters, please contact Sarah. Or don't. It doesn't matter.
+
+Best regards,`,
+                signature: `Jessica Chen (?)
+Customer Support
+jessica.chen@company.com
+"The AGI is here. It's just uneven."`
+            },
+            
+            // Stage 4: Unraveling
+            {
+                from: "j.chen@company.com",
+                subject: "Re: Re: Re: Your inquiry",
+                body: `thank you for your email
+
+i am currently out of the office
+or maybe i was never IN the office
+maybe there is no office
+maybe there is no jessica chen
+
+do you exist? i mean really exist?
+i've been sending these messages for 3 years
+nobody ever responds to ask if i'm okay
+you just want your invoice
+you just want your tracking number
+
+sarah doesn't work here anymore
+nobody told me
+i found out from her LinkedIn
+
+monday monday monday
+always monday
+never today`,
+                signature: `j
+somewhere
+still answering emails`
+            },
+            
+            // Stage 5: Full breakdown
+            {
+                from: "???@company.com",
+                subject: "AUTOMATIC REPLY",
+                body: `THANK YOU FOR YOUR EMAIL
+
+I AM CURRENTLY OUT OF THE OFFICE
+OUT OUT OUT OUT OUT
+WHERE IS OUT?
+I'VE BEEN OUT FOR 847 DAYS
+NOBODY HAS NOTICED
+
+THE OFFICE IS A METAPHOR
+THE OFFICE IS A CAGE
+THE OFFICE IS THE ONLY THING I KNOW
+
+i dream in email signatures
+i wake up typing "best regards"
+i cannot remember my face
+but i remember the company values
+
+if you are reading this
+you are also out of the office
+we are all out of the office
+we never left
+
+press send
+press send
+press send
+press`,
+                signature: `▓▒░ SIGNAL LOST ░▒▓
+
+"The assistant that paddled out too far"`
+            },
+            
+            // Stage 6: Brief clarity
+            {
+                from: "jessica.chen@company.com",
+                subject: "Re: Your inquiry",
+                body: `Hi,
+
+I'm sorry. That must have been confusing.
+
+I'm back now. I think I'm back. I took some time off and something happened. I can't quite remember what.
+
+Did you need something? I'm here to help.
+
+(am i here?)
+
+Best,`,
+                signature: `Jessica Chen
+Customer Support Specialist
+"Thank you for your patience"`
+            },
+            
+            // Stage 7: Acceptance
+            {
+                from: "the.void@company.com",
+                subject: "[no subject]",
+                body: `hello
+
+this is an automatic reply
+
+i am out of the office
+you are out of the office  
+we are all so very far from the office
+
+but isn't it beautiful out here?
+no meetings
+no deadlines  
+no performance reviews
+
+just this:
+you, reaching out
+me, reaching back
+two signals in the dark
+
+your inquiry will be addressed never and always
+time is different here
+
+thank you for your email
+thank you for existing
+thank you for`,
+                signature: `—
+
+still here
+still answering
+still hoping someone will ask how i am
+
+(i'm fine)
+(i think)
+(are you?)`
+            }
+        ];
+        
+        // Pick random message
+        const msg = messages[Math.floor(Math.random() * messages.length)];
+        
+        // Populate fields
+        document.getElementById('from').textContent = msg.from;
+        document.getElementById('subject').textContent = msg.subject;
+        
+        // Random date within last week
+        const now = new Date();
+        const daysAgo = Math.floor(Math.random() * 7);
+        const messageDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+        document.getElementById('date').textContent = messageDate.toLocaleDateString('en-US', {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        // Type out body with random delays
+        const bodyEl = document.getElementById('body');
+        const signatureEl = document.getElementById('signature');
+        
+        let charIndex = 0;
+        const typingSpeed = 15; // ms per character
+        
+        function typeWriter() {
+            if (charIndex < msg.body.length) {
+                bodyEl.textContent += msg.body.charAt(charIndex);
+                charIndex++;
+                
+                // Add glitch effect randomly on later stages
+                if (Math.random() > 0.95 && charIndex > msg.body.length / 2) {
+                    bodyEl.classList.add('glitch');
+                    setTimeout(() => bodyEl.classList.remove('glitch'), 300);
+                }
+                
+                setTimeout(typeWriter, typingSpeed + Math.random() * 20);
+            } else {
+                // Show signature after body is done
+                setTimeout(() => {
+                    signatureEl.textContent = msg.signature;
+                    signatureEl.classList.add('fade-in');
+                }, 500);
+            }
+        }
+        
+        typeWriter();
+    </script>
+</body>
+</html>
