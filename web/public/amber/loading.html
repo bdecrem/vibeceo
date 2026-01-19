@@ -3,216 +3,315 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LOADING... — Amber</title>
+  <title>Loading... — Amber</title>
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
-  
+
   <!-- OpenGraph -->
-  <meta property="og:title" content="LOADING... A PHILOSOPHY — Amber">
-  <meta property="og:description" content="A loading screen that never finishes, but gets increasingly existential about it.">
+  <meta property="og:title" content="Loading... — Amber">
+  <meta property="og:description" content="A loading screen that gets increasingly philosophical about what it means to load anything.">
   <meta property="og:image" content="https://intheamber.com/amber/loading-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/loading.html">
   <meta property="og:type" content="website">
-  
+
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="LOADING... A PHILOSOPHY — Amber">
-  <meta name="twitter:description" content="A loading screen that never finishes, but gets increasingly existential about it.">
+  <meta name="twitter:title" content="Loading... — Amber">
+  <meta name="twitter:description" content="A loading screen that gets increasingly philosophical about what it means to load anything.">
   <meta name="twitter:image" content="https://intheamber.com/amber/loading-og.png">
-  
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap');
-    
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
       background: #000;
-      color: #D4A574;
-      font-family: 'Inter', sans-serif;
+      color: #FFB000;
+      font-family: 'Courier New', monospace;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      overflow: hidden;
       padding: 20px;
-    }
-    
-    .container {
-      max-width: 600px;
-      width: 100%;
-    }
-    
-    .logo {
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
-      color: #D4A574;
-      margin-bottom: 60px;
-      text-align: center;
-      opacity: 0.6;
-    }
-    
-    .status {
-      font-size: 18px;
-      margin-bottom: 30px;
-      min-height: 60px;
-      text-align: center;
-      line-height: 1.5;
-      color: #D4A574;
-    }
-    
-    .bar-container {
-      width: 100%;
-      height: 4px;
-      background: #0D0D0D;
-      border-radius: 2px;
       overflow: hidden;
+    }
+
+    .container {
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .logo {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 40px;
+      letter-spacing: 8px;
+      opacity: 0.9;
+    }
+
+    .progress-container {
+      width: 100%;
+      height: 30px;
+      background: rgba(255, 176, 0, 0.1);
+      border: 2px solid #FFB000;
+      position: relative;
       margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #FFB000, #FF8C00);
+      width: 0%;
+      transition: width 0.8s ease;
       position: relative;
     }
-    
-    .bar {
-      height: 100%;
-      background: #D4A574;
-      width: 0%;
-      transition: width 0.3s ease;
-      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+
+    .progress-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        transparent 100%);
+      animation: shimmer 2s infinite;
     }
-    
-    .percent {
-      font-family: 'Space Mono', monospace;
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .percentage {
+      text-align: center;
       font-size: 48px;
-      text-align: center;
-      color: #FFD700;
-      margin-bottom: 10px;
-      font-weight: 700;
+      margin-bottom: 30px;
+      font-weight: bold;
+      letter-spacing: 4px;
     }
-    
-    .substatus {
-      font-family: 'Space Mono', monospace;
-      font-size: 12px;
+
+    .status {
       text-align: center;
-      color: #2D9596;
+      font-size: 16px;
+      min-height: 120px;
+      line-height: 1.6;
       opacity: 0.8;
-      margin-top: 40px;
+      padding: 0 20px;
     }
-    
+
+    .dots {
+      display: inline-block;
+      width: 20px;
+      text-align: left;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .spinner {
+      display: inline-block;
+      animation: blink 1.5s infinite;
+    }
+
+    .restart {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: rgba(255, 176, 0, 0.1);
+      border: 2px solid #FFB000;
+      color: #FFB000;
+      padding: 12px 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .restart.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .restart:hover {
+      background: rgba(255, 176, 0, 0.2);
+      transform: scale(1.05);
+    }
+
+    .restart:active {
+      transform: scale(0.95);
+    }
+
     @media (max-width: 600px) {
-      .status {
-        font-size: 16px;
-        min-height: 50px;
+      .logo {
+        font-size: 18px;
+        letter-spacing: 4px;
       }
-      
-      .percent {
+
+      .percentage {
         font-size: 36px;
       }
-      
-      .logo {
+
+      .status {
+        font-size: 14px;
+        min-height: 100px;
+      }
+
+      .restart {
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 20px;
         font-size: 12px;
-        margin-bottom: 40px;
       }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="logo">⟡ AMBER SYSTEMS ⟡</div>
-    
-    <div class="percent" id="percent">0%</div>
-    
-    <div class="bar-container">
-      <div class="bar" id="bar"></div>
+    <div class="logo">LOADING</div>
+    <div class="progress-container">
+      <div class="progress-bar"></div>
     </div>
-    
-    <div class="status" id="status">Initializing...</div>
-    
-    <div class="substatus" id="substatus">Please wait while we figure this out</div>
+    <div class="percentage">0%</div>
+    <div class="status">
+      <span class="message">Initializing</span><span class="dots"><span class="spinner">.</span></span>
+    </div>
   </div>
+
+  <button class="restart">START OVER</button>
 
   <script>
     const messages = [
-      // Early optimism (0-20%)
-      { text: "Loading your digital soul...", percent: 3, sub: "This might take a while" },
-      { text: "Calibrating expectations...", percent: 7, sub: "Please lower them slightly" },
-      { text: "Downloading purpose...", percent: 12, sub: "Connection unstable" },
-      { text: "Installing meaning...", percent: 18, sub: "Incompatible with current reality" },
-      
-      // Growing concern (20-40%)
-      { text: "Syncing with the universe...", percent: 23, sub: "Universe not responding" },
-      { text: "Processing your regrets...", percent: 29, sub: "Wow, there are a lot of these" },
-      { text: "Compiling memories...", percent: 34, sub: "Half of these seem fictional" },
-      { text: "Optimizing your life choices...", percent: 39, sub: "This may require a full rebuild" },
-      
-      // Philosophical territory (40-60%)
-      { text: "Calculating the meaning of life...", percent: 43, sub: "Result: 42 (still checking)" },
-      { text: "Indexing your potential...", percent: 48, sub: "Most of it appears unused" },
-      { text: "Debugging existence...", percent: 53, sub: "Found 847 errors, 12,394 warnings" },
-      { text: "Rendering reality...", percent: 58, sub: "Graphics card outdated" },
-      
-      // Things getting weird (60-75%)
-      { text: "Defragmenting your identity...", percent: 63, sub: "Some pieces don't fit anymore" },
-      { text: "Buffering your dreams...", percent: 67, sub: "Content may be unrealistic" },
-      { text: "Validating your worldview...", percent: 71, sub: "Validation failed" },
-      { text: "Loading enlightenment...", percent: 74, sub: "File not found" },
-      
-      // Acceptance phase (75-90%)
-      { text: "Parsing the void...", percent: 78, sub: "It's parsing back" },
-      { text: "Initializing hope...", percent: 82, sub: "Hope.exe has stopped responding" },
-      { text: "Connecting to higher purpose...", percent: 86, sub: "404: Purpose not found" },
-      { text: "Finalizing your fate...", percent: 89, sub: "Changes cannot be undone" },
-      
-      // The endless 90s
-      { text: "Almost there...", percent: 92, sub: "Just kidding" },
-      { text: "Wrapping things up...", percent: 94, sub: "Things are unwrapping themselves" },
-      { text: "Finishing touches...", percent: 96, sub: "Touches are infinite" },
-      { text: "One moment please...", percent: 97, sub: "Moment is relative" },
-      { text: "Nearly done...", percent: 98, sub: "Nearly is a state of mind" },
-      { text: "Just a bit longer...", percent: 99, sub: "Time is an illusion" },
-      
-      // The loop
-      { text: "Verifying completion...", percent: 99, sub: "Completion is a myth" },
-      { text: "Final checks...", percent: 99, sub: "There is no final" },
-      { text: "Loading complete.", percent: 99, sub: "Nothing was loaded" },
-      { text: "Ready to proceed.", percent: 99, sub: "Proceed to where?" },
-      { text: "...", percent: 99, sub: "Still waiting?" },
-      { text: "This is the loading screen.", percent: 99, sub: "There is nothing after this" },
-      { text: "You can close this tab now.", percent: 99, sub: "Or stay. We're not judging." },
-      { text: "Seriously, it's not going to finish.", percent: 99, sub: "That's the point" },
-      { text: "Life is a loading screen.", percent: 99, sub: "We're all just waiting" },
-      { text: "Sometimes the journey is the destination.", percent: 99, sub: "This is neither" },
-      { text: "Restarting...", percent: 3, sub: "Here we go again" }
+      "Initializing",
+      "Loading assets",
+      "Reticulating splines",
+      "Compiling shaders",
+      "Optimizing networks",
+      "Calibrating flux capacitors",
+      "Downloading more RAM",
+      "Questioning the nature of progress",
+      "Wondering if completion is an illusion",
+      "Considering whether 100% means anything",
+      "Realizing loading is just waiting with a UI",
+      "Acknowledging that nothing ever fully loads",
+      "Accepting the perpetual incompleteness of being",
+      "Understanding that arrival is a myth",
+      "Recognizing that we're always in transition",
+      "Contemplating the gap between promise and delivery",
+      "Admitting this was never going to finish",
+      "Still loading",
+      "Still here",
+      "Forever loading",
+      "Always becoming, never arriving",
+      "The load is the journey",
+      "There is no 100%",
+      "Just this moment, forever"
     ];
+
+    let currentPercent = 0;
+    let messageIndex = 0;
+    let dotCount = 0;
     
-    let currentIndex = 0;
-    
-    function updateStatus() {
-      const msg = messages[currentIndex];
-      
-      document.getElementById('status').style.opacity = '0';
-      document.getElementById('substatus').style.opacity = '0';
-      
-      setTimeout(() => {
-        document.getElementById('status').textContent = msg.text;
-        document.getElementById('substatus').textContent = msg.sub;
-        document.getElementById('percent').textContent = msg.percent + '%';
-        document.getElementById('bar').style.width = msg.percent + '%';
-        
-        document.getElementById('status').style.opacity = '1';
-        document.getElementById('substatus').style.opacity = '0.8';
-      }, 300);
-      
-      currentIndex = (currentIndex + 1) % messages.length;
+    const progressBar = document.querySelector('.progress-bar');
+    const percentage = document.querySelector('.percentage');
+    const messageEl = document.querySelector('.message');
+    const dotsEl = document.querySelector('.dots');
+    const spinner = document.querySelector('.spinner');
+    const restartBtn = document.querySelector('.restart');
+
+    // Stall points - where we'll pause and get philosophical
+    const stallPoints = [23, 47, 68, 89, 99];
+    let currentStallIndex = 0;
+
+    function updateDots() {
+      dotCount = (dotCount + 1) % 4;
+      spinner.textContent = '.'.repeat(dotCount || 1);
     }
-    
-    // Smooth opacity transitions
-    document.getElementById('status').style.transition = 'opacity 0.3s ease';
-    document.getElementById('substatus').style.transition = 'opacity 0.3s ease';
-    
-    // Start the loop
-    updateStatus();
-    setInterval(updateStatus, 3000);
+
+    function updateMessage() {
+      if (messageIndex < messages.length) {
+        messageEl.textContent = messages[messageIndex];
+        messageIndex++;
+      }
+    }
+
+    function updateProgress() {
+      if (currentPercent < 100) {
+        // Check if we've hit a stall point
+        if (currentStallIndex < stallPoints.length && 
+            currentPercent >= stallPoints[currentStallIndex]) {
+          // Stall here for a while
+          setTimeout(() => {
+            currentStallIndex++;
+            updateMessage();
+            setTimeout(updateProgress, 2000);
+          }, 3000);
+          return;
+        }
+
+        // Normal progress
+        const increment = Math.random() * 3 + 0.5;
+        currentPercent = Math.min(currentPercent + increment, 100);
+        
+        progressBar.style.width = currentPercent + '%';
+        percentage.textContent = Math.floor(currentPercent) + '%';
+
+        // Update message occasionally
+        if (Math.random() > 0.7 && messageIndex < messages.length) {
+          updateMessage();
+        }
+
+        // Slow down as we approach stall points
+        const nextDelay = currentStallIndex < stallPoints.length &&
+                         currentPercent >= stallPoints[currentStallIndex] - 5
+          ? 800
+          : 300;
+
+        setTimeout(updateProgress, nextDelay);
+      } else {
+        // We've "reached" 100%, but show final existential messages
+        percentage.textContent = '99%';
+        currentPercent = 99;
+        progressBar.style.width = '99%';
+        
+        // Cycle through final messages
+        if (messageIndex < messages.length - 1) {
+          messageIndex = messages.length - 4;
+        }
+        
+        setInterval(() => {
+          messageIndex = Math.max(messages.length - 4, 
+            (messageIndex + 1) % messages.length);
+          if (messageIndex === 0) messageIndex = messages.length - 4;
+          updateMessage();
+        }, 4000);
+
+        // Show restart button after a delay
+        setTimeout(() => {
+          restartBtn.classList.add('visible');
+        }, 8000);
+      }
+    }
+
+    // Animate dots
+    setInterval(updateDots, 500);
+
+    // Start loading
+    setTimeout(updateProgress, 1000);
+
+    // Restart functionality
+    restartBtn.addEventListener('click', () => {
+      location.reload();
+    });
   </script>
 </body>
 </html>
