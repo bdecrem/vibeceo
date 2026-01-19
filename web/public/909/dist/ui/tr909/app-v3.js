@@ -117,6 +117,7 @@ document.addEventListener('keydown', (e) => {
 
 const pattern = {};
 const engine = new TR909Engine();
+window.engine = engine; // Expose for debugging
 const PATTERN_ID = 'web-ui';
 // Track current step for visualization
 let currentStep = -1;

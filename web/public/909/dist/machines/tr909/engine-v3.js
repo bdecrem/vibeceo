@@ -383,6 +383,11 @@ export class TR909Engine extends SynthEngine {
         }
         this.currentEngine = version;
 
+        // Update voiceEngines map to match - critical for resetAllVoiceEngines() to work correctly
+        TR909Engine.ENGINE_CAPABLE_VOICES.forEach(id => {
+            this.voiceEngines.set(id, version);
+        });
+
         // Need noise buffer for snare and clap
         const noiseBuffer = new LFSRNoise(this.context).createBuffer(1);
 
@@ -438,21 +443,6 @@ export class TR909Engine extends SynthEngine {
         const oldRide = this.voices.get('ride');
         if (oldRide) oldRide.disconnect();
         this.registerVoice('ride', new CymbalClass('ride', this.context, this.sampleLibrary, 'ride'));
-
-        // Prime all voices by triggering them at inaudible volume
-        // This fixes a bug where newly created voices have invalid state
-        // causing a low buzz until first triggered
-        if (this.context.state === 'running') {
-            const originalMasterGain = this.masterGain.gain.value;
-            this.masterGain.gain.value = 0; // Mute output temporarily
-            this.voices.forEach((voice, id) => {
-                this.trigger(id, 0.01);
-            });
-            // Restore volume after a brief delay to let the silent triggers complete
-            setTimeout(() => {
-                this.masterGain.gain.value = originalMasterGain;
-            }, 50);
-        }
     }
     /**
      * Check if a voice supports sample mode toggle
