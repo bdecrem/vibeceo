@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ERROR 404: MOTIVATION NOT FOUND — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="ERROR 404: MOTIVATION NOT FOUND — Amber">
+  <meta property="og:description" content="Your motivation could not be located. Please try the troubleshooting steps below.">
+  <meta property="og:image" content="https://intheamber.com/amber/motivation-404-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/motivation-404.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ERROR 404: MOTIVATION NOT FOUND — Amber">
+  <meta name="twitter:description" content="Your motivation could not be located. Please try the troubleshooting steps below.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/motivation-404-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4AF37;
+      font-family: 'Space Mono', monospace;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    .error-code {
+      font-size: clamp(48px, 12vw, 96px);
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #FF6B6B;
+      letter-spacing: -2px;
+    }
+    
+    .error-title {
+      font-size: clamp(20px, 5vw, 32px);
+      font-weight: 700;
+      margin-bottom: 30px;
+      color: #D4AF37;
+    }
+    
+    .status {
+      background: rgba(212, 175, 55, 0.1);
+      border: 2px solid #D4AF37;
+      padding: 20px;
+      margin-bottom: 30px;
+      border-radius: 0;
+    }
+    
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: clamp(12px, 3vw, 14px);
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .status-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .status-label {
+      color: #888;
+    }
+    
+    .status-value {
+      color: #D4AF37;
+      text-align: right;
+    }
+    
+    .status-value.error {
+      color: #FF6B6B;
+    }
+    
+    h2 {
+      font-size: clamp(16px, 4vw, 20px);
+      margin-top: 40px;
+      margin-bottom: 15px;
+      color: #2D9596;
+    }
+    
+    .step {
+      margin-bottom: 20px;
+      padding-left: 30px;
+      position: relative;
+      font-size: clamp(12px, 3vw, 14px);
+      line-height: 1.6;
+    }
+    
+    .step::before {
+      content: "▸";
+      position: absolute;
+      left: 10px;
+      color: #D4AF37;
+    }
+    
+    .button {
+      background: transparent;
+      border: 2px solid #D4AF37;
+      color: #D4AF37;
+      padding: 15px 30px;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(12px, 3vw, 14px);
+      cursor: pointer;
+      margin-top: 30px;
+      width: 100%;
+      transition: all 0.3s ease;
+      font-weight: 700;
+    }
+    
+    .button:hover {
+      background: #D4AF37;
+      color: #000;
+    }
+    
+    .button:active {
+      transform: scale(0.98);
+    }
+    
+    .support-response {
+      display: none;
+      background: rgba(45, 149, 150, 0.1);
+      border: 2px solid #2D9596;
+      padding: 20px;
+      margin-top: 20px;
+      font-size: clamp(12px, 3vw, 14px);
+      line-height: 1.6;
+    }
+    
+    .support-response.visible {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .footer {
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 1px solid #333;
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: #555;
+      text-align: center;
+    }
+    
+    .loading-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(212, 175, 55, 0.1);
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    
+    .loading-bar-fill {
+      height: 100%;
+      background: #D4AF37;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="error-code">404</div>
+    <div class="error-title">MOTIVATION NOT FOUND</div>
+    
+    <div class="status">
+      <div class="status-item">
+        <span class="status-label">Last Seen:</span>
+        <span class="status-value error">UNKNOWN</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Expected Location:</span>
+        <span class="status-value">Somewhere deep inside you</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Current Status:</span>
+        <span class="status-value error">MISSING</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Time Since Last Productive Thought:</span>
+        <span class="status-value" id="time-counter">calculating...</span>
+      </div>
+    </div>
+    
+    <h2>TROUBLESHOOTING STEPS</h2>
+    
+    <div class="step">
+      Have you tried getting more sleep?<br>
+      <span style="color: #555; font-size: 0.9em;">Status: You've tried this. It didn't work.</span>
+    </div>
+    
+    <div class="step">
+      Have you tried making a to-do list?<br>
+      <span style="color: #555; font-size: 0.9em;">Status: List created. Items incomplete. List lost.</span>
+    </div>
+    
+    <div class="step">
+      Have you tried drinking more water?<br>
+      <span style="color: #555; font-size: 0.9em;">Status: You're hydrated but still unmotivated.</span>
+    </div>
+    
+    <div class="step">
+      Have you tried taking a break?<br>
+      <span style="color: #555; font-size: 0.9em;">Status: You've been on break for 3 days.</span>
+    </div>
+    
+    <div class="step">
+      Have you tried just starting?<br>
+      <span style="color: #555; font-size: 0.9em;">Status: ERROR: Cannot start. Motivation required to start.</span>
+    </div>
+    
+    <h2>SYSTEM DIAGNOSTICS</h2>
+    
+    <div class="step">
+      Running motivation scan...
+      <div class="loading-bar">
+        <div class="loading-bar-fill" id="scan-bar"></div>
+      </div>
+      <span style="color: #FF6B6B; font-size: 0.9em; display: none;" id="scan-result">ERROR: No motivation detected in system.</span>
+    </div>
+    
+    <button class="button" id="support-btn">CONTACT SUPPORT</button>
+    
+    <div class="support-response" id="response1">
+      <strong>Support Team:</strong> Thank you for contacting us. Have you tried turning yourself off and on again?
+    </div>
+    
+    <div class="support-response" id="response2">
+      <strong>Support Team:</strong> We understand your frustration. Unfortunately, motivation is not covered under your warranty. It expired when you became an adult.
+    </div>
+    
+    <div class="support-response" id="response3">
+      <strong>Support Team:</strong> Look, we've been running diagnostics on thousands of users, and honestly? Nobody knows where motivation comes from. Some people think it's genetic. Others think it's caffeine. We think it's a myth.
+    </div>
+    
+    <div class="support-response" id="response4">
+      <strong>Support Team:</strong> Between you and me? We're also unmotivated. We're only here because we need health insurance. The real secret is: you just do the thing anyway. Motivation is a lie capitalism sold you. The trick is discipline, which is equally unavailable but at least it's honest about being painful.
+    </div>
+    
+    <div class="support-response" id="response5">
+      <strong>Support Team:</strong> This ticket has been marked as RESOLVED. If you have further questions, please don't contact us. We're tired.
+    </div>
+    
+    <div class="footer">
+      MOTIVATION SUPPORT SERVICES™<br>
+      We've given up trying to help. Have you?
+    </div>
+  </div>
+  
+  <script>
+    // Time counter
+    let seconds = Math.floor(Math.random() * 86400) + 3600; // Random time between 1-25 hours
+    const timeCounter = document.getElementById('time-counter');
+    
+    function updateTime() {
+      seconds++;
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      timeCounter.textContent = `${hours}h ${mins}m ${secs}s`;
+    }
+    
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    // Scan animation
+    setTimeout(() => {
+      document.getElementById('scan-bar').style.width = '100%';
+      setTimeout(() => {
+        document.getElementById('scan-result').style.display = 'block';
+      }, 600);
+    }, 1000);
+    
+    // Support button
+    let clickCount = 0;
+    const supportBtn = document.getElementById('support-btn');
+    const responses = [
+      'response1', 'response2', 'response3', 'response4', 'response5'
+    ];
+    
+    supportBtn.addEventListener('click', () => {
+      if (clickCount < responses.length) {
+        document.getElementById(responses[clickCount]).classList.add('visible');
+        clickCount++;
+        
+        if (clickCount >= responses.length) {
+          supportBtn.textContent = 'SUPPORT HAS LEFT THE CHAT';
+          supportBtn.style.borderColor = '#555';
+          supportBtn.style.color = '#555';
+          supportBtn.style.cursor = 'not-allowed';
+        } else {
+          supportBtn.textContent = 'CONTACT SUPPORT AGAIN';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
