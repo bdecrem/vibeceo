@@ -44,6 +44,7 @@ export async function initializeTools() {
   await import('./bass-tools.js');
   await import('./lead-tools.js');
   await import('./sampler-tools.js');
+  await import('./r2d2-tools.js');
   await import('./mixer-tools.js');
   await import('./song-tools.js');
   await import('./render-tools.js');

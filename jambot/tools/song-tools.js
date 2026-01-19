@@ -102,6 +102,16 @@ const songTools = {
       return `Saved sampler pattern "${patternName}"`;
     }
 
+    if (instrument === 'r2d2') {
+      session.patterns.r2d2[patternName] = {
+        pattern: JSON.parse(JSON.stringify(session.r2d2Pattern)),
+        params: JSON.parse(JSON.stringify(session.r2d2Params)),
+        channelInserts: getInsertsForInstrument(session, 'r2d2'),
+      };
+      session.currentPattern.r2d2 = patternName;
+      return `Saved r2d2 pattern "${patternName}"`;
+    }
+
     return `Unknown instrument: ${instrument}`;
   },
 
@@ -163,6 +173,17 @@ const songTools = {
       return `Loaded sampler pattern "${patternName}"`;
     }
 
+    if (instrument === 'r2d2') {
+      const saved = session.patterns.r2d2[patternName];
+      if (!saved) return `No r2d2 pattern "${patternName}" found`;
+      session.r2d2Pattern = JSON.parse(JSON.stringify(saved.pattern));
+      session.r2d2Params = JSON.parse(JSON.stringify(saved.params));
+      clearInsertsForInstrument(session, 'r2d2');
+      restoreInserts(session, saved.channelInserts);
+      session.currentPattern.r2d2 = patternName;
+      return `Loaded r2d2 pattern "${patternName}"`;
+    }
+
     return `Unknown instrument: ${instrument}`;
   },
 
@@ -184,7 +205,7 @@ const songTools = {
    */
   list_patterns: async (input, session, context) => {
     const lines = [];
-    for (const instrument of ['drums', 'bass', 'lead', 'sampler']) {
+    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'r2d2']) {
       const patterns = session.patterns[instrument];
       const names = Object.keys(patterns);
       const current = session.currentPattern[instrument];
@@ -209,6 +230,7 @@ const songTools = {
         bass: s.bass || null,
         lead: s.lead || null,
         sampler: s.sampler || null,
+        r2d2: s.r2d2 || null,
       }
     }));
 
@@ -233,7 +255,7 @@ const songTools = {
 
     // Show patterns
     lines.push('PATTERNS:');
-    for (const instrument of ['drums', 'bass', 'lead', 'sampler']) {
+    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'r2d2']) {
       const patterns = session.patterns[instrument];
       const names = Object.keys(patterns);
       if (names.length > 0) {
@@ -250,6 +272,7 @@ const songTools = {
         if (section.patterns.bass) parts.push(`bass:${section.patterns.bass}`);
         if (section.patterns.lead) parts.push(`lead:${section.patterns.lead}`);
         if (section.patterns.sampler) parts.push(`sampler:${section.patterns.sampler}`);
+        if (section.patterns.r2d2) parts.push(`r2d2:${section.patterns.r2d2}`);
         lines.push(`  ${i + 1}. ${section.bars} bars — ${parts.join(', ') || '(silent)'}`);
       });
       const totalBars = session.arrangement.reduce((sum, s) => sum + s.bars, 0);

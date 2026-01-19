@@ -16,6 +16,9 @@ const R3D3Engine = TB303Module.TB303Engine || TB303Module.default;
 import * as SH101Module from '../web/public/101/dist/machines/sh101/engine.js';
 const R1D1Engine = SH101Module.SH101Engine || SH101Module.default;
 
+// R2D2 - Bass monosynth
+import { R2D2Engine } from './instruments/r2d2-engine.js';
+
 import { writeFileSync, readFileSync, readdirSync, existsSync, mkdirSync, copyFileSync } from 'fs';
 import { execSync } from 'child_process';
 import ffmpegPath from 'ffmpeg-static';
@@ -534,6 +537,32 @@ export function createSession() {
     samplerKit: null,        // Currently loaded kit { id, name, slots }
     samplerPattern: {},      // { s1: [{step, vel}, ...], s2: [...], ... }
     samplerParams: {},       // { s1: { level, tune, attack, decay, filter, pan }, ... }
+    // R2D2 (bass monosynth)
+    r2d2Level: 0,            // Node output level in dB (-60 to +6, 0 = unity)
+    r2d2Pattern: createEmptyR2D2Pattern(),
+    r2d2Params: {
+      osc1Waveform: 'sawtooth',
+      osc1Octave: 0,
+      osc1Detune: 0,
+      osc1Level: 1.0,
+      osc2Waveform: 'sawtooth',
+      osc2Octave: -12,
+      osc2Detune: 7,
+      osc2Level: 0.8,
+      filterCutoff: 0.4,    // Normalized 0-1
+      filterResonance: 0.4,
+      filterEnvAmount: 0.6,
+      filterAttack: 0,
+      filterDecay: 0.4,
+      filterSustain: 0.2,
+      filterRelease: 0.3,
+      ampAttack: 0,
+      ampDecay: 0.3,
+      ampSustain: 0.6,
+      ampRelease: 0.2,
+      drive: 0.2,
+      level: 0.8,
+    },
     // MIXER (DAW-like routing and effects)
     mixer: {
       sends: {},             // { name: { effect: 'reverb', params: { mix: 0.3 } } }
@@ -548,12 +577,14 @@ export function createSession() {
       bass: {},     // { 'A': { pattern, params } }
       lead: {},     // { 'A': { pattern, params, arp } }
       sampler: {},  // { 'A': { pattern, params } }
+      r2d2: {},     // { 'A': { pattern, params } }
     },
     currentPattern: {
       drums: 'A',
       bass: 'A',
       lead: 'A',
       sampler: 'A',
+      r2d2: 'A',
     },
     arrangement: [],  // [{ bars: 4, patterns: { drums: 'A', bass: 'A', lead: 'A', sampler: 'A' } }, ...]
   };
@@ -572,6 +603,15 @@ function createEmptyBassPattern() {
 function createEmptyLeadPattern() {
   return Array(16).fill(null).map(() => ({
     note: 'C3',
+    gate: false,
+    accent: false,
+    slide: false,
+  }));
+}
+
+function createEmptyR2D2Pattern() {
+  return Array(16).fill(null).map(() => ({
+    note: 'C2',
     gate: false,
     accent: false,
     slide: false,
@@ -766,7 +806,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Which instrument's pattern to save" },
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Which instrument's pattern to save" },
         name: { type: "string", description: "Pattern name (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -778,7 +818,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Which instrument's pattern to load" },
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Which instrument's pattern to load" },
         name: { type: "string", description: "Pattern name to load (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -790,7 +830,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Which instrument" },
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Which instrument" },
         from: { type: "string", description: "Source pattern name (A, B, etc)" },
         to: { type: "string", description: "Destination pattern name" }
       },
@@ -814,7 +854,7 @@ export const TOOLS = [
       properties: {
         sections: {
           type: "array",
-          description: "Array of sections. Each section: {bars: 4, drums: 'A', bass: 'A', lead: 'B', sampler: 'A'}",
+          description: "Array of sections. Each section: {bars: 4, drums: 'A', bass: 'A', lead: 'B', sampler: 'A', r2d2: 'A'}",
           items: {
             type: "object",
             properties: {
@@ -822,7 +862,8 @@ export const TOOLS = [
               drums: { type: "string", description: "Drum pattern name (or omit to silence)" },
               bass: { type: "string", description: "Bass pattern name (or omit to silence)" },
               lead: { type: "string", description: "Lead pattern name (or omit to silence)" },
-              sampler: { type: "string", description: "Sampler pattern name (or omit to silence)" }
+              sampler: { type: "string", description: "Sampler pattern name (or omit to silence)" },
+              r2d2: { type: "string", description: "R2D2 bass pattern name (or omit to silence)" }
             },
             required: ["bars"]
           }
@@ -946,6 +987,69 @@ export const TOOLS = [
         lfoToPitch: { type: "number", description: "LFO to pitch in semitones (0-24). Vibrato depth" },
         lfoToFilter: { type: "number", description: "LFO to filter 0-100. Wah/wobble depth" },
         lfoToPW: { type: "number", description: "LFO to pulse width 0-100. PWM movement" }
+      },
+      required: []
+    }
+  },
+  // R2D2 (Bass Monosynth)
+  {
+    name: "add_r2d2",
+    description: "Add a bass pattern using R2D2 (2-oscillator bass monosynth). Provide an array of 16 steps. Each step has: note, gate, accent, slide.",
+    input_schema: {
+      type: "object",
+      properties: {
+        pattern: {
+          type: "array",
+          description: "Array of 16 steps. Each step: {note: 'C2', gate: true, accent: false, slide: false}. Bass range: C1-C3",
+          items: {
+            type: "object",
+            properties: {
+              note: { type: "string", description: "Note name (C1, D2, E2, etc)" },
+              gate: { type: "boolean", description: "true = play note, false = rest" },
+              accent: { type: "boolean", description: "Accent for extra attack and filter opening" },
+              slide: { type: "boolean", description: "Glide/portamento to this note from previous" }
+            }
+          }
+        }
+      },
+      required: ["pattern"]
+    }
+  },
+  {
+    name: "tweak_r2d2",
+    description: "Adjust R2D2 bass synth parameters. UNITS: level in dB, filterCutoff in Hz (20-16000), octaves in semitones, all others 0-100. Use mute:true to silence.",
+    input_schema: {
+      type: "object",
+      properties: {
+        // Output
+        mute: { type: "boolean", description: "Mute bass (sets level to -60dB, effectively silent)" },
+        level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
+        // Oscillator 1
+        osc1Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 1 waveform" },
+        osc1Octave: { type: "number", description: "Osc 1 octave shift in semitones (-24 to +24)" },
+        osc1Detune: { type: "number", description: "Osc 1 fine tune (-50 to +50)" },
+        osc1Level: { type: "number", description: "Osc 1 level 0-100" },
+        // Oscillator 2
+        osc2Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 2 waveform" },
+        osc2Octave: { type: "number", description: "Osc 2 octave shift in semitones (-24 to +24). -12 = one octave down" },
+        osc2Detune: { type: "number", description: "Osc 2 fine tune (-50 to +50). 5-10 adds fatness" },
+        osc2Level: { type: "number", description: "Osc 2 level 0-100" },
+        // Filter
+        filterCutoff: { type: "number", description: "Filter cutoff in Hz (20-16000). 400=warm, 1200=present, 4000=bright" },
+        filterResonance: { type: "number", description: "Filter resonance 0-100. Adds bite at 40-60" },
+        filterEnvAmount: { type: "number", description: "Filter envelope depth -100 to +100. Positive opens filter on attack" },
+        // Filter envelope
+        filterAttack: { type: "number", description: "Filter envelope attack 0-100" },
+        filterDecay: { type: "number", description: "Filter envelope decay 0-100. Short (10-40) for plucky bass" },
+        filterSustain: { type: "number", description: "Filter envelope sustain 0-100" },
+        filterRelease: { type: "number", description: "Filter envelope release 0-100" },
+        // Amp envelope
+        ampAttack: { type: "number", description: "Amp envelope attack 0-100. 0 for punchy" },
+        ampDecay: { type: "number", description: "Amp envelope decay 0-100" },
+        ampSustain: { type: "number", description: "Amp envelope sustain 0-100. 50-80 for bass" },
+        ampRelease: { type: "number", description: "Amp envelope release 0-100. 10-30 for tight bass" },
+        // Drive
+        drive: { type: "number", description: "Output saturation 0-100. Adds harmonics and grit" }
       },
       required: []
     }
@@ -1125,7 +1229,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["drums", "bass", "lead", "sampler", "kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"], description: "Channel or drum voice to add effect to" },
+        channel: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2", "kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"], description: "Channel or drum voice to add effect to" },
         effect: { type: "string", enum: ["eq", "filter", "ducker"], description: "Type of effect" },
         preset: { type: "string", description: "Effect preset (eq: 'acidBass'/'crispHats'/'warmPad'; filter: 'dubDelay'/'telephone'/'lofi')" },
         params: {
@@ -1142,7 +1246,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["drums", "bass", "lead", "sampler", "kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"], description: "Channel or drum voice to remove effect from" },
+        channel: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2", "kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"], description: "Channel or drum voice to remove effect from" },
         effect: { type: "string", enum: ["eq", "filter", "ducker", "all"], description: "Type of effect to remove, or 'all' to clear all inserts" }
       },
       required: ["channel"]
@@ -1201,7 +1305,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Which instrument to save preset for" },
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Which instrument to save preset for" },
         id: { type: "string", description: "Preset ID (lowercase, hyphenated, e.g., 'my-deep-kick')" },
         name: { type: "string", description: "Display name (e.g., 'My Deep Kick')" },
         description: { type: "string", description: "Optional description of the preset's sound" }
@@ -1215,7 +1319,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Which instrument to load preset for" },
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Which instrument to load preset for" },
         id: { type: "string", description: "Preset ID to load" }
       },
       required: ["instrument", "id"]
@@ -1227,7 +1331,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Filter by instrument (optional, shows all if omitted)" }
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler", "r2d2"], description: "Filter by instrument (optional, shows all if omitted)" }
       },
       required: []
     }
@@ -1353,6 +1457,16 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
     // Reset R9DS (sampler) - keep kit loaded, just clear pattern
     session.samplerPattern = {};
     session.samplerParams = {};
+    // Reset R2D2 (bass monosynth)
+    session.r2d2Pattern = createEmptyR2D2Pattern();
+    session.r2d2Params = {
+      osc1Waveform: 'sawtooth', osc1Octave: 0, osc1Detune: 0, osc1Level: 1.0,
+      osc2Waveform: 'sawtooth', osc2Octave: -12, osc2Detune: 7, osc2Level: 0.8,
+      filterCutoff: 0.4, filterResonance: 0.4, filterEnvAmount: 0.6,
+      filterAttack: 0, filterDecay: 0.4, filterSustain: 0.2, filterRelease: 0.3,
+      ampAttack: 0, ampDecay: 0.3, ampSustain: 0.6, ampRelease: 0.2,
+      drive: 0.2, level: 0.8
+    };
     return `Session created at ${input.bpm} BPM`;
   }
 
@@ -1530,7 +1644,7 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
   // List all saved patterns
   if (name === "list_patterns") {
     const lines = [];
-    for (const instrument of ['drums', 'bass', 'lead', 'sampler']) {
+    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'r2d2']) {
       const patterns = session.patterns[instrument];
       const names = Object.keys(patterns);
       const current = session.currentPattern[instrument];
@@ -1553,6 +1667,7 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
         bass: s.bass || null,
         lead: s.lead || null,
         sampler: s.sampler || null,
+        r2d2: s.r2d2 || null,
       }
     }));
 
@@ -1573,7 +1688,7 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
 
     // Show patterns
     lines.push('PATTERNS:');
-    for (const instrument of ['drums', 'bass', 'lead', 'sampler']) {
+    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'r2d2']) {
       const patterns = session.patterns[instrument];
       const names = Object.keys(patterns);
       if (names.length > 0) {
@@ -1590,6 +1705,7 @@ async function _legacyExecuteTool(name, input, session, context = {}) {
         if (section.patterns.bass) parts.push(`bass:${section.patterns.bass}`);
         if (section.patterns.lead) parts.push(`lead:${section.patterns.lead}`);
         if (section.patterns.sampler) parts.push(`sampler:${section.patterns.sampler}`);
+        if (section.patterns.r2d2) parts.push(`r2d2:${section.patterns.r2d2}`);
         lines.push(`  ${i + 1}. ${section.bars} bars — ${parts.join(', ') || '(silent)'}`);
       });
       const totalBars = session.arrangement.reduce((sum, s) => sum + s.bars, 0);
@@ -2692,7 +2808,7 @@ async function renderSession(session, bars, filename) {
   // This lets us create filter nodes that can be enabled/disabled per-section
   const allPatternInserts = new Map(); // channel -> array of insert configs from any pattern
   if (hasArrangement) {
-    const instruments = ['drums', 'bass', 'lead', 'sampler'];
+    const instruments = ['drums', 'bass', 'lead', 'sampler', 'r2d2'];
     for (const inst of instruments) {
       for (const [patternName, patternData] of Object.entries(session.patterns[inst] || {})) {
         if (patternData.channelInserts) {
@@ -2715,6 +2831,7 @@ async function renderSession(session, bars, filename) {
       if (instrument === 'bass') return { pattern: session.bassPattern, params: session.bassParams };
       if (instrument === 'lead') return { pattern: session.leadPattern, params: session.leadParams };
       if (instrument === 'sampler') return { pattern: session.samplerPattern, params: session.samplerParams };
+      if (instrument === 'r2d2') return { pattern: session.r2d2Pattern, params: session.r2d2Params };
       return null;
     }
 
@@ -2799,6 +2916,11 @@ async function renderSession(session, bars, filename) {
   const samplerLevel = session.samplerLevel ?? 0;  // dB, default 0 = unity
   samplerGain.gain.value = Math.pow(10, samplerLevel / 20);
   samplerGain.connect(masterGain);
+
+  const r2d2Gain = context.createGain();
+  const r2d2Level = session.r2d2Level ?? 0;  // dB, default 0 = unity
+  r2d2Gain.gain.value = Math.pow(10, r2d2Level / 20);
+  r2d2Gain.connect(masterGain);
 
   // === R9D9 (Drums) ===
   // Get kit - EXACTLY like web app's loadKit()
@@ -2945,6 +3067,57 @@ async function renderSession(session, bars, filename) {
     if (session.leadPattern.some(s => s.gate)) {
       const buffer = await lead.renderPattern({ bars: renderBars, bpm: session.bpm });
       leadBuffers.push({ buffer, startBar: 0, bars: renderBars });
+    }
+  }
+
+  // === R2D2 (Bass Monosynth) ===
+  // For arrangement mode, pre-render each unique R2D2 pattern and store with section offsets
+  // For single-pattern mode, pre-render once
+  const r2d2Buffers = [];  // { buffer, startBar, bars }
+
+  if (hasArrangement) {
+    // Collect unique R2D2 patterns with their section info
+    const r2d2Sections = [];
+    for (const section of arrangementPlan) {
+      const patternName = section.patterns.r2d2;
+      if (patternName && session.patterns.r2d2?.[patternName]) {
+        r2d2Sections.push({
+          patternName,
+          patternData: session.patterns.r2d2[patternName],
+          startBar: section.barStart,
+          bars: section.barEnd - section.barStart
+        });
+      }
+    }
+
+    // Pre-render each R2D2 section
+    for (const sec of r2d2Sections) {
+      const r2d2InitContext = new OfflineAudioContext(2, 44100, 44100);
+      const r2d2 = new R2D2Engine({ context: r2d2InitContext });
+
+      // Apply params
+      Object.entries(sec.patternData.params || {}).forEach(([key, value]) => {
+        r2d2.setParameter(key, value);
+      });
+      r2d2.setPattern(sec.patternData.pattern);
+
+      if (sec.patternData.pattern?.some(s => s.gate)) {
+        const buffer = await r2d2.renderPattern({ bars: sec.bars, bpm: session.bpm });
+        r2d2Buffers.push({ buffer, startBar: sec.startBar, bars: sec.bars });
+      }
+    }
+  } else {
+    // Single pattern mode - original behavior
+    const r2d2InitContext = new OfflineAudioContext(2, 44100, 44100);
+    const r2d2 = new R2D2Engine({ context: r2d2InitContext });
+    Object.entries(session.r2d2Params).forEach(([key, value]) => {
+      r2d2.setParameter(key, value);
+    });
+    r2d2.setPattern(session.r2d2Pattern);
+
+    if (session.r2d2Pattern.some(s => s.gate)) {
+      const buffer = await r2d2.renderPattern({ bars: renderBars, bpm: session.bpm });
+      r2d2Buffers.push({ buffer, startBar: 0, bars: renderBars });
     }
   }
 
@@ -3490,6 +3663,7 @@ async function renderSession(session, bars, filename) {
   let hasDrums = Object.keys(session.drumPattern).length > 0;
   let hasBass = session.bassPattern.some(s => s.gate);
   let hasLead = session.leadPattern.some(s => s.gate);
+  let hasR2D2 = session.r2d2Pattern.some(s => s.gate);
   let hasSamples = Object.keys(session.samplerPattern).length > 0 && session.samplerKit;
 
   if (hasArrangement) {
@@ -3497,10 +3671,11 @@ async function renderSession(session, bars, filename) {
     hasDrums = arrangementPlan.some(s => s.patterns.drums && session.patterns.drums[s.patterns.drums]);
     hasBass = arrangementPlan.some(s => s.patterns.bass && session.patterns.bass[s.patterns.bass]);
     hasLead = leadBuffers.length > 0;
+    hasR2D2 = r2d2Buffers.length > 0;
     hasSamples = arrangementPlan.some(s => s.patterns.sampler && session.patterns.sampler[s.patterns.sampler]) && session.samplerKit;
   }
 
-  const synths = [hasDrums && 'R9D9', hasBass && 'R3D3', hasLead && 'R1D1', hasSamples && 'R9DS'].filter(Boolean);
+  const synths = [hasDrums && 'R9D9', hasBass && 'R3D3', hasLead && 'R1D1', hasR2D2 && 'R2D2', hasSamples && 'R9DS'].filter(Boolean);
 
   return context.startRendering().then(buffer => {
     // Mix in pre-rendered lead buffers at their respective positions
@@ -3518,6 +3693,22 @@ async function renderSession(session, bars, filename) {
         const leadData = leadBuffer.getChannelData(ch % leadBuffer.numberOfChannels);
         for (let i = 0; i < mixLength; i++) {
           mainData[startSample + i] += leadData[i] * leadMixLevel;  // Apply node-level gain
+        }
+      }
+    }
+
+    // Mix in pre-rendered R2D2 buffers at their respective positions
+    const r2d2MixLevel = r2d2Gain.gain.value;
+
+    for (const { buffer: r2d2Buffer, startBar } of r2d2Buffers) {
+      const startSample = Math.floor(startBar * samplesPerBar);
+      const mixLength = Math.min(buffer.length - startSample, r2d2Buffer.length);
+
+      for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+        const mainData = buffer.getChannelData(ch);
+        const r2d2Data = r2d2Buffer.getChannelData(ch % r2d2Buffer.numberOfChannels);
+        for (let i = 0; i < mixLength; i++) {
+          mainData[startSample + i] += r2d2Data[i] * r2d2MixLevel;  // Apply node-level gain
         }
       }
     }

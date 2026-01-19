@@ -29,12 +29,14 @@ export const R9D9_PARAMS = loadParams('r9d9-params.json');
 export const R3D3_PARAMS = loadParams('r3d3-params.json');
 export const R1D1_PARAMS = loadParams('r1d1-params.json');
 export const R9DS_PARAMS = loadParams('r9ds-params.json');
+export const R2D2_PARAMS = loadParams('r2d2-params.json');
 
 const SYNTH_PARAMS = {
   r9d9: R9D9_PARAMS,
   r3d3: R3D3_PARAMS,
   r1d1: R1D1_PARAMS,
   r9ds: R9DS_PARAMS,
+  r2d2: R2D2_PARAMS,
 };
 
 /**

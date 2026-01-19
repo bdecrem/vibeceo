@@ -10,6 +10,7 @@ import { DrumsNode } from '../instruments/drums-node.js';
 import { BassNode } from '../instruments/bass-node.js';
 import { LeadNode } from '../instruments/lead-node.js';
 import { SamplerNode } from '../instruments/sampler-node.js';
+import { R2D2Node } from '../instruments/r2d2-node.js';
 import { TR909_KITS } from '../../web/public/909/dist/machines/tr909/presets.js';
 
 // Default kit to load on session creation
@@ -31,6 +32,7 @@ export function createSession(config = {}) {
   const bassNode = new BassNode();
   const leadNode = new LeadNode();
   const samplerNode = new SamplerNode();
+  const r2d2Node = new R2D2Node();
 
   // Load default kit params into drums node
   const kit = TR909_KITS.find(k => k.id === DEFAULT_DRUM_KIT);
@@ -47,6 +49,7 @@ export function createSession(config = {}) {
   params.register('bass', bassNode);
   params.register('lead', leadNode);
   params.register('sampler', samplerNode);
+  params.register('r2d2', r2d2Node);
 
   // Create session object with convenience methods
   const session = {
@@ -64,6 +67,7 @@ export function createSession(config = {}) {
       bass: bassNode,
       lead: leadNode,
       sampler: samplerNode,
+      r2d2: r2d2Node,
     },
 
     // === UNIFIED PARAMETER ACCESS ===
@@ -287,6 +291,24 @@ export function createSession(config = {}) {
       }
     },
 
+    // R2D2 (Bass Monosynth)
+    get r2d2Pattern() { return r2d2Node.getPattern(); },
+    set r2d2Pattern(v) { r2d2Node.setPattern(v); },
+
+    get r2d2Params() {
+      const result = {};
+      for (const [path, desc] of Object.entries(r2d2Node.getParameterDescriptors())) {
+        const param = path.replace('bass.', '');
+        result[param] = r2d2Node.getParam(param);
+      }
+      return result;
+    },
+    set r2d2Params(v) {
+      for (const [param, value] of Object.entries(v)) {
+        r2d2Node.setParam(param, value);
+      }
+    },
+
     // Mixer (placeholder - will be populated in Phase 5)
     mixer: {
       sends: {},
@@ -302,12 +324,14 @@ export function createSession(config = {}) {
       bass: {},
       lead: {},
       sampler: {},
+      r2d2: {},
     },
     currentPattern: {
       drums: 'A',
       bass: 'A',
       lead: 'A',
       sampler: 'A',
+      r2d2: 'A',
     },
     arrangement: [],
   };
