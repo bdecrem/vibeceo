@@ -88,6 +88,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // R2-D2 bass monosynth at /r2d2
+    if (pathname.startsWith('/r2d2')) {
+      log(`[Middleware] R2D2 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // SynthMachine landing page at /synthmachine
     if (pathname === '/synthmachine' || pathname.startsWith('/synthmachine/')) {
       log(`[Middleware] synthmachine route bypassed: ${pathname}`)
@@ -288,6 +294,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // R2-D2 bass monosynth at /r2d2
+    if (pathname.startsWith('/r2d2')) {
+      log(`[Middleware] intheamber.com R2D2 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // If path already starts with /amber/, don't double-prefix - pass through
     // This handles assets like /amber/amber-avatar.png and direct links
     if (pathname.startsWith('/amber/') || pathname === '/amber') {
@@ -359,6 +371,12 @@ export function middleware(request: NextRequest) {
   // SPECIFIC FIX: Bypass mixer module
   if (pathname === '/mixer' || pathname.startsWith('/mixer/')) {
     log(`[Middleware] Mixer bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
+  // SPECIFIC FIX: Bypass R2-D2 bass monosynth
+  if (pathname === '/r2d2' || pathname.startsWith('/r2d2/')) {
+    log(`[Middleware] R2-D2 bypassed: ${pathname}`)
     return NextResponse.next()
   }
 
