@@ -555,8 +555,11 @@ function loadPreset(preset) {
 
 // Load just the kit (sound design: engine + voiceParams)
 function loadKit(kit) {
-    // First, reset all per-voice engines to defaults (clears any individual overrides)
-    if (typeof engine.resetAllVoiceEngines === 'function') {
+    // Only reset per-voice engines if NO global engine is specified
+    // (setEngine already recreates all voices, so calling resetAllVoiceEngines
+    // first would create voices that are immediately replaced, potentially
+    // causing audio glitches in Safari)
+    if (!kit.engine && typeof engine.resetAllVoiceEngines === 'function') {
         engine.resetAllVoiceEngines();
     }
 
