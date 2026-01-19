@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MEETING INVITE — Amber</title>
+  <title>MEETING THAT COULD HAVE BEEN AN EMAIL — Amber</title>
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
   
   <!-- OpenGraph -->
-  <meta property="og:title" content="MEETING INVITE — Amber">
-  <meta property="og:description" content="Absurdly formal calendar invites for meetings that definitely could have been an email">
+  <meta property="og:title" content="MEETING THAT COULD HAVE BEEN AN EMAIL — Amber">
+  <meta property="og:description" content="Experience the slow-motion realization that this meeting was completely pointless.">
   <meta property="og:image" content="https://intheamber.com/amber/meeting-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/meeting.html">
   <meta property="og:type" content="website">
   
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="MEETING INVITE — Amber">
-  <meta name="twitter:description" content="Absurdly formal calendar invites for meetings that definitely could have been an email">
+  <meta name="twitter:title" content="MEETING THAT COULD HAVE BEEN AN EMAIL — Amber">
+  <meta name="twitter:description" content="Experience the slow-motion realization that this meeting was completely pointless.">
   <meta name="twitter:image" content="https://intheamber.com/amber/meeting-og.png">
   
   <style>
@@ -27,291 +27,302 @@
     }
     
     body {
-      background: #000;
-      color: #FFB000;
+      background: #0a0a0a;
+      color: #ffb347;
       font-family: 'Courier New', monospace;
-      min-height: 100vh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      min-height: 100vh;
       padding: 20px;
-      line-height: 1.6;
     }
     
-    .container {
-      max-width: 600px;
+    #meeting-room {
       width: 100%;
-      border: 2px solid #FFB000;
+      max-width: 600px;
+      background: #1a1a1a;
+      border: 2px solid #ffb347;
+      border-radius: 8px;
       padding: 30px;
-      background: rgba(255, 176, 0, 0.05);
+      position: relative;
     }
     
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid #FFB000;
+    #timer {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 14px;
+      color: #ff6b6b;
+      opacity: 0.7;
     }
     
     h1 {
-      font-size: 1.5em;
-      margin-bottom: 10px;
-      letter-spacing: 2px;
-    }
-    
-    .subtitle {
-      font-size: 0.9em;
+      font-size: 18px;
+      margin-bottom: 20px;
       color: #2D9596;
-      letter-spacing: 1px;
-    }
-    
-    .invite {
-      margin: 20px 0;
-    }
-    
-    .field {
-      margin: 15px 0;
-      padding: 10px 0;
-    }
-    
-    .label {
-      color: #2D9596;
-      font-size: 0.85em;
-      letter-spacing: 1px;
-      margin-bottom: 5px;
-    }
-    
-    .value {
-      color: #FFB000;
-      font-size: 1em;
-      padding-left: 10px;
-    }
-    
-    .description {
-      background: rgba(255, 176, 0, 0.1);
-      padding: 15px;
-      margin: 20px 0;
-      border-left: 3px solid #2D9596;
-      font-size: 0.95em;
-    }
-    
-    .footer {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid #FFB000;
-      font-size: 0.8em;
-      color: #666;
       text-align: center;
     }
     
-    button {
-      background: #FFB000;
-      color: #000;
-      border: none;
-      padding: 15px 30px;
-      font-family: 'Courier New', monospace;
-      font-size: 1em;
-      cursor: pointer;
-      letter-spacing: 1px;
+    #speaker {
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: #888;
+    }
+    
+    #dialogue {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+      min-height: 120px;
+      color: #ffb347;
+    }
+    
+    #progress-container {
+      margin: 20px 0;
+      background: #0a0a0a;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    #progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ffb347, #2D9596);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    #continue-btn {
       width: 100%;
-      margin-top: 20px;
-      transition: all 0.3s;
-    }
-    
-    button:hover {
+      padding: 15px;
       background: #2D9596;
-      color: #000;
-    }
-    
-    button:active {
-      transform: scale(0.98);
-    }
-    
-    .priority {
-      color: #ff4444;
+      color: #0a0a0a;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-family: 'Courier New', monospace;
       font-weight: bold;
-      animation: blink 1s infinite;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 44px;
     }
     
-    @keyframes blink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0.3; }
+    #continue-btn:hover {
+      background: #3db5b6;
+      transform: translateY(-2px);
     }
     
-    @media (max-width: 600px) {
-      .container {
-        padding: 20px;
-      }
-      
-      h1 {
-        font-size: 1.2em;
-      }
-      
-      .value {
-        font-size: 0.9em;
-      }
+    #continue-btn:active {
+      transform: translateY(0);
+    }
+    
+    #continue-btn.exit {
+      background: #ff6b6b;
+    }
+    
+    #continue-btn.exit:hover {
+      background: #ff8787;
+    }
+    
+    .revelation {
+      margin-top: 20px;
+      padding: 15px;
+      background: #2a1a0a;
+      border-left: 4px solid #ffb347;
+      font-size: 14px;
+      line-height: 1.5;
+      opacity: 0;
+      animation: fadeIn 0.5s ease forwards;
+    }
+    
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    
+    .subtitle {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>📅 MEETING INVITATION</h1>
-      <div class="subtitle">REQUIRED ATTENDANCE</div>
+  <div id="meeting-room">
+    <div id="timer">00:00</div>
+    <h1>WEEKLY SYNC-UP MEETING</h1>
+    <div id="speaker"></div>
+    <div id="dialogue"></div>
+    <div id="progress-container">
+      <div id="progress-bar"></div>
     </div>
-    
-    <div class="invite" id="invite">
-      <!-- Generated content goes here -->
-    </div>
-    
-    <button id="generateBtn">GENERATE NEW MEETING</button>
-    
-    <div class="footer">
-      This meeting could have been an email
-    </div>
+    <button id="continue-btn">Join Meeting</button>
+    <div class="subtitle">tap to continue</div>
   </div>
 
   <script>
-    const meetings = [
+    const scenes = [
       {
-        subject: "Strategic Alignment Session: Deciding Which Lunch Option to Order",
-        organizer: "Karen from HR",
-        duration: "2 hours",
-        attendees: "All Hands (47 people)",
-        location: "Conference Room B (the one with the broken projector)",
-        description: "We will be discussing and voting on whether to order pizza or sandwiches for the team lunch next Friday. Please review the attached 23-slide deck beforehand. Attendance is mandatory. There will be breakout sessions.",
-        priority: "HIGH"
+        speaker: "Meeting Organizer",
+        text: "Thanks everyone for joining! Let's go around the room and do quick intros.",
+        button: "👋 Introduce yourself"
       },
       {
-        subject: "Synergy Workshop: Optimizing the Process for Sending Meeting Invites",
-        organizer: "The Committee on Committees",
-        duration: "90 minutes",
-        attendees: "Cross-functional stakeholders (you + 8 people who won't show up)",
-        location: "Zoom (Meeting ID will be sent 2 minutes after start time)",
-        description: "A deep-dive into our meeting culture to discuss how we can streamline the process of scheduling meetings about scheduling meetings. Please come prepared with examples of meetings you've attended. Pre-work required: 45-minute e-learning module.",
-        priority: "URGENT"
+        speaker: "You",
+        text: "Hi, I'm here for the update on the Q4 roadmap.",
+        button: "Continue"
       },
       {
-        subject: "Mandatory Fun: Team Building Ice Cream Social",
-        organizer: "Your Manager's Manager",
-        duration: "45 minutes (will definitely run over)",
-        attendees: "The whole team + that guy from Finance nobody knows",
-        location: "The kitchen (standing room only)",
-        description: "Join us for ice cream and forced conversation! We'll go around the room and everyone will share 'a fun fact nobody knows about you.' Declining this invite will be noted in your performance review.",
-        priority: "CRITICAL"
+        speaker: "Meeting Organizer",
+        text: "Great! Before we get to that, let's do a quick team building exercise. Everyone share one fun fact about themselves!",
+        button: "😐 Share fun fact"
       },
       {
-        subject: "Emergency Huddle: Discussing Whether We Need This Meeting",
-        organizer: "Someone who could have Slacked this",
-        duration: "30 minutes",
-        attendees: "You, CC: literally everyone",
-        location: "Your desk (they will come to you)",
-        description: "Quick sync to align on whether we actually need to schedule the quarterly review meeting or if we can just send a document around. Please review the attached meeting agenda for this meeting about meetings.",
-        priority: "HIGH"
+        speaker: "Colleague #1",
+        text: "I went hiking last weekend! It was really nice.",
+        button: "Continue"
       },
       {
-        subject: "Innovation Sprint: Brainstorming Session for New Email Signatures",
-        organizer: "The Brand Team",
-        duration: "3 hours",
-        attendees: "Selected thought leaders (you were voluntold)",
-        location: "The collaboration space (bean bags, no tables)",
-        description: "Let's think outside the box and ideate on how our email signatures can better reflect our core values. Bring sticky notes. We'll be using the SCRUM framework. Lunch will NOT be provided.",
-        priority: "MEDIUM"
+        speaker: "Colleague #2",
+        text: "I'm learning to play guitar. Slowly but surely!",
+        button: "Continue"
       },
       {
-        subject: "Town Hall: CEO Will Read Earnings Report Out Loud",
-        organizer: "Executive Assistant to the CEO",
-        duration: "1 hour (no Q&A)",
-        attendees: "Entire company (cameras on required)",
-        location: "Zoom webinar (you will be spotlighted if you look distracted)",
-        description: "Our CEO will personally read the publicly available earnings report to you, line by line. The report is attached but do not read it beforehand. Take notes. There will be a quiz. Business casual required.",
-        priority: "MANDATORY"
-      },
-{
-        subject: "Working Session: Updating the Color of a Button on the Website",
-        organizer: "Product, Design, Engineering, Marketing, Legal, and Sales",
-        duration: "2 hours (recurring weekly)",
-        attendees: "15 people (14 of whom are not needed)",
-        location: "The big conference room (scheduled back-to-back with another meeting)",
-        description: "We need everyone's input on whether the CTA button should be #FF6B00 or #FF6C00. Please review the A/B test results (statistically insignificant) and prepare your position. Stakeholder buy-in is critical.",
-        priority: "URGENT"
+        speaker: "You (internally)",
+        text: "*This could have been a Slack message*",
+        button: "Wait patiently"
       },
       {
-        subject: "Retrospective: Why Did Nobody Come to Last Week's Retrospective",
-        organizer: "The Scrum Master",
-        duration: "1 hour",
-        attendees: "The dev team (who are all in sprint and heads-down)",
-        location: "The fishbowl (glass room in the middle of the office)",
-        description: "Let's discuss why attendance has been low at our retrospectives and brainstorm ways to make them more engaging. Ironic attendance optional but strongly encouraged. We'll do a round of 'rose, bud, thorn.'",
-        priority: "LOW (but you'll feel guilty if you skip it)"
+        speaker: "Meeting Organizer",
+        text: "Wonderful! Now, before we dive into the roadmap, I want to give some context. Let me share my screen...",
+        button: "😑 Watch screen share"
       },
       {
-        subject: "Workshop: Best Practices for Declining Meeting Invitations",
-        organizer: "Productivity Task Force",
-        duration: "2.5 hours",
-        attendees: "All managers and their reports",
-        location: "Offsite (you have to drive 40 minutes)",
-        description: "An interactive workshop exploring when and how to say no to meetings. Includes role-playing exercises, a catered lunch (sad sandwiches), and a fireside chat with someone who once declined a meeting. Attendance is required.",
-        priority: "CRITICAL"
+        speaker: "Meeting Organizer",
+        text: "Can everyone see my screen? No? How about now? Now? Okay great.",
+        button: "Continue"
       },
       {
-        subject: "Check-in: Touching Base on Circling Back to that Thing",
-        organizer: "Your coworker who says 'per my last email'",
-        duration: "15 minutes (will become 45)",
-        attendees: "Just you two (but they'll invite 3 more people halfway through)",
-        location: "Wherever you are right now",
-        description: "Let's sync up and get on the same page about that thing we discussed in the hallway three weeks ago. I don't have an agenda but I blocked your calendar anyway. This could have been a Slack message but here we are.",
-        priority: "HIGH"
+        speaker: "Meeting Organizer",
+        text: "So as you can see from this slide, our mission is to synergize cross-functional stakeholder engagement.",
+        button: "Nod politely"
+      },
+      {
+        speaker: "You (internally)",
+        text: "*What does that even mean*",
+        button: "Continue"
+      },
+      {
+        speaker: "Meeting Organizer",
+        text: "Now let's look at our KPIs for Q3. Actually, wait, let me find that slide...",
+        button: "⏰ Check the time"
+      },
+      {
+        speaker: "Timer",
+        text: "You've been in this meeting for 18 minutes. Still no roadmap update.",
+        button: "Continue"
+      },
+      {
+        speaker: "Colleague #3 (unmuted)",
+        text: "Sorry, can you repeat that? I was on mute. Also, I have a hard stop at 2pm.",
+        button: "Continue"
+      },
+      {
+        speaker: "Meeting Organizer",
+        text: "No problem! So, about the Q4 roadmap — actually, I think Sarah should probably be here for this. Let me ping her.",
+        button: "😤 Wait"
+      },
+      {
+        speaker: "Meeting Organizer",
+        text: "She's in another meeting. Okay, let's table the roadmap discussion for now. Anyone have any questions?",
+        button: "Raise hand"
+      },
+      {
+        speaker: "You",
+        text: "Yes, I joined specifically for the Q4 roadmap update. When will we cover that?",
+        button: "Continue"
+      },
+      {
+        speaker: "Meeting Organizer",
+        text: "Great question! Let's schedule a follow-up meeting to discuss that. I'll send out a calendar invite.",
+        button: "🤯 Process this"
+      },
+      {
+        speaker: "Meeting Organizer",
+        text: "Thanks everyone for your time! This was really productive. Have a great rest of your day!",
+        button: "Leave Meeting"
+      },
+      {
+        speaker: "System",
+        text: "🏆 ACHIEVEMENT UNLOCKED: Survived a 25-minute meeting that could have been a 2-sentence email.",
+        button: "Never Again",
+        final: true
       }
     ];
 
-    function generateMeeting() {
-      const meeting = meetings[Math.floor(Math.random() * meetings.length)];
-      
-      const html = `
-        <div class="field">
-          <div class="label">SUBJECT:</div>
-          <div class="value">${meeting.subject}</div>
-        </div>
-        
-        <div class="field">
-          <div class="label">ORGANIZER:</div>
-          <div class="value">${meeting.organizer}</div>
-        </div>
-        
-        <div class="field">
-          <div class="label">DURATION:</div>
-          <div class="value">${meeting.duration}</div>
-        </div>
-        
-        <div class="field">
-          <div class="label">ATTENDEES:</div>
-          <div class="value">${meeting.attendees}</div>
-        </div>
-        
-        <div class="field">
-          <div class="label">LOCATION:</div>
-          <div class="value">${meeting.location}</div>
-        </div>
-        
-        <div class="field">
-          <div class="label">PRIORITY:</div>
-          <div class="value priority">${meeting.priority}</div>
-        </div>
-        
-        <div class="description">
-          ${meeting.description}
-        </div>
-      `;
-      
-      document.getElementById('invite').innerHTML = html;
+    let currentScene = 0;
+    let startTime = Date.now();
+    let timerInterval;
+
+    const speakerEl = document.getElementById('speaker');
+    const dialogueEl = document.getElementById('dialogue');
+    const btnEl = document.getElementById('continue-btn');
+    const progressEl = document.getElementById('progress-bar');
+    const timerEl = document.getElementById('timer');
+
+    function updateTimer() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const mins = Math.floor(elapsed / 60);
+      const secs = elapsed % 60;
+      timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
-    
-    document.getElementById('generateBtn').addEventListener('click', generateMeeting);
-    
-    // Generate first meeting on load
-    generateMeeting();
+
+    function showScene(index) {
+      if (index >= scenes.length) return;
+      
+      const scene = scenes[index];
+      speakerEl.textContent = scene.speaker;
+      dialogueEl.textContent = scene.text;
+      btnEl.textContent = scene.button;
+      
+      const progress = ((index + 1) / scenes.length) * 100;
+      progressEl.style.width = progress + '%';
+      
+      if (scene.final) {
+        btnEl.classList.add('exit');
+        if (timerInterval) clearInterval(timerInterval);
+        
+        const revelation = document.createElement('div');
+        revelation.className = 'revelation';
+        revelation.innerHTML = `
+          <strong>What could have been sent instead:</strong><br><br>
+          "Hi team,<br><br>
+          Q4 roadmap update will be shared next week once Sarah returns. Let me know if you have questions.<br><br>
+          Thanks!"<br><br>
+          <em>— The entire meeting, in 3 sentences</em>
+        `;
+        document.getElementById('meeting-room').appendChild(revelation);
+      }
+    }
+
+    btnEl.addEventListener('click', () => {
+      if (currentScene === 0) {
+        startTime = Date.now();
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+      
+      currentScene++;
+      if (currentScene < scenes.length) {
+        showScene(currentScene);
+      } else {
+        window.location.reload();
+      }
+    });
+
+    // Initialize
+    showScene(0);
   </script>
 </body>
 </html>
