@@ -18,6 +18,7 @@ export function middleware(request: NextRequest) {
   const isCtrlShiftDomain = host === 'ctrlshift.so' || host === 'www.ctrlshift.so' || host === 'ctrlshift.pizza' || host === 'www.ctrlshift.pizza'
   const isRivalAlertDomain = host === 'rivalalert.ai' || host === 'www.rivalalert.ai'
   const isInTheAmberDomain = host === 'intheamber.com' || host === 'www.intheamber.com'
+  const isKochitoLabsDomain = host === 'kochitolabs.com' || host === 'www.kochitolabs.com'
 
   // Handle token-tank domain (mirror kochi pattern)
   if (isTokenTankDomain) {
@@ -88,9 +89,15 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // R2-D2 bass monosynth at /r2d2
-    if (pathname.startsWith('/r2d2')) {
-      log(`[Middleware] R2D2 route bypassed: ${pathname}`)
+    // JB200 bass monosynth at /jb200
+    if (pathname.startsWith('/jb200')) {
+      log(`[Middleware] JB200 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // JB-01 drum machine at /jb01
+    if (pathname.startsWith('/jb01')) {
+      log(`[Middleware] JB01 route bypassed: ${pathname}`)
       return NextResponse.next()
     }
 
@@ -294,9 +301,15 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // R2-D2 bass monosynth at /r2d2
-    if (pathname.startsWith('/r2d2')) {
-      log(`[Middleware] intheamber.com R2D2 route bypassed: ${pathname}`)
+    // JB200 bass monosynth at /jb200
+    if (pathname.startsWith('/jb200')) {
+      log(`[Middleware] intheamber.com JB200 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // JB-01 drum machine at /jb01
+    if (pathname.startsWith('/jb01')) {
+      log(`[Middleware] intheamber.com JB01 route bypassed: ${pathname}`)
       return NextResponse.next()
     }
 
@@ -318,6 +331,28 @@ export function middleware(request: NextRequest) {
     const newUrl = new URL(`/amber${pathname}`, request.url)
     log(`[Middleware] intheamber.com rewrite ${pathname} -> ${newUrl.pathname}`)
     return NextResponse.rewrite(newUrl)
+  }
+
+  // Handle kochitolabs.com domain
+  if (isKochitoLabsDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    // Root → /kochitolabs
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/kochitolabs', request.url)
+      log(`[Middleware] Kochito Labs domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    return NextResponse.next()
   }
 
   // SPECIFIC FIX: Bypass music player route immediately
@@ -374,9 +409,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // SPECIFIC FIX: Bypass R2-D2 bass monosynth
-  if (pathname === '/r2d2' || pathname.startsWith('/r2d2/')) {
-    log(`[Middleware] R2-D2 bypassed: ${pathname}`)
+  // SPECIFIC FIX: Bypass JB200 bass monosynth
+  if (pathname === '/jb200' || pathname.startsWith('/jb200/')) {
+    log(`[Middleware] JB200 bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
+  // SPECIFIC FIX: Bypass JB-01 drum machine
+  if (pathname === '/jb01' || pathname.startsWith('/jb01/')) {
+    log(`[Middleware] JB-01 bypassed: ${pathname}`)
     return NextResponse.next()
   }
 
