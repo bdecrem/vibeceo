@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PULSE GRID</title>
+  <meta name="description" content="16 pulsing circles. Each one is a drum. Tap to trigger. Watch them breathe.">
   
-  <!-- OG Tags -->
+  <!-- OpenGraph -->
   <meta property="og:title" content="PULSE GRID">
-  <meta property="og:description" content="Hypnotic grid sequencer. Tap cells to paint beats. Watch them pulse.">
+  <meta property="og:description" content="16 pulsing circles. Each one is a drum. Tap to trigger. Watch them breathe.">
   <meta property="og:image" content="https://intheamber.com/amber/pulse-grid-og.png">
   <meta property="og:url" content="https://kochi.to/amber/pulse-grid.html">
   <meta name="twitter:card" content="summary_large_image">
@@ -19,297 +20,328 @@
       padding: 0;
       box-sizing: border-box;
     }
-
+    
     body {
       background: #000;
-      color: #D4A574;
+      color: #fff;
       font-family: 'Courier New', monospace;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      overflow: hidden;
-      padding: 20px;
+      touch-action: manipulation;
     }
-
+    
     #title {
-      font-size: 1.8rem;
-      letter-spacing: 0.3em;
-      margin-bottom: 30px;
+      font-size: 1.2rem;
+      letter-spacing: 0.2em;
+      margin-bottom: 10px;
+      color: #ff6b35;
       text-align: center;
-      opacity: 0.9;
     }
-
-    #grid-container {
-      display: grid;
-      grid-template-columns: repeat(16, 1fr);
-      gap: 4px;
-      max-width: 90vmin;
-      width: 100%;
-      margin-bottom: 30px;
+    
+    #subtitle {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 20px;
+      text-align: center;
     }
-
-    .cell {
-      aspect-ratio: 1;
-      background: rgba(212, 165, 116, 0.1);
-      border: 1px solid rgba(212, 165, 116, 0.3);
+    
+    #canvas {
+      border: 1px solid #222;
       cursor: pointer;
-      transition: all 0.1s ease;
-      position: relative;
+      max-width: 90vw;
+      max-height: 70vh;
     }
-
-    .cell.active {
-      background: rgba(212, 165, 116, 0.6);
-      border-color: #D4A574;
-    }
-
-    .cell.pulse {
-      background: #D4A574;
-      box-shadow: 0 0 20px rgba(212, 165, 116, 0.8);
-      transform: scale(1.15);
-    }
-
-    .cell.playing {
-      border-color: #fff;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    }
-
+    
     #controls {
+      margin-top: 20px;
       display: flex;
       gap: 20px;
       align-items: center;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 20px;
     }
-
+    
     button {
-      background: transparent;
-      border: 2px solid #D4A574;
-      color: #D4A574;
-      padding: 12px 28px;
+      background: #ff6b35;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
       font-family: 'Courier New', monospace;
-      font-size: 1rem;
+      font-size: 0.9rem;
+      font-weight: bold;
       cursor: pointer;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.05em;
       transition: all 0.2s;
     }
-
+    
     button:hover {
-      background: rgba(212, 165, 116, 0.2);
-      box-shadow: 0 0 15px rgba(212, 165, 116, 0.4);
+      background: #ff8555;
     }
-
-    button:active {
-      transform: scale(0.95);
+    
+    button:disabled {
+      background: #333;
+      color: #666;
+      cursor: not-allowed;
     }
-
-    button.playing {
-      background: #D4A574;
-      color: #000;
-      font-weight: bold;
-    }
-
-    #bpm-display {
-      font-size: 1rem;
-      opacity: 0.7;
-      min-width: 100px;
-      text-align: center;
-    }
-
-    #instructions {
-      text-align: center;
-      opacity: 0.5;
+    
+    #bpm {
+      color: #888;
       font-size: 0.9rem;
-      max-width: 600px;
-      line-height: 1.6;
     }
-
-    @media (max-width: 768px) {
-      #title {
-        font-size: 1.3rem;
-        letter-spacing: 0.2em;
-      }
-
-      #grid-container {
-        gap: 2px;
-      }
-
-      button {
-        padding: 10px 20px;
-        font-size: 0.9rem;
-      }
+    
+    #info {
+      margin-top: 15px;
+      font-size: 0.7rem;
+      color: #444;
+      text-align: center;
+      max-width: 500px;
+    }
+    
+    @media (max-width: 600px) {
+      #title { font-size: 1rem; }
+      #controls { flex-direction: column; gap: 10px; }
     }
   </style>
 </head>
 <body>
   <div id="title">PULSE GRID</div>
-  
-  <div id="grid-container"></div>
-  
+  <div id="subtitle">tap circles to trigger drums</div>
+  <canvas id="canvas"></canvas>
   <div id="controls">
-    <button id="playBtn">PLAY</button>
-    <button id="clearBtn">CLEAR</button>
-    <div id="bpm-display">128 BPM</div>
+    <button id="playBtn">TAP TO START</button>
+    <div id="bpm">128 BPM</div>
   </div>
-  
-  <div id="instructions">
-    Tap cells to paint beats. Each row is a different tone.<br>
-    Watch the grid pulse with the rhythm.
-  </div>
+  <div id="info">Each circle is a TR-909 voice. They pulse when they play. Click them to trigger manually.</div>
 
   <script type="module">
-    // Audio context
-    let audioContext;
-    let playing = false;
+    import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const playBtn = document.getElementById('playBtn');
+    
+    let audioContext = null;
+    let drums = null;
+    let isPlaying = false;
+    let animationId = null;
     let currentStep = 0;
-    let intervalId;
-    
+    let lastStepTime = 0;
     const BPM = 128;
-    const STEPS = 16;
-    const ROWS = 4;
-    const STEP_DURATION = (60 / BPM) / 4 * 1000; // ms per 16th note
+    const STEP_DURATION = (60 / BPM / 4) * 1000; // milliseconds per 16th note
     
-    // Grid state (4 rows x 16 steps)
-    const grid = Array(ROWS).fill(null).map(() => Array(STEPS).fill(false));
+    // Grid layout
+    const GRID_SIZE = 4;
+    const CELL_SIZE = 100;
+    const PADDING = 20;
+    const CANVAS_SIZE = GRID_SIZE * CELL_SIZE + (GRID_SIZE + 1) * PADDING;
+
+    canvas.width = CANVAS_SIZE;
+    canvas.height = CANVAS_SIZE;
     
-    // Frequencies for each row (pentatonic scale)
-    const frequencies = [
-      220,   // A3
-      293.66, // D4
-      329.63, // E4
-      440    // A4
+    // Voice mapping to grid positions
+    const voices = [
+      { id: 'kick', color: '#ff6b35', label: 'KICK' },
+      { id: 'snare', color: '#f7931e', label: 'SNARE' },
+      { id: 'clap', color: '#fdc82f', label: 'CLAP' },
+      { id: 'rimshot', color: '#a8e6cf', label: 'RIM' },
+      
+      { id: 'ch', color: '#56cfe1', label: 'CH' },
+      { id: 'oh', color: '#4ea8de', label: 'OH' },
+      { id: 'ltom', color: '#5e60ce', label: 'LTOM' },
+      { id: 'mtom', color: '#7209b7', label: 'MTOM' },
+      
+      { id: 'htom', color: '#b5179e', label: 'HTOM' },
+      { id: 'crash', color: '#f72585', label: 'CRASH' },
+      { id: 'ride', color: '#ff758f', label: 'RIDE' },
+      { id: 'kick', color: '#ff6b35', label: 'KICK2' }, // repeat for symmetry
+      
+      { id: 'snare', color: '#f7931e', label: 'SNR2' },
+      { id: 'ch', color: '#56cfe1', label: 'CH2' },
+      { id: 'clap', color: '#fdc82f', label: 'CLP2' },
+      { id: 'oh', color: '#4ea8de', label: 'OH2' },
     ];
     
-    // Create grid cells
-    const container = document.getElementById('grid-container');
-    const cells = [];
+    // Pattern for each voice (16 steps)
+    const pattern = {
+      kick:    [1, 0, 0, 0,  1, 0, 0, 0,  1, 0, 0, 0,  1, 0, 0, 0],
+      snare:   [0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0],
+      clap:    [0, 0, 0, 0,  1, 0, 0, 0,  0, 0, 0, 0,  1, 0, 0, 0],
+      ch:      [1, 0, 1, 0,  1, 0, 1, 0,  1, 0, 1, 0,  1, 0, 1, 0],
+      oh:      [0, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 0,  0, 0, 1, 0],
+      rimshot: [0, 0, 0, 1,  0, 0, 0, 0,  0, 0, 0, 1,  0, 0, 0, 0],
+      ltom:    [0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0],
+      mtom:    [0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0],
+      htom:    [0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0],
+      crash:   [1, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0],
+      ride:    [0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0],
+    };
     
-    for (let row = 0; row < ROWS; row++) {
-      for (let col = 0; col < STEPS; col++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.dataset.row = row;
-        cell.dataset.col = col;
+    // Pulse state for each cell
+    const pulses = voices.map(() => ({ active: false, intensity: 0 }));
+    
+    function getCellPosition(index) {
+      const row = Math.floor(index / GRID_SIZE);
+      const col = index % GRID_SIZE;
+      const x = PADDING + col * (CELL_SIZE + PADDING) + CELL_SIZE / 2;
+      const y = PADDING + row * (CELL_SIZE + PADDING) + CELL_SIZE / 2;
+      return { x, y };
+    }
+    
+    function triggerVoice(voiceId, index) {
+      if (!drums) return;
+      const voice = drums.voices.get(voiceId);
+      if (voice) {
+        const now = audioContext.currentTime;
+        voice.trigger(now, 1.0);
         
-        cell.addEventListener('click', () => {
-          grid[row][col] = !grid[row][col];
-          cell.classList.toggle('active', grid[row][col]);
-        });
-        
-        container.appendChild(cell);
-        if (!cells[row]) cells[row] = [];
-        cells[row][col] = cell;
+        // Activate pulse
+        pulses[index].active = true;
+        pulses[index].intensity = 1.0;
       }
     }
     
-    // Initialize audio context on first interaction
-    function initAudio() {
-      if (!audioContext) {
-        audioContext = new AudioContext();
-      }
-      return audioContext.resume();
-    }
-    
-    // Play a tone
-    function playTone(frequency, duration = 0.15) {
-      if (!audioContext) return;
+    function drawGrid() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
       
-      const now = audioContext.currentTime;
-      
-      // Oscillator
-      const osc = audioContext.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = frequency;
-      
-      // Envelope
-      const gain = audioContext.createGain();
-      gain.gain.setValueAtTime(0, now);
-      gain.gain.linearRampToValueAtTime(0.3, now + 0.005);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-      
-      // Filter for warmth
-      const filter = audioContext.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = frequency * 3;
-      filter.Q.value = 1;
-      
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(audioContext.destination);
-      
-      osc.start(now);
-      osc.stop(now + duration);
-    }
-    
-    // Step through the sequence
-    function step() {
-      // Clear previous step highlighting
-      cells.forEach(row => {
-        row.forEach(cell => cell.classList.remove('playing', 'pulse'));
-      });
-      
-      // Highlight current step
-      for (let row = 0; row < ROWS; row++) {
-        const cell = cells[row][currentStep];
-        cell.classList.add('playing');
+      voices.forEach((voice, i) => {
+        const pos = getCellPosition(i);
+        const pulse = pulses[i];
         
-        // If cell is active, play sound and pulse
-        if (grid[row][currentStep]) {
-          playTone(frequencies[row]);
-          cell.classList.add('pulse');
+        // Background circle
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 35, 0, Math.PI * 2);
+        ctx.fillStyle = '#111';
+        ctx.fill();
+        
+        // Pulse ring
+        if (pulse.active) {
+          const ringRadius = 35 + (15 * (1 - pulse.intensity));
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, ringRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = voice.color;
+          ctx.lineWidth = 3;
+          ctx.globalAlpha = pulse.intensity * 0.6;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+          
+          // Decay pulse
+          pulse.intensity *= 0.92;
+          if (pulse.intensity < 0.01) {
+            pulse.active = false;
+          }
         }
-      }
+        
+        // Main circle
+        const brightness = pulse.active ? 0.3 + pulse.intensity * 0.7 : 0.3;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 35, 0, Math.PI * 2);
+        ctx.fillStyle = voice.color;
+        ctx.globalAlpha = brightness;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        
+        // Border
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 35, 0, Math.PI * 2);
+        ctx.strokeStyle = voice.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Label
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 9px Courier New';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(voice.label, pos.x, pos.y);
+      });
       
-      currentStep = (currentStep + 1) % STEPS;
+      // Step indicator at top
+      ctx.fillStyle = '#444';
+      ctx.font = '10px Courier New';
+      ctx.textAlign = 'left';
+      ctx.fillText(`STEP ${currentStep + 1}/16`, 10, 15);
     }
     
-    // Play/Pause
-    document.getElementById('playBtn').addEventListener('click', async () => {
-      await initAudio();
+    function animate() {
+      const now = performance.now();
       
-      playing = !playing;
-      const btn = document.getElementById('playBtn');
-      btn.textContent = playing ? 'STOP' : 'PLAY';
-      btn.classList.toggle('playing', playing);
-      
-      if (playing) {
-        currentStep = 0;
-        step(); // Play first step immediately
-        intervalId = setInterval(step, STEP_DURATION);
-      } else {
-        clearInterval(intervalId);
-        cells.forEach(row => {
-          row.forEach(cell => cell.classList.remove('playing', 'pulse'));
+      // Check if it's time for next step
+      if (isPlaying && now - lastStepTime >= STEP_DURATION) {
+        currentStep = (currentStep + 1) % 16;
+        lastStepTime = now;
+        
+        // Trigger voices that are active on this step
+        voices.forEach((voice, i) => {
+          const shouldPlay = pattern[voice.id] && pattern[voice.id][currentStep];
+          if (shouldPlay) {
+            triggerVoice(voice.id, i);
+          }
         });
       }
-    });
+      
+      drawGrid();
+      animationId = requestAnimationFrame(animate);
+    }
     
-    // Clear grid
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      grid.forEach(row => row.fill(false));
-      cells.forEach(row => {
-        row.forEach(cell => cell.classList.remove('active', 'playing', 'pulse'));
+    async function initAudio() {
+      if (audioContext) return;
+      
+      audioContext = new AudioContext();
+      drums = new TR909Engine({ context: audioContext });
+      drums.setBpm(BPM);
+      
+      // Tune some voices for better sound
+      drums.voices.get('kick').decay = 0.5;
+      drums.voices.get('snare').tone = 0.4;
+      drums.voices.get('ch').decay = 0.1;
+      drums.voices.get('oh').decay = 0.3;
+    }
+    
+    async function togglePlay() {
+      if (!audioContext) {
+        await initAudio();
+      }
+      
+      await audioContext.resume();
+      
+      isPlaying = !isPlaying;
+      
+      if (isPlaying) {
+        playBtn.textContent = 'STOP';
+        lastStepTime = performance.now();
+      } else {
+        playBtn.textContent = 'PLAY';
+      }
+    }
+    
+    // Click to trigger individual voices
+    canvas.addEventListener('click', async (e) => {
+      if (!audioContext) {
+        await initAudio();
+        await audioContext.resume();
+      }
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Find which cell was clicked
+      voices.forEach((voice, i) => {
+        const pos = getCellPosition(i);
+        const distance = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+        if (distance < 35) {
+          triggerVoice(voice.id, i);
+        }
       });
     });
     
-    // Ambient animation when not playing (idle pulse)
-    function ambientPulse() {
-      if (playing) return;
-      
-      const randomRow = Math.floor(Math.random() * ROWS);
-      const randomCol = Math.floor(Math.random() * STEPS);
-      const cell = cells[randomRow][randomCol];
-      
-      if (grid[randomRow][randomCol]) {
-        cell.classList.add('pulse');
-        setTimeout(() => cell.classList.remove('pulse'), 200);
-      }
-    }
+    playBtn.addEventListener('click', togglePlay);
     
-    // Start ambient animation
-    setInterval(ambientPulse, 800);
+    // Start animation loop
+    animate();
   </script>
 </body>
 </html>
