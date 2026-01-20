@@ -1,0 +1,28 @@
+{
+  "name": "Default",
+  "description": "Classic JB200 bass sound - two detuned saws with filter envelope",
+  "author": "Jambot",
+  "params": {
+    "osc1Waveform": "sawtooth",
+    "osc1Octave": 0,
+    "osc1Detune": 0,
+    "osc1Level": 100,
+    "osc2Waveform": "sawtooth",
+    "osc2Octave": -12,
+    "osc2Detune": 7,
+    "osc2Level": 80,
+    "filterCutoff": 800,
+    "filterResonance": 40,
+    "filterEnvAmount": 60,
+    "filterAttack": 0,
+    "filterDecay": 40,
+    "filterSustain": 20,
+    "filterRelease": 30,
+    "ampAttack": 0,
+    "ampDecay": 30,
+    "ampSustain": 60,
+    "ampRelease": 20,
+    "drive": 20,
+    "level": 0
+  }
+}

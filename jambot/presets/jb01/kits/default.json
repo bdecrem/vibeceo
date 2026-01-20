@@ -1,0 +1,52 @@
+{
+  "name": "Default",
+  "description": "Classic drum machine sound",
+  "params": {
+    "kick": {
+      "level": 0,
+      "tune": 0,
+      "decay": 40,
+      "attack": 100,
+      "sweep": 100
+    },
+    "snare": {
+      "level": 0,
+      "tune": 0,
+      "decay": 50,
+      "tone": 50,
+      "snappy": 50
+    },
+    "clap": {
+      "level": 0,
+      "decay": 50,
+      "tone": 50
+    },
+    "ch": {
+      "level": 0,
+      "tune": 0,
+      "decay": 20,
+      "tone": 50
+    },
+    "oh": {
+      "level": 0,
+      "tune": 0,
+      "decay": 60,
+      "tone": 50
+    },
+    "perc": {
+      "level": 0,
+      "tune": 0,
+      "decay": 30
+    },
+    "tom": {
+      "level": 0,
+      "tune": 0,
+      "decay": 50
+    },
+    "cymbal": {
+      "level": 0,
+      "tune": 0,
+      "decay": 70
+    }
+  }
+}

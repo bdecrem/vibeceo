@@ -1,0 +1,23 @@
+{
+  "name": "Default",
+  "description": "Classic acid-style bass line with slides and accents",
+  "author": "Jambot",
+  "pattern": [
+    { "note": "C2", "gate": true, "accent": true, "slide": false },
+    { "note": "C2", "gate": false, "accent": false, "slide": false },
+    { "note": "C2", "gate": true, "accent": false, "slide": false },
+    { "note": "C2", "gate": false, "accent": false, "slide": false },
+    { "note": "D#2", "gate": true, "accent": false, "slide": true },
+    { "note": "D#2", "gate": false, "accent": false, "slide": false },
+    { "note": "G2", "gate": true, "accent": true, "slide": false },
+    { "note": "G2", "gate": false, "accent": false, "slide": false },
+    { "note": "C2", "gate": true, "accent": false, "slide": false },
+    { "note": "C2", "gate": false, "accent": false, "slide": false },
+    { "note": "A#1", "gate": true, "accent": false, "slide": true },
+    { "note": "A#1", "gate": false, "accent": false, "slide": false },
+    { "note": "G1", "gate": true, "accent": true, "slide": false },
+    { "note": "G1", "gate": true, "accent": false, "slide": true },
+    { "note": "A#1", "gate": true, "accent": false, "slide": true },
+    { "note": "C2", "gate": true, "accent": false, "slide": true }
+  ]
+}
