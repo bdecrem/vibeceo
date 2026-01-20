@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PENDULUM — Amber</title>
+    <meta property="og:title" content="PENDULUM">
+    <meta property="og:description" content="The still point between swings. A meditation on rhythm and gravity.">
+    <meta property="og:image" content="https://intheamber.com/amber/pendulum-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/pendulum.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/pendulum-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0D0D0D;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .info {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #D4A574;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="info">The still point between swings</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const centerX = canvas.width / 2;
+        const anchorY = 80;
+
+        // Multiple pendulums with different periods
+        const pendulums = [
+            { length: 180, angle: Math.PI / 4, velocity: 0, mass: 20, color: '#FFD700', damping: 0.999 },
+            { length: 240, angle: -Math.PI / 3, velocity: 0, mass: 16, color: '#D4A574', damping: 0.999 },
+            { length: 300, angle: Math.PI / 5, velocity: 0, mass: 12, color: '#2D9596', damping: 0.999 },
+            { length: 360, angle: -Math.PI / 6, velocity: 0, mass: 10, color: '#7B68EE', damping: 0.999 },
+            { length: 420, angle: Math.PI / 7, velocity: 0, mass: 8, color: '#f59e0b', damping: 0.999 }
+        ];
+
+        const gravity = 0.4;
+        const trails = pendulums.map(() => []);
+        const maxTrailLength = 120;
+
+        function updatePendulum(p) {
+            const acceleration = (-gravity / p.length) * Math.sin(p.angle);
+            p.velocity += acceleration;
+            p.velocity *= p.damping;
+            p.angle += p.velocity;
+        }
+
+        function drawPendulum(p, trail) {
+            const x = centerX + p.length * Math.sin(p.angle);
+            const y = anchorY + p.length * Math.cos(p.angle);
+
+            // Add to trail
+            trail.push({ x, y });
+            if (trail.length > maxTrailLength) trail.shift();
+
+            // Draw trail
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.15;
+            
+            for (let i = 1; i < trail.length; i++) {
+                const opacity = i / trail.length;
+                ctx.globalAlpha = opacity * 0.15;
+                ctx.beginPath();
+                ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
+                ctx.lineTo(trail[i].x, trail[i].y);
+                ctx.stroke();
+            }
+
+            ctx.globalAlpha = 1;
+
+            // Draw rod
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = 0.5;
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.moveTo(centerX, anchorY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            // Draw bob
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(x, y, p.mass, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Glow
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.arc(x, y, p.mass * 1.8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.globalAlpha = 1;
+        }
+
+        function drawAnchor() {
+            ctx.fillStyle = '#D4A574';
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            ctx.arc(centerX, anchorY, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+
+        function animate() {
+            // Fade effect instead of clear
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawAnchor();
+
+            pendulums.forEach((p, i) => {
+                updatePendulum(p);
+                drawPendulum(p, trails[i]);
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Click to disturb
+        canvas.addEventListener('click', (e) => {
+            const clickX = e.clientX;
+            const clickY = e.clientY;
+            
+            pendulums.forEach(p => {
+                const x = centerX + p.length * Math.sin(p.angle);
+                const y = anchorY + p.length * Math.cos(p.angle);
+                const dist = Math.sqrt((x - clickX) ** 2 + (y - clickY) ** 2);
+                
+                if (dist < p.mass * 3) {
+                    p.velocity += (Math.random() - 0.5) * 0.2;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
