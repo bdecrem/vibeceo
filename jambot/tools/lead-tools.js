@@ -1,7 +1,10 @@
 /**
- * Lead Tools (R1D1)
+ * Lead Tools
  *
- * Tools for SH-101 lead synth: add_lead, tweak_lead, list_101_presets, load_101_preset
+ * Tools for lead synth: add_lead, tweak_lead (deprecated)
+ *
+ * NOTE: 'lead' is now an ALIAS for JB200 (same as bass).
+ * Use generic tweak() for parameter changes.
  */
 
 import { registerTools } from './index.js';
@@ -87,12 +90,22 @@ const leadTools = {
       };
     });
     const activeSteps = session.leadPattern.filter(s => s.gate).length;
-    return `R1D1 lead: ${activeSteps} notes`;
+    return `lead: ${activeSteps} notes`;
   },
 
   /**
-   * Tweak lead parameters
-   * Accepts producer units: dB for level, Hz for cutoff, semitones for lfoToPitch, 0-100 for most others
+   * DEPRECATED: Use generic tweak() instead.
+   *
+   * Examples with generic tweak:
+   *   tweak({ path: 'lead.cutoff', value: 4000 })       → 4000Hz
+   *   tweak({ path: 'lead.resonance', value: 60 })     → 60%
+   *   tweak({ path: 'lead.lfoToPitch', value: 12 })    → 12 semitones
+   *   tweak({ path: 'lead.level', value: -3 })         → -3dB
+   *
+   * This tool still works but is no longer the recommended approach.
+   * The generic tweak() handles unit conversion automatically.
+   *
+   * @deprecated
    */
   tweak_lead: async (input, session, context) => {
     const tweaks = [];
@@ -153,7 +166,7 @@ const leadTools = {
       tweaks.push(`lfoWaveform=${input.lfoWaveform}`);
     }
 
-    return `R1D1 lead: ${tweaks.join(', ')}`;
+    return `lead: ${tweaks.join(', ')}`;
   },
 };
 

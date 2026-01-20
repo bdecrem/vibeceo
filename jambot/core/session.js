@@ -3,18 +3,21 @@
  *
  * Wraps the ParamSystem and provides the unified session interface.
  * All parameter access goes through session.get() and session.set().
+ *
+ * INSTRUMENTS:
+ *   - jb01 (drum machine) — aliases: 'drums'
+ *   - jb200 (bass/synth) — aliases: 'bass', 'lead', 'synth'
+ *   - sampler (sample player)
+ *
+ * These are the ONLY real instruments. The aliases are just pointers.
+ * Future: 909, 303, 101 will be added as separate instruments when modernized.
  */
 
 import { ParamSystem } from './params.js';
-import { DrumsNode } from '../instruments/drums-node.js';
-import { BassNode } from '../instruments/bass-node.js';
-import { LeadNode } from '../instruments/lead-node.js';
+import { Clock } from './clock.js';
 import { SamplerNode } from '../instruments/sampler-node.js';
-import { R2D2Node } from '../instruments/r2d2-node.js';
-import { TR909_KITS } from '../../web/public/909/dist/machines/tr909/presets.js';
-
-// Default kit to load on session creation
-const DEFAULT_DRUM_KIT = 'bart-deep';
+import { JB200Node } from '../instruments/jb200-node.js';
+import { JB01Node } from '../instruments/jb01-node.js';
 
 /**
  * Create a new session with ParamSystem integration
@@ -22,59 +25,72 @@ const DEFAULT_DRUM_KIT = 'bart-deep';
  * @returns {Object} Session object
  */
 export function createSession(config = {}) {
-  const bpm = config.bpm || 128;
+  // Create master clock - single source of truth for timing
+  const clock = new Clock({
+    bpm: config.bpm || 128,
+    swing: config.swing || 0,
+    sampleRate: config.sampleRate || 44100,
+  });
 
   // Create param system
   const params = new ParamSystem();
 
-  // Create instrument nodes
-  const drumsNode = new DrumsNode({ kit: DEFAULT_DRUM_KIT });
-  const bassNode = new BassNode();
-  const leadNode = new LeadNode();
+  // Create the REAL instruments (only 3)
+  const jb01Node = new JB01Node();
+  const jb200Node = new JB200Node();
   const samplerNode = new SamplerNode();
-  const r2d2Node = new R2D2Node();
 
-  // Load default kit params into drums node
-  const kit = TR909_KITS.find(k => k.id === DEFAULT_DRUM_KIT);
-  if (kit?.voiceParams) {
-    for (const [voice, voiceParams] of Object.entries(kit.voiceParams)) {
-      for (const [param, value] of Object.entries(voiceParams)) {
-        drumsNode.setParam(`${voice}.${param}`, value);
-      }
-    }
-  }
-
-  // Register all instruments
-  params.register('drums', drumsNode);
-  params.register('bass', bassNode);
-  params.register('lead', leadNode);
+  // Register instruments with their canonical names
+  params.register('jb01', jb01Node);
+  params.register('jb200', jb200Node);
   params.register('sampler', samplerNode);
-  params.register('r2d2', r2d2Node);
+
+  // Register ALIASES (pointers to the same nodes)
+  params.register('drums', jb01Node);      // drums → jb01
+  params.register('bass', jb200Node);      // bass → jb200
+  params.register('lead', jb200Node);      // lead → jb200
+  params.register('synth', jb200Node);     // synth → jb200
 
   // Create session object with convenience methods
   const session = {
-    // Core state
-    bpm,
-    swing: config.swing || 0,
+    // Master clock - all timing derives from here
+    clock,
+
+    // BPM and swing proxy to clock (producer-facing interface)
+    get bpm() { return clock.bpm; },
+    set bpm(v) { clock.bpm = v; },
+
+    get swing() { return clock.swing; },
+    set swing(v) { clock.swing = v; },
+
+    // Bars for render length
     bars: config.bars || 2,
+
+    // Instrument output levels in dB (-60 to +6, 0 = unity)
+    jb01Level: config.jb01Level ?? 0,
+    jb200Level: config.jb200Level ?? 0,
+    samplerLevel: config.samplerLevel ?? 0,
 
     // ParamSystem instance
     params,
 
-    // Direct node references (for compatibility during migration)
+    // Direct node references
     _nodes: {
-      drums: drumsNode,
-      bass: bassNode,
-      lead: leadNode,
+      jb01: jb01Node,
+      jb200: jb200Node,
       sampler: samplerNode,
-      r2d2: r2d2Node,
+      // Aliases point to same nodes
+      drums: jb01Node,
+      bass: jb200Node,
+      lead: jb200Node,
+      synth: jb200Node,
     },
 
     // === UNIFIED PARAMETER ACCESS ===
 
     /**
      * Get any parameter by path
-     * @param {string} path - e.g., 'drums.kick.decay', 'bass.cutoff', 'mixer.reverb.decay'
+     * @param {string} path - e.g., 'drums.kick.decay', 'bass.filterCutoff'
      * @returns {*}
      */
     get(path) {
@@ -134,136 +150,124 @@ export function createSession(config = {}) {
       params.clearAutomation(path);
     },
 
-    // === BACKWARD COMPATIBILITY LAYER ===
-    // These properties maintain compatibility with existing code
-    // while the migration to the new system progresses
+    // === PATTERN ACCESS ===
+    // drums/jb01 share the same pattern (they're the same node)
+    // bass/lead/synth/jb200 share the same pattern (they're the same node)
 
-    // Drums (R9D9)
-    get drumKit() { return drumsNode.getParam('kit'); },
-    set drumKit(v) { drumsNode.setParam('kit', v); },
+    get drumPattern() { return jb01Node.getPattern(); },
+    set drumPattern(v) { jb01Node.setPattern(v); },
 
-    get drumPattern() { return drumsNode.getPattern(); },
-    set drumPattern(v) { drumsNode.setPattern(v); },
+    get jb01Pattern() { return jb01Node.getPattern(); },
+    set jb01Pattern(v) { jb01Node.setPattern(v); },
+
+    get bassPattern() { return jb200Node.getPattern(); },
+    set bassPattern(v) { jb200Node.setPattern(v); },
+
+    get leadPattern() { return jb200Node.getPattern(); },
+    set leadPattern(v) { jb200Node.setPattern(v); },
+
+    get jb200Pattern() { return jb200Node.getPattern(); },
+    set jb200Pattern(v) { jb200Node.setPattern(v); },
+
+    get samplerKit() { return samplerNode.getKit(); },
+    set samplerKit(v) { samplerNode.setKit(v); },
+
+    get samplerPattern() { return samplerNode.getPattern(); },
+    set samplerPattern(v) { samplerNode.setPattern(v); },
+
+    // === PARAM ACCESS (proxies to nodes) ===
 
     get drumParams() {
-      // Return a proxy that maps to the node
+      const voices = jb01Node._voices;
       return new Proxy({}, {
         get: (_, voice) => {
-          const result = {};
-          const descriptors = drumsNode.getParameterDescriptors();
-          for (const path of Object.keys(descriptors)) {
-            if (path.startsWith(`${voice}.`)) {
-              const param = path.slice(voice.length + 1);
-              result[param] = drumsNode.getParam(path);
-            }
-          }
-          return result;
+          if (typeof voice !== 'string') return undefined;
+          const voiceDescriptors = jb01Node._descriptors;
+          return new Proxy({}, {
+            get: (__, param) => jb01Node.getParam(`${voice}.${param}`),
+            set: (__, param, value) => {
+              jb01Node.setParam(`${voice}.${param}`, value);
+              return true;
+            },
+            ownKeys: () => {
+              return Object.keys(voiceDescriptors)
+                .filter(path => path.startsWith(`${voice}.`))
+                .map(path => path.slice(voice.length + 1));
+            },
+            getOwnPropertyDescriptor: (__, prop) => {
+              const path = `${voice}.${prop}`;
+              if (voiceDescriptors[path] !== undefined || jb01Node.getParam(path) !== undefined) {
+                return { enumerable: true, configurable: true, writable: true };
+              }
+              return undefined;
+            },
+          });
         },
         set: (_, voice, params) => {
           for (const [param, value] of Object.entries(params)) {
-            drumsNode.setParam(`${voice}.${param}`, value);
+            jb01Node.setParam(`${voice}.${param}`, value);
           }
           return true;
+        },
+        ownKeys: () => voices,
+        getOwnPropertyDescriptor: (_, voice) => {
+          if (voices.includes(voice)) {
+            return { enumerable: true, configurable: true, writable: true };
+          }
+          return undefined;
         },
       });
     },
     set drumParams(v) {
       for (const [voice, params] of Object.entries(v)) {
         for (const [param, value] of Object.entries(params)) {
-          drumsNode.setParam(`${voice}.${param}`, value);
+          jb01Node.setParam(`${voice}.${param}`, value);
         }
       }
     },
 
-    get drumFlam() { return drumsNode.getParam('flam'); },
-    set drumFlam(v) { drumsNode.setParam('flam', v); },
-
-    get drumPatternLength() { return drumsNode.getParam('patternLength'); },
-    set drumPatternLength(v) { drumsNode.setParam('patternLength', v); },
-
-    get drumScale() { return drumsNode.getParam('scale'); },
-    set drumScale(v) { drumsNode.setParam('scale', v); },
-
-    get drumGlobalAccent() { return drumsNode.getParam('globalAccent') / 100; },
-    set drumGlobalAccent(v) { drumsNode.setParam('globalAccent', v * 100); },
-
-    get drumVoiceEngines() { return drumsNode._voiceEngines; },
-    set drumVoiceEngines(v) { drumsNode._voiceEngines = v; },
-
-    get drumUseSample() { return drumsNode._useSample; },
-    set drumUseSample(v) { drumsNode._useSample = v; },
-
-    get drumAutomation() {
-      // Convert from ParamSystem to old format
-      const result = {};
-      for (const path of params.listAutomation()) {
-        if (path.startsWith('drums.')) {
-          const [_, voice, param] = path.split('.');
-          if (!result[voice]) result[voice] = {};
-          result[voice][param] = params.getAutomation(path);
-        }
-      }
-      return result;
-    },
-    set drumAutomation(v) {
-      // Convert from old format to ParamSystem
-      for (const [voice, voiceAuto] of Object.entries(v)) {
-        for (const [param, values] of Object.entries(voiceAuto)) {
-          params.automate(`drums.${voice}.${param}`, values);
-        }
-      }
-    },
-
-    // Bass (R3D3)
-    get bassPattern() { return bassNode.getPattern(); },
-    set bassPattern(v) { bassNode.setPattern(v); },
+    get jb01Params() { return this.drumParams; },
+    set jb01Params(v) { this.drumParams = v; },
 
     get bassParams() {
-      const result = {};
-      for (const [path, desc] of Object.entries(bassNode.getParameterDescriptors())) {
-        const param = path.replace('bass.', '');
-        result[param] = bassNode.getParam(param);
-      }
-      return result;
+      return new Proxy({}, {
+        get: (_, param) => jb200Node.getParam(`bass.${param}`),
+        set: (_, param, value) => {
+          jb200Node.setParam(`bass.${param}`, value);
+          return true;
+        },
+        ownKeys: () => {
+          return Object.keys(jb200Node.getParameterDescriptors())
+            .map(path => path.replace('bass.', ''));
+        },
+        getOwnPropertyDescriptor: (_, prop) => {
+          const path = `bass.${prop}`;
+          if (jb200Node.getParameterDescriptors()[path] !== undefined) {
+            return { enumerable: true, configurable: true, writable: true };
+          }
+          if (jb200Node.getParam(path) !== undefined) {
+            return { enumerable: true, configurable: true, writable: true };
+          }
+          return undefined;
+        },
+        has: (_, prop) => {
+          const path = `bass.${prop}`;
+          return jb200Node.getParameterDescriptors()[path] !== undefined ||
+                 jb200Node.getParam(path) !== undefined;
+        },
+      });
     },
     set bassParams(v) {
       for (const [param, value] of Object.entries(v)) {
-        bassNode.setParam(param, value);
+        jb200Node.setParam(`bass.${param}`, value);
       }
     },
 
-    // Lead (R1D1)
-    get leadPreset() { return leadNode.getParam('preset'); },
-    set leadPreset(v) { leadNode.setParam('preset', v); },
+    get leadParams() { return this.bassParams; },
+    set leadParams(v) { this.bassParams = v; },
 
-    get leadPattern() { return leadNode.getPattern(); },
-    set leadPattern(v) { leadNode.setPattern(v); },
-
-    get leadParams() {
-      const result = {};
-      for (const [path, desc] of Object.entries(leadNode.getParameterDescriptors())) {
-        if (!path.startsWith('arp.')) {
-          const param = path.replace('lead.', '');
-          result[param] = leadNode.getParam(param);
-        }
-      }
-      return result;
-    },
-    set leadParams(v) {
-      for (const [param, value] of Object.entries(v)) {
-        leadNode.setParam(param, value);
-      }
-    },
-
-    get leadArp() { return leadNode.getArp(); },
-    set leadArp(v) { leadNode.setArp(v); },
-
-    // Sampler (R9DS)
-    get samplerKit() { return samplerNode.getKit(); },
-    set samplerKit(v) { samplerNode.setKit(v); },
-
-    get samplerPattern() { return samplerNode.getPattern(); },
-    set samplerPattern(v) { samplerNode.setPattern(v); },
+    get jb200Params() { return this.bassParams; },
+    set jb200Params(v) { this.bassParams = v; },
 
     get samplerParams() {
       return new Proxy({}, {
@@ -291,25 +295,7 @@ export function createSession(config = {}) {
       }
     },
 
-    // R2D2 (Bass Monosynth)
-    get r2d2Pattern() { return r2d2Node.getPattern(); },
-    set r2d2Pattern(v) { r2d2Node.setPattern(v); },
-
-    get r2d2Params() {
-      const result = {};
-      for (const [path, desc] of Object.entries(r2d2Node.getParameterDescriptors())) {
-        const param = path.replace('bass.', '');
-        result[param] = r2d2Node.getParam(param);
-      }
-      return result;
-    },
-    set r2d2Params(v) {
-      for (const [param, value] of Object.entries(v)) {
-        r2d2Node.setParam(param, value);
-      }
-    },
-
-    // Mixer (placeholder - will be populated in Phase 5)
+    // Mixer (placeholder)
     mixer: {
       sends: {},
       voiceRouting: {},
@@ -318,20 +304,22 @@ export function createSession(config = {}) {
       masterVolume: 0.8,
     },
 
-    // Song mode (keep as-is for now)
+    // Song mode
     patterns: {
       drums: {},
       bass: {},
       lead: {},
       sampler: {},
-      r2d2: {},
+      jb200: {},
+      jb01: {},
     },
     currentPattern: {
       drums: 'A',
       bass: 'A',
       lead: 'A',
       sampler: 'A',
-      r2d2: 'A',
+      jb200: 'A',
+      jb01: 'A',
     },
     arrangement: [],
   };
@@ -346,9 +334,11 @@ export function createSession(config = {}) {
  */
 export function serializeSession(session) {
   return {
-    bpm: session.bpm,
-    swing: session.swing,
+    clock: session.clock.serialize(),
     bars: session.bars,
+    jb01Level: session.jb01Level,
+    jb200Level: session.jb200Level,
+    samplerLevel: session.samplerLevel,
     params: session.params.serialize(),
     mixer: session.mixer,
     patterns: session.patterns,
@@ -363,10 +353,15 @@ export function serializeSession(session) {
  * @returns {Object}
  */
 export function deserializeSession(data) {
+  const clockData = data.clock || { bpm: data.bpm, swing: data.swing };
+
   const session = createSession({
-    bpm: data.bpm,
-    swing: data.swing,
+    bpm: clockData.bpm,
+    swing: clockData.swing,
     bars: data.bars,
+    jb01Level: data.jb01Level ?? data.drumLevel,
+    jb200Level: data.jb200Level ?? data.bassLevel,
+    samplerLevel: data.samplerLevel,
   });
 
   if (data.params) {

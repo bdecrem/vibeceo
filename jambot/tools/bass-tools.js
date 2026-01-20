@@ -1,7 +1,10 @@
 /**
- * Bass Tools (R3D3)
+ * Bass Tools
  *
- * Tools for TB-303 acid bass: add_bass, tweak_bass
+ * Tools for bass synth: add_bass, tweak_bass (deprecated)
+ *
+ * NOTE: 'bass' is now an ALIAS for JB200.
+ * Use generic tweak() for parameter changes.
  */
 
 import { registerTools } from './index.js';
@@ -23,12 +26,21 @@ const bassTools = {
       };
     });
     const activeSteps = session.bassPattern.filter(s => s.gate).length;
-    return `R3D3 bass: ${activeSteps} notes`;
+    return `bass: ${activeSteps} notes`;
   },
 
   /**
-   * Tweak bass parameters
-   * Accepts producer units: dB for level, Hz for cutoff, 0-100 for others
+   * DEPRECATED: Use generic tweak() instead.
+   *
+   * Examples with generic tweak:
+   *   tweak({ path: 'bass.cutoff', value: 2000 })      → 2000Hz
+   *   tweak({ path: 'bass.resonance', value: 80 })    → 80%
+   *   tweak({ path: 'bass.level', value: -6 })        → -6dB
+   *
+   * This tool still works but is no longer the recommended approach.
+   * The generic tweak() handles unit conversion automatically.
+   *
+   * @deprecated
    */
   tweak_bass: async (input, session, context) => {
     const tweaks = [];
@@ -89,7 +101,7 @@ const bassTools = {
       tweaks.push(`accent=${input.accent}`);
     }
 
-    return `R3D3 bass: ${tweaks.join(', ')}`;
+    return `bass: ${tweaks.join(', ')}`;
   },
 };
 

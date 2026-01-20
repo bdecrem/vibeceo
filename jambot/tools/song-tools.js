@@ -7,8 +7,8 @@
 
 import { registerTools } from './index.js';
 
-// Voice names for drums (used for channel inserts)
-const DRUM_VOICES = ['drums', 'kick', 'snare', 'clap', 'rimshot', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'crash', 'ride'];
+// JB01 voices (drums = jb01)
+const DRUM_VOICES = ['drums', 'kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
 
 // Helper: get channel inserts for an instrument
 function getInsertsForInstrument(session, inst) {
@@ -102,14 +102,14 @@ const songTools = {
       return `Saved sampler pattern "${patternName}"`;
     }
 
-    if (instrument === 'r2d2') {
-      session.patterns.r2d2[patternName] = {
-        pattern: JSON.parse(JSON.stringify(session.r2d2Pattern)),
-        params: JSON.parse(JSON.stringify(session.r2d2Params)),
-        channelInserts: getInsertsForInstrument(session, 'r2d2'),
+    if (instrument === 'jb200') {
+      session.patterns.jb200[patternName] = {
+        pattern: JSON.parse(JSON.stringify(session.jb200Pattern)),
+        params: JSON.parse(JSON.stringify(session.jb200Params)),
+        channelInserts: getInsertsForInstrument(session, 'jb200'),
       };
-      session.currentPattern.r2d2 = patternName;
-      return `Saved r2d2 pattern "${patternName}"`;
+      session.currentPattern.jb200 = patternName;
+      return `Saved jb200 pattern "${patternName}"`;
     }
 
     return `Unknown instrument: ${instrument}`;
@@ -173,15 +173,15 @@ const songTools = {
       return `Loaded sampler pattern "${patternName}"`;
     }
 
-    if (instrument === 'r2d2') {
-      const saved = session.patterns.r2d2[patternName];
-      if (!saved) return `No r2d2 pattern "${patternName}" found`;
-      session.r2d2Pattern = JSON.parse(JSON.stringify(saved.pattern));
-      session.r2d2Params = JSON.parse(JSON.stringify(saved.params));
-      clearInsertsForInstrument(session, 'r2d2');
+    if (instrument === 'jb200') {
+      const saved = session.patterns.jb200[patternName];
+      if (!saved) return `No jb200 pattern "${patternName}" found`;
+      session.jb200Pattern = JSON.parse(JSON.stringify(saved.pattern));
+      session.jb200Params = JSON.parse(JSON.stringify(saved.params));
+      clearInsertsForInstrument(session, 'jb200');
       restoreInserts(session, saved.channelInserts);
-      session.currentPattern.r2d2 = patternName;
-      return `Loaded r2d2 pattern "${patternName}"`;
+      session.currentPattern.jb200 = patternName;
+      return `Loaded jb200 pattern "${patternName}"`;
     }
 
     return `Unknown instrument: ${instrument}`;
@@ -205,7 +205,7 @@ const songTools = {
    */
   list_patterns: async (input, session, context) => {
     const lines = [];
-    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'r2d2']) {
+    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'jb200']) {
       const patterns = session.patterns[instrument];
       const names = Object.keys(patterns);
       const current = session.currentPattern[instrument];
@@ -230,7 +230,7 @@ const songTools = {
         bass: s.bass || null,
         lead: s.lead || null,
         sampler: s.sampler || null,
-        r2d2: s.r2d2 || null,
+        jb200: s.jb200 || null,
       }
     }));
 
@@ -255,7 +255,7 @@ const songTools = {
 
     // Show patterns
     lines.push('PATTERNS:');
-    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'r2d2']) {
+    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'jb200']) {
       const patterns = session.patterns[instrument];
       const names = Object.keys(patterns);
       if (names.length > 0) {
@@ -272,7 +272,7 @@ const songTools = {
         if (section.patterns.bass) parts.push(`bass:${section.patterns.bass}`);
         if (section.patterns.lead) parts.push(`lead:${section.patterns.lead}`);
         if (section.patterns.sampler) parts.push(`sampler:${section.patterns.sampler}`);
-        if (section.patterns.r2d2) parts.push(`r2d2:${section.patterns.r2d2}`);
+        if (section.patterns.jb200) parts.push(`jb200:${section.patterns.jb200}`);
         lines.push(`  ${i + 1}. ${section.bars} bars — ${parts.join(', ') || '(silent)'}`);
       });
       const totalBars = session.arrangement.reduce((sum, s) => sum + s.bars, 0);

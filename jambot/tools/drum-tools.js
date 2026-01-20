@@ -1,16 +1,17 @@
 /**
- * Drum Tools (R9D9)
+ * Drum Tools
  *
- * Tools for TR-909 drum machine: add_drums, tweak_drums, set_drum_groove,
- * automate_drums, clear_automation, list_909_kits, load_909_kit
+ * Tools for drum machine: add_drums, tweak_drums (deprecated), etc.
+ *
+ * NOTE: 'drums' is now an ALIAS for JB01.
+ * The voices are JB01 voices: kick, snare, clap, ch, oh, perc, tom, cymbal
  */
 
 import { registerTools } from './index.js';
-import { getParamDef } from '../params/converters.js';
-import { TR909_KITS } from '../../web/public/909/dist/machines/tr909/presets.js';
+import { getParamDef, toEngine } from '../params/converters.js';
 
-// Voice names for the 909
-export const DRUM_VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'rimshot', 'crash', 'ride'];
+// Voice names for JB01 (drums = jb01)
+export const DRUM_VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
 
 // Tool handlers
 const drumTools = {
@@ -47,90 +48,62 @@ const drumTools = {
       }
     }
 
-    return `R9D9 drums: ${added.join(', ')}`;
+    return `drums: ${added.join(', ')}`;
   },
 
   /**
-   * Tweak drum voice parameters
-   * Stores producer units (dB, semitones, 0-100) - conversion happens at render time
+   * DEPRECATED: Use generic tweak() instead.
+   *
+   * Examples with generic tweak:
+   *   tweak({ path: 'drums.kick.decay', value: 75 })
+   *   tweak({ path: 'drums.kick.level', value: -6 })
+   *   tweak({ path: 'drums.snare.tune', value: +3 })
+   *
+   * @deprecated
    */
   tweak_drums: async (input, session, context) => {
     const voice = input.voice;
-    if (!session.drumParams[voice]) {
-      session.drumParams[voice] = {};
+    if (!DRUM_VOICES.includes(voice)) {
+      return `Invalid voice: ${voice}. Use: ${DRUM_VOICES.join(', ')}`;
     }
 
     const tweaks = [];
 
-    // Mute: convenience alias for level=-60 (silent)
-    if (input.mute === true) {
-      session.drumParams[voice].level = -60;
-      tweaks.push('muted');
-    }
-
-    // Level: dB (-60 to +6)
+    // Level: dB
     if (input.level !== undefined) {
-      session.drumParams[voice].level = input.level;
+      const def = getParamDef('jb01', voice, 'level');
+      session.drumParams[voice].level = def ? toEngine(input.level, def) : input.level;
       tweaks.push(`level=${input.level}dB`);
     }
 
-    // Tune: semitones (±12)
+    // Mute: alias for level=-60
+    if (input.mute === true) {
+      const def = getParamDef('jb01', voice, 'level');
+      session.drumParams[voice].level = def ? toEngine(-60, def) : 0;
+      tweaks.push('muted');
+    }
+
+    // Tune: semitones
     if (input.tune !== undefined) {
-      session.drumParams[voice].tune = input.tune;
+      session.drumParams[voice].tune = input.tune * 100; // Convert to cents
       tweaks.push(`tune=${input.tune > 0 ? '+' : ''}${input.tune}st`);
     }
 
     // Decay: 0-100
     if (input.decay !== undefined) {
-      session.drumParams[voice].decay = input.decay;
+      const def = getParamDef('jb01', voice, 'decay');
+      session.drumParams[voice].decay = def ? toEngine(input.decay, def) : input.decay / 100;
       tweaks.push(`decay=${input.decay}`);
     }
 
-    // Tone: Hz for hats, 0-100 for others
-    if (input.tone !== undefined) {
-      const def = getParamDef('r9d9', voice, 'tone');
-      session.drumParams[voice].tone = input.tone;
-      if (def?.unit === 'Hz') {
-        tweaks.push(`tone=${input.tone}Hz`);
-      } else {
-        tweaks.push(`tone=${input.tone}`);
-      }
-    }
-
-    // Attack: 0-100 (kick only)
+    // Attack: 0-100
     if (input.attack !== undefined) {
-      session.drumParams[voice].attack = input.attack;
+      const def = getParamDef('jb01', voice, 'attack');
+      session.drumParams[voice].attack = def ? toEngine(input.attack, def) : input.attack / 100;
       tweaks.push(`attack=${input.attack}`);
     }
 
-    // Sweep: 0-100 (kick only)
-    if (input.sweep !== undefined) {
-      session.drumParams[voice].sweep = input.sweep;
-      tweaks.push(`sweep=${input.sweep}`);
-    }
-
-    // Snappy: 0-100 (snare only)
-    if (input.snappy !== undefined) {
-      session.drumParams[voice].snappy = input.snappy;
-      tweaks.push(`snappy=${input.snappy}`);
-    }
-
-    // Per-voice engine selection (no conversion needed)
-    if (input.engine !== undefined) {
-      session.drumVoiceEngines[voice] = input.engine;
-      tweaks.push(`engine=${input.engine}`);
-    }
-
-    // Sample mode (ch, oh, crash, ride only)
-    if (input.useSample !== undefined) {
-      const sampleCapable = ['ch', 'oh', 'crash', 'ride'];
-      if (sampleCapable.includes(voice)) {
-        session.drumUseSample[voice] = input.useSample;
-        tweaks.push(`useSample=${input.useSample}`);
-      }
-    }
-
-    return `R9D9 ${voice}: ${tweaks.join(', ')}`;
+    return `drums ${voice}: ${tweaks.join(', ')}`;
   },
 
   /**
@@ -217,43 +190,8 @@ const drumTools = {
     return `Cleared ${voice} ${param} automation`;
   },
 
-  /**
-   * List available 909 kits (sound presets)
-   */
-  list_909_kits: async (input, session, context) => {
-    const kitList = TR909_KITS.map(k => `  ${k.id} - ${k.name}: ${k.description}`).join('\n');
-    return `Available 909 kits:\n${kitList}`;
-  },
-
-  /**
-   * Load a 909 kit by ID
-   */
-  load_909_kit: async (input, session, context) => {
-    const kit = TR909_KITS.find(k => k.id === input.kit);
-    if (!kit) {
-      const available = TR909_KITS.map(k => k.id).join(', ');
-      return `Unknown kit: ${input.kit}. Available: ${available}`;
-    }
-    session.drumKit = kit.id;
-
-    // Copy kit's voiceParams into session.drumParams (producer units)
-    // This allows the agent to see/report current values
-    if (kit.voiceParams) {
-      for (const [voice, params] of Object.entries(kit.voiceParams)) {
-        session.drumParams[voice] = { ...params };
-      }
-    }
-
-    // Build a summary of what was set
-    const paramSummary = kit.voiceParams && Object.keys(kit.voiceParams).length > 0
-      ? Object.entries(kit.voiceParams).map(([voice, params]) => {
-          const paramList = Object.entries(params).map(([p, v]) => `${p}=${v}`).join(', ');
-          return `${voice}: ${paramList}`;
-        }).join('; ')
-      : 'default params';
-
-    return `Loaded 909 kit "${kit.name}" (${kit.engine} engine). Set: ${paramSummary}`;
-  },
+  // NOTE: list_909_kits and load_909_kit removed.
+  // drums = jb01 now. Use list_jb01_kits and load_jb01_kit from jb01-tools.js
 };
 
 // Register all drum tools

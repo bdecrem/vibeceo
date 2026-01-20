@@ -29,14 +29,16 @@ export const R9D9_PARAMS = loadParams('r9d9-params.json');
 export const R3D3_PARAMS = loadParams('r3d3-params.json');
 export const R1D1_PARAMS = loadParams('r1d1-params.json');
 export const R9DS_PARAMS = loadParams('r9ds-params.json');
-export const R2D2_PARAMS = loadParams('r2d2-params.json');
+export const JB200_PARAMS = loadParams('jb200-params.json');
+export const JB01_PARAMS = loadParams('jb01-params.json');
 
 const SYNTH_PARAMS = {
   r9d9: R9D9_PARAMS,
   r3d3: R3D3_PARAMS,
   r1d1: R1D1_PARAMS,
   r9ds: R9DS_PARAMS,
-  r2d2: R2D2_PARAMS,
+  jb200: JB200_PARAMS,
+  jb01: JB01_PARAMS,
 };
 
 /**
@@ -81,6 +83,11 @@ export function toEngine(value, paramDef) {
     case '0-100':
       // Simple percentage to 0-1
       return clamped / 100;
+
+    case 'bipolar':
+      // Linear normalization for bipolar ranges (e.g., -50 to +50 → 0 to 1)
+      // Center value maps to 0.5
+      return (clamped - min) / (max - min);
 
     case 'semitones':
       // Convert to cents for engines that expect it
@@ -130,6 +137,10 @@ export function fromEngine(value, paramDef) {
 
     case '0-100':
       return value * 100;
+
+    case 'bipolar':
+      // 0-1 back to min-max range (e.g., 0-1 → -50 to +50)
+      return min + value * (max - min);
 
     case 'semitones':
       // Cents back to semitones

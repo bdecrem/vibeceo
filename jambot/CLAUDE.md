@@ -464,73 +464,115 @@ The `presets/loader.js` module is generic. To add presets for another synth:
 
 ## Tools Available to Agent
 
-**Muting voices:**
-- **Mute a voice**: Use `mute: true` in any tweak tool (e.g., `tweak_drums` with `voice: "kick", mute: true`)
-- **Mute entire instrument in song mode**: Omit it from the section's pattern assignment
-- Mute is equivalent to `level: -60` (minimum dB, effectively silent)
+### Generic Parameter Tools (PRIMARY)
 
-### Generic Parameter Tools
-
-These unified tools work on ANY parameter in the system via dot-path addressing:
+**These are the PRIMARY tools for reading and writing parameters.** Use these for all parameter tweaks. The per-instrument `tweak_*` tools are deprecated.
 
 | Tool | Description |
 |------|-------------|
-| `get_param` | Get any parameter: `get_param({ path: 'drums.kick.decay' })` |
-| `get_state` | Get all params for a node/voice: `get_state({ node: 'drums', voice: 'kick' })` |
-| `tweak` | Set any parameter: `tweak({ path: 'drums.kick.decay', value: 75 })` |
-| `tweak_multi` | Set multiple params: `tweak_multi({ params: { 'drums.kick.decay': 75, 'bass.cutoff': 2000 } })` |
-| `list_params` | List available params: `list_params({ node: 'drums' })` |
+| `tweak` | **PRIMARY** - Set any parameter with automatic unit conversion |
+| `tweak_multi` | Set multiple params at once |
+| `get_param` | Get any parameter (returns producer-friendly units) |
+| `get_state` | Get all params for an instrument/voice |
+| `list_params` | List available params for an instrument |
+
+**`tweak` examples (with automatic unit conversion):**
+```
+tweak({ path: 'drums.kick.decay', value: 75 })       → Sets decay to 75%
+tweak({ path: 'drums.kick.level', value: -6 })       → Sets level to -6dB
+tweak({ path: 'bass.cutoff', value: 2000 })          → Sets filter to 2000Hz
+tweak({ path: 'bass.resonance', value: 80 })         → Sets resonance to 80%
+tweak({ path: 'lead.lfoToPitch', value: 12 })        → Sets vibrato to 12 semitones
+tweak({ path: 'sampler.s1.pan', value: -50 })        → Sets pan to L50
+tweak({ path: 'jb200.bass.filterCutoff', value: 800 }) → Sets JB200 filter to 800Hz
+```
+
+**Path format:** `{instrument}.{voice}.{param}` or `{instrument}.{param}` for single-voice synths
+
+| Instrument | Path Format | Example |
+|------------|-------------|---------|
+| drums | `drums.{voice}.{param}` | `drums.kick.decay`, `drums.snare.level` |
+| bass | `bass.{param}` | `bass.cutoff`, `bass.resonance` |
+| lead | `lead.{param}` | `lead.cutoff`, `lead.attack` |
+| sampler | `sampler.{slot}.{param}` | `sampler.s1.level`, `sampler.s3.tune` |
+| jb200 | `jb200.bass.{param}` | `jb200.bass.filterCutoff`, `jb200.bass.drive` |
+
+**Muting voices:**
+- Use `tweak({ path: 'drums.kick.level', value: -60 })` to mute (minimum dB = silent)
+- Or omit the instrument from the section's pattern assignment in song mode
 
 ### Per-Instrument Tools
+
+**Pattern programming tools** (use these for patterns):
+
+| Tool | Synth | Description |
+|------|-------|-------------|
+| `add_drums` | R9D9 | 11 voices: kick, snare, clap, ch, oh, ltom, mtom, htom, rimshot, crash, ride |
+| `add_bass` | R3D3 | 16-step pattern with note, gate, accent, slide |
+| `add_lead` | R1D1 | 16-step pattern with note, gate, accent, slide |
+| `add_samples` | R9DS | Program sample hits on steps (slot, step, velocity) |
+| `add_jb200` | JB200 | 16-step bass pattern with note, gate, accent, slide |
+
+**Session and preset tools:**
 
 | Tool | Synth | Description |
 |------|-------|-------------|
 | `create_session` | — | Set BPM (60-200), reset all patterns |
-| `show` | — | Show current state of any instrument (jb200, bass, lead, drums, sampler) |
+| `show` | — | Show current state of any instrument |
 | `list_projects` | — | List all saved projects |
-| `open_project` | — | Open a project by name/folder to continue working |
+| `open_project` | — | Open a project by name/folder |
 | `rename_project` | — | Rename current project |
-| `list_909_kits` | R9D9 | Show available 909 kits (sound presets) |
-| `load_909_kit` | R9D9 | Load a kit by ID (e.g., "bart-deep", "punchy") |
-| `add_drums` | R9D9 | 11 voices: kick, snare, clap, ch, oh, ltom, mtom, htom, rimshot, crash, ride |
-| `tweak_drums` | R9D9 | Adjust level (dB), tune (semitones), decay/attack (0-100), tone (Hz), engine, useSample per voice |
-| `set_drum_groove` | R9D9 | Set flam, patternLength (1-16), scale (16th/triplets/32nd), globalAccent |
-| `automate_drums` | R9D9 | Per-step parameter automation ("knob mashing") - array of 16 values per param |
-| `add_bass` | R3D3 | 16-step pattern with note, gate, accent, slide |
-| `tweak_bass` | R3D3 | level (dB), cutoff (Hz), resonance/envMod/decay/accent (0-100), waveform |
-| `list_101_presets` | R1D1 | Show available 101 presets (sound + pattern) |
-| `load_101_preset` | R1D1 | Load a preset by ID (e.g., "acidLine", "fatBass") |
-| `add_lead` | R1D1 | 16-step pattern with note, gate, accent, slide |
-| `tweak_lead` | R1D1 | level (dB), cutoff (Hz), osc/envelope params (0-100), lfoToPitch (semitones) |
-| `list_kits` | R9DS | Show available sample kits (bundled + user) |
-| `load_kit` | R9DS | Load a kit by ID (e.g., "808", "amber") |
-| `add_samples` | R9DS | Program sample hits on steps (slot, step, velocity) |
-| `tweak_samples` | R9DS | level (dB), tune (semitones), attack/decay (0-100), filter (Hz), pan (-100 to +100) |
-| `show_sampler` | R9DS | Show current kit, slots, and pattern (what's loaded now) |
-| `add_jb200` | JB200 | 16-step bass pattern with note, gate, accent, slide |
-| `tweak_jb200` | JB200 | level (dB), filterCutoff (Hz), osc/filter/amp params (0-100) |
-| `list_jb200_kits` | JB200 | Show available sound presets (kits) |
-| `load_jb200_kit` | JB200 | Load a kit by ID (e.g., "default") |
-| `list_jb200_sequences` | JB200 | Show available pattern presets (sequences) |
-| `load_jb200_sequence` | JB200 | Load a sequence by ID (e.g., "default") |
-| `set_swing` | — | Groove amount 0-100% |
-| `render` | — | Mix all synths to WAV file (uses arrangement if set) |
-| `save_pattern` | Song | Save current pattern for an instrument to a named slot (A, B, C...) |
-| `load_pattern` | Song | Load a saved pattern into current working pattern |
-| `copy_pattern` | Song | Copy a pattern to a new name (for variations) |
-| `list_patterns` | Song | List all saved patterns per instrument |
-| `set_arrangement` | Song | Set song arrangement: sections with bar counts and pattern assignments |
-| `clear_arrangement` | Song | Clear arrangement, return to single-pattern mode |
-| `show_arrangement` | Song | Display current patterns and arrangement |
-| `create_send` | Mixer | Create send bus with plate reverb (full param control) |
-| `tweak_reverb` | Mixer | Adjust reverb parameters on existing send |
-| `route_to_send` | Mixer | Route a voice to a send bus |
-| `add_channel_insert` | Mixer | Add EQ/filter/ducker to channel OR individual drum voice (kick, snare, ch, etc.) |
-| `remove_channel_insert` | Mixer | Remove EQ/filter/ducker from channel or drum voice |
-| `add_sidechain` | Mixer | Sidechain ducking (bass ducks on kick) |
-| `add_master_insert` | Mixer | Add effect to master bus |
-| `analyze_render` | Mixer | Analyze WAV: levels, frequency, recommendations |
-| `show_mixer` | Mixer | Display current mixer config |
+| `list_909_kits` | R9D9 | Show available 909 kits |
+| `load_909_kit` | R9D9 | Load a kit by ID (e.g., "bart-deep") |
+| `set_drum_groove` | R9D9 | Set flam, patternLength, scale, globalAccent |
+| `automate_drums` | R9D9 | Per-step parameter automation |
+| `list_101_presets` | R1D1 | Show available 101 presets |
+| `load_101_preset` | R1D1 | Load a preset by ID |
+| `list_kits` | R9DS | Show available sample kits |
+| `load_kit` | R9DS | Load a kit by ID |
+| `show_sampler` | R9DS | Show current kit and pattern |
+| `list_jb200_kits` | JB200 | Show available sound presets |
+| `load_jb200_kit` | JB200 | Load a kit by ID |
+| `list_jb200_sequences` | JB200 | Show available pattern presets |
+| `load_jb200_sequence` | JB200 | Load a sequence by ID |
+
+**DEPRECATED tweak tools** (use generic `tweak()` instead):
+
+| Tool | Replacement |
+|------|-------------|
+| ~~`tweak_drums`~~ | `tweak({ path: 'drums.kick.decay', value: 75 })` |
+| ~~`tweak_bass`~~ | `tweak({ path: 'bass.cutoff', value: 2000 })` |
+| ~~`tweak_lead`~~ | `tweak({ path: 'lead.resonance', value: 60 })` |
+| ~~`tweak_samples`~~ | `tweak({ path: 'sampler.s1.level', value: -6 })` |
+| ~~`tweak_jb200`~~ | `tweak({ path: 'jb200.bass.filterCutoff', value: 800 })` |
+
+**Song mode tools:**
+
+| Tool | Description |
+|------|-------------|
+| `set_swing` | Groove amount 0-100% |
+| `render` | Mix all synths to WAV file (uses arrangement if set) |
+| `save_pattern` | Save current pattern for an instrument to a named slot (A, B, C...) |
+| `load_pattern` | Load a saved pattern into current working pattern |
+| `copy_pattern` | Copy a pattern to a new name (for variations) |
+| `list_patterns` | List all saved patterns per instrument |
+| `set_arrangement` | Set song arrangement: sections with bar counts and pattern assignments |
+| `clear_arrangement` | Clear arrangement, return to single-pattern mode |
+| `show_arrangement` | Display current patterns and arrangement |
+
+**Mixer tools:**
+
+| Tool | Description |
+|------|-------------|
+| `create_send` | Create send bus with plate reverb (full param control) |
+| `tweak_reverb` | Adjust reverb parameters on existing send |
+| `route_to_send` | Route a voice to a send bus |
+| `add_channel_insert` | Add EQ/filter/ducker to channel OR individual drum voice |
+| `remove_channel_insert` | Remove EQ/filter/ducker from channel or drum voice |
+| `add_sidechain` | Sidechain ducking (bass ducks on kick) |
+| `add_master_insert` | Add effect to master bus |
+| `analyze_render` | Analyze WAV: levels, frequency, recommendations |
+| `show_mixer` | Display current mixer config |
 
 ## Mixer (DAW-like Routing)
 

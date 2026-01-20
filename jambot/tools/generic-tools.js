@@ -3,18 +3,90 @@
  *
  * Unified tools that work on ANY parameter in the system.
  * Replaces bespoke per-instrument tools (tweak_drums, tweak_bass, etc.)
+ *
+ * These are the PRIMARY tools for parameter access. Per-instrument tools
+ * (tweak_drums, tweak_bass, etc.) are DEPRECATED in favor of these.
  */
 
 import { registerTools } from './index.js';
+import { getParamDef, toEngine, fromEngine, formatValue } from '../params/converters.js';
+
+/**
+ * Map node IDs to synth IDs for converter lookup
+ *
+ * REAL INSTRUMENTS:
+ *   - jb01 (drum machine)
+ *   - jb200 (bass/synth)
+ *   - sampler
+ *
+ * ALIASES (point to same instruments):
+ *   - drums → jb01
+ *   - bass, lead, synth → jb200
+ */
+const NODE_TO_SYNTH = {
+  // Real instruments
+  jb01: 'jb01',
+  jb200: 'jb200',
+  sampler: 'r9ds',
+  // Aliases
+  drums: 'jb01',
+  bass: 'jb200',
+  lead: 'jb200',
+  synth: 'jb200',
+};
+
+/**
+ * Parse a path like 'drums.kick.decay' into { nodeId, voice, param }
+ * or 'bass.cutoff' into { nodeId, voice: 'bass', param: 'cutoff' }
+ */
+function parsePath(path) {
+  const parts = path.split('.');
+
+  if (parts.length < 2) {
+    return null;
+  }
+
+  const nodeId = parts[0];
+
+  // Single-voice instruments: bass.cutoff → voice='bass', param='cutoff'
+  // Multi-voice instruments: drums.kick.decay → voice='kick', param='decay'
+  // JB200: jb200.bass.filterCutoff → voice='bass', param='filterCutoff'
+
+  if (parts.length === 2) {
+    // bass.cutoff, lead.resonance
+    // For single-voice, the voice is the same as the nodeId
+    return { nodeId, voice: nodeId, param: parts[1] };
+  }
+
+  if (parts.length >= 3) {
+    // drums.kick.decay, sampler.s1.level, jb200.bass.filterCutoff
+    return { nodeId, voice: parts[1], param: parts.slice(2).join('.') };
+  }
+
+  return null;
+}
+
+/**
+ * Get the descriptor for a path
+ */
+function getDescriptorForPath(path) {
+  const parsed = parsePath(path);
+  if (!parsed) return null;
+
+  const synthId = NODE_TO_SYNTH[parsed.nodeId];
+  if (!synthId) return null;
+
+  return getParamDef(synthId, parsed.voice, parsed.param);
+}
 
 const genericTools = {
   /**
-   * Get any parameter value
+   * Get any parameter value (returns producer-friendly units)
    *
    * Examples:
-   *   get_param({ path: 'drums.kick.decay' })
-   *   get_param({ path: 'bass.cutoff' })
-   *   get_param({ path: 'mixer.sends.reverb1.decay' })
+   *   get_param({ path: 'drums.kick.decay' })     → "drums.kick.decay = 75" (0-100)
+   *   get_param({ path: 'bass.cutoff' })          → "bass.cutoff = 2000Hz"
+   *   get_param({ path: 'drums.kick.level' })     → "drums.kick.level = -3dB"
    */
   get_param: async (input, session, context) => {
     const { path } = input;
@@ -34,16 +106,34 @@ const genericTools = {
       return `${path} is not set (undefined)`;
     }
 
+    // Get descriptor for unit conversion
+    const descriptor = getDescriptorForPath(path);
+
+    if (descriptor) {
+      // Convert engine value back to producer units
+      const producerValue = fromEngine(value, descriptor);
+      return `${path} = ${formatValue(producerValue, descriptor)}`;
+    }
+
+    // No descriptor - return raw value
     return `${path} = ${JSON.stringify(value)}`;
   },
 
   /**
-   * Set any parameter value (generic tweak)
+   * Set any parameter value (generic tweak with automatic unit conversion)
+   *
+   * Accepts producer-friendly values and converts to engine units:
+   *   - dB → linear gain (level: -6 → 0.25)
+   *   - 0-100 → 0-1 (decay: 75 → 0.75)
+   *   - Hz → log-normalized 0-1 (cutoff: 2000 → ~0.65)
+   *   - semitones → cents (tune: +3 → 300)
+   *   - pan → -1 to +1 (pan: -50 → -0.5)
    *
    * Examples:
-   *   tweak({ path: 'drums.kick.decay', value: 75 })
-   *   tweak({ path: 'bass.cutoff', value: 2000 })
-   *   tweak({ path: 'lead.resonance', value: 80 })
+   *   tweak({ path: 'drums.kick.decay', value: 75 })       → Sets decay to 75%
+   *   tweak({ path: 'bass.cutoff', value: 2000 })          → Sets filter to 2000Hz
+   *   tweak({ path: 'drums.kick.level', value: -6 })       → Sets level to -6dB
+   *   tweak({ path: 'jb200.bass.filterCutoff', value: 800 }) → Sets JB200 filter
    */
   tweak: async (input, session, context) => {
     const { path, value } = input;
@@ -62,17 +152,25 @@ const genericTools = {
       return `Error: Unknown node "${nodeId}". Available: ${session.listNodes().join(', ')}`;
     }
 
-    const success = session.set(path, value);
+    // Get descriptor for unit conversion
+    const descriptor = getDescriptorForPath(path);
+
+    // Convert producer units to engine units if descriptor exists
+    const engineValue = descriptor ? toEngine(value, descriptor) : value;
+
+    const success = session.set(path, engineValue);
 
     if (success) {
-      return `Set ${path} = ${JSON.stringify(value)}`;
+      // Format the display value
+      const displayValue = descriptor ? formatValue(value, descriptor) : JSON.stringify(value);
+      return `Set ${path} = ${displayValue}`;
     } else {
       return `Error: Could not set ${path}`;
     }
   },
 
   /**
-   * Set multiple parameters at once
+   * Set multiple parameters at once (with automatic unit conversion)
    *
    * Examples:
    *   tweak_multi({ params: { 'drums.kick.decay': 75, 'drums.kick.level': -3, 'bass.cutoff': 2000 } })
@@ -86,9 +184,16 @@ const genericTools = {
 
     const results = [];
     for (const [path, value] of Object.entries(params)) {
-      const success = session.set(path, value);
+      // Get descriptor for unit conversion
+      const descriptor = getDescriptorForPath(path);
+
+      // Convert producer units to engine units if descriptor exists
+      const engineValue = descriptor ? toEngine(value, descriptor) : value;
+
+      const success = session.set(path, engineValue);
       if (success) {
-        results.push(`${path} = ${JSON.stringify(value)}`);
+        const displayValue = descriptor ? formatValue(value, descriptor) : JSON.stringify(value);
+        results.push(`${path} = ${displayValue}`);
       } else {
         results.push(`${path}: FAILED`);
       }

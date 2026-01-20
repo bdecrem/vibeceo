@@ -106,8 +106,18 @@ const samplerTools = {
   },
 
   /**
-   * Tweak sample slot parameters
-   * Accepts producer units: dB for level, semitones for tune, 0-100 for attack/decay, Hz for filter, pan -100 to +100
+   * DEPRECATED: Use generic tweak() instead.
+   *
+   * Examples with generic tweak:
+   *   tweak({ path: 'sampler.s1.level', value: -6 })   → -6dB
+   *   tweak({ path: 'sampler.s1.tune', value: +3 })    → +3 semitones
+   *   tweak({ path: 'sampler.s2.filter', value: 2000 }) → 2000Hz
+   *   tweak({ path: 'sampler.s3.pan', value: -50 })    → L50
+   *
+   * This tool still works but is no longer the recommended approach.
+   * The generic tweak() handles unit conversion automatically.
+   *
+   * @deprecated
    */
   tweak_samples: async (input, session, context) => {
     const slot = input.slot;
