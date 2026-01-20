@@ -83,6 +83,7 @@ export default function Home() {
               width={32}
               height={32}
               className="w-8 h-8"
+              unoptimized
             />
             <div className="text-xl font-bold">
               <span className="text-[#40e0d0]">Advisors</span>
@@ -161,12 +162,13 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12">
               <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
                 <div className="w-full md:w-2/5 h-96 md:h-auto relative">
-                  <Image 
-                    src="/images/coach-1.jpeg" 
-                    alt="Startup Coach" 
-                    fill 
-                    className="object-cover" 
-                    priority 
+                  <Image
+                    src="/images/coach-1.jpeg"
+                    alt="Startup Coach"
+                    fill
+                    className="object-cover"
+                    priority
+                    unoptimized
                   />
                 </div>
                 <div className="p-4 md:p-6 md:w-3/5">
@@ -191,12 +193,13 @@ export default function Home() {
 
               <div className="bg-gray-50 shadow-lg rounded-xl overflow-hidden flex flex-col md:flex-row">
                 <div className="w-full md:w-2/5 h-96 md:h-auto relative">
-                  <Image 
-                    src="/images/coach-5.png" 
-                    alt="Alex Monroe" 
-                    fill 
-                    className="object-cover" 
-                    priority 
+                  <Image
+                    src="/images/coach-5.png"
+                    alt="Alex Monroe"
+                    fill
+                    className="object-cover"
+                    priority
+                    unoptimized
                   />
                 </div>
                 <div className="p-4 md:p-6 md:w-3/5">
@@ -282,7 +285,7 @@ export default function Home() {
                   >
                     <div className="flex items-center mb-4">
                       <div className="w-12 h-12 relative rounded-full overflow-hidden mr-4">
-                        <Image src={slides[currentSlide].img} alt="Profile" fill className="object-cover" priority />
+                        <Image src={slides[currentSlide].img} alt="Profile" fill className="object-cover" priority unoptimized />
                       </div>
                       <div className="text-left">
                         <p className="font-bold">{slides[currentSlide].name}</p>

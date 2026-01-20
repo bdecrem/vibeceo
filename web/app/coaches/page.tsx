@@ -41,6 +41,7 @@ export default function CoachesPage() {
                   width={40}
                   height={40}
                   className="w-8 h-8 md:w-10 md:h-10"
+                  unoptimized
                 />
                 <div className="text-xl md:text-2xl font-bold cursor-pointer">
                   <span className="text-[#40e0d0]">Advisors</span>
@@ -218,12 +219,13 @@ export default function CoachesPage() {
               <div key={coach.id} className="bg-white rounded-xl shadow-lg overflow-hidden">
                 <div className="flex flex-col md:flex-row">
                   <div className="w-full md:w-1/3 h-96 md:h-auto relative">
-                    <Image 
-                      src={coach.image} 
-                      alt={coach.name} 
-                      fill 
-                      className="object-cover object-[center_top]" 
-                      priority 
+                    <Image
+                      src={coach.image}
+                      alt={coach.name}
+                      fill
+                      className="object-cover object-[center_top]"
+                      priority
+                      unoptimized
                     />
                   </div>
                   <div className="p-6 md:p-8 w-full md:w-2/3">

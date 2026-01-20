@@ -32,6 +32,7 @@ export default function WtafPage() {
             width={32}
             height={32}
             className="w-8 h-8"
+            unoptimized
           />
           <div className="text-xl font-bold">
             <span className="text-[#40e0d0]">Advisors</span>
