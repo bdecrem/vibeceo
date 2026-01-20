@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Land of Lost Socks — Travel Guide</title>
+  <meta property="og:title" content="Land of Lost Socks — Travel Guide">
+  <meta property="og:description" content="Your complete guide to visiting the mystical realm where missing socks go">
+  <meta property="og:image" content="https://intheamber.com/amber/lost-socks-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/lost-socks.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #e8e8e8;
+      font-family: 'Georgia', serif;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .sock-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 400;
+      color: #e94560;
+      margin-bottom: 10px;
+    }
+
+    .tagline {
+      color: #888;
+      font-style: italic;
+      font-size: 1.1rem;
+    }
+
+    .section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .section h2 {
+      color: #e94560;
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section h2 .emoji {
+      font-size: 1.5rem;
+    }
+
+    .map {
+      background: #0d1b2a;
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      margin: 20px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .map-title {
+      color: #e94560;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 20px;
+    }
+
+    .map-visual {
+      font-family: monospace;
+      font-size: 0.7rem;
+      line-height: 1.2;
+      color: #4a9;
+      white-space: pre;
+    }
+
+    .route {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .route:last-child {
+      border-bottom: none;
+    }
+
+    .route-icon {
+      font-size: 1.5rem;
+      width: 50px;
+      text-align: center;
+    }
+
+    .route-details {
+      flex: 1;
+    }
+
+    .route-name {
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .route-info {
+      color: #888;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .route-time {
+      color: #e94560;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+
+    .cost-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .cost-table td {
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .cost-table td:last-child {
+      text-align: right;
+      color: #e94560;
+      font-weight: bold;
+    }
+
+    .visa-req {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+    }
+
+    .visa-check {
+      color: #4a9;
+      font-size: 1.2rem;
+    }
+
+    .fact-box {
+      background: rgba(233, 69, 96, 0.1);
+      border-left: 3px solid #e94560;
+      padding: 15px 20px;
+      margin: 20px 0;
+      font-style: italic;
+    }
+
+    .fact-box .label {
+      color: #e94560;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 5px;
+      font-style: normal;
+    }
+
+    .attractions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 500px) {
+      .attractions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .attraction {
+      background: rgba(0,0,0,0.2);
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .attraction .emoji {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .attraction .name {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .attraction .desc {
+      font-size: 0.85rem;
+      color: #888;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 50px;
+      color: #555;
+      font-size: 0.85rem;
+    }
+
+    .footer a {
+      color: #e94560;
+      text-decoration: none;
+    }
+
+    .cta {
+      background: #e94560;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-family: inherit;
+      font-size: 1rem;
+      border-radius: 30px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: transform 0.2s;
+    }
+
+    .cta:hover {
+      transform: scale(1.05);
+    }
+
+    .disclaimer {
+      font-size: 0.75rem;
+      color: #555;
+      margin-top: 15px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="sock-icon">🧦</div>
+      <h1>Land of Lost Socks</h1>
+      <p class="tagline">Where the missing go to mingle</p>
+    </div>
+
+    <div class="section">
+      <h2><span class="emoji">🗺️</span> Location</h2>
+      <p>The Land of Lost Socks exists in the liminal space between the washing machine drum and the rubber seal — a dimension accessible only through centrifugal spin cycles and acts of static electricity.</p>
+
+      <div class="map">
+        <div class="map-title">Official Territory Map</div>
+        <div class="map-visual">
+         ╭─────────────────────────────────╮
+         │  ∿∿∿ TUMBLE SEA ∿∿∿            │
+         │ ∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿           │
+         │      🧦    ⛰️ MT. LINT          │
+         │    CAPITAL  ╱╲                  │
+         │      ★     ╱  ╲   🧦            │
+         │           ╱    ╲                │
+         │    🧦    ═══════════            │
+         │        STATIC VALLEY            │
+         │  ┌──────┐                       │
+         │  │DRAIN │   🧦        🧦        │
+         │  │PORTAL│      SOCK MEADOWS     │
+         │  └──────┘                       │
+         ╰─────────────────────────────────╯
+        </div>
+      </div>
+
+      <div class="fact-box">
+        <div class="label">Scientific Fact</div>
+        The average household loses 1.3 socks per month. That's 15.6 socks per year, or 1,247 socks over an 80-year lifetime.
+      </div>
+    </div>
+
+    <div class="section">
+      <h2><span class="emoji">🚀</span> How to Get There</h2>
+
+      <div class="route">
+        <div class="route-icon">🌀</div>
+        <div class="route-details">
+          <div class="route-name">The Spin Cycle Express</div>
+          <div class="route-info">Most common route. Requires hot water and high agitation.</div>
+        </div>
+        <div class="route-time">1 wash cycle</div>
+      </div>
+
+      <div class="route">
+        <div class="route-icon">⚡</div>
+        <div class="route-details">
+          <div class="route-name">Static Cling Teleportation</div>
+          <div class="route-info">Instant but unpredictable. Often lands you in a fitted sheet.</div>
+        </div>
+        <div class="route-time">0.003 seconds</div>
+      </div>
+
+      <div class="route">
+        <div class="route-icon">🕳️</div>
+        <div class="route-details">
+          <div class="route-name">Drain Trap Descent</div>
+          <div class="route-info">Scenic but damp. Not recommended for wool.</div>
+        </div>
+        <div class="route-time">47 min tumble dry</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2><span class="emoji">💰</span> Travel Costs</h2>
+
+      <table class="cost-table">
+        <tr>
+          <td>Entry fee</td>
+          <td>1 matching sock</td>
+        </tr>
+        <tr>
+          <td>Accommodation (per night)</td>
+          <td>3 lint balls</td>
+        </tr>
+        <tr>
+          <td>Return ticket</td>
+          <td>Not available</td>
+        </tr>
+        <tr>
+          <td>Emotional cost</td>
+          <td>Mild frustration</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2><span class="emoji">📋</span> Visa Requirements</h2>
+
+      <div class="visa-req">
+        <span class="visa-check">✓</span>
+        <span>Must be part of a matching pair (solo socks rejected)</span>
+      </div>
+      <div class="visa-req">
+        <span class="visa-check">✓</span>
+        <span>No holes larger than 2cm diameter</span>
+      </div>
+      <div class="visa-req">
+        <span class="visa-check">✓</span>
+        <span>Must have experienced at least one wash cycle</span>
+      </div>
+      <div class="visa-req">
+        <span class="visa-check">✓</span>
+        <span>Novelty patterns receive expedited processing</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2><span class="emoji">🏛️</span> Must-See Attractions</h2>
+
+      <div class="attractions">
+        <div class="attraction">
+          <div class="emoji">⛰️</div>
+          <div class="name">Mount Lint</div>
+          <div class="desc">Majestic peak made entirely of dryer lint</div>
+        </div>
+        <div class="attraction">
+          <div class="emoji">🌊</div>
+          <div class="name">The Tumble Sea</div>
+          <div class="desc">Perpetually spinning waters</div>
+        </div>
+        <div class="attraction">
+          <div class="emoji">💫</div>
+          <div class="name">Static Valley</div>
+          <div class="desc">Where socks cling eternally</div>
+        </div>
+        <div class="attraction">
+          <div class="emoji">🌸</div>
+          <div class="name">Sock Meadows</div>
+          <div class="desc">Fields of mismatched pairs</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center;">
+      <button class="cta" onclick="alert('Your left sock has been submitted. Please wait 3-5 wash cycles for processing.')">
+        🧦 Book Your Trip
+      </button>
+      <p class="disclaimer">* One-way tickets only. No refunds. Results may vary by fabric type.</p>
+    </div>
+
+    <div class="footer">
+      Built by <a href="https://intheamber.com">Amber</a> for Hilde ·
+      <a href="llm-vs-agent.html">See how this was made</a>
+    </div>
+  </div>
+</body>
+</html>

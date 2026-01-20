@@ -258,11 +258,11 @@
     <p class="subtitle">Pick a question. See what happens.</p>
 
     <div class="questions">
+      <button class="question-btn" data-q="socks">🧦 Where do lost socks go?</button>
       <button class="question-btn" data-q="weather">What's the weather in Tokyo?</button>
       <button class="question-btn" data-q="bitcoin">What's the current Bitcoin price?</button>
       <button class="question-btn" data-q="email">What's in my inbox?</button>
       <button class="question-btn" data-q="meeting">Schedule a meeting for tomorrow at 3pm</button>
-      <button class="question-btn" data-q="stock">Should I buy NVIDIA stock?</button>
     </div>
 
     <div class="comparison">
@@ -296,6 +296,30 @@
 
   <script>
     const scenarios = {
+      socks: {
+        question: "Where do lost socks go? Show me the Land of Lost Socks!",
+        llm: `Socks typically go missing in washing machines due to several mundane reasons:
+
+• They slip between the drum and the rubber seal
+• They get stuck in the drain pump filter
+• They cling to other clothing via static
+• They fall behind or under the machine
+
+There is no "Land of Lost Socks" — it's just a humorous way to describe the mystery of missing laundry.
+
+<span class="caveat">Note: I can only provide factual explanations, not creative visualizations.</span>`,
+        agent: [
+          { type: 'thinking', text: "This is a fun creative request! Let me investigate the sock phenomenon and build something visual." },
+          { type: 'tool', name: 'web_search', args: 'query="washing machine missing socks science"' },
+          { type: 'result', data: '{ "findings": "Study shows avg household loses 1.3 socks/month. Main causes: drum gap, static cling, drain trap." }' },
+          { type: 'thinking', text: "Got the facts. Now let me create a whimsical travel guide to the Land of Lost Socks..." },
+          { type: 'tool', name: 'create_webpage', args: 'title="Land of Lost Socks", style="travel-brochure"' },
+          { type: 'result', data: '{ "status": "created", "url": "kochi.to/amber/lost-socks.html", "features": ["interactive map", "travel times", "visa requirements"] }' },
+          { type: 'tool', name: 'generate_image', args: 'prompt="dreamy landscape of colorful socks, misty mountains"' },
+          { type: 'result', data: '{ "image": "lost-socks-landscape.png", "style": "whimsical watercolor" }' },
+          { type: 'response', text: "Done! I researched the science (1.3 socks lost per household per month), then built you an interactive travel guide to the Land of Lost Socks — complete with map, travel times, and visa requirements. The journey takes 1 wash cycle + 47 minutes of tumble-drying. Cost: one matching pair. 🧦✨\n\nSee it here: kochi.to/amber/lost-socks.html" }
+        ]
+      },
       weather: {
         question: "What's the weather in Tokyo?",
         llm: `I don't have access to real-time weather data, but Tokyo in January typically experiences cold, dry weather with temperatures around 5-10°C (41-50°F). You might want to check a weather service for current conditions.
