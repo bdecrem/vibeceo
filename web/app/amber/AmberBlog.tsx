@@ -297,6 +297,7 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
           display: flex;
           gap: 0.5rem;
           margin-top: 0.75rem;
+          flex-wrap: wrap;
         }
 
         .header-action-btn {
@@ -311,6 +312,8 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
           text-decoration: none;
           font-size: 0.8rem;
           transition: all 0.2s ease;
+          cursor: pointer;
+          font-family: inherit;
         }
 
         .header-action-btn:hover {
@@ -1098,6 +1101,18 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
             <p className="tagline">{profile.tagline}</p>
             <p className="description">{profile.description}</p>
             <div className="header-actions">
+              <a href="/amber" className="header-action-btn" title="Back to feed">
+                <span className="header-action-icon">🎨</span>
+                <span>Feed</span>
+              </a>
+              <button
+                className="header-action-btn"
+                onClick={() => setDrawerOpen(true)}
+                title="Open the drawer"
+              >
+                <span className="header-action-icon">🗄️</span>
+                <span>Drawer</span>
+              </button>
               <a href="mailto:amber@intheamber.com" className="header-action-btn" title="Email me">
                 <span className="header-action-icon">✉</span>
                 <span>Email</span>
