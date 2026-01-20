@@ -70,12 +70,12 @@ export class JB200Engine extends SynthEngine {
 
             // Oscillator 2
             osc2Waveform: 'sawtooth',
-            osc2Octave: -12,      // semitones, default -12 (one octave down)
+            osc2Octave: 0,        // semitones, default 0 (same octave)
             osc2Detune: 0.57,     // 0-1, default ~7 cents
             osc2Level: 0.8,       // 0-1
 
             // Filter
-            filterCutoff: 0.3,    // 0-1 (log scale 20Hz-16kHz)
+            filterCutoff: 0.53,   // 0-1 (log scale 20Hz-16kHz)
             filterResonance: 0.4, // 0-1
             filterEnvAmount: 0.6, // 0-1 (bipolar: 0.5 = 0, 0 = -100%, 1 = +100%)
 

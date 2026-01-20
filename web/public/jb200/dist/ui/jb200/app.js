@@ -24,10 +24,10 @@ const DEFAULTS = {
     osc1Octave: 0,
     osc1Detune: 0.5,
     osc1Level: 1.0,
-    osc2Octave: -12,
+    osc2Octave: 0,
     osc2Detune: 0.57,
     osc2Level: 0.8,
-    filterCutoff: 0.3,
+    filterCutoff: 0.53,
     filterResonance: 0.4,
     filterEnvAmount: 0.6,
     filterAttack: 0,
@@ -627,7 +627,7 @@ function exportKit() {
             osc1Detune: Math.round((params.osc1Detune - 0.5) * 100), // 0-1 → -50 to +50
             osc1Level: Math.round(params.osc1Level * 100),
             osc2Waveform: engine.getParameter('osc2Waveform') || 'sawtooth',
-            osc2Octave: params.osc2Octave ?? -12,
+            osc2Octave: params.osc2Octave ?? 0,
             osc2Detune: Math.round((params.osc2Detune - 0.5) * 100),
             osc2Level: Math.round(params.osc2Level * 100),
             filterCutoff: Math.round(20 * Math.pow(800, params.filterCutoff)), // 0-1 → Hz
