@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JB01 Drum Machine</title>
+    <meta name="description" content="8-voice drum machine with knob controls">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="drum-machine">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-text">JB01</span>
+                <span class="logo-sub">DRUM MACHINE</span>
+            </div>
+            <div class="header-controls">
+                <button class="icon-btn" id="help-btn" title="Help">?</button>
+                <button class="icon-btn" id="share-btn" title="Share">+</button>
+            </div>
+        </header>
+
+        <!-- Voice Mixer Section -->
+        <section class="voices-section">
+            <div class="voices-grid">
+                <!-- KICK -->
+                <div class="voice-channel" data-voice="kick">
+                    <div class="voice-header">
+                        <span class="voice-name">KICK</span>
+                        <button class="mute-btn" data-voice="kick">M</button>
+                    </div>
+                    <div class="voice-knobs">
+                        <div class="knob-group">
+                            <div class="knob" data-param="level" data-voice="kick" data-min="-60" data-max="6" data-default="0"></div>
+                            <label>LEVEL</label>
+                            <span class="knob-value">0dB</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="tune" data-voice="kick" data-min="-12" data-max="12" data-default="0"></div>
+                            <label>TUNE</label>
+                            <span class="knob-value">0</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="decay" data-voice="kick" data-min="0" data-max="100" data-default="80"></div>
+                            <label>DECAY</label>
+                            <span class="knob-value">80</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="attack" data-voice="kick" data-min="0" data-max="100" data-default="50"></div>
+                            <label>ATTACK</label>
+                            <span class="knob-value">50</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="sweep" data-voice="kick" data-min="0" data-max="100" data-default="100"></div>
+                            <label>SWEEP</label>
+                            <span class="knob-value">100</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SNARE -->
+                <div class="voice-channel" data-voice="snare">
+                    <div class="voice-header">
+                        <span class="voice-name">SNARE</span>
+                        <button class="mute-btn" data-voice="snare">M</button>
+                    </div>
+                    <div class="voice-knobs">
+                        <div class="knob-group">
+                            <div class="knob" data-param="level" data-voice="snare" data-min="-60" data-max="6" data-default="0"></div>
+                            <label>LEVEL</label>
+                            <span class="knob-value">0dB</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="tune" data-voice="snare" data-min="-12" data-max="12" data-default="0"></div>
+                            <label>TUNE</label>
+                            <span class="knob-value">0</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="decay" data-voice="snare" data-min="0" data-max="100" data-default="50"></div>
+                            <label>DECAY</label>
+                            <span class="knob-value">50</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="tone" data-voice="snare" data-min="0" data-max="100" data-default="50"></div>
+                            <label>TONE</label>
+                            <span class="knob-value">50</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="snappy" data-voice="snare" data-min="0" data-max="100" data-default="50"></div>
+                            <label>SNAPPY</label>
+                            <span class="knob-value">50</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CLAP -->
+                <div class="voice-channel" data-voice="clap">
+                    <div class="voice-header">
+                        <span class="voice-name">CLAP</span>
+                        <button class="mute-btn" data-voice="clap">M</button>
+                    </div>
+                    <div class="voice-knobs">
+                        <div class="knob-group">
+                            <div class="knob" data-param="level" data-voice="clap" data-min="-60" data-max="6" data-default="0"></div>
+                            <label>LEVEL</label>
+                            <span class="knob-value">0dB</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="decay" data-voice="clap" data-min="0" data-max="100" data-default="50"></div>
+                            <label>DECAY</label>
+                            <span class="knob-value">50</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="tone" data-voice="clap" data-min="0" data-max="100" data-default="50"></div>
+                            <label>TONE</label>
+                            <span class="knob-value">50</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CLOSED HI-HAT -->
+                <div class="voice-channel" data-voice="ch">
+                    <div class="voice-header">
+                        <span class="voice-name">C.HAT</span>
+                        <button class="mute-btn" data-voice="ch">M</button>
+                    </div>
+                    <div class="voice-knobs">
+                        <div class="knob-group">
+                            <div class="knob" data-param="level" data-voice="ch" data-min="-60" data-max="6" data-default="0"></div>
+                            <label>LEVEL</label>
+                            <span class="knob-value">0dB</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="tune" data-voice="ch" data-min="-12" data-max="12" data-default="0"></div>
+                            <label>TUNE</label>
+                            <span class="knob-value">0</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="decay" data-voice="ch" data-min="0" data-max="100" data-default="20"></div>
+                            <label>DECAY</label>
+                            <span class="knob-value">20</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="tone" data-voice="ch" data-min="0" data-max="100" data-default="50"></div>
+                            <label>TONE</label>
+                            <span class="knob-value">50</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OPEN HI-HAT -->
+                <div class="voice-channel" data-voice="oh">
+                    <div class="voice-header">
+                        <span class="voice-name">O.HAT</span>
+                        <button class="mute-btn" data-voice="oh">M</button>
+                    </div>
+                    <div class="voice-knobs">
+                        <div class="knob-group">
+                            <div class="knob" data-param="level" data-voice="oh" data-min="-60" data-max="6" data-default="0"></div>
+                            <label>LEVEL</label>
+                            <span class="knob-value">0dB</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="tune" data-voice="oh" data-min="-12" data-max="12" data-default="0"></div>
+                            <label>TUNE</label>
+                            <span class="knob-value">0</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="decay" data-voice="oh" data-min="0" data-max="100" data-default="60"></div>
+                            <label>DECAY</label>
+                            <span class="knob-value">60</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="tone" data-voice="oh" data-min="0" data-max="100" data-default="50"></div>
+                            <label>TONE</label>
+                            <span class="knob-value">50</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PERC -->
+                <div class="voice-channel" data-voice="perc">
+                    <div class="voice-header">
+                        <span class="voice-name">PERC</span>
+                        <button class="mute-btn" data-voice="perc">M</button>
+                    </div>
+                    <div class="voice-knobs">
+                        <div class="knob-group">
+                            <div class="knob" data-param="level" data-voice="perc" data-min="-60" data-max="6" data-default="0"></div>
+                            <label>LEVEL</label>
+                            <span class="knob-value">0dB</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="tune" data-voice="perc" data-min="-12" data-max="12" data-default="0"></div>
+                            <label>TUNE</label>
+                            <span class="knob-value">0</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="decay" data-voice="perc" data-min="0" data-max="100" data-default="30"></div>
+                            <label>DECAY</label>
+                            <span class="knob-value">30</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TOM -->
+                <div class="voice-channel" data-voice="tom">
+                    <div class="voice-header">
+                        <span class="voice-name">TOM</span>
+                        <button class="mute-btn" data-voice="tom">M</button>
+                    </div>
+                    <div class="voice-knobs">
+                        <div class="knob-group">
+                            <div class="knob" data-param="level" data-voice="tom" data-min="-60" data-max="6" data-default="0"></div>
+                            <label>LEVEL</label>
+                            <span class="knob-value">0dB</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="tune" data-voice="tom" data-min="-12" data-max="12" data-default="0"></div>
+                            <label>TUNE</label>
+                            <span class="knob-value">0</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="decay" data-voice="tom" data-min="0" data-max="100" data-default="50"></div>
+                            <label>DECAY</label>
+                            <span class="knob-value">50</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CYMBAL -->
+                <div class="voice-channel" data-voice="cymbal">
+                    <div class="voice-header">
+                        <span class="voice-name">CYMBAL</span>
+                        <button class="mute-btn" data-voice="cymbal">M</button>
+                    </div>
+                    <div class="voice-knobs">
+                        <div class="knob-group">
+                            <div class="knob" data-param="level" data-voice="cymbal" data-min="-60" data-max="6" data-default="0"></div>
+                            <label>LEVEL</label>
+                            <span class="knob-value">0dB</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="tune" data-voice="cymbal" data-min="-12" data-max="12" data-default="0"></div>
+                            <label>TUNE</label>
+                            <span class="knob-value">0</span>
+                        </div>
+                        <div class="knob-group">
+                            <div class="knob" data-param="decay" data-voice="cymbal" data-min="0" data-max="100" data-default="70"></div>
+                            <label>DECAY</label>
+                            <span class="knob-value">70</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sequencer Section -->
+        <section class="sequencer-section">
+            <div class="sequencer-header">
+                <h3>PATTERN</h3>
+                <div class="step-page-toggle">
+                    <button class="step-page-btn active" data-page="1">1-8</button>
+                    <button class="step-page-btn" data-page="2">9-16</button>
+                </div>
+            </div>
+            <div class="sequencer" id="sequencer">
+                <div class="seq-header-row">
+                    <div class="seq-label-spacer"></div>
+                    <div class="step-numbers" id="step-numbers"></div>
+                </div>
+                <!-- Voice rows rendered by JS -->
+            </div>
+        </section>
+
+        <!-- Transport -->
+        <section class="transport-section">
+            <div class="transport-left">
+                <label>BPM</label>
+                <input type="number" id="bpm-input" value="120" min="60" max="200">
+                <label>SWING</label>
+                <input type="range" id="swing-input" value="0" min="0" max="100">
+                <span id="swing-value">0%</span>
+            </div>
+            <button class="play-btn" id="play-btn">PLAY</button>
+            <div class="transport-right">
+                <button class="icon-btn export-icon" id="export-btn" title="Export WAV">WAV</button>
+            </div>
+        </section>
+
+        <!-- Status -->
+        <div class="status" id="status">Ready</div>
+
+        <!-- Keyboard Hints -->
+        <div class="keyboard-hints">
+            <kbd>Space</kbd> Play/Stop
+            <kbd>1</kbd>-<kbd>8</kbd> Trigger voices
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal" id="help-modal">
+        <div class="modal-content">
+            <button class="modal-close" id="help-close">&times;</button>
+            <h2>JB01 Drum Machine</h2>
+            <h3>Voice Controls</h3>
+            <p>Each voice has adjustable knob parameters:</p>
+            <ul>
+                <li><strong>LEVEL</strong> - Output volume (-60dB to +6dB)</li>
+                <li><strong>TUNE</strong> - Pitch adjustment (-12 to +12 semitones)</li>
+                <li><strong>DECAY</strong> - Sound length (0-100)</li>
+                <li><strong>TONE</strong> - Brightness (0-100)</li>
+                <li><strong>ATTACK</strong> - Kick click intensity (0-100)</li>
+                <li><strong>SWEEP</strong> - Kick pitch envelope (0-100)</li>
+                <li><strong>SNAPPY</strong> - Snare noise vs body (0-100)</li>
+            </ul>
+            <h3>Pattern Sequencer</h3>
+            <p>Click steps to toggle hits. Each row is a voice, each column is a step (1-16).</p>
+            <h3>Tips</h3>
+            <ul>
+                <li>Drag knobs up/down to adjust values</li>
+                <li>Double-click knob to reset to default</li>
+                <li>Click M button to mute a voice</li>
+                <li>Mobile: use page buttons for steps 9-16</li>
+            </ul>
+            <div class="modal-footer">
+                Built with Jambot
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
