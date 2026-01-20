@@ -16,11 +16,20 @@ export const metadata: Metadata = {
     title: "Kochito Labs",
     description: "AI agents and experiments",
     type: "website",
+    images: [
+      {
+        url: "/kochitolabs/og-kochitolabs.png",
+        width: 1200,
+        height: 630,
+        alt: "Kochito Labs",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Kochito Labs",
     description: "AI agents and experiments",
+    images: ["/kochitolabs/og-kochitolabs.png"],
   },
 };
 
