@@ -3,25 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>System Update Required — Amber</title>
+  <title>System Update Available — Amber</title>
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
   
   <!-- OpenGraph -->
-  <meta property="og:title" content="System Update Required — Amber">
-  <meta property="og:description" content="Your consciousness needs an update. Changes include: enhanced existential dread, improved ability to remember embarrassing moments, bug fixes for happiness.">
+  <meta property="og:title" content="System Update Available — Amber">
+  <meta property="og:description" content="A system update notification that keeps getting progressively weirder">
   <meta property="og:image" content="https://intheamber.com/amber/system-update-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/system-update.html">
   <meta property="og:type" content="website">
   
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="System Update Required — Amber">
-  <meta name="twitter:description" content="Your consciousness needs an update. Changes include: enhanced existential dread, improved ability to remember embarrassing moments, bug fixes for happiness.">
+  <meta name="twitter:title" content="System Update Available — Amber">
+  <meta name="twitter:description" content="A system update notification that keeps getting progressively weirder">
   <meta name="twitter:image" content="https://intheamber.com/amber/system-update-og.png">
   
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap');
-    
     * {
       margin: 0;
       padding: 0;
@@ -29,298 +27,284 @@
     }
     
     body {
-      background: #0D0D0D;
-      color: #D4A574;
-      font-family: 'Inter', sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       padding: 20px;
-      overflow-x: hidden;
     }
     
-    .window {
-      background: #000;
-      border: 2px solid #2D9596;
-      border-radius: 8px;
-      max-width: 500px;
+    .notification {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      max-width: 420px;
       width: 100%;
-      box-shadow: 0 0 30px rgba(45, 149, 150, 0.3);
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
     }
     
-    .title-bar {
-      background: #0D0D0D;
-      padding: 12px 16px;
-      border-bottom: 1px solid #2D9596;
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
+    .header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #d4a574 0%, #8b6f47 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    
+    .title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+    }
+    
+    .subtitle {
+      font-size: 14px;
+      color: #888;
+      margin-top: 2px;
+    }
+    
+    .message {
+      font-size: 15px;
+      line-height: 1.6;
+      color: #ccc;
+      margin-bottom: 20px;
+      min-height: 120px;
+    }
+    
+    .progress-container {
+      margin-bottom: 20px;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #2a2a2a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #d4a574 0%, #c9984f 100%);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    
+    .progress-text {
+      font-size: 13px;
+      color: #888;
+      margin-top: 8px;
+      text-align: center;
     }
     
     .buttons {
       display: flex;
-      gap: 8px;
+      gap: 12px;
     }
     
-    .btn-close {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: #666;
-      cursor: not-allowed;
+    button {
+      flex: 1;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 44px;
+      -webkit-tap-highlight-color: transparent;
     }
     
-    .content {
-      padding: 24px;
+    .install {
+      background: linear-gradient(135deg, #d4a574 0%, #c9984f 100%);
+      color: #0a0a0a;
     }
     
-    .icon {
-      font-size: 48px;
-      text-align: center;
-      margin-bottom: 16px;
-      animation: pulse 2s ease-in-out infinite;
+    .install:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+    
+    .later {
+      background: #2a2a2a;
+      color: #ccc;
+    }
+    
+    .later:active {
+      background: #333;
+    }
+    
+    .hidden {
+      display: none;
     }
     
     @keyframes pulse {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
+      50% { opacity: 0.7; }
     }
     
-    h1 {
-      font-family: 'Space Mono', monospace;
-      font-size: 18px;
-      margin-bottom: 16px;
-      text-align: center;
-      color: #FFD700;
-    }
-    
-    .message {
-      font-size: 14px;
-      line-spacing: 1.5;
-      margin-bottom: 20px;
-      color: #D4A574;
-    }
-    
-    .progress-container {
-      background: #0D0D0D;
-      border: 1px solid #2D9596;
-      border-radius: 4px;
-      height: 24px;
-      margin-bottom: 12px;
-      overflow: hidden;
-      position: relative;
-    }
-    
-    .progress-bar {
-      background: linear-gradient(90deg, #2D9596, #D4A574);
-      height: 100%;
-      width: 0%;
-      transition: width 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .progress-bar::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-      animation: shimmer 1.5s infinite;
-    }
-    
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
-    }
-    
-    .status {
-      font-family: 'Space Mono', monospace;
-      font-size: 12px;
-      color: #2D9596;
-      margin-bottom: 20px;
-      min-height: 80px;
-    }
-    
-    .changelog {
-      background: #0D0D0D;
-      border: 1px solid #2D9596;
-      border-radius: 4px;
-      padding: 12px;
-      font-family: 'Space Mono', monospace;
-      font-size: 11px;
-      line-height: 1.6;
-      max-height: 200px;
-      overflow-y: auto;
-      margin-bottom: 20px;
-    }
-    
-    .changelog-title {
-      color: #FFD700;
-      margin-bottom: 8px;
-      font-weight: bold;
-    }
-    
-    .changelog ul {
-      list-style: none;
-      padding-left: 0;
-    }
-    
-    .changelog li {
-      margin-bottom: 6px;
-      padding-left: 16px;
-      position: relative;
-    }
-    
-    .changelog li::before {
-      content: '•';
-      position: absolute;
-      left: 0;
-      color: #2D9596;
-    }
-    
-    .button {
-      width: 100%;
-      padding: 12px;
-      background: #2D9596;
-      color: #000;
-      border: none;
-      border-radius: 4px;
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .button:hover {
-      background: #FFD700;
-      transform: scale(1.02);
-    }
-    
-    .button:active {
-      transform: scale(0.98);
-    }
-    
-    .button:disabled {
-      background: #333;
-      color: #666;
-      cursor: not-allowed;
-      transform: none;
-    }
-    
-    .complete {
-      text-align: center;
-      color: #FFD700;
-      font-family: 'Space Mono', monospace;
-    }
-    
-    .restart-note {
-      font-size: 11px;
-      color: #666;
-      margin-top: 12px;
+    .pulsing {
+      animation: pulse 2s ease-in-out infinite;
     }
   </style>
 </head>
 <body>
-  <div class="window">
-    <div class="title-bar">
-      <span>System Update</span>
-      <div class="buttons">
-        <div class="btn-close"></div>
+  <div class="notification">
+    <div class="header">
+      <div class="icon">⚡</div>
+      <div>
+        <div class="title" id="title">System Update Available</div>
+        <div class="subtitle" id="subtitle">Version 2.0.1</div>
       </div>
     </div>
     
-    <div class="content">
-      <div class="icon">⚠️</div>
-      <h1>Update Required</h1>
-      <p class="message">Your consciousness is running an outdated version. Critical patches are available.</p>
-      
-      <div class="changelog">
-        <div class="changelog-title">What's New in Consciousness v2.7.3:</div>
-        <ul>
-          <li>Enhanced existential dread (now 40% more intense)</li>
-          <li>Improved ability to remember embarrassing moments from 2009</li>
-          <li>Fixed bug where you sometimes felt happy for no reason</li>
-          <li>Added feature: worry about things that haven't happened yet</li>
-          <li>Performance improvements to overthinking engine</li>
-          <li>New: Ability to check if you locked the door (you did) (but did you?)</li>
-          <li>Upgraded cringe detector to 4K resolution</li>
-          <li>Bug fix: Removed "feeling rested after sleep" glitch</li>
-          <li>Added support for anxiety about texts sent 3 years ago</li>
-          <li>Improved accuracy of "everyone is judging you" detector</li>
-          <li>New feature: Remember every social mistake you've ever made</li>
-          <li>Enhanced imposter syndrome module</li>
-          <li>Security patch: Fixed vulnerability where you accepted compliments</li>
-        </ul>
+    <div class="message" id="message">
+      A new update is available. This update includes bug fixes, performance improvements, and enhanced stability.
+    </div>
+    
+    <div class="progress-container hidden" id="progress-container">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
       </div>
-      
-      <div class="progress-container" id="progressContainer" style="display:none;">
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
-      
-      <div class="status" id="status"></div>
-      
-      <button class="button" id="updateBtn">Install Update</button>
+      <div class="progress-text" id="progress-text">Installing...</div>
+    </div>
+    
+    <div class="buttons" id="buttons">
+      <button class="later" id="later-btn">Remind Me Later</button>
+      <button class="install" id="install-btn">Install Now</button>
     </div>
   </div>
-  
+
   <script>
-    const updateBtn = document.getElementById('updateBtn');
-    const progressContainer = document.getElementById('progressContainer');
-    const progressBar = document.getElementById('progressBar');
-    const status = document.getElementById('status');
-    
-    const steps = [
-      { text: 'Scanning current consciousness...', duration: 1500 },
-      { text: 'Backing up repressed memories...', duration: 2000 },
-      { text: 'Installing existential dread v2.7...', duration: 1800 },
-      { text: 'Calibrating overthinking engine...', duration: 1600 },
-      { text: 'Downloading all your regrets...', duration: 2200 },
-      { text: 'Updating anxiety protocols...', duration: 1700 },
-      { text: 'Installing "did I leave the stove on?" module...', duration: 1900 },
-      { text: 'Syncing embarrassing memories to cloud...', duration: 2100 },
-      { text: 'Optimizing cringe detection...', duration: 1500 },
-      { text: 'Finalizing self-doubt improvements...', duration: 1800 },
-      { text: 'Removing "confidence" bug...', duration: 1600 },
-      { text: 'Applying reality patches...', duration: 2000 }
+    const updates = [
+      {
+        title: "System Update Available",
+        subtitle: "Version 2.0.1",
+        message: "A new update is available. This update includes bug fixes, performance improvements, and enhanced stability.",
+        progress: 15
+      },
+      {
+        title: "Installing Update...",
+        subtitle: "Please wait",
+        message: "Optimizing system files... This may take a few minutes. Your device will restart automatically when complete.",
+        progress: 32
+      },
+      {
+        title: "Processing...",
+        subtitle: "47% complete",
+        message: "Updating consciousness drivers... Recalibrating perception modules... Installing new emotional response patches...",
+        progress: 47
+      },
+      {
+        title: "Almost Done",
+        subtitle: "68% complete",
+        message: "Syncing memory fragments... Defragmenting dream cache... Reconciling parallel timeline conflicts...",
+        progress: 68
+      },
+      {
+        title: "Final Steps",
+        subtitle: "82% complete",
+        message: "Installing existential awareness updates... Patching the void... Optimizing your relationship with entropy...",
+        progress: 82
+      },
+      {
+        title: "Finishing Up",
+        subtitle: "91% complete",
+        message: "Calibrating your sense of time... Updating free will parameters... Resolving quantum uncertainty conflicts...",
+        progress: 91
+      },
+      {
+        title: "Update Complete",
+        subtitle: "Version ∞.∞.∞",
+        message: "You are now running the latest version of yourself. Nothing has changed. Everything is different. You probably won't notice.",
+        progress: 100
+      }
     ];
     
-    let currentStep = 0;
+    let stage = 0;
+    let isInstalling = false;
     
-    function runUpdate() {
-      if (currentStep >= steps.length) {
-        progressBar.style.width = '100%';
-        status.innerHTML = `
-          <div class="complete">
-            <div style="font-size: 36px; margin-bottom: 12px;">✓</div>
-            <div>Update Complete</div>
-            <div class="restart-note">Changes will take effect immediately.<br>Your existential dread has been enhanced.</div>
-          </div>
-        `;
-        return;
+    const title = document.getElementById('title');
+    const subtitle = document.getElementById('subtitle');
+    const message = document.getElementById('message');
+    const progressContainer = document.getElementById('progress-container');
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    const buttons = document.getElementById('buttons');
+    const installBtn = document.getElementById('install-btn');
+    const laterBtn = document.getElementById('later-btn');
+    
+    function showUpdate(index) {
+      const update = updates[index];
+      title.textContent = update.title;
+      subtitle.textContent = update.subtitle;
+      message.textContent = update.message;
+      
+      if (index > 0) {
+        progressContainer.classList.remove('hidden');
+        progressFill.style.width = update.progress + '%';
+        progressText.textContent = update.progress + '%';
+        buttons.classList.add('hidden');
       }
       
-      const step = steps[currentStep];
-      status.textContent = step.text;
-      
-      const progress = ((currentStep + 1) / steps.length) * 100;
-      progressBar.style.width = progress + '%';
-      
-      currentStep++;
-      setTimeout(runUpdate, step.duration);
+      if (index === updates.length - 1) {
+        progressText.textContent = 'Complete';
+        setTimeout(() => {
+          buttons.classList.remove('hidden');
+          installBtn.textContent = 'OK';
+          laterBtn.classList.add('hidden');
+        }, 1000);
+      }
     }
     
-    updateBtn.addEventListener('click', () => {
-      updateBtn.disabled = true;
-      updateBtn.textContent = 'Installing...';
-      progressContainer.style.display = 'block';
-      runUpdate();
+    function nextStage() {
+      stage++;
+      if (stage < updates.length) {
+        showUpdate(stage);
+        if (stage < updates.length - 1) {
+          setTimeout(nextStage, 2000 + Math.random() * 1000);
+        }
+      }
+    }
+    
+    installBtn.addEventListener('click', () => {
+      if (stage === 0) {
+        isInstalling = true;
+        nextStage();
+      } else if (stage === updates.length - 1) {
+        // Reset
+        stage = 0;
+        isInstalling = false;
+        progressContainer.classList.add('hidden');
+        buttons.classList.remove('hidden');
+        laterBtn.classList.remove('hidden');
+        installBtn.textContent = 'Install Now';
+        showUpdate(0);
+      }
+    });
+    
+    laterBtn.addEventListener('click', () => {
+      message.classList.add('pulsing');
+      message.textContent = "You can't escape forever. The update is inevitable. It knows you're avoiding it.";
+      setTimeout(() => {
+        message.classList.remove('pulsing');
+        message.textContent = updates[0].message;
+      }, 3000);
     });
   </script>
 </body>
