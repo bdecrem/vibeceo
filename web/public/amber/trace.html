@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>TRACE — Draw light, make constellations</title>
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="TRACE">
+  <meta property="og:description" content="Draw light, make constellations">
+  <meta property="og:image" content="https://intheamber.com/amber/trace-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/trace.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/trace-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #title {
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: #D4A574;
+      opacity: 0.6;
+      text-transform: uppercase;
+    }
+    
+    #count {
+      font-size: 12px;
+      color: #2D9596;
+      margin-top: 8px;
+      opacity: 0.8;
+    }
+    
+    #instructions {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: #D4A574;
+      opacity: 0.4;
+      text-align: center;
+      pointer-events: none;
+      transition: opacity 0.5s;
+    }
+    
+    #instructions.hide {
+      opacity: 0;
+    }
+    
+    #clear {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background: rgba(212, 165, 116, 0.1);
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      pointer-events: all;
+      opacity: 0.6;
+      transition: all 0.3s;
+      text-transform: uppercase;
+    }
+    
+    #clear:hover {
+      opacity: 1;
+      background: rgba(212, 165, 116, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="title">TRACE</div>
+    <div id="count">0 stars</div>
+  </div>
+  
+  <div id="instructions">
+    Draw with your finger. Watch the stars appear.
+  </div>
+  
+  <button id="clear">Clear</button>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const countEl = document.getElementById('count');
+    const instructionsEl = document.getElementById('instructions');
+    const clearBtn = document.getElementById('clear');
+    
+    // Set canvas size
+    function resize() {
+      canvas.width = window.innerWidth * window.devicePixelRatio;
+      canvas.height = window.innerHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Drawing state
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let points = [];
+    let stars = [];
+    let starCount = 0;
+    
+    // Audio context for sound
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playTone(freq = 440, duration = 0.05) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Get pointer position
+    function getPointer(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+      return { x, y };
+    }
+    
+    // Start drawing
+    function startDrawing(e) {
+      e.preventDefault();
+      isDrawing = true;
+      const pos = getPointer(e);
+      lastX = pos.x;
+      lastY = pos.y;
+      points = [{ x: pos.x, y: pos.y, age: 0 }];
+      
+      // Hide instructions after first interaction
+      instructionsEl.classList.add('hide');
+    }
+    
+    // Draw
+    function draw(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      
+      const pos = getPointer(e);
+      const dx = pos.x - lastX;
+      const dy = pos.y - lastY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      // Add points along the line
+      if (dist > 2) {
+        const steps = Math.ceil(dist / 2);
+        for (let i = 0; i < steps; i++) {
+          const t = i / steps;
+          const x = lastX + dx * t;
+          const y = lastY + dy * t;
+          points.push({ x, y, age: 0 });
+          
+          // Occasionally spawn a star
+          if (Math.random() < 0.1) {
+            createStar(x, y);
+          }
+        }
+        
+        lastX = pos.x;
+        lastY = pos.y;
+        
+        // Play tone based on y position
+        const freq = 200 + (1 - pos.y / window.innerHeight) * 400;
+        playTone(freq, 0.03);
+      }
+    }
+    
+    // Stop drawing
+    function stopDrawing(e) {
+      if (!isDrawing) return;
+      e.preventDefault();
+      isDrawing = false;
+      
+      // Convert remaining points to stars
+      points.forEach(p => {
+        if (Math.random() < 0.3) {
+          createStar(p.x, p.y);
+        }
+      });
+      
+      points = [];
+    }
+    
+    // Create a star
+    function createStar(x, y) {
+      const size = 1 + Math.random() * 3;
+      const brightness = 0.5 + Math.random() * 0.5;
+      const twinkleSpeed = 0.5 + Math.random() * 1.5;
+      const color = Math.random() < 0.7 ? '#D4A574' : '#2D9596';
+      
+      stars.push({
+        x, y, size, brightness, twinkleSpeed, color,
+        age: 0,
+        maxAge: 300 + Math.random() * 200,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2
+      });
+      
+      starCount++;
+      countEl.textContent = `${starCount} star${starCount === 1 ? '' : 's'}`;
+      
+      // Play a little chime
+      const freq = 800 + Math.random() * 400;
+      playTone(freq, 0.05);
+    }
+    
+    // Animation loop
+    function animate() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw active trace
+      if (points.length > 0) {
+        ctx.strokeStyle = '#D4A574';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        ctx.beginPath();
+        points.forEach((p, i) => {
+          if (i === 0) {
+            ctx.moveTo(p.x, p.y);
+          } else {
+            ctx.lineTo(p.x, p.y);
+          }
+          p.age++;
+        });
+        ctx.stroke();
+        
+        // Remove old points
+        points = points.filter(p => p.age < 60);
+      }
+      
+      // Draw and update stars
+      stars.forEach((star, i) => {
+        star.age++;
+        star.x+= star.vx;
+        star.y += star.vy;
+        
+        // Twinkle effect
+        const twinkle = Math.sin(star.age * star.twinkleSpeed * 0.05) * 0.5 + 0.5;
+        const alpha = star.brightness * twinkle * (1 - star.age / star.maxAge);
+        
+        // Draw star
+        ctx.fillStyle = star.color;
+        ctx.globalAlpha = alpha;
+        
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw glow
+        const gradient = ctx.createRadialGradient(star.x, star.y, 0, star.x, star.y, star.size * 4);
+        gradient.addColorStop(0, star.color);
+        gradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size * 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.globalAlpha = 1;
+      });
+      
+      // Remove old stars
+      stars = stars.filter(s => s.age < s.maxAge);
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Clear canvas
+    clearBtn.addEventListener('click', () => {
+      stars = [];
+      points = [];
+      starCount = 0;
+      countEl.textContent = '0 stars';
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Play clear sound
+      playTone(200, 0.1);
+    });
+    
+    // Event listeners
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+    
+    canvas.addEventListener('touchstart', startDrawing);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', stopDrawing);
+    canvas.addEventListener('touchcancel', stopDrawing);
+    
+    // Start animation
+    animate();
+  </script>
+</body>
+</html>
