@@ -280,9 +280,6 @@ export default function CSXPage() {
               </h1>
             </Link>
             <nav className="csx-header-nav">
-              <Link href="/csx/hiring" className="csx-header-link">
-                Hiring
-              </Link>
               <Link href="/cs" className="csx-header-link">
                 Link Feed →
               </Link>

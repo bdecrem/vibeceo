@@ -151,7 +151,7 @@ function ContactFormContent() {
         {error && <p className="csx-error">{error}</p>}
 
         <div className="csx-form-actions">
-          <Link href="/csx/hiring" className="csx-btn csx-btn-secondary">Cancel</Link>
+          <Link href="/csx/lf" className="csx-btn csx-btn-secondary">Cancel</Link>
           <button type="submit" className="csx-btn" disabled={submitting}>
             {submitting ? 'Sending...' : 'Apply'}
           </button>
