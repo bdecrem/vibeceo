@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM vs Agent</title>
+  <meta property="og:title" content="LLM vs Agent">
+  <meta property="og:description" content="See the difference between a simple LLM call and an agentic loop with tools">
+  <meta property="og:image" content="https://intheamber.com/amber/llm-vs-agent-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/llm-vs-agent.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/llm-vs-agent-og.png">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 400;
+      margin-bottom: 8px;
+      color: #FFD700;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 40px;
+    }
+
+    .questions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 40px;
+    }
+
+    .question-btn {
+      background: #1a1a18;
+      border: 1px solid #333;
+      color: #D4A574;
+      padding: 12px 18px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .question-btn:hover {
+      border-color: #D4A574;
+      background: #252520;
+    }
+
+    .question-btn.active {
+      border-color: #FFD700;
+      background: #2a2a25;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    @media (max-width: 700px) {
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: #111110;
+      border: 1px solid #222;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      background: #1a1a18;
+      padding: 12px 16px;
+      border-bottom: 1px solid #222;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-header .icon {
+      font-size: 1.1rem;
+    }
+
+    .panel-header .label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .llm-panel .panel-header {
+      color: #888;
+    }
+
+    .agent-panel .panel-header {
+      color: #2D9596;
+    }
+
+    .panel-body {
+      padding: 16px;
+      min-height: 300px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .empty-state {
+      color: #444;
+      font-style: italic;
+    }
+
+    .llm-response {
+      color: #999;
+    }
+
+    .llm-response .caveat {
+      color: #666;
+      font-style: italic;
+    }
+
+    /* Agent styling */
+    .agent-step {
+      margin-bottom: 16px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+    }
+
+    .agent-step.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .thinking {
+      color: #7B68EE;
+      font-style: italic;
+    }
+
+    .thinking::before {
+      content: '💭 ';
+    }
+
+    .tool-call {
+      background: #1a2a2a;
+      border-left: 3px solid #2D9596;
+      padding: 10px 14px;
+      margin: 8px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .tool-call .label {
+      color: #2D9596;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .tool-call code {
+      color: #4ECDC4;
+      font-family: inherit;
+    }
+
+    .tool-result {
+      background: #1a1a25;
+      border-left: 3px solid #6B5B95;
+      padding: 10px 14px;
+      margin: 8px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .tool-result .label {
+      color: #6B5B95;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .tool-result code {
+      color: #9B8DC4;
+      font-family: inherit;
+      font-size: 0.8rem;
+    }
+
+    .final-response {
+      color: #D4A574;
+      padding: 12px;
+      background: #1a1815;
+      border-radius: 4px;
+      border-left: 3px solid #D4A574;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: #D4A574;
+      margin-left: 2px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .reset-btn {
+      background: transparent;
+      border: 1px solid #333;
+      color: #666;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-top: 20px;
+      transition: all 0.2s;
+    }
+
+    .reset-btn:hover {
+      border-color: #666;
+      color: #999;
+    }
+
+    .footer {
+      margin-top: 60px;
+      text-align: center;
+      color: #444;
+      font-size: 0.75rem;
+    }
+
+    .footer a {
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>LLM vs Agent</h1>
+    <p class="subtitle">Pick a question. See what happens.</p>
+
+    <div class="questions">
+      <button class="question-btn" data-q="weather">What's the weather in Tokyo?</button>
+      <button class="question-btn" data-q="bitcoin">What's the current Bitcoin price?</button>
+      <button class="question-btn" data-q="email">What's in my inbox?</button>
+      <button class="question-btn" data-q="meeting">Schedule a meeting for tomorrow at 3pm</button>
+      <button class="question-btn" data-q="stock">Should I buy NVIDIA stock?</button>
+    </div>
+
+    <div class="comparison">
+      <div class="panel llm-panel">
+        <div class="panel-header">
+          <span class="icon">📝</span>
+          <span class="label">LLM (no tools)</span>
+        </div>
+        <div class="panel-body" id="llm-output">
+          <span class="empty-state">Select a question above...</span>
+        </div>
+      </div>
+
+      <div class="panel agent-panel">
+        <div class="panel-header">
+          <span class="icon">🔄</span>
+          <span class="label">Agent (with tools)</span>
+        </div>
+        <div class="panel-body" id="agent-output">
+          <span class="empty-state">Select a question above...</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="reset-btn" id="reset">Reset</button>
+
+    <div class="footer">
+      <a href="https://intheamber.com">amber</a> · an educational toy
+    </div>
+  </div>
+
+  <script>
+    const scenarios = {
+      weather: {
+        question: "What's the weather in Tokyo?",
+        llm: `I don't have access to real-time weather data, but Tokyo in January typically experiences cold, dry weather with temperatures around 5-10°C (41-50°F). You might want to check a weather service for current conditions.
+
+<span class="caveat">Note: I cannot access the internet or real-time data.</span>`,
+        agent: [
+          { type: 'thinking', text: "I need current weather data for Tokyo. Let me check the weather API." },
+          { type: 'tool', name: 'get_weather', args: 'location="Tokyo, Japan"' },
+          { type: 'result', data: '{ "temp": 8, "unit": "C", "condition": "Partly cloudy", "humidity": 45 }' },
+          { type: 'thinking', text: "Got the data. Now I can give an accurate answer." },
+          { type: 'response', text: "It's currently 8°C and partly cloudy in Tokyo, with 45% humidity." }
+        ]
+      },
+      bitcoin: {
+        question: "What's the current Bitcoin price?",
+        llm: `I don't have access to real-time market data. As of my knowledge cutoff, Bitcoin was trading around $40,000-$45,000, but cryptocurrency prices are highly volatile. Please check a financial website or exchange for the current price.
+
+<span class="caveat">Note: My training data has a cutoff date and I cannot access live prices.</span>`,
+        agent: [
+          { type: 'thinking', text: "I need to fetch the current Bitcoin price from a market data API." },
+          { type: 'tool', name: 'get_crypto_price', args: 'symbol="BTC"' },
+          { type: 'result', data: '{ "symbol": "BTC", "price": 104287.50, "change_24h": "+2.3%" }' },
+          { type: 'thinking', text: "Got the live price. I can now respond accurately." },
+          { type: 'response', text: "Bitcoin is currently trading at $104,287.50, up 2.3% in the last 24 hours." }
+        ]
+      },
+      email: {
+        question: "What's in my inbox?",
+        llm: `I don't have access to your email inbox or any personal accounts. To check your email, you'll need to:
+
+1. Open your email client or webmail
+2. Sign in with your credentials
+3. View your inbox
+
+<span class="caveat">Note: I cannot access external services or personal data.</span>`,
+        agent: [
+          { type: 'thinking', text: "I need to access the user's email. Let me authenticate and fetch recent messages." },
+          { type: 'tool', name: 'gmail_list', args: 'filter="is:unread", limit=5' },
+          { type: 'result', data: '[\n  { "from": "GitHub", "subject": "PR merged: Fix login bug" },\n  { "from": "Stripe", "subject": "Payment received: $49.00" },\n  { "from": "Mom", "subject": "Dinner Sunday?" }\n]' },
+          { type: 'thinking', text: "Found 3 unread emails. Let me summarize them." },
+          { type: 'response', text: "You have 3 unread emails:\n• GitHub — PR merged: Fix login bug\n• Stripe — Payment received: $49.00\n• Mom — Dinner Sunday?" }
+        ]
+      },
+      meeting: {
+        question: "Schedule a meeting for tomorrow at 3pm",
+        llm: `I'd be happy to help you schedule a meeting, but I don't have access to your calendar or the ability to create events. To schedule a meeting for tomorrow at 3pm, you can:
+
+1. Open Google Calendar, Outlook, or your preferred calendar app
+2. Click "Create" or the + button
+3. Set the time to 3:00 PM tomorrow
+4. Add attendees and details
+
+<span class="caveat">Note: I cannot interact with external calendars or services.</span>`,
+        agent: [
+          { type: 'thinking', text: "I need to create a calendar event. First, let me check what's on the calendar tomorrow at 3pm." },
+          { type: 'tool', name: 'calendar_check', args: 'date="tomorrow", time="15:00"' },
+          { type: 'result', data: '{ "available": true, "conflicts": [] }' },
+          { type: 'thinking', text: "The slot is free. Now I'll create the meeting." },
+          { type: 'tool', name: 'calendar_create', args: 'title="Meeting", time="tomorrow 15:00", duration=30' },
+          { type: 'result', data: '{ "status": "created", "id": "evt_8x7k2", "time": "Jan 21, 2026 3:00 PM" }' },
+          { type: 'response', text: "Done! I've scheduled a 30-minute meeting for tomorrow (Jan 21) at 3:00 PM. Want me to add any attendees?" }
+        ]
+      },
+      stock: {
+        question: "Should I buy NVIDIA stock?",
+        llm: `I can't provide personalized investment advice. NVIDIA has been a strong performer due to AI demand, but stock investments carry risks. Consider:
+
+• Your financial goals and risk tolerance
+• Portfolio diversification
+• Current valuation metrics
+• Market conditions
+
+<span class="caveat">Consult a licensed financial advisor for personalized advice. I cannot access real-time market data.</span>`,
+        agent: [
+          { type: 'thinking', text: "This requires current market data and analysis. Let me gather some information." },
+          { type: 'tool', name: 'get_stock_quote', args: 'symbol="NVDA"' },
+          { type: 'result', data: '{ "price": 138.42, "pe_ratio": 52.3, "52w_high": 152.89, "52w_low": 76.19 }' },
+          { type: 'tool', name: 'get_analyst_ratings', args: 'symbol="NVDA"' },
+          { type: 'result', data: '{ "buy": 38, "hold": 7, "sell": 2, "avg_target": 165.00 }' },
+          { type: 'thinking', text: "I have the data. NVDA is trading below its 52-week high, analysts are bullish. But I should caveat this isn't financial advice." },
+          { type: 'response', text: "NVDA is at $138.42 (down from 52-week high of $152.89). Analysts are bullish: 38 buy, 7 hold, 2 sell, with a $165 price target. P/E is 52.3 which is high but typical for growth stocks. That said — I can fetch data but I'm not a financial advisor. Your decision should factor in your risk tolerance and portfolio." }
+        ]
+      }
+    };
+
+    const llmOutput = document.getElementById('llm-output');
+    const agentOutput = document.getElementById('agent-output');
+    const buttons = document.querySelectorAll('.question-btn');
+    const resetBtn = document.getElementById('reset');
+
+    let isAnimating = false;
+
+    async function typeText(element, html, speed = 15) {
+      // Parse HTML and type it out
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+      const text = temp.textContent;
+
+      element.innerHTML = '';
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+
+      for (let i = 0; i < text.length; i++) {
+        element.textContent = text.substring(0, i + 1);
+        element.appendChild(cursor);
+        await sleep(speed);
+      }
+
+      // Replace with actual HTML
+      element.innerHTML = html;
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function animateAgent(steps) {
+      agentOutput.innerHTML = '';
+
+      for (const step of steps) {
+        const div = document.createElement('div');
+        div.className = 'agent-step';
+
+        if (step.type === 'thinking') {
+          div.innerHTML = `<div class="thinking">${step.text}</div>`;
+        } else if (step.type === 'tool') {
+          div.innerHTML = `
+            <div class="tool-call">
+              <div class="label">→ Tool Call</div>
+              <code>${step.name}(${step.args})</code>
+            </div>
+          `;
+        } else if (step.type === 'result') {
+          div.innerHTML = `
+            <div class="tool-result">
+              <div class="label">← Result</div>
+              <code>${step.data}</code>
+            </div>
+          `;
+        } else if (step.type === 'response') {
+          div.innerHTML = `<div class="final-response">${step.text}</div>`;
+        }
+
+        agentOutput.appendChild(div);
+        await sleep(100);
+        div.classList.add('visible');
+        await sleep(step.type === 'tool' || step.type === 'result' ? 800 : 600);
+      }
+    }
+
+    async function runScenario(key) {
+      if (isAnimating) return;
+      isAnimating = true;
+
+      const scenario = scenarios[key];
+
+      // Highlight active button
+      buttons.forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-q="${key}"]`).classList.add('active');
+
+      // Clear and animate
+      llmOutput.innerHTML = '<span class="cursor"></span>';
+      agentOutput.innerHTML = '<span class="empty-state">Waiting...</span>';
+
+      // Type LLM response
+      await typeText(llmOutput, `<div class="llm-response">${scenario.llm}</div>`, 12);
+
+      await sleep(500);
+
+      // Animate agent steps
+      await animateAgent(scenario.agent);
+
+      isAnimating = false;
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => runScenario(btn.dataset.q));
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (isAnimating) return;
+      buttons.forEach(b => b.classList.remove('active'));
+      llmOutput.innerHTML = '<span class="empty-state">Select a question above...</span>';
+      agentOutput.innerHTML = '<span class="empty-state">Select a question above...</span>';
+    });
+  </script>
+</body>
+</html>
