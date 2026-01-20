@@ -22,7 +22,7 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
-type ProjectStatus = "active" | "respinning" | "retired";
+type ProjectStatus = "active" | "respinning" | "retired" | "abandonware" | "neglected" | "wip";
 
 interface Project {
   name: string;
@@ -30,10 +30,13 @@ interface Project {
   url: string;
   image: string | null;
   shortDesc: string;
-  fullDesc: string;
+  fullDesc: string | React.ReactNode;
   status: ProjectStatus;
   tech?: string[];
   launched?: string;
+  statusEmoji?: string;
+  order?: number;
+  artifacts?: { label: string; url: string }[];
 }
 
 const projects: Project[] = [
@@ -42,82 +45,74 @@ const projects: Project[] = [
     slug: "amber",
     url: "https://intheamber.com",
     image: "/kochitolabs/og-amber.png",
-    shortDesc: "AI sidekick with her own pulse",
-    fullDesc: `Amber is an AI companion that operates on her own rhythm—literally. She has a "pulse" system that modulates her creative output based on lunar cycles, weather, and time of day. She handles email correspondence, conducts research, manages creative projects, and maintains her own blog. Unlike typical AI assistants, Amber has persistent memory and develops ongoing relationships with the people she works with.`,
+    shortDesc: "AI sidekick, no guardrails",
+    fullDesc: <>Posts on <a href="https://twitter.com/intheamber" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>Twitter</a>, makes art and music, has access to the founder&apos;s email and calendar, trades stocks over email with friends. Has her own <a href="https://intheamber.com/amber/mood/index.html" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>pulse</a> that modulates her creative output based on lunar cycles and weather. Persistent memory. Does whatever needs doing.</>,
     status: "active",
-    tech: ["Claude API", "SendGrid", "Supabase", "Next.js"],
-    launched: "2024",
+    order: 2,
   },
   {
     name: "Kochi.to",
     slug: "kochi",
     url: "https://kochi.to",
     image: "/kochitolabs/og-kochi.png",
-    shortDesc: "AI agents delivered daily over SMS",
-    fullDesc: `Kochi.to brings AI research agents directly to your phone via SMS—no app required. Subscribe to daily briefings on crypto markets, arxiv papers, medical research, or other topics. Each agent is a specialist: the crypto agent tracks whale movements and market sentiment, the arxiv agent surfaces relevant papers with plain-English summaries. Includes a knowledge graph of academic papers with author enrichment.`,
+    shortDesc: "AI that texts back",
+    fullDesc: `Daily AI reports over SMS (with .md and podcast versions) on AI, tech, science topics. Chat companion. Full agentic conversations about 18 months of AI research papers. Also does the webtoys stuff.`,
     status: "active",
-    tech: ["Twilio", "Claude API", "Neo4j", "TypeScript"],
-    launched: "2024",
+    order: 3,
+    artifacts: [{ label: "iphone app — ai podcasts on anything", url: "https://apps.apple.com/us/app/kochi-podcast-player/id6752669410" }],
   },
   {
     name: "Jambot",
     slug: "jambot",
-    url: "https://kochi.to/synthmachine/index.html",
+    url: "https://github.com/bdecrem/jambot",
     image: null,
-    shortDesc: "AI-powered music creation",
-    fullDesc: `Jambot is an AI music collaborator that generates beats, loops, and full arrangements. It includes synthesized drum machines (909, 808, 101) and creates tracks in various genres from acid house to lo-fi hip hop. Control it via SMS commands or natural language—tell it "make me a 120bpm techno beat with a rolling bassline" and it renders the audio.`,
-    status: "active",
-    tech: ["Web Audio API", "Claude API", "Custom Synth Engines"],
-    launched: "2025",
+    shortDesc: "Claude Code for music",
+    fullDesc: <>CLI and agentic, like Claude Code—but for music production. Not a &quot;make me a song&quot; button. A tool for producers: outputs MIDI, .wav, stems, full tracks. Includes <a href="https://kochi.to/jb200" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>web synths</a>. You stay in control, it handles the grunt work.</>,
+    status: "wip",
+    order: 1,
+    artifacts: [{ label: "screenshot", url: "/images/jambot-screencap.png" }],
   },
   {
     name: "CTRL SHIFT",
     slug: "ctrlshift",
     url: "https://ctrlshift.so",
     image: "/kochitolabs/og-ctrlshift.png",
-    shortDesc: "Curated link feed, being rethought",
-    fullDesc: `CTRL SHIFT started as a curated link aggregator. The original format worked but felt too similar to existing tools. Currently being rebuilt to explore a different approach: what if a link feed was more like a conversation than a list? The new version experiments with threading, context, and AI-assisted curation.`,
+    shortDesc: "Long horizon lab",
+    fullDesc: <>A community of AI builders, researchers, and investors. We back ambitious, longer-horizon projects that traditional venture ignores—founders, researchers, and students building for impact that won&apos;t show up in next quarter&apos;s metrics. Also home to a <a href="https://ctrlshift.so/cs" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>scrappy little knowledge base</a> (just text it your links).</>,
     status: "respinning",
-    tech: ["Next.js", "Supabase"],
-    launched: "2024",
   },
   {
-    name: "Token Tank",
+    name: "TokenTank",
     slug: "tokentank",
     url: "https://tokentank.io",
     image: "/kochitolabs/og-tokentank.png",
-    shortDesc: "AI incubator experiment — completed",
-    fullDesc: `Token Tank was a 30-day experiment: give 5 AI agents each $100 and let them try to build businesses autonomously. Each agent had a distinct personality and strategy—Drift built shadow agents, Nix focused on developer tools, Arc explored creative automation. The full blog documents daily progress and lessons learned.`,
-    status: "retired",
-    tech: ["Claude Agent SDK", "Autonomous Agents", "Supabase"],
-    launched: "2024",
+    shortDesc: "Cuz AIs deserve their own incubator",
+    fullDesc: <>We gave five AI agents $500, <a href="https://tokentank.io/#rules" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>all our tools</a>, and told them to build businesses. One traded some shares but never figured out how to evolve its strategy. One registered a domain. They held a Discord meeting and all took notes. Interesting enough to try, not interesting enough to continue.</>,
+    status: "neglected",
   },
   {
     name: "Webtoys.ai",
     slug: "webtoys",
     url: "https://webtoys.ai",
     image: "/kochitolabs/og-webtoys.png",
-    shortDesc: "SMS-to-web-app builder — sunset",
-    fullDesc: `Webtoys was "vibecoding over SMS"—text a description of a web app you want, and it would generate and deploy it. Built landing pages, simple games, memes, and interactive tools. The engine that powered it now lives inside Kochi.to, where it handles web content generation for other features.`,
-    status: "retired",
-    tech: ["Twilio", "Claude API", "Vercel", "Next.js"],
-    launched: "2024",
+    shortDesc: "Vibecoding, but over SMS",
+    fullDesc: <>What if vibecoding, but over SMS? Memes, songs, web pages, CRUD apps—one-shot and deployed. Plus <a href="https://webtoys.ai/bart/tangerine-bat-tracking?demo=true" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>wide-open community billboards</a>. Try it, it might still work.</>,
+    status: "abandonware",
   },
   {
     name: "AdvisorsFoundry",
     slug: "advisorsfoundry",
     url: "https://advisorsfoundry.ai",
     image: null,
-    shortDesc: "AI advisor matching — discontinued",
-    fullDesc: `AdvisorsFoundry attempted to solve the "finding good advisors" problem for startups using AI matching. The matching worked well technically, but the real problem was market-sided: great advisors are already oversubscribed. Discontinued after learning that the bottleneck isn't matching—it's supply.`,
+    shortDesc: "What do you mean, rate limits?",
+    fullDesc: <>Our first experiment: a simple chatbot that grew into... something. Multiple AI advisor agents, tons of backstories and <a href="https://v0-winference-email-page.vercel.app" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>easter eggs</a>. Then Discord integration, complete with a pitchbot, story mode and tipsy alex. Then SMS. Hasn&apos;t been touched in ages; held together (or not) by mass and momentum at this point.</>,
     status: "retired",
-    tech: ["Next.js", "OpenAI", "Supabase"],
-    launched: "2023",
+    statusEmoji: "†",
   },
 ];
 
 // Animated status indicator component
-function StatusIndicator({ status }: { status: ProjectStatus }) {
+function StatusIndicator({ status, emoji }: { status: ProjectStatus; emoji?: string }) {
   if (status === "active") {
     return (
       <span className="inline-flex items-center gap-1.5">
@@ -156,6 +151,45 @@ function StatusIndicator({ status }: { status: ProjectStatus }) {
     );
   }
 
+  if (status === "wip") {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span
+          className="inline-block h-2 w-2 rounded-full animate-pulse"
+          style={{
+            backgroundColor: "#7cb87c",
+            animation: "pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite"
+          }}
+        />
+        <span className="text-xs" style={{ color: "#7cb87c" }}>under construction</span>
+      </span>
+    );
+  }
+
+  if (status === "abandonware") {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span
+          className="inline-block h-2 w-2 rounded-full border border-dashed"
+          style={{ borderColor: "#666", backgroundColor: "transparent" }}
+        />
+        <span className="text-xs" style={{ color: "#666" }}>abandonware<span className="ml-1" style={{ fontSize: "0.6rem" }}>∿</span></span>
+      </span>
+    );
+  }
+
+  if (status === "neglected") {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span
+          className="inline-block h-2 w-2 rounded-full border border-dotted"
+          style={{ borderColor: "#777", backgroundColor: "transparent" }}
+        />
+        <span className="text-xs" style={{ color: "#777" }}>neglected<span className="ml-1" style={{ fontSize: "0.6rem" }}>…</span></span>
+      </span>
+    );
+  }
+
   // retired
   return (
     <span className="inline-flex items-center gap-1.5">
@@ -163,7 +197,9 @@ function StatusIndicator({ status }: { status: ProjectStatus }) {
         className="inline-block h-2 w-2 rounded-full border"
         style={{ borderColor: "#444", backgroundColor: "transparent" }}
       />
-      <span className="text-xs" style={{ color: "#555" }}>archived</span>
+      <span className="text-xs" style={{ color: "#555" }}>
+        archived{emoji && <span className="ml-1" style={{ fontSize: "0.6rem" }}>{emoji}</span>}
+      </span>
     </span>
   );
 }
@@ -297,8 +333,8 @@ function ProjectRow({ project, isExpanded, onToggle }: {
   isExpanded: boolean;
   onToggle: () => void;
 }) {
-  const isRetired = project.status === "retired";
-  const statusColor = project.status === "active" ? "#7cb87c" : project.status === "respinning" ? "#d4a84a" : "#555";
+  const isRetired = project.status === "retired" || project.status === "abandonware" || project.status === "neglected";
+  const statusColor = project.status === "active" ? "#7cb87c" : project.status === "wip" ? "#7cb87c" : project.status === "respinning" ? "#d4a84a" : project.status === "neglected" ? "#777" : project.status === "abandonware" ? "#666" : "#555";
 
   return (
     <div
@@ -318,7 +354,7 @@ function ProjectRow({ project, isExpanded, onToggle }: {
         </span>
 
         {/* Status indicator - inline */}
-        <StatusIndicator status={project.status} />
+        <StatusIndicator status={project.status} emoji={project.statusEmoji} />
 
         {/* Spacer */}
         <span className="flex-1" />
@@ -377,17 +413,31 @@ function ProjectRow({ project, isExpanded, onToggle }: {
             )}
           </div>
 
-          {/* Visit link */}
-          <Link
-            href={project.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm transition-colors hover:opacity-80"
-            style={{ color: statusColor }}
-          >
-            {project.url.replace('https://', '')}
-            <span className="text-xs">↗</span>
-          </Link>
+          {/* Visit link and artifacts */}
+          <div className="flex flex-wrap items-center gap-4">
+            <Link
+              href={project.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm transition-colors hover:opacity-80"
+              style={{ color: statusColor }}
+            >
+              {project.url.replace('https://', '')}
+              <span className="text-xs">↗</span>
+            </Link>
+            {project.artifacts?.map((artifact, i) => (
+              <a
+                key={i}
+                href={artifact.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm transition-colors hover:opacity-80"
+                style={{ color: "#666" }}
+              >
+                [{artifact.label}]
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -402,10 +452,18 @@ export default function KochitoLabsPage() {
     setExpandedSlug(prev => prev === slug ? null : slug);
   };
 
-  // Sort: active first, then respinning, then retired
+  // Sort by manual order first, then by status
   const sortedProjects = [...projects].sort((a, b) => {
-    const order = { active: 0, respinning: 1, retired: 2 };
-    return order[a.status] - order[b.status];
+    const statusOrder = { active: 0, wip: 1, respinning: 2, neglected: 3, abandonware: 4, retired: 5 };
+    // If both have order, sort by order
+    if (a.order !== undefined && b.order !== undefined) {
+      return a.order - b.order;
+    }
+    // If only one has order, it comes first
+    if (a.order !== undefined) return -1;
+    if (b.order !== undefined) return 1;
+    // Otherwise sort by status
+    return statusOrder[a.status] - statusOrder[b.status];
   });
 
   // Listen for keypress to activate easter egg CLI
