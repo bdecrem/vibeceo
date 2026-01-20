@@ -1028,6 +1028,93 @@ export const TOOLS = [
       required: ["sequence"]
     }
   },
+  // JB01 (Reference Drum Machine)
+  {
+    name: "add_jb01",
+    description: "Add JB01 drum pattern (reference drum machine). 8 voices: kick, snare, clap, ch (closed hat), oh (open hat), perc, tom, cymbal. Pass step arrays [0,4,8,12] for each voice.",
+    input_schema: {
+      type: "object",
+      properties: {
+        kick: { type: "array", items: { type: "number" }, description: "Kick steps (0-15)" },
+        snare: { type: "array", items: { type: "number" }, description: "Snare steps (0-15)" },
+        clap: { type: "array", items: { type: "number" }, description: "Clap steps (0-15)" },
+        ch: { type: "array", items: { type: "number" }, description: "Closed hi-hat steps (0-15)" },
+        oh: { type: "array", items: { type: "number" }, description: "Open hi-hat steps (0-15)" },
+        perc: { type: "array", items: { type: "number" }, description: "Percussion steps (0-15)" },
+        tom: { type: "array", items: { type: "number" }, description: "Tom steps (0-15)" },
+        cymbal: { type: "array", items: { type: "number" }, description: "Cymbal steps (0-15)" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "tweak_jb01",
+    description: "Adjust JB01 drum voice parameters. UNITS: level in dB (-60 to +6), tune in semitones (-12 to +12), decay/attack/sweep/tone/snappy 0-100. Use mute:true to silence.",
+    input_schema: {
+      type: "object",
+      properties: {
+        voice: { type: "string", enum: ["kick", "snare", "clap", "ch", "oh", "perc", "tom", "cymbal"], description: "Voice to tweak (required)" },
+        mute: { type: "boolean", description: "Mute voice (sets level to -60dB)" },
+        level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
+        tune: { type: "number", description: "Pitch in semitones (-12 to +12)" },
+        decay: { type: "number", description: "Decay time 0-100" },
+        attack: { type: "number", description: "Attack/click amount 0-100 (kick only)" },
+        sweep: { type: "number", description: "Pitch sweep depth 0-100 (kick only)" },
+        tone: { type: "number", description: "Tone/brightness 0-100 (hats, snare, clap)" },
+        snappy: { type: "number", description: "Snare snappiness 0-100 (snare only)" }
+      },
+      required: ["voice"]
+    }
+  },
+  {
+    name: "list_jb01_kits",
+    description: "List available JB01 sound presets (kits).",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "load_jb01_kit",
+    description: "Load a JB01 sound preset (kit).",
+    input_schema: {
+      type: "object",
+      properties: {
+        kit: { type: "string", description: "Kit ID to load" }
+      },
+      required: ["kit"]
+    }
+  },
+  {
+    name: "list_jb01_sequences",
+    description: "List available JB01 pattern presets (sequences).",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "load_jb01_sequence",
+    description: "Load a JB01 pattern preset (sequence).",
+    input_schema: {
+      type: "object",
+      properties: {
+        sequence: { type: "string", description: "Sequence ID to load" }
+      },
+      required: ["sequence"]
+    }
+  },
+  {
+    name: "show_jb01",
+    description: "Show current JB01 state (pattern and parameters).",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
   {
     name: "rename_project",
     description: "Rename the current project. Use when user says 'rename to X' or 'call this X'.",
