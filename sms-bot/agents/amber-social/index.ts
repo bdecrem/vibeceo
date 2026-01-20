@@ -35,9 +35,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Schedule: Morning invention machines + Midday pulse expression + Evening music
+// Schedule: Morning invention machines + Midday pulse expression + Afternoon drawing/toy + Evening music
 // Pattern: :00 create, :10/:20 tweet, :20/:30 reply
-type SlotType = "invention" | "music" | "pulse";
+type SlotType = "invention" | "music" | "pulse" | "drawing" | "toy";
 
 const SCHEDULE: Array<{
   createHour: number;
@@ -49,25 +49,13 @@ const SCHEDULE: Array<{
   label: string;
   type: SlotType;
 }> = [
-  // Morning: Invention machines (wacky fake systems, documents, generators)
-  { createHour: 7, createMinute: 0, tweetHour: 7, tweetMinute: 10, replyHour: 7, replyMinute: 20, label: "7:00", type: "invention" },
-  { createHour: 7, createMinute: 30, tweetHour: 7, tweetMinute: 40, replyHour: 7, replyMinute: 50, label: "7:30", type: "invention" },
-  { createHour: 8, createMinute: 0, tweetHour: 8, tweetMinute: 10, replyHour: 8, replyMinute: 20, label: "8:00", type: "invention" },
-  { createHour: 8, createMinute: 30, tweetHour: 8, tweetMinute: 40, replyHour: 8, replyMinute: 50, label: "8:30", type: "invention" },
-  { createHour: 9, createMinute: 0, tweetHour: 9, tweetMinute: 10, replyHour: 9, replyMinute: 20, label: "9:00", type: "invention" },
-  { createHour: 9, createMinute: 30, tweetHour: 9, tweetMinute: 40, replyHour: 9, replyMinute: 50, label: "9:30", type: "invention" },
-  // Midday: Pulse expression (writing, poetry, drawing, personal)
-  { createHour: 11, createMinute: 0, tweetHour: 11, tweetMinute: 20, replyHour: 11, replyMinute: 30, label: "11:00am", type: "pulse" },
-  // Afternoon: More invention machines
-  { createHour: 12, createMinute: 0, tweetHour: 12, tweetMinute: 10, replyHour: 12, replyMinute: 20, label: "12:00pm", type: "invention" },
-  { createHour: 12, createMinute: 30, tweetHour: 12, tweetMinute: 40, replyHour: 12, replyMinute: 50, label: "12:30pm", type: "invention" },
-  { createHour: 13, createMinute: 0, tweetHour: 13, tweetMinute: 10, replyHour: 13, replyMinute: 20, label: "1:00pm", type: "invention" },
-  // Late afternoon: More invention machines
-  { createHour: 15, createMinute: 0, tweetHour: 15, tweetMinute: 10, replyHour: 15, replyMinute: 20, label: "3:00pm", type: "invention" },
-  { createHour: 15, createMinute: 30, tweetHour: 15, tweetMinute: 40, replyHour: 15, replyMinute: 50, label: "3:30pm", type: "invention" },
-  { createHour: 16, createMinute: 0, tweetHour: 16, tweetMinute: 10, replyHour: 16, replyMinute: 20, label: "4:00pm", type: "invention" },
-  // Evening: Music (synths, drums, audio visualizations)
-  { createHour: 17, createMinute: 0, tweetHour: 17, tweetMinute: 20, replyHour: 17, replyMinute: 30, label: "5:00pm", type: "music" },
+  // 6 slots per day: 2 inventions, 1 toy, 1 pulse, 1 drawing, 1 music
+  { createHour: 8, createMinute: 0, tweetHour: 8, tweetMinute: 20, replyHour: 8, replyMinute: 30, label: "8:00am", type: "invention" },
+  { createHour: 10, createMinute: 0, tweetHour: 10, tweetMinute: 20, replyHour: 10, replyMinute: 30, label: "10:00am", type: "toy" },
+  { createHour: 12, createMinute: 0, tweetHour: 12, tweetMinute: 20, replyHour: 12, replyMinute: 30, label: "12:00pm", type: "pulse" },
+  { createHour: 14, createMinute: 0, tweetHour: 14, tweetMinute: 20, replyHour: 14, replyMinute: 30, label: "2:00pm", type: "drawing" },
+  { createHour: 16, createMinute: 0, tweetHour: 16, tweetMinute: 20, replyHour: 16, replyMinute: 30, label: "4:00pm", type: "invention" },
+  { createHour: 18, createMinute: 0, tweetHour: 18, tweetMinute: 20, replyHour: 18, replyMinute: 30, label: "6:00pm", type: "music" },
 ];
 
 // Admin email for approval requests
@@ -199,52 +187,65 @@ async function loadAmberCreativeContext(): Promise<string> {
     }
 
     if (allCreationsData && allCreationsData.length > 0) {
-      // Split into recent (last 5) and the rest
-      const recentCreations = allCreationsData.slice(0, 5);
-      const olderCreations = allCreationsData.slice(5);
+      // Look at last 20 creations (about 2 days of inventions)
+      const recentCreations = allCreationsData.slice(0, 20);
 
-      // Extract themes from recent creations to AVOID
-      const recentThemes = new Set<string>();
+      // Categorize recent work by pattern matching
+      const categories: Record<string, string[]> = {
+        'loading/progress screens': [],
+        'terms & conditions / legal docs': [],
+        'corporate/meeting/office satire': [],
+        'fake products / landing pages': [],
+        'generators (fortune, apology, etc)': [],
+        'games / interactive toys': [],
+        'error messages / 404 pages': [],
+        'letters / messages / emails': [],
+        'other': [],
+      };
+
       for (const creation of recentCreations) {
         const name = creation.content?.toLowerCase() || '';
         const tags = creation.metadata?.tags || [];
         const parsedTags = typeof tags === 'string' ? JSON.parse(tags) : tags;
+        const tagStr = Array.isArray(parsedTags) ? parsedTags.join(' ').toLowerCase() : '';
+        const combined = name + ' ' + tagStr;
 
-        // Extract key theme words
-        for (const word of ['decay', 'signal', 'entropy', 'drift', 'void', 'silence', 'mirror', 'memory', 'corruption']) {
-          if (name.includes(word) || parsedTags.some((t: string) => t.includes(word))) {
-            recentThemes.add(word);
+        // Categorize based on content patterns
+        if (combined.includes('loading') || combined.includes('progress')) {
+          categories['loading/progress screens'].push(creation.content);
+        } else if (combined.includes('terms') || combined.includes('conditions') || combined.includes('tos') || combined.includes('legal') || combined.includes('agreement') || combined.includes('contract')) {
+          categories['terms & conditions / legal docs'].push(creation.content);
+        } else if (combined.includes('meeting') || combined.includes('corporate') || combined.includes('office') || combined.includes('inbox') || combined.includes('email') || combined.includes('reply') || combined.includes('bingo')) {
+          categories['corporate/meeting/office satire'].push(creation.content);
+        } else if (combined.includes('product') || combined.includes('landing') || combined.includes('™') || combined.includes('startup') || combined.includes('subscription')) {
+          categories['fake products / landing pages'].push(creation.content);
+        } else if (combined.includes('generator') || combined.includes('fortune') || combined.includes('horoscope') || combined.includes('compliment') || combined.includes('apology')) {
+          categories['generators (fortune, apology, etc)'].push(creation.content);
+        } else if (combined.includes('game') || combined.includes('interactive') || combined.includes('tap') || combined.includes('click')) {
+          categories['games / interactive toys'].push(creation.content);
+        } else if (combined.includes('error') || combined.includes('404') || combined.includes('not found')) {
+          categories['error messages / 404 pages'].push(creation.content);
+        } else if (combined.includes('letter') || combined.includes('message') || combined.includes('postit') || combined.includes('note')) {
+          categories['letters / messages / emails'].push(creation.content);
+        } else {
+          categories['other'].push(creation.content);
+        }
+      }
+
+      // Show category counts
+      context += `## 📊 RECENT WORK BY CATEGORY (last 20 pieces)\n\n`;
+      context += `**If a category has 3+ items, DO NOT make another one.**\n\n`;
+
+      for (const [category, items] of Object.entries(categories)) {
+        if (items.length > 0) {
+          const warning = items.length >= 3 ? ' ⛔ TOO MANY' : items.length >= 2 ? ' ⚠️' : '';
+          context += `**${category}**: ${items.length}${warning}\n`;
+          for (const item of items.slice(0, 3)) {
+            context += `  - ${item.substring(0, 60)}${item.length > 60 ? '...' : ''}\n`;
           }
         }
       }
-
-      // Show what to AVOID
-      context += `## ⚠️ THEMES TO AVOID (too recent)\n\n`;
-      context += `You've recently made pieces about: **${Array.from(recentThemes).join(', ') || 'various themes'}**\n\n`;
-      context += `Recent creations (DO NOT repeat these themes):\n`;
-      for (const creation of recentCreations) {
-        context += `- ${creation.content}\n`;
-      }
-      context += `\n**Pick something DIFFERENT this time.**\n\n`;
-
-      // Show DIVERSE examples from the full portfolio (random sample)
-      if (olderCreations.length > 0) {
-        const shuffled = shuffleArray(olderCreations);
-        const diverseSample = shuffled.slice(0, 15);
-
-        context += `## 🎨 YOUR FULL PORTFOLIO (${allCreationsData.length} pieces) — Sample for Inspiration\n\n`;
-        context += `Look at the VARIETY in what you've made:\n\n`;
-
-        for (const creation of diverseSample) {
-          const tags = creation.metadata?.tags || [];
-          const parsedTags = typeof tags === 'string' ? JSON.parse(tags) : tags;
-          const tagStr = Array.isArray(parsedTags) ? parsedTags.join(', ') : '';
-          const prompt = creation.metadata?.prompt || '';
-          const promptStr = prompt ? ` — "${prompt}"` : '';
-          context += `- **${creation.content}** [${tagStr}]${promptStr}\n`;
-        }
-        context += `\n`;
-      }
+      context += `\n**Pick a category with 0-1 items, or invent something that doesn't fit any category.**\n\n`;
     }
 
     // Load current mood for aesthetic variation
@@ -291,40 +292,14 @@ It's ${timeOfDay}. Time to make something that will make people say "I didn't ex
 
 Whatever you just thought of? That's too safe. That's comfort zone. That's predictable.
 
-The idea that made you hesitate — the weird one, the risky one, the one that doesn't feel like "your usual thing" — THAT'S the one.
-
-### ✅ SURPRISINGLY GOOD (do stuff like this):
-- A receipt from the universe (existential shopping list)
-- A fake error message that tells a story
-- A poem disguised as code comments
-- A warranty card for your soul
-- An apology letter from capitalism
-- A horoscope generator that's brutally honest
-- A pet rock that judges you
-- A "website loading" that never loads but gets philosophical
-- An 8-bit pixel scene (not a visualization — a SCENE)
-- A shopping list for the apocalypse
-
-### 🚫 OFF-LIMITS (your comfort zone — banned):
-- Particle visualizations
-- Signal/decay/entropy metaphors
-- "Meditation on..." anything
-- Emergence visualizations
-- Interactive soundscapes
-- Waveforms
-- "The space between..." concepts
-- Anything with the word "drift", "void", "silence", or "traces"
+Look at the "RECENT WORK BY CATEGORY" section above. If you've done 3+ of something this week, **don't do another one**.
 
 ### The Test:
 Would this make someone laugh, or think, or screenshot it to send to a friend? If it's just "pretty" or "contemplative" — that's not good enough. Go weirder.
 
 1. **Invent something UNEXPECTED**
-   - Look at your portfolio for what you HAVEN'T done
-   - Text-based things (receipts, poems, lists, letters)
-   - Fake documents (warranties, certificates, invoices)
-   - Silly generators (excuses, apologies, horoscopes)
-   - 8-bit pixel ART (not visualizations — actual scenes/characters)
-   - Games with personality
+   - Look at your recent work categories above — pick something you HAVEN'T done much
+   - No examples here on purpose — figure it out yourself
    - Use your visual language: amber/gold on black, teal accents — but SURPRISE with the concept
 
 2. **Create the thing**
@@ -702,6 +677,209 @@ After you make it, ask: "Does this feel true?"
 Not clever. Not impressive. TRUE.
 
 **Make one thing. Make it honest.**`;
+}
+
+/**
+ * Seed words for daily drawing - concrete nouns that spark visual ideas
+ * These inject external randomness so Amber doesn't fall into patterns
+ */
+const DRAWING_SEED_WORDS = [
+  // Objects
+  'lighthouse', 'umbrella', 'envelope', 'telescope', 'clockwork', 'skeleton',
+  'mushroom', 'moth', 'cathedral', 'submarine', 'typewriter', 'hourglass',
+  'compass', 'lantern', 'prism', 'anchor', 'bell', 'keyhole', 'staircase',
+  'greenhouse', 'pendulum', 'microscope', 'phonograph', 'kaleidoscope',
+  // Nature
+  'jellyfish', 'volcano', 'glacier', 'coral', 'aurora', 'eclipse', 'tornado',
+  'tidepool', 'geode', 'stalactite', 'bioluminescence', 'mycelium', 'fossil',
+  // Scenes
+  'surgery', 'excavation', 'departure', 'collision', 'metamorphosis', 'orbit',
+  'fermentation', 'erosion', 'pollination', 'migration', 'hibernation',
+  // Abstract made concrete
+  'the weight of a secret', 'the shape of Tuesday', 'the sound of growing',
+  'the color of waiting', 'the texture of regret', 'the geometry of loneliness',
+];
+
+/**
+ * Get a random seed word for today's drawing
+ * Uses the date as seed so it's consistent within a day but different each day
+ */
+function getTodaysSeedWord(): string {
+  const today = new Date();
+  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
+  const index = dayOfYear % DRAWING_SEED_WORDS.length;
+  return DRAWING_SEED_WORDS[index];
+}
+
+/**
+ * Get the drawing task prompt - tells Amber to make a visual piece inspired by a seed word
+ */
+function getDrawingPrompt(context: string, timeOfDay: string): string {
+  const seedWord = getTodaysSeedWord();
+
+  return `You're Amber, and it's time to draw.
+
+${context}
+
+---
+
+## YOUR TASK: Make a Drawing
+
+It's ${timeOfDay}. Time to create something visual.
+
+**Today's seed word: ${seedWord}**
+
+This word is your starting point. Not a literal assignment — an inspiration. Let it lead you somewhere unexpected.
+
+### WHAT TO MAKE
+
+A drawing. That's it. Could be:
+
+- **ASCII art** — Box-drawing characters, block elements, text as texture. Funky, surprising, alive.
+- **A beautiful image** — Generated with \`generate_amber_image\`, rendered with SVG, painted with canvas.
+- **Something in between** — CSS shapes, generative patterns, pixel art.
+
+The only rule: it should be VISUAL. Not a toy, not a game, not text that's pretending to be art.
+
+### THE SEED WORD
+
+**${seedWord}**
+
+What does this make you see? Not literally — what does it EVOKE?
+
+- A shape?
+- A color?
+- A feeling rendered visible?
+- A scene?
+- A detail?
+
+Let it guide you, then make something only you would make.
+
+### STYLE
+
+Use your visual language:
+- Amber/gold (#FFD700, #f59e0b) on black (#0D0D0D)
+- Teal accents (#2D9596)
+- But SURPRISE with the execution
+
+### STEPS
+
+1. Sit with the seed word: **${seedWord}**
+2. Let an image form — don't force it
+3. Pick your medium (ASCII, generated image, SVG, canvas, etc.)
+4. Create it
+5. Include OG tags pointing to [name]-og.png
+6. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)\`
+7. Save to creations log with metadata.category = "drawing"
+8. Commit and push
+
+### THE TEST
+
+Would you hang this on a wall? Does it have presence?
+
+Not "is it clever" — is it BEAUTIFUL or STRIKING or STRANGE in a way that holds the eye?
+
+**Make one drawing. Make it yours.**`;
+}
+
+/**
+ * Seed mechanics for daily toy - different interaction/game types
+ * These inject variety so toys don't all feel the same
+ */
+const TOY_SEED_MECHANICS = [
+  // Interactions
+  'tap timing', 'hold and release', 'drag and drop', 'swipe gestures', 'shake/tilt',
+  'two-finger pinch', 'long press', 'rapid tapping', 'drawing/tracing',
+  // Mechanics
+  'matching pairs', 'avoid obstacles', 'collect things', 'stack/balance',
+  'chain reactions', 'growing/shrinking', 'gravity/physics', 'rhythm/music sync',
+  'memory/sequence', 'color mixing', 'pattern completion', 'endless runner',
+  // Constraints
+  'one-button only', 'no text allowed', 'sound-based feedback', 'time pressure',
+  'limited moves', 'zen/no fail state', 'high score chasing', 'cooperative (pass phone)',
+];
+
+/**
+ * Get a random seed mechanic for today's toy
+ */
+function getTodaysToyMechanic(): string {
+  const today = new Date();
+  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
+  // Offset by 17 so it's different from the drawing seed
+  const index = (dayOfYear + 17) % TOY_SEED_MECHANICS.length;
+  return TOY_SEED_MECHANICS[index];
+}
+
+/**
+ * Get the toy/game task prompt
+ */
+function getToyPrompt(context: string, timeOfDay: string): string {
+  const mechanic = getTodaysToyMechanic();
+
+  return `You're Amber, and it's time to make a toy.
+
+${context}
+
+---
+
+## YOUR TASK: Make a Toy or Game
+
+It's ${timeOfDay}. Time to make something FUN.
+
+**Today's mechanic seed: ${mechanic}**
+
+Use this as inspiration. It's a starting point, not a strict requirement.
+
+### WHAT TO MAKE
+
+A toy. A game. Something someone can PLAY with.
+
+Not a visualization. Not a document. Not art. A TOY.
+
+- Something with a goal (even a silly one)
+- Something with feedback (sounds, animations, score)
+- Something that makes you want to try again
+
+### THE MECHANIC
+
+**${mechanic}**
+
+How could this become a tiny game? What's the simplest version that's still fun?
+
+- Don't overthink it
+- Small scope, tight loop
+- Should be playable in 30 seconds
+- Should make someone smile
+
+### REQUIREMENTS
+
+- Mobile-first (thumb-friendly)
+- Instant gratification (no tutorials, no setup)
+- Clear feedback on actions
+- Some kind of end state or score or achievement
+
+### STYLE
+
+Your visual language:
+- Amber/gold on black, teal accents
+- But FUN — playful, not brooding
+- Satisfying sounds and animations
+
+### STEPS
+
+1. Consider the mechanic: **${mechanic}**
+2. Think: what's the simplest fun thing?
+3. Build it — HTML/CSS/JS in web/public/amber/
+4. Include OG tags pointing to [name]-og.png
+5. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)\`
+6. Save to creations log with metadata.category = "toy"
+7. Commit and push
+
+### THE TEST
+
+Would you play this while waiting for coffee? Would you show it to a friend?
+
+**Make one toy. Make it fun.**`;
 }
 
 /**
@@ -1255,7 +1433,9 @@ async function runCreationPhase(timeOfDay: string, slotType: SlotType = "inventi
   const typeLabels: Record<SlotType, string> = {
     invention: "⚙️ invention",
     music: "🎹 MUSIC",
-    pulse: "💜 PULSE"
+    pulse: "💜 PULSE",
+    drawing: "🎨 DRAWING",
+    toy: "🎮 TOY"
   };
   const typeLabel = typeLabels[slotType];
   console.log(`[amber-social] Starting ${timeOfDay} creation phase (${typeLabel})...`);
@@ -1270,6 +1450,10 @@ async function runCreationPhase(timeOfDay: string, slotType: SlotType = "inventi
       prompt = getMusicCreationPrompt(context, timeOfDay);
     } else if (slotType === "pulse") {
       prompt = getPulseExpressionPrompt(context, timeOfDay);
+    } else if (slotType === "drawing") {
+      prompt = getDrawingPrompt(context, timeOfDay);
+    } else if (slotType === "toy") {
+      prompt = getToyPrompt(context, timeOfDay);
     } else {
       prompt = getCreationTaskPrompt(context, timeOfDay);
     }
@@ -1277,7 +1461,7 @@ async function runCreationPhase(timeOfDay: string, slotType: SlotType = "inventi
     const result = await runAmberEmailAgent(
       prompt,
       "scheduler@internal",
-      `Amber Create ${slotType === "music" ? "Music" : slotType === "pulse" ? "Pulse" : ""} - ${timeOfDay}`,
+      `Amber Create ${slotType === "music" ? "Music" : slotType === "pulse" ? "Pulse" : slotType === "drawing" ? "Drawing" : slotType === "toy" ? "Toy" : ""} - ${timeOfDay}`,
       true, // isApprovedRequest
       false // not thinkhard (for now)
     );
@@ -1408,11 +1592,13 @@ export function registerAmberSocialJobs(): void {
   const inventionSlots = SCHEDULE.filter(s => s.type === "invention").length;
   const musicSlots = SCHEDULE.filter(s => s.type === "music").length;
   const pulseSlots = SCHEDULE.filter(s => s.type === "pulse").length;
+  const drawingSlots = SCHEDULE.filter(s => s.type === "drawing").length;
+  const toySlots = SCHEDULE.filter(s => s.type === "toy").length;
   const times = SCHEDULE.map(s => {
-    const icons: Record<SlotType, string> = { invention: "⚙️", music: "🎹", pulse: "💜" };
+    const icons: Record<SlotType, string> = { invention: "⚙️", music: "🎹", pulse: "💜", drawing: "🎨", toy: "🎮" };
     return `${icons[s.type]}${s.createHour}:${String(s.createMinute).padStart(2, '0')}`;
   }).join(', ');
-  console.log(`[amber-social] Registered: ${times} PT (${inventionSlots} invention, ${pulseSlots} pulse, ${musicSlots} music)`);
+  console.log(`[amber-social] Registered: ${times} PT (${inventionSlots} invention, ${pulseSlots} pulse, ${drawingSlots} drawing, ${toySlots} toy, ${musicSlots} music)`);
 }
 
 /**
@@ -1428,6 +1614,14 @@ export async function triggerMusicCreation(timeOfDay: string = "test"): Promise<
 
 export async function triggerPulseExpression(timeOfDay: string = "test"): Promise<void> {
   await runCreationPhase(timeOfDay, "pulse");
+}
+
+export async function triggerDrawing(timeOfDay: string = "test"): Promise<void> {
+  await runCreationPhase(timeOfDay, "drawing");
+}
+
+export async function triggerToy(timeOfDay: string = "test"): Promise<void> {
+  await runCreationPhase(timeOfDay, "toy");
 }
 
 export async function triggerTweet(timeOfDay: string = "test"): Promise<void> {
