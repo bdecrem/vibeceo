@@ -1,7 +1,6 @@
 "use client";
 
 import { Poppins, Montserrat, JetBrains_Mono } from "next/font/google";
-import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
 
@@ -441,13 +440,10 @@ export default function KochitoLabsPage() {
         {/* Header */}
         <div className="flex items-end gap-4 mb-8">
           <div className="w-10 h-10 sm:w-12 sm:h-12">
-            <Image
+            <img
               src="/kochito-logo.png"
               alt="Kochito Labs"
-              width={48}
-              height={48}
               className="w-full h-full object-contain"
-              priority
             />
           </div>
           <h1 className={`${poppins.className} text-xl sm:text-2xl font-semibold leading-none`} style={{ color: "#d4c4a8" }}>
