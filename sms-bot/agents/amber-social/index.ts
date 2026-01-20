@@ -770,7 +770,7 @@ Use your visual language:
 4. Create it
 5. Include OG tags pointing to [name]-og.png
 6. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)\`
-7. Save to creations log with metadata.category = "drawing"
+7. Save to creations log with metadata.category = "drawing", metadata.seed_word = "${seedWord}"
 8. Commit and push
 
 ### THE TEST
@@ -872,7 +872,7 @@ Your visual language:
 3. Build it — HTML/CSS/JS in web/public/amber/
 4. Include OG tags pointing to [name]-og.png
 5. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)\`
-6. Save to creations log with metadata.category = "toy"
+6. Save to creations log with metadata.category = "toy", metadata.seed_mechanic = "${mechanic}"
 7. Commit and push
 
 ### THE TEST
