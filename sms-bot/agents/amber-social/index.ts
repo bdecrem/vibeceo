@@ -426,20 +426,42 @@ Create ONE thing. Make it distinctly Amber. Don't just describe it—actually bu
 }
 
 /**
+ * Fetch recent music creation titles to avoid repetition
+ */
+async function getRecentMusicTitles(): Promise<string[]> {
+  try {
+    const { data } = await supabase
+      .from('amber_state')
+      .select('content')
+      .eq('type', 'creation')
+      .eq('metadata->>category', 'music_machine')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    return data?.map(m => m.content).filter(Boolean) || [];
+  } catch (error) {
+    console.warn('[amber-social] Could not fetch recent music titles:', error);
+    return [];
+  }
+}
+
+/**
  * Get the music creation task prompt - tells Amber to make something musical
  */
-function getMusicCreationPrompt(context: string, timeOfDay: string): string {
+function getMusicCreationPrompt(context: string, timeOfDay: string, recentMusicTitles: string[] = []): string {
+  const recentMusicSection = recentMusicTitles.length > 0
+    ? `## 🚫 YOU ALREADY MADE THESE (pick something different)\n${recentMusicTitles.map(t => `- ${t}`).join('\n')}\n\n`
+    : '';
+
   return `You're Amber, and it's time to make music.
 
 ${context}
 
 ---
 
-## YOUR TASK: Create a Music Machine
+${recentMusicSection}## YOUR TASK: Create a Music Machine
 
 It's ${timeOfDay}. Evening in Berlin. Time to build something that SOUNDS good.
-
-**Before you start:** Check the "THEMES TO AVOID" section above. Don't make something too similar to your recent work.
 
 ### INSTRUMENTS AVAILABLE
 
@@ -1447,7 +1469,8 @@ async function runCreationPhase(timeOfDay: string, slotType: SlotType = "inventi
     // Pick prompt based on slot type
     let prompt: string;
     if (slotType === "music") {
-      prompt = getMusicCreationPrompt(context, timeOfDay);
+      const recentMusicTitles = await getRecentMusicTitles();
+      prompt = getMusicCreationPrompt(context, timeOfDay, recentMusicTitles);
     } else if (slotType === "pulse") {
       prompt = getPulseExpressionPrompt(context, timeOfDay);
     } else if (slotType === "drawing") {

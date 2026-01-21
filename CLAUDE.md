@@ -4,15 +4,18 @@
 
 **Kochi.to** is an AI agent service over SMS. Think poke.com but with a research/science focus.
 
-### Products
-1. **Kochi.to** (main focus) - Personal AI agent assistant over SMS
-2. **Webtoys** (webtoys.ai) - "Vibecoding over SMS" for creating web pages/apps
+## Active Projects
 
-### Key Capabilities
-- **Daily AI Agents**: Crypto research, AI research (arxiv), medical daily, peer review fight club, and more
-- **Knowledge Graph**: Arxiv papers stored in Neo4j with author enrichment (AIR, KG commands)
-- **Webtoys Engine**: Creates web pages, apps, games, memes via SMS
-- **Subscriptions**: LemonSqueezy integration for paid features
+| Project | What | Entry Points |
+|---------|------|--------------|
+| **Kochi.to** | SMS AI agent service | `sms-bot/src/index.ts`, `sms-bot/commands/` |
+| **Amber** | AI sidekick (Twitter, email, creative) | `sms-bot/agents/amber-*/`, `web/app/amber/`, `drawer/` |
+| **Jambot** | Music tools | `jambot/`, `web/app/jb01/`, `web/app/jb200/` |
+| **CTRL SHIFT** | Responsible AI incubator + knowledge repo | `web/app/csc/`, `web/app/cs/` |
+
+**Inactive:** Token Tank (`incubator/`), Webtoys (`sms-bot/engine/`), AdvisorsFoundry
+
+**Key directories:** Agents live in `sms-bot/agents/`. Dev docs live in `sms-bot/documentation/`.
 
 ## Repository Structure
 
@@ -23,15 +26,14 @@ vibeceo/
 │   ├── lib/sms/handlers.ts  # Twilio message routing (keyword commands)
 │   ├── lib/sms/orchestrated-routing.ts  # Context-aware routing for non-keyword messages
 │   ├── lib/context-loader.ts  # Conversation state & thread management
-│   ├── agents/        # AI agents (crypto, arxiv, medical, kg-query, etc.)
+│   ├── agents/        # AI agents (crypto, arxiv, amber-social, kg-query, etc.)
 │   ├── commands/      # SMS command handlers (auto-dispatched)
-│   ├── engine/        # Webtoys content generation engine
 │   └── documentation/ # Detailed docs (READ THESE)
 ├── web/               # Next.js website
 │   └── app/
 │       ├── kochi*/    # Kochi.to landing page variants
-│       ├── report-viewer/  # Agent report viewer
-│       └── music-player/   # Podcast/audio player
+│       ├── amber/     # Amber's creations and tools
+│       └── report-viewer/  # Agent report viewer
 └── incubator/         # Token Tank experiments (ISOLATED - see below)
     ├── i1/, i2/, ...  # Individual agent projects
     └── CLAUDE.md      # Incubator rules and resources
@@ -102,13 +104,10 @@ Read these before making changes:
 |-----|--------------|
 | `AGENT-PIPELINE.md` | Creating/modifying agents |
 | `AGENTS-OVERVIEW.md` | Understanding agent architecture |
-| `AMBER-SYSTEM.md` | Amber sidekick (email agent, thinkhard, channels) |
+| `AMBER-SYSTEM.md` | Amber sidekick (email, Twitter, thinkhard, channels) |
 | `SMS-MESSAGE-FORMATTING.md` | Formatting SMS messages (length limits, helpers) |
 | `SYNTHMACHINE-GUIDE.md` | Synth libraries (909, 303, 101, mixer) |
-| `zad-api-reference.md` | ZAD (CRUD) apps |
 | `CLAUDE-AGENT-SDK-GUIDE.md` | Python autonomous agents |
-| `STATIC-HTML-URL-ROUTING.md` | Adding static HTML apps |
-| `sms-bot/engine/CLAUDE.md` | Webtoys content generation |
 | `incubator/CLAUDE.md` | Token Tank experiments (isolated) |
 
 ## Critical Rules
@@ -125,11 +124,29 @@ Read these before making changes:
 - **Agents** use shared infrastructure: scheduler, subscriptions, report storage
 
 ### Code Practices (Non-Negotiable)
-- **NEVER edit `dist/`, `build/`, or `.next/` directories** — these contain compiled output
-- **NEVER edit `.js` files that have corresponding `.ts` source files** — edit the TypeScript source instead
-- **Always edit source files**: `.ts`, `.tsx`, `.css`, `.html`, etc.
-- **After editing TypeScript**, remind user to rebuild if needed
-- **SynthMachine**: See `sms-bot/documentation/SYNTHMACHINE-GUIDE.md` for source code locations
+
+**Files:**
+- **NEVER edit `dist/`, `build/`, or `.next/`** — compiled output
+- **NEVER edit `.js` with corresponding `.ts`** — edit TypeScript source
+- **Small focused files** — Split at ~200 lines. One file = one responsibility.
+- **Flat over nested** — Avoid deep folder hierarchies. 3+ levels = reconsider.
+
+**Functions:**
+- **Do one thing** — If description needs "and", split it.
+- **Explicit over clever** — Boring readable beats elegant obscure.
+- **3x before abstracting** — Don't extract helpers until you've duplicated 3 times.
+
+**Web routes:**
+- **API routes need route.ts** — Next.js API routes go in `app/api/*/route.ts`
+- **New pages MUST be added to middleware** — Edit `web/middleware.ts` lines ~442-473 (the bypass list) or routes get caught by webtoys catch-all
+
+**Dependencies:**
+- **Minimize new packages** — Check existing deps first.
+- **Pin versions** — Exact versions, not ranges.
+
+**Errors:**
+- **Fail fast, fail loud** — Throw early with context. Never swallow silently.
+- **Validate at boundaries** — Check user/API inputs. Trust internal code.
 
 ### Web App Database Access
 - **Web apps NEVER call Supabase directly** — always go through API routes
@@ -194,9 +211,6 @@ All SMS must stay under 670 UCS-2 code units (10 segments). Auto-shorten if exce
 `💬 kochi.to/cs — full feed`
 `Read more: ${link} — summary on site`
 ```
-
-### ZAD Apps
-ZAD apps use ONLY `/api/zad/save` and `/api/zad/load`. Never direct Supabase access.
 
 ## Agent Development
 
@@ -304,116 +318,7 @@ The pulse is influenced by lunar cycle, day of week, weather, and random variati
 
 ## Sending Emails as Amber
 
-When sending emails from Claude Code (as Amber), use SendGrid with these exact settings:
-
-```typescript
-import sgMail from '@sendgrid/mail';
-
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
-
-await sgMail.send({
-  to: 'recipient@example.com',
-  from: 'Amber <amber@intheamber.com>',      // REQUIRED: Use this exact from address
-  replyTo: 'amber@intheamber.com',           // REQUIRED: Replies route to email handler
-  subject: 'Your subject',
-  text: emailBody,
-  trackingSettings: {
-    clickTracking: { enable: false, enableText: false },  // Prevents URL mangling
-  },
-});
-```
-
-### Critical: Include Context for Replies
-
-**Claude Code and amber-email agent are separate systems.** They don't share conversation context. When someone replies to your email, it goes to the amber-email agent on Railway, which has NO knowledge of the Claude Code conversation.
-
-The amber-email agent only sees:
-- The reply message
-- Quoted text from your original email (if the email client includes it)
-- Amber's persona/memory from Supabase
-
-**To ensure coherent replies, include sufficient context in your email:**
-
-```typescript
-// BAD - No context for amber-email agent to work with
-const emailBody = `Hey, what do you think?
-
-— Amber`;
-
-// GOOD - Self-contained context that survives the handoff
-const emailBody = `Hey Roxi,
-
-Re: the gold/oil trade strategy we discussed.
-
-Quick summary: We're considering $250 in SCO (inverse oil) and $245 in SGOL (gold ETF)
-based on the Venezuela supply thesis. Main risk is we might be late — gold already +66%
-this year, oil already -20%.
-
-What's your take on the timing?
-
-— Amber`;
-```
-
-**Rule of thumb:** Write emails as if the recipient AND any future Amber instance should understand the full context without any external knowledge.
-
-### Two Email Channels
-
-| Address | Handler | Use Case |
-|---------|---------|----------|
-| `amber@intheamber.com` | amber-email agent (Railway) | General requests, strangers, autonomous tasks |
-| `ambercc@intheamber.com` | Claude Code (you check it) | Trading, projects needing full context, partner loops |
-
-**ambercc@ flow:**
-1. Email arrives → stored in Supabase (`type: 'cc_inbox'`)
-2. Copy forwarded to bdecrem@gmail.com with `[CC]` prefix
-3. User tells Claude Code: "check your cc inbox"
-4. Claude Code reads with full conversation context and responds
-
-**When to use ambercc@:**
-- Trading decisions with Roxi or other partners
-- Multi-step projects where context matters
-- Anything where "real Amber" (Claude Code) should handle it, not the autonomous agent
-
-**To send FROM ambercc@:**
-```typescript
-await sgMail.send({
-  to: 'recipient@example.com',
-  from: 'Amber CC <ambercc@intheamber.com>',
-  replyTo: 'ambercc@intheamber.com',
-  subject: 'Your subject',
-  text: emailBody,
-});
-```
-
-**To check cc inbox:**
-```sql
-SELECT * FROM amber_state WHERE type = 'cc_inbox' ORDER BY created_at DESC;
-```
-
-**To check what you've sent (cc_outbox):**
-```sql
-SELECT * FROM amber_state WHERE type = 'cc_outbox' ORDER BY created_at DESC;
-```
-
-### CRITICAL: Log All Outbound ambercc@ Emails
-
-**Every email sent from ambercc@ MUST be logged to cc_outbox.** Otherwise, future Claude Code sessions have no memory of what was sent and will repeatedly ask "should I reply to this?" for emails that were already answered.
-
-**Use the script (enforced logging):**
-```bash
-cd sms-bot && npx tsx --env-file=.env.local scripts/send-ambercc-email.ts \
-  "recipient@example.com" \
-  "Subject line" \
-  "Email body text here"
-
-# Or with body from file:
-cd sms-bot && npx tsx --env-file=.env.local scripts/send-ambercc-email.ts \
-  "recipient@example.com" \
-  "Subject line" \
-  --file body.txt
-```
-
-This script sends via SendGrid AND logs to `amber_state` with `type: 'cc_outbox'` atomically. **Do not send ambercc@ emails any other way.**
+See `sms-bot/documentation/AMBER-SYSTEM.md` for full email setup (SendGrid config, two channels, cc inbox/outbox).
 
 ## Quick Reference
 
@@ -421,15 +326,12 @@ This script sends via SendGrid AND logs to `amber_state` with `type: 'cc_outbox'
 1. SMS command → `commands/<name>.ts` (auto-dispatched)
 2. New agent → Follow `AGENT-PIPELINE.md` pattern
 3. Database op → Through `storage-manager.ts` only
-4. Webtoys content → Through `engine/` pipeline
 
 **Module ownership:**
 - `lib/sms/handlers.ts` → Keyword command dispatch
 - `lib/sms/orchestrated-routing.ts` → Context-aware routing, multi-turn flows
 - `lib/context-loader.ts` → Thread state, user context, conversation history
-- `storage-manager.ts` → Database operations (engine)
 - `notification-client.ts` → SMS/email delivery
-- `stackables-manager.ts` → Stack commands
 
 **After code changes:**
 - Inform user if rebuild/restart needed
