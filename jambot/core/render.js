@@ -5,8 +5,12 @@
  * Handles arrangement mode, mixer configuration, and all synth engines.
  */
 
-import { OfflineAudioContext } from 'node-web-audio-api';
+import { OfflineAudioContext, AudioContext } from 'node-web-audio-api';
 import { writeFileSync } from 'fs';
+
+// Make Web Audio APIs available globally (synth engines expect browser globals)
+globalThis.OfflineAudioContext = OfflineAudioContext;
+globalThis.AudioContext = AudioContext;
 
 // Engine imports (dynamic in renderSession for fresh resolution)
 import { TR909_KITS } from '../../web/public/909/dist/machines/tr909/presets.js';
