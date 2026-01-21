@@ -71,9 +71,10 @@ export class JB01Node extends InstrumentNode {
   }
 
   /**
-   * Get a parameter value in producer-friendly units
-   * @param {string} path - e.g., 'kick.decay' or just 'decay' if voice is set
-   * @returns {*}
+   * Get a parameter value in ENGINE UNITS (0-1 for most params)
+   * Note: Tools should use fromEngine() to convert to producer-friendly units
+   * @param {string} path - e.g., 'kick.decay'
+   * @returns {number}
    */
   getParam(path) {
     return this._params[path];
@@ -94,6 +95,21 @@ export class JB01Node extends InstrumentNode {
         this._params[`${parts[0]}.level`] = 0;
       }
       return true;
+    }
+
+    // Validate: warn if value appears to be in producer units instead of engine units
+    if (typeof value === 'number' && parts.length === 2) {
+      const [voice, paramName] = parts;
+      const paramDef = JB01_PARAMS[voice]?.[paramName];
+      if (paramDef) {
+        if (paramDef.unit === '0-100' && value > 1.5) {
+          console.warn(`JB01Node.setParam: ${path}=${value} appears to be producer units (0-100), expected engine units (0-1). Converting automatically.`);
+          value = toEngine(value, paramDef);
+        } else if (paramDef.unit === 'dB' && value < -1.5 && value >= -60) {
+          console.warn(`JB01Node.setParam: ${path}=${value} appears to be dB, expected engine units (0-1). Converting automatically.`);
+          value = toEngine(value, paramDef);
+        }
+      }
     }
 
     this._params[path] = value;
@@ -192,11 +208,37 @@ export class JB01Node extends InstrumentNode {
 
   /**
    * Deserialize JB01 state
+   * Handles migration from legacy formats where producer values might have been stored
    * @param {Object} data
    */
   deserialize(data) {
     if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
-    if (data.params) this._params = { ...data.params };
+    if (data.params) {
+      // Validate and convert params - handle legacy data with producer values
+      const migratedParams = {};
+      for (const [path, value] of Object.entries(data.params)) {
+        const [voice, paramName] = path.split('.');
+        const paramDef = JB01_PARAMS[voice]?.[paramName];
+
+        if (paramDef && typeof value === 'number') {
+          // Check if value is outside engine range (0-1) for non-semitone params
+          // This indicates legacy producer-unit data that needs conversion
+          if (paramDef.unit === '0-100' && value > 1.5) {
+            // Legacy producer value (e.g., 55 instead of 0.55)
+            migratedParams[path] = toEngine(value, paramDef);
+          } else if (paramDef.unit === 'dB' && value < -1.5) {
+            // Legacy dB value (e.g., -6 instead of engine value)
+            migratedParams[path] = toEngine(value, paramDef);
+          } else {
+            // Already in engine units
+            migratedParams[path] = value;
+          }
+        } else {
+          migratedParams[path] = value;
+        }
+      }
+      this._params = migratedParams;
+    }
   }
 }
 

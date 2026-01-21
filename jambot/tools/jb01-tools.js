@@ -12,7 +12,7 @@
  */
 
 import { registerTools } from './index.js';
-import { getParamDef, toEngine } from '../params/converters.js';
+import { getParamDef, toEngine, fromEngine, formatValue } from '../params/converters.js';
 import { listKits, loadKit, listSequences, loadSequence } from '../presets/loader.js';
 
 const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
@@ -238,16 +238,26 @@ const jb01Tools = {
       }
     }
 
-    // Params
+    // Params (convert engine units to producer-friendly units for display)
     if (session.jb01Params) {
       lines.push('\nParams:');
       for (const voice of VOICES) {
-        const params = session.jb01Params[voice];
-        if (params && Object.keys(params).length > 0) {
-          const paramStr = Object.entries(params)
-            .map(([k, v]) => `${k}=${typeof v === 'number' ? v.toFixed(2) : v}`)
-            .join(', ');
-          lines.push(`  ${voice}: ${paramStr}`);
+        const engineParams = session.jb01Params[voice];
+        if (engineParams && Object.keys(engineParams).length > 0) {
+          const paramParts = [];
+          for (const [paramName, engineValue] of Object.entries(engineParams)) {
+            if (engineValue === undefined) continue;
+            const def = getParamDef('jb01', voice, paramName);
+            if (def) {
+              const producerValue = fromEngine(engineValue, def);
+              paramParts.push(`${paramName}=${formatValue(producerValue, def)}`);
+            } else {
+              paramParts.push(`${paramName}=${typeof engineValue === 'number' ? engineValue.toFixed(2) : engineValue}`);
+            }
+          }
+          if (paramParts.length > 0) {
+            lines.push(`  ${voice}: ${paramParts.join(', ')}`);
+          }
         }
       }
     }
