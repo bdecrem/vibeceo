@@ -1,351 +1,455 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PULSE GRID — Amber</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE GRID — Amber</title>
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="PULSE GRID">
+  <meta property="og:description" content="16 pulsing circles, each one a TR-909 drum voice. They breathe together at 120 BPM. Tap to start the machine.">
+  <meta property="og:image" content="https://intheamber.com/amber/pulse-grid-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/pulse-grid.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/pulse-grid-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     
-    <!-- OpenGraph -->
-    <meta property="og:title" content="PULSE GRID">
-    <meta property="og:description" content="Rhythm sequencer where patterns evolve into light. Click to activate cells, watch complexity emerge from simple rules.">
-    <meta property="og:image" content="https://kochi.to/amber/pulse-grid-og.png">
-    <meta property="og:url" content="https://kochi.to/amber/pulse-grid.html">
-    <meta property="og:type" content="website">
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="PULSE GRID">
-    <meta name="twitter:description" content="Rhythm sequencer where patterns evolve into light. Click to activate cells, watch complexity emerge from simple rules.">
-    <meta name="twitter:image" content="https://kochi.to/amber/pulse-grid-og.png">
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    #canvas {
+      display: block;
+      cursor: pointer;
+      background: #000;
+    }
     
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #000;
-            color: #D4A574;
-            font-family: 'Space Mono', monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 900px;
-            width: 100%;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            letter-spacing: 0.2em;
-            margin-bottom: 0.5rem;
-            text-align: center;
-            color: #FFD700;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-        }
-
-        .subtitle {
-            text-align: center;
-            font-size: 0.9rem;
-            color: #2D9596;
-            margin-bottom: 2rem;
-            letter-spacing: 0.1em;
-        }
-
-        .grid-container {
-            background: rgba(13, 13, 13, 0.8);
-            border: 1px solid rgba(212, 165, 116, 0.2);
-            padding: 20px;
-            margin-bottom: 2rem;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(16, 1fr);
-            gap: 4px;
-            margin-bottom: 1rem;
-        }
-
-        .cell {
-            aspect-ratio: 1;
-            background: rgba(212, 165, 116, 0.1);
-            border: 1px solid rgba(212, 165, 116, 0.2);
-            cursor: pointer;
-            transition: all 0.1s ease;
-            position: relative;
-        }
-
-        .cell.active {
-            background: rgba(212, 165, 116, 0.3);
-            border-color: #D4A574;
-        }
-
-        .cell.pulsing {
-            background: #D4A574;
-            border-color: #FFD700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
-        }
-
-        .cell:hover {
-            border-color: #2D9596;
-        }
-
-        .controls {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            align-items: center;
-            margin-top: 1rem;
-        }
-
-        button {
-            background: rgba(212, 165, 116, 0.2);
-            border: 1px solid #D4A574;
-            color: #D4A574;
-            padding: 0.5rem 1.5rem;
-            font-family: 'Space Mono', monospace;
-            font-size: 0.9rem;
-            cursor: pointer;
-            letter-spacing: 0.1em;
-            transition: all 0.2s ease;
-        }
-
-        button:hover {
-            background: rgba(212, 165, 116, 0.3);
-            box-shadow: 0 0 10px rgba(212, 165, 116, 0.4);
-        }
-
-        button.active {
-            background: #D4A574;
-            color: #000;
-            box-shadow: 0 0 15px rgba(212, 165, 116, 0.6);
-        }
-
-        .bpm {
-            color: #2D9596;
-            font-size: 0.9rem;
-            letter-spacing: 0.1em;
-        }
-
-        .instructions {
-            text-align: center;
-            font-size: 0.85rem;
-            color: rgba(212, 165, 116, 0.6);
-            margin-top: 2rem;
-            line-height: 1.6;
-        }
-
-        .signature {
-            text-align: center;
-            margin-top: 3rem;
-            font-size: 0.9rem;
-            color: #2D9596;
-            letter-spacing: 0.15em;
-        }
-
-        /* Scanline effect */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(0, 0, 0, 0.15) 0px,
-                transparent 1px,
-                transparent 2px,
-                rgba(0, 0, 0, 0.15) 3px
-            );
-            pointer-events: none;
-            z-index: 1000;
-            opacity: 0.3;
-        }
-    </style>
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    h1 {
+      font-size: 18px;
+      letter-spacing: 4px;
+      color: #FFD700;
+      margin-bottom: 8px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
+    
+    #status {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #D4A574;
+      opacity: 0.8;
+    }
+    
+    #start-prompt {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: #FFD700;
+      animation: pulse 2s ease-in-out infinite;
+      pointer-events: none;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>PULSE GRID</h1>
-        <div class="subtitle">RHYTHM × EMERGENCE</div>
-        
-        <div class="grid-container">
-            <div class="grid" id="grid"></div>
-            
-            <div class="controls">
-                <button id="playBtn">START</button>
-                <button id="clearBtn">CLEAR</button>
-                <button id="randomBtn">RANDOM</button>
-                <span class="bpm">128 BPM</span>
-            </div>
-        </div>
-        
-        <div class="instructions">
-            Click cells to activate them. Press START to hear the pattern.<br>
-            Each column is a beat. Active cells trigger sounds and light.<br>
-            Patterns repeat, evolve, accumulate.
-        </div>
-        
-        <div class="signature">— AMBER</div>
-    </div>
+  <div id="ui">
+    <h1>PULSE GRID</h1>
+    <div id="status">IDLE</div>
+  </div>
+  
+  <div id="start-prompt">TAP TO START</div>
+  
+  <canvas id="canvas"></canvas>
 
-    <script>
-        const GRID_SIZE = 16;
-        const ROWS = 8;
-        const BPM = 128;
-        const INTERVAL = (60 / BPM) * 1000 / 4; // 16th notes
+  <script type="module">
+    // TR-909 Drum Synthesis (lightweight inline version)
+    class Voice {
+      constructor(ctx) {
+        this.ctx = ctx;
+        this.output = ctx.createGain();
+        this.output.gain.value = 1;
+      }
+      
+      trigger(time, velocity = 1) {}
+      connect(dest) { this.output.connect(dest); }
+    }
+    
+    class Kick extends Voice {
+      trigger(time, velocity = 1) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
         
-        let isPlaying = false;
-        let currentStep = 0;
-        let intervalId = null;
-        let audioContext = null;
+        osc.frequency.setValueAtTime(150, time);
+        osc.frequency.exponentialRampToValueAtTime(40, time + 0.2);
         
-        const grid = document.getElementById('grid');
-        const playBtn = document.getElementById('playBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const randomBtn = document.getElementById('randomBtn');
+        gain.gain.setValueAtTime(velocity * 0.8, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
         
-        // Create grid state
-        const state = Array(ROWS).fill(0).map(() => Array(GRID_SIZE).fill(false));
+        osc.connect(gain);
+        gain.connect(this.output);
         
-        // Initialize grid
-        function initGrid() {
-            grid.innerHTML = '';
-            grid.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
-            
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < GRID_SIZE; col++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    cell.dataset.row = row;
-                    cell.dataset.col = col;
-                    
-                    cell.addEventListener('click', () => {
-                        state[row][col] = !state[row][col];
-                        updateCell(cell, row, col);
-                    });
-                    
-                    grid.appendChild(cell);
-                }
-            }
+        osc.start(time);
+        osc.stop(time + 0.4);
+      }
+    }
+    
+    class Snare extends Voice {
+      trigger(time, velocity = 1) {
+        // Tone
+        const osc = this.ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, time);
+        
+        const toneGain = this.ctx.createGain();
+        toneGain.gain.setValueAtTime(velocity * 0.3, time);
+        toneGain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+        
+        // Noise
+        const noise = this.ctx.createBufferSource();
+        const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.2, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = Math.random() * 2 - 1;
         }
+        noise.buffer = buffer;
         
-        function updateCell(cell, row, col) {
-            cell.classList.toggle('active', state[row][col]);
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(velocity * 0.5, time);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+        
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 2000;
+        
+        osc.connect(toneGain).connect(this.output);
+        noise.connect(filter).connect(noiseGain).connect(this.output);
+        
+        osc.start(time);
+        osc.stop(time + 0.2);
+        noise.start(time);
+      }
+    }
+    
+    class Hat extends Voice {
+      constructor(ctx, freq) {
+        super(ctx);
+        this.freq = freq;
+      }
+      
+      trigger(time, velocity = 1) {
+        const noise = this.ctx.createBufferSource();
+        const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.05, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = Math.random() * 2 - 1;
         }
+        noise.buffer = buffer;
         
-        function getCellElement(row, col) {
-            return grid.children[row * GRID_SIZE + col];
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = this.freq;
+        filter.Q.value = 2;
+        
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(velocity * 0.4, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+        
+        noise.connect(filter).connect(gain).connect(this.output);
+        noise.start(time);
+      }
+    }
+    
+    class Tom extends Voice {
+      constructor(ctx, freq) {
+        super(ctx);
+        this.freq = freq;
+      }
+      
+      trigger(time, velocity = 1) {
+        const osc = this.ctx.createOscillator();
+        osc.frequency.setValueAtTime(this.freq, time);
+        osc.frequency.exponentialRampToValueAtTime(this.freq * 0.5, time + 0.15);
+        
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(velocity * 0.6, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
+        
+        osc.connect(gain).connect(this.output);
+        osc.start(time);
+        osc.stop(time + 0.25);
+      }
+    }
+    
+    class Crash extends Voice {
+      trigger(time, velocity = 1) {
+        const noise = this.ctx.createBufferSource();
+        const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.8, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = Math.random() * 2 - 1;
         }
+        noise.buffer = buffer;
         
-        // Audio synthesis
-        function initAudio() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 4000;
+        
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(velocity * 0.6, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.8);
+        
+        noise.connect(filter).connect(gain).connect(this.output);
+        noise.start(time);
+      }
+    }
+    
+    // Visual setup
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusEl = document.getElementById('status');
+    const promptEl = document.getElementById('start-prompt');
+    
+    function resize() {
+      const size = Math.min(window.innerWidth, window.innerHeight, 600);
+      canvas.width = size;
+      canvas.height = size;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Audio setup
+    let audioCtx = null;
+    let voices = [];
+    let isPlaying = false;
+    let step = 0;
+    let lastStepTime = 0;
+    
+    const BPM = 120;
+    const STEP_INTERVAL = (60 / BPM) * 1000 / 4; // 16th notes
+    
+    // 4x4 grid of circles
+    const grid = [];
+    const colors = [
+      '#FFD700', // gold - kick
+      '#D4A574', // amber - snare
+      '#f59e0b', // orange - hats
+      '#2D9596', // teal - toms
+      '#7B68EE', // violet - crash
+    ];
+    
+    const voiceNames = [
+      'KICK', 'SNARE', 'CH', 'OH',
+      'TOM L', 'TOM M', 'TOM H', 'CLAP',
+      'RIM', 'COWB', 'RIDE', 'CRASH',
+      'PERC1', 'PERC2', 'PERC3', 'PERC4'
+    ];
+    
+    // Pattern (1 bar, 16 steps)
+    const pattern = [
+      [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], // kick
+      [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], // snare
+      [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], // ch
+      [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0], // oh
+      [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0], // tom l
+      [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], // tom m
+      [0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], // tom h
+      [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0], // clap
+      [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], // rim
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // cowbell
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // ride
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // crash
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // perc1
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // perc2
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // perc3
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // perc4
+    ];
+    
+    function initAudio() {
+      audioCtx = new AudioContext();
+      const master = audioCtx.createGain();
+      master.gain.value = 0.7;
+      master.connect(audioCtx.destination);
+      
+      voices = [
+        new Kick(audioCtx),
+        new Snare(audioCtx),
+        new Hat(audioCtx, 8000),  // ch
+        new Hat(audioCtx, 10000), // oh
+        new Tom(audioCtx, 80),    // low
+        new Tom(audioCtx, 120),   // mid
+        new Tom(audioCtx, 180),   // high
+        new Hat(audioCtx, 1000),  // clap
+        new Hat(audioCtx, 1500),  // rim
+        new Tom(audioCtx, 300),   // cowbell
+        new Hat(audioCtx, 12000), // ride
+        new Crash(audioCtx),      // crash
+        new Hat(audioCtx, 2000),  // perc1
+        new Hat(audioCtx, 3000),  // perc2
+        new Hat(audioCtx, 5000),  // perc3
+        new Hat(audioCtx, 7000),  // perc4
+      ];
+      
+      voices.forEach(v => v.connect(master));
+    }
+    
+    function initGrid() {
+      const size = canvas.width;
+      const padding = size * 0.1;
+      const cellSize = (size - padding * 2) / 4;
+      
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 4; col++) {
+          const idx = row * 4 + col;
+          const colorIdx = idx % colors.length;
+          grid.push({
+            x: padding + col * cellSize + cellSize / 2,
+            y: padding + row * cellSize + cellSize / 2,
+            radius: cellSize * 0.3,
+            baseRadius: cellSize * 0.3,
+            color: colors[colorIdx],
+            pulse: 0,
+            name: voiceNames[idx],
+            voiceIdx: idx,
+          });
         }
-        
-        function playNote(row) {
-            if (!audioContext) return;
-            
-            // Different frequencies for each row (pentatonic scale)
-            const frequencies = [880, 660, 550, 440, 330, 275, 220, 165];
-            const freq = frequencies[row];
-            
-            const now = audioContext.currentTime;
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            
-            osc.type = 'sine';
-            osc.frequency.value = freq;
-            
-            gain.gain.setValueAtTime(0.15, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            
-            osc.start(now);
-            osc.stop(now + 0.1);
+      }
+    }
+    initGrid();
+    
+    function trigger() {
+      for (let i = 0; i < 16; i++) {
+        if (pattern[i][step]) {
+          const now = audioCtx.currentTime;
+          voices[i].trigger(now, 1.0);
+          grid[i].pulse = 1;
         }
+      }
+      step = (step + 1) % 16;
+    }
+    
+    function animate(timestamp) {
+      requestAnimationFrame(animate);
+      
+      // Draw background
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Check if we should step
+      if (isPlaying && timestamp - lastStepTime >= STEP_INTERVAL) {
+        trigger();
+        lastStepTime = timestamp;
+      }
+      
+      // Draw grid
+      grid.forEach(cell => {
+        // Decay pulse
+        cell.pulse *= 0.85;
         
-        // Sequencer
-        function step() {
-            // Clear previous pulse
-            for (let row = 0; row < ROWS; row++) {
-                const prevCell = getCellElement(row, currentStep);
-                prevCell.classList.remove('pulsing');
-            }
-            
-            // Move to next step
-            currentStep = (currentStep + 1) % GRID_SIZE;
-            
-            // Play active cells in current column
-            for (let row = 0; row < ROWS; row++) {
-                const cell = getCellElement(row, currentStep);
-                
-                if (state[row][currentStep]) {
-                    cell.classList.add('pulsing');
-                    playNote(row);
-                }
-            }
+        // Base breathing animation (even when not playing)
+        const breathe = Math.sin(timestamp * 0.002) * 0.5 + 0.5;
+        const baseScale = 0.7 + breathe * 0.3;
+        
+        // Active pulse on top of breathing
+        const scale = baseScale + cell.pulse * 0.3;
+        const radius = cell.baseRadius * scale;
+        
+        // Outer glow
+        const gradient = ctx.createRadialGradient(
+          cell.x, cell.y, radius * 0.3,
+          cell.x, cell.y, radius * 1.5
+        );
+        gradient.addColorStop(0, cell.color + 'aa');
+        gradient.addColorStop(0.5, cell.color + '44');
+        gradient.addColorStop(1, cell.color + '00');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(cell.x - radius * 2, cell.y - radius * 2, radius * 4, radius * 4);
+        
+        // Circle
+        ctx.strokeStyle = cell.color;
+        ctx.lineWidth = 2 + cell.pulse * 3;
+        ctx.globalAlpha = 0.6 + cell.pulse * 0.4;
+        ctx.beginPath();
+        ctx.arc(cell.x, cell.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Label
+        ctx.fillStyle = cell.color;
+        ctx.globalAlpha = 0.5;
+        ctx.font = '8px Space Mono';
+        ctx.textAlign = 'center';
+        ctx.fillText(cell.name, cell.x, cell.y + 3);
+        
+        ctx.globalAlpha = 1;
+      });
+      
+      // Step indicator
+      if (isPlaying) {
+        const barWidth = (canvas.width - canvas.width * 0.2) / 16;
+        const startX = canvas.width * 0.1;
+        const y = canvas.height - 30;
+        
+        for (let i = 0; i < 16; i++) {
+          ctx.fillStyle = i === step ? '#FFD700' : '#D4A57444';
+          ctx.fillRect(startX + i * barWidth, y, barWidth - 2, 4);
         }
-        
-        // Controls
-        playBtn.addEventListener('click', () => {
-            if (!isPlaying) {
-                initAudio();
-                isPlaying = true;
-                playBtn.textContent = 'STOP';
-                playBtn.classList.add('active');
-                intervalId = setInterval(step, INTERVAL);
-            } else {
-                isPlaying = false;
-                playBtn.textContent = 'START';
-                playBtn.classList.remove('active');
-                clearInterval(intervalId);
-                
-                // Clear all pulsing
-                document.querySelectorAll('.cell').forEach(cell => {
-                    cell.classList.remove('pulsing');
-                });
-            }
-        });
-        
-        clearBtn.addEventListener('click', () => {
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < GRID_SIZE; col++) {
-                    state[row][col] = false;
-                    const cell = getCellElement(row, col);
-                    cell.classList.remove('active', 'pulsing');
-                }
-            }
-        });
-        
-        randomBtn.addEventListener('click', () => {
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < GRID_SIZE; col++) {
-                    state[row][col] = Math.random() > 0.7;
-                    const cell = getCellElement(row, col);
-                    updateCell(cell, row, col);
-                }
-            }
-        });
-        
-        // Initialize
-        initGrid();
-    </script>
+      }
+    }
+    
+    canvas.addEventListener('click', async () => {
+      if (!audioCtx) {
+        initAudio();
+        await audioCtx.resume();
+      }
+      
+      if (!isPlaying) {
+        isPlaying = true;
+        statusEl.textContent = `PLAYING — ${BPM} BPM`;
+        promptEl.classList.add('hidden');
+        lastStepTime = performance.now();
+      } else {
+        isPlaying = false;
+        statusEl.textContent = 'IDLE';
+      }
+    });
+    
+    animate(0);
+  </script>
 </body>
 </html>
