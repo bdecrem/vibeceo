@@ -566,6 +566,7 @@ class TerminalUI {
         this.setupScrollRegion();
         this.drawInputBox();
         this.drawStatusBar();
+        this.positionCursor();  // Hide cursor during processing, position when done
         this.handleSubmit(input);
       }
       return;
@@ -881,6 +882,7 @@ class TerminalUI {
   private async runAgent(input: string): Promise<void> {
     this.isProcessing = true;
     this.drawInputBox();
+    this.positionCursor();  // Hides cursor during processing
 
     let currentProject = this.project;
     let renderInfo: any = null;
