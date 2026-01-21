@@ -1,25 +1,25 @@
 {
   "name": "jambot",
-  "version": "0.0.3",
+  "version": "0.0.2",
   "type": "module",
   "description": "AI-powered music creation CLI",
   "scripts": {
-    "start": "tsx terminal-ui.ts",
-    "start:ink": "tsx ui.tsx",
+    "start": "tsx ui.tsx",
+    "start:old": "node jambot.js",
     "build": "node build.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "ffmpeg-static": "^5.3.0",
+    "ink": "^5.2.0",
+    "ink-text-input": "^6.0.0",
     "node-web-audio-api": "^1.0.7",
+    "react": "^18.3.1",
     "string-width": "^8.1.0",
     "wrap-ansi": "^9.0.2"
   },
   "devDependencies": {
     "esbuild": "^0.27.2",
-    "tsx": "^4.21.0",
-    "ink": "^5.2.0",
-    "ink-text-input": "^6.0.0",
-    "react": "^18.3.1"
+    "tsx": "^4.21.0"
   }
 }

@@ -1,16 +1,13 @@
 {
   "name": "jambot",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "type": "module",
   "description": "AI-powered music creation CLI",
   "bin": {
     "jambot": "./jambot.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.2",
     "node-web-audio-api": "^1.0.7",
-    "ffmpeg-static": "^5.3.0",
-    "string-width": "^8.1.0",
-    "wrap-ansi": "^9.0.2"
+    "inquirer": "^13.2.0"
   }
 }

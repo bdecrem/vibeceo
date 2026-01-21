@@ -6,27 +6,31 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-console.log('🔨 Building Jambot v0.0.3 for distribution...\n');
+console.log('🔨 Building Jambot v0.0.2 for distribution...\n');
 
 // Create dist folder
 mkdirSync('dist', { recursive: true });
 
 // Bundle the UI (entry point)
 await esbuild.build({
-  entryPoints: ['terminal-ui.ts'],
+  entryPoints: ['ui.tsx'],
   bundle: true,
   platform: 'node',
   target: 'node18',
   format: 'esm',
   outfile: 'dist/jambot.js',
+  // Shebang already in ui.tsx, don't add another
   // Mark native/dynamic modules as external
   external: [
     'node-web-audio-api',  // Native addon
+    'ink',                 // React renderer
+    'ink-text-input',      // Input component
+    'react',               // React runtime
     '@anthropic-ai/sdk',   // API client
     'ffmpeg-static',       // Binary
   ],
   loader: {
-    '.ts': 'ts',
+    '.tsx': 'tsx',
   },
 });
 
@@ -38,18 +42,19 @@ if (existsSync('genres.json')) {
 // Create package.json for dist
 const pkg = {
   name: "jambot",
-  version: "0.0.3",
+  version: "0.0.2",
   type: "module",
   description: "AI-powered music creation CLI",
   bin: {
     jambot: "./jambot.js"
   },
   dependencies: {
-    "@anthropic-ai/sdk": "^0.71.2",
+    "@anthropic-ai/sdk": "^0.39.0",
     "node-web-audio-api": "^1.0.7",
-    "ffmpeg-static": "^5.3.0",
-    "string-width": "^8.1.0",
-    "wrap-ansi": "^9.0.2"
+    "ink": "^5.2.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^18.3.1",
+    "ffmpeg-static": "^5.2.0"
   }
 };
 
