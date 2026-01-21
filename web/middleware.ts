@@ -345,14 +345,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // Root → /kochitolabs
-    if (pathname === '/' || pathname === '') {
-      const newUrl = new URL('/kochitolabs', request.url)
-      log(`[Middleware] Kochito Labs domain root rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    return NextResponse.next()
+    // Rewrite all paths to /kochitolabs/*
+    const targetPath = pathname === '/' || pathname === '' ? '/kochitolabs' : `/kochitolabs${pathname}`
+    const newUrl = new URL(targetPath, request.url)
+    log(`[Middleware] Kochito Labs domain rewrite ${pathname} -> ${newUrl.pathname}`)
+    return NextResponse.rewrite(newUrl)
   }
 
   // SPECIFIC FIX: Bypass music player route immediately
