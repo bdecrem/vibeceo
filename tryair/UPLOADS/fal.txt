@@ -1,0 +1,74 @@
+Done. One thing the instructions don't cover: you'll need audio for the lipsync step. Options for that include FAL's own TTS models, ElevenLabs, or just hosting any audio file somewhere accessible.
+
+# AI Content Workflow Test (Claude Code + FAL.ai)
+
+## Prerequisites
+
+- FAL.ai API key set as `FAL_KEY` environment variable
+- A source image (monk photo or similar)
+
+## Step 1: Get JSON Prompt from Image
+
+Upload your image to Claude and ask:
+
+```
+Generate a JSON prompt for this image that I can use with an image generation model. Include: subject description, style, lighting, composition, mood.
+```
+
+## Step 2: Generate Image with Nano Banana Pro
+
+```bash
+curl -X POST "https://queue.fal.run/fal-ai/nano-banana-pro" \
+  -H "Authorization: Key $FAL_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "YOUR_PROMPT_HERE",
+    "image_size": "square_hd",
+    "num_images": 1
+  }'
+```
+
+This returns a request_id. Poll for results:
+
+```bash
+curl "https://queue.fal.run/fal-ai/nano-banana-pro/requests/REQUEST_ID" \
+  -H "Authorization: Key $FAL_KEY"
+```
+
+## Step 3: Generate Lipsync with InfiniteTalk
+
+```bash
+curl -X POST "https://queue.fal.run/fal-ai/infinitetalk" \
+  -H "Authorization: Key $FAL_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "face_image_url": "URL_FROM_STEP_2",
+    "audio_url": "YOUR_AUDIO_URL"
+  }'
+```
+
+Poll for results same way as step 2.
+
+## Quick Test Script
+
+Save as `test-workflow.sh`:
+
+```bash
+#!/bin/bash
+
+# Test with a simple prompt first
+curl -X POST "https://queue.fal.run/fal-ai/nano-banana-pro" \
+  -H "Authorization: Key $FAL_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Buddhist monk in traditional orange robes, serene expression, ancient temple background, golden hour lighting, cinematic",
+    "image_size": "square_hd",
+    "num_images": 1
+  }'
+```
+
+## Notes
+
+- Nano Banana Pro is fast (~seconds)
+- InfiniteTalk needs an audio file URL (mp3/wav hosted somewhere accessible)
+- For audio, you could use ElevenLabs, FAL's own TTS, or any hosted audio file

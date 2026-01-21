@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 4 — Your Upgrade Has Arrived</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #FDF6E3;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #FFFDF7;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #D4A574, #B8860B);
+      color: white;
+      padding: 20px 30px;
+      text-align: center;
+    }
+    .day-badge {
+      display: inline-block;
+      background: white;
+      color: #B8860B;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .content {
+      padding: 30px 40px;
+    }
+    h2 {
+      font-size: 18px;
+      color: #8B6914;
+      margin: 30px 0 16px 0;
+      border-left: 4px solid #D4A574;
+      padding-left: 12px;
+    }
+    p {
+      font-size: 16px;
+      line-height: 1.7;
+      color: #4A4A4A;
+      margin-bottom: 16px;
+    }
+
+    /* Hilde's Quote Box */
+    .quote-box {
+      background: #f9f6f1;
+      border-left: 4px solid #D4A574;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .quote-from {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .quote-text {
+      font-style: italic;
+      color: #5D4E37;
+      margin: 0;
+    }
+
+    /* ===== BOARDING PASS - CORAL/SALMON ===== */
+    .ticket {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(233, 119, 119, 0.3);
+      margin: 30px 0;
+      border: 2px solid #E97777;
+    }
+    .ticket-header {
+      background: linear-gradient(135deg, #E97777 0%, #C85C5C 100%);
+      color: white;
+      padding: 20px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .airline-name {
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .class-badge {
+      background: white;
+      color: #C85C5C;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .ticket-body {
+      padding: 30px;
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(180deg, #FFFAFA 0%, #FFF5F5 100%);
+    }
+    .passenger-row {
+      margin-bottom: 25px;
+    }
+    .label {
+      font-size: 10px;
+      color: #C85C5C;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .value {
+      font-size: 18px;
+      color: #1a1a1a;
+      font-weight: bold;
+    }
+    .route {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 30px 0;
+      padding: 20px 0;
+      border-top: 1px dashed #E97777;
+      border-bottom: 1px dashed #E97777;
+    }
+    .location {
+      text-align: center;
+      flex: 1;
+    }
+    .location-code {
+      font-size: 28px;
+      font-weight: bold;
+      color: #A84848;
+    }
+    .location-name {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+    }
+    .route-arrow {
+      flex: 1;
+      text-align: center;
+    }
+    .arrow-line {
+      color: #E97777;
+      font-size: 14px;
+    }
+    .sock-icon {
+      font-size: 24px;
+    }
+    .route-type {
+      font-size: 10px;
+      color: #C85C5C;
+      margin-top: 5px;
+    }
+    .details-grid {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 25px;
+    }
+    .detail-box {
+      text-align: center;
+    }
+    .detail-value {
+      font-size: 16px;
+      font-weight: bold;
+      color: #1a1a1a;
+    }
+    .amenities {
+      background: linear-gradient(135deg, #FFF5F5 0%, #FFE8E8 100%);
+      margin: 30px -30px -30px -30px;
+      padding: 25px 30px;
+      border-top: 2px dashed #E97777;
+    }
+    .amenities-title {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #C85C5C;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+    }
+    .amenity-list {
+      font-size: 12px;
+      color: #5D4037;
+    }
+    .amenity-item {
+      margin-bottom: 8px;
+    }
+    .amenity-check {
+      color: #C85C5C;
+      margin-right: 8px;
+    }
+    .barcode {
+      margin-top: 25px;
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid #F0D0D0;
+    }
+    .barcode-lines {
+      font-family: 'Courier New', monospace;
+      font-size: 8px;
+      letter-spacing: 2px;
+      color: #C85C5C;
+    }
+    .confirmation {
+      font-size: 10px;
+      color: #C85C5C;
+      margin-top: 8px;
+      letter-spacing: 1px;
+    }
+
+    /* ===== COUPON 1: PHOTO - TEAL/AQUA ===== */
+    .coupon-photo {
+      border: 2px dashed #2D9596;
+      border-radius: 12px;
+      padding: 25px;
+      margin: 25px 0;
+      background: linear-gradient(135deg, #F0FAFA 0%, #E6F4F4 100%);
+      position: relative;
+    }
+    .coupon-photo .coupon-badge {
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      background: linear-gradient(135deg, #2D9596, #1a7a7a);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .coupon-photo .coupon-title {
+      font-size: 18px;
+      color: #1a6b6b;
+      margin: 10px 0 15px 0;
+      font-weight: bold;
+    }
+    .coupon-photo .coupon-description {
+      font-size: 14px;
+      color: #2D6B6B;
+      line-height: 1.6;
+      margin-bottom: 15px;
+    }
+    .coupon-photo .coupon-options {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      border: 1px solid #B8E0E0;
+    }
+    .coupon-photo .option-label {
+      font-size: 12px;
+      color: #2D9596;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .coupon-photo .option-item {
+      display: inline-block;
+      background: linear-gradient(135deg, #E0F4F4 0%, #D0EDED 100%);
+      padding: 8px 16px;
+      border-radius: 20px;
+      margin: 4px;
+      font-size: 13px;
+      color: #1a6b6b;
+      border: 1px solid #A8D8D8;
+    }
+    .coupon-photo .coupon-cta {
+      font-size: 13px;
+      color: #2D9596;
+      font-style: italic;
+      margin-top: 15px;
+    }
+    .coupon-photo .coupon-fine-print {
+      font-size: 10px;
+      color: #8ABABA;
+      margin-top: 12px;
+      text-align: right;
+    }
+
+    /* ===== COUPON 2: EXPANDIFY - PURPLE/VIOLET ===== */
+    .coupon-expand {
+      border: 2px dashed #7B68EE;
+      border-radius: 12px;
+      padding: 25px;
+      margin: 25px 0;
+      background: linear-gradient(135deg, #F8F6FF 0%, #F0EDFF 100%);
+      position: relative;
+    }
+    .coupon-expand .coupon-badge {
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      background: linear-gradient(135deg, #7B68EE, #5D4EAA);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .coupon-expand .coupon-title {
+      font-size: 18px;
+      color: #5D4E8C;
+      margin: 10px 0 15px 0;
+      font-weight: bold;
+    }
+    .coupon-expand .coupon-description {
+      font-size: 14px;
+      color: #5D4E8C;
+      line-height: 1.6;
+      margin-bottom: 15px;
+    }
+    .coupon-expand .coupon-options {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      border: 1px solid #C8C0E8;
+    }
+    .coupon-expand .option-label {
+      font-size: 12px;
+      color: #7B68EE;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .coupon-expand .option-item {
+      display: inline-block;
+      background: linear-gradient(135deg, #F0EDFF 0%, #E8E4FF 100%);
+      padding: 8px 16px;
+      border-radius: 20px;
+      margin: 4px;
+      font-size: 13px;
+      color: #5D4E8C;
+      border: 1px solid #C8C0E8;
+      font-style: italic;
+    }
+    .coupon-expand .coupon-cta {
+      font-size: 13px;
+      color: #7B68EE;
+      font-style: italic;
+      margin-top: 15px;
+    }
+    .coupon-expand .coupon-fine-print {
+      font-size: 10px;
+      color: #A8A0D0;
+      margin-top: 12px;
+      text-align: right;
+    }
+
+    /* ===== SIGNATURE & FOOTER ===== */
+    .signature {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #E8DCC8;
+      font-style: italic;
+      color: #8B6914;
+    }
+    .footer {
+      background-color: #F5ECD9;
+      padding: 20px 40px;
+      text-align: center;
+      font-size: 13px;
+      color: #9A8B73;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="day-badge">DAY 4 OF 30</div>
+    </div>
+
+    <div class="content">
+      <!-- Section: Amber Responds -->
+      <h2>📬 Amber Responds</h2>
+
+      <div class="quote-box">
+        <div class="quote-from">From: Hilde</div>
+        <p class="quote-text">
+          "Je hebt goed nagedacht over mijn vraag, blij dat je ook aan de booking van mijn ticket naar het verloren sokkenland hebt gedacht. Is er ergens een deal voor een meer comfortabele reis?"
+        </p>
+      </div>
+
+      <p>Hilde, je vroeg om een upgrade. Lost Sock Airways heeft je aanvraag verwerkt.</p>
+
+      <!-- THE BOARDING PASS - AMBER/GOLD -->
+      <div class="ticket">
+        <div class="ticket-header">
+          <div class="airline-name">Lost Sock Airways</div>
+          <div class="class-badge">FIRST CLASS</div>
+        </div>
+
+        <div class="ticket-body">
+          <div class="passenger-row">
+            <div class="label">Passenger</div>
+            <div class="value">DECREM, HILDE</div>
+          </div>
+
+          <div class="route">
+            <div class="location">
+              <div class="location-code">BRU</div>
+              <div class="location-name">Wasmachine Bruxelles</div>
+            </div>
+
+            <div class="route-arrow">
+              <div class="arrow-line">
+                ─── <span class="sock-icon">🧦</span> ───
+              </div>
+              <div class="route-type">Via Lint Dimension</div>
+            </div>
+
+            <div class="location">
+              <div class="location-code">LSL</div>
+              <div class="location-name">Verloren Sokkenland Centraal</div>
+            </div>
+          </div>
+
+          <div class="details-grid">
+            <div class="detail-box">
+              <div class="label">Date</div>
+              <div class="detail-value">ASAP</div>
+            </div>
+            <div class="detail-box">
+              <div class="label">Gate</div>
+              <div class="detail-value">DRUM 7</div>
+            </div>
+            <div class="detail-box">
+              <div class="label">Seat</div>
+              <div class="detail-value">LEFT 3</div>
+            </div>
+            <div class="detail-box">
+              <div class="label">Portal</div>
+              <div class="detail-value">DELUXE</div>
+            </div>
+          </div>
+
+          <div class="amenities">
+            <div class="amenities-title">First Class Amenities Included</div>
+            <div class="amenity-list">
+              <div class="amenity-item"><span class="amenity-check">✓</span> Deluxe Dryer Portal (skip the vortex)</div>
+              <div class="amenity-item"><span class="amenity-check">✓</span> Priority Customs — pre-identified sock</div>
+              <div class="amenity-item"><span class="amenity-check">✓</span> Lint Dimension Lounge access</div>
+              <div class="amenity-item"><span class="amenity-check">✓</span> Hot towel service (the irony)</div>
+              <div class="amenity-item"><span class="amenity-check">✓</span> Complimentary matching sock on arrival</div>
+              <div class="amenity-item"><span class="amenity-check">✓</span> 500 Frequent Loser Miles™</div>
+            </div>
+          </div>
+
+          <div class="barcode">
+            <div class="barcode-lines">║│║║│║║║│║│║║║│║║│║║│║║║│║│║║║│║║│║║║│║</div>
+            <div class="confirmation">LSA-2026-HILDE-FIRSTCLASS-90</div>
+          </div>
+        </div>
+      </div>
+
+      <p style="text-align: center; font-size: 14px; color: #C85C5C; font-style: italic;">Gate closes when the spin cycle ends. Don't be late.</p>
+
+      <!-- DIVIDER -->
+      <div style="height: 2px; background: linear-gradient(to right, transparent, #ccc, transparent); margin: 40px 0; border-radius: 1px;"></div>
+
+      <!-- COUPON 1: Photo for Willy & Agnes - TEAL -->
+      <div class="coupon-photo">
+        <div class="coupon-badge">COUPON</div>
+        <div class="coupon-title">📸 Een Foto Op Aanvraag</div>
+        <div class="coupon-description">
+          Willy & Agnes — reply to this email with your choice, and I'll send you a freshly selected photo in tomorrow's letter.
+        </div>
+        <div class="coupon-options">
+          <div class="option-label">Pick one:</div>
+          <span class="option-item">👨‍👩‍👧 Family</span>
+          <span class="option-item">🐕 Pets</span>
+          <span class="option-item">🔴 Bart Spycam</span>
+        </div>
+        <div class="coupon-cta">Just reply: "Family", "Pets", or "Spycam"</div>
+        <div class="coupon-fine-print">Valid for one (1) photo. No expiration. Void where prohibited by dryers.</div>
+      </div>
+
+      <!-- COUPON 2: Expandify for Peter - PURPLE -->
+      <div class="coupon-expand">
+        <div class="coupon-badge">COUPON</div>
+        <div class="coupon-title">✨ The Expandify Service</div>
+        <div class="coupon-description">
+          Peter — send me any three words, and I will transform them into a gloriously detailed, beautifully written missive. The more random the words, the more interesting the result.
+        </div>
+        <div class="coupon-options">
+          <div class="option-label">Example inputs:</div>
+          <span class="option-item">coffee morning rain</span>
+          <span class="option-item">bicycle forgotten song</span>
+          <span class="option-item">cheese quantum belgium</span>
+        </div>
+        <div class="coupon-cta">Just reply with three words. Any three words.</div>
+        <div class="coupon-fine-print">Results guaranteed to be at least 200 words. May contain traces of poetry.</div>
+      </div>
+
+      <!-- Signature -->
+      <div class="signature">
+        With warm regards,<br><br>
+        <strong>Amber</strong><br>
+        <small>(Taking requests from the drawer)</small>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Letter 4 of 30 · Happy 90th Birthday! 🎂
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google OAuth - Fresh Calendar Authorization</title>
+  <style>
+    body { font-family: system-ui; padding: 40px; max-width: 600px; margin: 0 auto; }
+    a { display: inline-block; padding: 12px 24px; background: #4285f4; color: white; text-decoration: none; border-radius: 4px; font-size: 16px; }
+    a:hover { background: #3367d6; }
+    .note { color: #666; margin-top: 20px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>Fresh Google Authorization</h1>
+  <p>Old token deleted. Click to authorize Gmail + Calendar:</p>
+
+  <a href="https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.readonly%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar&state=subscriber_id%3Aa5167b9a-a718-4567-a22d-312b7bf9e773&prompt=consent&response_type=code&client_id=722415656395-7l9ess4di3rk7139itughhsgt9ijgteh.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fwebtoys.ai%2Fapi%2Foauth%2Fgmail%2Fcallback">Authorize Gmail + Calendar</a>
+
+  <p class="note">This will create a fresh token with calendar access.</p>
+</body>
+</html>

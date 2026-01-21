@@ -1,0 +1,15 @@
+{
+  "name": "909 Kicks",
+  "slots": [
+    { "id": "s1", "name": "Bart Deep", "short": "BD" },
+    { "id": "s2", "name": "Bart Boom", "short": "BB" },
+    { "id": "s3", "name": "Kick Tight", "short": "K3" },
+    { "id": "s4", "name": "Kick Short", "short": "K4" },
+    { "id": "s5", "name": "Kick Dry", "short": "K5" },
+    { "id": "s6", "name": "Kick Punch", "short": "K6" },
+    { "id": "s7", "name": "Kick Mid", "short": "K7" },
+    { "id": "s8", "name": "Kick Long", "short": "K8" },
+    { "id": "s9", "name": "Kick Sub", "short": "K9" },
+    { "id": "s10", "name": "Kick Heavy", "short": "KX" }
+  ]
+}
