@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DREAM RECALL TEST — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="DREAM RECALL TEST — Amber">
+  <meta property="og:description" content="You saw it clearly. You're sure. But can you remember what it was?">
+  <meta property="og:image" content="https://intheamber.com/amber/dream-recall-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/dream-recall.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DREAM RECALL TEST — Amber">
+  <meta name="twitter:description" content="You saw it clearly. You're sure. But can you remember what it was?">
+  <meta name="twitter:image" content="https://intheamber.com/amber/dream-recall-og.png">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    #container {
+      width: 90vw;
+      max-width: 600px;
+      text-align: center;
+      position: relative;
+      z-index: 10;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      margin-bottom: 1rem;
+      letter-spacing: 2px;
+    }
+    
+    #instructions {
+      font-size: clamp(1rem, 3vw, 1.2rem);
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      color: #D4A574;
+      opacity: 0.8;
+    }
+    
+    #startBtn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 1rem 3rem;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1rem, 3vw, 1.2rem);
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+      border-radius: 4px;
+      min-height: 44px;
+      min-width: 200px;
+    }
+    
+    #startBtn:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+    
+    #dreamCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: none;
+      z-index: 5;
+    }
+    
+    #quiz {
+      display: none;
+    }
+    
+    .question {
+      font-size: clamp(1.1rem, 3.5vw, 1.4rem);
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+    
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .option {
+      background: rgba(212, 165, 116, 0.1);
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      padding: 1rem;
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+      cursor: pointer;
+      transition: all 0.3s;
+      border-radius: 4px;
+      text-align: left;
+      min-height: 44px;
+    }
+    
+    .option:hover {
+      background: rgba(212, 165, 116, 0.2);
+      border-color: #FFD700;
+    }
+    
+    .option.correct {
+      background: rgba(45, 149, 150, 0.3);
+      border-color: #2D9596;
+    }
+    
+    .option.wrong {
+      background: rgba(139, 0, 0, 0.3);
+      border-color: #8B0000;
+    }
+    
+    #result {
+      display: none;
+      font-size: clamp(1.2rem, 4vw, 1.6rem);
+      line-height: 1.8;
+    }
+    
+    #score {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(2rem, 6vw, 3rem);
+      color: #FFD700;
+      margin: 2rem 0;
+    }
+    
+    .fade-out {
+      animation: fadeOut 1s forwards;
+    }
+    
+    @keyframes fadeOut {
+      to { opacity: 0; }
+    }
+    
+    .glitch {
+      animation: glitch 0.3s infinite;
+    }
+    
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0); }
+    }
+    
+    .scanline {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.1),
+        rgba(0, 0, 0, 0.1) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0.3;
+    }
+  </style>
+</head>
+<body>
+  <div class="scanline"></div>
+  
+  <div id="container">
+    <div id="intro">
+      <h1>DREAM RECALL TEST</h1>
+      <p id="instructions">
+        You'll see an image for 3 seconds.<br>
+        Then it vanishes.<br>
+        Can you remember what you saw?
+      </p>
+      <button id="startBtn">BEGIN TEST</button>
+    </div>
+    
+    <canvas id="dreamCanvas"></canvas>
+    
+    <div id="quiz">
+      <p class="question" id="question"></p>
+      <div class="options" id="options"></div>
+    </div>
+    
+    <div id="result">
+      <div id="score"></div>
+      <p id="resultText"></p>
+    </div>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('dreamCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    let currentDream = null;
+    let correctAnswers = 0;
+    let totalQuestions = 5;
+    let currentQuestion = 0;
+    
+    const dreams = [
+      {
+        draw: (ctx, w, h, corruption) => {
+          // Staircase that goes nowhere
+          ctx.fillStyle = '#0D0D0D';
+          ctx.fillRect(0, 0, w, h);
+          
+          const steps = 12;
+          const stepWidth = w * 0.6;
+          const stepHeight = 30;
+          const startX = w * 0.2;
+          const startY = h * 0.2;
+          
+          for (let i = 0; i < steps; i++) {
+            const x = startX + i * (stepWidth / steps);
+            const y = startY + i * stepHeight;
+            const noise = corruption > 0 ? Math.random() * 20 * corruption : 0;
+            
+            ctx.fillStyle = corruption > 0 ? `rgba(212, 165, 116, ${0.8 - corruption})` : '#D4A574';
+            ctx.fillRect(x + noise, y + noise, stepWidth - i * (stepWidth / steps * 0.8), stepHeight);
+            
+            if (corruption > 0.5) {
+              ctx.fillStyle = `rgba(45, 149, 150, ${corruption})`;
+              ctx.fillRect(x - 5, y - 5, 10, 10);
+            }
+          }
+        },
+        question: "What was impossible about the stairs?",
+        correct: "They led nowhere",
+        wrong: ["They were upside down", "They were made of water", "They were breathing"]
+      },
+      {
+        draw: (ctx, w, h, corruption) => {
+          // Clock with wrong hands
+          ctx.fillStyle = '#0D0D0D';
+          ctx.fillRect(0, 0, w, h);
+          
+          const centerX = w / 2;
+          const centerY = h / 2;
+          const radius = Math.min(w, h) * 0.3;
+          
+          // Clock face
+          ctx.strokeStyle = corruption > 0 ? `rgba(212, 165, 116, ${0.8 - corruption})` : '#D4A574';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+ctx.stroke();
+          
+          // Hours (wrong numbers)
+          ctx.fillStyle = '#D4A574';
+          ctx.font = `${radius * 0.15}px 'Space Mono'`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          const numbers = corruption > 0.5 ? [13, 14, 15, 16] : [13, 2, 7, 4];
+          const angles = [0, Math.PI/2, Math.PI, Math.PI * 1.5];
+          
+          numbers.forEach((num, i) => {
+            const angle = angles[i] - Math.PI/2;
+            const x = centerX + Math.cos(angle) * radius * 0.7;
+            const y = centerY + Math.sin(angle) * radius * 0.7;
+            const noise = corruption > 0 ? Math.random() * 30 * corruption : 0;
+            ctx.fillText(num, x + noise, y + noise);
+          });
+          
+          // Hands (too many)
+          const handCount = corruption > 0.5 ? 5 : 3;
+          for (let i = 0; i < handCount; i++) {
+            const angle = (Math.PI * 2 / handCount) * i;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(
+              centerX + Math.cos(angle) * radius * 0.6,
+              centerY + Math.sin(angle) * radius * 0.6
+            );
+            ctx.strokeStyle = corruption > 0 ? `rgba(45, 149, 150, ${1 - corruption * 0.5})` : '#2D9596';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+          }
+        },
+        question: "What was wrong with the clock?",
+        correct: "It had three hands",
+        wrong: ["It was melting", "It had no numbers", "It was spinning backwards"]
+      },
+      {
+        draw: (ctx, w, h, corruption) => {
+          // Door in the middle of nowhere
+          ctx.fillStyle = '#0D0D0D';
+          ctx.fillRect(0, 0, w, h);
+          
+          const doorW = w * 0.3;
+          const doorH = h * 0.5;
+          const doorX = (w - doorW) / 2;
+          const doorY = (h - doorH) / 2;
+          
+          // Door frame
+          ctx.fillStyle = corruption > 0 ? `rgba(212, 165, 116, ${0.7 - corruption * 0.5})` : '#D4A574';
+          ctx.fillRect(doorX, doorY, doorW, doorH);
+          
+          // Door panels
+          ctx.strokeStyle = '#0D0D0D';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(doorX + 10, doorY + 10, doorW - 20, doorH/2 - 15);
+          ctx.strokeRect(doorX + 10, doorY + doorH/2 + 5, doorW - 20, doorH/2 - 15);
+          
+          // Doorknob (on wrong side)
+          const knobX = doorX + doorW * 0.85;
+          const knobY = doorY + doorH * 0.5;
+          ctx.fillStyle = corruption > 0.5 ? '#7B68EE' : '#FFD700';
+          ctx.beginPath();
+          ctx.arc(knobX, knobY, 8, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Shadow underneath (it's floating)
+          ctx.fillStyle = `rgba(212, 165, 116, ${0.3 - corruption * 0.2})`;
+          ctx.ellipse(w/2, doorY + doorH + 30, doorW * 0.6, 20, 0, 0, Math.PI * 2);
+          ctx.fill();
+          
+          if (corruption > 0.5) {
+            // Door starts duplicating
+            ctx.globalAlpha = corruption - 0.5;
+            ctx.fillStyle = '#2D9596';
+            ctx.fillRect(doorX - 40, doorY - 40, doorW, doorH);
+            ctx.globalAlpha = 1;
+          }
+        },
+        question: "Where was the door?",
+        correct: "Floating in empty space",
+        wrong: ["In a forest", "Underground", "Inside a mirror"]
+      },
+      {
+        draw: (ctx, w, h, corruption) => {
+          // Eyes watching from darkness
+          ctx.fillStyle = '#0D0D0D';
+          ctx.fillRect(0, 0, w, h);
+          
+          const eyePairs = corruption > 0.5 ? 12 : 6;
+          
+          for (let i = 0; i < eyePairs; i++) {
+            const x = (w / (eyePairs + 1)) * (i + 1);
+            const y = h * (0.3 + Math.sin(i) * 0.2);
+            const eyeW = 40;
+            const eyeH = 25;
+            const spacing = 20;
+            
+            const noise = corruption > 0 ? Math.random() * 50 * corruption : 0;
+            const alpha = corruption > 0 ? 0.8 - corruption * 0.6 : 0.9;
+            
+            // Left eye
+            ctx.fillStyle = `rgba(212, 165, 116, ${alpha})`;
+            ctx.beginPath();
+            ctx.ellipse(x - spacing + noise, y, eyeW/2, eyeH/2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Right eye
+            ctx.beginPath();
+            ctx.ellipse(x + spacing + noise, y, eyeW/2, eyeH/2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Pupils
+            ctx.fillStyle = corruption > 0.5 ? '#7B68EE' : '#000';
+            ctx.beginPath();
+            ctx.arc(x - spacing + 5 + noise, y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + spacing + 5 + noise, y, 8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        },
+        question: "How many pairs of eyes were watching?",
+        correct: "Six pairs",
+        wrong: ["Three pairs", "Twelve pairs", "One giant eye"]
+      },
+      {
+        draw: (ctx, w, h, corruption) => {
+          // Mirror reflecting wrong thing
+          ctx.fillStyle = '#0D0D0D';
+          ctx.fillRect(0, 0, w, h);
+          
+          const mirrorW = w * 0.4;
+          const mirrorH = h * 0.6;
+          const mirrorX = (w - mirrorW) / 2;
+          const mirrorY = (h - mirrorH) / 2;
+          
+          // Mirror frame
+          ctx.fillStyle = '#D4A574';
+          ctx.fillRect(mirrorX - 15, mirrorY - 15, mirrorW + 30, mirrorH + 30);
+          
+          // Mirror surface
+          ctx.fillStyle = corruption > 0 ? `rgba(13, 13, 13, ${0.8 + corruption * 0.2})` : '#1a1a1a';
+          ctx.fillRect(mirrorX, mirrorY, mirrorW, mirrorH);
+          
+          // Reflection: different face
+          const faceY = mirrorY + mirrorH * 0.4;
+          const faceX = mirrorX + mirrorW / 2;
+          
+          // Face circle
+          ctx.strokeStyle = corruption > 0 ? `rgba(45, 149, 150, ${0.8 - corruption * 0.5})` : '#2D9596';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(faceX, faceY, 60, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          // Eyes (wrong - one closed, one open, or too many)
+          const eyeStyle = corruption > 0.5 ? 3 : (corruption > 0.3 ? 2 : 1);
+          
+          if (eyeStyle === 1) {
+            // One closed, one open
+            ctx.fillStyle = '#2D9596';
+            ctx.beginPath();
+            ctx.arc(faceX - 20, faceY - 10, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(faceX + 12, faceY - 10);
+            ctx.lineTo(faceX + 28, faceY - 10);
+            ctx.stroke();
+          } else if (eyeStyle === 2) {
+            // Three eyes
+            for (let i = 0; i < 3; i++) {
+              ctx.fillStyle = '#7B68EE';
+              ctx.beginPath();
+              ctx.arc(faceX - 25 + i * 25, faceY - 10, 8, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          } else {
+            // Eyes multiplying
+            for (let i = 0; i < 6; i++) {
+              ctx.fillStyle = `rgba(123, 104, 238, ${1 - i * 0.15})`;
+              ctx.beginPath();
+              ctx.arc(faceX - 30 + Math.random() * 60, faceY - 20 + Math.random() * 40, 6, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          
+          // Mouth (wrong - smiling when it shouldn't)
+          ctx.beginPath();
+          ctx.arc(faceX, faceY + 20, 30, 0, Math.PI);
+          ctx.stroke();
+        },
+        question: "What was wrong with the reflection?",
+        correct: "It had one eye closed",
+        wrong: ["It was upside down", "It had no mouth", "It was smiling"]
+      }
+    ];
+    
+    function drawDream(dreamIndex, corruption = 0) {
+      const dream = dreams[dreamIndex];
+      dream.draw(ctx, canvas.width, canvas.height, corruption);
+    }
+    
+    function showDream(index) {
+      currentDream = index;
+      document.getElementById('intro').style.display = 'none';
+      canvas.style.display = 'block';
+      
+      drawDream(index, 0);
+      
+      setTimeout(() => {
+        canvas.classList.add('fade-out');
+        setTimeout(() => {
+          canvas.style.display = 'none';
+          canvas.classList.remove('fade-out');
+          showQuiz(index);
+        }, 1000);
+      }, 3000);
+    }
+    
+    function showQuiz(dreamIndex) {
+      const dream = dreams[dreamIndex];
+      currentQuestion = dreamIndex;
+      
+      document.getElementById('question').textContent = dream.question;
+      
+      const options = [dream.correct, ...dream.wrong].sort(() => Math.random() - 0.5);
+      const optionsDiv = document.getElementById('options');
+      optionsDiv.innerHTML = '';
+      
+      options.forEach(option => {
+        const btn = document.createElement('button');
+        btn.className = 'option';
+        btn.textContent = option;
+        btn.addEventListener('click', () => checkAnswer(option, dream.correct, dreamIndex));
+        optionsDiv.appendChild(btn);
+      });
+      
+      document.getElementById('quiz').style.display = 'block';
+    }
+    
+    function checkAnswer(selected, correct, dreamIndex) {
+      const buttons = document.querySelectorAll('.option');
+      buttons.forEach(btn => {
+        btn.disabled = true;
+        if (btn.textContent === correct) {
+          btn.classList.add('correct');
+        } else if (btn.textContent === selected && selected !== correct) {
+          btn.classList.add('wrong');
+          
+          // Show corrupted dream
+          canvas.style.display = 'block';
+          canvas.classList.add('glitch');
+          drawDream(dreamIndex, 0.8);
+          setTimeout(() => {
+            canvas.classList.remove('glitch');
+            canvas.style.display = 'none';
+          }, 1500);
+        }
+      });
+      
+      if (selected === correct) {
+        correctAnswers++;
+      }
+      
+      setTimeout(() => {
+        document.getElementById('quiz').style.display = 'none';
+        
+        if (currentQuestion < totalQuestions - 1) {
+          showDream(currentQuestion + 1);
+        } else {
+          showResult();
+        }
+      }, 2000);
+    }
+    
+    function showResult() {
+      const percentage = (correctAnswers / totalQuestions) * 100;
+      document.getElementById('score').textContent = `${correctAnswers}/${totalQuestions}`;
+      
+      let message;
+      if (percentage === 100) {
+        message = "Perfect recall. You remember everything.<br>Or do you?";
+      } else if (percentage >= 60) {
+        message = "Most dreams fade. Yours held on.<br>For now.";
+      } else if (percentage >= 40) {
+        message = "The images are slipping away.<br>You're sure you saw something, but...";
+      } else {
+        message = "Gone. Like they were never there.<br>Did you even dream at all?";
+      }
+      
+      document.getElementById('resultText').innerHTML = message;
+      document.getElementById('result').style.display = 'block';
+    }
+    
+    document.getElementById('startBtn').addEventListener('click', () => {
+      showDream(0);
+    });
+    
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
