@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MATCH MACHINE</title>
+    <meta name="description" content="Memory matching game. Find pairs. Beat the clock. Match Machine by Amber.">
+    <meta property="og:title" content="MATCH MACHINE">
+    <meta property="og:description" content="Memory matching game. Find pairs. Beat the clock.">
+    <meta property="og:image" content="https://intheamber.com/amber/match-machine-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/match-machine.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/match-machine-og.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            user-select: none;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #FFD700;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #D4A574;
+            letter-spacing: 1px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #FFD700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #D4A574;
+            margin-top: 5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            max-width: 400px;
+            margin: 0 auto 30px;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: #0D0D0D;
+            border: 2px solid #D4A574;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(212, 165, 116, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card.flipped {
+            background: #1a1a1a;
+            border-color: #2D9596;
+            box-shadow: 0 0 20px rgba(45, 149, 150, 0.4);
+        }
+
+        .card.matched {
+            background: #1a1a1a;
+            border-color: #FFD700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            animation: matchPulse 0.5s ease;
+        }
+
+        .card.matched::before {
+            opacity: 1;
+            background: radial-gradient(circle at center, rgba(255, 215, 0, 0.2) 0%, transparent 70%);
+        }
+
+        .card-back {
+            font-family: 'Space Mono', monospace;
+            color: #D4A574;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .card-front {
+            display: none;
+        }
+
+        .card.flipped .card-back {
+            display: none;
+        }
+
+        .card.flipped .card-front {
+            display: block;
+            animation: flipIn 0.3s ease;
+        }
+
+        @keyframes flipIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes matchPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .controls {
+            text-align: center;
+        }
+
+        .btn {
+            font-family: 'Space Mono', monospace;
+            font-size: 16px;
+            padding: 15px 40px;
+            background: #D4A574;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            background: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .game-over {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+            padding: 30px;
+            background: #0D0D0D;
+            border: 2px solid #FFD700;
+            border-radius: 8px;
+            max-width: 400px;
+        }
+
+        .game-over.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .game-over h2 {
+            font-family: 'Space Mono', monospace;
+            color: #FFD700;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .final-stats {
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            color: #D4A574;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 24px;
+            }
+
+            .grid {
+                gap: 8px;
+                max-width: 320px;
+            }
+
+            .card {
+                font-size: 24px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>MATCH MACHINE</h1>
+        <div class="subtitle">FIND THE PAIRS</div>
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-value" id="timer">00:00</div>
+            <div class="stat-label">TIME</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="moves">0</div>
+            <div class="stat-label">MOVES</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="pairs">0/8</div>
+            <div class="stat-label">PAIRS</div>
+        </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="controls">
+        <button class="btn" id="resetBtn">NEW GAME</button>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <h2>COMPLETE</h2>
+        <div class="final-stats">
+            <div>Time: <span id="finalTime"></span></div>
+            <div>Moves: <span id="finalMoves"></span></div>
+        </div>
+        <button class="btn" onclick="resetGame()">PLAY AGAIN</button>
+    </div>
+
+    <script>
+        // Audio context for synth sounds
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const symbols = ['◆', '●', '■', '★', '◉', '▲', '⬢', '◯'];
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let canFlip = true;
+
+        function playSound(frequency, duration = 100, type = 'match') {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = frequency;
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration / 1000);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration / 1000);
+        }
+
+        function initGame() {
+            // Create pairs
+            const deck = [...symbols, ...symbols];
+            // Shuffle
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            
+            cards = deck.map((symbol, index) => ({
+                id: index,
+                symbol,
+                flipped: false,
+                matched: false
+            }));
+
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            
+            cards.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                if (card.flipped) cardEl.classList.add('flipped');
+                if (card.matched) cardEl.classList.add('matched');
+                
+                cardEl.innerHTML = `
+                    <div class="card-back">?</div>
+                    <div class="card-front">${card.symbol}</div>
+                `;
+                
+                cardEl.addEventListener('click', () => flipCard(card.id));
+                grid.appendChild(cardEl);
+            });
+        }
+
+        function flipCard(id) {
+            if (!canFlip) return;
+            
+            const card = cards[id];
+            if (card.flipped || card.matched) return;
+            if (flippedCards.length >= 2) return;
+
+            // Start timer on first move
+            if (!startTime) {
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 100);
+            }
+
+            card.flipped = true;
+            flippedCards.push(card);
+            renderGrid();
+            
+            // Play flip sound
+            playSound(440 + (id * 30), 80);
+
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('moves').textContent = moves;
+                
+                canFlip = false;
+                
+                setTimeout(() => {
+                    checkMatch();
+                    canFlip = true;
+                }, 600);
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            
+            if (card1.symbol === card2.symbol) {
+                // Match!
+                card1.matched = true;
+                card2.matched = true;
+                matchedPairs++;
+                
+                // Play success sound (ascending)
+                playSound(523.25, 100); // C
+                setTimeout(() => playSound(659.25, 150), 100); // E
+                setTimeout(() => playSound(783.99, 200), 200); // G
+                
+                document.getElementById('pairs').textContent = `${matchedPairs}/8`;
+                
+                if (matchedPairs === 8) {
+                    endGame();
+                }
+            } else {
+                // No match
+                playSound(200, 150);
+                card1.flipped = false;
+                card2.flipped = false;
+            }
+            
+            flippedCards = [];
+            renderGrid();
+        }
+
+        function updateTimer() {
+            const elapsed = Date.now() - startTime;
+            const seconds = Math.floor(elapsed / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            const mins = minutes % 60;
+            
+            document.getElementById('timer').textContent = 
+                `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            
+            // Play victory sound
+            setTimeout(() => playSound(523.25, 150), 0);
+            setTimeout(() => playSound(659.25, 150), 150);
+            setTimeout(() => playSound(783.99, 150), 300);
+            setTimeout(() => playSound(1046.50, 300), 450);
+            
+            const finalTime = document.getElementById('timer').textContent;
+            document.getElementById('finalTime').textContent = finalTime;
+            document.getElementById('finalMoves').textContent = moves;
+            
+            setTimeout(() => {
+                document.getElementById('gameOver').classList.add('show');
+            }, 800);
+        }
+
+        function resetGame() {
+            clearInterval(timerInterval);
+            startTime = null;
+            moves = 0;
+            matchedPairs = 0;
+            flippedCards = [];
+            canFlip = true;
+            
+            document.getElementById('timer').textContent = '00:00';
+            document.getElementById('moves').textContent = '0';
+            document.getElementById('pairs').textContent = '0/8';
+            document.getElementById('gameOver').classList.remove('show');
+            
+            initGame();
+        }
+
+        document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+        // Initialize
+        initGame();
+    </script>
+</body>
+</html>
