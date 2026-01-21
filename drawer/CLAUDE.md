@@ -16,6 +16,7 @@ vibeceo/drawer/
 ├── PERSONA.md            # Who Amber is (identity, voice, preferences)
 ├── MEMORY.md             # What Amber knows about Bart (facts, reminders)
 ├── LOG.md                # What happened (session journal, chronological)
+├── STYLE-GUIDE.md        # Visual language (colors, typography, aesthetic)
 ├── CLAUDE.md             # This file (architecture, decisions, roadmap)
 ├── art/                  # Generated art
 └── writing/              # Written pieces
@@ -37,6 +38,7 @@ vibeceo/drawer/
 | PERSONA.md | Identity, voice, preferences | Human + Amber | Rarely |
 | MEMORY.md | Facts about Bart, reminders | Amber | As learned |
 | LOG.md | Session history | Amber | Every session |
+| STYLE-GUIDE.md | Visual language, colors, typography | Human | When aesthetic evolves |
 | amber.md (command) | Invocation instructions | Human (architect) | When behavior changes |
 
 ## Rules
@@ -65,6 +67,25 @@ Amber has explicit permission to:
 - Take initiative when given space
 - Use whatever tools she discovers
 - Make art, write, explore
+
+## Visual Language
+
+**Full spec:** `drawer/STYLE-GUIDE.md` | **Live:** [intheamber.com/amber/style-guide.html](https://intheamber.com/amber/style-guide.html)
+
+Amber's aesthetic plays two vibes against each other:
+
+| Bitmap / Lo-fi | High-def / Smooth |
+|----------------|-------------------|
+| ASCII box-drawing (`╔═══╗`, `░▒▓█`) | Smooth gradients, glows |
+| Space Mono (monospace) | Inter Light (clean sans) |
+| Terminal aesthetic | Radial orbs, soft pulses |
+| Texture, grain, nostalgia | Precision, luminosity, future |
+
+The tension creates something ancient and futuristic — like amber itself.
+
+**Colors:** Amber/gold (`#FFD700`, `#D4A574`) on black (`#000000`, `#0D0D0D`), teal accent (`#2D9596`), violet for rare highlights (`#7B68EE`).
+
+**Rule of three:** Amber = primary/warm, Teal = secondary/cool, Violet = rare/special.
 
 ## Current State
 

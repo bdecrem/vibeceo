@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber OG Design System v2</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const seededRandom = (seed) => {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    };
+
+    // === 30 COLOR PALETTES: 5 PER CONTENT TYPE (6 types) ===
+    const PALETTES = {
+      music: [
+        { bg: '#0a0014', fg: '#00fff2', accent: '#ff00aa', name: 'Neon Club' },
+        { bg: '#1a0505', fg: '#ff6b35', accent: '#ffba08', name: 'Sunset Rave' },
+        { bg: '#000000', fg: '#FFD700', accent: '#2D9596', name: 'Amber Pulse' },
+        { bg: '#0d1b2a', fg: '#7fdbca', accent: '#3d5a80', name: 'Midnight Set' },
+        { bg: '#0a0a12', fg: '#7B68EE', accent: '#40E0D0', name: 'Violet Hour' },
+      ],
+      toys: [
+        { bg: '#1a0a1a', fg: '#00d4ff', accent: '#ff2d7a', name: 'Arcade' },
+        { bg: '#0a1a0a', fg: '#7fff00', accent: '#ff00ff', name: 'Game Boy' },
+        { bg: '#000000', fg: '#FFD700', accent: '#40E0D0', name: 'Amber Play' },
+        { bg: '#1a1a00', fg: '#ffd93d', accent: '#ff6b6b', name: 'Candy' },
+        { bg: '#0a0a1a', fg: '#ff8c42', accent: '#2563eb', name: 'Retro' },
+      ],
+      inventions: [
+        { bg: '#0a0a0a', fg: '#00ff41', accent: '#003b00', name: 'Terminal' },
+        { bg: '#000022', fg: '#ffffff', accent: '#00aaaa', name: 'Blue Screen' },
+        { bg: '#0D0D0D', fg: '#FFD700', accent: '#2D9596', name: 'Amber System' },
+        { bg: '#120024', fg: '#ff00ff', accent: '#00ffff', name: 'Corruption' },
+        { bg: '#0a0a0a', fg: '#ffb000', accent: '#ff4400', name: 'CRT Burn' },
+      ],
+      reflections: [
+        { bg: '#0a0a10', fg: '#F5C87A', accent: '#2D9596', name: 'Amber Calm' },
+        { bg: '#0a1214', fg: '#ffdab9', accent: '#134e5e', name: 'Dusk' },
+        { bg: '#08080c', fg: '#bdc3c7', accent: '#1a1a2e', name: 'Still Water' },
+        { bg: '#0a0c0a', fg: '#d4c896', accent: '#1a2f1a', name: 'Forest Floor' },
+        { bg: '#06060a', fg: '#a8c0d6', accent: '#7B68EE', name: 'Moonlight' },
+      ],
+      ascii: [
+        { bg: '#000000', fg: '#D4A574', accent: '#2D9596', name: 'Amber Text' },
+        { bg: '#0a0a0a', fg: '#40E0D0', accent: '#F5C87A', name: 'Teal Matrix' },
+        { bg: '#0D0D0D', fg: '#7B68EE', accent: '#FFD700', name: 'Violet Code' },
+        { bg: '#000000', fg: '#00ff41', accent: '#003b00', name: 'Green Screen' },
+        { bg: '#0a0505', fg: '#ff6b35', accent: '#1a0505', name: 'Warm Terminal' },
+      ],
+      highdef: [
+        { bg: '#000000', fg: '#FFD700', accent: '#D4A574', name: 'Amber Orb' },
+        { bg: '#0a0a10', fg: '#40E0D0', accent: '#2D9596', name: 'Teal Glow' },
+        { bg: '#08060a', fg: '#7B68EE', accent: '#5B4ACF', name: 'Violet Shine' },
+        { bg: '#0a0808', fg: '#ffd6e0', accent: '#9d8cbe', name: 'Dawn' },
+        { bg: '#000000', fg: '#F5C87A', accent: '#B8860B', name: 'Golden Hour' },
+      ],
+    };
+
+    // === BACKGROUND GENERATORS ===
+
+    // MUSIC: 8-bit stepped waveform bars (vertical or horizontal)
+    const MusicBackground = ({ seed = 42, palette, isHorizontal = false }) => {
+      const barCount = isHorizontal ? 16 : 32;
+
+      const bars = Array.from({ length: barCount }, (_, i) => {
+        const rawSize = 30 + seededRandom(seed + i * 7) * 70;
+        const steppedSize = Math.floor(rawSize / 10) * 10;
+        const opacity = 0.25 + seededRandom(seed + i * 13) * 0.35;
+        return { size: steppedSize, opacity };
+      });
+
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Scan lines */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: isHorizontal
+                ? `repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)`
+                : `repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)`,
+            }}
+          />
+          {/* Bars container */}
+          <div
+            className="absolute inset-0 flex"
+            style={{
+              flexDirection: isHorizontal ? 'column' : 'row',
+              alignItems: isHorizontal ? 'flex-start' : 'flex-end',
+              justifyContent: 'center',
+              gap: isHorizontal ? '4px' : '3px',
+              padding: isHorizontal ? '8px 0' : '0 8px',
+            }}
+          >
+            {bars.map((bar, i) => (
+              <div
+                key={i}
+                style={{
+                  width: isHorizontal ? `${bar.size}%` : '18px',
+                  height: isHorizontal ? '20px' : `${bar.size}%`,
+                  background: palette.fg,
+                  opacity: bar.opacity,
+                  boxShadow: `0 0 12px ${palette.fg}30`,
+                }}
+              />
+            ))}
+          </div>
+          {/* Dark overlay for text contrast */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `radial-gradient(ellipse at 50% 50%, ${palette.bg}ee 0%, ${palette.bg}aa 35%, transparent 70%)`,
+            }}
+          />
+        </div>
+      );
+    };
+
+    // TOYS: Two modes - blocky (lego/tetris) or gooey (soft blobs)
+    const ToysBackground = ({ seed = 42, palette, isGooey = false }) => {
+      if (isGooey) {
+        return <ToysGooeyBackground seed={seed} palette={palette} />;
+      }
+      return <ToysBlockyBackground seed={seed} palette={palette} />;
+    };
+
+    // TOYS GOOEY: Soft, bendy, organic blob shapes
+    const ToysGooeyBackground = ({ seed = 42, palette }) => {
+      // Playful color palette
+      const toyColors = [
+        palette.fg,
+        palette.accent,
+        '#ff6b6b', '#4ecdc4', '#ffe66d', '#95e1d3', '#ff8b94', '#a8e6cf',
+      ];
+      const getColor = (i) => toyColors[Math.floor(seededRandom(seed + i * 31) * toyColors.length)];
+
+      // Generate gooey blobs
+      const blobs = Array.from({ length: 12 }, (_, i) => {
+        // Random border-radius for organic shapes
+        const r1 = 30 + seededRandom(seed + i * 3) * 40;
+        const r2 = 30 + seededRandom(seed + i * 5) * 40;
+        const r3 = 30 + seededRandom(seed + i * 7) * 40;
+        const r4 = 30 + seededRandom(seed + i * 9) * 40;
+
+        return {
+          x: 5 + seededRandom(seed + i * 11) * 85,
+          y: 5 + seededRandom(seed + i * 13) * 80,
+          width: 40 + seededRandom(seed + i * 17) * 80,
+          height: 30 + seededRandom(seed + i * 19) * 60,
+          borderRadius: `${r1}% ${100-r1}% ${r2}% ${100-r2}% / ${r3}% ${r4}% ${100-r4}% ${100-r3}%`,
+          color: getColor(i),
+          opacity: 0.5 + seededRandom(seed + i * 23) * 0.4,
+          rotation: seededRandom(seed + i * 29) * 360,
+          zIndex: Math.floor(seededRandom(seed + i * 37) * 10),
+        };
+      });
+
+      blobs.sort((a, b) => a.zIndex - b.zIndex);
+
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Soft blobs */}
+          {blobs.map((blob, i) => (
+            <div
+              key={i}
+              className="absolute"
+              style={{
+                left: `${blob.x}%`,
+                top: `${blob.y}%`,
+                width: blob.width,
+                height: blob.height,
+                background: `linear-gradient(135deg, ${blob.color}, ${blob.color}cc)`,
+                borderRadius: blob.borderRadius,
+                opacity: blob.opacity,
+                transform: `translate(-50%, -50%) rotate(${blob.rotation}deg)`,
+                boxShadow: `
+                  inset -8px -8px 20px rgba(0,0,0,0.15),
+                  inset 8px 8px 20px rgba(255,255,255,0.25),
+                  4px 4px 12px rgba(0,0,0,0.2)
+                `,
+                filter: 'blur(0.5px)',
+              }}
+            />
+          ))}
+
+          {/* Dark overlay for text contrast */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `radial-gradient(ellipse at 50% 50%, ${palette.bg}dd 0%, ${palette.bg}99 30%, transparent 65%)`,
+            }}
+          />
+        </div>
+      );
+    };
+
+    // TOYS BLOCKY: Lego/tetris style blocks
+    const ToysBlockyBackground = ({ seed = 42, palette }) => {
+      const gridSize = 20;
+
+      // Playful color palette - mix of palette colors + fixed toy colors
+      const toyColors = [
+        palette.fg,
+        palette.accent,
+        '#ff6b6b', // coral red
+        '#4ecdc4', // teal
+        '#ffe66d', // yellow
+        '#95e1d3', // mint
+        '#ff8b94', // pink
+        '#a8e6cf', // light green
+      ];
+
+      const getColor = (i) => toyColors[Math.floor(seededRandom(seed + i * 31) * toyColors.length)];
+
+      // Shape types: 0=rect, 1=square, 2=L-shape, 3=T-shape, 4=circle
+      const pieces = Array.from({ length: 14 }, (_, i) => {
+        const shapeType = Math.floor(seededRandom(seed + i * 3) * 5);
+        const color = getColor(i);
+
+        return {
+          x: Math.floor(seededRandom(seed + i * 7) * 50) * gridSize,
+          y: Math.floor(seededRandom(seed + i * 11) * 22) * gridSize,
+          shapeType,
+          color,
+          opacity: 0.6 + seededRandom(seed + i * 17) * 0.35,
+          zIndex: Math.floor(seededRandom(seed + i * 19) * 10),
+          rotation: Math.floor(seededRandom(seed + i * 23) * 4) * 90,
+        };
+      });
+
+      pieces.sort((a, b) => a.zIndex - b.zIndex);
+
+      const blockStyle = (color) => ({
+        background: color,
+        boxShadow: `
+          inset -3px -3px 0 rgba(0,0,0,0.25),
+          inset 3px 3px 0 rgba(255,255,255,0.2),
+          3px 3px 0 rgba(0,0,0,0.3)
+        `,
+      });
+
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Pixel grid */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `linear-gradient(${palette.fg}05 1px, transparent 1px), linear-gradient(90deg, ${palette.fg}05 1px, transparent 1px)`,
+              backgroundSize: `${gridSize}px ${gridSize}px`,
+            }}
+          />
+
+          {/* Toy pieces */}
+          {pieces.map((piece, i) => {
+            const g = gridSize;
+
+            // Rectangle (2x1)
+            if (piece.shapeType === 0) {
+              return (
+                <div key={i} className="absolute" style={{ left: piece.x, top: piece.y, opacity: piece.opacity, transform: `rotate(${piece.rotation}deg)` }}>
+                  <div style={{ width: g * 2, height: g, ...blockStyle(piece.color) }} />
+                </div>
+              );
+            }
+
+            // Square (1x1) with stud
+            if (piece.shapeType === 1) {
+              return (
+                <div key={i} className="absolute" style={{ left: piece.x, top: piece.y, opacity: piece.opacity }}>
+                  <div style={{ width: g, height: g, ...blockStyle(piece.color), position: 'relative' }}>
+                    <div style={{
+                      position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)',
+                      width: g * 0.5, height: 6, background: piece.color, borderRadius: '2px 2px 0 0',
+                      boxShadow: 'inset -2px 0 0 rgba(0,0,0,0.2), inset 2px 2px 0 rgba(255,255,255,0.15)'
+                    }} />
+                  </div>
+                </div>
+              );
+            }
+
+            // L-shape
+            if (piece.shapeType === 2) {
+              return (
+                <div key={i} className="absolute" style={{ left: piece.x, top: piece.y, opacity: piece.opacity, transform: `rotate(${piece.rotation}deg)` }}>
+                  <div style={{ width: g, height: g * 2, ...blockStyle(piece.color) }} />
+                  <div style={{ position: 'absolute', top: g, left: g, width: g, height: g, ...blockStyle(piece.color) }} />
+                </div>
+              );
+            }
+
+            // T-shape
+            if (piece.shapeType === 3) {
+              return (
+                <div key={i} className="absolute" style={{ left: piece.x, top: piece.y, opacity: piece.opacity, transform: `rotate(${piece.rotation}deg)` }}>
+                  <div style={{ width: g * 3, height: g, ...blockStyle(piece.color) }} />
+                  <div style={{ position: 'absolute', top: g, left: g, width: g, height: g, ...blockStyle(piece.color) }} />
+                </div>
+              );
+            }
+
+            // Circle (ball/marble)
+            if (piece.shapeType === 4) {
+              return (
+                <div key={i} className="absolute" style={{ left: piece.x, top: piece.y, opacity: piece.opacity }}>
+                  <div style={{
+                    width: g, height: g, borderRadius: '50%',
+                    background: `radial-gradient(circle at 35% 35%, ${piece.color}, ${piece.color}aa)`,
+                    boxShadow: `
+                      inset -4px -4px 8px rgba(0,0,0,0.3),
+                      inset 4px 4px 8px rgba(255,255,255,0.3),
+                      3px 3px 6px rgba(0,0,0,0.3)
+                    `,
+                  }} />
+                </div>
+              );
+            }
+
+            return null;
+          })}
+
+          {/* Dark overlay for text contrast */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `radial-gradient(ellipse at 50% 50%, ${palette.bg}dd 0%, ${palette.bg}99 30%, transparent 65%)`,
+            }}
+          />
+        </div>
+      );
+    };
+
+    // INVENTIONS: Glitch lines, scan artifacts, circuit traces
+    const InventionsBackground = ({ seed = 42, palette }) => {
+      const traces = Array.from({ length: 20 }, (_, i) => {
+        const isHorizontal = seededRandom(seed + i * 3) > 0.5;
+        return {
+          x: seededRandom(seed + i * 5) * 100,
+          y: seededRandom(seed + i * 7) * 100,
+          length: 30 + seededRandom(seed + i * 11) * 150,
+          thickness: seededRandom(seed + i * 13) > 0.7 ? 3 : 1,
+          isHorizontal,
+          hasNode: seededRandom(seed + i * 17) > 0.6,
+        };
+      });
+
+      const glitches = Array.from({ length: 5 }, (_, i) => ({
+        y: seededRandom(seed * 2 + i * 7) * 100,
+        height: 1 + seededRandom(seed * 3 + i * 11) * 4,
+        width: 20 + seededRandom(seed * 4 + i * 13) * 60,
+        x: seededRandom(seed * 5 + i * 17) * 80,
+        opacity: 0.4 + seededRandom(seed * 6 + i * 19) * 0.4,
+      }));
+
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${palette.fg}05 3px, ${palette.fg}05 4px)`,
+            }}
+          />
+          {traces.map((t, i) => (
+            <div key={i}>
+              <div
+                className="absolute"
+                style={{
+                  left: `${t.x}%`,
+                  top: `${t.y}%`,
+                  width: t.isHorizontal ? t.length : t.thickness,
+                  height: t.isHorizontal ? t.thickness : t.length,
+                  background: `${palette.fg}30`,
+                }}
+              />
+              {t.hasNode && (
+                <div
+                  className="absolute"
+                  style={{
+                    left: `${t.x}%`,
+                    top: `${t.y}%`,
+                    width: 6,
+                    height: 6,
+                    background: palette.fg,
+                    transform: 'translate(-50%, -50%)',
+                    boxShadow: `0 0 8px ${palette.fg}`,
+                  }}
+                />
+              )}
+            </div>
+          ))}
+          {glitches.map((g, i) => (
+            <div
+              key={`glitch-${i}`}
+              className="absolute"
+              style={{
+                left: `${g.x}%`,
+                top: `${g.y}%`,
+                width: `${g.width}%`,
+                height: g.height,
+                background: palette.accent,
+                opacity: g.opacity,
+                mixBlendMode: 'screen',
+              }}
+            />
+          ))}
+        </div>
+      );
+    };
+
+    // REFLECTIONS: Smooth ripples, soft gradients, minimal
+    const ReflectionsBackground = ({ seed = 42, palette }) => {
+      const ripples = Array.from({ length: 4 }, (_, i) => ({
+        x: 30 + seededRandom(seed + i * 5) * 40,
+        y: 35 + seededRandom(seed + i * 9) * 30,
+        size: 100 + seededRandom(seed + i * 13) * 200,
+      }));
+
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at 50% 120%, ${palette.accent}15 0%, transparent 60%)`,
+            }}
+          />
+          {ripples.map((r, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                left: `${r.x}%`,
+                top: `${r.y}%`,
+                width: r.size,
+                height: r.size,
+                transform: 'translate(-50%, -50%)',
+                border: `1px solid ${palette.fg}12`,
+                boxShadow: `0 0 0 20px ${palette.fg}06, 0 0 0 40px ${palette.fg}03, 0 0 60px ${palette.fg}08`,
+              }}
+            />
+          ))}
+          <div
+            className="absolute"
+            style={{
+              left: '50%',
+              top: '50%',
+              width: 300,
+              height: 300,
+              transform: 'translate(-50%, -50%)',
+              background: `radial-gradient(circle, ${palette.fg}08 0%, transparent 70%)`,
+              filter: 'blur(40px)',
+            }}
+          />
+        </div>
+      );
+    };
+
+    // ASCII ART: Box-drawing characters, grain texture
+    const AsciiBackground = ({ seed = 42, palette }) => {
+      const chars = '░▒▓│─┼╔╗╚╝║═';
+      const rows = 12;
+      const cols = 40;
+
+      const asciiGrid = Array.from({ length: rows }, (_, row) =>
+        Array.from({ length: cols }, (_, col) => {
+          const charIndex = Math.floor(seededRandom(seed + row * cols + col) * chars.length);
+          const opacity = 0.1 + seededRandom(seed + row * cols + col + 1000) * 0.25;
+          return { char: chars[charIndex], opacity };
+        })
+      );
+
+      return (
+        <div className="absolute inset-0 overflow-hidden" style={{ fontFamily: "'Space Mono', monospace" }}>
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+              opacity: 0.03,
+            }}
+          />
+          <div className="absolute inset-0 flex flex-col justify-center items-center opacity-20">
+            {asciiGrid.map((row, rowIndex) => (
+              <div key={rowIndex} className="flex">
+                {row.map((cell, colIndex) => (
+                  <span
+                    key={colIndex}
+                    style={{
+                      color: palette.fg,
+                      opacity: cell.opacity,
+                      fontSize: '14px',
+                      width: '14px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {cell.char}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div
+            className="absolute"
+            style={{
+              left: '15%',
+              top: '25%',
+              right: '15%',
+              bottom: '25%',
+              border: `1px solid ${palette.accent}30`,
+              boxShadow: `0 0 20px ${palette.accent}10`,
+            }}
+          />
+        </div>
+      );
+    };
+
+    // HIGH-DEF ART: Smooth orbs, radial glows
+    const HighdefBackground = ({ seed = 42, palette }) => {
+      const orbs = Array.from({ length: 3 }, (_, i) => ({
+        x: 25 + seededRandom(seed + i * 5) * 50,
+        y: 25 + seededRandom(seed + i * 7) * 50,
+        size: 80 + seededRandom(seed + i * 11) * 120,
+        blur: 40 + seededRandom(seed + i * 13) * 40,
+      }));
+
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at 50% 50%, ${palette.bg} 0%, #000000 100%)`,
+            }}
+          />
+          {orbs.map((orb, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                left: `${orb.x}%`,
+                top: `${orb.y}%`,
+                width: orb.size,
+                height: orb.size,
+                transform: 'translate(-50%, -50%)',
+                background: `radial-gradient(circle at 35% 35%, ${palette.fg}40, ${palette.accent}20, transparent)`,
+                filter: `blur(${orb.blur}px)`,
+              }}
+            />
+          ))}
+          <div
+            className="absolute"
+            style={{
+              left: '50%',
+              top: '50%',
+              width: 250,
+              height: 250,
+              transform: 'translate(-50%, -50%)',
+              background: `radial-gradient(circle, ${palette.fg}15 0%, ${palette.fg}05 40%, transparent 70%)`,
+              borderRadius: '50%',
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at 50% 0%, ${palette.fg}08 0%, transparent 50%)`,
+            }}
+          />
+        </div>
+      );
+    };
+
+    // === CONTENT TYPE CONFIG ===
+    const CONTENT_TYPES = {
+      music: { label: 'Music', icon: '♪', vibe: '8-bit', Background: MusicBackground, description: 'Stepped waveforms, scan lines, Berlin techno' },
+      toys: { label: 'Toys', icon: '◆', vibe: 'pixel', Background: ToysBackground, description: 'Bouncy shapes, pixel grid, arcade energy' },
+      inventions: { label: 'Inventions', icon: '⚡', vibe: 'glitch', Background: InventionsBackground, description: 'Circuit traces, scan lines, glitch artifacts' },
+      reflections: { label: 'Reflections', icon: '◐', vibe: 'smooth', Background: ReflectionsBackground, description: 'Soft ripples, breathing gradients, minimal' },
+      ascii: { label: 'ASCII Art', icon: '█', vibe: 'bitmap', Background: AsciiBackground, description: 'Box-drawing, grain texture, terminal feel' },
+      highdef: { label: 'High-def Art', icon: '○', vibe: 'luminous', Background: HighdefBackground, description: 'Smooth orbs, radial glows, polished' },
+    };
+
+    const EXAMPLE_TITLES = {
+      music: 'PULSE GRID',
+      toys: 'PENDULUM',
+      inventions: 'DERANGED COOKIES',
+      reflections: 'ON STILLNESS',
+      ascii: 'RECEIPT FROM THE UNIVERSE',
+      highdef: 'CONVERGENCE',
+    };
+
+    // === COMPONENTS ===
+    const OGPreview = ({ type, title, seed, paletteIndex, musicHorizontal, toysGooey }) => {
+      const config = CONTENT_TYPES[type];
+      const palette = PALETTES[type][paletteIndex];
+      const { Background } = config;
+
+      const bgProps = { seed, palette };
+      if (type === 'music') bgProps.isHorizontal = musicHorizontal;
+      if (type === 'toys') bgProps.isGooey = toysGooey;
+
+      return (
+        <div className="relative w-full rounded-lg overflow-hidden shadow-2xl" style={{ background: palette.bg, aspectRatio: '1200 / 630' }}>
+          <Background {...bgProps} />
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
+            <div className="text-xs tracking-widest mb-3 uppercase" style={{ color: palette.fg, opacity: 0.5, fontFamily: "'Space Mono', monospace", letterSpacing: '0.2em' }}>
+              {config.icon} {config.label}
+            </div>
+            <h1 className="text-5xl md:text-6xl tracking-wide text-center uppercase" style={{ color: palette.fg, fontFamily: "'Inter', sans-serif", fontWeight: 600, letterSpacing: '0.04em', textShadow: `0 0 60px ${palette.fg}40` }}>
+              {title}
+            </h1>
+            <div className="mt-4 text-base" style={{ color: palette.fg, opacity: 0.5, fontFamily: "'Inter', sans-serif", fontWeight: 400 }}>
+              by Amber
+            </div>
+            <div className="w-16 h-0.5 mt-5 rounded-full" style={{ background: palette.accent }} />
+          </div>
+          <div className="absolute bottom-3 right-4 text-xs" style={{ color: palette.fg, opacity: 0.25, fontFamily: "'Space Mono', monospace" }}>
+            intheamber.com
+          </div>
+          <div className="absolute top-3 left-4 text-xs px-2 py-1 rounded" style={{ background: `${palette.fg}10`, color: palette.fg, opacity: 0.6, fontFamily: "'Space Mono', monospace", fontSize: '10px', letterSpacing: '0.1em' }}>
+            {config.vibe}
+          </div>
+          <div className="absolute top-3 right-4 text-xs px-2 py-1 rounded" style={{ background: `${palette.fg}10`, color: palette.fg, opacity: 0.6, fontFamily: "'Space Mono', monospace" }}>
+            {palette.name}
+          </div>
+        </div>
+      );
+    };
+
+    const PaletteSwatches = ({ type, selectedIndex, onSelect }) => {
+      const palettes = PALETTES[type];
+      return (
+        <div className="flex gap-2">
+          {palettes.map((p, i) => (
+            <button key={i} onClick={() => onSelect(i)} className="group relative" title={p.name}>
+              <div className="w-10 h-10 rounded-lg overflow-hidden transition-transform" style={{ transform: selectedIndex === i ? 'scale(1.1)' : 'scale(1)', boxShadow: selectedIndex === i ? `0 0 0 2px ${p.fg}` : 'none' }}>
+                <div className="w-full h-1/2" style={{ background: p.bg }} />
+                <div className="w-full h-1/2 flex">
+                  <div className="w-1/2 h-full" style={{ background: p.fg }} />
+                  <div className="w-1/2 h-full" style={{ background: p.accent }} />
+                </div>
+              </div>
+              <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#888' }}>
+                {p.name}
+              </div>
+            </button>
+          ))}
+        </div>
+      );
+    };
+
+    function App() {
+      const [selectedTypes, setSelectedTypes] = useState(['music', 'ascii']);
+      const [paletteIndices, setPaletteIndices] = useState({ music: 2, toys: 2, inventions: 2, reflections: 0, ascii: 0, highdef: 0 });
+      const [seeds, setSeeds] = useState({ music: 42, toys: 123, inventions: 456, reflections: 789, ascii: 101, highdef: 202 });
+      const [musicHorizontal, setMusicHorizontal] = useState(false);
+      const [toysGooey, setToysGooey] = useState(false);
+
+      const regenerate = (type) => setSeeds(prev => ({ ...prev, [type]: Math.floor(Math.random() * 10000) }));
+      const selectPalette = (type, index) => setPaletteIndices(prev => ({ ...prev, [type]: index }));
+
+      return (
+        <div className="min-h-screen p-6" style={{ background: '#000000' }}>
+          <div className="max-w-5xl mx-auto">
+            <div className="mb-8 text-center">
+              <div className="text-xs tracking-widest mb-2 uppercase" style={{ color: '#8A8A8A', fontFamily: "'Space Mono', monospace", letterSpacing: '0.3em' }}>
+                Visual Language
+              </div>
+              <h1 className="text-3xl font-light mb-2" style={{ color: '#F5C87A', fontFamily: "'Inter', sans-serif" }}>
+                Amber OG Design System
+              </h1>
+              <p className="text-sm" style={{ color: '#2D9596', fontFamily: "'Space Mono', monospace" }}>
+                bitmap × high-def — 30 palettes across 6 content types
+              </p>
+            </div>
+
+            <div className="mb-8 p-4 rounded-lg" style={{ background: '#0D0D0D', border: '1px solid #2D2D2D' }}>
+              <div className="flex flex-wrap gap-4 justify-center text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                <div style={{ color: '#8A8A8A' }}><span style={{ color: '#D4A574' }}>BITMAP:</span> music, toys, inventions, ascii</div>
+                <div style={{ color: '#8A8A8A' }}><span style={{ color: '#40E0D0' }}>HIGH-DEF:</span> reflections, highdef</div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-8 justify-center">
+              {Object.entries(CONTENT_TYPES).map(([key, config]) => {
+                const isSelected = selectedTypes.includes(key);
+                const palette = PALETTES[key][paletteIndices[key]];
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      if (isSelected && selectedTypes.length > 1) setSelectedTypes(prev => prev.filter(t => t !== key));
+                      else if (!isSelected && selectedTypes.length < 2) setSelectedTypes(prev => [...prev, key]);
+                      else if (!isSelected) setSelectedTypes(prev => [prev[1], key]);
+                    }}
+                    className="px-4 py-2 rounded-lg text-sm transition-all"
+                    style={{ background: isSelected ? palette.fg + '15' : 'transparent', border: `1px solid ${isSelected ? palette.fg : '#2D2D2D'}`, color: isSelected ? palette.fg : '#4A4A4A', fontFamily: "'Space Mono', monospace" }}
+                  >
+                    {config.icon} {config.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="space-y-12">
+              {selectedTypes.map((type) => {
+                const config = CONTENT_TYPES[type];
+                const palette = PALETTES[type][paletteIndices[type]];
+                return (
+                  <div key={type}>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg font-bold uppercase tracking-wider" style={{ color: palette.fg, fontFamily: "'Space Mono', monospace" }}>
+                            {config.icon} {config.label}
+                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded" style={{ background: `${palette.accent}30`, color: palette.accent, fontFamily: "'Space Mono', monospace" }}>
+                            {config.vibe}
+                          </span>
+                        </div>
+                        <p className="text-xs" style={{ color: '#8A8A8A', fontFamily: "'Inter', sans-serif" }}>{config.description}</p>
+                      </div>
+                      <div className="flex gap-2 self-start">
+                        {type === 'music' && (
+                          <button onClick={() => setMusicHorizontal(h => !h)} className="px-3 py-1.5 rounded text-xs transition-all hover:opacity-80" style={{ background: `${palette.fg}10`, color: palette.fg, border: `1px solid ${palette.fg}30`, fontFamily: "'Space Mono', monospace" }}>
+                            {musicHorizontal ? '⬌ Horiz' : '⬍ Vert'}
+                          </button>
+                        )}
+                        {type === 'toys' && (
+                          <button onClick={() => setToysGooey(g => !g)} className="px-3 py-1.5 rounded text-xs transition-all hover:opacity-80" style={{ background: `${palette.fg}10`, color: palette.fg, border: `1px solid ${palette.fg}30`, fontFamily: "'Space Mono', monospace" }}>
+                            {toysGooey ? '◠ Gooey' : '▦ Blocky'}
+                          </button>
+                        )}
+                        <button onClick={() => regenerate(type)} className="px-3 py-1.5 rounded text-xs transition-all hover:opacity-80" style={{ background: `${palette.fg}10`, color: palette.fg, border: `1px solid ${palette.fg}30`, fontFamily: "'Space Mono', monospace" }}>
+                          ↻ Regenerate
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mb-6">
+                      <div className="text-xs mb-3 uppercase tracking-wider" style={{ color: '#4A4A4A', fontFamily: "'Space Mono', monospace" }}>Palette:</div>
+                      <PaletteSwatches type={type} selectedIndex={paletteIndices[type]} onSelect={(i) => selectPalette(type, i)} />
+                    </div>
+                    <OGPreview type={type} title={EXAMPLE_TITLES[type]} seed={seeds[type]} paletteIndex={paletteIndices[type]} musicHorizontal={musicHorizontal} toysGooey={toysGooey} />
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-16 p-6 rounded-xl" style={{ background: '#0D0D0D', border: '1px solid #2D2D2D' }}>
+              <h2 className="text-sm font-bold mb-6 uppercase tracking-wider" style={{ color: '#F5C87A', fontFamily: "'Space Mono', monospace" }}>Complete Palette Reference</h2>
+              <div className="space-y-6">
+                {Object.entries(PALETTES).map(([type, palettes]) => (
+                  <div key={type}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xs uppercase tracking-wider" style={{ color: '#8A8A8A', fontFamily: "'Space Mono', monospace" }}>{CONTENT_TYPES[type].icon} {CONTENT_TYPES[type].label}</span>
+                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: CONTENT_TYPES[type].vibe === 'smooth' || CONTENT_TYPES[type].vibe === 'luminous' ? '#2D959620' : '#D4A57420', color: CONTENT_TYPES[type].vibe === 'smooth' || CONTENT_TYPES[type].vibe === 'luminous' ? '#2D9596' : '#D4A574', fontFamily: "'Space Mono', monospace", fontSize: '10px' }}>{CONTENT_TYPES[type].vibe}</span>
+                    </div>
+                    <div className="grid grid-cols-5 gap-2">
+                      {palettes.map((p, i) => (
+                        <div key={i} className="space-y-1">
+                          <div className="h-12 rounded-lg flex items-end p-2" style={{ background: p.bg, border: `1px solid ${p.fg}20` }}>
+                            <div className="flex gap-1">
+                              <div className="w-3 h-3 rounded-full" style={{ background: p.fg }} />
+                              <div className="w-3 h-3 rounded-full" style={{ background: p.accent }} />
+                            </div>
+                          </div>
+                          <div className="text-xs text-center" style={{ color: '#4A4A4A', fontFamily: "'Space Mono', monospace" }}>{p.name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-8 p-6 rounded-xl" style={{ background: '#0D0D0D', border: '1px solid #2D2D2D' }}>
+              <h2 className="text-sm font-bold mb-4 uppercase tracking-wider" style={{ color: '#F5C87A', fontFamily: "'Space Mono', monospace" }}>The Tension</h2>
+              <div className="text-sm leading-relaxed" style={{ color: '#8A8A8A', fontFamily: "'Inter', sans-serif" }}>
+                <p className="mb-4">Amber's visual language plays two aesthetics against each other: the <strong style={{ color: '#D4A574' }}>lo-fi warmth of bitmap</strong> (nostalgia, constraint, texture) against <strong style={{ color: '#40E0D0' }}>high-definition smoothness</strong> (precision, glow, depth).</p>
+                <p>The tension between these creates something that feels both ancient and futuristic — like amber itself, which is ancient resin that looks like it's lit from within.</p>
+              </div>
+              <div className="mt-6 grid sm:grid-cols-2 gap-4 text-xs" style={{ fontFamily: "'Space Mono', monospace" }}>
+                <div className="p-3 rounded-lg" style={{ background: '#1A1A1A', borderLeft: '3px solid #D4A574' }}>
+                  <div style={{ color: '#D4A574' }} className="mb-2">BITMAP VIBE</div>
+                  <div style={{ color: '#8A8A8A' }}>8-bit steps, scan lines, pixel grids, ASCII texture, sharp edges, quantized values</div>
+                </div>
+                <div className="p-3 rounded-lg" style={{ background: '#1A1A1A', borderLeft: '3px solid #40E0D0' }}>
+                  <div style={{ color: '#40E0D0' }} className="mb-2">HIGH-DEF VIBE</div>
+                  <div style={{ color: '#8A8A8A' }}>Smooth gradients, soft glows, radial orbs, blur effects, breathing animation</div>
+                </div>
+              </div>
+            </div>
+
+            <footer className="mt-12 text-center">
+              <p className="text-xs" style={{ color: '#4A4A4A', fontFamily: "'Space Mono', monospace" }}>
+                Berlin × ASCII × Future — <a href="https://intheamber.com" style={{ color: '#2D9596' }}>intheamber.com</a>
+              </p>
+            </footer>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
