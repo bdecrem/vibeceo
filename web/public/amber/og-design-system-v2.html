@@ -42,11 +42,11 @@
         { bg: '#0a0a1a', fg: '#ff8c42', accent: '#2563eb', name: 'Retro' },
       ],
       inventions: [
-        { bg: '#0a0a0a', fg: '#00ff41', accent: '#003b00', name: 'Terminal' },
-        { bg: '#000022', fg: '#ffffff', accent: '#00aaaa', name: 'Blue Screen' },
-        { bg: '#0D0D0D', fg: '#FFD700', accent: '#2D9596', name: 'Amber System' },
-        { bg: '#120024', fg: '#ff00ff', accent: '#00ffff', name: 'Corruption' },
-        { bg: '#0a0a0a', fg: '#ffb000', accent: '#ff4400', name: 'CRT Burn' },
+        { bg: '#0a250a', fg: '#00ff41', accent: '#003b00', name: 'Terminal' },
+        { bg: '#000050', fg: '#ffffff', accent: '#00aaaa', name: 'Blue Screen' },
+        { bg: '#221a0a', fg: '#FFD700', accent: '#2D9596', name: 'Amber System' },
+        { bg: '#280050', fg: '#ff00ff', accent: '#00ffff', name: 'Corruption' },
+        { bg: '#221002', fg: '#ffb000', accent: '#ff4400', name: 'CRT Burn' },
       ],
       reflections: [
         { bg: '#0a0a10', fg: '#F5C87A', accent: '#2D9596', name: 'Amber Calm' },
@@ -636,8 +636,8 @@
       );
     };
 
-    const PaletteSwatches = ({ type, selectedIndex, onSelect }) => {
-      const palettes = PALETTES[type];
+    const PaletteSwatches = ({ type, selectedIndex, onSelect, palettes: customPalettes }) => {
+      const palettes = customPalettes || PALETTES[type];
       return (
         <div className="flex gap-2">
           {palettes.map((p, i) => (
@@ -758,7 +758,7 @@
             <div className="mt-16 p-6 rounded-xl" style={{ background: '#0D0D0D', border: '1px solid #2D2D2D' }}>
               <h2 className="text-sm font-bold mb-6 uppercase tracking-wider" style={{ color: '#F5C87A', fontFamily: "'Space Mono', monospace" }}>Complete Palette Reference</h2>
               <div className="space-y-6">
-                {Object.entries(PALETTES).map(([type, palettes]) => (
+                {Object.entries(PALETTES).filter(([type]) => CONTENT_TYPES[type]).map(([type, palettes]) => (
                   <div key={type}>
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-xs uppercase tracking-wider" style={{ color: '#8A8A8A', fontFamily: "'Space Mono', monospace" }}>{CONTENT_TYPES[type].icon} {CONTENT_TYPES[type].label}</span>
