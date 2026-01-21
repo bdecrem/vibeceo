@@ -219,8 +219,9 @@ class TerminalUI {
     const statusRow = inputBoxBottom + 1;  // after bottom border
 
     process.stdout.write(ANSI.savePos);
-    process.stdout.write(ANSI.moveTo(statusRow, 1));
-    process.stdout.write(ANSI.clearLine + ANSI.dim + ANSI.bgGray + ANSI.white + status + ANSI.reset);
+    process.stdout.write(ANSI.moveTo(statusRow, 1) + ANSI.clearLine);
+    // Subtle status: dim text with small left margin, no background
+    process.stdout.write(ANSI.moveTo(statusRow, 3) + ANSI.dim + status.trim() + ANSI.reset);
     process.stdout.write(ANSI.restorePos);
   }
 
@@ -236,19 +237,19 @@ class TerminalUI {
     // Input box top = scrollBottom + 1
     const inputBoxTop = this.scrollBottom + 1;
 
-    // Top border
-    process.stdout.write(ANSI.moveTo(inputBoxTop, 2) + ANSI.clearLine);
-    process.stdout.write(ANSI.cyan + BOX.topLeft + BOX.horizontal.repeat(innerWidth) + BOX.topRight + ANSI.reset);
+    // Top border — clear full line first to eliminate any artifacts at edges
+    process.stdout.write(ANSI.moveTo(inputBoxTop, 1) + ANSI.clearLine);
+    process.stdout.write(ANSI.moveTo(inputBoxTop, 2) + ANSI.cyan + BOX.topLeft + BOX.horizontal.repeat(innerWidth) + BOX.topRight + ANSI.reset);
 
     // Input lines
     for (let i = 0; i < lineCount; i++) {
       const row = inputBoxTop + 1 + i;
-      process.stdout.write(ANSI.moveTo(row, 2) + ANSI.clearLine);
-      process.stdout.write(ANSI.cyan + BOX.vertical + ANSI.reset);
+      process.stdout.write(ANSI.moveTo(row, 1) + ANSI.clearLine);
+      process.stdout.write(ANSI.moveTo(row, 2) + ANSI.cyan + BOX.vertical + ANSI.reset);
 
       if (this.isProcessing && i === 0) {
         process.stdout.write(ANSI.dim + ' thinking...' + ANSI.reset);
-        process.stdout.write(' '.repeat(Math.max(0, innerWidth - 11)));
+        process.stdout.write(' '.repeat(Math.max(0, innerWidth - 12)));  // " thinking..." is 12 chars
       } else if (this.isProcessing) {
         process.stdout.write(' '.repeat(innerWidth));
       } else {
@@ -260,8 +261,8 @@ class TerminalUI {
 
     // Bottom border
     const bottomRow = inputBoxTop + 1 + lineCount;
-    process.stdout.write(ANSI.moveTo(bottomRow, 2) + ANSI.clearLine);
-    process.stdout.write(ANSI.cyan + BOX.bottomLeft + BOX.horizontal.repeat(innerWidth) + BOX.bottomRight + ANSI.reset);
+    process.stdout.write(ANSI.moveTo(bottomRow, 1) + ANSI.clearLine);
+    process.stdout.write(ANSI.moveTo(bottomRow, 2) + ANSI.cyan + BOX.bottomLeft + BOX.horizontal.repeat(innerWidth) + BOX.bottomRight + ANSI.reset);
 
     // Clear any leftover rows from when input was longer (padding area)
     // Status bar is at bottomRow + 1, padding rows below that
@@ -273,7 +274,11 @@ class TerminalUI {
   }
 
   private positionCursor(): void {
-    if (this.isProcessing || this.inSetupWizard || this.inModal !== 'none') return;
+    // When processing, hide cursor entirely — "thinking..." is the visual indicator
+    if (this.isProcessing || this.inSetupWizard || this.inModal !== 'none') {
+      process.stdout.write(ANSI.hideCursor);
+      return;
+    }
 
     const innerWidth = this.inputInnerWidth;
     const inputLines = this.getInputLines();
