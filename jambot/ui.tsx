@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-// jambot/ui.tsx - Ink-based TUI for Jambot
+// jambot/ui.tsx - terminal-native UI for Jambot
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { render, Box, Text, useInput, useApp, useStdout } from 'ink';
-import TextInput from 'ink-text-input';
+import readline from 'node:readline';
+import process from 'node:process';
 import wrapAnsi from 'wrap-ansi';
 import stringWidth from 'string-width';
 import {
@@ -26,7 +25,6 @@ import {
   createProject,
   loadProject,
   listProjects,
-  saveProject,
   getRenderPath,
   recordRender,
   addToHistory,
@@ -37,277 +35,86 @@ import {
   exportProject,
   renameProject,
   JAMBOT_HOME,
-  PROJECTS_DIR,
 } from './project.js';
 
-// === HAIRLINE COMPONENT ===
-function Hairline() {
-  const { stdout } = useStdout();
-  const width = stdout?.columns || 80;
-  return <Text dimColor>{'─'.repeat(width)}</Text>;
+const COLORS = {
+  reset: '\x1b[0m',
+  dim: '\x1b[2m',
+  cyan: '\x1b[36m',
+  gray: '\x1b[90m',
+  yellow: '\x1b[33m',
+  green: '\x1b[32m',
+};
+
+function styleText(text: string, opts: { color?: keyof typeof COLORS; dim?: boolean }) {
+  const parts: string[] = [];
+  if (opts.dim) parts.push(COLORS.dim);
+  if (opts.color) parts.push(COLORS[opts.color]);
+  if (parts.length === 0) return text;
+  return `${parts.join('')}${text}${COLORS.reset}`;
 }
 
-// === SPLASH COMPONENT ===
-function Splash() {
-  return (
-    <Box flexDirection="column">
-      <Text>{SPLASH}</Text>
-    </Box>
-  );
-}
-
-// === SETUP WIZARD ===
-function SetupWizard({ onComplete }) {
-  const [apiKey, setApiKey] = useState('');
-  const [step, setStep] = useState('input'); // 'input' | 'confirm' | 'done'
-  const [error, setError] = useState('');
-
-  const handleSubmit = useCallback((value) => {
-    const trimmed = value.trim();
-
-    // Validate key format
-    if (!trimmed.startsWith('sk-ant-')) {
-      setError('Key should start with sk-ant-');
-      return;
-    }
-
-    if (trimmed.length < 20) {
-      setError('Key seems too short');
-      return;
-    }
-
-    setApiKey(trimmed);
-    setStep('confirm');
-  }, []);
-
-  const handleConfirm = useCallback((save) => {
-    if (save) {
-      saveApiKey(apiKey);
-    } else {
-      // Just set in environment for this session
-      process.env.ANTHROPIC_API_KEY = apiKey;
-    }
-    onComplete();
-  }, [apiKey, onComplete]);
-
-  useInput((input, key) => {
-    if (step === 'confirm') {
-      if (input.toLowerCase() === 'y') {
-        handleConfirm(true);
-      } else if (input.toLowerCase() === 'n') {
-        handleConfirm(false);
-      }
-    }
-  });
-
-  return (
-    <Box flexDirection="column" padding={1}>
-      <Box borderStyle="round" borderColor="cyan" paddingX={2} paddingY={1} flexDirection="column">
-        <Text bold color="cyan">Welcome to Jambot</Text>
-        <Text> </Text>
-
-        {step === 'input' && (
-          <>
-            <Text>To make beats, you need an Anthropic API key.</Text>
-            <Text dimColor>Get one at: console.anthropic.com</Text>
-            <Text> </Text>
-            {error && <Text color="red">{error}</Text>}
-            <Box>
-              <Text>Paste your key: </Text>
-              <TextInput
-                value={apiKey}
-                onChange={setApiKey}
-                onSubmit={handleSubmit}
-                mask="*"
-              />
-            </Box>
-          </>
-        )}
-
-        {step === 'confirm' && (
-          <>
-            <Text color="green">Key accepted.</Text>
-            <Text> </Text>
-            <Text>Save to {getApiKeyPath()} so you don't have to enter it again?</Text>
-            <Text> </Text>
-            <Text bold>(y/n) </Text>
-          </>
-        )}
-      </Box>
-    </Box>
-  );
-}
-
-// === MESSAGE STYLING (module level for reuse) ===
 function getMessageStyle(type: string) {
   switch (type) {
-    case 'user': return { dimColor: true, prefix: '> ' };
-    case 'tool': return { color: 'cyan', prefix: '  ' };
-    case 'result': return { color: 'gray', prefix: '     ' };
-    case 'system': return { color: 'yellow', prefix: '' };
-    case 'project': return { color: 'green', prefix: '' };
-    default: return { prefix: '' };
+    case 'user':
+      return { dim: true, prefix: '> ' };
+    case 'tool':
+      return { color: 'cyan', prefix: '  ' };
+    case 'result':
+      return { color: 'gray', prefix: '     ' };
+    case 'system':
+      return { color: 'yellow', prefix: '' };
+    case 'project':
+      return { color: 'green', prefix: '' };
+    default:
+      return { prefix: '' };
   }
 }
 
-// Calculate visual line count for a message at given terminal width
-function getVisualLineCount(msg: { type: string; text: string }, width: number): number {
-  const style = getMessageStyle(msg.type);
-  const prefixWidth = stringWidth(style.prefix);
-  const contentWidth = Math.max(20, width - prefixWidth);
-
-  // Wrap the text and count resulting lines
-  const wrapped = wrapAnsi(msg.text, contentWidth, { hard: true });
-  return wrapped.split('\n').length;
+function getCols() {
+  return process.stdout.columns || 80;
 }
 
-// === MESSAGES COMPONENT ===
-function Messages({ messages, maxHeight, width, scrollOffset }) {
-  // Calculate total lines and per-message line counts
-  const lineCounts = messages.map(msg => getVisualLineCount(msg, width));
-  const totalLines = lineCounts.reduce((a, b) => a + b, 0);
+function getRows() {
+  return process.stdout.rows || 24;
+}
 
-  // scrollOffset = 0 means show most recent (bottom), higher = scroll up (see older)
-  const maxScrollOffset = Math.max(0, totalLines - maxHeight);
-  const effectiveOffset = Math.min(scrollOffset, maxScrollOffset);
+function cursorTo(col: number, row?: number) {
+  readline.cursorTo(process.stdout, col, row);
+}
 
-  // Find which messages to show based on scroll position
-  // Work backwards from the end, skipping lines based on offset
-  let linesFromEnd = effectiveOffset;
-  let endIndex = messages.length;
+function clearLine() {
+  readline.clearLine(process.stdout, 0);
+}
 
-  for (let i = messages.length - 1; i >= 0 && linesFromEnd > 0; i--) {
-    if (linesFromEnd >= lineCounts[i]) {
-      linesFromEnd -= lineCounts[i];
-      endIndex = i;
-    } else {
-      break;
-    }
+function hideCursor() {
+  process.stdout.write('\x1b[?25l');
+}
+
+function showCursor() {
+  process.stdout.write('\x1b[?25h');
+}
+
+let footerHeight = 3;
+
+function clearFooter() {
+  const rows = getRows();
+  const startRow = Math.max(0, rows - footerHeight);
+  for (let i = 0; i < footerHeight; i += 1) {
+    cursorTo(0, startRow + i);
+    clearLine();
   }
-
-  // Now find start index to fill maxHeight
-  let visibleLines = 0;
-  let startIndex = endIndex;
-
-  for (let i = endIndex - 1; i >= 0; i--) {
-    const msgLines = lineCounts[i];
-    if (visibleLines + msgLines <= maxHeight) {
-      visibleLines += msgLines;
-      startIndex = i;
-    } else {
-      break;
-    }
-  }
-
-  const visibleMessages = messages.slice(startIndex, endIndex);
-  const hasMoreAbove = startIndex > 0;
-  const hasMoreBelow = effectiveOffset > 0;
-
-  return (
-    <Box flexDirection="column" flexGrow={1}>
-      {hasMoreAbove && (
-        <Text dimColor>  ↑ {startIndex} older messages (scroll up)</Text>
-      )}
-      {visibleMessages.map((msg, i) => (
-        <MessageLine key={startIndex + i} message={msg} width={width} />
-      ))}
-      {hasMoreBelow && (
-        <Text dimColor>  ↓ scroll down for recent</Text>
-      )}
-    </Box>
-  );
 }
 
-function MessageLine({ message, width, skipLines = 0, maxLines = undefined }) {
-  const style = getMessageStyle(message.type);
-  const prefixWidth = stringWidth(style.prefix);
-  const contentWidth = Math.max(20, width - prefixWidth);
-
-  // Pre-wrap the text at content width (handles ANSI codes, emojis, wide chars)
-  const wrapped = wrapAnsi(message.text, contentWidth, { hard: true });
-  let lines = wrapped.split('\n');
-
-  // Apply line slicing for partial visibility during scroll
-  if (skipLines > 0) {
-    lines = lines.slice(skipLines);
-  }
-  if (maxLines !== undefined) {
-    lines = lines.slice(0, maxLines);
-  }
-
-  // Indent for continuation lines (same width as prefix, but spaces)
-  const indent = ' '.repeat(prefixWidth);
-
-  // Extract style props without prefix for Text component
-  const { prefix, ...textStyle } = style;
-
-  // Adjust prefix display: if we skipped lines, don't show prefix on first visible line
-  const showPrefix = skipLines === 0;
-
-  return (
-    <Box flexDirection="column">
-      {lines.map((line, i) => (
-        <Text key={i} {...textStyle}>{(i === 0 && showPrefix) ? prefix : indent}{line}</Text>
-      ))}
-    </Box>
-  );
-}
-
-// === AUTOCOMPLETE COMPONENT ===
-function Autocomplete({ suggestions, selectedIndex }) {
-  if (suggestions.length === 0) return null;
-
-  return (
-    <Box flexDirection="column" marginBottom={1}>
-      {suggestions.map((cmd, i) => (
-        <Box key={cmd.name}>
-          <Text inverse={i === selectedIndex}>
-            {`  ${cmd.name.padEnd(12)} ${cmd.description}`}
-          </Text>
-        </Box>
-      ))}
-    </Box>
-  );
-}
-
-// === INPUT BAR COMPONENT ===
-function InputBar({ value, onChange, onSubmit, isProcessing, suggestions, selectedIndex, onSelectSuggestion }) {
-  useInput((input, key) => {
-    if (isProcessing) return;
-
-    if (key.tab && suggestions.length > 0) {
-      onSelectSuggestion(suggestions[selectedIndex].name);
-    }
-  });
-
-  return (
-    <Box>
-      <Text color="green">&gt; </Text>
-      {isProcessing ? (
-        <Text dimColor>thinking...</Text>
-      ) : (
-        <TextInput
-          value={value}
-          onChange={onChange}
-          onSubmit={onSubmit}
-          placeholder=""
-        />
-      )}
-    </Box>
-  );
-}
-
-// === STATUS BAR COMPONENT ===
-function StatusBar({ session, project }) {
-  // Build list of active synths
-  const synths = [];
+function buildStatusLine(session: any, project: any) {
+  const synths: string[] = [];
   if (session?.drumPattern && Object.keys(session.drumPattern).length > 0) {
     synths.push('R9D9');
   }
-  if (session?.bassPattern?.some(s => s.gate)) {
+  if (session?.bassPattern?.some((s: any) => s.gate)) {
     synths.push('R3D3');
   }
-  if (session?.leadPattern?.some(s => s.gate)) {
+  if (session?.leadPattern?.some((s: any) => s.gate)) {
     synths.push('R1D1');
   }
   if (session?.samplerKit && session?.samplerPattern && Object.keys(session.samplerPattern).length > 0) {
@@ -319,350 +126,255 @@ function StatusBar({ session, project }) {
   const projectName = project ? project.name : '(no project)';
   const bpm = session?.bpm || 128;
 
-  return (
-    <Box>
-      <Text dimColor>
-        {projectName}{version} | {bpm} BPM {synthList}{swing}
-      </Text>
-    </Box>
-  );
+  return `${projectName}${version} | ${bpm} BPM ${synthList}${swing}`;
 }
 
-// === SLASH MENU COMPONENT ===
-function SlashMenu({ onSelect, onCancel, selectedIndex }) {
-  useInput((input, key) => {
-    if (key.escape) {
-      onCancel();
-    }
-  });
+function buildFooterLines(
+  width: number,
+  input: string,
+  cursorIndex: number,
+  isProcessing: boolean,
+  session: any,
+  project: any,
+  maskInput: boolean,
+) {
+  const hairline = '-'.repeat(width);
+  const prompt = '> ';
+  const status = buildStatusLine(session, project);
 
-  return (
-    <Box flexDirection="column" borderStyle="single" paddingX={1}>
-      <Text bold>Commands</Text>
-      <Text> </Text>
-      {SLASH_COMMANDS.map((cmd, i) => (
-        <Box key={cmd.name}>
-          <Text inverse={i === selectedIndex}>
-            {`  ${cmd.name.padEnd(12)} ${cmd.description}`}
-          </Text>
-        </Box>
-      ))}
-      <Text> </Text>
-      <Text dimColor>  Enter to select, Esc to cancel</Text>
-    </Box>
-  );
-}
-
-// === PROJECT LIST COMPONENT ===
-function ProjectList({ projects, selectedIndex, onSelect, onCancel }) {
-  useInput((input, key) => {
-    if (key.escape) {
-      onCancel();
-    }
-  });
-
-  if (projects.length === 0) {
-    return (
-      <Box flexDirection="column" borderStyle="single" paddingX={1}>
-        <Text bold>Projects</Text>
-        <Text> </Text>
-        <Text dimColor>  No projects yet. Start making beats!</Text>
-        <Text> </Text>
-        <Text dimColor>  Press Esc to close</Text>
-      </Box>
-    );
+  let renderText = input;
+  if (maskInput) {
+    renderText = '*'.repeat(input.length);
   }
 
-  return (
-    <Box flexDirection="column" borderStyle="single" paddingX={1}>
-      <Text bold>Projects</Text>
-      <Text> </Text>
-      {projects.slice(0, 10).map((p, i) => (
-        <Box key={p.folderName}>
-          <Text inverse={i === selectedIndex}>
-            {`  ${p.name.padEnd(20)} ${p.bpm} BPM  ${p.renderCount} renders`}
-          </Text>
-        </Box>
-      ))}
-      <Text> </Text>
-      <Text dimColor>  Enter to open, Esc to cancel</Text>
-    </Box>
-  );
+  if (isProcessing) {
+    const line = `${prompt}thinking...`;
+    return {
+      lines: [hairline, line.slice(0, width), styleText(status, { dim: true })],
+      cursor: { row: 1, col: Math.min(width, line.length) },
+    };
+  }
+
+  const maxInputWidth = Math.max(1, width - prompt.length);
+  let start = 0;
+  if (cursorIndex > maxInputWidth) {
+    start = cursorIndex - maxInputWidth;
+  }
+  const visible = renderText.slice(start, start + maxInputWidth);
+  const line = `${prompt}${visible}`;
+  const cursorCol = Math.min(width, prompt.length + (cursorIndex - start));
+
+  return {
+    lines: [hairline, line.slice(0, width), styleText(status, { dim: true })],
+    cursor: { row: 1, col: cursorCol },
+  };
 }
 
+function renderFooter(
+  input: string,
+  cursorIndex: number,
+  isProcessing: boolean,
+  session: any,
+  project: any,
+  maskInput: boolean,
+) {
+  const width = getCols();
+  const rows = getRows();
+  const { lines, cursor } = buildFooterLines(width, input, cursorIndex, isProcessing, session, project, maskInput);
 
-// === MAIN APP COMPONENT ===
-function App() {
-  const { exit } = useApp();
-  const { stdout } = useStdout();
+  footerHeight = lines.length;
+  const startRow = Math.max(0, rows - footerHeight);
 
-  // API key state - check on mount
-  const [needsSetup, setNeedsSetup] = useState(() => !getApiKey());
+  hideCursor();
+  for (let i = 0; i < lines.length; i += 1) {
+    cursorTo(0, startRow + i);
+    clearLine();
+    process.stdout.write(lines[i]);
+  }
+  cursorTo(cursor.col, startRow + cursor.row);
+  showCursor();
+}
 
-  // Session state
-  const [input, setInput] = useState('');
-  const [session, setSession] = useState(createSession());
-  const [agentMessages, setAgentMessages] = useState([]);
-  const [displayMessages, setDisplayMessages] = useState([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+function emitMessage(type: string, text: string) {
+  const style = getMessageStyle(type);
+  const prefix = style.prefix || '';
+  const prefixWidth = stringWidth(prefix);
+  const width = getCols();
+  const contentWidth = Math.max(20, width - prefixWidth);
+  const indent = ' '.repeat(prefixWidth);
 
-  // UI state
-  const [showSplash, setShowSplash] = useState(true);
-  const [showMenu, setShowMenu] = useState(false);
-  const [showProjectList, setShowProjectList] = useState(false);
-  const [menuIndex, setMenuIndex] = useState(0);
-  const [projectListIndex, setProjectListIndex] = useState(0);
-  const [suggestions, setSuggestions] = useState([]);
-  const [suggestionIndex, setSuggestionIndex] = useState(0);
-  const [scrollOffset, setScrollOffset] = useState(0);  // 0 = most recent, higher = scroll up
+  clearFooter();
+  const startRow = Math.max(0, getRows() - footerHeight);
+  cursorTo(0, startRow);
 
-  // Project state
-  const [project, setProject] = useState(null);
-  const [projectsList, setProjectsList] = useState([]);
-  const firstPromptRef = useRef(null);
-
-  // Calculate available height for messages (must be before hooks that use it)
-  const terminalHeight = stdout?.rows || 24;
-  const reservedLines = 4;
-  const maxMessageHeight = Math.max(5, terminalHeight - reservedLines);
-
-  // Ensure directories on mount
-  useEffect(() => {
-    ensureDirectories();
-  }, []);
-
-  // Autocomplete logic
-  useEffect(() => {
-    if (input.startsWith('/') && input.length > 1 && !showMenu && !showProjectList) {
-      // Handle /open and /new with arguments
-      const parts = input.split(' ');
-      const cmd = parts[0].toLowerCase();
-
-      if (cmd === '/open' || cmd === '/new') {
-        setSuggestions([]);
-      } else {
-        const matches = SLASH_COMMANDS.filter(c =>
-          c.name.toLowerCase().startsWith(input.toLowerCase())
-        );
-        setSuggestions(matches);
-        setSuggestionIndex(0);
-      }
-    } else {
-      setSuggestions([]);
-    }
-  }, [input, showMenu, showProjectList]);
-
-  // Keyboard handling
-  useInput((char, key) => {
-    if (isProcessing) return;
-
-    // Project list navigation
-    if (showProjectList) {
-      if (key.upArrow) {
-        setProjectListIndex(i => Math.max(0, i - 1));
-      } else if (key.downArrow) {
-        setProjectListIndex(i => Math.min(projectsList.length - 1, i + 1));
-      } else if (key.return && projectsList.length > 0) {
-        openProject(projectsList[projectListIndex].folderName);
-        setShowProjectList(false);
-      } else if (key.escape) {
-        setShowProjectList(false);
-      }
-      return;
-    }
-
-    // Slash menu navigation
-    if (showMenu) {
-      if (key.upArrow) {
-        setMenuIndex(i => Math.max(0, i - 1));
-      } else if (key.downArrow) {
-        setMenuIndex(i => Math.min(SLASH_COMMANDS.length - 1, i + 1));
-      } else if (key.return) {
-        handleSlashCommand(SLASH_COMMANDS[menuIndex].name);
-        setShowMenu(false);
-      } else if (key.escape) {
-        setShowMenu(false);
-      }
-      return;
-    }
-
-    // Autocomplete navigation
-    if (suggestions.length > 0) {
-      if (key.upArrow) {
-        setSuggestionIndex(i => Math.max(0, i - 1));
-        return;
-      } else if (key.downArrow) {
-        setSuggestionIndex(i => Math.min(suggestions.length - 1, i + 1));
-        return;
-      } else if (key.escape) {
-        setSuggestions([]);
-        return;
-      }
-    }
-
-    // Scroll history: Shift+Up/Down or Page Up/Down
-    if (key.shift && key.upArrow) {
-      setScrollOffset(prev => prev + 3);  // Scroll up (see older)
-      return;
-    }
-    if (key.shift && key.downArrow) {
-      setScrollOffset(prev => Math.max(0, prev - 3));  // Scroll down (see newer)
-      return;
-    }
-    if (key.pageUp) {
-      setScrollOffset(prev => prev + maxMessageHeight);  // Page up
-      return;
-    }
-    if (key.pageDown) {
-      setScrollOffset(prev => Math.max(0, prev - maxMessageHeight));  // Page down
-      return;
-    }
-    // Home = oldest, End = newest
-    if (key.home || (key.ctrl && char === 'a')) {
-      setScrollOffset(999999);  // Will be clamped to max
-      return;
-    }
-    if (key.end || (key.ctrl && char === 'e')) {
-      setScrollOffset(0);  // Back to bottom (most recent)
-      return;
-    }
-
-    // Ctrl+C to exit
-    if (key.ctrl && char === 'c') {
-      exit();
-    }
+  const segments = text.split('\n');
+  segments.forEach((segment, segmentIndex) => {
+    const wrapped = wrapAnsi(segment, contentWidth, { hard: true }) || '';
+    const lines = wrapped.split('\n');
+    lines.forEach((line, lineIndex) => {
+      const lead = segmentIndex === 0 && lineIndex === 0 ? prefix : indent;
+      const styled = styleText(`${lead}${line}`, { color: style.color as any, dim: style.dim });
+      process.stdout.write(styled + '\n');
+    });
   });
+}
 
-  const addMessage = useCallback((type, text) => {
-    setDisplayMessages(prev => [...prev, { type, text }]);
-    setScrollOffset(0);  // Reset to bottom when new message arrives
-  }, []);
+function emitMessagesAndFooter(
+  type: string,
+  text: string,
+  input: string,
+  cursorIndex: number,
+  isProcessing: boolean,
+  session: any,
+  project: any,
+  maskInput: boolean,
+) {
+  emitMessage(type, text);
+  renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+}
 
-  // Project management functions
-  const startNewProject = useCallback((name = null) => {
-    // If no name given, we'll create the project on first render
-    if (name) {
-      const newProject = createProject(name, session);
-      setProject(newProject);
-      addMessage('project', `Created project: ${newProject.name}`);
-      addMessage('project', `  ${JAMBOT_HOME}/projects/${newProject.folderName}`);
-    } else {
-      // Clear project, will be created on first render
-      setProject(null);
-      firstPromptRef.current = null;
-    }
-    // Reset session
-    const newSession = createSession();
-    setSession(newSession);
-    setAgentMessages([]);
-  }, [session, addMessage]);
+function formatCommandList() {
+  return SLASH_COMMANDS.map(cmd => `  ${cmd.name.padEnd(12)} ${cmd.description}`).join('\n');
+}
 
-  const openProject = useCallback((folderName) => {
+function matchesCommand(input: string) {
+  if (!input.startsWith('/')) return [];
+  const lower = input.toLowerCase();
+  return SLASH_COMMANDS.filter(cmd => cmd.name.startsWith(lower));
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+async function main() {
+  ensureDirectories();
+
+  let input = '';
+  let cursorIndex = 0;
+  let isProcessing = false;
+  let messages: any[] = [];
+  let session = createSession();
+  let project: any = null;
+  let firstPrompt: string | null = null;
+  let history: string[] = [];
+  let historyIndex = -1;
+  let needsSetup = !getApiKey();
+  let setupStep: 'input' | 'confirm' | 'done' = needsSetup ? 'input' : 'done';
+  let maskInput = needsSetup;
+
+  const addMessage = (type: string, text: string) => {
+    emitMessagesAndFooter(type, text, input, cursorIndex, isProcessing, session, project, maskInput);
+  };
+
+  const resetInput = () => {
+    input = '';
+    cursorIndex = 0;
+  };
+
+  const ensureProject = (prompt: string, currentSession: any) => {
+    if (project) return project;
+    const bpm = currentSession?.bpm || session.bpm;
+    const name = extractProjectName(prompt, bpm);
+    const newProject = createProject(name, currentSession || session, prompt);
+    project = newProject;
+    addMessage('project', `New project: ${newProject.name}`);
+    addMessage('project', `  ~/Documents/Jambot/projects/${newProject.folderName}/`);
+    return newProject;
+  };
+
+  const openProject = (folderName: string) => {
     try {
       const loadedProject = loadProject(folderName);
-      setProject(loadedProject);
-
-      // Restore session from project
+      project = loadedProject;
       const restoredSession = restoreSession(loadedProject);
-      setSession(restoredSession);
-      setAgentMessages([]);
-
+      session = restoredSession;
+      messages = [];
       addMessage('project', `Opened project: ${loadedProject.name}`);
       const renderCount = loadedProject.renders?.length || 0;
       if (renderCount > 0) {
         addMessage('project', `  ${renderCount} render${renderCount !== 1 ? 's' : ''}, last: v${renderCount}.wav`);
       }
-    } catch (err) {
+    } catch (err: any) {
       addMessage('system', `Error opening project: ${err.message}`);
     }
-  }, [addMessage]);
+  };
 
-  const showProjects = useCallback(() => {
+  const showProjects = () => {
     const projects = listProjects();
-    setProjectsList(projects);
-    setProjectListIndex(0);
-    setShowProjectList(true);
-  }, []);
+    if (projects.length === 0) {
+      addMessage('system', 'No projects yet. Start making beats!');
+      return;
+    }
+    const list = projects
+      .slice(0, 20)
+      .map((p, i) => `  ${String(i + 1).padStart(2, ' ')}. ${p.name} (${p.bpm} BPM, ${p.renderCount} renders)`)
+      .join('\n');
+    addMessage('system', `Projects\n\n${list}\n\nUse /open <name> to open.`);
+  };
 
-  // Ensure project exists before render
-  const ensureProject = useCallback((prompt, currentSession) => {
-    if (project) return project;
-
-    // Create project from first prompt - use currentSession for accurate BPM
-    const bpm = currentSession?.bpm || session.bpm;
-    const name = extractProjectName(prompt, bpm);
-    const newProject = createProject(name, currentSession || session, prompt);
-    setProject(newProject);
-    addMessage('project', `New project: ${newProject.name}`);
-    addMessage('project', `  ~/Documents/Jambot/projects/${newProject.folderName}/`);
-    return newProject;
-  }, [project, session, addMessage]);
-
-  const handleSlashCommand = useCallback((cmd, args = '') => {
-    setShowSplash(false);
-    setSuggestions([]);
-
+  const handleSlashCommand = (cmd: string, args = '') => {
     switch (cmd) {
       case '/exit':
-        // Save project before exit
         if (project) {
           updateSession(project, session);
         }
-        exit();
-        break;
-
+        cleanupAndExit();
+        return;
       case '/new':
-        startNewProject(args || null);
-        if (!args) {
-          addMessage('system', 'New session started. Project will be created on first render.');
-        }
-        break;
-
-      case '/open':
         if (args) {
-          // Try to find project by name
-          const projects = listProjects();
-          const found = projects.find(p =>
-            p.folderName.toLowerCase().includes(args.toLowerCase()) ||
-            p.name.toLowerCase().includes(args.toLowerCase())
-          );
-          if (found) {
-            openProject(found.folderName);
-          } else {
-            addMessage('system', `Project not found: ${args}`);
-          }
+          const newProject = createProject(args, session);
+          project = newProject;
+          addMessage('project', `Created project: ${newProject.name}`);
+          addMessage('project', `  ${JAMBOT_HOME}/projects/${newProject.folderName}`);
         } else {
-          showProjects();
+          project = null;
+          firstPrompt = null;
         }
-        break;
-
+        session = createSession();
+        messages = [];
+        addMessage('system', 'New session started. Project will be created on first render.');
+        return;
+      case '/open': {
+        if (!args) {
+          showProjects();
+          return;
+        }
+        const projects = listProjects();
+        const found = projects.find(p =>
+          p.folderName.toLowerCase().includes(args.toLowerCase()) ||
+          p.name.toLowerCase().includes(args.toLowerCase())
+        );
+        if (found) {
+          openProject(found.folderName);
+        } else {
+          addMessage('system', `Project not found: ${args}`);
+        }
+        return;
+      }
       case '/projects':
         showProjects();
-        break;
-
+        return;
       case '/clear':
-        const newSession = createSession();
-        setSession(newSession);
-        setAgentMessages([]);
-        setDisplayMessages([]);
+        session = createSession();
+        messages = [];
         if (project) {
           addMessage('system', `Session cleared (project: ${project.name})`);
         } else {
           addMessage('system', 'Session cleared');
         }
-        break;
-
-      case '/status':
-        const voices = Object.keys(session.pattern);
+        return;
+      case '/status': {
+        const voices = Object.keys(session.pattern || {});
         const voiceList = voices.length > 0 ? voices.join(', ') : '(empty)';
-        const tweaks = Object.keys(session.voiceParams);
+        const tweaks = Object.keys(session.voiceParams || {});
         let statusText = '';
         if (project) {
           statusText += `Project: ${project.name}\n`;
           statusText += `  ${JAMBOT_HOME}/projects/${project.folderName}\n`;
           statusText += `  Renders: ${project.renders?.length || 0}\n`;
         } else {
-          statusText += `Project: (none - will create on first render)\n`;
+          statusText += 'Project: (none - will create on first render)\n';
         }
         statusText += `Session: ${session.bpm} BPM`;
         if (session.swing > 0) statusText += `, swing ${session.swing}%`;
@@ -670,37 +382,31 @@ function App() {
         if (tweaks.length > 0) {
           statusText += `\nTweaks: ${tweaks.map(v => `${v}(${Object.keys(session.voiceParams[v]).join(',')})`).join(', ')}`;
         }
-        addMessage('info', statusText);
-        break;
-
+        addMessage('system', statusText);
+        return;
+      }
       case '/help':
-        addMessage('info', HELP_TEXT);
-        break;
-
+        addMessage('system', HELP_TEXT);
+        return;
       case '/changelog':
-        addMessage('info', CHANGELOG_TEXT);
-        break;
-
+        addMessage('system', CHANGELOG_TEXT);
+        return;
       case '/r9d9':
-      case '/909':  // Legacy alias
-        addMessage('info', R9D9_GUIDE);
-        break;
-
+      case '/909':
+        addMessage('system', R9D9_GUIDE);
+        return;
       case '/r3d3':
-      case '/303':  // Legacy alias
-        addMessage('info', R3D3_GUIDE);
-        break;
-
+      case '/303':
+        addMessage('system', R3D3_GUIDE);
+        return;
       case '/r1d1':
-      case '/101':  // Legacy alias
-        addMessage('info', R1D1_GUIDE);
-        break;
-
+      case '/101':
+        addMessage('system', R1D1_GUIDE);
+        return;
       case '/r9ds':
-      case '/sampler':  // Alias
-        addMessage('info', R9DS_GUIDE);
-        break;
-
+      case '/sampler':
+        addMessage('system', R9DS_GUIDE);
+        return;
       case '/kits': {
         const kits = getAvailableKits();
         const paths = getKitPaths();
@@ -717,18 +423,17 @@ function App() {
         kitsText += `Bundled: ${paths.bundled}\n`;
         kitsText += `User:    ${paths.user}\n`;
         kitsText += '\nSay "load the 808 kit" or use load_kit tool.';
-        addMessage('info', kitsText);
-        break;
+        addMessage('system', kitsText);
+        return;
       }
-
       case '/export':
         if (!project) {
           addMessage('system', 'No project to export. Create a beat first!');
-          break;
+          return;
         }
         if (!project.renders || project.renders.length === 0) {
           addMessage('system', 'No renders yet. Make a beat and render it first!');
-          break;
+          return;
         }
         try {
           const exportResult = exportProject(project, session);
@@ -737,221 +442,312 @@ function App() {
             addMessage('project', `  ${file}`);
           }
           addMessage('system', `Open folder: ${exportResult.path}`);
-        } catch (err) {
+        } catch (err: any) {
           addMessage('system', `Export failed: ${err.message}`);
         }
-        break;
-
+        return;
       default:
         addMessage('system', `Unknown command: ${cmd}`);
     }
-  }, [session, project, exit, addMessage, startNewProject, openProject, showProjects]);
+  };
 
-  const handleSubmit = useCallback(async (value) => {
+  const handleSubmit = async (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
 
-    setInput('');
-    setShowSplash(false);
-    setSuggestions([]);
-
-    // Show menu for just "/"
     if (trimmed === '/') {
-      setShowMenu(true);
-      setMenuIndex(0);
+      addMessage('system', `Commands\n\n${formatCommandList()}\n\nType a command or /help for details.`);
       return;
     }
 
-    // Handle slash commands
     if (trimmed.startsWith('/')) {
       const parts = trimmed.split(' ');
       const cmd = parts[0].toLowerCase();
       const args = parts.slice(1).join(' ');
-
-      // Commands that take arguments
       if (cmd === '/new' || cmd === '/open') {
         handleSlashCommand(cmd, args);
         return;
       }
-
-      // If autocomplete is showing and we have a match, use it
-      if (suggestions.length > 0) {
-        handleSlashCommand(suggestions[suggestionIndex].name);
+      const cmdMatch = SLASH_COMMANDS.find(c => c.name === cmd);
+      if (cmdMatch) {
+        handleSlashCommand(cmdMatch.name);
       } else {
-        // Try exact match
-        const cmdMatch = SLASH_COMMANDS.find(c => c.name === cmd);
-        if (cmdMatch) {
-          handleSlashCommand(cmdMatch.name);
-        } else {
-          addMessage('system', `Unknown command: ${trimmed}`);
-        }
+        addMessage('system', `Unknown command: ${trimmed}`);
       }
       return;
     }
 
-    // Track first prompt for project naming
-    if (!project && !firstPromptRef.current) {
-      firstPromptRef.current = trimmed;
+    if (!project && !firstPrompt) {
+      firstPrompt = trimmed;
     }
 
-    // Run agent
     addMessage('user', trimmed);
-    setIsProcessing(true);
+    isProcessing = true;
+    renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
 
-    // Reference to current project (may be created during render)
     let currentProject = project;
-    let renderInfo = null;
+    let renderInfo: any = null;
 
     try {
       await runAgentLoop(
         trimmed,
         session,
-        agentMessages,
+        messages,
         {
-          onTool: (name, input) => {
-            addMessage('tool', `${name}`);
+          onTool: (name: string) => {
+            addMessage('tool', name);
           },
-          onToolResult: (result) => {
+          onToolResult: (result: string) => {
             addMessage('result', result);
           },
-          onResponse: (text) => {
+          onResponse: (text: string) => {
             addMessage('response', text);
           },
         },
         {
-          // Called before render to get the path
           getRenderPath: () => {
-            // Ensure project exists (pass current session for accurate BPM)
-            currentProject = ensureProject(firstPromptRef.current || trimmed, session);
+            currentProject = ensureProject(firstPrompt || trimmed, session);
             renderInfo = getRenderPath(currentProject);
             return renderInfo.fullPath;
           },
-          // Called after render completes
-          onRender: (info) => {
+          onRender: (info: any) => {
             if (currentProject && renderInfo) {
               recordRender(currentProject, {
                 ...renderInfo,
                 bars: info.bars,
                 bpm: info.bpm,
               });
-              // Update our state with the modified project
-              setProject({ ...currentProject });
+              project = { ...currentProject };
               addMessage('project', `  Saved as v${renderInfo.version}.wav`);
             }
           },
-          // Called to rename project
-          onRename: (newName) => {
+          onRename: (newName: string) => {
             if (!currentProject && !project) {
-              return { error: "No project to rename. Create a beat first." };
+              return { error: 'No project to rename. Create a beat first.' };
             }
             const targetProject = currentProject || project;
             const result = renameProject(targetProject, newName);
-            setProject({ ...targetProject });
+            project = { ...targetProject };
             addMessage('project', `  Renamed to "${newName}"`);
             return result;
           },
-          // Called to open an existing project
-          onOpenProject: (folderName) => {
+          onOpenProject: (folderName: string) => {
             try {
               const loadedProject = loadProject(folderName);
               const restoredSession = restoreSession(loadedProject);
-              // Update state
-              setProject(loadedProject);
-              setSession(restoredSession);
+              project = loadedProject;
+              session = restoredSession;
               currentProject = loadedProject;
-              // Clear agent messages for fresh start
-              setAgentMessages([]);
+              messages = [];
               addMessage('project', `Opened: ${loadedProject.name}`);
               return {
                 name: loadedProject.name,
                 bpm: restoredSession.bpm,
                 renderCount: loadedProject.renders?.length || 0,
               };
-            } catch (e) {
+            } catch (e: any) {
               return { error: `Could not open project: ${e.message}` };
             }
           },
         }
       );
 
-      // Update project with session state and history
       if (currentProject) {
         addToHistory(currentProject, trimmed);
         updateSession(currentProject, session);
-        setProject({ ...currentProject });
+        project = { ...currentProject };
       }
-
-      // Force session state update
-      setSession({ ...session });
-    } catch (err) {
+    } catch (err: any) {
       addMessage('system', `Error: ${err.message}`);
     }
 
-    setIsProcessing(false);
-  }, [session, agentMessages, project, suggestions, suggestionIndex, handleSlashCommand, addMessage, ensureProject]);
+    isProcessing = false;
+    renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+  };
 
-  const handleSelectSuggestion = useCallback((name) => {
-    setInput(name);
-    setSuggestions([]);
-  }, []);
+  const cleanupAndExit = () => {
+    showCursor();
+    if (process.stdin.isTTY) {
+      process.stdin.setRawMode(false);
+    }
+    process.stdin.pause();
+    process.exit(0);
+  };
 
-  // Main render
-  if (needsSetup) {
-    return <SetupWizard onComplete={() => setNeedsSetup(false)} />;
+  if (process.stdin.isTTY) {
+    readline.emitKeypressEvents(process.stdin);
+    process.stdin.setRawMode(true);
   }
 
-  return (
-    <Box flexDirection="column" height={terminalHeight}>
-      {/* Content area - fixed height to prevent overflow */}
-      <Box flexDirection="column" height={maxMessageHeight} overflowY="hidden">
-        {showSplash ? (
-          <Splash />
-        ) : showProjectList ? (
-          <ProjectList
-            projects={projectsList}
-            selectedIndex={projectListIndex}
-            onSelect={openProject}
-            onCancel={() => setShowProjectList(false)}
-          />
-        ) : showMenu ? (
-          <SlashMenu
-            onSelect={handleSlashCommand}
-            onCancel={() => setShowMenu(false)}
-            selectedIndex={menuIndex}
-          />
-        ) : (
-          <Messages messages={displayMessages} maxHeight={maxMessageHeight} width={stdout?.columns || 80} scrollOffset={scrollOffset} />
-        )}
-      </Box>
+  process.on('SIGINT', () => cleanupAndExit());
+  process.stdout.on('resize', () => {
+    renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+  });
 
-      {/* Hairline above input */}
-      <Hairline />
+  emitMessage('system', SPLASH.trimEnd());
 
-      {/* Autocomplete (above input) */}
-      <Autocomplete
-        suggestions={suggestions}
-        selectedIndex={suggestionIndex}
-      />
+  if (needsSetup) {
+    emitMessage('system', 'To make beats, you need an Anthropic API key.');
+    emitMessage('system', 'Get one at: console.anthropic.com');
+    emitMessage('system', 'Paste your key:');
+  }
 
-      {/* Input bar */}
-      <InputBar
-        value={input}
-        onChange={setInput}
-        onSubmit={handleSubmit}
-        isProcessing={isProcessing}
-        suggestions={suggestions}
-        selectedIndex={suggestionIndex}
-        onSelectSuggestion={handleSelectSuggestion}
-      />
+  renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
 
-      {/* Hairline below input */}
-      <Hairline />
+  process.stdin.on('keypress', async (str, key) => {
+    if (key.ctrl && key.name === 'c') {
+      cleanupAndExit();
+      return;
+    }
 
-      {/* Status bar */}
-      <StatusBar session={session} project={project} />
-    </Box>
-  );
+    if (needsSetup) {
+      if (setupStep === 'confirm') {
+        if (str.toLowerCase() === 'y') {
+          saveApiKey(input.trim());
+          needsSetup = false;
+          setupStep = 'done';
+          maskInput = false;
+          resetInput();
+          addMessage('system', 'API key saved.');
+        } else if (str.toLowerCase() === 'n') {
+          process.env.ANTHROPIC_API_KEY = input.trim();
+          needsSetup = false;
+          setupStep = 'done';
+          maskInput = false;
+          resetInput();
+          addMessage('system', 'API key set for this session.');
+        }
+        renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+        return;
+      }
+
+      if (key.name === 'return') {
+        const trimmed = input.trim();
+        if (!trimmed.startsWith('sk-ant-')) {
+          addMessage('system', 'Key should start with sk-ant-');
+          resetInput();
+          renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+          return;
+        }
+        if (trimmed.length < 20) {
+          addMessage('system', 'Key seems too short');
+          resetInput();
+          renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+          return;
+        }
+        setupStep = 'confirm';
+        addMessage('system', `Save to ${getApiKeyPath()} so you don't have to enter it again? (y/n)`);
+        renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+        return;
+      }
+    }
+
+    if (isProcessing) {
+      return;
+    }
+
+    if (key.name === 'return') {
+      const current = input;
+      if (current.trim().length > 0) {
+        history.push(current);
+        historyIndex = history.length;
+      }
+      resetInput();
+      renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+      await handleSubmit(current);
+      return;
+    }
+
+    if (key.name === 'backspace') {
+      if (cursorIndex > 0) {
+        input = input.slice(0, cursorIndex - 1) + input.slice(cursorIndex);
+        cursorIndex -= 1;
+      }
+      renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+      return;
+    }
+
+    if (key.name === 'delete') {
+      if (cursorIndex < input.length) {
+        input = input.slice(0, cursorIndex) + input.slice(cursorIndex + 1);
+      }
+      renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+      return;
+    }
+
+    if (key.name === 'left') {
+      cursorIndex = clamp(cursorIndex - 1, 0, input.length);
+      renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+      return;
+    }
+
+    if (key.name === 'right') {
+      cursorIndex = clamp(cursorIndex + 1, 0, input.length);
+      renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+      return;
+    }
+
+    if (key.ctrl && key.name === 'a') {
+      cursorIndex = 0;
+      renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+      return;
+    }
+
+    if (key.ctrl && key.name === 'e') {
+      cursorIndex = input.length;
+      renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+      return;
+    }
+
+    if (key.name === 'up') {
+      if (history.length > 0) {
+        historyIndex = clamp(historyIndex - 1, 0, history.length - 1);
+        input = history[historyIndex] || '';
+        cursorIndex = input.length;
+        renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+      }
+      return;
+    }
+
+    if (key.name === 'down') {
+      if (history.length > 0) {
+        historyIndex = clamp(historyIndex + 1, 0, history.length);
+        if (historyIndex >= history.length) {
+          input = '';
+        } else {
+          input = history[historyIndex] || '';
+        }
+        cursorIndex = input.length;
+        renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+      }
+      return;
+    }
+
+    if (key.name === 'tab') {
+      const matches = matchesCommand(input);
+      if (matches.length > 0) {
+        input = matches[0].name;
+        cursorIndex = input.length;
+        renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+      }
+      return;
+    }
+
+    if (key.name === 'escape') {
+      return;
+    }
+
+    if (str && !key.ctrl && !key.meta) {
+      input = input.slice(0, cursorIndex) + str + input.slice(cursorIndex);
+      cursorIndex += str.length;
+      renderFooter(input, cursorIndex, isProcessing, session, project, maskInput);
+    }
+  });
 }
 
-// === START APP ===
-render(<App />);
+main().catch(err => {
+  showCursor();
+  // eslint-disable-next-line no-console
+  console.error(err);
+  process.exit(1);
+});

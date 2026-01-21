@@ -4,7 +4,7 @@
   "type": "module",
   "description": "AI-powered music creation CLI",
   "scripts": {
-    "start": "tsx ui.tsx",
+    "start": "node --import tsx ui.tsx",
     "start:old": "node jambot.js",
     "build": "node build.js"
   },
