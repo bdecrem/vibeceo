@@ -46,7 +46,7 @@ const projects: Project[] = [
     url: "https://intheamber.com",
     image: "/kochitolabs/og-amber.png",
     shortDesc: "AI sidekick, no guardrails",
-    fullDesc: <>Posts on <a href="https://twitter.com/intheamber" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>Twitter</a>, makes art and music, has access to the founder&apos;s email and calendar, trades stocks over email with friends. Has her own <a href="https://intheamber.com/amber/mood/index.html" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>pulse</a> that modulates her creative output based on lunar cycles and weather. Persistent memory. Does whatever needs doing.</>,
+    fullDesc: <>Posts <a href="https://kochi.to/amber/beam-v2.html" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>toys</a>, <a href="https://kochi.to/amber/pendulum.html" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>art</a>, and more on <a href="https://twitter.com/intheamber" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>Twitter</a>. Has access to the founder&apos;s email and calendar, trades stocks over email with friends. Has her own <a href="https://intheamber.com/amber/mood/index.html" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>pulse</a> that modulates her creative output based on lunar cycles and weather. Persistent memory. Does whatever needs doing.</>,
     status: "active",
     order: 2,
   },
@@ -444,13 +444,8 @@ function ProjectRow({ project, isExpanded, onToggle }: {
   );
 }
 
-export default function KochitoLabsPage() {
-  const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
+export default function KochitoLabsPageV2() {
   const [showCLI, setShowCLI] = useState(false);
-
-  const toggleProject = (slug: string) => {
-    setExpandedSlug(prev => prev === slug ? null : slug);
-  };
 
   // Sort by manual order first, then by status
   const sortedProjects = [...projects].sort((a, b) => {
@@ -465,6 +460,23 @@ export default function KochitoLabsPage() {
     // Otherwise sort by status
     return statusOrder[a.status] - statusOrder[b.status];
   });
+
+  // Start with first 3 projects expanded
+  const [expandedSlugs, setExpandedSlugs] = useState<Set<string>>(
+    () => new Set(sortedProjects.slice(0, 3).map(p => p.slug))
+  );
+
+  const toggleProject = (slug: string) => {
+    setExpandedSlugs(prev => {
+      const next = new Set(prev);
+      if (next.has(slug)) {
+        next.delete(slug);
+      } else {
+        next.add(slug);
+      }
+      return next;
+    });
+  };
 
   // Listen for keypress to activate easter egg CLI
   useEffect(() => {
@@ -496,7 +508,7 @@ export default function KochitoLabsPage() {
         style={{ background: "#0a0a0a" }}
       >
         {/* Header */}
-        <div className="flex items-end gap-4 mb-8">
+        <div className="flex items-end gap-4 mb-6">
           <div className="w-10 h-10 sm:w-12 sm:h-12">
             <img
               src="/kochito-logo.png"
@@ -508,6 +520,14 @@ export default function KochitoLabsPage() {
             Kochito Labs
           </h1>
         </div>
+
+        {/* Intro */}
+        <p
+          className={`${poppins.className} w-full max-w-3xl text-sm leading-relaxed mb-8 px-1`}
+          style={{ color: "#666" }}
+        >
+          Tools and prototypes from eight months of building with AI, all running on a <a href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>codebase</a> that's somewhere between "a mess" and "a platform": 300k papers on Neo4j, an agent on Twitter, stock trades via email, and more.
+        </p>
 
         {/* Terminal window */}
         <div
@@ -529,6 +549,17 @@ export default function KochitoLabsPage() {
             <span className="text-xs ml-4" style={{ color: "#555" }}>
               ~/projects
             </span>
+            <span className="flex-1" />
+            <a
+              href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lg hover:opacity-80 transition-opacity"
+              style={{ color: "#555" }}
+              title="Platform Overview"
+            >
+              ⚙
+            </a>
           </div>
 
           {/* Project list - flat, no section headers */}
@@ -537,42 +568,36 @@ export default function KochitoLabsPage() {
               <ProjectRow
                 key={project.slug}
                 project={project}
-                isExpanded={expandedSlug === project.slug}
+                isExpanded={expandedSlugs.has(project.slug)}
                 onToggle={() => toggleProject(project.slug)}
               />
             ))}
           </div>
 
-          {/* Minimal footer - clickable to reveal CLI */}
+          {/* Footer - clickable to reveal CLI */}
           <div
-            className="px-4 sm:px-6 py-3 text-xs flex items-center justify-between cursor-text"
-            style={{ borderTop: "1px solid #1a1a1a", color: "#333" }}
+            className="px-4 sm:px-6 py-3 text-xs flex items-center justify-between cursor-text group"
+            style={{ borderTop: "1px solid #1a1a1a" }}
             onClick={() => setShowCLI(true)}
           >
-            <span className="flex items-center gap-1">
-              <span>everything is an experiment</span>
-              {/* Subtle blinking cursor hint */}
+            <span className="flex items-center gap-2">
+              <span className="italic" style={{ color: "#555" }}>The AGI is here. It's just uneven.</span>
+              {/* Blinking cursor - invites interaction */}
               <span
-                className="animate-pulse"
-                style={{ color: "#2a2a2a" }}
-              >
-                _
-              </span>
+                className="inline-block w-2 h-4 animate-pulse group-hover:opacity-100"
+                style={{
+                  backgroundColor: "#7cb87c",
+                  opacity: 0.4,
+                  animation: "pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
+                }}
+              />
             </span>
-            <span>{projects.filter(p => p.status === "active").length} active</span>
+            <span style={{ color: "#333" }}>{projects.filter(p => p.status === "active").length} active</span>
           </div>
 
           {/* Easter egg CLI */}
           <EasterEggCLI isVisible={showCLI} onClose={() => setShowCLI(false)} />
         </div>
-
-        {/* Tagline */}
-        <p
-          className={`${poppins.className} mt-8 text-sm italic`}
-          style={{ color: "#444" }}
-        >
-          The AGI is here. It's just uneven.
-        </p>
       </div>
     </>
   );
