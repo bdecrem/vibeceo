@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; padding: 0; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="1200" height="630"></canvas>
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, 1200, 630);
+
+    // Grid
+    ctx.strokeStyle = '#D4A574';
+    ctx.globalAlpha = 0.05;
+    ctx.lineWidth = 1;
+    for (let y = 0; y < 630; y += 40) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(1200, y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // Frequency stations
+    const stations = [
+      { y: 0.2, color: '#D4A574', width: 3 },
+      { y: 0.35, color: '#FFD700', width: 2 },
+      { y: 0.5, color: '#2D9596', width: 4 },
+      { y: 0.65, color: '#7B68EE', width: 3 },
+      { y: 0.8, color: '#D4A574', width: 2 }
+    ];
+
+    stations.forEach(st => {
+      const y = 630 * st.y;
+      ctx.strokeStyle = st.color;
+      ctx.lineWidth = st.width;
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(150, y);
+      ctx.lineTo(1050, y);
+      ctx.stroke();
+
+      // Glow
+      ctx.shadowColor = st.color;
+      ctx.shadowBlur = 20;
+      ctx.beginPath();
+      ctx.moveTo(150, y);
+      ctx.lineTo(1050, y);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    });
+
+    ctx.globalAlpha = 1;
+
+    // Scanner beam
+    const scanY = 315;
+    const gradient = ctx.createLinearGradient(0, scanY - 80, 0, scanY + 80);
+    gradient.addColorStop(0, 'rgba(45, 149, 150, 0)');
+    gradient.addColorStop(0.5, 'rgba(45, 149, 150, 0.8)');
+    gradient.addColorStop(1, 'rgba(45, 149, 150, 0)');
+
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, scanY);
+    ctx.lineTo(1200, scanY);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#2D9596';
+    ctx.shadowColor = '#2D9596';
+    ctx.shadowBlur = 30;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(200, scanY);
+    ctx.lineTo(1000, scanY);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Title
+    ctx.font = 'bold 72px monospace';
+    ctx.fillStyle = '#D4A574';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(212, 165, 116, 0.5)';
+    ctx.shadowBlur = 20;
+    ctx.fillText('FREQUENCY SCANNER', 600, 100);
+
+    // Subtitle
+    ctx.font = '20px monospace';
+    ctx.fillStyle = '#2D9596';
+    ctx.globalAlpha = 0.7;
+    ctx.shadowBlur = 10;
+    ctx.fillText('SUBMARINE SONAR × SHORTWAVE RADIO', 600, 560);
+  </script>
+</body>
+</html>

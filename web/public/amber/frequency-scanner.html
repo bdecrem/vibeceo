@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FREQUENCY SCANNER</title>
+  <meta name="description" content="Hypnotic radio frequency scanner. Watch it sweep. Hear the stations emerge.">
+  <meta property="og:title" content="FREQUENCY SCANNER">
+  <meta property="og:description" content="Hypnotic radio frequency scanner. Watch it sweep. Hear the stations emerge.">
+  <meta property="og:image" content="https://intheamber.com/amber/frequency-scanner-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/frequency-scanner.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/frequency-scanner-og.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    #title {
+      position: absolute;
+      top: 30px;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+      z-index: 10;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #startBtn {
+      position: relative;
+      z-index: 20;
+      background: transparent;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 15px 40px;
+      cursor: pointer;
+      letter-spacing: 2px;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+    }
+
+    #startBtn:hover {
+      background: #D4A574;
+      color: #000;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.6);
+    }
+
+    #startBtn.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #info {
+      position: absolute;
+      bottom: 30px;
+      font-size: 12px;
+      opacity: 0.6;
+      letter-spacing: 1px;
+      z-index: 10;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      #title { font-size: 18px; top: 20px; }
+      #startBtn { font-size: 14px; padding: 12px 30px; }
+      #info { font-size: 10px; bottom: 20px; padding: 0 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">FREQUENCY SCANNER</div>
+  <canvas id="canvas"></canvas>
+  <button id="startBtn">ACTIVATE SCANNER</button>
+  <div id="info">
+    SUBMARINE SONAR × SHORTWAVE RADIO<br>
+    TAP ANYWHERE TO RESTART
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    
+    let audioCtx;
+    let masterGain;
+    let isRunning = false;
+    let scannerY = 0;
+    let scanSpeed = 0.5;
+    let animationId;
+
+    // Color palette
+    const amber = '#D4A574';
+    const gold = '#FFD700';
+    const teal = '#2D9596';
+    const violet = '#7B68EE';
+    const black = '#000';
+
+    // Frequency stations - these will generate tones when scanner passes
+    const stations = [
+      { y: 0.15, freq: 220, color: amber, width: 3, label: '220 Hz' },
+      { y: 0.28, freq: 330, color: gold, width: 2, label: '330 Hz' },
+      { y: 0.42, freq: 440, color: teal, width: 4, label: '440 Hz' },
+      { y: 0.58, freq: 554, color: violet, width: 3, label: '554 Hz' },
+      { y: 0.71, freq: 660, color: amber, width: 2, label: '660 Hz' },
+      { y: 0.85, freq: 880, color: gold, width: 3, label: '880 Hz' }
+    ];
+
+    let activeOscillators = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.15;
+        masterGain.connect(audioCtx.destination);
+      }
+    }
+
+    function playTone(freq, duration = 800) {
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+
+      filter.type = 'lowpass';
+      filter.frequency.value = freq * 2;
+      filter.Q.value = 5;
+
+      gain.gain.setValueAtTime(0, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration / 1000);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration / 1000);
+
+      activeOscillators.push({ osc, stopTime: Date.now() + duration });
+      
+      // Cleanup
+      setTimeout(() => {
+        activeOscillators = activeOscillators.filter(o => o.stopTime > Date.now());
+      }, duration);
+    }
+
+    function drawStation(station, scannerPos) {
+      const stationY = canvas.height * station.y;
+      const distance = Math.abs(scannerPos - stationY);
+      const maxDistance = 50;
+      const proximity = Math.max(0, 1 - distance / maxDistance);
+
+      // Station bar
+      ctx.strokeStyle = station.color;
+      ctx.lineWidth = station.width;
+      ctx.globalAlpha = 0.3 + proximity * 0.7;
+      
+      const barWidth = canvas.width * 0.6;
+      const x = (canvas.width - barWidth) / 2;
+      
+      ctx.beginPath();
+      ctx.moveTo(x, stationY);
+      ctx.lineTo(x + barWidth, stationY);
+      ctx.stroke();
+
+      // Glow when scanner is close
+      if (proximity > 0.5) {
+        ctx.shadowColor = station.color;
+        ctx.shadowBlur = 30 * proximity;
+        ctx.beginPath();
+        ctx.moveTo(x, stationY);
+        ctx.lineTo(x + barWidth, stationY);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // Frequency label
+      ctx.font = '11px Space Mono';
+      ctx.fillStyle = station.color;
+      ctx.globalAlpha = 0.4 + proximity * 0.6;
+      ctx.fillText(station.label, x + barWidth + 15, stationY + 4);
+      
+      ctx.globalAlpha = 1;
+    }
+
+    function drawScanner() {
+      const h = canvas.height;
+      
+      // Move scanner
+      scannerY += scanSpeed;
+      if (scannerY > h) {
+        scannerY = 0;
+      }
+
+      // Check if scanner crosses any station
+      stations.forEach(station => {
+        const stationY = h * station.y;
+        const lastY = scannerY - scanSpeed;
+        
+        if ((lastY < stationY && scannerY >= stationY) || 
+            (scannerY < 10 && stationY > h - 10)) {
+          playTone(station.freq, 800);
+        }
+      });
+
+      // Draw vertical scanner beam
+      const gradient = ctx.createLinearGradient(0, scannerY - 100, 0, scannerY + 100);
+      gradient.addColorStop(0, 'rgba(45, 149, 150, 0)');
+      gradient.addColorStop(0.4, 'rgba(45, 149, 150, 0.6)');
+      gradient.addColorStop(0.5, 'rgba(45, 149, 150, 1)');
+      gradient.addColorStop(0.6, 'rgba(45, 149, 150, 0.6)');
+      gradient.addColorStop(1, 'rgba(45, 149, 150, 0)');
+
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, scannerY);
+      ctx.lineTo(canvas.width, scannerY);
+      ctx.stroke();
+
+      // Bright center line
+      ctx.strokeStyle = teal;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(0, scannerY);
+      ctx.lineTo(canvas.width, scannerY);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Scanner glow
+      ctx.shadowColor = teal;
+      ctx.shadowBlur = 40;
+      ctx.strokeStyle = teal;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(canvas.width * 0.2, scannerY);
+      ctx.lineTo(canvas.width * 0.8, scannerY);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = amber;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.05;
+      
+      // Horizontal lines
+      const spacing = 40;
+      for (let y = 0; y < canvas.height; y += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      
+      ctx.globalAlpha = 1;
+    }
+
+    function animate() {
+      if (!isRunning) return;
+
+      ctx.fillStyle = black;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawGrid();
+      
+      stations.forEach(station => {
+        drawStation(station, scannerY);
+      });
+
+      drawScanner();
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    function start() {
+      initAudio();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      isRunning = true;
+      scannerY = 0;
+      startBtn.classList.add('hidden');
+      animate();
+    }
+
+    function restart() {
+      if (isRunning) {
+        scannerY = 0;
+      }
+    }
+
+    startBtn.addEventListener('click', start);
+    canvas.addEventListener('click', () => {
+      if (!isRunning) {
+        start();
+      } else {
+        restart();
+      }
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Idle animation before start
+    function idleAnimation() {
+      if (isRunning) return;
+      
+      ctx.fillStyle = black;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      drawGrid();
+      
+      stations.forEach(station => {
+        drawStation(station, -100);
+      });
+      
+      requestAnimationFrame(idleAnimation);
+    }
+    
+    idleAnimation();
+  </script>
+</body>
+</html>
