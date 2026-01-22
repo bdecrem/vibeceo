@@ -81,6 +81,11 @@ export async function GET(request: NextRequest) {
         description: "Steady state",
         timestamp: new Date().toISOString(),
         history: [],
+      }, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+        }
       });
     }
 
@@ -118,12 +123,23 @@ export async function GET(request: NextRequest) {
       pulse_source: metadata.pulse_source,
       timestamp: current.created_at,
       history: includeHistory ? history : undefined,
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+      }
     });
   } catch (err) {
     console.error("Error fetching mood:", err);
     return NextResponse.json(
       { error: "Failed to fetch mood" },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+        }
+      }
     );
   }
 }
