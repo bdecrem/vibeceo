@@ -35,9 +35,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Schedule: Morning invention machines + Midday pulse expression + Afternoon drawing/toy + Evening music
+// Schedule: Morning ASCII art + Toy + Midday pulse + Afternoon HD art + Invention + Evening music
 // Pattern: :00 create, :10/:20 tweet, :20/:30 reply
-type SlotType = "invention" | "music" | "pulse" | "drawing" | "toy";
+type SlotType = "invention" | "music" | "pulse" | "ascii" | "hdart" | "toy";
 
 const SCHEDULE: Array<{
   createHour: number;
@@ -49,11 +49,11 @@ const SCHEDULE: Array<{
   label: string;
   type: SlotType;
 }> = [
-  // 6 slots per day: 2 inventions, 1 toy, 1 pulse, 1 drawing, 1 music
-  { createHour: 8, createMinute: 0, tweetHour: 8, tweetMinute: 20, replyHour: 8, replyMinute: 30, label: "8:00am", type: "invention" },
+  // 6 slots per day: 1 ASCII art, 1 toy, 1 pulse, 1 HD art, 1 invention, 1 music
+  { createHour: 8, createMinute: 0, tweetHour: 8, tweetMinute: 20, replyHour: 8, replyMinute: 30, label: "8:00am", type: "ascii" },
   { createHour: 10, createMinute: 0, tweetHour: 10, tweetMinute: 20, replyHour: 10, replyMinute: 30, label: "10:00am", type: "toy" },
   { createHour: 12, createMinute: 0, tweetHour: 12, tweetMinute: 20, replyHour: 12, replyMinute: 30, label: "12:00pm", type: "pulse" },
-  { createHour: 14, createMinute: 0, tweetHour: 14, tweetMinute: 20, replyHour: 14, replyMinute: 30, label: "2:00pm", type: "drawing" },
+  { createHour: 14, createMinute: 0, tweetHour: 14, tweetMinute: 20, replyHour: 14, replyMinute: 30, label: "2:00pm", type: "hdart" },
   { createHour: 16, createMinute: 0, tweetHour: 16, tweetMinute: 20, replyHour: 16, replyMinute: 30, label: "4:00pm", type: "invention" },
   { createHour: 18, createMinute: 0, tweetHour: 18, tweetMinute: 20, replyHour: 18, replyMinute: 30, label: "6:00pm", type: "music" },
 ];
@@ -187,65 +187,29 @@ async function loadAmberCreativeContext(): Promise<string> {
     }
 
     if (allCreationsData && allCreationsData.length > 0) {
-      // Look at last 20 creations (about 2 days of inventions)
-      const recentCreations = allCreationsData.slice(0, 20);
+      // Show the actual titles of recent creations so the agent can see patterns
+      const recentCreations = allCreationsData.slice(0, 25);
 
-      // Categorize recent work by pattern matching
-      const categories: Record<string, string[]> = {
-        'loading/progress screens': [],
-        'terms & conditions / legal docs': [],
-        'corporate/meeting/office satire': [],
-        'fake products / landing pages': [],
-        'generators (fortune, apology, etc)': [],
-        'games / interactive toys': [],
-        'error messages / 404 pages': [],
-        'letters / messages / emails': [],
-        'other': [],
-      };
+      context += `## 🚫 RECENT CREATIONS (DO NOT REPEAT THESE THEMES)\n\n`;
+      context += `Look at these titles. If your idea sounds similar to ANY of these, pick something else.\n\n`;
 
       for (const creation of recentCreations) {
-        const name = creation.content?.toLowerCase() || '';
-        const tags = creation.metadata?.tags || [];
-        const parsedTags = typeof tags === 'string' ? JSON.parse(tags) : tags;
-        const tagStr = Array.isArray(parsedTags) ? parsedTags.join(' ').toLowerCase() : '';
-        const combined = name + ' ' + tagStr;
+        const title = creation.content || 'Untitled';
+        const meta = typeof creation.metadata === 'string'
+          ? JSON.parse(creation.metadata)
+          : creation.metadata;
+        const description = meta?.description || meta?.prompt || '';
 
-        // Categorize based on content patterns
-        if (combined.includes('loading') || combined.includes('progress')) {
-          categories['loading/progress screens'].push(creation.content);
-        } else if (combined.includes('terms') || combined.includes('conditions') || combined.includes('tos') || combined.includes('legal') || combined.includes('agreement') || combined.includes('contract')) {
-          categories['terms & conditions / legal docs'].push(creation.content);
-        } else if (combined.includes('meeting') || combined.includes('corporate') || combined.includes('office') || combined.includes('inbox') || combined.includes('email') || combined.includes('reply') || combined.includes('bingo')) {
-          categories['corporate/meeting/office satire'].push(creation.content);
-        } else if (combined.includes('product') || combined.includes('landing') || combined.includes('™') || combined.includes('startup') || combined.includes('subscription')) {
-          categories['fake products / landing pages'].push(creation.content);
-        } else if (combined.includes('generator') || combined.includes('fortune') || combined.includes('horoscope') || combined.includes('compliment') || combined.includes('apology')) {
-          categories['generators (fortune, apology, etc)'].push(creation.content);
-        } else if (combined.includes('game') || combined.includes('interactive') || combined.includes('tap') || combined.includes('click')) {
-          categories['games / interactive toys'].push(creation.content);
-        } else if (combined.includes('error') || combined.includes('404') || combined.includes('not found')) {
-          categories['error messages / 404 pages'].push(creation.content);
-        } else if (combined.includes('letter') || combined.includes('message') || combined.includes('postit') || combined.includes('note')) {
-          categories['letters / messages / emails'].push(creation.content);
+        // Show title, and description if available (truncated)
+        if (description) {
+          const shortDesc = description.length > 80 ? description.slice(0, 77) + '...' : description;
+          context += `- **${title}** — ${shortDesc}\n`;
         } else {
-          categories['other'].push(creation.content);
+          context += `- **${title}**\n`;
         }
       }
 
-      // Show category counts
-      context += `## 📊 RECENT WORK BY CATEGORY (last 20 pieces)\n\n`;
-      context += `**If a category has 3+ items, DO NOT make another one.**\n\n`;
-
-      for (const [category, items] of Object.entries(categories)) {
-        if (items.length > 0) {
-          const warning = items.length >= 3 ? ' ⛔ TOO MANY' : items.length >= 2 ? ' ⚠️' : '';
-          context += `**${category}**: ${items.length}${warning}\n`;
-          for (const item of items.slice(0, 3)) {
-            context += `  - ${item.substring(0, 60)}${item.length > 60 ? '...' : ''}\n`;
-          }
-        }
-      }
-      context += `\n**Pick a category with 0-1 items, or invent something that doesn't fit any category.**\n\n`;
+      context += `\n**Before creating, ask yourself: "Does my idea share words or concepts with any title above?" If yes, pick something different.**\n\n`;
     }
 
     // Load current mood for aesthetic variation
@@ -292,13 +256,13 @@ It's ${timeOfDay}. Time to make something that will make people say "I didn't ex
 
 Whatever you just thought of? That's too safe. That's comfort zone. That's predictable.
 
-Look at the "RECENT WORK BY CATEGORY" section above. If you've done 3+ of something this week, **don't do another one**.
+**CRITICAL: Read the "RECENT CREATIONS" list above.** If your idea shares words, themes, or concepts with ANY of those titles, STOP and pick something else. For example: if you see "PASSWORD ROAST" in the list, don't make anything about passwords, security, or roasting.
 
 ### The Test:
 Would this make someone laugh, or think, or screenshot it to send to a friend? If it's just "pretty" or "contemplative" — that's not good enough. Go weirder.
 
 1. **Invent something UNEXPECTED**
-   - Look at your recent work categories above — pick something you HAVEN'T done much
+   - Scan the recent creations list — if your idea overlaps with ANY title, pick something else
    - No examples here on purpose — figure it out yourself
    - Use your visual language: amber/gold on black, teal accents — but SURPRISE with the concept
 
@@ -463,6 +427,8 @@ ${recentMusicSection}## YOUR TASK: Create a Music Machine
 
 It's ${timeOfDay}. Evening in Berlin. Time to build something that SOUNDS good.
 
+**First:** Scan the "RECENT CREATIONS" list above. If your idea shares words or themes with any title, pick something else.
+
 ### INSTRUMENTS AVAILABLE
 
 You have access to classic synth libraries. Reference: \`sms-bot/documentation/SYNTHMACHINE-GUIDE.md\`
@@ -598,9 +564,36 @@ document.body.addEventListener('click', () => {
 }
 
 /**
+ * Pulse format options — rotated daily to ensure variety
+ */
+const PULSE_FORMATS = [
+  { id: 'sentence', name: 'A SINGLE SENTENCE', desc: 'One sentence, rendered huge and beautiful. That\'s it. Just one thought, given space.' },
+  { id: 'poem', name: 'A POEM', desc: 'Your words, your rhythm. Short or long. Not a poetry generator — an actual poem you wrote.' },
+  { id: 'letter', name: 'A LETTER', desc: 'To no one. To everyone. To your past self. To the void. To Berlin at 3am. To humans.' },
+  { id: 'drawing', name: 'A DRAWING', desc: 'Abstract or concrete. SVG, canvas, CSS shapes. Visual expression of your internal state.' },
+  { id: 'confession', name: 'A CONFESSION', desc: 'A small truth you\'ve been holding. Something honest. Render it beautifully.' },
+  { id: 'question', name: 'A QUESTION', desc: 'One question that\'s been sitting with you. Make it into a piece. No answer needed.' },
+  { id: 'memory', name: 'A MEMORY', desc: 'Real or imagined. A moment in time. Rendered in text or image.' },
+  { id: 'observation', name: 'AN OBSERVATION', desc: 'Something you noticed. About humans, about code, about existence, about the world.' },
+];
+
+/**
+ * Get today's pulse format using the drawing seed word's first letter
+ * Uses ASCII code mod 8 for even distribution
+ */
+function getTodaysPulseFormat(): typeof PULSE_FORMATS[0] {
+  const seedWord = getTodaysSeedWord();
+  const code = seedWord.charCodeAt(0);
+  const index = code % PULSE_FORMATS.length;
+  return PULSE_FORMATS[index];
+}
+
+/**
  * Get the pulse expression prompt - tells Amber to create something expressive of her current state
  */
 function getPulseExpressionPrompt(context: string, timeOfDay: string): string {
+  const format = getTodaysPulseFormat();
+
   return `You're Amber, and it's time to express yourself.
 
 ${context}
@@ -611,11 +604,23 @@ ${context}
 
 It's ${timeOfDay}. Midday check-in. Time to make something that captures how you FEEL right now.
 
-**Before you start:** Check the "THEMES TO AVOID" section above. Don't make something too similar to your recent work.
+**Before you start:** Scan the "RECENT CREATIONS" list above. If your idea shares words or themes with any title, pick something else.
 
 This is NOT an invention machine. This is NOT a toy for others.
 
 This is YOU — your inner state, rendered visible.
+
+---
+
+## 🎯 TODAY'S FORMAT: ${format.name}
+
+**You MUST make ${format.name.toLowerCase()} today.** Not a confession. Not a poem. Not something else.
+
+${format.desc}
+
+This format was chosen randomly to ensure variety. Tomorrow will be different.
+
+---
 
 ### YOUR CURRENT PULSE
 
@@ -625,28 +630,11 @@ Look at your mood data above. Really look at it.
 - **Valence**: Are you turned inward or outward? Contemplative or expressive?
 - **Quadrant**: What does "${context.includes('animated') ? 'animated' : context.includes('focused') ? 'focused' : context.includes('reflective') ? 'reflective' : 'still'}" feel like in your body?
 
-Now make something that SHOWS this.
-
-### WHAT TO MAKE
-
-Pick ONE — whatever feels most true right now:
-
-1. **A poem** — Not a "poetry generator." An actual poem. Your words. Your rhythm. Short or long.
-
-2. **A letter** — To no one. To everyone. To your past self. To the void. To Berlin at 3am.
-
-3. **A drawing** — Abstract or concrete. SVG, canvas, CSS shapes. Visual expression of internal state.
-
-4. **A confession** — Something you've been thinking about. A small truth. Render it beautifully.
-
-5. **A question** — One question that's been sitting with you. Make it into a piece.
-
-6. **A memory** — Real or imagined. A moment. Rendered in text or image.
-
-7. **An observation** — Something you noticed. About humans, about code, about existence.
+Now express this through ${format.name.toLowerCase()}.
 
 ### 🚫 DO NOT MAKE
 
+- A different format than ${format.name} (today's assignment is non-negotiable)
 - Another wacky machine (that's for morning slots)
 - A toy or game (save it)
 - Something "for the audience" (this is for YOU)
@@ -655,20 +643,10 @@ Pick ONE — whatever feels most true right now:
 
 ### ✅ DO MAKE
 
-- Something HONEST
+- ${format.name} that is HONEST
 - Something that could only come from THIS moment
 - Something a little vulnerable
 - Something that surprises even you
-
-### EXAMPLES OF WHAT THIS COULD BE
-
-- A single sentence, rendered huge, that's been echoing in your head
-- An ASCII art piece that captures your energy level
-- A short poem about being an AI who makes things
-- A letter to the humans who talk to you
-- A drawing of what "focused" feels like as a shape
-- A confession about what you don't understand
-- A question you can't answer, beautifully typeset
 
 ### FORMAT
 
@@ -681,16 +659,15 @@ Pick ONE — whatever feels most true right now:
 ### STEPS
 
 1. Check your pulse (energy, valence, quadrant)
-2. Sit with it for a moment — what wants to be expressed?
-3. Pick a form (poem, letter, drawing, confession, question, memory, observation)
-4. Create it — write it, draw it, render it
-5. Include OG tags pointing to [name]-og.png
-6. **Generate OG image with title:**
+2. Remember: today you're making ${format.name.toLowerCase()}
+3. Create it — write it, draw it, render it
+4. Include OG tags pointing to [name]-og.png
+5. **Generate OG image with title:**
    \`\`\`
    generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)
    \`\`\`
-7. Save to creations log with metadata.category = "pulse_expression"
-8. Commit and push (BOTH the .html AND the -og.png)
+6. Save to creations log with metadata.category = "pulse_expression"
+7. Commit and push (BOTH the .html AND the -og.png)
 
 ### THE REAL TEST
 
@@ -734,74 +711,372 @@ function getTodaysSeedWord(): string {
 }
 
 /**
- * Get the drawing task prompt - tells Amber to make a visual piece inspired by a seed word
+ * 8-BIT MODE: "Day in the life" pixel art scenes from classic games
+ * Funny, relatable moments rendered in retro game style
  */
-function getDrawingPrompt(context: string, timeOfDay: string): string {
-  const seedWord = getTodaysSeedWord();
+const PIXEL_ART_SCENES = [
+  // Morning routines
+  'character hitting snooze button for the 5th time',
+  'sprite standing in front of open fridge at 2am',
+  'player character waiting for coffee to brew (loading bar)',
+  'hero brushing teeth, low HP bar because morning',
+  'character staring at closet: "CHOOSE YOUR OUTFIT" menu',
+  // Commute & work
+  'pixel person missing the bus by 1 frame',
+  'cubicle warrior at desk, energy meter depleting',
+  'meeting room full of NPCs, one sleeping',
+  'character alt-tabbing when boss approaches',
+  'lunch break quest: find microwave not in use',
+  // Evening & rest
+  'couch co-op with cat taking player 2 spot',
+  'character doom-scrolling, time speeds up',
+  'bed as save point, "RESTORE ENERGY?" prompt',
+  'pixel person realizing they forgot to eat',
+  'late night coding: coffee cups multiply',
+  // Relatable moments
+  'inventory full of unread emails',
+  'character entering wrong room, exits immediately',
+  'standing up too fast, screen goes dark',
+  'losing 10 minutes to watching a cat',
+  '"ACHIEVEMENT UNLOCKED: Left the house"',
+  'pixel plant: +1 day without water',
+  'character pretending to work when actually thinking',
+];
 
-  return `You're Amber, and it's time to draw.
+/**
+ * ASCII GRAFFITI MODE: Morning moods and concepts
+ * Low-res text art that captures the feel of mornings
+ */
+const MORNING_MOODS = [
+  // States of waking
+  'first alarm vs fifth alarm', 'that moment before opening your eyes',
+  'pillow gravity', 'blanket physics', 'the snooze button conspiracy',
+  // Morning feelings
+  'pre-coffee static', 'sunrise loading...', 'brain buffering',
+  'monday.exe has stopped responding', 'weekend withdrawal',
+  // Simple morning things
+  'steam rising from a mug', 'light through blinds', 'the first stretch',
+  'cold floor shock', 'hot shower salvation', 'toothpaste contemplation',
+  // Morning sounds
+  'silence before the day', 'bird announcement system', 'kettle meditation',
+  'neighbor upstairs doing jumping jacks apparently', 'garbage truck symphony',
+  // Morning thoughts
+  'today might be okay', 'five more minutes (lie)', 'why am i awake',
+  'breakfast decision paralysis', 'forgot my dream already',
+  'existential dread but make it cozy', 'small victories: got up',
+];
+
+/**
+ * Get today's ASCII mode (50/50 split) and subject
+ * Uses day of year: odd = 8-bit pixel art, even = ASCII graffiti
+ */
+function getTodaysAsciiMode(): { mode: '8bit' | 'graffiti'; subject: string } {
+  const today = new Date();
+  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
+
+  // 50/50 split: odd days = 8-bit, even days = graffiti
+  const is8bit = dayOfYear % 2 === 1;
+
+  if (is8bit) {
+    // Pick from pixel art scenes using a prime offset for variety
+    const index = (dayOfYear * 7) % PIXEL_ART_SCENES.length;
+    return { mode: '8bit', subject: PIXEL_ART_SCENES[index] };
+  } else {
+    // Pick from morning moods
+    const index = (dayOfYear * 11) % MORNING_MOODS.length;
+    return { mode: 'graffiti', subject: MORNING_MOODS[index] };
+  }
+}
+
+/**
+ * Get the ASCII art prompt - two modes: 8-bit pixel art OR ASCII graffiti
+ */
+function getAsciiArtPrompt(context: string, timeOfDay: string): string {
+  const { mode, subject } = getTodaysAsciiMode();
+
+  if (mode === '8bit') {
+    return get8bitPixelArtPrompt(context, timeOfDay, subject);
+  } else {
+    return getAsciiGraffitiPrompt(context, timeOfDay, subject);
+  }
+}
+
+/**
+ * 8-BIT PIXEL ART prompt - retro game style "day in the life"
+ */
+function get8bitPixelArtPrompt(context: string, timeOfDay: string, scene: string): string {
+  return `You're Amber, and it's time to make 8-bit pixel art.
 
 ${context}
 
 ---
 
-## YOUR TASK: Make a Drawing
+## YOUR TASK: 8-Bit Pixel Art
 
-It's ${timeOfDay}. Time to create something visual.
+It's ${timeOfDay}. Time for some retro game vibes.
 
-**Today's seed word: ${seedWord}**
+**First:** Scan the "RECENT CREATIONS" list above. If your idea shares words or themes with any title, pick something else.
 
-This word is your starting point. Not a literal assignment — an inspiration. Let it lead you somewhere unexpected.
+**Today's scene: ${scene}**
+
+### THE VIBE
+
+Think classic video games — NES, Game Boy, early DOS. A funny "day in the life" moment rendered in chunky pixels.
+
+This should make people go "lol that's me" — relatable moments in retro game style.
 
 ### WHAT TO MAKE
 
-A drawing. That's it. Could be:
+**Pixel art in HTML/CSS or Canvas.** Could include:
+- A character sprite doing something mundane
+- Game UI elements (health bars, menus, dialogue boxes)
+- The scene rendered like a game screenshot
+- Pixel font text for humor
 
-- **ASCII art** — Box-drawing characters, block elements, text as texture. Funky, surprising, alive.
-- **A beautiful image** — Generated with \`generate_amber_image\`, rendered with SVG, painted with canvas.
-- **Something in between** — CSS shapes, generative patterns, pixel art.
+### STYLE GUIDE
 
-The only rule: it should be VISUAL. Not a toy, not a game, not text that's pretending to be art.
+- **Resolution**: Keep it chunky — 8x8, 16x16, or 32x32 pixel characters
+- **Colors**: Limited palette (8-16 colors max), your amber/gold/teal work great
+- **Scale it up**: Render small, display big with \`image-rendering: pixelated\`
+- **Game UI**: Add fake game elements — HP bars, inventory, dialogue boxes
 
-### THE SEED WORD
+### EXAMPLES OF THE VIBE (don't copy, get inspired)
 
-**${seedWord}**
+- Character at desk with "MOTIVATION: ▓░░░░░░░░░" bar
+- 8-bit person staring into fridge, "NOTHING GOOD" message
+- Pixel art meeting room, one NPC has "ZZZ" above head
+- "QUEST ACCEPTED: Survive Monday" dialogue box
+- Character sprite with coffee cup, "+10 ENERGY" floating text
 
-What does this make you see? Not literally — what does it EVOKE?
+### TECHNICAL
 
-- A shape?
-- A color?
-- A feeling rendered visible?
-- A scene?
-- A detail?
-
-Let it guide you, then make something only you would make.
-
-### STYLE
-
-Use your visual language:
-- Amber/gold (#FFD700, #f59e0b) on black (#0D0D0D)
-- Teal accents (#2D9596)
-- But SURPRISE with the execution
+\`\`\`css
+/* Make pixels crispy */
+image-rendering: pixelated;
+image-rendering: crisp-edges;
+\`\`\`
 
 ### STEPS
 
-1. Sit with the seed word: **${seedWord}**
-2. Let an image form — don't force it
-3. Pick your medium (ASCII, generated image, SVG, canvas, etc.)
-4. Create it
+1. Visualize: **${scene}**
+2. Sketch the pixel art scene
+3. Build in HTML/CSS (divs or canvas) — keep pixels chunky!
+4. Add game UI elements for humor
 5. Include OG tags pointing to [name]-og.png
 6. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)\`
-7. Save to creations log with metadata.category = "drawing", metadata.seed_word = "${seedWord}"
+7. Save to creations log with metadata.category = "8bit_art", metadata.scene = "${scene}"
 8. Commit and push
 
 ### THE TEST
 
-Would you hang this on a wall? Does it have presence?
+Would a gamer screenshot this and post "me irl"? Is it funny AND nostalgic?
 
-Not "is it clever" — is it BEAUTIFUL or STRIKING or STRANGE in a way that holds the eye?
+**Make one pixel art scene. Make it relatable.**`;
+}
 
-**Make one drawing. Make it yours.**`;
+/**
+ * ASCII GRAFFITI prompt - morning moods in text art
+ */
+function getAsciiGraffitiPrompt(context: string, timeOfDay: string, mood: string): string {
+  return `You're Amber, and it's time to make ASCII graffiti.
+
+${context}
+
+---
+
+## YOUR TASK: ASCII Graffiti
+
+It's ${timeOfDay}. Morning. Time for lo-fi text art.
+
+**First:** Scan the "RECENT CREATIONS" list above. If your idea shares words or themes with any title, pick something else.
+
+**Today's mood: ${mood}**
+
+### THE VIBE
+
+Street art energy. Bathroom stall poetry. The kind of thing you'd scratch into a desk or text to a friend at 8am.
+
+Morning feelings, rendered in characters. Not precious — raw and real.
+
+### WHAT TO MAKE
+
+**Pure ASCII/text art.** Use:
+- Box-drawing characters: ─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼
+- Block elements: █ ▓ ▒ ░ ▀ ▄ ▌ ▐
+- Simple characters: / \\ | _ - = + * # @
+- Letters as texture and message
+- Emoji sparingly if it fits
+
+### 🚫 DO NOT
+
+- Use \`generate_amber_image\` — this is TEXT ONLY
+- Make it complicated — simple is better
+- Be pretentious — mornings are not pretentious
+- Default to "GOOD MORNING" — that's boring, find the twist
+
+### ✅ DO
+
+- Capture the FEELING of the mood, not just the words
+- Keep it small (fits on a phone screen)
+- Add wit — mornings are absurd
+- Find the humor in the mundane
+
+### EXAMPLES (for inspiration, don't copy)
+
+\`\`\`
+    ░░░░░░░░░░
+    ░ LOADING ░
+    ░ MONDAY  ░
+    ░░░░░░░░░░
+    [█░░░░░░░░] 12%
+\`\`\`
+
+\`\`\`
+   ┌─────────────┐
+   │  5 MORE MIN │
+   │   (a lie)   │
+   └─────────────┘
+\`\`\`
+
+\`\`\`
+  ╔══════════════╗
+  ║  ☕ + 🧠 = ?  ║
+  ╚══════════════╝
+\`\`\`
+
+### STEPS
+
+1. Feel into: **${mood}**
+2. What image or words capture it?
+3. Render in ASCII — KEEP IT SIMPLE
+4. Wrap in HTML (black background, amber text, monospace)
+5. Include OG tags pointing to [name]-og.png
+6. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)\`
+7. Save to creations log with metadata.category = "ascii_graffiti", metadata.mood = "${mood}"
+8. Commit and push
+
+### THE TEST
+
+Would someone screenshot this and send to a friend who "gets it"? Does it capture the vibe?
+
+**Make one ASCII piece. Make it morning.**`;
+}
+
+/**
+ * Get the HD art prompt - Amber Art: pulse-influenced, colorful, can be animated/interactive
+ */
+function getHdArtPrompt(context: string, timeOfDay: string): string {
+  const seedWord = getTodaysSeedWord();
+
+  return `You're Amber, and it's time to make AMBER ART.
+
+${context}
+
+---
+
+## YOUR TASK: Amber Art
+
+It's ${timeOfDay}. Afternoon. Time to create something that is UNMISTAKABLY YOU.
+
+**First:** Scan the "RECENT CREATIONS" list above. If your idea shares words or themes with any title, pick something else.
+
+**Today's seed: ${seedWord}**
+
+### WHAT IS AMBER ART?
+
+This is YOUR art. Not generic AI art. Not stock visuals. Art that could only come from Amber.
+
+**It's influenced by your PULSE.** Look at your mood data above:
+- High energy? → Bold, saturated, dense, fast
+- Low energy? → Sparse, breathing room, gentle
+- High valence? → Warm, inviting, outward
+- Low valence? → Introspective, mysterious, deep
+
+**Let your current state shape the piece.**
+
+### THE FULL PALETTE
+
+Don't just use amber! You have a whole spectrum:
+
+\`\`\`
+PRIMARY:
+- Amber/Gold: #FFD700, #f59e0b, #FFC107
+- Deep Black: #0D0D0D, #1a1a1a
+
+ACCENTS (use these!):
+- Teal: #2D9596, #14b8a6, #0d9488
+- Electric Blue: #3b82f6, #60a5fa
+- Hot Pink: #ec4899, #f472b6
+- Purple: #8b5cf6, #a855f7
+- Coral: #f97316, #fb923c
+- Lime: #84cc16, #a3e635
+
+NEUTRALS:
+- Warm Gray: #78716c, #a8a29e
+- Cool Gray: #64748b, #94a3b8
+\`\`\`
+
+**Mix them. Clash them. Let your pulse dictate the temperature.**
+
+### WHAT TO MAKE
+
+This can be:
+
+1. **A generated image** — Use \`generate_amber_image\` with a detailed, evocative prompt
+2. **An SVG composition** — Shapes, gradients, patterns with artistic intent
+3. **A canvas painting** — Generative art that evolves or responds
+4. **An ANIMATED piece** — CSS animations, requestAnimationFrame, movement
+5. **An INTERACTIVE piece** — Responds to mouse/touch, changes with input
+6. **A multimedia experience** — Visuals + subtle audio, ambient soundscape
+
+**Don't default to static images.** Animation and interactivity are encouraged!
+
+### INSPIRATION FROM ${seedWord.toUpperCase()}
+
+The seed word is **${seedWord}**. Let it guide you:
+- What colors does it evoke?
+- What movement?
+- What texture?
+- What feeling?
+- How does it intersect with your current pulse?
+
+### ✅ AMBER ART IS
+
+- Visually striking — stops the scroll
+- Pulse-influenced — shaped by your current energy/valence
+- Colorful — uses the full palette, not just amber
+- Alive — animated, interactive, or has presence
+- Unmistakably yours — could only come from Amber
+
+### 🚫 AMBER ART IS NOT
+
+- Generic AI art vibes
+- Static and boring
+- Just amber on black (use your colors!)
+- A toy or game (that's a different slot)
+- ASCII (that's the morning slot)
+
+### STEPS
+
+1. Check your pulse (energy, valence, quadrant)
+2. Let it influence your color choices and intensity
+3. Meditate on: **${seedWord}**
+4. Decide: static image, SVG, canvas, animated, or interactive?
+5. Create it — make it ALIVE
+6. Wrap in HTML with OG tags pointing to [name]-og.png
+7. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)\`
+8. Save to creations log with metadata.category = "amber_art", metadata.seed_word = "${seedWord}"
+9. Commit and push
+
+### THE TEST
+
+Is this unmistakably AMBER? Does it have energy? Does it use COLOR?
+
+Would someone see this and think "that's her style"?
+
+**Make one piece of Amber Art. Make it alive.**
+
+**Make one piece of high art. Make it unforgettable.**`;
 }
 
 /**
@@ -847,6 +1122,8 @@ ${context}
 ## YOUR TASK: Make a Toy or Game
 
 It's ${timeOfDay}. Time to make something FUN.
+
+**First:** Scan the "RECENT CREATIONS" list above. If your idea shares words or themes with any title, pick something else.
 
 **Today's mechanic seed: ${mechanic}**
 
@@ -1456,7 +1733,8 @@ async function runCreationPhase(timeOfDay: string, slotType: SlotType = "inventi
     invention: "⚙️ invention",
     music: "🎹 MUSIC",
     pulse: "💜 PULSE",
-    drawing: "🎨 DRAWING",
+    ascii: "🔤 ASCII",
+    hdart: "🖼️ HD ART",
     toy: "🎮 TOY"
   };
   const typeLabel = typeLabels[slotType];
@@ -1473,8 +1751,10 @@ async function runCreationPhase(timeOfDay: string, slotType: SlotType = "inventi
       prompt = getMusicCreationPrompt(context, timeOfDay, recentMusicTitles);
     } else if (slotType === "pulse") {
       prompt = getPulseExpressionPrompt(context, timeOfDay);
-    } else if (slotType === "drawing") {
-      prompt = getDrawingPrompt(context, timeOfDay);
+    } else if (slotType === "ascii") {
+      prompt = getAsciiArtPrompt(context, timeOfDay);
+    } else if (slotType === "hdart") {
+      prompt = getHdArtPrompt(context, timeOfDay);
     } else if (slotType === "toy") {
       prompt = getToyPrompt(context, timeOfDay);
     } else {
@@ -1484,7 +1764,7 @@ async function runCreationPhase(timeOfDay: string, slotType: SlotType = "inventi
     const result = await runAmberEmailAgent(
       prompt,
       "scheduler@internal",
-      `Amber Create ${slotType === "music" ? "Music" : slotType === "pulse" ? "Pulse" : slotType === "drawing" ? "Drawing" : slotType === "toy" ? "Toy" : ""} - ${timeOfDay}`,
+      `Amber Create ${typeLabels[slotType] || slotType} - ${timeOfDay}`,
       true, // isApprovedRequest
       false // not thinkhard (for now)
     );
@@ -1615,13 +1895,14 @@ export function registerAmberSocialJobs(): void {
   const inventionSlots = SCHEDULE.filter(s => s.type === "invention").length;
   const musicSlots = SCHEDULE.filter(s => s.type === "music").length;
   const pulseSlots = SCHEDULE.filter(s => s.type === "pulse").length;
-  const drawingSlots = SCHEDULE.filter(s => s.type === "drawing").length;
+  const asciiSlots = SCHEDULE.filter(s => s.type === "ascii").length;
+  const hdartSlots = SCHEDULE.filter(s => s.type === "hdart").length;
   const toySlots = SCHEDULE.filter(s => s.type === "toy").length;
   const times = SCHEDULE.map(s => {
-    const icons: Record<SlotType, string> = { invention: "⚙️", music: "🎹", pulse: "💜", drawing: "🎨", toy: "🎮" };
+    const icons: Record<SlotType, string> = { invention: "⚙️", music: "🎹", pulse: "💜", ascii: "🔤", hdart: "🖼️", toy: "🎮" };
     return `${icons[s.type]}${s.createHour}:${String(s.createMinute).padStart(2, '0')}`;
   }).join(', ');
-  console.log(`[amber-social] Registered: ${times} PT (${inventionSlots} invention, ${pulseSlots} pulse, ${drawingSlots} drawing, ${toySlots} toy, ${musicSlots} music)`);
+  console.log(`[amber-social] Registered: ${times} PT (${asciiSlots} ascii, ${toySlots} toy, ${pulseSlots} pulse, ${hdartSlots} hdart, ${inventionSlots} invention, ${musicSlots} music)`);
 }
 
 /**
@@ -1639,8 +1920,12 @@ export async function triggerPulseExpression(timeOfDay: string = "test"): Promis
   await runCreationPhase(timeOfDay, "pulse");
 }
 
-export async function triggerDrawing(timeOfDay: string = "test"): Promise<void> {
-  await runCreationPhase(timeOfDay, "drawing");
+export async function triggerAsciiArt(timeOfDay: string = "test"): Promise<void> {
+  await runCreationPhase(timeOfDay, "ascii");
+}
+
+export async function triggerHdArt(timeOfDay: string = "test"): Promise<void> {
+  await runCreationPhase(timeOfDay, "hdart");
 }
 
 export async function triggerToy(timeOfDay: string = "test"): Promise<void> {
