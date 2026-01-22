@@ -1,0 +1,946 @@
+{
+  "version": "1.0",
+  "generated": "2026-01-22T01:17:06.745Z",
+  "backgrounds": [
+    {
+      "file": "og-music-001.png",
+      "type": "music",
+      "fg": "#00fff2",
+      "palette": "Neon Club",
+      "mode": "vertical"
+    },
+    {
+      "file": "og-music-002.png",
+      "type": "music",
+      "fg": "#00fff2",
+      "palette": "Neon Club",
+      "mode": "vertical"
+    },
+    {
+      "file": "og-music-003.png",
+      "type": "music",
+      "fg": "#00fff2",
+      "palette": "Neon Club",
+      "mode": "horizontal"
+    },
+    {
+      "file": "og-music-004.png",
+      "type": "music",
+      "fg": "#00fff2",
+      "palette": "Neon Club",
+      "mode": "horizontal"
+    },
+    {
+      "file": "og-music-005.png",
+      "type": "music",
+      "fg": "#ff6b35",
+      "palette": "Sunset Rave",
+      "mode": "vertical"
+    },
+    {
+      "file": "og-music-006.png",
+      "type": "music",
+      "fg": "#ff6b35",
+      "palette": "Sunset Rave",
+      "mode": "vertical"
+    },
+    {
+      "file": "og-music-007.png",
+      "type": "music",
+      "fg": "#ff6b35",
+      "palette": "Sunset Rave",
+      "mode": "horizontal"
+    },
+    {
+      "file": "og-music-008.png",
+      "type": "music",
+      "fg": "#ff6b35",
+      "palette": "Sunset Rave",
+      "mode": "horizontal"
+    },
+    {
+      "file": "og-music-009.png",
+      "type": "music",
+      "fg": "#FFD700",
+      "palette": "Amber Pulse",
+      "mode": "vertical"
+    },
+    {
+      "file": "og-music-010.png",
+      "type": "music",
+      "fg": "#FFD700",
+      "palette": "Amber Pulse",
+      "mode": "vertical"
+    },
+    {
+      "file": "og-music-011.png",
+      "type": "music",
+      "fg": "#FFD700",
+      "palette": "Amber Pulse",
+      "mode": "horizontal"
+    },
+    {
+      "file": "og-music-012.png",
+      "type": "music",
+      "fg": "#FFD700",
+      "palette": "Amber Pulse",
+      "mode": "horizontal"
+    },
+    {
+      "file": "og-music-013.png",
+      "type": "music",
+      "fg": "#7fdbca",
+      "palette": "Midnight Set",
+      "mode": "vertical"
+    },
+    {
+      "file": "og-music-014.png",
+      "type": "music",
+      "fg": "#7fdbca",
+      "palette": "Midnight Set",
+      "mode": "vertical"
+    },
+    {
+      "file": "og-music-015.png",
+      "type": "music",
+      "fg": "#7fdbca",
+      "palette": "Midnight Set",
+      "mode": "horizontal"
+    },
+    {
+      "file": "og-music-016.png",
+      "type": "music",
+      "fg": "#7fdbca",
+      "palette": "Midnight Set",
+      "mode": "horizontal"
+    },
+    {
+      "file": "og-music-017.png",
+      "type": "music",
+      "fg": "#7B68EE",
+      "palette": "Violet Hour",
+      "mode": "vertical"
+    },
+    {
+      "file": "og-music-018.png",
+      "type": "music",
+      "fg": "#7B68EE",
+      "palette": "Violet Hour",
+      "mode": "vertical"
+    },
+    {
+      "file": "og-music-019.png",
+      "type": "music",
+      "fg": "#7B68EE",
+      "palette": "Violet Hour",
+      "mode": "horizontal"
+    },
+    {
+      "file": "og-music-020.png",
+      "type": "music",
+      "fg": "#7B68EE",
+      "palette": "Violet Hour",
+      "mode": "horizontal"
+    },
+    {
+      "file": "og-toy-001.png",
+      "type": "toy",
+      "fg": "#00d4ff",
+      "palette": "Arcade",
+      "mode": "blocky"
+    },
+    {
+      "file": "og-toy-002.png",
+      "type": "toy",
+      "fg": "#00d4ff",
+      "palette": "Arcade",
+      "mode": "blocky"
+    },
+    {
+      "file": "og-toy-003.png",
+      "type": "toy",
+      "fg": "#00d4ff",
+      "palette": "Arcade",
+      "mode": "gooey"
+    },
+    {
+      "file": "og-toy-004.png",
+      "type": "toy",
+      "fg": "#00d4ff",
+      "palette": "Arcade",
+      "mode": "gooey"
+    },
+    {
+      "file": "og-toy-005.png",
+      "type": "toy",
+      "fg": "#7fff00",
+      "palette": "Game Boy",
+      "mode": "blocky"
+    },
+    {
+      "file": "og-toy-006.png",
+      "type": "toy",
+      "fg": "#7fff00",
+      "palette": "Game Boy",
+      "mode": "blocky"
+    },
+    {
+      "file": "og-toy-007.png",
+      "type": "toy",
+      "fg": "#7fff00",
+      "palette": "Game Boy",
+      "mode": "gooey"
+    },
+    {
+      "file": "og-toy-008.png",
+      "type": "toy",
+      "fg": "#7fff00",
+      "palette": "Game Boy",
+      "mode": "gooey"
+    },
+    {
+      "file": "og-toy-009.png",
+      "type": "toy",
+      "fg": "#FFD700",
+      "palette": "Amber Play",
+      "mode": "blocky"
+    },
+    {
+      "file": "og-toy-010.png",
+      "type": "toy",
+      "fg": "#FFD700",
+      "palette": "Amber Play",
+      "mode": "blocky"
+    },
+    {
+      "file": "og-toy-011.png",
+      "type": "toy",
+      "fg": "#FFD700",
+      "palette": "Amber Play",
+      "mode": "gooey"
+    },
+    {
+      "file": "og-toy-012.png",
+      "type": "toy",
+      "fg": "#FFD700",
+      "palette": "Amber Play",
+      "mode": "gooey"
+    },
+    {
+      "file": "og-toy-013.png",
+      "type": "toy",
+      "fg": "#ffd93d",
+      "palette": "Candy",
+      "mode": "blocky"
+    },
+    {
+      "file": "og-toy-014.png",
+      "type": "toy",
+      "fg": "#ffd93d",
+      "palette": "Candy",
+      "mode": "blocky"
+    },
+    {
+      "file": "og-toy-015.png",
+      "type": "toy",
+      "fg": "#ffd93d",
+      "palette": "Candy",
+      "mode": "gooey"
+    },
+    {
+      "file": "og-toy-016.png",
+      "type": "toy",
+      "fg": "#ffd93d",
+      "palette": "Candy",
+      "mode": "gooey"
+    },
+    {
+      "file": "og-toy-017.png",
+      "type": "toy",
+      "fg": "#ff8c42",
+      "palette": "Retro",
+      "mode": "blocky"
+    },
+    {
+      "file": "og-toy-018.png",
+      "type": "toy",
+      "fg": "#ff8c42",
+      "palette": "Retro",
+      "mode": "blocky"
+    },
+    {
+      "file": "og-toy-019.png",
+      "type": "toy",
+      "fg": "#ff8c42",
+      "palette": "Retro",
+      "mode": "gooey"
+    },
+    {
+      "file": "og-toy-020.png",
+      "type": "toy",
+      "fg": "#ff8c42",
+      "palette": "Retro",
+      "mode": "gooey"
+    },
+    {
+      "file": "og-invention-001.png",
+      "type": "invention",
+      "fg": "#00ff41",
+      "palette": "Terminal"
+    },
+    {
+      "file": "og-invention-002.png",
+      "type": "invention",
+      "fg": "#00ff41",
+      "palette": "Terminal"
+    },
+    {
+      "file": "og-invention-003.png",
+      "type": "invention",
+      "fg": "#00ff41",
+      "palette": "Terminal"
+    },
+    {
+      "file": "og-invention-004.png",
+      "type": "invention",
+      "fg": "#00ff41",
+      "palette": "Terminal"
+    },
+    {
+      "file": "og-invention-005.png",
+      "type": "invention",
+      "fg": "#ffffff",
+      "palette": "Blue Screen"
+    },
+    {
+      "file": "og-invention-006.png",
+      "type": "invention",
+      "fg": "#ffffff",
+      "palette": "Blue Screen"
+    },
+    {
+      "file": "og-invention-007.png",
+      "type": "invention",
+      "fg": "#ffffff",
+      "palette": "Blue Screen"
+    },
+    {
+      "file": "og-invention-008.png",
+      "type": "invention",
+      "fg": "#ffffff",
+      "palette": "Blue Screen"
+    },
+    {
+      "file": "og-invention-009.png",
+      "type": "invention",
+      "fg": "#FFD700",
+      "palette": "Amber System"
+    },
+    {
+      "file": "og-invention-010.png",
+      "type": "invention",
+      "fg": "#FFD700",
+      "palette": "Amber System"
+    },
+    {
+      "file": "og-invention-011.png",
+      "type": "invention",
+      "fg": "#FFD700",
+      "palette": "Amber System"
+    },
+    {
+      "file": "og-invention-012.png",
+      "type": "invention",
+      "fg": "#FFD700",
+      "palette": "Amber System"
+    },
+    {
+      "file": "og-invention-013.png",
+      "type": "invention",
+      "fg": "#ff00ff",
+      "palette": "Corruption"
+    },
+    {
+      "file": "og-invention-014.png",
+      "type": "invention",
+      "fg": "#ff00ff",
+      "palette": "Corruption"
+    },
+    {
+      "file": "og-invention-015.png",
+      "type": "invention",
+      "fg": "#ff00ff",
+      "palette": "Corruption"
+    },
+    {
+      "file": "og-invention-016.png",
+      "type": "invention",
+      "fg": "#ff00ff",
+      "palette": "Corruption"
+    },
+    {
+      "file": "og-invention-017.png",
+      "type": "invention",
+      "fg": "#ffb000",
+      "palette": "CRT Burn"
+    },
+    {
+      "file": "og-invention-018.png",
+      "type": "invention",
+      "fg": "#ffb000",
+      "palette": "CRT Burn"
+    },
+    {
+      "file": "og-invention-019.png",
+      "type": "invention",
+      "fg": "#ffb000",
+      "palette": "CRT Burn"
+    },
+    {
+      "file": "og-invention-020.png",
+      "type": "invention",
+      "fg": "#ffb000",
+      "palette": "CRT Burn"
+    },
+    {
+      "file": "og-reflection-001.png",
+      "type": "pulse",
+      "fg": "#F5C87A",
+      "palette": "Amber Calm"
+    },
+    {
+      "file": "og-reflection-002.png",
+      "type": "pulse",
+      "fg": "#F5C87A",
+      "palette": "Amber Calm"
+    },
+    {
+      "file": "og-reflection-003.png",
+      "type": "pulse",
+      "fg": "#F5C87A",
+      "palette": "Amber Calm"
+    },
+    {
+      "file": "og-reflection-004.png",
+      "type": "pulse",
+      "fg": "#F5C87A",
+      "palette": "Amber Calm"
+    },
+    {
+      "file": "og-reflection-005.png",
+      "type": "pulse",
+      "fg": "#ffdab9",
+      "palette": "Dusk"
+    },
+    {
+      "file": "og-reflection-006.png",
+      "type": "pulse",
+      "fg": "#ffdab9",
+      "palette": "Dusk"
+    },
+    {
+      "file": "og-reflection-007.png",
+      "type": "pulse",
+      "fg": "#ffdab9",
+      "palette": "Dusk"
+    },
+    {
+      "file": "og-reflection-008.png",
+      "type": "pulse",
+      "fg": "#ffdab9",
+      "palette": "Dusk"
+    },
+    {
+      "file": "og-reflection-009.png",
+      "type": "pulse",
+      "fg": "#bdc3c7",
+      "palette": "Still Water"
+    },
+    {
+      "file": "og-reflection-010.png",
+      "type": "pulse",
+      "fg": "#bdc3c7",
+      "palette": "Still Water"
+    },
+    {
+      "file": "og-reflection-011.png",
+      "type": "pulse",
+      "fg": "#bdc3c7",
+      "palette": "Still Water"
+    },
+    {
+      "file": "og-reflection-012.png",
+      "type": "pulse",
+      "fg": "#bdc3c7",
+      "palette": "Still Water"
+    },
+    {
+      "file": "og-reflection-013.png",
+      "type": "pulse",
+      "fg": "#d4c896",
+      "palette": "Forest Floor"
+    },
+    {
+      "file": "og-reflection-014.png",
+      "type": "pulse",
+      "fg": "#d4c896",
+      "palette": "Forest Floor"
+    },
+    {
+      "file": "og-reflection-015.png",
+      "type": "pulse",
+      "fg": "#d4c896",
+      "palette": "Forest Floor"
+    },
+    {
+      "file": "og-reflection-016.png",
+      "type": "pulse",
+      "fg": "#d4c896",
+      "palette": "Forest Floor"
+    },
+    {
+      "file": "og-reflection-017.png",
+      "type": "pulse",
+      "fg": "#a8c0d6",
+      "palette": "Moonlight"
+    },
+    {
+      "file": "og-reflection-018.png",
+      "type": "pulse",
+      "fg": "#a8c0d6",
+      "palette": "Moonlight"
+    },
+    {
+      "file": "og-reflection-019.png",
+      "type": "pulse",
+      "fg": "#a8c0d6",
+      "palette": "Moonlight"
+    },
+    {
+      "file": "og-reflection-020.png",
+      "type": "pulse",
+      "fg": "#a8c0d6",
+      "palette": "Moonlight"
+    },
+    {
+      "file": "og-ascii-001.png",
+      "type": "ascii",
+      "fg": "#D4A574",
+      "palette": "Amber Text",
+      "mode": "dense"
+    },
+    {
+      "file": "og-ascii-002.png",
+      "type": "ascii",
+      "fg": "#40E0D0",
+      "palette": "Teal Matrix",
+      "mode": "dense"
+    },
+    {
+      "file": "og-ascii-003.png",
+      "type": "ascii",
+      "fg": "#7B68EE",
+      "palette": "Violet Code",
+      "mode": "dense"
+    },
+    {
+      "file": "og-ascii-004.png",
+      "type": "ascii",
+      "fg": "#00ff41",
+      "palette": "Green Screen",
+      "mode": "dense"
+    },
+    {
+      "file": "og-ascii-005.png",
+      "type": "ascii",
+      "fg": "#ff6b35",
+      "palette": "Warm Terminal",
+      "mode": "dense"
+    },
+    {
+      "file": "og-ascii-006.png",
+      "type": "ascii",
+      "fg": "#D4A574",
+      "palette": "Amber Text",
+      "mode": "dense"
+    },
+    {
+      "file": "og-ascii-007.png",
+      "type": "ascii",
+      "fg": "#40E0D0",
+      "palette": "Teal Matrix",
+      "mode": "dense"
+    },
+    {
+      "file": "og-ascii-008.png",
+      "type": "ascii",
+      "fg": "#7B68EE",
+      "palette": "Violet Code",
+      "mode": "float"
+    },
+    {
+      "file": "og-ascii-009.png",
+      "type": "ascii",
+      "fg": "#00ff41",
+      "palette": "Green Screen",
+      "mode": "float"
+    },
+    {
+      "file": "og-ascii-010.png",
+      "type": "ascii",
+      "fg": "#ff6b35",
+      "palette": "Warm Terminal",
+      "mode": "float"
+    },
+    {
+      "file": "og-ascii-011.png",
+      "type": "ascii",
+      "fg": "#D4A574",
+      "palette": "Amber Text",
+      "mode": "float"
+    },
+    {
+      "file": "og-ascii-012.png",
+      "type": "ascii",
+      "fg": "#40E0D0",
+      "palette": "Teal Matrix",
+      "mode": "float"
+    },
+    {
+      "file": "og-ascii-013.png",
+      "type": "ascii",
+      "fg": "#7B68EE",
+      "palette": "Violet Code",
+      "mode": "float"
+    },
+    {
+      "file": "og-ascii-014.png",
+      "type": "ascii",
+      "fg": "#00ff41",
+      "palette": "Green Screen",
+      "mode": "float"
+    },
+    {
+      "file": "og-ascii-015.png",
+      "type": "ascii",
+      "fg": "#ff6b35",
+      "palette": "Warm Terminal",
+      "mode": "vignette"
+    },
+    {
+      "file": "og-ascii-016.png",
+      "type": "ascii",
+      "fg": "#D4A574",
+      "palette": "Amber Text",
+      "mode": "vignette"
+    },
+    {
+      "file": "og-ascii-017.png",
+      "type": "ascii",
+      "fg": "#40E0D0",
+      "palette": "Teal Matrix",
+      "mode": "vignette"
+    },
+    {
+      "file": "og-ascii-018.png",
+      "type": "ascii",
+      "fg": "#7B68EE",
+      "palette": "Violet Code",
+      "mode": "vignette"
+    },
+    {
+      "file": "og-ascii-019.png",
+      "type": "ascii",
+      "fg": "#00ff41",
+      "palette": "Green Screen",
+      "mode": "vignette"
+    },
+    {
+      "file": "og-ascii-020.png",
+      "type": "ascii",
+      "fg": "#ff6b35",
+      "palette": "Warm Terminal",
+      "mode": "vignette"
+    },
+    {
+      "file": "og-hd-art-001.png",
+      "type": "hdart",
+      "fg": "#FFD700",
+      "palette": "Amber Orb",
+      "mode": "orb"
+    },
+    {
+      "file": "og-hd-art-002.png",
+      "type": "hdart",
+      "fg": "#40E0D0",
+      "palette": "Teal Glow",
+      "mode": "orb"
+    },
+    {
+      "file": "og-hd-art-003.png",
+      "type": "hdart",
+      "fg": "#7B68EE",
+      "palette": "Violet Shine",
+      "mode": "orb"
+    },
+    {
+      "file": "og-hd-art-004.png",
+      "type": "hdart",
+      "fg": "#ffd6e0",
+      "palette": "Dawn",
+      "mode": "orb"
+    },
+    {
+      "file": "og-hd-art-005.png",
+      "type": "hdart",
+      "fg": "#F5C87A",
+      "palette": "Golden Hour",
+      "mode": "orb"
+    },
+    {
+      "file": "og-hd-art-006.png",
+      "type": "hdart",
+      "fg": "#FFD700",
+      "palette": "Amber Orb",
+      "mode": "orb"
+    },
+    {
+      "file": "og-hd-art-007.png",
+      "type": "hdart",
+      "fg": "#40E0D0",
+      "palette": "Teal Glow",
+      "mode": "orb"
+    },
+    {
+      "file": "og-hd-art-008.png",
+      "type": "hdart",
+      "fg": "#7B68EE",
+      "palette": "Violet Shine",
+      "mode": "aurora"
+    },
+    {
+      "file": "og-hd-art-009.png",
+      "type": "hdart",
+      "fg": "#ffd6e0",
+      "palette": "Dawn",
+      "mode": "aurora"
+    },
+    {
+      "file": "og-hd-art-010.png",
+      "type": "hdart",
+      "fg": "#F5C87A",
+      "palette": "Golden Hour",
+      "mode": "aurora"
+    },
+    {
+      "file": "og-hd-art-011.png",
+      "type": "hdart",
+      "fg": "#FFD700",
+      "palette": "Amber Orb",
+      "mode": "aurora"
+    },
+    {
+      "file": "og-hd-art-012.png",
+      "type": "hdart",
+      "fg": "#40E0D0",
+      "palette": "Teal Glow",
+      "mode": "aurora"
+    },
+    {
+      "file": "og-hd-art-013.png",
+      "type": "hdart",
+      "fg": "#7B68EE",
+      "palette": "Violet Shine",
+      "mode": "aurora"
+    },
+    {
+      "file": "og-hd-art-014.png",
+      "type": "hdart",
+      "fg": "#ffd6e0",
+      "palette": "Dawn",
+      "mode": "aurora"
+    },
+    {
+      "file": "og-hd-art-015.png",
+      "type": "hdart",
+      "fg": "#F5C87A",
+      "palette": "Golden Hour",
+      "mode": "prism"
+    },
+    {
+      "file": "og-hd-art-016.png",
+      "type": "hdart",
+      "fg": "#FFD700",
+      "palette": "Amber Orb",
+      "mode": "prism"
+    },
+    {
+      "file": "og-hd-art-017.png",
+      "type": "hdart",
+      "fg": "#40E0D0",
+      "palette": "Teal Glow",
+      "mode": "prism"
+    },
+    {
+      "file": "og-hd-art-018.png",
+      "type": "hdart",
+      "fg": "#7B68EE",
+      "palette": "Violet Shine",
+      "mode": "prism"
+    },
+    {
+      "file": "og-hd-art-019.png",
+      "type": "hdart",
+      "fg": "#ffd6e0",
+      "palette": "Dawn",
+      "mode": "prism"
+    },
+    {
+      "file": "og-hd-art-020.png",
+      "type": "hdart",
+      "fg": "#F5C87A",
+      "palette": "Golden Hour",
+      "mode": "prism"
+    },
+    {
+      "file": "og-generic-001.png",
+      "type": "generic",
+      "fg": "#F5C87A",
+      "palette": "Amber Classic",
+      "mode": "orb"
+    },
+    {
+      "file": "og-generic-002.png",
+      "type": "generic",
+      "fg": "#D4A574",
+      "palette": "Warm Teal",
+      "mode": "orb"
+    },
+    {
+      "file": "og-generic-003.png",
+      "type": "generic",
+      "fg": "#FFD700",
+      "palette": "Gold Violet",
+      "mode": "orb"
+    },
+    {
+      "file": "og-generic-004.png",
+      "type": "generic",
+      "fg": "#40E0D0",
+      "palette": "Teal Amber",
+      "mode": "orb"
+    },
+    {
+      "file": "og-generic-005.png",
+      "type": "generic",
+      "fg": "#7B68EE",
+      "palette": "Violet Gold",
+      "mode": "orb"
+    },
+    {
+      "file": "og-generic-006.png",
+      "type": "generic",
+      "fg": "#F5C87A",
+      "palette": "Amber Classic",
+      "mode": "orb"
+    },
+    {
+      "file": "og-generic-007.png",
+      "type": "generic",
+      "fg": "#D4A574",
+      "palette": "Warm Teal",
+      "mode": "orb"
+    },
+    {
+      "file": "og-generic-008.png",
+      "type": "generic",
+      "fg": "#FFD700",
+      "palette": "Gold Violet",
+      "mode": "ember"
+    },
+    {
+      "file": "og-generic-009.png",
+      "type": "generic",
+      "fg": "#40E0D0",
+      "palette": "Teal Amber",
+      "mode": "ember"
+    },
+    {
+      "file": "og-generic-010.png",
+      "type": "generic",
+      "fg": "#7B68EE",
+      "palette": "Violet Gold",
+      "mode": "ember"
+    },
+    {
+      "file": "og-generic-011.png",
+      "type": "generic",
+      "fg": "#F5C87A",
+      "palette": "Amber Classic",
+      "mode": "ember"
+    },
+    {
+      "file": "og-generic-012.png",
+      "type": "generic",
+      "fg": "#D4A574",
+      "palette": "Warm Teal",
+      "mode": "ember"
+    },
+    {
+      "file": "og-generic-013.png",
+      "type": "generic",
+      "fg": "#FFD700",
+      "palette": "Gold Violet",
+      "mode": "ember"
+    },
+    {
+      "file": "og-generic-014.png",
+      "type": "generic",
+      "fg": "#40E0D0",
+      "palette": "Teal Amber",
+      "mode": "ember"
+    },
+    {
+      "file": "og-generic-015.png",
+      "type": "generic",
+      "fg": "#7B68EE",
+      "palette": "Violet Gold",
+      "mode": "drift"
+    },
+    {
+      "file": "og-generic-016.png",
+      "type": "generic",
+      "fg": "#F5C87A",
+      "palette": "Amber Classic",
+      "mode": "drift"
+    },
+    {
+      "file": "og-generic-017.png",
+      "type": "generic",
+      "fg": "#D4A574",
+      "palette": "Warm Teal",
+      "mode": "drift"
+    },
+    {
+      "file": "og-generic-018.png",
+      "type": "generic",
+      "fg": "#FFD700",
+      "palette": "Gold Violet",
+      "mode": "drift"
+    },
+    {
+      "file": "og-generic-019.png",
+      "type": "generic",
+      "fg": "#40E0D0",
+      "palette": "Teal Amber",
+      "mode": "drift"
+    },
+    {
+      "file": "og-generic-020.png",
+      "type": "generic",
+      "fg": "#7B68EE",
+      "palette": "Violet Gold",
+      "mode": "drift"
+    }
+  ]
+}

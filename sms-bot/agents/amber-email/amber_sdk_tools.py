@@ -449,23 +449,24 @@ async def generate_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "generate_og_image",
-    "Generate a simple, reliable OG image for social sharing. Use with use_ai=False for fast, consistent results. Title only, no subtitle.",
-    {"title": str, "save_path": str, "use_ai": bool}
+    "Generate an OG image for social sharing using pre-designed backgrounds. Pass the creation type (music, toy, invention, pulse, ascii, hdart) to get a matching background.",
+    {"title": str, "save_path": str, "type": str}
 )
 async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Generate a branded OG image for social sharing.
+    Generate a branded OG image using pre-designed backgrounds.
 
-    Recommended: use_ai=False for fast, reliable results.
-    Creates title text on dark background with random color variation.
+    Loads a random background from the manifest for the given type,
+    then composites the title text on top using the palette's fg color.
+
+    Args:
+        title: The creation title to display
+        save_path: Where to save the OG image (e.g., "web/public/amber/thing-og.png")
+        type: Creation type - one of: music, toy, invention, pulse, ascii, hdart, generic
     """
     title = args.get("title", "")
     save_path = args.get("save_path", "")
-    use_ai = args.get("use_ai", False)  # Default to PIL mode now
-    # Legacy params for AI mode (kept for backwards compat)
-    subtitle = args.get("subtitle", "")
-    mood_energy = args.get("mood_energy", 0.5)
-    mood_valence = args.get("mood_valence", 0.5)
+    creation_type = args.get("type", "generic")
 
     if not title:
         return make_result(json.dumps({"error": "Title required"}), is_error=True)
@@ -473,157 +474,105 @@ async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     if not save_path:
         return make_result(json.dumps({"error": "save_path required"}), is_error=True)
 
-    # ==========================================================================
-    # AI Generation Mode (using DALL-E)
-    # ==========================================================================
-    if use_ai:
-        openai_key = os.getenv("OPENAI_API_KEY")
-        if not openai_key:
-            # Fall back to PIL mode if no API key
-            use_ai = False
-        else:
-            # Build mood-influenced prompt
-            energy_desc = "bold, saturated, dynamic patterns" if mood_energy > 0.6 else \
-                         "minimal, sparse, restrained" if mood_energy < 0.4 else \
-                         "balanced, measured"
-            valence_desc = "warm, luminous, inviting tones" if mood_valence > 0.6 else \
-                          "introspective, shadowed, abstract" if mood_valence < 0.4 else \
-                          "neutral, observational"
+    # Valid types from amber-social SlotType
+    VALID_TYPES = ["music", "toy", "invention", "pulse", "ascii", "hdart", "generic"]
+    if creation_type not in VALID_TYPES:
+        print(f"[generate_og_image] Unknown type '{creation_type}', falling back to generic", file=sys.stderr)
+        creation_type = "generic"
 
-            og_prompt = f"""Create a BOLD, eye-catching social media preview image (1200x630).
-
-This is the OpenGraph image for: "{title}"
-{f'What it shows: {subtitle}' if subtitle else ''}
-
-MAKE IT SURPRISING AND FUN:
-- This should make someone STOP SCROLLING on Twitter
-- Be playful, weird, unexpected — NOT generic "digital art"
-- If the creation is funny, make the OG image funny
-- If it's weird, lean into the weirdness
-- Think: meme energy meets art gallery
-
-Visual style:
-- Dark background (near-black #0D0D0D)
-- Amber/gold highlights (#FFD700, #f59e0b)
-- Energy level: {energy_desc}
-- Mood: {valence_desc}
-
-AVOID being generic! No:
-- Generic "particle systems" or "waveforms"
-- Boring tech gradients
-- Corporate-looking previews
-- Anything that looks like every other OG image
-
-The title "{title}" can appear in the image if it fits the vibe."""
-
-            try:
-                url = "https://api.openai.com/v1/images/generations"
-                payload = json.dumps({
-                    "model": "gpt-image-1",
-                    "prompt": og_prompt,
-                    "n": 1,
-                    "size": "1536x1024",  # Closest to 1200x630 aspect
-                    "quality": "high",
-                    "response_format": "b64_json"
-                }).encode()
-
-                req = urllib.request.Request(url, data=payload, headers={
-                    "Authorization": f"Bearer {openai_key}",
-                    "Content-Type": "application/json"
-                })
-
-                with urllib.request.urlopen(req, timeout=120) as response:
-                    data = json.loads(response.read().decode())
-
-                if data.get("data") and data["data"][0].get("b64_json"):
-                    b64_image = data["data"][0]["b64_json"]
-
-                    # Save the image
-                    if IS_RAILWAY:
-                        _github_pending_files[save_path] = f"BASE64:{b64_image}"
-                        return make_result(json.dumps({
-                            "success": True,
-                            "saved_to": save_path,
-                            "mode": "ai_generated",
-                            "mood": {"energy": mood_energy, "valence": mood_valence},
-                            "message": f"AI-generated OG image staged for commit at {save_path}"
-                        }))
-                    else:
-                        import base64 as b64_module
-                        full_path = os.path.join(ALLOWED_CODEBASE, save_path)
-                        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-                        img_bytes = b64_module.b64decode(b64_image)
-                        with open(full_path, "wb") as f:
-                            f.write(img_bytes)
-                        return make_result(json.dumps({
-                            "success": True,
-                            "saved_to": full_path,
-                            "mode": "ai_generated",
-                            "mood": {"energy": mood_energy, "valence": mood_valence},
-                            "message": f"AI-generated OG image saved to {full_path}"
-                        }))
-
-            except Exception as e:
-                print(f"[generate_og_image] AI generation failed, falling back to PIL: {e}", file=sys.stderr)
-                # Fall through to PIL fallback
-
-    # ==========================================================================
-    # PIL Mode (simple title on dark with color variation)
-    # ==========================================================================
     try:
         from PIL import Image, ImageDraw, ImageFont
         import io
         import random
 
-        # Color palettes for variety (text_color, accent_color, gradient_tint)
-        COLOR_PALETTES = [
-            ('#FFD700', '#FFD700', (255, 215, 0)),      # Gold
-            ('#f59e0b', '#f59e0b', (245, 158, 11)),    # Amber
-            ('#2D9596', '#2D9596', (45, 149, 150)),    # Teal
-            ('#D4A574', '#D4A574', (212, 165, 116)),   # Soft amber
-            ('#9B8ACB', '#9B8ACB', (155, 138, 203)),   # Purple (pulse)
-        ]
-        text_color, accent_color, gradient_rgb = random.choice(COLOR_PALETTES)
+        # ==========================================================================
+        # Load manifest and pick random background for this type
+        # ==========================================================================
+        manifest_path = os.path.join(ALLOWED_CODEBASE, "web/public/amber/og-backgrounds/manifest.json")
+        bg_dir = os.path.join(ALLOWED_CODEBASE, "web/public/amber/og-backgrounds")
 
-        # Create 1200x630 image with dark background
-        width, height = 1200, 630
-        img = Image.new('RGB', (width, height), color='#0D0D0D')
+        try:
+            with open(manifest_path, 'r') as f:
+                manifest = json.load(f)
+        except Exception as e:
+            return make_result(json.dumps({
+                "error": f"Failed to load manifest: {e}"
+            }), is_error=True)
+
+        # Filter backgrounds by type
+        backgrounds = [b for b in manifest.get("backgrounds", []) if b.get("type") == creation_type]
+
+        if not backgrounds:
+            # Fallback to generic if no backgrounds for this type
+            backgrounds = [b for b in manifest.get("backgrounds", []) if b.get("type") == "generic"]
+            if not backgrounds:
+                return make_result(json.dumps({
+                    "error": f"No backgrounds found for type '{creation_type}' or generic"
+                }), is_error=True)
+
+        # Pick random background
+        bg_entry = random.choice(backgrounds)
+        bg_file = bg_entry.get("file", "")
+        fg_color = bg_entry.get("fg", "#FFD700")  # Default to gold if not specified
+
+        # Load background image
+        bg_path = os.path.join(bg_dir, bg_file)
+        try:
+            img = Image.open(bg_path).convert("RGBA")
+        except Exception as e:
+            return make_result(json.dumps({
+                "error": f"Failed to load background {bg_file}: {e}"
+            }), is_error=True)
+
+        # Ensure correct dimensions (should be 1200x630)
+        width, height = img.size
+        if width != 1200 or height != 630:
+            img = img.resize((1200, 630), Image.Resampling.LANCZOS)
+            width, height = 1200, 630
+
         draw = ImageDraw.Draw(img)
 
-        # Add subtle gradient overlay at top using chosen color
-        for y in range(150):
-            alpha = int(25 * (1 - y / 150))  # Fade out
-            for x in range(width):
-                r, g, b = img.getpixel((x, y))
-                r = min(255, r + int(alpha * gradient_rgb[0] / 255))
-                g = min(255, g + int(alpha * gradient_rgb[1] / 255))
-                b = min(255, b + int(alpha * gradient_rgb[2] / 255))
-                img.putpixel((x, y), (r, g, b))
+        # ==========================================================================
+        # Load fonts
+        # ==========================================================================
+        title_font = None
+        small_font = None
+        font_name = None
 
-        # Try to use a nice font, fall back to default
         try:
             font_size = 64
-            for font_name in ['/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-                              '/System/Library/Fonts/Helvetica.ttc',
-                              '/usr/share/fonts/TTF/DejaVuSans-Bold.ttf']:
+            for fn in ['/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+                       '/System/Library/Fonts/Helvetica.ttc',
+                       '/usr/share/fonts/TTF/DejaVuSans-Bold.ttf']:
                 try:
-                    title_font = ImageFont.truetype(font_name, font_size)
+                    title_font = ImageFont.truetype(fn, font_size)
+                    font_name = fn
                     break
                 except:
                     continue
-            else:
+            if title_font is None:
                 title_font = ImageFont.load_default()
         except:
             title_font = ImageFont.load_default()
 
-        # Word wrap title if too long
-        words = title.split()
+        try:
+            if font_name:
+                small_font = ImageFont.truetype(font_name, 28)
+            else:
+                small_font = ImageFont.load_default()
+        except:
+            small_font = ImageFont.load_default()
+
+        # ==========================================================================
+        # Word wrap title
+        # ==========================================================================
+        words = title.upper().split()  # Uppercase for impact
         lines = []
         current_line = []
         for word in words:
             test_line = ' '.join(current_line + [word])
             bbox = draw.textbbox((0, 0), test_line, font=title_font)
-            if bbox[2] - bbox[0] > width - 120:  # 60px padding each side
+            if bbox[2] - bbox[0] > width - 160:  # 80px padding each side
                 if current_line:
                     lines.append(' '.join(current_line))
                     current_line = [word]
@@ -634,41 +583,50 @@ The title "{title}" can appear in the image if it fits the vibe."""
         if current_line:
             lines.append(' '.join(current_line))
 
-        # Calculate vertical position for centered text block
+        # ==========================================================================
+        # Calculate text positioning (centered)
+        # ==========================================================================
         line_height = 80
-        total_text_height = len(lines) * line_height + 60  # +60 for "by Amber"
+        by_amber_height = 50
+        total_text_height = len(lines) * line_height + by_amber_height
         start_y = (height - total_text_height) // 2
 
-        # Draw title lines
+        # ==========================================================================
+        # Draw title with shadow for readability
+        # ==========================================================================
         for i, line in enumerate(lines):
             bbox = draw.textbbox((0, 0), line, font=title_font)
             text_width = bbox[2] - bbox[0]
             x = (width - text_width) // 2
             y = start_y + i * line_height
-            draw.text((x, y), line, fill=text_color, font=title_font)
 
-        # Draw "by Amber" in muted color
-        try:
-            small_font = ImageFont.truetype(font_name, 24)
-        except:
-            small_font = ImageFont.load_default()
+            # Shadow for readability
+            draw.text((x + 2, y + 2), line, font=title_font, fill=(0, 0, 0, 180))
+            draw.text((x, y), line, font=title_font, fill=fg_color)
+
+        # ==========================================================================
+        # Draw "by Amber" attribution
+        # ==========================================================================
         by_amber = "by Amber"
         bbox = draw.textbbox((0, 0), by_amber, font=small_font)
         text_width = bbox[2] - bbox[0]
         x = (width - text_width) // 2
-        y = start_y + len(lines) * line_height + 20
-        draw.text((x, y), by_amber, fill='#666666', font=small_font)
+        y = start_y + len(lines) * line_height + 15
 
-        # Add accent bar at bottom
-        draw.rectangle([(width // 2 - 60, height - 40), (width // 2 + 60, height - 36)], fill=accent_color)
+        draw.text((x, y), by_amber, font=small_font, fill=fg_color)
 
-        # Save to bytes
+        # ==========================================================================
+        # Save the composited image
+        # ==========================================================================
+        # Convert to RGB for PNG saving (drop alpha)
+        img_rgb = Image.new("RGB", img.size, (13, 13, 13))  # Dark background
+        img_rgb.paste(img, mask=img.split()[3] if img.mode == 'RGBA' else None)
+
         img_bytes = io.BytesIO()
-        img.save(img_bytes, format='PNG', optimize=True)
+        img_rgb.save(img_bytes, format='PNG', optimize=True)
         img_bytes.seek(0)
         img_data = img_bytes.getvalue()
 
-        # Save to file using same mechanism as other image tools
         if IS_RAILWAY:
             # On Railway, stage for GitHub commit
             b64_image = base64.b64encode(img_data).decode('utf-8')
@@ -676,8 +634,11 @@ The title "{title}" can appear in the image if it fits the vibe."""
             return make_result(json.dumps({
                 "success": True,
                 "saved_to": save_path,
-                "message": f"OG image generated and staged for commit at {save_path}",
-                "size_bytes": len(img_data)
+                "background": bg_file,
+                "type": creation_type,
+                "fg_color": fg_color,
+                "palette": bg_entry.get("palette", "unknown"),
+                "message": f"OG image generated using {bg_file} and staged for commit"
             }))
         else:
             # Local: save directly
@@ -688,8 +649,11 @@ The title "{title}" can appear in the image if it fits the vibe."""
             return make_result(json.dumps({
                 "success": True,
                 "saved_to": full_path,
-                "message": f"OG image generated and saved to {full_path}",
-                "size_bytes": len(img_data)
+                "background": bg_file,
+                "type": creation_type,
+                "fg_color": fg_color,
+                "palette": bg_entry.get("palette", "unknown"),
+                "message": f"OG image generated using {bg_file}"
             }))
 
     except ImportError:
@@ -697,7 +661,11 @@ The title "{title}" can appear in the image if it fits the vibe."""
             "error": "PIL/Pillow not installed. Run: pip install Pillow"
         }), is_error=True)
     except Exception as e:
-        return make_result(json.dumps({"error": str(e)}), is_error=True)
+        import traceback
+        return make_result(json.dumps({
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), is_error=True)
 
 
 # =============================================================================
