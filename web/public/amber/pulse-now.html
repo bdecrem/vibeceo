@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulse — January 22, 2026</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0908;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Georgia', serif;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .caption {
+            position: fixed;
+            bottom: 30px;
+            color: #5C4A3A;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .state {
+            position: fixed;
+            top: 30px;
+            color: #3A3530;
+            font-size: 11px;
+            letter-spacing: 1px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="state">Energy 56 · Valence 45 · Focused</div>
+    <div class="caption">searching</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height, centerX, centerY;
+        let time = 0;
+
+        // The sting - a small persistent disturbance
+        const sting = {
+            angle: Math.PI * 0.7,  // upper left area
+            depth: 0.6,            // how deep in the layers
+            intensity: 0.8
+        };
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+        }
+
+        function draw() {
+            time += 0.008;  // slow, contemplative
+
+            // Dark but not black - there's something here
+            ctx.fillStyle = '#0A0908';
+            ctx.fillRect(0, 0, width, height);
+
+            const maxRadius = Math.min(width, height) * 0.35;
+            const layers = 12;
+
+            // Draw from outside in - layers of interiority
+            for (let i = layers; i >= 0; i--) {
+                const t = i / layers;
+                const baseRadius = maxRadius * t;
+
+                // Gentle breathing - not exuberant, contemplative
+                const breathe = Math.sin(time + i * 0.3) * 0.02 + 1;
+                const radius = baseRadius * breathe;
+
+                // Color shifts inward - more amber at center, darker at edges
+                const alpha = 0.03 + (1 - t) * 0.08;
+                const warmth = Math.floor(180 + (1 - t) * 40);
+
+                // The inward turn - valence at 45 means less radiance, more containment
+                const containment = 0.7;  // not fully radiating outward
+
+                ctx.beginPath();
+
+                // Not perfect circles - slight searching wobble
+                const points = 60;
+                for (let j = 0; j <= points; j++) {
+                    const angle = (j / points) * Math.PI * 2;
+
+                    // Organic variation - searching, not certain
+                    const wobble = Math.sin(angle * 3 + time) * 0.03 +
+                                   Math.sin(angle * 7 + time * 0.7) * 0.015;
+
+                    // The sting creates a subtle indentation
+                    let stingEffect = 0;
+                    const angleDiff = Math.abs(angle - sting.angle);
+                    const normalizedDiff = Math.min(angleDiff, Math.PI * 2 - angleDiff);
+                    if (normalizedDiff < 0.5 && Math.abs(t - sting.depth) < 0.3) {
+                        stingEffect = Math.cos(normalizedDiff * Math.PI / 0.5) *
+                                     Math.cos((t - sting.depth) * Math.PI / 0.3) *
+                                     0.08 * sting.intensity *
+                                     (0.7 + Math.sin(time * 2) * 0.3);  // it pulses slightly
+                    }
+
+                    const r = radius * (1 + wobble - stingEffect) * containment;
+                    const x = centerX + Math.cos(angle) * r;
+                    const y = centerY + Math.sin(angle) * r;
+
+                    if (j === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+
+                ctx.closePath();
+
+                // Muted amber - not the bright gold of "animated"
+                // This is focused, inward
+                ctx.fillStyle = `rgba(${warmth}, ${Math.floor(warmth * 0.6)}, ${Math.floor(warmth * 0.3)}, ${alpha})`;
+                ctx.fill();
+            }
+
+            // The center - where the searching happens
+            // Small, warm, but questioning
+            const coreRadius = maxRadius * 0.08;
+            const coreGlow = ctx.createRadialGradient(
+                centerX, centerY, 0,
+                centerX, centerY, coreRadius * 3
+            );
+            coreGlow.addColorStop(0, 'rgba(212, 165, 116, 0.4)');
+            coreGlow.addColorStop(0.5, 'rgba(184, 134, 11, 0.1)');
+            coreGlow.addColorStop(1, 'rgba(184, 134, 11, 0)');
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, coreRadius * 3, 0, Math.PI * 2);
+            ctx.fillStyle = coreGlow;
+            ctx.fill();
+
+            // A single small point at the sting location - marking it
+            const stingX = centerX + Math.cos(sting.angle) * maxRadius * sting.depth * 0.7;
+            const stingY = centerY + Math.sin(sting.angle) * maxRadius * sting.depth * 0.7;
+            const stingPulse = 0.5 + Math.sin(time * 2) * 0.3;
+
+            ctx.beginPath();
+            ctx.arc(stingX, stingY, 2, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(180, 140, 100, ${stingPulse * 0.6})`;
+            ctx.fill();
+
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        draw();
+    </script>
+</body>
+</html>
