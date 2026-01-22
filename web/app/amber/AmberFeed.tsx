@@ -13,12 +13,10 @@ interface FeedItem {
   createdAt: string;
 }
 
-interface Artifact {
+interface ImageArtifact {
   name: string;
   title: string;
-  type: 'app' | 'image';
   url: string;
-  modifiedAt: string;
 }
 
 interface Profile {
@@ -177,13 +175,15 @@ function FeedCard({ item }: { item: FeedItem }) {
 
 export default function AmberFeed({
   profile,
-  artifacts = [],
 }: {
   profile: Profile;
-  artifacts?: Artifact[];
 }) {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [drawerItems, setDrawerItems] = useState<FeedItem[]>([]);
+  const [drawerImages, setDrawerImages] = useState<ImageArtifact[]>([]);
+  const [drawerHasMore, setDrawerHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar);
 
@@ -217,6 +217,40 @@ export default function AmberFeed({
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [drawerOpen]);
+
+  // Fetch drawer items when drawer opens
+  useEffect(() => {
+    if (drawerOpen && drawerItems.length === 0) {
+      setDrawerLoading(true);
+      Promise.all([
+        fetch('/api/amber/feed?all=true&limit=50').then(res => res.json()),
+        fetch('/api/amber/images').then(res => res.json()),
+      ])
+        .then(([feedData, imagesData]) => {
+          setDrawerItems(feedData.items || []);
+          setDrawerHasMore(feedData.hasMore || false);
+          setDrawerImages(imagesData.images || []);
+          setDrawerLoading(false);
+        })
+        .catch(() => {
+          setDrawerLoading(false);
+        });
+    }
+  }, [drawerOpen, drawerItems.length]);
+
+  const loadMoreDrawerItems = () => {
+    setDrawerLoading(true);
+    fetch(`/api/amber/feed?all=true&limit=50&offset=${drawerItems.length}`)
+      .then(res => res.json())
+      .then(data => {
+        setDrawerItems(prev => [...prev, ...(data.items || [])]);
+        setDrawerHasMore(data.hasMore || false);
+        setDrawerLoading(false);
+      })
+      .catch(() => {
+        setDrawerLoading(false);
+      });
+  };
 
   const formatShortDate = (isoString: string): string => {
     const date = new Date(isoString);
@@ -860,6 +894,67 @@ export default function AmberFeed({
           color: var(--text-muted);
         }
 
+        .drawer-load-more {
+          display: block;
+          width: 100%;
+          margin-top: 1rem;
+          padding: 0.75rem;
+          background: transparent;
+          border: 1px solid rgba(212, 165, 116, 0.2);
+          border-radius: 6px;
+          color: var(--amber-300);
+          font-size: 0.85rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .drawer-load-more:hover:not(:disabled) {
+          background: rgba(212, 165, 116, 0.1);
+          border-color: var(--amber-300);
+        }
+
+        .drawer-load-more:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .drawer-view-all {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          margin-top: 1.5rem;
+          padding: 1.25rem;
+          background: linear-gradient(135deg, var(--bg-elevated), var(--bg-deep));
+          border: 1px solid rgba(212, 165, 116, 0.25);
+          border-radius: 8px;
+          text-decoration: none;
+          transition: all 0.2s ease;
+        }
+
+        .drawer-view-all:hover {
+          border-color: var(--amber-300);
+          background: linear-gradient(135deg, rgba(212, 165, 116, 0.1), var(--bg-deep));
+          transform: translateY(-2px);
+          box-shadow: 0 4px 20px rgba(212, 165, 116, 0.15);
+        }
+
+        .drawer-view-all-icon {
+          font-size: 1.5rem;
+        }
+
+        .drawer-view-all span:nth-child(2) {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 1.1rem;
+          color: var(--amber-200);
+        }
+
+        .drawer-view-all-count {
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          letter-spacing: 0.05em;
+        }
+
         .drawer-image-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -1103,56 +1198,69 @@ export default function AmberFeed({
               </button>
             </div>
             <div className="drawer-modal-content">
-              {/* Apps section */}
-              {artifacts.filter(a => a.type === 'app').length > 0 && (
-                <div className="drawer-section">
-                  <div className="drawer-section-title">Pages & Apps</div>
-                  <div className="drawer-app-list">
-                    {artifacts
-                      .filter(a => a.type === 'app')
-                      .map((artifact) => (
+              {drawerLoading ? (
+                <div className="feed-loading">
+                  <div className="feed-loading-spinner" />
+                  <span>Loading creations...</span>
+                </div>
+              ) : drawerItems.length === 0 ? (
+                <div className="feed-empty">
+                  <div className="feed-empty-icon">🗄️</div>
+                  <p>Nothing in the drawer yet.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Recent creations */}
+                  <div className="drawer-section">
+                    <div className="drawer-section-title">Recent</div>
+                    <div className="drawer-app-list">
+                      {drawerItems.slice(0, 3).map((item) => (
                         <a
-                          key={artifact.url}
-                          href={artifact.url}
+                          key={item.id}
+                          href={item.url}
                           className="drawer-app-item"
                           target="_blank"
                           rel="noopener"
                         >
-                          <div className="drawer-app-title">{artifact.title}</div>
-                          <div className="drawer-app-date">{formatShortDate(artifact.modifiedAt)}</div>
+                          <div className="drawer-app-title">{item.title}</div>
+                          <div className="drawer-app-date">{formatShortDate(item.createdAt)}</div>
                         </a>
                       ))}
+                    </div>
                   </div>
-                </div>
-              )}
 
-              {/* Images section */}
-              {artifacts.filter(a => a.type === 'image').length > 0 && (
-                <div className="drawer-section">
-                  <div className="drawer-section-title">Images</div>
-                  <div className="drawer-image-grid">
-                    {artifacts
-                      .filter(a => a.type === 'image')
-                      .map((artifact) => (
-                        <a
-                          key={artifact.url}
-                          href={artifact.url}
-                          className="drawer-image-item"
-                          target="_blank"
-                          rel="noopener"
-                        >
-                          <div className="drawer-image-preview">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={artifact.url} alt={artifact.title} />
-                          </div>
-                          <div className="drawer-image-info">
-                            <div className="drawer-image-title" title={artifact.title}>{artifact.title}</div>
-                            <div className="drawer-image-date">{formatShortDate(artifact.modifiedAt)}</div>
-                          </div>
-                        </a>
-                      ))}
-                  </div>
-                </div>
+                  {/* Image previews */}
+                  {drawerImages.length > 0 && (
+                    <div className="drawer-section">
+                      <div className="drawer-section-title">Art</div>
+                      <div className="drawer-image-grid">
+                        {drawerImages.slice(0, 5).map((img) => (
+                          <a
+                            key={img.name}
+                            href={img.url}
+                            className="drawer-image-item"
+                            target="_blank"
+                            rel="noopener"
+                          >
+                            <div className="drawer-image-preview">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={img.url} alt={img.title} />
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* View All button */}
+                  <a href="/amber/drawer" className="drawer-view-all">
+                    <span className="drawer-view-all-icon">🗄️</span>
+                    <span>Open Full Drawer</span>
+                    <span className="drawer-view-all-count">
+                      {drawerItems.length > 50 ? '50+' : drawerItems.length} creations · {drawerImages.length} images
+                    </span>
+                  </a>
+                </>
               )}
             </div>
           </div>

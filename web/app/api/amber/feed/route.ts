@@ -70,8 +70,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 50);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
+    const showAll = searchParams.get("all") === "true"; // For drawer: show all creations
 
-    // Fetch tweeted creations
+    // Fetch creations
     const { data: creations, error: creationsError } = await supabase
       .from("amber_state")
       .select("id, content, metadata, created_at")
@@ -84,11 +85,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch feed" }, { status: 500 });
     }
 
-    // Filter to only tweeted creations
-    const tweetedCreations = (creations || []).filter((c) => {
-      const meta = c.metadata as CreationMetadata;
-      return meta?.tweeted === true;
-    });
+    // Filter to tweeted creations only (unless ?all=true for drawer)
+    const filteredCreations = showAll
+      ? (creations || [])
+      : (creations || []).filter((c) => {
+          const meta = c.metadata as CreationMetadata;
+          return meta?.tweeted === true;
+        });
 
     // Fetch tweet logs to get tweet text
     const { data: tweetLogs, error: tweetLogsError } = await supabase
@@ -118,7 +121,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build feed items
-    const feedItems: FeedItem[] = tweetedCreations.map((creation) => {
+    const feedItems: FeedItem[] = filteredCreations.map((creation) => {
       const meta = creation.metadata as CreationMetadata;
       const url = meta?.url || "";
 
