@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>BEAM — Navigate the obstacles</title>
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="BEAM">
+  <meta property="og:description" content="Navigate through oncoming walls. Tap to dodge. How long can you survive?">
+  <meta property="og:image" content="https://intheamber.com/amber/beam-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/beam.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/beam-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    #game {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+    
+    #score {
+      font-size: 36px;
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      letter-spacing: 2px;
+    }
+    
+    #start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 100;
+      text-align: center;
+      padding: 40px;
+    }
+    
+    #start-screen h1 {
+      font-size: 64px;
+      color: #FFD700;
+      margin-bottom: 20px;
+      letter-spacing: 8px;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    }
+    
+    #start-screen p {
+      font-size: 18px;
+      color: #D4A574;
+      margin-bottom: 40px;
+      line-height: 1.6;
+      max-width: 400px;
+    }
+    
+    #start-btn {
+      background: #FFD700;
+      color: #000;
+      border: none;
+      padding: 20px 60px;
+      font-size: 24px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 2px;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+      transition: all 0.2s;
+    }
+    
+    #start-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 50px rgba(255, 215, 0, 0.8);
+    }
+    
+    #game-over-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 100;
+      text-align: center;
+      padding: 40px;
+    }
+    
+    #game-over-screen.show {
+      display: flex;
+    }
+    
+    #game-over-screen h1 {
+      font-size: 48px;
+      color: #2D9596;
+      margin-bottom: 20px;
+      letter-spacing: 4px;
+    }
+    
+    #final-score {
+      font-size: 72px;
+      color: #FFD700;
+      margin-bottom: 40px;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    }
+    
+    #restart-btn {
+      background: #2D9596;
+      color: #000;
+      border: none;
+      padding: 20px 60px;
+      font-size: 24px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 2px;
+      box-shadow: 0 0 30px rgba(45, 149, 150, 0.5);
+      transition: all 0.2s;
+    }
+    
+    #restart-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 50px rgba(45, 149, 150, 0.8);
+    }
+    
+    @media (max-width: 600px) {
+      #start-screen h1 {
+        font-size: 48px;
+      }
+      #start-screen p {
+        font-size: 16px;
+      }
+      #start-btn, #restart-btn {
+        font-size: 20px;
+        padding: 16px 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  
+  <canvas id="game"></canvas>
+  
+  <div id="ui">
+    <div id="score">0</div>
+  </div>
+  
+  <div id="start-screen">
+    <h1>BEAM</h1>
+    <p>Navigate through the walls.<br>Tap left or right to move.<br>Don't crash.</p>
+    <button id="start-btn">START</button>
+  </div>
+  
+  <div id="game-over-screen">
+    <h1>GAME OVER</h1>
+    <div id="final-score">0</div>
+    <button id="restart-btn">AGAIN</button>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const startScreen = document.getElementById('start-screen');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const scoreEl = document.getElementById('score');
+    const finalScoreEl = document.getElementById('final-score');
+    
+    // Audio context for sounds
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playSound(freq, duration, type = 'sine') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    function dodgeSound() {
+      playSound(400, 0.05, 'sine');
+    }
+    
+    function scoreSound() {
+      playSound(800, 0.1, 'sine');
+    }
+    
+    function crashSound() {
+      playSound(80, 0.5, 'sawtooth');
+    }
+    
+    // Resize canvas
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    
+    // Game state
+    let gameRunning = false;
+    let score = 0;
+    let speed = 3;
+    let player = {
+      x: 0,
+      y: 0,
+      width: 8,
+      height: 40,
+      targetX: 0
+    };
+    let walls = [];
+    let lastWallTime = 0;
+    let wallInterval = 2000; // ms between walls
+    
+    const LANES = 5;
+    const GAP_SIZE = 1.5; // gaps in lanes
+    
+    function initGame() {
+      // Position player
+      const laneWidth = canvas.width / LANES;
+      player.x = canvas.width / 2 - player.width / 2;
+      player.y = canvas.height - 100;
+      player.targetX = player.x;
+      
+      walls = [];
+      score = 0;
+      speed = 3;
+      wallInterval = 2000;
+      lastWallTime = Date.now();
+      
+      scoreEl.textContent = score;
+    }
+    
+    function createWall() {
+      const laneWidth = canvas.width / LANES;
+      const gapLane = Math.floor(Math.random() * LANES);
+      
+      // Sometimes create double gaps for variety
+      const doubleGap = Math.random() > 0.7 && LANES > 3;
+      const gapLanes = doubleGap && gapLane < LANES - 1 
+        ? [gapLane, gapLane + 1] 
+        : [gapLane];
+      
+      walls.push({
+        y: -20,
+gapLanes: gapLanes,
+        passed: false
+      });
+    }
+    
+    function update() {
+      if (!gameRunning) return;
+      
+      // Smooth player movement
+      const diff = player.targetX - player.x;
+      player.x += diff * 0.2;
+      
+      // Create walls
+      if (Date.now() - lastWallTime > wallInterval) {
+        createWall();
+        lastWallTime = Date.now();
+      }
+      
+      // Update walls
+      walls = walls.filter(wall => {
+        wall.y += speed;
+        
+        // Check if passed
+        if (!wall.passed && wall.y > player.y) {
+          wall.passed = true;
+          score++;
+          scoreEl.textContent = score;
+          scoreSound();
+          
+          // Increase difficulty
+          if (score % 5 === 0) {
+            speed += 0.3;
+            wallInterval = Math.max(1200, wallInterval - 100);
+          }
+        }
+        
+        // Check collision
+        if (wall.y < player.y + player.height && wall.y + 20 > player.y) {
+          // Check which lane player is in
+          const laneWidth = canvas.width / LANES;
+          const playerLane = Math.floor((player.x + player.width/2) / laneWidth);
+          
+          if (!wall.gapLanes.includes(playerLane)) {
+            gameOver();
+            return false;
+          }
+        }
+        
+        return wall.y < canvas.height + 50;
+      });
+    }
+    
+    function draw() {
+      // Clear
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw lane dividers
+      const laneWidth = canvas.width / LANES;
+      ctx.strokeStyle = 'rgba(212, 165, 116, 0.1)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i < LANES; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * laneWidth, 0);
+        ctx.lineTo(i * laneWidth, canvas.height);
+        ctx.stroke();
+      }
+      
+      // Draw walls
+      walls.forEach(wall => {
+        const laneWidth = canvas.width / LANES;
+        
+        for (let i = 0; i < LANES; i++) {
+          if (!wall.gapLanes.includes(i)) {
+            const x = i * laneWidth;
+            
+            // Wall gradient
+            const gradient = ctx.createLinearGradient(x, wall.y, x, wall.y + 20);
+            gradient.addColorStop(0, '#2D9596');
+            gradient.addColorStop(1, 'rgba(45, 149, 150, 0.3)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, wall.y, laneWidth, 20);
+            
+            // Glow
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#2D9596';
+            ctx.fillRect(x, wall.y, laneWidth, 20);
+            ctx.shadowBlur = 0;
+          }
+        }
+      });
+      
+      // Draw player (golden beam)
+      const gradient = ctx.createLinearGradient(
+        player.x, player.y, 
+        player.x, player.y + player.height
+      );
+      gradient.addColorStop(0, '#FFD700');
+      gradient.addColorStop(1, '#D4A574');
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+      
+      // Player glow
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = '#FFD700';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+      ctx.shadowBlur = 0;
+    }
+    
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+    
+    function startGame() {
+      startScreen.style.display = 'none';
+      gameOverScreen.classList.remove('show');
+      initGame();
+      gameRunning = true;
+    }
+    
+    function gameOver() {
+      gameRunning = false;
+      crashSound();
+      finalScoreEl.textContent = score;
+      setTimeout(() => {
+        gameOverScreen.classList.add('show');
+      }, 500);
+    }
+    
+    // Controls - tap left/right half of screen
+    function handleInput(x) {
+      if (!gameRunning) return;
+      
+      const laneWidth = canvas.width / LANES;
+      const currentLane = Math.floor((player.x + player.width/2) / laneWidth);
+      
+      if (x < canvas.width / 2) {
+        // Move left
+        if (currentLane > 0) {
+          player.targetX = (currentLane - 1) * laneWidth + laneWidth/2 - player.width/2;
+          dodgeSound();
+        }
+      } else {
+        // Move right
+        if (currentLane < LANES - 1) {
+          player.targetX = (currentLane + 1) * laneWidth + laneWidth/2 - player.width/2;
+          dodgeSound();
+        }
+      }
+    }
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleInput(touch.clientX);
+    });
+    
+    canvas.addEventListener('mousedown', (e) => {
+      handleInput(e.clientX);
+    });
+    
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (!gameRunning) return;
+      
+      const laneWidth = canvas.width / LANES;
+      const currentLane = Math.floor((player.x + player.width/2) / laneWidth);
+      
+      if (e.key === 'ArrowLeft' || e.key === 'a') {
+        if (currentLane > 0) {
+          player.targetX = (currentLane - 1) * laneWidth + laneWidth/2 - player.width/2;
+          dodgeSound();
+        }
+      } else if (e.key === 'ArrowRight' || e.key === 'd') {
+        if (currentLane < LANES - 1) {
+          player.targetX = (currentLane + 1) * laneWidth + laneWidth/2 - player.width/2;
+          dodgeSound();
+        }
+      }
+    });
+    
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+    
+    // Start game loop
+    gameLoop();
+  </script>
+  
+</body>
+</html>
