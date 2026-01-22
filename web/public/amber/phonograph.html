@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PHONOGRAPH — Amber</title>
+  <meta property="og:title" content="PHONOGRAPH">
+  <meta property="og:description" content="Rotating grooves and warmth of analog sound">
+  <meta property="og:image" content="https://intheamber.com/amber/phonograph-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/phonograph.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/phonograph-og.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0D0D0D;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #canvas {
+      display: block;
+      cursor: pointer;
+    }
+
+    .title {
+      position: absolute;
+      top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: #FFD700;
+      z-index: 10;
+      text-align: center;
+    }
+
+    .subtitle {
+      font-size: 10px;
+      color: #2D9596;
+      margin-top: 8px;
+      letter-spacing: 2px;
+    }
+
+    .instructions {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: #78716c;
+      letter-spacing: 1px;
+    }
+
+    @media (max-width: 600px) {
+      .title {
+        font-size: 12px;
+        top: 30px;
+      }
+      .subtitle {
+        font-size: 9px;
+      }
+      .instructions {
+        font-size: 10px;
+        bottom: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="title">
+    PHONOGRAPH
+    <div class="subtitle">TAP TO PLAY</div>
+  </div>
+  <canvas id="canvas"></canvas>
+  <div class="instructions">EACH GROOVE HOLDS A FREQUENCY</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // Audio context
+    let audioCtx = null;
+    let playing = false;
+    let rotation = 0;
+    let oscillators = [];
+    let gainNodes = [];
+
+    // Grooves configuration - bold, saturated colors (high energy mood)
+    const grooves = [
+      { radius: 280, width: 8, color: '#FFD700', freq: 220, gap: 12 },   // A3 - gold
+      { radius: 240, width: 6, color: '#2D9596', freq: 293.66, gap: 10 }, // D4 - teal
+      { radius: 205, width: 7, color: '#f97316', freq: 329.63, gap: 11 }, // E4 - coral
+      { radius: 172, width: 5, color: '#3b82f6', freq: 392, gap: 9 },     // G4 - blue
+      { radius: 143, width: 6, color: '#ec4899', freq: 440, gap: 10 },    // A4 - pink
+      { radius: 117, width: 4, color: '#8b5cf6', freq: 523.25, gap: 8 },  // C5 - purple
+      { radius: 95, width: 5, color: '#84cc16', freq: 587.33, gap: 9 },   // D5 - lime
+      { radius: 76, width: 3, color: '#f59e0b', freq: 659.25, gap: 7 },   // E5 - amber
+      { radius: 60, width: 4, color: '#14b8a6', freq: 783.99, gap: 8 },   // G5 - teal bright
+      { radius: 47, width: 2, color: '#a855f7', freq: 880, gap: 6 }       // A5 - purple light
+    ];
+
+    // Needle position
+    const needleGroove = 3; // Which groove the needle is "reading"
+    const needleLength = 320;
+
+    function initAudio() {
+      if (audioCtx) return;
+      
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Create oscillators for each groove
+      grooves.forEach((groove, i) => {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = groove.freq;
+        
+        const gain = audioCtx.createGain();
+        gain.gain.value = 0;
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        
+        oscillators.push(osc);
+        gainNodes.push(gain);
+      });
+    }
+
+    function togglePlay() {
+      if (!audioCtx) {
+        initAudio();
+      }
+      
+      playing = !playing;
+      
+      if (playing && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function draw() {
+      // Dark background with subtle glow
+      ctx.fillStyle = '#0D0D0D';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw grooves (rotating)
+      grooves.forEach((groove, i) => {
+        const segments = Math.floor(360 / groove.gap);
+        
+        for (let j = 0; j < segments; j++) {
+          const angle = (j * groove.gap + rotation) * Math.PI / 180;
+          const startAngle = angle;
+          const endAngle = angle + (groove.gap - 2) * Math.PI / 180;
+          
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, groove.radius, startAngle, endAngle);
+          ctx.strokeStyle = groove.color;
+          ctx.lineWidth = groove.width;
+          ctx.lineCap = 'round';
+          
+          // Add glow for active grooves
+          if (playing) {
+            const intensity = Math.abs(Math.sin(rotation * Math.PI / 180 + i * 0.5));
+            ctx.shadowColor = groove.color;
+            ctx.shadowBlur = 15 + intensity * 10;
+          } else {
+            ctx.shadowBlur = 5;
+          }
+          
+          ctx.stroke();
+        }
+      });
+
+      // Draw center hole
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 35, 0, Math.PI * 2);
+      ctx.fillStyle = '#000';
+      ctx.fill();
+      ctx.strokeStyle = '#78716c';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw center dot
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+      ctx.fillStyle = '#a8a29e';
+      ctx.fill();
+
+      // Draw needle
+      const needleAngle = Math.PI / 4; // 45 degrees
+      const needleX = centerX + Math.cos(needleAngle) * needleLength;
+      const needleY = centerY + Math.sin(needleAngle) * needleLength;
+      
+      ctx.beginPath();
+      ctx.moveTo(centerX + Math.cos(needleAngle) * 350, centerY + Math.sin(needleAngle) * 350);
+      ctx.lineTo(needleX, needleY);
+      ctx.strokeStyle = playing ? '#FFD700' : '#64748b';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      
+      if (playing) {
+        ctx.shadowColor = '#FFD700';
+        ctx.shadowBlur = 20;
+      } else {
+        ctx.shadowBlur = 0;
+      }
+      
+      ctx.stroke();
+
+      // Draw needle tip
+      ctx.beginPath();
+      ctx.arc(needleX, needleY, 6, 0, Math.PI * 2);
+      ctx.fillStyle = playing ? '#FFD700' : '#64748b';
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+
+      // Update rotation and audio
+      if (playing) {
+        rotation += 0.8; // Speed based on high energy (0.77)
+        if (rotation >= 360) rotation -= 360;
+
+        // Modulate audio based on rotation
+        grooves.forEach((groove, i) => {
+          if (gainNodes[i]) {
+            // Create wave pattern based on rotation
+            const wave = Math.abs(Math.sin((rotation + i * 30) * Math.PI / 180));
+            const distance =Math.abs(i - needleGroove);
+            const proximity = Math.max(0, 1 - distance / grooves.length);
+            gainNodes[i].gain.value = wave * proximity * 0.08;
+          }
+        });
+      } else {
+        // Fade out audio
+        gainNodes.forEach(gain => {
+          if (gain.gain.value > 0) {
+            gain.gain.value *= 0.95;
+          }
+        });
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    canvas.addEventListener('click', togglePlay);
+
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    });
+
+    draw();
+  </script>
+</body>
+</html>
