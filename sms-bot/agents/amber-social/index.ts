@@ -334,7 +334,7 @@ Would this make someone laugh, or think, or screenshot it to send to a friend? I
    generate_og_image(
      title="YOUR CREATION TITLE",
      save_path="web/public/amber/[name]-og.png",
-     use_ai=false
+     type="invention"
    )
    \`\`\`
 
@@ -555,7 +555,7 @@ document.body.addEventListener('click', () => {
 4. Include OG tags pointing to [name]-og.png
 5. **Generate OG image with title:**
    \`\`\`
-   generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)
+   generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", type="music")
    \`\`\`
 6. Save to creations log with metadata.category = "music_machine"
 7. Commit and push (BOTH the .html AND the -og.png)
@@ -664,7 +664,7 @@ Now express this through ${format.name.toLowerCase()}.
 4. Include OG tags pointing to [name]-og.png
 5. **Generate OG image with title:**
    \`\`\`
-   generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)
+   generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", type="pulse")
    \`\`\`
 6. Save to creations log with metadata.category = "pulse_expression"
 7. Commit and push (BOTH the .html AND the -og.png)
@@ -863,7 +863,7 @@ image-rendering: crisp-edges;
 3. Build in HTML/CSS (divs or canvas) — keep pixels chunky!
 4. Add game UI elements for humor
 5. Include OG tags pointing to [name]-og.png
-6. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)\`
+6. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", type="ascii")\`
 7. Save to creations log with metadata.category = "8bit_art", metadata.scene = "${scene}"
 8. Commit and push
 
@@ -951,7 +951,7 @@ Morning feelings, rendered in characters. Not precious — raw and real.
 3. Render in ASCII — KEEP IT SIMPLE
 4. Wrap in HTML (black background, amber text, monospace)
 5. Include OG tags pointing to [name]-og.png
-6. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)\`
+6. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", type="ascii")\`
 7. Save to creations log with metadata.category = "ascii_graffiti", metadata.mood = "${mood}"
 8. Commit and push
 
@@ -1064,7 +1064,7 @@ The seed word is **${seedWord}**. Let it guide you:
 4. Decide: static image, SVG, canvas, animated, or interactive?
 5. Create it — make it ALIVE
 6. Wrap in HTML with OG tags pointing to [name]-og.png
-7. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)\`
+7. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", type="hdart")\`
 8. Save to creations log with metadata.category = "amber_art", metadata.seed_word = "${seedWord}"
 9. Commit and push
 
@@ -1170,7 +1170,7 @@ Your visual language:
 2. Think: what's the simplest fun thing?
 3. Build it — HTML/CSS/JS in web/public/amber/
 4. Include OG tags pointing to [name]-og.png
-5. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)\`
+5. Generate OG image: \`generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", type="toy")\`
 6. Save to creations log with metadata.category = "toy", metadata.seed_mechanic = "${mechanic}"
 7. Commit and push
 

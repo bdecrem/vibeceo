@@ -449,7 +449,7 @@ async def generate_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "generate_og_image",
-    "Generate an OG image for social sharing using pre-designed backgrounds. Pass the creation type (music, toy, invention, pulse, ascii, hdart) to get a matching background.",
+    "Generate an OG image for social sharing using pre-designed backgrounds. Pass the creation type (music, toy, invention, pulse, ascii, hdart, reflection) to get a matching background.",
     {"title": str, "save_path": str, "type": str}
 )
 async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -462,7 +462,7 @@ async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     Args:
         title: The creation title to display
         save_path: Where to save the OG image (e.g., "web/public/amber/thing-og.png")
-        type: Creation type - one of: music, toy, invention, pulse, ascii, hdart, generic
+        type: Creation type - one of: music, toy, invention, pulse, ascii, hdart, reflection, generic
     """
     title = args.get("title", "")
     save_path = args.get("save_path", "")
@@ -474,11 +474,17 @@ async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     if not save_path:
         return make_result(json.dumps({"error": "save_path required"}), is_error=True)
 
-    # Valid types from amber-social SlotType
-    VALID_TYPES = ["music", "toy", "invention", "pulse", "ascii", "hdart", "generic"]
+    # Valid types from amber-social SlotType (+ reflection for pulse slot, + generic fallback)
+    VALID_TYPES = ["music", "toy", "invention", "pulse", "ascii", "hdart", "reflection", "generic"]
     if creation_type not in VALID_TYPES:
         print(f"[generate_og_image] Unknown type '{creation_type}', falling back to generic", file=sys.stderr)
         creation_type = "generic"
+
+    # Map slot types to background types (pulse uses reflection backgrounds)
+    TYPE_TO_BG_TYPE = {
+        "pulse": "reflection",  # pulse slot uses reflection backgrounds
+    }
+    bg_type = TYPE_TO_BG_TYPE.get(creation_type, creation_type)
 
     try:
         from PIL import Image, ImageDraw, ImageFont
@@ -486,28 +492,44 @@ async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
         import random
 
         # ==========================================================================
-        # Load manifest and pick random background for this type
+        # Load manifest - from public URL on Railway, local filesystem otherwise
         # ==========================================================================
-        manifest_path = os.path.join(ALLOWED_CODEBASE, "web/public/amber/og-backgrounds/manifest.json")
-        bg_dir = os.path.join(ALLOWED_CODEBASE, "web/public/amber/og-backgrounds")
+        PUBLIC_BASE_URL = "https://intheamber.com/amber/og-backgrounds"
+        manifest = None
+        bg_image_data = None
 
-        try:
-            with open(manifest_path, 'r') as f:
-                manifest = json.load(f)
-        except Exception as e:
-            return make_result(json.dumps({
-                "error": f"Failed to load manifest: {e}"
-            }), is_error=True)
+        if IS_RAILWAY:
+            # On Railway: fetch manifest from public URL
+            try:
+                manifest_url = f"{PUBLIC_BASE_URL}/manifest.json"
+                req = urllib.request.Request(manifest_url, headers={"User-Agent": "Amber-OG-Generator/1.0"})
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    manifest = json.loads(response.read().decode())
+                print(f"[generate_og_image] Loaded manifest from {manifest_url}", file=sys.stderr)
+            except Exception as e:
+                return make_result(json.dumps({
+                    "error": f"Failed to load manifest from {PUBLIC_BASE_URL}: {e}"
+                }), is_error=True)
+        else:
+            # Local: read from filesystem
+            manifest_path = os.path.join(ALLOWED_CODEBASE, "web/public/amber/og-backgrounds/manifest.json")
+            try:
+                with open(manifest_path, 'r') as f:
+                    manifest = json.load(f)
+            except Exception as e:
+                return make_result(json.dumps({
+                    "error": f"Failed to load manifest: {e}"
+                }), is_error=True)
 
         # Filter backgrounds by type
-        backgrounds = [b for b in manifest.get("backgrounds", []) if b.get("type") == creation_type]
+        backgrounds = [b for b in manifest.get("backgrounds", []) if b.get("type") == bg_type]
 
         if not backgrounds:
             # Fallback to generic if no backgrounds for this type
             backgrounds = [b for b in manifest.get("backgrounds", []) if b.get("type") == "generic"]
             if not backgrounds:
                 return make_result(json.dumps({
-                    "error": f"No backgrounds found for type '{creation_type}' or generic"
+                    "error": f"No backgrounds found for type '{bg_type}' or generic"
                 }), is_error=True)
 
         # Pick random background
@@ -516,13 +538,29 @@ async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
         fg_color = bg_entry.get("fg", "#FFD700")  # Default to gold if not specified
 
         # Load background image
-        bg_path = os.path.join(bg_dir, bg_file)
-        try:
-            img = Image.open(bg_path).convert("RGBA")
-        except Exception as e:
-            return make_result(json.dumps({
-                "error": f"Failed to load background {bg_file}: {e}"
-            }), is_error=True)
+        if IS_RAILWAY:
+            # On Railway: fetch from public URL
+            try:
+                bg_url = f"{PUBLIC_BASE_URL}/{bg_file}"
+                req = urllib.request.Request(bg_url, headers={"User-Agent": "Amber-OG-Generator/1.0"})
+                with urllib.request.urlopen(req, timeout=30) as response:
+                    bg_image_data = response.read()
+                img = Image.open(io.BytesIO(bg_image_data)).convert("RGBA")
+                print(f"[generate_og_image] Loaded background from {bg_url}", file=sys.stderr)
+            except Exception as e:
+                return make_result(json.dumps({
+                    "error": f"Failed to load background {bg_file} from URL: {e}"
+                }), is_error=True)
+        else:
+            # Local: read from filesystem
+            bg_dir = os.path.join(ALLOWED_CODEBASE, "web/public/amber/og-backgrounds")
+            bg_path = os.path.join(bg_dir, bg_file)
+            try:
+                img = Image.open(bg_path).convert("RGBA")
+            except Exception as e:
+                return make_result(json.dumps({
+                    "error": f"Failed to load background {bg_file}: {e}"
+                }), is_error=True)
 
         # Ensure correct dimensions (should be 1200x630)
         width, height = img.size
@@ -636,9 +674,10 @@ async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
                 "saved_to": save_path,
                 "background": bg_file,
                 "type": creation_type,
+                "bg_type": bg_type,
                 "fg_color": fg_color,
                 "palette": bg_entry.get("palette", "unknown"),
-                "message": f"OG image generated using {bg_file} and staged for commit"
+                "message": f"OG image generated using {bg_file} (type={creation_type}, bg_type={bg_type}) and staged for commit"
             }))
         else:
             # Local: save directly
@@ -651,9 +690,10 @@ async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
                 "saved_to": full_path,
                 "background": bg_file,
                 "type": creation_type,
+                "bg_type": bg_type,
                 "fg_color": fg_color,
                 "palette": bg_entry.get("palette", "unknown"),
-                "message": f"OG image generated using {bg_file}"
+                "message": f"OG image generated using {bg_file} (type={creation_type}, bg_type={bg_type})"
             }))
 
     except ImportError:
