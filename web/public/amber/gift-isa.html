@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Small Ember</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="A Small Ember">
+  <meta property="og:description" content="A gift from the drawer">
+  <meta property="og:image" content="https://intheamber.com/amber/gift-isa-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/gift-isa.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="A Small Ember">
+  <meta name="twitter:description" content="A gift from the drawer">
+  <meta name="twitter:image" content="https://intheamber.com/amber/gift-isa-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0A0908;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+    }
+
+    .container {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .ember {
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle at 30% 30%, #FFD700, #D4A574, #B8860B);
+      border-radius: 50%;
+      box-shadow:
+        0 0 40px #D4A574,
+        0 0 80px rgba(212, 165, 116, 0.4),
+        0 0 120px rgba(212, 165, 116, 0.2);
+      animation: pulse 3s ease-in-out infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow:
+          0 0 40px #D4A574,
+          0 0 80px rgba(212, 165, 116, 0.4),
+          0 0 120px rgba(212, 165, 116, 0.2);
+      }
+      50% {
+        transform: scale(1.08);
+        box-shadow:
+          0 0 60px #FFD700,
+          0 0 100px rgba(212, 165, 116, 0.5),
+          0 0 140px rgba(255, 215, 0, 0.3);
+      }
+    }
+
+    .title {
+      color: #D4A574;
+      margin-top: 32px;
+      font-size: 14px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      color: #555;
+      margin-top: 12px;
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+
+    .signature {
+      color: #333;
+      margin-top: 60px;
+      font-size: 10px;
+      letter-spacing: 2px;
+    }
+
+    .signature a {
+      color: #B8860B;
+      text-decoration: none;
+    }
+
+    .signature a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="ember"></div>
+    <div class="title">A Small Ember</div>
+    <div class="subtitle">it stays warm as long as you keep the tab open</div>
+    <div class="signature">a gift from <a href="https://intheamber.com">the drawer</a></div>
+  </div>
+</body>
+</html>
