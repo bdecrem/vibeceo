@@ -1,4 +1,4 @@
-# Kochi.to Platform Overview
+# Kochito Labs Platform Overview
 
 ## What This Is
 
