@@ -62,6 +62,38 @@
       letter-spacing: 2px;
     }
 
+    #sound-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 150;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(212, 165, 116, 0.3);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #sound-toggle:hover {
+      background: rgba(212, 165, 116, 0.15);
+      border-color: rgba(212, 165, 116, 0.5);
+    }
+
+    #sound-toggle.muted {
+      opacity: 0.5;
+    }
+
+    #sound-toggle .icon {
+      font-size: 16px;
+    }
+
     .screen {
       position: fixed;
       top: 0;
@@ -312,6 +344,11 @@
 
   <canvas id="game"></canvas>
 
+  <button id="sound-toggle">
+    <span class="icon">♪</span>
+    <span class="label">SOUND</span>
+  </button>
+
   <div id="ui">
     <div id="score">0</div>
   </div>
@@ -369,33 +406,202 @@
     const leaderboardList = document.getElementById('leaderboard-list');
 
     const GAME_NAME = 'beam';
+    const soundToggle = document.getElementById('sound-toggle');
 
-    // Audio context for sounds
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Audio system
+    let audioCtx = null;
+    let soundEnabled = true;
+    let musicPlaying = false;
+    let musicInterval = null;
+    let masterGain = null;
 
-    function playSound(freq, duration, type = 'sine') {
+    function initAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.connect(audioCtx.destination);
+      masterGain.gain.value = soundEnabled ? 1 : 0;
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      soundToggle.classList.toggle('muted', !soundEnabled);
+      soundToggle.querySelector('.icon').textContent = soundEnabled ? '♪' : '♪';
+      soundToggle.querySelector('.label').textContent = soundEnabled ? 'SOUND' : 'MUTED';
+      if (masterGain) {
+        masterGain.gain.value = soundEnabled ? 1 : 0;
+      }
+    }
+
+    soundToggle.addEventListener('click', () => {
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      toggleSound();
+    });
+
+    function playSound(freq, duration, type = 'sine', volume = 0.1) {
+      if (!audioCtx || !soundEnabled) return;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain);
-      gain.connect(audioCtx.destination);
+      gain.connect(masterGain);
       osc.type = type;
       osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
       osc.start();
       osc.stop(audioCtx.currentTime + duration);
     }
 
     function dodgeSound() {
-      playSound(400, 0.05, 'sine');
+      playSound(600, 0.05, 'square', 0.08);
     }
 
     function scoreSound() {
-      playSound(800, 0.1, 'sine');
+      playSound(880, 0.08, 'square', 0.06);
+      setTimeout(() => playSound(1100, 0.08, 'square', 0.05), 50);
     }
 
     function crashSound() {
-      playSound(80, 0.5, 'sawtooth');
+      playSound(80, 0.4, 'sawtooth', 0.15);
+      playSound(60, 0.5, 'square', 0.1);
+    }
+
+    // 8-bit Arcade Music Engine
+    const MUSIC = {
+      bpm: 140,
+      // Bass pattern (notes in Hz, 0 = rest)
+      bass: [110, 0, 110, 0, 146.83, 0, 110, 0, 130.81, 0, 130.81, 0, 98, 0, 98, 0],
+      // Arpeggio pattern
+      arp: [
+        [220, 277, 330, 440],
+        [220, 277, 330, 440],
+        [233, 293, 349, 466],
+        [196, 247, 294, 392]
+      ],
+      // Kick pattern (1 = kick, 0 = nothing)
+      kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0],
+      // Hi-hat pattern
+      hat: [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1]
+    };
+
+    let musicStep = 0;
+    let arpStep = 0;
+    let beatInBar = 0;
+
+    function playKick() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    }
+
+    function playHat() {
+      if (!audioCtx) return;
+      // Create noise for hi-hat
+      const bufferSize = audioCtx.sampleRate * 0.05;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 8000;
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      noise.start();
+    }
+
+    function playBass(freq) {
+      if (!audioCtx || freq === 0) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.12);
+    }
+
+    function playArp(freqs) {
+      if (!audioCtx) return;
+      const freq = freqs[arpStep % freqs.length];
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function musicTick() {
+      if (!audioCtx || !musicPlaying) return;
+
+      // Drums
+      if (MUSIC.kick[musicStep % 16]) playKick();
+      if (MUSIC.hat[musicStep % 16]) playHat();
+
+      // Bass (every 2 steps)
+      if (musicStep % 2 === 0) {
+        playBass(MUSIC.bass[(musicStep / 2) % 16]);
+      }
+
+      // Arpeggio (every step)
+      const barIndex = Math.floor(musicStep / 16) % 4;
+      playArp(MUSIC.arp[barIndex]);
+      arpStep++;
+
+      musicStep++;
+    }
+
+    function startMusic() {
+      if (musicPlaying) return;
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      musicPlaying = true;
+      musicStep = 0;
+      arpStep = 0;
+      updateMusicTempo(MUSIC.bpm);
+    }
+
+    function updateMusicTempo(bpm) {
+      if (musicInterval) clearInterval(musicInterval);
+      if (!musicPlaying) return;
+      const stepTime = (60 / bpm) * 1000 / 4; // 16th notes
+      musicInterval = setInterval(musicTick, stepTime);
+    }
+
+    function stopMusic() {
+      musicPlaying = false;
+      if (musicInterval) {
+        clearInterval(musicInterval);
+        musicInterval = null;
+      }
     }
 
     // Resize canvas
@@ -478,6 +684,9 @@
           if (score % 5 === 0) {
             speed += 0.3;
             wallInterval = Math.max(1200, wallInterval - 100);
+            // Speed up music too (max 180 bpm)
+            const newBpm = Math.min(180, MUSIC.bpm + Math.floor(score / 5) * 5);
+            updateMusicTempo(newBpm);
           }
         }
 
@@ -560,6 +769,9 @@
       initGame();
       gameRunning = true;
 
+      // Start music
+      startMusic();
+
       // Reset leaderboard entry state
       leaderboardEntry.classList.remove('hidden');
       playerNameInput.value = localStorage.getItem('beam_player_name') || '';
@@ -569,6 +781,7 @@
 
     function gameOver() {
       gameRunning = false;
+      stopMusic();
       crashSound();
       finalScoreEl.textContent = score;
       setTimeout(() => {
