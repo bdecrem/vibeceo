@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KALEIDOSCOPE — Amber</title>
+    <meta name="description" content="Rotating fragments of light. Watch the pattern shift and evolve. Tap to shatter and reform.">
+    <meta property="og:title" content="KALEIDOSCOPE">
+    <meta property="og:description" content="Rotating fragments of light. Watch the pattern shift and evolve. Tap to shatter and reform.">
+    <meta property="og:image" content="https://intheamber.com/amber/kaleidoscope-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/kaleidoscope.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/kaleidoscope-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0D0D0D;
+            overflow: hidden;
+            touch-action: none;
+            font-family: 'Space Mono', monospace;
+        }
+
+        canvas {
+            display: block;
+            cursor: pointer;
+        }
+
+        #info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #D4A574;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.6;
+            pointer-events: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="info">TAP TO SHATTER</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Color palette - using full spectrum
+        const colors = [
+            '#FFD700', // gold
+            '#f59e0b', // amber
+            '#2D9596', // teal
+            '#14b8a6', // teal bright
+            '#3b82f6', // electric blue
+            '#ec4899', // hot pink
+            '#8b5cf6', // purple
+            '#f97316', // coral
+            '#84cc16', // lime
+            '#60a5fa', // sky blue
+        ];
+
+        // Kaleidoscope state
+        let rotation = 0;
+        let rotationSpeed = 0.003;
+        let segments = 8; // mirror segments
+        let shards = [];
+        let time = 0;
+
+        class Shard {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.angle = Math.random() * Math.PI * 2;
+                this.distance = Math.random() * 250 + 50;
+                this.size = Math.random() * 40 + 20;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.rotationOffset = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.02;
+                this.pulseOffset = Math.random() * Math.PI * 2;
+                this.pulseSpeed = Math.random() * 0.05 + 0.02;
+                this.opacity = Math.random() * 0.5 + 0.5;
+                this.shape = Math.floor(Math.random() * 3); // 0: triangle, 1: diamond, 2: hexagon
+            }
+
+            update() {
+                this.rotationOffset += this.rotationSpeed;
+                this.pulseOffset += this.pulseSpeed;
+            }
+
+            draw(cx, cy, globalRotation) {
+                const pulse = Math.sin(this.pulseOffset) * 0.3 + 1;
+                const x = cx + Math.cos(this.angle + globalRotation) * this.distance;
+                const y = cy + Math.sin(this.angle + globalRotation) * this.distance;
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(this.rotationOffset);
+                ctx.globalAlpha = this.opacity;
+                
+                // Draw glow
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size * pulse * 1.5);
+                gradient.addColorStop(0, this.color + '80');
+                gradient.addColorStop(1, this.color + '00');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size * pulse * 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw shape
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                
+                if (this.shape === 0) {
+                    // Triangle
+                    for (let i = 0; i < 3; i++) {
+                        const a = (i / 3) * Math.PI * 2 - Math.PI / 2;
+                        const px = Math.cos(a) * this.size * pulse;
+                        const py = Math.sin(a) * this.size * pulse;
+                        if (i === 0) ctx.moveTo(px, py);
+                        else ctx.lineTo(px, py);
+                    }
+                } else if (this.shape === 1) {
+                    // Diamond
+                    for (let i = 0; i < 4; i++) {
+                        const a = (i / 4) * Math.PI * 2;
+                        const px = Math.cos(a) * this.size * pulse;
+                        const py = Math.sin(a) * this.size * pulse;
+                        if (i === 0) ctx.moveTo(px, py);
+else ctx.lineTo(px, py);
+                    }
+                } else {
+                    // Hexagon
+                    for (let i = 0; i < 6; i++) {
+                        const a = (i / 6) * Math.PI * 2;
+                        const px = Math.cos(a) * this.size * pulse;
+                        const py = Math.sin(a) * this.size * pulse;
+                        if (i === 0) ctx.moveTo(px, py);
+                        else ctx.lineTo(px, py);
+                    }
+                }
+                
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+
+        // Initialize shards
+        for (let i = 0; i < 25; i++) {
+            shards.push(new Shard());
+        }
+
+        function drawKaleidoscope() {
+            const cx = width / 2;
+            const cy = height / 2;
+            
+            // Draw each segment with mirroring
+            for (let seg = 0; seg < segments; seg++) {
+                const segmentAngle = (seg / segments) * Math.PI * 2;
+                
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(segmentAngle);
+                
+                // Clip to segment
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, Math.max(width, height), 0, Math.PI / segments);
+                ctx.closePath();
+                ctx.clip();
+                
+                // Draw shards in this segment
+                shards.forEach(shard => {
+                    shard.draw(0, 0, rotation);
+                    
+                    // Mirror horizontally
+                    ctx.save();
+                    ctx.scale(-1, 1);
+                    shard.draw(0, 0, rotation);
+                    ctx.restore();
+                });
+                
+                ctx.restore();
+            }
+        }
+
+        function animate() {
+            time++;
+            
+            // Fade trail effect
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.15)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Update and draw
+            shards.forEach(shard => shard.update());
+            rotation += rotationSpeed;
+            
+            drawKaleidoscope();
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Shatter on click/tap
+        canvas.addEventListener('click', () => {
+            // Regenerate all shards
+            shards.forEach(shard => shard.reset());
+            
+            // Randomize rotation speed slightly
+            rotationSpeed = (Math.random() - 0.5) * 0.006 + 0.003;
+            
+            // Flash effect
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
