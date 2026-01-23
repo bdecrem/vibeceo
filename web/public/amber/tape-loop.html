@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TAPE LOOP — Amber</title>
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="TAPE LOOP">
+  <meta property="og:description" content="Analog tape machine. Record melodies, watch them loop and degrade. Each pass through the tape adds warmth and imperfection.">
+  <meta property="og:image" content="https://intheamber.com/amber/tape-loop-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/tape-loop.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/tape-loop-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      user-select: none;
+    }
+    
+    #canvas {
+      display: block;
+      background: #000;
+    }
+    
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 10;
+    }
+    
+    h1 {
+      font-size: 18px;
+      letter-spacing: 4px;
+      color: #FFD700;
+      margin-bottom: 8px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
+    
+    #info {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #D4A574;
+      opacity: 0.6;
+      margin-bottom: 12px;
+    }
+    
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 0 20px;
+    }
+    
+    button {
+      background: transparent;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      pointer-events: auto;
+    }
+    
+    button:hover {
+      background: #D4A574;
+      color: #000;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    button.active {
+      background: #FFD700;
+      border-color: #FFD700;
+      color: #000;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    }
+    
+    #status {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #2D9596;
+      opacity: 0.8;
+    }
+    
+    #start-prompt {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: #FFD700;
+      animation: pulse 2s ease-in-out infinite;
+      pointer-events: none;
+      text-align: center;
+      max-width: 80%;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <h1>TAPE LOOP</h1>
+    <div id="info">ANALOG MEMORY MACHINE</div>
+    <div id="controls">
+      <button id="recordBtn">REC</button>
+      <button id="playBtn">PLAY</button>
+      <button id="clearBtn">CLEAR</button>
+    </div>
+  </div>
+  
+  <div id="start-prompt">TAP REC TO BEGIN<br>MELODIES DEGRADE OVER TIME</div>
+  
+  <div id="status">IDLE • LOOP: 0 NOTES • GENERATION: 0</div>
+  
+  <canvas id="canvas"></canvas>
+
+  <script type="module">
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusEl = document.getElementById('status');
+    const promptEl = document.getElementById('start-prompt');
+    const recordBtn = document.getElementById('recordBtn');
+    const playBtn = document.getElementById('playBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    
+    function resize() {
+      const size = Math.min(window.innerWidth, window.innerHeight - 150, 600);
+      canvas.width = size;
+      canvas.height = size;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Audio setup
+    let audioCtx = null;
+    let masterGain = null;
+    
+    // Tape machine state
+    let isRecording = false;
+    let isPlaying = false;
+    let loop = []; // Array of {freq, time, velocity, generation}
+    let loopLength = 4000; // 4 seconds
+    let loopStart = 0;
+    let generation = 0; // How many times has this loop played?
+    
+    // Pentatonic scale (A minor pentatonic)
+    const scale = [220, 247, 261, 293, 330, 349, 392, 440, 494]; // A3 to B4
+    
+    // Tape reel animation
+    let leftReelAngle = 0;
+    let rightReelAngle = 0;
+    let tapeSpeed = 0;
+    
+    function initAudio() {
+      audioCtx = new AudioContext();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.4;
+      masterGain.connect(audioCtx.destination);
+    }
+    
+    function playNote(freq, velocity = 1, degradation = 0) {
+      if (!audioCtx) return;
+      
+      const now = audioCtx.currentTime;
+      
+      // Oscillator
+      const osc = audioCtx.createOscillator();
+      osc.type = 'triangle';
+      
+      // Add wow & flutter (pitch variation)
+      const wowAmount = degradation * 0.05;
+      const flutter = Math.random() * wowAmount;
+      osc.frequency.setValueAtTime(freq * (1 + flutter), now);
+      
+      // Filter for warmth
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 2000 - degradation * 500; // Gets darker with age
+      filter.Q.value = 1;
+      
+      // Envelope
+      const gain = audioCtx.createGain();
+      const adjustedVelocity = velocity * (1 - degradation * 0.3); // Gets quieter
+      
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(adjustedVelocity * 0.4, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      
+      osc.start(now);
+      osc.stop(now + 0.4);
+    }
+    
+    function recordNote(freq) {
+      if (!isRecording) return;
+      
+      const now = performance.now();
+      const timeInLoop = (now - loopStart) % loopLength;
+      
+      loop.push({
+        freq,
+        time: timeInLoop,
+        velocity: 0.8 + Math.random() * 0.2,
+        generation: 0,
+      });
+      
+      playNote(freq, 1, 0);
+      updateStatus();
+    }
+    
+    function playLoop() {
+      if (!isPlaying || loop.length === 0) return;
+      
+      const now = performance.now();
+      const timeInLoop = (now - loopStart) % loopLength;
+      
+      // Play notes that should trigger this frame
+      loop.forEach(note => {
+        const timeDiff = timeInLoop - note.time;
+        
+        // Trigger if we just crossed this note's time
+        if (timeDiff >= 0 && timeDiff < 50) { // 50ms window
+          const degradation = Math.min(note.generation * 0.15, 0.7);
+          playNote(note.freq, note.velocity, degradation);
+        }
+      });
+      
+      // Age the loop every full pass
+      if (timeInLoop < 100 && !loop.aged) {
+        generation++;
+        loop.forEach(note => note.generation++);
+        loop.aged = true;
+        
+        // Randomly drop some notes as tape degrades
+        if (generation > 5 && Math.random() < 0.1) {
+          const dropIdx = Math.floor(Math.random() * loop.length);
+          loop.splice(dropIdx, 1);
+        }
+        
+        updateStatus();
+      }
+      
+      if (timeInLoop > 200) {
+        loop.aged = false;
+      }
+    }
+    
+    function updateStatus() {
+      statusEl.textContent = `${isRecording ? 'RECORDING' : isPlaying ? 'PLAYING' : 'IDLE'} • LOOP: ${loop.length} NOTES • GENERATION: ${generation}`;
+    }
+    
+    // Button handlers
+    recordBtn.addEventListener('click', async () => {
+      if (!audioCtx) {
+        initAudio();
+        await audioCtx.resume();
+      }
+      
+      promptEl.classList.add('hidden');
+      
+      isRecording = !isRecording;
+      recordBtn.classList.toggle('active', isRecording);
+      
+      if (isRecording) {
+        if (isPlaying) {
+          // Overdub mode - keep playing
+        } else {
+          loopStart = performance.now();
+          generation = 0;
+        }
+      }
+      
+      updateStatus();
+    });
+    
+    playBtn.addEventListener('click', async () => {
+      if (!audioCtx) {
+        initAudio();
+        await audioCtx.resume();
+      }
+      
+      promptEl.classList.add('hidden');
+      
+      if (loop.length === 0) return;
+      
+      isPlaying = !isPlaying;
+      playBtn.classList.toggle('active', isPlaying);
+      
+      if (isPlaying) {
+        loopStart = performance.now();
+      }
+      
+      updateStatus();
+    });
+    
+    clearBtn.addEventListener('click', () => {
+      loop = [];
+      generation = 0;
+      isRecording = false;
+      isPlaying = false;
+      recordBtn.classList.remove('active');
+      playBtn.classList.remove('active');
+      updateStatus();
+    });
+    
+    // Canvas interaction - tap to record notes
+    canvas.addEventListener('click', (e) => {
+      if (!isRecording) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Map Y position to scale
+      const noteIdx = Math.floor((1 - y / canvas.height) * scale.length);
+      const freq = scale[Math.max(0, Math.min(noteIdx, scale.length - 1))];
+      
+      recordNote(freq);
+    });
+    
+    // Animation
+    function animate(timestamp) {
+      requestAnimationFrame(animate);
+      
+      // Update tape speed based on state
+      const targetSpeed = (isRecording || isPlaying) ? 0.05 : 0;
+      tapeSpeed += (targetSpeed - tapeSpeed) * 0.1;
+      
+      leftReelAngle += tapeSpeed;
+      rightReelAngle -= tapeSpeed;
+      
+      // Play loop
+      if (isPlaying) {
+        playLoop();
+      }
+      
+      // Draw
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const centerY = canvas.height / 2;
+      const reelRadius = canvas.width * 0.15;
+      const leftX = canvas.width * 0.3;
+      const rightX = canvas.width * 0.7;
+      
+      // Draw tape path
+      ctx.strokeStyle = '#D4A57433';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(leftX, centerY - reelRadius);
+      ctx.lineTo(rightX, centerY - reelRadius);
+      ctx.stroke();
+      
+      // Draw reels
+      function drawReel(x, y, angle) {
+        // Outer ring
+        ctx.strokeStyle = '#D4A574';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, reelRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Hub
+        ctx.fillStyle = '#D4A57444';
+        ctx.beginPath();
+        ctx.arc(x, y, reelRadius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Spokes
+        ctx.strokeStyle = '#D4A574';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 6; i++) {
+          const a = angle + (i * Math.PI * 2 / 6);
+          ctx.beginPath();
+          ctx.moveTo(x + Math.cos(a) * reelRadius * 0.3, y + Math.sin(a) * reelRadius * 0.3);
+          ctx.lineTo(x + Math.cos(a) * reelRadius * 0.9, y + Math.sin(a) * reelRadius * 0.9);
+          ctx.stroke();
+        }
+        
+        // Glow when active
+        if (isRecording || isPlaying) {
+          const gradient = ctx.createRadialGradient(x, y, reelRadius * 0.5, x, y, reelRadius * 1.5);
+          gradient.addColorStop(0, '#FFD70044');
+          gradient.addColorStop(1, '#FFD70000');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(x - reelRadius * 2, y - reelRadius * 2, reelRadius * 4, reelRadius * 4);
+        }
+      }
+      
+      drawReel(leftX, centerY, leftReelAngle);
+      drawReel(rightX, centerY, rightReelAngle);
+      
+      // Draw tape (the actual loop visualization)
+      if (loop.length > 0) {
+        const tapeY = centerY - reelRadius;
+        const tapeWidth = rightX - leftX;
+        
+        ctx.strokeStyle = '#2D9596';
+        ctx.lineWidth = 3;
+        
+        loop.forEach(note => {
+          const x = leftX + (note.time / loopLength) * tapeWidth;
+          const degradation = Math.min(note.generation * 0.15, 0.7);
+          const alpha = 1 - degradation * 0.5;
+          
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.moveTo(x, tapeY - 5);
+          ctx.lineTo(x, tapeY + 5);
+          ctx.stroke();
+        });
+        
+        ctx.globalAlpha = 1;
+        
+        // Playhead
+        if (isPlaying || isRecording) {
+          const now = performance.now();
+          const timeInLoop = (now - loopStart) % loopLength;
+          const playheadX = leftX + (timeInLoop / loopLength) * tapeWidth;
+          
+          ctx.strokeStyle = '#FFD700';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(playheadX, tapeY - 15);
+          ctx.lineTo(playheadX, tapeY + 15);
+          ctx.stroke();
+          
+          // Playhead glow
+          const gradient = ctx.createRadialGradient(playheadX, tapeY, 0, playheadX, tapeY, 20);
+          gradient.addColorStop(0, '#FFD70088');
+          gradient.addColorStop(1, '#FFD70000');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(playheadX - 20, tapeY - 20, 40, 40);
+        }
+      }
+      
+      // Recording hint
+      if (isRecording) {
+        ctx.fillStyle = '#D4A57466';
+        ctx.font = '9px Space Mono';
+        ctx.textAlign = 'center';
+        ctx.fillText('TAP ANYWHERE TO ADD NOTES', canvas.width / 2, canvas.height - 20);
+      }
+    }
+    
+    animate(0);
+  </script>
+</body>
+</html>
