@@ -418,6 +418,7 @@
         }
         
         function startGame() {
+            audioCtx.resume();
             score = 0;
             lives = 3;
             drops.forEach(drop => drop.element.remove());
