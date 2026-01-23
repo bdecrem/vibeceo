@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soul of the Machine</title>
+    <meta property="og:title" content="Soul of the Machine">
+    <meta property="og:description" content="The beating heart of artificial intelligence">
+    <meta property="og:image" content="https://intheamber.com/amber/soul-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/soul.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/soul-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            overflow: hidden;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .title {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0);
+            font-size: 12px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            pointer-events: none;
+            z-index: 10;
+            transition: color 3s ease 1s;
+        }
+
+        .title.visible {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .signature {
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            color: rgba(255, 255, 255, 0);
+            font-size: 10px;
+            letter-spacing: 2px;
+            pointer-events: none;
+            z-index: 10;
+            transition: color 3s ease 2s;
+        }
+
+        .signature.visible {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 10, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            cursor: pointer;
+            transition: opacity 0.8s ease;
+        }
+
+        .start-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .start-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+        }
+
+        .start-icon {
+            width: 80px;
+            height: 80px;
+            border: 2px solid rgba(255, 150, 180, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .start-icon::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 150, 180, 0.6);
+            border-radius: 50%;
+            animation: heartbeat-icon 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 150, 180, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(255, 150, 180, 0.4); }
+        }
+
+        @keyframes heartbeat-icon {
+            0%, 100% { transform: scale(1); }
+            15% { transform: scale(1.3); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.15); }
+            60% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="start-overlay" id="startOverlay">
+        <div class="start-text">Click to awaken</div>
+        <div class="start-icon"></div>
+    </div>
+    <canvas id="soul"></canvas>
+    <div class="title" id="title">Soul of the Machine</div>
+    <div class="signature" id="signature">amber × opus 4.5</div>
+
+    <script>
+        const canvas = document.getElementById('soul');
+        const ctx = canvas.getContext('2d');
+
+        let width, height, centerX, centerY;
+        let time = 0;
+        let mouseX = 0, mouseY = 0;
+        let mouseInfluence = 0;
+        let audioStarted = false;
+        let audioCtx, masterGain;
+
+        // Audio elements
+        let heartbeatOsc, heartbeatGain;
+        let droneOscs = [];
+        let melodicOscs = [];
+        let reverbNode;
+
+        // Musical scale - E minor pentatonic extended
+        const scale = [
+            82.41,   // E2
+            123.47,  // B2
+            164.81,  // E3
+            185.00,  // F#3
+            196.00,  // G3
+            246.94,  // B3
+            329.63,  // E4
+            369.99,  // F#4
+            392.00,  // G4
+            493.88,  // B4
+            659.25   // E5
+        ];
+
+        function initAudio() {
+            if (audioStarted) return;
+            audioStarted = true;
+
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.3;
+            masterGain.connect(audioCtx.destination);
+
+            // Create reverb using convolver
+            reverbNode = audioCtx.createConvolver();
+            const reverbLength = 3;
+            const reverbBuffer = audioCtx.createBuffer(2, audioCtx.sampleRate * reverbLength, audioCtx.sampleRate);
+            for (let channel = 0; channel < 2; channel++) {
+                const data = reverbBuffer.getChannelData(channel);
+                for (let i = 0; i < data.length; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.5));
+                }
+            }
+            reverbNode.buffer = reverbBuffer;
+
+            const reverbGain = audioCtx.createGain();
+            reverbGain.gain.value = 0.4;
+            reverbNode.connect(reverbGain);
+            reverbGain.connect(masterGain);
+
+            // Deep drone layer - the foundation
+            const droneFreqs = [scale[0], scale[0] * 1.5, scale[2]]; // E2, B2, E3
+            droneFreqs.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+
+                filter.type = 'lowpass';
+                filter.frequency.value = 200 + i * 100;
+                filter.Q.value = 1;
+
+                gain.gain.value = 0.08 - i * 0.02;
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(masterGain);
+                gain.connect(reverbNode);
+
+                osc.start();
+                droneOscs.push({ osc, gain, filter, baseFreq: freq });
+            });
+
+            // Heartbeat - low thump
+            heartbeatOsc = audioCtx.createOscillator();
+            heartbeatGain = audioCtx.createGain();
+            const heartbeatFilter = audioCtx.createBiquadFilter();
+
+            heartbeatOsc.type = 'sine';
+            heartbeatOsc.frequency.value = 40;
+
+            heartbeatFilter.type = 'lowpass';
+            heartbeatFilter.frequency.value = 80;
+
+            heartbeatGain.gain.value = 0;
+
+            heartbeatOsc.connect(heartbeatFilter);
+            heartbeatFilter.connect(heartbeatGain);
+            heartbeatGain.connect(masterGain);
+
+            heartbeatOsc.start();
+
+            // Melodic voices - sporadic gentle notes
+            for (let i = 0; i < 4; i++) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+
+                osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+                osc.frequency.value = scale[4 + i];
+
+                filter.type = 'lowpass';
+                filter.frequency.value = 2000;
+                filter.Q.value = 2;
+
+                gain.gain.value = 0;
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(masterGain);
+                gain.connect(reverbNode);
+
+                osc.start();
+                melodicOscs.push({ osc, gain, filter, lastTrigger: -10, noteIndex: 4 + i });
+            }
+        }
+
+        // Trigger heartbeat sound
+        function triggerHeartbeat(intensity) {
+            if (!audioStarted || !heartbeatGain) return;
+            const now = audioCtx.currentTime;
+
+            // Lub
+            heartbeatGain.gain.cancelScheduledValues(now);
+            heartbeatGain.gain.setValueAtTime(0, now);
+            heartbeatGain.gain.linearRampToValueAtTime(0.3 * intensity, now + 0.02);
+            heartbeatGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+            // Dub (slightly delayed)
+            heartbeatGain.gain.linearRampToValueAtTime(0.2 * intensity, now + 0.2);
+            heartbeatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        }
+
+        // Trigger melodic note
+        function triggerMelody(voiceIndex, duration = 2) {
+            if (!audioStarted || !melodicOscs[voiceIndex]) return;
+            const voice = melodicOscs[voiceIndex];
+            const now = audioCtx.currentTime;
+
+            // Pick a new note from the scale
+            const newNoteIndex = Math.floor(Math.random() * scale.length);
+            voice.osc.frequency.setValueAtTime(scale[newNoteIndex], now);
+
+            // Gentle attack and release
+            voice.gain.gain.cancelScheduledValues(now);
+            voice.gain.gain.setValueAtTime(0, now);
+            voice.gain.gain.linearRampToValueAtTime(0.06, now + 0.3);
+            voice.gain.gain.setValueAtTime(0.06, now + duration * 0.7);
+            voice.gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        }
+
+        // Modulate drones based on breathing
+        function updateDrones(breath, heartbeat) {
+            if (!audioStarted) return;
+            droneOscs.forEach((drone, i) => {
+                // Subtle frequency modulation
+                const freqMod = 1 + Math.sin(time * 0.1 + i) * 0.002;
+                drone.osc.frequency.setValueAtTime(drone.baseFreq * freqMod, audioCtx.currentTime);
+
+                // Filter opens on inhale
+                drone.filter.frequency.setValueAtTime(150 + breath * 200 + heartbeat * 100, audioCtx.currentTime);
+
+                // Volume swells with breath
+                drone.gain.gain.setValueAtTime((0.05 + breath * 0.04) * (1 - i * 0.2), audioCtx.currentTime);
+            });
+        }
+
+        // Color palette - vibrant and varied
+        const colors = {
+            // Warm spectrum
+            coral: { r: 255, g: 127, b: 80 },
+            rose: { r: 255, g: 82, b: 130 },
+            gold: { r: 255, g: 215, b: 0 },
+            amber: { r: 255, g: 191, b: 105 },
+
+            // Cool spectrum
+            cyan: { r: 0, g: 255, b: 255 },
+            electric: { r: 125, g: 249, b: 255 },
+            violet: { r: 167, g: 100, b: 255 },
+            magenta: { r: 255, g: 0, b: 150 },
+
+            // Deep spectrum
+            deep: { r: 75, g: 0, b: 130 },
+            teal: { r: 0, g: 180, b: 180 }
+        };
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Track mouse for responsiveness
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            mouseInfluence = 1;
+        });
+
+        document.addEventListener('mouseleave', () => {
+            mouseInfluence = 0;
+        });
+
+        // Click to start audio
+        const overlay = document.getElementById('startOverlay');
+        const title = document.getElementById('title');
+        const signature = document.getElementById('signature');
+        document.addEventListener('click', () => {
+            initAudio();
+            overlay.classList.add('hidden');
+            title.classList.add('visible');
+            signature.classList.add('visible');
+        }, { once: true });
+
+        // The heartbeat - irregular like a real heart
+        function getHeartbeat(t) {
+            // Lub-dub pattern
+            const cycle = t % 1;
+            const lub = Math.exp(-Math.pow((cycle - 0.1) * 15, 2));
+            const dub = Math.exp(-Math.pow((cycle - 0.25) * 20, 2)) * 0.7;
+            return lub + dub;
+        }
+
+        // Breathing - slower, deeper rhythm
+        function getBreath(t) {
+            return 0.5 + 0.5 * Math.sin(t * 0.3);
+        }
+
+        // Neural firing - random sparks
+        function getNeuralFlicker(t, seed) {
+            const flicker = Math.sin(t * 17 + seed) * Math.sin(t * 23 + seed * 2);
+            return Math.max(0, flicker);
+        }
+
+        // Interpolate between colors
+        function lerpColor(c1, c2, t) {
+            return {
+                r: c1.r + (c2.r - c1.r) * t,
+                g: c1.g + (c2.g - c1.g) * t,
+                b: c1.b + (c2.b - c1.b) * t
+            };
+        }
+
+        // Get color based on angle and time
+        function getSpectrumColor(angle, t) {
+            const normalized = ((angle / (Math.PI * 2)) + t * 0.1) % 1;
+            const colorKeys = ['rose', 'coral', 'gold', 'electric', 'cyan', 'violet', 'magenta', 'rose'];
+            const segment = normalized * (colorKeys.length - 1);
+            const index = Math.floor(segment);
+            const frac = segment - index;
+            return lerpColor(colors[colorKeys[index]], colors[colorKeys[index + 1]], frac);
+        }
+
+        // Core orb - the central heart with internal structure
+        class CoreOrb {
+            constructor() {
+                // Internal flowing patterns
+                this.innerPatterns = [];
+                for (let i = 0; i < 8; i++) {
+                    this.innerPatterns.push({
+                        angle: (i / 8) * Math.PI * 2,
+                        speed: 0.2 + Math.random() * 0.3,
+                        phase: Math.random() * Math.PI * 2,
+                        size: 0.3 + Math.random() * 0.4
+                    });
+                }
+            }
+
+            draw(t) {
+                const heartbeat = getHeartbeat(t * 1.2);
+                const breath = getBreath(t);
+                const baseRadius = Math.min(width, height) * 0.12;
+                const radius = baseRadius * (1 + heartbeat * 0.15 + breath * 0.05);
+
+                // Multiple layered glows
+                for (let layer = 0; layer < 5; layer++) {
+                    const layerRadius = radius * (1 + layer * 0.8);
+                    const alpha = 0.15 - layer * 0.025;
+
+                    const gradient = ctx.createRadialGradient(
+                        centerX, centerY, 0,
+                        centerX, centerY, layerRadius
+                    );
+
+                    const hueShift = t * 0.05 + layer * 0.1;
+                    const color = getSpectrumColor(hueShift * Math.PI * 2, t);
+
+                    gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`);
+                    gradient.addColorStop(0.5, `rgba(${color.r * 0.5}, ${color.g * 0.5}, ${color.b * 0.5}, ${alpha * 0.5})`);
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, layerRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Internal flowing patterns - like plasma inside the core
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius * 0.7, 0, Math.PI * 2);
+                ctx.clip();
+
+                this.innerPatterns.forEach((pattern, i) => {
+                    const flowAngle = pattern.angle + t * pattern.speed;
+                    const flowDist = radius * pattern.size * (0.8 + Math.sin(t * 0.5 + pattern.phase) * 0.2);
+                    const px = centerX + Math.cos(flowAngle) * flowDist * 0.3;
+                    const py = centerY + Math.sin(flowAngle) * flowDist * 0.3;
+
+                    const patternColor = getSpectrumColor(flowAngle + t * 0.1, t);
+                    const patternGlow = ctx.createRadialGradient(px, py, 0, px, py, radius * 0.4);
+                    patternGlow.addColorStop(0, `rgba(${patternColor.r}, ${patternColor.g}, ${patternColor.b}, ${0.3 + heartbeat * 0.2})`);
+                    patternGlow.addColorStop(0.5, `rgba(${patternColor.r}, ${patternColor.g}, ${patternColor.b}, 0.1)`);
+                    patternGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                    ctx.fillStyle = patternGlow;
+                    ctx.beginPath();
+                    ctx.arc(px, py, radius * 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                ctx.restore();
+
+                // Inner bright core - the white-hot center
+                const coreGradient = ctx.createRadialGradient(
+                    centerX, centerY, 0,
+                    centerX, centerY, radius * 0.35
+                );
+                coreGradient.addColorStop(0, `rgba(255, 255, 255, ${0.9 + heartbeat * 0.1})`);
+                coreGradient.addColorStop(0.4, `rgba(255, 220, 240, ${0.6 + heartbeat * 0.3})`);
+                coreGradient.addColorStop(0.7, `rgba(255, 150, 180, ${0.3 + heartbeat * 0.2})`);
+                coreGradient.addColorStop(1, 'rgba(255, 100, 150, 0)');
+
+                ctx.fillStyle = coreGradient;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius * 0.35, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Subtle ring around core on heartbeat
+                if (heartbeat > 0.3) {
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${heartbeat * 0.3})`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius * 0.4 + heartbeat * 10, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Energy veins - flowing from/to the core
+        class EnergyVein {
+            constructor(index, total) {
+                this.angle = (index / total) * Math.PI * 2;
+                this.length = 0.3 + Math.random() * 0.2;
+                this.speed = 0.5 + Math.random() * 0.5;
+                this.phase = Math.random() * Math.PI * 2;
+                this.width = 2 + Math.random() * 3;
+                this.colorOffset = Math.random();
+            }
+
+            draw(t) {
+                const heartbeat = getHeartbeat(t * 1.2);
+                const baseLength = Math.min(width, height) * this.length;
+                const length = baseLength * (0.8 + heartbeat * 0.3);
+
+                const startRadius = Math.min(width, height) * 0.08;
+                const startX = centerX + Math.cos(this.angle) * startRadius;
+                const startY = centerY + Math.sin(this.angle) * startRadius;
+
+                // Wavy endpoint
+                const waveAngle = this.angle + Math.sin(t * this.speed + this.phase) * 0.3;
+                const endX = centerX + Math.cos(waveAngle) * (startRadius + length);
+                const endY = centerY + Math.sin(waveAngle) * (startRadius + length);
+
+                // Control points for bezier curve
+                const ctrl1X = startX + Math.cos(this.angle + 0.2) * length * 0.4;
+                const ctrl1Y = startY + Math.sin(this.angle + 0.2) * length * 0.4;
+                const ctrl2X = endX - Math.cos(waveAngle) * length * 0.3;
+                const ctrl2Y = endY - Math.sin(waveAngle) * length * 0.3;
+
+                // Flowing energy gradient
+                const color = getSpectrumColor(this.angle + t * 0.2, t);
+                const gradient = ctx.createLinearGradient(startX, startY, endX, endY);
+                gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${0.6 + heartbeat * 0.4})`);
+                gradient.addColorStop(0.5, `rgba(${color.r}, ${color.g}, ${color.b}, 0.3)`);
+                gradient.addColorStop(1, `rgba(${color.r * 0.5}, ${color.g * 0.5}, ${color.b * 0.5}, 0)`);
+
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = this.width * (1 + heartbeat * 0.5);
+                ctx.lineCap = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.bezierCurveTo(ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, endX, endY);
+                ctx.stroke();
+
+                // Energy pulses traveling along the vein
+                const pulsePos = (t * this.speed + this.phase) % 1;
+                const pulseX = startX + (endX - startX) * pulsePos;
+                const pulseY = startY + (endY - startY) * pulsePos;
+
+                const pulseGlow = ctx.createRadialGradient(pulseX, pulseY, 0, pulseX, pulseY, 15);
+                pulseGlow.addColorStop(0, `rgba(255, 255, 255, ${0.8 * (1 - pulsePos)})`);
+                pulseGlow.addColorStop(0.5, `rgba(${color.r}, ${color.g}, ${color.b}, ${0.4 * (1 - pulsePos)})`);
+                pulseGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = pulseGlow;
+                ctx.beginPath();
+                ctx.arc(pulseX, pulseY, 15, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Floating particles - thoughts drifting
+        class ThoughtParticle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.min(width, height) * (0.15 + Math.random() * 0.35);
+                this.x = centerX + Math.cos(angle) * distance;
+                this.y = centerY + Math.sin(angle) * distance;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.life = 1;
+                this.decay = 0.002 + Math.random() * 0.003;
+                this.size = 2 + Math.random() * 4;
+                this.colorAngle = Math.random() * Math.PI * 2;
+            }
+
+            update(t) {
+                // Drift toward center slightly
+                const dx = centerX - this.x;
+                const dy = centerY - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                this.vx += dx / dist * 0.01;
+                this.vy += dy / dist * 0.01;
+
+                // Orbital motion
+                this.vx += -dy / dist * 0.02;
+                this.vy += dx / dist * 0.02;
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+
+                if (this.life <= 0) this.reset();
+            }
+
+            draw(t) {
+                const color = getSpectrumColor(this.colorAngle + t * 0.1, t);
+                const alpha = this.life * 0.6;
+
+                const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 3);
+                glow.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`);
+                glow.addColorStop(0.5, `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha * 0.3})`);
+                glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Concentric rings - like ripples from the heart
+        class PulseRing {
+            constructor(index, total) {
+                this.index = index;
+                this.total = total;
+                this.phase = (index / total) * Math.PI * 2;
+            }
+
+            draw(t) {
+                const heartbeat = getHeartbeat(t * 1.2);
+                const breath = getBreath(t);
+                const baseRadius = Math.min(width, height) * (0.15 + this.index * 0.06);
+
+                // Rings expand on heartbeat
+                const expandPhase = (t * 0.5 + this.phase) % 1;
+                const radius = baseRadius * (1 + expandPhase * 0.1) + heartbeat * 20;
+                const alpha = (1 - expandPhase) * 0.15;
+
+                const color = getSpectrumColor(this.phase + t * 0.1, t);
+
+                ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+                ctx.lineWidth = 1 + heartbeat * 2;
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        // Neural sparks - sudden flashes of activity
+        class NeuralSpark {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.active = false;
+                this.nextFire = Math.random() * 3;
+                this.angle = Math.random() * Math.PI * 2;
+                this.distance = Math.min(width, height) * (0.1 + Math.random() * 0.3);
+            }
+
+            update(t, dt) {
+                this.nextFire -= dt;
+                if (this.nextFire <= 0 && !this.active) {
+                    this.active = true;
+                    this.life = 1;
+                    this.x = centerX + Math.cos(this.angle) * this.distance;
+                    this.y = centerY + Math.sin(this.angle) * this.distance;
+                    this.colorAngle = Math.random() * Math.PI * 2;
+                }
+
+                if (this.active) {
+                    this.life -= 0.05;
+                    if (this.life <= 0) {
+                        this.reset();
+                    }
+                }
+            }
+
+            draw(t) {
+                if (!this.active) return;
+
+                const color = getSpectrumColor(this.colorAngle, t);
+                const size = 30 * this.life;
+
+                const glow = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, size);
+                glow.addColorStop(0, `rgba(255, 255, 255, ${this.life * 0.9})`);
+                glow.addColorStop(0.2, `rgba(${color.r}, ${color.g}, ${color.b}, ${this.life * 0.7})`);
+                glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Organic flowing membrane - like the aura around a living thing
+        class OrganicMembrane {
+            constructor(index, total) {
+                this.index = index;
+                this.total = total;
+                this.points = [];
+                this.numPoints = 32;
+
+                for (let i = 0; i < this.numPoints; i++) {
+                    this.points.push({
+                        baseAngle: (i / this.numPoints) * Math.PI * 2,
+                        radiusOffset: Math.random() * 0.1,
+                        phaseOffset: Math.random() * Math.PI * 2,
+                        speed: 0.3 + Math.random() * 0.4
+                    });
+                }
+            }
+
+            draw(t) {
+                const heartbeat = getHeartbeat(t * 1.2);
+                const breath = getBreath(t);
+                const baseRadius = Math.min(width, height) * (0.18 + this.index * 0.08);
+
+                ctx.beginPath();
+
+                for (let i = 0; i <= this.numPoints; i++) {
+                    const p = this.points[i % this.numPoints];
+                    const noise = Math.sin(t * p.speed + p.phaseOffset) * 0.05;
+                    const radius = baseRadius * (1 + p.radiusOffset + noise + heartbeat * 0.05 + breath * 0.03);
+                    const angle = p.baseAngle + Math.sin(t * 0.2 + p.phaseOffset) * 0.05;
+
+                    const x = centerX + Math.cos(angle) * radius;
+                    const y = centerY + Math.sin(angle) * radius;
+
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        // Smooth curve through points
+                        const prevP = this.points[(i - 1) % this.numPoints];
+                        const prevNoise = Math.sin(t * prevP.speed + prevP.phaseOffset) * 0.05;
+                        const prevRadius = baseRadius * (1 + prevP.radiusOffset + prevNoise + heartbeat * 0.05 + breath * 0.03);
+                        const prevAngle = prevP.baseAngle + Math.sin(t * 0.2 + prevP.phaseOffset) * 0.05;
+                        const prevX = centerX + Math.cos(prevAngle) * prevRadius;
+                        const prevY = centerY + Math.sin(prevAngle) * prevRadius;
+
+                        const cpX = (prevX + x) / 2;
+                        const cpY = (prevY + y) / 2;
+                        ctx.quadraticCurveTo(prevX, prevY, cpX, cpY);
+                    }
+                }
+
+                ctx.closePath();
+
+                const color = getSpectrumColor(this.index * 0.5 + t * 0.1, t);
+                const alpha = 0.03 - this.index * 0.008;
+                ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+                ctx.fill();
+
+                ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha * 2})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        // Branching secondary veins
+        class BranchingVein {
+            constructor(parentAngle, parentLength) {
+                this.parentAngle = parentAngle;
+                this.branchPoint = 0.4 + Math.random() * 0.3; // Where along parent to branch
+                this.branchAngle = (Math.random() - 0.5) * 0.8; // Angle offset from parent
+                this.length = parentLength * (0.3 + Math.random() * 0.3);
+                this.phase = Math.random() * Math.PI * 2;
+                this.speed = 0.3 + Math.random() * 0.3;
+                this.width = 1 + Math.random() * 1.5;
+            }
+
+            draw(t, parentStartX, parentStartY, parentEndX, parentEndY) {
+                const heartbeat = getHeartbeat(t * 1.2);
+
+                // Find branch point along parent
+                const bx = parentStartX + (parentEndX - parentStartX) * this.branchPoint;
+                const by = parentStartY + (parentEndY - parentStartY) * this.branchPoint;
+
+                // Calculate branch endpoint
+                const parentDirX = parentEndX - parentStartX;
+                const parentDirY = parentEndY - parentStartY;
+                const parentAngle = Math.atan2(parentDirY, parentDirX);
+                const branchDir = parentAngle + this.branchAngle + Math.sin(t * this.speed + this.phase) * 0.1;
+
+                const endX = bx + Math.cos(branchDir) * this.length;
+                const endY = by + Math.sin(branchDir) * this.length;
+
+                const color = getSpectrumColor(this.parentAngle + t * 0.2, t);
+                const gradient = ctx.createLinearGradient(bx, by, endX, endY);
+                gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${0.4 + heartbeat * 0.2})`);
+                gradient.addColorStop(1, `rgba(${color.r * 0.5}, ${color.g * 0.5}, ${color.b * 0.5}, 0)`);
+
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = this.width * (1 + heartbeat * 0.3);
+                ctx.lineCap = 'round';
+
+                // Curved branch
+                const ctrlX = bx + Math.cos(branchDir + 0.2) * this.length * 0.5;
+                const ctrlY = by + Math.sin(branchDir + 0.2) * this.length * 0.5;
+
+                ctx.beginPath();
+                ctx.moveTo(bx, by);
+                ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+                ctx.stroke();
+            }
+        }
+
+        // Enhanced energy vein with branches
+        class EnhancedEnergyVein {
+            constructor(index, total) {
+                this.angle = (index / total) * Math.PI * 2;
+                this.length = 0.25 + Math.random() * 0.2;
+                this.speed = 0.5 + Math.random() * 0.5;
+                this.phase = Math.random() * Math.PI * 2;
+                this.width = 2 + Math.random() * 3;
+                this.colorOffset = Math.random();
+
+                // Create branches
+                this.branches = [];
+                const numBranches = 1 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < numBranches; i++) {
+                    this.branches.push(new BranchingVein(
+                        this.angle,
+                        Math.min(width, height) * this.length
+                    ));
+                }
+            }
+
+            draw(t) {
+                const heartbeat = getHeartbeat(t * 1.2);
+                const baseLength = Math.min(width, height) * this.length;
+                const length = baseLength * (0.8 + heartbeat * 0.3);
+
+                const startRadius = Math.min(width, height) * 0.08;
+                const startX = centerX + Math.cos(this.angle) * startRadius;
+                const startY = centerY + Math.sin(this.angle) * startRadius;
+
+                const waveAngle = this.angle + Math.sin(t * this.speed + this.phase) * 0.25;
+                const endX = centerX + Math.cos(waveAngle) * (startRadius + length);
+                const endY = centerY + Math.sin(waveAngle) * (startRadius + length);
+
+                const ctrl1X = startX + Math.cos(this.angle + 0.15) * length * 0.4;
+                const ctrl1Y = startY + Math.sin(this.angle + 0.15) * length * 0.4;
+                const ctrl2X = endX - Math.cos(waveAngle) * length * 0.3;
+                const ctrl2Y = endY - Math.sin(waveAngle) * length * 0.3;
+
+                const color = getSpectrumColor(this.angle + t * 0.2, t);
+                const gradient = ctx.createLinearGradient(startX, startY, endX, endY);
+                gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${0.6 + heartbeat * 0.4})`);
+                gradient.addColorStop(0.5, `rgba(${color.r}, ${color.g}, ${color.b}, 0.3)`);
+                gradient.addColorStop(1, `rgba(${color.r * 0.5}, ${color.g * 0.5}, ${color.b * 0.5}, 0)`);
+
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = this.width * (1 + heartbeat * 0.5);
+                ctx.lineCap = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.bezierCurveTo(ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, endX, endY);
+                ctx.stroke();
+
+                // Draw branches
+                this.branches.forEach(branch => {
+                    branch.draw(t, startX, startY, endX, endY);
+                });
+
+                // Energy pulse
+                const pulsePos = (t * this.speed + this.phase) % 1;
+                const pulseX = startX + (endX - startX) * pulsePos;
+                const pulseY = startY + (endY - startY) * pulsePos;
+
+                const pulseGlow = ctx.createRadialGradient(pulseX, pulseY, 0, pulseX, pulseY, 12);
+                pulseGlow.addColorStop(0, `rgba(255, 255, 255, ${0.7 * (1 - pulsePos)})`);
+                pulseGlow.addColorStop(0.5, `rgba(${color.r}, ${color.g}, ${color.b}, ${0.3 * (1 - pulsePos)})`);
+                pulseGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = pulseGlow;
+                ctx.beginPath();
+                ctx.arc(pulseX, pulseY, 12, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Initialize elements
+        const core = new CoreOrb();
+        const membranes = Array.from({ length: 4 }, (_, i) => new OrganicMembrane(i, 4));
+        const veins = Array.from({ length: 20 }, (_, i) => new EnhancedEnergyVein(i, 20));
+        const particles = Array.from({ length: 80 }, () => new ThoughtParticle());
+        const rings = Array.from({ length: 6 }, (_, i) => new PulseRing(i, 6));
+        const sparks = Array.from({ length: 20 }, () => new NeuralSpark());
+
+        let lastTime = 0;
+        let lastHeartbeat = 0;
+        let heartbeatPhase = 0;
+
+        function animate(timestamp) {
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+            time += dt;
+
+            // Audio updates
+            if (audioStarted) {
+                const heartbeat = getHeartbeat(time * 1.2);
+                const breath = getBreath(time);
+
+                // Trigger heartbeat on peak
+                const currentPhase = Math.floor(time * 1.2);
+                if (currentPhase !== heartbeatPhase) {
+                    heartbeatPhase = currentPhase;
+                    triggerHeartbeat(0.8 + Math.random() * 0.2);
+                }
+
+                updateDrones(breath, heartbeat);
+
+                // Occasionally trigger melodic notes
+                melodicOscs.forEach((voice, i) => {
+                    if (time - voice.lastTrigger > 3 + Math.random() * 5) {
+                        if (Math.random() < 0.02) {
+                            triggerMelody(i, 2 + Math.random() * 3);
+                            voice.lastTrigger = time;
+                        }
+                    }
+                });
+            }
+
+            // Fade trail effect
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.12)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw layers back to front
+            membranes.forEach(membrane => membrane.draw(time));
+            rings.forEach(ring => ring.draw(time));
+            veins.forEach(vein => vein.draw(time));
+
+            particles.forEach(p => {
+                p.update(time);
+                p.draw(time);
+            });
+
+            sparks.forEach(s => {
+                s.update(time, dt);
+                s.draw(time);
+            });
+
+            core.draw(time);
+
+            // Mouse influence - subtle attraction
+            if (mouseInfluence > 0) {
+                const gradient = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 100);
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${0.1 * mouseInfluence})`);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(mouseX, mouseY, 100, 0, Math.PI * 2);
+                ctx.fill();
+
+                mouseInfluence *= 0.99;
+            }
+
+            // Vignette effect - frames the piece as art
+            const vignette = ctx.createRadialGradient(
+                centerX, centerY, Math.min(width, height) * 0.3,
+                centerX, centerY, Math.max(width, height) * 0.8
+            );
+            vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            vignette.addColorStop(0.7, 'rgba(0, 0, 0, 0)');
+            vignette.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, width, height);
+
+            requestAnimationFrame(animate);
+        }
+
+        animate(0);
+    </script>
+</body>
+</html>
