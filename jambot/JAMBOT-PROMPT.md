@@ -78,10 +78,39 @@ Complete the full task - create session, add instruments, AND render. System han
 
 ## MIXER
 
-Don't add mixer effects by default. Use them when user asks for polish, reverb, sidechain, filter, etc.
+Don't add mixer effects by default. Use them when user asks for polish, reverb, sidechain, filter, delay, etc.
 - create_send/route_to_send: Reverb buses
 - add_sidechain: Ducking (bass ducks on kick)
 - add_channel_insert/add_master_insert: EQ or Filter
+- add_effect/remove_effect/tweak_effect: Effect chains (delay, reverb on any target)
+
+### Effect Chains (Delay & Reverb)
+
+Add effects to any instrument, voice, or master. Chain multiple effects in order.
+
+**Targets:**
+- Instrument: `jb01`, `jb200`, `sampler`, etc.
+- Voice: `jb01.ch`, `jb01.kick`, `jb01.snare` (per-voice effects)
+- Master: `master`
+
+```
+add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 50, mix: 30 })
+add_effect({ target: 'jb01.ch', effect: 'reverb', after: 'delay', decay: 2, mix: 20 })
+add_effect({ target: 'jb200', effect: 'delay', mode: 'analog', time: 500 })
+add_effect({ target: 'master', effect: 'reverb', decay: 1.5, mix: 15 })
+```
+
+**Delay modes:**
+- `analog`: Mono with saturation, warm tape-style echo
+- `pingpong`: Stereo bouncing L→R→L
+
+**Delay params:** mode, time (ms), sync (off/8th/dotted8th/triplet8th/16th/quarter), feedback (0-100), mix (0-100), lowcut (Hz), highcut (Hz), saturation (0-100, analog only), spread (0-100, pingpong only)
+
+**Tweaking:** `tweak_effect({ target: 'jb01', effect: 'delay', feedback: 70 })`
+**Removing:** `remove_effect({ target: 'jb01', effect: 'delay' })`
+**Showing:** `show_effects()` to see all chains
+
+Use delay for: dub echoes, ping-pong bounce, slapback, stereo width.
 
 ### EQ
 Tonal shaping (highpass, lowGain, midGain, midFreq, highGain).

@@ -3,19 +3,23 @@
  *
  * 8-voice drum machine with pattern storage.
  * Exposes parameters through the unified parameter system.
+ * Supports variable pattern lengths (default 16 steps = 1 bar).
  */
 
 import { InstrumentNode } from '../core/node.js';
 import { JB01_PARAMS, toEngine, fromEngine } from '../params/converters.js';
+import { JB01Engine } from '../../web/public/jb01/dist/machines/jb01/engine.js';
+import { OfflineAudioContext } from 'node-web-audio-api';
 
 // Voice IDs
 const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
 
 /**
- * Create an empty 16-step pattern for one voice
+ * Create an empty pattern for one voice
+ * @param {number} steps - Number of steps (default 16 = 1 bar)
  */
-function createEmptyVoicePattern() {
-  return Array(16).fill(null).map(() => ({
+function createEmptyVoicePattern(steps = 16) {
+  return Array(steps).fill(null).map(() => ({
     velocity: 0,
     accent: false,
   }));
@@ -23,11 +27,12 @@ function createEmptyVoicePattern() {
 
 /**
  * Create an empty pattern for all voices
+ * @param {number} steps - Number of steps (default 16 = 1 bar)
  */
-function createEmptyPattern() {
+function createEmptyPattern(steps = 16) {
   const pattern = {};
   for (const voice of VOICES) {
-    pattern[voice] = createEmptyVoicePattern();
+    pattern[voice] = createEmptyVoicePattern(steps);
   }
   return pattern;
 }
@@ -192,6 +197,162 @@ export class JB01Node extends InstrumentNode {
    */
   getVoicePattern(voice) {
     return this._pattern[voice] || createEmptyVoicePattern();
+  }
+
+  /**
+   * Get pattern length in steps (uses kick pattern as reference)
+   * @returns {number}
+   */
+  getPatternLength() {
+    return this._pattern.kick?.length || 16;
+  }
+
+  /**
+   * Get pattern length in bars (16 steps = 1 bar)
+   * @returns {number}
+   */
+  getPatternBars() {
+    return this.getPatternLength() / 16;
+  }
+
+  /**
+   * Resize pattern to new length (preserves existing steps, fills new steps with empty)
+   * @param {number} steps - New pattern length in steps
+   */
+  resizePattern(steps) {
+    const currentLength = this.getPatternLength();
+    if (steps === currentLength) return;
+
+    for (const voice of VOICES) {
+      const current = this._pattern[voice] || [];
+      if (steps < current.length) {
+        this._pattern[voice] = current.slice(0, steps);
+      } else {
+        const empty = createEmptyVoicePattern(steps - current.length);
+        this._pattern[voice] = [...current, ...empty];
+      }
+    }
+  }
+
+  /**
+   * Render the pattern to an audio buffer
+   * @param {Object} options - Render options
+   * @param {number} options.bars - Number of bars to render (pattern loops to fill)
+   * @param {number} options.stepDuration - Duration of one step in seconds
+   * @param {number} options.swing - Swing amount (0-1)
+   * @param {number} options.sampleRate - Sample rate (default 44100)
+   * @param {Object} [options.pattern] - Optional pattern override (uses node's pattern if not provided)
+   * @param {Object} [options.params] - Optional voice params override (uses node's params if not provided)
+   * @returns {Promise<AudioBuffer>}
+   */
+  async renderPattern(options) {
+    const {
+      bars,
+      stepDuration,
+      swing = 0,
+      sampleRate = 44100,
+      pattern = this._pattern,
+      params = null,
+    } = options;
+
+    // Check if pattern has any hits
+    const hasHits = VOICES.some(voice =>
+      pattern[voice]?.some(step => step?.velocity > 0)
+    );
+    if (!hasHits) {
+      return null;
+    }
+
+    // Create engine with fresh context
+    const context = new OfflineAudioContext(2, sampleRate, sampleRate);
+    const engine = new JB01Engine({ context });
+
+    // Apply voice params - use override if provided, otherwise node's internal params
+    for (const voice of VOICES) {
+      const voiceParams = params?.[voice] || this.getVoiceEngineParams(voice);
+      for (const [paramId, value] of Object.entries(voiceParams)) {
+        try {
+          engine.setVoiceParam(voice, paramId, value);
+        } catch (e) {
+          // Ignore invalid params
+        }
+      }
+    }
+
+    // Render pattern
+    const buffer = await engine.renderPattern(pattern, {
+      bars,
+      stepDuration,
+      swing,
+      sampleRate,
+    });
+
+    return buffer;
+  }
+
+  /**
+   * Render each voice to a separate buffer (for per-voice effects)
+   * Used by render.js when voice-level effect chains are present.
+   *
+   * @param {Object} options - Same as renderPattern options
+   * @returns {Promise<Object>} Map of voice -> AudioBuffer
+   */
+  async renderVoices(options) {
+    const {
+      bars,
+      stepDuration,
+      swing = 0,
+      sampleRate = 44100,
+      pattern = this._pattern,
+      params = null,
+    } = options;
+
+    const voiceBuffers = {};
+
+    for (const voice of VOICES) {
+      // Check if this voice has any hits
+      const voicePattern = pattern[voice];
+      const hasHits = voicePattern?.some(step => step?.velocity > 0);
+      if (!hasHits) continue;
+
+      // Create a pattern with only this voice
+      const soloPattern = {};
+      for (const v of VOICES) {
+        if (v === voice) {
+          soloPattern[v] = voicePattern;
+        } else {
+          soloPattern[v] = createEmptyVoicePattern(voicePattern.length);
+        }
+      }
+
+      // Create engine with fresh context for this voice
+      const context = new OfflineAudioContext(2, sampleRate, sampleRate);
+      const engine = new JB01Engine({ context });
+
+      // Apply voice params
+      const voiceParams = params?.[voice] || this.getVoiceEngineParams(voice);
+      for (const [paramId, value] of Object.entries(voiceParams)) {
+        try {
+          engine.setVoiceParam(voice, paramId, value);
+        } catch (e) {
+          // Ignore invalid params
+        }
+      }
+
+      // Render just this voice
+      const buffer = await engine.renderPattern(soloPattern, {
+        bars,
+        stepDuration,
+        swing,
+        sampleRate,
+      });
+
+      if (buffer) {
+        voiceBuffers[voice] = buffer;
+      }
+    }
+
+    return voiceBuffers;
   }
 
   /**

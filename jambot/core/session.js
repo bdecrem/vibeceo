@@ -317,6 +317,10 @@ export function createSession(config = {}) {
       channelInserts: {},
       masterInserts: [],
       masterVolume: 0.8,
+      // Effect chains for flexible routing (delay, reverb, etc.)
+      // Structure: { 'target': [{ id, type, params }, ...] }
+      // Targets: 'jb01.ch', 'jb01.kick', 'jb200', 'master'
+      effectChains: {},
     },
 
     // Song mode - patterns stored by canonical instrument ID only

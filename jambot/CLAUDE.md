@@ -560,6 +560,15 @@ tweak({ path: 'jb200.bass.filterCutoff', value: 800 }) → Sets JB200 filter to 
 | `analyze_render` | Analyze WAV: levels, frequency, recommendations |
 | `show_mixer` | Display current mixer config |
 
+**Effect chain tools (flexible routing):**
+
+| Tool | Description |
+|------|-------------|
+| `add_effect` | Add effect to target (instrument/master) with optional position (`after: 'delay'`) |
+| `remove_effect` | Remove effect from target |
+| `show_effects` | Display all effect chains |
+| `tweak_effect` | Modify params on existing effect |
+
 ## Mixer (DAW-like Routing)
 
 Jambot includes a virtual mixer for professional mixing:
@@ -680,9 +689,87 @@ Note: For multi-voice instruments (drums, sampler), this is separate from per-vo
 
 ### Signal Flow
 ```
-voice → [voice level] → [channel EQ/Filter] → [ducker] → node level → [send] → master → [master EQ/Filter] → output
-                                                                         ↓
-                                                                   send bus (reverb) → master
+voice → [voice level] → [channel EQ/Filter] → [ducker] → node level → [effect chain] → [send] → master → [master chain] → output
+                                                                                          ↓
+                                                                                    send bus (reverb) → master
+```
+
+## Effect Chains (Flexible Routing)
+
+Add effects to any instrument, voice, or master in any order. Effect chains provide delay, reverb, and more.
+
+### Targets
+- **Instrument**: `jb01`, `jb200`, `sampler` — affects entire instrument
+- **Voice**: `jb01.ch`, `jb01.kick`, `jb01.snare` — affects single voice (JB01 supported)
+- **Master**: `master` — affects final mix
+
+### Adding Effects
+```
+add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 50, mix: 30 })
+add_effect({ target: 'jb01.ch', effect: 'reverb', after: 'delay', decay: 2, mix: 20 })
+add_effect({ target: 'jb200', effect: 'delay', mode: 'analog', time: 500 })
+add_effect({ target: 'master', effect: 'reverb', decay: 1.5, mix: 15 })
+```
+
+### Delay Parameters
+
+| Param | Range | Default | Description |
+|-------|-------|---------|-------------|
+| mode | analog/pingpong | analog | Delay type |
+| time | 1-2000ms | 375 | Delay time |
+| sync | off/8th/dotted8th/triplet8th/16th/quarter | off | Tempo sync |
+| feedback | 0-100 | 50 | Feedback amount |
+| mix | 0-100 | 30 | Wet/dry balance |
+| lowcut | 20-500Hz | 80 | Remove mud from feedback |
+| highcut | 1000-20000Hz | 8000 | Tame harshness |
+| saturation | 0-100 | 20 | Analog warmth (analog mode) |
+| spread | 0-100 | 100 | Stereo width (pingpong mode) |
+
+### Tweaking Effects
+```
+tweak_effect({ target: 'jb01', effect: 'delay', feedback: 70, time: 250 })
+```
+
+### Removing Effects
+```
+remove_effect({ target: 'jb01', effect: 'delay' })     # Remove specific effect
+remove_effect({ target: 'jb01', effect: 'all' })       # Remove all effects
+```
+
+### Showing Effect Chains
+```
+show_effects()
+# Output:
+# jb01: delay(pingpong) [feedback=50, mix=30] → reverb [decay=2, mix=20]
+# master: reverb [decay=1.5, mix=15]
+```
+
+### Use Cases
+
+**Dub-style hi-hats**: Add delay to JUST the closed hats
+```
+add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'analog', time: 375, feedback: 60, mix: 25 })
+```
+
+**Reverb on snare only**: Space on snare, dry kick
+```
+add_effect({ target: 'jb01.snare', effect: 'reverb', decay: 1.5, mix: 30 })
+```
+
+**Acid bass with ping-pong**: Bouncing echoes on the synth
+```
+add_effect({ target: 'jb200', effect: 'delay', mode: 'pingpong', time: 250, feedback: 40, mix: 20 })
+```
+
+**Master reverb for glue**: Subtle reverb on everything
+```
+add_effect({ target: 'master', effect: 'reverb', decay: 1.2, mix: 10 })
+```
+
+**Chained effects on hats**: Delay into reverb for spacious sound
+```
+add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 45 })
+add_effect({ target: 'jb01.ch', effect: 'reverb', after: 'delay', decay: 2.5, mix: 30 })
 ```
 
 ## Session State

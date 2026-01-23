@@ -455,6 +455,84 @@ All 6 instruments are registered and ready:
 - `r3d3` — TB-303 acid bass
 - `r1d1` — SH-101 lead synth
 
-## What's Coming
+## Effect Chains (Flexible Routing)
 
-- **Effects system** — Sends, inserts, delay pedal (mixer config exists, processing code coming)
+Add effects to any target (instrument, voice, or master) in any order. Effects are processed as a chain on each target.
+
+### Tools
+
+| Tool | Description |
+|------|-------------|
+| `add_effect` | Add effect to target with optional position |
+| `remove_effect` | Remove effect from target |
+| `show_effects` | Display all effect chains |
+| `tweak_effect` | Modify params on existing effect |
+
+### Targets
+
+- **Instruments**: `jb01`, `jb200`, `sampler`, `r9d9`, `r3d3`, `r1d1`
+- **Voices**: `jb01.ch`, `jb01.kick`, `jb01.snare`, etc. — per-voice effects (JB01 supported, others can add `renderVoices()`)
+- **Master**: `master`
+
+### Available Effects
+
+| Effect | Parameters |
+|--------|------------|
+| `delay` | mode (analog/pingpong), time (ms), sync, feedback (0-100), mix (0-100), lowcut (Hz), highcut (Hz), saturation (0-100), spread (0-100) |
+| `reverb` | decay (s), damping (0-1), predelay (ms), modulation (0-1), lowcut (Hz), highcut (Hz), width (0-1), mix (0-1) |
+
+### Examples
+
+```
+# Add ping pong delay to closed hats only
+add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 50, mix: 30 })
+
+# Add reverb AFTER the delay on hats
+add_effect({ target: 'jb01.ch', effect: 'reverb', after: 'delay', decay: 2, mix: 20 })
+
+# Add delay to entire JB01 (affects all voices)
+add_effect({ target: 'jb01', effect: 'delay', mode: 'analog', time: 250 })
+
+# Add analog delay to bass
+add_effect({ target: 'jb200', effect: 'delay', mode: 'analog', time: 500, saturation: 30 })
+
+# Master reverb
+add_effect({ target: 'master', effect: 'reverb', decay: 1.5, mix: 15 })
+
+# Tweak existing delay
+tweak_effect({ target: 'jb01.ch', effect: 'delay', feedback: 70, time: 250 })
+
+# Remove delay from hats
+remove_effect({ target: 'jb01.ch', effect: 'delay' })
+
+# Show all chains
+show_effects()
+# Output:
+# jb01.ch: delay(pingpong) [feedback=50, mix=30] → reverb [decay=2, mix=20]
+# jb01: delay(analog) [time=250]
+# master: reverb [decay=1.5, mix=15]
+```
+
+### Signal Flow
+
+```
+voice (jb01.ch) → [voice effect chain] ─┐
+voice (jb01.kick) ──────────────────────┼→ [instrument effect chain] → mix
+voice (jb01.snare) ─────────────────────┘                               ↓
+                                                                  [master chain]
+                                                                        ↓
+                                                                      output
+```
+
+### Delay Presets
+
+| Preset | Description |
+|--------|-------------|
+| `tape` | Classic analog tape delay |
+| `dub` | Long feedback with filtering |
+| `slapback` | Short single repeat |
+| `pingpong` | Classic stereo bounce |
+| `widePong` | Ping pong with longer tail |
+| `stereoWidth` | Subtle stereo widener |
+
+Use preset params directly: `add_effect({ target: 'jb01', effect: 'delay', mode: 'analog', time: 375, feedback: 45, saturation: 40 })`

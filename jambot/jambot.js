@@ -135,8 +135,8 @@ export function createSession() {
   // This sets up the node-based architecture with proxies for parameter access
   const session = createCoreSession({ bpm: 128 });
 
-  // Initialize bass params with engine defaults (BassNode is currently a stub)
-  // These remain as plain objects until BassNode is fully implemented
+  // Initialize bass params with engine defaults
+  // R3D3 (303) not yet integrated with ParamSystem
   session.bassParams = {
     waveform: 'sawtooth',
     cutoff: 0.5,
@@ -147,7 +147,8 @@ export function createSession() {
     level: 0.8,
   };
 
-  // Initialize lead params with engine defaults (LeadNode is currently a stub)
+  // Initialize lead params with engine defaults
+  // R1D1 (101) not yet integrated with ParamSystem
   session.leadParams = {
     vcoSaw: 0.5,
     vcoPulse: 0.5,
@@ -1009,6 +1010,84 @@ export const TOOLS = [
       type: "object",
       properties: {},
       required: []
+    }
+  },
+  // === EFFECT CHAIN TOOLS ===
+  {
+    name: "add_effect",
+    description: "Add an effect to any target (instrument, voice, or master). Effects chain in order. Use 'after' param to insert after a specific effect.",
+    input_schema: {
+      type: "object",
+      properties: {
+        target: { type: "string", description: "Target for effect: instrument (jb01, jb200), voice (jb01.ch, jb01.kick, jb01.snare), or 'master'" },
+        effect: { type: "string", enum: ["delay", "reverb"], description: "Type of effect to add" },
+        after: { type: "string", description: "Insert after this effect type/ID (for ordering). Omit to append." },
+        // Delay params
+        mode: { type: "string", enum: ["analog", "pingpong"], description: "Delay mode: analog (mono+saturation) or pingpong (stereo bounce)" },
+        time: { type: "number", description: "Delay time in ms (1-2000, default 375)" },
+        sync: { type: "string", enum: ["off", "8th", "dotted8th", "triplet8th", "16th", "quarter"], description: "Tempo sync mode" },
+        feedback: { type: "number", description: "Feedback amount 0-100 (default 50)" },
+        mix: { type: "number", description: "Wet/dry mix 0-100 (default 30)" },
+        lowcut: { type: "number", description: "Remove mud from feedback, Hz (default 80)" },
+        highcut: { type: "number", description: "Tame harshness, Hz (default 8000)" },
+        saturation: { type: "number", description: "Analog warmth 0-100 (analog mode only, default 20)" },
+        spread: { type: "number", description: "Stereo width 0-100 (pingpong mode only, default 100)" },
+        // Reverb params
+        decay: { type: "number", description: "Reverb tail length in seconds (0.5-10, default 2)" },
+        damping: { type: "number", description: "High-frequency rolloff (0-1, default 0.5)" },
+        predelay: { type: "number", description: "Gap before reverb in ms (0-100, default 10)" },
+        modulation: { type: "number", description: "Pitch wobble for shimmer (0-1, default 0.2)" },
+        width: { type: "number", description: "Stereo spread (0-1, default 1)" }
+      },
+      required: ["target", "effect"]
+    }
+  },
+  {
+    name: "remove_effect",
+    description: "Remove an effect from a target's chain.",
+    input_schema: {
+      type: "object",
+      properties: {
+        target: { type: "string", description: "Target to remove from: instrument (jb01), voice (jb01.ch), or 'master'" },
+        effect: { type: "string", description: "Effect type or ID to remove, or 'all' to clear entire chain" }
+      },
+      required: ["target"]
+    }
+  },
+  {
+    name: "show_effects",
+    description: "Display all effect chains across all targets.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "tweak_effect",
+    description: "Modify parameters on an existing effect in a target's chain.",
+    input_schema: {
+      type: "object",
+      properties: {
+        target: { type: "string", description: "Target: instrument (jb01), voice (jb01.ch), or 'master'" },
+        effect: { type: "string", description: "Effect type or ID to tweak" },
+        // All effect params supported
+        mode: { type: "string", enum: ["analog", "pingpong"], description: "Delay mode" },
+        time: { type: "number", description: "Delay time in ms" },
+        sync: { type: "string", enum: ["off", "8th", "dotted8th", "triplet8th", "16th", "quarter"], description: "Tempo sync" },
+        feedback: { type: "number", description: "Feedback amount 0-100" },
+        mix: { type: "number", description: "Wet/dry mix 0-100" },
+        lowcut: { type: "number", description: "Lowcut frequency Hz" },
+        highcut: { type: "number", description: "Highcut frequency Hz" },
+        saturation: { type: "number", description: "Analog warmth 0-100" },
+        spread: { type: "number", description: "Stereo width 0-100" },
+        decay: { type: "number", description: "Reverb tail seconds" },
+        damping: { type: "number", description: "Reverb damping 0-1" },
+        predelay: { type: "number", description: "Reverb predelay ms" },
+        modulation: { type: "number", description: "Reverb modulation 0-1" },
+        width: { type: "number", description: "Reverb stereo width 0-1" }
+      },
+      required: ["target", "effect"]
     }
   },
   // === PRESET TOOLS (Generic) ===

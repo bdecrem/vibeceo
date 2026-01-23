@@ -215,13 +215,32 @@ const mixerTools = {
       Object.keys(session.mixer.sends || {}).length > 0 ||
       Object.keys(session.mixer.voiceRouting || {}).length > 0 ||
       Object.keys(session.mixer.channelInserts || {}).length > 0 ||
+      Object.keys(session.mixer.effectChains || {}).length > 0 ||
       (session.mixer.masterInserts || []).length > 0
     );
 
     if (!hasConfig) {
       lines.push('Use tweak({ path: "drums.level", value: -3 }) to adjust levels.');
-      lines.push('Use create_send, add_channel_insert, or add_sidechain for more routing.');
+      lines.push('Use create_send, add_channel_insert, add_effect, or add_sidechain for more routing.');
       return lines.join('\n');
+    }
+
+    // Effect chains (new flexible routing)
+    const effectChains = Object.entries(session.mixer.effectChains || {});
+    if (effectChains.length > 0) {
+      lines.push('EFFECT CHAINS:');
+      effectChains.forEach(([target, chain]) => {
+        const chainStr = chain.map(e => {
+          const params = Object.entries(e.params || {})
+            .filter(([k]) => k !== 'mode')
+            .slice(0, 2)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(', ');
+          return `${e.type}${e.params?.mode ? `(${e.params.mode})` : ''}${params ? ` [${params}]` : ''}`;
+        }).join(' → ');
+        lines.push(`  ${target}: ${chainStr}`);
+      });
+      lines.push('');
     }
 
     // Sends
@@ -266,6 +285,173 @@ const mixerTools = {
     }
 
     return lines.join('\n');
+  },
+
+  // === EFFECT CHAIN TOOLS ===
+
+  /**
+   * Add effect to a target (voice, instrument, or master)
+   * @param {Object} input - { target, effect, after?, mode?, ...params }
+   */
+  add_effect: async (input, session, context) => {
+    const { target, effect, after, ...params } = input;
+
+    if (!target || !effect) {
+      return 'Error: add_effect requires target and effect parameters';
+    }
+
+    // Validate effect type
+    const validEffects = ['delay', 'reverb', 'filter', 'eq'];
+    if (!validEffects.includes(effect)) {
+      return `Error: Unknown effect type "${effect}". Valid types: ${validEffects.join(', ')}`;
+    }
+
+    ensureMixerState(session);
+    if (!session.mixer.effectChains) session.mixer.effectChains = {};
+    if (!session.mixer.effectChains[target]) session.mixer.effectChains[target] = [];
+
+    const chain = session.mixer.effectChains[target];
+
+    // Generate unique ID
+    const effectCount = chain.filter(e => e.type === effect).length;
+    const effectId = `${effect}${effectCount + 1}`;
+
+    const newEffect = {
+      id: effectId,
+      type: effect,
+      params: { ...params },
+    };
+
+    // Handle positioning
+    if (after) {
+      // Find the effect to insert after
+      const afterIndex = chain.findIndex(e => e.type === after || e.id === after);
+      if (afterIndex === -1) {
+        return `Error: Cannot find "${after}" in ${target} chain to insert after`;
+      }
+      chain.splice(afterIndex + 1, 0, newEffect);
+    } else {
+      // Append to end
+      chain.push(newEffect);
+    }
+
+    // Build confirmation message
+    const paramStr = Object.entries(params)
+      .filter(([k, v]) => v !== undefined)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(', ');
+
+    const positionStr = after ? ` after ${after}` : '';
+    return `Added ${effect}${params.mode ? ` (${params.mode})` : ''} to ${target}${positionStr}${paramStr ? ` [${paramStr}]` : ''}`;
+  },
+
+  /**
+   * Remove effect from a target
+   * @param {Object} input - { target, effect }
+   */
+  remove_effect: async (input, session, context) => {
+    const { target, effect } = input;
+
+    if (!target) {
+      return 'Error: remove_effect requires target parameter';
+    }
+
+    if (!session.mixer?.effectChains?.[target]) {
+      return `No effect chain on ${target}`;
+    }
+
+    const chain = session.mixer.effectChains[target];
+
+    if (!effect || effect === 'all') {
+      // Remove entire chain
+      const count = chain.length;
+      delete session.mixer.effectChains[target];
+      return `Removed all ${count} effect(s) from ${target}`;
+    }
+
+    // Remove specific effect (by type or ID)
+    const beforeLen = chain.length;
+    session.mixer.effectChains[target] = chain.filter(e => e.type !== effect && e.id !== effect);
+    const removed = beforeLen - session.mixer.effectChains[target].length;
+
+    if (removed === 0) {
+      return `No ${effect} found on ${target}`;
+    }
+
+    // Clean up empty chains
+    if (session.mixer.effectChains[target].length === 0) {
+      delete session.mixer.effectChains[target];
+    }
+
+    return `Removed ${effect} from ${target}`;
+  },
+
+  /**
+   * Display all effect chains
+   */
+  show_effects: async (input, session, context) => {
+    const chains = session.mixer?.effectChains || {};
+    const entries = Object.entries(chains);
+
+    if (entries.length === 0) {
+      return 'No effect chains configured. Use add_effect to add effects to targets.';
+    }
+
+    const lines = ['EFFECT CHAINS:', ''];
+
+    entries.forEach(([target, chain]) => {
+      const chainStr = chain.map(e => {
+        const mode = e.params?.mode ? `(${e.params.mode})` : '';
+        const params = Object.entries(e.params || {})
+          .filter(([k]) => k !== 'mode')
+          .map(([k, v]) => `${k}=${typeof v === 'number' ? v.toFixed(0) : v}`)
+          .join(', ');
+        return `${e.type}${mode}${params ? ` [${params}]` : ''}`;
+      }).join(' → ');
+
+      lines.push(`${target}:`);
+      lines.push(`  ${chainStr}`);
+    });
+
+    return lines.join('\n');
+  },
+
+  /**
+   * Tweak parameters on an existing effect
+   * @param {Object} input - { target, effect, ...params }
+   */
+  tweak_effect: async (input, session, context) => {
+    const { target, effect, ...params } = input;
+
+    if (!target || !effect) {
+      return 'Error: tweak_effect requires target and effect parameters';
+    }
+
+    if (!session.mixer?.effectChains?.[target]) {
+      return `No effect chain on ${target}`;
+    }
+
+    const chain = session.mixer.effectChains[target];
+    const effectObj = chain.find(e => e.type === effect || e.id === effect);
+
+    if (!effectObj) {
+      return `No ${effect} found on ${target}`;
+    }
+
+    // Update params
+    const tweaked = [];
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined) {
+        effectObj.params[key] = value;
+        tweaked.push(`${key}=${value}`);
+      }
+    }
+
+    if (tweaked.length === 0) {
+      return `No parameters to tweak on ${effect}`;
+    }
+
+    return `Tweaked ${effect} on ${target}: ${tweaked.join(', ')}`;
   },
 };
 
