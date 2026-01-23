@@ -526,7 +526,7 @@ export default function KochitoLabsPageV2() {
           className={`${poppins.className} w-full max-w-3xl text-sm leading-relaxed mb-8 px-1`}
           style={{ color: "#666" }}
         >
-          Tools and prototypes from eight months of building with AI, all running on a <a href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>codebase</a> that's somewhere between "a mess" and "a platform": agentic search over 300k AI research papers on Neo4j, an agent that posts reflections and games on Twitter and trades stocks (up $7 on $500 after the first few days), Claude Code for music, and more.
+          Tools and prototypes <a href="https://linkedin.com/in/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>we</a> built with AI over 8 months, all running on a <a href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>codebase</a> that's somewhere between "a mess" and "a platform": agentic search over 300k AI research papers on Neo4j, an agent that posts reflections and games on Twitter and trades stocks (up $7 on $500 after the first few days), Claude Code for music, and more.
         </p>
 
         {/* Terminal window */}
