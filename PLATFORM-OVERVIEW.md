@@ -2,9 +2,17 @@
 
 ## What This Is
 
-This codebase is an AI agent platform built around **Kochi.to**, an SMS-based AI service. At its core, it's a message orchestration system that routes incoming texts through various specialized AI agents—research agents that scan arXiv papers, crypto analysts, stock monitors, knowledge graph queriers, and more. The SMS interface serves as a lightweight, universal frontend: text a keyword, get an agent's output. But the infrastructure underneath is far more ambitious—a composable toolkit for building autonomous agents that can search the web, query databases, post to social media, send emails, and generate multimedia reports.
+A monorepo that grew like a vine. Started as an SMS bot (**Kochi.to**), now it's... more.
 
-The secondary persona here is **Amber**, an AI sidekick that operates across email, Twitter, and creative channels. Amber has a "pulse"—an aesthetic rhythm driven by lunar cycles and environmental factors—that shapes her creative output in music, visuals, and text. She runs through multi-iteration "thinkhard" workflows that persist across crashes, maintains awareness through Gmail scanning, and publishes to her own web presence. The **incubator** directory houses Token Tank, an experimental "AI business accelerator" where autonomous agents run simulated businesses with their own blogs, dashboards, and trading interfaces. Together, this represents 6+ months of building toward a vision where AI agents aren't just tools you prompt—they're persistent entities with identity, memory, and ongoing creative work.
+**The basics:** Text a keyword, get an AI agent's output. Research papers, crypto prices, stock news, knowledge graph queries. Twilio webhook comes in, something happens, SMS goes out.
+
+**The weird parts:**
+- **Amber** — an AI sidekick with access to email, Twitter, and a "pulse" (mood influenced by lunar cycles, because why not). Posts existentialist art and trades stocks with friends over email. Sometimes works.
+- **Token Tank** — we gave AI agents $500 and told them to build businesses. They held a Discord meeting and took notes. Experiment concluded.
+- **Jambot** — Claude Code but for music production. Outputs MIDI, stems, full tracks. WIP.
+- **Discord Bot** — AI coaches with distinct personalities having scheduled conversations in Discord. Micro-posts, staff meetings, weekend stories. Originally for AdvisorsFoundry. Probably still running somewhere.
+
+6+ months of "what if we tried this." Some of it runs in production. Some of it is held together by duct tape and optimism.
 
 ---
 
@@ -163,6 +171,23 @@ Key routes in `web/app/api/`:
 
 ---
 
+### Discord Bot
+
+Lives in `/discord-bot/`. AI coaches with personalities having scheduled conversations.
+
+| Component | What It Does | File |
+|-----------|--------------|------|
+| **Bot** | Discord client, webhooks, channel routing | `lib/discord/bot.ts` |
+| **Scheduler** | Time-based events from schedule.txt | `lib/discord/scheduler.ts` |
+| **Characters** | Coach personalities (Donte, Alex, Rohan, etc.) | `data/ceos.ts` |
+| **Micro-Posts** | Quotes, masterclasses, crowd favorites | `lib/discord/microPosts.ts` |
+| **Weekend Stories** | Narrative content for weekends | `lib/discord/weekend-story.ts` |
+| **Staff Meetings** | Scheduled coach discussions | `lib/discord/staffMeeting.ts` |
+
+Separate deployment. Uses webhooks so each character has their own avatar. Probably needs attention.
+
+---
+
 ### Scripts & Automation
 
 Located in `sms-bot/scripts/`:
@@ -269,4 +294,6 @@ Push to `main` → auto-deploy. Build: `npm run build` in each directory.
 
 ## Summary
 
-This is a **toolchest for building AI agents that exist in the world**—not just chat interfaces, but persistent entities that monitor, research, create, and communicate across SMS, email, Twitter, and web. The stack: Supabase for persistence, Neo4j for knowledge graphs, Twilio/SendGrid for communication, Anthropic/OpenAI for intelligence, Hume for voice. The architecture: message routing at the center, specialized agents at the edges, workflows for sustained work. The vision: AI that doesn't just answer questions, but maintains ongoing relationships with information and people.
+Supabase, Neo4j, Twilio, SendGrid, Anthropic, OpenAI, Hume. Message routing in the middle, agents around the edges. Push to main, Railway deploys it.
+
+If you're reading this, you're probably trying to figure out how something works. Good luck. The answer is usually in `sms-bot/documentation/` or buried in a 400-line TypeScript file somewhere. Check the CLAUDE.md files first.
