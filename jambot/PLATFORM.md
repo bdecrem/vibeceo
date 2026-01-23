@@ -64,17 +64,16 @@ jambot/
 │   ├── jb200-params.json  # Synth param definitions
 │   └── converters.js      # Producer units <-> engine units
 ├── tools/
-│   ├── index.js           # Tool registry
-│   ├── generic-tools.js   # tweak, get_param, list_params (PRIMARY)
-│   ├── drum-tools.js      # add_drums, tweak_drums (deprecated)
-│   ├── bass-tools.js      # add_bass, tweak_bass (deprecated)
-│   ├── lead-tools.js      # add_lead, tweak_lead (deprecated)
-│   ├── jb01-tools.js      # JB01-specific (kits, presets)
-│   ├── jb200-tools.js     # JB200-specific (kits, sequences)
-│   ├── song-tools.js      # Patterns, arrangement
-│   ├── session-tools.js   # render, show, create_session
-│   ├── routing-tools.js   # Mixer, sends, inserts
-│   └── preset-tools.js    # Preset loading
+│   ├── index.js              # Tool registry + handler dispatch
+│   ├── tool-definitions.js   # 65 tool schemas for Anthropic API
+│   ├── generic-tools.js      # tweak, get_param, list_params (PRIMARY)
+│   ├── jb01-tools.js         # JB01-specific (kits, presets)
+│   ├── jb200-tools.js        # JB200-specific (kits, sequences)
+│   ├── song-tools.js         # Patterns, arrangement
+│   ├── session-tools.js      # render, show, create_session
+│   ├── sampler-tools.js      # R9DS sampler tools
+│   ├── routing-tools.js      # Mixer, sends, inserts
+│   └── preset-tools.js       # Preset loading
 ├── presets/
 │   ├── jb01/kits/         # Drum sound presets
 │   ├── jb200/kits/        # Synth sound presets

@@ -40,9 +40,6 @@ export async function initializeTools() {
 
   // Dynamic imports ensure toolHandlers is initialized first
   await import('./session-tools.js');
-  await import('./drum-tools.js');
-  await import('./bass-tools.js');
-  await import('./lead-tools.js');
   await import('./sampler-tools.js');
   await import('./jb200-tools.js');
   await import('./jb01-tools.js');
