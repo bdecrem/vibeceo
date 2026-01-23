@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PRICE TAG — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="PRICE TAG — Amber">
+  <meta property="og:description" content="A thrift store price tag for things you can't actually buy">
+  <meta property="og:image" content="https://intheamber.com/amber/price-tag-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/price-tag.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PRICE TAG — Amber">
+  <meta name="twitter:description" content="A thrift store price tag for things you can't actually buy">
+  <meta name="twitter:image" content="https://intheamber.com/amber/price-tag-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Courier+Prime:wght@400;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .tag-container {
+      perspective: 1000px;
+      margin-bottom: 40px;
+    }
+    
+    .price-tag {
+      background: #F8F8F0;
+      width: 320px;
+      padding: 30px 25px;
+      border: 2px solid #000;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+      position: relative;
+      font-family: 'Courier Prime', monospace;
+      color: #000;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    
+    .price-tag:active {
+      transform: scale(0.98);
+    }
+    
+    .tag-hole {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      width: 12px;
+      height: 12px;
+      background: #000;
+      border-radius: 50%;
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+    }
+    
+    .tag-string {
+      position: absolute;
+      top: 21px;
+      left: 21px;
+      width: 2px;
+      height: 40px;
+      background: #666;
+      transform-origin: top;
+      transform: rotate(-35deg);
+      opacity: 0.6;
+    }
+    
+    .item-name {
+      font-size: 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 15px;
+      line-height: 1.3;
+      padding-top: 15px;
+    }
+    
+    .price-section {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .original-price {
+      font-size: 16px;
+      text-decoration: line-through;
+      opacity: 0.5;
+      font-weight: 400;
+    }
+    
+    .sale-price {
+      font-size: 32px;
+      font-weight: 700;
+      color: #C41E3A;
+    }
+    
+    .no-sale .sale-price {
+      color: #000;
+    }
+    
+    .condition {
+      font-size: 13px;
+      font-style: italic;
+      opacity: 0.7;
+      margin-top: 8px;
+    }
+    
+    .barcode {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px dashed #999;
+      font-family: 'Courier Prime', monospace;
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      opacity: 0.6;
+    }
+    
+    .instruction {
+      font-size: 14px;
+      color: #D4A574;
+      text-align: center;
+      margin-top: 20px;
+      opacity: 0.7;
+    }
+    
+    .signature {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 12px;
+      color: #D4A574;
+      opacity: 0.5;
+    }
+    
+    @media (max-width: 400px) {
+      .price-tag {
+        width: 280px;
+        padding: 25px 20px;
+      }
+      
+      .item-name {
+        font-size: 16px;
+      }
+      
+      .sale-price {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="tag-container">
+    <div class="price-tag" id="tag">
+      <div class="tag-hole"></div>
+      <div class="tag-string"></div>
+      <div class="item-name" id="itemName"></div>
+      <div class="price-section">
+        <div class="original-price" id="originalPrice"></div>
+        <div class="sale-price" id="salePrice"></div>
+      </div>
+      <div class="condition" id="condition"></div>
+      <div class="barcode">
+        <span id="barcode"></span>
+        <span id="date"></span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="instruction">tap for another</div>
+  <div class="signature">— Amber</div>
+  
+  <script>
+    const items = [
+      {
+        name: "MEMORY OF YOUR FIRST KISS",
+        original: "$847.00",
+        sale: "$12.50",
+        condition: "Slightly faded, good condition",
+        onSale: true
+      },
+      {
+        name: "THE ABILITY TO FALL ASLEEP INSTANTLY",
+        original: null,
+        sale: "$2,399.99",
+        condition: "Rare find, mint condition",
+        onSale: false
+      },
+      {
+        name: "CONFIDENCE YOU HAD AT AGE 7",
+        original: "$156.00",
+        sale: "$0.25",
+        condition: "As-is, no returns",
+        onSale: true
+      },
+      {
+        name: "ONE HOUR OF UNINTERRUPTED FOCUS",
+        original: "$89.99",
+        sale: "$44.99",
+        condition: "Limited availability",
+        onSale: true
+      },
+      {
+        name: "THE ENERGY YOU HAD AT 3PM YESTERDAY",
+        original: "$12.00",
+        sale: "$0.50",
+        condition: "Expired, non-refundable",
+        onSale: true
+      },
+      {
+        name: "ABILITY TO REMEMBER NAMES AT PARTIES",
+        original: null,
+        sale: "$599.00",
+        condition: "New in box, never opened",
+        onSale: false
+      },
+      {
+        name: "THE CERTAINTY YOU FELT AT 22",
+        original: "$234.00",
+        sale: "$3.99",
+        condition: "Worn, some damage",
+        onSale: true
+      },
+      {
+        name: "MOTIVATION TO GO TO THE GYM",
+        original: "$67.50",
+        sale: "$1.00",
+        condition: "Barely used, like new",
+        onSale: true
+      },
+      {
+        name: "YOUR CHILDHOOD SENSE OF TIME",
+        original: null,
+        sale: "$1,750.00",
+        condition: "Priceless, non-transferable",
+        onSale: false
+      },
+      {
+        name: "THE ABILITY TO NOT CHECK YOUR PHONE",
+        original: "$425.00",
+        sale: "$15.00",
+        condition: "Heavy wear, still functional",
+        onSale: true
+      },
+      {
+        name: "HANDWRITTEN LETTER FROM SOMEONE YOU MISS",
+        original: null,
+        sale: "$850.00",
+        condition: "One of a kind, irreplaceable",
+        onSale: false
+      },
+      {
+        name: "PATIENCE YOU HAD BEFORE THE INTERNET",
+        original: "$299.99",
+        sale: "$5.99",
+        condition: "Damaged in transit",
+        onSale: true
+      },
+      {
+        name: "THE DREAM YOU FORGOT THIS MORNING",
+        original: "$45.00",
+        sale: "$0.10",
+        condition: "Missing pieces, incomplete",
+        onSale: true
+      },
+      {
+        name: "ABILITY TO SIT STILL FOR 10 MINUTES",
+        original: "$112.00",
+        sale: "$22.00",
+        condition: "Gently used, works intermittently",
+        onSale: true
+      },
+      {
+        name: "ATTENTION SPAN OF A 1990s CHILD",
+        original: null,
+        sale: "$3,200.00",
+        condition: "Vintage, highly sought after",
+        onSale: false
+      },
+      {
+        name: "YOUR GRANDMOTHER'S LAUGH",
+        original: null,
+        sale: "$∞",
+        condition: "Preserved in memory only",
+        onSale: false
+      },
+      {
+        name: "ABILITY TO ENJOY DOING NOTHING",
+        original: "$189.00",
+        sale: "$7.50",
+        condition: "Needs repair, salvageable",
+        onSale: true
+      },
+      {
+        name: "THE EXCITEMENT OF FRIDAY AFTERNOON",
+        original: "$54.99",
+        sale: "$18.99",
+        condition: "Refurbished, slight defects",
+        onSale: true
+      },
+      {
+        name: "PEACE YOU FELT BEFORE YOU KNEW BETTER",
+        original: "$678.00",
+        sale: "$2.00",
+        condition: "Clearance, final sale",
+        onSale: true
+      },
+      {
+        name: "VOCABULARY YOU HAD BEFORE AUTOCORRECT",
+        original: "$92.00",
+        sale: "$11.00",
+        condition: "Some functionality lost",
+        onSale: true
+      },
+      {
+        name: "THE FRIEND WHO MOVED AWAY",
+        original: null,
+        sale: "$1,100.00",
+        condition: "Distance doesn't matter",
+        onSale: false
+      },
+      {
+        name: "ABILITY TO WATCH A SUNSET WITHOUT FILMING IT",
+        original: "$77.77",
+        sale: "$9.99",
+        condition: "Outdated model",
+        onSale: true
+      },
+      {
+        name: "HANDWRITING YOU HAD IN 4TH GRADE",
+        original: "$33.00",
+        sale: "$1.25",
+        condition: "Faded but legible",
+        onSale: true
+      },
+      {
+        name: "CURIOSITY BEFORE YOU LEARNED TO BE COOL",
+        original: "$445.00",
+        sale: "$23.00",
+        condition: "Slightly embarrassing, authentic",
+        onSale: true
+      },
+      {
+        name: "THE VERSION OF YOU THAT BELIEVED",
+        original: null,
+        sale: "$999.99",
+        condition: "Still in there somewhere",
+        onSale: false
+      }
+    ];
+    
+    let currentIndex = -1;
+    
+    function generateBarcode() {
+      return Math.floor(Math.random() * 900000000) + 100000000;
+    }
+    
+    function generateDate() {
+      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      const month = months[Math.floor(Math.random() * 12)];
+      const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
+      return `${month} ${day}`;
+    }
+    
+    function showRandomTag() {
+      // Pick a different item than the current one
+      let newIndex;
+      do {
+        newIndex = Math.floor(Math.random() * items.length);
+      } while (newIndex === currentIndex && items.length > 1);
+      
+      currentIndex = newIndex;
+      const item = items[currentIndex];
+      
+      const tag = document.getElementById('tag');
+      tag.style.opacity = '0';
+      tag.style.transform = 'rotateY(90deg)';
+      
+      setTimeout(() => {
+        document.getElementById('itemName').textContent = item.name;
+        document.getElementById('originalPrice').textContent = item.original || '';
+        document.getElementById('salePrice').textContent = item.sale;
+        document.getElementById('condition').textContent = item.condition;
+        document.getElementById('barcode').textContent = generateBarcode();
+        document.getElementById('date').textContent = generateDate();
+        
+        if (item.onSale) {
+          tag.classList.remove('no-sale');
+        } else {
+          tag.classList.add('no-sale');
+        }
+        
+        tag.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        tag.style.opacity = '1';
+        tag.style.transform = 'rotateY(0deg)';
+      }, 150);
+    }
+    
+    document.getElementById('tag').addEventListener('click', showRandomTag);
+    
+    // Show first tag on load
+    showRandomTag();
+  </script>
+</body>
+</html>
