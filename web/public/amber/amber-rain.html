@@ -190,13 +190,172 @@
             color: #FFD700;
             margin-bottom: 20px;
         }
-        
+
         .instructions {
             font-size: 14px;
             color: #D4A574;
             text-align: center;
             max-width: 300px;
             line-height: 1.6;
+        }
+
+        /* Leaderboard Entry */
+        #leaderboard-entry {
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        #leaderboard-entry.hidden {
+            display: none;
+        }
+
+        #leaderboard-entry input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 18px;
+            font-family: 'Space Mono', monospace;
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #FFD700;
+            color: #FFD700;
+            text-align: center;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        #leaderboard-entry input::placeholder {
+            color: rgba(255, 215, 0, 0.4);
+        }
+
+        #leaderboard-entry input:focus {
+            outline: none;
+            background: rgba(255, 215, 0, 0.15);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .entry-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .entry-buttons button {
+            padding: 12px 25px;
+            font-size: 14px;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #D4A574;
+            color: #D4A574;
+        }
+
+        .btn-outline:hover {
+            background: rgba(212, 165, 116, 0.1);
+        }
+
+        #submit-status {
+            font-size: 14px;
+            color: #2D9596;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+
+        .game-over-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        /* Leaderboard Screen */
+        #leaderboard-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.98);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            padding: 40px;
+        }
+
+        #leaderboard-screen h2 {
+            font-size: 32px;
+            color: #FFD700;
+            margin-bottom: 30px;
+            letter-spacing: 4px;
+        }
+
+        .leaderboard-list {
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 30px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+        }
+
+        .leaderboard-item:first-child {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .leaderboard-item:nth-child(2) {
+            background: rgba(192, 192, 192, 0.05);
+        }
+
+        .leaderboard-item:nth-child(3) {
+            background: rgba(205, 127, 50, 0.05);
+        }
+
+        .leaderboard-rank {
+            font-size: 14px;
+            color: #6B6560;
+            width: 30px;
+        }
+
+        .leaderboard-item:first-child .leaderboard-rank {
+            color: #FFD700;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            color: #D4A574;
+            text-align: left;
+            padding: 0 15px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .leaderboard-score {
+            font-weight: 700;
+            color: #2D9596;
+            font-size: 18px;
+        }
+
+        .leaderboard-empty {
+            color: #6B6560;
+            font-style: italic;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .leaderboard-loading {
+            color: #D4A574;
+            padding: 40px;
+            text-align: center;
         }
     </style>
 </head>
@@ -215,7 +374,28 @@
     <div id="game-over-screen">
         <h1>GAME OVER</h1>
         <div id="final-score"></div>
-        <button id="restart-btn">PLAY AGAIN</button>
+
+        <div id="leaderboard-entry">
+            <input type="text" id="player-name" placeholder="YOUR NAME" maxlength="20" autocomplete="off">
+            <div class="entry-buttons">
+                <button id="submit-score-btn">SUBMIT</button>
+                <button id="skip-btn" class="btn-outline">SKIP</button>
+            </div>
+            <div id="submit-status"></div>
+        </div>
+
+        <div class="game-over-actions">
+            <button id="restart-btn">PLAY AGAIN</button>
+            <button id="view-leaderboard-btn" class="btn-outline">VIEW LEADERBOARD</button>
+        </div>
+    </div>
+
+    <div id="leaderboard-screen">
+        <h2>LEADERBOARD</h2>
+        <div class="leaderboard-list" id="leaderboard-list">
+            <div class="leaderboard-loading">Loading...</div>
+        </div>
+        <button id="close-leaderboard-btn">BACK</button>
     </div>
     
     <div id="game">
@@ -231,6 +411,8 @@
     </div>
     
     <script>
+        const GAME_NAME = 'amber-rain';
+
         // Audio context
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
@@ -280,6 +462,17 @@
         const scoreEl = document.getElementById('score');
         const livesEl = document.getElementById('lives');
         const hearts = document.querySelectorAll('.heart');
+
+        // Leaderboard elements
+        const playerNameInput = document.getElementById('player-name');
+        const submitScoreBtn = document.getElementById('submit-score-btn');
+        const skipBtn = document.getElementById('skip-btn');
+        const submitStatus = document.getElementById('submit-status');
+        const leaderboardEntry = document.getElementById('leaderboard-entry');
+        const viewLeaderboardBtn = document.getElementById('view-leaderboard-btn');
+        const closeLeaderboardBtn = document.getElementById('close-leaderboard-btn');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const leaderboardScreen = document.getElementById('leaderboard-screen');
         
         // Input handling
         let mouseX = window.innerWidth / 2;
@@ -426,27 +619,125 @@
             spawnRate = 1000;
             dropSpeed = 2;
             lastSpawn = 0;
-            
+
             scoreEl.textContent = score;
             hearts.forEach(h => h.classList.remove('lost'));
-            
+
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-over-screen').style.display = 'none';
-            
+            leaderboardScreen.style.display = 'none';
+
+            // Reset leaderboard entry state
+            leaderboardEntry.classList.remove('hidden');
+            playerNameInput.value = localStorage.getItem('amber_rain_player_name') || '';
+            submitStatus.textContent = '';
+            submitScoreBtn.disabled = false;
+
             gameActive = true;
             requestAnimationFrame(gameLoop);
         }
-        
+
         function endGame() {
             gameActive = false;
             playGameOver();
-            
+
             document.getElementById('final-score').textContent = `SCORE: ${score}`;
             document.getElementById('game-over-screen').style.display = 'flex';
         }
-        
+
+        // Leaderboard functions
+        async function submitScore() {
+            const name = playerNameInput.value.trim();
+            if (!name) {
+                submitStatus.textContent = 'Enter your name first!';
+                submitStatus.style.color = '#D4A574';
+                return;
+            }
+
+            submitScoreBtn.disabled = true;
+            submitStatus.textContent = 'Submitting...';
+            submitStatus.style.color = '#D4A574';
+
+            try {
+                const res = await fetch('/api/game/leaderboard', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        game: GAME_NAME,
+                        playerName: name,
+                        score: score
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.setItem('amber_rain_player_name', name);
+                    submitStatus.textContent = `Rank #${data.rank}!`;
+                    submitStatus.style.color = '#2D9596';
+                    leaderboardEntry.classList.add('hidden');
+                } else {
+                    submitStatus.textContent = 'Failed to submit';
+                    submitStatus.style.color = '#D4A574';
+                    submitScoreBtn.disabled = false;
+                }
+            } catch (e) {
+                submitStatus.textContent = 'Network error';
+                submitStatus.style.color = '#D4A574';
+                submitScoreBtn.disabled = false;
+            }
+        }
+
+        async function loadLeaderboard() {
+            leaderboardList.innerHTML = '<div class="leaderboard-loading">Loading...</div>';
+
+            try {
+                const res = await fetch(`/api/game/leaderboard?game=${GAME_NAME}&limit=10`);
+                const data = await res.json();
+
+                if (data.leaderboard && data.leaderboard.length > 0) {
+                    leaderboardList.innerHTML = data.leaderboard.map((entry, i) => `
+                        <div class="leaderboard-item">
+                            <span class="leaderboard-rank">${i + 1}</span>
+                            <span class="leaderboard-name">${escapeHtml(entry.player_name)}</span>
+                            <span class="leaderboard-score">${entry.score}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    leaderboardList.innerHTML = '<div class="leaderboard-empty">No scores yet. Be the first!</div>';
+                }
+            } catch (e) {
+                leaderboardList.innerHTML = '<div class="leaderboard-empty">Failed to load leaderboard</div>';
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showLeaderboard() {
+            document.getElementById('game-over-screen').style.display = 'none';
+            leaderboardScreen.style.display = 'flex';
+            loadLeaderboard();
+        }
+
+        function hideLeaderboard() {
+            leaderboardScreen.style.display = 'none';
+            document.getElementById('game-over-screen').style.display = 'flex';
+        }
+
+        // Event listeners
         document.getElementById('start-btn').addEventListener('click', startGame);
         document.getElementById('restart-btn').addEventListener('click', startGame);
+        submitScoreBtn.addEventListener('click', submitScore);
+        skipBtn.addEventListener('click', () => leaderboardEntry.classList.add('hidden'));
+        viewLeaderboardBtn.addEventListener('click', showLeaderboard);
+        closeLeaderboardBtn.addEventListener('click', hideLeaderboard);
+        playerNameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submitScore();
+        });
     </script>
 </body>
 </html>
