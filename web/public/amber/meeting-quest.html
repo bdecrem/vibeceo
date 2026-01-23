@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEETING QUEST</title>
+    <meta property="og:title" content="MEETING QUEST">
+    <meta property="og:description" content="An 8-bit survival RPG. One NPC has fallen.">
+    <meta property="og:image" content="https://intheamber.com/amber/meeting-quest-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/meeting-quest.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/meeting-quest-og.png">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0D0D0D;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Press Start 2P', monospace;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .screen {
+            background: #000;
+            border: 4px solid #D4A574;
+            padding: 8px;
+            box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+        }
+
+        .hud {
+            background: #1a1a1a;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            font-size: 10px;
+            color: #D4A574;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .bar {
+            background: #333;
+            height: 16px;
+            border: 2px solid #D4A574;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .attention-fill {
+            background: #2D9596;
+        }
+
+        .sanity-fill {
+            background: #FFD700;
+        }
+
+        .time-fill {
+            background: #7B68EE;
+        }
+
+        .coffee-fill {
+            background: #D4A574;
+        }
+
+        .scene {
+            background: #1a1a1a;
+            padding: 16px;
+            position: relative;
+            aspect-ratio: 16/9;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .dialogue {
+            background: #000;
+            border: 4px solid #D4A574;
+            padding: 16px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #D4A574;
+            min-height: 80px;
+            position: relative;
+        }
+
+        .dialogue::after {
+            content: '▼';
+            position: absolute;
+            bottom: 8px;
+            right: 16px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .controls {
+            margin-top: 16px;
+            padding: 16px;
+            background: #1a1a1a;
+            border: 2px solid #2D9596;
+            font-size: 10px;
+            color: #2D9596;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .hud {
+                font-size: 8px;
+            }
+            .dialogue {
+                font-size: 10px;
+            }
+            .controls {
+                font-size: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="screen">
+            <div class="hud">
+                <div class="stat">
+                    <div>ATTENTION</div>
+                    <div class="bar">
+                        <div class="bar-fill attention-fill" id="attention" style="width: 15%"></div>
+                    </div>
+                </div>
+                <div class="stat">
+                    <div>SANITY</div>
+                    <div class="bar">
+                        <div class="bar-fill sanity-fill" id="sanity" style="width: 30%"></div>
+                    </div>
+                </div>
+                <div class="stat">
+                    <div>TIME LEFT</div>
+                    <div class="bar">
+                        <div class="bar-fill time-fill" id="time" style="width: 65%"></div>
+                    </div>
+                </div>
+                <div class="stat">
+                    <div>COFFEE LVL</div>
+                    <div class="bar">
+                        <div class="bar-fill coffee-fill" id="coffee" style="width: 85%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scene">
+                <canvas id="pixelCanvas"></canvas>
+            </div>
+
+            <div class="dialogue" id="dialogue">
+                QUEST: SURVIVE THE MEETING<br>
+                Press SPACE to advance time
+            </div>
+        </div>
+
+        <div class="controls">
+            [SPACE] ADVANCE • [R] RESTART • [ESC] GIVE UP
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pixelCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Setactual canvas size (small, will be scaled by CSS)
+        canvas.width = 160;
+        canvas.height = 90;
+
+        // Pixel art palette
+        const colors = {
+            bg: '#2a2a2a',
+            wall: '#4a4a4a',
+            table: '#5a3a2a',
+            screen: '#1a1a2a',
+            chair: '#3a3a4a',
+            person: '#D4A574',
+            clothes: '#2D9596',
+            sleeping: '#7B68EE',
+            zzz: '#FFD700',
+            window: '#6a8a9a'
+        };
+
+        let frame = 0;
+        let phase = 0;
+        const messages = [
+            "QUEST: SURVIVE THE MEETING",
+            "NPC_MANAGER is speaking...",
+            "NPC_COLLEAGUE_1: *nods vaguely*",
+            "NPC_COLLEAGUE_2: *checks phone*",
+            "WARNING: NPC_SLEEPER HP = 0",
+            "Your ATTENTION drops by 5",
+            "Your SANITY drops by 10",
+            "15 minutes remaining...",
+            "NPC_MANAGER: 'Any questions?'",
+            "You stay silent. +10 STEALTH",
+            "TIME REMAINING: 5 minutes",
+            "ACHIEVEMENT: Survived another one"
+        ];
+
+        function drawPixel(x, y, color, size = 1) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, size, size);
+        }
+
+        function drawPerson(x, y, sleeping = false) {
+            // Head
+            ctx.fillStyle = colors.person;
+            ctx.fillRect(x, y, 6, 6);
+            
+            // Eyes
+            ctx.fillStyle = '#000';
+            if (sleeping) {
+                ctx.fillRect(x + 1, y + 2, 1, 1);
+                ctx.fillRect(x + 4, y + 2, 1, 1);
+            } else {
+                ctx.fillRect(x + 1, y + 2, 1, 1);
+                ctx.fillRect(x + 4, y + 2, 1, 1);
+            }
+            
+            // Body
+            ctx.fillStyle = sleeping ? colors.sleeping : colors.clothes;
+            ctx.fillRect(x - 1, y + 6, 8, 8);
+        }
+
+        function drawZZZ(x, y, offset) {
+            ctx.fillStyle = colors.zzz;
+            ctx.font = '8px monospace';
+            ctx.fillText('Z', x + offset, y);
+            ctx.fillText('Z', x + offset + 3, y - 3);
+            ctx.fillText('Z', x + offset + 6, y - 6);
+        }
+
+        function drawScene() {
+            // Clear
+            ctx.fillStyle = colors.bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Back wall
+            ctx.fillStyle = colors.wall;
+            ctx.fillRect(0, 0, canvas.width, 40);
+
+            // Screen/projector
+            ctx.fillStyle = colors.screen;
+            ctx.fillRect(60, 5, 40, 25);
+            ctx.fillStyle = '#3a4a5a';
+            ctx.fillRect(62, 7, 36, 21);
+
+            // Table
+            ctx.fillStyle = colors.table;
+            ctx.fillRect(20, 50, 120, 6);
+            
+            // Chairs (simple rectangles)
+            ctx.fillStyle = colors.chair;
+            // Left side chairs
+            ctx.fillRect(25, 44, 8, 6);
+            ctx.fillRect(45, 44, 8, 6);
+            ctx.fillRect(65, 44, 8, 6);
+            // Right side chairs  
+            ctx.fillRect(87, 44, 8, 6);
+            ctx.fillRect(107, 44, 8, 6);
+            ctx.fillRect(127, 44, 8, 6);
+
+            // NPCs around table
+            drawPerson(27, 30); // Left 1
+            drawPerson(47, 30); // Left 2
+            drawPerson(67, 30, true); // SLEEPING ONE
+            drawPerson(89, 30); // Right 1
+            drawPerson(109, 30); // Right 2
+            drawPerson(129, 30); // Right 3
+
+            // ZZZ above sleeping person
+            const zOffset = Math.sin(frame * 0.1) * 2;
+            drawZZZ(69, 26, zOffset);
+
+            // Player (you) - slightly different color
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(80, 65, 6, 6);
+            ctx.fillStyle = colors.clothes;
+            ctx.fillRect(79, 71, 8, 8);
+
+            // Status indicator above player
+            ctx.fillStyle = '#D4A574';
+            ctx.font = '6px monospace';
+            ctx.fillText('YOU', 78, 62);
+        }
+
+        function updateBars() {
+            const attention = document.getElementById('attention');
+            const sanity = document.getElementById('sanity');
+            const time = document.getElementById('time');
+            const coffee = document.getElementById('coffee');
+
+            // Slow decay over time
+            const decay = phase * 5;
+            attention.style.width = Math.max(5, 15 - decay) + '%';
+            sanity.style.width = Math.max(10, 30 - decay * 1.5) + '%';
+            time.style.width = Math.max(0, 100 - phase * 8) + '%';
+            coffee.style.width = Math.max(0, 85 - phase * 7) + '%';
+        }
+
+        function nextPhase() {
+            if (phase < messages.length - 1) {
+                phase++;
+                document.getElementById('dialogue').innerHTML = 
+                    messages[phase] + '<br>Press SPACE to advance time';
+                updateBars();
+            } else {
+                document.getElementById('dialogue').innerHTML = 
+                    'MEETING COMPLETE<br>Press R to restart';
+            }
+        }
+
+        function restart() {
+            phase = 0;
+            frame = 0;
+            document.getElementById('dialogue').innerHTML = 
+                messages[0] + '<br>Press SPACE to advance time';
+            updateBars();
+        }
+
+        function animate() {
+            frame++;
+            drawScene();
+            requestAnimationFrame(animate);
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                nextPhase();
+            } else if (e.code === 'KeyR') {
+                restart();
+            } else if (e.code === 'Escape') {
+                document.getElementById('dialogue').innerHTML = 
+                    'YOU FLED THE MEETING<br>-100 REPUTATION';
+            }
+        });
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
