@@ -87,6 +87,104 @@ The tension creates something ancient and futuristic — like amber itself.
 
 **Rule of three:** Amber = primary/warm, Teal = secondary/cool, Violet = rare/special.
 
+## OG Background Generation System
+
+Amber has a design system for generating OpenGraph background images. These are pure backgrounds (no text) that another agent composites text onto.
+
+### Design System
+
+**Live preview:** `http://localhost:3000/amber/og-design-system-v2.html`
+**Source:** `web/public/amber/og-design-system-v2.html`
+
+The design system is a self-contained React app (Babel standalone + Tailwind CDN). It supports 7 content types, each with multiple modes and 5 color palettes.
+
+### Content Types & Modes
+
+| Type | Modes | Description |
+|------|-------|-------------|
+| `music` | vertical, horizontal | Stepped waveform bars |
+| `toys` | blocky, gooey | Tetris shapes or soft blobs |
+| `inventions` | (single) | Circuit traces, scan lines |
+| `reflections` | (single) | Soft ripples, breathing gradients |
+| `ascii` | dense, float, vignette | Terminal characters, box-drawing |
+| `highdef` | orb, aurora, prism | Smooth orbs, light bands, geometric refraction |
+| `generic` | orb, ember, drift | Corner orb, spark cluster, shifted position |
+
+### Export Mode
+
+Add `?export=true` to the URL to hide all text overlays and vignettes:
+```
+http://localhost:3000/amber/og-design-system-v2.html?export=true
+```
+
+### Generator Scripts
+
+Located in `web/scripts/`:
+
+| Script | Output |
+|--------|--------|
+| `generate-og-music.mjs` | 20 music backgrounds |
+| `generate-og-toys.mjs` | 20 toy backgrounds |
+| `generate-og-inventions.mjs` | 20 invention backgrounds |
+| `generate-og-reflections.mjs` | 20 reflection backgrounds |
+| `generate-og-ascii.mjs` | 20 ascii backgrounds (7/7/6 split) |
+| `generate-og-hdart.mjs` | 20 hd-art backgrounds (7/7/6 split) |
+| `generate-og-generic.mjs` | 20 generic backgrounds (7/7/6 split) |
+
+**Run a generator:**
+```bash
+cd web
+node scripts/generate-og-music.mjs
+```
+
+**Requirements:**
+- Local dev server running (`npm run dev` in web/)
+- Playwright installed (`npm install playwright`)
+
+### Output
+
+**Images:** `web/public/amber/og-backgrounds/og-{type}-{number}.png`
+**Manifest:** `web/public/amber/og-backgrounds/manifest.json`
+
+Manifest format:
+```json
+{
+  "version": "1.0",
+  "generated": "2026-01-22T...",
+  "backgrounds": [
+    {
+      "file": "og-music-001.png",
+      "type": "music",
+      "fg": "#00fff2",
+      "palette": "Neon Club",
+      "mode": "vertical"
+    }
+  ]
+}
+```
+
+The `fg` color is the recommended text color for that background.
+
+### Regenerating All Backgrounds
+
+To regenerate all 140 backgrounds:
+```bash
+cd web
+node scripts/generate-og-music.mjs
+node scripts/generate-og-toys.mjs
+node scripts/generate-og-inventions.mjs
+node scripts/generate-og-reflections.mjs
+node scripts/generate-og-ascii.mjs
+node scripts/generate-og-hdart.mjs
+node scripts/generate-og-generic.mjs
+```
+
+To start fresh, delete existing images and reset manifest first:
+```bash
+rm -f web/public/amber/og-backgrounds/og-*.png
+echo '{"version":"1.0","generated":"","backgrounds":[]}' > web/public/amber/og-backgrounds/manifest.json
+```
+
 ## Current State
 
 - **Created**: December 21, 2025

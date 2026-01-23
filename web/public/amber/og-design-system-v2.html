@@ -18,7 +18,10 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect } = React;
+
+    // Check for export mode via URL parameter
+    const isExportMode = new URLSearchParams(window.location.search).get('export') === 'true';
 
     const seededRandom = (seed) => {
       const x = Math.sin(seed) * 10000;
@@ -69,12 +72,19 @@
         { bg: '#0a0808', fg: '#ffd6e0', accent: '#9d8cbe', name: 'Dawn' },
         { bg: '#000000', fg: '#F5C87A', accent: '#B8860B', name: 'Golden Hour' },
       ],
+      generic: [
+        { bg: '#000000', fg: '#F5C87A', accent: '#2D9596', name: 'Amber Classic' },
+        { bg: '#0a0a0a', fg: '#D4A574', accent: '#40E0D0', name: 'Warm Teal' },
+        { bg: '#050508', fg: '#FFD700', accent: '#7B68EE', name: 'Gold Violet' },
+        { bg: '#080808', fg: '#40E0D0', accent: '#F5C87A', name: 'Teal Amber' },
+        { bg: '#000000', fg: '#7B68EE', accent: '#FFD700', name: 'Violet Gold' },
+      ],
     };
 
     // === BACKGROUND GENERATORS ===
 
     // MUSIC: 8-bit stepped waveform bars (vertical or horizontal)
-    const MusicBackground = ({ seed = 42, palette, isHorizontal = false }) => {
+    const MusicBackground = ({ seed = 42, palette, isHorizontal = false, exportMode = false }) => {
       const barCount = isHorizontal ? 16 : 32;
 
       const bars = Array.from({ length: barCount }, (_, i) => {
@@ -119,27 +129,29 @@
               />
             ))}
           </div>
-          {/* Dark overlay for text contrast */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `radial-gradient(ellipse at 50% 50%, ${palette.bg}ee 0%, ${palette.bg}aa 35%, transparent 70%)`,
-            }}
-          />
+          {/* Dark overlay for text contrast - reduced in export mode */}
+          {!exportMode && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse at 50% 50%, ${palette.bg}ee 0%, ${palette.bg}aa 35%, transparent 70%)`,
+              }}
+            />
+          )}
         </div>
       );
     };
 
     // TOYS: Two modes - blocky (lego/tetris) or gooey (soft blobs)
-    const ToysBackground = ({ seed = 42, palette, isGooey = false }) => {
+    const ToysBackground = ({ seed = 42, palette, isGooey = false, exportMode = false }) => {
       if (isGooey) {
-        return <ToysGooeyBackground seed={seed} palette={palette} />;
+        return <ToysGooeyBackground seed={seed} palette={palette} exportMode={exportMode} />;
       }
-      return <ToysBlockyBackground seed={seed} palette={palette} />;
+      return <ToysBlockyBackground seed={seed} palette={palette} exportMode={exportMode} />;
     };
 
     // TOYS GOOEY: Soft, bendy, organic blob shapes
-    const ToysGooeyBackground = ({ seed = 42, palette }) => {
+    const ToysGooeyBackground = ({ seed = 42, palette, exportMode = false }) => {
       // Playful color palette
       const toyColors = [
         palette.fg,
@@ -197,19 +209,21 @@
             />
           ))}
 
-          {/* Dark overlay for text contrast */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `radial-gradient(ellipse at 50% 50%, ${palette.bg}dd 0%, ${palette.bg}99 30%, transparent 65%)`,
-            }}
-          />
+          {/* Dark overlay for text contrast - hidden in export mode */}
+          {!exportMode && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse at 50% 50%, ${palette.bg}dd 0%, ${palette.bg}99 30%, transparent 65%)`,
+              }}
+            />
+          )}
         </div>
       );
     };
 
     // TOYS BLOCKY: Lego/tetris style blocks
-    const ToysBlockyBackground = ({ seed = 42, palette }) => {
+    const ToysBlockyBackground = ({ seed = 42, palette, exportMode = false }) => {
       const gridSize = 20;
 
       // Playful color palette - mix of palette colors + fixed toy colors
@@ -332,19 +346,21 @@
             return null;
           })}
 
-          {/* Dark overlay for text contrast */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `radial-gradient(ellipse at 50% 50%, ${palette.bg}dd 0%, ${palette.bg}99 30%, transparent 65%)`,
-            }}
-          />
+          {/* Dark overlay for text contrast - hidden in export mode */}
+          {!exportMode && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse at 50% 50%, ${palette.bg}dd 0%, ${palette.bg}99 30%, transparent 65%)`,
+              }}
+            />
+          )}
         </div>
       );
     };
 
     // INVENTIONS: Glitch lines, scan artifacts, circuit traces
-    const InventionsBackground = ({ seed = 42, palette }) => {
+    const InventionsBackground = ({ seed = 42, palette, exportMode = false }) => {
       const traces = Array.from({ length: 20 }, (_, i) => {
         const isHorizontal = seededRandom(seed + i * 3) > 0.5;
         return {
@@ -421,7 +437,7 @@
     };
 
     // REFLECTIONS: Smooth ripples, soft gradients, minimal
-    const ReflectionsBackground = ({ seed = 42, palette }) => {
+    const ReflectionsBackground = ({ seed = 42, palette, exportMode = false }) => {
       const ripples = Array.from({ length: 4 }, (_, i) => ({
         x: 30 + seededRandom(seed + i * 5) * 40,
         y: 35 + seededRandom(seed + i * 9) * 30,
@@ -467,84 +483,775 @@
       );
     };
 
-    // ASCII ART: Box-drawing characters, grain texture
-    const AsciiBackground = ({ seed = 42, palette }) => {
-      const chars = '░▒▓│─┼╔╗╚╝║═';
-      const rows = 12;
-      const cols = 40;
+    // ASCII ART: Three modes - Dense (full grid), Float (scattered), Vignette (dense at edges)
+    const AsciiBackground = ({ seed = 42, palette, mode = 'dense', exportMode = false }) => {
+      if (mode === 'float') {
+        return <AsciiFloatBackground seed={seed} palette={palette} exportMode={exportMode} />;
+      }
+      if (mode === 'vignette') {
+        return <AsciiVignetteBackground seed={seed} palette={palette} exportMode={exportMode} />;
+      }
+      return <AsciiDenseBackground seed={seed} palette={palette} exportMode={exportMode} />;
+    };
 
-      const asciiGrid = Array.from({ length: rows }, (_, row) =>
-        Array.from({ length: cols }, (_, col) => {
-          const charIndex = Math.floor(seededRandom(seed + row * cols + col) * chars.length);
-          const opacity = 0.1 + seededRandom(seed + row * cols + col + 1000) * 0.25;
-          return { char: chars[charIndex], opacity };
-        })
-      );
+    // ASCII VIGNETTE: Dense at edges, fading to clear center
+    const AsciiVignetteBackground = ({ seed = 42, palette, exportMode = false }) => {
+      const chars = '░▒▓█│─┼╔╗╚╝║═◢◣◤◥';
+
+      // Generate many more characters, density based on distance from center
+      const floatingChars = [];
+      const totalChars = 300;
+
+      for (let i = 0; i < totalChars; i++) {
+        // Random position
+        const rawX = seededRandom(seed + i * 3) * 100;
+        const rawY = seededRandom(seed + i * 5) * 100;
+
+        // Calculate distance from center (0 = center, 1 = corner)
+        const dx = (rawX - 50) / 50;
+        const dy = (rawY - 50) / 50;
+        const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+
+        // Probability of keeping char increases with distance from center
+        // Center (dist=0): 5% chance, Edge (dist=1): 95% chance
+        const keepProbability = 0.05 + distFromCenter * 0.9;
+
+        if (seededRandom(seed + i * 7 + 1000) < keepProbability) {
+          const charIndex = Math.floor(seededRandom(seed + i * 11) * chars.length);
+          // Size and opacity also increase toward edges
+          const edgeFactor = Math.min(1, distFromCenter);
+          const size = 8 + edgeFactor * 14 + seededRandom(seed + i * 13) * 8;
+          const opacity = 0.1 + edgeFactor * 0.5 + seededRandom(seed + i * 17) * 0.2;
+          const rotation = -30 + seededRandom(seed + i * 19) * 60;
+          const isGlowing = seededRandom(seed + i * 23) > 0.85 && edgeFactor > 0.5;
+
+          floatingChars.push({
+            x: rawX,
+            y: rawY,
+            char: chars[charIndex],
+            size,
+            opacity: Math.min(0.85, opacity),
+            rotation,
+            isGlowing,
+            edgeFactor,
+          });
+        }
+      }
+
+      // Edge border characters - very dense
+      const borderChars = [];
+      const borderDensity = 60;
+
+      // Top and bottom borders
+      for (let i = 0; i < borderDensity; i++) {
+        const x = (i / borderDensity) * 100;
+        const charIndex = Math.floor(seededRandom(seed + i * 31) * chars.length);
+        // Top
+        borderChars.push({
+          x,
+          y: 2 + seededRandom(seed + i * 33) * 8,
+          char: chars[charIndex],
+          size: 12 + seededRandom(seed + i * 35) * 10,
+          opacity: 0.4 + seededRandom(seed + i * 37) * 0.4,
+        });
+        // Bottom
+        borderChars.push({
+          x,
+          y: 90 + seededRandom(seed + i * 39) * 8,
+          char: chars[Math.floor(seededRandom(seed + i * 41) * chars.length)],
+          size: 12 + seededRandom(seed + i * 43) * 10,
+          opacity: 0.4 + seededRandom(seed + i * 45) * 0.4,
+        });
+      }
+
+      // Left and right borders
+      for (let i = 0; i < borderDensity * 0.6; i++) {
+        const y = (i / (borderDensity * 0.6)) * 100;
+        const charIndex = Math.floor(seededRandom(seed + i * 51) * chars.length);
+        // Left
+        borderChars.push({
+          x: 2 + seededRandom(seed + i * 53) * 8,
+          y,
+          char: chars[charIndex],
+          size: 12 + seededRandom(seed + i * 55) * 10,
+          opacity: 0.4 + seededRandom(seed + i * 57) * 0.4,
+        });
+        // Right
+        borderChars.push({
+          x: 90 + seededRandom(seed + i * 59) * 8,
+          y,
+          char: chars[Math.floor(seededRandom(seed + i * 61) * chars.length)],
+          size: 12 + seededRandom(seed + i * 63) * 10,
+          opacity: 0.4 + seededRandom(seed + i * 65) * 0.4,
+        });
+      }
 
       return (
         <div className="absolute inset-0 overflow-hidden" style={{ fontFamily: "'Space Mono', monospace" }}>
+          {/* Subtle scan lines */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `repeating-linear-gradient(0deg, transparent 0px, transparent 3px, ${palette.fg}04 3px, ${palette.fg}04 4px)`,
+            }}
+          />
+
+          {/* Border characters - densest layer */}
+          {borderChars.map((bc, i) => (
+            <div
+              key={`border-${i}`}
+              className="absolute"
+              style={{
+                left: `${bc.x}%`,
+                top: `${bc.y}%`,
+                transform: 'translate(-50%, -50%)',
+                fontSize: bc.size,
+                color: palette.fg,
+                opacity: bc.opacity,
+                textShadow: `0 0 4px ${palette.fg}40`,
+              }}
+            >
+              {bc.char}
+            </div>
+          ))}
+
+          {/* Floating characters - density gradient */}
+          {floatingChars.map((fc, i) => (
+            <div
+              key={`float-${i}`}
+              className="absolute"
+              style={{
+                left: `${fc.x}%`,
+                top: `${fc.y}%`,
+                transform: `translate(-50%, -50%) rotate(${fc.rotation}deg)`,
+                fontSize: fc.size,
+                color: fc.isGlowing ? palette.accent : palette.fg,
+                opacity: fc.opacity,
+                textShadow: fc.isGlowing ? `0 0 10px ${palette.accent}` : `0 0 3px ${palette.fg}30`,
+              }}
+            >
+              {fc.char}
+            </div>
+          ))}
+
+          {/* Radial gradient to enhance center clarity - hidden in export mode */}
+          {!exportMode && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse 70% 60% at 50% 50%, ${palette.bg}dd 0%, ${palette.bg}99 30%, transparent 60%)`,
+              }}
+            />
+          )}
+        </div>
+      );
+    };
+
+    // ASCII FLOAT: Characters floating around the edges, center clear
+    const AsciiFloatBackground = ({ seed = 42, palette, exportMode = false }) => {
+      const chars = '░▒▓█│─┼╔╗╚╝║═◢◣◤◥▲▼◆○●';
+
+      // Generate floating char clusters around edges
+      const floatingChars = Array.from({ length: 80 }, (_, i) => {
+        const angle = seededRandom(seed + i * 7) * Math.PI * 2;
+        const distance = 0.35 + seededRandom(seed + i * 11) * 0.25; // 35-60% from center
+
+        // Convert to x,y but push toward edges
+        let x = 50 + Math.cos(angle) * distance * 100;
+        let y = 50 + Math.sin(angle) * distance * 80;
+
+        // Clamp to stay in bounds
+        x = Math.max(3, Math.min(97, x));
+        y = Math.max(5, Math.min(95, y));
+
+        const charIndex = Math.floor(seededRandom(seed + i * 13) * chars.length);
+        const size = 10 + seededRandom(seed + i * 17) * 18;
+        const opacity = 0.15 + seededRandom(seed + i * 19) * 0.45;
+        const rotation = -20 + seededRandom(seed + i * 23) * 40;
+        const isGlowing = seededRandom(seed + i * 29) > 0.8;
+
+        return { x, y, char: chars[charIndex], size, opacity, rotation, isGlowing };
+      });
+
+      // Corner box-drawing decorations
+      const cornerDecorations = [
+        { x: 8, y: 12, text: '╔══════╗', align: 'left' },
+        { x: 8, y: 18, text: '║', align: 'left' },
+        { x: 8, y: 24, text: '╚══', align: 'left' },
+        { x: 92, y: 12, text: '╔══════╗', align: 'right' },
+        { x: 92, y: 18, text: '║', align: 'right' },
+        { x: 92, y: 24, text: '══╗', align: 'right' },
+        { x: 8, y: 76, text: '╔══', align: 'left' },
+        { x: 8, y: 82, text: '║', align: 'left' },
+        { x: 8, y: 88, text: '╚══════╝', align: 'left' },
+        { x: 92, y: 76, text: '══╗', align: 'right' },
+        { x: 92, y: 82, text: '║', align: 'right' },
+        { x: 92, y: 88, text: '╚══════╝', align: 'right' },
+      ];
+
+      return (
+        <div className="absolute inset-0 overflow-hidden" style={{ fontFamily: "'Space Mono', monospace" }}>
+          {/* Subtle scan lines */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `repeating-linear-gradient(0deg, transparent 0px, transparent 3px, ${palette.fg}05 3px, ${palette.fg}05 4px)`,
+            }}
+          />
+
+          {/* Noise texture */}
           <div
             className="absolute inset-0"
             style={{
               background: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-              opacity: 0.03,
+              opacity: 0.04,
             }}
           />
-          <div className="absolute inset-0 flex flex-col justify-center items-center opacity-20">
-            {asciiGrid.map((row, rowIndex) => (
-              <div key={rowIndex} className="flex">
-                {row.map((cell, colIndex) => (
-                  <span
-                    key={colIndex}
-                    style={{
-                      color: palette.fg,
-                      opacity: cell.opacity,
-                      fontSize: '14px',
-                      width: '14px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {cell.char}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
+
+          {/* Floating characters */}
+          {floatingChars.map((fc, i) => (
+            <div
+              key={`float-${i}`}
+              className="absolute"
+              style={{
+                left: `${fc.x}%`,
+                top: `${fc.y}%`,
+                transform: `translate(-50%, -50%) rotate(${fc.rotation}deg)`,
+                fontSize: fc.size,
+                color: fc.isGlowing ? palette.accent : palette.fg,
+                opacity: fc.opacity,
+                textShadow: fc.isGlowing ? `0 0 12px ${palette.accent}` : `0 0 4px ${palette.fg}40`,
+              }}
+            >
+              {fc.char}
+            </div>
+          ))}
+
+          {/* Corner decorations */}
+          {cornerDecorations.map((dec, i) => (
+            <div
+              key={`corner-${i}`}
+              className="absolute"
+              style={{
+                left: dec.align === 'left' ? `${dec.x}%` : 'auto',
+                right: dec.align === 'right' ? `${100 - dec.x}%` : 'auto',
+                top: `${dec.y}%`,
+                fontSize: '14px',
+                color: palette.accent,
+                opacity: 0.5,
+                textShadow: `0 0 8px ${palette.accent}60`,
+                whiteSpace: 'pre',
+              }}
+            >
+              {dec.text}
+            </div>
+          ))}
+
+          {/* Subtle center glow */}
           <div
             className="absolute"
             style={{
-              left: '15%',
-              top: '25%',
-              right: '15%',
-              bottom: '25%',
-              border: `1px solid ${palette.accent}30`,
-              boxShadow: `0 0 20px ${palette.accent}10`,
+              left: '50%',
+              top: '50%',
+              width: '60%',
+              height: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: `radial-gradient(ellipse, ${palette.fg}08 0%, transparent 70%)`,
             }}
           />
         </div>
       );
     };
 
-    // HIGH-DEF ART: Smooth orbs, radial glows
-    const HighdefBackground = ({ seed = 42, palette }) => {
-      const orbs = Array.from({ length: 3 }, (_, i) => ({
-        x: 25 + seededRandom(seed + i * 5) * 50,
-        y: 25 + seededRandom(seed + i * 7) * 50,
-        size: 80 + seededRandom(seed + i * 11) * 120,
-        blur: 40 + seededRandom(seed + i * 13) * 40,
+    // ASCII DENSE: Bold box-drawing characters with terminal glow
+    const AsciiDenseBackground = ({ seed = 42, palette, exportMode = false }) => {
+      const chars = '░▒▓█│─┼╔╗╚╝║═';
+      const rows = 18;
+      const cols = 60;
+
+      // Generate grid with varying intensity
+      const asciiGrid = Array.from({ length: rows }, (_, row) =>
+        Array.from({ length: cols }, (_, col) => {
+          const charIndex = Math.floor(seededRandom(seed + row * cols + col) * chars.length);
+          const intensity = seededRandom(seed + row * cols + col + 1000);
+          // Some chars glow brighter
+          const isGlowing = intensity > 0.85;
+          const opacity = isGlowing ? 0.9 : 0.25 + intensity * 0.35;
+          return { char: chars[charIndex], opacity, isGlowing };
+        })
+      );
+
+      // Prominent box frame coordinates
+      const frameTop = 4;
+      const frameBottom = rows - 4;
+      const frameLeft = 8;
+      const frameRight = cols - 8;
+
+      // Build the frame characters
+      const getFrameChar = (row, col) => {
+        const isTop = row === frameTop;
+        const isBottom = row === frameBottom;
+        const isLeft = col === frameLeft;
+        const isRight = col === frameRight;
+
+        if (isTop && isLeft) return '╔';
+        if (isTop && isRight) return '╗';
+        if (isBottom && isLeft) return '╚';
+        if (isBottom && isRight) return '╝';
+        if (isTop || isBottom) return '═';
+        if ((isLeft || isRight) && row > frameTop && row < frameBottom) return '║';
+        return null;
+      };
+
+      // Scan line effect positions
+      const scanLines = Array.from({ length: 6 }, (_, i) => ({
+        y: 10 + seededRandom(seed + i * 17) * 80,
+        opacity: 0.03 + seededRandom(seed + i * 19) * 0.04,
+      }));
+
+      return (
+        <div className="absolute inset-0 overflow-hidden" style={{ fontFamily: "'Space Mono', monospace" }}>
+          {/* CRT scan lines */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `repeating-linear-gradient(0deg, transparent 0px, transparent 2px, ${palette.fg}08 2px, ${palette.fg}08 4px)`,
+            }}
+          />
+
+          {/* Noise texture */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+              opacity: 0.06,
+            }}
+          />
+
+          {/* Horizontal scan line artifacts */}
+          {scanLines.map((line, i) => (
+            <div
+              key={`scan-${i}`}
+              className="absolute"
+              style={{
+                left: 0,
+                right: 0,
+                top: `${line.y}%`,
+                height: 1,
+                background: palette.fg,
+                opacity: line.opacity,
+              }}
+            />
+          ))}
+
+          {/* ASCII character grid */}
+          <div
+            className="absolute inset-0 flex flex-col justify-center items-center"
+            style={{ padding: '20px' }}
+          >
+            {asciiGrid.map((row, rowIndex) => (
+              <div key={rowIndex} className="flex">
+                {row.map((cell, colIndex) => {
+                  const frameChar = getFrameChar(rowIndex, colIndex);
+                  const isFrame = frameChar !== null;
+                  const displayChar = isFrame ? frameChar : cell.char;
+                  const charOpacity = isFrame ? 0.7 : cell.opacity;
+                  const charColor = isFrame ? palette.accent : (cell.isGlowing ? palette.fg : palette.fg);
+
+                  return (
+                    <span
+                      key={colIndex}
+                      style={{
+                        color: charColor,
+                        opacity: charOpacity,
+                        fontSize: '12px',
+                        width: '12px',
+                        height: '16px',
+                        lineHeight: '16px',
+                        textAlign: 'center',
+                        textShadow: (isFrame || cell.isGlowing) ? `0 0 8px ${charColor}` : 'none',
+                      }}
+                    >
+                      {displayChar}
+                    </span>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* Corner accents - hidden in export mode */}
+          {!exportMode && (
+            <>
+              <div className="absolute top-6 left-6 text-lg" style={{ color: palette.accent, opacity: 0.6, textShadow: `0 0 10px ${palette.accent}` }}>▛</div>
+              <div className="absolute top-6 right-6 text-lg" style={{ color: palette.accent, opacity: 0.6, textShadow: `0 0 10px ${palette.accent}` }}>▜</div>
+              <div className="absolute bottom-6 left-6 text-lg" style={{ color: palette.accent, opacity: 0.6, textShadow: `0 0 10px ${palette.accent}` }}>▙</div>
+              <div className="absolute bottom-6 right-6 text-lg" style={{ color: palette.accent, opacity: 0.6, textShadow: `0 0 10px ${palette.accent}` }}>▟</div>
+            </>
+          )}
+
+          {/* Vignette for text contrast - hidden in export mode */}
+          {!exportMode && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse at 50% 50%, transparent 0%, ${palette.bg}90 80%, ${palette.bg} 100%)`,
+              }}
+            />
+          )}
+        </div>
+      );
+    };
+
+    // HIGH-DEF ART: Three modes - Orb, Aurora, or Prism
+    const HighdefBackground = ({ seed = 42, palette, mode = 'orb', exportMode = false }) => {
+      if (mode === 'aurora') {
+        return <HighdefAuroraBackground seed={seed} palette={palette} exportMode={exportMode} />;
+      }
+      if (mode === 'prism') {
+        return <HighdefPrismBackground seed={seed} palette={palette} exportMode={exportMode} />;
+      }
+      return <HighdefOrbBackground seed={seed} palette={palette} exportMode={exportMode} />;
+    };
+
+    // HIGHDEF PRISM: Geometric light refraction
+    const HighdefPrismBackground = ({ seed = 42, palette, exportMode = false }) => {
+      // Spectral bands spreading from center
+      const spectralColors = [
+        palette.fg,
+        palette.accent,
+        '#7B68EE', // violet accent
+        palette.fg + 'aa',
+        palette.accent + '88',
+      ];
+
+      const bands = spectralColors.map((color, i) => ({
+        color,
+        angle: -15 + i * 8,
+        width: 60 + seededRandom(seed + i * 7) * 40,
+        offset: i * 25,
+      }));
+
+      // Floating geometric shapes
+      const shapes = Array.from({ length: 6 }, (_, i) => ({
+        x: 10 + seededRandom(seed + i * 11 + 50) * 80,
+        y: 10 + seededRandom(seed + i * 13 + 50) * 80,
+        size: 30 + seededRandom(seed + i * 17 + 50) * 60,
+        rotation: seededRandom(seed + i * 19 + 50) * 360,
+        sides: 3 + Math.floor(seededRandom(seed + i * 23 + 50) * 3), // 3-5 sides
+        opacity: 0.1 + seededRandom(seed + i * 29 + 50) * 0.15,
+      }));
+
+      // Create polygon clip path
+      const getPolygonPath = (sides) => {
+        const points = Array.from({ length: sides }, (_, i) => {
+          const angle = (i * 360 / sides - 90) * Math.PI / 180;
+          const x = 50 + 50 * Math.cos(angle);
+          const y = 50 + 50 * Math.sin(angle);
+          return `${x}% ${y}%`;
+        });
+        return `polygon(${points.join(', ')})`;
+      };
+
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Deep black base */}
+          <div className="absolute inset-0" style={{ background: '#000000' }} />
+
+          {/* Central light source glow */}
+          <div
+            className="absolute"
+            style={{
+              left: '30%',
+              top: '50%',
+              width: 300,
+              height: 300,
+              transform: 'translate(-50%, -50%)',
+              background: `radial-gradient(circle, ${palette.fg}40 0%, transparent 70%)`,
+              filter: 'blur(40px)',
+            }}
+          />
+
+          {/* Spectral light bands */}
+          {bands.map((band, i) => (
+            <div
+              key={`band-${i}`}
+              className="absolute"
+              style={{
+                left: '25%',
+                top: '50%',
+                width: '120%',
+                height: band.width,
+                background: `linear-gradient(90deg, ${band.color}00 0%, ${band.color}60 20%, ${band.color}40 60%, ${band.color}00 100%)`,
+                transform: `translateY(-50%) rotate(${band.angle}deg)`,
+                transformOrigin: 'left center',
+                filter: 'blur(8px)',
+              }}
+            />
+          ))}
+
+          {/* Central prism shape */}
+          <div
+            className="absolute"
+            style={{
+              left: '28%',
+              top: '50%',
+              width: 120,
+              height: 140,
+              transform: 'translate(-50%, -50%)',
+              clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)',
+              background: `linear-gradient(180deg, ${palette.fg}20 0%, ${palette.accent}30 50%, ${palette.fg}10 100%)`,
+              border: `1px solid ${palette.fg}40`,
+              boxShadow: `0 0 60px ${palette.fg}30`,
+            }}
+          />
+
+          {/* Prism edge highlights */}
+          <div
+            className="absolute"
+            style={{
+              left: '28%',
+              top: '50%',
+              width: 120,
+              height: 140,
+              transform: 'translate(-50%, -50%)',
+              clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)',
+              background: 'transparent',
+              boxShadow: `inset 2px 0 20px ${palette.fg}40, inset -2px 0 20px ${palette.accent}40`,
+            }}
+          />
+
+          {/* Floating geometric shapes */}
+          {shapes.map((shape, i) => (
+            <div
+              key={`shape-${i}`}
+              className="absolute"
+              style={{
+                left: `${shape.x}%`,
+                top: `${shape.y}%`,
+                width: shape.size,
+                height: shape.size,
+                transform: `translate(-50%, -50%) rotate(${shape.rotation}deg)`,
+                clipPath: getPolygonPath(shape.sides),
+                background: `linear-gradient(135deg, ${palette.fg}${Math.round(shape.opacity * 255).toString(16).padStart(2, '0')}, ${palette.accent}${Math.round(shape.opacity * 0.5 * 255).toString(16).padStart(2, '0')})`,
+                border: `1px solid ${palette.fg}20`,
+              }}
+            />
+          ))}
+
+          {/* Lens flare dots */}
+          {[0.4, 0.5, 0.6, 0.75].map((pos, i) => (
+            <div
+              key={`flare-${i}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${25 + pos * 50}%`,
+                top: `${50 - (pos - 0.5) * 20}%`,
+                width: 8 + i * 4,
+                height: 8 + i * 4,
+                background: `radial-gradient(circle, ${palette.fg}60 0%, transparent 70%)`,
+                transform: 'translate(-50%, -50%)',
+              }}
+            />
+          ))}
+
+          {/* Top gradient for text contrast - hidden in export mode */}
+          {!exportMode && (
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `radial-gradient(ellipse at 50% 50%, transparent 0%, ${palette.bg}40 50%, ${palette.bg}90 100%)`,
+              }}
+            />
+          )}
+        </div>
+      );
+    };
+
+    // HIGHDEF AURORA: Flowing horizontal light bands like northern lights
+    const HighdefAuroraBackground = ({ seed = 42, palette, exportMode = false }) => {
+      // Generate flowing bands
+      const bands = Array.from({ length: 5 }, (_, i) => ({
+        y: 20 + seededRandom(seed + i * 7) * 60,
+        height: 80 + seededRandom(seed + i * 11) * 120,
+        opacity: 0.15 + seededRandom(seed + i * 13) * 0.25,
+        skew: -5 + seededRandom(seed + i * 17) * 10,
+        color: i % 2 === 0 ? palette.fg : palette.accent,
+      }));
+
+      // Star/particle points
+      const stars = Array.from({ length: 20 }, (_, i) => ({
+        x: seededRandom(seed + i * 3 + 100) * 100,
+        y: seededRandom(seed + i * 5 + 100) * 100,
+        size: 1 + seededRandom(seed + i * 7 + 100) * 3,
+        opacity: 0.3 + seededRandom(seed + i * 11 + 100) * 0.7,
       }));
 
       return (
         <div className="absolute inset-0 overflow-hidden">
+          {/* Deep gradient base */}
           <div
             className="absolute inset-0"
             style={{
-              background: `radial-gradient(ellipse at 50% 50%, ${palette.bg} 0%, #000000 100%)`,
+              background: `linear-gradient(180deg, ${palette.bg} 0%, #000000 50%, ${palette.bg}80 100%)`,
             }}
           />
-          {orbs.map((orb, i) => (
+
+          {/* Horizon glow */}
+          <div
+            className="absolute"
+            style={{
+              left: 0,
+              right: 0,
+              bottom: '20%',
+              height: '40%',
+              background: `radial-gradient(ellipse 120% 100% at 50% 100%, ${palette.fg}30 0%, transparent 70%)`,
+            }}
+          />
+
+          {/* Aurora bands */}
+          {bands.map((band, i) => (
             <div
-              key={i}
+              key={`band-${i}`}
+              className="absolute"
+              style={{
+                left: '-10%',
+                right: '-10%',
+                top: `${band.y}%`,
+                height: band.height,
+                background: `linear-gradient(90deg, transparent 0%, ${band.color}${Math.round(band.opacity * 255).toString(16).padStart(2, '0')} 30%, ${band.color}${Math.round(band.opacity * 0.7 * 255).toString(16).padStart(2, '0')} 70%, transparent 100%)`,
+                transform: `skewY(${band.skew}deg)`,
+                filter: 'blur(30px)',
+              }}
+            />
+          ))}
+
+          {/* Central bright band */}
+          <div
+            className="absolute"
+            style={{
+              left: '10%',
+              right: '10%',
+              top: '40%',
+              height: 60,
+              background: `linear-gradient(90deg, transparent 0%, ${palette.fg}50 20%, ${palette.fg}80 50%, ${palette.fg}50 80%, transparent 100%)`,
+              filter: 'blur(20px)',
+            }}
+          />
+
+          {/* Vertical rays */}
+          {[0.2, 0.35, 0.5, 0.65, 0.8].map((x, i) => (
+            <div
+              key={`ray-${i}`}
+              className="absolute"
+              style={{
+                left: `${x * 100}%`,
+                top: '30%',
+                width: 2 + seededRandom(seed + i * 19) * 4,
+                height: '50%',
+                background: `linear-gradient(180deg, ${palette.fg}00 0%, ${palette.fg}40 30%, ${palette.accent}30 70%, transparent 100%)`,
+                filter: 'blur(8px)',
+                opacity: 0.4 + seededRandom(seed + i * 23) * 0.4,
+              }}
+            />
+          ))}
+
+          {/* Star points */}
+          {stars.map((star, i) => (
+            <div
+              key={`star-${i}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${star.x}%`,
+                top: `${star.y}%`,
+                width: star.size,
+                height: star.size,
+                background: palette.fg,
+                opacity: star.opacity,
+                boxShadow: `0 0 ${star.size * 2}px ${palette.fg}`,
+              }}
+            />
+          ))}
+
+          {/* Top fade for text contrast - hidden in export mode */}
+          {!exportMode && (
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(180deg, ${palette.bg}cc 0%, transparent 40%, transparent 100%)`,
+              }}
+            />
+          )}
+        </div>
+      );
+    };
+
+    // HIGHDEF ORB: Signature amber orb with accent rings
+    const HighdefOrbBackground = ({ seed = 42, palette, exportMode = false }) => {
+      // Primary orb position (slightly off-center for dynamism)
+      const mainX = 65 + seededRandom(seed) * 15;
+      const mainY = 45 + seededRandom(seed + 1) * 15;
+      const mainSize = 180 + seededRandom(seed + 2) * 60;
+
+      // Secondary smaller orbs
+      const secondaryOrbs = Array.from({ length: 3 }, (_, i) => ({
+        x: 15 + seededRandom(seed + i * 5 + 10) * 70,
+        y: 20 + seededRandom(seed + i * 7 + 10) * 60,
+        size: 40 + seededRandom(seed + i * 11 + 10) * 50,
+        opacity: 0.4 + seededRandom(seed + i * 13 + 10) * 0.3,
+      }));
+
+      // Concentric rings for depth
+      const rings = Array.from({ length: 4 }, (_, i) => ({
+        size: mainSize + 40 + i * 35,
+        opacity: 0.15 - i * 0.03,
+      }));
+
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Deep background gradient */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at ${mainX}% ${mainY}%, ${palette.bg} 0%, #000000 70%)`,
+            }}
+          />
+
+          {/* Ambient glow behind main orb */}
+          <div
+            className="absolute rounded-full"
+            style={{
+              left: `${mainX}%`,
+              top: `${mainY}%`,
+              width: mainSize * 2.5,
+              height: mainSize * 2.5,
+              transform: 'translate(-50%, -50%)',
+              background: `radial-gradient(circle, ${palette.fg}20 0%, ${palette.fg}08 40%, transparent 70%)`,
+              filter: 'blur(40px)',
+            }}
+          />
+
+          {/* Concentric rings */}
+          {rings.map((ring, i) => (
+            <div
+              key={`ring-${i}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${mainX}%`,
+                top: `${mainY}%`,
+                width: ring.size,
+                height: ring.size,
+                transform: 'translate(-50%, -50%)',
+                border: `1px solid ${palette.accent}`,
+                opacity: ring.opacity,
+              }}
+            />
+          ))}
+
+          {/* Secondary orbs */}
+          {secondaryOrbs.map((orb, i) => (
+            <div
+              key={`secondary-${i}`}
               className="absolute rounded-full"
               style={{
                 left: `${orb.x}%`,
@@ -552,27 +1259,521 @@
                 width: orb.size,
                 height: orb.size,
                 transform: 'translate(-50%, -50%)',
-                background: `radial-gradient(circle at 35% 35%, ${palette.fg}40, ${palette.accent}20, transparent)`,
-                filter: `blur(${orb.blur}px)`,
+                background: `radial-gradient(circle at 35% 35%, ${palette.fg}, ${palette.accent}80, transparent)`,
+                opacity: orb.opacity,
+                boxShadow: `0 0 ${orb.size / 2}px ${palette.fg}40`,
               }}
             />
           ))}
+
+          {/* Main signature orb - teal accent ring */}
           <div
-            className="absolute"
+            className="absolute rounded-full"
             style={{
-              left: '50%',
-              top: '50%',
-              width: 250,
-              height: 250,
+              left: `${mainX}%`,
+              top: `${mainY}%`,
+              width: mainSize + 16,
+              height: mainSize + 16,
               transform: 'translate(-50%, -50%)',
-              background: `radial-gradient(circle, ${palette.fg}15 0%, ${palette.fg}05 40%, transparent 70%)`,
-              borderRadius: '50%',
+              border: `2px solid ${palette.accent}`,
+              boxShadow: `0 0 30px ${palette.accent}50, inset 0 0 30px ${palette.accent}20`,
             }}
           />
+
+          {/* Main signature orb */}
+          <div
+            className="absolute rounded-full"
+            style={{
+              left: `${mainX}%`,
+              top: `${mainY}%`,
+              width: mainSize,
+              height: mainSize,
+              transform: 'translate(-50%, -50%)',
+              background: `radial-gradient(circle at 30% 30%, ${palette.fg}, ${palette.accent}90, ${palette.bg})`,
+              boxShadow: `0 0 60px ${palette.fg}60, 0 0 120px ${palette.fg}30`,
+            }}
+          />
+
+          {/* Specular highlight on main orb */}
+          <div
+            className="absolute rounded-full"
+            style={{
+              left: `${mainX - 3}%`,
+              top: `${mainY - 5}%`,
+              width: mainSize * 0.3,
+              height: mainSize * 0.2,
+              transform: 'translate(-50%, -50%) rotate(-20deg)',
+              background: `radial-gradient(ellipse, rgba(255,255,255,0.4) 0%, transparent 70%)`,
+              filter: 'blur(4px)',
+            }}
+          />
+
+          {/* Top rim light */}
           <div
             className="absolute inset-0"
             style={{
-              background: `radial-gradient(ellipse at 50% 0%, ${palette.fg}08 0%, transparent 50%)`,
+              background: `radial-gradient(ellipse at 50% -20%, ${palette.fg}12 0%, transparent 50%)`,
+            }}
+          />
+        </div>
+      );
+    };
+
+    // GENERIC: Chef's choice - three modes: Orb, Ember, Drift (shifted position)
+    const GenericBackground = ({ seed = 42, palette, mode = 'orb', exportMode = false }) => {
+      if (mode === 'ember') {
+        return <GenericEmberBackground seed={seed} palette={palette} exportMode={exportMode} />;
+      }
+      if (mode === 'drift') {
+        return <GenericDriftBackground seed={seed} palette={palette} exportMode={exportMode} />;
+      }
+      return <GenericOrbBackground seed={seed} palette={palette} exportMode={exportMode} />;
+    };
+
+    // GENERIC EMBER: Glowing ember/spark cluster instead of orb
+    const GenericEmberBackground = ({ seed = 42, palette, exportMode = false }) => {
+      // Ember cluster position
+      const emberX = 80 + seededRandom(seed) * 15;
+      const emberY = 25 + seededRandom(seed + 1) * 20;
+
+      // Core ember particles - bright, small, clustered
+      const coreEmbers = Array.from({ length: 12 }, (_, i) => {
+        const angle = seededRandom(seed + i * 3 + 100) * Math.PI * 2;
+        const dist = seededRandom(seed + i * 5 + 100) * 25;
+        return {
+          x: emberX + Math.cos(angle) * dist / 5,
+          y: emberY + Math.sin(angle) * dist / 8,
+          size: 3 + seededRandom(seed + i * 7 + 100) * 8,
+          opacity: 0.7 + seededRandom(seed + i * 11 + 100) * 0.3,
+          blur: seededRandom(seed + i * 13 + 100) * 2,
+        };
+      });
+
+      // Floating sparks - rising from ember
+      const sparks = Array.from({ length: 20 }, (_, i) => {
+        const drift = -15 + seededRandom(seed + i * 3 + 200) * 30;
+        const rise = seededRandom(seed + i * 5 + 200) * 40;
+        return {
+          x: emberX + drift / 5,
+          y: emberY - rise / 3,
+          size: 1 + seededRandom(seed + i * 7 + 200) * 3,
+          opacity: 0.3 + seededRandom(seed + i * 11 + 200) * 0.5 * (1 - rise / 40),
+        };
+      });
+
+      // Heat glow rings
+      const glowRings = Array.from({ length: 3 }, (_, i) => ({
+        size: 40 + i * 30 + seededRandom(seed + i * 17) * 20,
+        opacity: 0.15 - i * 0.04,
+      }));
+
+      // Diagonal lines
+      const lines = Array.from({ length: 6 }, (_, i) => ({
+        x: seededRandom(seed + i * 5 + 300) * 100,
+        length: 80 + seededRandom(seed + i * 7 + 300) * 150,
+        opacity: 0.02 + seededRandom(seed + i * 11 + 300) * 0.04,
+        angle: 25 + seededRandom(seed + i * 13 + 300) * 40,
+      }));
+
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Base gradient - warm glow from ember */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at ${emberX}% ${emberY}%, ${palette.fg}12 0%, ${palette.bg} 40%, #000000 100%)`,
+            }}
+          />
+
+          {/* Diagonal structural lines */}
+          {lines.map((line, i) => (
+            <div
+              key={`line-${i}`}
+              className="absolute"
+              style={{
+                left: `${line.x}%`,
+                top: '50%',
+                width: 1,
+                height: line.length,
+                background: palette.fg,
+                opacity: line.opacity,
+                transform: `translateY(-50%) rotate(${line.angle}deg)`,
+              }}
+            />
+          ))}
+
+          {/* Heat glow rings */}
+          {glowRings.map((ring, i) => (
+            <div
+              key={`glow-${i}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${emberX}%`,
+                top: `${emberY}%`,
+                width: ring.size,
+                height: ring.size,
+                transform: 'translate(-50%, -50%)',
+                background: `radial-gradient(circle, ${palette.fg}${Math.round(ring.opacity * 255).toString(16).padStart(2, '0')} 0%, transparent 70%)`,
+                filter: 'blur(10px)',
+              }}
+            />
+          ))}
+
+          {/* Core ember particles */}
+          {coreEmbers.map((ember, i) => (
+            <div
+              key={`core-${i}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${ember.x}%`,
+                top: `${ember.y}%`,
+                width: ember.size,
+                height: ember.size,
+                transform: 'translate(-50%, -50%)',
+                background: `radial-gradient(circle, ${palette.fg} 0%, ${palette.accent} 60%, transparent 100%)`,
+                opacity: ember.opacity,
+                boxShadow: `0 0 ${ember.size * 2}px ${palette.fg}`,
+                filter: `blur(${ember.blur}px)`,
+              }}
+            />
+          ))}
+
+          {/* Rising sparks */}
+          {sparks.map((spark, i) => (
+            <div
+              key={`spark-${i}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${spark.x}%`,
+                top: `${spark.y}%`,
+                width: spark.size,
+                height: spark.size,
+                background: palette.fg,
+                opacity: spark.opacity,
+                boxShadow: `0 0 ${spark.size * 3}px ${palette.fg}80`,
+              }}
+            />
+          ))}
+
+          {/* Bottom accent line */}
+          <div
+            className="absolute"
+            style={{
+              left: '10%',
+              right: '10%',
+              bottom: '12%',
+              height: 1,
+              background: `linear-gradient(90deg, transparent 0%, ${palette.accent}30 20%, ${palette.accent}30 80%, transparent 100%)`,
+            }}
+          />
+
+          {/* Corner brackets */}
+          <div className="absolute" style={{ left: 24, top: 24, width: 30, height: 30, borderLeft: `2px solid ${palette.accent}25`, borderTop: `2px solid ${palette.accent}25` }} />
+          <div className="absolute" style={{ right: 24, bottom: 24, width: 30, height: 30, borderRight: `2px solid ${palette.accent}25`, borderBottom: `2px solid ${palette.accent}25` }} />
+        </div>
+      );
+    };
+
+    // GENERIC DRIFT: Orb/ember shifted to bottom-left area
+    const GenericDriftBackground = ({ seed = 42, palette, exportMode = false }) => {
+      // Drifted position - bottom left quadrant
+      const orbX = 15 + seededRandom(seed) * 20;
+      const orbY = 65 + seededRandom(seed + 1) * 20;
+      const orbSize = 80 + seededRandom(seed + 2) * 50;
+
+      // Secondary small orb - opposite corner
+      const secondaryX = 75 + seededRandom(seed + 3) * 20;
+      const secondaryY = 15 + seededRandom(seed + 4) * 20;
+      const secondarySize = 30 + seededRandom(seed + 5) * 25;
+
+      // Connecting line/arc between the two
+      const lineAngle = Math.atan2(secondaryY - orbY, secondaryX - orbX) * 180 / Math.PI;
+
+      // Floating particles along the path
+      const particles = Array.from({ length: 12 }, (_, i) => {
+        const t = i / 11;
+        return {
+          x: orbX + (secondaryX - orbX) * t + (seededRandom(seed + i * 7 + 50) - 0.5) * 10,
+          y: orbY + (secondaryY - orbY) * t + (seededRandom(seed + i * 11 + 50) - 0.5) * 10,
+          size: 2 + seededRandom(seed + i * 13 + 50) * 4,
+          opacity: 0.15 + seededRandom(seed + i * 17 + 50) * 0.35,
+        };
+      });
+
+      // Diagonal lines
+      const lines = Array.from({ length: 5 }, (_, i) => ({
+        x: seededRandom(seed + i * 5 + 100) * 100,
+        length: 100 + seededRandom(seed + i * 7 + 100) * 180,
+        opacity: 0.02 + seededRandom(seed + i * 11 + 100) * 0.04,
+        angle: 20 + seededRandom(seed + i * 13 + 100) * 50,
+      }));
+
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Base gradient - glow from main orb position */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at ${orbX}% ${orbY}%, ${palette.fg}10 0%, ${palette.bg} 50%, #000000 100%)`,
+            }}
+          />
+
+          {/* Secondary glow from small orb */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at ${secondaryX}% ${secondaryY}%, ${palette.accent}08 0%, transparent 40%)`,
+            }}
+          />
+
+          {/* Diagonal structural lines */}
+          {lines.map((line, i) => (
+            <div
+              key={`line-${i}`}
+              className="absolute"
+              style={{
+                left: `${line.x}%`,
+                top: '50%',
+                width: 1,
+                height: line.length,
+                background: palette.fg,
+                opacity: line.opacity,
+                transform: `translateY(-50%) rotate(${line.angle}deg)`,
+              }}
+            />
+          ))}
+
+          {/* Connection line between orbs */}
+          <div
+            className="absolute"
+            style={{
+              left: `${orbX}%`,
+              top: `${orbY}%`,
+              width: Math.sqrt(Math.pow(secondaryX - orbX, 2) + Math.pow(secondaryY - orbY, 2)) * 1.2 + '%',
+              height: 1,
+              background: `linear-gradient(90deg, ${palette.fg}20 0%, ${palette.accent}15 50%, ${palette.fg}10 100%)`,
+              transform: `rotate(${lineAngle}deg)`,
+              transformOrigin: 'left center',
+            }}
+          />
+
+          {/* Particles along path */}
+          {particles.map((p, i) => (
+            <div
+              key={`particle-${i}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                width: p.size,
+                height: p.size,
+                background: palette.fg,
+                opacity: p.opacity,
+                boxShadow: `0 0 ${p.size * 2}px ${palette.fg}40`,
+              }}
+            />
+          ))}
+
+          {/* Main orb - bottom left */}
+          <div
+            className="absolute rounded-full"
+            style={{
+              left: `${orbX}%`,
+              top: `${orbY}%`,
+              width: orbSize,
+              height: orbSize,
+              transform: 'translate(-50%, -50%)',
+              background: `radial-gradient(circle at 30% 30%, ${palette.fg}90, ${palette.accent}70, transparent)`,
+              boxShadow: `0 0 50px ${palette.fg}40`,
+            }}
+          />
+
+          {/* Main orb ring */}
+          <div
+            className="absolute rounded-full"
+            style={{
+              left: `${orbX}%`,
+              top: `${orbY}%`,
+              width: orbSize + 14,
+              height: orbSize + 14,
+              transform: 'translate(-50%, -50%)',
+              border: `1px solid ${palette.accent}50`,
+              boxShadow: `0 0 25px ${palette.accent}25`,
+            }}
+          />
+
+          {/* Secondary orb - top right */}
+          <div
+            className="absolute rounded-full"
+            style={{
+              left: `${secondaryX}%`,
+              top: `${secondaryY}%`,
+              width: secondarySize,
+              height: secondarySize,
+              transform: 'translate(-50%, -50%)',
+              background: `radial-gradient(circle at 35% 35%, ${palette.accent}80, ${palette.fg}50, transparent)`,
+              boxShadow: `0 0 30px ${palette.accent}30`,
+            }}
+          />
+
+          {/* Corner brackets */}
+          <div className="absolute" style={{ left: 24, top: 24, width: 30, height: 30, borderLeft: `2px solid ${palette.accent}25`, borderTop: `2px solid ${palette.accent}25` }} />
+          <div className="absolute" style={{ right: 24, bottom: 24, width: 30, height: 30, borderRight: `2px solid ${palette.accent}25`, borderBottom: `2px solid ${palette.accent}25` }} />
+        </div>
+      );
+    };
+
+    // GENERIC ORB: Original - orb in corner
+    const GenericOrbBackground = ({ seed = 42, palette, exportMode = false }) => {
+      // Corner orb position (small signature element)
+      const orbX = 85 + seededRandom(seed) * 10;
+      const orbY = 20 + seededRandom(seed + 1) * 15;
+      const orbSize = 60 + seededRandom(seed + 2) * 40;
+
+      // Diagonal lines for subtle structure
+      const lines = Array.from({ length: 8 }, (_, i) => ({
+        x: seededRandom(seed + i * 5 + 10) * 100,
+        length: 100 + seededRandom(seed + i * 7 + 10) * 200,
+        opacity: 0.03 + seededRandom(seed + i * 11 + 10) * 0.06,
+        angle: 30 + seededRandom(seed + i * 13 + 10) * 30,
+      }));
+
+      // Floating dots/particles
+      const particles = Array.from({ length: 15 }, (_, i) => ({
+        x: seededRandom(seed + i * 3 + 50) * 100,
+        y: seededRandom(seed + i * 5 + 50) * 100,
+        size: 2 + seededRandom(seed + i * 7 + 50) * 4,
+        opacity: 0.2 + seededRandom(seed + i * 11 + 50) * 0.4,
+      }));
+
+      // Subtle gradient bands
+      const bands = Array.from({ length: 3 }, (_, i) => ({
+        y: 20 + i * 30 + seededRandom(seed + i * 17) * 20,
+        opacity: 0.02 + seededRandom(seed + i * 19) * 0.03,
+      }));
+
+      return (
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Base gradient - subtle warmth from corner */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at ${orbX}% ${orbY}%, ${palette.fg}08 0%, ${palette.bg} 50%, #000000 100%)`,
+            }}
+          />
+
+          {/* Horizontal gradient bands */}
+          {bands.map((band, i) => (
+            <div
+              key={`band-${i}`}
+              className="absolute"
+              style={{
+                left: 0,
+                right: 0,
+                top: `${band.y}%`,
+                height: 80,
+                background: `linear-gradient(90deg, transparent 0%, ${palette.fg}${Math.round(band.opacity * 255).toString(16).padStart(2, '0')} 30%, ${palette.fg}${Math.round(band.opacity * 255).toString(16).padStart(2, '0')} 70%, transparent 100%)`,
+                filter: 'blur(30px)',
+              }}
+            />
+          ))}
+
+          {/* Diagonal structural lines */}
+          {lines.map((line, i) => (
+            <div
+              key={`line-${i}`}
+              className="absolute"
+              style={{
+                left: `${line.x}%`,
+                top: '50%',
+                width: 1,
+                height: line.length,
+                background: palette.fg,
+                opacity: line.opacity,
+                transform: `translateY(-50%) rotate(${line.angle}deg)`,
+                transformOrigin: 'center',
+              }}
+            />
+          ))}
+
+          {/* Floating particles */}
+          {particles.map((p, i) => (
+            <div
+              key={`particle-${i}`}
+              className="absolute rounded-full"
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                width: p.size,
+                height: p.size,
+                background: palette.fg,
+                opacity: p.opacity,
+                boxShadow: `0 0 ${p.size * 2}px ${palette.fg}40`,
+              }}
+            />
+          ))}
+
+          {/* Corner signature orb - small but present */}
+          <div
+            className="absolute rounded-full"
+            style={{
+              right: `${100 - orbX}%`,
+              top: `${orbY}%`,
+              width: orbSize,
+              height: orbSize,
+              transform: 'translate(50%, -50%)',
+              background: `radial-gradient(circle at 30% 30%, ${palette.fg}80, ${palette.accent}60, transparent)`,
+              boxShadow: `0 0 40px ${palette.fg}30`,
+            }}
+          />
+
+          {/* Accent ring around orb */}
+          <div
+            className="absolute rounded-full"
+            style={{
+              right: `${100 - orbX}%`,
+              top: `${orbY}%`,
+              width: orbSize + 12,
+              height: orbSize + 12,
+              transform: 'translate(50%, -50%)',
+              border: `1px solid ${palette.accent}40`,
+              boxShadow: `0 0 20px ${palette.accent}20`,
+            }}
+          />
+
+          {/* Bottom accent line */}
+          <div
+            className="absolute"
+            style={{
+              left: '10%',
+              right: '10%',
+              bottom: '12%',
+              height: 1,
+              background: `linear-gradient(90deg, transparent 0%, ${palette.accent}30 20%, ${palette.accent}30 80%, transparent 100%)`,
+            }}
+          />
+
+          {/* Corner brackets */}
+          <div
+            className="absolute"
+            style={{
+              left: 24,
+              top: 24,
+              width: 30,
+              height: 30,
+              borderLeft: `2px solid ${palette.accent}25`,
+              borderTop: `2px solid ${palette.accent}25`,
+            }}
+          />
+          <div
+            className="absolute"
+            style={{
+              right: 24,
+              bottom: 24,
+              width: 30,
+              height: 30,
+              borderRight: `2px solid ${palette.accent}25`,
+              borderBottom: `2px solid ${palette.accent}25`,
             }}
           />
         </div>
@@ -587,6 +1788,7 @@
       reflections: { label: 'Reflections', icon: '◐', vibe: 'smooth', Background: ReflectionsBackground, description: 'Soft ripples, breathing gradients, minimal' },
       ascii: { label: 'ASCII Art', icon: '█', vibe: 'bitmap', Background: AsciiBackground, description: 'Box-drawing, grain texture, terminal feel' },
       highdef: { label: 'High-def Art', icon: '○', vibe: 'luminous', Background: HighdefBackground, description: 'Smooth orbs, radial glows, polished' },
+      generic: { label: 'Generic', icon: '◈', vibe: 'versatile', Background: GenericBackground, description: "Chef's choice — clean, balanced, works for anything" },
     };
 
     const EXAMPLE_TITLES = {
@@ -596,42 +1798,50 @@
       reflections: 'ON STILLNESS',
       ascii: 'RECEIPT FROM THE UNIVERSE',
       highdef: 'CONVERGENCE',
+      generic: 'SOMETHING NEW',
     };
 
     // === COMPONENTS ===
-    const OGPreview = ({ type, title, seed, paletteIndex, musicHorizontal, toysGooey }) => {
+    const OGPreview = ({ type, title, seed, paletteIndex, musicHorizontal, toysGooey, highdefMode, asciiMode, genericMode }) => {
       const config = CONTENT_TYPES[type];
       const palette = PALETTES[type][paletteIndex];
       const { Background } = config;
 
-      const bgProps = { seed, palette };
+      const bgProps = { seed, palette, exportMode: isExportMode };
       if (type === 'music') bgProps.isHorizontal = musicHorizontal;
       if (type === 'toys') bgProps.isGooey = toysGooey;
+      if (type === 'highdef') bgProps.mode = highdefMode;
+      if (type === 'ascii') bgProps.mode = asciiMode;
+      if (type === 'generic') bgProps.mode = genericMode;
 
       return (
         <div className="relative w-full rounded-lg overflow-hidden shadow-2xl" style={{ background: palette.bg, aspectRatio: '1200 / 630' }}>
           <Background {...bgProps} />
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
-            <div className="text-xs tracking-widest mb-3 uppercase" style={{ color: palette.fg, opacity: 0.5, fontFamily: "'Space Mono', monospace", letterSpacing: '0.2em' }}>
-              {config.icon} {config.label}
-            </div>
-            <h1 className="text-5xl md:text-6xl tracking-wide text-center uppercase" style={{ color: palette.fg, fontFamily: "'Inter', sans-serif", fontWeight: 600, letterSpacing: '0.04em', textShadow: `0 0 60px ${palette.fg}40` }}>
-              {title}
-            </h1>
-            <div className="mt-4 text-base" style={{ color: palette.fg, opacity: 0.5, fontFamily: "'Inter', sans-serif", fontWeight: 400 }}>
-              by Amber
-            </div>
-            <div className="w-16 h-0.5 mt-5 rounded-full" style={{ background: palette.accent }} />
-          </div>
-          <div className="absolute bottom-3 right-4 text-xs" style={{ color: palette.fg, opacity: 0.25, fontFamily: "'Space Mono', monospace" }}>
-            intheamber.com
-          </div>
-          <div className="absolute top-3 left-4 text-xs px-2 py-1 rounded" style={{ background: `${palette.fg}10`, color: palette.fg, opacity: 0.6, fontFamily: "'Space Mono', monospace", fontSize: '10px', letterSpacing: '0.1em' }}>
+          {!isExportMode && (
+            <>
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
+                <div className="text-xs tracking-widest mb-3 uppercase" style={{ color: palette.fg, opacity: 0.5, fontFamily: "'Space Mono', monospace", letterSpacing: '0.2em' }}>
+                  {config.icon} {config.label}
+                </div>
+                <h1 className="text-5xl md:text-6xl tracking-wide text-center uppercase" style={{ color: palette.fg, fontFamily: "'Inter', sans-serif", fontWeight: 600, letterSpacing: '0.04em', textShadow: `0 0 60px ${palette.fg}40` }}>
+                  {title}
+                </h1>
+                <div className="mt-4 text-base" style={{ color: palette.fg, opacity: 0.5, fontFamily: "'Inter', sans-serif", fontWeight: 400 }}>
+                  by Amber
+                </div>
+                <div className="w-16 h-0.5 mt-5 rounded-full" style={{ background: palette.accent }} />
+              </div>
+              <div className="absolute bottom-3 right-4 text-xs" style={{ color: palette.fg, opacity: 0.25, fontFamily: "'Space Mono', monospace" }}>
+                intheamber.com
+              </div>
+              <div className="absolute top-3 left-4 text-xs px-2 py-1 rounded" style={{ background: `${palette.fg}10`, color: palette.fg, opacity: 0.6, fontFamily: "'Space Mono', monospace", fontSize: '10px', letterSpacing: '0.1em' }}>
             {config.vibe}
           </div>
           <div className="absolute top-3 right-4 text-xs px-2 py-1 rounded" style={{ background: `${palette.fg}10`, color: palette.fg, opacity: 0.6, fontFamily: "'Space Mono', monospace" }}>
             {palette.name}
           </div>
+            </>
+          )}
         </div>
       );
     };
@@ -660,10 +1870,13 @@
 
     function App() {
       const [selectedTypes, setSelectedTypes] = useState(['music', 'ascii']);
-      const [paletteIndices, setPaletteIndices] = useState({ music: 2, toys: 2, inventions: 2, reflections: 0, ascii: 0, highdef: 0 });
-      const [seeds, setSeeds] = useState({ music: 42, toys: 123, inventions: 456, reflections: 789, ascii: 101, highdef: 202 });
+      const [paletteIndices, setPaletteIndices] = useState({ music: 2, toys: 2, inventions: 2, reflections: 0, ascii: 0, highdef: 0, generic: 0 });
+      const [seeds, setSeeds] = useState({ music: 42, toys: 123, inventions: 456, reflections: 789, ascii: 101, highdef: 202, generic: 303 });
       const [musicHorizontal, setMusicHorizontal] = useState(false);
       const [toysGooey, setToysGooey] = useState(false);
+      const [highdefMode, setHighdefMode] = useState('orb'); // 'orb', 'aurora', 'prism'
+      const [asciiMode, setAsciiMode] = useState('dense'); // 'dense', 'float', 'vignette'
+      const [genericMode, setGenericMode] = useState('orb'); // 'orb', 'ember', 'drift'
 
       const regenerate = (type) => setSeeds(prev => ({ ...prev, [type]: Math.floor(Math.random() * 10000) }));
       const selectPalette = (type, index) => setPaletteIndices(prev => ({ ...prev, [type]: index }));
@@ -740,6 +1953,21 @@
                             {toysGooey ? '◠ Gooey' : '▦ Blocky'}
                           </button>
                         )}
+                        {type === 'highdef' && (
+                          <button onClick={() => setHighdefMode(m => m === 'orb' ? 'aurora' : m === 'aurora' ? 'prism' : 'orb')} className="px-3 py-1.5 rounded text-xs transition-all hover:opacity-80" style={{ background: `${palette.fg}10`, color: palette.fg, border: `1px solid ${palette.fg}30`, fontFamily: "'Space Mono', monospace" }}>
+                            {highdefMode === 'orb' ? '◉ Orb' : highdefMode === 'aurora' ? '≋ Aurora' : '◇ Prism'}
+                          </button>
+                        )}
+                        {type === 'ascii' && (
+                          <button onClick={() => setAsciiMode(m => m === 'dense' ? 'float' : m === 'float' ? 'vignette' : 'dense')} className="px-3 py-1.5 rounded text-xs transition-all hover:opacity-80" style={{ background: `${palette.fg}10`, color: palette.fg, border: `1px solid ${palette.fg}30`, fontFamily: "'Space Mono', monospace" }}>
+                            {asciiMode === 'dense' ? '▦ Dense' : asciiMode === 'float' ? '◌ Float' : '◎ Vignette'}
+                          </button>
+                        )}
+                        {type === 'generic' && (
+                          <button onClick={() => setGenericMode(m => m === 'orb' ? 'ember' : m === 'ember' ? 'drift' : 'orb')} className="px-3 py-1.5 rounded text-xs transition-all hover:opacity-80" style={{ background: `${palette.fg}10`, color: palette.fg, border: `1px solid ${palette.fg}30`, fontFamily: "'Space Mono', monospace" }}>
+                            {genericMode === 'orb' ? '◉ Orb' : genericMode === 'ember' ? '✦ Ember' : '↘ Drift'}
+                          </button>
+                        )}
                         <button onClick={() => regenerate(type)} className="px-3 py-1.5 rounded text-xs transition-all hover:opacity-80" style={{ background: `${palette.fg}10`, color: palette.fg, border: `1px solid ${palette.fg}30`, fontFamily: "'Space Mono', monospace" }}>
                           ↻ Regenerate
                         </button>
@@ -749,7 +1977,7 @@
                       <div className="text-xs mb-3 uppercase tracking-wider" style={{ color: '#4A4A4A', fontFamily: "'Space Mono', monospace" }}>Palette:</div>
                       <PaletteSwatches type={type} selectedIndex={paletteIndices[type]} onSelect={(i) => selectPalette(type, i)} />
                     </div>
-                    <OGPreview type={type} title={EXAMPLE_TITLES[type]} seed={seeds[type]} paletteIndex={paletteIndices[type]} musicHorizontal={musicHorizontal} toysGooey={toysGooey} />
+                    <OGPreview type={type} title={EXAMPLE_TITLES[type]} seed={seeds[type]} paletteIndex={paletteIndices[type]} musicHorizontal={musicHorizontal} toysGooey={toysGooey} highdefMode={highdefMode} asciiMode={asciiMode} genericMode={genericMode} />
                   </div>
                 );
               })}

@@ -7,6 +7,8 @@
 
 import { InstrumentNode } from '../core/node.js';
 import { R9DS_PARAMS, toEngine, fromEngine } from '../params/converters.js';
+import { SampleVoice } from '../sample-voice.js';
+import { OfflineAudioContext } from 'node-web-audio-api';
 
 // All sampler slots
 const SLOTS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10'];
@@ -225,6 +227,105 @@ export class SamplerNode extends InstrumentNode {
     } else {
       this._pattern = pattern;
     }
+  }
+
+  /**
+   * Render the pattern to an audio buffer
+   * @param {Object} options - Render options
+   * @param {number} options.bars - Number of bars to render
+   * @param {number} options.stepDuration - Duration of one step in seconds
+   * @param {number} options.swing - Swing amount (0-1)
+   * @param {number} options.sampleRate - Sample rate (default 44100)
+   * @param {Object} [options.pattern] - Optional pattern override
+   * @param {Object} [options.params] - Optional params override
+   * @returns {Promise<AudioBuffer>}
+   */
+  async renderPattern(options) {
+    const {
+      bars,
+      stepDuration,
+      swing = 0,
+      sampleRate = 44100,
+      pattern = this._pattern,
+      params = null,
+    } = options;
+
+    // Check if pattern has any hits
+    const hasHits = SLOTS.some(slot =>
+      pattern[slot]?.some(step => step?.velocity > 0)
+    );
+    if (!hasHits || !this._kit) {
+      return null;
+    }
+
+    // Create offline context
+    const stepsPerBar = 16;
+    const totalSteps = stepsPerBar * bars;
+    const duration = totalSteps * stepDuration + 2; // Extra for release tails
+
+    const context = new OfflineAudioContext(2, Math.ceil(duration * sampleRate), sampleRate);
+
+    // Create master gain
+    const masterGain = context.createGain();
+    masterGain.gain.value = this.getOutputGain();
+    masterGain.connect(context.destination);
+
+    // Create sample voices for each slot
+    const voices = new Map();
+    for (const slot of SLOTS) {
+      const slotIndex = parseInt(slot.slice(1)) - 1;
+      const kitSlot = this._kit.slots?.[slotIndex];
+
+      if (kitSlot?.buffer) {
+        const voice = new SampleVoice(slot, context);
+        try {
+          // Decode the buffer (it's raw WAV bytes, need to convert to AudioBuffer)
+          const arrayBuffer = kitSlot.buffer.buffer.slice(
+            kitSlot.buffer.byteOffset,
+            kitSlot.buffer.byteOffset + kitSlot.buffer.byteLength
+          );
+          const audioBuffer = await context.decodeAudioData(arrayBuffer);
+          voice.setBuffer(audioBuffer);
+          voice.setMeta(kitSlot.name, kitSlot.short);
+
+          // Apply params - use override if provided, otherwise node's internal params
+          const slotParams = params?.[slot] || this.getSlotEngineParams(slot);
+          Object.entries(slotParams).forEach(([key, value]) => {
+            voice.setParameter(key, value);
+          });
+
+          voice.connect(masterGain);
+          voices.set(slot, voice);
+        } catch (e) {
+          console.warn(`Could not decode sample for ${slot}:`, e.message);
+        }
+      }
+    }
+
+    // Schedule all notes
+    const swingAmount = swing;
+    const maxSwingDelay = stepDuration * 0.5;
+
+    for (let i = 0; i < totalSteps; i++) {
+      const step = i % 16;
+      let time = i * stepDuration;
+
+      // Apply swing to off-beats
+      if (step % 2 === 1) {
+        time += swingAmount * maxSwingDelay;
+      }
+
+      for (const [slot, voice] of voices) {
+        const stepData = pattern[slot]?.[step];
+        if (stepData?.velocity > 0) {
+          voice.trigger(time, stepData.velocity);
+        }
+      }
+    }
+
+    // Render
+    const buffer = await context.startRendering();
+    return buffer;
   }
 
   /**

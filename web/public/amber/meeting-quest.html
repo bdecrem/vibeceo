@@ -188,7 +188,7 @@
         </div>
 
         <div class="controls">
-            [SPACE] ADVANCE • [R] RESTART • [ESC] GIVE UP
+            TAP DIALOGUE TO ADVANCE • TAP HERE TO RESTART
         </div>
     </div>
 
@@ -366,9 +366,18 @@
             } else if (e.code === 'KeyR') {
                 restart();
             } else if (e.code === 'Escape') {
-                document.getElementById('dialogue').innerHTML = 
+                document.getElementById('dialogue').innerHTML =
                     'YOU FLED THE MEETING<br>-100 REPUTATION';
             }
+        });
+
+        // Touch/click controls for mobile
+        document.getElementById('dialogue').addEventListener('click', () => {
+            nextPhase();
+        });
+
+        document.querySelector('.controls').addEventListener('click', () => {
+            restart();
         });
 
         // Start animation

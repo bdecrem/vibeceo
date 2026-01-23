@@ -19,9 +19,13 @@ const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
 
 /**
  * Convert step array (e.g., [0, 4, 8, 12]) to pattern array
+ * @param {number[]} steps - Step positions
+ * @param {number} length - Total pattern length in steps
+ * @param {number} velocity - Hit velocity (default 1)
+ * @param {boolean} accent - Accent flag (default false)
  */
-function stepsToPattern(steps, velocity = 1, accent = false) {
-  return Array(16).fill(null).map((_, i) => ({
+function stepsToPattern(steps, length = 16, velocity = 1, accent = false) {
+  return Array(length).fill(null).map((_, i) => ({
     velocity: steps.includes(i) ? velocity : 0,
     accent: steps.includes(i) ? accent : false,
   }));
@@ -30,11 +34,22 @@ function stepsToPattern(steps, velocity = 1, accent = false) {
 const jb01Tools = {
   /**
    * Add JB01 drum pattern
+   * @param {number} [bars=1] - Pattern length in bars (16 steps per bar)
    * Accepts either step arrays (e.g., kick: [0, 4, 8, 12]) or full pattern objects
    */
   add_jb01: async (input, session, context) => {
-    // Pattern is managed by JB01Node via session.jb01Pattern proxy
+    const bars = input.bars || 1;
+    const steps = bars * 16;
     const added = [];
+
+    // If bars > 1 and no existing pattern, resize first
+    if (bars > 1) {
+      for (const voice of VOICES) {
+        if (!session.jb01Pattern[voice] || session.jb01Pattern[voice].length < steps) {
+          session.jb01Pattern[voice] = stepsToPattern([], steps);
+        }
+      }
+    }
 
     for (const voice of VOICES) {
       if (input[voice] !== undefined) {
@@ -44,11 +59,16 @@ const jb01Tools = {
           // Check if it's a step array (numbers) or pattern array (objects)
           if (data.length > 0 && typeof data[0] === 'number') {
             // Step array: [0, 4, 8, 12]
-            session.jb01Pattern[voice] = stepsToPattern(data);
+            session.jb01Pattern[voice] = stepsToPattern(data, steps);
             added.push(`${voice}: ${data.length} hits`);
           } else {
-            // Full pattern array
-            session.jb01Pattern[voice] = data;
+            // Full pattern array - use as-is (pad if needed)
+            if (data.length < steps) {
+              const padded = [...data, ...Array(steps - data.length).fill({ velocity: 0, accent: false })];
+              session.jb01Pattern[voice] = padded;
+            } else {
+              session.jb01Pattern[voice] = data;
+            }
             const activeSteps = data.filter(s => s && s.velocity > 0).length;
             added.push(`${voice}: ${activeSteps} hits`);
           }
@@ -56,11 +76,17 @@ const jb01Tools = {
       }
     }
 
+    // Also update the node's pattern
+    if (session._nodes?.jb01) {
+      session._nodes.jb01.setPattern(session.jb01Pattern);
+    }
+
     if (added.length === 0) {
       return 'JB01: no pattern changes';
     }
 
-    return `JB01: ${added.join(', ')}`;
+    const barsLabel = bars > 1 ? ` (${bars} bars)` : '';
+    return `JB01: ${added.join(', ')}${barsLabel}`;
   },
 
   /**

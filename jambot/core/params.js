@@ -12,7 +12,7 @@
 
 export class ParamSystem {
   constructor() {
-    // Registered nodes: 'drums' -> DrumsNode, 'bass' -> BassNode, etc.
+    // Registered nodes: 'drums' -> JB01, 'bass' -> JB200, etc.
     this.nodes = new Map();
 
     // Automation data: 'drums.kick.decay' -> [values array]

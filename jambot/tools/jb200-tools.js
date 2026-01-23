@@ -16,11 +16,16 @@ import { listKits, loadKit, listSequences, loadSequence } from '../presets/loade
 
 const jb200Tools = {
   /**
-   * Add JB200 bass pattern - 16 steps with note, gate, accent, slide
+   * Add JB200 bass pattern
+   * @param {Array} pattern - Array of steps with note, gate, accent, slide
+   * @param {number} [bars=1] - Pattern length in bars (16 steps per bar)
    */
   add_jb200: async (input, session, context) => {
     const pattern = input.pattern || [];
-    session.jb200Pattern = Array(16).fill(null).map((_, i) => {
+    const bars = input.bars || 1;
+    const steps = bars * 16;
+
+    session.jb200Pattern = Array(steps).fill(null).map((_, i) => {
       const step = pattern[i] || {};
       return {
         note: step.note || 'C2',
@@ -29,8 +34,15 @@ const jb200Tools = {
         slide: step.slide || false,
       };
     });
+
+    // Also update the node's pattern
+    if (session._nodes?.jb200) {
+      session._nodes.jb200.setPattern(session.jb200Pattern);
+    }
+
     const activeSteps = session.jb200Pattern.filter(s => s.gate).length;
-    return `JB200 bass: ${activeSteps} notes`;
+    const barsLabel = bars > 1 ? ` (${bars} bars)` : '';
+    return `JB200 bass: ${activeSteps} notes${barsLabel}`;
   },
 
   /**

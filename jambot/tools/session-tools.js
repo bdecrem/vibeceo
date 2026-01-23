@@ -134,7 +134,6 @@ function showJB200(session) {
 
 /**
  * Show R3D3 (bass/303) state
- * Note: BassNode is a stub, so we access params from node's _params directly
  */
 function showBass(session) {
   const node = session._nodes.bass;
@@ -166,7 +165,6 @@ function showBass(session) {
 
 /**
  * Show R1D1 (lead/101) state
- * Note: LeadNode is a stub, so we access params from node's _params directly
  */
 function showLead(session) {
   const node = session._nodes.lead;

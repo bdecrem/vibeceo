@@ -3,19 +3,23 @@
  *
  * 2-oscillator bass synth with filter, envelopes, and drive.
  * Exposes parameters through the unified parameter system.
+ * Supports variable pattern lengths (default 16 steps = 1 bar).
  */
 
 import { InstrumentNode } from '../core/node.js';
 import { JB200_PARAMS, toEngine, fromEngine } from '../params/converters.js';
+import { JB200Engine } from '../../web/public/jb200/dist/machines/jb200/engine.js';
+import { OfflineAudioContext } from 'node-web-audio-api';
 
 // Voice (monophonic)
 const VOICES = ['bass'];
 
 /**
- * Create an empty 16-step pattern
+ * Create an empty pattern
+ * @param {number} steps - Number of steps (default 16 = 1 bar)
  */
-function createEmptyPattern() {
-  return Array(16).fill(null).map(() => ({
+function createEmptyPattern(steps = 16) {
+  return Array(steps).fill(null).map(() => ({
     note: 'C2',
     gate: false,
     accent: false,
@@ -155,10 +159,42 @@ export class JB200Node extends InstrumentNode {
 
   /**
    * Set the pattern
-   * @param {Array} pattern - 16-step pattern array
+   * @param {Array} pattern - Pattern array (any length, 16 steps = 1 bar)
    */
   setPattern(pattern) {
     this._pattern = pattern;
+  }
+
+  /**
+   * Get pattern length in steps
+   * @returns {number}
+   */
+  getPatternLength() {
+    return this._pattern.length;
+  }
+
+  /**
+   * Get pattern length in bars (16 steps = 1 bar)
+   * @returns {number}
+   */
+  getPatternBars() {
+    return this._pattern.length / 16;
+  }
+
+  /**
+   * Resize pattern to new length (preserves existing steps, fills new steps with empty)
+   * @param {number} steps - New pattern length in steps
+   */
+  resizePattern(steps) {
+    const current = this._pattern;
+    if (steps === current.length) return;
+
+    if (steps < current.length) {
+      this._pattern = current.slice(0, steps);
+    } else {
+      const empty = createEmptyPattern(steps - current.length);
+      this._pattern = [...current, ...empty];
+    }
   }
 
   /**
@@ -180,5 +216,52 @@ export class JB200Node extends InstrumentNode {
   deserialize(data) {
     if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
     if (data.params) this._params = { ...data.params };
+  }
+
+  /**
+   * Render the pattern to an audio buffer
+   * @param {Object} options - Render options
+   * @param {number} options.bars - Number of bars to render (pattern loops to fill)
+   * @param {number} options.stepDuration - Duration of one step in seconds
+   * @param {number} options.sampleRate - Sample rate (default 44100)
+   * @param {Array} [options.pattern] - Optional pattern override (uses node's pattern if not provided)
+   * @param {Object} [options.params] - Optional params override (uses node's params if not provided)
+   * @returns {Promise<AudioBuffer>}
+   */
+  async renderPattern(options) {
+    const {
+      bars,
+      stepDuration,
+      sampleRate = 44100,
+      pattern = this._pattern,
+      params = null,
+    } = options;
+
+    // Skip if no active notes
+    if (!pattern?.some(s => s.gate)) {
+      return null;
+    }
+
+    // Create engine with fresh context
+    const context = new OfflineAudioContext(2, sampleRate, sampleRate);
+    const engine = new JB200Engine({ context });
+
+    // Apply params - use override if provided, otherwise node's internal params
+    const engineParams = params || this.getEngineParams();
+    Object.entries(engineParams).forEach(([key, value]) => {
+      engine.setParameter(key, value);
+    });
+
+    // Set pattern on engine
+    engine.setPattern(pattern);
+
+    // Render
+    const buffer = await engine.renderPattern({
+      bars,
+      stepDuration,
+      sampleRate,
+    });
+
+    return buffer;
   }
 }
