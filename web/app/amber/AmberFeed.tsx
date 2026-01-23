@@ -108,6 +108,7 @@ function FeedCard({ item }: { item: FeedItem }) {
       case 'pulse_expression': return '💜';
       case 'drawing': return '🎨';
       case 'toy': return '🎮';
+      case 'reflection': return '💭';
       default: return '⚙️';
     }
   };
@@ -528,10 +529,11 @@ export default function AmberFeed({
         }
 
         .feed-item-caption {
-          font-size: 0.95rem;
-          color: var(--text-secondary);
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 1.15rem;
+          color: var(--amber-100);
           margin: 0;
-          line-height: 1.6;
+          line-height: 1.5;
         }
 
         /* Loading State */
@@ -1082,7 +1084,7 @@ export default function AmberFeed({
           }
 
           .feed-item-caption {
-            font-size: 0.9rem;
+            font-size: 1rem;
           }
 
           .feed-item:hover {

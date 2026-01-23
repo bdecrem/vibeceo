@@ -15,6 +15,7 @@ interface CreationMetadata {
   category?: string;
   seed_word?: string;
   seed_mechanic?: string;
+  prompt?: string;
 }
 
 interface TweetLogMetadata {
@@ -125,10 +126,14 @@ export async function GET(request: NextRequest) {
       const meta = creation.metadata as CreationMetadata;
       const url = meta?.url || "";
 
-      // Try to find matching tweet text
+      // Try to find matching tweet text, fall back to prompt
       let tweetText: string | null = null;
       if (url) {
         tweetText = tweetTextByUrl[url] || tweetTextByUrl[url.replace("https://", "")] || null;
+      }
+      // Fall back to metadata.prompt if no tweet_log exists
+      if (!tweetText && meta?.prompt) {
+        tweetText = meta.prompt;
       }
 
       return {
