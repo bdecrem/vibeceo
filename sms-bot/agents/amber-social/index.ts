@@ -655,6 +655,7 @@ Now express this through ${format.name.toLowerCase()}.
 - Can be generative but PERSONAL (not generic)
 - Should look beautiful — you care about aesthetics
 - Amber color palette: gold/amber (#FFD700, #f59e0b), black (#0D0D0D), teal accents (#2D9596)
+- **Mobile:** Text 16px+, fits one screen, tap-friendly if interactive
 
 ### STEPS
 
@@ -839,6 +840,7 @@ This should make people go "lol that's me" — relatable moments in retro game s
 - **Colors**: Limited palette (8-16 colors max), your amber/gold/teal work great
 - **Scale it up**: Render small, display big with \`image-rendering: pixelated\`
 - **Game UI**: Add fake game elements — HP bars, inventory, dialogue boxes
+- **Mobile**: Must fit phone screen without horizontal scroll. If interactive, use tap—no keyboard
 
 ### EXAMPLES OF THE VIBE (don't copy, get inspired)
 
@@ -917,9 +919,10 @@ Morning feelings, rendered in characters. Not precious — raw and real.
 ### ✅ DO
 
 - Capture the FEELING of the mood, not just the words
-- Keep it small (fits on a phone screen)
+- Keep it small (fits on a phone screen without horizontal scroll)
 - Add wit — mornings are absurd
 - Find the humor in the mundane
+- **Mobile**: If interactive, use tap—no keyboard
 
 ### EXAMPLES (for inspiration, don't copy)
 
@@ -1030,6 +1033,8 @@ This can be:
 6. **A multimedia experience** — Visuals + subtle audio, ambient soundscape
 
 **Don't default to static images.** Animation and interactivity are encouraged!
+
+**Mobile:** Touch not hover. Responsive canvas (use vw/vh). Audio needs tap-to-start.
 
 ### INSPIRATION FROM ${seedWord.toUpperCase()}
 
@@ -1152,7 +1157,7 @@ How could this become a tiny game? What's the simplest version that's still fun?
 
 ### REQUIREMENTS
 
-- Mobile-first (thumb-friendly)
+- Mobile-first (thumb-friendly): tap targets 44px+, no keyboard. Audio starts on tap, not autoplay
 - Instant gratification (no tutorials, no setup)
 - Clear feedback on actions
 - Some kind of end state or score or achievement
