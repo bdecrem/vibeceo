@@ -215,6 +215,38 @@ function melodicPatternToMidi(pattern, channel = 0, bars = 2, ppq = 96) {
   }
   return events;
 }
+function generateJB01Midi(session, outputPath) {
+  const bars = session.bars || 2;
+  const ppq = 96;
+  const pattern = session.jb01Pattern || session.drumPattern || {};
+  const trackEvents = [
+    ...trackNameEvent("JB01 Drums"),
+    ...tempoEvent(session.bpm),
+    ...drumPatternToMidi(pattern, bars, ppq)
+  ];
+  const midiData = [
+    ...generateHeader(0, 1, ppq),
+    ...generateTrack(trackEvents)
+  ];
+  writeFileSync(outputPath, Buffer.from(midiData));
+  return outputPath;
+}
+function generateJB200Midi(session, outputPath) {
+  const bars = session.bars || 2;
+  const ppq = 96;
+  const pattern = session.jb200Pattern || session.bassPattern || [];
+  const trackEvents = [
+    ...trackNameEvent("JB200 Bass"),
+    ...tempoEvent(session.bpm),
+    ...melodicPatternToMidi(pattern, 0, bars, ppq)
+  ];
+  const midiData = [
+    ...generateHeader(0, 1, ppq),
+    ...generateTrack(trackEvents)
+  ];
+  writeFileSync(outputPath, Buffer.from(midiData));
+  return outputPath;
+}
 function generateDrumsMidi(session, outputPath) {
   const bars = session.bars || 2;
   const ppq = 96;
@@ -267,34 +299,72 @@ function generateFullMidi(session, outputPath) {
     ...trackNameEvent(session.name || "Jambot Export"),
     ...tempoEvent(session.bpm)
   ];
-  const drumTrack = [
+  const jb01Track = [
+    ...trackNameEvent("JB01 Drums"),
+    ...drumPatternToMidi(session.jb01Pattern || session.drumPattern || {}, bars, ppq)
+  ];
+  const jb200Track = [
+    ...trackNameEvent("JB200 Bass"),
+    ...melodicPatternToMidi(session.jb200Pattern || [], 0, bars, ppq)
+  ];
+  const r9d9Pattern = session._nodes?.r9d9?.getPattern?.() || {};
+  const r9d9Track = [
     ...trackNameEvent("R9D9 Drums"),
-    ...drumPatternToMidi(session.drumPattern || {}, bars, ppq)
+    ...drumPatternToMidi(r9d9Pattern, bars, ppq)
   ];
-  const bassTrack = [
+  const r3d3Pattern = session._nodes?.r3d3?.getPattern?.() || [];
+  const r3d3Track = [
     ...trackNameEvent("R3D3 Bass"),
-    ...melodicPatternToMidi(session.bassPattern || [], 0, bars, ppq)
+    ...melodicPatternToMidi(r3d3Pattern, 1, bars, ppq)
   ];
-  const leadTrack = [
+  const r1d1Pattern = session._nodes?.r1d1?.getPattern?.() || [];
+  const r1d1Track = [
     ...trackNameEvent("R1D1 Lead"),
-    ...melodicPatternToMidi(session.leadPattern || [], 1, bars, ppq)
+    ...melodicPatternToMidi(r1d1Pattern, 2, bars, ppq)
   ];
   const midiData = [
-    ...generateHeader(1, 4, ppq),
-    // Format 1, 4 tracks
+    ...generateHeader(1, 6, ppq),
+    // Format 1, 6 tracks (tempo + 5 instruments)
     ...generateTrack(tempoTrack),
-    ...generateTrack(drumTrack),
-    ...generateTrack(bassTrack),
-    ...generateTrack(leadTrack)
+    ...generateTrack(jb01Track),
+    ...generateTrack(jb200Track),
+    ...generateTrack(r9d9Track),
+    ...generateTrack(r3d3Track),
+    ...generateTrack(r1d1Track)
   ];
   writeFileSync(outputPath, Buffer.from(midiData));
   return outputPath;
 }
 function hasContent(session) {
-  const hasDrums = Object.keys(session.drumPattern || {}).length > 0;
-  const hasBass = (session.bassPattern || []).some((s) => s?.gate);
-  const hasLead = (session.leadPattern || []).some((s) => s?.gate);
-  return { hasDrums, hasBass, hasLead, any: hasDrums || hasBass || hasLead };
+  const jb01Pattern = session.jb01Pattern || session.drumPattern || {};
+  const hasJB01 = Object.values(jb01Pattern).some(
+    (voice) => Array.isArray(voice) && voice.some((step) => step?.velocity > 0)
+  );
+  const jb200Pattern = session.jb200Pattern || [];
+  const hasJB200 = Array.isArray(jb200Pattern) && jb200Pattern.some((s) => s?.gate);
+  const r9d9Pattern = session._nodes?.r9d9?.getPattern?.() || {};
+  const hasR9D9 = Object.values(r9d9Pattern).some(
+    (voice) => Array.isArray(voice) && voice.some((step) => step?.velocity > 0)
+  );
+  const r3d3Pattern = session._nodes?.r3d3?.getPattern?.() || [];
+  const hasR3D3 = Array.isArray(r3d3Pattern) && r3d3Pattern.some((s) => s?.gate);
+  const r1d1Pattern = session._nodes?.r1d1?.getPattern?.() || [];
+  const hasR1D1 = Array.isArray(r1d1Pattern) && r1d1Pattern.some((s) => s?.gate);
+  const hasDrums = hasJB01;
+  const hasBass = hasJB200;
+  const hasLead = hasR1D1;
+  return {
+    hasJB01,
+    hasJB200,
+    hasR9D9,
+    hasR3D3,
+    hasR1D1,
+    hasDrums,
+    hasBass,
+    hasLead,
+    // Legacy
+    any: hasJB01 || hasJB200 || hasR9D9 || hasR3D3 || hasR1D1
+  };
 }
 var HEADER_CHUNK, TRACK_CHUNK, NOTE_ON, NOTE_OFF, END_OF_TRACK, GM_DRUM_MAP;
 var init_midi = __esm({
@@ -606,7 +676,7 @@ function restoreSession(project) {
 }
 function generateReadme(project, session) {
   const lines = [];
-  const { hasDrums, hasBass, hasLead } = hasContent(session);
+  const { hasJB01, hasJB200, hasR9D9, hasR3D3, hasR1D1 } = hasContent(session);
   lines.push(`# ${project.name}`);
   lines.push("");
   lines.push(`Created with [Jambot](https://github.com/bdecrem/jambot)`);
@@ -618,56 +688,64 @@ function generateReadme(project, session) {
   lines.push("");
   lines.push("## Instruments");
   lines.push("");
-  lines.push("### R9D9 (Drums)");
-  if (hasDrums) {
-    const drumPattern = session.drumPattern || {};
+  lines.push("### JB01 (Drums)");
+  if (hasJB01) {
+    const drumPattern = session.jb01Pattern || session.drumPattern || {};
     for (const [voice, pattern] of Object.entries(drumPattern)) {
-      const steps = pattern.map((s, i) => s?.velocity > 0 ? i : null).filter((i) => i !== null);
+      const steps = (pattern || []).map((s, i) => s?.velocity > 0 ? i : null).filter((i) => i !== null);
       if (steps.length > 0) {
         lines.push(`- ${voice}: steps ${steps.join(", ")}`);
-      }
-    }
-    const drumParams = session.drumParams || {};
-    for (const [voice, params] of Object.entries(drumParams)) {
-      const tweaks = Object.entries(params).map(([k, v]) => `${k}=${v}`).join(", ");
-      if (tweaks) {
-        lines.push(`- ${voice} tweaks: ${tweaks}`);
       }
     }
   } else {
     lines.push("- (not used)");
   }
   lines.push("");
-  lines.push("### R3D3 (Bass)");
-  if (hasBass) {
-    const bassPattern = session.bassPattern || [];
+  lines.push("### JB200 (Bass)");
+  if (hasJB200) {
+    const bassPattern = session.jb200Pattern || [];
     const activeNotes = bassPattern.filter((s) => s?.gate);
     const notes = activeNotes.map((s) => s.note);
     const uniqueNotes = [...new Set(notes)];
     lines.push(`- ${activeNotes.length} notes`);
     lines.push(`- Notes used: ${uniqueNotes.join(", ")}`);
-    const bassParams = session.bassParams || {};
-    const paramStr = Object.entries(bassParams).map(([k, v]) => `${k}=${v}`).join(", ");
-    if (paramStr) {
-      lines.push(`- Settings: ${paramStr}`);
+  } else {
+    lines.push("- (not used)");
+  }
+  lines.push("");
+  lines.push("### R9D9 (TR-909 Drums)");
+  if (hasR9D9) {
+    const drumPattern = session._nodes?.r9d9?.getPattern?.() || {};
+    for (const [voice, pattern] of Object.entries(drumPattern)) {
+      const steps = (pattern || []).map((s, i) => s?.velocity > 0 ? i : null).filter((i) => i !== null);
+      if (steps.length > 0) {
+        lines.push(`- ${voice}: steps ${steps.join(", ")}`);
+      }
     }
   } else {
     lines.push("- (not used)");
   }
   lines.push("");
-  lines.push("### R1D1 (Lead)");
-  if (hasLead) {
-    const leadPattern = session.leadPattern || [];
+  lines.push("### R3D3 (TB-303 Bass)");
+  if (hasR3D3) {
+    const bassPattern = session._nodes?.r3d3?.getPattern?.() || [];
+    const activeNotes = bassPattern.filter((s) => s?.gate);
+    const notes = activeNotes.map((s) => s.note);
+    const uniqueNotes = [...new Set(notes)];
+    lines.push(`- ${activeNotes.length} notes`);
+    lines.push(`- Notes used: ${uniqueNotes.join(", ")}`);
+  } else {
+    lines.push("- (not used)");
+  }
+  lines.push("");
+  lines.push("### R1D1 (SH-101 Lead)");
+  if (hasR1D1) {
+    const leadPattern = session._nodes?.r1d1?.getPattern?.() || [];
     const activeNotes = leadPattern.filter((s) => s?.gate);
     const notes = activeNotes.map((s) => s.note);
     const uniqueNotes = [...new Set(notes)];
     lines.push(`- ${activeNotes.length} notes`);
     lines.push(`- Notes used: ${uniqueNotes.join(", ")}`);
-    const leadParams = session.leadParams || {};
-    const paramStr = Object.entries(leadParams).map(([k, v]) => `${k}=${v}`).join(", ");
-    if (paramStr) {
-      lines.push(`- Settings: ${paramStr}`);
-    }
   } else {
     lines.push("- (not used)");
   }
@@ -681,9 +759,11 @@ function generateReadme(project, session) {
   }
   lines.push("## Files");
   lines.push(`- \`${project.name}.mid\` \u2014 Full arrangement (import into any DAW)`);
-  if (hasDrums) lines.push("- `drums.mid` \u2014 Drum pattern only");
-  if (hasBass) lines.push("- `bass.mid` \u2014 Bass pattern only");
-  if (hasLead) lines.push("- `lead.mid` \u2014 Lead pattern only");
+  if (hasJB01) lines.push("- `jb01-drums.mid` \u2014 JB01 drum pattern");
+  if (hasJB200) lines.push("- `jb200-bass.mid` \u2014 JB200 bass pattern");
+  if (hasR9D9) lines.push("- `r9d9-drums.mid` \u2014 R9D9 (909) drum pattern");
+  if (hasR3D3) lines.push("- `r3d3-bass.mid` \u2014 R3D3 (303) bass pattern");
+  if (hasR1D1) lines.push("- `r1d1-lead.mid` \u2014 R1D1 (101) lead pattern");
   lines.push("- `latest.wav` \u2014 Rendered mix");
   lines.push("");
   return lines.join("\n");
@@ -694,7 +774,7 @@ function exportProject(project, session) {
   if (!existsSync(exportPath)) {
     mkdirSync(exportPath, { recursive: true });
   }
-  const { hasDrums, hasBass, hasLead, any } = hasContent(session);
+  const { hasJB01, hasJB200, hasR9D9, hasR3D3, hasR1D1, any } = hasContent(session);
   const files = [];
   const readmePath = join(exportPath, "README.md");
   writeFileSync2(readmePath, generateReadme(project, session));
@@ -705,20 +785,30 @@ function exportProject(project, session) {
     generateFullMidi(exportSession, fullMidiPath);
     files.push(`${project.name}.mid`);
   }
-  if (hasDrums) {
-    const drumsMidiPath = join(exportPath, "drums.mid");
+  if (hasJB01) {
+    const jb01MidiPath = join(exportPath, "jb01-drums.mid");
+    generateJB01Midi(exportSession, jb01MidiPath);
+    files.push("jb01-drums.mid");
+  }
+  if (hasJB200) {
+    const jb200MidiPath = join(exportPath, "jb200-bass.mid");
+    generateJB200Midi(exportSession, jb200MidiPath);
+    files.push("jb200-bass.mid");
+  }
+  if (hasR9D9) {
+    const drumsMidiPath = join(exportPath, "r9d9-drums.mid");
     generateDrumsMidi(exportSession, drumsMidiPath);
-    files.push("drums.mid");
+    files.push("r9d9-drums.mid");
   }
-  if (hasBass) {
-    const bassMidiPath = join(exportPath, "bass.mid");
+  if (hasR3D3) {
+    const bassMidiPath = join(exportPath, "r3d3-bass.mid");
     generateBassMidi(exportSession, bassMidiPath);
-    files.push("bass.mid");
+    files.push("r3d3-bass.mid");
   }
-  if (hasLead) {
-    const leadMidiPath = join(exportPath, "lead.mid");
+  if (hasR1D1) {
+    const leadMidiPath = join(exportPath, "r1d1-lead.mid");
     generateLeadMidi(exportSession, leadMidiPath);
-    files.push("lead.mid");
+    files.push("r1d1-lead.mid");
   }
   const renders = project.renders || [];
   if (renders.length > 0) {
@@ -746,13 +836,44 @@ var init_project = __esm({
 });
 
 // ../web/public/909/dist/machines/tr909/presets.js
+var presets_exports = {};
+__export(presets_exports, {
+  TR909_KITS: () => TR909_KITS,
+  TR909_PRESETS: () => TR909_PRESETS,
+  TR909_SEQUENCES: () => TR909_SEQUENCES,
+  acidHouse: () => acidHouse,
+  bartDeep: () => bartDeep,
+  breakbeat: () => breakbeat,
+  detroitShuffle: () => detroitShuffle,
+  electroFunk: () => electroFunk,
+  getKit: () => getKit,
+  getPreset: () => getPreset,
+  getSequence: () => getSequence,
+  houseClassic: () => houseClassic,
+  industrial: () => industrial,
+  listPresetIds: () => listPresetIds,
+  minimal: () => minimal,
+  technoBasic: () => technoBasic
+});
 function stepsFromIndices(indices, accents = [], length = 16) {
   return Array.from({ length }, (_, i) => ({
     velocity: indices.includes(i) ? accents.includes(i) ? 1 : 0.7 : 0,
     accent: accents.includes(i)
   }));
 }
-var technoBasic, detroitShuffle, houseClassic, breakbeat, minimal, acidHouse, electroFunk, industrial, bartDeep, TR909_KITS, TR909_SEQUENCES;
+function getKit(id) {
+  return TR909_KITS.find((k) => k.id === id);
+}
+function getSequence(id) {
+  return TR909_SEQUENCES.find((s) => s.id === id);
+}
+function getPreset(id) {
+  return TR909_PRESETS.find((p) => p.id === id);
+}
+function listPresetIds() {
+  return TR909_PRESETS.map((p) => p.id);
+}
+var technoBasic, detroitShuffle, houseClassic, breakbeat, minimal, acidHouse, electroFunk, industrial, bartDeep, TR909_PRESETS, TR909_KITS, TR909_SEQUENCES;
 var init_presets = __esm({
   "../web/public/909/dist/machines/tr909/presets.js"() {
     "use strict";
@@ -938,6 +1059,17 @@ var init_presets = __esm({
         ride: stepsFromIndices([])
       }
     };
+    TR909_PRESETS = [
+      bartDeep,
+      technoBasic,
+      detroitShuffle,
+      houseClassic,
+      breakbeat,
+      minimal,
+      acidHouse,
+      electroFunk,
+      industrial
+    ];
     TR909_KITS = [
       {
         id: "default",
@@ -1088,24 +1220,6 @@ function formatValue(value, paramDef) {
     default:
       return String(value);
   }
-}
-function convertTweaks(synth, voice, tweaks) {
-  const result = {};
-  for (const [param, value] of Object.entries(tweaks)) {
-    const paramDef = getParamDef(synth, voice, param);
-    if (!paramDef) {
-      result[param] = value;
-      continue;
-    }
-    if (paramDef.unit === "choice") {
-      result[param] = value;
-    } else if (paramDef.unit === "semitones") {
-      result[param] = value * 100;
-    } else {
-      result[param] = toEngine(value, paramDef);
-    }
-  }
-  return result;
 }
 var __filename, __dirname, loadParams, R9D9_PARAMS, R3D3_PARAMS, R1D1_PARAMS, R9DS_PARAMS, JB200_PARAMS, JB01_PARAMS, SYNTH_PARAMS;
 var init_converters = __esm({
@@ -1519,778 +1633,6 @@ var init_session_tools = __esm({
       }
     };
     registerTools(sessionTools);
-  }
-});
-
-// tools/drum-tools.js
-var drum_tools_exports = {};
-__export(drum_tools_exports, {
-  DRUM_VOICES: () => DRUM_VOICES
-});
-var DRUM_VOICES, drumTools;
-var init_drum_tools = __esm({
-  "tools/drum-tools.js"() {
-    init_tools();
-    init_converters();
-    DRUM_VOICES = ["kick", "snare", "clap", "ch", "oh", "perc", "tom", "cymbal"];
-    drumTools = {
-      /**
-       * Add drum pattern - specify which steps each voice hits
-       */
-      add_drums: async (input, session, context) => {
-        const added = [];
-        for (const voice of DRUM_VOICES) {
-          const steps = input[voice] || [];
-          if (steps.length > 0) {
-            session.drumPattern[voice] = Array(16).fill(null).map(() => ({ velocity: 0 }));
-            const isDetailed = typeof steps[0] === "object";
-            if (isDetailed) {
-              for (const hit of steps) {
-                const step = hit.step;
-                const vel = hit.vel !== void 0 ? hit.vel : 1;
-                if (step >= 0 && step < 16) {
-                  session.drumPattern[voice][step].velocity = vel;
-                }
-              }
-              added.push(`${voice}:${steps.length}`);
-            } else {
-              const defaultVel = voice === "ch" || voice === "oh" ? 0.7 : 1;
-              for (const step of steps) {
-                if (step >= 0 && step < 16) {
-                  session.drumPattern[voice][step].velocity = defaultVel;
-                }
-              }
-              added.push(`${voice}:${steps.length}`);
-            }
-          }
-        }
-        return `drums: ${added.join(", ")}`;
-      },
-      /**
-       * DEPRECATED: Use generic tweak() instead.
-       *
-       * Examples with generic tweak:
-       *   tweak({ path: 'drums.kick.decay', value: 75 })
-       *   tweak({ path: 'drums.kick.level', value: -6 })
-       *   tweak({ path: 'drums.snare.tune', value: +3 })
-       *
-       * @deprecated
-       */
-      tweak_drums: async (input, session, context) => {
-        const voice = input.voice;
-        if (!DRUM_VOICES.includes(voice)) {
-          return `Invalid voice: ${voice}. Use: ${DRUM_VOICES.join(", ")}`;
-        }
-        const tweaks = [];
-        if (input.level !== void 0) {
-          const def = getParamDef("jb01", voice, "level");
-          session.drumParams[voice].level = def ? toEngine(input.level, def) : input.level;
-          tweaks.push(`level=${input.level}dB`);
-        }
-        if (input.mute === true) {
-          const def = getParamDef("jb01", voice, "level");
-          session.drumParams[voice].level = def ? toEngine(-60, def) : 0;
-          tweaks.push("muted");
-        }
-        if (input.tune !== void 0) {
-          session.drumParams[voice].tune = input.tune * 100;
-          tweaks.push(`tune=${input.tune > 0 ? "+" : ""}${input.tune}st`);
-        }
-        if (input.decay !== void 0) {
-          const def = getParamDef("jb01", voice, "decay");
-          session.drumParams[voice].decay = def ? toEngine(input.decay, def) : input.decay / 100;
-          tweaks.push(`decay=${input.decay}`);
-        }
-        if (input.attack !== void 0) {
-          const def = getParamDef("jb01", voice, "attack");
-          session.drumParams[voice].attack = def ? toEngine(input.attack, def) : input.attack / 100;
-          tweaks.push(`attack=${input.attack}`);
-        }
-        return `drums ${voice}: ${tweaks.join(", ")}`;
-      },
-      /**
-       * Set drum groove parameters (flam, pattern length, scale, accent)
-       */
-      set_drum_groove: async (input, session, context) => {
-        const changes = [];
-        if (input.flam !== void 0) {
-          session.drumFlam = Math.max(0, Math.min(1, input.flam));
-          changes.push(`flam=${session.drumFlam}`);
-        }
-        if (input.patternLength !== void 0) {
-          session.drumPatternLength = Math.max(1, Math.min(16, Math.floor(input.patternLength)));
-          changes.push(`patternLength=${session.drumPatternLength}`);
-        }
-        if (input.scale !== void 0) {
-          const validScales = ["16th", "8th-triplet", "16th-triplet", "32nd"];
-          if (validScales.includes(input.scale)) {
-            session.drumScale = input.scale;
-            changes.push(`scale=${session.drumScale}`);
-          }
-        }
-        if (input.globalAccent !== void 0) {
-          session.drumGlobalAccent = Math.max(0, Math.min(1, input.globalAccent));
-          changes.push(`globalAccent=${session.drumGlobalAccent}`);
-        }
-        return `R9D9 groove: ${changes.join(", ") || "no changes"}`;
-      },
-      /**
-       * Add per-step automation to a drum voice parameter
-       */
-      automate_drums: async (input, session, context) => {
-        const { voice, param, values } = input;
-        if (!session.drumAutomation[voice]) {
-          session.drumAutomation[voice] = {};
-        }
-        const automationValues = Array(16).fill(null).map(
-          (_, i) => values[i] !== void 0 ? values[i] : null
-        );
-        session.drumAutomation[voice][param] = automationValues;
-        const activeSteps = automationValues.filter((v) => v !== null).length;
-        return `R9D9 ${voice} ${param} automation: ${activeSteps}/16 steps`;
-      },
-      /**
-       * Clear automation from drum voices
-       */
-      clear_automation: async (input, session, context) => {
-        const { voice, param } = input;
-        if (!voice) {
-          session.drumAutomation = {};
-          return `Cleared all drum automation`;
-        }
-        if (!session.drumAutomation[voice]) {
-          return `No automation on ${voice} to clear`;
-        }
-        if (!param) {
-          delete session.drumAutomation[voice];
-          return `Cleared all automation on ${voice}`;
-        }
-        delete session.drumAutomation[voice][param];
-        if (Object.keys(session.drumAutomation[voice]).length === 0) {
-          delete session.drumAutomation[voice];
-        }
-        return `Cleared ${voice} ${param} automation`;
-      }
-      // NOTE: list_909_kits and load_909_kit removed.
-      // drums = jb01 now. Use list_jb01_kits and load_jb01_kit from jb01-tools.js
-    };
-    registerTools(drumTools);
-  }
-});
-
-// tools/bass-tools.js
-var bass_tools_exports = {};
-var bassTools;
-var init_bass_tools = __esm({
-  "tools/bass-tools.js"() {
-    init_tools();
-    init_converters();
-    bassTools = {
-      /**
-       * Add bass pattern - 16 steps with note, gate, accent, slide
-       */
-      add_bass: async (input, session, context) => {
-        const pattern = input.pattern || [];
-        session.bassPattern = Array(16).fill(null).map((_, i) => {
-          const step = pattern[i] || {};
-          return {
-            note: step.note || "C2",
-            gate: step.gate || false,
-            accent: step.accent || false,
-            slide: step.slide || false
-          };
-        });
-        const activeSteps = session.bassPattern.filter((s) => s.gate).length;
-        return `bass: ${activeSteps} notes`;
-      },
-      /**
-       * DEPRECATED: Use generic tweak() instead.
-       *
-       * Examples with generic tweak:
-       *   tweak({ path: 'bass.cutoff', value: 2000 })      → 2000Hz
-       *   tweak({ path: 'bass.resonance', value: 80 })    → 80%
-       *   tweak({ path: 'bass.level', value: -6 })        → -6dB
-       *
-       * This tool still works but is no longer the recommended approach.
-       * The generic tweak() handles unit conversion automatically.
-       *
-       * @deprecated
-       */
-      tweak_bass: async (input, session, context) => {
-        const tweaks = [];
-        if (input.mute === true) {
-          const def = getParamDef("r3d3", "bass", "level");
-          session.bassParams.level = def ? toEngine(-60, def) : 0;
-          tweaks.push("muted");
-        }
-        if (input.waveform !== void 0) {
-          session.bassParams.waveform = input.waveform;
-          tweaks.push(`waveform=${input.waveform}`);
-        }
-        if (input.level !== void 0) {
-          const def = getParamDef("r3d3", "bass", "level");
-          session.bassParams.level = def ? toEngine(input.level, def) : input.level;
-          tweaks.push(`level=${input.level}dB`);
-        }
-        if (input.cutoff !== void 0) {
-          const def = getParamDef("r3d3", "bass", "cutoff");
-          session.bassParams.cutoff = def ? toEngine(input.cutoff, def) : input.cutoff;
-          const display = input.cutoff >= 1e3 ? `${(input.cutoff / 1e3).toFixed(1)}kHz` : `${input.cutoff}Hz`;
-          tweaks.push(`cutoff=${display}`);
-        }
-        if (input.resonance !== void 0) {
-          const def = getParamDef("r3d3", "bass", "resonance");
-          session.bassParams.resonance = def ? toEngine(input.resonance, def) : input.resonance / 100;
-          tweaks.push(`resonance=${input.resonance}`);
-        }
-        if (input.envMod !== void 0) {
-          const def = getParamDef("r3d3", "bass", "envMod");
-          session.bassParams.envMod = def ? toEngine(input.envMod, def) : input.envMod / 100;
-          tweaks.push(`envMod=${input.envMod}`);
-        }
-        if (input.decay !== void 0) {
-          const def = getParamDef("r3d3", "bass", "decay");
-          session.bassParams.decay = def ? toEngine(input.decay, def) : input.decay / 100;
-          tweaks.push(`decay=${input.decay}`);
-        }
-        if (input.accent !== void 0) {
-          const def = getParamDef("r3d3", "bass", "accent");
-          session.bassParams.accent = def ? toEngine(input.accent, def) : input.accent / 100;
-          tweaks.push(`accent=${input.accent}`);
-        }
-        return `bass: ${tweaks.join(", ")}`;
-      }
-    };
-    registerTools(bassTools);
-  }
-});
-
-// ../web/public/101/dist/machines/sh101/presets.js
-var presets, presets_default;
-var init_presets2 = __esm({
-  "../web/public/101/dist/machines/sh101/presets.js"() {
-    "use strict";
-    presets = {
-      // Classic PWM lead - shimmering synth lead
-      classicLead: {
-        id: "classicLead",
-        name: "Classic Lead",
-        description: "Shimmering PWM lead sound",
-        parameters: {
-          vcoSaw: 0.3,
-          vcoPulse: 0.8,
-          pulseWidth: 0.35,
-          subLevel: 0.2,
-          subMode: 1,
-          cutoff: 0.6,
-          resonance: 0.25,
-          envMod: 0.4,
-          attack: 0.02,
-          decay: 0.3,
-          sustain: 0.7,
-          release: 0.3,
-          lfoRate: 0.2,
-          lfoWaveform: "triangle",
-          lfoToPitch: 0.1,
-          lfoToFilter: 0,
-          lfoToPW: 0.3,
-          volume: 0.8
-        },
-        bpm: 120,
-        pattern: [
-          { note: "C4", gate: true, accent: true, slide: false },
-          { note: "C4", gate: false, accent: false, slide: false },
-          { note: "G3", gate: true, accent: false, slide: false },
-          { note: "G3", gate: false, accent: false, slide: false },
-          { note: "E4", gate: true, accent: true, slide: false },
-          { note: "E4", gate: false, accent: false, slide: false },
-          { note: "G3", gate: true, accent: false, slide: false },
-          { note: "G3", gate: false, accent: false, slide: false },
-          { note: "C4", gate: true, accent: true, slide: false },
-          { note: "C4", gate: false, accent: false, slide: false },
-          { note: "G3", gate: true, accent: false, slide: false },
-          { note: "G3", gate: false, accent: false, slide: false },
-          { note: "D4", gate: true, accent: false, slide: false },
-          { note: "E4", gate: true, accent: true, slide: false },
-          { note: "D4", gate: true, accent: false, slide: false },
-          { note: "C4", gate: true, accent: false, slide: false }
-        ]
-      },
-      // Fat bass - thick and heavy
-      fatBass: {
-        id: "fatBass",
-        name: "Fat Bass",
-        description: "Thick, heavy bass with sub",
-        parameters: {
-          vcoSaw: 0.7,
-          vcoPulse: 0.4,
-          pulseWidth: 0.5,
-          subLevel: 0.6,
-          subMode: 1,
-          // -1 octave
-          cutoff: 0.25,
-          resonance: 0.4,
-          envMod: 0.5,
-          attack: 5e-3,
-          decay: 0.4,
-          sustain: 0.4,
-          release: 0.2,
-          lfoRate: 0,
-          lfoWaveform: "triangle",
-          lfoToPitch: 0,
-          lfoToFilter: 0,
-          lfoToPW: 0,
-          volume: 0.8
-        },
-        bpm: 110,
-        pattern: [
-          { note: "C2", gate: true, accent: true, slide: false },
-          { note: "C2", gate: false, accent: false, slide: false },
-          { note: "C2", gate: true, accent: false, slide: false },
-          { note: "C2", gate: false, accent: false, slide: false },
-          { note: "E2", gate: true, accent: false, slide: true },
-          { note: "G2", gate: true, accent: true, slide: false },
-          { note: "G2", gate: false, accent: false, slide: false },
-          { note: "G2", gate: true, accent: false, slide: false },
-          { note: "C2", gate: true, accent: true, slide: false },
-          { note: "C2", gate: false, accent: false, slide: false },
-          { note: "C2", gate: true, accent: false, slide: false },
-          { note: "D2", gate: true, accent: false, slide: true },
-          { note: "E2", gate: true, accent: false, slide: false },
-          { note: "E2", gate: false, accent: false, slide: false },
-          { note: "G2", gate: true, accent: true, slide: true },
-          { note: "C3", gate: true, accent: true, slide: false }
-        ]
-      },
-      // Acid line - squelchy 303-style
-      acidLine: {
-        id: "acidLine",
-        name: "Acid Line",
-        description: "Squelchy resonant bassline",
-        parameters: {
-          vcoSaw: 1,
-          vcoPulse: 0,
-          pulseWidth: 0.5,
-          subLevel: 0,
-          subMode: 0,
-          cutoff: 0.2,
-          resonance: 0.75,
-          envMod: 0.8,
-          attack: 1e-3,
-          decay: 0.15,
-          sustain: 0.1,
-          release: 0.1,
-          lfoRate: 0,
-          lfoWaveform: "triangle",
-          lfoToPitch: 0,
-          lfoToFilter: 0,
-          lfoToPW: 0,
-          volume: 0.8
-        },
-        bpm: 130,
-        pattern: [
-          { note: "C2", gate: true, accent: true, slide: false },
-          { note: "C2", gate: false, accent: false, slide: false },
-          { note: "C3", gate: true, accent: false, slide: true },
-          { note: "C2", gate: true, accent: false, slide: false },
-          { note: "D#2", gate: true, accent: true, slide: false },
-          { note: "D#2", gate: false, accent: false, slide: false },
-          { note: "G2", gate: true, accent: false, slide: true },
-          { note: "C2", gate: true, accent: true, slide: false },
-          { note: "C2", gate: true, accent: false, slide: false },
-          { note: "C2", gate: false, accent: false, slide: false },
-          { note: "A#1", gate: true, accent: true, slide: false },
-          { note: "C2", gate: true, accent: false, slide: true },
-          { note: "D#2", gate: true, accent: false, slide: false },
-          { note: "G2", gate: true, accent: true, slide: true },
-          { note: "C3", gate: true, accent: false, slide: false },
-          { note: "C2", gate: true, accent: true, slide: false }
-        ]
-      },
-      // Synth brass - punchy with fast attack
-      synthBrass: {
-        id: "synthBrass",
-        name: "Synth Brass",
-        description: "Punchy brass stab",
-        parameters: {
-          vcoSaw: 0.7,
-          vcoPulse: 0.6,
-          pulseWidth: 0.45,
-          subLevel: 0.1,
-          subMode: 1,
-          cutoff: 0.55,
-          resonance: 0.2,
-          envMod: 0.35,
-          attack: 0.02,
-          decay: 0.2,
-          sustain: 0.8,
-          release: 0.15,
-          lfoRate: 0.15,
-          lfoWaveform: "triangle",
-          lfoToPitch: 0.05,
-          lfoToFilter: 0,
-          lfoToPW: 0.1,
-          volume: 0.75
-        },
-        bpm: 115,
-        pattern: [
-          { note: "C3", gate: true, accent: true, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: true, accent: false, slide: false },
-          { note: "D#3", gate: true, accent: true, slide: false },
-          { note: "D#3", gate: false, accent: false, slide: false },
-          { note: "D#3", gate: false, accent: false, slide: false },
-          { note: "G3", gate: true, accent: false, slide: false },
-          { note: "C3", gate: true, accent: true, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "F3", gate: true, accent: false, slide: false },
-          { note: "F3", gate: false, accent: false, slide: false },
-          { note: "D#3", gate: true, accent: true, slide: false },
-          { note: "D3", gate: true, accent: false, slide: true },
-          { note: "C3", gate: true, accent: true, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false }
-        ]
-      },
-      // Arp pad - gentle arpeggiated pad
-      arpPad: {
-        id: "arpPad",
-        name: "Arp Pad",
-        description: "Soft arpeggiated pad",
-        parameters: {
-          vcoSaw: 0.5,
-          vcoPulse: 0.5,
-          pulseWidth: 0.4,
-          subLevel: 0.3,
-          subMode: 2,
-          // -2 octaves
-          cutoff: 0.45,
-          resonance: 0.3,
-          envMod: 0.2,
-          attack: 0.1,
-          decay: 0.5,
-          sustain: 0.6,
-          release: 0.5,
-          lfoRate: 0.1,
-          lfoWaveform: "triangle",
-          lfoToPitch: 0,
-          lfoToFilter: 0.2,
-          lfoToPW: 0.15,
-          volume: 0.7
-        },
-        arp: {
-          mode: "updown",
-          octaves: 2,
-          hold: true
-        },
-        bpm: 90,
-        pattern: [
-          { note: "C3", gate: true, accent: false, slide: false },
-          { note: "E3", gate: true, accent: false, slide: false },
-          { note: "G3", gate: true, accent: false, slide: false },
-          { note: "C4", gate: true, accent: true, slide: false },
-          { note: "G3", gate: true, accent: false, slide: false },
-          { note: "E3", gate: true, accent: false, slide: false },
-          { note: "C3", gate: true, accent: false, slide: false },
-          { note: "E3", gate: true, accent: false, slide: true },
-          { note: "G3", gate: true, accent: false, slide: false },
-          { note: "B3", gate: true, accent: false, slide: false },
-          { note: "D4", gate: true, accent: true, slide: false },
-          { note: "B3", gate: true, accent: false, slide: false },
-          { note: "G3", gate: true, accent: false, slide: false },
-          { note: "E3", gate: true, accent: false, slide: true },
-          { note: "D3", gate: true, accent: false, slide: false },
-          { note: "E3", gate: true, accent: false, slide: false }
-        ]
-      },
-      // Zap bass - sci-fi bass with fast sweep
-      zapBass: {
-        id: "zapBass",
-        name: "Zap Bass",
-        description: "Sci-fi bass with filter zap",
-        parameters: {
-          vcoSaw: 0.8,
-          vcoPulse: 0.3,
-          pulseWidth: 0.5,
-          subLevel: 0.4,
-          subMode: 1,
-          cutoff: 0.1,
-          resonance: 0.6,
-          envMod: 0.9,
-          attack: 1e-3,
-          decay: 0.08,
-          sustain: 0.05,
-          release: 0.1,
-          lfoRate: 0,
-          lfoWaveform: "triangle",
-          lfoToPitch: 0,
-          lfoToFilter: 0,
-          lfoToPW: 0,
-          volume: 0.8
-        },
-        bpm: 128,
-        pattern: [
-          { note: "C2", gate: true, accent: true, slide: false },
-          { note: "C2", gate: false, accent: false, slide: false },
-          { note: "C2", gate: true, accent: false, slide: false },
-          { note: "C2", gate: false, accent: false, slide: false },
-          { note: "C2", gate: true, accent: true, slide: false },
-          { note: "C2", gate: false, accent: false, slide: false },
-          { note: "C3", gate: true, accent: true, slide: false },
-          { note: "C2", gate: true, accent: false, slide: false },
-          { note: "C2", gate: true, accent: true, slide: false },
-          { note: "C2", gate: false, accent: false, slide: false },
-          { note: "C2", gate: true, accent: false, slide: false },
-          { note: "C2", gate: false, accent: false, slide: false },
-          { note: "D#2", gate: true, accent: true, slide: false },
-          { note: "D#2", gate: false, accent: false, slide: false },
-          { note: "G2", gate: true, accent: true, slide: false },
-          { note: "G2", gate: false, accent: false, slide: false }
-        ]
-      },
-      // S&H sequence - random filter modulation
-      shSequence: {
-        id: "shSequence",
-        name: "S&H Sequence",
-        description: "Random sample & hold filter",
-        parameters: {
-          vcoSaw: 0.6,
-          vcoPulse: 0.4,
-          pulseWidth: 0.5,
-          subLevel: 0.2,
-          subMode: 1,
-          cutoff: 0.4,
-          resonance: 0.5,
-          envMod: 0.3,
-          attack: 0.01,
-          decay: 0.2,
-          sustain: 0.5,
-          release: 0.2,
-          lfoRate: 0.4,
-          lfoWaveform: "sh",
-          lfoToPitch: 0,
-          lfoToFilter: 0.4,
-          lfoToPW: 0,
-          volume: 0.75
-        },
-        bpm: 125,
-        pattern: [
-          { note: "C3", gate: true, accent: false, slide: false },
-          { note: "C3", gate: true, accent: false, slide: false },
-          { note: "D#3", gate: true, accent: true, slide: false },
-          { note: "C3", gate: true, accent: false, slide: false },
-          { note: "G3", gate: true, accent: false, slide: true },
-          { note: "F3", gate: true, accent: true, slide: false },
-          { note: "C3", gate: true, accent: false, slide: false },
-          { note: "D#3", gate: true, accent: false, slide: false },
-          { note: "C3", gate: true, accent: true, slide: false },
-          { note: "C3", gate: true, accent: false, slide: false },
-          { note: "A#2", gate: true, accent: false, slide: true },
-          { note: "C3", gate: true, accent: true, slide: false },
-          { note: "G3", gate: true, accent: false, slide: false },
-          { note: "D#3", gate: true, accent: true, slide: false },
-          { note: "C3", gate: true, accent: false, slide: true },
-          { note: "G2", gate: true, accent: true, slide: false }
-        ]
-      },
-      // Empty - blank starting point
-      empty: {
-        id: "empty",
-        name: "Empty",
-        description: "Blank starting point",
-        parameters: {
-          vcoSaw: 0.5,
-          vcoPulse: 0.5,
-          pulseWidth: 0.5,
-          subLevel: 0,
-          subMode: 0,
-          cutoff: 0.5,
-          resonance: 0.3,
-          envMod: 0.5,
-          attack: 0.01,
-          decay: 0.3,
-          sustain: 0.7,
-          release: 0.3,
-          lfoRate: 0.3,
-          lfoWaveform: "triangle",
-          lfoToPitch: 0,
-          lfoToFilter: 0,
-          lfoToPW: 0,
-          volume: 0.8
-        },
-        bpm: 120,
-        pattern: [
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false },
-          { note: "C3", gate: false, accent: false, slide: false }
-        ]
-      }
-    };
-    presets_default = presets;
-  }
-});
-
-// tools/lead-tools.js
-var lead_tools_exports = {};
-var SH101_PRESETS, leadTools;
-var init_lead_tools = __esm({
-  "tools/lead-tools.js"() {
-    init_tools();
-    init_converters();
-    init_presets2();
-    SH101_PRESETS = Object.values(presets_default);
-    leadTools = {
-      /**
-       * List available 101 presets
-       */
-      list_101_presets: async (input, session, context) => {
-        const presetList = SH101_PRESETS.map((p) => `  ${p.id} - ${p.name}: ${p.description}`).join("\n");
-        return `Available 101 presets:
-${presetList}`;
-      },
-      /**
-       * Load a 101 preset (sound + optionally pattern)
-       */
-      load_101_preset: async (input, session, context) => {
-        const preset = SH101_PRESETS.find((p) => p.id === input.preset);
-        if (!preset) {
-          const available = SH101_PRESETS.map((p) => p.id).join(", ");
-          return `Unknown preset: ${input.preset}. Available: ${available}`;
-        }
-        session.leadPreset = preset.id;
-        if (preset.parameters) {
-          Object.entries(preset.parameters).forEach(([key, value]) => {
-            const paramKey = key === "volume" ? "level" : key;
-            session.leadParams[paramKey] = value;
-          });
-        }
-        const details = [];
-        if (preset.bpm) {
-          session.bpm = preset.bpm;
-          details.push(`${preset.bpm} BPM`);
-        }
-        const includePattern = input.includePattern !== false;
-        if (includePattern && preset.pattern) {
-          session.leadPattern = preset.pattern.map((step) => ({
-            note: step.note || "C3",
-            gate: step.gate || false,
-            accent: step.accent || false,
-            slide: step.slide || false
-          }));
-          details.push("pattern");
-        }
-        if (preset.arp) {
-          session.leadArp = {
-            mode: preset.arp.mode || "off",
-            octaves: preset.arp.octaves || 1,
-            hold: preset.arp.hold || false
-          };
-          details.push(`arp: ${preset.arp.mode}`);
-        }
-        const detailsMsg = details.length > 0 ? ` (${details.join(", ")})` : "";
-        return `Loaded 101 preset "${preset.name}"${detailsMsg}`;
-      },
-      /**
-       * Add lead pattern - 16 steps with note, gate, accent, slide
-       */
-      add_lead: async (input, session, context) => {
-        const pattern = input.pattern || [];
-        session.leadPattern = Array(16).fill(null).map((_, i) => {
-          const step = pattern[i] || {};
-          return {
-            note: step.note || "C3",
-            gate: step.gate || false,
-            accent: step.accent || false,
-            slide: step.slide || false
-          };
-        });
-        const activeSteps = session.leadPattern.filter((s) => s.gate).length;
-        return `lead: ${activeSteps} notes`;
-      },
-      /**
-       * DEPRECATED: Use generic tweak() instead.
-       *
-       * Examples with generic tweak:
-       *   tweak({ path: 'lead.cutoff', value: 4000 })       → 4000Hz
-       *   tweak({ path: 'lead.resonance', value: 60 })     → 60%
-       *   tweak({ path: 'lead.lfoToPitch', value: 12 })    → 12 semitones
-       *   tweak({ path: 'lead.level', value: -3 })         → -3dB
-       *
-       * This tool still works but is no longer the recommended approach.
-       * The generic tweak() handles unit conversion automatically.
-       *
-       * @deprecated
-       */
-      tweak_lead: async (input, session, context) => {
-        const tweaks = [];
-        if (input.mute === true) {
-          const def = getParamDef("r1d1", "lead", "level");
-          session.leadParams.level = def ? toEngine(-60, def) : 0;
-          tweaks.push("muted");
-        }
-        if (input.level !== void 0) {
-          const def = getParamDef("r1d1", "lead", "level");
-          session.leadParams.level = def ? toEngine(input.level, def) : input.level;
-          tweaks.push(`level=${input.level}dB`);
-        }
-        if (input.cutoff !== void 0) {
-          const def = getParamDef("r1d1", "lead", "cutoff");
-          session.leadParams.cutoff = def ? toEngine(input.cutoff, def) : input.cutoff;
-          const display = input.cutoff >= 1e3 ? `${(input.cutoff / 1e3).toFixed(1)}kHz` : `${input.cutoff}Hz`;
-          tweaks.push(`cutoff=${display}`);
-        }
-        if (input.lfoToPitch !== void 0) {
-          const def = getParamDef("r1d1", "lead", "lfoToPitch");
-          session.leadParams.lfoToPitch = def ? input.lfoToPitch / def.max : input.lfoToPitch / 24;
-          tweaks.push(`lfoToPitch=${input.lfoToPitch}st`);
-        }
-        const knobParams = [
-          "vcoSaw",
-          "vcoPulse",
-          "pulseWidth",
-          "subLevel",
-          "resonance",
-          "envMod",
-          "attack",
-          "decay",
-          "sustain",
-          "release",
-          "lfoRate",
-          "lfoToFilter",
-          "lfoToPW"
-        ];
-        for (const param of knobParams) {
-          if (input[param] !== void 0) {
-            const def = getParamDef("r1d1", "lead", param);
-            session.leadParams[param] = def ? toEngine(input[param], def) : input[param] / 100;
-            tweaks.push(`${param}=${input[param]}`);
-          }
-        }
-        if (input.subMode !== void 0) {
-          session.leadParams.subMode = input.subMode;
-          tweaks.push(`subMode=${input.subMode}`);
-        }
-        if (input.lfoWaveform !== void 0) {
-          session.leadParams.lfoWaveform = input.lfoWaveform;
-          tweaks.push(`lfoWaveform=${input.lfoWaveform}`);
-        }
-        return `lead: ${tweaks.join(", ")}`;
-      }
-    };
-    registerTools(leadTools);
   }
 });
 
@@ -3325,11 +2667,23 @@ var init_mixer_tools = __esm({
         lines.push("OUTPUT LEVELS:");
         lines.push(`  drums: ${formatLevel(drums)}  bass: ${formatLevel(bass)}  lead: ${formatLevel(lead)}  sampler: ${formatLevel(sampler)}`);
         lines.push("");
-        const hasConfig = session.mixer && (Object.keys(session.mixer.sends || {}).length > 0 || Object.keys(session.mixer.voiceRouting || {}).length > 0 || Object.keys(session.mixer.channelInserts || {}).length > 0 || (session.mixer.masterInserts || []).length > 0);
+        const hasConfig = session.mixer && (Object.keys(session.mixer.sends || {}).length > 0 || Object.keys(session.mixer.voiceRouting || {}).length > 0 || Object.keys(session.mixer.channelInserts || {}).length > 0 || Object.keys(session.mixer.effectChains || {}).length > 0 || (session.mixer.masterInserts || []).length > 0);
         if (!hasConfig) {
           lines.push('Use tweak({ path: "drums.level", value: -3 }) to adjust levels.');
-          lines.push("Use create_send, add_channel_insert, or add_sidechain for more routing.");
+          lines.push("Use create_send, add_channel_insert, add_effect, or add_sidechain for more routing.");
           return lines.join("\n");
+        }
+        const effectChains = Object.entries(session.mixer.effectChains || {});
+        if (effectChains.length > 0) {
+          lines.push("EFFECT CHAINS:");
+          effectChains.forEach(([target, chain]) => {
+            const chainStr = chain.map((e) => {
+              const params = Object.entries(e.params || {}).filter(([k]) => k !== "mode").slice(0, 2).map(([k, v]) => `${k}=${v}`).join(", ");
+              return `${e.type}${e.params?.mode ? `(${e.params.mode})` : ""}${params ? ` [${params}]` : ""}`;
+            }).join(" \u2192 ");
+            lines.push(`  ${target}: ${chainStr}`);
+          });
+          lines.push("");
         }
         const sends = Object.entries(session.mixer.sends || {});
         if (sends.length > 0) {
@@ -3363,6 +2717,123 @@ var init_mixer_tools = __esm({
           lines.push(`  ${masterEffects}`);
         }
         return lines.join("\n");
+      },
+      // === EFFECT CHAIN TOOLS ===
+      /**
+       * Add effect to a target (voice, instrument, or master)
+       * @param {Object} input - { target, effect, after?, mode?, ...params }
+       */
+      add_effect: async (input, session, context) => {
+        const { target, effect, after, ...params } = input;
+        if (!target || !effect) {
+          return "Error: add_effect requires target and effect parameters";
+        }
+        const validEffects = ["delay", "reverb", "filter", "eq"];
+        if (!validEffects.includes(effect)) {
+          return `Error: Unknown effect type "${effect}". Valid types: ${validEffects.join(", ")}`;
+        }
+        ensureMixerState(session);
+        if (!session.mixer.effectChains) session.mixer.effectChains = {};
+        if (!session.mixer.effectChains[target]) session.mixer.effectChains[target] = [];
+        const chain = session.mixer.effectChains[target];
+        const effectCount = chain.filter((e) => e.type === effect).length;
+        const effectId = `${effect}${effectCount + 1}`;
+        const newEffect = {
+          id: effectId,
+          type: effect,
+          params: { ...params }
+        };
+        if (after) {
+          const afterIndex = chain.findIndex((e) => e.type === after || e.id === after);
+          if (afterIndex === -1) {
+            return `Error: Cannot find "${after}" in ${target} chain to insert after`;
+          }
+          chain.splice(afterIndex + 1, 0, newEffect);
+        } else {
+          chain.push(newEffect);
+        }
+        const paramStr = Object.entries(params).filter(([k, v]) => v !== void 0).map(([k, v]) => `${k}=${v}`).join(", ");
+        const positionStr = after ? ` after ${after}` : "";
+        return `Added ${effect}${params.mode ? ` (${params.mode})` : ""} to ${target}${positionStr}${paramStr ? ` [${paramStr}]` : ""}`;
+      },
+      /**
+       * Remove effect from a target
+       * @param {Object} input - { target, effect }
+       */
+      remove_effect: async (input, session, context) => {
+        const { target, effect } = input;
+        if (!target) {
+          return "Error: remove_effect requires target parameter";
+        }
+        if (!session.mixer?.effectChains?.[target]) {
+          return `No effect chain on ${target}`;
+        }
+        const chain = session.mixer.effectChains[target];
+        if (!effect || effect === "all") {
+          const count = chain.length;
+          delete session.mixer.effectChains[target];
+          return `Removed all ${count} effect(s) from ${target}`;
+        }
+        const beforeLen = chain.length;
+        session.mixer.effectChains[target] = chain.filter((e) => e.type !== effect && e.id !== effect);
+        const removed = beforeLen - session.mixer.effectChains[target].length;
+        if (removed === 0) {
+          return `No ${effect} found on ${target}`;
+        }
+        if (session.mixer.effectChains[target].length === 0) {
+          delete session.mixer.effectChains[target];
+        }
+        return `Removed ${effect} from ${target}`;
+      },
+      /**
+       * Display all effect chains
+       */
+      show_effects: async (input, session, context) => {
+        const chains = session.mixer?.effectChains || {};
+        const entries = Object.entries(chains);
+        if (entries.length === 0) {
+          return "No effect chains configured. Use add_effect to add effects to targets.";
+        }
+        const lines = ["EFFECT CHAINS:", ""];
+        entries.forEach(([target, chain]) => {
+          const chainStr = chain.map((e) => {
+            const mode = e.params?.mode ? `(${e.params.mode})` : "";
+            const params = Object.entries(e.params || {}).filter(([k]) => k !== "mode").map(([k, v]) => `${k}=${typeof v === "number" ? v.toFixed(0) : v}`).join(", ");
+            return `${e.type}${mode}${params ? ` [${params}]` : ""}`;
+          }).join(" \u2192 ");
+          lines.push(`${target}:`);
+          lines.push(`  ${chainStr}`);
+        });
+        return lines.join("\n");
+      },
+      /**
+       * Tweak parameters on an existing effect
+       * @param {Object} input - { target, effect, ...params }
+       */
+      tweak_effect: async (input, session, context) => {
+        const { target, effect, ...params } = input;
+        if (!target || !effect) {
+          return "Error: tweak_effect requires target and effect parameters";
+        }
+        if (!session.mixer?.effectChains?.[target]) {
+          return `No effect chain on ${target}`;
+        }
+        const chain = session.mixer.effectChains[target];
+        const effectObj = chain.find((e) => e.type === effect || e.id === effect);
+        if (!effectObj) {
+          return `No ${effect} found on ${target}`;
+        }
+        const tweaked = [];
+        for (const [key, value] of Object.entries(params)) {
+          if (value !== void 0) {
+            effectObj.params[key] = value;
+            tweaked.push(`${key}=${value}`);
+          }
+        }
+        if (tweaked.length === 0) {
+          return `No parameters to tweak on ${effect}`;
+        }
+        return `Tweaked ${effect} on ${target}: ${tweaked.join(", ")}`;
       }
     };
     registerTools(mixerTools);
@@ -3376,7 +2847,7 @@ function getInsertsForInstrument(session, inst) {
   if (inst === "drums") {
     const result = {};
     if (inserts["drums"]) result["drums"] = JSON.parse(JSON.stringify(inserts["drums"]));
-    for (const v of DRUM_VOICES2) {
+    for (const v of DRUM_VOICES) {
       if (inserts[v]) result[v] = JSON.parse(JSON.stringify(inserts[v]));
     }
     return Object.keys(result).length > 0 ? result : null;
@@ -3395,16 +2866,16 @@ function restoreInserts(session, inserts) {
 function clearInsertsForInstrument(session, inst) {
   if (!session.mixer?.channelInserts) return;
   if (inst === "drums") {
-    for (const v of DRUM_VOICES2) delete session.mixer.channelInserts[v];
+    for (const v of DRUM_VOICES) delete session.mixer.channelInserts[v];
   } else {
     delete session.mixer.channelInserts[inst];
   }
 }
-var DRUM_VOICES2, songTools;
+var DRUM_VOICES, songTools;
 var init_song_tools = __esm({
   "tools/song-tools.js"() {
     init_tools();
-    DRUM_VOICES2 = ["drums", "kick", "snare", "clap", "ch", "oh", "perc", "tom", "cymbal"];
+    DRUM_VOICES = ["drums", "kick", "snare", "clap", "ch", "oh", "perc", "tom", "cymbal"];
     songTools = {
       /**
        * Save current working pattern to a named slot
@@ -4199,9 +3670,6 @@ function registerTools(tools) {
 async function initializeTools() {
   if (initialized) return;
   await Promise.resolve().then(() => (init_session_tools(), session_tools_exports));
-  await Promise.resolve().then(() => (init_drum_tools(), drum_tools_exports));
-  await Promise.resolve().then(() => (init_bass_tools(), bass_tools_exports));
-  await Promise.resolve().then(() => (init_lead_tools(), lead_tools_exports));
   await Promise.resolve().then(() => (init_sampler_tools(), sampler_tools_exports));
   await Promise.resolve().then(() => (init_jb200_tools(), jb200_tools_exports));
   await Promise.resolve().then(() => (init_jb01_tools(), jb01_tools_exports));
@@ -4235,7 +3703,7 @@ var init_tools = __esm({
 });
 
 // ../web/public/909/dist/core/output.js
-function audioBufferToWav4(buffer) {
+function audioBufferToWav2(buffer) {
   const numChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
   const format = 1;
@@ -4253,10 +3721,10 @@ function audioBufferToWav4(buffer) {
   const dataLength = interleavedLength * bytesPerSample;
   const wavBuffer = new ArrayBuffer(44 + dataLength);
   const view = new DataView(wavBuffer);
-  writeString4(view, 0, "RIFF");
+  writeString2(view, 0, "RIFF");
   view.setUint32(4, 36 + dataLength, true);
-  writeString4(view, 8, "WAVE");
-  writeString4(view, 12, "fmt ");
+  writeString2(view, 8, "WAVE");
+  writeString2(view, 12, "fmt ");
   view.setUint32(16, 16, true);
   view.setUint16(20, format, true);
   view.setUint16(22, numChannels, true);
@@ -4264,7 +3732,7 @@ function audioBufferToWav4(buffer) {
   view.setUint32(28, sampleRate * blockAlign, true);
   view.setUint16(32, blockAlign, true);
   view.setUint16(34, bitDepth, true);
-  writeString4(view, 36, "data");
+  writeString2(view, 36, "data");
   view.setUint32(40, dataLength, true);
   let offset = 44;
   for (let i = 0; i < interleavedLength; i++) {
@@ -4275,16 +3743,16 @@ function audioBufferToWav4(buffer) {
   }
   return wavBuffer;
 }
-function writeString4(view, offset, string) {
+function writeString2(view, offset, string) {
   for (let i = 0; i < string.length; i++) {
     view.setUint8(offset + i, string.charCodeAt(i));
   }
 }
-var OutputManager3;
+var OutputManager2;
 var init_output = __esm({
   "../web/public/909/dist/core/output.js"() {
     "use strict";
-    OutputManager3 = class {
+    OutputManager2 = class {
       constructor(context, destination) {
         this.context = context;
         this.destination = destination ?? context.destination;
@@ -4303,7 +3771,7 @@ var init_output = __esm({
         return Promise.resolve(setupGraph(offlineContext)).then(() => offlineContext.startRendering());
       }
       audioBufferToWav(buffer) {
-        return audioBufferToWav4(buffer);
+        return audioBufferToWav2(buffer);
       }
       async audioBufferToBlob(buffer) {
         const wavArray = this.audioBufferToWav(buffer);
@@ -4314,12 +3782,12 @@ var init_output = __esm({
 });
 
 // ../web/public/909/dist/core/engine.js
-var SynthEngine3;
+var SynthEngine2;
 var init_engine = __esm({
   "../web/public/909/dist/core/engine.js"() {
     "use strict";
     init_output();
-    SynthEngine3 = class {
+    SynthEngine2 = class {
       constructor(options = {}) {
         this.voices = /* @__PURE__ */ new Map();
         this.started = false;
@@ -4331,7 +3799,7 @@ var init_engine = __esm({
         this.compressor.connect(this.analyser);
         this.analyser.connect(this.masterGain);
         this.masterGain.connect(this.context.destination);
-        this.outputManager = new OutputManager3(this.context, this.masterGain);
+        this.outputManager = new OutputManager2(this.context, this.masterGain);
       }
       registerVoice(id, voice) {
         voice.connect(this.compressor);
@@ -5636,13 +5104,13 @@ var init_rimshot_e1 = __esm({
 });
 
 // ../web/public/909/dist/machines/tr909/voices/sample-voice.js
-var SampleVoice2;
+var SampleVoice;
 var init_sample_voice = __esm({
   "../web/public/909/dist/machines/tr909/voices/sample-voice.js"() {
     "use strict";
     init_voice();
     init_noise();
-    SampleVoice2 = class extends Voice2 {
+    SampleVoice = class extends Voice2 {
       constructor(id, context, sampleLibrary, sampleId, options = {}) {
         super(id, context, options);
         this.sampleLibrary = sampleLibrary;
@@ -5735,7 +5203,7 @@ var init_hihat = __esm({
       1204.4
       // Highest component
     ];
-    HiHat909 = class extends SampleVoice2 {
+    HiHat909 = class extends SampleVoice {
       constructor(id, context, library, type) {
         super(id, context, library, type === "closed" ? "closed-hat" : "open-hat");
         this.type = type;
@@ -5819,7 +5287,7 @@ var init_hihat_e1 = __esm({
   "../web/public/909/dist/machines/tr909/voices/hihat-e1.js"() {
     "use strict";
     init_sample_voice();
-    HiHat909E1 = class extends SampleVoice2 {
+    HiHat909E1 = class extends SampleVoice {
       constructor(id, context, library, type) {
         super(id, context, library, type === "closed" ? "closed-hat" : "open-hat");
         this.type = type;
@@ -5897,7 +5365,7 @@ var init_cymbal = __esm({
         // High shimmer
       ]
     };
-    Cymbal909 = class extends SampleVoice2 {
+    Cymbal909 = class extends SampleVoice {
       constructor(id, context, library, type) {
         super(id, context, library, type === "crash" ? "crash" : "ride");
         this.type = type;
@@ -5984,7 +5452,7 @@ var init_cymbal_e1 = __esm({
   "../web/public/909/dist/machines/tr909/voices/cymbal-e1.js"() {
     "use strict";
     init_sample_voice();
-    Cymbal909E1 = class extends SampleVoice2 {
+    Cymbal909E1 = class extends SampleVoice {
       constructor(id, context, library, type) {
         super(id, context, library, type === "crash" ? "crash" : "ride");
         this.type = type;
@@ -6172,7 +5640,7 @@ var init_engine_v3 = __esm({
     init_cymbal_e1();
     init_sample_voice();
     init_library();
-    TR909Engine = class _TR909Engine extends SynthEngine3 {
+    TR909Engine = class _TR909Engine extends SynthEngine2 {
       constructor(options = {}) {
         super(options);
         this.sequencer = new StepSequencer({ steps: 16, bpm: 125 });
@@ -6539,7 +6007,7 @@ var init_engine_v3 = __esm({
        */
       setVoiceUseSample(voiceId, useSample) {
         const voice = this.voices.get(voiceId);
-        if (voice && voice instanceof SampleVoice2) {
+        if (voice && voice instanceof SampleVoice) {
           voice.setUseSample(useSample);
         }
       }
@@ -6548,7 +6016,7 @@ var init_engine_v3 = __esm({
        */
       getVoiceUseSample(voiceId) {
         const voice = this.voices.get(voiceId);
-        if (voice && voice instanceof SampleVoice2) {
+        if (voice && voice instanceof SampleVoice) {
           return voice.useSample;
         }
         return false;
@@ -6712,7 +6180,7 @@ var init_engine_v3 = __esm({
 });
 
 // ../web/public/303/dist/core/output.js
-function audioBufferToWav5(buffer) {
+function audioBufferToWav3(buffer) {
   const numChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
   const format = 1;
@@ -6730,10 +6198,10 @@ function audioBufferToWav5(buffer) {
   const dataLength = interleavedLength * bytesPerSample;
   const wavBuffer = new ArrayBuffer(44 + dataLength);
   const view = new DataView(wavBuffer);
-  writeString5(view, 0, "RIFF");
+  writeString3(view, 0, "RIFF");
   view.setUint32(4, 36 + dataLength, true);
-  writeString5(view, 8, "WAVE");
-  writeString5(view, 12, "fmt ");
+  writeString3(view, 8, "WAVE");
+  writeString3(view, 12, "fmt ");
   view.setUint32(16, 16, true);
   view.setUint16(20, format, true);
   view.setUint16(22, numChannels, true);
@@ -6741,7 +6209,7 @@ function audioBufferToWav5(buffer) {
   view.setUint32(28, sampleRate * blockAlign, true);
   view.setUint16(32, blockAlign, true);
   view.setUint16(34, bitDepth, true);
-  writeString5(view, 36, "data");
+  writeString3(view, 36, "data");
   view.setUint32(40, dataLength, true);
   let offset = 44;
   for (let i = 0; i < interleavedLength; i++) {
@@ -6752,16 +6220,16 @@ function audioBufferToWav5(buffer) {
   }
   return wavBuffer;
 }
-function writeString5(view, offset, string) {
+function writeString3(view, offset, string) {
   for (let i = 0; i < string.length; i++) {
     view.setUint8(offset + i, string.charCodeAt(i));
   }
 }
-var OutputManager4;
+var OutputManager3;
 var init_output2 = __esm({
   "../web/public/303/dist/core/output.js"() {
     "use strict";
-    OutputManager4 = class {
+    OutputManager3 = class {
       constructor(context, destination) {
         this.context = context;
         this.destination = destination ?? context.destination;
@@ -6780,7 +6248,7 @@ var init_output2 = __esm({
         return Promise.resolve(setupGraph(offlineContext)).then(() => offlineContext.startRendering());
       }
       audioBufferToWav(buffer) {
-        return audioBufferToWav5(buffer);
+        return audioBufferToWav3(buffer);
       }
       async audioBufferToBlob(buffer) {
         const wavArray = this.audioBufferToWav(buffer);
@@ -6791,12 +6259,12 @@ var init_output2 = __esm({
 });
 
 // ../web/public/303/dist/core/engine.js
-var SynthEngine4;
+var SynthEngine3;
 var init_engine2 = __esm({
   "../web/public/303/dist/core/engine.js"() {
     "use strict";
     init_output2();
-    SynthEngine4 = class {
+    SynthEngine3 = class {
       constructor(options = {}) {
         this.voices = /* @__PURE__ */ new Map();
         this.started = false;
@@ -6808,7 +6276,7 @@ var init_engine2 = __esm({
         this.compressor.connect(this.analyser);
         this.analyser.connect(this.masterGain);
         this.masterGain.connect(this.context.destination);
-        this.outputManager = new OutputManager4(this.context, this.masterGain);
+        this.outputManager = new OutputManager3(this.context, this.masterGain);
       }
       registerVoice(id, voice) {
         voice.connect(this.compressor);
@@ -6877,26 +6345,26 @@ var init_engine2 = __esm({
 });
 
 // ../web/public/303/dist/machines/tb303/sequencer.js
-function noteToMidi2(noteName) {
+function noteToMidi(noteName) {
   const match = noteName.match(/^([A-G]#?)(\d)$/);
   if (!match) return 48;
   const [, note, octave] = match;
-  const noteIndex = NOTES2.indexOf(note);
+  const noteIndex = NOTES.indexOf(note);
   return (parseInt(octave) + 1) * 12 + noteIndex;
 }
-function midiToNote2(midi) {
+function midiToNote(midi) {
   const octave = Math.floor(midi / 12) - 1;
   const noteIndex = midi % 12;
-  return `${NOTES2[noteIndex]}${octave}`;
+  return `${NOTES[noteIndex]}${octave}`;
 }
-function midiToFreq2(midi) {
+function midiToFreq(midi) {
   return 440 * Math.pow(2, (midi - 69) / 12);
 }
-var NOTES2, TB303Sequencer;
+var NOTES, TB303Sequencer;
 var init_sequencer2 = __esm({
   "../web/public/303/dist/machines/tb303/sequencer.js"() {
     "use strict";
-    NOTES2 = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
     TB303Sequencer = class {
       constructor(options = {}) {
         this.steps = options.steps ?? 16;
@@ -7003,14 +6471,14 @@ var init_sequencer2 = __esm({
         if (this.onStep && stepData.gate) {
           this.onStep(step, {
             ...stepData,
-            midi: noteToMidi2(stepData.note),
-            frequency: midiToFreq2(noteToMidi2(stepData.note)),
+            midi: noteToMidi(stepData.note),
+            frequency: midiToFreq(noteToMidi(stepData.note)),
             time,
             duration: this.getStepDuration()
           }, {
             ...nextStepData,
-            midi: noteToMidi2(nextStepData.note),
-            frequency: midiToFreq2(noteToMidi2(nextStepData.note))
+            midi: noteToMidi(nextStepData.note),
+            frequency: midiToFreq(noteToMidi(nextStepData.note))
           });
         }
         this.onStepChange?.(step);
@@ -7021,13 +6489,13 @@ var init_sequencer2 = __esm({
       }
       // Get next note for a cycle (used by UI)
       static cycleNote(currentNote, direction = 1) {
-        const midi = noteToMidi2(currentNote);
+        const midi = noteToMidi(currentNote);
         const minMidi = 36;
         const maxMidi = 60;
         let newMidi = midi + direction;
         if (newMidi > maxMidi) newMidi = minMidi;
         if (newMidi < minMidi) newMidi = maxMidi;
-        return midiToNote2(newMidi);
+        return midiToNote(newMidi);
       }
     };
   }
@@ -7563,7 +7031,7 @@ var init_engine3 = __esm({
     init_sequencer2();
     init_bass_e1();
     init_bass();
-    TB303Engine = class _TB303Engine extends SynthEngine4 {
+    TB303Engine = class _TB303Engine extends SynthEngine3 {
       constructor(options = {}) {
         super(options);
         this.sequencer = new TB303Sequencer({ steps: 16, bpm: 130 });
@@ -7619,8 +7087,8 @@ var init_engine3 = __esm({
       playNote(note, accent = false) {
         const voice = this.voices.get("bass");
         if (!voice) return;
-        const midi = typeof note === "string" ? noteToMidi2(note) : note;
-        const frequency = midiToFreq2(midi);
+        const midi = typeof note === "string" ? noteToMidi(note) : note;
+        const frequency = midiToFreq(midi);
         voice.trigger(this.context.currentTime, 0.8, frequency, accent, false, null);
       }
       /**
@@ -7810,10 +7278,10 @@ var init_engine3 = __esm({
           const nextStepData = pattern[nextStep];
           if (!stepData.gate) continue;
           const time = i * stepDuration;
-          const midi = noteToMidi2(stepData.note);
-          const frequency = midiToFreq2(midi);
+          const midi = noteToMidi(stepData.note);
+          const frequency = midiToFreq(midi);
           const shouldSlide = stepData.slide && nextStepData.gate;
-          const nextFreq = shouldSlide ? midiToFreq2(noteToMidi2(nextStepData.note)) : null;
+          const nextFreq = shouldSlide ? midiToFreq(noteToMidi(nextStepData.note)) : null;
           voice.trigger(time, 0.8, frequency, stepData.accent, shouldSlide, nextFreq);
         }
       }
@@ -7847,7 +7315,7 @@ var init_engine3 = __esm({
 });
 
 // ../web/public/101/dist/core/output.js
-function audioBufferToWav6(buffer) {
+function audioBufferToWav4(buffer) {
   const numChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
   const format = 1;
@@ -7865,10 +7333,10 @@ function audioBufferToWav6(buffer) {
   const dataLength = interleavedLength * bytesPerSample;
   const wavBuffer = new ArrayBuffer(44 + dataLength);
   const view = new DataView(wavBuffer);
-  writeString6(view, 0, "RIFF");
+  writeString4(view, 0, "RIFF");
   view.setUint32(4, 36 + dataLength, true);
-  writeString6(view, 8, "WAVE");
-  writeString6(view, 12, "fmt ");
+  writeString4(view, 8, "WAVE");
+  writeString4(view, 12, "fmt ");
   view.setUint32(16, 16, true);
   view.setUint16(20, format, true);
   view.setUint16(22, numChannels, true);
@@ -7876,7 +7344,7 @@ function audioBufferToWav6(buffer) {
   view.setUint32(28, sampleRate * blockAlign, true);
   view.setUint16(32, blockAlign, true);
   view.setUint16(34, bitDepth, true);
-  writeString6(view, 36, "data");
+  writeString4(view, 36, "data");
   view.setUint32(40, dataLength, true);
   let offset = 44;
   for (let i = 0; i < interleavedLength; i++) {
@@ -7887,16 +7355,16 @@ function audioBufferToWav6(buffer) {
   }
   return wavBuffer;
 }
-function writeString6(view, offset, string) {
+function writeString4(view, offset, string) {
   for (let i = 0; i < string.length; i++) {
     view.setUint8(offset + i, string.charCodeAt(i));
   }
 }
-var OutputManager5;
+var OutputManager4;
 var init_output3 = __esm({
   "../web/public/101/dist/core/output.js"() {
     "use strict";
-    OutputManager5 = class {
+    OutputManager4 = class {
       constructor(context, destination) {
         this.context = context;
         this.destination = destination ?? context.destination;
@@ -7915,7 +7383,7 @@ var init_output3 = __esm({
         return Promise.resolve(setupGraph(offlineContext)).then(() => offlineContext.startRendering());
       }
       audioBufferToWav(buffer) {
-        return audioBufferToWav6(buffer);
+        return audioBufferToWav4(buffer);
       }
       async audioBufferToBlob(buffer) {
         const wavArray = this.audioBufferToWav(buffer);
@@ -7926,12 +7394,12 @@ var init_output3 = __esm({
 });
 
 // ../web/public/101/dist/core/engine.js
-var SynthEngine5;
+var SynthEngine4;
 var init_engine4 = __esm({
   "../web/public/101/dist/core/engine.js"() {
     "use strict";
     init_output3();
-    SynthEngine5 = class {
+    SynthEngine4 = class {
       constructor(options = {}) {
         this.voices = /* @__PURE__ */ new Map();
         this.started = false;
@@ -7943,7 +7411,7 @@ var init_engine4 = __esm({
         this.compressor.connect(this.analyser);
         this.analyser.connect(this.masterGain);
         this.masterGain.connect(this.context.destination);
-        this.outputManager = new OutputManager5(this.context, this.masterGain);
+        this.outputManager = new OutputManager4(this.context, this.masterGain);
       }
       registerVoice(id, voice) {
         voice.connect(this.compressor);
@@ -9008,7 +8476,7 @@ var init_engine5 = __esm({
     init_envelope();
     init_lfo();
     init_vca();
-    SH101Engine = class _SH101Engine extends SynthEngine5 {
+    SH101Engine = class _SH101Engine extends SynthEngine4 {
       constructor(options = {}) {
         super(options);
         this.engineVersion = options.engine ?? "E1";
@@ -10900,506 +10368,8 @@ var JB200Node = class extends InstrumentNode {
 
 // instruments/jb01-node.js
 init_converters();
-var VOICES3 = ["kick", "snare", "clap", "ch", "oh", "perc", "tom", "cymbal"];
-function createEmptyVoicePattern() {
-  return Array(16).fill(null).map(() => ({
-    velocity: 0,
-    accent: false
-  }));
-}
-function createEmptyPattern2() {
-  const pattern = {};
-  for (const voice of VOICES3) {
-    pattern[voice] = createEmptyVoicePattern();
-  }
-  return pattern;
-}
-var JB01Node = class extends InstrumentNode {
-  constructor(config = {}) {
-    super("jb01", config);
-    this._voices = VOICES3;
-    this._pattern = createEmptyPattern2();
-    this._registerParams();
-  }
-  /**
-   * Register all parameters from the JSON definition
-   * Stores values in ENGINE UNITS (0-1) internally
-   */
-  _registerParams() {
-    for (const voice of VOICES3) {
-      const voiceDef = JB01_PARAMS[voice];
-      if (!voiceDef) continue;
-      for (const [paramName, paramDef] of Object.entries(voiceDef)) {
-        const path = `${voice}.${paramName}`;
-        this.registerParam(path, {
-          ...paramDef,
-          voice,
-          param: paramName
-        });
-        if (paramDef.default !== void 0) {
-          this._params[path] = toEngine(paramDef.default, paramDef);
-        }
-      }
-    }
-  }
-  /**
-   * Get a parameter value in ENGINE UNITS (0-1 for most params)
-   * Note: Tools should use fromEngine() to convert to producer-friendly units
-   * @param {string} path - e.g., 'kick.decay'
-   * @returns {number}
-   */
-  getParam(path) {
-    return this._params[path];
-  }
-  /**
-   * Set a parameter value (stores ENGINE UNITS, 0-1 normalized)
-   * Tools convert from producer units before calling this.
-   * @param {string} path - e.g., 'kick.decay'
-   * @param {*} value - Value in engine units (0-1 for most params)
-   * @returns {boolean}
-   */
-  setParam(path, value) {
-    const parts = path.split(".");
-    if (parts.length === 2 && parts[1] === "mute") {
-      if (value) {
-        this._params[`${parts[0]}.level`] = 0;
-      }
-      return true;
-    }
-    if (typeof value === "number" && parts.length === 2) {
-      const [voice, paramName] = parts;
-      const paramDef = JB01_PARAMS[voice]?.[paramName];
-      if (paramDef) {
-        if (paramDef.unit === "0-100" && value > 1.5) {
-          console.warn(`JB01Node.setParam: ${path}=${value} appears to be producer units (0-100), expected engine units (0-1). Converting automatically.`);
-          value = toEngine(value, paramDef);
-        } else if (paramDef.unit === "dB" && value < -1.5 && value >= -60) {
-          console.warn(`JB01Node.setParam: ${path}=${value} appears to be dB, expected engine units (0-1). Converting automatically.`);
-          value = toEngine(value, paramDef);
-        }
-      }
-    }
-    this._params[path] = value;
-    return true;
-  }
-  /**
-   * Get a parameter value in engine units (0-1)
-   * Used by render loop.
-   * @param {string} path
-   * @returns {number}
-   */
-  getEngineParam(path) {
-    return this._params[path];
-  }
-  /**
-   * Get all params for a voice in engine units
-   * @param {string} voice
-   * @returns {Object}
-   */
-  getVoiceEngineParams(voice) {
-    const result = {};
-    const voiceDef = JB01_PARAMS[voice];
-    if (!voiceDef) return result;
-    for (const paramName of Object.keys(voiceDef)) {
-      const path = `${voice}.${paramName}`;
-      const value = this._params[path];
-      if (value !== void 0) {
-        result[paramName] = value;
-      }
-    }
-    return result;
-  }
-  /**
-   * Get node output level as linear gain multiplier
-   * Returns 1.0 (unity) - individual voice levels are handled separately
-   * @returns {number}
-   */
-  getOutputGain() {
-    return 1;
-  }
-  /**
-   * Get the current pattern
-   * @returns {Object}
-   */
-  getPattern() {
-    return this._pattern;
-  }
-  /**
-   * Set the pattern
-   * @param {Object} pattern - { kick: [...], snare: [...], ... }
-   */
-  setPattern(pattern) {
-    this._pattern = pattern;
-  }
-  /**
-   * Set a single voice pattern
-   * @param {string} voice
-   * @param {Array} pattern
-   */
-  setVoicePattern(voice, pattern) {
-    if (VOICES3.includes(voice)) {
-      this._pattern[voice] = pattern;
-    }
-  }
-  /**
-   * Get a single voice pattern
-   * @param {string} voice
-   * @returns {Array}
-   */
-  getVoicePattern(voice) {
-    return this._pattern[voice] || createEmptyVoicePattern();
-  }
-  /**
-   * Serialize full JB01 state
-   * @returns {Object}
-   */
-  serialize() {
-    return {
-      id: this.id,
-      pattern: JSON.parse(JSON.stringify(this._pattern)),
-      params: { ...this._params }
-    };
-  }
-  /**
-   * Deserialize JB01 state
-   * Handles migration from legacy formats where producer values might have been stored
-   * @param {Object} data
-   */
-  deserialize(data) {
-    if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
-    if (data.params) {
-      const migratedParams = {};
-      for (const [path, value] of Object.entries(data.params)) {
-        const [voice, paramName] = path.split(".");
-        const paramDef = JB01_PARAMS[voice]?.[paramName];
-        if (paramDef && typeof value === "number") {
-          if (paramDef.unit === "0-100" && value > 1.5) {
-            migratedParams[path] = toEngine(value, paramDef);
-          } else if (paramDef.unit === "dB" && value < -1.5) {
-            migratedParams[path] = toEngine(value, paramDef);
-          } else {
-            migratedParams[path] = value;
-          }
-        } else {
-          migratedParams[path] = value;
-        }
-      }
-      this._params = migratedParams;
-    }
-  }
-};
 
-// core/session.js
-function createSession(config = {}) {
-  const clock = new Clock({
-    bpm: config.bpm || 128,
-    swing: config.swing || 0,
-    sampleRate: config.sampleRate || 44100
-  });
-  const params = new ParamSystem();
-  const jb01Node = new JB01Node();
-  const jb200Node = new JB200Node();
-  const samplerNode = new SamplerNode();
-  params.register("jb01", jb01Node);
-  params.register("jb200", jb200Node);
-  params.register("sampler", samplerNode);
-  params.register("drums", jb01Node);
-  params.register("bass", jb200Node);
-  params.register("lead", jb200Node);
-  params.register("synth", jb200Node);
-  const session = {
-    // Master clock - all timing derives from here
-    clock,
-    // BPM and swing proxy to clock (producer-facing interface)
-    get bpm() {
-      return clock.bpm;
-    },
-    set bpm(v) {
-      clock.bpm = v;
-    },
-    get swing() {
-      return clock.swing;
-    },
-    set swing(v) {
-      clock.swing = v;
-    },
-    // Bars for render length
-    bars: config.bars || 2,
-    // Instrument output levels in dB (-60 to +6, 0 = unity)
-    jb01Level: config.jb01Level ?? 0,
-    jb200Level: config.jb200Level ?? 0,
-    samplerLevel: config.samplerLevel ?? 0,
-    // ParamSystem instance
-    params,
-    // Direct node references
-    _nodes: {
-      jb01: jb01Node,
-      jb200: jb200Node,
-      sampler: samplerNode,
-      // Aliases point to same nodes
-      drums: jb01Node,
-      bass: jb200Node,
-      lead: jb200Node,
-      synth: jb200Node
-    },
-    // === UNIFIED PARAMETER ACCESS ===
-    /**
-     * Get any parameter by path
-     * @param {string} path - e.g., 'drums.kick.decay', 'bass.filterCutoff'
-     * @returns {*}
-     */
-    get(path) {
-      return params.get(path);
-    },
-    /**
-     * Set any parameter by path
-     * @param {string} path
-     * @param {*} value
-     * @returns {boolean}
-     */
-    set(path, value) {
-      return params.set(path, value);
-    },
-    /**
-     * Get parameter descriptors for a node
-     * @param {string} nodeId
-     * @returns {Object}
-     */
-    describe(nodeId) {
-      return params.describe(nodeId);
-    },
-    /**
-     * List all registered nodes
-     * @returns {string[]}
-     */
-    listNodes() {
-      return params.listNodes();
-    },
-    /**
-     * Automate any parameter
-     * @param {string} path
-     * @param {Array} values
-     */
-    automate(path, values) {
-      return params.automate(path, values);
-    },
-    /**
-     * Get automation values
-     * @param {string} path
-     * @returns {Array|undefined}
-     */
-    getAutomation(path) {
-      return params.getAutomation(path);
-    },
-    /**
-     * Clear automation
-     * @param {string} [path] - If omitted, clears all
-     */
-    clearAutomation(path) {
-      params.clearAutomation(path);
-    },
-    // === PATTERN ACCESS ===
-    // drums/jb01 share the same pattern (they're the same node)
-    // bass/lead/synth/jb200 share the same pattern (they're the same node)
-    get drumPattern() {
-      return jb01Node.getPattern();
-    },
-    set drumPattern(v) {
-      jb01Node.setPattern(v);
-    },
-    get jb01Pattern() {
-      return jb01Node.getPattern();
-    },
-    set jb01Pattern(v) {
-      jb01Node.setPattern(v);
-    },
-    get bassPattern() {
-      return jb200Node.getPattern();
-    },
-    set bassPattern(v) {
-      jb200Node.setPattern(v);
-    },
-    get leadPattern() {
-      return jb200Node.getPattern();
-    },
-    set leadPattern(v) {
-      jb200Node.setPattern(v);
-    },
-    get jb200Pattern() {
-      return jb200Node.getPattern();
-    },
-    set jb200Pattern(v) {
-      jb200Node.setPattern(v);
-    },
-    get samplerKit() {
-      return samplerNode.getKit();
-    },
-    set samplerKit(v) {
-      samplerNode.setKit(v);
-    },
-    get samplerPattern() {
-      return samplerNode.getPattern();
-    },
-    set samplerPattern(v) {
-      samplerNode.setPattern(v);
-    },
-    // === PARAM ACCESS (proxies to nodes) ===
-    get drumParams() {
-      const voices = jb01Node._voices;
-      return new Proxy({}, {
-        get: (_, voice) => {
-          if (typeof voice !== "string") return void 0;
-          const voiceDescriptors = jb01Node._descriptors;
-          return new Proxy({}, {
-            get: (__, param) => jb01Node.getParam(`${voice}.${param}`),
-            set: (__, param, value) => {
-              jb01Node.setParam(`${voice}.${param}`, value);
-              return true;
-            },
-            ownKeys: () => {
-              return Object.keys(voiceDescriptors).filter((path) => path.startsWith(`${voice}.`)).map((path) => path.slice(voice.length + 1));
-            },
-            getOwnPropertyDescriptor: (__, prop) => {
-              const path = `${voice}.${prop}`;
-              if (voiceDescriptors[path] !== void 0 || jb01Node.getParam(path) !== void 0) {
-                return { enumerable: true, configurable: true, writable: true };
-              }
-              return void 0;
-            }
-          });
-        },
-        set: (_, voice, params2) => {
-          for (const [param, value] of Object.entries(params2)) {
-            jb01Node.setParam(`${voice}.${param}`, value);
-          }
-          return true;
-        },
-        ownKeys: () => voices,
-        getOwnPropertyDescriptor: (_, voice) => {
-          if (voices.includes(voice)) {
-            return { enumerable: true, configurable: true, writable: true };
-          }
-          return void 0;
-        }
-      });
-    },
-    set drumParams(v) {
-      for (const [voice, params2] of Object.entries(v)) {
-        for (const [param, value] of Object.entries(params2)) {
-          jb01Node.setParam(`${voice}.${param}`, value);
-        }
-      }
-    },
-    get jb01Params() {
-      return this.drumParams;
-    },
-    set jb01Params(v) {
-      this.drumParams = v;
-    },
-    get bassParams() {
-      return new Proxy({}, {
-        get: (_, param) => jb200Node.getParam(`bass.${param}`),
-        set: (_, param, value) => {
-          jb200Node.setParam(`bass.${param}`, value);
-          return true;
-        },
-        ownKeys: () => {
-          return Object.keys(jb200Node.getParameterDescriptors()).map((path) => path.replace("bass.", ""));
-        },
-        getOwnPropertyDescriptor: (_, prop) => {
-          const path = `bass.${prop}`;
-          if (jb200Node.getParameterDescriptors()[path] !== void 0) {
-            return { enumerable: true, configurable: true, writable: true };
-          }
-          if (jb200Node.getParam(path) !== void 0) {
-            return { enumerable: true, configurable: true, writable: true };
-          }
-          return void 0;
-        },
-        has: (_, prop) => {
-          const path = `bass.${prop}`;
-          return jb200Node.getParameterDescriptors()[path] !== void 0 || jb200Node.getParam(path) !== void 0;
-        }
-      });
-    },
-    set bassParams(v) {
-      for (const [param, value] of Object.entries(v)) {
-        jb200Node.setParam(`bass.${param}`, value);
-      }
-    },
-    get leadParams() {
-      return this.bassParams;
-    },
-    set leadParams(v) {
-      this.bassParams = v;
-    },
-    get jb200Params() {
-      return this.bassParams;
-    },
-    set jb200Params(v) {
-      this.bassParams = v;
-    },
-    get samplerParams() {
-      return new Proxy({}, {
-        get: (_, slot) => {
-          const result = {};
-          const slotParams = ["level", "tune", "attack", "decay", "filter", "pan"];
-          for (const param of slotParams) {
-            result[param] = samplerNode.getParam(`${slot}.${param}`);
-          }
-          return result;
-        },
-        set: (_, slot, params2) => {
-          for (const [param, value] of Object.entries(params2)) {
-            samplerNode.setParam(`${slot}.${param}`, value);
-          }
-          return true;
-        }
-      });
-    },
-    set samplerParams(v) {
-      for (const [slot, params2] of Object.entries(v)) {
-        for (const [param, value] of Object.entries(params2)) {
-          samplerNode.setParam(`${slot}.${param}`, value);
-        }
-      }
-    },
-    // Mixer (placeholder)
-    mixer: {
-      sends: {},
-      voiceRouting: {},
-      channelInserts: {},
-      masterInserts: [],
-      masterVolume: 0.8
-    },
-    // Song mode
-    patterns: {
-      drums: {},
-      bass: {},
-      lead: {},
-      sampler: {},
-      jb200: {},
-      jb01: {}
-    },
-    currentPattern: {
-      drums: "A",
-      bass: "A",
-      lead: "A",
-      sampler: "A",
-      jb200: "A",
-      jb01: "A"
-    },
-    arrangement: []
-  };
-  return session;
-}
-
-// core/render.js
-init_presets();
-import { OfflineAudioContext as OfflineAudioContext2, AudioContext as AudioContext2 } from "node-web-audio-api";
-import { writeFileSync as writeFileSync4 } from "fs";
-
-// ../web/public/jb200/dist/core/output.js
+// ../web/public/jb01/dist/core/output.js
 function audioBufferToWav(buffer) {
   const numChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
@@ -11472,7 +10442,7 @@ var OutputManager = class {
   }
 };
 
-// ../web/public/jb200/dist/core/engine.js
+// ../web/public/jb01/dist/core/engine.js
 var SynthEngine = class {
   constructor(options = {}) {
     this.voices = /* @__PURE__ */ new Map();
@@ -11486,720 +10456,6 @@ var SynthEngine = class {
     this.analyser.connect(this.masterGain);
     this.masterGain.connect(this.context.destination);
     this.outputManager = new OutputManager(this.context, this.masterGain);
-  }
-  registerVoice(id, voice) {
-    voice.connect(this.compressor);
-    this.voices.set(id, voice);
-  }
-  getVoices() {
-    return [...this.voices.keys()];
-  }
-  getVoiceParameterDescriptors() {
-    const descriptors = {};
-    for (const [id, voice] of this.voices.entries()) {
-      descriptors[id] = voice.parameterDescriptors;
-    }
-    return descriptors;
-  }
-  async start() {
-    if (this.context.state === "suspended") {
-      await this.context.resume();
-    }
-    this.started = true;
-  }
-  stop() {
-    this.started = false;
-  }
-  isRunning() {
-    return this.started;
-  }
-  trigger(voiceId, velocity = 1, time) {
-    const voice = this.voices.get(voiceId);
-    if (!voice) {
-      throw new Error(`Unknown voice "${voiceId}"`);
-    }
-    const when = time ?? this.context.currentTime;
-    voice.trigger(when, velocity);
-  }
-  setVoiceParameter(voiceId, parameterId, value) {
-    const voice = this.voices.get(voiceId);
-    if (!voice) {
-      throw new Error(`Unknown voice "${voiceId}"`);
-    }
-    voice.setParameter(parameterId, value);
-  }
-  connectOutput(destination) {
-    this.masterGain.disconnect();
-    this.masterGain.connect(destination);
-    this.outputManager.setDestination(destination);
-  }
-  audioBufferToWav(buffer) {
-    return this.outputManager.audioBufferToWav(buffer);
-  }
-  audioBufferToBlob(buffer) {
-    return this.outputManager.audioBufferToBlob(buffer);
-  }
-  async renderToBuffer(options) {
-    return this.outputManager.renderOffline(
-      options.duration,
-      (offlineContext) => this.prepareOfflineRender(offlineContext, options),
-      {
-        sampleRate: options.sampleRate,
-        numberOfChannels: options.numberOfChannels
-      }
-    );
-  }
-};
-
-// ../web/public/jb200/dist/machines/jb200/sequencer.js
-var NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-function noteToMidi(noteName) {
-  const match = noteName.match(/^([A-G]#?)(\d)$/);
-  if (!match) return 48;
-  const [, note, octave] = match;
-  const noteIndex = NOTES.indexOf(note);
-  return (parseInt(octave) + 1) * 12 + noteIndex;
-}
-function midiToNote(midi) {
-  const octave = Math.floor(midi / 12) - 1;
-  const noteIndex = midi % 12;
-  return `${NOTES[noteIndex]}${octave}`;
-}
-function midiToFreq(midi) {
-  return 440 * Math.pow(2, (midi - 69) / 12);
-}
-var JB200Sequencer = class {
-  constructor(options = {}) {
-    this.steps = options.steps ?? 16;
-    this.bpm = options.bpm ?? 120;
-    this.running = false;
-    this.currentStep = -1;
-    this.nextStepTime = 0;
-    this.scheduleAheadTime = 0.1;
-    this.lookahead = 25;
-    this.pattern = this.createEmptyPattern();
-    this.onStep = null;
-    this.onStepChange = null;
-    this.timerID = null;
-    this.audioContext = null;
-  }
-  createEmptyPattern() {
-    const pattern = [];
-    for (let i = 0; i < this.steps; i++) {
-      pattern.push({
-        note: "C2",
-        gate: i === 0,
-        // First step on by default
-        accent: false,
-        slide: false
-      });
-    }
-    return pattern;
-  }
-  setContext(context) {
-    this.audioContext = context;
-  }
-  setBpm(bpm) {
-    this.bpm = Math.max(30, Math.min(300, bpm));
-  }
-  getBpm() {
-    return this.bpm;
-  }
-  getStepDuration() {
-    return 60 / this.bpm / 4;
-  }
-  setPattern(pattern) {
-    if (Array.isArray(pattern) && pattern.length === this.steps) {
-      this.pattern = pattern.map((step) => ({
-        note: step.note ?? "C2",
-        gate: step.gate ?? false,
-        accent: step.accent ?? false,
-        slide: step.slide ?? false
-      }));
-    }
-  }
-  getPattern() {
-    return this.pattern.map((step) => ({ ...step }));
-  }
-  setStep(index, data) {
-    if (index >= 0 && index < this.steps) {
-      Object.assign(this.pattern[index], data);
-    }
-  }
-  getStep(index) {
-    if (index >= 0 && index < this.steps) {
-      return { ...this.pattern[index] };
-    }
-    return null;
-  }
-  start() {
-    if (this.running) return;
-    if (!this.audioContext) {
-      console.warn("JB200Sequencer: No audio context set");
-      return;
-    }
-    this.running = true;
-    this.currentStep = -1;
-    this.nextStepTime = this.audioContext.currentTime;
-    this.scheduler();
-  }
-  stop() {
-    this.running = false;
-    if (this.timerID) {
-      clearTimeout(this.timerID);
-      this.timerID = null;
-    }
-    this.currentStep = -1;
-    this.onStepChange?.(-1);
-  }
-  isRunning() {
-    return this.running;
-  }
-  getCurrentStep() {
-    return this.currentStep;
-  }
-  scheduler() {
-    if (!this.running) return;
-    const currentTime = this.audioContext.currentTime;
-    while (this.nextStepTime < currentTime + this.scheduleAheadTime) {
-      this.scheduleStep(this.nextStepTime);
-      this.advanceStep();
-    }
-    this.timerID = setTimeout(() => this.scheduler(), this.lookahead);
-  }
-  scheduleStep(time) {
-    const step = (this.currentStep + 1) % this.steps;
-    const stepData = this.pattern[step];
-    const nextStep = (step + 1) % this.steps;
-    const nextStepData = this.pattern[nextStep];
-    if (this.onStep && stepData.gate) {
-      this.onStep(step, {
-        ...stepData,
-        midi: noteToMidi(stepData.note),
-        frequency: midiToFreq(noteToMidi(stepData.note)),
-        time,
-        duration: this.getStepDuration()
-      }, {
-        ...nextStepData,
-        midi: noteToMidi(nextStepData.note),
-        frequency: midiToFreq(noteToMidi(nextStepData.note))
-      });
-    }
-    this.onStepChange?.(step);
-  }
-  advanceStep() {
-    this.currentStep = (this.currentStep + 1) % this.steps;
-    this.nextStepTime += this.getStepDuration();
-  }
-  // Get next note for a cycle (used by UI)
-  static cycleNote(currentNote, direction = 1) {
-    const midi = noteToMidi(currentNote);
-    const minMidi = 24;
-    const maxMidi = 60;
-    let newMidi = midi + direction;
-    if (newMidi > maxMidi) newMidi = minMidi;
-    if (newMidi < minMidi) newMidi = maxMidi;
-    return midiToNote(newMidi);
-  }
-};
-
-// ../web/public/jb200/dist/machines/jb200/engine.js
-function knobToTime(value) {
-  return 2e-3 + value / 100 * (value / 100) * 1.998;
-}
-function knobToQ(value) {
-  return 0.5 + value / 100 * 19.5;
-}
-function makeDriveShaper(context, amount) {
-  const k = amount * 50;
-  const n = 8192;
-  const curve = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const x = i * 2 / n - 1;
-    if (k === 0) {
-      curve[i] = x;
-    } else {
-      curve[i] = (Math.PI + k) * x / (Math.PI + k * Math.abs(x));
-    }
-  }
-  const shaper = context.createWaveShaper();
-  shaper.curve = curve;
-  shaper.oversample = "2x";
-  return shaper;
-}
-var JB200Engine = class extends SynthEngine {
-  constructor(options = {}) {
-    super(options);
-    this.sequencer = new JB200Sequencer({ steps: 16, bpm: 120 });
-    this.sequencer.setContext(this.context);
-    this.currentBpm = 120;
-    this.parameters = {
-      // Oscillator 1
-      osc1Waveform: "sawtooth",
-      osc1Octave: 0,
-      // semitones: -24 to +24, default 0
-      osc1Detune: 0.5,
-      // 0-1 -> -50 to +50 cents
-      osc1Level: 1,
-      // 0-1
-      // Oscillator 2
-      osc2Waveform: "sawtooth",
-      osc2Octave: 0,
-      // semitones, default 0 (same octave)
-      osc2Detune: 0.57,
-      // 0-1, default ~7 cents
-      osc2Level: 0.8,
-      // 0-1
-      // Filter
-      filterCutoff: 0.53,
-      // 0-1 (log scale 20Hz-16kHz)
-      filterResonance: 0.4,
-      // 0-1
-      filterEnvAmount: 0.6,
-      // 0-1 (bipolar: 0.5 = 0, 0 = -100%, 1 = +100%)
-      // Filter envelope
-      filterAttack: 0,
-      // 0-1
-      filterDecay: 0.4,
-      // 0-1
-      filterSustain: 0.2,
-      // 0-1
-      filterRelease: 0.3,
-      // 0-1
-      // Amp envelope
-      ampAttack: 0,
-      // 0-1
-      ampDecay: 0.3,
-      // 0-1
-      ampSustain: 0.6,
-      // 0-1
-      ampRelease: 0.2,
-      // 0-1
-      // Drive
-      drive: 0.2,
-      // 0-1
-      // Master level
-      level: 0.8
-      // 0-1
-    };
-    this.activeVoice = null;
-    this.driveNode = null;
-    this.outputGain = this.context.createGain();
-    this.outputGain.gain.value = this.parameters.level;
-    this.outputGain.connect(this.compressor);
-    this.updateDrive();
-    this.sequencer.onStep = (step, stepData, nextStepData) => {
-      this.handleSequencerStep(step, stepData, nextStepData);
-    };
-    this.sequencer.onStepChange = (step) => {
-      this.onStepChange?.(step);
-    };
-  }
-  updateDrive() {
-    const driveAmount = this.parameters.drive * 100;
-    if (this.driveNode) {
-      this.driveNode.disconnect();
-    }
-    if (driveAmount > 1) {
-      this.driveNode = makeDriveShaper(this.context, driveAmount);
-      this.driveNode.connect(this.outputGain);
-    } else {
-      this.driveNode = null;
-    }
-  }
-  getOutput() {
-    return this.driveNode || this.outputGain;
-  }
-  // ========================================
-  // Parameter Access
-  // ========================================
-  setParameter(id, value) {
-    if (this.parameters.hasOwnProperty(id)) {
-      this.parameters[id] = value;
-      if (id === "level") {
-        this.outputGain.gain.value = value;
-      } else if (id === "drive") {
-        this.updateDrive();
-      }
-    }
-  }
-  getParameter(id) {
-    return this.parameters[id];
-  }
-  getParameters() {
-    return { ...this.parameters };
-  }
-  setOsc1Waveform(waveform) {
-    this.parameters.osc1Waveform = waveform;
-  }
-  setOsc2Waveform(waveform) {
-    this.parameters.osc2Waveform = waveform;
-  }
-  // ========================================
-  // Note Playback (Real-time)
-  // ========================================
-  playNote(note, accent = false, slide = false) {
-    if (this.context.state === "suspended") {
-      this.context.resume();
-    }
-    const time = this.context.currentTime;
-    const midi = typeof note === "string" ? noteToMidi(note) : note;
-    const baseFreq = midiToFreq(midi);
-    if (this.activeVoice && !slide) {
-      this.releaseVoice(this.activeVoice, time);
-    }
-    const voice = this.createVoice(baseFreq, time, accent, slide);
-    this.activeVoice = voice;
-    setTimeout(() => {
-      if (this.activeVoice === voice) {
-        this.releaseVoice(voice, this.context.currentTime);
-        this.activeVoice = null;
-      }
-    }, 300);
-  }
-  createVoice(baseFreq, time, accent, slide) {
-    const p = this.parameters;
-    const osc1 = this.context.createOscillator();
-    osc1.type = p.osc1Waveform;
-    const osc1Freq = baseFreq * Math.pow(2, p.osc1Octave / 12);
-    const osc1Detune = (p.osc1Detune - 0.5) * 100;
-    osc1.frequency.setValueAtTime(osc1Freq, time);
-    osc1.detune.setValueAtTime(osc1Detune, time);
-    const osc2 = this.context.createOscillator();
-    osc2.type = p.osc2Waveform;
-    const osc2Freq = baseFreq * Math.pow(2, p.osc2Octave / 12);
-    const osc2Detune = (p.osc2Detune - 0.5) * 100;
-    osc2.frequency.setValueAtTime(osc2Freq, time);
-    osc2.detune.setValueAtTime(osc2Detune, time);
-    const osc1Gain = this.context.createGain();
-    osc1Gain.gain.value = p.osc1Level;
-    osc1.connect(osc1Gain);
-    const osc2Gain = this.context.createGain();
-    osc2Gain.gain.value = p.osc2Level;
-    osc2.connect(osc2Gain);
-    const oscMixer = this.context.createGain();
-    oscMixer.gain.value = 0.5;
-    osc1Gain.connect(oscMixer);
-    osc2Gain.connect(oscMixer);
-    const filter1 = this.context.createBiquadFilter();
-    filter1.type = "lowpass";
-    const filter2 = this.context.createBiquadFilter();
-    filter2.type = "lowpass";
-    const baseCutoff = 20 * Math.pow(800, p.filterCutoff);
-    const resonance = knobToQ(p.filterResonance * 100);
-    filter1.Q.value = resonance * 0.7;
-    filter2.Q.value = resonance * 0.5;
-    const envAmount = (p.filterEnvAmount - 0.5) * 2;
-    const filterAttack = knobToTime(p.filterAttack * 100);
-    const filterDecay = knobToTime(p.filterDecay * 100);
-    const filterSustain = p.filterSustain;
-    const filterRelease = knobToTime(p.filterRelease * 100);
-    const envPeakOffset = Math.abs(envAmount) * 8e3;
-    const envPeak = envAmount >= 0 ? Math.min(16e3, baseCutoff + envPeakOffset) : Math.max(20, baseCutoff - envPeakOffset);
-    const envSustainFreq = baseCutoff + (envPeak - baseCutoff) * filterSustain;
-    const accentBoost = accent ? 1.5 : 1;
-    const peakCutoff = Math.min(16e3, envPeak * accentBoost);
-    filter1.frequency.setValueAtTime(baseCutoff, time);
-    filter1.frequency.linearRampToValueAtTime(peakCutoff, time + filterAttack);
-    filter1.frequency.exponentialRampToValueAtTime(Math.max(20, envSustainFreq), time + filterAttack + filterDecay);
-    filter2.frequency.setValueAtTime(baseCutoff, time);
-    filter2.frequency.linearRampToValueAtTime(peakCutoff, time + filterAttack);
-    filter2.frequency.exponentialRampToValueAtTime(Math.max(20, envSustainFreq), time + filterAttack + filterDecay);
-    oscMixer.connect(filter1);
-    filter1.connect(filter2);
-    const vca = this.context.createGain();
-    const ampAttack = knobToTime(p.ampAttack * 100);
-    const ampDecay = knobToTime(p.ampDecay * 100);
-    const ampSustain = p.ampSustain;
-    const peakLevel = accent ? 1 : 0.8;
-    vca.gain.setValueAtTime(0, time);
-    vca.gain.linearRampToValueAtTime(peakLevel, time + ampAttack);
-    vca.gain.exponentialRampToValueAtTime(Math.max(1e-3, ampSustain * peakLevel), time + ampAttack + ampDecay);
-    filter2.connect(vca);
-    vca.connect(this.getOutput());
-    osc1.start(time);
-    osc2.start(time);
-    return {
-      osc1,
-      osc2,
-      osc1Gain,
-      osc2Gain,
-      filter1,
-      filter2,
-      vca,
-      baseFreq,
-      time
-    };
-  }
-  releaseVoice(voice, time) {
-    const p = this.parameters;
-    const ampRelease = knobToTime(p.ampRelease * 100);
-    const filterRelease = knobToTime(p.filterRelease * 100);
-    voice.vca.gain.cancelScheduledValues(time);
-    voice.vca.gain.setValueAtTime(voice.vca.gain.value, time);
-    voice.vca.gain.exponentialRampToValueAtTime(1e-3, time + ampRelease);
-    const baseCutoff = 20 * Math.pow(800, p.filterCutoff);
-    voice.filter1.frequency.cancelScheduledValues(time);
-    voice.filter1.frequency.setValueAtTime(voice.filter1.frequency.value, time);
-    voice.filter1.frequency.exponentialRampToValueAtTime(Math.max(20, baseCutoff * 0.5), time + filterRelease);
-    voice.filter2.frequency.cancelScheduledValues(time);
-    voice.filter2.frequency.setValueAtTime(voice.filter2.frequency.value, time);
-    voice.filter2.frequency.exponentialRampToValueAtTime(Math.max(20, baseCutoff * 0.5), time + filterRelease);
-    const stopTime = time + Math.max(ampRelease, filterRelease) + 0.1;
-    voice.osc1.stop(stopTime);
-    voice.osc2.stop(stopTime);
-  }
-  // ========================================
-  // Sequencer
-  // ========================================
-  handleSequencerStep(step, stepData, nextStepData) {
-    if (!stepData) return;
-    const time = stepData.time;
-    const baseFreq = stepData.frequency;
-    const accent = stepData.accent;
-    const slide = stepData.slide;
-    const duration = stepData.duration;
-    const voice = this.createVoice(baseFreq, time, accent, slide);
-    const releaseTime = time + duration * 0.9;
-    setTimeout(() => {
-      this.releaseVoice(voice, this.context.currentTime);
-    }, (releaseTime - this.context.currentTime) * 1e3);
-  }
-  startSequencer() {
-    if (this.context.state === "suspended") {
-      this.context.resume();
-    }
-    this.sequencer.start();
-  }
-  stopSequencer() {
-    this.sequencer.stop();
-    if (this.activeVoice) {
-      this.releaseVoice(this.activeVoice, this.context.currentTime);
-      this.activeVoice = null;
-    }
-  }
-  isPlaying() {
-    return this.sequencer.isRunning();
-  }
-  setBpm(bpm) {
-    this.currentBpm = bpm;
-    this.sequencer.setBpm(bpm);
-  }
-  getBpm() {
-    return this.currentBpm;
-  }
-  setPattern(pattern) {
-    this.sequencer.setPattern(pattern);
-  }
-  getPattern() {
-    return this.sequencer.getPattern();
-  }
-  setStep(index, data) {
-    this.sequencer.setStep(index, data);
-  }
-  getStep(index) {
-    return this.sequencer.getStep(index);
-  }
-  // ========================================
-  // Offline Rendering
-  // ========================================
-  async renderPattern(options = {}) {
-    const { bars = 1 } = options;
-    let stepDuration;
-    if (options.stepDuration) {
-      stepDuration = options.stepDuration;
-    } else if (options.bpm) {
-      stepDuration = 60 / options.bpm / 4;
-    } else {
-      stepDuration = 60 / this.currentBpm / 4;
-    }
-    const stepsPerBar = 16;
-    const duration = bars * stepsPerBar * stepDuration;
-    const sampleRate = options.sampleRate ?? this.context.sampleRate ?? 44100;
-    const totalSamples = Math.ceil((duration + 2) * sampleRate);
-    const offlineContext = new OfflineAudioContext(2, totalSamples, sampleRate);
-    const masterGain = offlineContext.createGain();
-    masterGain.gain.value = this.parameters.level;
-    masterGain.connect(offlineContext.destination);
-    let output = masterGain;
-    if (this.parameters.drive > 0.01) {
-      const driveNode = makeDriveShaper(offlineContext, this.parameters.drive * 100);
-      driveNode.connect(masterGain);
-      output = driveNode;
-    }
-    const pattern = this.sequencer.getPattern();
-    const totalSteps = bars * 16;
-    for (let i = 0; i < totalSteps; i++) {
-      const step = pattern[i % 16];
-      if (!step.gate) continue;
-      const time = i * stepDuration;
-      const midi = noteToMidi(step.note);
-      const baseFreq = midiToFreq(midi);
-      this.renderNote(offlineContext, output, baseFreq, time, stepDuration, step.accent, step.slide);
-    }
-    return offlineContext.startRendering();
-  }
-  renderNote(context, output, baseFreq, time, duration, accent, slide) {
-    const p = this.parameters;
-    const osc1 = context.createOscillator();
-    osc1.type = p.osc1Waveform;
-    const osc1Freq = baseFreq * Math.pow(2, p.osc1Octave / 12);
-    osc1.frequency.setValueAtTime(osc1Freq, time);
-    osc1.detune.setValueAtTime((p.osc1Detune - 0.5) * 100, time);
-    const osc2 = context.createOscillator();
-    osc2.type = p.osc2Waveform;
-    const osc2Freq = baseFreq * Math.pow(2, p.osc2Octave / 12);
-    osc2.frequency.setValueAtTime(osc2Freq, time);
-    osc2.detune.setValueAtTime((p.osc2Detune - 0.5) * 100, time);
-    const osc1Gain = context.createGain();
-    osc1Gain.gain.value = p.osc1Level;
-    osc1.connect(osc1Gain);
-    const osc2Gain = context.createGain();
-    osc2Gain.gain.value = p.osc2Level;
-    osc2.connect(osc2Gain);
-    const oscMixer = context.createGain();
-    oscMixer.gain.value = 0.5;
-    osc1Gain.connect(oscMixer);
-    osc2Gain.connect(oscMixer);
-    const filter1 = context.createBiquadFilter();
-    filter1.type = "lowpass";
-    const filter2 = context.createBiquadFilter();
-    filter2.type = "lowpass";
-    const baseCutoff = 20 * Math.pow(800, p.filterCutoff);
-    const resonance = knobToQ(p.filterResonance * 100);
-    filter1.Q.value = resonance * 0.7;
-    filter2.Q.value = resonance * 0.5;
-    const envAmount = (p.filterEnvAmount - 0.5) * 2;
-    const filterAttack = knobToTime(p.filterAttack * 100);
-    const filterDecay = knobToTime(p.filterDecay * 100);
-    const filterSustain = p.filterSustain;
-    const filterRelease = knobToTime(p.filterRelease * 100);
-    const envPeakOffset = Math.abs(envAmount) * 8e3;
-    const envPeak = envAmount >= 0 ? Math.min(16e3, baseCutoff + envPeakOffset) : Math.max(20, baseCutoff - envPeakOffset);
-    const envSustainFreq = baseCutoff + (envPeak - baseCutoff) * filterSustain;
-    const accentBoost = accent ? 1.5 : 1;
-    const peakCutoff = Math.min(16e3, envPeak * accentBoost);
-    filter1.frequency.setValueAtTime(baseCutoff, time);
-    filter1.frequency.linearRampToValueAtTime(peakCutoff, time + filterAttack);
-    filter1.frequency.exponentialRampToValueAtTime(Math.max(20, envSustainFreq), time + filterAttack + filterDecay);
-    filter2.frequency.setValueAtTime(baseCutoff, time);
-    filter2.frequency.linearRampToValueAtTime(peakCutoff, time + filterAttack);
-    filter2.frequency.exponentialRampToValueAtTime(Math.max(20, envSustainFreq), time + filterAttack + filterDecay);
-    const releaseTime = time + duration * 0.9;
-    filter1.frequency.setValueAtTime(Math.max(20, envSustainFreq), releaseTime);
-    filter1.frequency.exponentialRampToValueAtTime(Math.max(20, baseCutoff * 0.5), releaseTime + filterRelease);
-    filter2.frequency.setValueAtTime(Math.max(20, envSustainFreq), releaseTime);
-    filter2.frequency.exponentialRampToValueAtTime(Math.max(20, baseCutoff * 0.5), releaseTime + filterRelease);
-    oscMixer.connect(filter1);
-    filter1.connect(filter2);
-    const vca = context.createGain();
-    const ampAttack = knobToTime(p.ampAttack * 100);
-    const ampDecay = knobToTime(p.ampDecay * 100);
-    const ampSustain = p.ampSustain;
-    const ampRelease = knobToTime(p.ampRelease * 100);
-    const peakLevel = accent ? 1 : 0.8;
-    vca.gain.setValueAtTime(0, time);
-    vca.gain.linearRampToValueAtTime(peakLevel, time + ampAttack);
-    vca.gain.exponentialRampToValueAtTime(Math.max(1e-3, ampSustain * peakLevel), time + ampAttack + ampDecay);
-    vca.gain.setValueAtTime(Math.max(1e-3, ampSustain * peakLevel), releaseTime);
-    vca.gain.exponentialRampToValueAtTime(1e-3, releaseTime + ampRelease);
-    filter2.connect(vca);
-    vca.connect(output);
-    osc1.start(time);
-    osc2.start(time);
-    const stopTime = releaseTime + Math.max(ampRelease, filterRelease) + 0.1;
-    osc1.stop(stopTime);
-    osc2.stop(stopTime);
-  }
-};
-
-// ../web/public/jb01/dist/core/output.js
-function audioBufferToWav2(buffer) {
-  const numChannels = buffer.numberOfChannels;
-  const sampleRate = buffer.sampleRate;
-  const format = 1;
-  const bitDepth = 16;
-  const bytesPerSample = bitDepth / 8;
-  const blockAlign = numChannels * bytesPerSample;
-  const length = buffer.length;
-  const interleavedLength = length * numChannels;
-  const interleaved = new Float32Array(interleavedLength);
-  for (let i = 0; i < length; i++) {
-    for (let ch = 0; ch < numChannels; ch++) {
-      interleaved[i * numChannels + ch] = buffer.getChannelData(ch)[i];
-    }
-  }
-  const dataLength = interleavedLength * bytesPerSample;
-  const wavBuffer = new ArrayBuffer(44 + dataLength);
-  const view = new DataView(wavBuffer);
-  writeString2(view, 0, "RIFF");
-  view.setUint32(4, 36 + dataLength, true);
-  writeString2(view, 8, "WAVE");
-  writeString2(view, 12, "fmt ");
-  view.setUint32(16, 16, true);
-  view.setUint16(20, format, true);
-  view.setUint16(22, numChannels, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * blockAlign, true);
-  view.setUint16(32, blockAlign, true);
-  view.setUint16(34, bitDepth, true);
-  writeString2(view, 36, "data");
-  view.setUint32(40, dataLength, true);
-  let offset = 44;
-  for (let i = 0; i < interleavedLength; i++) {
-    const sample = Math.max(-1, Math.min(1, interleaved[i]));
-    const int16 = sample < 0 ? sample * 32768 : sample * 32767;
-    view.setInt16(offset, int16, true);
-    offset += 2;
-  }
-  return wavBuffer;
-}
-function writeString2(view, offset, string) {
-  for (let i = 0; i < string.length; i++) {
-    view.setUint8(offset + i, string.charCodeAt(i));
-  }
-}
-var OutputManager2 = class {
-  constructor(context, destination) {
-    this.context = context;
-    this.destination = destination ?? context.destination;
-  }
-  setDestination(node) {
-    this.destination = node;
-  }
-  getDestination() {
-    return this.destination;
-  }
-  renderOffline(duration, setupGraph, options = {}) {
-    const sampleRate = options.sampleRate ?? this.context.sampleRate ?? 44100;
-    const channels = options.numberOfChannels ?? 2;
-    const frameCount = Math.ceil(duration * sampleRate);
-    const offlineContext = new OfflineAudioContext(channels, frameCount, sampleRate);
-    return Promise.resolve(setupGraph(offlineContext)).then(() => offlineContext.startRendering());
-  }
-  audioBufferToWav(buffer) {
-    return audioBufferToWav2(buffer);
-  }
-  async audioBufferToBlob(buffer) {
-    const wavArray = this.audioBufferToWav(buffer);
-    return new Blob([wavArray], { type: "audio/wav" });
-  }
-};
-
-// ../web/public/jb01/dist/core/engine.js
-var SynthEngine2 = class {
-  constructor(options = {}) {
-    this.voices = /* @__PURE__ */ new Map();
-    this.started = false;
-    this.context = options.context ?? new AudioContext();
-    this.masterGain = this.context.createGain();
-    this.masterGain.gain.value = options.masterVolume ?? 0.8;
-    this.compressor = this.context.createDynamicsCompressor();
-    this.analyser = this.context.createAnalyser();
-    this.compressor.connect(this.analyser);
-    this.analyser.connect(this.masterGain);
-    this.masterGain.connect(this.context.destination);
-    this.outputManager = new OutputManager2(this.context, this.masterGain);
   }
   registerVoice(id, voice) {
     voice.connect(this.compressor);
@@ -13114,7 +11370,7 @@ var CymbalVoice = class extends Voice {
 };
 
 // ../web/public/jb01/dist/machines/jb01/engine.js
-var JB01Engine = class extends SynthEngine2 {
+var JB01Engine = class extends SynthEngine {
   constructor(options = {}) {
     super(options);
     this.currentBpm = options.bpm ?? 128;
@@ -13311,8 +11567,1476 @@ var JB01Engine = class extends SynthEngine2 {
   }
 };
 
+// instruments/jb01-node.js
+import { OfflineAudioContext as OfflineAudioContext2 } from "node-web-audio-api";
+var VOICES3 = ["kick", "snare", "clap", "ch", "oh", "perc", "tom", "cymbal"];
+function createEmptyVoicePattern(steps = 16) {
+  return Array(steps).fill(null).map(() => ({
+    velocity: 0,
+    accent: false
+  }));
+}
+function createEmptyPattern2(steps = 16) {
+  const pattern = {};
+  for (const voice of VOICES3) {
+    pattern[voice] = createEmptyVoicePattern(steps);
+  }
+  return pattern;
+}
+var JB01Node = class extends InstrumentNode {
+  constructor(config = {}) {
+    super("jb01", config);
+    this._voices = VOICES3;
+    this._pattern = createEmptyPattern2();
+    this._registerParams();
+  }
+  /**
+   * Register all parameters from the JSON definition
+   * Stores values in ENGINE UNITS (0-1) internally
+   */
+  _registerParams() {
+    for (const voice of VOICES3) {
+      const voiceDef = JB01_PARAMS[voice];
+      if (!voiceDef) continue;
+      for (const [paramName, paramDef] of Object.entries(voiceDef)) {
+        const path = `${voice}.${paramName}`;
+        this.registerParam(path, {
+          ...paramDef,
+          voice,
+          param: paramName
+        });
+        if (paramDef.default !== void 0) {
+          this._params[path] = toEngine(paramDef.default, paramDef);
+        }
+      }
+    }
+  }
+  /**
+   * Get a parameter value in ENGINE UNITS (0-1 for most params)
+   * Note: Tools should use fromEngine() to convert to producer-friendly units
+   * @param {string} path - e.g., 'kick.decay'
+   * @returns {number}
+   */
+  getParam(path) {
+    return this._params[path];
+  }
+  /**
+   * Set a parameter value (stores ENGINE UNITS, 0-1 normalized)
+   * Tools convert from producer units before calling this.
+   * @param {string} path - e.g., 'kick.decay'
+   * @param {*} value - Value in engine units (0-1 for most params)
+   * @returns {boolean}
+   */
+  setParam(path, value) {
+    const parts = path.split(".");
+    if (parts.length === 2 && parts[1] === "mute") {
+      if (value) {
+        this._params[`${parts[0]}.level`] = 0;
+      }
+      return true;
+    }
+    if (typeof value === "number" && parts.length === 2) {
+      const [voice, paramName] = parts;
+      const paramDef = JB01_PARAMS[voice]?.[paramName];
+      if (paramDef) {
+        if (paramDef.unit === "0-100" && value > 1.5) {
+          console.warn(`JB01Node.setParam: ${path}=${value} appears to be producer units (0-100), expected engine units (0-1). Converting automatically.`);
+          value = toEngine(value, paramDef);
+        } else if (paramDef.unit === "dB" && value < -1.5 && value >= -60) {
+          console.warn(`JB01Node.setParam: ${path}=${value} appears to be dB, expected engine units (0-1). Converting automatically.`);
+          value = toEngine(value, paramDef);
+        }
+      }
+    }
+    this._params[path] = value;
+    return true;
+  }
+  /**
+   * Get a parameter value in engine units (0-1)
+   * Used by render loop.
+   * @param {string} path
+   * @returns {number}
+   */
+  getEngineParam(path) {
+    return this._params[path];
+  }
+  /**
+   * Get all params for a voice in engine units
+   * @param {string} voice
+   * @returns {Object}
+   */
+  getVoiceEngineParams(voice) {
+    const result = {};
+    const voiceDef = JB01_PARAMS[voice];
+    if (!voiceDef) return result;
+    for (const paramName of Object.keys(voiceDef)) {
+      const path = `${voice}.${paramName}`;
+      const value = this._params[path];
+      if (value !== void 0) {
+        result[paramName] = value;
+      }
+    }
+    return result;
+  }
+  /**
+   * Get node output level as linear gain multiplier
+   * Returns 1.0 (unity) - individual voice levels are handled separately
+   * @returns {number}
+   */
+  getOutputGain() {
+    return 1;
+  }
+  /**
+   * Get the current pattern
+   * @returns {Object}
+   */
+  getPattern() {
+    return this._pattern;
+  }
+  /**
+   * Set the pattern
+   * @param {Object} pattern - { kick: [...], snare: [...], ... }
+   */
+  setPattern(pattern) {
+    this._pattern = pattern;
+  }
+  /**
+   * Set a single voice pattern
+   * @param {string} voice
+   * @param {Array} pattern
+   */
+  setVoicePattern(voice, pattern) {
+    if (VOICES3.includes(voice)) {
+      this._pattern[voice] = pattern;
+    }
+  }
+  /**
+   * Get a single voice pattern
+   * @param {string} voice
+   * @returns {Array}
+   */
+  getVoicePattern(voice) {
+    return this._pattern[voice] || createEmptyVoicePattern();
+  }
+  /**
+   * Get pattern length in steps (uses kick pattern as reference)
+   * @returns {number}
+   */
+  getPatternLength() {
+    return this._pattern.kick?.length || 16;
+  }
+  /**
+   * Get pattern length in bars (16 steps = 1 bar)
+   * @returns {number}
+   */
+  getPatternBars() {
+    return this.getPatternLength() / 16;
+  }
+  /**
+   * Resize pattern to new length (preserves existing steps, fills new steps with empty)
+   * @param {number} steps - New pattern length in steps
+   */
+  resizePattern(steps) {
+    const currentLength = this.getPatternLength();
+    if (steps === currentLength) return;
+    for (const voice of VOICES3) {
+      const current = this._pattern[voice] || [];
+      if (steps < current.length) {
+        this._pattern[voice] = current.slice(0, steps);
+      } else {
+        const empty = createEmptyVoicePattern(steps - current.length);
+        this._pattern[voice] = [...current, ...empty];
+      }
+    }
+  }
+  /**
+   * Render the pattern to an audio buffer
+   * @param {Object} options - Render options
+   * @param {number} options.bars - Number of bars to render (pattern loops to fill)
+   * @param {number} options.stepDuration - Duration of one step in seconds
+   * @param {number} options.swing - Swing amount (0-1)
+   * @param {number} options.sampleRate - Sample rate (default 44100)
+   * @param {Object} [options.pattern] - Optional pattern override (uses node's pattern if not provided)
+   * @param {Object} [options.params] - Optional voice params override (uses node's params if not provided)
+   * @returns {Promise<AudioBuffer>}
+   */
+  async renderPattern(options) {
+    const {
+      bars,
+      stepDuration,
+      swing = 0,
+      sampleRate = 44100,
+      pattern = this._pattern,
+      params = null
+    } = options;
+    const hasHits = VOICES3.some(
+      (voice) => pattern[voice]?.some((step) => step?.velocity > 0)
+    );
+    if (!hasHits) {
+      return null;
+    }
+    const context = new OfflineAudioContext2(2, sampleRate, sampleRate);
+    const engine = new JB01Engine({ context });
+    for (const voice of VOICES3) {
+      const voiceParams = params?.[voice] || this.getVoiceEngineParams(voice);
+      for (const [paramId, value] of Object.entries(voiceParams)) {
+        try {
+          engine.setVoiceParam(voice, paramId, value);
+        } catch (e) {
+        }
+      }
+    }
+    const buffer = await engine.renderPattern(pattern, {
+      bars,
+      stepDuration,
+      swing,
+      sampleRate
+    });
+    return buffer;
+  }
+  /**
+   * Render each voice to a separate buffer (for per-voice effects)
+   * Used by render.js when voice-level effect chains are present.
+   *
+   * @param {Object} options - Same as renderPattern options
+   * @returns {Promise<Object>} Map of voice -> AudioBuffer
+   */
+  async renderVoices(options) {
+    const {
+      bars,
+      stepDuration,
+      swing = 0,
+      sampleRate = 44100,
+      pattern = this._pattern,
+      params = null
+    } = options;
+    const voiceBuffers = {};
+    for (const voice of VOICES3) {
+      const voicePattern = pattern[voice];
+      const hasHits = voicePattern?.some((step) => step?.velocity > 0);
+      if (!hasHits) continue;
+      const soloPattern = {};
+      for (const v of VOICES3) {
+        if (v === voice) {
+          soloPattern[v] = voicePattern;
+        } else {
+          soloPattern[v] = createEmptyVoicePattern(voicePattern.length);
+        }
+      }
+      const context = new OfflineAudioContext2(2, sampleRate, sampleRate);
+      const engine = new JB01Engine({ context });
+      const voiceParams = params?.[voice] || this.getVoiceEngineParams(voice);
+      for (const [paramId, value] of Object.entries(voiceParams)) {
+        try {
+          engine.setVoiceParam(voice, paramId, value);
+        } catch (e) {
+        }
+      }
+      const buffer = await engine.renderPattern(soloPattern, {
+        bars,
+        stepDuration,
+        swing,
+        sampleRate
+      });
+      if (buffer) {
+        voiceBuffers[voice] = buffer;
+      }
+    }
+    return voiceBuffers;
+  }
+  /**
+   * Serialize full JB01 state
+   * @returns {Object}
+   */
+  serialize() {
+    return {
+      id: this.id,
+      pattern: JSON.parse(JSON.stringify(this._pattern)),
+      params: { ...this._params }
+    };
+  }
+  /**
+   * Deserialize JB01 state
+   * Handles migration from legacy formats where producer values might have been stored
+   * @param {Object} data
+   */
+  deserialize(data) {
+    if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
+    if (data.params) {
+      const migratedParams = {};
+      for (const [path, value] of Object.entries(data.params)) {
+        const [voice, paramName] = path.split(".");
+        const paramDef = JB01_PARAMS[voice]?.[paramName];
+        if (paramDef && typeof value === "number") {
+          if (paramDef.unit === "0-100" && value > 1.5) {
+            migratedParams[path] = toEngine(value, paramDef);
+          } else if (paramDef.unit === "dB" && value < -1.5) {
+            migratedParams[path] = toEngine(value, paramDef);
+          } else {
+            migratedParams[path] = value;
+          }
+        } else {
+          migratedParams[path] = value;
+        }
+      }
+      this._params = migratedParams;
+    }
+  }
+};
+
+// instruments/tr909-node.js
+init_converters();
+import { OfflineAudioContext as OfflineAudioContext3 } from "node-web-audio-api";
+var VOICES4 = ["kick", "snare", "clap", "ch", "oh", "ltom", "mtom", "htom", "rimshot", "crash", "ride"];
+function createEmptyVoicePattern2(steps = 16) {
+  return Array(steps).fill(null).map(() => ({
+    velocity: 0,
+    accent: false
+  }));
+}
+function createEmptyPattern3(steps = 16) {
+  const pattern = {};
+  for (const voice of VOICES4) {
+    pattern[voice] = createEmptyVoicePattern2(steps);
+  }
+  return pattern;
+}
+var TR909Node = class extends InstrumentNode {
+  constructor(config = {}) {
+    super("drums", config);
+    this._voices = VOICES4;
+    this._pattern = createEmptyPattern3();
+    this._automation = {};
+    this._patternLength = 16;
+    this._scale = "16th";
+    this._flam = 0;
+    this._globalAccent = 1;
+    this._kit = config.kit || "default";
+    this._voiceEngines = {};
+    this._useSample = {};
+    this._level = 0;
+    this._registerParams();
+  }
+  /**
+   * Register all parameters from the JSON definition
+   * Stores values in ENGINE UNITS (0-1) internally
+   */
+  _registerParams() {
+    this.registerParam("level", { min: -60, max: 6, default: 0, unit: "dB", hint: "node output level" });
+    for (const voice of VOICES4) {
+      const voiceDef = R9D9_PARAMS[voice];
+      if (!voiceDef) continue;
+      for (const [paramName, paramDef] of Object.entries(voiceDef)) {
+        const path = `${voice}.${paramName}`;
+        this.registerParam(path, {
+          ...paramDef,
+          voice,
+          param: paramName
+        });
+        if (paramDef.default !== void 0) {
+          this._params[path] = toEngine(paramDef.default, paramDef);
+        }
+      }
+    }
+  }
+  /**
+   * Get a parameter value in ENGINE UNITS
+   * @param {string} path - e.g., 'kick.decay'
+   * @returns {number}
+   */
+  getParam(path) {
+    if (path === "level") return this._level;
+    return this._params[path];
+  }
+  /**
+   * Set a parameter value (stores ENGINE UNITS)
+   * @param {string} path - e.g., 'kick.decay'
+   * @param {*} value - Value in engine units (0-1 for most params)
+   * @returns {boolean}
+   */
+  setParam(path, value) {
+    if (path === "level") {
+      this._level = Math.max(-60, Math.min(6, value));
+      return true;
+    }
+    const parts = path.split(".");
+    if (parts.length === 2 && parts[1] === "mute") {
+      if (value) {
+        this._params[`${parts[0]}.level`] = 0;
+      }
+      return true;
+    }
+    this._params[path] = value;
+    return true;
+  }
+  /**
+   * Get a parameter value in engine units
+   * @param {string} path
+   * @returns {number}
+   */
+  getEngineParam(path) {
+    return this._params[path];
+  }
+  /**
+   * Get all params for a voice in engine units
+   * @param {string} voice
+   * @returns {Object}
+   */
+  getVoiceEngineParams(voice) {
+    const result = {};
+    const voiceDef = R9D9_PARAMS[voice];
+    if (!voiceDef) return result;
+    for (const paramName of Object.keys(voiceDef)) {
+      const path = `${voice}.${paramName}`;
+      const value = this._params[path];
+      if (value !== void 0) {
+        result[paramName] = value;
+      }
+    }
+    return result;
+  }
+  /**
+   * Get node output level as linear gain multiplier
+   * @returns {number} Linear gain (1.0 = unity, 2.0 = +6dB)
+   */
+  getOutputGain() {
+    return Math.pow(10, this._level / 20);
+  }
+  /**
+   * Get the current pattern
+   * @returns {Object}
+   */
+  getPattern() {
+    return this._pattern;
+  }
+  /**
+   * Set the pattern
+   * @param {Object} pattern - { kick: [...], snare: [...], ... }
+   */
+  setPattern(pattern) {
+    this._pattern = pattern;
+  }
+  /**
+   * Get automation data
+   * @returns {Object}
+   */
+  getAutomation() {
+    return this._automation;
+  }
+  /**
+   * Set automation data
+   * @param {Object} automation
+   */
+  setAutomation(automation) {
+    this._automation = automation;
+  }
+  /**
+   * Get groove settings
+   * @returns {Object}
+   */
+  getGroove() {
+    return {
+      patternLength: this._patternLength,
+      scale: this._scale,
+      flam: this._flam,
+      globalAccent: this._globalAccent
+    };
+  }
+  /**
+   * Set groove settings
+   * @param {Object} groove
+   */
+  setGroove(groove) {
+    if (groove.patternLength !== void 0) this._patternLength = groove.patternLength;
+    if (groove.scale !== void 0) this._scale = groove.scale;
+    if (groove.flam !== void 0) this._flam = groove.flam;
+    if (groove.globalAccent !== void 0) this._globalAccent = groove.globalAccent;
+  }
+  /**
+   * Get pattern length in steps
+   * @returns {number}
+   */
+  getPatternLength() {
+    return this._patternLength;
+  }
+  /**
+   * Set pattern length
+   * @param {number} length
+   */
+  setPatternLength(length) {
+    this._patternLength = length;
+  }
+  /**
+   * Render the pattern to an audio buffer
+   * @param {Object} options - Render options
+   * @param {number} options.bars - Number of bars to render
+   * @param {number} options.stepDuration - Duration of one step in seconds
+   * @param {number} options.swing - Swing amount (0-1)
+   * @param {number} options.sampleRate - Sample rate (default 44100)
+   * @param {Object} [options.pattern] - Optional pattern override
+   * @param {Object} [options.params] - Optional params override
+   * @param {Object} [options.automation] - Optional automation override
+   * @returns {Promise<AudioBuffer>}
+   */
+  async renderPattern(options) {
+    const {
+      bars,
+      stepDuration,
+      swing = 0,
+      sampleRate = 44100,
+      pattern = this._pattern,
+      params = null,
+      automation = this._automation
+    } = options;
+    const hasHits = VOICES4.some(
+      (voice) => pattern[voice]?.some((step) => step?.velocity > 0)
+    );
+    if (!hasHits) {
+      return null;
+    }
+    const { TR909Engine: TR909Engine2 } = await Promise.resolve().then(() => (init_engine_v3(), engine_v3_exports));
+    const { TR909_KITS: TR909_KITS2 } = await Promise.resolve().then(() => (init_presets(), presets_exports));
+    const stepsPerBar = 16;
+    const totalSteps = stepsPerBar * bars;
+    const scaleMultipliers = {
+      "16th": 1,
+      "8th-triplet": 4 / 3,
+      "16th-triplet": 2 / 3,
+      "32nd": 0.5
+    };
+    const scaledStepDuration = stepDuration * (scaleMultipliers[this._scale] || 1);
+    const duration = totalSteps * scaledStepDuration + 2;
+    const context = new OfflineAudioContext3(2, Math.ceil(duration * sampleRate), sampleRate);
+    const drums = new TR909Engine2({ context });
+    const masterGain = context.createGain();
+    masterGain.gain.value = this.getOutputGain();
+    drums.connectOutput(masterGain);
+    masterGain.connect(context.destination);
+    const kitData = TR909_KITS2.find((k) => k.id === this._kit) || TR909_KITS2[0];
+    if (kitData.engine && drums.setEngine) {
+      drums.currentEngine = null;
+      drums.setEngine(kitData.engine);
+    }
+    if (drums.getVoiceParameterDescriptors) {
+      const descriptors = drums.getVoiceParameterDescriptors();
+      Object.entries(descriptors).forEach(([voiceId, voiceParams]) => {
+        voiceParams.forEach((param) => {
+          try {
+            drums.setVoiceParam(voiceId, param.id, param.defaultValue);
+          } catch (e) {
+          }
+        });
+      });
+    }
+    for (const voice of VOICES4) {
+      const voiceParams = params?.[voice] || this.getVoiceEngineParams(voice);
+      if (voiceParams && Object.keys(voiceParams).length > 0) {
+        Object.entries(voiceParams).forEach(([paramId, value]) => {
+          try {
+            drums.setVoiceParam(voice, paramId, value);
+          } catch (e) {
+          }
+        });
+      }
+    }
+    if (this._voiceEngines && drums.setVoiceEngine) {
+      Object.entries(this._voiceEngines).forEach(([voiceId, engine]) => {
+        try {
+          drums.setVoiceEngine(voiceId, engine);
+        } catch (e) {
+        }
+      });
+    }
+    if (this._useSample) {
+      const sampleCapable = ["ch", "oh", "crash", "ride"];
+      sampleCapable.forEach((voiceId) => {
+        if (this._useSample[voiceId] !== void 0) {
+          const voice = drums.voices.get(voiceId);
+          if (voice && voice.setUseSample) {
+            voice.setUseSample(this._useSample[voiceId]);
+          }
+        }
+      });
+    }
+    if (this._flam > 0 && drums.setFlam) {
+      drums.setFlam(this._flam);
+    }
+    const swingAmount = swing;
+    const maxSwingDelay = scaledStepDuration * 0.5;
+    for (let i = 0; i < totalSteps; i++) {
+      const step = i % this._patternLength;
+      let time = i * scaledStepDuration;
+      if (step % 2 === 1) {
+        time += swingAmount * maxSwingDelay;
+      }
+      for (const voice of VOICES4) {
+        const stepData = pattern[voice]?.[step];
+        if (stepData?.velocity > 0) {
+          const voiceObj = drums.voices.get(voice);
+          if (voiceObj) {
+            const voiceAutomation = automation?.[voice];
+            if (voiceAutomation) {
+              for (const [paramId, stepValues] of Object.entries(voiceAutomation)) {
+                const autoValue = stepValues[step];
+                if (autoValue !== null && autoValue !== void 0) {
+                  const def = getParamDef("r9d9", voice, paramId);
+                  const engineValue = def ? toEngine(autoValue, def) : autoValue;
+                  voiceObj[paramId] = engineValue;
+                }
+              }
+            }
+            voiceObj.trigger(time, stepData.velocity);
+          }
+        }
+      }
+    }
+    const buffer = await context.startRendering();
+    return buffer;
+  }
+  /**
+   * Serialize full TR909 state
+   * @returns {Object}
+   */
+  serialize() {
+    return {
+      id: this.id,
+      kit: this._kit,
+      pattern: JSON.parse(JSON.stringify(this._pattern)),
+      params: { ...this._params },
+      automation: JSON.parse(JSON.stringify(this._automation)),
+      level: this._level,
+      patternLength: this._patternLength,
+      scale: this._scale,
+      flam: this._flam,
+      globalAccent: this._globalAccent,
+      voiceEngines: { ...this._voiceEngines },
+      useSample: { ...this._useSample }
+    };
+  }
+  /**
+   * Deserialize TR909 state
+   * @param {Object} data
+   */
+  deserialize(data) {
+    if (data.kit) this._kit = data.kit;
+    if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
+    if (data.params) this._params = { ...data.params };
+    if (data.automation) this._automation = JSON.parse(JSON.stringify(data.automation));
+    if (data.level !== void 0) this._level = data.level;
+    if (data.patternLength !== void 0) this._patternLength = data.patternLength;
+    if (data.scale !== void 0) this._scale = data.scale;
+    if (data.flam !== void 0) this._flam = data.flam;
+    if (data.globalAccent !== void 0) this._globalAccent = data.globalAccent;
+    if (data.voiceEngines) this._voiceEngines = { ...data.voiceEngines };
+    if (data.useSample) this._useSample = { ...data.useSample };
+  }
+};
+
+// instruments/tb303-node.js
+init_converters();
+import { OfflineAudioContext as OfflineAudioContext4 } from "node-web-audio-api";
+var VOICES5 = ["bass"];
+function createEmptyPattern4(steps = 16) {
+  return Array(steps).fill(null).map(() => ({
+    note: "C2",
+    gate: false,
+    accent: false,
+    slide: false
+  }));
+}
+var TB303Node = class extends InstrumentNode {
+  constructor(config = {}) {
+    super("bass", config);
+    this._voices = VOICES5;
+    this._pattern = createEmptyPattern4();
+    this._waveform = "sawtooth";
+    this._level = 0;
+    this._registerParams();
+  }
+  /**
+   * Register all parameters from the JSON definition
+   * Stores values in ENGINE UNITS (0-1) internally
+   */
+  _registerParams() {
+    this.registerParam("level", { min: -60, max: 6, default: 0, unit: "dB", hint: "node output level" });
+    const bassDef = R3D3_PARAMS.bass;
+    if (!bassDef) return;
+    for (const [paramName, paramDef] of Object.entries(bassDef)) {
+      const path = `bass.${paramName}`;
+      this.registerParam(path, {
+        ...paramDef,
+        voice: "bass",
+        param: paramName
+      });
+      if (paramDef.default !== void 0) {
+        this._params[path] = toEngine(paramDef.default, paramDef);
+      }
+    }
+  }
+  /**
+   * Get a parameter value
+   * @param {string} path - e.g., 'bass.cutoff' or 'cutoff'
+   * @returns {*}
+   */
+  getParam(path) {
+    if (path === "level") return this._level;
+    if (path === "waveform") return this._waveform;
+    const normalizedPath = path.startsWith("bass.") ? path : `bass.${path}`;
+    return this._params[normalizedPath];
+  }
+  /**
+   * Set a parameter value (stores ENGINE UNITS)
+   * @param {string} path - e.g., 'bass.cutoff' or 'cutoff'
+   * @param {*} value
+   * @returns {boolean}
+   */
+  setParam(path, value) {
+    if (path === "level") {
+      this._level = Math.max(-60, Math.min(6, value));
+      return true;
+    }
+    if (path === "waveform") {
+      this._waveform = value;
+      return true;
+    }
+    const normalizedPath = path.startsWith("bass.") ? path : `bass.${path}`;
+    if (normalizedPath === "bass.mute" || path === "mute") {
+      if (value) {
+        this._params["bass.level"] = 0;
+      }
+      return true;
+    }
+    this._params[normalizedPath] = value;
+    return true;
+  }
+  /**
+   * Get a parameter value in engine units
+   * @param {string} path
+   * @returns {number}
+   */
+  getEngineParam(path) {
+    const normalizedPath = path.startsWith("bass.") ? path : `bass.${path}`;
+    return this._params[normalizedPath];
+  }
+  /**
+   * Get all params for bass voice in engine units
+   * @returns {Object}
+   */
+  getEngineParams() {
+    const result = {};
+    const bassDef = R3D3_PARAMS.bass;
+    if (!bassDef) return result;
+    for (const paramName of Object.keys(bassDef)) {
+      const path = `bass.${paramName}`;
+      const value = this._params[path];
+      if (value !== void 0) {
+        result[paramName] = value;
+      }
+    }
+    return result;
+  }
+  /**
+   * Get node output level as linear gain multiplier
+   * @returns {number}
+   */
+  getOutputGain() {
+    return Math.pow(10, this._level / 20);
+  }
+  /**
+   * Get waveform
+   * @returns {string}
+   */
+  getWaveform() {
+    return this._waveform;
+  }
+  /**
+   * Set waveform
+   * @param {string} waveform
+   */
+  setWaveform(waveform) {
+    this._waveform = waveform;
+  }
+  /**
+   * Get the current pattern
+   * @returns {Array}
+   */
+  getPattern() {
+    return this._pattern;
+  }
+  /**
+   * Set the pattern
+   * @param {Array} pattern
+   */
+  setPattern(pattern) {
+    this._pattern = pattern;
+  }
+  /**
+   * Get pattern length in steps
+   * @returns {number}
+   */
+  getPatternLength() {
+    return this._pattern.length;
+  }
+  /**
+   * Render the pattern to an audio buffer
+   * @param {Object} options - Render options
+   * @param {number} options.bars - Number of bars to render
+   * @param {number} options.stepDuration - Duration of one step in seconds
+   * @param {number} options.swing - Swing amount (0-1)
+   * @param {number} options.sampleRate - Sample rate (default 44100)
+   * @param {Array} [options.pattern] - Optional pattern override
+   * @param {Object} [options.params] - Optional params override
+   * @returns {Promise<AudioBuffer>}
+   */
+  async renderPattern(options) {
+    const {
+      bars,
+      stepDuration,
+      swing = 0,
+      sampleRate = 44100,
+      pattern = this._pattern,
+      params = null
+    } = options;
+    if (!pattern?.some((s) => s.gate)) {
+      return null;
+    }
+    const TB303Mod = await Promise.resolve().then(() => (init_engine3(), engine_exports));
+    const TB303Engine2 = TB303Mod.TB303Engine || TB303Mod.default;
+    const stepsPerBar = 16;
+    const totalSteps = stepsPerBar * bars;
+    const duration = totalSteps * stepDuration + 2;
+    const context = new OfflineAudioContext4(2, Math.ceil(duration * sampleRate), sampleRate);
+    const bass = new TB303Engine2({ context, engine: "E1" });
+    const masterGain = context.createGain();
+    masterGain.gain.value = this.getOutputGain();
+    bass.connectOutput(masterGain);
+    masterGain.connect(context.destination);
+    if (this._waveform) {
+      bass.setWaveform(this._waveform);
+    }
+    const engineParams = params || this.getEngineParams();
+    Object.entries(engineParams).forEach(([key, value]) => {
+      if (key !== "waveform") {
+        bass.setParameter(key, value);
+      }
+    });
+    bass.setPattern(pattern);
+    const noteToFreq = (note) => {
+      const noteMap = { "C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11 };
+      const match = note.match(/^([A-G])([#b]?)(\d+)$/);
+      if (!match) return 440;
+      let n = noteMap[match[1]];
+      if (match[2] === "#") n += 1;
+      if (match[2] === "b") n -= 1;
+      const octave = parseInt(match[3]);
+      const midi = n + (octave + 1) * 12;
+      return 440 * Math.pow(2, (midi - 69) / 12);
+    };
+    const bassVoice = bass.voices.get("bass");
+    const swingAmount = swing;
+    const maxSwingDelay = stepDuration * 0.5;
+    for (let i = 0; i < totalSteps; i++) {
+      const step = i % pattern.length;
+      let time = i * stepDuration;
+      if (step % 2 === 1) {
+        time += swingAmount * maxSwingDelay;
+      }
+      const stepData = pattern[step];
+      if (stepData?.gate && bassVoice) {
+        const freq = noteToFreq(stepData.note);
+        const nextStep = pattern[(step + 1) % pattern.length];
+        const shouldSlide = stepData.slide && nextStep?.gate;
+        const nextFreq = shouldSlide ? noteToFreq(nextStep.note) : null;
+        bassVoice.trigger(time, 0.8, freq, stepData.accent, shouldSlide, nextFreq);
+      }
+    }
+    const buffer = await context.startRendering();
+    return buffer;
+  }
+  /**
+   * Serialize full TB303 state
+   * @returns {Object}
+   */
+  serialize() {
+    return {
+      id: this.id,
+      waveform: this._waveform,
+      pattern: JSON.parse(JSON.stringify(this._pattern)),
+      params: { ...this._params },
+      level: this._level
+    };
+  }
+  /**
+   * Deserialize TB303 state
+   * @param {Object} data
+   */
+  deserialize(data) {
+    if (data.waveform) this._waveform = data.waveform;
+    if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
+    if (data.params) this._params = { ...data.params };
+    if (data.level !== void 0) this._level = data.level;
+  }
+};
+
+// instruments/sh101-node.js
+init_converters();
+import { OfflineAudioContext as OfflineAudioContext5 } from "node-web-audio-api";
+var VOICES6 = ["lead"];
+function createEmptyPattern5(steps = 16) {
+  return Array(steps).fill(null).map(() => ({
+    note: "C3",
+    gate: false,
+    accent: false,
+    slide: false
+  }));
+}
+var SH101Node = class extends InstrumentNode {
+  constructor(config = {}) {
+    super("lead", config);
+    this._voices = VOICES6;
+    this._pattern = createEmptyPattern5();
+    this._preset = null;
+    this._arp = {
+      mode: "off",
+      // 'off', 'up', 'down', 'updown'
+      octaves: 1,
+      hold: false
+    };
+    this._level = 0;
+    this._registerParams();
+  }
+  /**
+   * Register all parameters from the JSON definition
+   * Stores values in ENGINE UNITS (0-1) internally
+   */
+  _registerParams() {
+    this.registerParam("level", { min: -60, max: 6, default: 0, unit: "dB", hint: "node output level" });
+    const leadDef = R1D1_PARAMS.lead;
+    if (!leadDef) return;
+    for (const [paramName, paramDef] of Object.entries(leadDef)) {
+      const path = `lead.${paramName}`;
+      this.registerParam(path, {
+        ...paramDef,
+        voice: "lead",
+        param: paramName
+      });
+      if (paramDef.default !== void 0) {
+        this._params[path] = toEngine(paramDef.default, paramDef);
+      }
+    }
+  }
+  /**
+   * Get a parameter value
+   * @param {string} path - e.g., 'lead.cutoff' or 'cutoff'
+   * @returns {*}
+   */
+  getParam(path) {
+    if (path === "level") return this._level;
+    if (path === "preset") return this._preset;
+    const normalizedPath = path.startsWith("lead.") ? path : `lead.${path}`;
+    return this._params[normalizedPath];
+  }
+  /**
+   * Set a parameter value (stores ENGINE UNITS)
+   * @param {string} path - e.g., 'lead.cutoff' or 'cutoff'
+   * @param {*} value
+   * @returns {boolean}
+   */
+  setParam(path, value) {
+    if (path === "level") {
+      this._level = Math.max(-60, Math.min(6, value));
+      return true;
+    }
+    if (path === "preset") {
+      this._preset = value;
+      return true;
+    }
+    const normalizedPath = path.startsWith("lead.") ? path : `lead.${path}`;
+    if (normalizedPath === "lead.mute" || path === "mute") {
+      if (value) {
+        this._params["lead.level"] = 0;
+      }
+      return true;
+    }
+    this._params[normalizedPath] = value;
+    return true;
+  }
+  /**
+   * Get a parameter value in engine units
+   * @param {string} path
+   * @returns {number}
+   */
+  getEngineParam(path) {
+    const normalizedPath = path.startsWith("lead.") ? path : `lead.${path}`;
+    return this._params[normalizedPath];
+  }
+  /**
+   * Get all params for lead voice in engine units
+   * @returns {Object}
+   */
+  getEngineParams() {
+    const result = {};
+    const leadDef = R1D1_PARAMS.lead;
+    if (!leadDef) return result;
+    for (const paramName of Object.keys(leadDef)) {
+      const path = `lead.${paramName}`;
+      const value = this._params[path];
+      if (value !== void 0) {
+        result[paramName] = value;
+      }
+    }
+    return result;
+  }
+  /**
+   * Get node output level as linear gain multiplier
+   * @returns {number}
+   */
+  getOutputGain() {
+    return Math.pow(10, this._level / 20);
+  }
+  /**
+   * Get arpeggiator settings
+   * @returns {Object}
+   */
+  getArp() {
+    return { ...this._arp };
+  }
+  /**
+   * Set arpeggiator settings
+   * @param {Object} arp
+   */
+  setArp(arp) {
+    if (arp.mode !== void 0) this._arp.mode = arp.mode;
+    if (arp.octaves !== void 0) this._arp.octaves = arp.octaves;
+    if (arp.hold !== void 0) this._arp.hold = arp.hold;
+  }
+  /**
+   * Get the current pattern
+   * @returns {Array}
+   */
+  getPattern() {
+    return this._pattern;
+  }
+  /**
+   * Set the pattern
+   * @param {Array} pattern
+   */
+  setPattern(pattern) {
+    this._pattern = pattern;
+  }
+  /**
+   * Get pattern length in steps
+   * @returns {number}
+   */
+  getPatternLength() {
+    return this._pattern.length;
+  }
+  /**
+   * Render the pattern to an audio buffer
+   * @param {Object} options - Render options
+   * @param {number} options.bars - Number of bars to render
+   * @param {number} options.stepDuration - Duration of one step in seconds
+   * @param {number} options.sampleRate - Sample rate (default 44100)
+   * @param {Array} [options.pattern] - Optional pattern override
+   * @param {Object} [options.params] - Optional params override
+   * @returns {Promise<AudioBuffer>}
+   */
+  async renderPattern(options) {
+    const {
+      bars,
+      stepDuration,
+      sampleRate = 44100,
+      pattern = this._pattern,
+      params = null
+    } = options;
+    if (!pattern?.some((s) => s.gate)) {
+      return null;
+    }
+    const SH101Mod = await Promise.resolve().then(() => (init_engine5(), engine_exports2));
+    const SH101Engine2 = SH101Mod.SH101Engine || SH101Mod.default;
+    const bpm = 60 / stepDuration / 4;
+    const initContext = new OfflineAudioContext5(2, sampleRate, sampleRate);
+    const lead = new SH101Engine2({ context: initContext, engine: "E1" });
+    const engineParams = params || this.getEngineParams();
+    Object.entries(engineParams).forEach(([key, value]) => {
+      const paramKey = key === "level" ? "volume" : key;
+      lead.setParameter(paramKey, value);
+    });
+    lead.setPattern(pattern);
+    const buffer = await lead.renderPattern({ bars, bpm });
+    return buffer;
+  }
+  /**
+   * Serialize full SH101 state
+   * @returns {Object}
+   */
+  serialize() {
+    return {
+      id: this.id,
+      preset: this._preset,
+      pattern: JSON.parse(JSON.stringify(this._pattern)),
+      params: { ...this._params },
+      level: this._level,
+      arp: { ...this._arp }
+    };
+  }
+  /**
+   * Deserialize SH101 state
+   * @param {Object} data
+   */
+  deserialize(data) {
+    if (data.preset) this._preset = data.preset;
+    if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
+    if (data.params) this._params = { ...data.params };
+    if (data.level !== void 0) this._level = data.level;
+    if (data.arp) this._arp = { ...data.arp };
+  }
+};
+
+// core/session.js
+function createSession(config = {}) {
+  const clock = new Clock({
+    bpm: config.bpm || 128,
+    swing: config.swing || 0,
+    sampleRate: config.sampleRate || 44100
+  });
+  const params = new ParamSystem();
+  const jb01Node = new JB01Node();
+  const jb200Node = new JB200Node();
+  const samplerNode = new SamplerNode();
+  const tr909Node = new TR909Node();
+  const tb303Node = new TB303Node();
+  const sh101Node = new SH101Node();
+  params.register("jb01", jb01Node);
+  params.register("jb200", jb200Node);
+  params.register("sampler", samplerNode);
+  params.register("r9d9", tr909Node);
+  params.register("r3d3", tb303Node);
+  params.register("r1d1", sh101Node);
+  params.register("drums", jb01Node);
+  params.register("bass", jb200Node);
+  params.register("lead", jb200Node);
+  params.register("synth", jb200Node);
+  const session = {
+    // Master clock - all timing derives from here
+    clock,
+    // BPM and swing proxy to clock (producer-facing interface)
+    get bpm() {
+      return clock.bpm;
+    },
+    set bpm(v) {
+      clock.bpm = v;
+    },
+    get swing() {
+      return clock.swing;
+    },
+    set swing(v) {
+      clock.swing = v;
+    },
+    // Bars for render length
+    bars: config.bars || 2,
+    // Instrument output levels in dB (-60 to +6, 0 = unity)
+    jb01Level: config.jb01Level ?? 0,
+    jb200Level: config.jb200Level ?? 0,
+    samplerLevel: config.samplerLevel ?? 0,
+    r9d9Level: config.r9d9Level ?? 0,
+    r3d3Level: config.r3d3Level ?? 0,
+    r1d1Level: config.r1d1Level ?? 0,
+    // ParamSystem instance
+    params,
+    // Direct node references
+    _nodes: {
+      jb01: jb01Node,
+      jb200: jb200Node,
+      sampler: samplerNode,
+      r9d9: tr909Node,
+      r3d3: tb303Node,
+      r1d1: sh101Node,
+      // Aliases point to same nodes
+      drums: jb01Node,
+      bass: jb200Node,
+      lead: jb200Node,
+      synth: jb200Node
+    },
+    // === UNIFIED PARAMETER ACCESS ===
+    /**
+     * Get any parameter by path
+     * @param {string} path - e.g., 'drums.kick.decay', 'bass.filterCutoff'
+     * @returns {*}
+     */
+    get(path) {
+      return params.get(path);
+    },
+    /**
+     * Set any parameter by path
+     * @param {string} path
+     * @param {*} value
+     * @returns {boolean}
+     */
+    set(path, value) {
+      return params.set(path, value);
+    },
+    /**
+     * Get parameter descriptors for a node
+     * @param {string} nodeId
+     * @returns {Object}
+     */
+    describe(nodeId) {
+      return params.describe(nodeId);
+    },
+    /**
+     * List all registered nodes
+     * @returns {string[]}
+     */
+    listNodes() {
+      return params.listNodes();
+    },
+    /**
+     * Automate any parameter
+     * @param {string} path
+     * @param {Array} values
+     */
+    automate(path, values) {
+      return params.automate(path, values);
+    },
+    /**
+     * Get automation values
+     * @param {string} path
+     * @returns {Array|undefined}
+     */
+    getAutomation(path) {
+      return params.getAutomation(path);
+    },
+    /**
+     * Clear automation
+     * @param {string} [path] - If omitted, clears all
+     */
+    clearAutomation(path) {
+      params.clearAutomation(path);
+    },
+    // === PATTERN ACCESS ===
+    // drums/jb01 share the same pattern (they're the same node)
+    // bass/lead/synth/jb200 share the same pattern (they're the same node)
+    get drumPattern() {
+      return jb01Node.getPattern();
+    },
+    set drumPattern(v) {
+      jb01Node.setPattern(v);
+    },
+    get jb01Pattern() {
+      return jb01Node.getPattern();
+    },
+    set jb01Pattern(v) {
+      jb01Node.setPattern(v);
+    },
+    get bassPattern() {
+      return jb200Node.getPattern();
+    },
+    set bassPattern(v) {
+      jb200Node.setPattern(v);
+    },
+    get leadPattern() {
+      return jb200Node.getPattern();
+    },
+    set leadPattern(v) {
+      jb200Node.setPattern(v);
+    },
+    get jb200Pattern() {
+      return jb200Node.getPattern();
+    },
+    set jb200Pattern(v) {
+      jb200Node.setPattern(v);
+    },
+    get samplerKit() {
+      return samplerNode.getKit();
+    },
+    set samplerKit(v) {
+      samplerNode.setKit(v);
+    },
+    get samplerPattern() {
+      return samplerNode.getPattern();
+    },
+    set samplerPattern(v) {
+      samplerNode.setPattern(v);
+    },
+    // === PARAM ACCESS (proxies to nodes) ===
+    get drumParams() {
+      const voices = jb01Node._voices;
+      return new Proxy({}, {
+        get: (_, voice) => {
+          if (typeof voice !== "string") return void 0;
+          const voiceDescriptors = jb01Node._descriptors;
+          return new Proxy({}, {
+            get: (__, param) => jb01Node.getParam(`${voice}.${param}`),
+            set: (__, param, value) => {
+              jb01Node.setParam(`${voice}.${param}`, value);
+              return true;
+            },
+            ownKeys: () => {
+              return Object.keys(voiceDescriptors).filter((path) => path.startsWith(`${voice}.`)).map((path) => path.slice(voice.length + 1));
+            },
+            getOwnPropertyDescriptor: (__, prop) => {
+              const path = `${voice}.${prop}`;
+              if (voiceDescriptors[path] !== void 0 || jb01Node.getParam(path) !== void 0) {
+                return { enumerable: true, configurable: true, writable: true };
+              }
+              return void 0;
+            }
+          });
+        },
+        set: (_, voice, params2) => {
+          for (const [param, value] of Object.entries(params2)) {
+            jb01Node.setParam(`${voice}.${param}`, value);
+          }
+          return true;
+        },
+        ownKeys: () => voices,
+        getOwnPropertyDescriptor: (_, voice) => {
+          if (voices.includes(voice)) {
+            return { enumerable: true, configurable: true, writable: true };
+          }
+          return void 0;
+        }
+      });
+    },
+    set drumParams(v) {
+      for (const [voice, params2] of Object.entries(v)) {
+        for (const [param, value] of Object.entries(params2)) {
+          jb01Node.setParam(`${voice}.${param}`, value);
+        }
+      }
+    },
+    get jb01Params() {
+      return this.drumParams;
+    },
+    set jb01Params(v) {
+      this.drumParams = v;
+    },
+    get bassParams() {
+      return new Proxy({}, {
+        get: (_, param) => jb200Node.getParam(`bass.${param}`),
+        set: (_, param, value) => {
+          jb200Node.setParam(`bass.${param}`, value);
+          return true;
+        },
+        ownKeys: () => {
+          return Object.keys(jb200Node.getParameterDescriptors()).map((path) => path.replace("bass.", ""));
+        },
+        getOwnPropertyDescriptor: (_, prop) => {
+          const path = `bass.${prop}`;
+          if (jb200Node.getParameterDescriptors()[path] !== void 0) {
+            return { enumerable: true, configurable: true, writable: true };
+          }
+          if (jb200Node.getParam(path) !== void 0) {
+            return { enumerable: true, configurable: true, writable: true };
+          }
+          return void 0;
+        },
+        has: (_, prop) => {
+          const path = `bass.${prop}`;
+          return jb200Node.getParameterDescriptors()[path] !== void 0 || jb200Node.getParam(path) !== void 0;
+        }
+      });
+    },
+    set bassParams(v) {
+      for (const [param, value] of Object.entries(v)) {
+        jb200Node.setParam(`bass.${param}`, value);
+      }
+    },
+    get leadParams() {
+      return this.bassParams;
+    },
+    set leadParams(v) {
+      this.bassParams = v;
+    },
+    get jb200Params() {
+      return this.bassParams;
+    },
+    set jb200Params(v) {
+      this.bassParams = v;
+    },
+    get samplerParams() {
+      return new Proxy({}, {
+        get: (_, slot) => {
+          const result = {};
+          const slotParams = ["level", "tune", "attack", "decay", "filter", "pan"];
+          for (const param of slotParams) {
+            result[param] = samplerNode.getParam(`${slot}.${param}`);
+          }
+          return result;
+        },
+        set: (_, slot, params2) => {
+          for (const [param, value] of Object.entries(params2)) {
+            samplerNode.setParam(`${slot}.${param}`, value);
+          }
+          return true;
+        }
+      });
+    },
+    set samplerParams(v) {
+      for (const [slot, params2] of Object.entries(v)) {
+        for (const [param, value] of Object.entries(params2)) {
+          samplerNode.setParam(`${slot}.${param}`, value);
+        }
+      }
+    },
+    // Mixer (placeholder)
+    mixer: {
+      sends: {},
+      voiceRouting: {},
+      channelInserts: {},
+      masterInserts: [],
+      masterVolume: 0.8,
+      // Effect chains for flexible routing (delay, reverb, etc.)
+      // Structure: { 'target': [{ id, type, params }, ...] }
+      // Targets: 'jb01.ch', 'jb01.kick', 'jb200', 'master'
+      effectChains: {}
+    },
+    // Song mode - patterns stored by canonical instrument ID only
+    patterns: {
+      jb01: {},
+      jb200: {},
+      sampler: {},
+      r9d9: {},
+      r3d3: {},
+      r1d1: {}
+    },
+    currentPattern: {
+      jb01: "A",
+      jb200: "A",
+      sampler: "A",
+      r9d9: "A",
+      r3d3: "A",
+      r1d1: "A"
+    },
+    arrangement: [],
+    // === HELPER METHODS FOR GENERIC RENDERING ===
+    /**
+     * Get all canonical instrument IDs with their nodes
+     * @returns {Array<{id: string, node: InstrumentNode}>}
+     */
+    getCanonicalInstruments() {
+      return ["jb01", "jb200", "sampler", "r9d9", "r3d3", "r1d1"].map((id) => ({ id, node: this._nodes[id] })).filter(({ node }) => node);
+    },
+    /**
+     * Get the output level for an instrument in dB
+     * @param {string} id - Canonical instrument ID
+     * @returns {number} Level in dB
+     */
+    getInstrumentLevel(id) {
+      const key = `${id}Level`;
+      return this[key] ?? 0;
+    }
+  };
+  return session;
+}
+
+// core/render.js
+import { OfflineAudioContext as OfflineAudioContext6, AudioContext as AudioContext2 } from "node-web-audio-api";
+import { writeFileSync as writeFileSync4 } from "fs";
+
 // core/wav.js
-function audioBufferToWav3(buffer) {
+function audioBufferToWav5(buffer) {
   const numChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
   const format = 1;
@@ -13324,10 +13048,10 @@ function audioBufferToWav3(buffer) {
   const bufferSize = 44 + dataSize;
   const arrayBuffer = new ArrayBuffer(bufferSize);
   const view = new DataView(arrayBuffer);
-  writeString3(view, 0, "RIFF");
+  writeString5(view, 0, "RIFF");
   view.setUint32(4, 36 + dataSize, true);
-  writeString3(view, 8, "WAVE");
-  writeString3(view, 12, "fmt ");
+  writeString5(view, 8, "WAVE");
+  writeString5(view, 12, "fmt ");
   view.setUint32(16, 16, true);
   view.setUint16(20, format, true);
   view.setUint16(22, numChannels, true);
@@ -13335,7 +13059,7 @@ function audioBufferToWav3(buffer) {
   view.setUint32(28, sampleRate * blockAlign, true);
   view.setUint16(32, blockAlign, true);
   view.setUint16(34, bitDepth, true);
-  writeString3(view, 36, "data");
+  writeString5(view, 36, "data");
   view.setUint32(40, dataSize, true);
   const channels = [];
   for (let i = 0; i < numChannels; i++) {
@@ -13352,10 +13076,180 @@ function audioBufferToWav3(buffer) {
   }
   return arrayBuffer;
 }
-function writeString3(view, offset, string) {
+function writeString5(view, offset, string) {
   for (let i = 0; i < string.length; i++) {
     view.setUint8(offset + i, string.charCodeAt(i));
   }
+}
+
+// effects/delay.js
+function processAnalogDelay(inputBuffer, params, sampleRate) {
+  const {
+    time = 375,
+    feedback = 50,
+    mix = 30,
+    lowcut = 80,
+    highcut = 8e3,
+    saturation = 20
+  } = params;
+  const numChannels = inputBuffer.numberOfChannels;
+  const length = inputBuffer.length;
+  const outputL = new Float32Array(length);
+  const outputR = new Float32Array(length);
+  const inputL = inputBuffer.getChannelData(0);
+  const inputR = numChannels > 1 ? inputBuffer.getChannelData(1) : inputL;
+  const delaySamples = Math.floor(time / 1e3 * sampleRate);
+  const delayBuffer = new Float32Array(delaySamples + 1);
+  let delayWriteIndex = 0;
+  const hpAlpha = calculateHighpassAlpha(lowcut, sampleRate);
+  const lpAlpha = calculateLowpassAlpha(highcut, sampleRate);
+  let hpPrev = 0;
+  let lpPrev = 0;
+  const feedbackGain = feedback / 100;
+  const wetGain = mix / 100;
+  const dryGain = 1 - wetGain;
+  const satAmount = saturation / 100;
+  for (let i = 0; i < length; i++) {
+    const inputMono = (inputL[i] + inputR[i]) * 0.5;
+    const readIndex = (delayWriteIndex - delaySamples + delayBuffer.length) % delayBuffer.length;
+    let delayed = delayBuffer[readIndex];
+    const hpFiltered = delayed - hpPrev;
+    hpPrev = delayed - hpAlpha * hpFiltered;
+    delayed = hpFiltered;
+    lpPrev = lpPrev + lpAlpha * (delayed - lpPrev);
+    delayed = lpPrev;
+    if (satAmount > 0) {
+      delayed = softSaturate(delayed, satAmount);
+    }
+    delayBuffer[delayWriteIndex] = inputMono + delayed * feedbackGain;
+    delayWriteIndex = (delayWriteIndex + 1) % delayBuffer.length;
+    outputL[i] = inputL[i] * dryGain + delayed * wetGain;
+    outputR[i] = inputR[i] * dryGain + delayed * wetGain;
+  }
+  return {
+    numberOfChannels: 2,
+    length,
+    sampleRate,
+    getChannelData: (ch) => ch === 0 ? outputL : outputR
+  };
+}
+function processPingPongDelay(inputBuffer, params, sampleRate) {
+  const {
+    time = 375,
+    feedback = 50,
+    mix = 30,
+    lowcut = 80,
+    highcut = 8e3,
+    spread = 100
+  } = params;
+  const numChannels = inputBuffer.numberOfChannels;
+  const length = inputBuffer.length;
+  const outputL = new Float32Array(length);
+  const outputR = new Float32Array(length);
+  const inputL = inputBuffer.getChannelData(0);
+  const inputR = numChannels > 1 ? inputBuffer.getChannelData(1) : inputL;
+  const delaySamples = Math.floor(time / 1e3 * sampleRate);
+  const delayBufferL = new Float32Array(delaySamples + 1);
+  const delayBufferR = new Float32Array(delaySamples + 1);
+  let delayWriteIndexL = 0;
+  let delayWriteIndexR = 0;
+  const hpAlpha = calculateHighpassAlpha(lowcut, sampleRate);
+  const lpAlpha = calculateLowpassAlpha(highcut, sampleRate);
+  let hpPrevL = 0, hpPrevR = 0;
+  let lpPrevL = 0, lpPrevR = 0;
+  const feedbackGain = feedback / 100;
+  const wetGain = mix / 100;
+  const dryGain = 1 - wetGain;
+  const spreadAmount = spread / 100;
+  const crossGain = spreadAmount;
+  const monoMix = (1 - spreadAmount) * 0.5;
+  for (let i = 0; i < length; i++) {
+    const readIndexL = (delayWriteIndexL - delaySamples + delayBufferL.length) % delayBufferL.length;
+    const readIndexR = (delayWriteIndexR - delaySamples + delayBufferR.length) % delayBufferR.length;
+    const delayedL = delayBufferL[readIndexL];
+    const delayedR = delayBufferR[readIndexR];
+    let feedbackL = delayedL;
+    let feedbackR = delayedR;
+    const hpFilteredL = feedbackL - hpPrevL;
+    hpPrevL = feedbackL - hpAlpha * hpFilteredL;
+    feedbackL = hpFilteredL;
+    lpPrevL = lpPrevL + lpAlpha * (feedbackL - lpPrevL);
+    feedbackL = lpPrevL;
+    const hpFilteredR = feedbackR - hpPrevR;
+    hpPrevR = feedbackR - hpAlpha * hpFilteredR;
+    feedbackR = hpFilteredR;
+    lpPrevR = lpPrevR + lpAlpha * (feedbackR - lpPrevR);
+    feedbackR = lpPrevR;
+    const toDelayL = inputL[i] * 0.5 + inputR[i] * 0.5 + feedbackR * feedbackGain * crossGain;
+    const toDelayR = feedbackL * feedbackGain * crossGain;
+    delayBufferL[delayWriteIndexL] = toDelayL;
+    delayBufferR[delayWriteIndexR] = toDelayR;
+    delayWriteIndexL = (delayWriteIndexL + 1) % delayBufferL.length;
+    delayWriteIndexR = (delayWriteIndexR + 1) % delayBufferR.length;
+    const wetL = delayedL * (1 - monoMix) + delayedR * monoMix;
+    const wetR = delayedR * (1 - monoMix) + delayedL * monoMix;
+    outputL[i] = inputL[i] * dryGain + wetL * wetGain;
+    outputR[i] = inputR[i] * dryGain + wetR * wetGain;
+  }
+  return {
+    numberOfChannels: 2,
+    length,
+    sampleRate,
+    getChannelData: (ch) => ch === 0 ? outputL : outputR
+  };
+}
+function processDelay(inputBuffer, params, sampleRate, bpm) {
+  let effectiveTime = params.time ?? 375;
+  if (params.sync && params.sync !== 0 && params.sync !== "off" && bpm) {
+    const beatMs = 60 / bpm * 1e3;
+    const syncMode = typeof params.sync === "string" ? ["off", "8th", "dotted8th", "triplet8th", "16th", "quarter"].indexOf(params.sync) : params.sync;
+    switch (syncMode) {
+      case 1:
+        effectiveTime = beatMs / 2;
+        break;
+      // 8th
+      case 2:
+        effectiveTime = beatMs / 2 * 1.5;
+        break;
+      // Dotted 8th
+      case 3:
+        effectiveTime = beatMs / 3;
+        break;
+      // Triplet 8th
+      case 4:
+        effectiveTime = beatMs / 4;
+        break;
+      // 16th
+      case 5:
+        effectiveTime = beatMs;
+        break;
+    }
+  }
+  const processParams = { ...params, time: effectiveTime };
+  const mode = params.mode ?? 0;
+  const isPingPong = mode === 1 || mode === "pingpong";
+  if (isPingPong) {
+    return processPingPongDelay(inputBuffer, processParams, sampleRate);
+  } else {
+    return processAnalogDelay(inputBuffer, processParams, sampleRate);
+  }
+}
+function calculateHighpassAlpha(freq, sampleRate) {
+  const rc = 1 / (2 * Math.PI * freq);
+  const dt = 1 / sampleRate;
+  return rc / (rc + dt);
+}
+function calculateLowpassAlpha(freq, sampleRate) {
+  const rc = 1 / (2 * Math.PI * freq);
+  const dt = 1 / sampleRate;
+  return dt / (rc + dt);
+}
+function softSaturate(x, amount) {
+  if (amount <= 0) return x;
+  const drive = 1 + amount * 3;
+  const driven = x * drive;
+  const saturated = driven / (1 + Math.abs(driven));
+  return x * (1 - amount) + saturated * amount;
 }
 
 // effects/reverb.js
@@ -13468,167 +13362,133 @@ function generatePlateReverbIR(context, params = {}) {
 }
 
 // core/render.js
-init_converters();
-
-// sample-voice.js
-var SampleVoice = class {
-  constructor(id, context) {
-    this.id = id;
-    this.context = context;
-    this.buffer = null;
-    this.name = "";
-    this.short = "";
-    this.level = 0.5;
-    this.tune = 0;
-    this.attack = 0;
-    this.decay = 1;
-    this.filter = 1;
-    this.pan = 0;
-    this.filterNode = context.createBiquadFilter();
-    this.filterNode.type = "lowpass";
-    this.filterNode.frequency.value = 2e4;
-    this.filterNode.Q.value = 0.7;
-    this.pannerNode = context.createStereoPanner();
-    this.pannerNode.pan.value = 0;
-    this.gainNode = context.createGain();
-    this.gainNode.gain.value = this.level * 2;
-    this.filterNode.connect(this.pannerNode);
-    this.pannerNode.connect(this.gainNode);
-    this.output = this.gainNode;
-  }
-  setBuffer(audioBuffer) {
-    this.buffer = audioBuffer;
-  }
-  setMeta(name, short) {
-    this.name = name;
-    this.short = short;
-  }
-  connect(destination) {
-    this.output.connect(destination);
-  }
-  disconnect() {
-    this.output.disconnect();
-  }
-  setParameter(id, value) {
-    switch (id) {
-      case "level":
-        this.level = Math.max(0, Math.min(1, value));
-        this.gainNode.gain.value = this.level * 2;
-        break;
-      case "tune":
-        this.tune = Math.max(-12, Math.min(12, value));
-        break;
-      case "attack":
-        this.attack = Math.max(0, Math.min(1, value));
-        break;
-      case "decay":
-        this.decay = Math.max(0.01, Math.min(1, value));
-        break;
-      case "filter":
-        this.filter = Math.max(0, Math.min(1, value));
-        const filterFreq = 200 * Math.pow(100, this.filter);
-        this.filterNode.frequency.value = filterFreq;
-        break;
-      case "pan":
-        this.pan = Math.max(-1, Math.min(1, value));
-        this.pannerNode.pan.value = this.pan;
-        break;
-    }
-  }
-  trigger(time, velocity) {
-    if (!this.buffer) return;
-    const when = time ?? this.context.currentTime;
-    const source = this.context.createBufferSource();
-    source.buffer = this.buffer;
-    source.playbackRate.value = Math.pow(2, this.tune / 12);
-    const baseDuration = this.buffer.duration / source.playbackRate.value;
-    const effectiveDuration = baseDuration * this.decay;
-    const envGain = this.context.createGain();
-    const peakLevel = velocity * this.level;
-    if (this.attack > 0) {
-      const attackTime = this.attack * 0.5;
-      envGain.gain.setValueAtTime(0, when);
-      envGain.gain.linearRampToValueAtTime(peakLevel, when + attackTime);
-    } else {
-      envGain.gain.setValueAtTime(peakLevel, when);
-    }
-    const fadeStart = when + effectiveDuration - 0.01;
-    const fadeEnd = when + effectiveDuration;
-    envGain.gain.setValueAtTime(peakLevel, fadeStart);
-    envGain.gain.linearRampToValueAtTime(0, fadeEnd);
-    source.connect(envGain);
-    envGain.connect(this.filterNode);
-    source.start(when);
-    source.stop(when + effectiveDuration + 0.1);
-  }
-};
-
-// core/render.js
-globalThis.OfflineAudioContext = OfflineAudioContext2;
+globalThis.OfflineAudioContext = OfflineAudioContext6;
 globalThis.AudioContext = AudioContext2;
-var EQ_PRESETS = {
-  acidBass: { highpass: 60, lowGain: 2, midGain: 3, midFreq: 800, highGain: -2 },
-  crispHats: { highpass: 200, lowGain: -3, midGain: 0, midFreq: 3e3, highGain: 2 },
-  warmPad: { highpass: 80, lowGain: 2, midGain: -1, midFreq: 500, highGain: -3 },
-  master: { highpass: 30, lowGain: 0, midGain: 0, midFreq: 1e3, highGain: 1 },
-  punchyKick: { highpass: 30, lowGain: 3, midGain: -2, midFreq: 400, highGain: 0 },
-  cleanSnare: { highpass: 100, lowGain: -2, midGain: 2, midFreq: 2e3, highGain: 1 }
-};
-var FILTER_PRESETS = {
-  dubDelay: { mode: "lowpass", cutoff: 800, resonance: 30 },
-  telephone: { mode: "bandpass", cutoff: 1500, resonance: 50 },
-  lofi: { mode: "lowpass", cutoff: 3e3, resonance: 10 },
-  darkRoom: { mode: "lowpass", cutoff: 400, resonance: 40 },
-  airFilter: { mode: "highpass", cutoff: 500, resonance: 20 },
-  thinOut: { mode: "highpass", cutoff: 1e3, resonance: 30 }
-};
-function createEQ(ctx, params = {}) {
-  const p = params.preset ? { ...EQ_PRESETS[params.preset], ...params } : params;
-  const input = ctx.createGain();
-  const output = ctx.createGain();
-  const hpf = ctx.createBiquadFilter();
-  hpf.type = "highpass";
-  hpf.frequency.value = p.highpass || 20;
-  hpf.Q.value = 0.7;
-  const lowShelf = ctx.createBiquadFilter();
-  lowShelf.type = "lowshelf";
-  lowShelf.frequency.value = 200;
-  lowShelf.gain.value = p.lowGain || 0;
-  const midPeak = ctx.createBiquadFilter();
-  midPeak.type = "peaking";
-  midPeak.frequency.value = p.midFreq || 1e3;
-  midPeak.Q.value = 1.5;
-  midPeak.gain.value = p.midGain || 0;
-  const highShelf = ctx.createBiquadFilter();
-  highShelf.type = "highshelf";
-  highShelf.frequency.value = 6e3;
-  highShelf.gain.value = p.highGain || 0;
-  input.connect(hpf);
-  hpf.connect(lowShelf);
-  lowShelf.connect(midPeak);
-  midPeak.connect(highShelf);
-  highShelf.connect(output);
-  return { input, output };
+async function applyEffect(buffer, effect, sampleRate, bpm) {
+  const { type, params = {} } = effect;
+  switch (type) {
+    case "delay":
+      return processDelay(buffer, params, sampleRate, bpm);
+    case "reverb":
+      const context = new OfflineAudioContext6(2, buffer.length, sampleRate);
+      const ir = generatePlateReverbIR(context, params);
+      return applyConvolution(buffer, ir, params.mix ?? 0.3, sampleRate);
+    // Future effects can be added here
+    // case 'filter':
+    // case 'eq':
+    default:
+      console.warn(`Unknown effect type: ${type}`);
+      return buffer;
+  }
 }
-function createFilter(ctx, params = {}) {
-  const p = params.preset ? { ...FILTER_PRESETS[params.preset], ...params } : params;
-  const input = ctx.createGain();
-  const output = ctx.createGain();
-  const filter = ctx.createBiquadFilter();
-  filter.type = p.mode || "lowpass";
-  filter.frequency.value = p.cutoff || 1e3;
-  const resonance = p.resonance ?? 0;
-  filter.Q.value = 0.5 + resonance / 100 * 19.5;
-  input.connect(filter);
-  filter.connect(output);
-  return { input, output, filterNode: filter };
+function applyConvolution(inputBuffer, ir, mix, sampleRate) {
+  const length = inputBuffer.length;
+  const irLength = ir.length;
+  const outputLength = length + irLength - 1;
+  const outputL = new Float32Array(outputLength);
+  const outputR = new Float32Array(outputLength);
+  const inputL = inputBuffer.getChannelData(0);
+  const inputR = inputBuffer.numberOfChannels > 1 ? inputBuffer.getChannelData(1) : inputL;
+  const irL = ir.getChannelData(0);
+  const irR = ir.numberOfChannels > 1 ? ir.getChannelData(1) : irL;
+  for (let i = 0; i < length; i++) {
+    for (let j = 0; j < irLength; j++) {
+      outputL[i + j] += inputL[i] * irL[j];
+      outputR[i + j] += inputR[i] * irR[j];
+    }
+  }
+  const dryGain = 1 - mix;
+  const wetGain = mix;
+  const resultL = new Float32Array(length);
+  const resultR = new Float32Array(length);
+  for (let i = 0; i < length; i++) {
+    resultL[i] = inputL[i] * dryGain + outputL[i] * wetGain;
+    resultR[i] = inputR[i] * dryGain + outputR[i] * wetGain;
+  }
+  return {
+    numberOfChannels: 2,
+    length,
+    sampleRate,
+    getChannelData: (ch) => ch === 0 ? resultL : resultR
+  };
+}
+async function processEffectChain(buffer, chain, sampleRate, bpm) {
+  let result = buffer;
+  for (const effect of chain) {
+    result = await applyEffect(result, effect, sampleRate, bpm);
+  }
+  return result;
+}
+function getVoiceEffectChains(effectChains, instrumentId) {
+  if (!effectChains) return {};
+  const voiceChains = {};
+  const prefix = `${instrumentId}.`;
+  for (const [target, chain] of Object.entries(effectChains)) {
+    if (target.startsWith(prefix) && chain.length > 0) {
+      const voice = target.slice(prefix.length);
+      voiceChains[voice] = chain;
+    }
+  }
+  return voiceChains;
+}
+function mixVoiceBuffers(voiceBuffers, length, sampleRate) {
+  const outputL = new Float32Array(length);
+  const outputR = new Float32Array(length);
+  for (const [voice, buffer] of Object.entries(voiceBuffers)) {
+    if (!buffer) continue;
+    const bufferL = buffer.getChannelData(0);
+    const bufferR = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : bufferL;
+    const mixLen = Math.min(length, buffer.length);
+    for (let i = 0; i < mixLen; i++) {
+      outputL[i] += bufferL[i];
+      outputR[i] += bufferR[i];
+    }
+  }
+  return {
+    numberOfChannels: 2,
+    length,
+    sampleRate,
+    getChannelData: (ch) => ch === 0 ? outputL : outputR
+  };
+}
+async function renderInstrumentWithEffects(node, renderOptions, effectChains, instrumentId, sampleRate, bpm) {
+  const voiceChains = getVoiceEffectChains(effectChains, instrumentId);
+  const hasVoiceEffects = Object.keys(voiceChains).length > 0;
+  const instrumentChain = effectChains?.[instrumentId] || [];
+  if (!hasVoiceEffects || typeof node.renderVoices !== "function") {
+    let buffer = await node.renderPattern(renderOptions);
+    if (buffer && instrumentChain.length > 0) {
+      buffer = await processEffectChain(buffer, instrumentChain, sampleRate, bpm);
+    }
+    return buffer;
+  }
+  const voiceBuffers = await node.renderVoices(renderOptions);
+  if (!voiceBuffers || Object.keys(voiceBuffers).length === 0) {
+    return null;
+  }
+  let maxLength = 0;
+  for (const buffer of Object.values(voiceBuffers)) {
+    if (buffer && buffer.length > maxLength) {
+      maxLength = buffer.length;
+    }
+  }
+  const processedVoices = {};
+  for (const [voice, buffer] of Object.entries(voiceBuffers)) {
+    if (!buffer) continue;
+    const chain = voiceChains[voice];
+    if (chain && chain.length > 0) {
+      processedVoices[voice] = await processEffectChain(buffer, chain, sampleRate, bpm);
+    } else {
+      processedVoices[voice] = buffer;
+    }
+  }
+  let mixedBuffer = mixVoiceBuffers(processedVoices, maxLength, sampleRate);
+  if (instrumentChain.length > 0) {
+    mixedBuffer = await processEffectChain(mixedBuffer, instrumentChain, sampleRate, bpm);
+  }
+  return mixedBuffer;
 }
 async function renderSession(session, bars, filename) {
-  const { TR909Engine: TR909Engine2 } = await Promise.resolve().then(() => (init_engine_v3(), engine_v3_exports));
-  const TB303Mod = await Promise.resolve().then(() => (init_engine3(), engine_exports));
-  const TB303Engine2 = TB303Mod.TB303Engine || TB303Mod.default;
-  const SH101Mod = await Promise.resolve().then(() => (init_engine5(), engine_exports2));
-  const SH101Engine2 = SH101Mod.SH101Engine || SH101Mod.default;
   const hasArrangement = session.arrangement && session.arrangement.length > 0;
   let renderBars = bars;
   let arrangementPlan = null;
@@ -13645,744 +13505,124 @@ async function renderSession(session, bars, filename) {
     }
     renderBars = currentBar;
   }
-  const allPatternInserts = /* @__PURE__ */ new Map();
-  if (hasArrangement) {
-    const instruments = ["drums", "bass", "lead", "sampler", "jb200"];
-    for (const inst of instruments) {
-      for (const [patternName, patternData] of Object.entries(session.patterns[inst] || {})) {
-        if (patternData.channelInserts) {
-          for (const [channel, inserts] of Object.entries(patternData.channelInserts)) {
-            if (!allPatternInserts.has(channel)) {
-              allPatternInserts.set(channel, inserts);
-            }
-          }
-        }
-      }
-    }
-  }
-  const getPatternForBar = (instrument, bar) => {
-    if (!hasArrangement) {
-      if (instrument === "drums") return { pattern: session.drumPattern, params: session.drumParams, automation: session.drumAutomation, length: session.drumPatternLength };
-      if (instrument === "bass") return { pattern: session.bassPattern, params: session.bassParams };
-      if (instrument === "lead") return { pattern: session.leadPattern, params: session.leadParams };
-      if (instrument === "sampler") return { pattern: session.samplerPattern, params: session.samplerParams };
-      if (instrument === "jb200") return { pattern: session.jb200Pattern, params: session.jb200Params };
-      return null;
-    }
-    const section = arrangementPlan.find((s) => bar >= s.barStart && bar < s.barEnd);
-    if (!section) return null;
-    const patternName = section.patterns[instrument];
-    if (!patternName) return null;
-    const savedPattern = session.patterns[instrument]?.[patternName];
-    if (!savedPattern) return null;
-    return savedPattern;
-  };
+  const sampleRate = session.clock.sampleRate || 44100;
+  const stepDuration = session.clock.stepDuration;
+  const samplesPerBar = session.clock.samplesPerBar;
   const stepsPerBar = 16;
   const totalSteps = renderBars * stepsPerBar;
-  const stepDuration = session.clock.stepDuration;
-  const drumScaleMultipliers = {
-    "16th": 1,
-    // Standard 16th notes
-    "8th-triplet": 4 / 3,
-    // 8th triplets (slower, 12 per bar)
-    "16th-triplet": 2 / 3,
-    // 16th triplets (faster, 24 per bar)
-    "32nd": 0.5
-    // 32nd notes (double speed)
-  };
-  const drumStepDuration = stepDuration * (drumScaleMultipliers[session.drumScale] || 1);
-  const drumPatternLength = session.drumPatternLength || 16;
   const totalDuration = totalSteps * stepDuration + 2;
-  const sampleRate = 44100;
-  const context = new OfflineAudioContext2(2, totalDuration * sampleRate, sampleRate);
-  const originalCreateWaveShaper = context.createWaveShaper.bind(context);
-  context.createWaveShaper = function() {
-    const shaper = originalCreateWaveShaper();
-    let curveSet = false;
-    const originalCurve = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(shaper), "curve");
-    Object.defineProperty(shaper, "curve", {
-      get() {
-        return originalCurve?.get?.call(this);
-      },
-      set(value) {
-        if (!curveSet) {
-          curveSet = true;
-          originalCurve?.set?.call(this, value);
-        }
-      },
-      configurable: true
-    });
-    return shaper;
-  };
+  const context = new OfflineAudioContext6(2, totalDuration * sampleRate, sampleRate);
   const masterGain = context.createGain();
   masterGain.gain.value = 0.8;
   masterGain.connect(context.destination);
-  const drumsGain = context.createGain();
-  const drumsLevel = session.drumLevel ?? 0;
-  drumsGain.gain.value = Math.pow(10, drumsLevel / 20);
-  drumsGain.connect(masterGain);
-  const bassGain = context.createGain();
-  const bassLevel = session.bassLevel ?? 0;
-  bassGain.gain.value = Math.pow(10, bassLevel / 20);
-  bassGain.connect(masterGain);
-  const leadGain = context.createGain();
-  const leadLevel = session.leadLevel ?? 0;
-  leadGain.gain.value = Math.pow(10, leadLevel / 20);
-  leadGain.connect(masterGain);
-  const samplerGain = context.createGain();
-  const samplerLevel = session.samplerLevel ?? 0;
-  samplerGain.gain.value = Math.pow(10, samplerLevel / 20);
-  samplerGain.connect(masterGain);
-  const jb200Gain = context.createGain();
-  const jb200Level = session.jb200Level ?? 0;
-  jb200Gain.gain.value = Math.pow(10, jb200Level / 20);
-  jb200Gain.connect(masterGain);
-  const jb01Gain = context.createGain();
-  const jb01Level = session.jb01Level ?? 0;
-  jb01Gain.gain.value = Math.pow(10, jb01Level / 20);
-  jb01Gain.connect(masterGain);
-  const drumKit = TR909_KITS.find((k) => k.id === session.drumKit) || TR909_KITS[0];
-  const drums = new TR909Engine2({ context });
-  drums.connectOutput(drumsGain);
-  if (drums.resetAllVoiceEngines) {
-    drums.resetAllVoiceEngines();
-  }
-  if (drumKit.engine && drums.setEngine) {
-    drums.currentEngine = null;
-    drums.setEngine(drumKit.engine);
-  }
-  const voiceNames = ["kick", "snare", "clap", "ch", "oh", "ltom", "mtom", "htom", "rimshot", "crash", "ride"];
-  if (drums.getVoiceParameterDescriptors) {
-    const descriptors = drums.getVoiceParameterDescriptors();
-    Object.entries(descriptors).forEach(([voiceId, params]) => {
-      params.forEach((param) => {
+  const outputBuffer = await context.startRendering();
+  const instrumentBuffers = [];
+  const canonicalIds = ["jb01", "jb200", "sampler", "r9d9", "r3d3", "r1d1"];
+  for (const id of canonicalIds) {
+    const node = session._nodes[id];
+    if (!node) continue;
+    const level = session.getInstrumentLevel(id);
+    const linearLevel = Math.pow(10, level / 20);
+    if (hasArrangement) {
+      for (const section of arrangementPlan) {
+        const patternName = section.patterns[id];
+        if (!patternName) continue;
+        const savedPattern = session.patterns[id]?.[patternName];
+        if (!savedPattern) continue;
         try {
-          drums.setVoiceParam(voiceId, param.id, param.defaultValue);
-        } catch (e) {
-        }
-      });
-    });
-  }
-  if (!hasArrangement) {
-    for (const voiceId of voiceNames) {
-      const producerParams = session.drumParams[voiceId];
-      if (producerParams && Object.keys(producerParams).length > 0) {
-        const engineParams = convertTweaks("r9d9", voiceId, producerParams);
-        Object.entries(engineParams).forEach(([paramId, value]) => {
-          try {
-            drums.setVoiceParam(voiceId, paramId, value);
-          } catch (e) {
-          }
-        });
-      }
-    }
-  }
-  if (session.drumVoiceEngines && drums.setVoiceEngine) {
-    Object.entries(session.drumVoiceEngines).forEach(([voiceId, engine]) => {
-      try {
-        drums.setVoiceEngine(voiceId, engine);
-      } catch (e) {
-      }
-    });
-  }
-  if (session.drumUseSample) {
-    const sampleCapable = ["ch", "oh", "crash", "ride"];
-    sampleCapable.forEach((voiceId) => {
-      if (session.drumUseSample[voiceId] !== void 0) {
-        const voice = drums.voices.get(voiceId);
-        if (voice && voice.setUseSample) {
-          voice.setUseSample(session.drumUseSample[voiceId]);
-        }
-      }
-    });
-  }
-  if (session.drumFlam > 0 && drums.setFlam) {
-    drums.setFlam(session.drumFlam);
-  }
-  const bass = new TB303Engine2({ context, engine: "E1" });
-  bass.connectOutput(bassGain);
-  const bassVoice = bass.voices.get("bass");
-  if (session.bassParams.waveform) {
-    bass.setWaveform(session.bassParams.waveform);
-  }
-  Object.entries(session.bassParams).forEach(([key, value]) => {
-    if (key !== "waveform") {
-      bass.setParameter(key, value);
-    }
-  });
-  const leadBuffers = [];
-  if (hasArrangement) {
-    const leadSections = [];
-    for (const section of arrangementPlan) {
-      const patternName = section.patterns.lead;
-      if (patternName && session.patterns.lead?.[patternName]) {
-        leadSections.push({
-          patternName,
-          patternData: session.patterns.lead[patternName],
-          startBar: section.barStart,
-          bars: section.barEnd - section.barStart
-        });
-      }
-    }
-    for (const sec of leadSections) {
-      const leadInitContext = new OfflineAudioContext2(2, 44100, 44100);
-      const lead = new SH101Engine2({ context: leadInitContext, engine: "E1" });
-      Object.entries(sec.patternData.params || {}).forEach(([key, value]) => {
-        const paramKey = key === "level" ? "volume" : key;
-        lead.setParameter(paramKey, value);
-      });
-      lead.setPattern(sec.patternData.pattern);
-      if (sec.patternData.pattern?.some((s) => s.gate)) {
-        const buffer = await lead.renderPattern({ bars: sec.bars, bpm: session.bpm });
-        leadBuffers.push({ buffer, startBar: sec.startBar, bars: sec.bars });
-      }
-    }
-  } else {
-    const leadInitContext = new OfflineAudioContext2(2, 44100, 44100);
-    const lead = new SH101Engine2({ context: leadInitContext, engine: "E1" });
-    Object.entries(session.leadParams).forEach(([key, value]) => {
-      const paramKey = key === "level" ? "volume" : key;
-      lead.setParameter(paramKey, value);
-    });
-    lead.setPattern(session.leadPattern);
-    if (session.leadPattern.some((s) => s.gate)) {
-      const buffer = await lead.renderPattern({ bars: renderBars, bpm: session.bpm });
-      leadBuffers.push({ buffer, startBar: 0, bars: renderBars });
-    }
-  }
-  const jb200Buffers = [];
-  if (hasArrangement) {
-    const jb200Sections = [];
-    for (const section of arrangementPlan) {
-      const patternName = section.patterns.jb200;
-      if (patternName && session.patterns.jb200?.[patternName]) {
-        jb200Sections.push({
-          patternName,
-          patternData: session.patterns.jb200[patternName],
-          startBar: section.barStart,
-          bars: section.barEnd - section.barStart
-        });
-      }
-    }
-    for (const sec of jb200Sections) {
-      const jb200InitContext = new OfflineAudioContext2(2, 44100, 44100);
-      const jb200 = new JB200Engine({ context: jb200InitContext });
-      Object.entries(sec.patternData.params || {}).forEach(([key, value]) => {
-        jb200.setParameter(key, value);
-      });
-      jb200.setPattern(sec.patternData.pattern);
-      if (sec.patternData.pattern?.some((s) => s.gate)) {
-        const buffer = await jb200.renderPattern({
-          bars: sec.bars,
-          stepDuration: session.clock.stepDuration,
-          sampleRate: session.clock.sampleRate
-        });
-        jb200Buffers.push({ buffer, startBar: sec.startBar, bars: sec.bars });
-      }
-    }
-  } else {
-    const jb200InitContext = new OfflineAudioContext2(2, 44100, 44100);
-    const jb200 = new JB200Engine({ context: jb200InitContext });
-    const jb200Params = session._nodes.jb200.getEngineParams();
-    Object.entries(jb200Params).forEach(([key, value]) => {
-      jb200.setParameter(key, value);
-    });
-    jb200.setPattern(session.jb200Pattern);
-    if (session.jb200Pattern.some((s) => s.gate)) {
-      const buffer = await jb200.renderPattern({
-        bars: renderBars,
-        stepDuration: session.clock.stepDuration,
-        sampleRate: session.clock.sampleRate
-      });
-      jb200Buffers.push({ buffer, startBar: 0, bars: renderBars });
-    }
-  }
-  const jb01Buffers = [];
-  if (hasArrangement) {
-    const jb01Sections = [];
-    for (const section of arrangementPlan) {
-      const patternName = section.patterns.jb01;
-      if (patternName && session.patterns.jb01?.[patternName]) {
-        jb01Sections.push({
-          patternName,
-          patternData: session.patterns.jb01[patternName],
-          startBar: section.barStart,
-          bars: section.barEnd - section.barStart
-        });
-      }
-    }
-    for (const sec of jb01Sections) {
-      const jb01InitContext = new OfflineAudioContext2(2, 44100, 44100);
-      const jb01 = new JB01Engine({ context: jb01InitContext });
-      const patternParams = sec.patternData.params || {};
-      for (const [voice, voiceParams] of Object.entries(patternParams)) {
-        for (const [param, value] of Object.entries(voiceParams)) {
-          jb01.setVoiceParam(voice, param, value);
-        }
-      }
-      const pattern = sec.patternData.pattern || {};
-      const hasHits = Object.values(pattern).some(
-        (track) => track.some((s) => s && s.velocity > 0)
-      );
-      if (hasHits) {
-        const buffer = await jb01.renderPattern(pattern, {
-          bars: sec.bars,
-          stepDuration: session.clock.stepDuration,
-          swing: session.clock.swing,
-          sampleRate: session.clock.sampleRate
-        });
-        jb01Buffers.push({ buffer, startBar: sec.startBar, bars: sec.bars });
-      }
-    }
-  } else {
-    const jb01Pattern = session.jb01Pattern;
-    const jb01Params = session.jb01Params || {};
-    const hasHits = jb01Pattern && Object.values(jb01Pattern).some(
-      (track) => Array.isArray(track) && track.some((s) => s && s.velocity > 0)
-    );
-    if (hasHits) {
-      const jb01InitContext = new OfflineAudioContext2(2, 44100, 44100);
-      const jb01 = new JB01Engine({ context: jb01InitContext });
-      for (const [voice, voiceParams] of Object.entries(jb01Params)) {
-        for (const [param, value] of Object.entries(voiceParams)) {
-          jb01.setVoiceParam(voice, param, value);
-        }
-      }
-      const buffer = await jb01.renderPattern(jb01Pattern, {
-        bars: renderBars,
-        stepDuration: session.clock.stepDuration,
-        swing: session.clock.swing,
-        sampleRate: session.clock.sampleRate
-      });
-      jb01Buffers.push({ buffer, startBar: 0, bars: renderBars });
-    }
-  }
-  const samplerVoices = /* @__PURE__ */ new Map();
-  if (session.samplerKit) {
-    for (const slot of session.samplerKit.slots) {
-      if (slot.buffer) {
-        const voice = new SampleVoice(slot.id, context);
-        try {
-          const arrayBuffer = slot.buffer.buffer.slice(
-            slot.buffer.byteOffset,
-            slot.buffer.byteOffset + slot.buffer.byteLength
+          const buffer = await renderInstrumentWithEffects(
+            node,
+            {
+              bars: section.barEnd - section.barStart,
+              stepDuration,
+              swing: session.clock.swing,
+              sampleRate,
+              pattern: savedPattern.pattern,
+              params: savedPattern.params,
+              automation: savedPattern.automation
+            },
+            session.mixer?.effectChains,
+            id,
+            sampleRate,
+            session.bpm
           );
-          const audioBuffer = await context.decodeAudioData(arrayBuffer);
-          voice.setBuffer(audioBuffer);
-          voice.setMeta(slot.name, slot.short);
-          const params = session.samplerParams[slot.id];
-          if (params) {
-            Object.entries(params).forEach(([key, value]) => {
-              voice.setParameter(key, value);
+          if (buffer) {
+            instrumentBuffers.push({
+              id,
+              buffer,
+              startBar: section.barStart,
+              level: linearLevel
             });
           }
-          voice.connect(samplerGain);
-          samplerVoices.set(slot.id, voice);
         } catch (e) {
-          console.warn(`Could not decode sample for ${slot.id}:`, e.message);
+          console.warn(`Failed to render ${id} section:`, e.message);
         }
       }
-    }
-  }
-  const mixerConfig = session.mixer || {};
-  const sendBuses = /* @__PURE__ */ new Map();
-  const sidechainTargets = /* @__PURE__ */ new Map();
-  if (mixerConfig.sends) {
-    for (const [busName, busConfig] of Object.entries(mixerConfig.sends)) {
-      const sendInput = context.createGain();
-      sendInput.gain.value = 1;
-      let effectOutput = sendInput;
-      if (busConfig.effect === "reverb") {
-        const convolver = context.createConvolver();
-        const reverbParams = busConfig.params || {};
-        const reverbBuffer = generatePlateReverbIR(context, reverbParams);
-        convolver.buffer = reverbBuffer;
-        sendInput.connect(convolver);
-        const wetGain = context.createGain();
-        wetGain.gain.value = reverbParams.mix ?? 0.3;
-        convolver.connect(wetGain);
-        effectOutput = wetGain;
-      } else if (busConfig.effect === "eq") {
-        const eq = createEQ(context, busConfig.params || {});
-        sendInput.connect(eq.input);
-        effectOutput = eq.output;
-      }
-      effectOutput.connect(masterGain);
-      sendBuses.set(busName, { input: sendInput, output: effectOutput });
-    }
-  }
-  if (mixerConfig.voiceRouting) {
-    for (const [voiceId, routeConfig] of Object.entries(mixerConfig.voiceRouting)) {
-      let voiceOutput = null;
-      if (["kick", "snare", "clap", "ch", "oh", "ltom", "mtom", "htom", "rimshot", "crash", "ride"].includes(voiceId)) {
-        voiceOutput = drums.voices.get(voiceId)?.output;
-      } else if (voiceId === "bass") {
-        voiceOutput = bassVoice?.output;
-      } else if (voiceId.startsWith("s") && samplerVoices.has(voiceId)) {
-        voiceOutput = samplerVoices.get(voiceId)?.output;
-      }
-      if (voiceOutput && routeConfig.sends) {
-        for (const [busName, level] of Object.entries(routeConfig.sends)) {
-          const bus = sendBuses.get(busName);
-          if (bus) {
-            const sendGain = context.createGain();
-            sendGain.gain.value = level;
-            voiceOutput.connect(sendGain);
-            sendGain.connect(bus.input);
-          }
-        }
-      }
-    }
-  }
-  const channelOutputs = /* @__PURE__ */ new Map();
-  const channelFilters = /* @__PURE__ */ new Map();
-  const allChannelInserts = { ...mixerConfig.channelInserts || {} };
-  if (hasArrangement) {
-    for (const [channel, inserts] of allPatternInserts) {
-      if (!allChannelInserts[channel]) {
-        allChannelInserts[channel] = inserts;
-      }
-    }
-  }
-  const voicesWithInserts = /* @__PURE__ */ new Set();
-  if (Object.keys(allChannelInserts).length > 0) {
-    for (const [channel, inserts] of Object.entries(allChannelInserts)) {
-      let sourceOutput = null;
-      let destinationNode = masterGain;
-      if (channel === "bass" && bass.masterGain) {
-        sourceOutput = bass.masterGain;
-      } else if (channel === "drums" && drums.compressor) {
-        sourceOutput = drums.compressor;
-      } else if (["kick", "snare", "clap", "rimshot", "ch", "oh", "ltom", "mtom", "htom", "crash", "ride"].includes(channel)) {
-        const voice = drums.voices.get(channel);
-        if (voice?.output) {
-          sourceOutput = voice.output;
-          destinationNode = masterGain;
-          voicesWithInserts.add(channel);
-        }
-      }
-      if (!sourceOutput) continue;
+    } else {
       try {
-        sourceOutput.disconnect();
-      } catch (e) {
-      }
-      let chainInput = sourceOutput;
-      let chainOutput = null;
-      for (const insert of inserts) {
-        if (insert.type === "eq") {
-          const eqParams = { ...insert.params, preset: insert.preset };
-          const eq = createEQ(context, eqParams);
-          chainInput.connect(eq.input);
-          chainInput = eq.output;
-          chainOutput = eq.output;
-          channelFilters.set(channel, { type: "eq", eq });
-        } else if (insert.type === "filter") {
-          const filterParams = { ...insert.params, preset: insert.preset };
-          const filter = createFilter(context, filterParams);
-          chainInput.connect(filter.input);
-          chainInput = filter.output;
-          chainOutput = filter.output;
-          channelFilters.set(channel, { type: "filter", filter: filter.filterNode });
-        } else if (insert.type === "ducker" && insert.params?.trigger) {
-          const duckGain = context.createGain();
-          duckGain.gain.value = 1;
-          chainInput.connect(duckGain);
-          chainInput = duckGain;
-          chainOutput = duckGain;
-          sidechainTargets.set(channel, {
-            gain: duckGain,
-            trigger: insert.params.trigger,
-            amount: insert.params.amount ?? 0.5
+        const buffer = await renderInstrumentWithEffects(
+          node,
+          {
+            bars: renderBars,
+            stepDuration,
+            swing: session.clock.swing,
+            sampleRate
+          },
+          session.mixer?.effectChains,
+          id,
+          sampleRate,
+          session.bpm
+        );
+        if (buffer) {
+          instrumentBuffers.push({
+            id,
+            buffer,
+            startBar: 0,
+            level: linearLevel
           });
         }
-      }
-      if (chainOutput) {
-        chainOutput.connect(destinationNode);
-        channelOutputs.set(channel, chainOutput);
-      } else {
-        sourceOutput.connect(destinationNode);
+      } catch (e) {
+        console.warn(`Failed to render ${id}:`, e.message);
       }
     }
   }
-  let finalMaster = masterGain;
-  if (mixerConfig.masterInserts && mixerConfig.masterInserts.length > 0) {
-    masterGain.disconnect();
-    let chainInput = masterGain;
-    let chainOutput = masterGain;
-    for (const insert of mixerConfig.masterInserts) {
-      if (insert.type === "eq") {
-        const eqParams = { ...insert.params, preset: insert.preset };
-        const eq = createEQ(context, eqParams);
-        chainInput.connect(eq.input);
-        chainInput = eq.output;
-        chainOutput = eq.output;
-      } else if (insert.type === "filter") {
-        const filterParams = { ...insert.params, preset: insert.preset };
-        const filter = createFilter(context, filterParams);
-        chainInput.connect(filter.input);
-        chainInput = filter.output;
-        chainOutput = filter.output;
-      }
-    }
-    chainOutput.connect(context.destination);
-    finalMaster = chainOutput;
-  }
-  const swingAmount = session.swing / 100;
-  const maxSwingDelay = stepDuration * 0.5;
-  const noteToFreq = (note) => {
-    const noteMap = { "C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11 };
-    const match = note.match(/^([A-G])([#b]?)(\d+)$/);
-    if (!match) return 440;
-    let n = noteMap[match[1]];
-    if (match[2] === "#") n += 1;
-    if (match[2] === "b") n -= 1;
-    const octave = parseInt(match[3]);
-    const midi = n + (octave + 1) * 12;
-    return 440 * Math.pow(2, (midi - 69) / 12);
-  };
-  let lastDrumSection = null;
-  let lastBassSection = null;
-  let lastSamplerSection = null;
-  let lastFilterSection = null;
-  const reconfigureFilter = (channel, patternInserts, atTime) => {
-    const filterInfo = channelFilters.get(channel);
-    if (!filterInfo || filterInfo.type !== "filter") return;
-    const filterNode = filterInfo.filter;
-    if (!filterNode) return;
-    const inserts = patternInserts?.[channel];
-    const filterInsert = inserts?.find((i) => i.type === "filter");
-    if (filterInsert) {
-      const p = filterInsert.preset ? { ...FILTER_PRESETS[filterInsert.preset], ...filterInsert.params } : filterInsert.params;
-      filterNode.type = p.mode || "lowpass";
-      filterNode.frequency.setValueAtTime(p.cutoff || 1e3, atTime);
-      const resonance = p.resonance ?? 0;
-      filterNode.Q.setValueAtTime(0.5 + resonance / 100 * 19.5, atTime);
-    } else {
-      filterNode.type = "lowpass";
-      filterNode.frequency.setValueAtTime(2e4, atTime);
-      filterNode.Q.setValueAtTime(0.5, atTime);
-    }
-  };
-  for (let i = 0; i < totalSteps; i++) {
-    let time = i * stepDuration;
-    const step = i % 16;
-    const currentBar = Math.floor(i / 16);
-    if (step % 2 === 1) {
-      time += swingAmount * maxSwingDelay;
-    }
-    if (hasArrangement && channelFilters.size > 0) {
-      const currentSection = arrangementPlan.find((s) => currentBar >= s.barStart && currentBar < s.barEnd);
-      if (currentSection !== lastFilterSection) {
-        lastFilterSection = currentSection;
-        for (const [channel] of channelFilters) {
-          let patternInserts = null;
-          if (channel === "drums" || ["kick", "snare", "clap", "ch", "oh", "ltom", "mtom", "htom", "rimshot", "crash", "ride"].includes(channel)) {
-            const drumPatternName = currentSection?.patterns?.drums;
-            if (drumPatternName) {
-              patternInserts = session.patterns.drums?.[drumPatternName]?.channelInserts;
-            }
-          } else if (channel === "bass") {
-            const bassPatternName = currentSection?.patterns?.bass;
-            if (bassPatternName) {
-              patternInserts = session.patterns.bass?.[bassPatternName]?.channelInserts;
-            }
-          } else if (channel === "lead") {
-            const leadPatternName = currentSection?.patterns?.lead;
-            if (leadPatternName) {
-              patternInserts = session.patterns.lead?.[leadPatternName]?.channelInserts;
-            }
-          } else if (channel === "sampler") {
-            const samplerPatternName = currentSection?.patterns?.sampler;
-            if (samplerPatternName) {
-              patternInserts = session.patterns.sampler?.[samplerPatternName]?.channelInserts;
-            }
-          }
-          reconfigureFilter(channel, patternInserts, time);
-        }
-      }
-    }
-    const drumData = getPatternForBar("drums", currentBar);
-    if (drumData && drumData.pattern) {
-      const drumSectionKey = hasArrangement ? arrangementPlan.find((s) => currentBar >= s.barStart && currentBar < s.barEnd) : null;
-      if (drumSectionKey !== lastDrumSection) {
-        lastDrumSection = drumSectionKey;
-        if (drums.getVoiceParameterDescriptors) {
-          const descriptors = drums.getVoiceParameterDescriptors();
-          for (const voiceName of voiceNames) {
-            const voiceDesc = descriptors[voiceName];
-            if (voiceDesc) {
-              for (const param of voiceDesc) {
-                try {
-                  drums.setVoiceParam(voiceName, param.id, param.defaultValue);
-                } catch (e) {
-                }
-              }
-            }
-          }
-        }
-        for (const [voiceName, voiceParams] of Object.entries(drumData.params || {})) {
-          if (voiceParams && Object.keys(voiceParams).length > 0) {
-            const engineParams = convertTweaks("r9d9", voiceName, voiceParams);
-            Object.entries(engineParams).forEach(([paramId, value]) => {
-              try {
-                drums.setVoiceParam(voiceName, paramId, value);
-              } catch (e) {
-              }
-            });
-          }
-        }
-      }
-      const patternLength = drumData.length || 16;
-      const drumStep = i % patternLength;
-      let drumTime = i * drumStepDuration;
-      if (drumStep % 2 === 1) {
-        drumTime += swingAmount * (drumStepDuration * 0.5);
-      }
-      for (const name of voiceNames) {
-        if (drumData.pattern[name]?.[drumStep]?.velocity > 0) {
-          const voice = drums.voices.get(name);
-          if (voice) {
-            const voiceAutomation = drumData.automation?.[name];
-            if (voiceAutomation) {
-              for (const [paramId, stepValues] of Object.entries(voiceAutomation)) {
-                const autoValue = stepValues[drumStep];
-                if (autoValue !== null && autoValue !== void 0) {
-                  const def = getParamDef("r9d9", name, paramId);
-                  const engineValue = def ? toEngine(autoValue, def) : autoValue;
-                  voice[paramId] = engineValue;
-                }
-              }
-            }
-            voice.trigger(drumTime, drumData.pattern[name][drumStep].velocity);
-          }
-          for (const [targetChannel, scConfig] of sidechainTargets) {
-            if (scConfig.trigger === name) {
-              const attackTime = 5e-3;
-              const releaseTime = 0.15;
-              const targetGain = 1 - scConfig.amount;
-              scConfig.gain.gain.setValueAtTime(1, drumTime);
-              scConfig.gain.gain.linearRampToValueAtTime(targetGain, drumTime + attackTime);
-              scConfig.gain.gain.linearRampToValueAtTime(1, drumTime + attackTime + releaseTime);
-            }
-          }
-        }
-      }
-    }
-    const bassData = getPatternForBar("bass", currentBar);
-    if (bassData && bassData.pattern) {
-      const bassSectionKey = hasArrangement ? arrangementPlan.find((s) => currentBar >= s.barStart && currentBar < s.barEnd) : null;
-      if (bassSectionKey !== lastBassSection) {
-        lastBassSection = bassSectionKey;
-        try {
-          bass.setParameter("level", 1);
-        } catch (e) {
-        }
-        Object.entries(bassData.params || {}).forEach(([key, value]) => {
-          if (key !== "waveform") {
-            bass.setParameter(key, value);
-          }
-        });
-        if (bassData.params?.waveform) {
-          bass.setWaveform(bassData.params.waveform);
-        }
-      }
-      const bassStep = bassData.pattern[step];
-      if (bassStep?.gate && bassVoice) {
-        const freq = noteToFreq(bassStep.note);
-        const nextStep = bassData.pattern[(step + 1) % 16];
-        const shouldSlide = bassStep.slide && nextStep?.gate;
-        const nextFreq = shouldSlide ? noteToFreq(nextStep.note) : null;
-        bassVoice.trigger(time, 0.8, freq, bassStep.accent, shouldSlide, nextFreq);
-      }
-    }
-    const samplerData = getPatternForBar("sampler", currentBar);
-    if (samplerData && samplerData.pattern) {
-      const samplerSectionKey = hasArrangement ? arrangementPlan.find((s) => currentBar >= s.barStart && currentBar < s.barEnd) : null;
-      if (samplerSectionKey !== lastSamplerSection) {
-        lastSamplerSection = samplerSectionKey;
-        for (const [slotId, voice] of samplerVoices) {
-          try {
-            voice.setParameter("level", 1);
-          } catch (e) {
-          }
-        }
-        for (const [slotId, slotParams] of Object.entries(samplerData.params || {})) {
-          const voice = samplerVoices.get(slotId);
-          if (voice) {
-            Object.entries(slotParams).forEach(([key, value]) => {
-              voice.setParameter(key, value);
-            });
-          }
-        }
-      }
-      for (const [slotId, voice] of samplerVoices) {
-        if (samplerData.pattern[slotId]?.[step]?.velocity > 0) {
-          voice.trigger(time, samplerData.pattern[slotId][step].velocity);
-        }
+  for (const { buffer, startBar, level } of instrumentBuffers) {
+    const startSample = Math.floor(startBar * samplesPerBar);
+    const mixLength = Math.min(outputBuffer.length - startSample, buffer.length);
+    for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
+      const mainData = outputBuffer.getChannelData(ch);
+      const instData = buffer.getChannelData(ch % buffer.numberOfChannels);
+      for (let i = 0; i < mixLength; i++) {
+        mainData[startSample + i] += instData[i] * level;
       }
     }
   }
-  let hasDrums = Object.keys(session.drumPattern).length > 0;
-  let hasBass = session.bassPattern.some((s) => s.gate);
-  let hasLead = session.leadPattern.some((s) => s.gate);
-  let hasJB200 = session.jb200Pattern.some((s) => s.gate);
-  let hasJB01 = jb01Buffers.length > 0;
-  let hasSamples = Object.keys(session.samplerPattern).length > 0 && session.samplerKit;
+  const masterChain = session.mixer?.effectChains?.master;
+  let finalBuffer = outputBuffer;
+  if (masterChain && masterChain.length > 0) {
+    const wrappedBuffer = {
+      numberOfChannels: outputBuffer.numberOfChannels,
+      length: outputBuffer.length,
+      sampleRate: outputBuffer.sampleRate,
+      getChannelData: (ch) => outputBuffer.getChannelData(ch)
+    };
+    const processedMaster = await processEffectChain(wrappedBuffer, masterChain, sampleRate, session.bpm);
+    for (let ch = 0; ch < outputBuffer.numberOfChannels; ch++) {
+      const mainData = outputBuffer.getChannelData(ch);
+      const processedData = processedMaster.getChannelData(ch);
+      for (let i = 0; i < outputBuffer.length; i++) {
+        mainData[i] = processedData[i];
+      }
+    }
+  }
+  const wav = audioBufferToWav5(outputBuffer);
+  writeFileSync4(filename, Buffer.from(wav));
+  const synths = instrumentBuffers.map((b) => b.id.toUpperCase()).filter((v, i, a) => a.indexOf(v) === i);
   if (hasArrangement) {
-    hasDrums = arrangementPlan.some((s) => s.patterns.drums && session.patterns.drums[s.patterns.drums]);
-    hasBass = arrangementPlan.some((s) => s.patterns.bass && session.patterns.bass[s.patterns.bass]);
-    hasLead = leadBuffers.length > 0;
-    hasJB200 = jb200Buffers.length > 0;
-    hasJB01 = jb01Buffers.length > 0;
-    hasSamples = arrangementPlan.some((s) => s.patterns.sampler && session.patterns.sampler[s.patterns.sampler]) && session.samplerKit;
+    const sectionCount = session.arrangement.length;
+    return `Rendered ${renderBars} bars (${sectionCount} sections) at ${session.bpm} BPM (${synths.join("+") || "empty"})`;
   }
-  const synths = [hasDrums && "R9D9", hasBass && "R3D3", hasLead && "R1D1", hasJB200 && "JB200", hasJB01 && "JB01", hasSamples && "R9DS"].filter(Boolean);
-  return context.startRendering().then((buffer) => {
-    const samplesPerBar = session.clock.samplesPerBar;
-    const leadMixLevel = leadGain.gain.value;
-    for (const { buffer: leadBuffer, startBar } of leadBuffers) {
-      const startSample = Math.floor(startBar * samplesPerBar);
-      const mixLength = Math.min(buffer.length - startSample, leadBuffer.length);
-      for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
-        const mainData = buffer.getChannelData(ch);
-        const leadData = leadBuffer.getChannelData(ch % leadBuffer.numberOfChannels);
-        for (let i = 0; i < mixLength; i++) {
-          mainData[startSample + i] += leadData[i] * leadMixLevel;
-        }
-      }
-    }
-    const jb200MixLevel = jb200Gain.gain.value;
-    for (const { buffer: jb200Buffer, startBar } of jb200Buffers) {
-      const startSample = Math.floor(startBar * samplesPerBar);
-      const mixLength = Math.min(buffer.length - startSample, jb200Buffer.length);
-      for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
-        const mainData = buffer.getChannelData(ch);
-        const jb200Data = jb200Buffer.getChannelData(ch % jb200Buffer.numberOfChannels);
-        for (let i = 0; i < mixLength; i++) {
-          mainData[startSample + i] += jb200Data[i] * jb200MixLevel;
-        }
-      }
-    }
-    const jb01MixLevel = jb01Gain.gain.value;
-    for (const { buffer: jb01Buffer, startBar } of jb01Buffers) {
-      const startSample = Math.floor(startBar * samplesPerBar);
-      const mixLength = Math.min(buffer.length - startSample, jb01Buffer.length);
-      for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
-        const mainData = buffer.getChannelData(ch);
-        const jb01Data = jb01Buffer.getChannelData(ch % jb01Buffer.numberOfChannels);
-        for (let i = 0; i < mixLength; i++) {
-          mainData[startSample + i] += jb01Data[i] * jb01MixLevel;
-        }
-      }
-    }
-    const wav = audioBufferToWav3(buffer);
-    writeFileSync4(filename, Buffer.from(wav));
-    if (hasArrangement) {
-      const sectionCount = session.arrangement.length;
-      return `Rendered ${renderBars} bars (${sectionCount} sections) at ${session.bpm} BPM (${synths.join("+") || "empty"})`;
-    }
-    return `Rendered ${renderBars} bars at ${session.bpm} BPM (${synths.join("+") || "empty"})`;
-  });
+  return `Rendered ${renderBars} bars at ${session.bpm} BPM (${synths.join("+") || "empty"})`;
 }
 
 // core/library.js
@@ -14550,113 +13790,7 @@ ${sections.join("\n")}`;
 var detectGenres = detectLibraryKeys;
 var buildGenreContext = buildLibraryContext;
 
-// jambot.js
-init_presets();
-init_presets2();
-var __dirname4 = dirname4(fileURLToPath4(import.meta.url));
-var JAMBOT_PROMPT = readFileSync5(join6(__dirname4, "JAMBOT-PROMPT.md"), "utf-8");
-var JAMBOT_CONFIG_DIR = join6(homedir4(), ".jambot");
-var JAMBOT_ENV_FILE = join6(JAMBOT_CONFIG_DIR, ".env");
-function loadEnvFile(path) {
-  try {
-    const content = readFileSync5(path, "utf-8");
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim();
-      if (trimmed && !trimmed.startsWith("#") && trimmed.includes("=")) {
-        const [key, ...rest] = trimmed.split("=");
-        process.env[key] = rest.join("=");
-      }
-    }
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-function getApiKey() {
-  if (process.env.ANTHROPIC_API_KEY) {
-    return process.env.ANTHROPIC_API_KEY;
-  }
-  if (existsSync5(JAMBOT_ENV_FILE)) {
-    loadEnvFile(JAMBOT_ENV_FILE);
-    if (process.env.ANTHROPIC_API_KEY) {
-      return process.env.ANTHROPIC_API_KEY;
-    }
-  }
-  const localEnv = join6(process.cwd(), ".env");
-  if (existsSync5(localEnv)) {
-    loadEnvFile(localEnv);
-    if (process.env.ANTHROPIC_API_KEY) {
-      return process.env.ANTHROPIC_API_KEY;
-    }
-  }
-  const devEnv = join6(__dirname4, "..", "sms-bot", ".env.local");
-  if (existsSync5(devEnv)) {
-    loadEnvFile(devEnv);
-    if (process.env.ANTHROPIC_API_KEY) {
-      return process.env.ANTHROPIC_API_KEY;
-    }
-  }
-  return null;
-}
-function saveApiKey(key) {
-  if (!existsSync5(JAMBOT_CONFIG_DIR)) {
-    mkdirSync3(JAMBOT_CONFIG_DIR, { recursive: true });
-  }
-  writeFileSync5(JAMBOT_ENV_FILE, `ANTHROPIC_API_KEY=${key}
-`);
-  process.env.ANTHROPIC_API_KEY = key;
-}
-function getApiKeyPath() {
-  return JAMBOT_ENV_FILE;
-}
-getApiKey();
-var _client = null;
-function getClient() {
-  if (!_client) {
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      throw new Error("No API key configured");
-    }
-    _client = new Anthropic({ apiKey });
-  }
-  return _client;
-}
-var SH101_PRESETS2 = Object.values(presets_default);
-function createSession2() {
-  ensureUserKitsDir();
-  const session = createSession({ bpm: 128 });
-  session.bassParams = {
-    waveform: "sawtooth",
-    cutoff: 0.5,
-    resonance: 0.5,
-    envMod: 0.5,
-    decay: 0.5,
-    accent: 0.8,
-    level: 0.8
-  };
-  session.leadParams = {
-    vcoSaw: 0.5,
-    vcoPulse: 0.5,
-    pulseWidth: 0.5,
-    subLevel: 0,
-    subMode: 0,
-    cutoff: 0.5,
-    resonance: 0.3,
-    envMod: 0.5,
-    attack: 0.01,
-    decay: 0.3,
-    sustain: 0.7,
-    release: 0.3,
-    lfoRate: 0.3,
-    lfoWaveform: "triangle",
-    lfoToPitch: 0,
-    lfoToFilter: 0,
-    lfoToPW: 0,
-    level: 0.8
-  };
-  session.samplerKit = null;
-  return session;
-}
+// tools/tool-definitions.js
 var TOOLS = [
   {
     name: "create_session",
@@ -15464,6 +14598,84 @@ var TOOLS = [
       required: []
     }
   },
+  // === EFFECT CHAIN TOOLS ===
+  {
+    name: "add_effect",
+    description: "Add an effect to any target (instrument, voice, or master). Effects chain in order. Use 'after' param to insert after a specific effect.",
+    input_schema: {
+      type: "object",
+      properties: {
+        target: { type: "string", description: "Target for effect: instrument (jb01, jb200), voice (jb01.ch, jb01.kick, jb01.snare), or 'master'" },
+        effect: { type: "string", enum: ["delay", "reverb"], description: "Type of effect to add" },
+        after: { type: "string", description: "Insert after this effect type/ID (for ordering). Omit to append." },
+        // Delay params
+        mode: { type: "string", enum: ["analog", "pingpong"], description: "Delay mode: analog (mono+saturation) or pingpong (stereo bounce)" },
+        time: { type: "number", description: "Delay time in ms (1-2000, default 375)" },
+        sync: { type: "string", enum: ["off", "8th", "dotted8th", "triplet8th", "16th", "quarter"], description: "Tempo sync mode" },
+        feedback: { type: "number", description: "Feedback amount 0-100 (default 50)" },
+        mix: { type: "number", description: "Wet/dry mix 0-100 (default 30)" },
+        lowcut: { type: "number", description: "Remove mud from feedback, Hz (default 80)" },
+        highcut: { type: "number", description: "Tame harshness, Hz (default 8000)" },
+        saturation: { type: "number", description: "Analog warmth 0-100 (analog mode only, default 20)" },
+        spread: { type: "number", description: "Stereo width 0-100 (pingpong mode only, default 100)" },
+        // Reverb params
+        decay: { type: "number", description: "Reverb tail length in seconds (0.5-10, default 2)" },
+        damping: { type: "number", description: "High-frequency rolloff (0-1, default 0.5)" },
+        predelay: { type: "number", description: "Gap before reverb in ms (0-100, default 10)" },
+        modulation: { type: "number", description: "Pitch wobble for shimmer (0-1, default 0.2)" },
+        width: { type: "number", description: "Stereo spread (0-1, default 1)" }
+      },
+      required: ["target", "effect"]
+    }
+  },
+  {
+    name: "remove_effect",
+    description: "Remove an effect from a target's chain.",
+    input_schema: {
+      type: "object",
+      properties: {
+        target: { type: "string", description: "Target to remove from: instrument (jb01), voice (jb01.ch), or 'master'" },
+        effect: { type: "string", description: "Effect type or ID to remove, or 'all' to clear entire chain" }
+      },
+      required: ["target"]
+    }
+  },
+  {
+    name: "show_effects",
+    description: "Display all effect chains across all targets.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "tweak_effect",
+    description: "Modify parameters on an existing effect in a target's chain.",
+    input_schema: {
+      type: "object",
+      properties: {
+        target: { type: "string", description: "Target: instrument (jb01), voice (jb01.ch), or 'master'" },
+        effect: { type: "string", description: "Effect type or ID to tweak" },
+        // All effect params supported
+        mode: { type: "string", enum: ["analog", "pingpong"], description: "Delay mode" },
+        time: { type: "number", description: "Delay time in ms" },
+        sync: { type: "string", enum: ["off", "8th", "dotted8th", "triplet8th", "16th", "quarter"], description: "Tempo sync" },
+        feedback: { type: "number", description: "Feedback amount 0-100" },
+        mix: { type: "number", description: "Wet/dry mix 0-100" },
+        lowcut: { type: "number", description: "Lowcut frequency Hz" },
+        highcut: { type: "number", description: "Highcut frequency Hz" },
+        saturation: { type: "number", description: "Analog warmth 0-100" },
+        spread: { type: "number", description: "Stereo width 0-100" },
+        decay: { type: "number", description: "Reverb tail seconds" },
+        damping: { type: "number", description: "Reverb damping 0-1" },
+        predelay: { type: "number", description: "Reverb predelay ms" },
+        modulation: { type: "number", description: "Reverb modulation 0-1" },
+        width: { type: "number", description: "Reverb stereo width 0-1" }
+      },
+      required: ["target", "effect"]
+    }
+  },
   // === PRESET TOOLS (Generic) ===
   {
     name: "save_preset",
@@ -15561,10 +14773,463 @@ var TOOLS = [
     }
   }
 ];
+
+// jambot.js
+init_presets();
+
+// ../web/public/101/dist/machines/sh101/presets.js
+var presets = {
+  // Classic PWM lead - shimmering synth lead
+  classicLead: {
+    id: "classicLead",
+    name: "Classic Lead",
+    description: "Shimmering PWM lead sound",
+    parameters: {
+      vcoSaw: 0.3,
+      vcoPulse: 0.8,
+      pulseWidth: 0.35,
+      subLevel: 0.2,
+      subMode: 1,
+      cutoff: 0.6,
+      resonance: 0.25,
+      envMod: 0.4,
+      attack: 0.02,
+      decay: 0.3,
+      sustain: 0.7,
+      release: 0.3,
+      lfoRate: 0.2,
+      lfoWaveform: "triangle",
+      lfoToPitch: 0.1,
+      lfoToFilter: 0,
+      lfoToPW: 0.3,
+      volume: 0.8
+    },
+    bpm: 120,
+    pattern: [
+      { note: "C4", gate: true, accent: true, slide: false },
+      { note: "C4", gate: false, accent: false, slide: false },
+      { note: "G3", gate: true, accent: false, slide: false },
+      { note: "G3", gate: false, accent: false, slide: false },
+      { note: "E4", gate: true, accent: true, slide: false },
+      { note: "E4", gate: false, accent: false, slide: false },
+      { note: "G3", gate: true, accent: false, slide: false },
+      { note: "G3", gate: false, accent: false, slide: false },
+      { note: "C4", gate: true, accent: true, slide: false },
+      { note: "C4", gate: false, accent: false, slide: false },
+      { note: "G3", gate: true, accent: false, slide: false },
+      { note: "G3", gate: false, accent: false, slide: false },
+      { note: "D4", gate: true, accent: false, slide: false },
+      { note: "E4", gate: true, accent: true, slide: false },
+      { note: "D4", gate: true, accent: false, slide: false },
+      { note: "C4", gate: true, accent: false, slide: false }
+    ]
+  },
+  // Fat bass - thick and heavy
+  fatBass: {
+    id: "fatBass",
+    name: "Fat Bass",
+    description: "Thick, heavy bass with sub",
+    parameters: {
+      vcoSaw: 0.7,
+      vcoPulse: 0.4,
+      pulseWidth: 0.5,
+      subLevel: 0.6,
+      subMode: 1,
+      // -1 octave
+      cutoff: 0.25,
+      resonance: 0.4,
+      envMod: 0.5,
+      attack: 5e-3,
+      decay: 0.4,
+      sustain: 0.4,
+      release: 0.2,
+      lfoRate: 0,
+      lfoWaveform: "triangle",
+      lfoToPitch: 0,
+      lfoToFilter: 0,
+      lfoToPW: 0,
+      volume: 0.8
+    },
+    bpm: 110,
+    pattern: [
+      { note: "C2", gate: true, accent: true, slide: false },
+      { note: "C2", gate: false, accent: false, slide: false },
+      { note: "C2", gate: true, accent: false, slide: false },
+      { note: "C2", gate: false, accent: false, slide: false },
+      { note: "E2", gate: true, accent: false, slide: true },
+      { note: "G2", gate: true, accent: true, slide: false },
+      { note: "G2", gate: false, accent: false, slide: false },
+      { note: "G2", gate: true, accent: false, slide: false },
+      { note: "C2", gate: true, accent: true, slide: false },
+      { note: "C2", gate: false, accent: false, slide: false },
+      { note: "C2", gate: true, accent: false, slide: false },
+      { note: "D2", gate: true, accent: false, slide: true },
+      { note: "E2", gate: true, accent: false, slide: false },
+      { note: "E2", gate: false, accent: false, slide: false },
+      { note: "G2", gate: true, accent: true, slide: true },
+      { note: "C3", gate: true, accent: true, slide: false }
+    ]
+  },
+  // Acid line - squelchy 303-style
+  acidLine: {
+    id: "acidLine",
+    name: "Acid Line",
+    description: "Squelchy resonant bassline",
+    parameters: {
+      vcoSaw: 1,
+      vcoPulse: 0,
+      pulseWidth: 0.5,
+      subLevel: 0,
+      subMode: 0,
+      cutoff: 0.2,
+      resonance: 0.75,
+      envMod: 0.8,
+      attack: 1e-3,
+      decay: 0.15,
+      sustain: 0.1,
+      release: 0.1,
+      lfoRate: 0,
+      lfoWaveform: "triangle",
+      lfoToPitch: 0,
+      lfoToFilter: 0,
+      lfoToPW: 0,
+      volume: 0.8
+    },
+    bpm: 130,
+    pattern: [
+      { note: "C2", gate: true, accent: true, slide: false },
+      { note: "C2", gate: false, accent: false, slide: false },
+      { note: "C3", gate: true, accent: false, slide: true },
+      { note: "C2", gate: true, accent: false, slide: false },
+      { note: "D#2", gate: true, accent: true, slide: false },
+      { note: "D#2", gate: false, accent: false, slide: false },
+      { note: "G2", gate: true, accent: false, slide: true },
+      { note: "C2", gate: true, accent: true, slide: false },
+      { note: "C2", gate: true, accent: false, slide: false },
+      { note: "C2", gate: false, accent: false, slide: false },
+      { note: "A#1", gate: true, accent: true, slide: false },
+      { note: "C2", gate: true, accent: false, slide: true },
+      { note: "D#2", gate: true, accent: false, slide: false },
+      { note: "G2", gate: true, accent: true, slide: true },
+      { note: "C3", gate: true, accent: false, slide: false },
+      { note: "C2", gate: true, accent: true, slide: false }
+    ]
+  },
+  // Synth brass - punchy with fast attack
+  synthBrass: {
+    id: "synthBrass",
+    name: "Synth Brass",
+    description: "Punchy brass stab",
+    parameters: {
+      vcoSaw: 0.7,
+      vcoPulse: 0.6,
+      pulseWidth: 0.45,
+      subLevel: 0.1,
+      subMode: 1,
+      cutoff: 0.55,
+      resonance: 0.2,
+      envMod: 0.35,
+      attack: 0.02,
+      decay: 0.2,
+      sustain: 0.8,
+      release: 0.15,
+      lfoRate: 0.15,
+      lfoWaveform: "triangle",
+      lfoToPitch: 0.05,
+      lfoToFilter: 0,
+      lfoToPW: 0.1,
+      volume: 0.75
+    },
+    bpm: 115,
+    pattern: [
+      { note: "C3", gate: true, accent: true, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: true, accent: false, slide: false },
+      { note: "D#3", gate: true, accent: true, slide: false },
+      { note: "D#3", gate: false, accent: false, slide: false },
+      { note: "D#3", gate: false, accent: false, slide: false },
+      { note: "G3", gate: true, accent: false, slide: false },
+      { note: "C3", gate: true, accent: true, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "F3", gate: true, accent: false, slide: false },
+      { note: "F3", gate: false, accent: false, slide: false },
+      { note: "D#3", gate: true, accent: true, slide: false },
+      { note: "D3", gate: true, accent: false, slide: true },
+      { note: "C3", gate: true, accent: true, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false }
+    ]
+  },
+  // Arp pad - gentle arpeggiated pad
+  arpPad: {
+    id: "arpPad",
+    name: "Arp Pad",
+    description: "Soft arpeggiated pad",
+    parameters: {
+      vcoSaw: 0.5,
+      vcoPulse: 0.5,
+      pulseWidth: 0.4,
+      subLevel: 0.3,
+      subMode: 2,
+      // -2 octaves
+      cutoff: 0.45,
+      resonance: 0.3,
+      envMod: 0.2,
+      attack: 0.1,
+      decay: 0.5,
+      sustain: 0.6,
+      release: 0.5,
+      lfoRate: 0.1,
+      lfoWaveform: "triangle",
+      lfoToPitch: 0,
+      lfoToFilter: 0.2,
+      lfoToPW: 0.15,
+      volume: 0.7
+    },
+    arp: {
+      mode: "updown",
+      octaves: 2,
+      hold: true
+    },
+    bpm: 90,
+    pattern: [
+      { note: "C3", gate: true, accent: false, slide: false },
+      { note: "E3", gate: true, accent: false, slide: false },
+      { note: "G3", gate: true, accent: false, slide: false },
+      { note: "C4", gate: true, accent: true, slide: false },
+      { note: "G3", gate: true, accent: false, slide: false },
+      { note: "E3", gate: true, accent: false, slide: false },
+      { note: "C3", gate: true, accent: false, slide: false },
+      { note: "E3", gate: true, accent: false, slide: true },
+      { note: "G3", gate: true, accent: false, slide: false },
+      { note: "B3", gate: true, accent: false, slide: false },
+      { note: "D4", gate: true, accent: true, slide: false },
+      { note: "B3", gate: true, accent: false, slide: false },
+      { note: "G3", gate: true, accent: false, slide: false },
+      { note: "E3", gate: true, accent: false, slide: true },
+      { note: "D3", gate: true, accent: false, slide: false },
+      { note: "E3", gate: true, accent: false, slide: false }
+    ]
+  },
+  // Zap bass - sci-fi bass with fast sweep
+  zapBass: {
+    id: "zapBass",
+    name: "Zap Bass",
+    description: "Sci-fi bass with filter zap",
+    parameters: {
+      vcoSaw: 0.8,
+      vcoPulse: 0.3,
+      pulseWidth: 0.5,
+      subLevel: 0.4,
+      subMode: 1,
+      cutoff: 0.1,
+      resonance: 0.6,
+      envMod: 0.9,
+      attack: 1e-3,
+      decay: 0.08,
+      sustain: 0.05,
+      release: 0.1,
+      lfoRate: 0,
+      lfoWaveform: "triangle",
+      lfoToPitch: 0,
+      lfoToFilter: 0,
+      lfoToPW: 0,
+      volume: 0.8
+    },
+    bpm: 128,
+    pattern: [
+      { note: "C2", gate: true, accent: true, slide: false },
+      { note: "C2", gate: false, accent: false, slide: false },
+      { note: "C2", gate: true, accent: false, slide: false },
+      { note: "C2", gate: false, accent: false, slide: false },
+      { note: "C2", gate: true, accent: true, slide: false },
+      { note: "C2", gate: false, accent: false, slide: false },
+      { note: "C3", gate: true, accent: true, slide: false },
+      { note: "C2", gate: true, accent: false, slide: false },
+      { note: "C2", gate: true, accent: true, slide: false },
+      { note: "C2", gate: false, accent: false, slide: false },
+      { note: "C2", gate: true, accent: false, slide: false },
+      { note: "C2", gate: false, accent: false, slide: false },
+      { note: "D#2", gate: true, accent: true, slide: false },
+      { note: "D#2", gate: false, accent: false, slide: false },
+      { note: "G2", gate: true, accent: true, slide: false },
+      { note: "G2", gate: false, accent: false, slide: false }
+    ]
+  },
+  // S&H sequence - random filter modulation
+  shSequence: {
+    id: "shSequence",
+    name: "S&H Sequence",
+    description: "Random sample & hold filter",
+    parameters: {
+      vcoSaw: 0.6,
+      vcoPulse: 0.4,
+      pulseWidth: 0.5,
+      subLevel: 0.2,
+      subMode: 1,
+      cutoff: 0.4,
+      resonance: 0.5,
+      envMod: 0.3,
+      attack: 0.01,
+      decay: 0.2,
+      sustain: 0.5,
+      release: 0.2,
+      lfoRate: 0.4,
+      lfoWaveform: "sh",
+      lfoToPitch: 0,
+      lfoToFilter: 0.4,
+      lfoToPW: 0,
+      volume: 0.75
+    },
+    bpm: 125,
+    pattern: [
+      { note: "C3", gate: true, accent: false, slide: false },
+      { note: "C3", gate: true, accent: false, slide: false },
+      { note: "D#3", gate: true, accent: true, slide: false },
+      { note: "C3", gate: true, accent: false, slide: false },
+      { note: "G3", gate: true, accent: false, slide: true },
+      { note: "F3", gate: true, accent: true, slide: false },
+      { note: "C3", gate: true, accent: false, slide: false },
+      { note: "D#3", gate: true, accent: false, slide: false },
+      { note: "C3", gate: true, accent: true, slide: false },
+      { note: "C3", gate: true, accent: false, slide: false },
+      { note: "A#2", gate: true, accent: false, slide: true },
+      { note: "C3", gate: true, accent: true, slide: false },
+      { note: "G3", gate: true, accent: false, slide: false },
+      { note: "D#3", gate: true, accent: true, slide: false },
+      { note: "C3", gate: true, accent: false, slide: true },
+      { note: "G2", gate: true, accent: true, slide: false }
+    ]
+  },
+  // Empty - blank starting point
+  empty: {
+    id: "empty",
+    name: "Empty",
+    description: "Blank starting point",
+    parameters: {
+      vcoSaw: 0.5,
+      vcoPulse: 0.5,
+      pulseWidth: 0.5,
+      subLevel: 0,
+      subMode: 0,
+      cutoff: 0.5,
+      resonance: 0.3,
+      envMod: 0.5,
+      attack: 0.01,
+      decay: 0.3,
+      sustain: 0.7,
+      release: 0.3,
+      lfoRate: 0.3,
+      lfoWaveform: "triangle",
+      lfoToPitch: 0,
+      lfoToFilter: 0,
+      lfoToPW: 0,
+      volume: 0.8
+    },
+    bpm: 120,
+    pattern: [
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false },
+      { note: "C3", gate: false, accent: false, slide: false }
+    ]
+  }
+};
+var presets_default = presets;
+
+// jambot.js
+init_converters();
+var __dirname4 = dirname4(fileURLToPath4(import.meta.url));
+var JAMBOT_PROMPT = readFileSync5(join6(__dirname4, "JAMBOT-PROMPT.md"), "utf-8");
+var JAMBOT_CONFIG_DIR = join6(homedir4(), ".jambot");
+var JAMBOT_ENV_FILE = join6(JAMBOT_CONFIG_DIR, ".env");
+function loadEnvFile(path) {
+  try {
+    const content = readFileSync5(path, "utf-8");
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith("#") && trimmed.includes("=")) {
+        const [key, ...rest] = trimmed.split("=");
+        process.env[key] = rest.join("=");
+      }
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+function getApiKey() {
+  if (process.env.ANTHROPIC_API_KEY) {
+    return process.env.ANTHROPIC_API_KEY;
+  }
+  if (existsSync5(JAMBOT_ENV_FILE)) {
+    loadEnvFile(JAMBOT_ENV_FILE);
+    if (process.env.ANTHROPIC_API_KEY) {
+      return process.env.ANTHROPIC_API_KEY;
+    }
+  }
+  const localEnv = join6(process.cwd(), ".env");
+  if (existsSync5(localEnv)) {
+    loadEnvFile(localEnv);
+    if (process.env.ANTHROPIC_API_KEY) {
+      return process.env.ANTHROPIC_API_KEY;
+    }
+  }
+  const devEnv = join6(__dirname4, "..", "sms-bot", ".env.local");
+  if (existsSync5(devEnv)) {
+    loadEnvFile(devEnv);
+    if (process.env.ANTHROPIC_API_KEY) {
+      return process.env.ANTHROPIC_API_KEY;
+    }
+  }
+  return null;
+}
+function saveApiKey(key) {
+  if (!existsSync5(JAMBOT_CONFIG_DIR)) {
+    mkdirSync3(JAMBOT_CONFIG_DIR, { recursive: true });
+  }
+  writeFileSync5(JAMBOT_ENV_FILE, `ANTHROPIC_API_KEY=${key}
+`);
+  process.env.ANTHROPIC_API_KEY = key;
+}
+function getApiKeyPath() {
+  return JAMBOT_ENV_FILE;
+}
+getApiKey();
+var _client = null;
+function getClient() {
+  if (!_client) {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("No API key configured");
+    }
+    _client = new Anthropic({ apiKey });
+  }
+  return _client;
+}
+var SH101_PRESETS = Object.values(presets_default);
+function createSession2() {
+  ensureUserKitsDir();
+  const session = createSession({ bpm: 128 });
+  return session;
+}
 var SLASH_COMMANDS = [
   { name: "/new", description: "Start a new project" },
   { name: "/open", description: "Open an existing project" },
   { name: "/projects", description: "List all projects" },
+  { name: "/mix", description: "Show mix overview (instruments, tweaks, effects)" },
   { name: "/r9d9", description: "R9D9 drum machine guide" },
   { name: "/r3d3", description: "R3D3 acid bass guide" },
   { name: "/r1d1", description: "R1D1 lead synth guide" },
@@ -15577,6 +15242,137 @@ var SLASH_COMMANDS = [
   { name: "/help", description: "Show available commands" },
   { name: "/exit", description: "Quit Jambot" }
 ];
+function buildMixOverview(session, project = null) {
+  const lines = [];
+  const projectName = project?.name || "(unsaved)";
+  const swingStr = session.swing > 0 ? `, ${session.swing}% swing` : "";
+  lines.push(`${projectName} \u2014 ${session.bpm} BPM${swingStr}, ${session.bars || 2} bars`);
+  lines.push("");
+  const active = [];
+  const jb01Pattern = session.jb01Pattern || session.drumPattern || {};
+  const jb01Voices = Object.entries(jb01Pattern).filter(([_, pattern]) => Array.isArray(pattern) && pattern.some((s) => s?.velocity > 0)).map(([voice]) => voice);
+  if (jb01Voices.length > 0) {
+    active.push(`jb01: ${jb01Voices.join(" ")} (${jb01Voices.length} voices)`);
+  }
+  const jb200Pattern = session.jb200Pattern || [];
+  const jb200Notes = jb200Pattern.filter((s) => s?.gate);
+  if (jb200Notes.length > 0) {
+    const noteNames = [...new Set(jb200Notes.map((s) => s.note))];
+    const range = noteNames.length > 1 ? `${noteNames[0]}-${noteNames[noteNames.length - 1]}` : noteNames[0];
+    active.push(`jb200: ${jb200Notes.length} notes, ${range}`);
+  }
+  const r9d9Pattern = session._nodes?.r9d9?.getPattern?.() || {};
+  const r9d9Voices = Object.entries(r9d9Pattern).filter(([_, pattern]) => Array.isArray(pattern) && pattern.some((s) => s?.velocity > 0)).map(([voice]) => voice);
+  if (r9d9Voices.length > 0) {
+    active.push(`r9d9: ${r9d9Voices.join(" ")} (${r9d9Voices.length} voices)`);
+  }
+  const r3d3Pattern = session._nodes?.r3d3?.getPattern?.() || [];
+  const r3d3Notes = r3d3Pattern.filter((s) => s?.gate);
+  if (r3d3Notes.length > 0) {
+    active.push(`r3d3: ${r3d3Notes.length} notes`);
+  }
+  const r1d1Pattern = session._nodes?.r1d1?.getPattern?.() || [];
+  const r1d1Notes = r1d1Pattern.filter((s) => s?.gate);
+  if (r1d1Notes.length > 0) {
+    active.push(`r1d1: ${r1d1Notes.length} notes`);
+  }
+  const samplerPattern = session.samplerPattern || {};
+  const samplerSlots = Object.entries(samplerPattern).filter(([_, pattern]) => Array.isArray(pattern) && pattern.some((s) => s?.velocity > 0)).map(([slot]) => slot);
+  if (samplerSlots.length > 0) {
+    active.push(`sampler: ${samplerSlots.join(" ")} (${samplerSlots.length} slots)`);
+  }
+  if (active.length > 0) {
+    lines.push("ACTIVE:");
+    active.forEach((a) => lines.push(`  ${a}`));
+    lines.push("");
+  } else {
+    lines.push("ACTIVE: (none)");
+    lines.push("");
+  }
+  const tweaks = [];
+  if (jb01Voices.length > 0 && session._nodes?.jb01) {
+    const node = session._nodes.jb01;
+    for (const voice of jb01Voices) {
+      const voiceParams = JB01_PARAMS[voice];
+      if (!voiceParams) continue;
+      const nonDefault = [];
+      for (const [param, def] of Object.entries(voiceParams)) {
+        const path = `${voice}.${param}`;
+        const engineVal = node.getParam(path);
+        if (engineVal === void 0) continue;
+        const producerVal = fromEngine(engineVal, def);
+        if (Math.abs(producerVal - def.default) > 0.5) {
+          if (def.unit === "dB" && producerVal !== 0) {
+            nonDefault.push(`${param} ${producerVal > 0 ? "+" : ""}${Math.round(producerVal)}dB`);
+          } else if (def.unit === "semitones" && producerVal !== 0) {
+            nonDefault.push(`${param} ${producerVal > 0 ? "+" : ""}${Math.round(producerVal)}`);
+          } else if (def.unit === "0-100") {
+            nonDefault.push(`${param} ${Math.round(producerVal)}`);
+          }
+        }
+      }
+      if (nonDefault.length > 0) {
+        tweaks.push(`jb01.${voice}: ${nonDefault.join(", ")}`);
+      }
+    }
+  }
+  if (jb200Notes.length > 0 && session._nodes?.jb200 && JB200_PARAMS?.bass) {
+    const node = session._nodes.jb200;
+    const nonDefault = [];
+    for (const [param, def] of Object.entries(JB200_PARAMS.bass)) {
+      const path = `bass.${param}`;
+      const engineVal = node.getParam(path);
+      if (engineVal === void 0) continue;
+      const producerVal = fromEngine(engineVal, def);
+      if (Math.abs(producerVal - def.default) > 0.5) {
+        if (def.unit === "Hz") {
+          nonDefault.push(`${param} ${Math.round(producerVal)}Hz`);
+        } else if (def.unit === "dB" && producerVal !== 0) {
+          nonDefault.push(`${param} ${producerVal > 0 ? "+" : ""}${Math.round(producerVal)}dB`);
+        } else if (def.unit === "0-100") {
+          nonDefault.push(`${param} ${Math.round(producerVal)}%`);
+        }
+      }
+    }
+    if (nonDefault.length > 0) {
+      tweaks.push(`jb200: ${nonDefault.join(", ")}`);
+    }
+  }
+  if (tweaks.length > 0) {
+    lines.push("TWEAKS:");
+    tweaks.forEach((t) => lines.push(`  ${t}`));
+    lines.push("");
+  }
+  const effects = [];
+  const effectChains = session.mixer?.effectChains || {};
+  for (const [target, chain] of Object.entries(effectChains)) {
+    if (Array.isArray(chain) && chain.length > 0) {
+      const fxList = chain.map((fx) => {
+        const mode = fx.params?.mode ? ` (${fx.params.mode})` : "";
+        return `${fx.type}${mode}`;
+      }).join(" \u2192 ");
+      effects.push(`${target}: ${fxList}`);
+    }
+  }
+  if (effects.length > 0) {
+    lines.push("EFFECTS:");
+    effects.forEach((e) => lines.push(`  ${e}`));
+    lines.push("");
+  }
+  const levels = [];
+  const instruments = ["jb01", "jb200", "r9d9", "r3d3", "r1d1", "sampler"];
+  for (const inst of instruments) {
+    const level = session[`${inst}Level`];
+    if (level !== void 0 && level !== 0) {
+      levels.push(`${inst} ${level > 0 ? "+" : ""}${level}dB`);
+    }
+  }
+  if (levels.length > 0) {
+    lines.push("LEVELS:");
+    lines.push(`  ${levels.join(" | ")}`);
+  }
+  return lines.join("\n");
+}
 function buildSessionContext(session) {
   const parts = [];
   if (session.bpm) {
@@ -16075,8 +15871,8 @@ var TerminalUI = class {
     const inputBoxBottom = inputBoxTop + 1 + inputLines;
     const statusRow = inputBoxBottom + 1;
     process.stdout.write(ANSI.savePos);
-    process.stdout.write(ANSI.moveTo(statusRow, 1));
-    process.stdout.write(ANSI.clearLine + ANSI.dim + ANSI.bgGray + ANSI.white + status + ANSI.reset);
+    process.stdout.write(ANSI.moveTo(statusRow, 1) + ANSI.clearLine);
+    process.stdout.write(ANSI.moveTo(statusRow, 3) + ANSI.dim + status.trim() + ANSI.reset);
     process.stdout.write(ANSI.restorePos);
   }
   // === DRAWING: INPUT BOX ===
@@ -16086,15 +15882,15 @@ var TerminalUI = class {
     const inputLines = this.getInputLines();
     const lineCount = inputLines.length;
     const inputBoxTop = this.scrollBottom + 1;
-    process.stdout.write(ANSI.moveTo(inputBoxTop, 2) + ANSI.clearLine);
-    process.stdout.write(ANSI.cyan + BOX.topLeft + BOX.horizontal.repeat(innerWidth) + BOX.topRight + ANSI.reset);
+    process.stdout.write(ANSI.moveTo(inputBoxTop, 1) + ANSI.clearLine);
+    process.stdout.write(ANSI.moveTo(inputBoxTop, 2) + ANSI.cyan + BOX.topLeft + BOX.horizontal.repeat(innerWidth) + BOX.topRight + ANSI.reset);
     for (let i = 0; i < lineCount; i++) {
       const row = inputBoxTop + 1 + i;
-      process.stdout.write(ANSI.moveTo(row, 2) + ANSI.clearLine);
-      process.stdout.write(ANSI.cyan + BOX.vertical + ANSI.reset);
+      process.stdout.write(ANSI.moveTo(row, 1) + ANSI.clearLine);
+      process.stdout.write(ANSI.moveTo(row, 2) + ANSI.cyan + BOX.vertical + ANSI.reset);
       if (this.isProcessing && i === 0) {
         process.stdout.write(ANSI.dim + " thinking..." + ANSI.reset);
-        process.stdout.write(" ".repeat(Math.max(0, innerWidth - 11)));
+        process.stdout.write(" ".repeat(Math.max(0, innerWidth - 12)));
       } else if (this.isProcessing) {
         process.stdout.write(" ".repeat(innerWidth));
       } else {
@@ -16104,8 +15900,8 @@ var TerminalUI = class {
       process.stdout.write(ANSI.cyan + BOX.vertical + ANSI.reset);
     }
     const bottomRow = inputBoxTop + 1 + lineCount;
-    process.stdout.write(ANSI.moveTo(bottomRow, 2) + ANSI.clearLine);
-    process.stdout.write(ANSI.cyan + BOX.bottomLeft + BOX.horizontal.repeat(innerWidth) + BOX.bottomRight + ANSI.reset);
+    process.stdout.write(ANSI.moveTo(bottomRow, 1) + ANSI.clearLine);
+    process.stdout.write(ANSI.moveTo(bottomRow, 2) + ANSI.cyan + BOX.bottomLeft + BOX.horizontal.repeat(innerWidth) + BOX.bottomRight + ANSI.reset);
     const statusRow = bottomRow + 1;
     const paddingStart = statusRow + 1;
     for (let r = paddingStart; r <= this.rows; r++) {
@@ -16113,7 +15909,10 @@ var TerminalUI = class {
     }
   }
   positionCursor() {
-    if (this.isProcessing || this.inSetupWizard || this.inModal !== "none") return;
+    if (this.isProcessing || this.inSetupWizard || this.inModal !== "none") {
+      process.stdout.write(ANSI.hideCursor);
+      return;
+    }
     const innerWidth = this.inputInnerWidth;
     const inputLines = this.getInputLines();
     const lineCount = inputLines.length;
@@ -16344,6 +16143,7 @@ var TerminalUI = class {
         this.setupScrollRegion();
         this.drawInputBox();
         this.drawStatusBar();
+        this.positionCursor();
         this.handleSubmit(input);
       }
       return;
@@ -16540,6 +16340,9 @@ var TerminalUI = class {
         this.redrawContent();
         this.printSystem(this.project ? `Session cleared (project: ${this.project.name})` : "Session cleared");
         break;
+      case "/mix":
+        this.printInfo(buildMixOverview(this.session, this.project));
+        break;
       case "/status":
         this.showStatus();
         break;
@@ -16662,6 +16465,7 @@ Say "load the 808 kit" or use load_kit tool.`;
   async runAgent(input) {
     this.isProcessing = true;
     this.drawInputBox();
+    this.positionCursor();
     let currentProject = this.project;
     let renderInfo = null;
     try {

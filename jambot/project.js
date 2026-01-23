@@ -330,6 +330,8 @@ export function restoreSession(project) {
 
 import { copyFileSync } from 'fs';
 import {
+  generateJB01Midi,
+  generateJB200Midi,
   generateDrumsMidi,
   generateBassMidi,
   generateLeadMidi,
@@ -340,7 +342,7 @@ import {
 // Generate README.md content for export
 function generateReadme(project, session) {
   const lines = [];
-  const { hasDrums, hasBass, hasLead } = hasContent(session);
+  const { hasJB01, hasJB200, hasR9D9, hasR3D3, hasR1D1 } = hasContent(session);
 
   lines.push(`# ${project.name}`);
   lines.push('');
@@ -358,24 +360,47 @@ function generateReadme(project, session) {
   lines.push('## Instruments');
   lines.push('');
 
-  // R9D9 Drums
-  lines.push('### R9D9 (Drums)');
-  if (hasDrums) {
-    const drumPattern = session.drumPattern || {};
+  // JB01 Drums
+  lines.push('### JB01 (Drums)');
+  if (hasJB01) {
+    const drumPattern = session.jb01Pattern || session.drumPattern || {};
     for (const [voice, pattern] of Object.entries(drumPattern)) {
-      const steps = pattern
+      const steps = (pattern || [])
         .map((s, i) => s?.velocity > 0 ? i : null)
         .filter(i => i !== null);
       if (steps.length > 0) {
         lines.push(`- ${voice}: steps ${steps.join(', ')}`);
       }
     }
-    // Drum params
-    const drumParams = session.drumParams || {};
-    for (const [voice, params] of Object.entries(drumParams)) {
-      const tweaks = Object.entries(params).map(([k, v]) => `${k}=${v}`).join(', ');
-      if (tweaks) {
-        lines.push(`- ${voice} tweaks: ${tweaks}`);
+  } else {
+    lines.push('- (not used)');
+  }
+  lines.push('');
+
+  // JB200 Bass
+  lines.push('### JB200 (Bass)');
+  if (hasJB200) {
+    const bassPattern = session.jb200Pattern || [];
+    const activeNotes = bassPattern.filter(s => s?.gate);
+    const notes = activeNotes.map(s => s.note);
+    const uniqueNotes = [...new Set(notes)];
+    lines.push(`- ${activeNotes.length} notes`);
+    lines.push(`- Notes used: ${uniqueNotes.join(', ')}`);
+  } else {
+    lines.push('- (not used)');
+  }
+  lines.push('');
+
+  // R9D9 Drums
+  lines.push('### R9D9 (TR-909 Drums)');
+  if (hasR9D9) {
+    const drumPattern = session._nodes?.r9d9?.getPattern?.() || {};
+    for (const [voice, pattern] of Object.entries(drumPattern)) {
+      const steps = (pattern || [])
+        .map((s, i) => s?.velocity > 0 ? i : null)
+        .filter(i => i !== null);
+      if (steps.length > 0) {
+        lines.push(`- ${voice}: steps ${steps.join(', ')}`);
       }
     }
   } else {
@@ -384,44 +409,28 @@ function generateReadme(project, session) {
   lines.push('');
 
   // R3D3 Bass
-  lines.push('### R3D3 (Bass)');
-  if (hasBass) {
-    const bassPattern = session.bassPattern || [];
+  lines.push('### R3D3 (TB-303 Bass)');
+  if (hasR3D3) {
+    const bassPattern = session._nodes?.r3d3?.getPattern?.() || [];
     const activeNotes = bassPattern.filter(s => s?.gate);
     const notes = activeNotes.map(s => s.note);
     const uniqueNotes = [...new Set(notes)];
     lines.push(`- ${activeNotes.length} notes`);
     lines.push(`- Notes used: ${uniqueNotes.join(', ')}`);
-    // Bass params
-    const bassParams = session.bassParams || {};
-    const paramStr = Object.entries(bassParams)
-      .map(([k, v]) => `${k}=${v}`)
-      .join(', ');
-    if (paramStr) {
-      lines.push(`- Settings: ${paramStr}`);
-    }
   } else {
     lines.push('- (not used)');
   }
   lines.push('');
 
   // R1D1 Lead
-  lines.push('### R1D1 (Lead)');
-  if (hasLead) {
-    const leadPattern = session.leadPattern || [];
+  lines.push('### R1D1 (SH-101 Lead)');
+  if (hasR1D1) {
+    const leadPattern = session._nodes?.r1d1?.getPattern?.() || [];
     const activeNotes = leadPattern.filter(s => s?.gate);
     const notes = activeNotes.map(s => s.note);
     const uniqueNotes = [...new Set(notes)];
     lines.push(`- ${activeNotes.length} notes`);
     lines.push(`- Notes used: ${uniqueNotes.join(', ')}`);
-    // Lead params
-    const leadParams = session.leadParams || {};
-    const paramStr = Object.entries(leadParams)
-      .map(([k, v]) => `${k}=${v}`)
-      .join(', ');
-    if (paramStr) {
-      lines.push(`- Settings: ${paramStr}`);
-    }
   } else {
     lines.push('- (not used)');
   }
@@ -439,9 +448,11 @@ function generateReadme(project, session) {
   // Files
   lines.push('## Files');
   lines.push(`- \`${project.name}.mid\` — Full arrangement (import into any DAW)`);
-  if (hasDrums) lines.push('- `drums.mid` — Drum pattern only');
-  if (hasBass) lines.push('- `bass.mid` — Bass pattern only');
-  if (hasLead) lines.push('- `lead.mid` — Lead pattern only');
+  if (hasJB01) lines.push('- `jb01-drums.mid` — JB01 drum pattern');
+  if (hasJB200) lines.push('- `jb200-bass.mid` — JB200 bass pattern');
+  if (hasR9D9) lines.push('- `r9d9-drums.mid` — R9D9 (909) drum pattern');
+  if (hasR3D3) lines.push('- `r3d3-bass.mid` — R3D3 (303) bass pattern');
+  if (hasR1D1) lines.push('- `r1d1-lead.mid` — R1D1 (101) lead pattern');
   lines.push('- `latest.wav` — Rendered mix');
   lines.push('');
 
@@ -458,7 +469,7 @@ export function exportProject(project, session) {
     mkdirSync(exportPath, { recursive: true });
   }
 
-  const { hasDrums, hasBass, hasLead, any } = hasContent(session);
+  const { hasJB01, hasJB200, hasR9D9, hasR3D3, hasR1D1, any } = hasContent(session);
   const files = [];
 
   // Generate README
@@ -476,22 +487,39 @@ export function exportProject(project, session) {
     files.push(`${project.name}.mid`);
   }
 
-  if (hasDrums) {
-    const drumsMidiPath = join(exportPath, 'drums.mid');
+  // JB01 drums
+  if (hasJB01) {
+    const jb01MidiPath = join(exportPath, 'jb01-drums.mid');
+    generateJB01Midi(exportSession, jb01MidiPath);
+    files.push('jb01-drums.mid');
+  }
+
+  // JB200 bass
+  if (hasJB200) {
+    const jb200MidiPath = join(exportPath, 'jb200-bass.mid');
+    generateJB200Midi(exportSession, jb200MidiPath);
+    files.push('jb200-bass.mid');
+  }
+
+  // R9D9 drums (909)
+  if (hasR9D9) {
+    const drumsMidiPath = join(exportPath, 'r9d9-drums.mid');
     generateDrumsMidi(exportSession, drumsMidiPath);
-    files.push('drums.mid');
+    files.push('r9d9-drums.mid');
   }
 
-  if (hasBass) {
-    const bassMidiPath = join(exportPath, 'bass.mid');
+  // R3D3 bass (303)
+  if (hasR3D3) {
+    const bassMidiPath = join(exportPath, 'r3d3-bass.mid');
     generateBassMidi(exportSession, bassMidiPath);
-    files.push('bass.mid');
+    files.push('r3d3-bass.mid');
   }
 
-  if (hasLead) {
-    const leadMidiPath = join(exportPath, 'lead.mid');
+  // R1D1 lead (101)
+  if (hasR1D1) {
+    const leadMidiPath = join(exportPath, 'r1d1-lead.mid');
     generateLeadMidi(exportSession, leadMidiPath);
-    files.push('lead.mid');
+    files.push('r1d1-lead.mid');
   }
 
   // Copy latest render

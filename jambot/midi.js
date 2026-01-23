@@ -232,7 +232,53 @@ function melodicPatternToMidi(pattern, channel = 0, bars = 2, ppq = 96) {
 
 // === PUBLIC API ===
 
-// Generate drums MIDI file
+// Generate JB01 drums MIDI file
+export function generateJB01Midi(session, outputPath) {
+  const bars = session.bars || 2;
+  const ppq = 96;
+
+  // Get JB01 pattern (session.jb01Pattern or session.drumPattern both work)
+  const pattern = session.jb01Pattern || session.drumPattern || {};
+
+  const trackEvents = [
+    ...trackNameEvent('JB01 Drums'),
+    ...tempoEvent(session.bpm),
+    ...drumPatternToMidi(pattern, bars, ppq),
+  ];
+
+  const midiData = [
+    ...generateHeader(0, 1, ppq),
+    ...generateTrack(trackEvents),
+  ];
+
+  writeFileSync(outputPath, Buffer.from(midiData));
+  return outputPath;
+}
+
+// Generate JB200 bass MIDI file
+export function generateJB200Midi(session, outputPath) {
+  const bars = session.bars || 2;
+  const ppq = 96;
+
+  // Get JB200 pattern (session.jb200Pattern or session.bassPattern both work)
+  const pattern = session.jb200Pattern || session.bassPattern || [];
+
+  const trackEvents = [
+    ...trackNameEvent('JB200 Bass'),
+    ...tempoEvent(session.bpm),
+    ...melodicPatternToMidi(pattern, 0, bars, ppq),
+  ];
+
+  const midiData = [
+    ...generateHeader(0, 1, ppq),
+    ...generateTrack(trackEvents),
+  ];
+
+  writeFileSync(outputPath, Buffer.from(midiData));
+  return outputPath;
+}
+
+// Generate drums MIDI file (legacy - uses session.drumPattern which points to JB01)
 export function generateDrumsMidi(session, outputPath) {
   const bars = session.bars || 2;
   const ppq = 96;
@@ -303,30 +349,48 @@ export function generateFullMidi(session, outputPath) {
     ...tempoEvent(session.bpm),
   ];
 
-  // Track 1: Drums (channel 10)
-  const drumTrack = [
+  // Track 1: JB01 Drums (channel 10)
+  const jb01Track = [
+    ...trackNameEvent('JB01 Drums'),
+    ...drumPatternToMidi(session.jb01Pattern || session.drumPattern || {}, bars, ppq),
+  ];
+
+  // Track 2: JB200 Bass (channel 1)
+  const jb200Track = [
+    ...trackNameEvent('JB200 Bass'),
+    ...melodicPatternToMidi(session.jb200Pattern || [], 0, bars, ppq),
+  ];
+
+  // Track 3: R9D9 Drums (channel 10 - shares with JB01)
+  // Get R9D9 pattern from the node directly if available
+  const r9d9Pattern = session._nodes?.r9d9?.getPattern?.() || {};
+  const r9d9Track = [
     ...trackNameEvent('R9D9 Drums'),
-    ...drumPatternToMidi(session.drumPattern || {}, bars, ppq),
+    ...drumPatternToMidi(r9d9Pattern, bars, ppq),
   ];
 
-  // Track 2: Bass (channel 1)
-  const bassTrack = [
+  // Track 4: R3D3 Bass (channel 2)
+  const r3d3Pattern = session._nodes?.r3d3?.getPattern?.() || [];
+  const r3d3Track = [
     ...trackNameEvent('R3D3 Bass'),
-    ...melodicPatternToMidi(session.bassPattern || [], 0, bars, ppq),
+    ...melodicPatternToMidi(r3d3Pattern, 1, bars, ppq),
   ];
 
-  // Track 3: Lead (channel 2)
-  const leadTrack = [
+  // Track 5: R1D1 Lead (channel 3)
+  const r1d1Pattern = session._nodes?.r1d1?.getPattern?.() || [];
+  const r1d1Track = [
     ...trackNameEvent('R1D1 Lead'),
-    ...melodicPatternToMidi(session.leadPattern || [], 1, bars, ppq),
+    ...melodicPatternToMidi(r1d1Pattern, 2, bars, ppq),
   ];
 
   const midiData = [
-    ...generateHeader(1, 4, ppq), // Format 1, 4 tracks
+    ...generateHeader(1, 6, ppq), // Format 1, 6 tracks (tempo + 5 instruments)
     ...generateTrack(tempoTrack),
-    ...generateTrack(drumTrack),
-    ...generateTrack(bassTrack),
-    ...generateTrack(leadTrack),
+    ...generateTrack(jb01Track),
+    ...generateTrack(jb200Track),
+    ...generateTrack(r9d9Track),
+    ...generateTrack(r3d3Track),
+    ...generateTrack(r1d1Track),
   ];
 
   writeFileSync(outputPath, Buffer.from(midiData));
@@ -335,8 +399,38 @@ export function generateFullMidi(session, outputPath) {
 
 // Check if pattern has any content
 export function hasContent(session) {
-  const hasDrums = Object.keys(session.drumPattern || {}).length > 0;
-  const hasBass = (session.bassPattern || []).some(s => s?.gate);
-  const hasLead = (session.leadPattern || []).some(s => s?.gate);
-  return { hasDrums, hasBass, hasLead, any: hasDrums || hasBass || hasLead };
+  // JB01 drums - check if any voice has hits
+  const jb01Pattern = session.jb01Pattern || session.drumPattern || {};
+  const hasJB01 = Object.values(jb01Pattern).some(voice =>
+    Array.isArray(voice) && voice.some(step => step?.velocity > 0)
+  );
+
+  // JB200 bass
+  const jb200Pattern = session.jb200Pattern || [];
+  const hasJB200 = Array.isArray(jb200Pattern) && jb200Pattern.some(s => s?.gate);
+
+  // R9D9 drums
+  const r9d9Pattern = session._nodes?.r9d9?.getPattern?.() || {};
+  const hasR9D9 = Object.values(r9d9Pattern).some(voice =>
+    Array.isArray(voice) && voice.some(step => step?.velocity > 0)
+  );
+
+  // R3D3 bass
+  const r3d3Pattern = session._nodes?.r3d3?.getPattern?.() || [];
+  const hasR3D3 = Array.isArray(r3d3Pattern) && r3d3Pattern.some(s => s?.gate);
+
+  // R1D1 lead
+  const r1d1Pattern = session._nodes?.r1d1?.getPattern?.() || [];
+  const hasR1D1 = Array.isArray(r1d1Pattern) && r1d1Pattern.some(s => s?.gate);
+
+  // Legacy aliases (for backwards compatibility)
+  const hasDrums = hasJB01;
+  const hasBass = hasJB200;
+  const hasLead = hasR1D1;
+
+  return {
+    hasJB01, hasJB200, hasR9D9, hasR3D3, hasR1D1,
+    hasDrums, hasBass, hasLead,  // Legacy
+    any: hasJB01 || hasJB200 || hasR9D9 || hasR3D3 || hasR1D1,
+  };
 }

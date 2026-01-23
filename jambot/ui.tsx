@@ -20,6 +20,7 @@ import {
   getApiKey,
   saveApiKey,
   getApiKeyPath,
+  buildMixOverview,
 } from './jambot.js';
 import { getAvailableKits, getKitPaths } from './kit-loader.js';
 import {
@@ -650,6 +651,10 @@ function App() {
         } else {
           addMessage('system', 'Session cleared');
         }
+        break;
+
+      case '/mix':
+        addMessage('info', buildMixOverview(session, project));
         break;
 
       case '/status':

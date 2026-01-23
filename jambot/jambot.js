@@ -149,6 +149,7 @@ export const SLASH_COMMANDS = [
   { name: '/new', description: 'Start a new project' },
   { name: '/open', description: 'Open an existing project' },
   { name: '/projects', description: 'List all projects' },
+  { name: '/mix', description: 'Show mix overview (instruments, tweaks, effects)' },
   { name: '/r9d9', description: 'R9D9 drum machine guide' },
   { name: '/r3d3', description: 'R3D3 acid bass guide' },
   { name: '/r1d1', description: 'R1D1 lead synth guide' },
@@ -162,6 +163,183 @@ export const SLASH_COMMANDS = [
   { name: '/exit', description: 'Quit Jambot' },
 ];
 
+// === MIX OVERVIEW ===
+// Builds a human-readable summary of the current mix state
+import { JB01_PARAMS, JB200_PARAMS, fromEngine } from './params/converters.js';
+
+export function buildMixOverview(session, project = null) {
+  const lines = [];
+
+  // Header: project name + session info
+  const projectName = project?.name || '(unsaved)';
+  const swingStr = session.swing > 0 ? `, ${session.swing}% swing` : '';
+  lines.push(`${projectName} — ${session.bpm} BPM${swingStr}, ${session.bars || 2} bars`);
+  lines.push('');
+
+  // Active instruments
+  const active = [];
+
+  // JB01 drums
+  const jb01Pattern = session.jb01Pattern || session.drumPattern || {};
+  const jb01Voices = Object.entries(jb01Pattern)
+    .filter(([_, pattern]) => Array.isArray(pattern) && pattern.some(s => s?.velocity > 0))
+    .map(([voice]) => voice);
+  if (jb01Voices.length > 0) {
+    active.push(`jb01: ${jb01Voices.join(' ')} (${jb01Voices.length} voices)`);
+  }
+
+  // JB200 bass
+  const jb200Pattern = session.jb200Pattern || [];
+  const jb200Notes = jb200Pattern.filter(s => s?.gate);
+  if (jb200Notes.length > 0) {
+    const noteNames = [...new Set(jb200Notes.map(s => s.note))];
+    const range = noteNames.length > 1 ? `${noteNames[0]}-${noteNames[noteNames.length - 1]}` : noteNames[0];
+    active.push(`jb200: ${jb200Notes.length} notes, ${range}`);
+  }
+
+  // R9D9 drums
+  const r9d9Pattern = session._nodes?.r9d9?.getPattern?.() || {};
+  const r9d9Voices = Object.entries(r9d9Pattern)
+    .filter(([_, pattern]) => Array.isArray(pattern) && pattern.some(s => s?.velocity > 0))
+    .map(([voice]) => voice);
+  if (r9d9Voices.length > 0) {
+    active.push(`r9d9: ${r9d9Voices.join(' ')} (${r9d9Voices.length} voices)`);
+  }
+
+  // R3D3 bass
+  const r3d3Pattern = session._nodes?.r3d3?.getPattern?.() || [];
+  const r3d3Notes = r3d3Pattern.filter(s => s?.gate);
+  if (r3d3Notes.length > 0) {
+    active.push(`r3d3: ${r3d3Notes.length} notes`);
+  }
+
+  // R1D1 lead
+  const r1d1Pattern = session._nodes?.r1d1?.getPattern?.() || [];
+  const r1d1Notes = r1d1Pattern.filter(s => s?.gate);
+  if (r1d1Notes.length > 0) {
+    active.push(`r1d1: ${r1d1Notes.length} notes`);
+  }
+
+  // Sampler
+  const samplerPattern = session.samplerPattern || {};
+  const samplerSlots = Object.entries(samplerPattern)
+    .filter(([_, pattern]) => Array.isArray(pattern) && pattern.some(s => s?.velocity > 0))
+    .map(([slot]) => slot);
+  if (samplerSlots.length > 0) {
+    active.push(`sampler: ${samplerSlots.join(' ')} (${samplerSlots.length} slots)`);
+  }
+
+  if (active.length > 0) {
+    lines.push('ACTIVE:');
+    active.forEach(a => lines.push(`  ${a}`));
+    lines.push('');
+  } else {
+    lines.push('ACTIVE: (none)');
+    lines.push('');
+  }
+
+  // Non-default tweaks
+  const tweaks = [];
+
+  // JB01 tweaks - check each active voice
+  if (jb01Voices.length > 0 && session._nodes?.jb01) {
+    const node = session._nodes.jb01;
+    for (const voice of jb01Voices) {
+      const voiceParams = JB01_PARAMS[voice];
+      if (!voiceParams) continue;
+
+      const nonDefault = [];
+      for (const [param, def] of Object.entries(voiceParams)) {
+        const path = `${voice}.${param}`;
+        const engineVal = node.getParam(path);
+        if (engineVal === undefined) continue;
+
+        // Convert to producer units and compare to default
+        const producerVal = fromEngine(engineVal, def);
+        if (Math.abs(producerVal - def.default) > 0.5) {
+          // Format nicely
+          if (def.unit === 'dB' && producerVal !== 0) {
+            nonDefault.push(`${param} ${producerVal > 0 ? '+' : ''}${Math.round(producerVal)}dB`);
+          } else if (def.unit === 'semitones' && producerVal !== 0) {
+            nonDefault.push(`${param} ${producerVal > 0 ? '+' : ''}${Math.round(producerVal)}`);
+          } else if (def.unit === '0-100') {
+            nonDefault.push(`${param} ${Math.round(producerVal)}`);
+          }
+        }
+      }
+      if (nonDefault.length > 0) {
+        tweaks.push(`jb01.${voice}: ${nonDefault.join(', ')}`);
+      }
+    }
+  }
+
+  // JB200 tweaks
+  if (jb200Notes.length > 0 && session._nodes?.jb200 && JB200_PARAMS?.bass) {
+    const node = session._nodes.jb200;
+    const nonDefault = [];
+    for (const [param, def] of Object.entries(JB200_PARAMS.bass)) {
+      const path = `bass.${param}`;
+      const engineVal = node.getParam(path);
+      if (engineVal === undefined) continue;
+
+      const producerVal = fromEngine(engineVal, def);
+      if (Math.abs(producerVal - def.default) > 0.5) {
+        if (def.unit === 'Hz') {
+          nonDefault.push(`${param} ${Math.round(producerVal)}Hz`);
+        } else if (def.unit === 'dB' && producerVal !== 0) {
+          nonDefault.push(`${param} ${producerVal > 0 ? '+' : ''}${Math.round(producerVal)}dB`);
+        } else if (def.unit === '0-100') {
+          nonDefault.push(`${param} ${Math.round(producerVal)}%`);
+        }
+      }
+    }
+    if (nonDefault.length > 0) {
+      tweaks.push(`jb200: ${nonDefault.join(', ')}`);
+    }
+  }
+
+  if (tweaks.length > 0) {
+    lines.push('TWEAKS:');
+    tweaks.forEach(t => lines.push(`  ${t}`));
+    lines.push('');
+  }
+
+  // Effects
+  const effects = [];
+  const effectChains = session.mixer?.effectChains || {};
+  for (const [target, chain] of Object.entries(effectChains)) {
+    if (Array.isArray(chain) && chain.length > 0) {
+      const fxList = chain.map(fx => {
+        const mode = fx.params?.mode ? ` (${fx.params.mode})` : '';
+        return `${fx.type}${mode}`;
+      }).join(' → ');
+      effects.push(`${target}: ${fxList}`);
+    }
+  }
+
+  if (effects.length > 0) {
+    lines.push('EFFECTS:');
+    effects.forEach(e => lines.push(`  ${e}`));
+    lines.push('');
+  }
+
+  // Levels (only show non-zero)
+  const levels = [];
+  const instruments = ['jb01', 'jb200', 'r9d9', 'r3d3', 'r1d1', 'sampler'];
+  for (const inst of instruments) {
+    const level = session[`${inst}Level`];
+    if (level !== undefined && level !== 0) {
+      levels.push(`${inst} ${level > 0 ? '+' : ''}${level}dB`);
+    }
+  }
+
+  if (levels.length > 0) {
+    lines.push('LEVELS:');
+    lines.push(`  ${levels.join(' | ')}`);
+  }
+
+  return lines.join('\n');
+}
 
 // === SESSION STATE CONTEXT ===
 // Builds a summary of current session state for the agent

@@ -18,6 +18,7 @@ import {
   getApiKey,
   saveApiKey,
   getApiKeyPath,
+  buildMixOverview,
 } from './jambot.js';
 import { getAvailableKits, getKitPaths } from './kit-loader.js';
 import {
@@ -788,6 +789,7 @@ class TerminalUI {
         this.printSystem(this.project ? `Session cleared (project: ${this.project.name})` : 'Session cleared');
         break;
 
+      case '/mix': this.printInfo(buildMixOverview(this.session, this.project)); break;
       case '/status': this.showStatus(); break;
       case '/help': this.printInfo(HELP_TEXT); break;
       case '/changelog': this.printInfo(CHANGELOG_TEXT); break;
