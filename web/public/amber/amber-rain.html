@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMBER RAIN — Catch the falling light</title>
+    <meta name="description" content="Catch falling amber drops before they hit the ground. A fast-paced collecting game.">
+    
+    <meta property="og:title" content="AMBER RAIN">
+    <meta property="og:description" content="Catch falling amber drops before they hit the ground">
+    <meta property="og:image" content="https://intheamber.com/amber/amber-rain-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/amber-rain.html">
+    <meta property="og:type" content="website">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AMBER RAIN">
+    <meta name="twitter:description" content="Catch falling amber drops before they hit the ground">
+    <meta name="twitter:image" content="https://intheamber.com/amber/amber-rain-og.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+        
+        #game {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            cursor: none;
+        }
+        
+        #hud {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        #score {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FFD700;
+        }
+        
+        #lives {
+            font-size: 18px;
+            color: #2D9596;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .heart {
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+        
+        .heart.lost {
+            opacity: 0.2;
+        }
+        
+        .drop {
+            position: absolute;
+            width: 20px;
+            height: 28px;
+            background: radial-gradient(ellipse at 50% 40%, #FFD700, #D4A574);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: 0 0 10px rgba(212, 165, 116, 0.6);
+            pointer-events: none;
+        }
+        
+        #basket {
+            position: absolute;
+            bottom: 40px;
+            width: 80px;
+            height: 60px;
+            pointer-events: none;
+            transition: left 0.05s linear;
+        }
+        
+        #basket::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to top, #2D9596, rgba(45, 149, 150, 0.5));
+            border-radius: 8px 8px 20px 20px;
+            border: 2px solid #2D9596;
+        }
+        
+        #basket::after {
+            content: '';
+            position: absolute;
+            bottom: 35px;
+            left: -5px;
+            right: -5px;
+            height: 3px;
+            background: #2D9596;
+            border-radius: 2px;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #FFD700;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        #start-screen, #game-over-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            gap: 20px;
+        }
+        
+        #game-over-screen {
+            display: none;
+        }
+        
+        h1 {
+            font-size: 48px;
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #D4A574;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            background: #2D9596;
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #FFD700;
+            transform: scale(1.05);
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        #final-score {
+            font-size: 32px;
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+        
+        .instructions {
+            font-size: 14px;
+            color: #D4A574;
+            text-align: center;
+            max-width: 300px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <h1>AMBER RAIN</h1>
+        <div class="subtitle">Catch the falling light</div>
+        <div class="instructions">
+            Move left and right to catch amber drops.<br>
+            Don't let them hit the ground.<br>
+            Three lives. How many can you catch?
+        </div>
+        <button id="start-btn">START</button>
+    </div>
+    
+    <div id="game-over-screen">
+        <h1>GAME OVER</h1>
+        <div id="final-score"></div>
+        <button id="restart-btn">PLAY AGAIN</button>
+    </div>
+    
+    <div id="game">
+        <div id="hud">
+            <div id="score">0</div>
+            <div id="lives">
+                <span class="heart">♥</span>
+                <span class="heart">♥</span>
+                <span class="heart">♥</span>
+            </div>
+        </div>
+        <div id="basket"></div>
+    </div>
+    
+    <script>
+        // Audio context
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(freq, duration, type = 'sine') {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = freq;
+            osc.type = type;
+            
+            gain.gain.value = 0.15;
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        function playCatch() {
+            playSound(800, 0.1);
+            setTimeout(() => playSound(1200, 0.1), 50);
+        }
+
+        function playMiss() {
+            playSound(120, 0.3, 'sawtooth');
+        }
+        
+        function playGameOver() {
+            playSound(200, 0.2);
+            setTimeout(() => playSound(150, 0.3), 200);
+            setTimeout(() => playSound(100, 0.5), 500);
+        }
+        
+        // Game state
+        let score = 0;
+        let lives = 3;
+        let gameActive = false;
+        let drops = [];
+        let basketX = window.innerWidth / 2 - 40;
+        let spawnRate = 1000;
+        let dropSpeed = 2;
+        let lastSpawn = 0;
+        
+        const basket = document.getElementById('basket');
+        const scoreEl = document.getElementById('score');
+        const livesEl = document.getElementById('lives');
+        const hearts = document.querySelectorAll('.heart');
+        
+        // Input handling
+        let mouseX = window.innerWidth / 2;
+        let touchX = window.innerWidth / 2;
+        
+        document.addEventListener('mousemove', (e) => {
+            if (gameActive) {
+                mouseX = e.clientX;
+            }
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (gameActive) {
+                touchX = e.touches[0].clientX;
+            }
+        });
+        
+        document.addEventListener('touchstart', (e) => {
+            if (gameActive) {
+                touchX = e.touches[0].clientX;
+            }
+        });
+        
+        // Particle effect
+        function createParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                document.getElementById('game').appendChild(particle);
+                
+                const angle = (Math.PI * 2 * i) / 8;
+                const velocity = 2 + Math.random() * 2;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity - 2;
+                
+                let px = x;
+                let py = y;
+                let life = 1;
+                
+                const animate = () => {
+                    px += vx;
+                    py += vy;
+                    life -= 0.02;
+                    
+                    particle.style.left = px + 'px';
+                    particle.style.top = py + 'px';
+                    particle.style.opacity = life;
+                    
+                    if (life > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        particle.remove();
+                    }
+                };
+                
+                animate();
+            }
+        }
+        
+        // Drop creation
+        function spawnDrop() {
+            const drop = {
+                x: Math.random() * (window.innerWidth - 20),
+                y: -30,
+                element: document.createElement('div')
+            };
+            
+            drop.element.className = 'drop';
+            drop.element.style.left = drop.x + 'px';
+            drop.element.style.top = drop.y + 'px';
+            document.getElementById('game').appendChild(drop.element);
+            
+            drops.push(drop);
+        }
+        
+        // Game loop
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+            
+            // Spawn drops
+            if (timestamp - lastSpawn > spawnRate) {
+                spawnDrop();
+                lastSpawn = timestamp;
+            }
+            
+            // Update basket position
+            const targetX = ('ontouchstart' in window) ? touchX : mouseX;
+            basketX += (targetX - basketX - 40) * 0.2;
+            basketX = Math.max(0, Math.min(window.innerWidth - 80, basketX));
+            basket.style.left = basketX + 'px';
+            
+            // Update drops
+            for (let i = drops.length - 1; i >= 0; i--) {
+                const drop = drops[i];
+                drop.y += dropSpeed;
+                drop.element.style.top = drop.y + 'px';
+                
+                // Check collision with basket
+                if (drop.y > window.innerHeight - 100 && drop.y < window.innerHeight - 40) {
+                    if (drop.x > basketX && drop.x < basketX + 80) {
+                        // Caught!
+                        score++;
+                        scoreEl.textContent = score;
+                        playCatch();
+                        createParticles(drop.x + 10, drop.y + 14);
+                        drop.element.remove();
+                        drops.splice(i, 1);
+                        
+                        // Increase difficulty
+                        if (score % 10 === 0) {
+                            dropSpeed += 0.3;
+                            spawnRate = Math.max(400, spawnRate - 50);
+                        }
+                        continue;
+                    }
+                }
+                
+                // Check if missed
+                if (drop.y > window.innerHeight) {
+                    lives--;
+                    hearts[lives].classList.add('lost');
+                    playMiss();
+                    drop.element.remove();
+                    drops.splice(i, 1);
+                    
+                    if (lives === 0) {
+                        endGame();
+                        return;
+                    }
+                }
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function startGame() {
+            score = 0;
+            lives = 3;
+            drops.forEach(drop => drop.element.remove());
+            drops = [];
+            spawnRate = 1000;
+            dropSpeed = 2;
+            lastSpawn = 0;
+            
+            scoreEl.textContent = score;
+            hearts.forEach(h => h.classList.remove('lost'));
+            
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-over-screen').style.display = 'none';
+            
+            gameActive = true;
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function endGame() {
+            gameActive = false;
+            playGameOver();
+            
+            document.getElementById('final-score').textContent = `SCORE: ${score}`;
+            document.getElementById('game-over-screen').style.display = 'flex';
+        }
+        
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+    </script>
+</body>
+</html>
