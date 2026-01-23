@@ -433,11 +433,12 @@ export class JB200Engine extends SynthEngine {
 
         // Get pattern
         const pattern = this.sequencer.getPattern();
+        const patternLength = pattern.length || 16;
         const totalSteps = bars * 16;
 
-        // Schedule notes
+        // Schedule notes (pattern loops to fill requested bars)
         for (let i = 0; i < totalSteps; i++) {
-            const step = pattern[i % 16];
+            const step = pattern[i % patternLength];
             if (!step.gate) continue;
 
             const time = i * stepDuration;

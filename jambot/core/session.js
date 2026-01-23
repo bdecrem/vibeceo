@@ -18,6 +18,9 @@ import { Clock } from './clock.js';
 import { SamplerNode } from '../instruments/sampler-node.js';
 import { JB200Node } from '../instruments/jb200-node.js';
 import { JB01Node } from '../instruments/jb01-node.js';
+import { TR909Node } from '../instruments/tr909-node.js';
+import { TB303Node } from '../instruments/tb303-node.js';
+import { SH101Node } from '../instruments/sh101-node.js';
 
 /**
  * Create a new session with ParamSystem integration
@@ -35,15 +38,21 @@ export function createSession(config = {}) {
   // Create param system
   const params = new ParamSystem();
 
-  // Create the REAL instruments (only 3)
+  // Create the canonical instruments (6 total)
   const jb01Node = new JB01Node();
   const jb200Node = new JB200Node();
   const samplerNode = new SamplerNode();
+  const tr909Node = new TR909Node();
+  const tb303Node = new TB303Node();
+  const sh101Node = new SH101Node();
 
   // Register instruments with their canonical names
   params.register('jb01', jb01Node);
   params.register('jb200', jb200Node);
   params.register('sampler', samplerNode);
+  params.register('r9d9', tr909Node);
+  params.register('r3d3', tb303Node);
+  params.register('r1d1', sh101Node);
 
   // Register ALIASES (pointers to the same nodes)
   params.register('drums', jb01Node);      // drums → jb01
@@ -70,6 +79,9 @@ export function createSession(config = {}) {
     jb01Level: config.jb01Level ?? 0,
     jb200Level: config.jb200Level ?? 0,
     samplerLevel: config.samplerLevel ?? 0,
+    r9d9Level: config.r9d9Level ?? 0,
+    r3d3Level: config.r3d3Level ?? 0,
+    r1d1Level: config.r1d1Level ?? 0,
 
     // ParamSystem instance
     params,
@@ -79,6 +91,9 @@ export function createSession(config = {}) {
       jb01: jb01Node,
       jb200: jb200Node,
       sampler: samplerNode,
+      r9d9: tr909Node,
+      r3d3: tb303Node,
+      r1d1: sh101Node,
       // Aliases point to same nodes
       drums: jb01Node,
       bass: jb200Node,
@@ -304,24 +319,46 @@ export function createSession(config = {}) {
       masterVolume: 0.8,
     },
 
-    // Song mode
+    // Song mode - patterns stored by canonical instrument ID only
     patterns: {
-      drums: {},
-      bass: {},
-      lead: {},
-      sampler: {},
-      jb200: {},
       jb01: {},
+      jb200: {},
+      sampler: {},
+      r9d9: {},
+      r3d3: {},
+      r1d1: {},
     },
     currentPattern: {
-      drums: 'A',
-      bass: 'A',
-      lead: 'A',
-      sampler: 'A',
-      jb200: 'A',
       jb01: 'A',
+      jb200: 'A',
+      sampler: 'A',
+      r9d9: 'A',
+      r3d3: 'A',
+      r1d1: 'A',
     },
     arrangement: [],
+
+    // === HELPER METHODS FOR GENERIC RENDERING ===
+
+    /**
+     * Get all canonical instrument IDs with their nodes
+     * @returns {Array<{id: string, node: InstrumentNode}>}
+     */
+    getCanonicalInstruments() {
+      return ['jb01', 'jb200', 'sampler', 'r9d9', 'r3d3', 'r1d1']
+        .map(id => ({ id, node: this._nodes[id] }))
+        .filter(({ node }) => node);
+    },
+
+    /**
+     * Get the output level for an instrument in dB
+     * @param {string} id - Canonical instrument ID
+     * @returns {number} Level in dB
+     */
+    getInstrumentLevel(id) {
+      const key = `${id}Level`;
+      return this[key] ?? 0;
+    },
   };
 
   return session;
@@ -339,6 +376,9 @@ export function serializeSession(session) {
     jb01Level: session.jb01Level,
     jb200Level: session.jb200Level,
     samplerLevel: session.samplerLevel,
+    r9d9Level: session.r9d9Level,
+    r3d3Level: session.r3d3Level,
+    r1d1Level: session.r1d1Level,
     params: session.params.serialize(),
     mixer: session.mixer,
     patterns: session.patterns,
@@ -362,6 +402,9 @@ export function deserializeSession(data) {
     jb01Level: data.jb01Level ?? data.drumLevel,
     jb200Level: data.jb200Level ?? data.bassLevel,
     samplerLevel: data.samplerLevel,
+    r9d9Level: data.r9d9Level,
+    r3d3Level: data.r3d3Level,
+    r1d1Level: data.r1d1Level,
   });
 
   if (data.params) {

@@ -503,48 +503,34 @@ tweak({ path: 'jb200.bass.filterCutoff', value: 800 }) → Sets JB200 filter to 
 
 ### Per-Instrument Tools
 
-**Pattern programming tools** (use these for patterns):
+**Pattern programming tools:**
 
-| Tool | Synth | Description |
-|------|-------|-------------|
-| `add_drums` | R9D9 | 11 voices: kick, snare, clap, ch, oh, ltom, mtom, htom, rimshot, crash, ride |
-| `add_bass` | R3D3 | 16-step pattern with note, gate, accent, slide |
-| `add_lead` | R1D1 | 16-step pattern with note, gate, accent, slide |
-| `add_samples` | R9DS | Program sample hits on steps (slot, step, velocity) |
-| `add_jb200` | JB200 | 16-step bass pattern with note, gate, accent, slide |
+| Tool | Instrument | Description |
+|------|------------|-------------|
+| `add_jb01` | JB01 | Drum machine (8 voices: kick, snare, clap, ch, oh, perc, tom, cymbal). Use `bars` param for multi-bar patterns. |
+| `add_jb200` | JB200 | Bass monosynth pattern with note, gate, accent, slide. Use `bars` param for multi-bar patterns. |
 
-**Session and preset tools:**
+**Session tools:**
 
-| Tool | Synth | Description |
-|------|-------|-------------|
-| `create_session` | — | Set BPM (60-200), reset all patterns |
-| `show` | — | Show current state of any instrument |
-| `list_projects` | — | List all saved projects |
-| `open_project` | — | Open a project by name/folder |
-| `rename_project` | — | Rename current project |
-| `list_909_kits` | R9D9 | Show available 909 kits |
-| `load_909_kit` | R9D9 | Load a kit by ID (e.g., "bart-deep") |
-| `set_drum_groove` | R9D9 | Set flam, patternLength, scale, globalAccent |
-| `automate_drums` | R9D9 | Per-step parameter automation |
-| `list_101_presets` | R1D1 | Show available 101 presets |
-| `load_101_preset` | R1D1 | Load a preset by ID |
-| `list_kits` | R9DS | Show available sample kits |
-| `load_kit` | R9DS | Load a kit by ID |
-| `show_sampler` | R9DS | Show current kit and pattern |
-| `list_jb200_kits` | JB200 | Show available sound presets |
-| `load_jb200_kit` | JB200 | Load a kit by ID |
-| `list_jb200_sequences` | JB200 | Show available pattern presets |
-| `load_jb200_sequence` | JB200 | Load a sequence by ID |
-
-**DEPRECATED tweak tools** (use generic `tweak()` instead):
-
-| Tool | Replacement |
+| Tool | Description |
 |------|-------------|
-| ~~`tweak_drums`~~ | `tweak({ path: 'drums.kick.decay', value: 75 })` |
-| ~~`tweak_bass`~~ | `tweak({ path: 'bass.cutoff', value: 2000 })` |
-| ~~`tweak_lead`~~ | `tweak({ path: 'lead.resonance', value: 60 })` |
-| ~~`tweak_samples`~~ | `tweak({ path: 'sampler.s1.level', value: -6 })` |
-| ~~`tweak_jb200`~~ | `tweak({ path: 'jb200.bass.filterCutoff', value: 800 })` |
+| `create_session` | Set BPM (60-200), reset all patterns |
+| `show` | Show current state of any instrument |
+| `render` | Render session to WAV file |
+| `list_projects` | List all saved projects |
+| `open_project` | Open a project by name/folder |
+| `rename_project` | Rename current project |
+
+**Preset tools:**
+
+| Tool | Instrument | Description |
+|------|------------|-------------|
+| `list_jb01_kits` | JB01 | Show available drum kits |
+| `load_jb01_kit` | JB01 | Load a drum kit by ID |
+| `list_jb200_kits` | JB200 | Show available sound presets |
+| `load_jb200_kit` | JB200 | Load a sound preset by ID |
+| `list_jb200_sequences` | JB200 | Show available pattern presets |
+| `load_jb200_sequence` | JB200 | Load a pattern preset by ID |
 
 **Song mode tools:**
 
@@ -735,55 +721,91 @@ session = {
     masterInserts: [{ type: 'eq', preset: 'master' }],
     masterVolume: 0.8,
   },
-  // Song Mode
+  // Song Mode - patterns stored by canonical instrument ID
   patterns: {
-    drums: { 'A': {...}, 'B': {...} },   // Named patterns with full state
-    bass: { 'A': {...}, 'B': {...} },
-    lead: { 'A': {...} },
+    jb01: { 'A': {...}, 'B': {...} },
+    jb200: { 'A': {...}, 'B': {...} },
     sampler: { 'A': {...} },
+    r9d9: { 'A': {...} },
+    r3d3: { 'A': {...} },
+    r1d1: { 'A': {...} },
   },
-  currentPattern: { drums: 'A', bass: 'A', lead: 'A', sampler: 'A' },
+  currentPattern: { jb01: 'A', jb200: 'A', sampler: 'A', r9d9: 'A', r3d3: 'A', r1d1: 'A' },
   arrangement: [
-    { bars: 4, patterns: { drums: 'A', bass: 'A' } },
-    { bars: 8, patterns: { drums: 'B', bass: 'A', lead: 'A' } },
+    { bars: 4, patterns: { jb01: 'A', jb200: 'A' } },
+    { bars: 8, patterns: { jb01: 'B', jb200: 'A', r1d1: 'A' } },
   ],
 }
 ```
 
 ## Song Mode
 
-Song mode enables multi-section arrangements with reusable patterns.
+Song mode enables multi-section arrangements with reusable patterns of any length.
+
+### Variable Pattern Lengths
+
+Each instrument can have its own pattern length:
+- **16 steps = 1 bar** (default)
+- **32 steps = 2 bars**
+- **64 steps = 4 bars**
+- **256 steps = 16 bars**
+- etc.
+
+Short patterns loop to fill their section. Long patterns play through once (or loop if shorter than the section).
+
+**Example:** 1-bar drum loop + 4-bar bass progression
+```javascript
+// Drums: 16 steps (1 bar) - loops 4x over 4 bars
+add_jb01({ kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] })
+
+// Bass: 64 steps (4 bars) - plays once over 4 bars
+add_jb200({ pattern: [
+  // Bar 1: C
+  { note: 'C2', gate: true }, ...rest,
+  // Bar 2: E
+  { note: 'E2', gate: true }, ...rest,
+  // Bar 3: G
+  { note: 'G2', gate: true }, ...rest,
+  // Bar 4: A
+  { note: 'A2', gate: true }, ...rest,
+], bars: 4 })
+
+render({ bars: 4 })  // Drums loop 4x, bass plays once
+```
 
 ### Workflow
 
-1. **Create patterns**: Program drums/bass/lead/sampler as usual
-2. **Save patterns**: `save_pattern(instrument: 'drums', name: 'A')` — saves current state to named slot
+1. **Create patterns**: Program instruments with desired length (use `bars` param for multi-bar patterns)
+2. **Save patterns**: `save_pattern(instrument: 'jb01', name: 'A')` — saves current state to named slot
 3. **Create variations**: Load pattern, modify, save as new name (B, C, etc.)
 4. **Set arrangement**: Define sections with bar counts and pattern assignments
 5. **Render**: Outputs full song with patterns looping within each section
 
 ### How Patterns Loop
 
-Each 16-step pattern loops to fill its section. A 16-step kick pattern playing over 8 bars loops 8 times. This matches hardware behavior (TR-909, MPC) and works musically — a 4-on-floor kick IS a loop.
+Patterns loop to fill their section. A 16-step (1-bar) drum pattern playing over 8 bars loops 8 times. A 64-step (4-bar) bass pattern playing over 8 bars loops twice.
 
 ### Example
 
 ```javascript
-// 1. Create verse pattern
-add_drums({ kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] })
-save_pattern({ instrument: 'drums', name: 'A' })
+// 1. Create drum patterns (16 steps = 1 bar, loops to fill sections)
+add_jb01({ kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] })
+save_pattern({ instrument: 'jb01', name: 'A' })
 
-// 2. Create chorus with more energy
-add_drums({ kick: [0,4,8,12], snare: [4,12], oh: [2,6,10,14] })
-save_pattern({ instrument: 'drums', name: 'B' })
+add_jb01({ kick: [0,4,8,12], snare: [4,12], oh: [2,6,10,14] })
+save_pattern({ instrument: 'jb01', name: 'B' })
 
-// 3. Arrange
+// 2. Create bass pattern (64 steps = 4 bars, different notes each bar)
+add_jb200({ pattern: [...64 steps...], bars: 4 })
+save_pattern({ instrument: 'jb200', name: 'A' })
+
+// 3. Arrange using canonical instrument IDs
 set_arrangement({
   sections: [
-    { bars: 4, drums: 'A', bass: 'A' },           // Intro
-    { bars: 8, drums: 'B', bass: 'A', lead: 'A' }, // Main
-    { bars: 4, drums: 'A' },                       // Breakdown (no bass/lead)
-    { bars: 8, drums: 'B', bass: 'A', lead: 'A' }, // Main
+    { bars: 4, jb01: 'A', jb200: 'A' },   // Intro: drums loop 4x, bass plays once
+    { bars: 8, jb01: 'B', jb200: 'A' },   // Main: drums loop 8x, bass loops 2x
+    { bars: 4, jb01: 'A' },               // Breakdown (no bass)
+    { bars: 8, jb01: 'B', jb200: 'A' },   // Main
   ]
 })
 
