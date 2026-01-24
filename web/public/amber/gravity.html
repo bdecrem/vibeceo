@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>GRAVITY — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    <meta property="og:title" content="GRAVITY — Amber">
+    <meta property="og:description" content="Orbital drum machine. Tap the sun to add voices.">
+    <meta property="og:image" content="https://kochi.to/amber/gravity-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/gravity.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GRAVITY — Amber">
+    <meta name="twitter:description" content="Orbital drum machine. Tap the sun to add voices.">
+    <meta name="twitter:image" content="https://kochi.to/amber/gravity-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Mono', 'Courier New', monospace;
+            background: #000;
+            color: #D4A574;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #title {
+            position: absolute;
+            top: 30px;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            z-index: 10;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+        }
+
+        #subtitle {
+            position: absolute;
+            top: 60px;
+            font-size: 12px;
+            color: rgba(212, 165, 116, 0.6);
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        #canvas {
+            display: block;
+            cursor: pointer;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 50px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #playButton {
+            padding: 16px 40px;
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            background: transparent;
+            color: #D4A574;
+            border: 2px solid #D4A574;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        #playButton:hover {
+            background: #D4A574;
+            color: #000;
+            box-shadow: 0 0 30px rgba(212, 165, 116, 0.6);
+        }
+
+        #playButton.playing {
+            border-color: #2D9596;
+            color: #2D9596;
+        }
+
+        #playButton.playing:hover {
+            background: #2D9596;
+            color: #000;
+        }
+
+        .controlBtn {
+            padding: 12px 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            background: transparent;
+            color: rgba(212, 165, 116, 0.6);
+            border: 1px solid rgba(212, 165, 116, 0.4);
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .controlBtn:hover {
+            color: #D4A574;
+            border-color: #D4A574;
+        }
+
+        #info {
+            position: absolute;
+            bottom: 16px;
+            font-size: 11px;
+            color: rgba(212, 165, 116, 0.5);
+            letter-spacing: 1px;
+        }
+
+        #hint {
+            position: absolute;
+            top: 90px;
+            font-size: 10px;
+            color: rgba(212, 165, 116, 0.4);
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+
+        /* Save Modal */
+        #saveModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #saveModal.visible {
+            display: flex;
+        }
+
+        #saveModal h2 {
+            font-size: 18px;
+            letter-spacing: 3px;
+            margin-bottom: 30px;
+            color: #D4A574;
+        }
+
+        #saveModal input {
+            font-family: 'Space Mono', monospace;
+            font-size: 16px;
+            padding: 12px 20px;
+            background: transparent;
+            border: 2px solid #D4A574;
+            color: #D4A574;
+            width: 280px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #saveModal input:focus {
+            outline: none;
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+        }
+
+        #saveModal input::placeholder {
+            color: rgba(212, 165, 116, 0.4);
+        }
+
+        .modalButtons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .modalBtn {
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            padding: 12px 30px;
+            background: transparent;
+            border: 2px solid #D4A574;
+            color: #D4A574;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .modalBtn:hover {
+            background: #D4A574;
+            color: #000;
+        }
+
+        .modalBtn.cancel {
+            border-color: rgba(212, 165, 116, 0.4);
+            color: rgba(212, 165, 116, 0.4);
+        }
+
+        .shareContainer {
+            margin-top: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .shareContainer.visible {
+            display: flex;
+        }
+
+        #shareUrl {
+            font-size: 11px;
+            color: #2D9596;
+            word-break: break-all;
+            max-width: 240px;
+        }
+
+        #copyBtn {
+            background: transparent;
+            border: 1px solid #2D9596;
+            color: #2D9596;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #copyBtn:hover {
+            background: #2D9596;
+            color: #000;
+        }
+
+        #copyBtn.copied {
+            background: #4ECDC4;
+            border-color: #4ECDC4;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">GRAVITY</div>
+    <div id="subtitle"></div>
+    <div id="hint">tap ☀ to supernova · tap ring to add · drag to move · hold to delete</div>
+    <canvas id="canvas"></canvas>
+    <div id="controls">
+        <button class="controlBtn" id="resetBtn">RESET</button>
+        <button id="playButton">START</button>
+        <button class="controlBtn" id="saveBtn">SAVE</button>
+    </div>
+    <div id="info">120 BPM × TR-909 × <span id="voiceCount">4</span> TRIGGERS</div>
+
+    <div id="saveModal">
+        <h2>NAME YOUR COMPOSITION</h2>
+        <input type="text" id="compositionName" placeholder="untitled orbit" maxlength="30">
+        <div class="modalButtons">
+            <button class="modalBtn cancel" id="cancelSave">CANCEL</button>
+            <button class="modalBtn" id="confirmSave">SAVE</button>
+        </div>
+        <div class="shareContainer" id="shareContainer">
+            <div id="shareUrl"></div>
+            <button id="copyBtn">📋 COPY</button>
+        </div>
+    </div>
+
+    <script type="module">
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const playButton = document.getElementById('playButton');
+        const voiceCountEl = document.getElementById('voiceCount');
+        const subtitleEl = document.getElementById('subtitle');
+        const hintEl = document.getElementById('hint');
+        const saveModal = document.getElementById('saveModal');
+        const compositionNameInput = document.getElementById('compositionName');
+        const cancelSaveBtn = document.getElementById('cancelSave');
+        const confirmSaveBtn = document.getElementById('confirmSave');
+        const shareUrlEl = document.getElementById('shareUrl');
+
+        let width, height, centerX, centerY;
+        let audioContext;
+        let isPlaying = false;
+        let audioStarted = false;
+        let time = 0;
+        let globalRotation = 0;
+
+        const bpm = 120;
+        const beatsPerSecond = bpm / 60;
+        const rotationSpeed = 0.5;
+
+        // ═══════════════════════════════════════════════════════════════
+        // SOUND KITS - 5 completely different sonic universes!
+        // ═══════════════════════════════════════════════════════════════
+
+        const SOUND_KITS = [
+            {
+                name: '909',
+                voices: [
+                    { id: 'rim', color: '#4ECDC4', name: 'RIM' },
+                    { id: 'clap', color: '#FF6B6B', name: 'CLAP' },
+                    { id: 'hat', color: '#7B68EE', name: 'HAT' },
+                    { id: 'tick', color: '#2D9596', name: 'TICK' },
+                    { id: 'snare', color: '#D4A574', name: 'SNR' },
+                    { id: 'kick', color: '#FFD700', name: 'KICK' }
+                ]
+            },
+            {
+                name: 'ARCADE',
+                voices: [
+                    { id: 'coin', color: '#FFD700', name: 'COIN' },
+                    { id: 'jump', color: '#00FF88', name: 'JUMP' },
+                    { id: 'laser', color: '#FF3366', name: 'ZAP' },
+                    { id: 'powerup', color: '#00DDFF', name: 'PWR' },
+                    { id: 'hit', color: '#FF8800', name: 'HIT' },
+                    { id: 'boom', color: '#FF00FF', name: 'BOOM' }
+                ]
+            },
+            {
+                name: 'SPACE',
+                voices: [
+                    { id: 'blip', color: '#00FFFF', name: 'BLIP' },
+                    { id: 'whoosh', color: '#8844FF', name: 'WOSH' },
+                    { id: 'drone', color: '#2244AA', name: 'DRNE' },
+                    { id: 'static', color: '#AAAAAA', name: 'SSTC' },
+                    { id: 'ping', color: '#44FF88', name: 'PING' },
+                    { id: 'bass', color: '#FF4488', name: 'BASS' }
+                ]
+            },
+            {
+                name: 'KITCHEN',
+                voices: [
+                    { id: 'glass', color: '#88DDFF', name: 'GLSS' },
+                    { id: 'pot', color: '#CD7F32', name: 'POT' },
+                    { id: 'knife', color: '#SILVER', name: 'KNFE' },
+                    { id: 'cork', color: '#8B4513', name: 'CORK' },
+                    { id: 'drip', color: '#4488FF', name: 'DRIP' },
+                    { id: 'sizzle', color: '#FF6600', name: 'SIZZ' }
+                ]
+            },
+            {
+                name: 'WEIRD',
+                voices: [
+                    { id: 'glitch', color: '#FF00FF', name: 'GLTC' },
+                    { id: 'voice', color: '#FFAA00', name: 'VOX' },
+                    { id: 'spring', color: '#00FF00', name: 'SPRG' },
+                    { id: 'bubble', color: '#00AAFF', name: 'BUBL' },
+                    { id: 'scratch', color: '#FF4444', name: 'SCRT' },
+                    { id: 'wub', color: '#AA00FF', name: 'WUB' }
+                ]
+            }
+        ];
+
+        let currentKitIndex = 0;
+        let currentKit = SOUND_KITS[0];
+
+        // Voice types derived from current kit
+        function getVoiceTypes() {
+            const radii = [100, 140, 180, 220, 260, 300];
+            return currentKit.voices.map((v, i) => ({
+                voice: v.id,
+                color: v.color,
+                name: v.name,
+                radius: radii[i]
+            }));
+        }
+
+        let voiceTypes = getVoiceTypes();
+
+        // Default triggers - one per voice to start
+        const defaultOrbiters = [
+            { voice: 'kick', angle: -Math.PI / 2 },  // 12 o'clock
+            { voice: 'snare', angle: Math.PI / 2 },   // 6 o'clock
+            { voice: 'hat', angle: 0 },               // 3 o'clock
+            { voice: 'hat', angle: Math.PI },         // 9 o'clock
+        ];
+
+        let orbiters = [];
+
+        // Voice palette in inner ring
+        const PALETTE_RADIUS = 55; // Where voice buttons sit
+        const PALETTE_BUTTON_SIZE = 22; // Touch target size
+
+        // Drag state
+        let draggingIndex = -1;
+        let dragStartPos = null;
+        let didDrag = false;
+        let holdTimeout = null;
+        const DRAG_THRESHOLD = 10; // pixels before it counts as a drag
+        const HOLD_TO_DELETE = 500; // ms to trigger delete
+
+        // Supernova state
+        const SUN_TAP_RADIUS = 25; // Tap target for center sun
+        let supernovaActive = false;
+        let supernovaProgress = 0;
+        let supernovaScatter = []; // Outgoing particles
+        let supernovaIncoming = []; // New orbiters flying in
+
+        function initOrbiters() {
+            orbiters = defaultOrbiters.map(o => {
+                const info = getVoiceInfo(o.voice);
+                return {
+                    voice: o.voice,
+                    angle: o.angle,
+                    radius: info.radius,
+                    color: info.color,
+                    name: info.name,
+                    lastTrigger: -1
+                };
+            });
+            updateVoiceCount();
+        }
+
+        function getVoiceInfo(voiceName) {
+            return voiceTypes.find(v => v.voice === voiceName);
+        }
+
+        function updateVoiceCount() {
+            voiceCountEl.textContent = orbiters.length;
+        }
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            centerX = width / 2;
+            centerY = height / 2;
+        }
+
+        async function initAudio() {
+            if (audioStarted) return;
+            audioContext = new AudioContext();
+            audioStarted = true;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SOUND SYNTHESIZER - creates all the crazy sounds!
+        // ═══════════════════════════════════════════════════════════════
+
+        function playSound(soundId, velocity = 1.0) {
+            if (!audioContext) return;
+            const now = audioContext.currentTime;
+            const vol = velocity * 0.7;
+
+            const synths = {
+                // 909 Kit
+                kick: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+                    gain.gain.setValueAtTime(vol, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.4);
+                },
+                snare: () => {
+                    const noise = audioContext.createBufferSource();
+                    const buffer = audioContext.createBuffer(1, 4096, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < 4096; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const gain = audioContext.createGain();
+                    const filter = audioContext.createBiquadFilter();
+                    filter.type = 'highpass'; filter.frequency.value = 1000;
+                    gain.gain.setValueAtTime(vol * 0.8, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    noise.connect(filter).connect(gain).connect(audioContext.destination);
+                    noise.start(now); noise.stop(now + 0.2);
+                },
+                clap: () => {
+                    for (let i = 0; i < 3; i++) {
+                        const noise = audioContext.createBufferSource();
+                        const buffer = audioContext.createBuffer(1, 2048, audioContext.sampleRate);
+                        const data = buffer.getChannelData(0);
+                        for (let j = 0; j < 2048; j++) data[j] = Math.random() * 2 - 1;
+                        noise.buffer = buffer;
+                        const gain = audioContext.createGain();
+                        const filter = audioContext.createBiquadFilter();
+                        filter.type = 'bandpass'; filter.frequency.value = 1500;
+                        gain.gain.setValueAtTime(vol * 0.5, now + i * 0.01);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.01 + 0.1);
+                        noise.connect(filter).connect(gain).connect(audioContext.destination);
+                        noise.start(now + i * 0.01); noise.stop(now + 0.15);
+                    }
+                },
+                rim: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = 800;
+                    gain.gain.setValueAtTime(vol * 0.6, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.05);
+                },
+                hat: () => {
+                    const noise = audioContext.createBufferSource();
+                    const buffer = audioContext.createBuffer(1, 2048, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < 2048; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const gain = audioContext.createGain();
+                    const filter = audioContext.createBiquadFilter();
+                    filter.type = 'highpass'; filter.frequency.value = 7000;
+                    gain.gain.setValueAtTime(vol * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    noise.connect(filter).connect(gain).connect(audioContext.destination);
+                    noise.start(now); noise.stop(now + 0.08);
+                },
+                tick: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'square';
+                    osc.frequency.value = 1200;
+                    gain.gain.setValueAtTime(vol * 0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.02);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.02);
+                },
+
+                // ARCADE Kit
+                coin: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(988, now);
+                    osc.frequency.setValueAtTime(1319, now + 0.08);
+                    gain.gain.setValueAtTime(vol * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.2);
+                },
+                jump: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+                    gain.gain.setValueAtTime(vol * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.2);
+                },
+                laser: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(1500, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+                    gain.gain.setValueAtTime(vol * 0.35, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.15);
+                },
+                powerup: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.3);
+                    gain.gain.setValueAtTime(vol * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.35);
+                },
+                hit: () => {
+                    const noise = audioContext.createBufferSource();
+                    const buffer = audioContext.createBuffer(1, 2048, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < 2048; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const gain = audioContext.createGain();
+                    gain.gain.setValueAtTime(vol * 0.6, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    noise.connect(gain).connect(audioContext.destination);
+                    noise.start(now); noise.stop(now + 0.05);
+                },
+                boom: () => {
+                    const osc = audioContext.createOscillator();
+                    const noise = audioContext.createBufferSource();
+                    const buffer = audioContext.createBuffer(1, 8192, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < 8192; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const gain1 = audioContext.createGain();
+                    const gain2 = audioContext.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(100, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+                    gain1.gain.setValueAtTime(vol * 0.8, now);
+                    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    gain2.gain.setValueAtTime(vol * 0.5, now);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.connect(gain1).connect(audioContext.destination);
+                    noise.connect(gain2).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.4);
+                    noise.start(now); noise.stop(now + 0.2);
+                },
+
+                // SPACE Kit
+                blip: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 880 + Math.random() * 440;
+                    gain.gain.setValueAtTime(vol * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.1);
+                },
+                whoosh: () => {
+                    const noise = audioContext.createBufferSource();
+                    const buffer = audioContext.createBuffer(1, 8192, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < 8192; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const filter = audioContext.createBiquadFilter();
+                    const gain = audioContext.createGain();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(500, now);
+                    filter.frequency.exponentialRampToValueAtTime(4000, now + 0.2);
+                    gain.gain.setValueAtTime(vol * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    noise.connect(filter).connect(gain).connect(audioContext.destination);
+                    noise.start(now); noise.stop(now + 0.3);
+                },
+                drone: () => {
+                    const osc1 = audioContext.createOscillator();
+                    const osc2 = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc1.type = 'sawtooth'; osc1.frequency.value = 55;
+                    osc2.type = 'sawtooth'; osc2.frequency.value = 55.5;
+                    gain.gain.setValueAtTime(vol * 0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc1.connect(gain); osc2.connect(gain);
+                    gain.connect(audioContext.destination);
+                    osc1.start(now); osc2.start(now);
+                    osc1.stop(now + 0.4); osc2.stop(now + 0.4);
+                },
+                static: () => {
+                    const noise = audioContext.createBufferSource();
+                    const buffer = audioContext.createBuffer(1, 2048, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < 2048; i++) data[i] = (Math.random() > 0.5 ? 1 : -1) * Math.random();
+                    noise.buffer = buffer;
+                    const gain = audioContext.createGain();
+                    gain.gain.setValueAtTime(vol * 0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    noise.connect(gain).connect(audioContext.destination);
+                    noise.start(now); noise.stop(now + 0.1);
+                },
+                ping: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 1760;
+                    gain.gain.setValueAtTime(vol * 0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.5);
+                },
+                bass: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    const filter = audioContext.createBiquadFilter();
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = 55;
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(2000, now);
+                    filter.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                    gain.gain.setValueAtTime(vol * 0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(filter).connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.3);
+                },
+
+                // KITCHEN Kit
+                glass: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 2400 + Math.random() * 400;
+                    gain.gain.setValueAtTime(vol * 0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.6);
+                },
+                pot: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                    gain.gain.setValueAtTime(vol * 0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.5);
+                },
+                knife: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = 3000;
+                    gain.gain.setValueAtTime(vol * 0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.03);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.03);
+                },
+                cork: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.02);
+                    gain.gain.setValueAtTime(vol * 0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.08);
+                },
+                drip: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1800, now);
+                    osc.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+                    gain.gain.setValueAtTime(vol * 0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.15);
+                },
+                sizzle: () => {
+                    const noise = audioContext.createBufferSource();
+                    const buffer = audioContext.createBuffer(1, 8192, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < 8192; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const filter = audioContext.createBiquadFilter();
+                    const gain = audioContext.createGain();
+                    filter.type = 'highpass'; filter.frequency.value = 3000;
+                    gain.gain.setValueAtTime(vol * 0.25, now);
+                    gain.gain.setValueAtTime(vol * 0.3, now + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    noise.connect(filter).connect(gain).connect(audioContext.destination);
+                    noise.start(now); noise.stop(now + 0.3);
+                },
+
+                // WEIRD Kit
+                glitch: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'square';
+                    for (let i = 0; i < 10; i++) {
+                        osc.frequency.setValueAtTime(Math.random() * 2000 + 100, now + i * 0.01);
+                    }
+                    gain.gain.setValueAtTime(vol * 0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.1);
+                },
+                voice: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    const filter = audioContext.createBiquadFilter();
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = 150;
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(600, now);
+                    filter.frequency.setValueAtTime(1000, now + 0.1);
+                    filter.frequency.setValueAtTime(400, now + 0.2);
+                    filter.Q.value = 10;
+                    gain.gain.setValueAtTime(vol * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(filter).connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.3);
+                },
+                spring: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(100, now);
+                    for (let i = 0; i < 20; i++) {
+                        const t = now + i * 0.02;
+                        osc.frequency.setValueAtTime(100 + Math.sin(i * 2) * 50 * (1 - i/20), t);
+                    }
+                    gain.gain.setValueAtTime(vol * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.4);
+                },
+                bubble: () => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                    osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
+                    gain.gain.setValueAtTime(vol * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.connect(gain).connect(audioContext.destination);
+                    osc.start(now); osc.stop(now + 0.15);
+                },
+                scratch: () => {
+                    const noise = audioContext.createBufferSource();
+                    const buffer = audioContext.createBuffer(1, 4096, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < 4096; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    noise.playbackRate.setValueAtTime(0.5, now);
+                    noise.playbackRate.linearRampToValueAtTime(2, now + 0.1);
+                    const gain = audioContext.createGain();
+                    gain.gain.setValueAtTime(vol * 0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    noise.connect(gain).connect(audioContext.destination);
+                    noise.start(now); noise.stop(now + 0.15);
+                },
+                wub: () => {
+                    const osc = audioContext.createOscillator();
+                    const lfo = audioContext.createOscillator();
+                    const lfoGain = audioContext.createGain();
+                    const gain = audioContext.createGain();
+                    const filter = audioContext.createBiquadFilter();
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = 55;
+                    lfo.frequency.value = 8;
+                    lfoGain.gain.value = 500;
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 800;
+                    lfo.connect(lfoGain).connect(filter.frequency);
+                    gain.gain.setValueAtTime(vol * 0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(filter).connect(gain).connect(audioContext.destination);
+                    osc.start(now); lfo.start(now);
+                    osc.stop(now + 0.3); lfo.stop(now + 0.3);
+                }
+            };
+
+            if (synths[soundId]) synths[soundId]();
+        }
+
+        function addOrbiter(voiceName) {
+            const info = getVoiceInfo(voiceName);
+            if (!info) return;
+
+            // Add new trigger at 12 o'clock on the voice's fixed orbit
+            orbiters.push({
+                voice: voiceName,
+                radius: info.radius,
+                angle: -Math.PI / 2, // 12 o'clock - where triggers fire
+                color: info.color,
+                name: info.name,
+                lastTrigger: -1,
+                isNew: true // For spawn animation
+            });
+
+            updateVoiceCount();
+
+            // Trigger the sound as feedback
+            if (audioStarted) {
+                playSound(voiceName, 0.8);
+            }
+        }
+
+        function removeOrbiter(index) {
+            // Can remove any trigger
+            orbiters.splice(index, 1);
+            updateVoiceCount();
+            return true;
+        }
+
+        function resetOrbiters() {
+            initOrbiters();
+        }
+
+        function triggerSupernova() {
+            if (supernovaActive) return;
+
+            // Play dramatic explosion sound!
+            if (audioStarted) {
+                playSound('boom', 1.0);
+            }
+
+            // Store current orbiters as scatter particles
+            supernovaScatter = orbiters.map(o => ({
+                ...o,
+                currentAngle: o.angle + globalRotation,
+                velocity: 8 + Math.random() * 4,
+                alpha: 1
+            }));
+
+            // SWITCH TO A NEW KIT!
+            let newKitIndex;
+            do {
+                newKitIndex = Math.floor(Math.random() * SOUND_KITS.length);
+            } while (newKitIndex === currentKitIndex && SOUND_KITS.length > 1);
+
+            currentKitIndex = newKitIndex;
+            currentKit = SOUND_KITS[currentKitIndex];
+            voiceTypes = getVoiceTypes();
+
+            // Update subtitle to show new kit
+            subtitleEl.textContent = currentKit.name;
+
+            // Generate new random orbiters with the NEW kit's voices
+            const numOrbiters = 4 + Math.floor(Math.random() * 4); // 4-7 triggers
+            const newOrbiters = [];
+            for (let i = 0; i < numOrbiters; i++) {
+                const voiceType = voiceTypes[Math.floor(Math.random() * voiceTypes.length)];
+                const angle = Math.random() * Math.PI * 2;
+                newOrbiters.push({
+                    voice: voiceType.voice,
+                    radius: voiceType.radius,
+                    angle: angle,
+                    color: voiceType.color,
+                    name: voiceType.name,
+                    lastTrigger: -1
+                });
+            }
+
+            // Set up incoming animation
+            supernovaIncoming = newOrbiters.map((o, i) => ({
+                ...o,
+                delay: i * 0.05, // Stagger arrivals
+                startRadius: 500 + Math.random() * 200,
+                progress: 0
+            }));
+
+            // Clear current orbiters and start animation
+            orbiters = [];
+            supernovaActive = true;
+            supernovaProgress = 0;
+            updateVoiceCount();
+        }
+
+        function getDistance(x1, y1, x2, y2) {
+            return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        }
+
+        function getOrbiterAt(x, y) {
+            const hitRadius = 40; // Larger hit area for mobile
+            for (let i = orbiters.length - 1; i >= 0; i--) {
+                const o = orbiters[i];
+                const ox = centerX + Math.cos(o.angle) * o.radius;
+                const oy = centerY + Math.sin(o.angle) * o.radius;
+                if (getDistance(x, y, ox, oy) < hitRadius) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function getPaletteVoiceAt(x, y) {
+            // Check if tap is on one of the voice buttons in the inner palette
+            for (let i = 0; i < voiceTypes.length; i++) {
+                const angle = (i / voiceTypes.length) * Math.PI * 2 - Math.PI / 2;
+                const vx = centerX + Math.cos(angle) * PALETTE_RADIUS;
+                const vy = centerY + Math.sin(angle) * PALETTE_RADIUS;
+                if (getDistance(x, y, vx, vy) < PALETTE_BUTTON_SIZE) {
+                    return voiceTypes[i].voice;
+                }
+            }
+            return null;
+        }
+
+        function showSaveModal() {
+            isPlaying = false;
+            playButton.textContent = 'START';
+            playButton.classList.remove('playing');
+            saveModal.classList.add('visible');
+            compositionNameInput.value = localStorage.getItem('gravity_last_name') || '';
+            compositionNameInput.focus();
+            document.getElementById('shareContainer').classList.remove('visible');
+            currentShareUrl = '';
+        }
+
+        function hideSaveModal() {
+            saveModal.classList.remove('visible');
+        }
+
+        let currentShareUrl = '';
+
+        async function saveComposition() {
+            const name = compositionNameInput.value.trim() || 'untitled orbit';
+            localStorage.setItem('gravity_last_name', name);
+
+            const data = {
+                name: name,
+                kit: currentKit.name,  // Save the kit!
+                orbiters: orbiters.map(o => ({
+                    voice: o.voice,
+                    angle: o.angle
+                })),
+                bpm: bpm
+            };
+
+            try {
+                const response = await fetch('/api/zad/gravity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    currentShareUrl = `${window.location.origin}/amber/gravity.html?id=${result.id}`;
+                    shareUrlEl.textContent = currentShareUrl;
+                    document.getElementById('shareContainer').classList.add('visible');
+                    document.getElementById('copyBtn').classList.remove('copied');
+                    document.getElementById('copyBtn').textContent = '📋 COPY';
+                }
+            } catch (err) {
+                console.error('Save failed:', err);
+            }
+        }
+
+        function copyShareUrl() {
+            if (!currentShareUrl) return;
+            navigator.clipboard.writeText(currentShareUrl).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.classList.add('copied');
+                btn.textContent = '✓ COPIED';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.textContent = '📋 COPY';
+                }, 2000);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+            });
+        }
+
+        async function loadComposition(id) {
+            try {
+                const response = await fetch(`/api/zad/gravity/${id}`);
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Restore the kit if saved
+                    if (data.kit) {
+                        const kitIndex = SOUND_KITS.findIndex(k => k.name === data.kit);
+                        if (kitIndex >= 0) {
+                            currentKitIndex = kitIndex;
+                            currentKit = SOUND_KITS[kitIndex];
+                            voiceTypes = getVoiceTypes();
+                        }
+                    }
+
+                    orbiters = data.orbiters.map(o => {
+                        const info = getVoiceInfo(o.voice);
+                        if (!info) return null; // Skip if voice doesn't exist in kit
+                        return {
+                            voice: o.voice,
+                            angle: o.angle,
+                            radius: info.radius,
+                            color: info.color,
+                            name: info.name,
+                            lastTrigger: -1
+                        };
+                    }).filter(o => o !== null);
+
+                    updateVoiceCount();
+
+                    subtitleEl.textContent = data.kit ? `${data.kit} — "${data.name}"` : `"${data.name}"`;
+                    hintEl.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Load failed:', err);
+            }
+        }
+
+        // Event handlers
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            }
+            if (e.changedTouches) {
+                return {
+                    x: e.changedTouches[0].clientX - rect.left,
+                    y: e.changedTouches[0].clientY - rect.top
+                };
+            }
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function handlePointerDown(e) {
+            const { x, y } = getPointerPos(e);
+
+            // Check for sun tap (center) - trigger supernova!
+            const distToCenter = getDistance(x, y, centerX, centerY);
+            if (distToCenter < SUN_TAP_RADIUS) {
+                triggerSupernova();
+                return;
+            }
+
+            // Check for palette button tap
+            const paletteVoice = getPaletteVoiceAt(x, y);
+            if (paletteVoice) {
+                addOrbiter(paletteVoice);
+                return;
+            }
+
+            // Check for orbiter - start drag or hold-to-delete
+            const orbiterIndex = getOrbiterAt(x, y);
+            if (orbiterIndex >= 0) {
+                draggingIndex = orbiterIndex;
+                dragStartPos = { x, y };
+                didDrag = false;
+                orbiters[orbiterIndex].dragging = true;
+                orbiters[orbiterIndex].holdStart = Date.now(); // Track hold start for visual feedback
+
+                // Start hold-to-delete timer
+                holdTimeout = setTimeout(() => {
+                    if (draggingIndex >= 0 && !didDrag && orbiters[draggingIndex]) {
+                        // Delete on hold
+                        orbiters[draggingIndex].deleting = true;
+                        orbiters[draggingIndex].holdStart = null;
+                        setTimeout(() => {
+                            const idx = orbiters.findIndex(o => o.deleting);
+                            if (idx >= 0) {
+                                orbiters.splice(idx, 1);
+                                updateVoiceCount();
+                            }
+                            draggingIndex = -1;
+                        }, 150);
+                    }
+                }, HOLD_TO_DELETE);
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (draggingIndex < 0) return;
+
+            const { x, y } = getPointerPos(e);
+
+            // Check if we've moved enough to count as a drag
+            if (dragStartPos) {
+                const dist = getDistance(x, y, dragStartPos.x, dragStartPos.y);
+                if (dist > DRAG_THRESHOLD) {
+                    didDrag = true;
+                    // Cancel hold-to-delete if dragging
+                    if (holdTimeout) {
+                        clearTimeout(holdTimeout);
+                        holdTimeout = null;
+                    }
+                    // Clear hold visual feedback
+                    if (orbiters[draggingIndex]) {
+                        orbiters[draggingIndex].holdStart = null;
+                    }
+                }
+            }
+
+            if (didDrag && orbiters[draggingIndex]) {
+                // Update the orbiter's base angle (subtract globalRotation to get base position)
+                const dx = x - centerX;
+                const dy = y - centerY;
+                const pointerAngle = Math.atan2(dy, dx);
+                orbiters[draggingIndex].angle = pointerAngle - globalRotation;
+
+                // Trigger sound as feedback while dragging near 12 o'clock
+                const normalizedAngle = ((pointerAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+                const atTop = Math.abs(normalizedAngle - Math.PI * 1.5) < 0.15;
+                if (atTop && audioStarted) {
+                    const now = time;
+                    if (now - orbiters[draggingIndex].lastTrigger > 0.2) {
+                        playSound(orbiters[draggingIndex].voice, 0.6);
+                        orbiters[draggingIndex].lastTrigger = now;
+                    }
+                }
+            }
+        }
+
+        function handlePointerUp(e) {
+            // Cancel hold-to-delete timer
+            if (holdTimeout) {
+                clearTimeout(holdTimeout);
+                holdTimeout = null;
+            }
+
+            // End drag if active
+            if (draggingIndex >= 0 && orbiters[draggingIndex]) {
+                orbiters[draggingIndex].dragging = false;
+                orbiters[draggingIndex].holdStart = null;
+            }
+
+            draggingIndex = -1;
+            dragStartPos = null;
+            didDrag = false;
+        }
+
+        canvas.addEventListener('mousedown', handlePointerDown);
+        canvas.addEventListener('mousemove', handlePointerMove);
+        canvas.addEventListener('mouseup', handlePointerUp);
+        canvas.addEventListener('mouseleave', handlePointerUp);
+        canvas.addEventListener('touchstart', handlePointerDown, { passive: true });
+        canvas.addEventListener('touchmove', handlePointerMove, { passive: true });
+        canvas.addEventListener('touchend', handlePointerUp, { passive: true });
+        canvas.addEventListener('touchcancel', handlePointerUp, { passive: true });
+
+        // Button handlers
+        document.getElementById('resetBtn').addEventListener('click', resetOrbiters);
+        document.getElementById('saveBtn').addEventListener('click', showSaveModal);
+
+        cancelSaveBtn.addEventListener('click', hideSaveModal);
+        confirmSaveBtn.addEventListener('click', saveComposition);
+        document.getElementById('copyBtn').addEventListener('click', copyShareUrl);
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Supernova flash and shockwave
+            if (supernovaActive && supernovaProgress < 0.3) {
+                const flashIntensity = 1 - (supernovaProgress / 0.3);
+                // Central flash
+                const flashGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 150);
+                flashGradient.addColorStop(0, `rgba(255, 255, 255, ${flashIntensity * 0.9})`);
+                flashGradient.addColorStop(0.3, `rgba(255, 215, 0, ${flashIntensity * 0.6})`);
+                flashGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                ctx.fillStyle = flashGradient;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 150, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Expanding shockwave ring
+            if (supernovaActive && supernovaProgress < 0.6) {
+                const ringProgress = supernovaProgress / 0.6;
+                const ringRadius = 50 + ringProgress * 400;
+                const ringAlpha = 1 - ringProgress;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, ringRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(255, 215, 0, ${ringAlpha * 0.8})`;
+                ctx.lineWidth = 3 * (1 - ringProgress) + 1;
+                ctx.stroke();
+            }
+
+            // Draw scattering particles (old orbiters flying outward)
+            supernovaScatter.forEach(p => {
+                if (p.alpha <= 0) return;
+                const x = centerX + Math.cos(p.currentAngle) * (p.radius + p.velocity * supernovaProgress * 60);
+                const y = centerY + Math.sin(p.currentAngle) * (p.radius + p.velocity * supernovaProgress * 60);
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(x, y, 8 * p.alpha, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+
+            // Draw center sun (pulsing to show it's tappable)
+            const sunPulse = 1 + Math.sin(Date.now() / 500) * 0.15;
+            const sunSize = supernovaActive ? 2 : 6 * sunPulse;
+
+            // Sun glow
+            if (!supernovaActive) {
+                const sunGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 20);
+                sunGlow.addColorStop(0, 'rgba(255, 215, 0, 0.3)');
+                sunGlow.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                ctx.fillStyle = sunGlow;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, sunSize, 0, Math.PI * 2);
+            ctx.fillStyle = supernovaActive ? '#FFF' : '#FFD700';
+            ctx.fill();
+
+            // Draw permanent voice palette in inner ring
+            voiceTypes.forEach((v, i) => {
+                const angle = (i / voiceTypes.length) * Math.PI * 2 - Math.PI / 2;
+                const vx = centerX + Math.cos(angle) * PALETTE_RADIUS;
+                const vy = centerY + Math.sin(angle) * PALETTE_RADIUS;
+
+                // Background circle with subtle glow
+                const gradient = ctx.createRadialGradient(vx, vy, 0, vx, vy, PALETTE_BUTTON_SIZE + 5);
+                gradient.addColorStop(0, `${v.color}33`);
+                gradient.addColorStop(1, `${v.color}00`);
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(vx, vy, PALETTE_BUTTON_SIZE + 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Voice button
+                ctx.beginPath();
+                ctx.arc(vx, vy, PALETTE_BUTTON_SIZE - 4, 0, Math.PI * 2);
+                ctx.fillStyle = `${v.color}22`;
+                ctx.fill();
+                ctx.strokeStyle = v.color;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Label
+                ctx.fillStyle = v.color;
+                ctx.font = 'bold 8px Space Mono, monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(v.name, vx, vy);
+            });
+
+            // Draw all orbit paths (one per voice type)
+            voiceTypes.forEach(v => {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, v.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `${v.color}22`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+
+            // Draw trigger line at 12 o'clock (from palette edge to outermost orbit)
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - 80);
+            ctx.lineTo(centerX, centerY - 320);
+            ctx.strokeStyle = 'rgba(212, 165, 116, 0.15)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw incoming orbiters (supernova animation)
+            supernovaIncoming.forEach(o => {
+                if (o.progress <= 0) return;
+
+                // Ease in with overshoot
+                const eased = o.progress < 1
+                    ? 1 - Math.pow(1 - o.progress, 3)
+                    : 1;
+
+                // Fly in from outer edge
+                const currentRadius = o.startRadius + (o.radius - o.startRadius) * eased;
+                const x = centerX + Math.cos(o.angle) * currentRadius;
+                const y = centerY + Math.sin(o.angle) * currentRadius;
+
+                // Glow trail
+                const trailGradient = ctx.createRadialGradient(x, y, 0, x, y, 25);
+                trailGradient.addColorStop(0, `${o.color}88`);
+                trailGradient.addColorStop(1, `${o.color}00`);
+                ctx.fillStyle = trailGradient;
+                ctx.beginPath();
+                ctx.arc(x, y, 25, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Orbiter
+                ctx.beginPath();
+                ctx.arc(x, y, 12, 0, Math.PI * 2);
+                ctx.fillStyle = o.color;
+                ctx.fill();
+
+                // Label
+                if (o.progress > 0.5) {
+                    ctx.globalAlpha = (o.progress - 0.5) * 2;
+                    ctx.fillStyle = o.color;
+                    ctx.font = '10px Space Mono, monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(o.name, x, y + 28);
+                    ctx.globalAlpha = 1;
+                }
+            });
+
+            // Draw orbiters
+            orbiters.forEach((o, i) => {
+                // Skip if being deleted
+                if (o.deleting) {
+                    // Shrink animation
+                    o.deleteProgress = (o.deleteProgress || 0) + 0.2;
+                    if (o.deleteProgress >= 1) return;
+
+                    const scale = 1 - o.deleteProgress;
+                    const currentAngle = o.angle + globalRotation;
+                    const x = centerX + Math.cos(currentAngle) * o.radius;
+                    const y = centerY + Math.sin(currentAngle) * o.radius;
+
+                    ctx.globalAlpha = scale;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 12 * scale, 0, Math.PI * 2);
+                    ctx.fillStyle = o.color;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    return;
+                }
+
+                // Current angle = base angle + global rotation (when playing)
+                const currentAngle = o.angle + globalRotation;
+                const x = centerX + Math.cos(currentAngle) * o.radius;
+                const y = centerY + Math.sin(currentAngle) * o.radius;
+
+                // Trigger at 12 o'clock (-PI/2)
+                const normalizedAngle = ((currentAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+                const triggerAngle = Math.PI * 1.5; // -PI/2 normalized = 3PI/2
+                const atTop = Math.abs(normalizedAngle - triggerAngle) < 0.08;
+                const shouldTrigger = atTop && isPlaying && audioStarted;
+
+                if (shouldTrigger && (time - o.lastTrigger > 0.1)) {
+                    playSound(o.voice, 1.0);
+                    o.lastTrigger = time;
+                }
+
+                // Glow when at trigger point, flashing, or dragging
+                if (atTop || o.flash || o.dragging) {
+                    const glowSize = o.dragging ? 40 : 30;
+                    const gradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
+                    gradient.addColorStop(0, o.dragging ? `${o.color}aa` : `${o.color}88`);
+                    gradient.addColorStop(1, `${o.color}00`);
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Hold-to-delete countdown ring
+                if (o.holdStart && !didDrag) {
+                    const holdProgress = Math.min((Date.now() - o.holdStart) / HOLD_TO_DELETE, 1);
+                    const ringRadius = 28;
+                    const remainingArc = (1 - holdProgress) * Math.PI * 2;
+
+                    // Background ring (full circle, dim)
+                    ctx.beginPath();
+                    ctx.arc(x, y, ringRadius, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(255, 107, 107, 0.2)';
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+
+                    // Shrinking countdown ring (bright, starts full)
+                    if (remainingArc > 0.01) {
+                        ctx.beginPath();
+                        ctx.arc(x, y, ringRadius, -Math.PI / 2, -Math.PI / 2 + remainingArc);
+                        ctx.strokeStyle = holdProgress > 0.7 ? '#FF6B6B' : '#FFF';
+                        ctx.lineWidth = 4;
+                        ctx.stroke();
+                    }
+
+                    // Pulsing red glow as it gets closer to delete
+                    if (holdProgress > 0.3) {
+                        const pulseIntensity = Math.min((holdProgress - 0.3) * 1.4, 1);
+                        const gradient = ctx.createRadialGradient(x, y, 0, x, y, 40);
+                        gradient.addColorStop(0, `rgba(255, 107, 107, ${pulseIntensity * 0.5})`);
+                        gradient.addColorStop(1, 'rgba(255, 107, 107, 0)');
+                        ctx.fillStyle = gradient;
+                        ctx.beginPath();
+                        ctx.arc(x, y, 40, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                // Spawn animation or dragging size
+                let size = 12;
+                if (o.dragging) {
+                    size = 16;
+                } else if (o.isNew) {
+                    size = 20;
+                    o.isNew = false;
+                }
+
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fillStyle = o.color;
+                ctx.fill();
+
+                ctx.fillStyle = o.color;
+                ctx.font = '10px Space Mono, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(o.name, x, y + 28);
+            });
+        }
+
+        function animate() {
+            if (isPlaying) {
+                time += 1/60;
+                // Rotate all orbits together
+                globalRotation += rotationSpeed * beatsPerSecond * (Math.PI * 2) / 60;
+            }
+
+            // Supernova animation
+            if (supernovaActive) {
+                supernovaProgress += 0.02;
+
+                // Fade out scatter particles
+                supernovaScatter.forEach(p => {
+                    p.alpha = Math.max(0, 1 - supernovaProgress * 2);
+                });
+
+                // Animate incoming orbiters
+                supernovaIncoming.forEach(o => {
+                    const adjustedProgress = Math.max(0, supernovaProgress - o.delay - 0.3);
+                    o.progress = Math.min(1, adjustedProgress * 3);
+                });
+
+                // When animation completes, transfer incoming to actual orbiters
+                if (supernovaProgress >= 1) {
+                    orbiters = supernovaIncoming.map(o => ({
+                        voice: o.voice,
+                        radius: o.radius,
+                        angle: o.angle,
+                        color: o.color,
+                        name: o.name,
+                        lastTrigger: -1
+                    }));
+                    supernovaActive = false;
+                    supernovaScatter = [];
+                    supernovaIncoming = [];
+                    updateVoiceCount();
+                }
+            }
+
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        playButton.addEventListener('click', async () => {
+            if (!audioStarted) {
+                await initAudio();
+            }
+            await audioContext.resume();
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+                playButton.textContent = 'STOP';
+                playButton.classList.add('playing');
+            } else {
+                playButton.textContent = 'START';
+                playButton.classList.remove('playing');
+            }
+        });
+
+        // Check for composition ID in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const compositionId = urlParams.get('id');
+
+        window.addEventListener('resize', resize);
+        resize();
+        initOrbiters();
+        subtitleEl.textContent = currentKit.name;
+
+        if (compositionId) {
+            loadComposition(compositionId);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
