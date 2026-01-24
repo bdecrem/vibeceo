@@ -62,11 +62,15 @@ const jb200Tools = {
   tweak_jb200: async (input, session, context) => {
     const tweaks = [];
 
-    // Mute: convenience alias for level=-60dB (silent)
+    // Mute: convenience alias for level=-60dB, Unmute: restore to 0dB
     if (input.mute === true) {
       const def = getParamDef('jb200', 'bass', 'level');
       session.jb200Params.level = def ? toEngine(-60, def) : 0;
       tweaks.push('muted');
+    } else if (input.mute === false) {
+      const def = getParamDef('jb200', 'bass', 'level');
+      session.jb200Params.level = def ? toEngine(0, def) : 1;  // 0dB = unity
+      tweaks.push('unmuted');
     }
 
     // Level: dB → linear
@@ -225,6 +229,75 @@ const jb200Tools = {
     const activeSteps = result.pattern.filter(s => s.gate).length;
 
     return `Loaded JB200 sequence: ${result.name} (${activeSteps} notes)${result.description ? ` - ${result.description}` : ''}`;
+  },
+  /**
+   * Render a test tone for audio analysis
+   * Pure A440 saw wave, flat envelope, 1 second
+   */
+  test_tone: async (input, session, context) => {
+    const { OfflineAudioContext } = await import('node-web-audio-api');
+    const { writeFileSync } = await import('fs');
+    const { join, dirname } = await import('path');
+
+    const note = input.note || 'A4';
+    const duration = input.duration || 1.0;
+    const sampleRate = 44100;
+
+    // Note to frequency
+    const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const match = note.match(/^([A-G]#?)(\d+)$/);
+    if (!match) return 'Invalid note format (e.g., A4)';
+    const noteName = match[1];
+    const octave = parseInt(match[2]);
+    const midi = noteNames.indexOf(noteName) + (octave + 1) * 12;
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+
+    // Create offline context
+    const totalSamples = Math.ceil(duration * sampleRate);
+    const offlineContext = new OfflineAudioContext(2, totalSamples, sampleRate);
+
+    // Create oscillator
+    const osc = offlineContext.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = freq;
+
+    // Create gain
+    const gain = offlineContext.createGain();
+    gain.gain.value = 0.8;
+
+    // Connect
+    osc.connect(gain);
+    gain.connect(offlineContext.destination);
+
+    // Schedule
+    osc.start(0);
+    osc.stop(duration);
+
+    // Render
+    const buffer = await offlineContext.startRendering();
+
+    // Encode to WAV
+    const { audioBufferToWav } = await import('../core/wav.js');
+    const wavData = audioBufferToWav(buffer);
+
+    // Save to project folder, or ~/Documents/Jambot if no project
+    const filename = `test-${note.toLowerCase()}-saw.wav`;
+    const { homedir } = await import('os');
+    const { mkdirSync } = await import('fs');
+
+    let filepath;
+    if (context.renderPath) {
+      filepath = join(dirname(context.renderPath), filename);
+    } else {
+      // No project - save to ~/Documents/Jambot/
+      const defaultDir = join(homedir(), 'Documents', 'Jambot');
+      mkdirSync(defaultDir, { recursive: true });
+      filepath = join(defaultDir, filename);
+    }
+
+    writeFileSync(filepath, Buffer.from(wavData));
+
+    return `Test tone exported: ${filepath} (${note} = ${freq.toFixed(2)}Hz, ${duration}s)`;
   },
 };
 

@@ -148,13 +148,12 @@ export { TOOLS };
 export const SLASH_COMMANDS = [
   { name: '/new', description: 'Start a new project' },
   { name: '/open', description: 'Open an existing project' },
+  { name: '/recent', description: 'Resume most recent project' },
   { name: '/projects', description: 'List all projects' },
   { name: '/mix', description: 'Show mix overview (instruments, tweaks, effects)' },
-  { name: '/r9d9', description: 'R9D9 drum machine guide' },
-  { name: '/r3d3', description: 'R3D3 acid bass guide' },
-  { name: '/r1d1', description: 'R1D1 lead synth guide' },
-  { name: '/r9ds', description: 'R9DS sampler guide' },
-  { name: '/kits', description: 'List available sample kits' },
+  { name: '/jb01', description: 'JB01 drum machine guide' },
+  { name: '/jb200', description: 'JB200 bass synth guide' },
+  { name: '/delay', description: 'Delay effect guide' },
   { name: '/status', description: 'Show current session state' },
   { name: '/clear', description: 'Clear session (stay in project)' },
   { name: '/changelog', description: 'Version history and release notes' },
@@ -476,7 +475,7 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
             ...context,
             renderSession,  // Pass renderSession function to tools
           };
-          if (block.name === 'render' && context.getRenderPath) {
+          if ((block.name === 'render' || block.name === 'test_tone') && context.getRenderPath) {
             toolContext.renderPath = context.getRenderPath();
           }
 
@@ -533,12 +532,12 @@ Slash Commands
 
   /new [name]   Start a new project
   /open <name>  Open an existing project
-  /projects     List all projects
-  /r9d9         R9D9 drum machine guide
-  /r3d3         R3D3 acid bass guide
-  /r1d1         R1D1 lead synth guide
-  /r9ds         R9DS sampler guide
-  /kits         List available sample kits
+  /recent       Resume most recent project
+  /projects     List all projects (with timestamps)
+  /mix          Show mix overview
+  /jb01         JB01 drum machine guide (kochi.to/jb01)
+  /jb200        JB200 bass synth guide (kochi.to/jb200)
+  /delay        Delay effect guide
   /status       Show current session state
   /clear        Clear session (stay in project)
   /changelog    Version history
@@ -546,9 +545,9 @@ Slash Commands
 
 Or just talk:
   > make me a techno beat at 128
-  > add a 303 bass line
-  > layer in a synth lead
-  > load the 808 kit and make a boom bap beat
+  > add a bass line
+  > tweak the kick decay
+  > add reverb to the hats
 `;
 
 export const CHANGELOG_TEXT = `
@@ -718,3 +717,123 @@ R9DS — Sampler
 
 // Legacy alias
 export const TR909_GUIDE = R9D9_GUIDE;
+
+// === ACTIVE INSTRUMENT GUIDES ===
+
+export const JB01_GUIDE = `
+JB01 — Drum Machine
+
+  Web UI: kochi.to/jb01
+
+  VOICES
+  kick     Bass drum        snare    Snare drum
+  clap     Handclap         ch       Closed hi-hat
+  oh       Open hi-hat      perc     Percussion
+  tom      Tom              cymbal   Crash/ride
+
+  PARAMETERS  "tweak the kick..."
+  level    Volume in dB (-60 to +6). 0dB = unity
+  decay    Length 0-100. Low = tight punch, high = boomy
+  tune     Pitch in semitones (-12 to +12). Negative = deeper
+  attack   Click amount 0-100 (kick only)
+  sweep    Pitch envelope 0-100 (kick only)
+  tone     Brightness 0-100 (hats, snare)
+
+  PATTERNS
+  > add_jb01({ kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] })
+  > "four on the floor with 8th note hats"
+  > "add snare on 4 and 12"
+
+  PRESETS
+  > "list jb01 kits"
+  > "load the punchy kit"
+
+  EXAMPLES
+  > "make me a techno beat at 128"
+  > "tune the kick down 2 semitones"
+  > "mute the snare"
+  > "add 30% swing"
+`;
+
+export const JB200_GUIDE = `
+JB200 — Bass Monosynth
+
+  Web UI: kochi.to/jb200
+
+  ARCHITECTURE
+  2 oscillators → filter → amp → drive
+  Each step: note, gate, accent, slide
+
+  PARAMETERS  "tweak the bass..."
+  Oscillators:
+    osc1Waveform   sawtooth/square/triangle
+    osc1Octave     Octave shift (-24 to +24 semitones)
+    osc1Detune     Fine tune (-50 to +50 cents)
+    osc1Level      Mix level 0-100
+    (same for osc2)
+
+  Filter:
+    filterCutoff     Frequency in Hz (20-16000)
+    filterResonance  Q amount 0-100
+    filterEnvAmount  Envelope depth -100 to +100
+
+  Envelopes:
+    filterAttack/Decay/Sustain/Release  0-100
+    ampAttack/Decay/Sustain/Release     0-100
+
+  Output:
+    drive    Saturation 0-100
+    level    Volume in dB (-60 to +6)
+
+  PATTERNS
+  > add_jb200({ pattern: [{note:'C2',gate:true}, ...] })
+  > "add an acid bass line"
+  > "make it squelchy"
+
+  PRESETS
+  > "list jb200 kits"      (sound presets)
+  > "list jb200 sequences" (pattern presets)
+
+  EXAMPLES
+  > "open the filter"
+  > "add more resonance"
+  > "detune osc2 by 7 cents for fatness"
+`;
+
+export const DELAY_GUIDE = `
+DELAY — Echo Effect
+
+  MODES
+  analog     Mono with saturation, warm tape-style
+  pingpong   Stereo bouncing L→R→L
+
+  PARAMETERS
+  time       Delay time in ms (1-2000), default 375
+  sync       Tempo sync: off, 8th, dotted8th, triplet8th, 16th, quarter
+  feedback   Repeat amount 0-100, default 50
+  mix        Wet/dry balance 0-100, default 30
+  lowcut     Remove mud (Hz), default 80
+  highcut    Tame harshness (Hz), default 8000
+  saturation Analog warmth 0-100 (analog mode only)
+  spread     Stereo width 0-100 (pingpong mode only)
+
+  TARGETS
+  Instrument:  jb01, jb200, sampler
+  Voice:       jb01.ch, jb01.kick, jb01.snare (per-voice)
+  Master:      master
+
+  EXAMPLES
+  > add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong' })
+  > "add delay to the hats"
+  > "put a dub delay on the snare"
+  > "pingpong delay on the bass, sync to dotted 8ths"
+
+  TWEAKING
+  > tweak_effect({ target: 'jb01.ch', effect: 'delay', feedback: 70 })
+  > "more feedback on the delay"
+  > "sync the delay to 16th notes"
+
+  REMOVING
+  > remove_effect({ target: 'jb01.ch', effect: 'delay' })
+  > "remove the delay from the hats"
+`;

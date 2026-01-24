@@ -11,6 +11,10 @@ import { JB200Sequencer } from '../../machines/jb200/sequencer.js';
 const STEPS = 16;
 const STORAGE_KEY = 'jb200-saved-patterns';
 
+// Presets loaded from library
+let presets = [];
+let sequences = [];
+
 // Keyboard to note mapping (QWERTY row = chromatic C2-B2)
 const KEY_TO_NOTE = {
     'a': 'C2', 'w': 'C#2', 's': 'D2', 'e': 'D#2',
@@ -20,26 +24,27 @@ const KEY_TO_NOTE = {
 };
 
 // Default parameter values (0-1 normalized)
+// Matches engine.js defaults for consistent sound
 const DEFAULTS = {
     osc1Octave: 0,
-    osc1Detune: 0.5,
-    osc1Level: 1.0,
+    osc1Detune: 0.5,      // 0 cents
+    osc1Level: 0.63,      // 63%
     osc2Octave: 0,
-    osc2Detune: 0.57,
-    osc2Level: 0.8,
-    filterCutoff: 0.53,
-    filterResonance: 0.4,
-    filterEnvAmount: 0.6,
+    osc2Detune: 0.57,     // 7 cents
+    osc2Level: 1.0,       // 100%
+    filterCutoff: 0.603,  // ~1129 Hz
+    filterResonance: 0,   // 0%
+    filterEnvAmount: 0.6, // 20%
     filterAttack: 0,
-    filterDecay: 0.4,
-    filterSustain: 0.2,
-    filterRelease: 0.3,
+    filterDecay: 0.4,     // 40%
+    filterSustain: 0.2,   // 20%
+    filterRelease: 0.3,   // 30%
     ampAttack: 0,
-    ampDecay: 0.3,
-    ampSustain: 0.6,
-    ampRelease: 0.2,
-    drive: 0.2,
-    level: 0.8,
+    ampDecay: 0.3,        // 30%
+    ampSustain: 0,        // 0% (plucky)
+    ampRelease: 0.2,      // 20%
+    drive: 0.2,           // 20%
+    level: 1.0,           // 0dB (unity)
 };
 
 // Initialize engine
@@ -426,6 +431,147 @@ function updateWaveformUI(osc1Wave, osc2Wave) {
     // OSC 2
     document.querySelectorAll('#osc2-saw, #osc2-square, #osc2-tri').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.wave === osc2Wave);
+    });
+}
+
+// ========================================
+// Presets
+// ========================================
+
+async function loadPresets() {
+    try {
+        const response = await fetch('../../dist/presets.json');
+        if (!response.ok) throw new Error('Failed to load presets');
+        const data = await response.json();
+        presets = data.presets || [];
+        populatePresetDropdown();
+    } catch (err) {
+        console.error('Failed to load presets:', err);
+        // Fallback: just show current as "Custom"
+        const select = document.getElementById('preset-select');
+        if (select) {
+            select.innerHTML = '<option value="">Custom</option>';
+        }
+    }
+}
+
+function populatePresetDropdown() {
+    const select = document.getElementById('preset-select');
+    if (!select) return;
+
+    select.innerHTML = '';
+    presets.forEach(preset => {
+        const option = document.createElement('option');
+        option.value = preset.id;
+        option.textContent = preset.name;
+        option.title = preset.description || '';
+        select.appendChild(option);
+    });
+
+    // Select first preset (Pulse) by default
+    if (presets.length > 0) {
+        select.value = presets[0].id;
+    }
+}
+
+function applyPreset(presetId) {
+    const preset = presets.find(p => p.id === presetId);
+    if (!preset) return;
+
+    const params = preset.params;
+
+    // Apply waveforms first
+    if (params.osc1Waveform) {
+        engine.setOsc1Waveform(params.osc1Waveform);
+    }
+    if (params.osc2Waveform) {
+        engine.setOsc2Waveform(params.osc2Waveform);
+    }
+    updateWaveformUI(
+        params.osc1Waveform || 'sawtooth',
+        params.osc2Waveform || 'sawtooth'
+    );
+
+    // Apply all numeric parameters
+    const numericParams = { ...params };
+    delete numericParams.osc1Waveform;
+    delete numericParams.osc2Waveform;
+
+    updateKnobsFromParams(numericParams);
+
+    setStatus(`Preset: ${preset.name}`);
+}
+
+function setupPresetDropdown() {
+    const select = document.getElementById('preset-select');
+    if (!select) return;
+
+    select.addEventListener('change', (e) => {
+        const presetId = e.target.value;
+        if (presetId) {
+            applyPreset(presetId);
+        }
+    });
+}
+
+// ========================================
+// Sequences
+// ========================================
+
+async function loadSequences() {
+    try {
+        const response = await fetch('../../dist/sequences.json');
+        if (!response.ok) throw new Error('Failed to load sequences');
+        const data = await response.json();
+        sequences = data.sequences || [];
+        populateSequenceDropdown();
+    } catch (err) {
+        console.error('Failed to load sequences:', err);
+        const select = document.getElementById('sequence-select');
+        if (select) {
+            select.innerHTML = '<option value="">Custom</option>';
+        }
+    }
+}
+
+function populateSequenceDropdown() {
+    const select = document.getElementById('sequence-select');
+    if (!select) return;
+
+    select.innerHTML = '';
+    sequences.forEach(seq => {
+        const option = document.createElement('option');
+        option.value = seq.id;
+        option.textContent = seq.name;
+        option.title = seq.description || '';
+        select.appendChild(option);
+    });
+
+    // Select first sequence by default
+    if (sequences.length > 0) {
+        select.value = sequences[0].id;
+    }
+}
+
+function applySequence(sequenceId) {
+    const seq = sequences.find(s => s.id === sequenceId);
+    if (!seq || !seq.pattern) return;
+
+    engine.setPattern(seq.pattern);
+    refreshSequencer();
+
+    setStatus(`Sequence: ${seq.name}`);
+}
+
+function setupSequenceDropdown() {
+    const select = document.getElementById('sequence-select');
+    if (!select) return;
+
+    select.addEventListener('change', (e) => {
+        const sequenceId = e.target.value;
+        if (sequenceId) {
+            applySequence(sequenceId);
+        }
     });
 }
 
@@ -829,7 +975,7 @@ function setupExportImport() {
 // Initialize
 // ========================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Setup UI first
     renderSequencer();
     initKnobs();
@@ -839,6 +985,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setupKeyboard();
     setupStepPageToggle();
     setupExportImport();
+    setupPresetDropdown();
+    setupSequenceDropdown();
+
+    // Load presets and sequences from library
+    await loadPresets();
+    await loadSequences();
 
     // Connect step callback
     engine.onStepChange = updateStepIndicator;
@@ -865,6 +1017,60 @@ document.addEventListener('DOMContentLoaded', () => {
     engine.setPattern(defaultPattern);
     refreshSequencer();
 
-    // Initial status
-    setStatus('Ready - Space to play, A-K for notes');
+    // Check for test mode (?test in URL)
+    if (window.location.search.includes('test')) {
+        runTestTone();
+    } else {
+        setStatus('Ready - Space to play, A-K for notes');
+    }
 });
+
+// ========================================
+// Test Tone (for audio analysis)
+// ========================================
+
+async function runTestTone() {
+    setStatus('Test mode: rendering A440 saw...');
+
+    // Set up pure test parameters: single osc, flat envelope, no filter
+    const testParams = {
+        osc1Waveform: 'sawtooth',
+        osc1Octave: 0,
+        osc1Detune: 0.5,
+        osc1Level: 1.0,
+        osc2Level: 0,
+        filterCutoff: 1.0,
+        filterResonance: 0,
+        filterEnvAmount: 0.5,
+        filterAttack: 0,
+        filterDecay: 0,
+        filterSustain: 1.0,
+        filterRelease: 0,
+        ampAttack: 0,
+        ampDecay: 0,
+        ampSustain: 1.0,
+        ampRelease: 0.01,
+        drive: 0,
+        level: 1.0,
+    };
+
+    // Apply test params
+    Object.entries(testParams).forEach(([key, value]) => {
+        if (key.includes('Waveform')) {
+            if (key === 'osc1Waveform') engine.setOsc1Waveform(value);
+        } else {
+            engine.setParameter(key, value);
+        }
+    });
+
+    // Render 1 second of A440
+    const buffer = await engine.renderTestTone({ note: 'A4', duration: 1.0 });
+
+    if (buffer) {
+        const blob = await engine.audioBufferToBlob(buffer);
+        downloadBlob(blob, 'test-a440-saw.wav');
+        setStatus('Test tone exported: test-a440-saw.wav');
+    } else {
+        setStatus('Test tone failed');
+    }
+}

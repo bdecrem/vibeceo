@@ -6,6 +6,18 @@
  */
 
 /**
+ * Seeded pseudo-random number generator (deterministic)
+ * Uses LCG (Linear Congruential Generator) for reproducible "random" values
+ */
+function createSeededRandom(seed = 12345) {
+  let state = seed;
+  return function() {
+    state = (state * 1103515245 + 12345) & 0x7fffffff;
+    return state / 0x7fffffff;
+  };
+}
+
+/**
  * Generate a plate reverb impulse response
  * @param {BaseAudioContext} context - Web Audio context (Offline or realtime)
  * @param {Object} params - Reverb parameters
@@ -16,10 +28,15 @@
  * @param {number} [params.lowcut=100] - Remove mud below this Hz (20-500)
  * @param {number} [params.highcut=8000] - Tame harshness above this Hz (2000-20000)
  * @param {number} [params.width=1] - Stereo spread (0-1)
+ * @param {number} [params.seed=12345] - Random seed for reproducible output
  * @returns {AudioBuffer} Stereo impulse response buffer
  */
 export function generatePlateReverbIR(context, params = {}) {
   const sampleRate = context.sampleRate;
+
+  // Create seeded random for deterministic output
+  const seed = params.seed ?? 12345;
+  const random = createSeededRandom(seed);
 
   // Extract parameters with defaults
   const decay = Math.max(0.5, Math.min(10, params.decay ?? 2));        // seconds
@@ -94,15 +111,15 @@ export function generatePlateReverbIR(context, params = {}) {
       const phase1 = i * 0.0001 + stereoPhase;
       const phase2 = i * 0.00017 + stereoPhase * 1.3;
 
-      // Multi-frequency noise for density
+      // Multi-frequency noise for density (using seeded PRNG for determinism)
       let noise = 0;
-      noise += (Math.random() * 2 - 1) * 0.5;
-      noise += Math.sin(i * 0.01 + ch * Math.PI) * (Math.random() * 0.3);
-      noise += Math.sin(i * 0.003 + phase1) * (Math.random() * 0.2);
+      noise += (random() * 2 - 1) * 0.5;
+      noise += Math.sin(i * 0.01 + ch * Math.PI) * (random() * 0.3);
+      noise += Math.sin(i * 0.003 + phase1) * (random() * 0.2);
 
       // Modulation: subtle pitch/phase wobble
       if (modulation > 0) {
-        const modFreq = 0.5 + Math.random() * 1.5;
+        const modFreq = 0.5 + random() * 1.5;
         const modDepth = modulation * 0.15;
         noise *= (1 + Math.sin(t * modFreq * Math.PI * 2 + ch * Math.PI * 0.5) * modDepth);
       }

@@ -14,7 +14,7 @@
 
 - **The agent** is just a user. It sees the current configuration, reads and writes parameters, renders audio. No special code per instrument — same interface for everything.
 
-**The Core Requirement:** The agent must be able to **read and write ANY parameter** in the system. Everything is addressable (drums.kick.decay, mixer.reverb.decay, master.volume). One way to read, one way to write. If a value exists, the agent can see it.
+**The Core Requirement:** The agent must be able to **read and write ANY parameter** in the system. Everything is addressable (jb01.kick.decay, jb200.filterCutoff, mixer.reverb.decay, master.volume). One way to read, one way to write. If a value exists, the agent can see it.
 
 **When adding anything new:** It plugs into the existing architecture. New synth? Same interface. New effect? Same interface. New service? Works on everything. Never write bespoke code that only works for one thing.
 
@@ -34,16 +34,28 @@ Core files:
 - `ui.tsx` — Ink-based terminal UI
 - `project.js` — Project persistence
 
-## The Droid Quartet + JB Series
+## Instruments
 
-| Synth | Engine | Description |
-|-------|--------|-------------|
-| **R9D9** | TR-909 | Drum machine (11 voices) |
-| **R3D3** | TB-303 | Acid bass synth |
-| **R1D1** | SH-101 | Lead/poly synth |
-| **R9DS** | Sampler | 10-slot sample player with kits |
-| **JB200** | JB200 | Bass monosynth (2-osc, filter, drive) |
-| **JB01** | JB01 | Reference drum machine |
+### Active Instruments
+
+| Instrument | ID | Description |
+|------------|-----|-------------|
+| **JB01** | `jb01` | Drum machine (8 voices: kick, snare, clap, ch, oh, perc, tom, cymbal) |
+| **JB200** | `jb200` | Bass monosynth (2-osc, filter, drive) |
+| **Sampler** | `sampler` | 10-slot sample player with kits |
+
+### Dormant Instruments (files exist, not yet integrated)
+
+| Synth | Engine | Status |
+|-------|--------|--------|
+| **R9D9** | TR-909 | Dormant — files in `instruments/tr909-node.js` |
+| **R3D3** | TB-303 | Dormant — files in `instruments/tb303-node.js` |
+| **R1D1** | SH-101 | Dormant — files in `instruments/sh101-node.js` |
+
+**Agent guidance for user intent:**
+- User says "drum" / "drums" / "beat" → suggest **JB01**
+- User says "bass" / "bassline" → suggest **JB200**
+- User says "sample" / "samples" / "kit" → suggest **Sampler**
 
 ## Synth Sources
 
@@ -84,14 +96,13 @@ This section covers creating new synth libraries and web clients for the Jambot 
           ▼                   ▼                   ▼
     ┌──────────┐        ┌──────────┐        ┌──────────┐
     │  ENGINE  │        │  ENGINE  │        │  ENGINE  │
-    │  (JB01)  │        │  (JB200) │        │  (R9D9)  │
-    │  drums   │        │  bass    │        │  909     │
+    │  (JB01)  │        │  (JB200) │        │ (Sampler)│
     └──────────┘        └──────────┘        └──────────┘
           │                   │                   │
     ┌─────┴─────┐            │             ┌─────┴─────┐
     ▼     ▼     ▼            ▼             ▼     ▼     ▼
-  Voice Voice Voice       Voice         Voice Voice Voice
-  kick  snare hihat       bass          kick  snare ...
+  Voice Voice Voice       Voice         Slot  Slot  Slot
+  kick  snare ch          bass          s1    s2    s3
 ```
 
 ### Master Clock (`jambot/core/clock.js`)
@@ -281,11 +292,11 @@ Always test synth consistency with Playwright (`web/test-*.mjs`). Verify that mu
 
 ### Reference Implementations
 
-| Synth | Type | Key Patterns |
-|-------|------|--------------|
+| Instrument | Type | Key Patterns |
+|------------|------|--------------|
 | **JB01** | Drum machine | Pre-rendered kicks, 8 voices, hi-hat choke |
 | **JB200** | Bass monosynth | Real-time oscillators OK (not percussive) |
-| **R9D9** | TR-909 | Sample + synthesis hybrid |
+| **Sampler** | Sample player | 10 slots, kit-based loading |
 
 ### Checklist for New Synths
 
@@ -319,38 +330,28 @@ Plus `choice` for discrete options (waveform: "sawtooth"/"square").
 
 ```
 params/
-  r9d9-params.json   # TR-909 drum voices
-  r3d3-params.json   # TB-303 bass
-  r1d1-params.json   # SH-101 lead
-  r9ds-params.json   # Sampler slots
-  jb200-params.json  # JB200 bass monosynth
   jb01-params.json   # JB01 drum machine
+  jb200-params.json  # JB200 bass monosynth
   converters.js      # toEngine(), fromEngine(), etc.
 ```
 
-### Per-Synth Parameters
+### Per-Instrument Parameters
 
-**R9D9 (drums):**
+**JB01 (drum machine):**
 - `level` (dB): -60 to +6
 - `tune` (semitones): -12 to +12
 - `decay` (0-100): 0=tight/punchy, 100=boomy
-- `attack` (0-100): 0=soft, 100=clicky
-- `tone` (Hz): 4000-16000 for hi-hats
+- `attack` (0-100): 0=soft, 100=clicky (kick only)
+- `tone` (0-100): brightness
 
-**R3D3 (bass):**
+**JB200 (bass monosynth):**
 - `level` (dB): -60 to +6
-- `cutoff` (Hz): 100-10000
-- `resonance` (0-100): 0=clean, 100=screaming
-- `envMod`, `decay`, `accent` (0-100)
+- `filterCutoff` (Hz): 20-16000
+- `filterResonance` (0-100): 0=clean, 100=screaming
+- `drive` (0-100): saturation/grit
+- `osc1Waveform`, `osc2Waveform`: sawtooth/square/triangle
 
-**R1D1 (lead):**
-- `level` (dB): -60 to +6
-- `cutoff` (Hz): 20-16000
-- `vcoSaw`, `vcoPulse`, `pulseWidth` (0-100)
-- `attack`, `decay`, `sustain`, `release` (0-100)
-- `lfoToPitch` (semitones): 0-24 vibrato depth
-
-**R9DS (sampler):**
+**Sampler:**
 - `level` (dB): -60 to +6
 - `tune` (semitones): -24 to +24
 - `attack`, `decay` (0-100)
@@ -394,16 +395,50 @@ Bundled kits: 808, amber
 
 Unified preset system for loading sounds (kits) and patterns (sequences) separately.
 
+### JB200 Library Presets (Kits)
+
+The JB200 has built-in kits shared between the web UI and Jambot:
+
+| Kit | Description |
+|-----|-------------|
+| **Pulse** | Balanced and responsive (default) |
+| **Ember** | Warm and saturated |
+| **Glass** | Bright and crystalline |
+| **Shadow** | Deep and resonant |
+| **Wire** | Sharp and aggressive |
+| **Test** | Pure saw for testing |
+
+Load with: `load_jb200_kit({ kit: 'ember' })` or `load_jb200_kit({ kit: 'wire' })`
+
+### JB200 Library Sequences
+
+The JB200 has built-in sequences shared between the web UI and Jambot:
+
+| Sequence | Description |
+|----------|-------------|
+| **Steady** | Simple pulse |
+| **Bounce** | Upbeat rhythm |
+| **Glide** | Smooth slides |
+| **Stab** | Punchy staccato |
+| **Climb** | Ascending run |
+| **Test** | Single note for testing |
+
+Load with: `load_jb200_sequence({ sequence: 'glide' })` or `load_jb200_sequence({ sequence: 'stab' })`
+
 ### Architecture
 
 ```
+web/public/{synth}/dist/
+  presets.json           # Library kits (shared with web UI, engine units)
+  sequences.json         # Library sequences (shared with web UI)
+
 presets/
   loader.js              # Generic loader (reusable for all synths)
   jb200/
     kits/
-      default.json       # Sound preset (oscillators, filter, envelopes)
+      *.json             # Additional/legacy kits (producer units)
     sequences/
-      default.json       # Pattern preset (notes, gates, accents, slides)
+      *.json             # Additional/legacy sequences
 ```
 
 User presets location: `~/Documents/Jambot/presets/{synth}/kits/` and `.../sequences/`
@@ -424,7 +459,7 @@ User presets location: `~/Documents/Jambot/presets/{synth}/kits/` and `.../seque
 }
 ```
 
-Values are in producer units (Hz, dB, 0-100). The loader converts to engine units (0-1) automatically.
+Values in user/bundled kits are in producer units (Hz, dB, 0-100). The loader converts to engine units (0-1) automatically. Library presets are already in engine units.
 
 ### Sequence Format
 
@@ -478,27 +513,24 @@ The `presets/loader.js` module is generic. To add presets for another synth:
 
 **`tweak` examples (with automatic unit conversion):**
 ```
-tweak({ path: 'drums.kick.decay', value: 75 })       → Sets decay to 75%
-tweak({ path: 'drums.kick.level', value: -6 })       → Sets level to -6dB
-tweak({ path: 'bass.cutoff', value: 2000 })          → Sets filter to 2000Hz
-tweak({ path: 'bass.resonance', value: 80 })         → Sets resonance to 80%
-tweak({ path: 'lead.lfoToPitch', value: 12 })        → Sets vibrato to 12 semitones
+tweak({ path: 'jb01.kick.decay', value: 75 })        → Sets decay to 75%
+tweak({ path: 'jb01.kick.level', value: -6 })        → Sets level to -6dB
+tweak({ path: 'jb200.filterCutoff', value: 2000 })   → Sets filter to 2000Hz
+tweak({ path: 'jb200.filterResonance', value: 80 })  → Sets resonance to 80%
 tweak({ path: 'sampler.s1.pan', value: -50 })        → Sets pan to L50
-tweak({ path: 'jb200.bass.filterCutoff', value: 800 }) → Sets JB200 filter to 800Hz
+tweak({ path: 'sampler.s1.level', value: 0 })        → Sets sampler slot 1 to unity
 ```
 
 **Path format:** `{instrument}.{voice}.{param}` or `{instrument}.{param}` for single-voice synths
 
 | Instrument | Path Format | Example |
 |------------|-------------|---------|
-| drums | `drums.{voice}.{param}` | `drums.kick.decay`, `drums.snare.level` |
-| bass | `bass.{param}` | `bass.cutoff`, `bass.resonance` |
-| lead | `lead.{param}` | `lead.cutoff`, `lead.attack` |
+| jb01 | `jb01.{voice}.{param}` | `jb01.kick.decay`, `jb01.snare.level` |
+| jb200 | `jb200.{param}` | `jb200.filterCutoff`, `jb200.drive` |
 | sampler | `sampler.{slot}.{param}` | `sampler.s1.level`, `sampler.s3.tune` |
-| jb200 | `jb200.bass.{param}` | `jb200.bass.filterCutoff`, `jb200.bass.drive` |
 
 **Muting voices:**
-- Use `tweak({ path: 'drums.kick.level', value: -60 })` to mute (minimum dB = silent)
+- Use `tweak({ path: 'jb01.kick.level', value: -60 })` to mute (minimum dB = silent)
 - Or omit the instrument from the section's pattern assignment in song mode
 
 ### Per-Instrument Tools
@@ -593,8 +625,8 @@ Reverb parameters (Dattorro plate algorithm):
 
 ### Channel EQ
 ```
-add_channel_insert(channel: 'bass', effect: 'eq', preset: 'acidBass')
-add_channel_insert(channel: 'drums', effect: 'eq', preset: 'punchyKick')
+add_channel_insert(channel: 'jb200', effect: 'eq', preset: 'acidBass')
+add_channel_insert(channel: 'jb01', effect: 'eq', preset: 'punchyKick')
 ```
 
 EQ presets: `acidBass`, `crispHats`, `warmPad`, `punchyKick`, `cleanSnare`
@@ -608,8 +640,8 @@ EQ parameters (can override preset):
 
 ### Channel Filter
 ```
-add_channel_insert(channel: 'bass', effect: 'filter', preset: 'dubDelay')
-add_channel_insert(channel: 'drums', effect: 'filter', params: { mode: 'lowpass', cutoff: 2000, resonance: 40 })
+add_channel_insert(channel: 'jb200', effect: 'filter', preset: 'dubDelay')
+add_channel_insert(channel: 'jb01', effect: 'filter', params: { mode: 'lowpass', cutoff: 2000, resonance: 40 })
 ```
 
 Filter presets: `dubDelay` (LP 800Hz), `telephone` (BP 1500Hz), `lofi` (LP 3000Hz), `darkRoom` (LP 400Hz), `airFilter` (HP 500Hz), `thinOut` (HP 1000Hz)
@@ -623,39 +655,39 @@ Use filter for: dub effects, lo-fi warmth, breakdown sweeps, telephone/radio sou
 
 ### Per-Section Channel Inserts (Song Mode)
 
-Channel inserts (filter, EQ) are saved with patterns. Supports individual drum voices (kick, snare, ch, oh, etc.).
+Channel inserts (filter, EQ) are saved with patterns. Supports individual JB01 voices (kick, snare, ch, oh, etc.).
 
 ```
 # Apply highpass to ONLY THE KICK in part C
-load_pattern(drums, C)
+load_pattern(jb01, C)
 add_channel_insert(channel: 'kick', effect: 'filter', params: {mode: 'highpass', cutoff: 500})
-save_pattern(drums, C)
+save_pattern(jb01, C)
 
-# Apply filter to ALL drums in part C
-load_pattern(drums, C)
-add_channel_insert(channel: 'drums', effect: 'filter', params: {mode: 'lowpass', cutoff: 2000})
-save_pattern(drums, C)
+# Apply filter to ALL JB01 voices in part C
+load_pattern(jb01, C)
+add_channel_insert(channel: 'jb01', effect: 'filter', params: {mode: 'lowpass', cutoff: 2000})
+save_pattern(jb01, C)
 
 # Change filter settings on C
-load_pattern(drums, C)
+load_pattern(jb01, C)
 add_channel_insert(channel: 'kick', effect: 'filter', params: {mode: 'highpass', cutoff: 800})  # Replaces existing
-save_pattern(drums, C)
+save_pattern(jb01, C)
 
 # Remove filter from kick in A and D
-load_pattern(drums, A)
+load_pattern(jb01, A)
 remove_channel_insert(channel: 'kick', effect: 'filter')
-save_pattern(drums, A)
+save_pattern(jb01, A)
 
-load_pattern(drums, D)
+load_pattern(jb01, D)
 remove_channel_insert(channel: 'kick', effect: 'filter')
-save_pattern(drums, D)
+save_pattern(jb01, D)
 ```
 
 Parts without filters in their saved state play without the filter. Always: **load → modify → save** for EACH part.
 
 ### Sidechain Ducking
 ```
-add_sidechain(target: 'bass', trigger: 'kick', amount: 0.5)
+add_sidechain(target: 'jb200', trigger: 'kick', amount: 0.5)
 ```
 
 ### Master EQ
@@ -673,19 +705,18 @@ analyze_render()  // Returns levels, frequency balance, recommendations
 Each instrument has a node-level output gain for balancing the mix:
 
 ```
-tweak({ path: 'drums.level', value: -3 })    // Drums down 3dB
+tweak({ path: 'jb01.level', value: -3 })     // JB01 down 3dB
+tweak({ path: 'jb200.level', value: -6 })    // JB200 down 6dB
 tweak({ path: 'sampler.level', value: 0 })   // Sampler at unity
-tweak({ path: 'bass.level', value: -6 })     // Bass down 6dB
-tweak({ path: 'lead.level', value: -3 })     // Lead down 3dB
 ```
 
 Use `show_mixer` to see current output levels:
 ```
 OUTPUT LEVELS:
-  drums: 0dB  bass: -3dB  lead: -6dB  sampler: +2dB
+  jb01: 0dB  jb200: -3dB  sampler: +2dB
 ```
 
-Note: For multi-voice instruments (drums, sampler), this is separate from per-voice levels (`drums.kick.level`, `sampler.s1.level`). For single-voice instruments (bass, lead), this IS the voice level.
+Note: For multi-voice instruments (jb01, sampler), this is separate from per-voice levels (`jb01.kick.level`, `sampler.s1.level`). For single-voice instruments (jb200), this IS the voice level.
 
 ### Signal Flow
 ```
@@ -777,26 +808,13 @@ add_effect({ target: 'jb01.ch', effect: 'reverb', after: 'delay', decay: 2.5, mi
 ```javascript
 session = {
   bpm, swing, bars,
-  // R9D9
-  drumKit: 'default',  // Kit ID (e.g., 'bart-deep', 'punchy')
-  drumPattern: { kick: [...], snare: [...], ... },
-  drumParams: { kick: { decay, tune, ... }, ... },
-  drumFlam: 0,              // Flam amount 0-1
-  drumPatternLength: 16,    // Pattern length 1-16 steps
-  drumScale: '16th',        // '16th', '8th-triplet', '16th-triplet', '32nd'
-  drumGlobalAccent: 1,      // Global accent multiplier 0-1
-  drumVoiceEngines: {},     // Per-voice engine { kick: 'E1', snare: 'E2', ... }
-  drumUseSample: {},        // Sample mode for hats/cymbals { ch: true, oh: false, ... }
-  drumAutomation: {},       // Per-step automation { ch: { decay: [0.1, 0.2, ...], level: [...] }, ... }
-  // R3D3
-  bassPattern: [{ note, gate, accent, slide }, ...],
-  bassParams: { waveform, cutoff, resonance, envMod, decay, accent, level },
-  // R1D1
-  leadPreset: null,  // Preset ID (e.g., 'acidLine', 'fatBass')
-  leadPattern: [{ note, gate, accent, slide }, ...],
-  leadParams: { vcoSaw, vcoPulse, pulseWidth, subLevel, subMode, cutoff, resonance, envMod, attack, decay, sustain, release, lfoRate, lfoWaveform, lfoToPitch, lfoToFilter, lfoToPW, level },
-  leadArp: { mode: 'off', octaves: 1, hold: false },  // mode: 'off', 'up', 'down', 'updown'
-  // R9DS
+  // JB01 (drum machine)
+  jb01Pattern: { kick: [...], snare: [...], ch: [...], oh: [...], ... },
+  jb01Params: { kick: { decay, tune, level, ... }, snare: {...}, ... },
+  // JB200 (bass monosynth)
+  jb200Pattern: [{ note, gate, accent, slide }, ...],
+  jb200Params: { osc1Waveform, filterCutoff, filterResonance, drive, level, ... },
+  // Sampler
   samplerKit: { id, name, slots: [{ id, name, short, buffer }] },
   samplerPattern: { s1: [{step, vel}, ...], s2: [...], ... },
   samplerParams: { s1: { level, tune, attack, decay, filter, pan }, ... },
@@ -804,23 +822,20 @@ session = {
   mixer: {
     sends: { 'reverb': { effect: 'reverb', params: { mix: 0.3 } } },
     voiceRouting: { 'ch': { sends: { 'reverb': 0.4 } } },
-    channelInserts: { 'bass': [{ type: 'ducker', params: { trigger: 'kick', amount: 0.5 } }] },
+    channelInserts: { 'jb200': [{ type: 'ducker', params: { trigger: 'kick', amount: 0.5 } }] },
     masterInserts: [{ type: 'eq', preset: 'master' }],
     masterVolume: 0.8,
   },
-  // Song Mode - patterns stored by canonical instrument ID
+  // Song Mode - patterns stored by instrument ID
   patterns: {
     jb01: { 'A': {...}, 'B': {...} },
     jb200: { 'A': {...}, 'B': {...} },
     sampler: { 'A': {...} },
-    r9d9: { 'A': {...} },
-    r3d3: { 'A': {...} },
-    r1d1: { 'A': {...} },
   },
-  currentPattern: { jb01: 'A', jb200: 'A', sampler: 'A', r9d9: 'A', r3d3: 'A', r1d1: 'A' },
+  currentPattern: { jb01: 'A', jb200: 'A', sampler: 'A' },
   arrangement: [
     { bars: 4, patterns: { jb01: 'A', jb200: 'A' } },
-    { bars: 8, patterns: { jb01: 'B', jb200: 'A', r1d1: 'A' } },
+    { bars: 8, patterns: { jb01: 'B', jb200: 'A' } },
   ],
 }
 ```
@@ -904,9 +919,8 @@ render({ filename: 'full-track' })
 
 Each saved pattern captures the full state for that instrument:
 
-- **drums**: pattern, params, automation, flam, length, scale, accent, engines, useSample
-- **bass**: pattern, params
-- **lead**: pattern, params, arp settings
+- **jb01**: pattern, params
+- **jb200**: pattern, params
 - **sampler**: pattern, params
 
 ## Genre Knowledge System
@@ -934,15 +948,19 @@ Each saved pattern captures the full state for that instrument:
 
 | Command | Description |
 |---------|-------------|
-| `/r9d9` | R9D9 drum machine guide |
-| `/r3d3` | R3D3 acid bass guide |
-| `/r1d1` | R1D1 lead synth guide |
-| `/r9ds` | R9DS sampler guide |
-| `/kits` | List available sample kits |
-| `/status` | Show current session |
-| `/clear` | Reset session |
 | `/new` | New project |
 | `/open` | Open project |
+| `/recent` | Resume most recent project |
+| `/projects` | List all projects (with timestamps) |
+| `/mix` | Show mix overview |
+| `/jb01` | JB01 drum machine guide (kochi.to/jb01) |
+| `/jb200` | JB200 bass synth guide (kochi.to/jb200) |
+| `/delay` | Delay effect guide |
+| `/status` | Show current session |
+| `/clear` | Reset session |
+| `/changelog` | Version history |
+| `/help` | Show available commands |
+| `/exit` | Quit Jambot |
 
 ## Splash Screen
 

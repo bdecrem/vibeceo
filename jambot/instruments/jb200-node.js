@@ -246,7 +246,8 @@ export class JB200Node extends InstrumentNode {
     const context = new OfflineAudioContext(2, sampleRate, sampleRate);
     const engine = new JB200Engine({ context });
 
-    // Apply params - use override if provided, otherwise node's internal params
+    // Apply node's registered params (converted from jb200-params.json defaults)
+    // If explicit params override provided, use those instead
     const engineParams = params || this.getEngineParams();
     Object.entries(engineParams).forEach(([key, value]) => {
       engine.setParameter(key, value);

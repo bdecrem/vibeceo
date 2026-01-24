@@ -15,6 +15,18 @@
                 <span class="logo-sub">BASS MONOSYNTH</span>
             </div>
             <div class="header-controls">
+                <div class="preset-group">
+                    <span class="preset-label">Kit</span>
+                    <select id="preset-select" class="preset-select" title="Kit Preset">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div class="preset-group">
+                    <span class="preset-label">Sequence</span>
+                    <select id="sequence-select" class="preset-select" title="Sequence Preset">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
                 <button id="info-btn" class="icon-btn" title="Info">?</button>
             </div>
         </header>
@@ -231,6 +243,9 @@
                 <li><strong>Acc:</strong> Accent (brighter, louder)</li>
                 <li><strong>Sld:</strong> Slide from previous note</li>
             </ul>
+
+            <h3>Test</h3>
+            <p><a href="?test">Generate A440 test tone</a> - Pure saw wave for audio analysis</p>
 
             <p class="modal-footer">Part of the Jambot Droid Quartet</p>
         </div>

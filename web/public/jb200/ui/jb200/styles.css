@@ -98,6 +98,42 @@ body {
     border-color: var(--accent);
 }
 
+.preset-select {
+    background: var(--bg-section);
+    border: 1px solid var(--accent-dim);
+    color: var(--text);
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    min-width: 100px;
+    transition: all 0.15s;
+}
+
+.preset-select:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+}
+
+.preset-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.preset-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.preset-label {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
 /* Controls Grid */
 .controls-grid {
     display: grid;

@@ -61,41 +61,42 @@ export class JB200Engine extends SynthEngine {
         this.currentBpm = 120;
 
         // Synth parameters (0-1 normalized for knobs, except where noted)
+        // Defaults match jb200-params.json for consistent sound between web UI and Jambot
         this.parameters = {
             // Oscillator 1
             osc1Waveform: 'sawtooth',
             osc1Octave: 0,        // semitones: -24 to +24, default 0
-            osc1Detune: 0.5,      // 0-1 -> -50 to +50 cents
-            osc1Level: 1.0,       // 0-1
+            osc1Detune: 0.5,      // 0-1 -> -50 to +50 cents (0 cents)
+            osc1Level: 0.63,      // 0-1 (63%)
 
             // Oscillator 2
             osc2Waveform: 'sawtooth',
             osc2Octave: 0,        // semitones, default 0 (same octave)
             osc2Detune: 0.57,     // 0-1, default ~7 cents
-            osc2Level: 0.8,       // 0-1
+            osc2Level: 1.0,       // 0-1 (100%)
 
             // Filter
-            filterCutoff: 0.53,   // 0-1 (log scale 20Hz-16kHz)
-            filterResonance: 0.4, // 0-1
-            filterEnvAmount: 0.6, // 0-1 (bipolar: 0.5 = 0, 0 = -100%, 1 = +100%)
+            filterCutoff: 0.603,  // 0-1 (log scale 20Hz-16kHz) - ~1129 Hz
+            filterResonance: 0,   // 0-1 (0%)
+            filterEnvAmount: 0.6, // 0-1 (bipolar: 0.5 = 0, 0 = -100%, 1 = +100%) - 20%
 
             // Filter envelope
             filterAttack: 0,      // 0-1
-            filterDecay: 0.4,     // 0-1
-            filterSustain: 0.2,   // 0-1
-            filterRelease: 0.3,   // 0-1
+            filterDecay: 0.4,     // 0-1 (40%)
+            filterSustain: 0.2,   // 0-1 (20%)
+            filterRelease: 0.3,   // 0-1 (30%)
 
             // Amp envelope
             ampAttack: 0,         // 0-1
-            ampDecay: 0.3,        // 0-1
-            ampSustain: 0.6,      // 0-1
-            ampRelease: 0.2,      // 0-1
+            ampDecay: 0.3,        // 0-1 (30%)
+            ampSustain: 0,        // 0-1 (0% - plucky, no sustain)
+            ampRelease: 0.2,      // 0-1 (20%)
 
             // Drive
-            drive: 0.2,           // 0-1
+            drive: 0.2,           // 0-1 (20%)
 
             // Master level
-            level: 0.8,           // 0-1
+            level: 1.0,           // 0-1 (unity gain, 0dB)
         };
 
         // Active voice tracking for monophonic operation
@@ -447,6 +448,41 @@ export class JB200Engine extends SynthEngine {
 
             this.renderNote(offlineContext, output, baseFreq, time, stepDuration, step.accent, step.slide);
         }
+
+        return offlineContext.startRendering();
+    }
+
+    /**
+     * Render a test tone for audio analysis
+     * Pure waveform, flat envelope, no effects
+     * @param {Object} options
+     * @param {string} options.note - Note name (default 'A4' = 440Hz)
+     * @param {number} options.duration - Duration in seconds (default 1.0)
+     * @param {number} options.sampleRate - Sample rate (default 44100)
+     */
+    async renderTestTone(options = {}) {
+        const { note = 'A4', duration = 1.0, sampleRate = 44100 } = options;
+
+        const midi = noteToMidi(note);
+        const freq = midiToFreq(midi);
+
+        const totalSamples = Math.ceil(duration * sampleRate);
+        const offlineContext = new OfflineAudioContext(2, totalSamples, sampleRate);
+
+        // Single oscillator, no effects
+        const osc = offlineContext.createOscillator();
+        osc.type = this.parameters.osc1Waveform;
+        osc.frequency.setValueAtTime(freq, 0);
+
+        // Flat envelope (instant on/off)
+        const gain = offlineContext.createGain();
+        gain.gain.setValueAtTime(this.parameters.level, 0);
+
+        osc.connect(gain);
+        gain.connect(offlineContext.destination);
+
+        osc.start(0);
+        osc.stop(duration);
 
         return offlineContext.startRendering();
     }
