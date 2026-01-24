@@ -767,6 +767,17 @@ export const TOOLS = [
     }
   },
   {
+    name: "show_spectrum",
+    description: "Display a full-range ASCII spectrum analyzer visualization, like an EQ plugin. Shows energy across 8 frequency bands from Sub (20Hz) to Air (20kHz) as a vertical bar graph.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" }
+      },
+      required: []
+    }
+  },
+  {
     name: "show_mixer",
     description: "Show current mixer configuration (sends, routing, effects).",
     input_schema: {

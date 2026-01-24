@@ -274,13 +274,37 @@ const analyzeTools = {
 
       if (result.bands && result.bands.length > 0) {
         lines.push('');
-        lines.push('  Band Analysis:');
+        lines.push('  ┌─────────────────────────────────────────────────────┐');
+        lines.push('  │  SPECTRUM ANALYZER (Mud Zone: 200-600Hz)            │');
+        lines.push('  ├─────────────────────────────────────────────────────┤');
+
+        // Find min/max for scaling
+        const dbValues = result.bands.map(b => b.rmsDb);
+        const minDb = Math.min(...dbValues);
+        const maxDb = Math.max(...dbValues);
+        const range = maxDb - minDb || 1;
+
         for (const band of result.bands) {
-          const normalizedLevel = band.rmsDb + 60; // Normalize to 0-60 range
-          const barLength = Math.max(0, Math.round(normalizedLevel / 2));
-          const bar = '='.repeat(barLength);
-          lines.push(`    ${band.centerFreq.toString().padStart(3)}Hz (${band.note.padEnd(3)}): ${bar.padEnd(30)} ${band.rmsDb}dB`);
+          // Scale to 0-20 range for the bar
+          const normalized = (band.rmsDb - minDb) / range;
+          const fullBlocks = Math.floor(normalized * 20);
+          const remainder = (normalized * 20) - fullBlocks;
+
+          // Use block characters for smooth gradient
+          let bar = '█'.repeat(fullBlocks);
+          if (remainder > 0.75) bar += '▓';
+          else if (remainder > 0.5) bar += '▒';
+          else if (remainder > 0.25) bar += '░';
+
+          // Mark the mud band with ← MUD
+          const isMud = result.worstBand && band.centerFreq === result.worstBand.centerFreq && result.mudDetected;
+          const marker = isMud ? ' ← MUD' : '';
+
+          lines.push(`  │ ${band.centerFreq.toString().padStart(3)}Hz ${band.note.padEnd(3)} ${bar.padEnd(21)} ${band.rmsDb.toString().padStart(4)}dB${marker}`);
         }
+
+        lines.push('  └─────────────────────────────────────────────────────┘');
+        lines.push(`  Scale: ${minDb}dB to ${maxDb}dB`);
       }
 
       return lines.join('\n');
@@ -323,6 +347,110 @@ const analyzeTools = {
       return lines.join('\n');
     } catch (e) {
       return `Spectral flux error: ${e.message}`;
+    }
+  },
+
+  /**
+   * Show full spectrum analyzer display
+   *
+   * Displays an ASCII visualization of the frequency spectrum across
+   * the full audible range, like an EQ analyzer plugin.
+   */
+  show_spectrum: async (input, session, context) => {
+    const { filename } = input;
+    const wavPath = filename || session.lastRenderedFile;
+
+    if (!wavPath) {
+      return 'No WAV file to analyze. Render first, or provide a filename.';
+    }
+
+    try {
+      // Analyze bands across full spectrum using logarithmic spacing
+      // Sub, Bass, Low-Mid, Mid, High-Mid, Presence, Brilliance, Air
+      const bands = [
+        { start: 20, end: 60, name: 'Sub' },
+        { start: 60, end: 250, name: 'Bass' },
+        { start: 250, end: 500, name: 'Low-Mid' },
+        { start: 500, end: 2000, name: 'Mid' },
+        { start: 2000, end: 4000, name: 'Hi-Mid' },
+        { start: 4000, end: 6000, name: 'Presence' },
+        { start: 6000, end: 12000, name: 'Brilliance' },
+        { start: 12000, end: 20000, name: 'Air' },
+      ];
+
+      const results = [];
+      for (const band of bands) {
+        const result = spectralAnalyzer.analyzeNarrowBands(wavPath, {
+          startHz: band.start,
+          endHz: band.end,
+          bandwidthHz: band.end - band.start, // Single band
+        });
+        if (result.bands && result.bands.length > 0) {
+          results.push({
+            name: band.name,
+            range: `${band.start}-${band.end}`,
+            rmsDb: result.bands[0].rmsDb,
+          });
+        }
+      }
+
+      if (results.length === 0) {
+        return 'Could not analyze spectrum. The audio may be silent or corrupted.';
+      }
+
+      // Find range for scaling
+      const dbValues = results.map(r => r.rmsDb);
+      const minDb = Math.min(...dbValues);
+      const maxDb = Math.max(...dbValues);
+      const range = maxDb - minDb || 1;
+
+      const lines = [
+        '┌────────────────────────────────────────────────────────────┐',
+        '│           SPECTRUM ANALYZER (Full Range)                   │',
+        '├────────────────────────────────────────────────────────────┤',
+        '│                                                            │',
+      ];
+
+      // Create vertical bar graph (8 rows of bars)
+      const barHeight = 8;
+      for (let row = barHeight; row >= 1; row--) {
+        const threshold = row / barHeight;
+        let rowStr = '│  ';
+        for (const result of results) {
+          const normalized = (result.rmsDb - minDb) / range;
+          if (normalized >= threshold) {
+            rowStr += '  ██  ';
+          } else if (normalized >= threshold - 0.125) {
+            rowStr += '  ▄▄  ';
+          } else {
+            rowStr += '      ';
+          }
+        }
+        lines.push(rowStr.padEnd(61) + '│');
+      }
+
+      // Add frequency labels
+      lines.push('│  ' + '──────'.repeat(results.length) + '  │');
+      let labelRow = '│  ';
+      for (const result of results) {
+        labelRow += result.name.substring(0, 5).padStart(3).padEnd(6);
+      }
+      lines.push(labelRow.padEnd(61) + '│');
+
+      // Add dB values row
+      let dbRow = '│  ';
+      for (const result of results) {
+        dbRow += `${result.rmsDb}`.padStart(4).padEnd(6);
+      }
+      lines.push(dbRow.padEnd(61) + '│');
+
+      lines.push('├────────────────────────────────────────────────────────────┤');
+      lines.push(`│  Range: ${minDb}dB to ${maxDb}dB`.padEnd(61) + '│');
+      lines.push('└────────────────────────────────────────────────────────────┘');
+
+      return lines.join('\n');
+    } catch (e) {
+      return `Spectrum analysis error: ${e.message}`;
     }
   },
 
