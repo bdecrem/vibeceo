@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIOLUME — Amber</title>
+    <meta property="og:title" content="BIOLUME">
+    <meta property="og:description" content="Deep ocean bioluminescence. Touch the water and watch them glow.">
+    <meta property="og:image" content="https://intheamber.com/amber/biolume-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/biolume.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/biolume-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(180deg, #0a0e1a 0%, #001529 50%, #000d1a 100%);
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            cursor: none;
+        }
+
+        .title {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #2D9596;
+            font-size: 14px;
+            letter-spacing: 4px;
+            opacity: 0.6;
+            pointer-events: none;
+            text-shadow: 0 0 20px rgba(45, 149, 150, 0.5);
+        }
+
+        .depth {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #64748b;
+            font-size: 11px;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">BIOLUME</div>
+    <div class="depth">DEPTH: 2,400m</div>
+    <canvas id="ocean"></canvas>
+
+    <script>
+        const canvas = document.getElementById('ocean');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height / 2;
+        let touching = false;
+
+        // Jellyfish class
+        class Jellyfish {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.baseSize = 20 + Math.random() * 40;
+                this.size = this.baseSize;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+                this.pulseSpeed = 0.02 + Math.random() * 0.02;
+                
+                // Color palette - bioluminescent spectrum
+                const colors = [
+                    { r: 45, g: 149, b: 150 },    // Teal
+                    { r: 59, g: 130, b: 246 },    // Electric Blue
+                    { r: 139, g: 92, b: 246 },    // Purple
+                    { r: 236, g: 72, b: 153 },    // Hot Pink
+                    { r: 132, g: 204, b: 22 },    // Lime
+                    { r: 249, g: 115, b: 22 }     // Coral
+                ];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                
+                this.glow = 0;
+                this.targetGlow = 0;
+                
+                this.tentacles = [];
+                const tentacleCount = 8 + Math.floor(Math.random() * 8);
+                for (let i = 0; i < tentacleCount; i++) {
+                    this.tentacles.push({
+                        angle: (Math.PI * 2 * i) / tentacleCount,
+                        length: this.baseSize * (1.5 + Math.random() * 2),
+                        segments: 12 + Math.floor(Math.random() * 8),
+                        waveOffset: Math.random() * Math.PI * 2,
+                        waveSpeed: 0.03 + Math.random() * 0.02
+                    });
+                }
+            }
+
+            update() {
+                // Pulse animation
+                this.pulsePhase += this.pulseSpeed;
+                const pulse = Math.sin(this.pulsePhase);
+                this.size = this.baseSize * (1 + pulse * 0.15);
+
+                // Check distance to mouse
+                const dx = mouseX - this.x;
+                const dy = mouseY - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (touching && dist < 200) {
+                    this.targetGlow = 1 - (dist / 200);
+                    
+                    // Gentle repulsion
+                    const force = (200 - dist) / 200;
+                    this.vx -= (dx / dist) * force * 0.1;
+                    this.vy -= (dy / dist) * force * 0.1;
+                } else {
+                    this.targetGlow *= 0.95;
+                }
+
+                this.glow += (this.targetGlow - this.glow) * 0.1;
+
+                // Drift
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Damping
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+
+                // Random impulses
+                if (Math.random() < 0.01) {
+                    this.vx += (Math.random() - 0.5) * 0.3;
+                    this.vy += (Math.random() - 0.5) * 0.3;
+                }
+
+                // Wrap around
+                if (this.x < -100) this.x = canvas.width + 100;
+                if (this.x > canvas.width + 100) this.x = -100;
+                if (this.y < -100) this.y = canvas.height + 100;
+                if (this.y > canvas.height + 100) this.y = -100;
+            }
+
+            draw() {
+                const intensity = 0.3 + this.glow * 0.7;
+                const alpha = 0.4 + this.glow * 0.6;
+
+                // Draw tentacles
+                this.tentacles.forEach(tentacle => {
+                    ctx.strokeStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha * 0.6})`;
+                    ctx.lineWidth = 2;
+                    ctx.lineCap = 'round';
+
+                    ctx.beginPath();
+                    
+                    for (let i = 0; i <= tentacle.segments; i++) {
+                        const t = i / tentacle.segments;
+                        const segmentAngle = tentacle.angle;
+                        const wavePhase = this.pulsePhase + tentacle.waveOffset;
+                        const wave = Math.sin(wavePhase + t * Math.PI * 2) * (tentacle.length * 0.3);
+                        
+                        const segX = this.x + 
+                            Math.cos(segmentAngle) * (tentacle.length * t) +
+                            Math.cos(segmentAngle + Math.PI / 2) * wave * t;
+                        const segY = this.y + 
+                            Math.sin(segmentAngle) * (tentacle.length * t) +
+                            Math.sin(segmentAngle + Math.PI / 2) * wave * t;
+
+                        if (i === 0) {
+                            ctx.moveTo(segX, segY);
+                        } else {
+                            ctx.lineTo(segX, segY);
+                        }
+                    }
+                    
+                    ctx.stroke();
+                });
+
+                // Draw bell (main body)
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size
+                );
+                
+                gradient.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`);
+gradient.addColorStop(0.6, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha * 0.4})`);
+                gradient.addColorStop(1, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0)`);
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner glow when activated
+                if (this.glow > 0.1) {
+                    const innerGlow = ctx.createRadialGradient(
+                        this.x, this.y, 0,
+                        this.x, this.y, this.size * 0.5
+                    );
+                    
+                    innerGlow.addColorStop(0, `rgba(255, 255, 255, ${this.glow * 0.4})`);
+                    innerGlow.addColorStop(1, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0)`);
+
+                    ctx.fillStyle = innerGlow;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Outer bloom when highly activated
+                if (this.glow > 0.5) {
+                    const bloom = ctx.createRadialGradient(
+                        this.x, this.y, this.size,
+                        this.x, this.y, this.size * 2
+                    );
+                    
+                    bloom.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${this.glow * 0.2})`);
+                    bloom.addColorStop(1, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0)`);
+
+                    ctx.fillStyle = bloom;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Create jellyfish population
+        const jellies = [];
+        const count = 25;
+        for (let i = 0; i < count; i++) {
+            jellies.push(new Jellyfish());
+        }
+
+        // Particle trail system
+        const particles = [];
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.life = 1;
+                this.decay = 0.01 + Math.random() * 0.02;
+                this.size = 2 + Math.random() * 3;
+                this.color = color;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+            }
+
+            draw() {
+                const alpha = this.life * 0.6;
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Glow
+                const glow = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size * this.life * 2
+                );
+                glow.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha * 0.3})`);
+                glow.addColorStop(1, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0)`);
+                
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * this.life * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function spawnParticles(x, y, color) {
+            for (let i = 0; i < 3; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            // Fade previous frame instead of clearing
+            ctx.fillStyle = 'rgba(10, 14, 26, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Update and draw jellyfish
+            jellies.forEach(jelly => {
+                jelly.update();
+                jelly.draw();
+
+                // Spawn particles when glowing
+                if (jelly.glow > 0.3 && Math.random() < 0.3) {
+                    spawnParticles(jelly.x, jelly.y, jelly.color);
+                }
+            });
+
+            // Draw cursor glow
+            if (touching) {
+                const cursorGlow = ctx.createRadialGradient(
+                    mouseX, mouseY, 0,
+                    mouseX, mouseY, 60
+                );
+                cursorGlow.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+                cursorGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                
+                ctx.fillStyle = cursorGlow;
+                ctx.beginPath();
+                ctx.arc(mouseX, mouseY, 60, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Event listeners
+        canvas.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        canvas.addEventListener('mousedown', () => {
+            touching = true;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            touching = false;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            mouseX = touch.clientX;
+            mouseY = touch.clientY;
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            mouseX = touch.clientX;
+            mouseY = touch.clientY;
+            touching = true;
+        });
+
+        canvas.addEventListener('touchend', () => {
+            touching = false;
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Start
+        animate();
+    </script>
+</body>
+</html>
