@@ -710,6 +710,63 @@ export const TOOLS = [
     }
   },
   {
+    name: "detect_resonance",
+    description: "Detect filter resonance peaks (squelch detection). Identifies if a sound has prominent resonance - the characteristic 'squelch' of acid bass. Returns whether squelchy, resonance peaks, and their prominence in dB.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" },
+        minProminence: { type: "number", description: "Minimum prominence in dB to count as resonance (default: 6)" },
+        minFreq: { type: "number", description: "Minimum frequency to check in Hz (default: 200)" },
+        maxFreq: { type: "number", description: "Maximum frequency to check in Hz (default: 4000)" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "detect_mud",
+    description: "Detect frequency buildup in the 'mud zone' (200-600Hz). Analyzes narrow frequency bands to identify where low-mid frequencies are building up and making the mix muddy. Returns which frequencies need cutting.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" },
+        startHz: { type: "number", description: "Start frequency for analysis (default: 200)" },
+        endHz: { type: "number", description: "End frequency for analysis (default: 600)" },
+        bandwidthHz: { type: "number", description: "Width of each analysis band in Hz (default: 50)" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "measure_spectral_flux",
+    description: "Measure how much the spectrum changes over time. High flux indicates filter sweeps and movement - the 'acid' character. Low flux means static, non-moving sound.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" },
+        windowMs: { type: "number", description: "Analysis window size in milliseconds (default: 100)" },
+        freqLow: { type: "number", description: "Low frequency bound in Hz (default: 200)" },
+        freqHigh: { type: "number", description: "High frequency bound in Hz (default: 2000)" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "get_spectral_peaks",
+    description: "Find the dominant frequencies in the spectrum. Returns the loudest frequency peaks with their musical note names, amplitudes, and cents deviation from perfect pitch.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" },
+        minFreq: { type: "number", description: "Minimum frequency to consider in Hz (default: 20)" },
+        maxFreq: { type: "number", description: "Maximum frequency to consider in Hz (default: 8000)" },
+        minPeakDb: { type: "number", description: "Minimum amplitude for peaks in dB (default: -40)" },
+        maxPeaks: { type: "number", description: "Maximum number of peaks to return (default: 10)" }
+      },
+      required: []
+    }
+  },
+  {
     name: "show_mixer",
     description: "Show current mixer configuration (sends, routing, effects).",
     input_schema: {
