@@ -12,6 +12,9 @@
 export { JB01Node } from './jb01-node.js';
 export { JB200Node } from './jb200-node.js';
 
+// JP9000 Modular Synth
+export { JP9000Node, JP9000_PRESETS } from './jp9000-node.js';
+
 // Droid Quartet (legacy engine wrappers)
 export { TR909Node } from './tr909-node.js';
 export { TB303Node } from './tb303-node.js';
