@@ -127,11 +127,15 @@ const samplerTools = {
 
     const tweaks = [];
 
-    // Mute: convenience alias for level=-60dB (silent)
+    // Mute: convenience alias for level=-60dB, Unmute: restore to 0dB
     if (input.mute === true) {
       const def = getParamDef('r9ds', slot, 'level');
       session.samplerParams[slot].level = def ? toEngine(-60, def) : 0;
       tweaks.push('muted');
+    } else if (input.mute === false) {
+      const def = getParamDef('r9ds', slot, 'level');
+      session.samplerParams[slot].level = def ? toEngine(0, def) : 0.5;  // 0dB = unity (0.5 in sampler scale)
+      tweaks.push('unmuted');
     }
 
     // Level: dB → linear

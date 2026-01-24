@@ -414,7 +414,7 @@ const sessionTools = {
       envMod: 0.5,
       decay: 0.5,
       accent: 0.8,
-      level: 0.8
+      level: 0.25  // -6dB for proper gain staging
     };
 
     // Reset R1D1 (lead)
@@ -426,7 +426,7 @@ const sessionTools = {
       cutoff: 0.5, resonance: 0.3, envMod: 0.5,
       attack: 0.01, decay: 0.3, sustain: 0.7, release: 0.3,
       lfoRate: 0.3, lfoWaveform: 'triangle', lfoToPitch: 0, lfoToFilter: 0, lfoToPW: 0,
-      level: 0.8
+      level: 0.25  // -6dB for proper gain staging
     };
 
     // Reset R9DS (sampler) - keep kit loaded, just clear pattern
@@ -458,7 +458,7 @@ const sessionTools = {
       ampSustain: 0.6,
       ampRelease: 0.2,
       drive: 0.2,
-      level: 0.5,         // 0-1 (0dB)
+      level: 0.25,        // 0-1 (-6dB for proper gain staging)
     };
 
     return `Session created at ${input.bpm} BPM`;

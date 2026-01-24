@@ -26,8 +26,8 @@ export class SamplerNode extends InstrumentNode {
     // Kit contains sample buffers
     this._kit = config.kit || null;
 
-    // Node output level in dB (-60 to +6, 0 = unity)
-    this._level = 0;
+    // Node output level in dB (-6dB default for proper gain staging)
+    this._level = -6;
 
     // Pattern: { s1: [{step, vel}, ...], s2: [...], ... }
     this._pattern = {};
@@ -44,7 +44,7 @@ export class SamplerNode extends InstrumentNode {
    */
   _registerParams() {
     // Node-level output gain
-    this.registerParam('level', { min: -60, max: 6, default: 0, unit: 'dB', hint: 'node output level' });
+    this.registerParam('level', { min: -60, max: 6, default: -6, unit: 'dB', hint: 'node output level' });
 
     const slotDef = R9DS_PARAMS.slot;
     if (!slotDef) return;

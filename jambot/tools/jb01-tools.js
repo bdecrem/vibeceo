@@ -35,12 +35,20 @@ const jb01Tools = {
   /**
    * Add JB01 drum pattern
    * @param {number} [bars=1] - Pattern length in bars (16 steps per bar)
+   * @param {boolean} [clear=false] - Clear all voices before adding (for creating fresh patterns)
    * Accepts either step arrays (e.g., kick: [0, 4, 8, 12]) or full pattern objects
    */
   add_jb01: async (input, session, context) => {
     const bars = input.bars || 1;
     const steps = bars * 16;
     const added = [];
+
+    // Clear all voices first if requested (for creating fresh patterns in song mode)
+    if (input.clear) {
+      for (const voice of VOICES) {
+        session.jb01Pattern[voice] = stepsToPattern([], steps);
+      }
+    }
 
     // If bars > 1 and no existing pattern, resize first
     if (bars > 1) {
@@ -86,7 +94,8 @@ const jb01Tools = {
     }
 
     const barsLabel = bars > 1 ? ` (${bars} bars)` : '';
-    return `JB01: ${added.join(', ')}${barsLabel}`;
+    const clearLabel = input.clear ? ' (cleared first)' : '';
+    return `JB01: ${added.join(', ')}${barsLabel}${clearLabel}`;
   },
 
   /**
@@ -102,11 +111,15 @@ const jb01Tools = {
     // Params are managed by JB01Node via session.jb01Params proxy
     const tweaks = [];
 
-    // Mute: convenience alias for level=-60dB
+    // Mute: convenience alias for level=-60dB, Unmute: restore to 0dB
     if (input.mute === true) {
       const def = getParamDef('jb01', voice, 'level');
       session.jb01Params[voice].level = def ? toEngine(-60, def) : 0;
       tweaks.push('muted');
+    } else if (input.mute === false) {
+      const def = getParamDef('jb01', voice, 'level');
+      session.jb01Params[voice].level = def ? toEngine(0, def) : 1;  // 0dB = unity
+      tweaks.push('unmuted');
     }
 
     // Level: dB → linear

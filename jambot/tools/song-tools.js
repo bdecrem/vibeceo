@@ -7,13 +7,24 @@
 
 import { registerTools } from './index.js';
 
-// JB01 voices (drums = jb01)
+// JB01 voices
+const JB01_VOICES = ['jb01', 'kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
+// Legacy drums = jb01
 const DRUM_VOICES = ['drums', 'kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
 
 // Helper: get channel inserts for an instrument
 function getInsertsForInstrument(session, inst) {
   const inserts = session.mixer?.channelInserts || {};
-  // For drums, include 'drums' channel + all voice channels
+  // For jb01, include 'jb01' channel + all voice channels
+  if (inst === 'jb01') {
+    const result = {};
+    if (inserts['jb01']) result['jb01'] = JSON.parse(JSON.stringify(inserts['jb01']));
+    for (const v of JB01_VOICES) {
+      if (inserts[v]) result[v] = JSON.parse(JSON.stringify(inserts[v]));
+    }
+    return Object.keys(result).length > 0 ? result : null;
+  }
+  // For legacy drums, include 'drums' channel + all voice channels
   if (inst === 'drums') {
     const result = {};
     if (inserts['drums']) result['drums'] = JSON.parse(JSON.stringify(inserts['drums']));
@@ -22,7 +33,7 @@ function getInsertsForInstrument(session, inst) {
     }
     return Object.keys(result).length > 0 ? result : null;
   }
-  // For bass/lead/sampler, just the instrument channel
+  // For bass/lead/sampler/jb200, just the instrument channel
   if (inserts[inst]) return { [inst]: JSON.parse(JSON.stringify(inserts[inst])) };
   return null;
 }
@@ -40,7 +51,9 @@ function restoreInserts(session, inserts) {
 // Helper: clear channel inserts for an instrument
 function clearInsertsForInstrument(session, inst) {
   if (!session.mixer?.channelInserts) return;
-  if (inst === 'drums') {
+  if (inst === 'jb01') {
+    for (const v of JB01_VOICES) delete session.mixer.channelInserts[v];
+  } else if (inst === 'drums') {
     for (const v of DRUM_VOICES) delete session.mixer.channelInserts[v];
   } else {
     delete session.mixer.channelInserts[inst];
@@ -100,6 +113,18 @@ const songTools = {
       };
       session.currentPattern.sampler = patternName;
       return `Saved sampler pattern "${patternName}"`;
+    }
+
+    if (instrument === 'jb01') {
+      if (!session.patterns.jb01) session.patterns.jb01 = {};
+      session.patterns.jb01[patternName] = {
+        pattern: JSON.parse(JSON.stringify(session.jb01Pattern || {})),
+        params: JSON.parse(JSON.stringify(session.jb01Params || {})),
+        channelInserts: getInsertsForInstrument(session, 'jb01'),
+      };
+      if (!session.currentPattern) session.currentPattern = {};
+      session.currentPattern.jb01 = patternName;
+      return `Saved jb01 pattern "${patternName}"`;
     }
 
     if (instrument === 'jb200') {
@@ -173,6 +198,18 @@ const songTools = {
       return `Loaded sampler pattern "${patternName}"`;
     }
 
+    if (instrument === 'jb01') {
+      const saved = session.patterns.jb01?.[patternName];
+      if (!saved) return `No jb01 pattern "${patternName}" found`;
+      session.jb01Pattern = JSON.parse(JSON.stringify(saved.pattern));
+      session.jb01Params = JSON.parse(JSON.stringify(saved.params));
+      clearInsertsForInstrument(session, 'jb01');
+      restoreInserts(session, saved.channelInserts);
+      if (!session.currentPattern) session.currentPattern = {};
+      session.currentPattern.jb01 = patternName;
+      return `Loaded jb01 pattern "${patternName}"`;
+    }
+
     if (instrument === 'jb200') {
       const saved = session.patterns.jb200[patternName];
       if (!saved) return `No jb200 pattern "${patternName}" found`;
@@ -205,15 +242,26 @@ const songTools = {
    */
   list_patterns: async (input, session, context) => {
     const lines = [];
-    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'jb200']) {
-      const patterns = session.patterns[instrument];
+    // Active instruments first
+    for (const instrument of ['jb01', 'jb200', 'sampler']) {
+      const patterns = session.patterns?.[instrument] || {};
       const names = Object.keys(patterns);
-      const current = session.currentPattern[instrument];
+      const current = session.currentPattern?.[instrument];
       if (names.length > 0) {
         const list = names.map(n => n === current ? `[${n}]` : n).join(', ');
         lines.push(`${instrument}: ${list}`);
       } else {
         lines.push(`${instrument}: (none saved)`);
+      }
+    }
+    // Dormant instruments (only show if they have patterns)
+    for (const instrument of ['drums', 'bass', 'lead']) {
+      const patterns = session.patterns?.[instrument] || {};
+      const names = Object.keys(patterns);
+      if (names.length > 0) {
+        const current = session.currentPattern?.[instrument];
+        const list = names.map(n => n === current ? `[${n}]` : n).join(', ');
+        lines.push(`${instrument}: ${list}`);
       }
     }
     return lines.join('\n');
@@ -226,11 +274,13 @@ const songTools = {
     session.arrangement = input.sections.map(s => ({
       bars: s.bars,
       patterns: {
+        jb01: s.jb01 || null,
+        jb200: s.jb200 || null,
+        sampler: s.sampler || null,
+        // Dormant instruments (legacy support)
         drums: s.drums || null,
         bass: s.bass || null,
         lead: s.lead || null,
-        sampler: s.sampler || null,
-        jb200: s.jb200 || null,
       }
     }));
 
@@ -253,10 +303,18 @@ const songTools = {
   show_arrangement: async (input, session, context) => {
     const lines = [];
 
-    // Show patterns
+    // Show patterns (active instruments first)
     lines.push('PATTERNS:');
-    for (const instrument of ['drums', 'bass', 'lead', 'sampler', 'jb200']) {
-      const patterns = session.patterns[instrument];
+    for (const instrument of ['jb01', 'jb200', 'sampler']) {
+      const patterns = session.patterns?.[instrument] || {};
+      const names = Object.keys(patterns);
+      if (names.length > 0) {
+        lines.push(`  ${instrument}: ${names.join(', ')}`);
+      }
+    }
+    // Dormant instruments (only show if they have patterns)
+    for (const instrument of ['drums', 'bass', 'lead']) {
+      const patterns = session.patterns?.[instrument] || {};
       const names = Object.keys(patterns);
       if (names.length > 0) {
         lines.push(`  ${instrument}: ${names.join(', ')}`);
@@ -264,15 +322,16 @@ const songTools = {
     }
 
     // Show arrangement
-    if (session.arrangement.length > 0) {
+    if (session.arrangement && session.arrangement.length > 0) {
       lines.push('\nARRANGEMENT:');
       session.arrangement.forEach((section, i) => {
         const parts = [];
+        if (section.patterns.jb01) parts.push(`jb01:${section.patterns.jb01}`);
+        if (section.patterns.jb200) parts.push(`jb200:${section.patterns.jb200}`);
+        if (section.patterns.sampler) parts.push(`sampler:${section.patterns.sampler}`);
         if (section.patterns.drums) parts.push(`drums:${section.patterns.drums}`);
         if (section.patterns.bass) parts.push(`bass:${section.patterns.bass}`);
         if (section.patterns.lead) parts.push(`lead:${section.patterns.lead}`);
-        if (section.patterns.sampler) parts.push(`sampler:${section.patterns.sampler}`);
-        if (section.patterns.jb200) parts.push(`jb200:${section.patterns.jb200}`);
         lines.push(`  ${i + 1}. ${section.bars} bars — ${parts.join(', ') || '(silent)'}`);
       });
       const totalBars = session.arrangement.reduce((sum, s) => sum + s.bars, 0);

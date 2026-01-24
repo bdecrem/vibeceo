@@ -43,6 +43,9 @@ export class JB01Node extends InstrumentNode {
 
     this._voices = VOICES;
 
+    // Node output level in dB (-6dB default for proper gain staging)
+    this._level = -6;
+
     // Initialize pattern
     this._pattern = createEmptyPattern();
 
@@ -55,6 +58,9 @@ export class JB01Node extends InstrumentNode {
    * Stores values in ENGINE UNITS (0-1) internally
    */
   _registerParams() {
+    // Register node-level output (in dB, not engine units)
+    this.registerParam('level', { min: -60, max: 6, default: -6, unit: 'dB', hint: 'node output level' });
+
     for (const voice of VOICES) {
       const voiceDef = JB01_PARAMS[voice];
       if (!voiceDef) continue;
@@ -68,8 +74,13 @@ export class JB01Node extends InstrumentNode {
         });
 
         // Convert default value from producer units to engine units
+        // Semitones and choices pass through (engine expects them as-is)
         if (paramDef.default !== undefined) {
-          this._params[path] = toEngine(paramDef.default, paramDef);
+          if (paramDef.unit === 'semitones' || paramDef.unit === 'choice') {
+            this._params[path] = paramDef.default;
+          } else {
+            this._params[path] = toEngine(paramDef.default, paramDef);
+          }
         }
       }
     }
@@ -78,10 +89,14 @@ export class JB01Node extends InstrumentNode {
   /**
    * Get a parameter value in ENGINE UNITS (0-1 for most params)
    * Note: Tools should use fromEngine() to convert to producer-friendly units
-   * @param {string} path - e.g., 'kick.decay'
+   * @param {string} path - e.g., 'kick.decay' or 'level' for node output
    * @returns {number}
    */
   getParam(path) {
+    // Node-level output is in dB, not engine units
+    if (path === 'level') {
+      return this.getLevel();
+    }
     return this._params[path];
   }
 
@@ -93,6 +108,12 @@ export class JB01Node extends InstrumentNode {
    * @returns {boolean}
    */
   setParam(path, value) {
+    // Handle node-level output (in dB, not engine units)
+    if (path === 'level') {
+      this.setLevel(value);
+      return true;
+    }
+
     // Handle mute (sets level to minimum engine value)
     const parts = path.split('.');
     if (parts.length === 2 && parts[1] === 'mute') {
@@ -156,11 +177,27 @@ export class JB01Node extends InstrumentNode {
 
   /**
    * Get node output level as linear gain multiplier
-   * Returns 1.0 (unity) - individual voice levels are handled separately
+   * Converts from dB to linear gain
    * @returns {number}
    */
   getOutputGain() {
-    return 1.0;
+    return Math.pow(10, this._level / 20);
+  }
+
+  /**
+   * Set node output level in dB
+   * @param {number} dB - Level in dB (-60 to +6)
+   */
+  setLevel(dB) {
+    this._level = Math.max(-60, Math.min(6, dB));
+  }
+
+  /**
+   * Get node output level in dB
+   * @returns {number}
+   */
+  getLevel() {
+    return this._level;
   }
 
   /**

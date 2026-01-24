@@ -173,6 +173,13 @@ export function listProjects() {
   return projects;
 }
 
+// Get the most recently modified project
+export function getMostRecentProject() {
+  const projects = listProjects();
+  if (projects.length === 0) return null;
+  return projects[0]; // Already sorted by modified date, most recent first
+}
+
 // === RENDER MANAGEMENT ===
 
 // Get next render version number
@@ -224,7 +231,13 @@ export function updateSession(project, session) {
     bpm: session.bpm,
     bars: session.bars,
     swing: session.swing,
-    // R9D9 (drums)
+    // JB01 (drums) - active instrument
+    jb01Pattern: session.jb01Pattern,
+    jb01Params: session.jb01Params,
+    // JB200 (bass) - active instrument
+    jb200Pattern: session.jb200Pattern,
+    jb200Params: session.jb200Params,
+    // R9D9 (drums) - dormant
     drumKit: session.drumKit,
     drumPattern: session.drumPattern,
     drumParams: session.drumParams,
@@ -235,10 +248,10 @@ export function updateSession(project, session) {
     drumVoiceEngines: session.drumVoiceEngines,
     drumUseSample: session.drumUseSample,
     drumAutomation: session.drumAutomation,
-    // R3D3 (bass)
+    // R3D3 (bass) - dormant
     bassPattern: session.bassPattern,
     bassParams: session.bassParams,
-    // R1D1 (lead)
+    // R1D1 (lead) - dormant
     leadPreset: session.leadPreset,
     leadPattern: session.leadPattern,
     leadParams: session.leadParams,
@@ -249,6 +262,8 @@ export function updateSession(project, session) {
     samplerParams: session.samplerParams,
     // Mixer
     mixer: session.mixer,
+    // Effect chains
+    effectChains: session.effectChains,
     // Song mode (patterns + arrangement)
     patterns: session.patterns,
     currentPattern: session.currentPattern,
@@ -261,69 +276,71 @@ export function updateSession(project, session) {
 // === SESSION RESTORE ===
 
 import { loadKit } from './kit-loader.js';
+import { createSession } from './core/session.js';
 
 // Restore session state from a project
+// Creates a proper session object with clock, nodes, params, etc.
 export function restoreSession(project) {
-  // Reload sampler kit if one was saved
-  let samplerKit = null;
-  if (project.session?.samplerKitId) {
+  const saved = project.session || {};
+
+  // Create a proper session with clock, nodes, and params
+  const session = createSession({
+    bpm: saved.bpm || 128,
+    swing: saved.swing || 0,
+    bars: saved.bars || 2,
+    jb01Level: saved.jb01Level ?? 0,
+    jb200Level: saved.jb200Level ?? 0,
+    samplerLevel: saved.samplerLevel ?? 0,
+    r9d9Level: saved.r9d9Level ?? 0,
+    r3d3Level: saved.r3d3Level ?? 0,
+    r1d1Level: saved.r1d1Level ?? 0,
+  });
+
+  // Restore JB01 (drums) pattern and params
+  if (saved.jb01Pattern) session.jb01Pattern = saved.jb01Pattern;
+  if (saved.jb01Params) session.jb01Params = saved.jb01Params;
+
+  // Restore JB200 (bass) pattern and params
+  if (saved.jb200Pattern) session.jb200Pattern = saved.jb200Pattern;
+  if (saved.jb200Params) session.jb200Params = saved.jb200Params;
+
+  // Restore sampler kit and pattern
+  if (saved.samplerKitId) {
     try {
-      samplerKit = loadKit(project.session.samplerKitId);
+      session.samplerKit = loadKit(saved.samplerKitId);
     } catch (e) {
-      console.warn(`Could not reload sampler kit ${project.session.samplerKitId}:`, e.message);
+      console.warn(`Could not reload sampler kit ${saved.samplerKitId}:`, e.message);
     }
   }
+  if (saved.samplerPattern) session.samplerPattern = saved.samplerPattern;
+  if (saved.samplerParams) session.samplerParams = saved.samplerParams;
 
-  return {
-    bpm: project.session?.bpm || 128,
-    bars: project.session?.bars || 2,
-    swing: project.session?.swing || 0,
-    // R9D9 (drums)
-    drumKit: project.session?.drumKit || 'bart-deep',
-    drumPattern: project.session?.drumPattern || {},
-    drumParams: project.session?.drumParams || {},
-    drumFlam: project.session?.drumFlam || 0,
-    drumPatternLength: project.session?.drumPatternLength || 16,
-    drumScale: project.session?.drumScale || '16th',
-    drumGlobalAccent: project.session?.drumGlobalAccent || 1,
-    drumVoiceEngines: project.session?.drumVoiceEngines || {},
-    drumUseSample: project.session?.drumUseSample || {},
-    drumAutomation: project.session?.drumAutomation || {},
-    // R3D3 (bass)
-    bassPattern: project.session?.bassPattern || [],
-    bassParams: project.session?.bassParams || {},
-    // R1D1 (lead)
-    leadPreset: project.session?.leadPreset || null,
-    leadPattern: project.session?.leadPattern || [],
-    leadParams: project.session?.leadParams || {},
-    leadArp: project.session?.leadArp || { mode: 'off', octaves: 1, hold: false },
-    // R9DS (sampler) - reload kit from ID
-    samplerKit: samplerKit,
-    samplerPattern: project.session?.samplerPattern || {},
-    samplerParams: project.session?.samplerParams || {},
-    // Mixer
-    mixer: project.session?.mixer || {
-      sends: {},
-      voiceRouting: {},
-      channelInserts: {},
-      masterInserts: [],
-      masterVolume: 0.8,
-    },
-    // Song mode (patterns + arrangement)
-    patterns: project.session?.patterns || {
-      drums: {},
-      bass: {},
-      lead: {},
-      sampler: {},
-    },
-    currentPattern: project.session?.currentPattern || {
-      drums: 'A',
-      bass: 'A',
-      lead: 'A',
-      sampler: 'A',
-    },
-    arrangement: project.session?.arrangement || [],
+  // Restore mixer
+  session.mixer = saved.mixer || {
+    sends: {},
+    voiceRouting: {},
+    channelInserts: {},
+    masterInserts: [],
+    masterVolume: 0.8,
   };
+
+  // Restore effect chains
+  session.effectChains = saved.effectChains || {};
+
+  // Restore song mode (patterns + arrangement)
+  session.patterns = saved.patterns || {
+    jb01: {},
+    jb200: {},
+    sampler: {},
+  };
+  session.currentPattern = saved.currentPattern || {
+    jb01: 'A',
+    jb200: 'A',
+    sampler: 'A',
+  };
+  session.arrangement = saved.arrangement || [];
+
+  return session;
 }
 
 // === EXPORT ===

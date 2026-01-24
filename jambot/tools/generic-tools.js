@@ -2,10 +2,7 @@
  * Generic Tools
  *
  * Unified tools that work on ANY parameter in the system.
- * Replaces bespoke per-instrument tools (tweak_drums, tweak_bass, etc.)
- *
- * These are the PRIMARY tools for parameter access. Per-instrument tools
- * (tweak_drums, tweak_bass, etc.) are DEPRECATED in favor of these.
+ * These are the PRIMARY tools for parameter access across all instruments.
  */
 
 import { registerTools } from './index.js';

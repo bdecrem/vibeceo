@@ -13,10 +13,9 @@ import {
   SPLASH,
   HELP_TEXT,
   CHANGELOG_TEXT,
-  R9D9_GUIDE,
-  R3D3_GUIDE,
-  R1D1_GUIDE,
-  R9DS_GUIDE,
+  JB01_GUIDE,
+  JB200_GUIDE,
+  DELAY_GUIDE,
   getApiKey,
   saveApiKey,
   getApiKeyPath,
@@ -27,6 +26,7 @@ import {
   createProject,
   loadProject,
   listProjects,
+  getMostRecentProject,
   saveProject,
   getRenderPath,
   recordRender,
@@ -637,6 +637,15 @@ function App() {
         }
         break;
 
+      case '/recent':
+        const recentProject = getMostRecentProject();
+        if (recentProject) {
+          openProject(recentProject.folderName);
+        } else {
+          addMessage('system', 'No projects found. Create a beat first!');
+        }
+        break;
+
       case '/projects':
         showProjects();
         break;
@@ -686,45 +695,17 @@ function App() {
         addMessage('info', CHANGELOG_TEXT);
         break;
 
-      case '/r9d9':
-      case '/909':  // Legacy alias
-        addMessage('info', R9D9_GUIDE);
+      case '/jb01':
+        addMessage('info', JB01_GUIDE);
         break;
 
-      case '/r3d3':
-      case '/303':  // Legacy alias
-        addMessage('info', R3D3_GUIDE);
+      case '/jb200':
+        addMessage('info', JB200_GUIDE);
         break;
 
-      case '/r1d1':
-      case '/101':  // Legacy alias
-        addMessage('info', R1D1_GUIDE);
+      case '/delay':
+        addMessage('info', DELAY_GUIDE);
         break;
-
-      case '/r9ds':
-      case '/sampler':  // Alias
-        addMessage('info', R9DS_GUIDE);
-        break;
-
-      case '/kits': {
-        const kits = getAvailableKits();
-        const paths = getKitPaths();
-        let kitsText = 'Available Sample Kits\n\n';
-        if (kits.length === 0) {
-          kitsText += '  No kits found.\n\n';
-        } else {
-          for (const kit of kits) {
-            const source = kit.source === 'user' ? '[user]' : '[bundled]';
-            kitsText += `  ${kit.id.padEnd(12)} ${kit.name.padEnd(20)} ${source}\n`;
-          }
-          kitsText += '\n';
-        }
-        kitsText += `Bundled: ${paths.bundled}\n`;
-        kitsText += `User:    ${paths.user}\n`;
-        kitsText += '\nSay "load the 808 kit" or use load_kit tool.';
-        addMessage('info', kitsText);
-        break;
-      }
 
       case '/export':
         if (!project) {

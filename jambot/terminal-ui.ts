@@ -11,10 +11,9 @@ import {
   SPLASH,
   HELP_TEXT,
   CHANGELOG_TEXT,
-  R9D9_GUIDE,
-  R3D3_GUIDE,
-  R1D1_GUIDE,
-  R9DS_GUIDE,
+  JB01_GUIDE,
+  JB200_GUIDE,
+  DELAY_GUIDE,
   getApiKey,
   saveApiKey,
   getApiKeyPath,
@@ -25,6 +24,7 @@ import {
   createProject,
   loadProject,
   listProjects,
+  getMostRecentProject,
   getRenderPath,
   recordRender,
   addToHistory,
@@ -391,16 +391,27 @@ class TerminalUI {
       return;
     }
 
-    const visible = this.projectsList.slice(0, 10);
+    const formatDateTime = (isoStr: string) => {
+      const d = new Date(isoStr);
+      const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      return `${date} ${time}`;
+    };
+
+    const visible = this.projectsList.slice(0, 8);
     for (let i = 0; i < visible.length; i++) {
       const p = visible[i];
       const highlight = i === this.modalIndex ? ANSI.inverse : '';
-      process.stdout.write(ANSI.moveTo(startRow + 2 + i, startCol));
-      process.stdout.write(highlight + `  ${p.name.padEnd(20)} ${p.bpm || 128} BPM  ${p.renderCount || 0} renders` + ANSI.reset);
+      const recent = i === 0 ? ' ← recent' : '';
+      const modified = p.modified ? formatDateTime(p.modified) : '';
+      process.stdout.write(ANSI.moveTo(startRow + 2 + i * 2, startCol));
+      process.stdout.write(highlight + `  ${p.folderName}` + ANSI.reset + ANSI.dim + recent + ANSI.reset);
+      process.stdout.write(ANSI.moveTo(startRow + 3 + i * 2, startCol));
+      process.stdout.write(ANSI.dim + `    "${p.name}" • ${p.bpm || 128} BPM • ${p.renderCount || 0} renders • ${modified}` + ANSI.reset);
     }
 
-    process.stdout.write(ANSI.moveTo(startRow + 3 + visible.length, startCol));
-    process.stdout.write(ANSI.dim + '  Enter to open, Esc to cancel' + ANSI.reset);
+    process.stdout.write(ANSI.moveTo(startRow + 4 + visible.length * 2, startCol));
+    process.stdout.write(ANSI.dim + '  Enter to open, Esc to cancel, /recent for most recent' + ANSI.reset);
   }
 
   private closeModal(): void {
@@ -772,6 +783,15 @@ class TerminalUI {
         }
         break;
 
+      case '/recent':
+        const recentProject = getMostRecentProject();
+        if (recentProject) {
+          this.openProject(recentProject.folderName);
+        } else {
+          this.printSystem('No projects found. Create a beat first!');
+        }
+        break;
+
       case '/projects':
         this.projectsList = listProjects();
         this.inModal = 'projects';
@@ -793,11 +813,9 @@ class TerminalUI {
       case '/status': this.showStatus(); break;
       case '/help': this.printInfo(HELP_TEXT); break;
       case '/changelog': this.printInfo(CHANGELOG_TEXT); break;
-      case '/r9d9': case '/909': this.printInfo(R9D9_GUIDE); break;
-      case '/r3d3': case '/303': this.printInfo(R3D3_GUIDE); break;
-      case '/r1d1': case '/101': this.printInfo(R1D1_GUIDE); break;
-      case '/r9ds': case '/sampler': this.printInfo(R9DS_GUIDE); break;
-      case '/kits': this.showKits(); break;
+      case '/jb01': this.printInfo(JB01_GUIDE); break;
+      case '/jb200': this.printInfo(JB200_GUIDE); break;
+      case '/delay': this.printInfo(DELAY_GUIDE); break;
       case '/export': this.exportCurrentProject(); break;
       default: this.printSystem(`Unknown command: ${cmd}`);
     }
