@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Nocturne</title>
+  <meta property="og:title" content="Nocturne">
+  <meta property="og:description" content="Generative ethereal electronic. Each listen is different.">
+  <meta property="og:image" content="https://intheamber.com/amber/nocturne-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/nocturne.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/nocturne-og.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #08080a;
+      color: #666;
+      font-family: 'Courier New', monospace;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .ui {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 0.75rem;
+      font-weight: normal;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    #playBtn {
+      background: transparent;
+      border: 1px solid #333;
+      color: #555;
+      padding: 0.8rem 2.5rem;
+      font-family: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    #playBtn:hover {
+      border-color: #555;
+      color: #888;
+    }
+
+    .key-display {
+      margin-top: 1rem;
+      font-size: 0.65rem;
+      opacity: 0.3;
+      letter-spacing: 0.2em;
+      min-height: 1em;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div class="ui">
+    <h1>Nocturne</h1>
+    <button id="playBtn">Enter</button>
+    <p class="key-display" id="keyDisplay"></p>
+  </div>
+
+  <script>
+    // === VISUAL LAYER ===
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+    let bassIntensity = 0;
+    let highIntensity = 0;
+    let filterValue = 0;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.x = Math.random() * width;
+        this.y = height + Math.random() * 100;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedY = -Math.random() * 0.5 - 0.1;
+        this.speedX = (Math.random() - 0.5) * 0.3;
+        this.opacity = Math.random() * 0.3 + 0.1;
+        this.life = 1;
+      }
+
+      update() {
+        this.y += this.speedY * (1 + bassIntensity * 2);
+        this.x += this.speedX + Math.sin(this.y * 0.01) * 0.2;
+        this.life -= 0.001;
+
+        if (this.y < -10 || this.life <= 0) {
+          this.reset();
+        }
+      }
+
+      draw() {
+        const alpha = this.opacity * this.life * (0.3 + highIntensity * 0.5);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * (1 + bassIntensity), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(100, 120, 140, ${alpha})`;
+        ctx.fill();
+      }
+    }
+
+    // Initialize particles
+    for (let i = 0; i < 100; i++) {
+      const p = new Particle();
+      p.y = Math.random() * height;
+      particles.push(p);
+    }
+
+    function drawVisuals() {
+      // Fade with slight color tint based on filter
+      const r = 8 + filterValue * 5;
+      const g = 8 + filterValue * 3;
+      const b = 10 + filterValue * 8;
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.08)`;
+      ctx.fillRect(0, 0, width, height);
+
+      // Central glow
+      if (bassIntensity > 0.05) {
+        const gradient = ctx.createRadialGradient(
+          width / 2, height / 2, 0,
+          width / 2, height / 2, height * 0.4
+        );
+        gradient.addColorStop(0, `rgba(60, 80, 120, ${bassIntensity * 0.1})`);
+        gradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      // Horizontal scan line
+      if (highIntensity > 0.1) {
+        const lineY = (Date.now() * 0.02) % height;
+        ctx.strokeStyle = `rgba(80, 100, 130, ${highIntensity * 0.15})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, lineY);
+        ctx.lineTo(width, lineY);
+        ctx.stroke();
+      }
+
+      // Particles
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      // Decay
+      bassIntensity *= 0.95;
+      highIntensity *= 0.92;
+
+      requestAnimationFrame(drawVisuals);
+    }
+    drawVisuals();
+
+    // === MUSIC ENGINE ===
+    let audioCtx = null;
+    let isPlaying = false;
+    let masterGain = null;
+    let filterNode = null;
+    let reverbNode = null;
+    let reverbGain = null;
+    let compressor = null;
+
+    // Dark modes only
+    const MODES = [
+      { name: 'minor', intervals: [0, 2, 3, 5, 7, 8, 10] },
+      { name: 'phrygian', intervals: [0, 1, 3, 5, 7, 8, 10] },
+      { name: 'dorian', intervals: [0, 2, 3, 5, 7, 9, 10] },
+      { name: 'locrian', intervals: [0, 1, 3, 5, 6, 8, 10] }
+    ];
+
+    let currentKey = 0;
+    let currentMode = null;
+    let currentTempo = 85;
+    let currentOctaveBase = 2;
+    let filterFreq = 800;
+    let targetFilterFreq = 800;
+
+    function noteToFreq(note) {
+      return 440 * Math.pow(2, (note - 69) / 12);
+    }
+
+    function getScaleNote(degree, octaveOffset = 0) {
+      const octave = currentOctaveBase + octaveOffset + Math.floor(degree / 7);
+      const interval = currentMode.intervals[((degree % 7) + 7) % 7];
+      const midiNote = (octave + 1) * 12 + currentKey + interval;
+      return noteToFreq(midiNote);
+    }
+
+    // Create reverb
+    function createReverb() {
+      const sampleRate = audioCtx.sampleRate;
+      const length = sampleRate * 4;
+      const impulse = audioCtx.createBuffer(2, length, sampleRate);
+
+      for (let channel = 0; channel < 2; channel++) {
+        const data = impulse.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 1.5);
+        }
+      }
+
+      const convolver = audioCtx.createConvolver();
+      convolver.buffer = impulse;
+      return convolver;
+    }
+
+    // Synth pad (filtered saw)
+    function playPad(freq, startTime, duration, velocity = 0.12) {
+      const osc = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+      osc2.type = 'sawtooth';
+      osc2.frequency.value = freq * 1.005; // Detune
+
+      filter.type = 'lowpass';
+      filter.frequency.value = filterFreq;
+      filter.Q.value = 2;
+
+      const attack = 1.5;
+      const release = 2;
+
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(velocity, startTime + attack);
+      gain.gain.setValueAtTime(velocity, startTime + duration - release);
+      gain.gain.linearRampToValueAtTime(0, startTime + duration);
+
+      osc.connect(filter);
+      osc2.connect(filter);
+      filter.connect(gain);
+      gain.connect(filterNode);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.1);
+      osc2.start(startTime);
+      osc2.stop(startTime + duration + 0.1);
+
+      bassIntensity = Math.max(bassIntensity, velocity * 3);
+    }
+
+    // Sub bass
+    function playBass(freq, startTime, duration) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.2, startTime + 0.1);
+      gain.gain.setValueAtTime(0.2, startTime + duration - 0.5);
+      gain.gain.linearRampToValueAtTime(0, startTime + duration);
+
+      osc.connect(gain);
+      gain.connect(masterGain);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.1);
+
+      bassIntensity = Math.max(bassIntensity, 0.8);
+    }
+
+    // Pluck synth (for arpeggios)
+    function playPluck(freq, startTime, velocity = 0.15) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      osc.type = 'square';
+      osc.frequency.value = freq;
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(filterFreq * 2, startTime);
+      filter.frequency.exponentialRampToValueAtTime(200, startTime + 0.5);
+      filter.Q.value = 5;
+
+      gain.gain.setValueAtTime(velocity, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.8);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(filterNode);
+
+      osc.start(startTime);
+      osc.stop(startTime + 1);
+
+      highIntensity = Math.max(highIntensity, velocity * 4);
+    }
+
+    // Hi-hat / noise
+    function playHat(startTime, velocity = 0.05) {
+      const bufferSize = audioCtx.sampleRate * 0.1;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 8000;
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(velocity, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.08);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(reverbGain);
+
+      noise.start(startTime);
+      noise.stop(startTime + 0.1);
+
+      highIntensity = Math.max(highIntensity, velocity * 5);
+    }
+
+    // === COMPOSITION ===
+    let phraseIndex = 0;
+    let measureInPhrase = 0;
+    const MEASURES_PER_PHRASE = 8;
+
+    function chooseNewKey() {
+      const shifts = [0, 5, 7, -2, -5];
+      currentKey = (currentKey + shifts[Math.floor(Math.random() * shifts.length)] + 12) % 12;
+
+      if (Math.random() < 0.4) {
+        currentMode = MODES[Math.floor(Math.random() * MODES.length)];
+      }
+
+      // Filter sweep on key change
+      targetFilterFreq = 400 + Math.random() * 1200;
+
+      updateKeyDisplay();
+    }
+
+    function updateKeyDisplay() {
+      const keyNames = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+      document.getElementById('keyDisplay').textContent =
+        `${keyNames[currentKey]} ${currentMode.name}`.toLowerCase();
+    }
+
+    function generateMeasure(startTime) {
+      const beatDuration = 60 / currentTempo;
+      const measureDuration = beatDuration * 4;
+
+      // Filter automation
+      filterFreq += (targetFilterFreq - filterFreq) * 0.1;
+      filterNode.frequency.setTargetAtTime(filterFreq, startTime, 0.5);
+      filterValue = (filterFreq - 400) / 1600;
+
+      if (measureInPhrase === 0 && phraseIndex > 0 && Math.random() < 0.3) {
+        chooseNewKey();
+      }
+
+      const chordRoots = [
+        [0, 0, 3, 4],
+        [0, 5, 3, 4],
+        [0, 3, 5, 4],
+        [0, 0, 0, 3]
+      ];
+      const progression = chordRoots[phraseIndex % chordRoots.length];
+      const root = progression[measureInPhrase % 4];
+
+      // Pad chord
+      if (Math.random() < 0.7) {
+        const padNotes = [root, root + 2, root + 4];
+        padNotes.forEach(degree => {
+          playPad(getScaleNote(degree, 1), startTime, measureDuration * 1.2, 0.06 + Math.random() * 0.03);
+        });
+      }
+
+      // Sub bass on 1 and 3
+      if (measureInPhrase % 2 === 0) {
+        playBass(getScaleNote(root, -1), startTime, measureDuration * 0.9);
+      }
+
+      // Arpeggio patterns
+      const arpPatterns = [
+        () => {
+          // Rising
+          [0, 2, 4, 7].forEach((d, i) => {
+            playPluck(getScaleNote(root + d, 2), startTime + i * beatDuration * 0.5, 0.1);
+          });
+        },
+        () => {
+          // Falling
+          [7, 4, 2, 0].forEach((d, i) => {
+            playPluck(getScaleNote(root + d, 2), startTime + i * beatDuration * 0.5, 0.1);
+          });
+        },
+        () => {
+          // Sparse
+          playPluck(getScaleNote(root + 4, 2), startTime + beatDuration, 0.12);
+          playPluck(getScaleNote(root + 7, 2), startTime + beatDuration * 2.5, 0.08);
+        },
+        () => {
+          // Rapid
+          for (let i = 0; i < 8; i++) {
+            const deg = [0, 2, 4, 7, 4, 2, 0, -3][i];
+            playPluck(getScaleNote(root + deg, 2), startTime + i * beatDuration * 0.25, 0.07);
+          }
+        },
+        () => {} // Silence
+      ];
+
+      if (Math.random() < 0.8) {
+        const pattern = arpPatterns[Math.floor(Math.random() * arpPatterns.length)];
+        pattern();
+      }
+
+      // Hi-hats
+      if (Math.random() < 0.6) {
+        for (let i = 0; i < 4; i++) {
+          if (Math.random() < 0.7) {
+            playHat(startTime + i * beatDuration, 0.03 + Math.random() * 0.02);
+          }
+          if (Math.random() < 0.3) {
+            playHat(startTime + i * beatDuration + beatDuration * 0.5, 0.02);
+          }
+        }
+      }
+
+      // Advance
+      measureInPhrase++;
+      if (measureInPhrase >= MEASURES_PER_PHRASE) {
+        measureInPhrase = 0;
+        phraseIndex++;
+
+        if (Math.random() < 0.3) {
+          currentTempo = 75 + Math.floor(Math.random() * 20);
+        }
+      }
+
+      return measureDuration;
+    }
+
+    let nextMeasureTime = 0;
+    let schedulerInterval = null;
+
+    function scheduler() {
+      while (nextMeasureTime < audioCtx.currentTime + 0.5) {
+        const duration = generateMeasure(nextMeasureTime);
+        nextMeasureTime += duration;
+      }
+    }
+
+    function startMusic() {
+      if (isPlaying) return;
+
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Master chain
+      compressor = audioCtx.createDynamicsCompressor();
+      compressor.threshold.value = -20;
+      compressor.ratio.value = 4;
+      compressor.connect(audioCtx.destination);
+
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.8;
+      masterGain.connect(compressor);
+
+      // Main filter
+      filterNode = audioCtx.createBiquadFilter();
+      filterNode.type = 'lowpass';
+      filterNode.frequency.value = 800;
+      filterNode.Q.value = 1;
+      filterNode.connect(masterGain);
+
+      // Reverb
+      reverbNode = createReverb();
+      reverbGain = audioCtx.createGain();
+      reverbGain.gain.value = 0.4;
+      reverbNode.connect(reverbGain);
+      reverbGain.connect(compressor);
+      filterNode.connect(reverbNode);
+
+      // Initialize
+      currentKey = Math.floor(Math.random() * 12);
+      currentMode = MODES[Math.floor(Math.random() * MODES.length)];
+      currentTempo = 75 + Math.floor(Math.random() * 20);
+      filterFreq = 600 + Math.random() * 600;
+      targetFilterFreq = filterFreq;
+      phraseIndex = 0;
+      measureInPhrase = 0;
+
+      updateKeyDisplay();
+
+      nextMeasureTime = audioCtx.currentTime + 0.1;
+      schedulerInterval = setInterval(scheduler, 100);
+
+      isPlaying = true;
+      document.getElementById('playBtn').textContent = '...';
+      document.getElementById('playBtn').style.opacity = '0.3';
+    }
+
+    function stopMusic() {
+      if (!isPlaying) return;
+
+      clearInterval(schedulerInterval);
+      masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
+
+      setTimeout(() => {
+        audioCtx.close();
+        audioCtx = null;
+        isPlaying = false;
+        document.getElementById('playBtn').textContent = 'Enter';
+        document.getElementById('playBtn').style.opacity = '1';
+        document.getElementById('keyDisplay').textContent = '';
+      }, 2100);
+    }
+
+    document.getElementById('playBtn').addEventListener('click', () => {
+      if (isPlaying) {
+        stopMusic();
+      } else {
+        startMusic();
+      }
+    });
+  </script>
+</body>
+</html>
