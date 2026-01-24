@@ -1032,3 +1032,24 @@ Must fit 80x24 terminal. Currently 21 lines + prompt.
 **Daily development**: Edit `jambot.js` / `ui.tsx`, commit/push. No builds needed.
 
 **Cutting a release**: See README.md.
+
+## Code Review
+
+After major work, run the code review subagent:
+
+```
+/review-jambot                    # Review uncommitted changes
+/review-jambot HEAD~3..HEAD       # Review last 3 commits
+/review-jambot main..feature      # Review a branch
+/review-jambot effects/           # Review specific directory
+```
+
+The reviewer checks:
+- **Architecture compliance** — Node interface, ParamSystem, engine sourcing
+- **Audio consistency** — Pre-render percussion, deterministic audio, no Math.random()
+- **Code quality** — File sizes (<400 lines), tool organization, no duplication
+- **Puzzle piece reuse** — Clock, session, routing, presets
+
+Then updates `jambot/CLAUDE.md` and `PLATFORM-OVERVIEW.md` with new capabilities.
+
+Source: `sms-bot/documentation/subagents/review-jambot.md`
