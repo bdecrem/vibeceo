@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORBIT — Amber</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="ORBIT">
+  <meta property="og:description" content="Six drum voices orbiting. Each one sounds when it reaches the top. Geometric techno.">
+  <meta property="og:image" content="https://intheamber.com/amber/orbit-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/orbit.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ORBIT">
+  <meta name="twitter:description" content="Six drum voices orbiting. Each one sounds when it reaches the top. Geometric techno.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/amber/orbit-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Space Mono', 'Courier New', monospace;
+      background: #000;
+      color: #D4A574;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    #title {
+      position: absolute;
+      top: 30px;
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      z-index: 10;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+
+    #canvas {
+      display: block;
+      cursor: pointer;
+    }
+
+    #playButton {
+      position: absolute;
+      bottom: 60px;
+      padding: 16px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: 18px;
+      font-weight: bold;
+      background: transparent;
+      color: #D4A574;
+      border: 2px solid #D4A574;
+      cursor: pointer;
+      letter-spacing: 2px;
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+
+    #playButton:hover {
+      background: #D4A574;
+      color: #000;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.6);
+    }
+
+    #playButton.playing {
+      border-color: #2D9596;
+      color: #2D9596;
+    }
+
+    #playButton.playing:hover {
+      background: #2D9596;
+      color: #000;
+    }
+
+    #info {
+      position: absolute;
+      bottom: 20px;
+      font-size: 11px;
+      color: rgba(212, 165, 116, 0.5);
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">ORBIT</div>
+  <canvas id="canvas"></canvas>
+  <button id="playButton">START</button>
+  <div id="info">120 BPM × TR-909 × 6 VOICES</div>
+
+  <script type="module">
+    import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const playButton = document.getElementById('playButton');
+
+    let width, height, centerX, centerY;
+    let audioContext, drums;
+    let isPlaying = false;
+    let audioStarted = false;
+    let time = 0;
+    const bpm = 120;
+    const beatsPerSecond = bpm / 60;
+
+    // Six orbiting voices
+    const orbiters = [
+      { voice: 'kick', radius: 80, speed: 1, angle: 0, color: '#FFD700', name: 'KICK' },
+      { voice: 'snare', radius: 120, speed: 0.8, angle: Math.PI / 3, color: '#D4A574', name: 'SNARE' },
+      { voice: 'ch', radius: 160, speed: 1.2, angle: Math.PI * 2 / 3, color: '#2D9596', name: 'CH' },
+      { voice: 'oh', radius: 200, speed: 0.9, angle: Math.PI, color: '#7B68EE', name: 'OH' },
+      { voice: 'clap', radius: 240, speed: 1.1, angle: Math.PI * 4 / 3, color: '#FF6B6B', name: 'CLAP' },
+      { voice: 'rimshot', radius: 280, speed: 0.7, angle: Math.PI * 5 / 3, color: '#4ECDC4', name: 'RIM' }
+    ];
+
+    // Track last trigger to prevent double hits
+    orbiters.forEach(o => o.lastTrigger = -1);
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      centerX = width / 2;
+      centerY = height / 2;
+    }
+
+    async function initAudio() {
+      if (audioStarted) return;
+      
+      audioContext = new AudioContext();
+      drums = new TR909Engine({ context: audioContext });
+      
+      // Set voice parameters for nice sound
+      const kick = drums.voices.get('kick');
+      if (kick) kick.decay = 0.4;
+      
+      const snare = drums.voices.get('snare');
+      if (snare) snare.tone = 0.6;
+      
+      const ch = drums.voices.get('ch');
+      if (ch) ch.decay = 0.12;
+      
+      const oh = drums.voices.get('oh');
+      if (oh) oh.decay = 0.3;
+
+      audioStarted = true;
+    }
+
+    function draw() {
+      // Clear with fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw center point
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#D4A574';
+      ctx.fill();
+
+      // Draw orbit paths
+      orbiters.forEach(o => {
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, o.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `${o.color}22`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      // Draw orbiters
+      orbiters.forEach(o => {
+        const x = centerX + Math.cos(o.angle) * o.radius;
+        const y = centerY + Math.sin(o.angle) * o.radius;
+
+        // Check if at top (trigger zone)
+        const atTop = Math.abs(o.angle % (Math.PI * 2) - (Math.PI * 1.5)) < 0.1;
+        const shouldTrigger = atTop && isPlaying && audioStarted;
+        
+        // Trigger sound if crossing top and enough time passed
+        if (shouldTrigger && (time - o.lastTrigger > 0.1)) {
+          const voice = drums.voices.get(o.voice);
+          if (voice) {
+            voice.trigger(audioContext.currentTime, 1.0);
+            o.lastTrigger = time;
+          }
+        }
+
+        // Draw glow when at top
+        if (atTop) {
+          const gradient = ctx.createRadialGradient(x, y, 0, x, y, 30);
+          gradient.addColorStop(0, `${o.color}88`);
+          gradient.addColorStop(1, `${o.color}00`);
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(x, y, 30, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Draw orbiter circle
+        ctx.beginPath();
+        ctx.arc(x, y, 12, 0, Math.PI * 2);
+        ctx.fillStyle = o.color;
+        ctx.fill();
+
+        // Draw label
+        ctx.fillStyle = o.color;
+        ctx.font = '10px Space Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(o.name, x, y + 30);
+
+        // Update angle
+        if (isPlaying) {
+          o.angle += o.speed * 0.01 * beatsPerSecond;
+        }
+      });
+    }
+
+    function animate() {
+      if (isPlaying) {
+        time += 1/60;
+      }
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    playButton.addEventListener('click', async () => {
+      if (!audioStarted) {
+        await initAudio();
+      }
+      
+      await audioContext.resume();
+      
+      isPlaying = !isPlaying;
+      
+      if (isPlaying) {
+        playButton.textContent = 'STOP';
+        playButton.classList.add('playing');
+      } else {
+        playButton.textContent = 'START';
+        playButton.classList.remove('playing');
+      }
+    });
+
+    window.addEventListener('resize', resize);
+    resize();
+    animate();
+  </script>
+</body>
+</html>
