@@ -42,6 +42,7 @@ export async function initializeTools() {
   await import('./session-tools.js');
   await import('./sampler-tools.js');
   await import('./jb200-tools.js');
+  await import('./jb202-tools.js');
   await import('./jb01-tools.js');
   await import('./mixer-tools.js');
   await import('./song-tools.js');

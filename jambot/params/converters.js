@@ -30,6 +30,7 @@ export const R3D3_PARAMS = loadParams('r3d3-params.json');
 export const R1D1_PARAMS = loadParams('r1d1-params.json');
 export const R9DS_PARAMS = loadParams('r9ds-params.json');
 export const JB200_PARAMS = loadParams('jb200-params.json');
+export const JB202_PARAMS = loadParams('jb202-params.json');
 export const JB01_PARAMS = loadParams('jb01-params.json');
 
 const SYNTH_PARAMS = {
@@ -38,6 +39,7 @@ const SYNTH_PARAMS = {
   r1d1: R1D1_PARAMS,
   r9ds: R9DS_PARAMS,
   jb200: JB200_PARAMS,
+  jb202: JB202_PARAMS,
   jb01: JB01_PARAMS,
 };
 

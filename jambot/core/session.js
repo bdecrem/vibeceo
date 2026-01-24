@@ -17,6 +17,7 @@ import { ParamSystem } from './params.js';
 import { Clock } from './clock.js';
 import { SamplerNode } from '../instruments/sampler-node.js';
 import { JB200Node } from '../instruments/jb200-node.js';
+import { JB202Node } from '../instruments/jb202-node.js';
 import { JB01Node } from '../instruments/jb01-node.js';
 import { TR909Node } from '../instruments/tr909-node.js';
 import { TB303Node } from '../instruments/tb303-node.js';
@@ -38,9 +39,10 @@ export function createSession(config = {}) {
   // Create param system
   const params = new ParamSystem();
 
-  // Create the canonical instruments (6 total)
+  // Create the canonical instruments (7 total)
   const jb01Node = new JB01Node();
   const jb200Node = new JB200Node();
+  const jb202Node = new JB202Node();
   const samplerNode = new SamplerNode();
   const tr909Node = new TR909Node();
   const tb303Node = new TB303Node();
@@ -49,6 +51,7 @@ export function createSession(config = {}) {
   // Register instruments with their canonical names
   params.register('jb01', jb01Node);
   params.register('jb200', jb200Node);
+  params.register('jb202', jb202Node);
   params.register('sampler', samplerNode);
   params.register('r9d9', tr909Node);
   params.register('r3d3', tb303Node);
@@ -78,6 +81,7 @@ export function createSession(config = {}) {
     // Instrument output levels in dB (-60 to +6, 0 = unity)
     jb01Level: config.jb01Level ?? 0,
     jb200Level: config.jb200Level ?? 0,
+    jb202Level: config.jb202Level ?? 0,
     samplerLevel: config.samplerLevel ?? 0,
     r9d9Level: config.r9d9Level ?? 0,
     r3d3Level: config.r3d3Level ?? 0,
@@ -90,6 +94,7 @@ export function createSession(config = {}) {
     _nodes: {
       jb01: jb01Node,
       jb200: jb200Node,
+      jb202: jb202Node,
       sampler: samplerNode,
       r9d9: tr909Node,
       r3d3: tb303Node,
@@ -183,6 +188,9 @@ export function createSession(config = {}) {
 
     get jb200Pattern() { return jb200Node.getPattern(); },
     set jb200Pattern(v) { jb200Node.setPattern(v); },
+
+    get jb202Pattern() { return jb202Node.getPattern(); },
+    set jb202Pattern(v) { jb202Node.setPattern(v); },
 
     get samplerKit() { return samplerNode.getKit(); },
     set samplerKit(v) { samplerNode.setKit(v); },
@@ -284,6 +292,40 @@ export function createSession(config = {}) {
     get jb200Params() { return this.bassParams; },
     set jb200Params(v) { this.bassParams = v; },
 
+    get jb202Params() {
+      return new Proxy({}, {
+        get: (_, param) => jb202Node.getParam(`bass.${param}`),
+        set: (_, param, value) => {
+          jb202Node.setParam(`bass.${param}`, value);
+          return true;
+        },
+        ownKeys: () => {
+          return Object.keys(jb202Node.getParameterDescriptors())
+            .map(path => path.replace('bass.', ''));
+        },
+        getOwnPropertyDescriptor: (_, prop) => {
+          const path = `bass.${prop}`;
+          if (jb202Node.getParameterDescriptors()[path] !== undefined) {
+            return { enumerable: true, configurable: true, writable: true };
+          }
+          if (jb202Node.getParam(path) !== undefined) {
+            return { enumerable: true, configurable: true, writable: true };
+          }
+          return undefined;
+        },
+        has: (_, prop) => {
+          const path = `bass.${prop}`;
+          return jb202Node.getParameterDescriptors()[path] !== undefined ||
+                 jb202Node.getParam(path) !== undefined;
+        },
+      });
+    },
+    set jb202Params(v) {
+      for (const [param, value] of Object.entries(v)) {
+        jb202Node.setParam(`bass.${param}`, value);
+      }
+    },
+
     get samplerParams() {
       return new Proxy({}, {
         get: (_, slot) => {
@@ -327,6 +369,7 @@ export function createSession(config = {}) {
     patterns: {
       jb01: {},
       jb200: {},
+      jb202: {},
       sampler: {},
       r9d9: {},
       r3d3: {},
@@ -335,6 +378,7 @@ export function createSession(config = {}) {
     currentPattern: {
       jb01: 'A',
       jb200: 'A',
+      jb202: 'A',
       sampler: 'A',
       r9d9: 'A',
       r3d3: 'A',
@@ -349,7 +393,7 @@ export function createSession(config = {}) {
      * @returns {Array<{id: string, node: InstrumentNode}>}
      */
     getCanonicalInstruments() {
-      return ['jb01', 'jb200', 'sampler', 'r9d9', 'r3d3', 'r1d1']
+      return ['jb01', 'jb200', 'jb202', 'sampler', 'r9d9', 'r3d3', 'r1d1']
         .map(id => ({ id, node: this._nodes[id] }))
         .filter(({ node }) => node);
     },
@@ -379,6 +423,7 @@ export function serializeSession(session) {
     bars: session.bars,
     jb01Level: session.jb01Level,
     jb200Level: session.jb200Level,
+    jb202Level: session.jb202Level,
     samplerLevel: session.samplerLevel,
     r9d9Level: session.r9d9Level,
     r3d3Level: session.r3d3Level,
@@ -405,6 +450,7 @@ export function deserializeSession(data) {
     bars: data.bars,
     jb01Level: data.jb01Level ?? data.drumLevel,
     jb200Level: data.jb200Level ?? data.bassLevel,
+    jb202Level: data.jb202Level,
     samplerLevel: data.samplerLevel,
     r9d9Level: data.r9d9Level,
     r3d3Level: data.r3d3Level,
