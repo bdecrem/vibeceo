@@ -43,6 +43,7 @@ Core files:
 | **JB01** | `jb01` | Drum machine (8 voices: kick, snare, clap, ch, oh, perc, tom, cymbal) |
 | **JB200** | `jb200` | Bass monosynth (2-osc, filter, drive) |
 | **JB202** | `jb202` | Modular bass synth with custom DSP (cross-platform consistent) |
+| **JP9000** | `jp9000` | True modular synth with patchable modules (oscillators, filters, Karplus-Strong strings) |
 | **Sampler** | `sampler` | 10-slot sample player with kits |
 
 ### Dormant Instruments (files exist, not yet integrated)
@@ -57,6 +58,7 @@ Core files:
 - User says "drum" / "drums" / "beat" → suggest **JB01**
 - User says "bass" / "bassline" → suggest **JB200** or **JB202**
 - User says "jb202" / "modular bass" / "custom dsp" → suggest **JB202**
+- User says "modular" / "patch" / "modules" / "string" / "pluck" → suggest **JP9000**
 - User says "sample" / "samples" / "kit" → suggest **Sampler**
 
 ### JB202 - Modular Bass Synth (Custom DSP)
@@ -73,6 +75,31 @@ JB202 is a bass monosynth with **custom DSP components** written in pure JavaScr
 
 **Web UI**: `kochi.to/jb202`
 
+### JP9000 - True Modular Synthesizer
+
+JP9000 is a fully patchable modular synthesizer where you connect modules together:
+
+**Module Types:**
+- **Sound Sources**: `osc-saw`, `osc-square`, `osc-triangle`, `string` (Karplus-Strong physical modeling)
+- **Filters**: `filter-lp24` (24dB lowpass), `filter-biquad`
+- **Modulation**: `env-adsr` (ADSR envelope), `sequencer`
+- **Utilities**: `vca`, `mixer` (4-channel)
+- **Effects**: `drive` (saturation)
+
+**Key feature**: The `string` module uses Karplus-Strong physical modeling for realistic plucked strings, bells, and mallet sounds. Deterministic seeded PRNG ensures reproducible audio.
+
+**API**: Module-based patching with `add_module`, `connect_modules`, `tweak_module`.
+
+**Presets**: `basic` (osc→filter→vca), `pluck` (string→filter→drive), `dualBass` (dual osc bass)
+
+**Example workflow:**
+```
+add_jp9000({ preset: 'pluck' })          # Load string preset
+tweak_module({ module: 'string1', param: 'brightness', value: 70 })
+add_jp9000_pattern({ pattern: [...] })   # Set melodic pattern
+render()
+```
+
 ## Synth Sources
 
 Engines imported from `web/public/`:
@@ -82,6 +109,7 @@ Engines imported from `web/public/`:
 - JB200: `../web/public/jb200/dist/machines/jb200/engine.js`
 - JB202: `../web/public/jb202/dist/machines/jb202/engine.js` (custom DSP)
 - JB01: `../web/public/jb01/dist/machines/jb01/engine.js`
+- JP9000: `../web/public/jp9000/dist/rack.js` + modules (reuses JB202 DSP)
 
 R9DS uses local files:
 - `kit-loader.js` — Loads kits from filesystem
@@ -569,6 +597,23 @@ tweak({ path: 'sampler.s1.level', value: 0 })        → Sets sampler slot 1 to 
 | `add_jb01` | JB01 | Drum machine (8 voices: kick, snare, clap, ch, oh, perc, tom, cymbal). Use `bars` param for multi-bar patterns. |
 | `add_jb200` | JB200 | Bass monosynth pattern with note, gate, accent, slide. Use `bars` param for multi-bar patterns. |
 | `add_jb202` | JB202 | Modular bass synth pattern (same format as JB200). Cross-platform consistent output. |
+| `add_jp9000` | JP9000 | Initialize modular synth with optional preset (basic, pluck, dualBass). |
+| `add_jp9000_pattern` | JP9000 | Set melodic pattern (triggers modules set via set_trigger_modules). |
+
+**JP9000 modular tools:**
+
+| Tool | Description |
+|------|-------------|
+| `add_module` | Add module to rack (osc-saw, filter-lp24, string, env-adsr, etc.) |
+| `remove_module` | Remove module from rack |
+| `connect_modules` | Patch two module ports (e.g., 'osc1.audio' → 'filter1.audio') |
+| `disconnect_modules` | Unpatch two module ports |
+| `set_jp9000_output` | Set which module is the final output |
+| `tweak_module` | Adjust module parameter (cutoff, decay, brightness, etc.) |
+| `pluck_string` | Pluck a string module at a specific note |
+| `set_trigger_modules` | Set which modules the pattern sequencer triggers |
+| `show_jp9000` | Show current rack: modules, connections, params |
+| `list_module_types` | List available module types with descriptions |
 
 **Session tools:**
 

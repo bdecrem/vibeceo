@@ -146,7 +146,7 @@ Auto-dispatched from `sms-bot/commands/`:
 | **Amber** | `/amber/` | Creative tools, mood dashboard, gallery |
 | **CTRL SHIFT** | `/cs/`, `/csc/` | Responsible AI knowledge repo |
 | **Report Viewer** | `/report-viewer/` | Agent report display |
-| **Jambot** | `/jb01/`, `/jb200/`, `/jb202/` | Music production tools |
+| **Jambot** | `/jb01/`, `/jb200/`, `/jb202/`, `/jp9000/` | Music production tools |
 | **Code Voice** | `/code-voice/` | Voice-based code assistant (Hume) |
 
 #### Synthesizers (SynthMachine)
@@ -157,6 +157,7 @@ Auto-dispatched from `sms-bot/commands/`:
 | **SH-101** | `/101/` | Monophonic synth |
 | **R9-DS** | `/90s/` | 90s drum sampler |
 | **JB202** | `/jb202/` | Modular bass synth (custom DSP) |
+| **JP9000** | `/jp9000/` | True modular synth (patchable modules, Karplus-Strong) |
 | **Mixer** | Multiple | 4-band EQ, sidechain, reverb |
 
 #### API Endpoints (70+)
