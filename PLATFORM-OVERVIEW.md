@@ -1,8 +1,8 @@
-# Kochito Labs Platform Overview
+# Kochito Labs Plotfarm Overview
 
 ## What This Is
 
-A monorepo that grew like a vine. Started as an SMS bot (**Kochi.to**), now it's... more.
+A monorepo that grew like a vine. The [KL plotfarm](https://en.wikipedia.org/wiki/Bugzilla#Zarro_Boogs) started as an SMS bot (**Kochi.to**), now it's... more.
 
 **The basics:** Text a keyword, get an AI agent's output. Research papers, crypto prices, stock news, knowledge graph queries. Twilio webhook comes in, something happens, SMS goes out.
 

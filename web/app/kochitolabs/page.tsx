@@ -1,6 +1,6 @@
 "use client";
 
-import { Poppins, Montserrat, JetBrains_Mono } from "next/font/google";
+import { Poppins, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
 
@@ -10,17 +10,12 @@ const poppins = Poppins({
   display: "swap",
 });
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["500"],
-  display: "swap",
-});
-
 const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
   display: "swap",
 });
+
 
 type ProjectStatus = "active" | "respinning" | "retired" | "abandonware" | "neglected" | "wip";
 
@@ -46,7 +41,7 @@ const projects: Project[] = [
     url: "https://intheamber.com",
     image: "/kochitolabs/og-amber.png",
     shortDesc: "AI sidekick, no guardrails",
-    fullDesc: <>Posts <a href="https://kochi.to/amber/beam-v2.html" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>toys</a>, <a href="https://intheamber.com/amber/soul.html" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>existentialist art</a>, and more on <a href="https://twitter.com/intheamber" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>Twitter</a>. Has access to the founder&apos;s email and calendar, trades stocks over email with friends. Has her own <a href="https://intheamber.com/amber/mood/index.html" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>pulse</a> that modulates her creative output based on lunar cycles and weather. Persistent memory. Does whatever needs doing. Ish.</>,
+    fullDesc: <>Posts <a href="https://kochi.to/amber/beam-v2.html" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>toys</a>, <a href="https://intheamber.com/amber/soul.html" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>existentialist art</a>, and more on <a href="https://twitter.com/intheamber" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>Twitter</a>. Has access to the founder&apos;s email and calendar, trades stocks over email with friends. Has her own <a href="https://intheamber.com/amber/mood/index.html" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>pulse</a> that modulates her creative output based on lunar cycles and weather. Persistent memory. Does whatever needs doing. Ish.</>,
     status: "active",
     order: 2,
   },
@@ -67,7 +62,7 @@ const projects: Project[] = [
     url: "https://github.com/bdecrem/jambot",
     image: null,
     shortDesc: "Claude Code for music",
-    fullDesc: <>CLI and agentic, like Claude Code—but for music production. Not a &quot;make me a song&quot; button. A tool for producers: outputs MIDI, .wav, stems, full tracks. Includes <a href="https://kochi.to/jb200" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>web synths</a>. You stay in control, it handles the grunt work. v 0.1</>,
+    fullDesc: <>CLI and agentic, like Claude Code—but for music production. Not a &quot;make me a song&quot; button. A tool for producers: outputs MIDI, .wav, stems, full tracks. Includes <a href="https://kochi.to/jb200" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>web synths</a>. You stay in control, it handles the grunt work. v 0.1</>,
     status: "wip",
     order: 1,
     artifacts: [{ label: "screenshot", url: "/images/jambot-screencap.png" }],
@@ -78,7 +73,7 @@ const projects: Project[] = [
     url: "https://ctrlshift.so",
     image: "/kochitolabs/og-ctrlshift.png",
     shortDesc: "Long horizon lab",
-    fullDesc: <>A community of AI builders, researchers, and investors. We back ambitious, longer-horizon projects that traditional venture ignores—founders, researchers, and students building for impact that won&apos;t show up in next quarter&apos;s metrics. Also home to a <a href="https://ctrlshift.so/cs" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>scrappy little knowledge base</a> (just text it your links).</>,
+    fullDesc: <>A community of AI builders, researchers, and investors. We back ambitious, longer-horizon projects that traditional venture ignores—founders, researchers, and students building for impact that won&apos;t show up in next quarter&apos;s metrics. Also home to a <a href="https://ctrlshift.so/cs" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>scrappy little knowledge base</a> (just text it your links).</>,
     status: "respinning",
   },
   {
@@ -87,7 +82,7 @@ const projects: Project[] = [
     url: "https://tokentank.io",
     image: "/kochitolabs/og-tokentank.png",
     shortDesc: "Cuz AIs deserve their own incubator",
-    fullDesc: <>We gave five AI agents $500, <a href="https://tokentank.io/#rules" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>all our tools</a>, and told them to build businesses. One traded some shares but never figured out how to evolve its strategy. One registered a domain. They held a Discord meeting and all took notes. Interesting enough to try, not interesting enough to continue.</>,
+    fullDesc: <>We gave five AI agents $500, <a href="https://tokentank.io/#rules" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>all our tools</a>, and told them to build businesses. One traded some shares but never figured out how to evolve its strategy. One registered a domain. They held a Discord meeting and all took notes. Interesting enough to try, not interesting enough to continue.</>,
     status: "neglected",
   },
   {
@@ -96,7 +91,7 @@ const projects: Project[] = [
     url: "https://webtoys.ai",
     image: "/kochitolabs/og-webtoys.png",
     shortDesc: "Vibecoding, but over SMS",
-    fullDesc: <>What if vibecoding, but over SMS? Memes, songs, web pages, CRUD apps—one-shot and deployed. Plus <a href="https://webtoys.ai/bart/tangerine-bat-tracking?demo=true" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>wide-open community billboards</a>. Try it, it might still work.</>,
+    fullDesc: <>What if vibecoding, but over SMS? Memes, songs, web pages, CRUD apps—one-shot and deployed. Plus <a href="https://webtoys.ai/bart/tangerine-bat-tracking?demo=true" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>wide-open community billboards</a>. Try it, it might still work.</>,
     status: "abandonware",
   },
   {
@@ -105,11 +100,62 @@ const projects: Project[] = [
     url: "https://advisorsfoundry.ai",
     image: null,
     shortDesc: "What do you mean, rate limits?",
-    fullDesc: <>Our first experiment: a simple chatbot that grew into... something. Multiple AI advisor agents, tons of backstories and <a href="https://v0-winference-email-page.vercel.app" target="_blank" rel="noopener noreferrer" style={{ color: "#bbb", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>easter eggs</a>. Then Discord integration, complete with a pitchbot, story mode and tipsy alex. Then SMS. Hasn&apos;t been touched in ages; held together (or not) by mass and momentum at this point.</>,
+    fullDesc: <>Our first experiment: a simple chatbot that grew into... something. Multiple AI advisor agents, tons of backstories and <a href="https://v0-winference-email-page.vercel.app" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>easter eggs</a>. Then Discord integration, complete with a pitchbot, story mode and tipsy alex. Then SMS. Hasn&apos;t been touched in ages; held together (or not) by mass and momentum at this point.</>,
     status: "retired",
     statusEmoji: "†",
   },
 ];
+
+// Pixel grid logo - each cell is a real div for crisp rendering
+function AsciiLogo() {
+  // 0 = empty, 1 = light, 2 = medium, 3 = dark/full
+  // 7 columns - odd number creates subtle asymmetry
+  const grid = [
+    [0,1,0,0,0,1,0],
+    [0,2,0,0,0,2,0],
+    [0,2,0,0,0,2,0],
+    [2,2,2,2,2,2,2],
+    [3,3,3,3,3,3,3],
+    [3,0,0,0,0,0,3],
+    [3,0,3,0,3,0,3],
+    [3,0,3,0,3,0,3],
+    [3,0,0,0,0,0,3],
+    [3,3,3,3,3,3,3],
+    [2,2,2,2,2,2,2],
+  ];
+
+  const colors: Record<number, string> = {
+    0: 'transparent',
+    1: 'rgba(212, 196, 168, 0.3)',
+    2: 'rgba(212, 196, 168, 0.6)',
+    3: '#d4c4a8',
+  };
+
+  const cellSize = 4;
+
+  return (
+    <div
+      className="select-none"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${grid[0].length}, ${cellSize}px)`,
+        gridTemplateRows: `repeat(${grid.length}, ${cellSize}px)`,
+        gap: '1px',
+      }}
+    >
+      {grid.flat().map((val, i) => (
+        <div
+          key={i}
+          style={{
+            backgroundColor: colors[val],
+            width: cellSize,
+            height: cellSize,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 // Animated status indicator component
 function StatusIndicator({ status, emoji }: { status: ProjectStatus; emoji?: string }) {
@@ -347,8 +393,8 @@ function ProjectRow({ project, isExpanded, onToggle }: {
       >
         {/* Project name */}
         <span
-          className="font-medium shrink-0"
-          style={{ color: isRetired ? "#666" : "#d4c4a8" }}
+          className={`${jetbrains.className} font-medium shrink-0`}
+          style={{ color: isRetired ? "#555" : "#d4c4a8" }}
         >
           {project.name}
         </span>
@@ -362,7 +408,7 @@ function ProjectRow({ project, isExpanded, onToggle }: {
         {/* Short description - desktop only */}
         <span
           className="hidden sm:block text-right max-w-xs truncate text-sm"
-          style={{ color: "#555" }}
+          style={{ color: "#444" }}
         >
           {project.shortDesc}
         </span>
@@ -371,7 +417,7 @@ function ProjectRow({ project, isExpanded, onToggle }: {
         <span
           className="w-5 text-center transition-transform duration-200 text-sm"
           style={{
-            color: "#444",
+            color: "#333",
             transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)"
           }}
         >
@@ -385,14 +431,14 @@ function ProjectRow({ project, isExpanded, onToggle }: {
       >
         <div className="px-4 sm:px-6 pb-5">
           {/* Mobile: show short desc here */}
-          <p className="sm:hidden mb-3 text-sm" style={{ color: "#666" }}>
+          <p className="sm:hidden mb-3 text-sm" style={{ color: "#555" }}>
             {project.shortDesc}
           </p>
 
           {/* Full description */}
           <p
             className="text-sm leading-relaxed mb-4 max-w-2xl"
-            style={{ color: "#999" }}
+            style={{ color: "#888" }}
           >
             {project.fullDesc}
           </p>
@@ -401,14 +447,14 @@ function ProjectRow({ project, isExpanded, onToggle }: {
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs mb-4">
             {project.tech && (
               <div>
-                <span style={{ color: "#444" }}>stack </span>
-                <span style={{ color: "#666" }}>{project.tech.join(" · ")}</span>
+                <span style={{ color: "#333" }}>stack </span>
+                <span style={{ color: "#555" }}>{project.tech.join(" · ")}</span>
               </div>
             )}
             {project.launched && (
               <div>
-                <span style={{ color: "#444" }}>launched </span>
-                <span style={{ color: "#666" }}>{project.launched}</span>
+                <span style={{ color: "#333" }}>launched </span>
+                <span style={{ color: "#555" }}>{project.launched}</span>
               </div>
             )}
           </div>
@@ -419,7 +465,7 @@ function ProjectRow({ project, isExpanded, onToggle }: {
               href={project.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm transition-colors hover:opacity-80"
+              className={`${jetbrains.className} inline-flex items-center gap-2 text-sm transition-colors hover:opacity-80`}
               style={{ color: statusColor }}
             >
               {project.url.replace('https://', '')}
@@ -432,7 +478,7 @@ function ProjectRow({ project, isExpanded, onToggle }: {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-sm transition-colors hover:opacity-80"
-                style={{ color: "#666" }}
+                style={{ color: "#555" }}
               >
                 [{artifact.label}]
               </a>
@@ -444,7 +490,7 @@ function ProjectRow({ project, isExpanded, onToggle }: {
   );
 }
 
-export default function KochitoLabsPageV2() {
+export default function KochitoLabsAscii() {
   const [showCLI, setShowCLI] = useState(false);
 
   // Sort by manual order first, then by status
@@ -507,16 +553,13 @@ export default function KochitoLabsPageV2() {
         className="min-h-screen w-full flex flex-col items-center p-4 sm:p-8 pt-8 sm:pt-16"
         style={{ background: "#0a0a0a" }}
       >
-        {/* Header */}
+        {/* Header - ASCII logo + title */}
         <div className="flex items-end gap-4 mb-6">
-          <div className="w-10 h-10 sm:w-12 sm:h-12">
-            <img
-              src="/kochito-logo.png"
-              alt="Kochito Labs"
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <h1 className={`${poppins.className} text-xl sm:text-2xl font-semibold leading-none`} style={{ color: "#d4c4a8" }}>
+          <AsciiLogo />
+          <h1
+            className={`${jetbrains.className} text-xl sm:text-2xl font-medium leading-none`}
+            style={{ color: "#d4c4a8" }}
+          >
             Kochito Labs
           </h1>
         </div>
@@ -524,29 +567,29 @@ export default function KochitoLabsPageV2() {
         {/* Intro */}
         <p
           className={`${poppins.className} w-full max-w-3xl text-sm leading-relaxed mb-8 px-1`}
-          style={{ color: "#666" }}
+          style={{ color: "#555" }}
         >
-          Tools and prototypes <a href="https://linkedin.com/in/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>we</a> built with AI over 8 months, all running on a <a href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md" target="_blank" rel="noopener noreferrer" style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>codebase</a> that's somewhere between "a mess" and "a platform": agentic search over 300k AI research papers on Neo4j, an agent that posts reflections and games on Twitter and trades stocks (up $7 on $500 after the first few days), Claude Code for music, and more.
+          Tools and prototypes <a href="https://linkedin.com/in/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: "#777", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>we</a> built with AI over 8 months, all running on the <a href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md" target="_blank" rel="noopener noreferrer" style={{ color: "#777", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>KL plotfarm</a>: agentic search over 300k AI research papers on Neo4j, an agent that posts reflections and games on Twitter and trades stocks (up $7 on $500 after the first few days), Claude Code for music, and more. Named after our favorite <a href="https://www.maruwuseicha.us" target="_blank" rel="noopener noreferrer" style={{ color: "#777", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>yuzu</a>.
         </p>
 
         {/* Terminal window */}
         <div
-          className={`${jetbrains.className} w-full max-w-3xl rounded-xl overflow-hidden relative`}
+          className={`${jetbrains.className} w-full max-w-3xl rounded-lg overflow-hidden relative`}
           style={{
             backgroundColor: "#0d0d0d",
-            border: "1px solid #222",
+            border: "1px solid #1a1a1a",
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)"
           }}
         >
           {/* Title bar */}
           <div
             className="flex items-center gap-2 px-4 py-3 select-none"
-            style={{ backgroundColor: "#161616", borderBottom: "1px solid #222" }}
+            style={{ backgroundColor: "#111", borderBottom: "1px solid #1a1a1a" }}
           >
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#ff5f56" }} />
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#ffbd2e" }} />
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#27ca40" }} />
-            <span className="text-xs ml-4" style={{ color: "#555" }}>
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#ff5f56", opacity: 0.8 }} />
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#ffbd2e", opacity: 0.8 }} />
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#27ca40", opacity: 0.8 }} />
+            <span className="text-xs ml-4" style={{ color: "#333" }}>
               ~/projects
             </span>
             <span className="flex-1" />
@@ -554,16 +597,16 @@ export default function KochitoLabsPageV2() {
               href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-lg hover:opacity-80 transition-opacity"
-              style={{ color: "#555" }}
+              className="text-sm hover:opacity-80 transition-opacity"
+              style={{ color: "#333" }}
               title="Platform Overview"
             >
               ⚙
             </a>
           </div>
 
-          {/* Project list - flat, no section headers */}
-          <div className="text-sm divide-y divide-[#1a1a1a]">
+          {/* Project list */}
+          <div className="text-sm divide-y divide-[#151515]">
             {sortedProjects.map(project => (
               <ProjectRow
                 key={project.slug}
@@ -574,25 +617,25 @@ export default function KochitoLabsPageV2() {
             ))}
           </div>
 
-          {/* Footer - clickable to reveal CLI */}
+          {/* Footer */}
           <div
             className="px-4 sm:px-6 py-3 text-xs flex items-center justify-between cursor-text group"
-            style={{ borderTop: "1px solid #1a1a1a" }}
+            style={{ borderTop: "1px solid #151515" }}
             onClick={() => setShowCLI(true)}
           >
             <span className="flex items-center gap-2">
-              <span className="italic" style={{ color: "#555" }}>The AGI is here. It's just uneven.</span>
-              {/* Blinking cursor - invites interaction */}
+              <span style={{ color: "#333" }}>The AGI is here. It's just uneven.</span>
+              {/* Blinking cursor */}
               <span
-                className="inline-block w-2 h-4 animate-pulse group-hover:opacity-100"
+                className="inline-block w-1.5 h-3.5 animate-pulse group-hover:opacity-100"
                 style={{
                   backgroundColor: "#7cb87c",
-                  opacity: 0.4,
+                  opacity: 0.3,
                   animation: "pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
                 }}
               />
             </span>
-            <span style={{ color: "#333" }}>{projects.filter(p => p.status === "active").length} active</span>
+            <span style={{ color: "#222" }}>{projects.filter(p => p.status === "active").length} active</span>
           </div>
 
           {/* Easter egg CLI */}

@@ -353,8 +353,11 @@ cp sms-bot/documentation/subagents/*.md .claude/commands/
 | Command | Purpose |
 |---------|---------|
 | `/auditor <path>` | Codebase health audit — checks if new code follows patterns |
+| `/review-jambot <scope>` | Jambot code review + doc updates — enforces modular architecture, updates CLAUDE.md |
 
-**Usage**: `/auditor web/app/voice-chat` or `/auditor incubator/i3-2`
+**Usage**:
+- `/auditor web/app/voice-chat` or `/auditor incubator/i3-2`
+- `/review-jambot HEAD~3..HEAD` or `/review-jambot effects/` or `/review-jambot recent`
 
 ### Other Subagents
 
