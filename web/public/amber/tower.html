@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOWER — Stack blocks without toppling</title>
+  <meta name="description" content="Stack falling blocks as high as you can. Tap to drop. Don't let it topple.">
+  <meta property="og:title" content="TOWER">
+  <meta property="og:description" content="Stack falling blocks as high as you can. Tap to drop. Don't let it topple.">
+  <meta property="og:image" content="https://intheamber.com/amber/tower-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/tower.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/tower-og.png">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+    }
+    
+    #canvas {
+      display: block;
+      background: #000;
+      cursor: pointer;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    
+    #score {
+      font-size: 48px;
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 20px #FFD700;
+    }
+    
+    #high {
+      font-size: 14px;
+      color: #2D9596;
+      margin-top: 4px;
+    }
+    
+    #prompt {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 18px;
+      text-align: center;
+      color: #D4A574;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    #prompt.show {
+      opacity: 1;
+    }
+    
+    #gameover {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    
+    #gameover.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    #gameover h2 {
+      font-size: 36px;
+      color: #FFD700;
+      margin-bottom: 12px;
+    }
+    
+    #gameover p {
+      font-size: 18px;
+      color: #D4A574;
+      margin-bottom: 20px;
+    }
+    
+    #restart {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 16px 32px;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    #restart:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+    
+    #restart:active {
+      transform: scale(0.95);
+    }
+    
+    .signature {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 12px;
+      color: #2D9596;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="score">0</div>
+    <div id="high">HIGH: 0</div>
+  </div>
+  
+  <div id="prompt">TAP TO DROP</div>
+  
+  <div id="gameover">
+    <h2>TOWER FELL</h2>
+    <p id="finalScore"></p>
+    <button id="restart">BUILD AGAIN</button>
+  </div>
+  
+  <div class="signature">AMBER</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const highEl = document.getElementById('high');
+    const promptEl = document.getElementById('prompt');
+    const gameoverEl = document.getElementById('gameover');
+    const finalScoreEl = document.getElementById('finalScore');
+    const restartBtn = document.getElementById('restart');
+    
+    let width, height;
+    let blocks = [];
+    let currentBlock = null;
+    let score = 0;
+    let highScore = parseInt(localStorage.getItem('towerHigh') || '0');
+    let gameState = 'start'; // start, playing, gameover
+    let audioContext = null;
+    let groundY;
+    let baseWidth = 120;
+    
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      groundY = height - 60;
+    }
+    
+    resize();
+    window.addEventListener('resize', resize);
+    
+    highEl.textContent = `HIGH: ${highScore}`;
+    
+    // Audio setup
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function playTone(freq, duration, type = 'sine') {
+      if (!audioContext) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = freq;
+      osc.type = type;
+      gain.gain.value = 0.2;
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      osc.start();
+      osc.stop(audioContext.currentTime + duration);
+    }
+    
+    function playDrop() {
+      playTone(220 + score * 20, 0.1, 'sine');
+    }
+    
+    function playTopple() {
+      playTone(80, 0.5, 'sawtooth');
+    }
+    
+    function playSuccess() {
+      playTone(440, 0.15, 'sine');
+      setTimeout(() => playTone(550, 0.15, 'sine'), 50);
+    }
+    
+    class Block {
+      constructor(x, y, w, h, isMoving = false) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.vx = isMoving ? 3 : 0;
+        this.vy = 0;
+        this.isMoving = isMoving;
+        this.landed = false;
+        this.rotation = 0;
+        this.rotationSpeed = 0;
+        this.color = this.getColor();
+      }
+      
+      getColor() {
+        const colors = ['#D4A574', '#FFD700', '#2D9596'];
+        return colors[Math.floor(Math.random() * colors.length)];
+      }
+      
+      update() {
+        if (this.isMoving) {
+          // Horizontal movement
+          this.x += this.vx;
+          if (this.x < 0 || this.x + this.w > width) {
+            this.vx *= -1;
+          }
+        } else if (!this.landed) {
+          // Falling
+          this.vy += 0.5; // gravity
+          this.y += this.vy;
+          this.rotation += this.rotationSpeed;
+          
+          // Check collision with ground
+          if (this.y + this.h >= groundY) {
+            this.y = groundY - this.h;
+            this.landed = true;
+            this.rotation = 0;
+            this.checkStability();
+          }
+          
+          // Check collision with other blocks
+          for (let block of blocks) {
+            if (block !== this && block.landed && this.collidesWith(block)) {
+              this.y = block.y - this.h;
+              this.landed = true;
+              this.rotation = 0;
+              this.checkStability();
+              break;
+            }
+          }
+        }
+      }
+      
+      collidesWith(other) {
+        return this.x < other.x + other.w &&
+               this.x + this.w > other.x &&
+               this.y < other.y + other.h &&
+               this.y + this.h > other.y;
+      }
+      
+      checkStability() {
+        // Check if block is aligned enough with the block below
+        if (blocks.length === 0) return;
+        
+        const below = blocks.filter(b => b!== this && b.landed && b.y < this.y)
+          .sort((a, b) => b.y - a.y)[0];
+        
+        if (!below) return;
+        
+        // Calculate overlap
+        const overlapLeft = Math.max(this.x, below.x);
+        const overlapRight = Math.min(this.x + this.w, below.x + below.w);
+        const overlap = overlapRight - overlapLeft;
+        
+        // If overlap is too small, block starts rotating and falls
+        if (overlap < this.w * 0.3) {
+          this.rotationSpeed = (Math.random() - 0.5) * 0.3;
+          setTimeout(() => this.topple(), 300);
+        }
+      }
+      
+      topple() {
+        if (gameState !== 'playing') return;
+        playTopple();
+        endGame();
+      }
+      
+      draw() {
+        ctx.save();
+        ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
+        ctx.rotate(this.rotation);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-this.w / 2, -this.h / 2, this.w, this.h);
+        ctx.restore();
+      }
+    }
+    
+    function spawnBlock() {
+      const w = Math.max(60, baseWidth - score * 3);
+      const h = 30;
+      const x = width / 2 - w / 2;
+      const y = 80;
+      currentBlock = new Block(x, y, w, h, true);
+    }
+    
+    function dropBlock() {
+      if (!currentBlock || !currentBlock.isMoving) return;
+      
+      currentBlock.isMoving = false;
+      blocks.push(currentBlock);
+      playDrop();
+      
+      setTimeout(() => {
+        if (currentBlock.landed) {
+          score++;
+          scoreEl.textContent = score;
+          playSuccess();
+          spawnBlock();
+        }
+      }, 100);
+      
+      currentBlock = null;
+    }
+    
+    function endGame() {
+      gameState = 'gameover';
+      
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('towerHigh', highScore);
+        highEl.textContent = `HIGH: ${highScore}`;
+        finalScoreEl.textContent = `NEW RECORD: ${score} blocks!`;
+      } else {
+        finalScoreEl.textContent = `You stacked ${score} blocks`;
+      }
+      
+      gameoverEl.classList.add('show');
+    }
+    
+    function startGame() {
+      gameState = 'playing';
+      blocks = [];
+      currentBlock = null;
+      score = 0;
+      scoreEl.textContent = score;
+      promptEl.classList.remove('show');
+      gameoverEl.classList.remove('show');
+      
+      // Add base block
+      const baseBlock = new Block(width / 2 - baseWidth / 2, groundY - 30, baseWidth, 30, false);
+      baseBlock.landed = true;
+      blocks.push(baseBlock);
+      
+      spawnBlock();
+    }
+    
+    function draw() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Draw ground
+      ctx.fillStyle = '#0D0D0D';
+      ctx.fillRect(0, groundY, width, height - groundY);
+      ctx.strokeStyle = '#2D9596';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(width, groundY);
+      ctx.stroke();
+      
+      // Draw blocks
+      for (let block of blocks) {
+        block.draw();
+      }
+      
+      if (currentBlock) {
+        currentBlock.draw();
+      }
+    }
+    
+    function update() {
+      if (gameState !== 'playing') return;
+      
+      for (let block of blocks) {
+        block.update();
+      }
+      
+      if (currentBlock) {
+        currentBlock.update();
+      }
+    }
+    
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+    
+    // Input handling
+    canvas.addEventListener('click', () => {
+      initAudio();
+      
+      if (gameState === 'start') {
+        startGame();
+      } else if (gameState === 'playing' && currentBlock && currentBlock.isMoving) {
+        dropBlock();
+      }
+    });
+    
+    restartBtn.addEventListener('click', () => {
+      startGame();
+    });
+    
+    // Show initial prompt
+    setTimeout(() => {
+      promptEl.classList.add('show');
+    }, 500);
+    
+    gameLoop();
+  </script>
+</body>
+</html>
