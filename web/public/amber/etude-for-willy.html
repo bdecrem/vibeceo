@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Etude for Willy</title>
+  <meta property="og:title" content="Etude for Willy">
+  <meta property="og:description" content="A generative classical piece that plays forever, different each time.">
+  <meta property="og:image" content="https://intheamber.com/amber/etude-for-willy-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/etude-for-willy.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/etude-for-willy-og.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Georgia', serif;
+      background: #0a0908;
+      color: #D4A574;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: normal;
+      font-style: italic;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.1em;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      margin-bottom: 2rem;
+    }
+
+    #playBtn {
+      background: transparent;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      padding: 1rem 3rem;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    #playBtn:hover {
+      background: #D4A574;
+      color: #0a0908;
+    }
+
+    #playBtn.playing {
+      opacity: 0.5;
+    }
+
+    .info {
+      position: fixed;
+      bottom: 1rem;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.75rem;
+      opacity: 0.4;
+      z-index: 1;
+    }
+
+    .key-display {
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      opacity: 0.6;
+      min-height: 1.5em;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div class="content">
+    <h1>Etude for Willy</h1>
+    <p class="subtitle">a generative piece</p>
+    <button id="playBtn">Begin</button>
+    <p class="key-display" id="keyDisplay"></p>
+  </div>
+
+  <p class="info">Each performance is unique</p>
+
+  <script>
+    // === VISUAL LAYER ===
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let visualIntensity = 0;
+    let currentHue = 30; // Amber-ish
+    let targetHue = 30;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function drawVisuals() {
+      // Gentle fade
+      ctx.fillStyle = 'rgba(10, 9, 8, 0.03)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Smooth hue transition
+      currentHue += (targetHue - currentHue) * 0.01;
+
+      // Central glow that pulses with music
+      const intensity = visualIntensity * 0.3;
+      if (intensity > 0.01) {
+        const gradient = ctx.createRadialGradient(
+          width / 2, height / 2, 0,
+          width / 2, height / 2, Math.min(width, height) * 0.6
+        );
+
+        const alpha = intensity * 0.15;
+        gradient.addColorStop(0, `hsla(${currentHue}, 40%, 60%, ${alpha})`);
+        gradient.addColorStop(0.5, `hsla(${currentHue}, 30%, 40%, ${alpha * 0.5})`);
+        gradient.addColorStop(1, 'transparent');
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      // Decay
+      visualIntensity *= 0.95;
+
+      requestAnimationFrame(drawVisuals);
+    }
+    drawVisuals();
+
+    // === MUSIC ENGINE ===
+    let audioCtx = null;
+    let isPlaying = false;
+    let masterGain = null;
+    let reverbNode = null;
+    let scheduledEvents = [];
+
+    // Musical constants
+    const KEYS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    const MODES = [
+      { name: 'major', intervals: [0, 2, 4, 5, 7, 9, 11] },
+      { name: 'minor', intervals: [0, 2, 3, 5, 7, 8, 10] },
+      { name: 'dorian', intervals: [0, 2, 3, 5, 7, 9, 10] },
+      { name: 'mixolydian', intervals: [0, 2, 4, 5, 7, 9, 10] }
+    ];
+
+    let currentKey = 0; // C = 0
+    let currentMode = null;
+    let currentTempo = 72; // BPM
+    let currentOctaveBase = 3;
+
+    // Note frequencies (A4 = 440Hz)
+    function noteToFreq(note) {
+      return 440 * Math.pow(2, (note - 69) / 12);
+    }
+
+    function getScaleNote(degree, octaveOffset = 0) {
+      const octave = currentOctaveBase + octaveOffset + Math.floor(degree / 7);
+      const interval = currentMode.intervals[((degree % 7) + 7) % 7];
+      const midiNote = (octave + 1) * 12 + currentKey + interval;
+      return noteToFreq(midiNote);
+    }
+
+    // Create simple reverb impulse
+    function createReverb() {
+      const sampleRate = audioCtx.sampleRate;
+      const length = sampleRate * 2.5;
+      const impulse = audioCtx.createBuffer(2, length, sampleRate);
+
+      for (let channel = 0; channel < 2; channel++) {
+        const data = impulse.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+        }
+      }
+
+      const convolver = audioCtx.createConvolver();
+      convolver.buffer = impulse;
+      return convolver;
+    }
+
+    // Warm pad voice (strings-like)
+    function playPad(freq, startTime, duration, velocity = 0.15) {
+      const attack = 0.8;
+      const release = 1.2;
+
+      // Two detuned oscillators for warmth
+      const oscs = [];
+      const gains = [];
+
+      for (let i = 0; i < 2; i++) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.value = freq * (1 + (i - 0.5) * 0.003); // Slight detune
+
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(velocity * 0.5, startTime + attack);
+        gain.gain.setValueAtTime(velocity * 0.5, startTime + duration - release);
+        gain.gain.linearRampToValueAtTime(0, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(reverbNode);
+        gain.connect(masterGain);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration + 0.1);
+
+        oscs.push(osc);
+        gains.push(gain);
+      }
+
+      visualIntensity = Math.max(visualIntensity, velocity * 2);
+    }
+
+    // Melodic voice (piano-like)
+    function playMelody(freq, startTime, duration, velocity = 0.2) {
+      const osc = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      // Triangle with harmonic for piano-like tone
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+
+      osc2.type = 'sine';
+      osc2.frequency.value = freq * 2;
+
+      filter.type = 'lowpass';
+      filter.frequency.value = 2000;
+      filter.Q.value = 1;
+
+      // Piano-like envelope
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(velocity, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(velocity * 0.6, startTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+      osc.connect(filter);
+      osc2.connect(filter);
+      filter.connect(gain);
+      gain.connect(reverbNode);
+      gain.connect(masterGain);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.1);
+      osc2.start(startTime);
+      osc2.stop(startTime + duration + 0.1);
+
+      visualIntensity = Math.max(visualIntensity, velocity * 3);
+    }
+
+    // Arpeggio pattern
+    function playArpeggio(startTime, degrees, noteDuration, velocity = 0.18) {
+      degrees.forEach((degree, i) => {
+        const freq = getScaleNote(degree, 1);
+        const time = startTime + i * noteDuration;
+        playMelody(freq, time, noteDuration * 1.5, velocity * (0.8 + Math.random() * 0.2));
+      });
+    }
+
+    // === COMPOSITION ENGINE ===
+    let phraseIndex = 0;
+    let measureInPhrase = 0;
+    const MEASURES_PER_PHRASE = 8;
+
+    function chooseNewKey() {
+      // Choose a new key, often related to current
+      const relationships = [0, 5, 7, 2, -3]; // Same, fourth, fifth, second, relative
+      const choice = relationships[Math.floor(Math.random() * relationships.length)];
+      currentKey = (currentKey + choice + 12) % 12;
+
+      // Sometimes change mode
+      if (Math.random() < 0.3) {
+        currentMode = MODES[Math.floor(Math.random() * MODES.length)];
+      }
+
+      // Update hue based on key
+      targetHue = 25 + currentKey * 8; // Cycle through warm colors
+
+      updateKeyDisplay();
+    }
+
+    function updateKeyDisplay() {
+      const keyNames = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+      const display = document.getElementById('keyDisplay');
+      display.textContent = `${keyNames[currentKey]} ${currentMode.name}`;
+    }
+
+    function generateMeasure(startTime) {
+      const beatDuration = 60 / currentTempo;
+      const measureDuration = beatDuration * 4;
+
+      // Harmonic progression patterns
+      const progressions = [
+        [0, 3, 4, 0],   // I - IV - V - I
+        [0, 5, 3, 4],   // I - vi - IV - V
+        [0, 4, 5, 3],   // I - V - vi - IV
+        [0, 2, 4, 0],   // I - iii - V - I
+        [0, 3, 0, 4],   // I - IV - I - V
+      ];
+
+      // Choose progression at start of phrase
+      if (measureInPhrase === 0) {
+        if (phraseIndex > 0 && Math.random() < 0.4) {
+          chooseNewKey();
+        }
+      }
+
+      const progression = progressions[phraseIndex % progressions.length];
+      const chordRoot = progression[measureInPhrase % 4];
+
+      // Pad chord (sustained)
+      const padNotes = [chordRoot, chordRoot + 2, chordRoot + 4];
+      padNotes.forEach(degree => {
+        const freq = getScaleNote(degree, 0);
+        playPad(freq, startTime, measureDuration * 1.1, 0.08 + Math.random() * 0.04);
+      });
+
+      // Bass note
+      const bassFreq = getScaleNote(chordRoot, -1);
+      playPad(bassFreq, startTime, measureDuration, 0.12);
+
+      // Melodic patterns
+      const patterns = [
+        // Ascending arpeggio
+        () => playArpeggio(startTime, [chordRoot, chordRoot + 2, chordRoot + 4, chordRoot + 5], beatDuration * 0.5),
+        // Descending
+        () => playArpeggio(startTime, [chordRoot + 5, chordRoot + 4, chordRoot + 2, chordRoot], beatDuration * 0.5),
+        // Waltz-like
+        () => {
+          playMelody(getScaleNote(chordRoot + 7, 1), startTime, beatDuration * 0.9, 0.22);
+          playArpeggio(startTime + beatDuration, [chordRoot + 2, chordRoot + 4], beatDuration * 0.4, 0.12);
+          playArpeggio(startTime + beatDuration * 2, [chordRoot + 2, chordRoot + 4], beatDuration * 0.4, 0.10);
+        },
+        // Sparse melody
+        () => {
+          if (Math.random() < 0.7) {
+            const melodicDegree = chordRoot + [0, 2, 4, 5, 7][Math.floor(Math.random() * 5)];
+            playMelody(getScaleNote(melodicDegree, 1), startTime + beatDuration * Math.random(), beatDuration * 2, 0.2);
+          }
+        },
+        // Running notes
+        () => {
+          const run = [];
+          let degree = chordRoot;
+          for (let i = 0; i < 8; i++) {
+            run.push(degree);
+            degree += Math.random() < 0.6 ? 1 : -1;
+          }
+          run.forEach((d, i) => {
+            playMelody(getScaleNote(d, 1), startTime + i * beatDuration * 0.25, beatDuration * 0.4, 0.15);
+          });
+        }
+      ];
+
+      // Choose and play pattern
+      const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+      pattern();
+
+      // Occasional ornament
+      if (Math.random() < 0.2) {
+        const ornamentTime = startTime + beatDuration * (2 + Math.random() * 2);
+        const ornamentDegree = chordRoot + Math.floor(Math.random() * 8);
+        playMelody(getScaleNote(ornamentDegree, 2), ornamentTime, beatDuration * 0.3, 0.1);
+      }
+
+      // Advance
+      measureInPhrase++;
+      if (measureInPhrase >= MEASURES_PER_PHRASE) {
+        measureInPhrase = 0;
+        phraseIndex++;
+
+        // Occasional tempo variation
+        if (Math.random() < 0.2) {
+          currentTempo = 68 + Math.floor(Math.random() * 12);
+        }
+      }
+
+      return measureDuration;
+    }
+
+    // Scheduler
+    let nextMeasureTime = 0;
+    let schedulerInterval = null;
+
+    function scheduler() {
+      const lookAhead = 0.5; // Schedule 500ms ahead
+
+      while (nextMeasureTime < audioCtx.currentTime + lookAhead) {
+        const duration = generateMeasure(nextMeasureTime);
+        nextMeasureTime += duration;
+      }
+    }
+
+    function startMusic() {
+      if (isPlaying) return;
+
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.7;
+      masterGain.connect(audioCtx.destination);
+
+      reverbNode = createReverb();
+      const reverbGain = audioCtx.createGain();
+      reverbGain.gain.value = 0.3;
+      reverbNode.connect(reverbGain);
+      reverbGain.connect(audioCtx.destination);
+
+      // Initialize with random key and mode
+      currentKey = Math.floor(Math.random() * 12);
+      currentMode = MODES[Math.floor(Math.random() * MODES.length)];
+      currentTempo = 68 + Math.floor(Math.random() * 12);
+      currentOctaveBase = 3;
+      phraseIndex = 0;
+      measureInPhrase = 0;
+
+      updateKeyDisplay();
+
+      nextMeasureTime = audioCtx.currentTime + 0.1;
+      schedulerInterval = setInterval(scheduler, 100);
+
+      isPlaying = true;
+      document.getElementById('playBtn').textContent = 'Playing...';
+      document.getElementById('playBtn').classList.add('playing');
+    }
+
+    function stopMusic() {
+      if (!isPlaying) return;
+
+      clearInterval(schedulerInterval);
+      masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
+
+      setTimeout(() => {
+        audioCtx.close();
+        audioCtx = null;
+        isPlaying = false;
+        document.getElementById('playBtn').textContent = 'Begin';
+        document.getElementById('playBtn').classList.remove('playing');
+        document.getElementById('keyDisplay').textContent = '';
+      }, 1100);
+    }
+
+    // Toggle
+    document.getElementById('playBtn').addEventListener('click', () => {
+      if (isPlaying) {
+        stopMusic();
+      } else {
+        startMusic();
+      }
+    });
+
+    // Handle page visibility
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && isPlaying) {
+        // Keep playing but reduce CPU
+      }
+    });
+  </script>
+</body>
+</html>
