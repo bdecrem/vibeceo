@@ -1,0 +1,675 @@
+/* JB202 Modular Bass Synth Styles */
+
+:root {
+    --bg-dark: #1a1e2e;
+    --bg-panel: #162130;
+    --bg-section: #1f2f3f;
+    --accent: #4fd1a3;
+    --accent-bright: #6ff1c3;
+    --accent-dim: #2a8f6f;
+    --text: #e8e8e8;
+    --text-dim: #88aa99;
+    --knob-bg: #2a4a3a;
+    --knob-indicator: #4fd1a3;
+    --gate-on: #4fd1a3;
+    --gate-off: #2a3a4a;
+    --accent-color: #f0a030;
+    --slide-color: #30a0d0;
+    --playing: #6ff1c3;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    background: var(--bg-dark);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+}
+
+/* Main Panel */
+.synth-panel {
+    background: var(--bg-panel);
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 900px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--accent-dim);
+}
+
+.logo {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo-text {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent-bright);
+    letter-spacing: 2px;
+}
+
+.logo-sub {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+}
+
+.header-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.icon-btn {
+    background: var(--bg-section);
+    border: 1px solid var(--accent-dim);
+    color: var(--text);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.icon-btn:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+}
+
+.preset-select {
+    background: var(--bg-section);
+    border: 1px solid var(--accent-dim);
+    color: var(--text);
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    min-width: 100px;
+    transition: all 0.15s;
+}
+
+.preset-select:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+}
+
+.preset-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.preset-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.preset-label {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+/* Controls Grid */
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.control-section {
+    background: var(--bg-section);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.control-section h3 {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+/* Waveform Toggle */
+.wave-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.wave-btn {
+    background: var(--bg-dark);
+    border: 1px solid var(--accent-dim);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    font-size: 10px;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s;
+}
+
+.wave-btn:hover {
+    border-color: var(--accent);
+}
+
+.wave-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg-dark);
+}
+
+/* Knob Row */
+.knob-row {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.knob-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.knob-group label {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+}
+
+.knob-value {
+    font-size: 10px;
+    color: var(--accent);
+    min-width: 30px;
+    text-align: center;
+}
+
+/* Knobs */
+.knob {
+    width: 40px;
+    height: 40px;
+    background: var(--knob-bg);
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    border: 2px solid var(--accent-dim);
+    transition: border-color 0.15s;
+}
+
+.knob:hover {
+    border-color: var(--accent);
+}
+
+.knob::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 10px;
+    background: var(--knob-indicator);
+    border-radius: 2px;
+}
+
+.knob.knob-large {
+    width: 50px;
+    height: 50px;
+}
+
+.knob.knob-large::after {
+    height: 12px;
+}
+
+.knob.knob-small {
+    width: 32px;
+    height: 32px;
+}
+
+.knob.knob-small::after {
+    top: 4px;
+    height: 8px;
+    width: 2px;
+}
+
+/* Sequencer Section */
+.sequencer-section {
+    background: var(--bg-section);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.sequencer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.step-page-toggle {
+    display: flex;
+    gap: 4px;
+}
+
+.step-page-btn {
+    background: var(--bg-dark);
+    border: 1px solid var(--accent-dim);
+    color: var(--text-dim);
+    padding: 4px 12px;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s;
+}
+
+.step-page-btn:hover {
+    border-color: var(--accent);
+}
+
+.step-page-btn.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+.step-page-btn.has-playing {
+    box-shadow: 0 0 8px var(--playing);
+}
+
+.seq-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 9px;
+    color: var(--text-dim);
+    text-align: right;
+}
+
+/* Sequencer Grid */
+.sequencer {
+    overflow: hidden;
+}
+
+.seq-steps {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+}
+
+.seq-step {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px;
+    background: var(--bg-dark);
+    border-radius: 4px;
+    transition: all 0.1s;
+}
+
+.seq-step.playing {
+    box-shadow: 0 0 12px var(--playing);
+    background: var(--bg-panel);
+}
+
+/* Hide steps 9-16 by default on mobile */
+.seq-step:nth-child(n+9) {
+    display: none;
+}
+
+.sequencer.page-2 .seq-step:nth-child(-n+8) {
+    display: none;
+}
+
+.sequencer.page-2 .seq-step:nth-child(n+9) {
+    display: flex;
+}
+
+/* Note button */
+.seq-note {
+    background: var(--bg-section);
+    border: 1px solid var(--accent-dim);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 11px;
+    padding: 6px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.seq-note:hover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+}
+
+/* Gate/Accent/Slide buttons */
+.seq-gate,
+.seq-accent,
+.seq-slide {
+    height: 16px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.seq-gate {
+    background: var(--gate-off);
+}
+
+.seq-gate.active {
+    background: var(--gate-on);
+    box-shadow: 0 0 6px var(--gate-on);
+}
+
+.seq-accent {
+    background: var(--gate-off);
+}
+
+.seq-accent.active {
+    background: var(--accent-color);
+    box-shadow: 0 0 6px var(--accent-color);
+}
+
+.seq-slide {
+    background: var(--gate-off);
+}
+
+.seq-slide.active {
+    background: var(--slide-color);
+    box-shadow: 0 0 6px var(--slide-color);
+}
+
+/* Transport */
+.transport-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: var(--bg-section);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.transport-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.transport-left label {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.transport-left input {
+    width: 60px;
+    background: var(--bg-dark);
+    border: 1px solid var(--accent-dim);
+    color: var(--text);
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    text-align: center;
+}
+
+.transport-left input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.play-btn {
+    background: var(--accent);
+    border: none;
+    color: var(--bg-dark);
+    padding: 10px 30px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.play-btn:hover {
+    background: var(--accent-bright);
+}
+
+.share-icon::before {
+    content: 'SHARE';
+    font-size: 9px;
+}
+
+/* Status */
+.status {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 8px;
+}
+
+/* Modals */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-panel);
+    border-radius: 12px;
+    padding: 25px;
+    max-width: 450px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--text);
+}
+
+.modal-content h2 {
+    color: var(--accent-bright);
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+.modal-content h3 {
+    color: var(--accent);
+    font-size: 14px;
+    margin: 15px 0 8px;
+}
+
+.modal-content p,
+.modal-content li {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+}
+
+.modal-content ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.modal-content li {
+    margin-bottom: 6px;
+}
+
+.modal-content li strong {
+    color: var(--text);
+}
+
+.modal-footer {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--accent-dim);
+    text-align: center;
+    font-style: italic;
+}
+
+/* Share Modal */
+.share-modal-content {
+    text-align: center;
+}
+
+.share-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.share-option {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--bg-section);
+    border: 1px solid var(--accent-dim);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: all 0.15s;
+}
+
+.share-option:hover {
+    border-color: var(--accent);
+    background: var(--bg-dark);
+}
+
+.share-option-icon {
+    background: var(--accent);
+    color: var(--bg-dark);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 40px;
+}
+
+/* Desktop: Show all 16 steps */
+@media (min-width: 768px) {
+    .seq-steps {
+        grid-template-columns: repeat(16, 1fr);
+    }
+
+    .seq-step:nth-child(n+9) {
+        display: flex;
+    }
+
+    .step-page-toggle {
+        display: none;
+    }
+
+    .sequencer.page-2 .seq-step:nth-child(-n+8) {
+        display: flex;
+    }
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+    .controls-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .filter-section {
+        grid-column: span 2;
+    }
+
+    .knob {
+        width: 36px;
+        height: 36px;
+    }
+
+    .knob.knob-large {
+        width: 44px;
+        height: 44px;
+    }
+
+    .knob.knob-small {
+        width: 28px;
+        height: 28px;
+    }
+
+    .logo-text {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+
+    .synth-panel {
+        padding: 15px;
+    }
+
+    .controls-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-section {
+        grid-column: span 1;
+    }
+}

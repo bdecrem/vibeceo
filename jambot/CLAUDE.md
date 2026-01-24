@@ -42,6 +42,7 @@ Core files:
 |------------|-----|-------------|
 | **JB01** | `jb01` | Drum machine (8 voices: kick, snare, clap, ch, oh, perc, tom, cymbal) |
 | **JB200** | `jb200` | Bass monosynth (2-osc, filter, drive) |
+| **JB202** | `jb202` | Modular bass synth with custom DSP (cross-platform consistent) |
 | **Sampler** | `sampler` | 10-slot sample player with kits |
 
 ### Dormant Instruments (files exist, not yet integrated)
@@ -54,8 +55,23 @@ Core files:
 
 **Agent guidance for user intent:**
 - User says "drum" / "drums" / "beat" → suggest **JB01**
-- User says "bass" / "bassline" → suggest **JB200**
+- User says "bass" / "bassline" → suggest **JB200** or **JB202**
+- User says "jb202" / "modular bass" / "custom dsp" → suggest **JB202**
 - User says "sample" / "samples" / "kit" → suggest **Sampler**
+
+### JB202 - Modular Bass Synth (Custom DSP)
+
+JB202 is a bass monosynth with **custom DSP components** written in pure JavaScript:
+- **PolyBLEP oscillators**: Band-limited waveforms (alias-free)
+- **24dB cascaded biquad filter**: Smooth lowpass with resonance
+- **Exponential ADSR envelopes**: Natural decay curves
+- **Soft-clip drive**: Warm saturation
+
+**Key feature**: Produces **identical output** in Web Audio (browser) and offline rendering (Node.js/Jambot). Same waveforms, same filter response, same timing.
+
+**API**: Identical to JB200 - same parameter names, same pattern format. Drop-in replacement for cross-platform consistency testing.
+
+**Web UI**: `kochi.to/jb202`
 
 ## Synth Sources
 
@@ -64,6 +80,7 @@ Engines imported from `web/public/`:
 - R3D3: `../web/public/303/dist/machines/tb303/engine.js`
 - R1D1: `../web/public/101/dist/machines/sh101/engine.js`
 - JB200: `../web/public/jb200/dist/machines/jb200/engine.js`
+- JB202: `../web/public/jb202/dist/machines/jb202/engine.js` (custom DSP)
 - JB01: `../web/public/jb01/dist/machines/jb01/engine.js`
 
 R9DS uses local files:
@@ -296,6 +313,7 @@ Always test synth consistency with Playwright (`web/test-*.mjs`). Verify that mu
 |------------|------|--------------|
 | **JB01** | Drum machine | Pre-rendered kicks, 8 voices, hi-hat choke |
 | **JB200** | Bass monosynth | Real-time oscillators OK (not percussive) |
+| **JB202** | Modular bass synth | Custom DSP, cross-platform consistent, PolyBLEP oscillators |
 | **Sampler** | Sample player | 10 slots, kit-based loading |
 
 ### Checklist for New Synths
@@ -350,6 +368,15 @@ params/
 - `filterResonance` (0-100): 0=clean, 100=screaming
 - `drive` (0-100): saturation/grit
 - `osc1Waveform`, `osc2Waveform`: sawtooth/square/triangle
+
+**JB202 (modular bass synth with custom DSP):**
+- `level` (0-100): output level
+- `filterCutoff` (Hz): 20-16000
+- `filterResonance` (0-100): 0=clean, 100=resonant
+- `drive` (0-100): soft-clip saturation
+- `osc1Waveform`, `osc2Waveform`: sawtooth/square/triangle
+- All ADSR envelopes (0-100): filterAttack/Decay/Sustain/Release, ampAttack/Decay/Sustain/Release
+- Same parameter names as JB200 for compatibility
 
 **Sampler:**
 - `level` (dB): -60 to +6
@@ -541,6 +568,7 @@ tweak({ path: 'sampler.s1.level', value: 0 })        → Sets sampler slot 1 to 
 |------|------------|-------------|
 | `add_jb01` | JB01 | Drum machine (8 voices: kick, snare, clap, ch, oh, perc, tom, cymbal). Use `bars` param for multi-bar patterns. |
 | `add_jb200` | JB200 | Bass monosynth pattern with note, gate, accent, slide. Use `bars` param for multi-bar patterns. |
+| `add_jb202` | JB202 | Modular bass synth pattern (same format as JB200). Cross-platform consistent output. |
 
 **Session tools:**
 
@@ -563,6 +591,10 @@ tweak({ path: 'sampler.s1.level', value: 0 })        → Sets sampler slot 1 to 
 | `load_jb200_kit` | JB200 | Load a sound preset by ID |
 | `list_jb200_sequences` | JB200 | Show available pattern presets |
 | `load_jb200_sequence` | JB200 | Load a pattern preset by ID |
+| `list_jb202_kits` | JB202 | Show available JB202 sound presets |
+| `load_jb202_kit` | JB202 | Load a JB202 sound preset by ID |
+| `list_jb202_sequences` | JB202 | Show available JB202 pattern presets |
+| `load_jb202_sequence` | JB202 | Load a JB202 pattern preset by ID |
 
 **Song mode tools:**
 
@@ -983,6 +1015,7 @@ Each saved pattern captures the full state for that instrument:
 | `/mix` | Show mix overview |
 | `/jb01` | JB01 drum machine guide (kochi.to/jb01) |
 | `/jb200` | JB200 bass synth guide (kochi.to/jb200) |
+| `/jb202` | JB202 modular bass synth guide (kochi.to/jb202) |
 | `/delay` | Delay effect guide |
 | `/status` | Show current session |
 | `/clear` | Reset session |

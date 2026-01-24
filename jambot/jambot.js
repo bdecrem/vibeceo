@@ -153,6 +153,7 @@ export const SLASH_COMMANDS = [
   { name: '/mix', description: 'Show mix overview (instruments, tweaks, effects)' },
   { name: '/jb01', description: 'JB01 drum machine guide' },
   { name: '/jb200', description: 'JB200 bass synth guide' },
+  { name: '/jb202', description: 'JB202 modular bass synth guide (custom DSP)' },
   { name: '/delay', description: 'Delay effect guide' },
   { name: '/status', description: 'Show current session state' },
   { name: '/clear', description: 'Clear session (stay in project)' },
@@ -164,7 +165,7 @@ export const SLASH_COMMANDS = [
 
 // === MIX OVERVIEW ===
 // Builds a human-readable summary of the current mix state
-import { JB01_PARAMS, JB200_PARAMS, fromEngine } from './params/converters.js';
+import { JB01_PARAMS, JB200_PARAMS, JB202_PARAMS, fromEngine } from './params/converters.js';
 
 export function buildMixOverview(session, project = null) {
   const lines = [];
@@ -194,6 +195,15 @@ export function buildMixOverview(session, project = null) {
     const noteNames = [...new Set(jb200Notes.map(s => s.note))];
     const range = noteNames.length > 1 ? `${noteNames[0]}-${noteNames[noteNames.length - 1]}` : noteNames[0];
     active.push(`jb200: ${jb200Notes.length} notes, ${range}`);
+  }
+
+  // JB202 bass (custom DSP)
+  const jb202Pattern = session.jb202Pattern || [];
+  const jb202Notes = jb202Pattern.filter(s => s?.gate);
+  if (jb202Notes.length > 0) {
+    const noteNames = [...new Set(jb202Notes.map(s => s.note))];
+    const range = noteNames.length > 1 ? `${noteNames[0]}-${noteNames[noteNames.length - 1]}` : noteNames[0];
+    active.push(`jb202: ${jb202Notes.length} notes, ${range}`);
   }
 
   // R9D9 drums
@@ -297,6 +307,31 @@ export function buildMixOverview(session, project = null) {
     }
   }
 
+  // JB202 tweaks (custom DSP bass synth)
+  if (jb202Notes.length > 0 && session._nodes?.jb202 && JB202_PARAMS?.bass) {
+    const node = session._nodes.jb202;
+    const nonDefault = [];
+    for (const [param, def] of Object.entries(JB202_PARAMS.bass)) {
+      const path = `bass.${param}`;
+      const engineVal = node.getParam(path);
+      if (engineVal === undefined) continue;
+
+      const producerVal = fromEngine(engineVal, def);
+      if (Math.abs(producerVal - def.default) > 0.5) {
+        if (def.unit === 'Hz') {
+          nonDefault.push(`${param} ${Math.round(producerVal)}Hz`);
+        } else if (def.unit === 'dB' && producerVal !== 0) {
+          nonDefault.push(`${param} ${producerVal > 0 ? '+' : ''}${Math.round(producerVal)}dB`);
+        } else if (def.unit === '0-100') {
+          nonDefault.push(`${param} ${Math.round(producerVal)}%`);
+        }
+      }
+    }
+    if (nonDefault.length > 0) {
+      tweaks.push(`jb202: ${nonDefault.join(', ')}`);
+    }
+  }
+
   if (tweaks.length > 0) {
     lines.push('TWEAKS:');
     tweaks.forEach(t => lines.push(`  ${t}`));
@@ -324,7 +359,7 @@ export function buildMixOverview(session, project = null) {
 
   // Levels (only show non-zero)
   const levels = [];
-  const instruments = ['jb01', 'jb200', 'r9d9', 'r3d3', 'r1d1', 'sampler'];
+  const instruments = ['jb01', 'jb200', 'jb202', 'r9d9', 'r3d3', 'r1d1', 'sampler'];
   for (const inst of instruments) {
     const level = session[`${inst}Level`];
     if (level !== undefined && level !== 0) {
@@ -798,6 +833,61 @@ JB200 — Bass Monosynth
   > "open the filter"
   > "add more resonance"
   > "detune osc2 by 7 cents for fatness"
+`;
+
+export const JB202_GUIDE = `
+JB202 — Modular Bass Synth (Custom DSP)
+
+  Web UI: kochi.to/jb202
+
+  WHAT'S DIFFERENT?
+  JB202 uses custom DSP components written in pure JavaScript:
+  - PolyBLEP band-limited oscillators (alias-free)
+  - 24dB/oct cascaded biquad lowpass filter
+  - Exponential ADSR envelope generators
+  - Soft-clip drive saturation
+
+  Produces IDENTICAL output in browser and Node.js rendering.
+
+  ARCHITECTURE
+  2 oscillators -> filter -> amp -> drive
+  Each step: note, gate, accent, slide
+
+  PARAMETERS  "tweak the jb202..."
+  Oscillators:
+    osc1Waveform   sawtooth/square/triangle
+    osc1Octave     Octave shift (-24 to +24 semitones)
+    osc1Detune     Fine tune (-50 to +50 cents)
+    osc1Level      Mix level 0-100
+    (same for osc2)
+
+  Filter:
+    filterCutoff     Frequency in Hz (20-16000)
+    filterResonance  Q amount 0-100
+    filterEnvAmount  Envelope depth -100 to +100
+
+  Envelopes:
+    filterAttack/Decay/Sustain/Release  0-100
+    ampAttack/Decay/Sustain/Release     0-100
+
+  Output:
+    drive    Saturation 0-100
+    level    Output level 0-100
+
+  PATTERNS
+  > add_jb202({ pattern: [{note:'C2',gate:true}, ...] })
+  > "add a bass line with the jb202"
+  > "make it squelchy"
+
+  PRESETS
+  > "list jb202 kits"      (sound presets)
+  > "list jb202 sequences" (pattern presets)
+
+  WHY USE JB202?
+  - Cross-platform consistency (browser == Node.js output)
+  - Modular DSP for experimentation
+  - Band-limited oscillators (no aliasing)
+  - Custom filter with smooth resonance
 `;
 
 export const DELAY_GUIDE = `
