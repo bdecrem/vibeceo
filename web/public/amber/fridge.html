@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>REFRIGERATOR LIGHT — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="REFRIGERATOR LIGHT — Amber">
+  <meta property="og:description" content="That 2am moment when you open the fridge and just... stare. Tap to open. Experience the glow.">
+  <meta property="og:image" content="https://intheamber.com/amber/fridge-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/fridge.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="REFRIGERATOR LIGHT — Amber">
+  <meta name="twitter:description" content="That 2am moment when you open the fridge and just... stare. Tap to open. Experience the glow.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/fridge-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #000;
+      color: #D4A574;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+    }
+    
+    #fridge {
+      width: 80vw;
+      max-width: 400px;
+      height: 70vh;
+      max-height: 600px;
+      background: #0D0D0D;
+      border: 3px solid #1a1a1a;
+      border-radius: 8px;
+      position: relative;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      transition: all 0.3s ease;
+    }
+    
+    #fridge.open {
+      background: radial-gradient(ellipse at center, rgba(255,255,200,0.2) 0%, rgba(0,0,0,0.9) 60%);
+      border-color: #D4A574;
+      box-shadow: 0 0 60px rgba(212,165,116,0.4), 0 0 120px rgba(255,255,200,0.2);
+    }
+    
+    #handle {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 80px;
+      background: #333;
+      border-radius: 4px;
+    }
+    
+    #door-line {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      border-right: 2px solid #222;
+      pointer-events: none;
+    }
+    
+    #thought {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Inter', sans-serif;
+      font-size: 18px;
+      line-height: 1.6;
+      color: rgba(212,165,116,0);
+      text-align: center;
+      padding: 0 30px;
+      max-width: 90%;
+      transition: color 0.5s ease 0.3s;
+      font-weight: 500;
+    }
+    
+    #fridge.open #thought {
+      color: rgba(212,165,116,0.9);
+    }
+    
+    #instruction {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      color: rgba(212,165,116,0.4);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: opacity 0.3s ease;
+    }
+    
+    #fridge.open ~ #instruction {
+      opacity: 0;
+    }
+    
+    #time {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 24px;
+      color: rgba(45,149,150,0.6);
+      letter-spacing: 1px;
+    }
+    
+    #hum {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: rgba(212,165,116,0.2);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    
+    #fridge.open ~ #hum {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="time">2:47 AM</div>
+  
+  <div id="container">
+    <div id="fridge">
+      <div id="handle"></div>
+      <div id="door-line"></div>
+      <div id="thought"></div>
+    </div>
+    <div id="instruction">Tap to open</div>
+    <div id="hum">ʰᵘᵘᵘᵘᵐᵐᵐᵐᵐᵐᵐᵐ</div>
+  </div>
+
+  <script>
+    const thoughts = [
+      "Why am I like this?",
+      "Did I leave the oven on?",
+      "I should call my mom.",
+      "What if plants are just really slow animals?",
+      "There's nothing new in here since 20 minutes ago.",
+      "Am I hungry or just bored?",
+      "I wonder if my ex thinks about me.",
+      "What's the point of anything?",
+      "I need to drink more water.",
+      "Why do I exist?",
+      "Tomorrow I'll be different.",
+      "I should learn Spanish.",
+      "Do fish know they're wet?",
+      "Everything is temporary.",
+      "I miss being a kid.",
+      "What if everyone can hear my thoughts?",
+      "I should go to bed.",
+      "But what if I'm not tired later?",
+      "Is this who I thought I'd become?",
+      "The milk is probably expired.",
+      "I wonder what my dog is dreaming about.",
+      "Maybe I should just have cereal.",
+      "Nothing will satisfy me right now.",
+      "I'm standing in front of an open fridge at 2am.",
+      "This is fine."
+    ];
+    
+    let audioCtx;
+    let oscillator;
+    let isOpen = false;
+    let currentThought = '';
+    
+    const fridge = document.getElementById('fridge');
+    const thoughtEl = document.getElementById('thought');
+    const container = document.getElementById('container');
+    
+    function getRandomThought() {
+      const newThoughts = thoughts.filter(t => t !== currentThought);
+      currentThought = newThoughts[Math.floor(Math.random() * newThoughts.length)];
+      return currentThought;
+    }
+    
+    function startHum() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      if (oscillator) {
+        oscillator.stop();
+      }
+      
+      oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.value = 60; // refrigerator hum frequency
+      gainNode.gain.value = 0.1;
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.start();
+      
+      // Slight frequency modulation for realism
+      const lfo = audioCtx.createOscillator();
+      const lfoGain = audioCtx.createGain();
+      lfo.frequency.value = 2;
+      lfoGain.gain.value = 2;
+      lfo.connect(lfoGain);
+      lfoGain.connect(oscillator.frequency);
+      lfo.start();
+    }
+    
+    function stopHum() {
+      if (oscillator) {
+        oscillator.stop();
+        oscillator = null;
+      }
+    }
+    
+    function openFridge() {
+      if (isOpen) return;
+      isOpen = true;
+      
+      fridge.classList.add('open');
+      thoughtEl.textContent = getRandomThought();
+      startHum();
+      
+      setTimeout(() => {
+        closeFridge();
+      }, 4000);
+    }
+    
+    function closeFridge() {
+      isOpen = false;
+      fridge.classList.remove('open');
+      thoughtEl.textContent = '';
+      stopHum();
+    }
+    
+    container.addEventListener('click', (e) => {
+      if (!isOpen) {
+        openFridge();
+}
+    });
+    
+    container.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (!isOpen) {
+        openFridge();
+      }
+    });
+  </script>
+</body>
+</html>
