@@ -589,8 +589,21 @@ tweak({ path: 'sampler.s1.level', value: 0 })        → Sets sampler slot 1 to 
 | `remove_channel_insert` | Remove EQ/filter/ducker from channel or drum voice |
 | `add_sidechain` | Sidechain ducking (bass ducks on kick) |
 | `add_master_insert` | Add effect to master bus |
-| `analyze_render` | Analyze WAV: levels, frequency, recommendations |
 | `show_mixer` | Display current mixer config |
+
+**Analysis tools:**
+
+| Tool | Description |
+|------|-------------|
+| `analyze_render` | Analyze WAV: levels, frequency balance, recommendations |
+| `detect_resonance` | Detect filter resonance peaks (squelch detection) |
+| `detect_mud` | Detect frequency buildup in 200-600Hz mud zone |
+| `measure_spectral_flux` | Measure spectrum changes over time (filter movement) |
+| `get_spectral_peaks` | Find dominant frequencies with note names |
+| `show_spectrum` | ASCII spectrum analyzer visualization (8-band EQ style) |
+| `detect_waveform` | Identify waveform type (saw, square, triangle, sine) |
+| `verify_waveform` | Verify expected waveform type matches actual |
+| `generate_spectrogram` | Generate spectrogram image from WAV |
 
 **Effect chain tools (flexible routing):**
 
@@ -696,9 +709,24 @@ add_master_insert(effect: 'eq', preset: 'master')
 ```
 
 ### Analysis
+
+Jambot includes spectral analysis tools for mixing feedback. Requires sox: `brew install sox`
+
 ```
-analyze_render()  // Returns levels, frequency balance, recommendations
+analyze_render()           // Levels, frequency balance, recommendations
+detect_resonance()         // Find filter squelch peaks
+detect_mud()               // Find 200-600Hz buildup
+show_spectrum()            // ASCII 8-band spectrum analyzer
+get_spectral_peaks()       // Dominant frequencies with note names
+measure_spectral_flux()    // Filter movement detection
+detect_waveform()          // Identify saw/square/triangle/sine
 ```
+
+**Resonance detection** identifies acid squelch — prominent filter resonance peaks above the average spectrum. Returns peak frequencies with their musical note names and prominence in dB.
+
+**Mud detection** analyzes narrow bands in the 200-600Hz range to find frequency buildup that makes mixes sound muddy. Returns which frequencies need cutting.
+
+**Spectral flux** measures how much the spectrum changes over time. High flux = active filter sweeps, low flux = static sound.
 
 ### Node Output Levels (Mixer)
 
