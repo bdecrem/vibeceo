@@ -1,11 +1,13 @@
 /**
  * Render Tools
  *
- * Tools for rendering and analysis: render, analyze_render
+ * Tools for rendering: render
  * Plus project management: rename_project, list_projects, open_project
  *
  * Note: The actual renderSession() function is kept in jambot.js for now
  * since it's 1500+ lines of core engine code. It's passed via context.
+ *
+ * Analysis tools have been moved to analyze-tools.js
  */
 
 import { registerTools } from './index.js';
@@ -37,30 +39,6 @@ const renderTools = {
   },
 
   /**
-   * Analyze a rendered WAV file
-   */
-  analyze_render: async (input, session, context) => {
-    const { filename } = input;
-    // Use provided filename, or fall back to session's last rendered file
-    const wavPath = filename || session.lastRenderedFile;
-
-    if (!wavPath) {
-      return 'No WAV file to analyze. Render first, or provide a filename.';
-    }
-
-    try {
-      const { analyzeWav, formatAnalysis, getRecommendations } = await import('../analyze.js');
-      const analysis = await analyzeWav(wavPath, { bpm: session.bpm });
-      const formatted = formatAnalysis(analysis);
-      const recommendations = getRecommendations(analysis);
-
-      return `${formatted}\n\nRECOMMENDATIONS:\n${recommendations.map(r => `• ${r}`).join('\n')}`;
-    } catch (e) {
-      return `Analysis error: ${e.message}`;
-    }
-  },
-
-  /**
    * Rename the current project
    */
   rename_project: async (input, session, context) => {
@@ -82,11 +60,22 @@ const renderTools = {
     if (projects.length === 0) {
       return "No projects found. Create a beat and render to start a project.";
     }
-    const projectList = projects.map(p => {
-      const date = new Date(p.modified).toLocaleDateString();
-      return `  ${p.folderName} - "${p.name}" (${p.bpm} BPM, ${p.renderCount} renders, ${date})`;
-    }).join('\n');
-    return `Your projects:\n${projectList}\n\nUse open_project to continue working on one.`;
+
+    // Format date+time nicely
+    const formatDateTime = (isoStr) => {
+      const d = new Date(isoStr);
+      const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      return `${date} ${time}`;
+    };
+
+    const projectList = projects.map((p, i) => {
+      const modified = formatDateTime(p.modified);
+      const recent = i === 0 ? ' ← most recent' : '';
+      return `  ${p.folderName}\n    "${p.name}" • ${p.bpm} BPM • ${p.renderCount} renders • ${modified}${recent}`;
+    }).join('\n\n');
+
+    return `Your projects (${projects.length}):\n\n${projectList}\n\nUse /open <folder> or /recent to continue.`;
   },
 
   /**

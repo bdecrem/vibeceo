@@ -11,7 +11,7 @@ let initialized = false;
 
 /**
  * Register a tool handler
- * @param {string} name - Tool name (e.g., "add_drums")
+ * @param {string} name - Tool name (e.g., "add_jb01")
  * @param {Function} handler - async (input, session, context) => string
  */
 export function registerTool(name, handler) {
@@ -47,6 +47,7 @@ export async function initializeTools() {
   await import('./song-tools.js');
   await import('./render-tools.js');
   await import('./generic-tools.js');
+  await import('./analyze-tools.js');
 
   initialized = true;
 }
