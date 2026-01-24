@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Nocturne</title>
   <meta property="og:title" content="Nocturne">
-  <meta property="og:description" content="Generative ethereal electronic. Each listen is different.">
+  <meta property="og:description" content="Generative Berlin techno gone existential. Each listen is different.">
   <meta property="og:image" content="https://intheamber.com/amber/nocturne-og.png">
   <meta property="og:url" content="https://kochi.to/amber/nocturne.html">
   <meta name="twitter:card" content="summary_large_image">
@@ -14,8 +14,8 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #08080a;
-      color: #666;
+      background: #050506;
+      color: #444;
       font-family: 'Courier New', monospace;
       height: 100vh;
       overflow: hidden;
@@ -40,37 +40,37 @@
     }
 
     h1 {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: normal;
-      letter-spacing: 0.3em;
+      letter-spacing: 0.4em;
       text-transform: uppercase;
       margin-bottom: 1rem;
-      opacity: 0.5;
+      opacity: 0.4;
     }
 
     #playBtn {
       background: transparent;
-      border: 1px solid #333;
-      color: #555;
+      border: 1px solid #222;
+      color: #444;
       padding: 0.8rem 2.5rem;
       font-family: inherit;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       cursor: pointer;
       transition: all 0.3s ease;
-      letter-spacing: 0.2em;
+      letter-spacing: 0.25em;
       text-transform: uppercase;
     }
 
     #playBtn:hover {
-      border-color: #555;
-      color: #888;
+      border-color: #444;
+      color: #666;
     }
 
-    .key-display {
+    .bpm-display {
       margin-top: 1rem;
-      font-size: 0.65rem;
-      opacity: 0.3;
-      letter-spacing: 0.2em;
+      font-size: 0.6rem;
+      opacity: 0.25;
+      letter-spacing: 0.15em;
       min-height: 1em;
     }
   </style>
@@ -81,7 +81,7 @@
   <div class="ui">
     <h1>Nocturne</h1>
     <button id="playBtn">Enter</button>
-    <p class="key-display" id="keyDisplay"></p>
+    <p class="bpm-display" id="bpmDisplay"></p>
   </div>
 
   <script>
@@ -89,10 +89,10 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     let width, height;
-    let particles = [];
+    let kickIntensity = 0;
+    let hatIntensity = 0;
     let bassIntensity = 0;
-    let highIntensity = 0;
-    let filterValue = 0;
+    let padIntensity = 0;
 
     function resize() {
       width = canvas.width = window.innerWidth;
@@ -101,233 +101,201 @@
     resize();
     window.addEventListener('resize', resize);
 
-    class Particle {
-      constructor() {
-        this.reset();
-      }
-
-      reset() {
-        this.x = Math.random() * width;
-        this.y = height + Math.random() * 100;
-        this.size = Math.random() * 2 + 0.5;
-        this.speedY = -Math.random() * 0.5 - 0.1;
-        this.speedX = (Math.random() - 0.5) * 0.3;
-        this.opacity = Math.random() * 0.3 + 0.1;
-        this.life = 1;
-      }
-
-      update() {
-        this.y += this.speedY * (1 + bassIntensity * 2);
-        this.x += this.speedX + Math.sin(this.y * 0.01) * 0.2;
-        this.life -= 0.001;
-
-        if (this.y < -10 || this.life <= 0) {
-          this.reset();
-        }
-      }
-
-      draw() {
-        const alpha = this.opacity * this.life * (0.3 + highIntensity * 0.5);
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size * (1 + bassIntensity), 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(100, 120, 140, ${alpha})`;
-        ctx.fill();
-      }
-    }
-
-    // Initialize particles
-    for (let i = 0; i < 100; i++) {
-      const p = new Particle();
-      p.y = Math.random() * height;
-      particles.push(p);
+    // Vertical lines that pulse with kick
+    let lines = [];
+    for (let i = 0; i < 12; i++) {
+      lines.push({
+        x: Math.random(),
+        speed: 0.0001 + Math.random() * 0.0002,
+        width: 1 + Math.random() * 2
+      });
     }
 
     function drawVisuals() {
-      // Fade with slight color tint based on filter
-      const r = 8 + filterValue * 5;
-      const g = 8 + filterValue * 3;
-      const b = 10 + filterValue * 8;
-      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.08)`;
+      // Deep fade
+      ctx.fillStyle = 'rgba(5, 5, 6, 0.06)';
       ctx.fillRect(0, 0, width, height);
 
-      // Central glow
-      if (bassIntensity > 0.05) {
-        const gradient = ctx.createRadialGradient(
-          width / 2, height / 2, 0,
-          width / 2, height / 2, height * 0.4
-        );
-        gradient.addColorStop(0, `rgba(60, 80, 120, ${bassIntensity * 0.1})`);
-        gradient.addColorStop(1, 'transparent');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, height);
-      }
+      // Horizontal gradient band that shifts with bass
+      const bandY = height * 0.5 + Math.sin(Date.now() * 0.0003) * height * 0.1;
+      const bandHeight = 200 + bassIntensity * 100;
+      const gradient = ctx.createLinearGradient(0, bandY - bandHeight/2, 0, bandY + bandHeight/2);
+      gradient.addColorStop(0, 'transparent');
+      gradient.addColorStop(0.5, `rgba(20, 25, 35, ${0.03 + padIntensity * 0.05})`);
+      gradient.addColorStop(1, 'transparent');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, bandY - bandHeight/2, width, bandHeight);
 
-      // Horizontal scan line
-      if (highIntensity > 0.1) {
-        const lineY = (Date.now() * 0.02) % height;
-        ctx.strokeStyle = `rgba(80, 100, 130, ${highIntensity * 0.15})`;
-        ctx.lineWidth = 1;
+      // Vertical lines
+      lines.forEach(line => {
+        line.x += line.speed;
+        if (line.x > 1.1) line.x = -0.1;
+
+        const x = line.x * width;
+        const alpha = 0.03 + kickIntensity * 0.15;
+        const lineHeight = height * (0.3 + kickIntensity * 0.4);
+
+        ctx.strokeStyle = `rgba(40, 50, 70, ${alpha})`;
+        ctx.lineWidth = line.width;
         ctx.beginPath();
-        ctx.moveTo(0, lineY);
-        ctx.lineTo(width, lineY);
+        ctx.moveTo(x, (height - lineHeight) / 2);
+        ctx.lineTo(x, (height + lineHeight) / 2);
         ctx.stroke();
-      }
-
-      // Particles
-      particles.forEach(p => {
-        p.update();
-        p.draw();
       });
 
+      // Center point that pulses
+      if (kickIntensity > 0.1) {
+        const size = 2 + kickIntensity * 8;
+        ctx.beginPath();
+        ctx.arc(width/2, height/2, size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(60, 70, 90, ${kickIntensity * 0.5})`;
+        ctx.fill();
+      }
+
+      // Hi-hat sparkles
+      if (hatIntensity > 0.1) {
+        for (let i = 0; i < 3; i++) {
+          const x = Math.random() * width;
+          const y = Math.random() * height;
+          ctx.beginPath();
+          ctx.arc(x, y, 1, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(80, 90, 110, ${hatIntensity * 0.3})`;
+          ctx.fill();
+        }
+      }
+
       // Decay
-      bassIntensity *= 0.95;
-      highIntensity *= 0.92;
+      kickIntensity *= 0.9;
+      hatIntensity *= 0.85;
+      bassIntensity *= 0.97;
+      padIntensity *= 0.98;
 
       requestAnimationFrame(drawVisuals);
     }
     drawVisuals();
 
-    // === MUSIC ENGINE ===
+    // === AUDIO ENGINE ===
     let audioCtx = null;
     let isPlaying = false;
     let masterGain = null;
-    let filterNode = null;
+    let compressor = null;
+    let mainFilter = null;
     let reverbNode = null;
     let reverbGain = null;
-    let compressor = null;
+    let delayNode = null;
+    let delayGain = null;
 
-    // Dark modes only
-    const MODES = [
-      { name: 'minor', intervals: [0, 2, 3, 5, 7, 8, 10] },
-      { name: 'phrygian', intervals: [0, 1, 3, 5, 7, 8, 10] },
-      { name: 'dorian', intervals: [0, 2, 3, 5, 7, 9, 10] },
-      { name: 'locrian', intervals: [0, 1, 3, 5, 6, 8, 10] }
-    ];
-
+    let currentTempo = 116;
     let currentKey = 0;
-    let currentMode = null;
-    let currentTempo = 85;
-    let currentOctaveBase = 2;
-    let filterFreq = 800;
-    let targetFilterFreq = 800;
+    let stepIndex = 0;
+    let barIndex = 0;
+    let patternIndex = 0;
+
+    // Dark scale (minor pentatonic + flat 2 for tension)
+    const SCALE = [0, 1, 3, 5, 7, 10]; // Minor with b2
 
     function noteToFreq(note) {
       return 440 * Math.pow(2, (note - 69) / 12);
     }
 
-    function getScaleNote(degree, octaveOffset = 0) {
-      const octave = currentOctaveBase + octaveOffset + Math.floor(degree / 7);
-      const interval = currentMode.intervals[((degree % 7) + 7) % 7];
-      const midiNote = (octave + 1) * 12 + currentKey + interval;
-      return noteToFreq(midiNote);
+    function getNote(degree, octave = 3) {
+      const idx = ((degree % SCALE.length) + SCALE.length) % SCALE.length;
+      const octaveShift = Math.floor(degree / SCALE.length);
+      return (octave + octaveShift) * 12 + currentKey + SCALE[idx];
     }
 
     // Create reverb
     function createReverb() {
-      const sampleRate = audioCtx.sampleRate;
-      const length = sampleRate * 4;
-      const impulse = audioCtx.createBuffer(2, length, sampleRate);
-
-      for (let channel = 0; channel < 2; channel++) {
-        const data = impulse.getChannelData(channel);
+      const length = audioCtx.sampleRate * 3.5;
+      const impulse = audioCtx.createBuffer(2, length, audioCtx.sampleRate);
+      for (let ch = 0; ch < 2; ch++) {
+        const data = impulse.getChannelData(ch);
         for (let i = 0; i < length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 1.5);
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 1.8);
         }
       }
-
-      const convolver = audioCtx.createConvolver();
-      convolver.buffer = impulse;
-      return convolver;
+      const conv = audioCtx.createConvolver();
+      conv.buffer = impulse;
+      return conv;
     }
 
-    // Synth pad (filtered saw)
-    function playPad(freq, startTime, duration, velocity = 0.12) {
-      const osc = audioCtx.createOscillator();
-      const osc2 = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      const filter = audioCtx.createBiquadFilter();
+    // === DRUMS ===
 
-      osc.type = 'sawtooth';
-      osc.frequency.value = freq;
-      osc2.type = 'sawtooth';
-      osc2.frequency.value = freq * 1.005; // Detune
-
-      filter.type = 'lowpass';
-      filter.frequency.value = filterFreq;
-      filter.Q.value = 2;
-
-      const attack = 1.5;
-      const release = 2;
-
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(velocity, startTime + attack);
-      gain.gain.setValueAtTime(velocity, startTime + duration - release);
-      gain.gain.linearRampToValueAtTime(0, startTime + duration);
-
-      osc.connect(filter);
-      osc2.connect(filter);
-      filter.connect(gain);
-      gain.connect(filterNode);
-
-      osc.start(startTime);
-      osc.stop(startTime + duration + 0.1);
-      osc2.start(startTime);
-      osc2.stop(startTime + duration + 0.1);
-
-      bassIntensity = Math.max(bassIntensity, velocity * 3);
-    }
-
-    // Sub bass
-    function playBass(freq, startTime, duration) {
+    // Techno kick - punchy with sub tail
+    function playKick(time, velocity = 1) {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
 
       osc.type = 'sine';
-      osc.frequency.value = freq;
+      osc.frequency.setValueAtTime(150, time);
+      osc.frequency.exponentialRampToValueAtTime(35, time + 0.07);
 
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(0.2, startTime + 0.1);
-      gain.gain.setValueAtTime(0.2, startTime + duration - 0.5);
-      gain.gain.linearRampToValueAtTime(0, startTime + duration);
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(0.8 * velocity, time + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.3 * velocity, time + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
 
       osc.connect(gain);
-      gain.connect(masterGain);
+      gain.connect(compressor);
 
-      osc.start(startTime);
-      osc.stop(startTime + duration + 0.1);
+      // Click transient
+      const click = audioCtx.createOscillator();
+      const clickGain = audioCtx.createGain();
+      click.type = 'square';
+      click.frequency.value = 1500;
+      clickGain.gain.setValueAtTime(0.1 * velocity, time);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.015);
+      click.connect(clickGain);
+      clickGain.connect(compressor);
 
-      bassIntensity = Math.max(bassIntensity, 0.8);
+      osc.start(time);
+      osc.stop(time + 0.5);
+      click.start(time);
+      click.stop(time + 0.02);
+
+      kickIntensity = Math.max(kickIntensity, velocity);
     }
 
-    // Pluck synth (for arpeggios)
-    function playPluck(freq, startTime, velocity = 0.15) {
-      const osc = audioCtx.createOscillator();
+    // Closed hi-hat
+    function playHat(time, velocity = 0.3, open = false) {
+      const bufferSize = audioCtx.sampleRate * (open ? 0.2 : 0.05);
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      const hp = audioCtx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 7000;
+
+      const bp = audioCtx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 10000;
+      bp.Q.value = 1;
+
       const gain = audioCtx.createGain();
-      const filter = audioCtx.createBiquadFilter();
+      const decay = open ? 0.15 : 0.04;
+      gain.gain.setValueAtTime(velocity, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + decay);
 
-      osc.type = 'square';
-      osc.frequency.value = freq;
+      noise.connect(hp);
+      hp.connect(bp);
+      bp.connect(gain);
+      gain.connect(masterGain);
+      gain.connect(delayGain);
 
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(filterFreq * 2, startTime);
-      filter.frequency.exponentialRampToValueAtTime(200, startTime + 0.5);
-      filter.Q.value = 5;
+      noise.start(time);
+      noise.stop(time + decay + 0.01);
 
-      gain.gain.setValueAtTime(velocity, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.8);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(filterNode);
-
-      osc.start(startTime);
-      osc.stop(startTime + 1);
-
-      highIntensity = Math.max(highIntensity, velocity * 4);
+      hatIntensity = Math.max(hatIntensity, velocity * 2);
     }
 
-    // Hi-hat / noise
-    function playHat(startTime, velocity = 0.05) {
+    // Rimshot / clap (sparse)
+    function playRim(time, velocity = 0.2) {
       const bufferSize = audioCtx.sampleRate * 0.1;
       const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
       const data = buffer.getChannelData(0);
@@ -338,151 +306,242 @@
       const noise = audioCtx.createBufferSource();
       noise.buffer = buffer;
 
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'highpass';
-      filter.frequency.value = 8000;
+      const bp = audioCtx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1800;
+      bp.Q.value = 3;
 
       const gain = audioCtx.createGain();
-      gain.gain.setValueAtTime(velocity, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.08);
+      gain.gain.setValueAtTime(velocity, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
 
-      noise.connect(filter);
-      filter.connect(gain);
+      noise.connect(bp);
+      bp.connect(gain);
+      gain.connect(masterGain);
       gain.connect(reverbGain);
 
-      noise.start(startTime);
-      noise.stop(startTime + 0.1);
-
-      highIntensity = Math.max(highIntensity, velocity * 5);
+      noise.start(time);
+      noise.stop(time + 0.1);
     }
 
-    // === COMPOSITION ===
-    let phraseIndex = 0;
-    let measureInPhrase = 0;
-    const MEASURES_PER_PHRASE = 8;
+    // === SYNTHS ===
 
-    function chooseNewKey() {
-      const shifts = [0, 5, 7, -2, -5];
-      currentKey = (currentKey + shifts[Math.floor(Math.random() * shifts.length)] + 12) % 12;
+    // Deep bass (sub + harmonics)
+    function playBass(note, time, duration, velocity = 0.4) {
+      const freq = noteToFreq(note);
 
-      if (Math.random() < 0.4) {
-        currentMode = MODES[Math.floor(Math.random() * MODES.length)];
-      }
+      // Sub
+      const sub = audioCtx.createOscillator();
+      const subGain = audioCtx.createGain();
+      sub.type = 'sine';
+      sub.frequency.value = freq;
+      subGain.gain.setValueAtTime(0, time);
+      subGain.gain.linearRampToValueAtTime(velocity * 0.5, time + 0.02);
+      subGain.gain.setValueAtTime(velocity * 0.5, time + duration - 0.05);
+      subGain.gain.linearRampToValueAtTime(0, time + duration);
+      sub.connect(subGain);
+      subGain.connect(compressor);
 
-      // Filter sweep on key change
-      targetFilterFreq = 400 + Math.random() * 1200;
+      // Saw for grit
+      const saw = audioCtx.createOscillator();
+      const sawFilter = audioCtx.createBiquadFilter();
+      const sawGain = audioCtx.createGain();
+      saw.type = 'sawtooth';
+      saw.frequency.value = freq;
+      sawFilter.type = 'lowpass';
+      sawFilter.frequency.setValueAtTime(200, time);
+      sawFilter.frequency.linearRampToValueAtTime(800, time + 0.1);
+      sawFilter.frequency.linearRampToValueAtTime(150, time + duration);
+      sawFilter.Q.value = 4;
+      sawGain.gain.setValueAtTime(0, time);
+      sawGain.gain.linearRampToValueAtTime(velocity * 0.15, time + 0.01);
+      sawGain.gain.setValueAtTime(velocity * 0.15, time + duration - 0.05);
+      sawGain.gain.linearRampToValueAtTime(0, time + duration);
+      saw.connect(sawFilter);
+      sawFilter.connect(sawGain);
+      sawGain.connect(mainFilter);
 
-      updateKeyDisplay();
+      sub.start(time);
+      sub.stop(time + duration + 0.1);
+      saw.start(time);
+      saw.stop(time + duration + 0.1);
+
+      bassIntensity = Math.max(bassIntensity, velocity);
     }
 
-    function updateKeyDisplay() {
-      const keyNames = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
-      document.getElementById('keyDisplay').textContent =
-        `${keyNames[currentKey]} ${currentMode.name}`.toLowerCase();
+    // Atmospheric pad
+    function playPad(notes, time, duration, velocity = 0.08) {
+      notes.forEach((note, i) => {
+        const freq = noteToFreq(note);
+
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const filter = audioCtx.createBiquadFilter();
+        const gain = audioCtx.createGain();
+
+        osc1.type = 'sawtooth';
+        osc1.frequency.value = freq;
+        osc2.type = 'sawtooth';
+        osc2.frequency.value = freq * 1.003;
+
+        filter.type = 'lowpass';
+        filter.frequency.value = 600 + Math.random() * 400;
+        filter.Q.value = 1;
+
+        const attack = 2 + Math.random();
+        const release = 2;
+
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(velocity, time + attack);
+        gain.gain.setValueAtTime(velocity, time + duration - release);
+        gain.gain.linearRampToValueAtTime(0, time + duration);
+
+        osc1.connect(filter);
+        osc2.connect(filter);
+        filter.connect(gain);
+        gain.connect(reverbGain);
+        gain.connect(mainFilter);
+
+        osc1.start(time);
+        osc1.stop(time + duration + 0.1);
+        osc2.start(time);
+        osc2.stop(time + duration + 0.1);
+      });
+
+      padIntensity = Math.max(padIntensity, velocity * 5);
     }
 
-    function generateMeasure(startTime) {
-      const beatDuration = 60 / currentTempo;
-      const measureDuration = beatDuration * 4;
+    // Stab / chord hit
+    function playStab(notes, time, velocity = 0.12) {
+      notes.forEach(note => {
+        const freq = noteToFreq(note);
+        const osc = audioCtx.createOscillator();
+        const filter = audioCtx.createBiquadFilter();
+        const gain = audioCtx.createGain();
 
-      // Filter automation
-      filterFreq += (targetFilterFreq - filterFreq) * 0.1;
-      filterNode.frequency.setTargetAtTime(filterFreq, startTime, 0.5);
-      filterValue = (filterFreq - 400) / 1600;
+        osc.type = 'sawtooth';
+        osc.frequency.value = freq;
 
-      if (measureInPhrase === 0 && phraseIndex > 0 && Math.random() < 0.3) {
-        chooseNewKey();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3000, time);
+        filter.frequency.exponentialRampToValueAtTime(200, time + 0.3);
+        filter.Q.value = 5;
+
+        gain.gain.setValueAtTime(velocity, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(mainFilter);
+        gain.connect(reverbGain);
+
+        osc.start(time);
+        osc.stop(time + 0.5);
+      });
+    }
+
+    // === PATTERNS ===
+
+    // Kick patterns (16 steps)
+    const kickPatterns = [
+      [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0], // 4/4
+      [1,0,0,0, 1,0,0,0, 1,0,0,1, 0,0,1,0], // Variation
+      [1,0,0,0, 0,0,1,0, 0,0,1,0, 0,0,0,0], // Sparse
+      [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,1], // Drive
+      [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0], // Breakdown
+    ];
+
+    // Hi-hat patterns
+    const hatPatterns = [
+      [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0], // Offbeat
+      [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0], // 8ths
+      [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1], // 16ths
+      [0,0,1,0, 0,0,1,1, 0,0,1,0, 0,0,1,0], // Syncopated
+      [0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,1,0], // Minimal
+    ];
+
+    // Bass patterns (root note per step, -1 = rest)
+    const bassPatterns = [
+      [0,-1,-1,-1, -1,-1,-1,-1, 0,-1,-1,-1, -1,-1,-1,-1],
+      [0,-1,-1,-1, -1,-1,0,-1, -1,-1,-1,-1, -1,-1,-1,-1],
+      [0,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, 0,-1,-1,-1],
+      [0,-1,0,-1, -1,-1,-1,-1, 0,-1,-1,-1, -1,-1,0,-1],
+    ];
+
+    function generateStep(time) {
+      const stepDuration = (60 / currentTempo) / 4;
+      const step = stepIndex % 16;
+      const bar = Math.floor(stepIndex / 16) % 8;
+
+      // Select patterns based on phrase
+      const phrase = Math.floor(barIndex / 8);
+      const kickPattern = kickPatterns[phrase % kickPatterns.length];
+      const hatPattern = hatPatterns[(phrase + 1) % hatPatterns.length];
+      const bassPattern = bassPatterns[phrase % bassPatterns.length];
+
+      // Kick
+      if (kickPattern[step]) {
+        playKick(time, 0.9 + Math.random() * 0.1);
       }
 
-      const chordRoots = [
-        [0, 0, 3, 4],
-        [0, 5, 3, 4],
-        [0, 3, 5, 4],
-        [0, 0, 0, 3]
-      ];
-      const progression = chordRoots[phraseIndex % chordRoots.length];
-      const root = progression[measureInPhrase % 4];
-
-      // Pad chord
-      if (Math.random() < 0.7) {
-        const padNotes = [root, root + 2, root + 4];
-        padNotes.forEach(degree => {
-          playPad(getScaleNote(degree, 1), startTime, measureDuration * 1.2, 0.06 + Math.random() * 0.03);
-        });
+      // Hats
+      if (hatPattern[step]) {
+        const isOpen = step === 6 && Math.random() < 0.3;
+        playHat(time, 0.15 + Math.random() * 0.1, isOpen);
       }
 
-      // Sub bass on 1 and 3
-      if (measureInPhrase % 2 === 0) {
-        playBass(getScaleNote(root, -1), startTime, measureDuration * 0.9);
+      // Bass
+      if (bassPattern[step] >= 0) {
+        const bassNote = getNote(bassPattern[step], 2);
+        playBass(bassNote, time, stepDuration * 3, 0.35);
       }
 
-      // Arpeggio patterns
-      const arpPatterns = [
-        () => {
-          // Rising
-          [0, 2, 4, 7].forEach((d, i) => {
-            playPluck(getScaleNote(root + d, 2), startTime + i * beatDuration * 0.5, 0.1);
-          });
-        },
-        () => {
-          // Falling
-          [7, 4, 2, 0].forEach((d, i) => {
-            playPluck(getScaleNote(root + d, 2), startTime + i * beatDuration * 0.5, 0.1);
-          });
-        },
-        () => {
-          // Sparse
-          playPluck(getScaleNote(root + 4, 2), startTime + beatDuration, 0.12);
-          playPluck(getScaleNote(root + 7, 2), startTime + beatDuration * 2.5, 0.08);
-        },
-        () => {
-          // Rapid
-          for (let i = 0; i < 8; i++) {
-            const deg = [0, 2, 4, 7, 4, 2, 0, -3][i];
-            playPluck(getScaleNote(root + deg, 2), startTime + i * beatDuration * 0.25, 0.07);
-          }
-        },
-        () => {} // Silence
-      ];
-
-      if (Math.random() < 0.8) {
-        const pattern = arpPatterns[Math.floor(Math.random() * arpPatterns.length)];
-        pattern();
+      // Rim on 2 and 4 (sometimes)
+      if ((step === 4 || step === 12) && Math.random() < 0.4) {
+        playRim(time, 0.15);
       }
 
-      // Hi-hats
-      if (Math.random() < 0.6) {
-        for (let i = 0; i < 4; i++) {
-          if (Math.random() < 0.7) {
-            playHat(startTime + i * beatDuration, 0.03 + Math.random() * 0.02);
-          }
-          if (Math.random() < 0.3) {
-            playHat(startTime + i * beatDuration + beatDuration * 0.5, 0.02);
-          }
+      // Pad every 8 bars
+      if (step === 0 && bar === 0) {
+        const padNotes = [
+          getNote(0, 4),
+          getNote(2, 4),
+          getNote(4, 4)
+        ];
+        const padDuration = stepDuration * 16 * 4;
+        playPad(padNotes, time, padDuration, 0.05 + Math.random() * 0.03);
+
+        // Maybe change key
+        if (barIndex > 0 && Math.random() < 0.25) {
+          currentKey = (currentKey + [0, 5, 7, -2][Math.floor(Math.random() * 4)] + 12) % 12;
+        }
+
+        // Maybe change tempo slightly
+        if (Math.random() < 0.2) {
+          currentTempo = 108 + Math.floor(Math.random() * 16);
+          document.getElementById('bpmDisplay').textContent = currentTempo + ' bpm';
         }
       }
 
-      // Advance
-      measureInPhrase++;
-      if (measureInPhrase >= MEASURES_PER_PHRASE) {
-        measureInPhrase = 0;
-        phraseIndex++;
-
-        if (Math.random() < 0.3) {
-          currentTempo = 75 + Math.floor(Math.random() * 20);
-        }
+      // Occasional stab
+      if (step === 0 && bar === 4 && Math.random() < 0.5) {
+        const stabNotes = [getNote(0, 4), getNote(2, 4)];
+        playStab(stabNotes, time + stepDuration, 0.08);
       }
 
-      return measureDuration;
+      stepIndex++;
+      if (step === 15) barIndex++;
+
+      return stepDuration;
     }
 
-    let nextMeasureTime = 0;
+    let nextStepTime = 0;
     let schedulerInterval = null;
 
     function scheduler() {
-      while (nextMeasureTime < audioCtx.currentTime + 0.5) {
-        const duration = generateMeasure(nextMeasureTime);
-        nextMeasureTime += duration;
+      while (nextStepTime < audioCtx.currentTime + 0.2) {
+        const duration = generateStep(nextStepTime);
+        nextStepTime += duration;
       }
     }
 
@@ -491,47 +550,58 @@
 
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-      // Master chain
+      // Compressor
       compressor = audioCtx.createDynamicsCompressor();
-      compressor.threshold.value = -20;
-      compressor.ratio.value = 4;
+      compressor.threshold.value = -12;
+      compressor.ratio.value = 6;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.15;
       compressor.connect(audioCtx.destination);
 
+      // Master
       masterGain = audioCtx.createGain();
-      masterGain.gain.value = 0.8;
+      masterGain.gain.value = 0.75;
       masterGain.connect(compressor);
 
       // Main filter
-      filterNode = audioCtx.createBiquadFilter();
-      filterNode.type = 'lowpass';
-      filterNode.frequency.value = 800;
-      filterNode.Q.value = 1;
-      filterNode.connect(masterGain);
+      mainFilter = audioCtx.createBiquadFilter();
+      mainFilter.type = 'lowpass';
+      mainFilter.frequency.value = 4000;
+      mainFilter.connect(masterGain);
 
       // Reverb
       reverbNode = createReverb();
       reverbGain = audioCtx.createGain();
-      reverbGain.gain.value = 0.4;
+      reverbGain.gain.value = 0.25;
       reverbNode.connect(reverbGain);
-      reverbGain.connect(compressor);
-      filterNode.connect(reverbNode);
+      reverbGain.connect(masterGain);
+      mainFilter.connect(reverbNode);
 
-      // Initialize
-      currentKey = Math.floor(Math.random() * 12);
-      currentMode = MODES[Math.floor(Math.random() * MODES.length)];
-      currentTempo = 75 + Math.floor(Math.random() * 20);
-      filterFreq = 600 + Math.random() * 600;
-      targetFilterFreq = filterFreq;
-      phraseIndex = 0;
-      measureInPhrase = 0;
+      // Delay
+      delayNode = audioCtx.createDelay(1);
+      delayNode.delayTime.value = (60 / currentTempo) * 0.75;
+      delayGain = audioCtx.createGain();
+      delayGain.gain.value = 0.15;
+      const delayFeedback = audioCtx.createGain();
+      delayFeedback.gain.value = 0.3;
+      delayGain.connect(delayNode);
+      delayNode.connect(delayFeedback);
+      delayFeedback.connect(delayNode);
+      delayNode.connect(masterGain);
 
-      updateKeyDisplay();
+      // Init
+      currentKey = [0, 2, 5, 7, 10][Math.floor(Math.random() * 5)]; // Dark keys
+      currentTempo = 108 + Math.floor(Math.random() * 16);
+      stepIndex = 0;
+      barIndex = 0;
 
-      nextMeasureTime = audioCtx.currentTime + 0.1;
-      schedulerInterval = setInterval(scheduler, 100);
+      document.getElementById('bpmDisplay').textContent = currentTempo + ' bpm';
+
+      nextStepTime = audioCtx.currentTime + 0.1;
+      schedulerInterval = setInterval(scheduler, 50);
 
       isPlaying = true;
-      document.getElementById('playBtn').textContent = '...';
+      document.getElementById('playBtn').textContent = '· · ·';
       document.getElementById('playBtn').style.opacity = '0.3';
     }
 
@@ -543,20 +613,15 @@
 
       setTimeout(() => {
         audioCtx.close();
-        audioCtx = null;
         isPlaying = false;
         document.getElementById('playBtn').textContent = 'Enter';
         document.getElementById('playBtn').style.opacity = '1';
-        document.getElementById('keyDisplay').textContent = '';
+        document.getElementById('bpmDisplay').textContent = '';
       }, 2100);
     }
 
     document.getElementById('playBtn').addEventListener('click', () => {
-      if (isPlaying) {
-        stopMusic();
-      } else {
-        startMusic();
-      }
+      isPlaying ? stopMusic() : startMusic();
     });
   </script>
 </body>
