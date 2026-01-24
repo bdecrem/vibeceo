@@ -95,6 +95,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // JB202 modular bass synth at /jb202
+    if (pathname.startsWith('/jb202')) {
+      log(`[Middleware] JB202 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // JB-01 drum machine at /jb01
     if (pathname.startsWith('/jb01')) {
       log(`[Middleware] JB01 route bypassed: ${pathname}`)
@@ -307,6 +313,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // JB202 modular bass synth at /jb202
+    if (pathname.startsWith('/jb202')) {
+      log(`[Middleware] intheamber.com JB202 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // JB-01 drum machine at /jb01
     if (pathname.startsWith('/jb01')) {
       log(`[Middleware] intheamber.com JB01 route bypassed: ${pathname}`)
@@ -409,6 +421,12 @@ export function middleware(request: NextRequest) {
   // SPECIFIC FIX: Bypass JB200 bass monosynth
   if (pathname === '/jb200' || pathname.startsWith('/jb200/')) {
     log(`[Middleware] JB200 bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
+  // SPECIFIC FIX: Bypass JB202 modular bass synth
+  if (pathname === '/jb202' || pathname.startsWith('/jb202/')) {
+    log(`[Middleware] JB202 bypassed: ${pathname}`)
     return NextResponse.next()
   }
 

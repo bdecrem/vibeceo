@@ -1,0 +1,43 @@
+{
+  "_meta": {
+    "name": "JB202",
+    "description": "Bass Monosynth - 2-oscillator bass synth with custom DSP components",
+    "version": "1.0",
+    "units": {
+      "dB": "Volume levels (-60 to +6, 0 = unity)",
+      "0-100": "Knob position (like hardware)",
+      "Hz": "Filter frequency",
+      "semitones": "Pitch adjustment",
+      "choice": "Discrete option"
+    }
+  },
+  "bass": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "output level" },
+
+    "osc1Waveform": { "unit": "choice", "options": ["sawtooth", "square", "triangle"], "default": "sawtooth", "hint": "oscillator 1 waveform" },
+    "osc1Octave": { "unit": "semitones", "min": -24, "max": 24, "default": 0, "hint": "oscillator 1 octave shift" },
+    "osc1Detune": { "unit": "bipolar", "min": -50, "max": 50, "default": 0, "hint": "oscillator 1 fine tune (cents)" },
+    "osc1Level": { "unit": "0-100", "min": 0, "max": 100, "default": 63, "hint": "oscillator 1 level" },
+
+    "osc2Waveform": { "unit": "choice", "options": ["sawtooth", "square", "triangle"], "default": "sawtooth", "hint": "oscillator 2 waveform" },
+    "osc2Octave": { "unit": "semitones", "min": -24, "max": 24, "default": 0, "hint": "oscillator 2 octave shift" },
+    "osc2Detune": { "unit": "bipolar", "min": -50, "max": 50, "default": 7, "hint": "oscillator 2 fine tune (cents)" },
+    "osc2Level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "oscillator 2 level" },
+
+    "filterCutoff": { "unit": "Hz", "min": 20, "max": 16000, "default": 1129, "hint": "filter cutoff frequency" },
+    "filterResonance": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "filter resonance/Q" },
+    "filterEnvAmount": { "unit": "bipolar", "min": -100, "max": 100, "default": 20, "hint": "filter envelope depth" },
+
+    "filterAttack": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "filter envelope attack" },
+    "filterDecay": { "unit": "0-100", "min": 0, "max": 100, "default": 40, "hint": "filter envelope decay" },
+    "filterSustain": { "unit": "0-100", "min": 0, "max": 100, "default": 20, "hint": "filter envelope sustain" },
+    "filterRelease": { "unit": "0-100", "min": 0, "max": 100, "default": 30, "hint": "filter envelope release" },
+
+    "ampAttack": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "amp envelope attack" },
+    "ampDecay": { "unit": "0-100", "min": 0, "max": 100, "default": 30, "hint": "amp envelope decay" },
+    "ampSustain": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "amp envelope sustain" },
+    "ampRelease": { "unit": "0-100", "min": 0, "max": 100, "default": 20, "hint": "amp envelope release" },
+
+    "drive": { "unit": "0-100", "min": 0, "max": 100, "default": 20, "hint": "output saturation/drive" }
+  }
+}

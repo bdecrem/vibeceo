@@ -244,6 +244,102 @@ export const TOOLS = [
       }
     }
   },
+  // JB202 (Modular Bass Synth with Custom DSP)
+  {
+    name: "add_jb202",
+    description: "Add a bass pattern using JB202 (modular bass synth with custom DSP). Same API as JB200 but uses PolyBLEP oscillators, 24dB cascaded biquad filter, and soft-clip drive. Produces identical output in browser and Node.js.",
+    input_schema: {
+      type: "object",
+      properties: {
+        pattern: {
+          type: "array",
+          description: "Array of 16 steps. Each step: {note: 'C2', gate: true, accent: false, slide: false}. Bass range: C1-C3",
+          items: {
+            type: "object",
+            properties: {
+              note: { type: "string", description: "Note name (C1, D2, E2, etc)" },
+              gate: { type: "boolean", description: "true = play note, false = rest" },
+              accent: { type: "boolean", description: "Accent for extra attack and filter opening" },
+              slide: { type: "boolean", description: "Glide/portamento to this note from previous" }
+            }
+          }
+        }
+      },
+      required: ["pattern"]
+    }
+  },
+  {
+    name: "tweak_jb202",
+    description: "Adjust JB202 bass synth parameters (custom DSP version). UNITS: level 0-100, filterCutoff in Hz (20-16000), detune in cents (-50 to +50), filterEnvAmount (-100 to +100), octaves in semitones, all others 0-100. Use mute:true to silence.",
+    input_schema: {
+      type: "object",
+      properties: {
+        mute: { type: "boolean", description: "Mute bass (sets level to 0)" },
+        level: { type: "number", description: "Output level 0-100" },
+        osc1Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 1 waveform" },
+        osc1Octave: { type: "number", description: "Osc 1 octave shift in semitones (-24 to +24)" },
+        osc1Detune: { type: "number", description: "Osc 1 fine tune (-50 to +50)" },
+        osc1Level: { type: "number", description: "Osc 1 level 0-100" },
+        osc2Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 2 waveform" },
+        osc2Octave: { type: "number", description: "Osc 2 octave shift in semitones (-24 to +24)" },
+        osc2Detune: { type: "number", description: "Osc 2 fine tune (-50 to +50). 5-10 adds fatness" },
+        osc2Level: { type: "number", description: "Osc 2 level 0-100" },
+        filterCutoff: { type: "number", description: "Filter cutoff in Hz (20-16000). 400=warm, 1200=present, 4000=bright" },
+        filterResonance: { type: "number", description: "Filter resonance 0-100. Adds bite at 40-60" },
+        filterEnvAmount: { type: "number", description: "Filter envelope depth -100 to +100. Positive opens filter on attack" },
+        filterAttack: { type: "number", description: "Filter envelope attack 0-100" },
+        filterDecay: { type: "number", description: "Filter envelope decay 0-100. Short (10-40) for plucky bass" },
+        filterSustain: { type: "number", description: "Filter envelope sustain 0-100" },
+        filterRelease: { type: "number", description: "Filter envelope release 0-100" },
+        ampAttack: { type: "number", description: "Amp envelope attack 0-100. 0 for punchy" },
+        ampDecay: { type: "number", description: "Amp envelope decay 0-100" },
+        ampSustain: { type: "number", description: "Amp envelope sustain 0-100. 50-80 for bass" },
+        ampRelease: { type: "number", description: "Amp envelope release 0-100. 10-30 for tight bass" },
+        drive: { type: "number", description: "Output saturation 0-100. Adds harmonics and grit" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "list_jb202_kits",
+    description: "List available JB202 sound presets (kits). JB202 uses custom DSP for cross-platform consistency.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "load_jb202_kit",
+    description: "Load a JB202 kit (sound preset). Applies oscillator, filter, envelope, and drive settings.",
+    input_schema: {
+      type: "object",
+      properties: {
+        kit: { type: "string", description: "Kit ID or name (e.g., 'default', 'acid', 'sub')" }
+      },
+      required: ["kit"]
+    }
+  },
+  {
+    name: "list_jb202_sequences",
+    description: "List available JB202 pattern presets (sequences).",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "load_jb202_sequence",
+    description: "Load a JB202 sequence (pattern preset). Applies the note pattern with gates, accents, and slides.",
+    input_schema: {
+      type: "object",
+      properties: {
+        sequence: { type: "string", description: "Sequence ID or name (e.g., 'default', 'minimal', 'busy')" }
+      },
+      required: ["sequence"]
+    }
+  },
   // JB01 (Reference Drum Machine)
   {
     name: "add_jb01",
@@ -610,6 +706,74 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {},
+      required: []
+    }
+  },
+  {
+    name: "detect_resonance",
+    description: "Detect filter resonance peaks (squelch detection). Identifies if a sound has prominent resonance - the characteristic 'squelch' of acid bass. Returns whether squelchy, resonance peaks, and their prominence in dB.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" },
+        minProminence: { type: "number", description: "Minimum prominence in dB to count as resonance (default: 6)" },
+        minFreq: { type: "number", description: "Minimum frequency to check in Hz (default: 200)" },
+        maxFreq: { type: "number", description: "Maximum frequency to check in Hz (default: 4000)" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "detect_mud",
+    description: "Detect frequency buildup in the 'mud zone' (200-600Hz). Analyzes narrow frequency bands to identify where low-mid frequencies are building up and making the mix muddy. Returns which frequencies need cutting.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" },
+        startHz: { type: "number", description: "Start frequency for analysis (default: 200)" },
+        endHz: { type: "number", description: "End frequency for analysis (default: 600)" },
+        bandwidthHz: { type: "number", description: "Width of each analysis band in Hz (default: 50)" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "measure_spectral_flux",
+    description: "Measure how much the spectrum changes over time. High flux indicates filter sweeps and movement - the 'acid' character. Low flux means static, non-moving sound.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" },
+        windowMs: { type: "number", description: "Analysis window size in milliseconds (default: 100)" },
+        freqLow: { type: "number", description: "Low frequency bound in Hz (default: 200)" },
+        freqHigh: { type: "number", description: "High frequency bound in Hz (default: 2000)" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "get_spectral_peaks",
+    description: "Find the dominant frequencies in the spectrum. Returns the loudest frequency peaks with their musical note names, amplitudes, and cents deviation from perfect pitch.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" },
+        minFreq: { type: "number", description: "Minimum frequency to consider in Hz (default: 20)" },
+        maxFreq: { type: "number", description: "Maximum frequency to consider in Hz (default: 8000)" },
+        minPeakDb: { type: "number", description: "Minimum amplitude for peaks in dB (default: -40)" },
+        maxPeaks: { type: "number", description: "Maximum number of peaks to return (default: 10)" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "show_spectrum",
+    description: "Display a full-range ASCII spectrum analyzer visualization, like an EQ plugin. Shows energy across 8 frequency bands from Sub (20Hz) to Air (20kHz) as a vertical bar graph.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" }
+      },
       required: []
     }
   },

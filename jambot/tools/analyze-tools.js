@@ -1,13 +1,15 @@
 /**
  * Analyze Tools
  *
- * Tools for audio analysis: analyze_render, analyze_waveform, detect_waveform
+ * Tools for audio analysis: analyze_render, analyze_waveform, detect_waveform,
+ * detect_resonance, detect_mud
  *
- * Uses the AnalyzeNode for all analysis operations.
+ * Uses the AnalyzeNode for basic analysis and SpectralAnalyzer for spectral analysis.
  */
 
 import { registerTools } from './index.js';
 import { AnalyzeNode } from '../effects/analyze-node.js';
+import { spectralAnalyzer } from '../effects/spectral-analyzer.js';
 
 // Create a singleton instance of AnalyzeNode for tool use
 const analyzeNode = new AnalyzeNode('analyze');
@@ -191,6 +193,307 @@ const analyzeTools = {
       return 'sox is installed and available for audio analysis.';
     } else {
       return 'sox is NOT installed. Install with: brew install sox';
+    }
+  },
+
+  /**
+   * Detect resonance peaks in audio (squelch detection)
+   *
+   * Identifies if a sound has prominent filter resonance - the characteristic
+   * "squelch" of acid bass. Returns resonance peaks and their prominence.
+   */
+  detect_resonance: async (input, session, context) => {
+    const { filename, minProminence, minFreq, maxFreq } = input;
+    const wavPath = filename || session.lastRenderedFile;
+
+    if (!wavPath) {
+      return 'No WAV file to analyze. Render first, or provide a filename.';
+    }
+
+    try {
+      const result = spectralAnalyzer.detectResonance(wavPath, {
+        minProminence: minProminence || 6,
+        minFreq: minFreq || 200,
+        maxFreq: maxFreq || 4000,
+      });
+
+      const lines = [
+        'RESONANCE DETECTION:',
+        `  Squelchy: ${result.detected ? 'YES' : 'NO'}`,
+        '',
+        `  ${result.description}`,
+      ];
+
+      if (result.peaks && result.peaks.length > 0) {
+        lines.push('');
+        lines.push('  Prominent Peaks:');
+        for (const peak of result.peaks) {
+          lines.push(`    ${Math.round(peak.freq)}Hz (${peak.note}): +${peak.prominenceDb}dB prominence`);
+        }
+      }
+
+      return lines.join('\n');
+    } catch (e) {
+      return `Resonance detection error: ${e.message}`;
+    }
+  },
+
+  /**
+   * Detect mud in the low-mid frequency range
+   *
+   * Analyzes narrow frequency bands in the "mud zone" (200-600Hz) to identify
+   * frequency buildup that can make a mix sound muddy or boomy.
+   */
+  detect_mud: async (input, session, context) => {
+    const { filename, startHz, endHz, bandwidthHz } = input;
+    const wavPath = filename || session.lastRenderedFile;
+
+    if (!wavPath) {
+      return 'No WAV file to analyze. Render first, or provide a filename.';
+    }
+
+    try {
+      const result = spectralAnalyzer.analyzeNarrowBands(wavPath, {
+        startHz: startHz || 200,
+        endHz: endHz || 600,
+        bandwidthHz: bandwidthHz || 50,
+      });
+
+      const lines = [
+        'MUD DETECTION (Low-Mid Frequency Analysis):',
+        `  Mud Detected: ${result.mudDetected ? 'YES' : 'NO'}`,
+        '',
+        `  ${result.description}`,
+      ];
+
+      if (result.worstBand) {
+        lines.push('');
+        lines.push(`  Loudest Band: ${result.worstBand.centerFreq}Hz (${result.worstBand.note})`);
+        lines.push(`    Level: ${result.worstBand.rmsDb}dB (${result.worstBand.excessDb >= 0 ? '+' : ''}${result.worstBand.excessDb}dB vs average)`);
+      }
+
+      if (result.bands && result.bands.length > 0) {
+        lines.push('');
+        lines.push('  ┌─────────────────────────────────────────────────────┐');
+        lines.push('  │  SPECTRUM ANALYZER (Mud Zone: 200-600Hz)            │');
+        lines.push('  ├─────────────────────────────────────────────────────┤');
+
+        // Find min/max for scaling
+        const dbValues = result.bands.map(b => b.rmsDb);
+        const minDb = Math.min(...dbValues);
+        const maxDb = Math.max(...dbValues);
+        const range = maxDb - minDb || 1;
+
+        for (const band of result.bands) {
+          // Scale to 0-20 range for the bar
+          const normalized = (band.rmsDb - minDb) / range;
+          const fullBlocks = Math.floor(normalized * 20);
+          const remainder = (normalized * 20) - fullBlocks;
+
+          // Use block characters for smooth gradient
+          let bar = '█'.repeat(fullBlocks);
+          if (remainder > 0.75) bar += '▓';
+          else if (remainder > 0.5) bar += '▒';
+          else if (remainder > 0.25) bar += '░';
+
+          // Mark the mud band with ← MUD
+          const isMud = result.worstBand && band.centerFreq === result.worstBand.centerFreq && result.mudDetected;
+          const marker = isMud ? ' ← MUD' : '';
+
+          lines.push(`  │ ${band.centerFreq.toString().padStart(3)}Hz ${band.note.padEnd(3)} ${bar.padEnd(21)} ${band.rmsDb.toString().padStart(4)}dB${marker}`);
+        }
+
+        lines.push('  └─────────────────────────────────────────────────────┘');
+        lines.push(`  Scale: ${minDb}dB to ${maxDb}dB`);
+      }
+
+      return lines.join('\n');
+    } catch (e) {
+      return `Mud detection error: ${e.message}`;
+    }
+  },
+
+  /**
+   * Measure spectral flux (filter movement / acid character)
+   *
+   * Measures how much the spectrum changes over time. High flux in the
+   * mid-range indicates active filter sweeps - the "acid" character.
+   */
+  measure_spectral_flux: async (input, session, context) => {
+    const { filename, windowMs, freqLow, freqHigh } = input;
+    const wavPath = filename || session.lastRenderedFile;
+
+    if (!wavPath) {
+      return 'No WAV file to analyze. Render first, or provide a filename.';
+    }
+
+    try {
+      const result = spectralAnalyzer.measureSpectralFlux(wavPath, {
+        windowMs: windowMs || 100,
+        freqLow: freqLow || 200,
+        freqHigh: freqHigh || 2000,
+      });
+
+      const lines = [
+        'SPECTRAL FLUX ANALYSIS:',
+        `  Flux Level: ${result.fluxLevel.toUpperCase()}`,
+        '',
+        `  ${result.description}`,
+        '',
+        `  Average Flux: ${result.avgFlux}dB`,
+        `  Maximum Flux: ${result.maxFlux}dB`,
+      ];
+
+      return lines.join('\n');
+    } catch (e) {
+      return `Spectral flux error: ${e.message}`;
+    }
+  },
+
+  /**
+   * Show full spectrum analyzer display
+   *
+   * Displays an ASCII visualization of the frequency spectrum across
+   * the full audible range, like an EQ analyzer plugin.
+   */
+  show_spectrum: async (input, session, context) => {
+    const { filename } = input;
+    const wavPath = filename || session.lastRenderedFile;
+
+    if (!wavPath) {
+      return 'No WAV file to analyze. Render first, or provide a filename.';
+    }
+
+    try {
+      // Analyze bands across full spectrum using logarithmic spacing
+      // Sub, Bass, Low-Mid, Mid, High-Mid, Presence, Brilliance, Air
+      const bands = [
+        { start: 20, end: 60, name: 'Sub' },
+        { start: 60, end: 250, name: 'Bass' },
+        { start: 250, end: 500, name: 'Low-Mid' },
+        { start: 500, end: 2000, name: 'Mid' },
+        { start: 2000, end: 4000, name: 'Hi-Mid' },
+        { start: 4000, end: 6000, name: 'Presence' },
+        { start: 6000, end: 12000, name: 'Brilliance' },
+        { start: 12000, end: 20000, name: 'Air' },
+      ];
+
+      const results = [];
+      for (const band of bands) {
+        const result = spectralAnalyzer.analyzeNarrowBands(wavPath, {
+          startHz: band.start,
+          endHz: band.end,
+          bandwidthHz: band.end - band.start, // Single band
+        });
+        if (result.bands && result.bands.length > 0) {
+          results.push({
+            name: band.name,
+            range: `${band.start}-${band.end}`,
+            rmsDb: result.bands[0].rmsDb,
+          });
+        }
+      }
+
+      if (results.length === 0) {
+        return 'Could not analyze spectrum. The audio may be silent or corrupted.';
+      }
+
+      // Find range for scaling
+      const dbValues = results.map(r => r.rmsDb);
+      const minDb = Math.min(...dbValues);
+      const maxDb = Math.max(...dbValues);
+      const range = maxDb - minDb || 1;
+
+      const lines = [
+        '┌────────────────────────────────────────────────────────────┐',
+        '│           SPECTRUM ANALYZER (Full Range)                   │',
+        '├────────────────────────────────────────────────────────────┤',
+        '│                                                            │',
+      ];
+
+      // Create vertical bar graph (8 rows of bars)
+      const barHeight = 8;
+      for (let row = barHeight; row >= 1; row--) {
+        const threshold = row / barHeight;
+        let rowStr = '│  ';
+        for (const result of results) {
+          const normalized = (result.rmsDb - minDb) / range;
+          if (normalized >= threshold) {
+            rowStr += '  ██  ';
+          } else if (normalized >= threshold - 0.125) {
+            rowStr += '  ▄▄  ';
+          } else {
+            rowStr += '      ';
+          }
+        }
+        lines.push(rowStr.padEnd(61) + '│');
+      }
+
+      // Add frequency labels
+      lines.push('│  ' + '──────'.repeat(results.length) + '  │');
+      let labelRow = '│  ';
+      for (const result of results) {
+        labelRow += result.name.substring(0, 5).padStart(3).padEnd(6);
+      }
+      lines.push(labelRow.padEnd(61) + '│');
+
+      // Add dB values row
+      let dbRow = '│  ';
+      for (const result of results) {
+        dbRow += `${result.rmsDb}`.padStart(4).padEnd(6);
+      }
+      lines.push(dbRow.padEnd(61) + '│');
+
+      lines.push('├────────────────────────────────────────────────────────────┤');
+      lines.push(`│  Range: ${minDb}dB to ${maxDb}dB`.padEnd(61) + '│');
+      lines.push('└────────────────────────────────────────────────────────────┘');
+
+      return lines.join('\n');
+    } catch (e) {
+      return `Spectrum analysis error: ${e.message}`;
+    }
+  },
+
+  /**
+   * Get spectral peaks - find dominant frequencies
+   *
+   * Returns the loudest frequency peaks in the spectrum with their
+   * musical note names and amplitudes.
+   */
+  get_spectral_peaks: async (input, session, context) => {
+    const { filename, minFreq, maxFreq, minPeakDb, maxPeaks } = input;
+    const wavPath = filename || session.lastRenderedFile;
+
+    if (!wavPath) {
+      return 'No WAV file to analyze. Render first, or provide a filename.';
+    }
+
+    try {
+      const peaks = spectralAnalyzer.getSpectralPeaks(wavPath, {
+        minFreq: minFreq || 20,
+        maxFreq: maxFreq || 8000,
+        minPeakDb: minPeakDb || -40,
+        maxPeaks: maxPeaks || 10,
+      });
+
+      if (peaks.length === 0) {
+        return 'No spectral peaks found. The audio may be too quiet or too noisy.';
+      }
+
+      const lines = [
+        'SPECTRAL PEAKS (Dominant Frequencies):',
+        '',
+      ];
+
+      for (let i = 0; i < peaks.length; i++) {
+        const peak = peaks[i];
+        const centsStr = peak.cents >= 0 ? `+${peak.cents}` : `${peak.cents}`;
+        lines.push(`  ${i + 1}. ${Math.round(peak.freq)}Hz (${peak.note}, ${centsStr} cents): ${peak.amplitudeDb}dB`);
+      }
+
+      return lines.join('\n');
+    } catch (e) {
+      return `Spectral peaks error: ${e.message}`;
     }
   },
 };

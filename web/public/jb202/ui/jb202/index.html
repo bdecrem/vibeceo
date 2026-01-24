@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JB202 Bass Monosynth</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="synth-panel">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-text">JB202</span>
+                <span class="logo-sub">MODULAR BASS SYNTH</span>
+            </div>
+            <div class="header-controls">
+                <div class="preset-group">
+                    <span class="preset-label">Kit</span>
+                    <select id="preset-select" class="preset-select" title="Kit Preset">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div class="preset-group">
+                    <span class="preset-label">Sequence</span>
+                    <select id="sequence-select" class="preset-select" title="Sequence Preset">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <button id="info-btn" class="icon-btn" title="Info">?</button>
+            </div>
+        </header>
+
+        <!-- Main Controls -->
+        <div class="controls-grid">
+            <!-- OSC 1 -->
+            <section class="control-section osc-section">
+                <h3>OSC 1</h3>
+                <div class="wave-toggle">
+                    <button id="osc1-saw" class="wave-btn active" data-wave="sawtooth">SAW</button>
+                    <button id="osc1-square" class="wave-btn" data-wave="square">SQR</button>
+                    <button id="osc1-tri" class="wave-btn" data-wave="triangle">TRI</button>
+                </div>
+                <div class="knob-row">
+                    <div class="knob-group">
+                        <div class="knob" data-param="osc1Octave" data-min="-24" data-max="24" data-default="0"></div>
+                        <label>OCT</label>
+                        <span id="osc1Octave-value" class="knob-value">0</span>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob" data-param="osc1Detune"></div>
+                        <label>DETUNE</label>
+                        <span id="osc1Detune-value" class="knob-value">50</span>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob" data-param="osc1Level"></div>
+                        <label>LEVEL</label>
+                        <span id="osc1Level-value" class="knob-value">100</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- OSC 2 -->
+            <section class="control-section osc-section">
+                <h3>OSC 2</h3>
+                <div class="wave-toggle">
+                    <button id="osc2-saw" class="wave-btn active" data-wave="sawtooth">SAW</button>
+                    <button id="osc2-square" class="wave-btn" data-wave="square">SQR</button>
+                    <button id="osc2-tri" class="wave-btn" data-wave="triangle">TRI</button>
+                </div>
+                <div class="knob-row">
+                    <div class="knob-group">
+                        <div class="knob" data-param="osc2Octave" data-min="-24" data-max="24" data-default="0"></div>
+                        <label>OCT</label>
+                        <span id="osc2Octave-value" class="knob-value">0</span>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob" data-param="osc2Detune"></div>
+                        <label>DETUNE</label>
+                        <span id="osc2Detune-value" class="knob-value">57</span>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob" data-param="osc2Level"></div>
+                        <label>LEVEL</label>
+                        <span id="osc2Level-value" class="knob-value">80</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filter -->
+            <section class="control-section filter-section">
+                <h3>FILTER</h3>
+                <div class="knob-row">
+                    <div class="knob-group">
+                        <div class="knob knob-large" data-param="filterCutoff"></div>
+                        <label>CUTOFF</label>
+                        <span id="filterCutoff-value" class="knob-value">53</span>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob knob-large" data-param="filterResonance"></div>
+                        <label>RESO</label>
+                        <span id="filterResonance-value" class="knob-value">40</span>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob" data-param="filterEnvAmount" data-bipolar="true"></div>
+                        <label>ENV</label>
+                        <span id="filterEnvAmount-value" class="knob-value">60</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filter Envelope -->
+            <section class="control-section env-section">
+                <h3>FILTER ENV</h3>
+                <div class="knob-row">
+                    <div class="knob-group">
+                        <div class="knob knob-small" data-param="filterAttack"></div>
+                        <label>A</label>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob knob-small" data-param="filterDecay"></div>
+                        <label>D</label>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob knob-small" data-param="filterSustain"></div>
+                        <label>S</label>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob knob-small" data-param="filterRelease"></div>
+                        <label>R</label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Amp Envelope -->
+            <section class="control-section env-section">
+                <h3>AMP ENV</h3>
+                <div class="knob-row">
+                    <div class="knob-group">
+                        <div class="knob knob-small" data-param="ampAttack"></div>
+                        <label>A</label>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob knob-small" data-param="ampDecay"></div>
+                        <label>D</label>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob knob-small" data-param="ampSustain"></div>
+                        <label>S</label>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob knob-small" data-param="ampRelease"></div>
+                        <label>R</label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Output -->
+            <section class="control-section output-section">
+                <h3>OUTPUT</h3>
+                <div class="knob-row">
+                    <div class="knob-group">
+                        <div class="knob" data-param="drive"></div>
+                        <label>DRIVE</label>
+                        <span id="drive-value" class="knob-value">20</span>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob" data-param="level"></div>
+                        <label>LEVEL</label>
+                        <span id="level-value" class="knob-value">80</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Sequencer -->
+        <section class="sequencer-section">
+            <div class="sequencer-header">
+                <div class="step-page-toggle">
+                    <button class="step-page-btn active" data-page="1">1-8</button>
+                    <button class="step-page-btn" data-page="2">9-16</button>
+                </div>
+                <div class="seq-labels">
+                    <span class="seq-label">NOTE</span>
+                    <span class="seq-label">GATE</span>
+                    <span class="seq-label">ACC</span>
+                    <span class="seq-label">SLD</span>
+                </div>
+            </div>
+            <div id="sequencer" class="sequencer">
+                <div id="seq-steps" class="seq-steps"></div>
+            </div>
+        </section>
+
+        <!-- Transport -->
+        <section class="transport-section">
+            <div class="transport-left">
+                <label>BPM</label>
+                <input type="number" id="bpm" value="120" min="30" max="300">
+            </div>
+            <div class="transport-center">
+                <button id="play-toggle" class="play-btn">Play</button>
+            </div>
+            <div class="transport-right">
+                <button id="share-btn" class="icon-btn" title="Share">
+                    <span class="share-icon"></span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Status -->
+        <div id="status" class="status">Ready - Space to play, A-K for notes</div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <h2>JB202 Modular Bass Synth</h2>
+            <p>A 2-oscillator bass synthesizer with <strong>custom DSP components</strong> for cross-platform consistency.</p>
+
+            <h3>What's Different?</h3>
+            <ul>
+                <li><strong>Custom oscillators:</strong> PolyBLEP band-limited waveforms</li>
+                <li><strong>Custom filter:</strong> 24dB/oct cascaded biquad lowpass</li>
+                <li><strong>Custom envelopes:</strong> Exponential ADSR generators</li>
+                <li><strong>Custom drive:</strong> Soft-clip saturation</li>
+            </ul>
+
+            <h3>Controls</h3>
+            <ul>
+                <li><strong>OSC 1/2:</strong> Waveform select, octave (-24 to +24 semitones), detune, level</li>
+                <li><strong>Filter:</strong> Cutoff (20Hz-16kHz), resonance, envelope amount (bipolar)</li>
+                <li><strong>Filter Env:</strong> Attack, Decay, Sustain, Release</li>
+                <li><strong>Amp Env:</strong> Attack, Decay, Sustain, Release</li>
+                <li><strong>Output:</strong> Drive (soft saturation), master level</li>
+            </ul>
+
+            <h3>Keyboard</h3>
+            <ul>
+                <li><strong>Space:</strong> Play/Stop sequencer</li>
+                <li><strong>A-K:</strong> Play notes (chromatic from C2)</li>
+                <li><strong>Shift + key:</strong> Accent</li>
+            </ul>
+
+            <h3>Sequencer</h3>
+            <ul>
+                <li><strong>Click note:</strong> Cycle up</li>
+                <li><strong>Right-click note:</strong> Cycle down</li>
+                <li><strong>Gate:</strong> Note on/off</li>
+                <li><strong>Acc:</strong> Accent (brighter, louder)</li>
+                <li><strong>Sld:</strong> Slide from previous note</li>
+            </ul>
+
+            <h3>Test</h3>
+            <p><a href="?test">Generate A440 test tone</a> - Pure saw wave for audio analysis</p>
+
+            <p class="modal-footer">Part of the Jambot Droid Quartet</p>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="share-modal" class="modal">
+        <div class="modal-content share-modal-content">
+            <button class="modal-close share-modal-close">&times;</button>
+            <h2>Export / Import</h2>
+            <div class="share-options">
+                <button id="export-btn" class="share-option">
+                    <span class="share-option-icon">WAV</span>
+                    <span>Export Audio</span>
+                </button>
+                <button id="export-kit" class="share-option">
+                    <span class="share-option-icon">KIT</span>
+                    <span>Export Kit</span>
+                </button>
+                <button id="export-seq" class="share-option">
+                    <span class="share-option-icon">SEQ</span>
+                    <span>Export Sequence</span>
+                </button>
+                <button id="export-json" class="share-option">
+                    <span class="share-option-icon">ALL</span>
+                    <span>Export All</span>
+                </button>
+                <button id="import-json" class="share-option">
+                    <span class="share-option-icon">+</span>
+                    <span>Import</span>
+                </button>
+            </div>
+            <input type="file" id="import-file" accept=".json" hidden>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
