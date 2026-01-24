@@ -16,6 +16,7 @@ export { FilterBiquadModule } from './filter-biquad.js';
 
 // Modulation
 export { EnvADSRModule } from './env-adsr.js';
+export { SequencerModule } from './sequencer.js';
 
 // Utilities
 export { VCAModule } from './vca.js';
@@ -32,6 +33,7 @@ import { StringModule } from './string.js';
 import { FilterLP24Module } from './filter-lp24.js';
 import { FilterBiquadModule } from './filter-biquad.js';
 import { EnvADSRModule } from './env-adsr.js';
+import { SequencerModule } from './sequencer.js';
 import { VCAModule } from './vca.js';
 import { MixerModule } from './mixer.js';
 import { DriveModule } from './drive.js';
@@ -52,6 +54,7 @@ const MODULE_REGISTRY = {
 
   // Modulation
   'env-adsr': EnvADSRModule,
+  'sequencer': SequencerModule,
 
   // Utilities
   'vca': VCAModule,
@@ -99,7 +102,7 @@ export function createModule(type, id, sampleRate = 44100) {
 export const MODULE_CATEGORIES = {
   'Sound Sources': ['osc-saw', 'osc-square', 'osc-triangle', 'string'],
   'Filters': ['filter-lp24', 'filter-biquad'],
-  'Modulation': ['env-adsr'],
+  'Modulation': ['env-adsr', 'sequencer'],
   'Utilities': ['vca', 'mixer'],
   'Effects': ['drive'],
 };
@@ -115,6 +118,7 @@ export const MODULE_NAMES = {
   'filter-lp24': '24dB Lowpass Filter',
   'filter-biquad': 'Biquad Filter',
   'env-adsr': 'ADSR Envelope',
+  'sequencer': 'Step Sequencer',
   'vca': 'VCA',
   'mixer': '4-Channel Mixer',
   'drive': 'Drive / Saturation',

@@ -959,5 +959,158 @@ export const TOOLS = [
       },
       required: ["node"]
     }
+  },
+  // === JP9000 MODULAR SYNTH ===
+  {
+    name: "add_jp9000",
+    description: "Initialize the JP9000 modular synthesizer. Optionally load a preset patch (basic, pluck, dualBass) or start empty.",
+    input_schema: {
+      type: "object",
+      properties: {
+        preset: { type: "string", enum: ["basic", "pluck", "dualBass", "empty"], description: "Preset patch to load. 'basic' = osc->filter->vca, 'pluck' = Karplus-Strong string, 'dualBass' = dual osc bass. Default: empty" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "add_module",
+    description: "Add a module to the JP9000 rack. Available types: osc-saw, osc-square, osc-triangle, string (Karplus-Strong), filter-lp24, filter-biquad, env-adsr, sequencer, vca, mixer, drive.",
+    input_schema: {
+      type: "object",
+      properties: {
+        type: { type: "string", enum: ["osc-saw", "osc-square", "osc-triangle", "string", "filter-lp24", "filter-biquad", "env-adsr", "sequencer", "vca", "mixer", "drive"], description: "Module type to add" },
+        id: { type: "string", description: "Custom ID for the module (optional, auto-generated if not provided)" }
+      },
+      required: ["type"]
+    }
+  },
+  {
+    name: "remove_module",
+    description: "Remove a module from the JP9000 rack.",
+    input_schema: {
+      type: "object",
+      properties: {
+        id: { type: "string", description: "Module ID to remove" }
+      },
+      required: ["id"]
+    }
+  },
+  {
+    name: "connect_modules",
+    description: "Connect two module ports in the JP9000. Format: 'moduleId.portName' (e.g., 'osc1.audio' -> 'filter1.audio').",
+    input_schema: {
+      type: "object",
+      properties: {
+        from: { type: "string", description: "Source port (e.g., 'osc1.audio', 'env1.cv')" },
+        to: { type: "string", description: "Destination port (e.g., 'filter1.audio', 'vca1.cv')" }
+      },
+      required: ["from", "to"]
+    }
+  },
+  {
+    name: "disconnect_modules",
+    description: "Disconnect two module ports in the JP9000.",
+    input_schema: {
+      type: "object",
+      properties: {
+        from: { type: "string", description: "Source port to disconnect" },
+        to: { type: "string", description: "Destination port to disconnect" }
+      },
+      required: ["from", "to"]
+    }
+  },
+  {
+    name: "set_jp9000_output",
+    description: "Set which module is the final output of the JP9000 rack.",
+    input_schema: {
+      type: "object",
+      properties: {
+        module: { type: "string", description: "Module ID to use as output" },
+        port: { type: "string", description: "Output port name (default: 'audio')" }
+      },
+      required: ["module"]
+    }
+  },
+  {
+    name: "tweak_module",
+    description: "Adjust a parameter on a JP9000 module. Common params by type: osc-* (frequency, octave, detune), filter-* (cutoff, resonance, envAmount), env-adsr (attack, decay, sustain, release), string (decay, brightness, pluckPosition), drive (amount, type, mix), vca (gain), mixer (gain1-4).",
+    input_schema: {
+      type: "object",
+      properties: {
+        module: { type: "string", description: "Module ID" },
+        param: { type: "string", description: "Parameter name" },
+        value: { type: "number", description: "New value" }
+      },
+      required: ["module", "param", "value"]
+    }
+  },
+  {
+    name: "pluck_string",
+    description: "Pluck a JP9000 string module at a specific note. The string module uses Karplus-Strong physical modeling for realistic plucked string sounds.",
+    input_schema: {
+      type: "object",
+      properties: {
+        module: { type: "string", description: "String module ID (e.g., 'string1')" },
+        note: { type: "string", description: "Note to pluck (e.g., 'E2', 'A3')" },
+        velocity: { type: "number", description: "Pluck velocity 0-1 (default: 1)" }
+      },
+      required: ["module", "note"]
+    }
+  },
+  {
+    name: "add_jp9000_pattern",
+    description: "Set a melodic pattern for the JP9000. Each step has note, gate, accent, velocity. Pattern triggers the modules set via set_trigger_modules.",
+    input_schema: {
+      type: "object",
+      properties: {
+        pattern: {
+          type: "array",
+          description: "Array of 16 steps. Each step: {note: 'C2', gate: true, accent: false, velocity: 1}",
+          items: {
+            type: "object",
+            properties: {
+              note: { type: "string", description: "Note name (C1, D2, E2, etc)" },
+              gate: { type: "boolean", description: "true = trigger, false = rest" },
+              accent: { type: "boolean", description: "Accent for dynamics" },
+              velocity: { type: "number", description: "Velocity 0-1" }
+            }
+          }
+        }
+      },
+      required: ["pattern"]
+    }
+  },
+  {
+    name: "set_trigger_modules",
+    description: "Set which JP9000 modules should be triggered by the pattern sequencer.",
+    input_schema: {
+      type: "object",
+      properties: {
+        modules: {
+          type: "array",
+          items: { type: "string" },
+          description: "Array of module IDs to trigger (e.g., ['osc1', 'string1'])"
+        }
+      },
+      required: ["modules"]
+    }
+  },
+  {
+    name: "show_jp9000",
+    description: "Show the current JP9000 rack configuration: all modules, connections, and parameters.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "list_module_types",
+    description: "List all available JP9000 module types with descriptions.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
   }
 ];

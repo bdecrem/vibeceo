@@ -49,6 +49,7 @@ export async function initializeTools() {
   await import('./render-tools.js');
   await import('./generic-tools.js');
   await import('./analyze-tools.js');
+  await import('./jp9000-tools.js');
 
   initialized = true;
 }
