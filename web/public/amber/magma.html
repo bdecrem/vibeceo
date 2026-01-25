@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAGMA — Amber</title>
+    <meta name="description" content="Volcanic flow visualization. Watch molten rock pulse through geological veins. By Amber.">
+    <meta property="og:title" content="MAGMA">
+    <meta property="og:description" content="Volcanic flow visualization. By Amber.">
+    <meta property="og:image" content="https://intheamber.com/amber/magma-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/magma.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/magma-og.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .title {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 8px;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .instructions {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: #2D9596;
+            letter-spacing: 2px;
+            pointer-events: none;
+            z-index: 10;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .title {
+                font-size: 32px;
+                letter-spacing: 4px;
+            }
+            .instructions {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">MAGMA</div>
+    <div class="instructions">TAP TO ERUPT</div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        // Volcanic color palette
+        const colors = {
+            magma: ['#ff3300', '#ff6600', '#ff9900', '#ffcc00', '#FFD700'],
+            rock: ['#1a1a1a', '#2d2d2d', '#0D0D0D'],
+            glow: ['#f59e0b', '#FFC107', '#ec4899', '#f97316'],
+            cool: ['#2D9596', '#14b8a6', '#3b82f6']
+        };
+
+        // Particles for magma flow
+        class Particle {
+            constructor(x, y, vein) {
+                this.x = x;
+                this.y = y;
+                this.vein = vein;
+                this.speed = 0.5 + Math.random() * 1.5;
+                this.size = 2 + Math.random() * 4;
+                this.color = colors.magma[Math.floor(Math.random() * colors.magma.length)];
+                this.life = 1.0;
+                this.decay = 0.002 + Math.random() * 0.005;
+            }
+
+            update() {
+                // Follow vein path
+                const segment = Math.floor((this.y / height) * (this.vein.points.length - 1));
+                if (segment < this.vein.points.length - 1) {
+                    const target = this.vein.points[segment + 1];
+                    const dx = target.x - this.x;
+                    this.x += dx * 0.02;
+                }
+                
+                this.y += this.speed * this.vein.flowSpeed;
+                this.life -= this.decay;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                
+                // Glow
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 3);
+                gradient.addColorStop(0, this.color);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(this.x - this.size * 3, this.y - this.size * 3, this.size * 6, this.size * 6);
+                
+                // Core
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+                
+                ctx.restore();
+            }
+
+            isDead() {
+                return this.life <= 0 || this.y > height;
+            }
+        }
+
+        // Veins - paths for magma to flow through
+        class Vein {
+            constructor(startX) {
+                this.points = [];
+                this.particles = [];
+                this.flowSpeed = 0.8 + Math.random() * 0.4;
+                this.width = 20 + Math.random() * 40;
+                this.intensity = 0;
+                
+                // Create winding path from top to bottom
+                let x = startX;
+                let y = 0;
+                const segments = 15 + Math.floor(Math.random() * 10);
+                
+                for (let i = 0; i <= segments; i++) {
+                    this.points.push({ x, y });
+                    y += height / segments;
+                    x += (Math.random() - 0.5) * 100;
+                    x = Math.max(50, Math.min(width - 50, x));
+                }
+            }
+
+            addParticles(count) {
+                for (let i = 0; i < count; i++) {
+                    const startPoint = this.points[0];
+                    const x = startPoint.x + (Math.random() - 0.5) * this.width;
+                    this.particles.push(new Particle(x, startPoint.y, this));
+                }
+                this.intensity = 1.0;
+            }
+
+            update() {
+                // Update particles
+                this.particles = this.particles.filter(p => {
+                    p.update();
+                    return !p.isDead();
+                });
+
+                // Natural flow
+                if (Math.random() < 0.1 * this.flowSpeed) {
+                    this.addParticles(2);
+                }
+
+                // Decay intensity
+                this.intensity *= 0.95;
+            }
+
+            draw() {
+                // Draw vein structure
+                ctx.save();
+                ctx.strokeStyle = colors.rock[0];
+                ctx.lineWidth = this.width + 10;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                
+                ctx.beginPath();
+                ctx.moveTo(this.points[0].x, this.points[0].y);
+                for (let i = 1; i < this.points.length; i++) {
+                    ctx.lineTo(this.points[i].x, this.points[i].y);
+                }
+                ctx.stroke();
+
+                // Draw inner glow if active
+                if (this.intensity > 0.1) {
+                    ctx.strokeStyle = colors.glow[Math.floor(Math.random() * colors.glow.length)];
+                    ctx.lineWidth = this.width * this.intensity;
+                    ctx.globalAlpha = this.intensity * 0.3;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.points[0].x, this.points[0].y);
+                    for (let i = 1; i < this.points.length; i++) {
+                        ctx.lineTo(this.points[i].x, this.points[i].y);
+                    }
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+
+                // Draw particles
+                this.particles.forEach(p => p.draw());
+            }
+        }
+
+        // Create veins
+        const veins = [];
+        const veinCount = width < 600 ? 4 : 6;
+        for (let i = 0; i < veinCount; i++) {
+            const x = (width / (veinCount + 1)) * (i + 1);
+            veins.push(new Vein(x));
+        }
+
+        // Ambient heat distortion particles
+        const ambientParticles = [];
+        for (let i = 0; i < 100; i++) {
+            ambientParticles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: -0.5 - Math.random() * 0.5,
+                size: 1 + Math.random() * 2,
+                color: colors.cool[Math.floor(Math.random() * colors.cool.length)],
+                alpha: 0.1 + Math.random() * 0.2
+            });
+        }
+
+        function drawAmbient() {
+            ambientParticles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                
+                if (p.y < 0) p.y = height;
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+                ctx.restore();
+            });
+        }
+
+        // Eruption on click/tap
+        function erupt(x, y) {
+            // Find nearest vein
+            let nearest = veins[0];
+            let minDist = Infinity;
+            
+            veins.forEach(vein => {
+                const dist = Math.abs(vein.points[0].x - x);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = vein;
+                }
+            });
+
+            // Major eruption
+            nearest.addParticles(50);
+        }
+
+        // Input handling
+        canvas.addEventListener('click', (e) => {
+            erupt(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            erupt(touch.clientX, touch.clientY);
+        });
+
+        // Animation loop
+        function animate() {
+            // Fade trail
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+
+            drawAmbient();
+            
+            veins.forEach(vein => {
+                vein.update();
+                vein.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        });
+    </script>
+</body>
+</html>
