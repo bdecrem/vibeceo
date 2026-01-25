@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DAYDREAM MODE</title>
+  <meta name="description" content="8-bit pixel art. You're at your desk. The spreadsheet is open. Your hands are on the keyboard. But you're thinking about literally anything else.">
+  <meta property="og:title" content="DAYDREAM MODE">
+  <meta property="og:description" content="8-bit pixel art. You're at your desk. The spreadsheet is open. Your hands are on the keyboard. But you're thinking about literally anything else.">
+  <meta property="og:image" content="https://intheamber.com/amber/daydream-mode-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/daydream-mode.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/daydream-mode-og.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      color: #FFD700;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    .title {
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+
+    .game-screen {
+      background: #1a1a1a;
+      border: 4px solid #D4A574;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+      position: relative;
+      max-width: 100%;
+    }
+
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .hud {
+      margin-top: 20px;
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      padding: 15px;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .stat-label {
+      color: #D4A574;
+      width: 140px;
+    }
+
+    .stat-bar-container {
+      flex: 1;
+      height: 20px;
+      background: #000;
+      border: 2px solid #2D9596;
+      position: relative;
+      margin: 0 10px;
+    }
+
+    .stat-bar {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .productivity { background: #FFD700; }
+    .daydream { background: #7B68EE; }
+    .coffee { background: #D4A574; }
+    .spreadsheet { background: #2D9596; }
+
+    .thought-bubble {
+      margin-top: 20px;
+      background: #0D0D0D;
+      border: 2px solid #7B68EE;
+      padding: 15px;
+      width: 100%;
+      max-width: 640px;
+      text-align: center;
+      font-size: 14px;
+      color: #7B68EE;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .controls {
+      margin-top: 20px;
+      text-align: center;
+      color: #D4A574;
+      font-size: 12px;
+      max-width: 640px;
+    }
+
+    @media (max-width: 600px) {
+      .title { font-size: 18px; }
+      .stat-row { font-size: 12px; }
+      .stat-label { width: 110px; font-size: 11px; }
+      .thought-bubble { font-size: 12px; padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="title">DAYDREAM MODE</div>
+  
+  <div class="game-screen">
+    <canvas id="game" width="320" height="240"></canvas>
+  </div>
+
+  <div class="hud">
+    <div class="stat-row">
+      <div class="stat-label">PRODUCTIVITY:</div>
+      <div class="stat-bar-container">
+        <div class="stat-bar productivity" id="productivity-bar" style="width: 8%"></div>
+      </div>
+      <div id="productivity-val">8%</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-label">DAYDREAM:</div>
+      <div class="stat-bar-container">
+        <div class="stat-bar daydream" id="daydream-bar" style="width: 94%"></div>
+      </div>
+      <div id="daydream-val">94%</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-label">COFFEE LEVEL:</div>
+      <div class="stat-bar-container">
+        <div class="stat-bar coffee" id="coffee-bar" style="width: 12%"></div>
+      </div>
+      <div id="coffee-val">12%</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-label">SPREADSHEET:</div>
+      <div class="stat-bar-container">
+        <div class="stat-bar spreadsheet" id="spreadsheet-bar" style="width: 3%"></div>
+      </div>
+      <div id="spreadsheet-val">3%</div>
+    </div>
+  </div>
+
+  <div class="thought-bubble" id="thought"></div>
+
+  <div class="controls">TAP SCREEN TO SWITCH THOUGHTS</div>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    
+    // Scale factor for crispy pixels
+    const SCALE = 1;
+    
+    // Colors
+    const COLORS = {
+      black: '#000',
+      charcoal: '#0D0D0D',
+      amber: '#D4A574',
+      gold: '#FFD700',
+      teal: '#2D9596',
+      violet: '#7B68EE',
+      white: '#FFF',
+      gray: '#333',
+      lightGray: '#666',
+      skin: '#FFCC99',
+      brown: '#8B4513'
+    };
+
+    // Thoughts that cycle through
+    const THOUGHTS = [
+      "What if dogs think we're dogs?",
+      "Is mayonnaise an instrument?",
+      "Did I lock the door this morning?",
+      "What would my wrestling name be?",
+      "Is a hotdog a sandwich?",
+      "Why do they call it rush hour when nothing moves?",
+      "What if everyone sees colors differently?",
+      "Could I survive a zombie apocalypse?",
+      "What's the meaning of... wait, what was I thinking?",
+      "When will this meeting end?",
+      "I could totally start a band",
+      "Maybe I should learn pottery",
+      "What if plants are just really slow animals?",
+      "I'm hungry. What's for lunch?",
+      "Do fish get thirsty?",
+      "Why is abbreviated such a long word?",
+      "What if reality is a simulation?",
+      "I should buy a boat",
+      "Could I pull off a mustache?",
+      "What would I do if I won the lottery?"
+    ];
+
+    let currentThought = 0;
+    let animFrame = 0;
+
+    function drawPixel(x, y, color, size = 1) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * SCALE, y * SCALE, size * SCALE, size * SCALE);
+    }
+
+    function drawRect(x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * SCALE, y * SCALE, w * SCALE, h * SCALE);
+    }
+
+    function drawDesk() {
+      // Desk surface - brown
+      drawRect(0, 180, 320, 60, COLORS.brown);
+      
+      // Desk edge highlight
+      drawRect(0, 180, 320, 2, COLORS.lightGray);
+      
+      // Monitor on desk (spreadsheet visible)
+      // Monitor frame
+      drawRect(100, 80, 120, 90, COLORS.charcoal);
+      // Screen (teal with grid)
+      drawRect(106, 86, 108, 78, COLORS.teal);
+      
+      // Draw spreadsheet grid
+      for (let i = 0; i < 6; i++) {
+        drawRect(106, 86 + i * 13, 108, 1, COLORS.charcoal);
+      }
+      for (let i = 0; i < 4; i++) {
+        drawRect(106 + i * 27, 86, 1, 78, COLORS.charcoal);
+      }
+      
+      // Monitor stand
+      drawRect(145, 170, 30, 10, COLORS.gray);
+      
+      // Keyboard on desk
+      drawRect(120, 190, 80, 30, COLORS.charcoal);
+      // Keys
+      for (let row = 0; row < 4; row++) {
+        for (let col = 0; col < 12; col++) {
+          drawRect(124 + col * 6, 194 + row * 6, 4, 4, COLORS.lightGray);
+        }
+      }
+      
+      // Coffee mug (nearly empty!)
+      drawRect(50, 185, 20, 25, COLORS.amber);
+      drawRect(52, 187, 16, 3, COLORS.brown); // tiny bit of coffee left
+      drawRect(70, 195, 8, 4, COLORS.amber); // handle
+    }
+
+    function drawCharacter() {
+      // Character sitting at desk
+      const x = 155;
+      const y = 150;
+      
+      // Head
+      drawRect(x, y, 16, 16, COLORS.skin);
+      
+      // Hair
+      drawRect(x, y, 16, 4, COLORS.brown);
+      
+      // Eyes (looking up/away - daydreaming!)
+      drawPixel(x + 4, y + 8, COLORS.black, 2);
+      drawPixel(x + 10, y + 8, COLORS.black, 2);
+      
+      // Body/shirt (gold - amber colors)
+      drawRect(x - 4, y + 16, 24, 24, COLORS.gold);
+      
+      // Arms on keyboard (typing but not really)
+      drawRect(x - 12, y + 24, 12, 6, COLORS.skin); // left arm
+      drawRect(x + 16, y + 24, 12, 6, COLORS.skin); // right arm
+      
+      // Hands on keyboard
+      drawRect(x - 16, y + 28, 8, 4, COLORS.skin);
+      drawRect(x + 24, y + 28, 8, 4, COLORS.skin);
+    }
+
+    function drawThoughtCloud() {
+      // Animated thought bubble above character
+      const x = 200;
+      const y = 30 + Math.sin(animFrame / 20) * 2; // floating
+      
+      // Cloud (violet - daydream color)
+      ctx.fillStyle = COLORS.violet;
+      ctx.globalAlpha = 0.8;
+      
+      // Main cloud body
+      drawRect(x, y + 10, 60, 30, COLORS.violet);
+      drawRect(x + 10, y, 40, 20, COLORS.violet);
+      drawRect(x + 5, y + 5, 50, 35, COLORS.violet);
+      
+      // Small bubbles connecting to head
+      drawRect(180, 130, 8, 8, COLORS.violet);
+      drawRect(170, 120, 6, 6, COLORS.violet);
+      
+      ctx.globalAlpha = 1.0;
+      
+      // Question marks and symbols in cloud
+      ctx.fillStyle = COLORS.gold;
+      ctx.font = '16px "Courier New"';
+      ctx.fillText('?', x + 15, y + 28);
+      ctx.fillText('...', x + 30, y + 28);
+    }
+
+    function drawScene() {
+      // Clear canvas
+      ctx.fillStyle = COLORS.black;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw back wall
+      drawRect(0, 0, 320, 180, '#1a1a1a');
+      
+      // Window on wall (daydreaming about outside)
+      drawRect(20, 20, 60, 60, '#000033');
+      // Window panes
+      drawRect(20, 49, 60, 2, COLORS.lightGray);
+      drawRect(49, 20, 2, 60, COLORS.lightGray);
+      // Stars/sun visible (it's a nice day outside)
+      drawPixel(30, 35, COLORS.gold, 3);
+      drawPixel(55, 45, COLORS.white, 2);
+      drawPixel(65, 30, COLORS.white, 2);
+      
+      drawDesk();
+      drawCharacter();
+      drawThoughtCloud();
+      
+      animFrame++;
+    }
+
+    function updateStats() {
+      // Simulate stats
+      const prod = Math.floor(Math.random() * 15) + 3;
+      const dream = Math.floor(Math.random() * 20) + 80;
+      const coffee = Math.floor(Math.random() * 30) + 5;
+      const sheet = Math.floor(Math.random() * 10) + 1;
+      
+      document.getElementById('productivity-bar').style.width = prod + '%';
+      document.getElementById('productivity-val').textContent = prod + '%';
+      
+      document.getElementById('daydream-bar').style.width = dream + '%';
+      document.getElementById('daydream-val').textContent = dream + '%';
+      
+      document.getElementById('coffee-bar').style.width = coffee + '%';
+      document.getElementById('coffee-val').textContent = coffee + '%';
+      
+      document.getElementById('spreadsheet-bar').style.width = sheet + '%';
+      document.getElementById('spreadsheet-val').textContent = sheet + '%';
+    }
+
+    function showThought() {
+      document.getElementById('thought').textContent = THOUGHTS[currentThought];
+    }
+
+    function nextThought() {
+      currentThought = (currentThought + 1) % THOUGHTS.length;
+      showThought();
+      updateStats();
+    }
+
+    // Animation loop
+    function animate() {
+      drawScene();
+      requestAnimationFrame(animate);
+    }
+
+    // Initial render
+    showThought();
+    animate();
+
+    // Click/tap to cycle thoughts
+    canvas.addEventListener('click', nextThought);
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        nextThought();
+      }
+    });
+
+    // Slowly update stats
+    setInterval(updateStats, 3000);
+  </script>
+</body>
+</html>
