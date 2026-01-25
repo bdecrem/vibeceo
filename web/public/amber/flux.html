@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FLUX — Amber</title>
+  <meta name="description" content="Flowing liquid waveforms. Ambient drones that morph and breathe.">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="FLUX">
+  <meta property="og:description" content="Flowing liquid waveforms. Ambient drones that morph and breathe.">
+  <meta property="og:image" content="https://intheamber.com/amber/flux-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/flux.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/flux-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #ui {
+      position: absolute;
+      z-index: 10;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    h1 {
+      font-size: 3rem;
+      letter-spacing: 0.2em;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+
+    #status {
+      font-size: 0.9rem;
+      color: #2D9596;
+      letter-spacing: 0.1em;
+      margin-bottom: 2rem;
+    }
+
+    button {
+      background: rgba(212, 165, 116, 0.1);
+      border: 2px solid #D4A574;
+      color: #FFD700;
+      padding: 1rem 2rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      pointer-events: all;
+      transition: all 0.3s;
+      text-transform: uppercase;
+    }
+
+    button:hover {
+      background: rgba(212, 165, 116, 0.3);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    .hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #credits {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      font-size: 0.7rem;
+      color: rgba(212, 165, 116, 0.5);
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <h1>FLUX</h1>
+    <div id="status">Flowing liquid waveforms</div>
+    <button id="startBtn">START</button>
+  </div>
+
+  <div id="credits">AMBER × 2026</div>
+
+  <script type="module">
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    const status = document.getElementById('status');
+
+    let audioContext;
+    let isPlaying = false;
+    let animationId;
+    
+    // Oscillators for ambient drone
+    let osc1, osc2, osc3, osc4;
+    let gain1, gain2, gain3, gain4;
+    let masterGain;
+    let filter;
+
+    // Waveform data
+    let waveforms = [];
+    const numWaves = 5;
+
+    // Resize canvas
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Initialize audio
+    function initAudio() {
+      audioContext = new AudioContext();
+      
+      // Master gain
+      masterGain = audioContext.createGain();
+      masterGain.gain.value = 0.3;
+      
+      // Lowpass filter for warmth
+      filter = audioContext.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 800;
+      filter.Q.value = 1;
+      
+      // Create 4 oscillators in a minor chord with slow detuning
+      // Root note: E2 (82.41 Hz)
+      const frequencies = [
+        82.41,      // E2
+        98.00,      // G2 (minor third)
+        123.47,     // B2 (fifth)
+        164.81      // E3 (octave)
+      ];
+
+      [osc1, osc2, osc3, osc4] = frequencies.map((freq, i) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        
+        osc.type = i < 2 ? 'sine' : 'triangle';
+        osc.frequency.value = freq;
+        
+        // Slow LFO detuning
+        const lfo = audioContext.createOscillator();
+        const lfoGain = audioContext.createGain();
+        lfo.frequency.value = 0.1 + Math.random() * 0.2;
+        lfoGain.gain.value = 0.5 + Math.random() * 1.5;
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        lfo.start();
+        
+        gain.gain.value = 0.25;
+        
+        osc.connect(gain);
+        gain.connect(filter);
+        
+        if (i === 0) { gain1 = gain; return osc; }
+        if (i === 1) { gain2 = gain; return osc; }
+        if (i === 2) { gain3 = gain; return osc; }
+        gain4 = gain;
+        return osc;
+      });
+      
+      filter.connect(masterGain);
+      masterGain.connect(audioContext.destination);
+
+      // Slowly modulate filter cutoff
+      const filterLFO = audioContext.createOscillator();
+      const filterLFOGain = audioContext.createGain();
+      filterLFO.frequency.value = 0.05;
+      filterLFOGain.gain.value = 300;
+      filterLFO.connect(filterLFOGain);
+      filterLFOGain.connect(filter.frequency);
+      filterLFO.start();
+
+      // Slowly fade in each oscillator
+      [osc1, osc2, osc3, osc4].forEach((osc, i) => {
+        osc.start();
+        const g = [gain1, gain2, gain3, gain4][i];
+        g.gain.setValueAtTime(0, audioContext.currentTime);
+        g.gain.linearRampToValueAtTime(0.25, audioContext.currentTime + 3 + i * 0.5);
+      });
+    }
+
+    // Initialize waveforms
+    function initWaveforms() {
+      const colors = [
+        '#FFD700',  // Gold
+        '#D4A574',  // Amber
+        '#2D9596',  // Teal
+        '#7B68EE',  // Violet
+        '#FFA07A'   // Coral
+      ];
+
+      for (let i = 0; i < numWaves; i++) {
+        waveforms.push({
+          y: canvas.height * (0.3 + i * 0.1),
+          amplitude: 30 + Math.random() * 50,
+          frequency: 0.01 + Math.random() * 0.02,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.001 + Math.random() * 0.002,
+          color: colors[i],
+          opacity: 0.6 + Math.random() * 0.4,
+          thickness: 2 + Math.random() * 3
+        });
+      }
+    }
+
+    // Draw liquid waveforms
+    function drawWaveforms() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const time = Date.now() * 0.001;
+
+      waveforms.forEach((wave, i) => {
+        ctx.strokeStyle = wave.color;
+        ctx.globalAlpha = wave.opacity;
+        ctx.lineWidth = wave.thickness;
+        ctx.beginPath();
+
+        for (let x = 0; x <= canvas.width; x += 3) {
+          const y = wave.y + 
+                    Math.sin(x * wave.frequency + wave.phase + time * wave.speed) * wave.amplitude +
+                    Math.sin(x * wave.frequency * 0.5 + time * wave.speed * 2) * wave.amplitude * 0.3;
+          
+          if (x === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.stroke();
+
+        // Update phase
+        wave.phase += wave.speed;
+      });
+
+      ctx.globalAlpha = 1;
+    }
+
+    // Animation loop
+    function animate() {
+      drawWaveforms();
+      animationId = requestAnimationFrame(animate);
+    }
+
+    // Start button
+    startBtn.addEventListener('click', async () => {
+      if (!isPlaying) {
+        initAudio();
+        initWaveforms();
+        
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+        
+        isPlaying = true;
+        startBtn.classList.add('hidden');
+        status.textContent = 'Flowing...';
+        
+        animate();
+      }
+    });
+
+    // Idle animation before start
+    function idleAnimate() {
+      if (!isPlaying) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const time = Date.now() * 0.0005;
+        const centerY = canvas.height / 2;
+        
+        ctx.strokeStyle = 'rgba(212, 165, 116, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        for (let x = 0; x <= canvas.width; x += 3) {
+          const y = centerY + Math.sin(x * 0.01 + time) * 20;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        requestAnimationFrame(idleAnimate);
+      }
+    }
+    idleAnimate();
+  </script>
+</body>
+</html>
