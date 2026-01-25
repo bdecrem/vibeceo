@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sunday Morning</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+    }
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      cursor: pointer;
+    }
+    #c {
+      width: 640px;
+      height: 480px;
+      border: 4px solid #D4A574;
+    }
+    h1 {
+      color: #D4A574;
+      margin-top: 20px;
+      font-size: 14px;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+    }
+    .hint {
+      color: #8B7355;
+      margin-top: 10px;
+      font-size: 11px;
+      letter-spacing: 2px;
+    }
+    @media (max-width: 700px) {
+      #c {
+        width: 320px;
+        height: 240px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="160" height="120"></canvas>
+  <h1>Sunday Morning</h1>
+  <p class="hint">click to interact</p>
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    // State
+    let catAwake = false;
+    let catPurring = false;
+    let catPurrFrame = 0;
+    let steamParticles = [];
+    let sparkles = [];
+    let sunPulse = 0;
+    let time = 0;
+
+    // Palette
+    const colors = {
+      sky1: '#87CEEB',
+      sky2: '#FFE4B5',
+      sun: '#FFD700',
+      sunGlow: '#FFA500',
+      wall: '#F5DEB3',
+      wallShadow: '#DEB887',
+      wood: '#8B4513',
+      woodLight: '#A0522D',
+      woodDark: '#654321',
+      cup: '#FFFFFF',
+      cupShadow: '#E8E8E8',
+      coffee: '#3E2723',
+      coffeeLight: '#5D4037',
+      croissant: '#D4A574',
+      croissantLight: '#E8C89E',
+      croissantDark: '#B8860B',
+      plant: '#228B22',
+      plantDark: '#006400',
+      pot: '#CD853F',
+      window: '#ADD8E6',
+      windowFrame: '#8B7355',
+      curtain: '#FFB6C1',
+      curtainDark: '#DB7093',
+      cat: '#FF8C00',
+      catDark: '#CC7000',
+      catLight: '#FFA500',
+    };
+
+    function drawRect(x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w, h);
+    }
+
+    // Steam particle system
+    function spawnSteam() {
+      if (steamParticles.length < 8) {
+        steamParticles.push({
+          x: 65 + Math.random() * 10,
+          y: 60,
+          life: 1,
+          speed: 0.3 + Math.random() * 0.2,
+          drift: (Math.random() - 0.5) * 0.3
+        });
+      }
+    }
+
+    function updateSteam() {
+      steamParticles = steamParticles.filter(p => {
+        p.y -= p.speed;
+        p.x += p.drift + Math.sin(time * 0.1 + p.x) * 0.1;
+        p.life -= 0.015;
+        return p.life > 0;
+      });
+    }
+
+    // Sparkle system
+    function initSparkles() {
+      sparkles = [
+        { x: 50, y: 65, phase: 0 },
+        { x: 75, y: 58, phase: 1 },
+        { x: 90, y: 72, phase: 2 },
+        { x: 120, y: 60, phase: 3 },
+        { x: 45, y: 75, phase: 4 },
+        { x: 100, y: 55, phase: 5 },
+        { x: 30, y: 70, phase: 6 },
+      ];
+    }
+
+    function draw() {
+      time++;
+      sunPulse = Math.sin(time * 0.03) * 0.5 + 0.5;
+
+      // Clear
+      ctx.clearRect(0, 0, 160, 120);
+
+      // Sky gradient
+      for (let y = 0; y < 50; y++) {
+        const t = y / 50;
+        const r = Math.floor(135 + (255 - 135) * t);
+        const g = Math.floor(206 + (228 - 206) * t);
+        const b = Math.floor(235 + (181 - 235) * t);
+        drawRect(0, y, 160, 1, `rgb(${r},${g},${b})`);
+      }
+
+      // Sun with pulse
+      const sunSize = 12 + sunPulse * 2;
+      const glowSize = 18 + sunPulse * 4;
+      ctx.fillStyle = `rgba(255, 165, 0, ${0.4 + sunPulse * 0.2})`;
+      ctx.beginPath();
+      ctx.arc(130, 25, glowSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = colors.sun;
+      ctx.beginPath();
+      ctx.arc(130, 25, sunSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sun rays
+      ctx.strokeStyle = `rgba(255, 215, 0, ${0.3 + sunPulse * 0.3})`;
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2 + time * 0.01;
+        const innerR = sunSize + 4;
+        const outerR = sunSize + 8 + sunPulse * 4;
+        ctx.beginPath();
+        ctx.moveTo(130 + Math.cos(angle) * innerR, 25 + Math.sin(angle) * innerR);
+        ctx.lineTo(130 + Math.cos(angle) * outerR, 25 + Math.sin(angle) * outerR);
+        ctx.stroke();
+      }
+
+      // Wall
+      drawRect(0, 50, 160, 70, colors.wall);
+      drawRect(0, 50, 160, 5, colors.wallShadow);
+
+      // Window frame
+      drawRect(10, 8, 60, 50, colors.windowFrame);
+      drawRect(12, 10, 56, 46, colors.window);
+      drawRect(38, 10, 4, 46, colors.windowFrame);
+      drawRect(12, 30, 56, 4, colors.windowFrame);
+
+      // Curtains with gentle sway
+      const curtainSway = Math.sin(time * 0.02) * 1.5;
+      for (let y = 8; y < 58; y++) {
+        const wave = Math.sin(y * 0.3 + time * 0.03) * 2 + curtainSway;
+        drawRect(8 + wave, y, 6, 1, y % 3 === 0 ? colors.curtainDark : colors.curtain);
+      }
+      for (let y = 8; y < 58; y++) {
+        const wave = Math.sin(y * 0.3 + 1 + time * 0.03) * 2 - curtainSway;
+        drawRect(66 + wave, y, 6, 1, y % 3 === 0 ? colors.curtainDark : colors.curtain);
+      }
+
+      // Wooden table
+      drawRect(0, 85, 160, 35, colors.wood);
+      drawRect(0, 85, 160, 3, colors.woodLight);
+      drawRect(0, 88, 160, 2, colors.woodDark);
+      for (let x = 0; x < 160; x += 20) {
+        drawRect(x, 92, 18, 1, colors.woodLight);
+        drawRect(x + 5, 100, 12, 1, colors.woodLight);
+        drawRect(x + 2, 108, 15, 1, colors.woodLight);
+      }
+
+      // Coffee cup
+      drawRect(55, 82, 30, 4, colors.cupShadow);
+      drawRect(57, 83, 26, 2, colors.cup);
+      drawRect(60, 62, 20, 20, colors.cup);
+      drawRect(58, 64, 24, 16, colors.cup);
+      drawRect(61, 63, 18, 1, colors.cupShadow);
+      drawRect(80, 66, 6, 12, colors.cup);
+      drawRect(82, 68, 4, 8, colors.wall);
+      drawRect(84, 68, 2, 8, colors.cup);
+      drawRect(61, 64, 18, 6, colors.coffee);
+      drawRect(62, 65, 16, 3, colors.coffeeLight);
+
+      // Animated steam
+      spawnSteam();
+      updateSteam();
+      steamParticles.forEach(p => {
+        const alpha = p.life * 0.7;
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        const size = 2 + (1 - p.life) * 2;
+        ctx.fillRect(p.x, p.y, size, size);
+      });
+
+      // Plate
+      ctx.fillStyle = colors.cup;
+      ctx.beginPath();
+      ctx.ellipse(115, 80, 18, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = colors.cupShadow;
+      ctx.beginPath();
+      ctx.ellipse(115, 81, 16, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Croissant
+      ctx.fillStyle = colors.croissant;
+      ctx.beginPath();
+      ctx.moveTo(100, 76);
+      ctx.quadraticCurveTo(105, 68, 115, 68);
+      ctx.quadraticCurveTo(125, 68, 130, 76);
+      ctx.quadraticCurveTo(125, 74, 115, 74);
+      ctx.quadraticCurveTo(105, 74, 100, 76);
+      ctx.fill();
+      drawRect(104, 71, 8, 1, colors.croissantDark);
+      drawRect(112, 70, 10, 1, colors.croissantDark);
+      drawRect(106, 73, 6, 1, colors.croissantLight);
+      drawRect(114, 72, 8, 1, colors.croissantLight);
+      drawRect(99, 75, 3, 2, colors.croissantDark);
+      drawRect(128, 75, 3, 2, colors.croissantDark);
+
+      // Plant pot
+      drawRect(135, 70, 16, 15, colors.pot);
+      drawRect(137, 72, 12, 11, colors.pot);
+      drawRect(133, 68, 20, 4, colors.pot);
+
+      // Plant leaves with gentle sway
+      const leafSway = Math.sin(time * 0.025) * 1;
+      const leaves = [
+        [140 + leafSway, 55, 6, 12],
+        [136 - leafSway * 0.5, 58, 5, 10],
+        [147 + leafSway * 0.5, 58, 5, 10],
+        [142 + leafSway * 0.3, 52, 4, 8],
+        [138 - leafSway * 0.3, 54, 4, 8],
+        [146 + leafSway * 0.7, 54, 4, 8],
+      ];
+      leaves.forEach(([x, y, w, h], i) => {
+        ctx.fillStyle = i % 2 === 0 ? colors.plant : colors.plantDark;
+        ctx.fillRect(x, y, w, h);
+      });
+
+      // Cat
+      drawCat();
+
+      // Sparkles
+      sparkles.forEach((s, i) => {
+        const brightness = Math.sin(time * 0.08 + s.phase) * 0.5 + 0.5;
+        if (brightness > 0.3) {
+          ctx.fillStyle = `rgba(255, 255, 200, ${brightness * 0.8})`;
+          drawRect(s.x, s.y, 1, 1);
+          if (brightness > 0.7) {
+            drawRect(s.x - 1, s.y, 1, 1);
+            drawRect(s.x + 1, s.y, 1, 1);
+            drawRect(s.x, s.y - 1, 1, 1);
+            drawRect(s.x, s.y + 1, 1, 1);
+          }
+        }
+      });
+
+      requestAnimationFrame(draw);
+    }
+
+    function drawCat() {
+      const breathe = Math.sin(time * 0.05) * 0.5;
+
+      // Body
+      ctx.fillStyle = colors.cat;
+      ctx.beginPath();
+      ctx.ellipse(35, 56 + breathe, 12, 6 + (catPurring ? Math.sin(time * 0.3) * 0.5 : 0), 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Head
+      ctx.beginPath();
+      ctx.arc(24, 54 + breathe, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ears
+      ctx.fillStyle = colors.catDark;
+      ctx.beginPath();
+      ctx.moveTo(19, 49 + breathe);
+      ctx.lineTo(21, 44 + breathe);
+      ctx.lineTo(24, 48 + breathe);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(25, 48 + breathe);
+      ctx.lineTo(28, 44 + breathe);
+      ctx.lineTo(30, 49 + breathe);
+      ctx.fill();
+
+      // Inner ears when awake
+      if (catAwake) {
+        ctx.fillStyle = colors.curtain;
+        ctx.beginPath();
+        ctx.moveTo(20, 49 + breathe);
+        ctx.lineTo(21.5, 46 + breathe);
+        ctx.lineTo(23, 48 + breathe);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(26, 48 + breathe);
+        ctx.lineTo(27.5, 46 + breathe);
+        ctx.lineTo(29, 49 + breathe);
+        ctx.fill();
+      }
+
+      // Tail with wag when awake
+      ctx.fillStyle = colors.cat;
+      const tailWag = catAwake ? Math.sin(time * 0.15) * 3 : 0;
+      ctx.beginPath();
+      ctx.moveTo(47, 56 + breathe);
+      ctx.quadraticCurveTo(55 + tailWag, 50 + breathe, 52 + tailWag, 58 + breathe);
+      ctx.quadraticCurveTo(50, 62 + breathe, 47, 58 + breathe);
+      ctx.fill();
+
+      // Stripes
+      ctx.fillStyle = colors.catDark;
+      drawRect(30, 53 + breathe, 2, 5);
+      drawRect(35, 52 + breathe, 2, 6);
+      drawRect(40, 53 + breathe, 2, 5);
+
+      // Eyes
+      ctx.fillStyle = '#000';
+      if (catAwake) {
+        // Open eyes
+        ctx.fillStyle = '#90EE90'; // Green eyes
+        ctx.beginPath();
+        ctx.ellipse(22, 54 + breathe, 2, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(27, 54 + breathe, 2, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Pupils
+        ctx.fillStyle = '#000';
+        ctx.fillRect(22, 53 + breathe, 1, 2);
+        ctx.fillRect(27, 53 + breathe, 1, 2);
+      } else {
+        // Sleeping eyes (closed lines)
+        drawRect(21, 54 + breathe, 3, 1);
+        drawRect(25, 54 + breathe, 3, 1);
+      }
+
+      // Purr effect - little Z's or hearts
+      if (catPurring) {
+        catPurrFrame++;
+        const purrY = 45 - (catPurrFrame % 30) * 0.3;
+        const purrAlpha = 1 - (catPurrFrame % 30) / 30;
+        ctx.fillStyle = `rgba(255, 182, 193, ${purrAlpha})`;
+        ctx.font = '6px monospace';
+        ctx.fillText('♥', 15, purrY + breathe);
+      } else if (!catAwake) {
+        // Z's when sleeping
+        const zFrame = Math.floor(time / 30) % 3;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.font = '5px monospace';
+        if (zFrame >= 0) ctx.fillText('z', 16, 48);
+        if (zFrame >= 1) ctx.fillText('z', 13, 45);
+        if (zFrame >= 2) ctx.fillText('Z', 10, 42);
+      }
+
+      // Whiskers when awake
+      if (catAwake) {
+        ctx.strokeStyle = colors.catDark;
+        ctx.lineWidth = 0.5;
+        // Left whiskers
+        ctx.beginPath();
+        ctx.moveTo(18, 55 + breathe);
+        ctx.lineTo(12, 54 + breathe);
+        ctx.moveTo(18, 56 + breathe);
+        ctx.lineTo(12, 57 + breathe);
+        // Right whiskers
+        ctx.moveTo(30, 55 + breathe);
+        ctx.lineTo(36, 54 + breathe);
+        ctx.moveTo(30, 56 + breathe);
+        ctx.lineTo(36, 57 + breathe);
+        ctx.stroke();
+      }
+    }
+
+    // Click handling
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = 160 / rect.width;
+      const scaleY = 120 / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+
+      // Cat hitbox (around 20-50, 48-62)
+      if (x >= 15 && x <= 55 && y >= 45 && y <= 65) {
+        if (!catAwake) {
+          catAwake = true;
+          catPurring = false;
+        } else {
+          catPurring = !catPurring;
+          catPurrFrame = 0;
+        }
+      }
+
+      // Coffee hitbox - add extra steam burst
+      if (x >= 55 && x <= 85 && y >= 60 && y <= 85) {
+        for (let i = 0; i < 5; i++) {
+          steamParticles.push({
+            x: 62 + Math.random() * 16,
+            y: 58 + Math.random() * 4,
+            life: 1,
+            speed: 0.4 + Math.random() * 0.3,
+            drift: (Math.random() - 0.5) * 0.5
+          });
+        }
+      }
+
+      // Sun hitbox - burst of sparkles
+      if (x >= 110 && x <= 150 && y >= 5 && y <= 45) {
+        for (let i = 0; i < 5; i++) {
+          sparkles.push({
+            x: 40 + Math.random() * 80,
+            y: 55 + Math.random() * 25,
+            phase: Math.random() * 6
+          });
+        }
+        // Remove extras after a delay
+        setTimeout(() => {
+          sparkles = sparkles.slice(0, 7);
+        }, 3000);
+      }
+    });
+
+    // Double-click cat to put back to sleep
+    canvas.addEventListener('dblclick', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = 160 / rect.width;
+      const scaleY = 120 / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+
+      if (x >= 15 && x <= 55 && y >= 45 && y <= 65) {
+        catAwake = false;
+        catPurring = false;
+      }
+    });
+
+    initSparkles();
+    draw();
+  </script>
+</body>
+</html>
