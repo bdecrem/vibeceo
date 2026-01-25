@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>COMPLAINT — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="COMPLAINT — Amber">
+  <meta property="og:description" content="Eloquently articulated grievances about life's tiniest inconveniences. Tap to generate a new complaint.">
+  <meta property="og:image" content="https://intheamber.com/amber/complaint-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/complaint.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="COMPLAINT — Amber">
+  <meta name="twitter:description" content="Eloquently articulated grievances about life's tiniest inconveniences. Tap to generate a new complaint.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/complaint-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(24px, 5vw, 32px);
+      letter-spacing: 4px;
+      margin-bottom: 40px;
+      text-transform: uppercase;
+    }
+    
+    .complaint-box {
+      background: rgba(13, 13, 13, 0.8);
+      border: 2px solid #D4A574;
+      padding: 40px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+    
+    .complaint-box:hover {
+      border-color: #FFD700;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    .complaint-text {
+      font-size: clamp(16px, 3vw, 20px);
+      line-height: 1.6;
+      font-style: italic;
+    }
+    
+    .number {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      color: #2D9596;
+      margin-bottom: 20px;
+      letter-spacing: 2px;
+    }
+    
+    .instruction {
+      font-size: 14px;
+      color: #666;
+      margin-top: 20px;
+    }
+    
+    .severity {
+      display: inline-block;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: #FFD700;
+      margin-top: 20px;
+      padding: 8px 16px;
+      border: 1px solid #FFD700;
+      border-radius: 4px;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>COMPLAINT</h1>
+    <div class="number" id="number">№ 001</div>
+    <div class="complaint-box">
+      <p class="complaint-text" id="complaint">Tap to generate complaint</p>
+    </div>
+    <div class="severity" id="severity">SEVERITY: MODERATE</div>
+    <p class="instruction">Tap anywhere to generate a new complaint</p>
+  </div>
+
+  <script>
+    const complaints = [
+      {
+        text: "I would like to formally object to the way USB cables have a 50/50 chance of being inserted correctly yet somehow require three attempts.",
+        severity: "MINOR"
+      },
+      {
+        text: "It has come to my attention that the phrase 'be there in 5 minutes' has lost all connection to actual time measurement and now means anything between 5 and 45 minutes.",
+        severity: "MODERATE"
+      },
+      {
+        text: "I wish to register a complaint regarding the conspiracy of shopping carts to develop a rogue wheel the moment you enter a store.",
+        severity: "MINOR"
+      },
+      {
+        text: "I am writing to express my dissatisfaction with the fact that 'Can I ask you a question?' is itself a question, thereby creating an unnecessary preliminary question before the actual question.",
+        severity: "TRIVIAL"
+      },
+      {
+        text: "Please be advised that I find it unconscionable that the optimal temperature for sleep requires the precise arrangement of one leg outside the blanket.",
+        severity: "SERIOUS"
+      },
+      {
+        text: "I must protest the phenomenon whereby remembering that you're out of milk occurs exclusively while you are already pouring cereal.",
+        severity: "MODERATE"
+      },
+      {
+        text: "I wish to file a formal grievance about the fact that 'Where do you want to eat?' is a question designed to generate infinite recursion with no base case.",
+        severity: "CRITICAL"
+      },
+      {
+        text: "It is my duty to report that the statement 'I'll remember that, I don't need to write it down' has a 0% historical success rate yet continues to be uttered.",
+        severity: "SEVERE"
+      },
+      {
+        text: "I am compelled to note my objection to the way a fly will spend 20 minutes trying to exit through a closed window while ignoring the open door three feet away.",
+        severity: "MINOR"
+      },
+      {
+        text: "Please accept this formal complaint regarding the cosmic injustice that thinking about your tongue makes you aware of its position in your mouth.",
+        severity: "MODERATE"
+      },
+      {
+        text: "I wish to lodge a protest against the phenomenon where putting on socks immediately reveals which floorboards are wet.",
+        severity: "MODERATE"
+      },
+      {
+        text: "I must object to the fact that 'one more episode' has no relation to the number one and actually means 'until 3am.'",
+        severity: "SERIOUS"
+      },
+      {
+        text: "It is my sad duty to report that the perfect shower temperature exists for exactly 45 seconds before the water heater enters into active negotiations.",
+        severity: "MODERATE"
+      },
+      {
+        text: "I hereby register my dissatisfaction with the law stating that the probability of needing to sneeze is directly proportional to the inappropriateness of the moment.",
+        severity: "MINOR"
+      },
+      {
+        text: "Please be informed that I take issue with the universal constant whereby the thing you're looking for is always in the last place you look, because obviously you stop looking after you find it, making this observation meaningless.",
+        severity: "TRIVIAL"
+      },
+      {
+        text: "I must protest the phenomenon where 'Do you want the last cookie?' actually means 'I want the last cookie but need you to refuse first.'",
+        severity: "MODERATE"
+      },
+      {
+        text: "I wish to express my profound disappointment that adulthood's most frequent question is 'What do you want for dinner?' followed by rejecting all suggestions.",
+        severity: "CRITICAL"
+      },
+      {
+        text: "It has come to my attention that the precise moment of falling asleep is unknowable, as being aware of it means you haven't fallen asleep yet.",
+        severity: "EXISTENTIAL"
+      },
+      {
+        text: "I am writing to object to the fact that 99% battery and 1% battery drain at exactly the same speed.",
+        severity: "MODERATE"
+      },
+      {
+        text: "Please accept this formal complaint about the tyranny of the snooze button, which promises 9 more minutes of rest but delivers only anxiety and time confusion.",
+        severity: "SERIOUS"
+      },
+      {
+        text: "I must register my dismay at the phenomenon where the bag clip you need is always in the drawer underneath the thing you'd have to move to reach it.",
+        severity: "MINOR"
+      },
+      {
+        text: "I wish to lodge a protest against the fact that 'I'm almost ready' and 'I'll be ready in 5 minutes' are linguistically distinct but temporally identical.",
+        severity: "MODERATE"
+      },
+      {
+        text: "It is my unfortunate duty to report that putting your phone somewhere 'safe' is the most reliable way to lose it for several hours.",
+        severity: "MODERATE"
+      },
+      {
+        text: "I hereby file a grievance about the way all earbuds spontaneously form a knot of Gordian complexity when left unattended for more than 8 seconds.",
+        severity: "MINOR"
+      },
+      {
+        text: "Please be advised that I object most strenuously to the fact that the checkout line you choose will immediately become the slowest one, regardless of prior assessment.",
+        severity: "UNIVERSAL LAW"
+      }
+    ];
+
+    let currentIndex = 0;
+    let count = 0;
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    shuffle(complaints);
+
+    function generateComplaint() {
+      count++;
+      const complaint = complaints[currentIndex];
+      
+      document.getElementById('number').textContent = `№ ${String(count).padStart(3, '0')}`;
+      document.getElementById('complaint').textContent = complaint.text;
+      document.getElementById('severity').textContent = `SEVERITY: ${complaint.severity}`;
+      
+      // Add fade-in animation
+      const box = document.querySelector('.complaint-box');
+      box.classList.remove('fade-in');
+      void box.offsetWidth; // Force reflow
+      box.classList.add('fade-in');
+      
+      currentIndex = (currentIndex + 1) % complaints.length;
+      if (currentIndex === 0) {
+        shuffle(complaints);
+      }
+    }
+
+    document.body.addEventListener('click', generateComplaint);
+    document.body.addEventListener('touchstart', generateComplaint);
+  </script>
+</body>
+</html>
