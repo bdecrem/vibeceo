@@ -39,4 +39,8 @@ export class SoundEffects {
   playRestart() {
     this.playTone(660, 0.15); // Bright, hopeful tone
   }
+
+  playJump() {
+    this.playTone(520, 0.08); // Quick chirp for jump
+  }
 }
