@@ -9,23 +9,11 @@ import sgMail from '@sendgrid/mail';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { chromium } from 'playwright';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
-
-async function capturePixelArt(): Promise<Buffer> {
-  console.log('📸 Capturing pixel art...');
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 700, height: 560 } });
-  await page.goto(`file://${path.join(__dirname, '../../web/public/amber/sunday-morning.html')}`);
-  await page.waitForTimeout(500);
-  const screenshot = await page.screenshot();
-  await browser.close();
-  return screenshot;
-}
 
 function buildEmailHtml(): string {
   return `
@@ -193,14 +181,12 @@ function buildEmailHtml(): string {
 }
 
 async function sendEmail() {
-  console.log('Sending Sunday Morning test email...');
+  console.log('Sending Sunday Morning email...');
 
-  // Capture the pixel art
-  const artworkImage = await capturePixelArt();
-
-  // Load header and profile images from papa90 folder
+  // Load images from papa90 folder
   const headerImage = fs.readFileSync(path.join(__dirname, 'papa90/header.png'));
   const profileImage = fs.readFileSync(path.join(__dirname, 'papa90/profile.png'));
+  const artworkImage = fs.readFileSync(path.join(__dirname, 'papa90/sunday-morning.png'));
 
   const html = buildEmailHtml();
 
