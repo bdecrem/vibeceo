@@ -295,7 +295,7 @@ export async function renderSession(session, bars, filename) {
 
   // === RENDER ALL INSTRUMENTS ===
   const instrumentBuffers = []; // { id, buffer, startBar, level }
-  const canonicalIds = ['jb01', 'jb200', 'sampler', 'r9d9', 'r3d3', 'r1d1'];
+  const canonicalIds = ['jb01', 'jb200', 'jb202', 'sampler', 'r9d9', 'r3d3', 'r1d1'];
 
   for (const id of canonicalIds) {
     const node = session._nodes[id];

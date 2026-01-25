@@ -54,7 +54,7 @@ let activeKnob = null;
 // Audio Context & Engine Init
 // ========================================
 
-function initEngine() {
+async function initEngine() {
     if (engine) return;
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -65,12 +65,15 @@ function initEngine() {
         sampleRate: context.sampleRate,
         bpm: 120
     });
+
+    // Engine uses custom DSP via ScriptProcessor - no worklet needed
+    // ONE SYNTH: Same DSP code for real-time and offline rendering
 }
 
 // Resume audio context on user interaction
-function resumeAudio() {
+async function resumeAudio() {
     if (engine?.context?.state === 'suspended') {
-        engine.context.resume();
+        await engine.context.resume();
     }
 }
 
@@ -514,6 +517,13 @@ function populatePresetDropdown() {
     if (!select) return;
 
     select.innerHTML = '';
+
+    // Add placeholder option to force explicit selection
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '-- Select Kit --';
+    select.appendChild(placeholder);
+
     presets.forEach(preset => {
         const option = document.createElement('option');
         option.value = preset.id;
@@ -522,9 +532,8 @@ function populatePresetDropdown() {
         select.appendChild(option);
     });
 
-    if (presets.length > 0) {
-        select.value = presets[0].id;
-    }
+    // Don't auto-select - user must choose explicitly
+    select.value = '';
 }
 
 function applyPreset(presetId) {
@@ -594,6 +603,13 @@ function populateSequenceDropdown() {
     if (!select) return;
 
     select.innerHTML = '';
+
+    // Add placeholder option to force explicit selection
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '-- Select Sequence --';
+    select.appendChild(placeholder);
+
     sequences.forEach(seq => {
         const option = document.createElement('option');
         option.value = seq.id;
@@ -602,9 +618,8 @@ function populateSequenceDropdown() {
         select.appendChild(option);
     });
 
-    if (sequences.length > 0) {
-        select.value = sequences[0].id;
-    }
+    // Don't auto-select - user must choose explicitly
+    select.value = '';
 }
 
 function applySequence(sequenceId) {
@@ -1041,36 +1056,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         engine.sequencer.onStepChange = updateStepIndicator;
     }
 
-    // Set default pattern
-    const defaultPattern = [
-        { note: 'C2', gate: true, accent: true, slide: false },
-        { note: 'C2', gate: false, accent: false, slide: false },
-        { note: 'C2', gate: true, accent: false, slide: false },
-        { note: 'C2', gate: false, accent: false, slide: false },
-        { note: 'D#2', gate: true, accent: false, slide: true },
-        { note: 'D#2', gate: false, accent: false, slide: false },
-        { note: 'G2', gate: true, accent: true, slide: false },
-        { note: 'G2', gate: false, accent: false, slide: false },
-        { note: 'C2', gate: true, accent: false, slide: false },
-        { note: 'C2', gate: false, accent: false, slide: false },
-        { note: 'A#1', gate: true, accent: false, slide: true },
-        { note: 'A#1', gate: false, accent: false, slide: false },
-        { note: 'G1', gate: true, accent: true, slide: false },
-        { note: 'G1', gate: true, accent: false, slide: true },
-        { note: 'A#1', gate: true, accent: false, slide: true },
-        { note: 'C2', gate: true, accent: false, slide: true },
-    ];
-
-    if (engine) {
-        engine.setPattern(defaultPattern);
-    }
+    // Render the sequencer UI with whatever default pattern the engine has
+    // User must explicitly select Kit and Sequence from dropdowns
     refreshSequencer();
 
     // Check for test mode
     if (window.location.search.includes('test')) {
         runTestTone();
     } else {
-        setStatus('Ready - Space to play, A-K for notes');
+        setStatus('Select Kit + Sequence, then Space to play');
     }
 });
 

@@ -1,14 +1,8 @@
 /**
  * JB202 Synth Engine
  *
- * 2-oscillator bass monosynth with:
- * - Dual oscillators (saw/square/triangle) with detune
- * - 24dB lowpass filter with envelope modulation
- * - ADSR envelopes for filter and amplitude
- * - Soft-clipping drive
- *
- * All synthesis uses custom DSP components for cross-platform consistency.
- * API compatible with JB200 for drop-in replacement.
+ * ONE SYNTH: Single SynthVoice class used by both real-time and offline rendering.
+ * No duplicate code paths. No drift.
  */
 
 import {
@@ -26,48 +20,226 @@ import { JB202Sequencer } from './sequencer.js';
 
 // Default parameters (engine units, 0-1 unless noted)
 const DEFAULT_PARAMS = {
-  // Oscillator 1
   osc1Waveform: 'sawtooth',
-  osc1Octave: 0,       // semitones (-24 to +24)
-  osc1Detune: 0.5,     // 0-1, center = 0.5 = 0 cents
-  osc1Level: 0.63,     // 0-1
-
-  // Oscillator 2
+  osc1Octave: 0,
+  osc1Detune: 0.5,
+  osc1Level: 0.63,
   osc2Waveform: 'sawtooth',
   osc2Octave: 0,
-  osc2Detune: 0.57,    // Slight detune for thickness
+  osc2Detune: 0.57,
   osc2Level: 1.0,
-
-  // Filter
-  filterCutoff: 0.6,   // 0-1 (log scale, 20-16000Hz)
-  filterResonance: 0,  // 0-1 (maps to 0-100)
-  filterEnvAmount: 0.6, // 0-1, center = 0.5 = 0%
-
-  // Filter envelope
-  filterAttack: 0,     // 0-1 (maps to 2ms-2s)
+  filterCutoff: 0.6,
+  filterResonance: 0,
+  filterEnvAmount: 0.6,
+  filterAttack: 0,
   filterDecay: 0.4,
   filterSustain: 0.2,
   filterRelease: 0.3,
-
-  // Amp envelope
   ampAttack: 0,
   ampDecay: 0.3,
   ampSustain: 0,
   ampRelease: 0.2,
-
-  // Drive
-  drive: 0.2,          // 0-1 (maps to 0-100)
-
-  // Output
-  level: 1.0,          // 0-1
+  drive: 0.2,
+  level: 1.0,
 };
 
+/**
+ * SynthVoice - THE synth. One class, used everywhere.
+ * Holds all DSP state, processes samples, handles note events.
+ */
+class SynthVoice {
+  constructor(sampleRate, params) {
+    this.sampleRate = sampleRate;
+    this.params = params;
+
+    // DSP components
+    this.osc1 = createOscillatorSync(params.osc1Waveform, sampleRate);
+    this.osc2 = createOscillatorSync(params.osc2Waveform, sampleRate);
+    this.filter = new Lowpass24Filter(sampleRate);
+    this.filterEnv = new ADSREnvelope(sampleRate);
+    this.ampEnv = new ADSREnvelope(sampleRate);
+    this.drive = new Drive(sampleRate);
+
+    // Voice state
+    this.currentFreq = 440;
+    this.slideTarget = null;
+    this.slideProgress = 0;
+    this.slideDuration = 0.05;
+    this.gateOpen = false;
+
+    // Apply params
+    this.updateParams(params);
+  }
+
+  updateParams(params) {
+    this.params = params;
+
+    // Envelopes
+    this.filterEnv.setParameters(
+      params.filterAttack * 100,
+      params.filterDecay * 100,
+      params.filterSustain * 100,
+      params.filterRelease * 100
+    );
+    this.ampEnv.setParameters(
+      params.ampAttack * 100,
+      params.ampDecay * 100,
+      params.ampSustain * 100,
+      params.ampRelease * 100
+    );
+
+    // Filter
+    const baseCutoff = normalizedToHz(params.filterCutoff);
+    const resonance = params.filterResonance * 100;
+    this.filter.setParameters(baseCutoff, resonance);
+
+    // Drive
+    this.drive.setAmount(params.drive * 100);
+  }
+
+  updateOscillators(params) {
+    // Recreate if waveform changed
+    const osc1Type = this.osc1.constructor.name.toLowerCase().replace('oscillator', '');
+    const osc2Type = this.osc2.constructor.name.toLowerCase().replace('oscillator', '');
+    const waveformMap = { sawtooth: 'sawtooth', square: 'square', triangle: 'triangle' };
+
+    if (waveformMap[osc1Type] !== params.osc1Waveform) {
+      this.osc1 = createOscillatorSync(params.osc1Waveform, this.sampleRate);
+    }
+    if (waveformMap[osc2Type] !== params.osc2Waveform) {
+      this.osc2 = createOscillatorSync(params.osc2Waveform, this.sampleRate);
+    }
+    this.params = params;
+  }
+
+  /**
+   * Trigger a new note
+   */
+  triggerNote(freq, accent) {
+    this.currentFreq = freq;
+    this.slideTarget = null;
+
+    this.osc1.reset();
+    this.osc2.reset();
+    this.filter.reset();
+
+    this.ampEnv.trigger(accent ? 1.0 : 0.8);
+    this.filterEnv.trigger(accent ? 1.5 : 1.0);
+
+    this.gateOpen = true;
+  }
+
+  /**
+   * Release the current note
+   */
+  releaseNote() {
+    this.ampEnv.gateOff();
+    this.filterEnv.gateOff();
+    this.gateOpen = false;
+  }
+
+  /**
+   * Slide to a new frequency (portamento)
+   */
+  slideTo(freq) {
+    this.slideTarget = freq;
+    this.slideProgress = 0;
+  }
+
+  /**
+   * Process step event - SINGLE implementation used by both paths
+   */
+  processStepEvent(stepData, nextStepData) {
+    if (!stepData.gate) return;
+
+    const freq = midiToFreq(noteToMidi(stepData.note));
+    const accent = stepData.accent;
+    const slide = stepData.slide;
+
+    // Slide only if gate is open (not releasing)
+    if (slide && this.gateOpen) {
+      this.slideTo(freq);
+    } else {
+      this.triggerNote(freq, accent);
+    }
+  }
+
+  /**
+   * Check if we should release at end of step
+   */
+  shouldReleaseAfterStep(stepData, nextStepData) {
+    return stepData.gate && !nextStepData.slide;
+  }
+
+  /**
+   * Generate one audio sample - THE DSP, used everywhere
+   */
+  processSample(masterVolume = 1.0) {
+    const params = this.params;
+
+    // Handle slide
+    if (this.slideTarget !== null) {
+      this.slideProgress += 1 / (this.slideDuration * this.sampleRate);
+      if (this.slideProgress >= 1) {
+        this.currentFreq = this.slideTarget;
+        this.slideTarget = null;
+      } else {
+        this.currentFreq = this.currentFreq + (this.slideTarget - this.currentFreq) * 0.1;
+      }
+    }
+
+    // Oscillator frequencies
+    const osc1Freq = transpose(this.currentFreq, params.osc1Octave);
+    const osc2Freq = transpose(this.currentFreq, params.osc2Octave);
+    const detune1 = (params.osc1Detune - 0.5) * 100;
+    const detune2 = (params.osc2Detune - 0.5) * 100;
+
+    this.osc1.setFrequency(detune(osc1Freq, detune1));
+    this.osc2.setFrequency(detune(osc2Freq, detune2));
+
+    // Generate oscillators
+    const osc1Sample = this.osc1._generateSample() * params.osc1Level;
+    const osc2Sample = this.osc2._generateSample() * params.osc2Level;
+    this.osc1._advancePhase();
+    this.osc2._advancePhase();
+
+    // Mix
+    let sample = osc1Sample + osc2Sample;
+
+    // Envelopes
+    const ampValue = this.ampEnv.processSample();
+    const filterEnvValue = this.filterEnv.processSample();
+
+    // Filter modulation
+    const baseCutoff = normalizedToHz(params.filterCutoff);
+    const envAmount = (params.filterEnvAmount - 0.5) * 2;
+    const modCutoff = clamp(baseCutoff + envAmount * filterEnvValue * 8000, 20, 16000);
+    this.filter.setCutoff(modCutoff);
+
+    // Filter
+    sample = this.filter.processSample(sample);
+
+    // VCA
+    sample *= ampValue;
+
+    // Drive
+    sample = this.drive.processSample(sample);
+
+    // Output level
+    sample *= params.level * masterVolume;
+
+    return sample;
+  }
+}
+
+/**
+ * JB202Engine - Wrapper that provides real-time and offline interfaces
+ * Both use the same SynthVoice internally
+ */
 export class JB202Engine {
   constructor(options = {}) {
     this.sampleRate = options.sampleRate ?? 44100;
     this.masterVolume = options.masterVolume ?? 0.8;
-
-    // Parameters (engine units)
     this.params = { ...DEFAULT_PARAMS };
 
     // Sequencer
@@ -77,283 +249,160 @@ export class JB202Engine {
     });
     this.sequencer.onStep = this._handleSequencerStep.bind(this);
 
-    // Current note state (for monophonic voice)
-    this._currentNote = null;
-    this._currentFreq = 440;
-    this._gateOpen = false;
+    // Voice (created on demand)
+    this._voice = null;
 
-    // DSP components (created per-render or per-voice)
-    this._osc1 = null;
-    this._osc2 = null;
-    this._filter = null;
-    this._filterEnv = null;
-    this._ampEnv = null;
-    this._drive = null;
-
-    // Web Audio context (for real-time playback)
+    // Web Audio
     this.context = options.context ?? null;
     this._scriptNode = null;
-    this._activeVoice = null;
+    this._isRealTimePlaying = false;
+    this._pendingRelease = null;
   }
 
-  // === Parameter API (JB200 compatible) ===
+  _ensureVoice() {
+    const sr = this.context?.sampleRate ?? this.sampleRate;
+    if (!this._voice || this._voice.sampleRate !== sr) {
+      this._voice = new SynthVoice(sr, this.params);
+    }
+    return this._voice;
+  }
+
+  // === Parameter API ===
 
   setParameter(id, value) {
     if (id in this.params) {
       this.params[id] = value;
+      if (this._voice) {
+        if (id.startsWith('osc') && (id.includes('Waveform'))) {
+          this._voice.updateOscillators(this.params);
+        } else {
+          this._voice.updateParams(this.params);
+        }
+      }
     }
   }
 
-  getParameter(id) {
-    return this.params[id];
-  }
-
-  getParameters() {
-    return { ...this.params };
-  }
+  getParameter(id) { return this.params[id]; }
+  getParameters() { return { ...this.params }; }
 
   setOsc1Waveform(waveform) {
     this.params.osc1Waveform = waveform;
+    if (this._voice) this._voice.updateOscillators(this.params);
   }
 
   setOsc2Waveform(waveform) {
     this.params.osc2Waveform = waveform;
+    if (this._voice) this._voice.updateOscillators(this.params);
   }
 
-  // === BPM / Sequencer API ===
+  // === Sequencer API ===
 
-  setBpm(bpm) {
-    this.sequencer.setBpm(bpm);
-  }
+  setBpm(bpm) { this.sequencer.setBpm(bpm); }
+  getBpm() { return this.sequencer.getBpm(); }
+  setPattern(pattern) { this.sequencer.setPattern(pattern); }
+  getPattern() { return this.sequencer.getPattern(); }
+  setStep(index, data) { this.sequencer.setStep(index, data); }
+  getStep(index) { return this.sequencer.getStep(index); }
 
-  getBpm() {
-    return this.sequencer.getBpm();
-  }
+  // === Real-time Playback ===
 
-  setPattern(pattern) {
-    this.sequencer.setPattern(pattern);
-  }
+  async startSequencer() {
+    if (!this.context) return;
 
-  getPattern() {
-    return this.sequencer.getPattern();
-  }
+    this._ensureVoice();
 
-  setStep(index, data) {
-    this.sequencer.setStep(index, data);
-  }
+    const bufferSize = 1024;
+    this._scriptNode = this.context.createScriptProcessor(bufferSize, 0, 2);
+    this._scriptNode.onaudioprocess = this._processAudio.bind(this);
+    this._scriptNode.connect(this.context.destination);
 
-  getStep(index) {
-    return this.sequencer.getStep(index);
-  }
-
-  // === Real-time Playback (Web Audio) ===
-
-  startSequencer() {
-    if (!this.context) {
-      console.warn('JB202Engine: No audio context for real-time playback');
-      return;
-    }
+    this._isRealTimePlaying = true;
     this.sequencer.setContext(this.context);
     this.sequencer.start();
   }
 
   stopSequencer() {
     this.sequencer.stop();
-    this._releaseVoice();
+    this._isRealTimePlaying = false;
+
+    if (this._voice) this._voice.releaseNote();
+    if (this._pendingRelease) {
+      clearTimeout(this._pendingRelease);
+      this._pendingRelease = null;
+    }
+
+    if (this._scriptNode) {
+      setTimeout(() => {
+        if (this._scriptNode && !this._isRealTimePlaying) {
+          this._scriptNode.disconnect();
+          this._scriptNode = null;
+        }
+      }, 500);
+    }
   }
 
-  isPlaying() {
-    return this.sequencer.isRunning();
-  }
+  isPlaying() { return this.sequencer.isRunning(); }
 
   _handleSequencerStep(step, stepData, nextStepData) {
-    if (!this.context) return;
+    if (!this._voice) return;
 
-    const { frequency, time, accent, slide } = stepData;
-    const nextSlide = nextStepData?.slide ?? false;
+    // Use the SAME method as offline
+    this._voice.processStepEvent(stepData, nextStepData);
 
-    // Handle slide: don't release if next step slides
-    if (!slide && this._activeVoice) {
-      this._releaseVoice(time);
+    // Schedule release if needed
+    if (this._pendingRelease) {
+      clearTimeout(this._pendingRelease);
+      this._pendingRelease = null;
     }
 
-    // Create new voice or slide to new frequency
-    if (slide && this._activeVoice) {
-      // Portamento to new frequency
-      this._slideVoice(frequency, time);
+    if (this._voice.shouldReleaseAfterStep(stepData, nextStepData)) {
+      const stepDuration = 60 / this.sequencer.getBpm() / 4;
+      this._pendingRelease = setTimeout(() => {
+        if (this._voice?.gateOpen) {
+          this._voice.releaseNote();
+        }
+        this._pendingRelease = null;
+      }, stepDuration * 0.9 * 1000);
+    }
+  }
+
+  _processAudio(event) {
+    if (!this._voice) return;
+
+    const outputL = event.outputBuffer.getChannelData(0);
+    const outputR = event.outputBuffer.getChannelData(1);
+
+    for (let i = 0; i < outputL.length; i++) {
+      const sample = this._voice.processSample(this.masterVolume);
+      outputL[i] = sample;
+      outputR[i] = sample;
+    }
+  }
+
+  async playNote(note, accent = false, slide = false) {
+    if (!this.context) return;
+
+    this._ensureVoice();
+
+    if (!this._scriptNode) {
+      const bufferSize = 1024;
+      this._scriptNode = this.context.createScriptProcessor(bufferSize, 0, 2);
+      this._scriptNode.onaudioprocess = this._processAudio.bind(this);
+      this._scriptNode.connect(this.context.destination);
+    }
+
+    const freq = midiToFreq(typeof note === 'string' ? noteToMidi(note) : note);
+
+    if (slide && this._voice.gateOpen) {
+      this._voice.slideTo(freq);
     } else {
-      this._createVoice(frequency, time, accent, nextSlide);
+      if (this._voice.gateOpen) this._voice.releaseNote();
+      this._voice.triggerNote(freq, accent);
     }
   }
 
-  playNote(note, accent = false, slide = false) {
-    if (!this.context) return;
+  // === Offline Rendering ===
 
-    const midi = typeof note === 'string' ? noteToMidi(note) : note;
-    const freq = midiToFreq(midi);
-    const time = this.context.currentTime;
-
-    if (!slide && this._activeVoice) {
-      this._releaseVoice(time);
-    }
-
-    this._createVoice(freq, time, accent, slide);
-  }
-
-  _createVoice(freq, time, accent, slide) {
-    // For Web Audio real-time, we use native oscillators + our filter logic
-    // This is a simplified version - full DSP rendering is in renderPattern
-    if (!this.context) return;
-
-    const ctx = this.context;
-    const voice = {};
-
-    // Create oscillators (using native for real-time performance)
-    voice.osc1 = ctx.createOscillator();
-    voice.osc2 = ctx.createOscillator();
-    voice.osc1Gain = ctx.createGain();
-    voice.osc2Gain = ctx.createGain();
-    voice.mixer = ctx.createGain();
-    voice.filter1 = ctx.createBiquadFilter();
-    voice.filter2 = ctx.createBiquadFilter();
-    voice.vca = ctx.createGain();
-    voice.output = ctx.createGain();
-
-    // Configure oscillators
-    voice.osc1.type = this.params.osc1Waveform;
-    voice.osc2.type = this.params.osc2Waveform;
-
-    const osc1Freq = transpose(freq, this.params.osc1Octave);
-    const osc2Freq = transpose(freq, this.params.osc2Octave);
-    const detune1 = (this.params.osc1Detune - 0.5) * 100; // cents
-    const detune2 = (this.params.osc2Detune - 0.5) * 100;
-
-    voice.osc1.frequency.value = osc1Freq;
-    voice.osc2.frequency.value = osc2Freq;
-    voice.osc1.detune.value = detune1;
-    voice.osc2.detune.value = detune2;
-
-    voice.osc1Gain.gain.value = this.params.osc1Level;
-    voice.osc2Gain.gain.value = this.params.osc2Level;
-
-    // Configure filter
-    const cutoffHz = normalizedToHz(this.params.filterCutoff);
-    const q = 0.5 + this.params.filterResonance * 19.5;
-    voice.filter1.type = 'lowpass';
-    voice.filter2.type = 'lowpass';
-    voice.filter1.frequency.value = cutoffHz;
-    voice.filter2.frequency.value = cutoffHz;
-    voice.filter1.Q.value = q * 0.7;
-    voice.filter2.Q.value = q * 0.5;
-
-    // VCA starts at 0
-    voice.vca.gain.value = 0;
-
-    // Connect signal path
-    voice.osc1.connect(voice.osc1Gain);
-    voice.osc2.connect(voice.osc2Gain);
-    voice.osc1Gain.connect(voice.mixer);
-    voice.osc2Gain.connect(voice.mixer);
-    voice.mixer.connect(voice.filter1);
-    voice.filter1.connect(voice.filter2);
-    voice.filter2.connect(voice.vca);
-    voice.vca.connect(voice.output);
-    voice.output.gain.value = this.params.level * this.masterVolume;
-    voice.output.connect(ctx.destination);
-
-    // Schedule envelopes
-    const peakLevel = accent ? 1.0 : 0.8;
-    const attackTime = this._knobToTime(this.params.ampAttack * 100);
-    const decayTime = this._knobToTime(this.params.ampDecay * 100);
-    const sustainLevel = this.params.ampSustain * peakLevel;
-
-    voice.vca.gain.setValueAtTime(0, time);
-    voice.vca.gain.linearRampToValueAtTime(peakLevel, time + attackTime);
-    voice.vca.gain.exponentialRampToValueAtTime(
-      Math.max(0.001, sustainLevel),
-      time + attackTime + decayTime
-    );
-
-    // Filter envelope
-    const envAmount = (this.params.filterEnvAmount - 0.5) * 2; // -1 to +1
-    const filterAttack = this._knobToTime(this.params.filterAttack * 100);
-    const filterDecay = this._knobToTime(this.params.filterDecay * 100);
-    const filterSustain = this.params.filterSustain;
-
-    const envPeak = cutoffHz + envAmount * 8000 * (accent ? 1.5 : 1);
-    const envSustainFreq = cutoffHz + (envPeak - cutoffHz) * filterSustain;
-
-    voice.filter1.frequency.setValueAtTime(cutoffHz, time);
-    voice.filter1.frequency.linearRampToValueAtTime(
-      clamp(envPeak, 20, 16000),
-      time + filterAttack
-    );
-    voice.filter1.frequency.exponentialRampToValueAtTime(
-      clamp(envSustainFreq, 20, 16000),
-      time + filterAttack + filterDecay
-    );
-    voice.filter2.frequency.setValueAtTime(cutoffHz, time);
-    voice.filter2.frequency.linearRampToValueAtTime(
-      clamp(envPeak, 20, 16000),
-      time + filterAttack
-    );
-    voice.filter2.frequency.exponentialRampToValueAtTime(
-      clamp(envSustainFreq, 20, 16000),
-      time + filterAttack + filterDecay
-    );
-
-    // Start oscillators
-    voice.osc1.start(time);
-    voice.osc2.start(time);
-
-    voice.startTime = time;
-    voice.freq = freq;
-    this._activeVoice = voice;
-  }
-
-  _releaseVoice(time) {
-    if (!this._activeVoice || !this.context) return;
-
-    const voice = this._activeVoice;
-    const releaseTime = this._knobToTime(this.params.ampRelease * 100);
-    const t = time ?? this.context.currentTime;
-
-    voice.vca.gain.cancelScheduledValues(t);
-    voice.vca.gain.setValueAtTime(voice.vca.gain.value, t);
-    voice.vca.gain.exponentialRampToValueAtTime(0.001, t + releaseTime);
-
-    // Stop oscillators after release
-    voice.osc1.stop(t + releaseTime + 0.1);
-    voice.osc2.stop(t + releaseTime + 0.1);
-
-    this._activeVoice = null;
-  }
-
-  _slideVoice(newFreq, time) {
-    if (!this._activeVoice) return;
-
-    const voice = this._activeVoice;
-    const slideTime = 0.05; // 50ms portamento
-
-    const osc1Freq = transpose(newFreq, this.params.osc1Octave);
-    const osc2Freq = transpose(newFreq, this.params.osc2Octave);
-
-    voice.osc1.frequency.linearRampToValueAtTime(osc1Freq, time + slideTime);
-    voice.osc2.frequency.linearRampToValueAtTime(osc2Freq, time + slideTime);
-    voice.freq = newFreq;
-  }
-
-  _knobToTime(value) {
-    const normalized = clamp(value / 100, 0, 1);
-    return 0.002 + normalized * normalized * 1.998;
-  }
-
-  // === Offline Rendering (Buffer-based) ===
-
-  /**
-   * Render pattern to AudioBuffer using pure DSP
-   * This produces identical output across all platforms
-   */
   async renderPattern(options = {}) {
     const {
       bars = 1,
@@ -363,7 +412,6 @@ export class JB202Engine {
       params = null
     } = options;
 
-    // Use provided pattern/params or current state
     const renderPattern = pattern ?? this.sequencer.getPattern();
     const renderParams = params ? { ...this.params, ...params } : this.params;
 
@@ -371,51 +419,14 @@ export class JB202Engine {
     const stepsPerBar = 16;
     const totalSteps = bars * stepsPerBar;
     const stepDur = stepDuration ?? (60 / this.sequencer.getBpm() / 4);
-    const totalDuration = totalSteps * stepDur;
-    const totalSamples = Math.ceil(totalDuration * sampleRate);
+    const totalSamples = Math.ceil((totalSteps * stepDur + 2) * sampleRate);
 
-    // Create output buffer
     const output = new Float32Array(totalSamples);
 
-    // Initialize DSP components
-    const osc1 = createOscillatorSync(renderParams.osc1Waveform, sampleRate);
-    const osc2 = createOscillatorSync(renderParams.osc2Waveform, sampleRate);
-    const filter = new Lowpass24Filter(sampleRate);
-    const filterEnv = new ADSREnvelope(sampleRate);
-    const ampEnv = new ADSREnvelope(sampleRate);
-    const drive = new Drive(sampleRate);
+    // Create voice - SAME CLASS as real-time
+    const voice = new SynthVoice(sampleRate, renderParams);
 
-    // Configure envelopes
-    filterEnv.setParameters(
-      renderParams.filterAttack * 100,
-      renderParams.filterDecay * 100,
-      renderParams.filterSustain * 100,
-      renderParams.filterRelease * 100
-    );
-    ampEnv.setParameters(
-      renderParams.ampAttack * 100,
-      renderParams.ampDecay * 100,
-      renderParams.ampSustain * 100,
-      renderParams.ampRelease * 100
-    );
-
-    // Configure filter base
-    const baseCutoff = normalizedToHz(renderParams.filterCutoff);
-    const resonance = renderParams.filterResonance * 100;
-    filter.setParameters(baseCutoff, resonance);
-
-    // Configure drive
-    drive.setAmount(renderParams.drive * 100);
-
-    // Envelope amount (-1 to +1)
-    const envAmount = (renderParams.filterEnvAmount - 0.5) * 2;
-
-    // Process each step
     let sampleIndex = 0;
-    let currentFreq = 440;
-    let slideTarget = null;
-    let slideProgress = 0;
-    const slideDuration = 0.05; // 50ms portamento
 
     for (let stepNum = 0; stepNum < totalSteps; stepNum++) {
       const patternStep = stepNum % steps;
@@ -423,132 +434,40 @@ export class JB202Engine {
       const nextPatternStep = (patternStep + 1) % steps;
       const nextStepData = renderPattern[nextPatternStep];
 
+      // Use the SAME method as real-time
+      voice.processStepEvent(stepData, nextStepData);
+
       const stepSamples = Math.floor(stepDur * sampleRate);
-      const stepEndIndex = Math.min(sampleIndex + stepSamples, totalSamples);
+      const shouldRelease = voice.shouldReleaseAfterStep(stepData, nextStepData);
+      const releaseSample = shouldRelease ? Math.floor(stepSamples * 0.9) : stepSamples;
 
-      if (stepData.gate) {
-        const midi = noteToMidi(stepData.note);
-        const newFreq = midiToFreq(midi);
-        const accent = stepData.accent;
-        const slide = stepData.slide;
+      for (let i = 0; i < stepSamples && sampleIndex < totalSamples; i++, sampleIndex++) {
+        // Use the SAME method as real-time
+        output[sampleIndex] = voice.processSample(this.masterVolume);
 
-        if (slide && ampEnv.isActive()) {
-          // Portamento - slide to new frequency
-          slideTarget = newFreq;
-          slideProgress = 0;
-        } else {
-          // New note - reset envelopes
-          currentFreq = newFreq;
-          slideTarget = null;
-          osc1.reset();
-          osc2.reset();
-          filter.reset();
-          ampEnv.trigger(accent ? 1.0 : 0.8);
-          filterEnv.trigger(accent ? 1.5 : 1.0);
-        }
-      }
-
-      // Check if we should release at end of step
-      const shouldRelease = !nextStepData.slide && stepData.gate;
-
-      // Render samples for this step
-      const releaseSample = shouldRelease
-        ? Math.floor(stepSamples * 0.9)
-        : stepSamples;
-
-      for (let i = 0; sampleIndex < stepEndIndex; i++, sampleIndex++) {
-        // Handle slide
-        if (slideTarget !== null) {
-          slideProgress += 1 / (slideDuration * sampleRate);
-          if (slideProgress >= 1) {
-            currentFreq = slideTarget;
-            slideTarget = null;
-          } else {
-            currentFreq = currentFreq + (slideTarget - currentFreq) * 0.1;
-          }
-        }
-
-        // Update oscillator frequencies
-        const osc1Freq = transpose(currentFreq, renderParams.osc1Octave);
-        const osc2Freq = transpose(currentFreq, renderParams.osc2Octave);
-        const detune1 = (renderParams.osc1Detune - 0.5) * 100;
-        const detune2 = (renderParams.osc2Detune - 0.5) * 100;
-
-        osc1.setFrequency(detune(osc1Freq, detune1));
-        osc2.setFrequency(detune(osc2Freq, detune2));
-
-        // Generate oscillator samples
-        const osc1Sample = osc1._generateSample() * renderParams.osc1Level;
-        const osc2Sample = osc2._generateSample() * renderParams.osc2Level;
-        osc1._advancePhase();
-        osc2._advancePhase();
-
-        // Mix oscillators
-        let sample = osc1Sample + osc2Sample;
-
-        // Process envelopes
-        const ampValue = ampEnv.processSample();
-        const filterEnvValue = filterEnv.processSample();
-
-        // Modulate filter cutoff
-        const modCutoff = clamp(
-          baseCutoff + envAmount * filterEnvValue * 8000,
-          20,
-          16000
-        );
-        filter.setCutoff(modCutoff);
-
-        // Apply filter
-        sample = filter.processSample(sample);
-
-        // Apply VCA
-        sample *= ampValue;
-
-        // Apply drive
-        sample = drive.processSample(sample);
-
-        // Apply output level
-        sample *= renderParams.level * this.masterVolume;
-
-        output[sampleIndex] = sample;
-
-        // Trigger release near end of step
         if (shouldRelease && i === releaseSample) {
-          ampEnv.gateOff();
-          filterEnv.gateOff();
+          voice.releaseNote();
         }
       }
     }
 
-    // Return as AudioBuffer-like object
     return {
       sampleRate,
       length: totalSamples,
-      duration: totalDuration,
+      duration: totalSteps * stepDur,
       numberOfChannels: 1,
       getChannelData: (channel) => channel === 0 ? output : null,
       _data: output
     };
   }
 
-  /**
-   * Render a single test tone (for audio analysis)
-   */
   async renderTestTone(options = {}) {
-    const {
-      note = 'A4',
-      duration = 1.0,
-      sampleRate = this.sampleRate
-    } = options;
-
-    const midi = noteToMidi(note);
-    const freq = midiToFreq(midi);
+    const { note = 'A4', duration = 1.0, sampleRate = this.sampleRate } = options;
     const totalSamples = Math.ceil(duration * sampleRate);
     const output = new Float32Array(totalSamples);
 
-    // Simple sawtooth test tone
     const osc = new SawtoothOscillator(sampleRate);
-    osc.setFrequency(freq);
+    osc.setFrequency(midiToFreq(noteToMidi(note)));
 
     for (let i = 0; i < totalSamples; i++) {
       output[i] = osc._generateSample() * 0.5;
@@ -556,26 +475,21 @@ export class JB202Engine {
     }
 
     return {
-      sampleRate,
-      length: totalSamples,
-      duration,
-      numberOfChannels: 1,
+      sampleRate, length: totalSamples, duration, numberOfChannels: 1,
       getChannelData: (channel) => channel === 0 ? output : null,
       _data: output
     };
   }
 
-  // === Output routing (Web Audio) ===
-
-  getOutput() {
-    return this._activeVoice?.output ?? null;
-  }
-
-  // === Cleanup ===
+  getOutput() { return this._scriptNode ?? null; }
 
   dispose() {
     this.stopSequencer();
-    this._activeVoice = null;
+    if (this._scriptNode) {
+      this._scriptNode.disconnect();
+      this._scriptNode = null;
+    }
+    this._voice = null;
   }
 }
 
