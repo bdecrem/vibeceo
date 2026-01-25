@@ -19,6 +19,7 @@ export function middleware(request: NextRequest) {
   const isRivalAlertDomain = host === 'rivalalert.ai' || host === 'www.rivalalert.ai'
   const isInTheAmberDomain = host === 'intheamber.com' || host === 'www.intheamber.com'
   const isKochitoLabsDomain = host === 'kochitolabs.com' || host === 'www.kochitolabs.com'
+  const isPixelpitDomain = host === 'pixelpit.gg' || host === 'www.pixelpit.gg'
 
   // Handle token-tank domain (mirror kochi pattern)
   if (isTokenTankDomain) {
@@ -364,6 +365,37 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(newUrl)
   }
 
+  // Handle pixelpit.gg domain
+  if (isPixelpitDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    // Kochitown games live under /kochitown/*
+    if (pathname.startsWith('/kochitown')) {
+      log(`[Middleware] Pixelpit kochitown route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // Root → /pixelpit
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/pixelpit', request.url)
+      log(`[Middleware] Pixelpit domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    // All other paths → /pixelpit/*
+    const newUrl = new URL(`/pixelpit${pathname}`, request.url)
+    log(`[Middleware] Pixelpit domain rewrite ${pathname} -> ${newUrl.pathname}`)
+    return NextResponse.rewrite(newUrl)
+  }
+
   // SPECIFIC FIX: Bypass music player route immediately
   if (pathname === '/music-player' || pathname.startsWith('/music-player/')) {
     log(`[Middleware] Music player bypassed: ${pathname}`)
@@ -482,6 +514,8 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/amber') ||
       pathname.startsWith('/voice-chat') ||
       pathname.startsWith('/simple-voice') ||
+      pathname.startsWith('/kochitown') ||
+      pathname.startsWith('/pixelpit') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()
