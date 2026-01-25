@@ -1,7 +1,5 @@
 'use client';
 
-import Image from 'next/image';
-
 export default function PixelpitLanding() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FFF8E7] to-[#FFE4B5] text-gray-800 overflow-hidden">
@@ -29,13 +27,13 @@ export default function PixelpitLanding() {
       <div className="relative z-10">
         {/* Hero section */}
         <header className="flex flex-col items-center justify-center pt-16 pb-8 px-4">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/pixelpit/pixelpit-logo-dark.png"
             alt="Pixelpit"
             width={380}
             height={110}
             className="mb-6 drop-shadow-lg"
-            priority
           />
           <p className="text-[#E67E00] text-xl font-bold tracking-wide">
             indie games with soul
@@ -47,7 +45,8 @@ export default function PixelpitLanding() {
           {/* Dot */}
           <div className="flex flex-col items-center group">
             <div className="relative bg-white rounded-3xl p-6 shadow-xl border-4 border-[#FF1493]/20 hover:border-[#FF1493] transition-all hover:scale-105">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/pixelpit/dot.png"
                 alt="Dot - Creative Director"
                 width={240}
@@ -64,7 +63,8 @@ export default function PixelpitLanding() {
           {/* Pit */}
           <div className="flex flex-col items-center group">
             <div className="relative bg-white rounded-3xl p-6 shadow-xl border-4 border-[#00BFBF]/20 hover:border-[#00BFBF] transition-all hover:scale-105">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/pixelpit/pit.png"
                 alt="Pit - Lead Developer"
                 width={240}
