@@ -248,6 +248,161 @@ window.PixelpitSocial = (function() {
 
   // ============ UI Helpers ============
 
+  // Track if styles have been injected
+  let stylesInjected = false;
+
+  /**
+   * Inject Pixelpit Social CSS (once)
+   */
+  function injectStyles() {
+    if (stylesInjected) return;
+    stylesInjected = true;
+
+    const css = `
+      .pp-share-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #0ff;
+        color: #000;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 18px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        position: relative;
+      }
+      .pp-share-btn:hover {
+        background: #5ff;
+        transform: translateY(-1px);
+      }
+      .pp-share-btn:active {
+        transform: translateY(0);
+      }
+      .pp-share-btn.pp-style-icon {
+        padding: 10px;
+        border-radius: 50%;
+      }
+      .pp-share-btn.pp-style-icon .pp-share-text {
+        display: none;
+      }
+      .pp-share-btn.pp-style-minimal {
+        background: transparent;
+        color: #0ff;
+        padding: 6px 12px;
+        border: 1px solid #0ff;
+      }
+      .pp-share-btn.pp-style-minimal:hover {
+        background: rgba(0, 255, 255, 0.1);
+      }
+      .pp-share-icon {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+      .pp-toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: #222;
+        color: #0ff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        opacity: 0;
+        transition: all 0.3s ease;
+        pointer-events: none;
+      }
+      .pp-toast.pp-toast-visible {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
+    `;
+
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  /**
+   * Show a toast notification
+   * @param {string} message
+   * @param {number} [duration=2000]
+   */
+  function showToast(message, duration = 2000) {
+    injectStyles();
+
+    // Remove existing toast
+    const existing = document.querySelector('.pp-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'pp-toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+      toast.classList.add('pp-toast-visible');
+    });
+
+    // Remove after duration
+    setTimeout(() => {
+      toast.classList.remove('pp-toast-visible');
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  }
+
+  /**
+   * Create a share button in a container
+   * @param {string} containerId - ID of the container element
+   * @param {{ url: string, text: string, style?: 'icon' | 'button' | 'minimal' }} opts
+   * @returns {HTMLButtonElement | null}
+   */
+  function ShareButton(containerId, opts) {
+    injectStyles();
+
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error(`PixelpitSocial: Container #${containerId} not found`);
+      return null;
+    }
+
+    const { url, text, style = 'button' } = opts;
+
+    // Share icon SVG
+    const shareIcon = `<svg class="pp-share-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/>
+    </svg>`;
+
+    const btn = document.createElement('button');
+    btn.className = `pp-share-btn pp-style-${style}`;
+    btn.innerHTML = `${shareIcon}<span class="pp-share-text">Share</span>`;
+
+    btn.addEventListener('click', async () => {
+      const result = await share(url, text);
+      if (result.success) {
+        if (result.method === 'clipboard') {
+          showToast('Copied!');
+        }
+        // Native share handles its own UI
+      } else {
+        showToast('Failed to share');
+      }
+    });
+
+    container.appendChild(btn);
+    return btn;
+  }
+
   /**
    * Format a leaderboard entry for display
    * @param {{ name: string, score: number, isRegistered: boolean }} entry
@@ -312,5 +467,7 @@ window.PixelpitSocial = (function() {
     // UI Helpers
     formatLeaderboardEntry,
     renderLeaderboard,
+    ShareButton,
+    showToast,
   };
 })();

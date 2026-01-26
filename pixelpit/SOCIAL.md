@@ -205,6 +205,36 @@ const { success, method } = await PixelpitSocial.share(
 await PixelpitSocial.shareGame('g1', 'Just beat level 5!');
 ```
 
+### Share Button
+
+Drop-in share button with consistent Pixelpit styling.
+
+```html
+<div id="share-container"></div>
+
+<script>
+PixelpitSocial.ShareButton('share-container', {
+  url: 'https://pixelpit.gg/g1',
+  text: 'Check out my score on Pixelpit!',
+  style: 'button'  // 'button' | 'icon' | 'minimal'
+});
+</script>
+```
+
+**Styles:**
+- `button` (default) — Cyan filled button with icon + "Share" text
+- `icon` — Circular icon-only button
+- `minimal` — Transparent with cyan border
+
+**Behavior:**
+- Mobile: Opens native share sheet
+- Desktop: Copies URL to clipboard, shows "Copied!" toast for 2s
+
+```javascript
+// Show a toast manually
+PixelpitSocial.showToast('Link copied!', 2000);
+```
+
 ### UI Helpers
 
 ```javascript
