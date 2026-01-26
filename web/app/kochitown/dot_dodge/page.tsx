@@ -64,7 +64,7 @@ export default function DotDodge() {
     let obstacleSpawnTimer = 0;
 
     function update(timestamp: number) {
-      if (gameOver) return;
+      if (gameOver || !ctx) return;
 
       const delta = timestamp - lastTime;
       lastTime = timestamp;
@@ -140,7 +140,7 @@ export default function DotDodge() {
 
     // Touch/mouse move handler
     function handleMove(clientX: number) {
-      if (!gameOver) {
+      if (!gameOver && canvas) {
         const rect = canvas.getBoundingClientRect();
         const x = clientX - rect.left;
         // Ensure dot stays within canvas with new radius

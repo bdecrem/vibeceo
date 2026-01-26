@@ -141,7 +141,7 @@ export default function BallPopGame() {
   }, [gameOver, timeLeft]);
 
   // Optional CRT glow effect style
-  const crtGlowStyle = {
+  const crtGlowStyle: React.CSSProperties = {
     position: 'fixed',
     top: 0,
     left: 0,

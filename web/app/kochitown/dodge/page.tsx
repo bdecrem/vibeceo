@@ -5,7 +5,7 @@ import localFont from 'next/font/local';
 
 // Pixel font
 const pressStart2P = localFont({
-  src: '../../../public/fonts/PressStart2P-Regular.ttf',
+  src: '../whack/fonts/PressStart2P.woff2',
   variable: '--font-press-start'
 });
 

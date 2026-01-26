@@ -40,14 +40,14 @@ export default function CatchGame() {
   })
 
   // Touch/mouse controls with smoother movement
-  const handleTouch = (e: React.TouchEvent | React.MouseEvent) => {
+  const handleTouch = (e: TouchEvent | MouseEvent) => {
     if (gameOver) return
 
     const canvas = canvasRef.current
     if (!canvas) return
 
     const rect = canvas.getBoundingClientRect()
-    const touchX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX
+    const touchX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX
     const relativeX = touchX - rect.left
 
     const gameState = gameStateRef.current
