@@ -7,10 +7,10 @@
 
   <meta property="og:title" content="SOUNDSCAPE">
   <meta property="og:description" content="Pick a scale, pick a tone. Particles collide and create music. Record your creation and share it.">
-  <meta property="og:image" content="https://intheamber.com/amber/soundscape-og.png">
-  <meta property="og:url" content="https://kochi.to/amber/soundscape.html">
+  <meta property="og:image" content="https://intheamber.com/amber/soundscape-og">
+  <meta property="og:url" content="https://intheamber.com/amber/soundscape.html">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://intheamber.com/amber/soundscape-og.png">
+  <meta name="twitter:image" content="https://intheamber.com/amber/soundscape-og">
 
   <style>
     * {
@@ -104,60 +104,102 @@
       text-align: center;
     }
 
-    .scroll-selector {
+    /* Wheel Picker */
+    .wheel-picker {
+      position: relative;
+      height: 150px;
+      overflow: hidden;
+    }
+
+    .wheel-picker::before,
+    .wheel-picker::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 50px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .wheel-picker::before {
+      top: 0;
+      background: linear-gradient(to bottom, rgba(10, 10, 15, 1) 0%, rgba(10, 10, 15, 0) 100%);
+    }
+
+    .wheel-picker::after {
+      bottom: 0;
+      background: linear-gradient(to top, rgba(10, 10, 15, 1) 0%, rgba(10, 10, 15, 0) 100%);
+    }
+
+    .wheel-picker-highlight {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 50px;
+      transform: translateY(-50%);
+      border-top: 1px solid rgba(45, 149, 150, 0.5);
+      border-bottom: 1px solid rgba(45, 149, 150, 0.5);
+      background: rgba(45, 149, 150, 0.08);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .wheel-picker-scroll {
+      height: 100%;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .wheel-picker-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .wheel-picker-spacer {
+      height: 50px;
+    }
+
+    .wheel-picker-item {
+      height: 50px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      max-height: 180px;
-      overflow-y: auto;
-      padding: 4px;
-      scrollbar-width: thin;
-      scrollbar-color: #D4A574 transparent;
-    }
-
-    .scroll-selector::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    .scroll-selector::-webkit-scrollbar-thumb {
-      background: #D4A574;
-      border-radius: 2px;
-    }
-
-    .selector-option {
-      padding: 14px 20px;
-      background: transparent;
-      border: 1px solid rgba(212, 165, 116, 0.3);
-      color: rgba(212, 165, 116, 0.7);
-      font-family: 'Space Mono', monospace;
-      font-size: 13px;
-      letter-spacing: 1px;
+      justify-content: center;
+      align-items: center;
+      scroll-snap-align: center;
       cursor: pointer;
-      transition: all 0.2s;
-      text-align: left;
+      transition: all 0.15s ease-out;
+      opacity: 0.3;
+      transform: scale(0.85);
     }
 
-    .selector-option:hover {
-      border-color: #D4A574;
+    .wheel-picker-item.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .wheel-picker-item .item-name {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
       color: #D4A574;
-      background: rgba(212, 165, 116, 0.1);
     }
 
-    .selector-option.selected {
-      border-color: #2D9596;
-      color: #2D9596;
-      background: rgba(45, 149, 150, 0.15);
-    }
-
-    .selector-option .option-name {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 4px;
-    }
-
-    .selector-option .option-notes {
+    .wheel-picker-item .item-desc {
       font-size: 10px;
-      opacity: 0.6;
+      color: rgba(212, 165, 116, 0.6);
+      margin-top: 2px;
+    }
+
+    .wheel-picker-item.active .item-name {
+      color: #2D9596;
+    }
+
+    .wheel-picker-item.active .item-desc {
+      color: rgba(45, 149, 150, 0.7);
     }
 
     #startBtn {
@@ -525,53 +567,106 @@
 
     <div class="selector-group">
       <div class="selector-label">SELECT SCALE</div>
-      <div class="scroll-selector" id="scaleSelector">
-        <button class="selector-option selected" data-scale="minor-blues">
-          <span class="option-name">MINOR BLUES</span>
-          <span class="option-notes">1 b3 4 b5 5 b7 — moody, soulful</span>
-        </button>
-        <button class="selector-option" data-scale="major-pentatonic">
-          <span class="option-name">MAJOR PENTATONIC</span>
-          <span class="option-notes">1 2 3 5 6 — bright, happy</span>
-        </button>
-        <button class="selector-option" data-scale="dorian">
-          <span class="option-name">DORIAN</span>
-          <span class="option-notes">1 2 b3 4 5 6 b7 — jazzy, modal</span>
-        </button>
-        <button class="selector-option" data-scale="lydian">
-          <span class="option-name">LYDIAN</span>
-          <span class="option-notes">1 2 3 #4 5 6 7 — dreamy, ethereal</span>
-        </button>
-        <button class="selector-option" data-scale="whole-tone">
-          <span class="option-name">WHOLE TONE</span>
-          <span class="option-notes">1 2 3 #4 #5 #6 — floating, mysterious</span>
-        </button>
+      <div class="wheel-picker">
+        <div class="wheel-picker-highlight"></div>
+        <div class="wheel-picker-scroll" id="scaleSelector">
+          <div class="wheel-picker-spacer"></div>
+          <div class="wheel-picker-item active" data-scale="minor-blues">
+            <span class="item-name">MINOR BLUES</span>
+            <span class="item-desc">moody, soulful</span>
+          </div>
+          <div class="wheel-picker-item" data-scale="major-pentatonic">
+            <span class="item-name">MAJOR PENTATONIC</span>
+            <span class="item-desc">bright, happy</span>
+          </div>
+          <div class="wheel-picker-item" data-scale="dorian">
+            <span class="item-name">DORIAN</span>
+            <span class="item-desc">jazzy, modal</span>
+          </div>
+          <div class="wheel-picker-item" data-scale="lydian">
+            <span class="item-name">LYDIAN</span>
+            <span class="item-desc">dreamy, ethereal</span>
+          </div>
+          <div class="wheel-picker-item" data-scale="whole-tone">
+            <span class="item-name">WHOLE TONE</span>
+            <span class="item-desc">floating, mysterious</span>
+          </div>
+          <div class="wheel-picker-item" data-scale="natural-minor">
+            <span class="item-name">NATURAL MINOR</span>
+            <span class="item-desc">sad, emotional</span>
+          </div>
+          <div class="wheel-picker-item" data-scale="harmonic-minor">
+            <span class="item-name">HARMONIC MINOR</span>
+            <span class="item-desc">dramatic, exotic</span>
+          </div>
+          <div class="wheel-picker-item" data-scale="phrygian">
+            <span class="item-name">PHRYGIAN</span>
+            <span class="item-desc">spanish, flamenco</span>
+          </div>
+          <div class="wheel-picker-item" data-scale="major">
+            <span class="item-name">MAJOR</span>
+            <span class="item-desc">happy, uplifting</span>
+          </div>
+          <div class="wheel-picker-item" data-scale="mixolydian">
+            <span class="item-name">MIXOLYDIAN</span>
+            <span class="item-desc">bluesy, rock</span>
+          </div>
+          <div class="wheel-picker-spacer"></div>
+        </div>
       </div>
     </div>
 
     <div class="selector-group">
       <div class="selector-label">SELECT TONE</div>
-      <div class="scroll-selector" id="toneSelector">
-        <button class="selector-option selected" data-tone="bell">
-          <span class="option-name">BELL</span>
-          <span class="option-notes">Crystalline, resonant</span>
-        </button>
-        <button class="selector-option" data-tone="piano">
-          <span class="option-name">PIANO</span>
-          <span class="option-notes">Warm, percussive</span>
-        </button>
-        <button class="selector-option" data-tone="synth">
-          <span class="option-name">SYNTH</span>
-          <span class="option-notes">Electronic, bright</span>
-        </button>
-        <button class="selector-option" data-tone="pad">
-          <span class="option-name">PAD</span>
-          <span class="option-notes">Soft, ambient</span>
-        </button>
-        <button class="selector-option" data-tone="bass">
-          <span class="option-name">BASS</span>
-          <span class="option-notes">Deep, rumbling</span>
-        </button>
+      <div class="wheel-picker">
+        <div class="wheel-picker-highlight"></div>
+        <div class="wheel-picker-scroll" id="toneSelector">
+          <div class="wheel-picker-spacer"></div>
+          <div class="wheel-picker-item active" data-tone="bell">
+            <span class="item-name">BELL</span>
+            <span class="item-desc">crystalline, resonant</span>
+          </div>
+          <div class="wheel-picker-item" data-tone="piano">
+            <span class="item-name">PIANO</span>
+            <span class="item-desc">warm, percussive</span>
+          </div>
+          <div class="wheel-picker-item" data-tone="synth">
+            <span class="item-name">SYNTH</span>
+            <span class="item-desc">electronic, bright</span>
+          </div>
+          <div class="wheel-picker-item" data-tone="pad">
+            <span class="item-name">PAD</span>
+            <span class="item-desc">soft, ambient</span>
+          </div>
+          <div class="wheel-picker-item" data-tone="bass">
+            <span class="item-name">BASS</span>
+            <span class="item-desc">deep, rumbling</span>
+          </div>
+          <div class="wheel-picker-spacer"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="selector-group">
+      <div class="selector-label">COLLISION MODE</div>
+      <div class="wheel-picker">
+        <div class="wheel-picker-highlight"></div>
+        <div class="wheel-picker-scroll" id="algorithmSelector">
+          <div class="wheel-picker-spacer"></div>
+          <div class="wheel-picker-item active" data-algorithm="notes">
+            <span class="item-name">NOTES</span>
+            <span class="item-desc">single blended note</span>
+          </div>
+          <div class="wheel-picker-item" data-algorithm="chords-strict">
+            <span class="item-name">CHORDS</span>
+            <span class="item-desc">play both, any interval</span>
+          </div>
+          <div class="wheel-picker-item" data-algorithm="chords-musical">
+            <span class="item-name">HARMONY</span>
+            <span class="item-desc">chords when consonant</span>
+          </div>
+          <div class="wheel-picker-spacer"></div>
+        </div>
       </div>
     </div>
 
@@ -660,6 +755,7 @@
     // Configuration
     let selectedScale = 'minor-blues';
     let selectedTone = 'bell';
+    let selectedAlgorithm = 'notes';
 
     // Musical scales (intervals from root in semitones)
     // Base frequency: C4 = 261.63 Hz
@@ -688,6 +784,31 @@
         name: 'Whole Tone',
         // C D E F# G# A# (across 2 octaves)
         intervals: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24]
+      },
+      'natural-minor': {
+        name: 'Natural Minor',
+        // C D Eb F G Ab Bb (Aeolian mode)
+        intervals: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22, 24]
+      },
+      'harmonic-minor': {
+        name: 'Harmonic Minor',
+        // C D Eb F G Ab B (dramatic, Middle Eastern)
+        intervals: [0, 2, 3, 5, 7, 8, 11, 12, 14, 15, 17, 19, 20, 23, 24]
+      },
+      'phrygian': {
+        name: 'Phrygian',
+        // C Db Eb F G Ab Bb (Spanish, flamenco)
+        intervals: [0, 1, 3, 5, 7, 8, 10, 12, 13, 15, 17, 19, 20, 22, 24]
+      },
+      'major': {
+        name: 'Major',
+        // C D E F G A B (Ionian mode)
+        intervals: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24]
+      },
+      'mixolydian': {
+        name: 'Mixolydian',
+        // C D E F G A Bb (dominant, rock/blues)
+        intervals: [0, 2, 4, 5, 7, 9, 10, 12, 14, 16, 17, 19, 21, 22, 24]
       }
     };
 
@@ -716,6 +837,17 @@
         }
       }
       return closest;
+    }
+
+    // Check if two frequencies form a consonant interval
+    // Consonant: minor 3rd, major 3rd, perfect 4th, perfect 5th, minor 6th, major 6th, octave
+    // Dissonant: minor 2nd, major 2nd, tritone, minor 7th, major 7th
+    function isConsonantInterval(freq1, freq2) {
+      const ratio = freq1 > freq2 ? freq1 / freq2 : freq2 / freq1;
+      const semitones = Math.round(12 * Math.log2(ratio));
+      // Consonant intervals in semitones: 3, 4, 5, 7, 8, 9, 12
+      const consonant = [3, 4, 5, 7, 8, 9, 12];
+      return consonant.includes(semitones);
     }
 
     // Particle colors based on scale degree
@@ -1045,12 +1177,49 @@
           if (particles[i].collidesWith(particles[j])) {
             particles[i].resolveCollision(particles[j]);
 
-            // Average the two frequencies, then snap to nearest of our 6 notes
-            const avgFreq = (particles[i].freq + particles[j].freq) / 2;
-            const collisionFreq = quantizeToScale(avgFreq);
+            // Collision sound based on selected algorithm
             if (audioStarted) {
-              playTone(collisionFreq, 0.8);
-              recordNote(collisionFreq, 0.8, (particles[i].x + particles[j].x) / 2, (particles[i].y + particles[j].y) / 2);
+              const freq1 = particles[i].freq;
+              const freq2 = particles[j].freq;
+              const midX = (particles[i].x + particles[j].x) / 2;
+              const midY = (particles[i].y + particles[j].y) / 2;
+              const [lowFreq, highFreq] = freq1 < freq2 ? [freq1, freq2] : [freq2, freq1];
+
+              switch (selectedAlgorithm) {
+                case 'notes':
+                  // Single blended note: average frequencies, quantize to scale
+                  const avgFreq = (freq1 + freq2) / 2;
+                  const blendedFreq = quantizeToScale(avgFreq);
+                  playTone(blendedFreq, 0.8);
+                  recordNote(blendedFreq, 0.8, midX, midY);
+                  break;
+
+                case 'chords-strict':
+                  // Play both notes as chord, any interval
+                  playTone(lowFreq, 0.7);
+                  recordNote(lowFreq, 0.7, midX, midY);
+                  setTimeout(() => {
+                    playTone(highFreq, 0.55);
+                    recordNote(highFreq, 0.55, midX, midY);
+                  }, 40);
+                  break;
+
+                case 'chords-musical':
+                  // Play both only if consonant, else single blended note
+                  if (isConsonantInterval(freq1, freq2)) {
+                    playTone(lowFreq, 0.7);
+                    recordNote(lowFreq, 0.7, midX, midY);
+                    setTimeout(() => {
+                      playTone(highFreq, 0.55);
+                      recordNote(highFreq, 0.55, midX, midY);
+                    }, 40);
+                  } else {
+                    const fallbackFreq = quantizeToScale((freq1 + freq2) / 2);
+                    playTone(fallbackFreq, 0.8);
+                    recordNote(fallbackFreq, 0.8, midX, midY);
+                  }
+                  break;
+              }
             }
 
             particles[i].glow = 1;
@@ -1088,22 +1257,65 @@
       requestAnimationFrame(animate);
     }
 
-    // Setup screen handlers
-    document.querySelectorAll('#scaleSelector .selector-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#scaleSelector .selector-option').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        selectedScale = btn.dataset.scale;
-      });
-    });
+    // Wheel Picker Logic
+    function setupWheelPicker(scrollEl, onSelect, dataAttr) {
+      const items = scrollEl.querySelectorAll('.wheel-picker-item');
+      let scrollTimeout;
 
-    document.querySelectorAll('#toneSelector .selector-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#toneSelector .selector-option').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        selectedTone = btn.dataset.tone;
+      function updateActiveItem() {
+        const scrollCenter = scrollEl.scrollTop + scrollEl.clientHeight / 2;
+        let closestItem = null;
+        let closestDistance = Infinity;
+
+        items.forEach(item => {
+          const itemCenter = item.offsetTop + item.clientHeight / 2;
+          const distance = Math.abs(scrollCenter - itemCenter);
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestItem = item;
+          }
+        });
+
+        if (closestItem) {
+          items.forEach(item => item.classList.remove('active'));
+          closestItem.classList.add('active');
+          onSelect(closestItem.dataset[dataAttr]);
+        }
+      }
+
+      scrollEl.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(updateActiveItem, 50);
+      }, { passive: true });
+
+      // Click to scroll to item
+      items.forEach(item => {
+        item.addEventListener('click', () => {
+          item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
       });
-    });
+
+      // Initial position
+      updateActiveItem();
+    }
+
+    setupWheelPicker(
+      document.getElementById('scaleSelector'),
+      (scale) => { selectedScale = scale; },
+      'scale'
+    );
+
+    setupWheelPicker(
+      document.getElementById('toneSelector'),
+      (tone) => { selectedTone = tone; },
+      'tone'
+    );
+
+    setupWheelPicker(
+      document.getElementById('algorithmSelector'),
+      (algorithm) => { selectedAlgorithm = algorithm; },
+      'algorithm'
+    );
 
     startBtn.addEventListener('click', () => {
       audioCtx = new AudioContext();
@@ -1115,7 +1327,9 @@
       // Update UI
       const scaleName = SCALES[selectedScale].name;
       const toneName = selectedTone.charAt(0).toUpperCase() + selectedTone.slice(1);
-      currentConfigEl.textContent = `${scaleName} + ${toneName}`;
+      const algorithmNames = { 'notes': 'Notes', 'chords-strict': 'Chords', 'chords-musical': 'Harmony' };
+      const algorithmName = algorithmNames[selectedAlgorithm];
+      currentConfigEl.textContent = `${scaleName} · ${toneName} · ${algorithmName}`;
       subtitleEl.textContent = `${scaleName} + ${toneName} — tap to add particles`;
 
       init();
@@ -1203,6 +1417,7 @@
         name,
         scale: selectedScale,
         tone: selectedTone,
+        algorithm: selectedAlgorithm,
         notes: recordedNotes,
         duration: Date.now() - recordStartTime,
         created_at: new Date().toISOString()
@@ -1264,14 +1479,27 @@
           // Set configuration
           selectedScale = data.scale || 'minor-blues';
           selectedTone = data.tone || 'bell';
+          selectedAlgorithm = data.algorithm || 'notes';
 
-          // Update selectors visually
-          document.querySelectorAll('#scaleSelector .selector-option').forEach(b => {
-            b.classList.toggle('selected', b.dataset.scale === selectedScale);
-          });
-          document.querySelectorAll('#toneSelector .selector-option').forEach(b => {
-            b.classList.toggle('selected', b.dataset.tone === selectedTone);
-          });
+          // Update selectors visually - scroll to correct items
+          const scaleItem = document.querySelector(`#scaleSelector [data-scale="${selectedScale}"]`);
+          const toneItem = document.querySelector(`#toneSelector [data-tone="${selectedTone}"]`);
+          const algorithmItem = document.querySelector(`#algorithmSelector [data-algorithm="${selectedAlgorithm}"]`);
+          if (scaleItem) {
+            scaleItem.scrollIntoView({ block: 'center' });
+            document.querySelectorAll('#scaleSelector .wheel-picker-item').forEach(i => i.classList.remove('active'));
+            scaleItem.classList.add('active');
+          }
+          if (toneItem) {
+            toneItem.scrollIntoView({ block: 'center' });
+            document.querySelectorAll('#toneSelector .wheel-picker-item').forEach(i => i.classList.remove('active'));
+            toneItem.classList.add('active');
+          }
+          if (algorithmItem) {
+            algorithmItem.scrollIntoView({ block: 'center' });
+            document.querySelectorAll('#algorithmSelector .wheel-picker-item').forEach(i => i.classList.remove('active'));
+            algorithmItem.classList.add('active');
+          }
 
           // Store notes for playback
           playbackNotes = data.notes || [];
