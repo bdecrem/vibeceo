@@ -168,6 +168,34 @@
         "drive": 0,
         "level": 1.0
       }
+    },
+    {
+      "id": "drift",
+      "name": "Drift",
+      "description": "Slow and subby",
+      "params": {
+        "osc1Waveform": "sawtooth",
+        "osc1Octave": 0,
+        "osc1Detune": 0.5,
+        "osc1Level": 1.0,
+        "osc2Waveform": "sawtooth",
+        "osc2Octave": -12,
+        "osc2Detune": 0.48,
+        "osc2Level": 0.27,
+        "filterCutoff": 0.664,
+        "filterResonance": 0.13,
+        "filterEnvAmount": 0.605,
+        "filterAttack": 0.1,
+        "filterDecay": 0.6,
+        "filterSustain": 0.1,
+        "filterRelease": 0.5,
+        "ampAttack": 0.05,
+        "ampDecay": 0.59,
+        "ampSustain": 0.05,
+        "ampRelease": 0.72,
+        "drive": 0.11,
+        "level": 1.0
+      }
     }
   ]
 }

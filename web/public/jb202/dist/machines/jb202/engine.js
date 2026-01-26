@@ -11,10 +11,10 @@ import {
   TriangleOscillator,
   createOscillatorSync
 } from '../../dsp/oscillators/index.js';
-import { Lowpass24Filter, normalizedToHz } from '../../dsp/filters/index.js';
+import { MoogLadderFilter, normalizedToHz } from '../../dsp/filters/index.js';
 import { ADSREnvelope } from '../../dsp/envelopes/index.js';
 import { Drive } from '../../dsp/effects/index.js';
-import { clamp, dbToLinear } from '../../dsp/utils/math.js';
+import { clamp, dbToLinear, fastTanh } from '../../dsp/utils/math.js';
 import { noteToMidi, midiToFreq, transpose, detune } from '../../dsp/utils/note.js';
 import { JB202Sequencer } from './sequencer.js';
 
@@ -55,7 +55,7 @@ class SynthVoice {
     // DSP components
     this.osc1 = createOscillatorSync(params.osc1Waveform, sampleRate);
     this.osc2 = createOscillatorSync(params.osc2Waveform, sampleRate);
-    this.filter = new Lowpass24Filter(sampleRate);
+    this.filter = new MoogLadderFilter(sampleRate);
     this.filterEnv = new ADSREnvelope(sampleRate);
     this.ampEnv = new ADSREnvelope(sampleRate);
     this.drive = new Drive(sampleRate);
@@ -205,6 +205,9 @@ class SynthVoice {
 
     // Mix
     let sample = osc1Sample + osc2Sample;
+
+    // Pre-filter saturation (warm up the signal before the ladder filter)
+    sample = fastTanh(sample * 1.2) / fastTanh(1.2);
 
     // Envelopes
     const ampValue = this.ampEnv.processSample();

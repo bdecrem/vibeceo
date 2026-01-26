@@ -11,3 +11,4 @@ export {
   normalizedToHz,
   hzToNormalized
 } from './lowpass24.js';
+export { MoogLadderFilter, createMoogLadder } from './moog-ladder.js';
