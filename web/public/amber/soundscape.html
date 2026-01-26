@@ -698,6 +698,22 @@
       return scale.intervals.map(semitones => baseFreq * Math.pow(2, semitones / 12));
     }
 
+    // Quantize any frequency to the nearest scale frequency
+    function quantizeToScale(freq) {
+      const scaleFreqs = getScaleFrequencies();
+      let closest = scaleFreqs[0];
+      let minDiff = Math.abs(freq - closest);
+
+      for (const f of scaleFreqs) {
+        const diff = Math.abs(freq - f);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = f;
+        }
+      }
+      return closest;
+    }
+
     // Particle colors based on scale degree
     const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#4ECDC4', '#FF6B6B'];
 
@@ -1025,11 +1041,12 @@
           if (particles[i].collidesWith(particles[j])) {
             particles[i].resolveCollision(particles[j]);
 
-            // Play combined frequency
+            // Play combined frequency, quantized to scale
             const avgFreq = (particles[i].freq + particles[j].freq) / 2;
+            const quantizedFreq = quantizeToScale(avgFreq);
             if (audioStarted) {
-              playTone(avgFreq, 0.8);
-              recordNote(avgFreq, 0.8, (particles[i].x + particles[j].x) / 2, (particles[i].y + particles[j].y) / 2);
+              playTone(quantizedFreq, 0.8);
+              recordNote(quantizedFreq, 0.8, (particles[i].x + particles[j].x) / 2, (particles[i].y + particles[j].y) / 2);
             }
 
             particles[i].glow = 1;
