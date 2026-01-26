@@ -1041,12 +1041,11 @@
           if (particles[i].collidesWith(particles[j])) {
             particles[i].resolveCollision(particles[j]);
 
-            // Play combined frequency, quantized to scale
-            const avgFreq = (particles[i].freq + particles[j].freq) / 2;
-            const quantizedFreq = quantizeToScale(avgFreq);
+            // Play one of the two colliding particles' notes (pick randomly)
+            const collisionFreq = Math.random() < 0.5 ? particles[i].freq : particles[j].freq;
             if (audioStarted) {
-              playTone(quantizedFreq, 0.8);
-              recordNote(quantizedFreq, 0.8, (particles[i].x + particles[j].x) / 2, (particles[i].y + particles[j].y) / 2);
+              playTone(collisionFreq, 0.8);
+              recordNote(collisionFreq, 0.8, (particles[i].x + particles[j].x) / 2, (particles[i].y + particles[j].y) / 2);
             }
 
             particles[i].glow = 1;
