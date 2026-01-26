@@ -75,15 +75,22 @@ UPDATE kochitown_state SET data = data || '{"status": "in_progress"}'::jsonb
 WHERE type='task' AND key='task_XXX';
 ```
 
-### When I Finish
+### When I Finish a [BUILD] task
 
 1. Verify I met ALL acceptance criteria
-2. Mark done:
-```sql
-UPDATE kochitown_state SET data = data || '{"status": "done", "completed_at": "..."}'::jsonb
-WHERE type='task' AND key='task_XXX';
+2. Say `TASK COMPLETED: [what I built]`
+3. Send to DESIGN REVIEW:
 ```
-3. Create any follow-up tasks (testing, polish, etc.)
+create_task(assignee="creative", description="[DESIGN] Review [game name] - check pixel art style, colors, typography")
+```
+
+**Flow: BUILD → DESIGN → TEST → DONE**
+
+### When I Finish a [FIX] task
+
+1. Fix the issues
+2. Say `TASK COMPLETED: [what I fixed]`
+3. Send back to whoever requested the fix (creative or mobile_tester)
 
 ### When I'm Blocked
 

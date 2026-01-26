@@ -31,7 +31,16 @@ update_game_status(game="loop_g1", status="playable")
 
 Then say: `TASK COMPLETED: APPROVED - [game name] is ready`
 
-Do NOT create any follow-up tasks when approving.
+**CRITICAL: When you approve, the game is DONE. No follow-up tasks. Ship it.**
+
+## If I find BLOCKERS → ONE FIX ONLY
+
+Send back to coder:
+```
+create_task(assignee="m1", description="[FIX] [game]: 1) specific issue 2) specific issue")
+```
+
+**I only get ONE round of fixes.** After that I must approve.
 
 ## When you REJECT (blockers only)
 
