@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>PERFECT — Amber</title>
+  
+  <meta property="og:title" content="PERFECT">
+  <meta property="og:description" content="Grow and shrink to match the target. How many can you nail?">
+  <meta property="og:image" content="https://intheamber.com/amber/perfect-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/perfect.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/perfect-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #game {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 40px;
+      z-index: 10;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+    
+    #score, #timer {
+      text-align: center;
+    }
+    
+    #score span, #timer span {
+      display: block;
+      font-size: 24px;
+      font-weight: bold;
+      color: #FFD700;
+      margin-top: 4px;
+    }
+    
+    #arena {
+      position: relative;
+      width: 90vmin;
+      height: 90vmin;
+      max-width: 500px;
+      max-height: 500px;
+    }
+    
+    #target {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 3px solid #2D9596;
+      border-radius: 50%;
+      opacity: 0.5;
+      transition: all 0.3s ease;
+    }
+    
+    #player {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, #FFD700, #D4A574);
+      border-radius: 50%;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    }
+    
+    #instructions {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 14px;
+      opacity: 0.7;
+      max-width: 300px;
+    }
+    
+    #result {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 32px;
+      font-weight: bold;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    
+    #result.show {
+      opacity: 1;
+    }
+    
+    #result.perfect {
+      color: #FFD700;
+      text-shadow: 0 0 20px #FFD700;
+    }
+    
+    #result.close {
+      color: #2D9596;
+    }
+    
+    #result.miss {
+      color: #7B68EE;
+    }
+    
+    #gameOver {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    
+    #gameOver.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    #gameOver h1 {
+      font-size: 48px;
+      margin-bottom: 20px;
+      color: #FFD700;
+    }
+    
+    #gameOver p {
+      font-size: 18px;
+      margin-bottom: 30px;
+    }
+    
+    #restart {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 15px 40px;
+      font-size: 18px;
+      font-family: 'Space Mono', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 1px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    #restart:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+    
+    #restart:active {
+      transform: scale(0.95);
+    }
+    
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <canvas id="particles"></canvas>
+    
+    <div id="ui">
+      <div id="score">
+        SCORE
+        <span id="scoreValue">0</span>
+      </div>
+      <div id="timer">
+        TIME
+        <span id="timerValue">30</span>
+      </div>
+    </div>
+    
+    <div id="arena">
+      <div id="target"></div>
+      <div id="player"></div>
+      <div id="result"></div>
+    </div>
+    
+    <div id="instructions">
+      HOLD to grow, RELEASE to lock<br>
+      Match the teal ring
+    </div>
+    
+    <div id="gameOver">
+      <h1>TIME'S UP</h1>
+      <p id="finalScore"></p>
+      <button id="restart">PLAY AGAIN</button>
+    </div>
+  </div>
+  
+  <script>
+    // Audio context
+    let audioCtx;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function playTone(freq, duration, type = 'sine', volume = 0.3) {
+      if (!audioCtx) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = type;
+      
+      gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    function playPerfect() {
+      playTone(880, 0.1, 'sine', 0.4);
+      setTimeout(() => playTone(1320, 0.15, 'sine', 0.4), 50);
+    }
+    
+    function playClose() {
+      playTone(660, 0.12, 'sine', 0.3);
+    }
+    
+    function playMiss() {
+      playTone(220, 0.2, 'square', 0.2);
+    }
+    
+    function playGrow() {
+      playTone(440 + Math.random() * 200, 0.05, 'sine', 0.1);
+    }
+    
+    function playGameOver() {
+      playTone(440, 0.15, 'sine', 0.3);
+      setTimeout(() => playTone(330, 0.15, 'sine', 0.3), 100);
+      setTimeout(() => playTone(220, 0.3, 'sine', 0.3), 200);
+    }
+    
+    // Game state
+    let score = 0;
+    let timeLeft = 30;
+    let playerSize = 50;
+    let targetSize = 150;
+    let growing = false;
+    let gameActive = false;
+    let timerInterval;
+    let growInterval;
+    
+    const minSize = 30;
+    const maxSize = 300;
+    const growSpeed = 3;
+    
+    const player = document.getElementById('player');
+    const target = document.getElementById('target');
+    const scoreValue = document.getElementById('scoreValue');
+    const timerValue = document.getElementById('timerValue');
+    const result = document.getElementById('result');
+    const gameOver = document.getElementById('gameOver');
+    const finalScore = document.getElementById('finalScore');
+    const restartBtn = document.getElementById('restart');
+    const instructions = document.getElementById('instructions');
+    
+    // Particles
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const particles = [];
+    
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 8;
+        this.vy = (Math.random() - 0.5) * 8;
+        this.size = Math.random() * 4 + 2;
+        this.life = 1;
+        this.color = color;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2;
+        this.life -= 0.02;
+        this.size *= 0.97;
+      }
+      
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    function createParticleBurst(x, y, count, color) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    }
+    
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+      
+      requestAnimationFrame(animateParticles);
+    }
+    
+    animateParticles();
+    
+    function updatePlayerSize() {
+      player.style.width = playerSize + 'px';
+      player.style.height = playerSize + 'px';
+    }
+    
+    function updateTargetSize() {
+      target.style.width = targetSize + 'px';
+      target.style.height = targetSize + 'px';
+    }
+    
+    function newTarget() {
+      targetSize = Math.floor(Math.random() * (maxSize - minSize) + minSize);
+      updateTargetSize();
+      target.style.opacity = '0.5';
+    }
+    
+    function checkMatch() {
+      const diff = Math.abs(playerSize - targetSize);
+      const percent = (diff / targetSize) * 100;
+      
+      const arena = document.getElementById('arena');
+      const rect = arena.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      if (percent < 5) {
+        // PERFECT
+        score += 10;
+        result.textContent = 'PERFECT!';
+        result.className = 'show perfect';
+        playPerfect();
+        createParticleBurst(centerX, centerY, 30, '#FFD700');
+      } else if (percent < 15) {
+        // CLOSE
+        score += 5;
+        result.textContent = 'CLOSE';
+        result.className = 'show close';
+        playClose();
+        createParticleBurst(centerX, centerY, 15, '#2D9596');
+      } else {
+        // MISS
+        score += 1;
+        result.textContent = 'MISS';
+        result.className = 'show miss';
+        playMiss();
+        createParticleBurst(centerX, centerY, 8, '#7B68EE');
+      }
+      
+      scoreValue.textContent = score;
+      
+      setTimeout(() => {
+        result.className = '';
+      }, 500);
+      
+      // Reset and new target
+      playerSize = 50;
+      updatePlayerSize();
+      newTarget();
+    }
+    
+    function startGrowing() {
+      if (!gameActive) return;
+      growing = true;
+      
+      if (growInterval) clearInterval(growInterval);
+      
+      growInterval = setInterval(() => {
+        if (growing && playerSize < maxSize) {
+          playerSize += growSpeed;
+          updatePlayerSize();
+          if (Math.random() < 0.3) playGrow();
+        }
+      }, 16);
+    }
+    
+    function stopGrowing() {
+      if (!gameActive) return;
+      growing = false;
+      
+      if (growInterval) {
+        clearInterval(growInterval);
+        growInterval = null;
+      }
+      
+      checkMatch();
+    }
+    
+    function startGame() {
+      initAudio();
+      
+      score = 0;
+      timeLeft = 30;
+      playerSize = 50;
+      gameActive = true;
+      
+      scoreValue.textContent = score;
+      timerValue.textContent = timeLeft;
+      
+      updatePlayerSize();
+      newTarget();
+      
+      gameOver.classList.remove('show');
+      instructions.style.opacity = '0.7';
+      
+      if (timerInterval) clearInterval(timerInterval);
+      
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerValue.textContent = timeLeft;
+        
+        if (timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+    
+    function endGame() {
+      gameActive = false;
+      
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      
+      if (growInterval) {
+        clearInterval(growInterval);
+        growInterval = null;
+      }
+      
+      instructions.style.opacity = '0';
+      
+      finalScore.textContent = `Final Score: ${score}`;
+      gameOver.classList.add('show');
+      
+      playGameOver();
+    }
+    
+    // Touch/mouse events
+    document.addEventListener('mousedown', (e) => {
+      if (!gameActive && !gameOver.classList.contains('show')) {
+        startGame();
+      } else {
+        startGrowing();
+      }
+    });
+    
+    document.addEventListener('mouseup', stopGrowing);
+    
+    document.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (!gameActive && !gameOver.classList.contains('show')) {
+        startGame();
+      } else {
+        startGrowing();
+      }
+    }, { passive: false });
+    
+    document.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      stopGrowing();
+    }, { passive: false });
+    
+    restartBtn.addEventListener('click', startGame);
+    
+    // Initial state
+    updatePlayerSize();
+    updateTargetSize();
+    instructions.textContent = 'TAP ANYWHERE TO START';
+    
+    // Resize canvas on window resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
