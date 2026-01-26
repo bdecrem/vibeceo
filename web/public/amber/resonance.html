@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RESONANCE — Ambient particle collisions by Amber</title>
+  
+  <meta property="og:title" content="RESONANCE">
+  <meta property="og:description" content="Sound particles drift and collide. Each touch creates a bell tone. Tap to add more particles. Generative ambient music.">
+  <meta property="og:image" content="https://intheamber.com/amber/resonance-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/resonance.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/resonance-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100vh;
+      cursor: pointer;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+    }
+    
+    h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+      color: #D4A574;
+    }
+    
+    p {
+      font-size: 11px;
+      color: #2D9596;
+      line-height: 1.6;
+    }
+    
+    #start {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 100;
+    }
+    
+    #start:hover {
+      background: #FFD700;
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+    
+    #start.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <h1>RESONANCE</h1>
+    <p>Particles collide and sing.<br>Tap to add more voices.</p>
+  </div>
+  
+  <button id="start">START</button>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('start');
+    
+    let audioCtx;
+    let particles = [];
+    let audioStarted = false;
+    
+    // Pentatonic scale (E minor pentatonic: E, G, A, B, D)
+    const scale = [164.81, 196.00, 220.00, 246.94, 293.66, 329.63, 392.00, 440.00];
+    
+    // Particle colors
+    const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE'];
+    
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    
+    resize();
+    window.addEventListener('resize', resize);
+    
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = Math.random() * 15 + 10; // 10-25px
+        this.vx = (Math.random() - 0.5) * 2; // Slow drift
+        this.vy = (Math.random() - 0.5) * 2;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.freq = scale[Math.floor(Math.random() * scale.length)];
+        this.glow = 0;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Bounce off edges
+        if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+          this.vx *= -1;
+          this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+        }
+        if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+          this.vy *= -1;
+          this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+        }
+        
+        // Fade glow
+        if (this.glow > 0) this.glow -= 0.05;
+      }
+      
+      draw() {
+        ctx.save();
+        
+        // Outer glow when resonating
+        if (this.glow > 0) {
+          ctx.shadowBlur = 40 * this.glow;
+          ctx.shadowColor = this.color;
+        }
+        
+        // Particle
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = 0.6 + (this.glow * 0.4);
+        ctx.fill();
+        
+        // Inner ring
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 0.6, 0, Math.PI * 2);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.restore();
+      }
+      
+      collidesWith(other) {
+        const dx = this.x - other.x;
+        const dy = this.y - other.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < this.radius + other.radius;
+      }
+      
+      resolveCollision(other) {
+        // Simple elastic collision
+        const dx = other.x - this.x;
+        const dy = other.y - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance === 0) return;
+        
+        const nx = dx / distance;
+        const ny = dy / distance;
+        
+        const dvx = other.vx - this.vx;
+        const dvy = other.vy - this.vy;
+        const dotProduct = dvx * nx + dvy * ny;
+        
+        this.vx += dotProduct * nx;
+        this.vy += dotProduct * ny;
+        other.vx -= dotProduct * nx;
+        other.vy -= dotProduct * ny;
+        
+        // Separate particles
+        const overlap = this.radius + other.radius - distance;
+        this.x -= nx * overlap * 0.5;
+        this.y -= ny * overlap * 0.5;
+        other.x += nx * overlap * 0.5;
+        other.y += ny * overlap * 0.5;
+      }
+    }
+    
+    function playTone(freq) {
+      if (!audioCtx) return;
+      
+      const now = audioCtx.currentTime;
+      
+      // Bell-like tone using multiple oscillators
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc1.type = 'sine';
+      osc2.type = 'sine';
+      osc1.frequency.value = freq;
+      osc2.frequency.value = freq * 2.01; // Slight detuning for richness
+      
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      // Envelope
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.1, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+      
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + 1.5);
+      osc2.stop(now + 1.5);
+    }
+    
+    function addParticle(x, y) {
+      particles.push(new Particle(x, y));
+    }
+    
+    function init() {
+      // Start with 8 particles in random positions
+      for (let i = 0; i < 8; i++) {
+        addParticle(
+          Math.random() * canvas.width,
+          Math.random() * canvas.height
+        );
+      }
+    }
+    
+    function animate() {
+      // Fade trail effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Update particles
+      particles.forEach(p => p.update());
+      
+      // Check collisions
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          if (particles[i].collidesWith(particles[j])) {
+            particles[i].resolveCollision(particles[j]);
+            
+            // Play collision sound
+            const avgFreq = (particles[i].freq + particles[j].freq) / 2;
+            playTone(avgFreq);
+            
+            // Trigger glow
+            particles[i].glow = 1;
+            particles[j].glow = 1;
+          }
+        }
+      }
+      
+      // Draw particles
+      particles.forEach(p => p.draw());
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Start button
+    startBtn.addEventListener('click', () => {
+      if (!audioStarted) {
+        audioCtx = new AudioContext();
+        audioStarted = true;
+        startBtn.classList.add('hidden');
+        init();
+        animate();
+      }
+    });
+    
+    // Add particle on tap
+    canvas.addEventListener('click', (e) => {
+      if (audioStarted) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+        addParticle(x, y);
+      }
+    });
+    
+    // Mobile touch
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (audioStarted) {
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        addParticle(x, y);
+      }
+    });
+  </script>
+</body>
+</html>
