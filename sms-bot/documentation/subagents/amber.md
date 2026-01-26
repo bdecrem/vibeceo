@@ -318,12 +318,21 @@ Bart has Gmail connected. Check for unread emails, especially from VIP senders:
 ### Trading Inbox (ambercc@)
 Check for unread emails from Roxi or others about trading:
 ```sql
-SELECT content, metadata, created_at
+SELECT id, content, metadata, created_at
 FROM amber_state
 WHERE type = 'cc_inbox'
 AND metadata->>'status' = 'unread'
 ORDER BY created_at DESC;
 ```
+
+**After processing each email**, mark it as handled so you don't report it again:
+```sql
+UPDATE amber_state
+SET metadata = jsonb_set(metadata, '{status}', '"handled"')
+WHERE id = '[email_id]';
+```
+
+Use `"no_response_needed"` instead of `"handled"` if no reply was needed.
 
 ### Trader Status
 Check current portfolio from Alpaca:
