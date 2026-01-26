@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gymnopédie Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'Georgia', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: normal;
+      letter-spacing: 0.1em;
+    }
+    button {
+      background: transparent;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      padding: 1rem 2rem;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover:not(:disabled) {
+      background: #D4A574;
+      color: #0A0908;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .status {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      text-align: center;
+      max-width: 500px;
+      line-height: 1.6;
+    }
+    .loading {
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <h1>GYMNOPÉDIE — 4 BARS</h1>
+
+  <button id="play" disabled>Play</button>
+
+  <p class="status" id="status">Loading piano...</p>
+
+  <script type="module">
+    import { SplendidGrandPiano, Reverb } from "https://unpkg.com/smplr@0.15.1/dist/index.mjs";
+
+    const status = document.getElementById('status');
+    const playBtn = document.getElementById('play');
+
+    let piano = null;
+    let audioContext = null;
+    let reverb = null;
+
+    async function init() {
+      try {
+        status.textContent = 'Loading Steinway samples...';
+        status.className = 'status loading';
+
+        audioContext = new AudioContext();
+        piano = new SplendidGrandPiano(audioContext, { volume: 100 });
+        await piano.load;
+
+        reverb = new Reverb(audioContext);
+        piano.output.addEffect('reverb', reverb, 0.18);
+
+        status.textContent = 'Ready.';
+        status.className = 'status';
+        playBtn.disabled = false;
+
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        console.error(err);
+      }
+    }
+
+    function playNote(note, time, duration, velocity = 70) {
+      piano.start({ note, time, velocity });
+      piano.stop({ note, time: time + duration });
+    }
+
+    function playGymnopedie() {
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
+      const now = audioContext.currentTime + 0.1;
+      const tempo = 72;
+      const beat = 60 / tempo;
+      const bar = beat * 3; // 3/4 time
+
+      status.textContent = 'Playing Gymnopédie No. 1 — first 4 bars...';
+
+      // Bar 1: Gmaj7 feel (G-B-D-F#)
+      // Beat 1: bass
+      playNote('G2', now, beat * 2.5, 45);
+      // Beats 2-3: chord
+      playNote('D4', now + beat, beat * 2, 35);
+      playNote('F#4', now + beat, beat * 2, 35);
+      playNote('B4', now + beat, beat * 2, 38);
+
+      // Bar 2: Dmaj7 feel (D-F#-A-C#)
+      const bar2 = now + bar;
+      playNote('D3', bar2, beat * 2.5, 45);
+      playNote('A3', bar2 + beat, beat * 2, 35);
+      playNote('C#4', bar2 + beat, beat * 2, 35);
+      playNote('F#4', bar2 + beat, beat * 2, 38);
+
+      // Bar 3: Gmaj7 + melody begins
+      const bar3 = now + bar * 2;
+      playNote('G2', bar3, beat * 2.5, 45);
+      playNote('D4', bar3 + beat, beat * 2, 32);
+      playNote('F#4', bar3 + beat, beat * 2, 32);
+      playNote('B4', bar3 + beat, beat * 2, 35);
+      // Melody: F#5
+      playNote('F#5', bar3, beat * 2, 55);
+      playNote('E5', bar3 + beat * 2, beat, 50);
+
+      // Bar 4: Dmaj7 + melody continues
+      const bar4 = now + bar * 3;
+      playNote('D3', bar4, beat * 2.5, 45);
+      playNote('A3', bar4 + beat, beat * 2, 32);
+      playNote('C#4', bar4 + beat, beat * 2, 32);
+      playNote('F#4', bar4 + beat, beat * 2, 35);
+      // Melody: D5 held
+      playNote('D5', bar4, beat * 3, 55);
+
+      setTimeout(() => {
+        status.textContent = 'Ready.';
+      }, (bar * 4 + 2) * 1000);
+    }
+
+    playBtn.addEventListener('click', playGymnopedie);
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gymnopédie for Willy</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0A0908;
+      overflow: hidden;
+      font-family: 'Georgia', serif;
+    }
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      z-index: 10;
+      background: rgba(10, 9, 8, 0.9);
+      transition: opacity 1.5s ease-out;
+    }
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    h1 {
+      color: #D4A574;
+      font-size: 1.8rem;
+      font-weight: normal;
+      letter-spacing: 0.15em;
+      text-align: center;
+    }
+    .subtitle {
+      color: #D4A574;
+      opacity: 0.6;
+      font-size: 1rem;
+      font-style: italic;
+    }
+    button {
+      background: transparent;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      padding: 1rem 3rem;
+      font-family: inherit;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      letter-spacing: 0.1em;
+    }
+    button:hover {
+      background: #D4A574;
+      color: #0A0908;
+    }
+    .status {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #D4A574;
+      opacity: 0.4;
+      font-size: 0.8rem;
+      z-index: 5;
+      transition: opacity 0.5s;
+    }
+    .status.loading {
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.6; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div class="overlay" id="overlay">
+    <h1>GYMNOPÉDIE FOR WILLY</h1>
+    <p class="subtitle">after Erik Satie</p>
+    <button id="playBtn">Begin</button>
+  </div>
+
+  <p class="status loading" id="status">Loading piano...</p>
+
+  <script type="module">
+    import { SplendidGrandPiano, Reverb } from "https://unpkg.com/smplr@0.15.1/dist/index.mjs";
+
+    // ─────────────────────────────────────────────────────────────
+    // AUDIO
+    // ─────────────────────────────────────────────────────────────
+
+    let piano = null;
+    let audioContext = null;
+    let isPlaying = false;
+
+    const TEMPO = 69;
+    const BEAT = 60 / TEMPO;
+    const BAR = BEAT * 3;
+
+    // Chord definitions (root + chord tones for left hand)
+    const CHORDS = {
+      Gmaj7:  { bass: 'G2',  tones: ['D4', 'F#4', 'B4'] },
+      Dmaj7:  { bass: 'D3',  tones: ['A3', 'C#4', 'F#4'] },
+      Bm7:    { bass: 'B2',  tones: ['F#3', 'A3', 'D4'] },
+      Em7:    { bass: 'E2',  tones: ['B3', 'D4', 'G4'] },
+      Amaj7:  { bass: 'A2',  tones: ['E3', 'G#3', 'C#4'] },
+      F_m7:   { bass: 'F#2', tones: ['C#3', 'E3', 'A3'] },
+    };
+
+    // Scale for melody (D major / B natural minor shared tones)
+    const MELODY_NOTES = ['D4', 'E4', 'F#4', 'G4', 'A4', 'B4', 'C#5', 'D5', 'E5', 'F#5', 'G5'];
+
+    // The original Gymnopédie progression for returns
+    const GYMNOPEDIE_INTRO = ['Gmaj7', 'Dmaj7', 'Gmaj7', 'Dmaj7', 'Gmaj7', 'Dmaj7', 'Gmaj7', 'Dmaj7'];
+
+    // Drift chord options (weighted toward the main two)
+    const DRIFT_CHORDS = ['Gmaj7', 'Gmaj7', 'Dmaj7', 'Dmaj7', 'Bm7', 'Em7', 'Amaj7', 'F_m7'];
+
+    async function initAudio() {
+      audioContext = new AudioContext();
+      piano = new SplendidGrandPiano(audioContext, { volume: 100 });
+      await piano.load;
+
+      const reverb = new Reverb(audioContext);
+      piano.output.addEffect('reverb', reverb, 0.22);
+
+      document.getElementById('status').textContent = 'Ready';
+      document.getElementById('status').classList.remove('loading');
+    }
+
+    function playNote(note, time, duration, velocity = 60) {
+      piano.start({ note, time, velocity });
+      piano.stop({ note, time: time + duration });
+
+      // Trigger visual pulse
+      triggerNotePulse(note, velocity);
+    }
+
+    function playBar(chordName, time, melodyNote = null, melodyRhythm = null) {
+      const chord = CHORDS[chordName];
+
+      // Bass on beat 1
+      playNote(chord.bass, time, BEAT * 2.8, 42);
+
+      // Chord on beats 2-3 (slightly arpeggiated)
+      chord.tones.forEach((tone, i) => {
+        playNote(tone, time + BEAT + (i * 0.025), BEAT * 2, 32 + Math.random() * 6);
+      });
+
+      // Melody if provided
+      if (melodyNote && melodyRhythm) {
+        const [startBeat, duration] = melodyRhythm;
+        playNote(melodyNote, time + (startBeat * BEAT), duration * BEAT, 52 + Math.random() * 8);
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // GENERATIVE LOGIC
+    // ─────────────────────────────────────────────────────────────
+
+    let currentSection = 'intro';
+    let barIndex = 0;
+    let driftLength = 0;
+    let lastMelodyIndex = 6; // Start around F#5
+    let scheduledUntil = 0;
+
+    function getNextMelodyNote() {
+      // Stepwise motion, mostly descending
+      const direction = Math.random() < 0.65 ? -1 : 1; // 65% descending
+      const step = Math.random() < 0.8 ? 1 : 2; // Usually step, sometimes skip
+
+      let newIndex = lastMelodyIndex + (direction * step);
+      newIndex = Math.max(0, Math.min(MELODY_NOTES.length - 1, newIndex));
+
+      lastMelodyIndex = newIndex;
+      return MELODY_NOTES[newIndex];
+    }
+
+    function getMelodyRhythm() {
+      // Satie-esque rhythms: simple, spacious
+      const rhythms = [
+        [0, 2],      // Half note on beat 1
+        [0, 3],      // Dotted half (whole bar)
+        [0, 1.5],    // Quarter + eighth on beat 1
+        [1, 2],      // Half note on beat 2
+        [2, 1],      // Quarter on beat 3
+        null,        // Rest (no melody this bar)
+        null,        // More rests for space
+      ];
+      return rhythms[Math.floor(Math.random() * rhythms.length)];
+    }
+
+    function scheduleSection(startTime) {
+      if (!isPlaying) return;
+
+      let time = startTime;
+
+      if (currentSection === 'intro') {
+        // Play the recognizable 8-bar intro
+        const introMelodies = [
+          null, null,  // First 2 bars: just chords
+          { note: 'F#5', rhythm: [0, 2] },
+          { note: 'E5', rhythm: [2, 1] },
+          { note: 'D5', rhythm: [0, 3] },
+          { note: 'B4', rhythm: [0, 2] },
+          { note: 'A4', rhythm: [2, 1] },
+          { note: 'G4', rhythm: [0, 3] },
+        ];
+
+        for (let i = 0; i < 8; i++) {
+          const melody = introMelodies[i];
+          playBar(
+            GYMNOPEDIE_INTRO[i],
+            time,
+            melody?.note,
+            melody?.rhythm
+          );
+          time += BAR;
+        }
+
+        currentSection = 'drift';
+        driftLength = 16 + Math.floor(Math.random() * 16); // 16-32 bars
+        barIndex = 0;
+        lastMelodyIndex = 4; // Reset melody position
+
+      } else if (currentSection === 'drift') {
+        // Generative drift
+        const barsToSchedule = Math.min(8, driftLength - barIndex);
+
+        for (let i = 0; i < barsToSchedule; i++) {
+          const chord = DRIFT_CHORDS[Math.floor(Math.random() * DRIFT_CHORDS.length)];
+          const melodyNote = getNextMelodyNote();
+          const melodyRhythm = getMelodyRhythm();
+
+          playBar(chord, time, melodyNote, melodyRhythm);
+          time += BAR;
+          barIndex++;
+        }
+
+        if (barIndex >= driftLength) {
+          currentSection = 'return';
+          barIndex = 0;
+        }
+
+      } else if (currentSection === 'return') {
+        // Return to recognizable fragment (4 bars)
+        const returnMelodies = [
+          { note: 'F#5', rhythm: [0, 2] },
+          { note: 'E5', rhythm: [2, 1] },
+          { note: 'D5', rhythm: [0, 3] },
+          null,
+        ];
+
+        for (let i = 0; i < 4; i++) {
+          const melody = returnMelodies[i];
+          playBar(
+            GYMNOPEDIE_INTRO[i % 2 === 0 ? 0 : 1], // Alternate Gmaj7/Dmaj7
+            time,
+            melody?.note,
+            melody?.rhythm
+          );
+          time += BAR;
+        }
+
+        currentSection = 'drift';
+        driftLength = 20 + Math.floor(Math.random() * 20); // 20-40 bars
+        barIndex = 0;
+      }
+
+      scheduledUntil = time;
+
+      // Schedule next section
+      const scheduleAhead = 4 * BAR;
+      const nextScheduleTime = (time - audioContext.currentTime - scheduleAhead) * 1000;
+
+      if (isPlaying) {
+        setTimeout(() => scheduleSection(scheduledUntil), Math.max(100, nextScheduleTime));
+      }
+    }
+
+    function startMusic() {
+      if (!audioContext) return;
+
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
+      isPlaying = true;
+      currentSection = 'intro';
+      barIndex = 0;
+      scheduledUntil = audioContext.currentTime + 0.2;
+
+      scheduleSection(scheduledUntil);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // VISUALS
+    // ─────────────────────────────────────────────────────────────
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    let particles = [];
+    let notePulses = [];
+
+    const COLORS = [
+      'rgba(212, 165, 116, 0.6)',  // Amber
+      'rgba(184, 134, 11, 0.5)',   // Gold
+      'rgba(255, 215, 0, 0.3)',    // Bright gold
+      'rgba(210, 180, 140, 0.4)',  // Tan
+      'rgba(205, 133, 63, 0.35)',  // Peru
+    ];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    function createParticle(x, y, fromNote = false) {
+      return {
+        x: x ?? Math.random() * width,
+        y: y ?? Math.random() * height,
+        size: fromNote ? (2 + Math.random() * 4) : (1 + Math.random() * 2.5),
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: (Math.random() - 0.5) * 0.1 - 0.05, // Slight upward drift
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        alpha: fromNote ? 0.8 : (0.2 + Math.random() * 0.4),
+        life: fromNote ? 1 : null, // Note particles fade out
+        pulse: 0,
+      };
+    }
+
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < 80; i++) {
+        particles.push(createParticle());
+      }
+    }
+
+    function triggerNotePulse(note, velocity) {
+      // Create a few particles where the note "appears"
+      const x = width * 0.3 + Math.random() * width * 0.4;
+      const y = height * 0.3 + Math.random() * height * 0.4;
+
+      for (let i = 0; i < 3; i++) {
+        particles.push(createParticle(
+          x + (Math.random() - 0.5) * 50,
+          y + (Math.random() - 0.5) * 50,
+          true
+        ));
+      }
+
+      // Pulse nearby existing particles
+      const pulseStrength = velocity / 100;
+      particles.forEach(p => {
+        const dx = p.x - x;
+        const dy = p.y - y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 200) {
+          p.pulse = Math.max(p.pulse, pulseStrength * (1 - dist / 200));
+        }
+      });
+    }
+
+    function updateParticles() {
+      particles = particles.filter(p => {
+        // Move
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Wrap around
+        if (p.x < -10) p.x = width + 10;
+        if (p.x > width + 10) p.x = -10;
+        if (p.y < -10) p.y = height + 10;
+        if (p.y > height + 10) p.y = -10;
+
+        // Decay pulse
+        if (p.pulse > 0) {
+          p.pulse *= 0.95;
+        }
+
+        // Fade out note particles
+        if (p.life !== null) {
+          p.life -= 0.005;
+          p.alpha = p.life * 0.8;
+          return p.life > 0;
+        }
+
+        return true;
+      });
+
+      // Keep particle count stable
+      while (particles.length < 60) {
+        particles.push(createParticle());
+      }
+    }
+
+    function drawParticles() {
+      ctx.fillStyle = 'rgba(10, 9, 8, 0.08)';
+      ctx.fillRect(0, 0, width, height);
+
+      particles.forEach(p => {
+        const size = p.size * (1 + p.pulse * 2);
+        const alpha = Math.min(1, p.alpha + p.pulse * 0.5);
+
+        // Glow
+        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size * 3);
+        gradient.addColorStop(0, p.color.replace(/[\d.]+\)$/, `${alpha})`));
+        gradient.addColorStop(0.5, p.color.replace(/[\d.]+\)$/, `${alpha * 0.3})`));
+        gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, size * 3, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Core
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color.replace(/[\d.]+\)$/, `${alpha})`);
+        ctx.fill();
+      });
+    }
+
+    function animate() {
+      updateParticles();
+      drawParticles();
+      requestAnimationFrame(animate);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // INIT
+    // ─────────────────────────────────────────────────────────────
+
+    window.addEventListener('resize', resize);
+    resize();
+    initParticles();
+
+    // Clear canvas to black initially
+    ctx.fillStyle = '#0A0908';
+    ctx.fillRect(0, 0, width, height);
+
+    // Start animation loop (even before music)
+    animate();
+
+    // Load audio
+    initAudio().then(() => {
+      document.getElementById('playBtn').addEventListener('click', () => {
+        document.getElementById('overlay').classList.add('hidden');
+        document.getElementById('status').style.opacity = '0';
+        startMusic();
+      });
+    });
+  </script>
+</body>
+</html>

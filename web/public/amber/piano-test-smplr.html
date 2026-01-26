@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Piano Test — Smplr</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'Georgia', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: normal;
+      letter-spacing: 0.1em;
+    }
+    .controls {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button {
+      background: transparent;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      padding: 1rem 2rem;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover:not(:disabled) {
+      background: #D4A574;
+      color: #0A0908;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .status {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      text-align: center;
+      max-width: 500px;
+      line-height: 1.6;
+    }
+    .loading {
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    .param-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    input[type="range"] {
+      width: 200px;
+      accent-color: #D4A574;
+    }
+    label {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>PIANO TEST — SMPLR</h1>
+
+  <div class="controls">
+    <button id="play" disabled>Play 2 Bars</button>
+    <button id="single" disabled>Single Note</button>
+    <button id="chord" disabled>Single Chord</button>
+  </div>
+
+  <div class="param-group">
+    <label>Reverb: <span id="reverbVal">0.18</span></label>
+    <input type="range" id="reverb" min="0" max="1" step="0.02" value="0.18">
+  </div>
+
+  <p class="status" id="status">Loading Steinway samples...</p>
+
+  <script type="module">
+    import { SplendidGrandPiano, Reverb } from "https://unpkg.com/smplr@0.15.1/dist/index.mjs";
+
+    const status = document.getElementById('status');
+    const playBtn = document.getElementById('play');
+    const singleBtn = document.getElementById('single');
+    const chordBtn = document.getElementById('chord');
+    const reverbSlider = document.getElementById('reverb');
+    const reverbVal = document.getElementById('reverbVal');
+
+    let piano = null;
+    let audioContext = null;
+    let reverb = null;
+    let reverbMix = 0.18;
+
+    // Initialize
+    async function init() {
+      try {
+        status.textContent = 'Loading Steinway samples...';
+        status.className = 'status loading';
+
+        audioContext = new AudioContext();
+
+        // Create piano
+        piano = new SplendidGrandPiano(audioContext, {
+          volume: 100
+        });
+
+        // Wait for samples to load
+        await piano.load;
+
+        // Add reverb
+        reverb = new Reverb(audioContext);
+        piano.output.addEffect('reverb', reverb, reverbMix);
+
+        status.textContent = 'Ready. Steinway Grand Piano loaded.';
+        status.className = 'status';
+
+        // Enable buttons
+        playBtn.disabled = false;
+        singleBtn.disabled = false;
+        chordBtn.disabled = false;
+
+      } catch (err) {
+        status.textContent = 'Error loading: ' + err.message;
+        status.className = 'status';
+        console.error(err);
+      }
+    }
+
+    // Play a single note
+    function playNote(note, time, duration, velocity = 80) {
+      piano.start({ note, time, velocity });
+      piano.stop({ note, time: time + duration });
+    }
+
+    // Play a chord (array of notes)
+    function playChordNotes(notes, time, duration, velocity = 70) {
+      notes.forEach((note, i) => {
+        // Slight stagger for realistic feel
+        playNote(note, time + i * 0.02, duration, velocity);
+      });
+    }
+
+    // 2-bar Satie-esque piece
+    function playTwoBars() {
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
+      const now = audioContext.currentTime + 0.1;
+      const tempo = 66; // BPM - slow, contemplative
+      const beat = 60 / tempo;
+
+      status.textContent = 'Playing: Cm → Ab → Fm → G...';
+
+      // Bar 1, beats 1-2: C minor arpeggio
+      playNote('C3', now, beat * 3, 50);                    // Bass
+      playNote('C4', now + beat * 0.5, beat * 2, 45);       // Root
+      playNote('Eb4', now + beat * 1, beat * 1.5, 50);      // Minor 3rd
+      playNote('G4', now + beat * 1.5, beat * 1.5, 55);     // 5th
+
+      // Bar 1, beats 3-4: Ab major
+      const bar1b3 = now + beat * 2;
+      playNote('Ab2', bar1b3, beat * 2.5, 50);              // Bass
+      playChordNotes(['Ab3', 'C4', 'Eb4'], bar1b3 + beat * 0.3, beat * 2, 45);
+
+      // Bar 2, beats 1-2: F minor
+      const bar2 = now + beat * 4;
+      playNote('F2', bar2, beat * 2.5, 50);                 // Bass
+      playChordNotes(['F3', 'Ab3', 'C4'], bar2 + beat * 0.2, beat * 2, 45);
+
+      // Bar 2, beats 3-4: G major (resolution)
+      const bar2b3 = now + beat * 6;
+      playNote('G2', bar2b3, beat * 3, 55);                 // Bass
+      playChordNotes(['G3', 'B3', 'D4'], bar2b3 + beat * 0.2, beat * 2.5, 50);
+
+      // Final questioning note
+      playNote('C5', bar2b3 + beat * 1.5, beat * 2, 40);
+
+      // Reset status after piece ends
+      setTimeout(() => {
+        status.textContent = 'Ready. Steinway Grand Piano loaded.';
+      }, (beat * 9) * 1000);
+    }
+
+    function playSingleNote() {
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      const now = audioContext.currentTime + 0.05;
+      playNote('C4', now, 2.5, 70);
+      status.textContent = 'Single note: Middle C';
+    }
+
+    function playSingleChord() {
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      const now = audioContext.currentTime + 0.05;
+      playNote('C3', now, 3, 50);
+      playChordNotes(['C4', 'E4', 'G4', 'B4'], now + 0.02, 2.5, 55);
+      status.textContent = 'Chord: C major 7';
+    }
+
+    // Event listeners
+    playBtn.addEventListener('click', playTwoBars);
+    singleBtn.addEventListener('click', playSingleNote);
+    chordBtn.addEventListener('click', playSingleChord);
+
+    reverbSlider.addEventListener('input', (e) => {
+      reverbMix = parseFloat(e.target.value);
+      reverbVal.textContent = reverbMix.toFixed(2);
+      if (piano && reverb) {
+        piano.output.sendEffect('reverb', reverbMix);
+      }
+    });
+
+    // Start loading
+    init();
+  </script>
+</body>
+</html>

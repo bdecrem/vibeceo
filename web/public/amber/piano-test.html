@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Piano Tone Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'Georgia', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: normal;
+      letter-spacing: 0.1em;
+    }
+    .controls {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button {
+      background: transparent;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      padding: 1rem 2rem;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: #D4A574;
+      color: #0A0908;
+    }
+    .status {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      text-align: center;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+    .param-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    input[type="range"] {
+      width: 200px;
+      accent-color: #D4A574;
+    }
+    label {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>PIANO TONE TEST</h1>
+
+  <div class="controls">
+    <button id="play">Play 2 Bars</button>
+    <button id="single">Single Note</button>
+    <button id="chord">Single Chord</button>
+  </div>
+
+  <div class="param-group">
+    <label>Reverb: <span id="reverbVal">0.4</span></label>
+    <input type="range" id="reverb" min="0" max="1" step="0.05" value="0.4">
+  </div>
+
+  <div class="param-group">
+    <label>Brightness: <span id="brightnessVal">0.5</span></label>
+    <input type="range" id="brightness" min="0" max="1" step="0.05" value="0.5">
+  </div>
+
+  <p class="status" id="status">Click to test piano synthesis with reverb</p>
+
+  <script>
+    let audioCtx = null;
+    let convolver = null;
+    let reverbGain = null;
+    let dryGain = null;
+    let masterGain = null;
+
+    let reverbAmount = 0.4;
+    let brightness = 0.5;
+
+    // Initialize audio context and reverb
+    async function initAudio() {
+      if (audioCtx) return;
+
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Create reverb using convolver with generated impulse response
+      convolver = audioCtx.createConvolver();
+      convolver.buffer = createReverbImpulse(2.5, 3.5); // decay, duration
+
+      // Wet/dry mix
+      reverbGain = audioCtx.createGain();
+      dryGain = audioCtx.createGain();
+      masterGain = audioCtx.createGain();
+
+      reverbGain.gain.value = reverbAmount;
+      dryGain.gain.value = 1 - reverbAmount * 0.5;
+      masterGain.gain.value = 0.7;
+
+      // Routing
+      convolver.connect(reverbGain);
+      reverbGain.connect(masterGain);
+      dryGain.connect(masterGain);
+      masterGain.connect(audioCtx.destination);
+
+      updateStatus('Audio initialized');
+    }
+
+    // Generate reverb impulse response
+    function createReverbImpulse(decay, duration) {
+      const length = audioCtx.sampleRate * duration;
+      const impulse = audioCtx.createBuffer(2, length, audioCtx.sampleRate);
+
+      for (let channel = 0; channel < 2; channel++) {
+        const channelData = impulse.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+          const t = i / audioCtx.sampleRate;
+          // Exponential decay with some randomness for diffusion
+          channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - t / duration, decay);
+        }
+      }
+      return impulse;
+    }
+
+    // Piano note synthesis
+    function playPianoNote(frequency, startTime, duration, velocity = 0.7) {
+      const now = startTime;
+
+      // Piano has complex harmonic structure
+      // Fundamental + harmonics with decreasing amplitude
+      const harmonics = [
+        { ratio: 1, amp: 1.0 },      // fundamental
+        { ratio: 2, amp: 0.5 },      // octave
+        { ratio: 3, amp: 0.25 * brightness },     // fifth above octave
+        { ratio: 4, amp: 0.15 },     // 2 octaves
+        { ratio: 5, amp: 0.1 * brightness },      // major 3rd above 2 octaves
+        { ratio: 6, amp: 0.08 * brightness },     // 5th above 2 octaves
+        { ratio: 7, amp: 0.04 * brightness },     // minor 7th-ish
+      ];
+
+      const noteGain = audioCtx.createGain();
+
+      // Soft lowpass to tame harshness
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      // Higher notes get filtered more (real piano behavior)
+      const filterFreq = Math.min(8000, 2000 + frequency * 4 + brightness * 4000);
+      filter.frequency.value = filterFreq;
+      filter.Q.value = 0.7;
+
+      harmonics.forEach(h => {
+        const osc = audioCtx.createOscillator();
+        const oscGain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.value = frequency * h.ratio;
+
+        // Slight detune for richness (piano strings aren't perfect)
+        osc.detune.value = (Math.random() - 0.5) * 4;
+
+        oscGain.gain.value = h.amp * velocity * 0.15;
+
+        osc.connect(oscGain);
+        oscGain.connect(noteGain);
+
+        osc.start(now);
+        osc.stop(now + duration + 2); // extra time for release
+      });
+
+      // Add a subtle attack transient (hammer noise)
+      const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.02, audioCtx.sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < noiseData.length; i++) {
+        noiseData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / noiseData.length, 3);
+      }
+
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const noiseFilter = audioCtx.createBiquadFilter();
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.value = frequency * 2;
+      noiseFilter.Q.value = 2;
+
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.value = 0.15 * velocity;
+
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(noteGain);
+      noise.start(now);
+
+      // ADSR envelope - piano has fast attack, long decay
+      noteGain.gain.setValueAtTime(0, now);
+      noteGain.gain.linearRampToValueAtTime(1, now + 0.008); // 8ms attack
+      noteGain.gain.setTargetAtTime(0.7, now + 0.008, 0.1);  // initial decay
+      noteGain.gain.setTargetAtTime(0.3, now + 0.15, duration * 0.5); // sustain decay
+      noteGain.gain.setTargetAtTime(0, now + duration, 0.3); // release
+
+      noteGain.connect(filter);
+      filter.connect(convolver);
+      filter.connect(dryGain);
+    }
+
+    // MIDI note to frequency
+    function midiToFreq(midi) {
+      return 440 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    // Play a chord
+    function playChord(notes, startTime, duration, velocity = 0.6) {
+      notes.forEach((note, i) => {
+        // Slight stagger for realism (rolled chord effect)
+        playPianoNote(midiToFreq(note), startTime + i * 0.015, duration, velocity);
+      });
+    }
+
+    // 2-bar test piece: Simple, expressive, Satie-esque
+    function playTwoBars() {
+      const tempo = 72; // BPM - slow and contemplative
+      const beatDuration = 60 / tempo;
+      const now = audioCtx.currentTime + 0.1;
+
+      // Bar 1: C minor feel - Cm (C-Eb-G) arpeggiated, then Ab major
+      // Bar 2: Fm to G (tension and gentle resolution)
+
+      // Using MIDI notes: C4=60, Eb4=63, G4=67, Ab3=56, etc.
+
+      // Bar 1, beat 1-2: Cm arpeggio (low to high)
+      playPianoNote(midiToFreq(48), now, beatDuration * 3, 0.5);  // C3 bass
+      playPianoNote(midiToFreq(60), now + beatDuration * 0.5, beatDuration * 2, 0.4);  // C4
+      playPianoNote(midiToFreq(63), now + beatDuration * 1, beatDuration * 1.5, 0.45); // Eb4
+      playPianoNote(midiToFreq(67), now + beatDuration * 1.5, beatDuration * 1.5, 0.5); // G4
+
+      // Bar 1, beat 3-4: Ab major (Ab-C-Eb)
+      const bar1beat3 = now + beatDuration * 2;
+      playPianoNote(midiToFreq(44), bar1beat3, beatDuration * 2.5, 0.5); // Ab2 bass
+      playChord([56, 60, 63], bar1beat3 + beatDuration * 0.3, beatDuration * 2, 0.4); // Ab3-C4-Eb4
+
+      // Bar 2, beat 1-2: Fm (F-Ab-C)
+      const bar2 = now + beatDuration * 4;
+      playPianoNote(midiToFreq(41), bar2, beatDuration * 2.5, 0.5); // F2 bass
+      playChord([53, 56, 60], bar2 + beatDuration * 0.2, beatDuration * 2, 0.4); // F3-Ab3-C4
+
+      // Bar 2, beat 3-4: G major (resolution) - G-B-D
+      const bar2beat3 = now + beatDuration * 6;
+      playPianoNote(midiToFreq(43), bar2beat3, beatDuration * 3, 0.55); // G2 bass
+      playChord([55, 59, 62], bar2beat3 + beatDuration * 0.2, beatDuration * 2.5, 0.45); // G3-B3-D4
+
+      // Final high note - a question mark
+      playPianoNote(midiToFreq(72), bar2beat3 + beatDuration * 1.5, beatDuration * 2, 0.35); // C5
+
+      updateStatus('Playing 2 bars: Cm → Ab → Fm → G');
+    }
+
+    function playSingleNote() {
+      const now = audioCtx.currentTime + 0.05;
+      playPianoNote(midiToFreq(60), now, 2, 0.6); // Middle C, 2 seconds
+      updateStatus('Single note: Middle C (C4)');
+    }
+
+    function playSingleChord() {
+      const now = audioCtx.currentTime + 0.05;
+      // C major 7 - lush and pretty
+      playPianoNote(midiToFreq(48), now, 3, 0.5); // C3 bass
+      playChord([60, 64, 67, 71], now + 0.02, 2.5, 0.45); // C4-E4-G4-B4
+      updateStatus('Chord: C major 7');
+    }
+
+    function updateStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+
+    // Event listeners
+    document.getElementById('play').addEventListener('click', async () => {
+      await initAudio();
+      playTwoBars();
+    });
+
+    document.getElementById('single').addEventListener('click', async () => {
+      await initAudio();
+      playSingleNote();
+    });
+
+    document.getElementById('chord').addEventListener('click', async () => {
+      await initAudio();
+      playSingleChord();
+    });
+
+    document.getElementById('reverb').addEventListener('input', (e) => {
+      reverbAmount = parseFloat(e.target.value);
+      document.getElementById('reverbVal').textContent = reverbAmount.toFixed(2);
+      if (reverbGain) {
+        reverbGain.gain.value = reverbAmount;
+        dryGain.gain.value = 1 - reverbAmount * 0.5;
+      }
+    });
+
+    document.getElementById('brightness').addEventListener('input', (e) => {
+      brightness = parseFloat(e.target.value);
+      document.getElementById('brightnessVal').textContent = brightness.toFixed(2);
+    });
+  </script>
+</body>
+</html>
