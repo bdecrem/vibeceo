@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLACIER — Amber</title>
+    <meta name="description" content="Ancient ice. Moving so slowly you can't see it. But it carves mountains.">
+    <meta property="og:title" content="GLACIER — Amber">
+    <meta property="og:description" content="Ancient ice. Moving so slowly you can't see it. But it carves mountains.">
+    <meta property="og:image" content="https://intheamber.com/amber/glacier-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/glacier.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/glacier-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #title {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 18px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            z-index: 10;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">GLACIER</div>
+    <canvas id="canvas"></canvas>
+    <div id="info">Touch to disturb the ice</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width * 2;
+        canvas.height = height * 2;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.scale(2, 2);
+
+        // Glacier layers - each moves at different speeds
+        const layers = [];
+        const numLayers = 12;
+        
+        // Color palette: cool blues, teals, whites, hints of amber (trapped sunlight)
+        const iceColors = [
+            { r: 147, g: 216, b: 228, a: 0.3 }, // pale blue
+            { r: 45, g: 149, b: 150, a: 0.4 },  // teal
+            { r: 59, g: 130, b: 246, a: 0.35 }, // electric blue
+            { r: 139, g: 92, b: 246, a: 0.25 }, // purple (deep ice)
+            { r: 255, g: 215, b: 0, a: 0.15 },  // amber (ancient sunlight)
+            { r: 236, g: 72, b: 153, a: 0.2 },  // hot pink (minerals)
+        ];
+
+        // Initialize glacier layers
+        for (let i = 0; i < numLayers; i++) {
+            const depth = i / numLayers;
+            layers.push({
+                offset: Math.random() * width,
+                speed: (0.01 + depth * 0.05) * 0.5, // deeper = faster (paradox)
+                amplitude: 40 + depth * 60,
+                frequency: 0.003 + Math.random() * 0.002,
+                color: iceColors[Math.floor(Math.random() * iceColors.length)],
+                thickness: 30 + depth * 40,
+                y: (height * 0.2) + (depth * height * 0.6),
+                cracks: []
+            });
+            
+            // Add cracks to some layers
+            if (Math.random() > 0.6) {
+                const numCracks = Math.floor(Math.random() * 3) + 1;
+                for (let c = 0; c < numCracks; c++) {
+                    layers[i].cracks.push({
+                        x: Math.random() * width,
+                        depth: Math.random() * 100 + 50,
+                        width: Math.random() * 3 + 1,
+                        age: Math.random() * 1000
+                    });
+                }
+            }
+        }
+
+        // Particles - frozen debris, air bubbles
+        const particles = [];
+        for (let i = 0; i < 80; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 3 + 1,
+                speed: (Math.random() * 0.1 + 0.05) * 0.5,
+                opacity: Math.random() * 0.6 + 0.2,
+                color: iceColors[Math.floor(Math.random() * iceColors.length)]
+            });
+        }
+
+        // Touch/click interactions - create ripples
+        const ripples = [];
+        
+        function addRipple(x, y) {
+            ripples.push({
+                x, y,
+                radius: 0,
+                maxRadius: 200 + Math.random() * 100,
+                speed: 2,
+                opacity: 0.8,
+                color: iceColors[Math.floor(Math.random() * iceColors.length)]
+            });
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            addRipple(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            addRipple(touch.clientX - rect.left, touch.clientY - rect.top);
+        });
+
+        let time = 0;
+
+        function draw() {
+            // Fade to black slowly
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
+            ctx.fillRect(0, 0, width, height);
+
+            time += 1;
+
+            // Draw glacier layers (back to front)
+            for (let i = layers.length - 1; i >= 0; i--) {
+                const layer = layers[i];
+                layer.offset += layer.speed;
+
+                ctx.save();
+                ctx.globalAlpha = 0.6;
+
+                // Draw ice layer with wave pattern
+                ctx.beginPath();
+                for (let x = -100; x < width + 100; x += 5) {
+                    const wave1 = Math.sin((x + layer.offset) * layer.frequency) * layer.amplitude;
+                    const wave2 = Math.sin((x + layer.offset) * layer.frequency * 1.7 + 100) * (layer.amplitude * 0.5);
+                    const y = layer.y + wave1 + wave2;
+                    
+                    if (x === -100) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                
+                // Complete the shape
+                ctx.lineTo(width + 100, height + 100);
+                ctx.lineTo(-100, height + 100);
+                ctx.closePath();
+
+                // Gradient fill
+                const gradient = ctx.createLinearGradient(0, layer.y - 50, 0, layer.y + layer.thickness);
+                gradient.addColorStop(0, `rgba(${layer.color.r}, ${layer.color.g}, ${layer.color.b}, 0)`);
+                gradient.addColorStop(0.5, `rgba(${layer.color.r}, ${layer.color.g}, ${layer.color.b}, ${layer.color.a})`);
+                gradient.addColorStop(1, `rgba(${layer.color.r}, ${layer.color.g}, ${layer.color.b}, 0)`);
+                
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // Draw cracks
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                for (const crack of layer.cracks) {
+                    crack.x += layer.speed * 0.5;
+                    if (crack.x > width + 50) crack.x = -50;
+                    
+                    ctx.lineWidth = crack.width;
+                    ctx.beginPath();
+                    const waveY = Math.sin((crack.x + layer.offset) * layer.frequency) * layer.amplitude;
+                    const startY = layer.y + waveY;
+                    ctx.moveTo(crack.x, startY);
+                    
+                    // Jagged crack
+                    for (let d = 0; d < crack.depth; d += 10) {
+                        const jag = (Math.random() - 0.5) * 8;
+                        ctx.lineTo(crack.x + jag, startY + d);
+                    }
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+
+            // Draw particles (trapped air, debris)
+            for (const p of particles) {
+                p.x += p.speed;
+                if (p.x > width + 10) {
+                    p.x = -10;
+                    p.y = Math.random() * height;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.opacity;
+                ctx.fillStyle = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${p.color.a})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Glow
+                const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
+                glow.addColorStop(0, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, ${p.color.a * 0.5})`);
+                glow.addColorStop(1, `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, 0)`);
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+
+            // Draw ripples
+            for (let i = ripples.length - 1; i >= 0; i--) {
+                const r = ripples[i];
+                r.radius += r.speed;
+                r.opacity -= 0.01;
+
+                if (r.opacity <= 0) {
+                    ripples.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = r.opacity;
+                ctx.strokeStyle = `rgba(${r.color.r}, ${r.color.g}, ${r.color.b}, ${r.color.a})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Inner ripple
+                ctx.globalAlpha = r.opacity * 0.5;
+                ctx.beginPath();
+                ctx.arc(r.x, r.y, r.radius * 0.7, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width * 2;
+            canvas.height = height * 2;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            ctx.scale(2, 2);
+        }
+
+        window.addEventListener('resize', resize);
+
+        draw();
+    </script>
+</body>
+</html>
