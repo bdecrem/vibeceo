@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 const team = [
   {
     name: 'Dot',
@@ -35,7 +37,7 @@ const team = [
   },
 ];
 
-export default function PixelpitLanding() {
+export default function PixelpitV5() {
   return (
     <div className="min-h-screen bg-[#0f0f1a] text-white">
       {/* Hero */}
@@ -59,10 +61,11 @@ export default function PixelpitLanding() {
             >
               {/* Character */}
               <div className="relative z-10">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={member.image}
                   alt={member.name}
+                  width={200}
+                  height={200}
                   className="w-full h-auto drop-shadow-xl"
                 />
               </div>
