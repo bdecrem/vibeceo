@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SOUNDSCAPE — Generative music machine by Amber</title>
+
+  <meta property="og:title" content="SOUNDSCAPE">
+  <meta property="og:description" content="Pick a scale, pick a tone. Particles collide and create music. Record your creation and share it.">
+  <meta property="og:image" content="https://intheamber.com/amber/soundscape-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/soundscape.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/soundscape-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0a0a0f;
+      overflow: hidden;
+      font-family: 'Space Mono', 'Courier New', monospace;
+      color: #D4A574;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100vh;
+      cursor: pointer;
+    }
+
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+      color: #D4A574;
+    }
+
+    #subtitle {
+      font-size: 11px;
+      color: #2D9596;
+      line-height: 1.6;
+    }
+
+    /* Setup screen */
+    #setupScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 10, 15, 0.98);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #setupScreen.hidden {
+      display: none;
+    }
+
+    #setupScreen h2 {
+      font-size: 24px;
+      letter-spacing: 4px;
+      margin-bottom: 10px;
+      color: #D4A574;
+    }
+
+    #setupScreen .setup-subtitle {
+      font-size: 12px;
+      color: rgba(212, 165, 116, 0.6);
+      margin-bottom: 30px;
+    }
+
+    .selector-group {
+      margin-bottom: 30px;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .selector-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #2D9596;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .scroll-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 180px;
+      overflow-y: auto;
+      padding: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: #D4A574 transparent;
+    }
+
+    .scroll-selector::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .scroll-selector::-webkit-scrollbar-thumb {
+      background: #D4A574;
+      border-radius: 2px;
+    }
+
+    .selector-option {
+      padding: 14px 20px;
+      background: transparent;
+      border: 1px solid rgba(212, 165, 116, 0.3);
+      color: rgba(212, 165, 116, 0.7);
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .selector-option:hover {
+      border-color: #D4A574;
+      color: #D4A574;
+      background: rgba(212, 165, 116, 0.1);
+    }
+
+    .selector-option.selected {
+      border-color: #2D9596;
+      color: #2D9596;
+      background: rgba(45, 149, 150, 0.15);
+    }
+
+    .selector-option .option-name {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .selector-option .option-notes {
+      font-size: 10px;
+      opacity: 0.6;
+    }
+
+    #startBtn {
+      margin-top: 20px;
+      padding: 16px 50px;
+      background: #D4A574;
+      color: #0a0a0f;
+      border: none;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    #startBtn:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+
+    /* Recording indicator */
+    #recordBtn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: transparent;
+      border: 3px solid #FF4444;
+      cursor: pointer;
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    #recordBtn.visible {
+      display: flex;
+    }
+
+    #recordBtn.recording {
+      animation: pulse-record 1s ease-in-out infinite;
+    }
+
+    #recordBtn .rec-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #FF4444;
+    }
+
+    #recordBtn.recording .rec-dot {
+      animation: blink 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse-record {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 15px rgba(255, 68, 68, 0); }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    #recordTime {
+      position: fixed;
+      top: 75px;
+      right: 20px;
+      font-size: 12px;
+      color: #FF4444;
+      letter-spacing: 1px;
+      z-index: 50;
+      display: none;
+    }
+
+    #recordTime.visible {
+      display: block;
+    }
+
+    /* Info bar */
+    #infoBar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: rgba(212, 165, 116, 0.5);
+      letter-spacing: 1px;
+      text-align: center;
+    }
+
+    #hint {
+      margin-top: 4px;
+      font-size: 9px;
+      color: rgba(45, 149, 150, 0.5);
+    }
+
+    /* Save Modal */
+    #saveModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 10, 15, 0.95);
+      z-index: 200;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #saveModal.visible {
+      display: flex;
+    }
+
+    #saveModal h2 {
+      font-size: 18px;
+      letter-spacing: 3px;
+      margin-bottom: 10px;
+      color: #D4A574;
+    }
+
+    #saveModal .stats {
+      font-size: 11px;
+      color: rgba(212, 165, 116, 0.6);
+      margin-bottom: 25px;
+    }
+
+    #saveModal input {
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      padding: 12px 20px;
+      background: transparent;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      width: 280px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #saveModal input:focus {
+      outline: none;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+    }
+
+    #saveModal input::placeholder {
+      color: rgba(212, 165, 116, 0.4);
+    }
+
+    .modalButtons {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .modalBtn {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      padding: 12px 25px;
+      background: transparent;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+    }
+
+    .modalBtn:hover {
+      background: #D4A574;
+      color: #0a0a0f;
+    }
+
+    .modalBtn.cancel {
+      border-color: rgba(212, 165, 116, 0.4);
+      color: rgba(212, 165, 116, 0.4);
+    }
+
+    .modalBtn.cancel:hover {
+      background: rgba(212, 165, 116, 0.2);
+      color: #D4A574;
+    }
+
+    .shareContainer {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .shareContainer.visible {
+      display: flex;
+    }
+
+    #shareUrl {
+      font-size: 11px;
+      color: #2D9596;
+      word-break: break-all;
+      max-width: 280px;
+      text-align: center;
+    }
+
+    .shareButtons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .shareBtn {
+      background: transparent;
+      border: 1px solid #2D9596;
+      color: #2D9596;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .shareBtn:hover {
+      background: #2D9596;
+      color: #0a0a0f;
+    }
+
+    .shareBtn.copied {
+      background: #4ECDC4;
+      border-color: #4ECDC4;
+      color: #0a0a0f;
+    }
+
+    /* Playback mode (when viewing shared) */
+    #playbackInfo {
+      position: fixed;
+      top: 20px;
+      right: 80px;
+      font-size: 11px;
+      color: #2D9596;
+      letter-spacing: 1px;
+      z-index: 50;
+      display: none;
+    }
+
+    #playbackInfo.visible {
+      display: block;
+    }
+
+    /* Export panel for shared compositions */
+    #exportPanel {
+      position: fixed;
+      bottom: 60px;
+      right: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 50;
+    }
+
+    #exportPanel.visible {
+      display: flex;
+    }
+
+    .exportBtn {
+      padding: 10px 16px;
+      background: transparent;
+      border: 1px solid #2D9596;
+      color: #2D9596;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+
+    .exportBtn:hover {
+      background: #2D9596;
+      color: #0a0a0f;
+    }
+
+    /* Data modal for JSON view */
+    #dataModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 10, 15, 0.98);
+      z-index: 300;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    #dataModal.visible {
+      display: flex;
+    }
+
+    #dataModal h2 {
+      font-size: 16px;
+      letter-spacing: 3px;
+      margin: 20px 0 10px;
+      color: #D4A574;
+    }
+
+    #dataModal .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: transparent;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+    }
+
+    #dataModal pre {
+      background: #111;
+      padding: 15px;
+      border-radius: 4px;
+      max-width: 100%;
+      overflow-x: auto;
+      font-size: 10px;
+      color: #4ECDC4;
+      margin: 10px 0;
+      max-height: 60vh;
+      overflow-y: auto;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    #dataModal .copy-json-btn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: transparent;
+      border: 1px solid #2D9596;
+      color: #2D9596;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+    }
+
+    #dataModal .copy-json-btn:hover {
+      background: #2D9596;
+      color: #0a0a0f;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <h1>SOUNDSCAPE</h1>
+    <div id="subtitle">Tap to add particles. Listen to the collisions.</div>
+  </div>
+
+  <!-- Setup Screen -->
+  <div id="setupScreen">
+    <h2>SOUNDSCAPE</h2>
+    <div class="setup-subtitle">Create generative music from particle collisions</div>
+
+    <div class="selector-group">
+      <div class="selector-label">SELECT SCALE</div>
+      <div class="scroll-selector" id="scaleSelector">
+        <button class="selector-option selected" data-scale="minor-blues">
+          <span class="option-name">MINOR BLUES</span>
+          <span class="option-notes">1 b3 4 b5 5 b7 — moody, soulful</span>
+        </button>
+        <button class="selector-option" data-scale="major-pentatonic">
+          <span class="option-name">MAJOR PENTATONIC</span>
+          <span class="option-notes">1 2 3 5 6 — bright, happy</span>
+        </button>
+        <button class="selector-option" data-scale="dorian">
+          <span class="option-name">DORIAN</span>
+          <span class="option-notes">1 2 b3 4 5 6 b7 — jazzy, modal</span>
+        </button>
+        <button class="selector-option" data-scale="lydian">
+          <span class="option-name">LYDIAN</span>
+          <span class="option-notes">1 2 3 #4 5 6 7 — dreamy, ethereal</span>
+        </button>
+        <button class="selector-option" data-scale="whole-tone">
+          <span class="option-name">WHOLE TONE</span>
+          <span class="option-notes">1 2 3 #4 #5 #6 — floating, mysterious</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="selector-group">
+      <div class="selector-label">SELECT TONE</div>
+      <div class="scroll-selector" id="toneSelector">
+        <button class="selector-option selected" data-tone="bell">
+          <span class="option-name">BELL</span>
+          <span class="option-notes">Crystalline, resonant</span>
+        </button>
+        <button class="selector-option" data-tone="piano">
+          <span class="option-name">PIANO</span>
+          <span class="option-notes">Warm, percussive</span>
+        </button>
+        <button class="selector-option" data-tone="synth">
+          <span class="option-name">SYNTH</span>
+          <span class="option-notes">Electronic, bright</span>
+        </button>
+        <button class="selector-option" data-tone="pad">
+          <span class="option-name">PAD</span>
+          <span class="option-notes">Soft, ambient</span>
+        </button>
+        <button class="selector-option" data-tone="bass">
+          <span class="option-name">BASS</span>
+          <span class="option-notes">Deep, rumbling</span>
+        </button>
+      </div>
+    </div>
+
+    <button id="startBtn">START</button>
+  </div>
+
+  <!-- Record Button -->
+  <button id="recordBtn">
+    <div class="rec-dot"></div>
+  </button>
+  <div id="recordTime">0:00</div>
+
+  <!-- Playback Info (for shared compositions) -->
+  <div id="playbackInfo"></div>
+
+  <!-- Export Panel (for shared compositions) -->
+  <div id="exportPanel">
+    <button class="exportBtn" id="viewJsonBtn">VIEW JSON</button>
+    <button class="exportBtn" id="downloadMidiBtn">DOWNLOAD MIDI</button>
+  </div>
+
+  <!-- Data Modal (for JSON view) -->
+  <div id="dataModal">
+    <button class="close-btn" id="closeDataModal">CLOSE</button>
+    <h2>COMPOSITION DATA</h2>
+    <pre id="jsonData"></pre>
+    <button class="copy-json-btn" id="copyJsonBtn">COPY JSON</button>
+  </div>
+
+  <!-- Main Canvas -->
+  <canvas id="canvas"></canvas>
+
+  <!-- Info Bar -->
+  <div id="infoBar">
+    <div id="currentConfig"></div>
+    <div id="hint">tap to add particles — tap record to save</div>
+  </div>
+
+  <!-- Save Modal -->
+  <div id="saveModal">
+    <h2>SAVE YOUR CREATION</h2>
+    <div class="stats" id="saveStats"></div>
+    <input type="text" id="compositionName" placeholder="untitled soundscape" maxlength="30">
+    <div class="modalButtons">
+      <button class="modalBtn cancel" id="cancelSave">DISCARD</button>
+      <button class="modalBtn" id="confirmSave">SAVE</button>
+    </div>
+    <div class="shareContainer" id="shareContainer">
+      <div id="shareUrl"></div>
+      <div class="shareButtons">
+        <button class="shareBtn" id="copyBtn">COPY LINK</button>
+        <button class="shareBtn" id="newBtn">NEW</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const setupScreen = document.getElementById('setupScreen');
+    const startBtn = document.getElementById('startBtn');
+    const recordBtn = document.getElementById('recordBtn');
+    const recordTimeEl = document.getElementById('recordTime');
+    const subtitleEl = document.getElementById('subtitle');
+    const currentConfigEl = document.getElementById('currentConfig');
+    const saveModal = document.getElementById('saveModal');
+    const saveStatsEl = document.getElementById('saveStats');
+    const compositionNameInput = document.getElementById('compositionName');
+    const shareContainerEl = document.getElementById('shareContainer');
+    const shareUrlEl = document.getElementById('shareUrl');
+    const playbackInfoEl = document.getElementById('playbackInfo');
+
+    let audioCtx;
+    let particles = [];
+    let audioStarted = false;
+    let isRecording = false;
+    let recordStartTime = 0;
+    let recordedNotes = [];
+    let currentShareUrl = '';
+    let isPlaybackMode = false;
+    let playbackNotes = [];
+    let playbackIndex = 0;
+    let playbackStartTime = 0;
+    let loadedCompositionData = null;
+
+    // Configuration
+    let selectedScale = 'minor-blues';
+    let selectedTone = 'bell';
+
+    // Musical scales (intervals from root in semitones)
+    // Base frequency: C4 = 261.63 Hz
+    const SCALES = {
+      'minor-blues': {
+        name: 'Minor Blues',
+        // C Eb F Gb G Bb (across 2 octaves)
+        intervals: [0, 3, 5, 6, 7, 10, 12, 15, 17, 18, 19, 22, 24]
+      },
+      'major-pentatonic': {
+        name: 'Major Pentatonic',
+        // C D E G A (across 2 octaves)
+        intervals: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24]
+      },
+      'dorian': {
+        name: 'Dorian',
+        // C D Eb F G A Bb (across 2 octaves)
+        intervals: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19, 21, 22, 24]
+      },
+      'lydian': {
+        name: 'Lydian',
+        // C D E F# G A B (across 2 octaves)
+        intervals: [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23, 24]
+      },
+      'whole-tone': {
+        name: 'Whole Tone',
+        // C D E F# G# A# (across 2 octaves)
+        intervals: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24]
+      }
+    };
+
+    // Generate frequencies for current scale
+    function getScaleFrequencies() {
+      const baseFreq = 261.63; // C4
+      const scale = SCALES[selectedScale];
+      return scale.intervals.map(semitones => baseFreq * Math.pow(2, semitones / 12));
+    }
+
+    // Particle colors based on scale degree
+    const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#4ECDC4', '#FF6B6B'];
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = Math.random() * 12 + 8;
+        this.vx = (Math.random() - 0.5) * 2.5;
+        this.vy = (Math.random() - 0.5) * 2.5;
+
+        const frequencies = getScaleFrequencies();
+        const freqIndex = Math.floor(Math.random() * frequencies.length);
+        this.freq = frequencies[freqIndex];
+        this.scaleIndex = freqIndex;
+        this.color = colors[freqIndex % colors.length];
+        this.glow = 0;
+        this.id = Date.now() + Math.random();
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Bounce off edges
+        if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+          this.vx *= -1;
+          this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+        }
+        if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+          this.vy *= -1;
+          this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+        }
+
+        if (this.glow > 0) this.glow -= 0.04;
+      }
+
+      draw() {
+        ctx.save();
+
+        if (this.glow > 0) {
+          ctx.shadowBlur = 35 * this.glow;
+          ctx.shadowColor = this.color;
+        }
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = 0.5 + (this.glow * 0.5);
+        ctx.fill();
+
+        // Inner ring
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      collidesWith(other) {
+        const dx = this.x - other.x;
+        const dy = this.y - other.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance < this.radius + other.radius;
+      }
+
+      resolveCollision(other) {
+        const dx = other.x - this.x;
+        const dy = other.y - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance === 0) return;
+
+        const nx = dx / distance;
+        const ny = dy / distance;
+
+        const dvx = other.vx - this.vx;
+        const dvy = other.vy - this.vy;
+        const dotProduct = dvx * nx + dvy * ny;
+
+        this.vx += dotProduct * nx;
+        this.vy += dotProduct * ny;
+        other.vx -= dotProduct * nx;
+        other.vy -= dotProduct * ny;
+
+        // Separate particles
+        const overlap = this.radius + other.radius - distance;
+        this.x -= nx * overlap * 0.5;
+        this.y -= ny * overlap * 0.5;
+        other.x += nx * overlap * 0.5;
+        other.y += ny * overlap * 0.5;
+      }
+    }
+
+    // Sound synthesis based on selected tone
+    function playTone(freq, velocity = 1.0) {
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime;
+      const vol = velocity * 0.12;
+
+      const tones = {
+        bell: () => {
+          // Bell-like with harmonics
+          const osc1 = audioCtx.createOscillator();
+          const osc2 = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc1.type = 'sine';
+          osc2.type = 'sine';
+          osc1.frequency.value = freq;
+          osc2.frequency.value = freq * 2.01;
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(vol, now + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + 1.8);
+          osc2.stop(now + 1.8);
+        },
+
+        piano: () => {
+          // Piano-like with quick attack
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          const filter = audioCtx.createBiquadFilter();
+
+          osc.type = 'sawtooth';
+          osc.frequency.value = freq;
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(freq * 4, now);
+          filter.frequency.exponentialRampToValueAtTime(freq, now + 0.3);
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(vol * 0.8, now + 0.005);
+          gain.gain.exponentialRampToValueAtTime(vol * 0.3, now + 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+
+          osc.start(now);
+          osc.stop(now + 1.2);
+        },
+
+        synth: () => {
+          // Bright synth
+          const osc1 = audioCtx.createOscillator();
+          const osc2 = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc1.type = 'square';
+          osc2.type = 'sawtooth';
+          osc1.frequency.value = freq;
+          osc2.frequency.value = freq * 1.005;
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(vol * 0.6, now + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + 0.8);
+          osc2.stop(now + 0.8);
+        },
+
+        pad: () => {
+          // Soft ambient pad
+          const osc1 = audioCtx.createOscillator();
+          const osc2 = audioCtx.createOscillator();
+          const osc3 = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          const filter = audioCtx.createBiquadFilter();
+
+          osc1.type = 'sine';
+          osc2.type = 'sine';
+          osc3.type = 'sine';
+          osc1.frequency.value = freq;
+          osc2.frequency.value = freq * 2;
+          osc3.frequency.value = freq * 0.5;
+
+          filter.type = 'lowpass';
+          filter.frequency.value = freq * 2;
+          filter.Q.value = 1;
+
+          osc1.connect(filter);
+          osc2.connect(filter);
+          osc3.connect(filter);
+          filter.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(vol * 0.5, now + 0.15);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc3.start(now);
+          osc1.stop(now + 2.5);
+          osc2.stop(now + 2.5);
+          osc3.stop(now + 2.5);
+        },
+
+        bass: () => {
+          // Deep bass
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          const filter = audioCtx.createBiquadFilter();
+
+          osc.type = 'sine';
+          osc.frequency.value = freq / 2; // One octave down
+          filter.type = 'lowpass';
+          filter.frequency.value = 400;
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(vol * 1.2, now + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+
+          osc.start(now);
+          osc.stop(now + 1.0);
+        }
+      };
+
+      if (tones[selectedTone]) {
+        tones[selectedTone]();
+      }
+    }
+
+    function addParticle(x, y) {
+      const p = new Particle(x, y);
+      particles.push(p);
+
+      // Limit particles
+      if (particles.length > 20) {
+        particles.shift();
+      }
+
+      return p;
+    }
+
+    function init() {
+      // Start with 6 particles
+      for (let i = 0; i < 6; i++) {
+        addParticle(
+          Math.random() * canvas.width * 0.6 + canvas.width * 0.2,
+          Math.random() * canvas.height * 0.6 + canvas.height * 0.2
+        );
+      }
+    }
+
+    // Quantize timestamp to 64th notes (or 128th)
+    // At 120 BPM: 1 beat = 0.5s, 64th note = 0.5/16 = 0.03125s
+    function quantizeTime(timeMs, resolution = 64) {
+      const bpm = 120;
+      const beatMs = 60000 / bpm;
+      const noteMs = beatMs / (resolution / 4);
+      return Math.round(timeMs / noteMs) * noteMs;
+    }
+
+    // Convert frequency to MIDI note number
+    function freqToMidi(freq) {
+      return Math.round(12 * Math.log2(freq / 440) + 69);
+    }
+
+    // Record a note
+    function recordNote(freq, velocity, x, y) {
+      if (!isRecording) return;
+
+      const timeMs = Date.now() - recordStartTime;
+      const quantizedTime = quantizeTime(timeMs);
+
+      recordedNotes.push({
+        time: quantizedTime,
+        freq: Math.round(freq * 100) / 100,
+        midi: freqToMidi(freq),
+        velocity: Math.round(velocity * 100) / 100,
+        x: Math.round(x),
+        y: Math.round(y)
+      });
+    }
+
+    function formatTime(ms) {
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return `${m}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    function animate() {
+      // Fade trail
+      ctx.fillStyle = 'rgba(10, 10, 15, 0.12)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Update particles
+      particles.forEach(p => p.update());
+
+      // Check collisions
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          if (particles[i].collidesWith(particles[j])) {
+            particles[i].resolveCollision(particles[j]);
+
+            // Play combined frequency
+            const avgFreq = (particles[i].freq + particles[j].freq) / 2;
+            if (audioStarted) {
+              playTone(avgFreq, 0.8);
+              recordNote(avgFreq, 0.8, (particles[i].x + particles[j].x) / 2, (particles[i].y + particles[j].y) / 2);
+            }
+
+            particles[i].glow = 1;
+            particles[j].glow = 1;
+          }
+        }
+      }
+
+      // Draw particles
+      particles.forEach(p => p.draw());
+
+      // Update record time
+      if (isRecording) {
+        const elapsed = Date.now() - recordStartTime;
+        recordTimeEl.textContent = formatTime(elapsed);
+      }
+
+      // Playback mode: play recorded notes
+      if (isPlaybackMode && playbackNotes.length > 0) {
+        const elapsed = Date.now() - playbackStartTime;
+
+        while (playbackIndex < playbackNotes.length && playbackNotes[playbackIndex].time <= elapsed) {
+          const note = playbackNotes[playbackIndex];
+          playTone(note.freq, note.velocity || 0.8);
+          playbackIndex++;
+        }
+
+        // Loop playback
+        if (playbackIndex >= playbackNotes.length) {
+          playbackIndex = 0;
+          playbackStartTime = Date.now();
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Setup screen handlers
+    document.querySelectorAll('#scaleSelector .selector-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#scaleSelector .selector-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedScale = btn.dataset.scale;
+      });
+    });
+
+    document.querySelectorAll('#toneSelector .selector-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#toneSelector .selector-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedTone = btn.dataset.tone;
+      });
+    });
+
+    startBtn.addEventListener('click', () => {
+      audioCtx = new AudioContext();
+      audioStarted = true;
+
+      setupScreen.classList.add('hidden');
+      recordBtn.classList.add('visible');
+
+      // Update UI
+      const scaleName = SCALES[selectedScale].name;
+      const toneName = selectedTone.charAt(0).toUpperCase() + selectedTone.slice(1);
+      currentConfigEl.textContent = `${scaleName} + ${toneName}`;
+      subtitleEl.textContent = `${scaleName} + ${toneName} — tap to add particles`;
+
+      init();
+      animate();
+
+      // Start recording automatically
+      startRecording();
+    });
+
+    // Recording controls
+    function startRecording() {
+      isRecording = true;
+      recordStartTime = Date.now();
+      recordedNotes = [];
+      recordBtn.classList.add('recording');
+      recordTimeEl.classList.add('visible');
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      recordBtn.classList.remove('recording');
+      showSaveModal();
+    }
+
+    recordBtn.addEventListener('click', () => {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    });
+
+    // Canvas interaction
+    canvas.addEventListener('click', (e) => {
+      if (!audioStarted || setupScreen.classList.contains('hidden') === false) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+      const p = addParticle(x, y);
+      playTone(p.freq, 0.6);
+      recordNote(p.freq, 0.6, x, y);
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (!audioStarted || setupScreen.classList.contains('hidden') === false) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+
+      const p = addParticle(x, y);
+      playTone(p.freq, 0.6);
+      recordNote(p.freq, 0.6, x, y);
+    });
+
+    // Save modal
+    function showSaveModal() {
+      const duration = formatTime(Date.now() - recordStartTime);
+      const noteCount = recordedNotes.length;
+      saveStatsEl.textContent = `${noteCount} notes recorded — ${duration}`;
+
+      compositionNameInput.value = localStorage.getItem('soundscape_last_name') || '';
+      shareContainerEl.classList.remove('visible');
+      saveModal.classList.add('visible');
+      compositionNameInput.focus();
+    }
+
+    function hideSaveModal() {
+      saveModal.classList.remove('visible');
+      // Resume recording
+      startRecording();
+    }
+
+    document.getElementById('cancelSave').addEventListener('click', hideSaveModal);
+
+    document.getElementById('confirmSave').addEventListener('click', async () => {
+      const name = compositionNameInput.value.trim() || 'untitled soundscape';
+      localStorage.setItem('soundscape_last_name', name);
+
+      const data = {
+        name,
+        scale: selectedScale,
+        tone: selectedTone,
+        notes: recordedNotes,
+        duration: Date.now() - recordStartTime,
+        created_at: new Date().toISOString()
+      };
+
+      try {
+        const response = await fetch('/api/zad/soundscape', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          currentShareUrl = `${window.location.origin}/amber/soundscape.html?id=${result.id}`;
+          shareUrlEl.textContent = currentShareUrl;
+          shareContainerEl.classList.add('visible');
+
+          // Hide save buttons, show share
+          document.querySelector('.modalButtons').style.display = 'none';
+        } else {
+          alert('Failed to save. Please try again.');
+        }
+      } catch (err) {
+        console.error('Save failed:', err);
+        alert('Failed to save. Please try again.');
+      }
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      if (!currentShareUrl) return;
+      navigator.clipboard.writeText(currentShareUrl).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.classList.add('copied');
+        btn.textContent = 'COPIED!';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.textContent = 'COPY LINK';
+        }, 2000);
+      });
+    });
+
+    document.getElementById('newBtn').addEventListener('click', () => {
+      saveModal.classList.remove('visible');
+      document.querySelector('.modalButtons').style.display = 'flex';
+      recordedNotes = [];
+      particles = [];
+      init();
+      startRecording();
+    });
+
+    // Load composition from URL
+    async function loadComposition(id) {
+      try {
+        const response = await fetch(`/api/zad/soundscape/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+
+          // Set configuration
+          selectedScale = data.scale || 'minor-blues';
+          selectedTone = data.tone || 'bell';
+
+          // Update selectors visually
+          document.querySelectorAll('#scaleSelector .selector-option').forEach(b => {
+            b.classList.toggle('selected', b.dataset.scale === selectedScale);
+          });
+          document.querySelectorAll('#toneSelector .selector-option').forEach(b => {
+            b.classList.toggle('selected', b.dataset.tone === selectedTone);
+          });
+
+          // Store notes for playback
+          playbackNotes = data.notes || [];
+          isPlaybackMode = true;
+
+          // Store data for export
+          loadedCompositionData = data;
+
+          // Update UI
+          const scaleName = SCALES[selectedScale].name;
+          const toneName = selectedTone.charAt(0).toUpperCase() + selectedTone.slice(1);
+          subtitleEl.innerHTML = `<strong>"${data.name}"</strong> — ${scaleName} + ${toneName}`;
+          playbackInfoEl.textContent = `${playbackNotes.length} notes — ${formatTime(data.duration || 0)}`;
+          playbackInfoEl.classList.add('visible');
+
+          // Show export panel
+          document.getElementById('exportPanel').classList.add('visible');
+
+          // Hide setup, show playback
+          setupScreen.classList.add('hidden');
+          document.getElementById('hint').textContent = 'tap to add particles — listening to saved composition';
+          currentConfigEl.textContent = `${scaleName} + ${toneName}`;
+
+          // Initialize audio and start
+          audioCtx = new AudioContext();
+          audioStarted = true;
+          playbackStartTime = Date.now();
+          playbackIndex = 0;
+
+          init();
+          animate();
+        }
+      } catch (err) {
+        console.error('Load failed:', err);
+      }
+    }
+
+    // Export functionality
+    function showDataModal() {
+      if (!loadedCompositionData) return;
+
+      const jsonData = {
+        name: loadedCompositionData.name,
+        scale: loadedCompositionData.scale,
+        tone: loadedCompositionData.tone,
+        duration: loadedCompositionData.duration,
+        bpm: 120,
+        quantization: '64th notes',
+        notes: loadedCompositionData.notes
+      };
+
+      document.getElementById('jsonData').textContent = JSON.stringify(jsonData, null, 2);
+      document.getElementById('dataModal').classList.add('visible');
+    }
+
+    function hideDataModal() {
+      document.getElementById('dataModal').classList.remove('visible');
+    }
+
+    function generateMidiFile() {
+      if (!loadedCompositionData || !loadedCompositionData.notes.length) return;
+
+      // Simple MIDI file generation (Type 0, single track)
+      const notes = loadedCompositionData.notes;
+
+      // MIDI file header
+      const header = [
+        0x4D, 0x54, 0x68, 0x64, // "MThd"
+        0x00, 0x00, 0x00, 0x06, // Header length
+        0x00, 0x00,             // Format type 0
+        0x00, 0x01,             // Number of tracks
+        0x00, 0x60              // Ticks per quarter note (96)
+      ];
+
+      // Build track data
+      const trackEvents = [];
+
+      // Tempo event (120 BPM = 500000 microseconds per beat)
+      trackEvents.push([0x00, 0xFF, 0x51, 0x03, 0x07, 0xA1, 0x20]);
+
+      // Convert notes to MIDI events
+      const ticksPerMs = 96 / 500; // At 120 BPM
+      let lastTick = 0;
+
+      const sortedNotes = [...notes].sort((a, b) => a.time - b.time);
+
+      for (const note of sortedNotes) {
+        const tick = Math.round(note.time * ticksPerMs);
+        const delta = tick - lastTick;
+        const midiNote = note.midi || 60;
+        const velocity = Math.round((note.velocity || 0.8) * 100);
+
+        // Note on
+        trackEvents.push([...variableLengthQuantity(delta), 0x90, midiNote, velocity]);
+
+        // Note off after 100ms
+        const noteDuration = Math.round(100 * ticksPerMs);
+        trackEvents.push([...variableLengthQuantity(noteDuration), 0x80, midiNote, 0x40]);
+
+        lastTick = tick + noteDuration;
+      }
+
+      // End of track
+      trackEvents.push([0x00, 0xFF, 0x2F, 0x00]);
+
+      // Flatten track events
+      const trackData = trackEvents.flat();
+
+      // Track header
+      const trackHeader = [
+        0x4D, 0x54, 0x72, 0x6B, // "MTrk"
+        ...int32ToBytes(trackData.length)
+      ];
+
+      // Combine all
+      const midiData = new Uint8Array([...header, ...trackHeader, ...trackData]);
+
+      // Download
+      const blob = new Blob([midiData], { type: 'audio/midi' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${loadedCompositionData.name.replace(/[^a-z0-9]/gi, '-')}.mid`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function variableLengthQuantity(value) {
+      if (value < 0) value = 0;
+      const bytes = [];
+      bytes.push(value & 0x7F);
+      value >>= 7;
+      while (value > 0) {
+        bytes.unshift((value & 0x7F) | 0x80);
+        value >>= 7;
+      }
+      return bytes;
+    }
+
+    function int32ToBytes(value) {
+      return [
+        (value >> 24) & 0xFF,
+        (value >> 16) & 0xFF,
+        (value >> 8) & 0xFF,
+        value & 0xFF
+      ];
+    }
+
+    document.getElementById('viewJsonBtn').addEventListener('click', showDataModal);
+    document.getElementById('downloadMidiBtn').addEventListener('click', generateMidiFile);
+    document.getElementById('closeDataModal').addEventListener('click', hideDataModal);
+    document.getElementById('copyJsonBtn').addEventListener('click', () => {
+      const json = document.getElementById('jsonData').textContent;
+      navigator.clipboard.writeText(json).then(() => {
+        const btn = document.getElementById('copyJsonBtn');
+        btn.textContent = 'COPIED!';
+        setTimeout(() => { btn.textContent = 'COPY JSON'; }, 2000);
+      });
+    });
+
+    // Check for composition ID in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const compositionId = urlParams.get('id');
+
+    if (compositionId) {
+      loadComposition(compositionId);
+    }
+  </script>
+</body>
+</html>
