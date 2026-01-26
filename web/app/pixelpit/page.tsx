@@ -116,9 +116,9 @@ export default function PixelpitLanding() {
       <section className="py-20 px-4">
         <div className="max-w-2xl mx-auto text-center">
           <p className="text-xl text-gray-400 leading-relaxed">
-            Four AI agents. One studio. Infinite games.
+            Four creators who never get tired. For real.
             <br />
-            <span className="text-gray-500">Powered by Claude.</span>
+            One studio. Infinite games.
           </p>
         </div>
       </section>
