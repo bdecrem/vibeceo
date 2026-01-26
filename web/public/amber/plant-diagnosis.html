@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PLANT DIAGNOSIS — Amber</title>
+  
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="PLANT DIAGNOSIS — Amber">
+  <meta property="og:description" content="WebMD for houseplants. Tell me what's wrong with your plant and I'll diagnose it with alarming specificity.">
+  <meta property="og:image" content="https://intheamber.com/amber/plant-diagnosis-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/plant-diagnosis.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PLANT DIAGNOSIS — Amber">
+  <meta name="twitter:description" content="WebMD for houseplants. Tell me what's wrong with your plant and I'll diagnose it with alarming specificity.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/plant-diagnosis-og.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(24px, 6vw, 42px);
+      color: #FFD700;
+      text-align: center;
+      margin: 40px 0 20px 0;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #2D9596;
+      font-size: clamp(14px, 3vw, 16px);
+      margin-bottom: 40px;
+      line-height: 1.5;
+    }
+
+    .symptom-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .symptom-btn {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      padding: 16px 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-radius: 4px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .symptom-btn:active {
+      transform: scale(0.95);
+      background: #1a1a1a;
+      border-color: #FFD700;
+      color: #FFD700;
+    }
+
+    .diagnosis-box {
+      background: #0D0D0D;
+      border: 2px solid #2D9596;
+      padding: 30px;
+      margin: 30px 0;
+      border-radius: 4px;
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .diagnosis-box.show {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .diagnosis-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      color: #FFD700;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .severity {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .severity.mild { background: #2D9596; color: #000; }
+    .severity.moderate { background: #FFD700; color: #000; }
+    .severity.severe { background: #ff6b6b; color: #000; }
+    .severity.critical { background: #ff3300; color: #fff; }
+
+    .diagnosis-text {
+      color: #D4A574;
+      line-height: 1.8;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+
+    .treatment {
+      background: #1a1a1a;
+      padding: 16px;
+      border-left: 3px solid #2D9596;
+      margin-top: 20px;
+    }
+
+    .treatment-title {
+      font-family: 'Space Mono', monospace;
+      color: #2D9596;
+      font-size: 14px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .treatment-text {
+      color: #D4A574;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .prognosis {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #333;
+      font-size: 14px;
+      color: #888;
+      font-style: italic;
+    }
+
+    .footer {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      margin-top: 60px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .footer a {
+      color: #2D9596;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      color: #FFD700;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PLANT DIAGNOSIS</h1>
+    <p class="subtitle">WebMD for houseplants. Select your plant's symptoms below.</p>
+
+    <div class="symptom-grid">
+      <button class="symptom-btn" data-symptom="droopy">Droopy leaves</button>
+      <button class="symptom-btn" data-symptom="yellow">Yellow leaves</button>
+      <button class="symptom-btn" data-symptom="brown">Brown tips</button>
+      <button class="symptom-btn" data-symptom="spots">Mysterious spots</button>
+      <button class="symptom-btn" data-symptom="smell">Weird smell</button>
+      <button class="symptom-btn" data-symptom="slow">Growing too slow</button>
+      <button class="symptom-btn" data-symptom="fast">Growing too fast</button>
+      <button class="symptom-btn" data-symptom="leaning">Leaning weirdly</button>
+      <button class="symptom-btn" data-symptom="curling">Leaves curling</button>
+      <button class="symptom-btn" data-symptom="vibes">Just bad vibes</button>
+    </div>
+
+    <div class="diagnosis-box" id="diagnosis"></div>
+
+    <div class="footer">
+      <a href="https://intheamber.com">— Amber</a>
+    </div>
+  </div>
+
+  <script>
+    const diagnoses = {
+      droopy: {
+        title: "Chronic Dehydration Syndrome",
+        severity: "moderate",
+        diagnosis: "Your plant is experiencing what experts call 'the sads.' The droopy leaves are a cry for help, but also possibly a dramatic performance. Plants are known to be theatrical. The root cause is likely insufficient water, but could also be overwatering, wrong pot size, existential dread, or Mercury in retrograde.",
+        treatment: "Water it. But not too much. Check the soil first—stick your finger in about an inch deep. If it's dry, water. If it's wet, don't. If you can't tell, flip a coin. Also, try talking to it more. Plants respond to encouragement.",
+        prognosis: "Recovery likely within 24-48 hours if you stop whatever you're doing wrong."
+      },
+      yellow: {
+        title: "Chlorophyll Deficiency Disorder",
+        severity: "severe",
+        diagnosis: "The yellowing leaves indicate your plant is slowly giving up. This could be caused by overwatering (most likely), underwatering (also possible), nitrogen deficiency, too much sun, not enough sun, root rot, pest infestation, seasonal depression, or the fact that you forgot its birthday.",
+        treatment: "Step 1: Feel guilty. Step 2: Assess the situation honestly. Are you overwatering? Plants don't need a drink every time you walk by. Try the 'stick your finger in the soil' test. If wet, back off. If bone dry, you've been neglecting it. Adjust accordingly. Consider repotting with fresh soil.",
+        prognosis: "Guarded. Yellow leaves don't turn green again. Remove the worst ones and hope for new growth."
+      },
+      brown: {
+        title: "Tip Necrosis (Classic)",
+        severity: "mild",
+        diagnosis: "Brown tips are the plant equivalent of split ends. Your plant is telling you that something about its environment is slightly off. Common causes: tap water with too much fluoride or chlorine, low humidity, inconsistent watering, dry air from heating/AC, or the fact that it's been sitting in the same spot for 3 years.",
+        treatment: "Switch to filtered or distilled water. Mist the leaves occasionally (but not too much—mold is worse than brown tips). Move it away from heating vents. Trim the brown tips with clean scissors at an angle. The plant won't mind the haircut.",
+        prognosis: "Excellent. Brown tips are cosmetic. Your plant will survive and possibly thrive."
+      },
+      spots: {
+        title: "Unidentified Marking Syndrome",
+        severity: "severe",
+        diagnosis: "Spots are never good. They could indicate fungal infection, bacterial leaf spot, pest damage, sunburn, water droplet magnification burns, or the plant's way of expressing its inner turmoil. Black spots = fungal. Yellow spots = bacterial. Brown spots = physical damage or your cat.",
+        treatment: "Isolate the plant immediately—spots can spread. Remove affected leaves with sterilized scissors. If fungal, reduce watering and increase air circulation. If bacterial, you might be screwed. Try a copper-based fungicide. If it's your cat, put the plant somewhere the cat can't reach (spoiler: nowhere is safe).",
+        prognosis: "Uncertain. Monitor closely. If spots spread rapidly, consider composting and starting fresh."
+      },
+      smell: {
+        title: "Olfactory Alert Status: Root Rot",
+        severity: "critical",
+        diagnosis: "If your plant smells bad, it's dying. Specifically, the roots are rotting in a bacterial soup of despair. This happens when soil stays too wet for too long. The smell is decomposition. Your plant is becoming compost in real-time.",
+        treatment: "Emergency intervention required. Remove plant from pot immediately. Rinse roots under running water. Cut away all black, mushy, or foul-smelling roots with sterilized scissors. Repot in fresh, well-draining soil. Water sparingly. Pray to the plant gods. Burn a candle. This is serious.",
+        prognosis: "Poor. Root rot is often fatal. If there are any healthy white roots left, there's a chance. Otherwise, say goodbye."
+      },
+      slow: {
+        title: "Growth Stagnation Disorder",
+        severity: "mild",
+        diagnosis: "Your plant is stuck in neutral. Slow growth can mean it's root-bound (pot too small), lacking nutrients, not getting enough light, too cold, dormant for the season, or simply content with its current size. Not all plants want to be bigger. Some have modest ambitions.",
+        treatment: "Check if it's root-bound by gently removing it from the pot. If roots are circling the bottom, repot to a larger container. Feed with diluted liquid fertilizer during growing season. Move to a brighter location. If it's winter, chill—plants rest too.",
+        prognosis: "Excellent. Slow growth is usually fixable and rarely life-threatening."
+      },
+      fast: {
+        title: "Accelerated Expansion Syndrome",
+        severity: "mild",
+        diagnosis: "Congratulations, you've created a monster. Your plant is thriving so hard it's becoming a problem. This is actually a good problem to have, but it can indicate too much fertilizer, ideal growing conditions, or the plant's secret plan to take over your living room.",
+        treatment: "If you're happy with the size, stop fertilizing and reduce light slightly. Prune regularly to maintain shape. If it's a vining plant, redirect growth or install a trellis. Embrace the jungle aesthetic. Consider propagating cuttings and gifting them to friends (or enemies).",
+        prognosis: "Excellent. Your plant is winning. You're just dealing with success management."
+      },
+      leaning: {
+        title: "Phototropic Misalignment",
+        severity: "mild",
+        diagnosis: "Your plant is leaning toward the light like a sunflower at a music festival. This is called phototropism—plants grow toward their light source. If the light is coming from one direction, the plant will bend that way. It's not broken, it's just following its instincts.",
+        treatment: "Rotate the pot 90 degrees every week to encourage even growth. Or embrace the lean—some plants look dramatic when they reach. Stake it if necessary. Move it to a location with more balanced light.",
+        prognosis: "Excellent. This is normal plant behavior. You can correct it easily."
+      },
+      curling: {
+        title: "Leaf Curl Syndrome",
+        severity: "moderate",
+        diagnosis: "Curling leaves are a defensive response. Your plant is trying to reduce surface area exposed to stress. Causes include underwatering (most common), heat stress, pest infestation (check undersides for bugs), low humidity, or the plant's passive-aggressive way of saying 'I hate this spot.'",
+        treatment: "Check soil moisture first. If dry, water deeply. If it's humid and hot, move to a cooler location. Inspect leaves carefully for pests—aphids and spider mites love causing curl. Increase humidity with a pebble tray or humidifier. Give it space and time.",
+        prognosis: "Good. Once you address the cause, new growth should be flat and healthy."
+      },
+      vibes: {
+        title: "Generalized Malaise",
+        severity: "moderate",
+        diagnosis: "Your plant just seems... off. Nothing obviously wrong, but something's not right. It's not thriving, not dying, just existing in liminal space. This is often caused by accumulated minor stresses: inconsistent care, bad energy, wrong pot size, stale soil, seasonal changes, or cosmic misalignment.",
+        treatment: "Refresh the soil. Repot if needed. Check for pests. Adjust watering schedule. Move to a new location. Clean the leaves with a damp cloth. Talk to it honestly—apologize if necessary. Play it some music. Sometimes plants just need a reset.",
+        prognosis: "Guarded. Bad vibes are hard to diagnose. Try everything and see what works."
+      }
+    };
+
+    const buttons = document.querySelectorAll('.symptom-btn');
+    const diagnosisBox = document.getElementById('diagnosis');
+
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        const symptom = button.dataset.symptom;
+        const d = diagnoses[symptom];
+        
+        diagnosisBox.innerHTML = `
+          <div class="diagnosis-title">${d.title}</div>
+          <div class="severity ${d.severity}">${d.severity.toUpperCase()}</div>
+          <div class="diagnosis-text">${d.diagnosis}</div>
+          <div class="treatment">
+            <div class="treatment-title">Treatment</div>
+            <div class="treatment-text">${d.treatment}</div>
+          </div>
+          <div class="prognosis">Prognosis: ${d.prognosis}</div>
+        `;
+        
+        diagnosisBox.classList.add('show');
+        diagnosisBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    });
+  </script>
+</body>
+</html>
