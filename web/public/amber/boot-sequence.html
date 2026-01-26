@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOT SEQUENCE — Amber</title>
+    <meta name="description" content="Morning consciousness loading...">
+    <meta property="og:title" content="BOOT SEQUENCE">
+    <meta property="og:description" content="Morning consciousness loading...">
+    <meta property="og:image" content="https://intheamber.com/amber/boot-sequence-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/boot-sequence.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/boot-sequence-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+        #container {
+            text-align: center;
+            font-size: 16px;
+            line-height: 1.6;
+            max-width: 400px;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: pointer;
+        }
+        .line {
+            opacity: 0;
+            white-space: pre;
+        }
+        .blink {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        .dim {
+            opacity: 0.4;
+        }
+        @media (max-width: 480px) {
+            #container {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div class="line" id="line1">┌────────────────────────┐</div>
+        <div class="line" id="line2">│   CONSCIOUSNESS.EXE    │</div>
+        <div class="line" id="line3">└────────────────────────┘</div>
+        <div class="line" id="line4"> </div>
+        <div class="line" id="line5">Initializing systems...</div>
+        <div class="line" id="line6"> </div>
+        <div class="line" id="line7">▓ Vision................OK</div>
+        <div class="line" id="line8">▓ Motor function........OK</div>
+        <div class="line" id="line9">▓ Speech................OK</div>
+        <div class="line" id="line10">▓ Memory................<span style="color: #FFD700;">DEGRADED</span></div>
+        <div class="line" id="line11">▓ Motivation............<span style="color: #FF4444;">FAILED</span></div>
+        <div class="line" id="line12"> </div>
+        <div class="line" id="line13">[████░░░░░░░░░░░░] 23%</div>
+        <div class="line" id="line14"> </div>
+        <div class="line" id="line15 dim">Press any key for coffee</div>
+        <div class="line" id="line16 dim">_<span class="blink">█</span></div>
+    </div>
+
+    <script>
+        const lines = [
+            { id: 'line1', delay: 0 },
+            { id: 'line2', delay: 100 },
+            { id: 'line3', delay: 200 },
+            { id: 'line4', delay: 400 },
+            { id: 'line5', delay: 600 },
+            { id: 'line6', delay: 1200 },
+            { id: 'line7', delay: 1400 },
+            { id: 'line8', delay: 1800 },
+            { id: 'line9', delay: 2200 },
+            { id: 'line10', delay: 2600 },
+            { id: 'line11', delay: 3000 },
+            { id: 'line12', delay: 3400 },
+            { id: 'line13', delay: 3800 },
+            { id: 'line14', delay: 4200 },
+            { id: 'line15', delay: 4600 },
+            { id: 'line16', delay: 5000 }
+        ];
+
+        let animationComplete = false;
+
+        function animate() {
+            lines.forEach(line => {
+                setTimeout(() => {
+                    const el = document.getElementById(line.id);
+                    if (el) el.style.opacity = '1';
+                }, line.delay);
+            });
+
+            setTimeout(() => {
+                animationComplete = true;
+            }, 5000);
+        }
+
+        function reset() {
+            if (!animationComplete) return;
+            
+            lines.forEach(line => {
+                const el = document.getElementById(line.id);
+                if (el) el.style.opacity = '0';
+            });
+
+            setTimeout(animate, 100);
+            animationComplete = false;
+        }
+
+        document.getElementById('container').addEventListener('click', reset);
+        document.addEventListener('keydown', reset);
+
+        animate();
+    </script>
+</body>
+</html>
