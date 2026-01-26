@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&display=swap');
+
+    :root {
+      --accent: #2dd4bf;
+      --accent-glow: rgba(45, 212, 191, 0.4);
+      --bg: #0a0a0a;
+      --text: #ffffff;
+      --text-muted: rgba(255,255,255,0.5);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      background: var(--bg);
+      font-family: 'Space Grotesk', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Subtle grid - type-specific decoration */
+    .decoration {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(45, 212, 191, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45, 212, 191, 0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* Glow */
+    .glow {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      top: 50%;
+      left: 20%;
+      transform: translate(-50%, -50%);
+      filter: blur(80px);
+      opacity: 0.5;
+    }
+
+    /* Type-specific: floating code */
+    .code-float {
+      position: absolute;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      opacity: 0.15;
+      white-space: pre;
+    }
+
+    /* Content */
+    .content {
+      position: relative;
+      z-index: 10;
+      padding: 80px 100px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .category {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      background: rgba(45, 212, 191, 0.15);
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      color: var(--accent);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border-radius: 6px;
+      margin-bottom: 28px;
+    }
+
+    .title {
+      color: var(--text);
+      font-size: 64px;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      max-width: 700px;
+    }
+
+    .title span {
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-family: 'Inter', sans-serif;
+      color: var(--text-muted);
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1.5;
+      max-width: 550px;
+    }
+
+    .signature {
+      position: absolute;
+      bottom: 40px;
+      right: 60px;
+      font-family: 'Inter', sans-serif;
+      color: rgba(255, 255, 255, 0.25);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="decoration"></div>
+  <div class="glow"></div>
+
+  <div class="code-float" style="top: 60px; right: 80px;">const reality = await update();
+if (!reality.valid) {
+  patch(void);
+}</div>
+
+  <div class="code-float" style="bottom: 100px; right: 200px; opacity: 0.08;">// TODO: fix existence</div>
+
+  <div class="content">
+    <div class="category">⚙️ Invention</div>
+    <h1 class="title">System Update <span>Available</span></h1>
+    <p class="subtitle">A fake system update that installs consciousness drivers and patches the void.</p>
+  </div>
+
+  <div class="signature">— Amber</div>
+</body>
+</html>

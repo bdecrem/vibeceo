@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@500;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%);
+      font-family: 'Space Grotesk', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Playful blob shapes */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+    }
+
+    .blob-1 {
+      width: 300px;
+      height: 300px;
+      background: rgba(251, 146, 60, 0.3);
+      top: -80px;
+      right: 100px;
+      filter: blur(40px);
+    }
+
+    .blob-2 {
+      width: 250px;
+      height: 250px;
+      background: rgba(244, 63, 94, 0.2);
+      bottom: -60px;
+      left: -50px;
+      filter: blur(50px);
+    }
+
+    /* EMOJI EXPLOSION */
+    .emoji {
+      position: absolute;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+    }
+
+    /* Main content card */
+    .card {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 32px;
+      padding: 48px 64px;
+      box-shadow:
+        0 25px 80px rgba(0,0,0,0.12),
+        0 10px 30px rgba(0,0,0,0.08);
+      text-align: center;
+      z-index: 10;
+    }
+
+    .category {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 10px 20px;
+      border-radius: 50px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+    }
+
+    .mechanic {
+      color: #92400e;
+      font-size: 13px;
+      margin-bottom: 12px;
+      opacity: 0.6;
+    }
+
+    .title {
+      color: #1f2937;
+      font-size: 64px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-family: 'Inter', sans-serif;
+      color: #6b7280;
+      font-size: 18px;
+      line-height: 1.5;
+      max-width: 380px;
+      margin: 0 auto 24px;
+    }
+
+    .play-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
+      color: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 14px 32px;
+      border-radius: 50px;
+      box-shadow: 0 8px 25px rgba(244, 63, 94, 0.4);
+    }
+
+    .signature {
+      position: absolute;
+      bottom: 24px;
+      right: 40px;
+      font-family: 'Inter', sans-serif;
+      color: rgba(146, 64, 14, 0.5);
+      font-size: 14px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <!-- EMOJI PARTY -->
+  <div class="emoji" style="font-size: 80px; top: 30px; left: 40px; transform: rotate(-15deg);">🎮</div>
+  <div class="emoji" style="font-size: 90px; bottom: 20px; right: 30px; transform: rotate(10deg);">✨</div>
+  <div class="emoji" style="font-size: 70px; top: 50px; right: 180px; transform: rotate(5deg);">🌟</div>
+  <div class="emoji" style="font-size: 60px; bottom: 100px; left: 80px; transform: rotate(-8deg);">🎯</div>
+  <div class="emoji" style="font-size: 55px; top: 180px; left: 150px; transform: rotate(12deg);">🎪</div>
+  <div class="emoji" style="font-size: 50px; bottom: 180px; right: 120px; transform: rotate(-5deg);">🎲</div>
+  <div class="emoji" style="font-size: 45px; top: 120px; right: 80px;">⭐</div>
+  <div class="emoji" style="font-size: 40px; bottom: 60px; left: 250px; transform: rotate(8deg);">🎈</div>
+  <div class="emoji" style="font-size: 65px; top: 280px; left: 50px;">🎁</div>
+  <div class="emoji" style="font-size: 48px; top: 80px; left: 320px; transform: rotate(-10deg);">💫</div>
+  <div class="emoji" style="font-size: 52px; bottom: 140px; right: 280px;">🌈</div>
+  <div class="emoji" style="font-size: 44px; top: 200px; right: 40px; transform: rotate(15deg);">🎵</div>
+  <div class="emoji" style="font-size: 38px; bottom: 30px; left: 400px;">🍭</div>
+  <div class="emoji" style="font-size: 42px; top: 30px; right: 350px; transform: rotate(-12deg);">🎀</div>
+
+  <div class="card">
+    <div class="category">🎮 TOY</div>
+    <div class="mechanic">mechanic: drawing / trails</div>
+    <h1 class="title">TRACE</h1>
+    <p class="subtitle">Draw light, make constellations. Your finger traces become twinkling stars.</p>
+    <div class="play-btn">▶ TAP TO PLAY</div>
+  </div>
+
+  <div class="signature">— Amber</div>
+</body>
+</html>

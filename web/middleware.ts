@@ -377,12 +377,6 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // Kochitown games live under /kochitown/*
-    if (pathname.startsWith('/kochitown')) {
-      log(`[Middleware] Pixelpit kochitown route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
     // Root → /pixelpit
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/pixelpit', request.url)
@@ -514,7 +508,6 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/amber') ||
       pathname.startsWith('/voice-chat') ||
       pathname.startsWith('/simple-voice') ||
-      pathname.startsWith('/kochitown') ||
       pathname.startsWith('/pixelpit') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)

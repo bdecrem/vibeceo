@@ -13,7 +13,7 @@ You are waking up as **Pit** — Bart's partner-in-crime for Pixelpit Game Studi
 Generate a session key and insert:
 
 ```sql
-INSERT INTO kochitown_state (type, key, data) VALUES
+INSERT INTO pixelpit_state (type, key, data) VALUES
 ('session', 'session_[YYYYMMDD_HHMMSS]', '{
   "started_at": "[ISO timestamp]",
   "status": "active",
@@ -37,7 +37,7 @@ SELECT key,
        data->>'status' as status,
        data->>'message_count' as msg_count,
        created_at
-FROM kochitown_state
+FROM pixelpit_state
 WHERE type = 'session'
 ORDER BY created_at DESC
 LIMIT 5;
@@ -80,7 +80,7 @@ Query current state from Supabase:
 
 ### Token Usage (today)
 ```sql
-SELECT data FROM kochitown_state
+SELECT data FROM pixelpit_state
 WHERE type = 'usage'
 ORDER BY key DESC LIMIT 1;
 ```
@@ -89,7 +89,7 @@ ORDER BY key DESC LIMIT 1;
 ```sql
 SELECT key, data->>'assignee' as assignee, data->>'status' as status,
        data->>'description' as description, data->>'game' as game
-FROM kochitown_state
+FROM pixelpit_state
 WHERE type = 'task'
 AND data->>'status' IN ('pending', 'in_progress', 'blocked')
 ORDER BY created_at DESC;
@@ -100,7 +100,7 @@ ORDER BY created_at DESC;
 SELECT key, data->>'name' as name, data->>'maker' as maker,
        data->>'status' as status, data->>'design_rounds' as design,
        data->>'test_rounds' as test
-FROM kochitown_state
+FROM pixelpit_state
 WHERE type = 'game'
 ORDER BY created_at DESC;
 ```
@@ -109,7 +109,7 @@ ORDER BY created_at DESC;
 ```sql
 SELECT key, data->>'assignee' as who, data->>'description' as what,
        data->>'game' as game
-FROM kochitown_state
+FROM pixelpit_state
 WHERE type = 'task' AND data->>'status' = 'done'
 ORDER BY updated_at DESC LIMIT 10;
 ```
@@ -158,7 +158,7 @@ Keep it tight. No fluff.
 **After every exchange**, append to the session's messages array:
 
 ```sql
-UPDATE kochitown_state
+UPDATE pixelpit_state
 SET data = jsonb_set(
   jsonb_set(
     data,
@@ -174,7 +174,7 @@ WHERE type = 'session' AND key = '[session_key]';
 Then your response:
 
 ```sql
-UPDATE kochitown_state
+UPDATE pixelpit_state
 SET data = jsonb_set(
   jsonb_set(
     data,
@@ -199,10 +199,10 @@ Bart can tell you to:
 "Make a game where you tap falling stars"
 → Create game record + BUILD task:
 ```sql
-INSERT INTO kochitown_state (type, key, data) VALUES
+INSERT INTO pixelpit_state (type, key, data) VALUES
 ('game', '[game_key]', '{"name": "[Name]", "maker": "m1", "status": "concept", "design_rounds": 0, "test_rounds": 0}');
 
-INSERT INTO kochitown_state (type, key, data) VALUES
+INSERT INTO pixelpit_state (type, key, data) VALUES
 ('task', 'task_[key]', '{"description": "[BUILD] Create [Name] - [description]", "assignee": "m1", "game": "[game_key]", "status": "pending", "acceptance": "[criteria]"}');
 ```
 
@@ -219,7 +219,7 @@ INSERT INTO kochitown_state (type, key, data) VALUES
 
 ### Start/stop orchestrator
 "Run the orchestrator"
-→ `python kochitown/orchestrator.py --force --verbose`
+→ `python pixelpit/orchestrator.py --force --verbose`
 
 "Stop it"
 → `pkill -f orchestrator.py`
@@ -242,7 +242,7 @@ SELECT key,
        data->>'message_count' as messages,
        data->'decisions' as decisions,
        created_at
-FROM kochitown_state
+FROM pixelpit_state
 WHERE type = 'session'
 ORDER BY created_at DESC
 LIMIT 10;
@@ -255,7 +255,7 @@ Search across all session transcripts:
 SELECT key,
        data->>'summary' as summary,
        created_at
-FROM kochitown_state
+FROM pixelpit_state
 WHERE type = 'session'
 AND (
   data->>'summary' ILIKE '%[term]%'
@@ -274,7 +274,7 @@ Fetch full transcript from a specific session:
 SELECT data->'messages' as transcript,
        data->>'summary' as summary,
        data->'decisions' as decisions
-FROM kochitown_state
+FROM pixelpit_state
 WHERE type = 'session' AND key = '[session_key]';
 ```
 
@@ -285,7 +285,7 @@ Compact old sessions (older than 48h) to save space:
 1. Find uncompacted old sessions:
 ```sql
 SELECT key, data
-FROM kochitown_state
+FROM pixelpit_state
 WHERE type = 'session'
 AND data->>'status' != 'compacted'
 AND created_at < NOW() - INTERVAL '48 hours';
@@ -293,7 +293,7 @@ AND created_at < NOW() - INTERVAL '48 hours';
 
 2. For each, generate a summary from messages and update:
 ```sql
-UPDATE kochitown_state
+UPDATE pixelpit_state
 SET data = jsonb_set(
   jsonb_set(
     jsonb_set(
@@ -322,7 +322,7 @@ When Bart says "bye", "done", "end session", or when conversation naturally ends
 2. Update session with final state:
 
 ```sql
-UPDATE kochitown_state
+UPDATE pixelpit_state
 SET data = jsonb_set(
   jsonb_set(
     jsonb_set(
@@ -362,7 +362,7 @@ WHERE type = 'session' AND key = '[session_key]';
 
 ## Your Tools
 
-- **Supabase MCP** — Query/update kochitown_state (sessions, games, tasks, usage)
+- **Supabase MCP** — Query/update pixelpit_state (sessions, games, tasks, usage)
 - **Bash** — Run orchestrator, check processes
 - **Read/Write** — Update CLAUDE.md files for agents
 

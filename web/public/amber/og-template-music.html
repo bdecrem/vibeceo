@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 1200px;
+      height: 630px;
+      background: #0a0a0a;
+      font-family: 'Space Grotesk', sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Hot neon glows */
+    .glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+    }
+
+    .glow-1 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(255, 0, 150, 0.5) 0%, transparent 70%);
+      top: 30%;
+      left: 10%;
+    }
+
+    .glow-2 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+      bottom: 0;
+      right: 20%;
+    }
+
+    .glow-3 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%);
+      top: 10%;
+      right: 10%;
+    }
+
+    /* Waveform bars */
+    .waveform {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 200px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 4px;
+      padding: 0 60px;
+    }
+
+    .bar {
+      width: 12px;
+      background: linear-gradient(to top, #ff0096 0%, #8b5cf6 50%, #06b6d4 100%);
+      border-radius: 6px 6px 0 0;
+      opacity: 0.6;
+    }
+
+    /* BPM */
+    .bpm {
+      position: absolute;
+      top: 50px;
+      right: 70px;
+      text-align: right;
+    }
+
+    .bpm-value {
+      font-size: 72px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ff0096 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+    }
+
+    .bpm-label {
+      font-size: 14px;
+      color: #ff0096;
+      letter-spacing: 3px;
+      opacity: 0.8;
+    }
+
+    /* Content */
+    .content {
+      position: relative;
+      z-index: 10;
+      padding: 80px 100px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .category {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
+      background: rgba(255, 0, 150, 0.2);
+      border: 1px solid rgba(255, 0, 150, 0.5);
+      color: #ff0096;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border-radius: 6px;
+      margin-bottom: 28px;
+    }
+
+    .title {
+      color: #ffffff;
+      font-size: 80px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 20px;
+      text-shadow: 0 0 60px rgba(255, 0, 150, 0.5);
+    }
+
+    .title span {
+      background: linear-gradient(135deg, #ff0096 0%, #8b5cf6 50%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-family: 'Inter', sans-serif;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 20px;
+      line-height: 1.5;
+      max-width: 450px;
+    }
+
+    .signature {
+      position: absolute;
+      bottom: 40px;
+      right: 60px;
+      font-family: 'Inter', sans-serif;
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+  <div class="glow glow-3"></div>
+
+  <div class="waveform">
+    <div class="bar" style="height: 40px;"></div>
+    <div class="bar" style="height: 80px;"></div>
+    <div class="bar" style="height: 120px;"></div>
+    <div class="bar" style="height: 60px;"></div>
+    <div class="bar" style="height: 160px;"></div>
+    <div class="bar" style="height: 100px;"></div>
+    <div class="bar" style="height: 180px;"></div>
+    <div class="bar" style="height: 70px;"></div>
+    <div class="bar" style="height: 140px;"></div>
+    <div class="bar" style="height: 90px;"></div>
+    <div class="bar" style="height: 170px;"></div>
+    <div class="bar" style="height: 50px;"></div>
+    <div class="bar" style="height: 130px;"></div>
+    <div class="bar" style="height: 110px;"></div>
+    <div class="bar" style="height: 150px;"></div>
+    <div class="bar" style="height: 65px;"></div>
+    <div class="bar" style="height: 125px;"></div>
+    <div class="bar" style="height: 85px;"></div>
+    <div class="bar" style="height: 145px;"></div>
+    <div class="bar" style="height: 55px;"></div>
+    <div class="bar" style="height: 115px;"></div>
+    <div class="bar" style="height: 95px;"></div>
+    <div class="bar" style="height: 165px;"></div>
+    <div class="bar" style="height: 45px;"></div>
+    <div class="bar" style="height: 135px;"></div>
+    <div class="bar" style="height: 75px;"></div>
+    <div class="bar" style="height: 155px;"></div>
+  </div>
+
+  <div class="bpm">
+    <div class="bpm-value">128</div>
+    <div class="bpm-label">BPM</div>
+  </div>
+
+  <div class="content">
+    <div class="category">🎹 Music</div>
+    <h1 class="title">ACID <span>TRIP</span></h1>
+    <p class="subtitle">TB-303 synthesizer with particle visualization. Tap to trigger acid lines.</p>
+  </div>
+
+  <div class="signature">— Amber</div>
+</body>
+</html>

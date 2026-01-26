@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1200px;
+      height: 630px;
+      background: linear-gradient(180deg, #1a1a1a 0%, #0D0D0D 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+    }
+    .container {
+      text-align: center;
+      padding: 40px;
+    }
+    .title {
+      font-size: 52px;
+      color: #9B8ACB;
+      font-weight: bold;
+      letter-spacing: 4px;
+      margin-bottom: 30px;
+      text-shadow: 0 0 30px rgba(155, 138, 203, 0.5);
+    }
+    .swords {
+      color: #D4A574;
+      font-size: 40px;
+    }
+    .boss-card {
+      background: #000;
+      border: 3px solid #2D9596;
+      padding: 30px 50px;
+      margin: 30px auto;
+      max-width: 700px;
+      box-shadow: 0 0 40px rgba(45, 149, 150, 0.3);
+    }
+    .boss-name {
+      font-size: 36px;
+      color: #D4A574;
+      letter-spacing: 3px;
+      margin-bottom: 15px;
+    }
+    .boss-desc {
+      font-size: 18px;
+      color: #888;
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+    .hp-bar {
+      background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%);
+      height: 24px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .hp-text {
+      color: #fff;
+      font-size: 16px;
+    }
+    .enemies {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 30px;
+    }
+    .enemy {
+      background: rgba(212, 165, 116, 0.1);
+      border: 2px solid #D4A574;
+      padding: 15px 25px;
+      font-size: 14px;
+      color: #D4A574;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">
+      <span class="swords">⚔</span> LIFE ADMIN BOSS FIGHT <span class="swords">⚔</span>
+    </div>
+    <div class="boss-card">
+      <div class="boss-name">THE LAUNDRY MOUNTAIN</div>
+      <div class="boss-desc">A towering heap of unwashed despair. It knows your weaknesses.</div>
+      <div class="hp-bar"></div>
+      <div class="hp-text">HP: 100 / 100</div>
+    </div>
+    <div class="enemies">
+      <div class="enemy">EMAIL HYDRA</div>
+      <div class="enemy">DENTIST APPOINTMENT</div>
+      <div class="enemy">TAX DEADLINE</div>
+    </div>
+  </div>
+</body>
+</html>
