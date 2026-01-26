@@ -1112,5 +1112,38 @@ export const TOOLS = [
       properties: {},
       required: []
     }
+  },
+  // === JP9000 RIG MANAGEMENT ===
+  {
+    name: "save_jp9000_rig",
+    description: "Save the current JP9000 rack configuration as a named rig for later recall.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Name for the rig (e.g., 'dark-bass', 'plucky-lead')" },
+        description: { type: "string", description: "Optional description of the sound/purpose" }
+      },
+      required: ["name"]
+    }
+  },
+  {
+    name: "load_jp9000_rig",
+    description: "Load a previously saved JP9000 rig by name. Replaces the current rack configuration.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Name of the rig to load" }
+      },
+      required: ["name"]
+    }
+  },
+  {
+    name: "list_jp9000_rigs",
+    description: "List all saved JP9000 rigs available to load.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
   }
 ];

@@ -154,6 +154,7 @@ export const SLASH_COMMANDS = [
   { name: '/jb01', description: 'JB01 drum machine guide' },
   { name: '/jb200', description: 'JB200 bass synth guide' },
   { name: '/jb202', description: 'JB202 modular bass synth guide (custom DSP)' },
+  { name: '/jp9000', description: 'JP9000 modular synth guide (patch-based)' },
   { name: '/delay', description: 'Delay effect guide' },
   { name: '/status', description: 'Show current session state' },
   { name: '/clear', description: 'Clear session (stay in project)' },
@@ -572,6 +573,8 @@ Slash Commands
   /mix          Show mix overview
   /jb01         JB01 drum machine guide (kochi.to/jb01)
   /jb200        JB200 bass synth guide (kochi.to/jb200)
+  /jb202        JB202 bass synth guide (custom DSP)
+  /jp9000       JP9000 modular synth guide
   /delay        Delay effect guide
   /status       Show current session state
   /clear        Clear session (stay in project)
@@ -926,4 +929,69 @@ DELAY — Echo Effect
   REMOVING
   > remove_effect({ target: 'jb01.ch', effect: 'delay' })
   > "remove the delay from the hats"
+`;
+
+export const JP9000_GUIDE = `
+JP9000 — Modular Synthesizer
+
+  A text-controllable virtual modular synth.
+  Build patches by adding modules and connecting them.
+
+  WORKFLOW
+  1. add_jp9000({ preset: 'basic' })  Start with preset or empty
+  2. add_module({ type: 'osc-saw' })  Add modules
+  3. connect_modules({ from, to })    Patch cables
+  4. set_jp9000_output({ module })    Set output
+  5. set_trigger_modules({ modules }) What responds to pattern
+  6. add_jp9000_pattern({ pattern })  Add notes
+  7. render
+
+  PRESETS
+  basic     osc -> filter -> vca (subtractive)
+  pluck     Karplus-Strong string -> filter -> drive
+  dualBass  dual oscs -> mixer -> filter -> vca -> drive
+
+  MODULES
+  Sound Sources:
+    osc-saw       Sawtooth oscillator
+    osc-square    Square oscillator (with pulse width)
+    osc-triangle  Triangle oscillator
+    string        Karplus-Strong physical modeling
+
+  Filters:
+    filter-lp24   24dB/oct lowpass (cutoff, resonance, envAmount)
+    filter-biquad Biquad filter (frequency, Q, type)
+
+  Modulation:
+    env-adsr      ADSR envelope (attack, decay, sustain, release)
+
+  Utilities:
+    vca           Voltage-controlled amp (gain)
+    mixer         4-channel mixer (gain1-4)
+
+  Effects:
+    drive         Saturation (amount, type: 1=soft, 2=tube, 3=hard)
+
+  PORT NAMING
+  moduleId.portName — e.g., osc1.audio, env1.cv, filter1.cutoffCV
+
+  STRING MODULE (Karplus-Strong)
+  The killer module. Physical modeling synthesis.
+    frequency      Pitch (or use note names)
+    decay          How long it rings (0-100)
+    brightness     High frequency content (0-100)
+    pluckPosition  Where you pluck (0-100)
+
+  RIG MANAGEMENT
+  > save_jp9000_rig({ name: 'dark-bass' })
+  > load_jp9000_rig({ name: 'dark-bass' })
+  > list_jp9000_rigs()
+  Rigs saved to ~/Documents/Jambot/rigs/
+
+  EXAMPLES
+  > "build a jp9000 with the pluck preset"
+  > "add a square oscillator"
+  > "connect osc1 to the filter"
+  > "tweak the string decay to 80"
+  > "save this as fat-pluck"
 `;

@@ -15,6 +15,8 @@ import {
   CHANGELOG_TEXT,
   JB01_GUIDE,
   JB200_GUIDE,
+  JB202_GUIDE,
+  JP9000_GUIDE,
   DELAY_GUIDE,
   getApiKey,
   saveApiKey,
@@ -705,6 +707,14 @@ function App() {
 
       case '/delay':
         addMessage('info', DELAY_GUIDE);
+        break;
+
+      case '/jb202':
+        addMessage('info', JB202_GUIDE);
+        break;
+
+      case '/jp9000':
+        addMessage('info', JP9000_GUIDE);
         break;
 
       case '/export':

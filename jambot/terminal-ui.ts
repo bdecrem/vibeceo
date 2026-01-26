@@ -13,6 +13,8 @@ import {
   CHANGELOG_TEXT,
   JB01_GUIDE,
   JB200_GUIDE,
+  JB202_GUIDE,
+  JP9000_GUIDE,
   DELAY_GUIDE,
   getApiKey,
   saveApiKey,
@@ -815,6 +817,8 @@ class TerminalUI {
       case '/changelog': this.printInfo(CHANGELOG_TEXT); break;
       case '/jb01': this.printInfo(JB01_GUIDE); break;
       case '/jb200': this.printInfo(JB200_GUIDE); break;
+      case '/jb202': this.printInfo(JB202_GUIDE); break;
+      case '/jp9000': this.printInfo(JP9000_GUIDE); break;
       case '/delay': this.printInfo(DELAY_GUIDE); break;
       case '/export': this.exportCurrentProject(); break;
       default: this.printSystem(`Unknown command: ${cmd}`);

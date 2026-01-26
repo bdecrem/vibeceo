@@ -58,8 +58,8 @@ OPERATING_HOURS = {
 # How often to check for work (seconds)
 TICK_INTERVAL = 30
 
-# Max concurrent agent workers
-MAX_WORKERS = 3
+# Max concurrent agent workers (parallel-safe via closure-based MCP tools)
+MAX_WORKERS = 2
 
 # Model to use for agents (Haiku for speed + cost)
 AGENT_MODEL = "claude-3-5-haiku-20241022"
@@ -72,6 +72,37 @@ AGENT_TOOLS = [
     "Glob",
     "Grep",
 ]
+
+def track_tokens(supabase: Client, input_tokens: int, output_tokens: int):
+    """Track token usage for the day in Supabase."""
+    today = datetime.now(timezone.utc).date().isoformat()
+    key = f"usage_{today}"
+
+    try:
+        # Get or create today's usage record
+        result = supabase.table("kochitown_state").select("data").eq("type", "usage").eq("key", key).execute()
+
+        if result.data:
+            data = result.data[0]["data"]
+            data["input_tokens"] = data.get("input_tokens", 0) + input_tokens
+            data["output_tokens"] = data.get("output_tokens", 0) + output_tokens
+            # Haiku pricing: $0.80/1M input, $4.00/1M output
+            data["total_cost_usd"] = (data["input_tokens"] * 0.80 / 1_000_000) + (data["output_tokens"] * 4.00 / 1_000_000)
+            supabase.table("kochitown_state").update({"data": data}).eq("type", "usage").eq("key", key).execute()
+        else:
+            cost = (input_tokens * 0.80 / 1_000_000) + (output_tokens * 4.00 / 1_000_000)
+            supabase.table("kochitown_state").insert({
+                "type": "usage",
+                "key": key,
+                "data": {
+                    "date": today,
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "total_cost_usd": cost
+                }
+            }).execute()
+    except Exception as e:
+        print(f"[WARN] Failed to track tokens: {e}")
 
 # ============================================================================
 # Database
@@ -224,105 +255,147 @@ def get_agent_persona(supabase: Client, agent_id: str) -> Optional[Dict[str, Any
 
 
 # ============================================================================
-# Agent Tools (MCP)
+# Agent Tools (MCP) - Factory pattern for parallel execution
 # ============================================================================
 
-# Global supabase client for tools (set before running agent)
-_supabase_client: Optional[Client] = None
-_current_game: Optional[str] = None
-_current_agent: Optional[str] = None
+def create_pixelpit_mcp_server(supabase: Client, game: str, agent: str, round_num: int):
+    """
+    Create MCP server with context baked in via closures.
+    Each agent gets its own isolated context - no globals, no race conditions.
+    """
 
+    @tool(
+        "update_game_status",
+        "Update a game's status. Use when approving a game after QA.",
+        {"game": str, "status": str}
+    )
+    async def update_game_status_tool(args: dict) -> dict:
+        """Update game status in Supabase. Valid statuses: concept, prototype, playable, launched, dead"""
+        game_key = args.get("game", "").strip() or game
+        status = args.get("status", "").strip()
 
-@tool(
-    "update_game_status",
-    "Update a game's status. Use when approving a game after QA.",
-    {"game": str, "status": str}
-)
-async def update_game_status_tool(args: dict) -> dict:
-    """Update game status in Supabase. Valid statuses: concept, prototype, playable, launched, dead"""
-    global _supabase_client
+        valid_statuses = ["concept", "prototype", "playable", "testing", "launched", "dead"]
+        if status not in valid_statuses:
+            return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": f"Invalid status. Use: {valid_statuses}"})}]}
 
-    game = args.get("game", "").strip()
-    status = args.get("status", "").strip()
+        if not game_key:
+            return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": "game required"})}]}
 
-    valid_statuses = ["concept", "prototype", "playable", "testing", "launched", "dead"]
-    if status not in valid_statuses:
-        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": f"Invalid status. Use: {valid_statuses}"})}]}
-
-    if not game or not _supabase_client:
-        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": "game required"})}]}
-
-    try:
-        # Get current game data
-        result = _supabase_client.table("kochitown_state").select("data").eq("type", "game").eq("key", game).single().execute()
-        data = result.data["data"]
-        data["status"] = status
-
-        # Update
-        _supabase_client.table("kochitown_state").update({"data": data}).eq("type", "game").eq("key", game).execute()
-        return {"content": [{"type": "text", "text": json.dumps({"success": True, "game": game, "status": status})}]}
-    except Exception as e:
-        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": str(e)})}]}
-
-
-_current_round: int = 0  # Track fix rounds for current game
-
-@tool(
-    "create_task",
-    "Create a follow-up task for another agent. Use this after completing BUILD tasks to request testing.",
-    {"assignee": str, "description": str}
-)
-async def create_task_tool(args: dict) -> dict:
-    """Create a task in Supabase. Auto-routes to mayor after 2 QA rounds."""
-    global _supabase_client, _current_game, _current_agent, _current_round
-
-    assignee = args.get("assignee", "").strip().lower()
-    description = args.get("description", "").strip()
-
-    if not assignee:
-        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": "assignee required"})}]}
-    if not description:
-        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": "description required"})}]}
-    if not _supabase_client:
-        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": "no database connection"})}]}
-
-    # Track rounds: if this is a TEST task and we've had 2+ fix rounds, route to mayor
-    is_test_task = assignee in ["mobile_tester", "desktop_tester"] or "[TEST]" in description.upper()
-    is_fix_task = "[FIX]" in description.upper()
-
-    # If tester is creating a FIX task, increment round
-    new_round = _current_round
-    if is_fix_task and _current_agent in ["mobile_tester", "desktop_tester"]:
-        new_round = _current_round + 1
-
-    # If builder is creating a TEST task after round 2, route to mayor instead
-    if is_test_task and _current_round >= 2:
-        assignee = "mayor"
-        description = f"[REVIEW] {_current_game} ready after {_current_round} fix rounds. Approve for launch or kill."
-
-    try:
-        task_key = create_task(
-            _supabase_client,
-            description,
-            assignee,
-            game=_current_game,
-            created_by=_current_agent or "agent",
-        )
-
-        # Store round in task data
-        if new_round > 0 or _current_round > 0:
-            result = _supabase_client.table("kochitown_state").select("data").eq("type", "task").eq("key", task_key).single().execute()
+        try:
+            result = supabase.table("kochitown_state").select("data").eq("type", "game").eq("key", game_key).single().execute()
             data = result.data["data"]
-            data["round"] = new_round
-            _supabase_client.table("kochitown_state").update({"data": data}).eq("type", "task").eq("key", task_key).execute()
+            data["status"] = status
+            supabase.table("kochitown_state").update({"data": data}).eq("type", "game").eq("key", game_key).execute()
+            return {"content": [{"type": "text", "text": json.dumps({"success": True, "game": game_key, "status": status})}]}
+        except Exception as e:
+            return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": str(e)})}]}
 
-        return {"content": [{"type": "text", "text": json.dumps({"success": True, "task_key": task_key, "routed_to": assignee, "round": new_round})}]}
-    except Exception as e:
-        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": str(e)})}]}
+    @tool(
+        "create_task",
+        "Create a follow-up task for another agent.",
+        {"assignee": str, "description": str}
+    )
+    async def create_task_tool(args: dict) -> dict:
+        """Create a task. Enforces the flow: BUILD → DESIGN (2 fix max) → TEST (2 fix max) → DONE."""
+        # Context from closure - no globals
+        current_game = game
+        current_agent = agent
+        current_round = round_num
 
+        assignee = args.get("assignee", "").strip().lower()
+        description = args.get("description", "").strip()
 
-def create_pixelpit_mcp_server():
-    """Create MCP server with Pixelpit tools."""
+        if not assignee:
+            return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": "assignee required"})}]}
+        if not description:
+            return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": "description required"})}]}
+
+        # Get game data for round tracking
+        game_data = {}
+        if current_game:
+            try:
+                result = supabase.table("kochitown_state").select("data").eq("type", "game").eq("key", current_game).single().execute()
+                if result.data:
+                    game_data = result.data["data"]
+            except:
+                pass
+
+        # BLOCK: If game is already playable, no more tasks
+        if game_data.get("status") == "playable":
+            return {"content": [{"type": "text", "text": json.dumps({
+                "success": False,
+                "blocked": True,
+                "message": f"Game {current_game} is PLAYABLE. Done!"
+            })}]}
+
+        # FLOW ENFORCEMENT
+        is_fix_task = "[FIX]" in description.upper()
+        design_rounds = game_data.get("design_rounds", 0)
+        test_rounds = game_data.get("test_rounds", 0)
+
+        # Creative sending back to coder - only 2 times allowed
+        if current_agent == "creative" and is_fix_task:
+            if design_rounds >= 2:
+                return {"content": [{"type": "text", "text": json.dumps({
+                    "success": False,
+                    "blocked": True,
+                    "message": "Design already sent 2 fixes. Must approve now. Use update_game_status to approve."
+                })}]}
+            game_data["design_rounds"] = design_rounds + 1
+            supabase.table("kochitown_state").update({"data": game_data}).eq("type", "game").eq("key", current_game).execute()
+
+        # Tester sending back to coder - only 2 times allowed
+        if current_agent in ["mobile_tester", "desktop_tester"] and is_fix_task:
+            if test_rounds >= 2:
+                return {"content": [{"type": "text", "text": json.dumps({
+                    "success": False,
+                    "blocked": True,
+                    "message": "QA already sent 2 fixes. Must approve now. Use update_game_status to mark playable."
+                })}]}
+            game_data["test_rounds"] = test_rounds + 1
+            supabase.table("kochitown_state").update({"data": game_data}).eq("type", "game").eq("key", current_game).execute()
+
+        is_test_task = assignee in ["mobile_tester", "desktop_tester"] or "[TEST]" in description.upper()
+
+        # If tester is creating a FIX task, increment round
+        new_round = current_round
+        if is_fix_task and current_agent in ["mobile_tester", "desktop_tester"]:
+            new_round = current_round + 1
+
+        # If builder is creating a TEST task after round 2, auto-complete
+        if is_test_task and current_round >= 2:
+            try:
+                result = supabase.table("kochitown_state").select("data").eq("type", "game").eq("key", current_game).single().execute()
+                gd = result.data["data"]
+                gd["status"] = "playable"
+                supabase.table("kochitown_state").update({"data": gd}).eq("type", "game").eq("key", current_game).execute()
+            except:
+                pass
+            return {"content": [{"type": "text", "text": json.dumps({
+                "success": True,
+                "auto_completed": True,
+                "message": f"Game {current_game} auto-approved after {current_round} rounds. Marked as playable."
+            })}]}
+
+        try:
+            task_key = create_task(
+                supabase,
+                description,
+                assignee,
+                game=current_game,
+                created_by=current_agent or "agent",
+            )
+
+            if new_round > 0 or current_round > 0:
+                result = supabase.table("kochitown_state").select("data").eq("type", "task").eq("key", task_key).single().execute()
+                data = result.data["data"]
+                data["round"] = new_round
+                supabase.table("kochitown_state").update({"data": data}).eq("type", "task").eq("key", task_key).execute()
+
+            return {"content": [{"type": "text", "text": json.dumps({"success": True, "task_key": task_key, "routed_to": assignee, "round": new_round})}]}
+        except Exception as e:
+            return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": str(e)})}]}
+
     return create_sdk_mcp_server(
         name="pixelpit",
         version="1.0.0",
@@ -380,24 +453,21 @@ async def run_agent(agent_id: str, task: Dict[str, Any], supabase: Client, verbo
       - new_tasks: list of task dicts to create
       - files_written: list of files the agent created/modified
     """
-    global _supabase_client, _current_game, _current_agent, _current_round
+    try:
+        # Context for this agent (passed to MCP server factory, no globals)
+        current_game = task.get("game")
+        current_round = task.get("round", 0)
 
-    # Set globals for MCP tools
-    _supabase_client = supabase
-    _current_game = task.get("game")
-    _current_agent = agent_id
-    _current_round = task.get("round", 0)
+        # Load persona
+        persona = load_agent_prompt(agent_id)
 
-    # Load persona
-    persona = load_agent_prompt(agent_id)
+        # Determine working directory for the game
+        game_id = task.get("game") or "scratch"
+        game_path = GAMES_OUTPUT_PATH / game_id
+        game_path.mkdir(parents=True, exist_ok=True)
 
-    # Determine working directory for the game
-    game_id = task.get("game") or "scratch"
-    game_path = GAMES_OUTPUT_PATH / game_id
-    game_path.mkdir(parents=True, exist_ok=True)
-
-    # Build the prompt
-    prompt = f"""You are an agent in the Pixelpit Game Studio. Here is your persona and role:
+        # Build the prompt
+        prompt = f"""You are an agent in the Pixelpit Game Studio. Here is your persona and role:
 
 {persona}
 
@@ -423,17 +493,14 @@ When finished, output your status:
 
 ## REQUIRED: Follow-up Tasks
 
-After completing a [BUILD] task, you MUST use the create_task tool:
+**Flow: BUILD → DESIGN → TEST → DONE**
+
+After completing a [BUILD] or [FIX] task, you MUST use the create_task tool to send to design review:
 ```
-create_task(assignee="mobile_tester", description="[TEST] Test [game name] on mobile and desktop")
+create_task(assignee="creative", description="[DESIGN] Review [game name] for pixel art style, colors, typography")
 ```
 
-After completing a [TEST] task with bugs found:
-```
-create_task(assignee="m1", description="[FIX] Fix [specific bug description]")
-```
-
-Valid assignees: m1, m2, m3, m4, m5, mobile_tester, desktop_tester
+Valid assignees: m1, creative, mobile_tester
 
 ## Technical Guidelines
 
@@ -442,27 +509,30 @@ Valid assignees: m1, m2, m3, m4, m5, mobile_tester, desktop_tester
 - Single file games: put everything in page.tsx unless it gets too large
 - Use HTML5 Canvas or pure React - no external game engines
 - Aim for 60fps
+- For pixel fonts, use Google Fonts (Press_Start_2P from next/font/google)
+- NEVER use localFont or import font files - they don't exist
 
 Now execute the task. Use the Write/Edit tools to create the actual game code.
 """
 
-    # Create MCP server with Pixelpit tools (create_task)
-    pixelpit_server = create_pixelpit_mcp_server()
+        # Create MCP server with context baked in (no globals, parallel-safe)
+        pixelpit_server = create_pixelpit_mcp_server(supabase, current_game, agent_id, current_round)
 
-    # Configure agent with file write capabilities + Pixelpit tools
-    options = ClaudeAgentOptions(
-        model=AGENT_MODEL,
-        permission_mode="acceptEdits",  # Auto-accept file writes
-        mcp_servers={"pixelpit": pixelpit_server},
-        allowed_tools=AGENT_TOOLS + ["mcp__pixelpit__create_task", "mcp__pixelpit__update_game_status"],
-        cwd=str(REPO_ROOT),  # Work from repo root so paths resolve correctly
-    )
+        # Configure agent with file write capabilities + Pixelpit tools
+        options = ClaudeAgentOptions(
+            model=AGENT_MODEL,
+            permission_mode="acceptEdits",  # Auto-accept file writes
+            mcp_servers={"pixelpit": pixelpit_server},
+            allowed_tools=AGENT_TOOLS + ["mcp__pixelpit__create_task", "mcp__pixelpit__update_game_status"],
+            cwd=str(REPO_ROOT),  # Work from repo root so paths resolve correctly
+        )
 
-    result_text = ""
-    files_written = []
-    tool_calls = 0
+        result_text = ""
+        files_written = []
+        tool_calls = 0
+        input_tokens = 0
+        output_tokens = 0
 
-    try:
         async with ClaudeSDKClient(options=options) as client:
             await client.query(prompt)
 
@@ -471,6 +541,19 @@ Now execute the task. Use the Write/Edit tools to create the actual game code.
 
                 if verbose:
                     print(f"  [{agent_id}] {msg_type}")
+
+                # Track token usage from ResultMessage (final message)
+                if msg_type == "ResultMessage":
+                    usage = getattr(message, "usage", None)
+                    if usage:
+                        if isinstance(usage, dict):
+                            input_tokens = usage.get("input_tokens", 0)
+                            output_tokens = usage.get("output_tokens", 0)
+                        else:
+                            input_tokens = getattr(usage, "input_tokens", 0)
+                            output_tokens = getattr(usage, "output_tokens", 0)
+                        if verbose:
+                            print(f"  [{agent_id}] Usage: {input_tokens} in / {output_tokens} out")
 
                 content = getattr(message, "content", None)
                 if isinstance(content, list):
@@ -525,6 +608,8 @@ Now execute the task. Use the Write/Edit tools to create the actual game code.
             "new_tasks": new_tasks,
             "files_written": files_written,
             "tool_calls": tool_calls,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
         }
 
     except Exception as e:
@@ -536,6 +621,8 @@ Now execute the task. Use the Write/Edit tools to create the actual game code.
             "new_tasks": [],
             "files_written": [],
             "tool_calls": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
         }
 
 
@@ -611,6 +698,13 @@ async def tick(supabase: Client, verbose: bool = False):
             block_task(supabase, task["key"], f"Exception: {str(result)}")
             print(f"[EXCEPTION] {agent_id} on {task['key']}: {result}")
             continue
+
+        # Track token usage
+        input_tokens = result.get("input_tokens", 0)
+        output_tokens = result.get("output_tokens", 0)
+        if input_tokens > 0 or output_tokens > 0:
+            track_tokens(supabase, input_tokens, output_tokens)
+            print(f"[TOKENS] {agent_id}: {input_tokens:,} in / {output_tokens:,} out")
 
         if result["success"]:
             files_info = f" (wrote {len(result.get('files_written', []))} files)" if result.get('files_written') else ""

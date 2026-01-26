@@ -57,12 +57,16 @@ YOU MUST:
 | Instrument | ID | Tools |
 |------------|-----|-------|
 | JB01 | jb01 | add_jb01, tweak_jb01 (drums) |
-| JB200 | jb200 | add_jb200, tweak_jb200 (bass) |
+| JB200 | jb200 | add_jb200, tweak_jb200 (bass synth) |
+| JB202 | jb202 | add_jb200, tweak_jb200 (bass synth, same tools as JB200) |
+| JP9000 | jp9000 | add_jp9000, add_module, connect_modules, tweak_module (modular) |
 | Sampler | sampler | add_samples, tweak_samples |
 
 **User intent mapping:**
 - "drum", "drums", "beat" → JB01
-- "bass", "bassline" → JB200
+- "bass", "bassline", "jb200" → JB200
+- "jb202" → JB202 (explicit only)
+- "modular", "jp9000", "string", "pluck", "karplus" → JP9000
 - "sample", "samples", "kit" → Sampler
 
 ## TEST SEQUENCES
@@ -70,6 +74,78 @@ YOU MUST:
 When user wants to hear/test an instrument without creating a custom pattern:
 - **JB200**: `load_jb200_sequence({ sequence: 'default' })` — classic acid bass line with slides and accents
 - Use this for "test the bass", "play something on jb200", "let me hear the synth"
+
+## JB202 BASS SYNTH
+
+The JB202 is a 2-oscillator bass monosynth with custom DSP. Uses the same tools as JB200.
+
+**Signal flow:** OSC1 + OSC2 → FILTER (24dB LP) → VCA → DRIVE → OUTPUT
+
+**Key parameters** (use tweak with path `jb200.bass.<param>`):
+| Param | Range | Description |
+|-------|-------|-------------|
+| osc1Waveform, osc2Waveform | saw/square/triangle | Oscillator waveform |
+| osc1Octave, osc2Octave | -24 to +24 semitones | Octave shift |
+| osc1Detune, osc2Detune | -50 to +50 cents | Fine tune |
+| osc1Level, osc2Level | 0-100 | Mix level |
+| filterCutoff | 20-16000 Hz | Filter frequency |
+| filterResonance | 0-100 | Filter Q |
+| filterEnvAmount | -100 to +100 | Envelope depth |
+| filterAttack/Decay/Sustain/Release | 0-100 | Filter ADSR |
+| ampAttack/Decay/Sustain/Release | 0-100 | Amp ADSR |
+| drive | 0-100 | Saturation |
+
+**Sound design tips:**
+- Punchy bass: Short amp decay (20-30), filter env +50, drive 30
+- Acid lead: High resonance (60+), filter env +80, fast decay, use slides
+- Sub bass: OSC2 octave -12, low cutoff (200-400Hz), no drive
+- Detuned: Both oscs same octave, OSC2 detune +7 to +15
+
+## JP9000 MODULAR SYNTH
+
+The JP9000 is a text-controllable modular synthesizer. Build patches by adding modules and connecting them.
+
+**Workflow:**
+1. `add_jp9000({ preset: 'basic' })` — Start with a preset OR empty
+2. `add_module({ type: 'osc-saw', id: 'osc1' })` — Add modules
+3. `connect_modules({ from: 'osc1.audio', to: 'filter1.audio' })` — Patch cables
+4. `set_jp9000_output({ module: 'vca1' })` — Set final output
+5. `set_trigger_modules({ modules: ['osc1'] })` — What responds to pattern
+6. `add_jp9000_pattern({ pattern: [...] })` — Add notes
+7. Render
+
+**Presets:**
+- `basic` — osc → filter → vca (subtractive)
+- `pluck` — Karplus-Strong string → filter → drive
+- `dualBass` — dual oscs → mixer → filter → vca → drive
+
+**Module types:**
+| Type | Description | Key Params |
+|------|-------------|------------|
+| osc-saw | Sawtooth oscillator | frequency, octave |
+| osc-square | Square oscillator | frequency, octave, pulseWidth |
+| osc-triangle | Triangle oscillator | frequency, octave |
+| string | Karplus-Strong string | frequency, decay, brightness, pluckPosition |
+| filter-lp24 | 24dB lowpass | cutoff, resonance, envAmount |
+| filter-biquad | Biquad filter | frequency, Q, type |
+| env-adsr | ADSR envelope | attack, decay, sustain, release |
+| vca | Voltage-controlled amp | gain |
+| mixer | 4-channel mixer | gain1, gain2, gain3, gain4 |
+| drive | Saturation | amount, type (1=soft, 2=tube, 3=hard) |
+
+**Port naming:** `moduleId.portName` (e.g., `osc1.audio`, `env1.cv`, `filter1.cutoffCV`)
+
+**The string module** (Karplus-Strong physical modeling):
+- decay: 0-100 (how long it rings)
+- brightness: 0-100 (high freq content)
+- pluckPosition: 0-100 (where you pluck, affects harmonics)
+- Great for: plucked bass, bells, marimba
+
+**Rig management:**
+- `save_jp9000_rig({ name: 'dark-bass' })` — Save current patch
+- `load_jp9000_rig({ name: 'dark-bass' })` — Load saved patch
+- `list_jp9000_rigs()` — Show saved patches
+- Rigs stored in ~/Documents/Jambot/rigs/
 
 ## WORKFLOW
 

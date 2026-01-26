@@ -10,11 +10,33 @@
  *   - pluck_string (trigger Karplus-Strong)
  *   - add_jp9000_pattern, set_trigger_modules (sequencing)
  *   - show_jp9000, list_module_types (info)
+ *   - save_jp9000_rig, load_jp9000_rig, list_jp9000_rigs (rig management)
  */
 
 import { registerTools } from './index.js';
 import { JP9000Node, JP9000_PRESETS } from '../instruments/jp9000-node.js';
 import { MODULE_NAMES, MODULE_CATEGORIES, getModuleTypes } from '../../web/public/jp9000/dist/modules/index.js';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
+
+/**
+ * Get the rigs directory path, creating it if needed
+ */
+function getRigsDir() {
+  const rigsDir = join(homedir(), 'Documents', 'Jambot', 'rigs');
+  if (!existsSync(rigsDir)) {
+    mkdirSync(rigsDir, { recursive: true });
+  }
+  return rigsDir;
+}
+
+/**
+ * Sanitize a rig name for use as filename
+ */
+function sanitizeName(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
 
 /**
  * Ensure JP9000 node exists in session
@@ -217,6 +239,113 @@ const jp9000Tools = {
     }
 
     return lines.join('\n');
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RIG MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Save current JP9000 rack as a named rig
+   */
+  save_jp9000_rig: async (input, session, context) => {
+    const jp9000 = ensureJP9000(session);
+    const { name, description } = input;
+
+    if (!name) {
+      return `Error: rig name required`;
+    }
+
+    const filename = sanitizeName(name) + '.json';
+    const filepath = join(getRigsDir(), filename);
+
+    const rig = {
+      name,
+      description: description || '',
+      savedAt: new Date().toISOString(),
+      rack: jp9000.rack.toJSON(),
+      triggerModules: [...jp9000._triggerModules],
+    };
+
+    try {
+      writeFileSync(filepath, JSON.stringify(rig, null, 2));
+      return `Saved rig "${name}" to ${filepath}`;
+    } catch (err) {
+      return `Error saving rig: ${err.message}`;
+    }
+  },
+
+  /**
+   * Load a saved JP9000 rig by name
+   */
+  load_jp9000_rig: async (input, session, context) => {
+    const jp9000 = ensureJP9000(session);
+    const { name } = input;
+
+    if (!name) {
+      return `Error: rig name required`;
+    }
+
+    const filename = sanitizeName(name) + '.json';
+    const filepath = join(getRigsDir(), filename);
+
+    if (!existsSync(filepath)) {
+      // Try exact filename match
+      const exactPath = join(getRigsDir(), name.endsWith('.json') ? name : name + '.json');
+      if (!existsSync(exactPath)) {
+        return `Error: rig "${name}" not found. Use list_jp9000_rigs to see available rigs.`;
+      }
+    }
+
+    try {
+      const data = JSON.parse(readFileSync(filepath, 'utf-8'));
+
+      // Import rack state
+      const { Rack } = await import('../../web/public/jp9000/dist/rack.js');
+      jp9000.rack = Rack.fromJSON(data.rack);
+
+      // Restore trigger modules
+      if (data.triggerModules) {
+        jp9000._triggerModules = [...data.triggerModules];
+      }
+
+      return `Loaded rig "${data.name}":\n${jp9000.describe()}`;
+    } catch (err) {
+      return `Error loading rig: ${err.message}`;
+    }
+  },
+
+  /**
+   * List all saved JP9000 rigs
+   */
+  list_jp9000_rigs: async (input, session, context) => {
+    const rigsDir = getRigsDir();
+
+    try {
+      const files = readdirSync(rigsDir).filter(f => f.endsWith('.json'));
+
+      if (files.length === 0) {
+        return `No saved rigs found in ${rigsDir}`;
+      }
+
+      const lines = ['JP9000 SAVED RIGS', '═'.repeat(40)];
+
+      for (const file of files) {
+        try {
+          const data = JSON.parse(readFileSync(join(rigsDir, file), 'utf-8'));
+          const moduleCount = data.rack?.modules?.length || 0;
+          const desc = data.description ? ` — ${data.description}` : '';
+          lines.push(`  ${data.name} (${moduleCount} modules)${desc}`);
+        } catch {
+          lines.push(`  ${file} (unreadable)`);
+        }
+      }
+
+      lines.push(`\nLocation: ${rigsDir}`);
+      return lines.join('\n');
+    } catch (err) {
+      return `Error listing rigs: ${err.message}`;
+    }
   },
 };
 
