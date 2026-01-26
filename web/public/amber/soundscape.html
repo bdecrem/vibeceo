@@ -691,14 +691,18 @@
       }
     };
 
-    // Generate frequencies for current scale
+    // Generate frequencies for current scale - limited to 6 notes (matching colors)
+    const NOTE_COUNT = 6;
+
     function getScaleFrequencies() {
       const baseFreq = 261.63; // C4
       const scale = SCALES[selectedScale];
-      return scale.intervals.map(semitones => baseFreq * Math.pow(2, semitones / 12));
+      // Only use first NOTE_COUNT intervals to keep a tight palette
+      const limitedIntervals = scale.intervals.slice(0, NOTE_COUNT);
+      return limitedIntervals.map(semitones => baseFreq * Math.pow(2, semitones / 12));
     }
 
-    // Quantize any frequency to the nearest scale frequency
+    // Quantize any frequency to the nearest of our 6 available notes
     function quantizeToScale(freq) {
       const scaleFreqs = getScaleFrequencies();
       let closest = scaleFreqs[0];
@@ -1041,8 +1045,9 @@
           if (particles[i].collidesWith(particles[j])) {
             particles[i].resolveCollision(particles[j]);
 
-            // Play one of the two colliding particles' notes (pick randomly)
-            const collisionFreq = Math.random() < 0.5 ? particles[i].freq : particles[j].freq;
+            // Average the two frequencies, then snap to nearest of our 6 notes
+            const avgFreq = (particles[i].freq + particles[j].freq) / 2;
+            const collisionFreq = quantizeToScale(avgFreq);
             if (audioStarted) {
               playTone(collisionFreq, 0.8);
               recordNote(collisionFreq, 0.8, (particles[i].x + particles[j].x) / 2, (particles[i].y + particles[j].y) / 2);
