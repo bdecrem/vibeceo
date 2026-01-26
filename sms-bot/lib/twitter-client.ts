@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Read env vars at runtime (not module load) to support late dotenv loading
-// Optional account parameter for multi-account support (e.g., "intheamber", "echo")
+// Optional account parameter for multi-account support (e.g., "intheamber", "tokentank")
 function getTwitterCredentials(account?: string) {
   // API key/secret are app-level (same for all accounts)
   const apiKey = process.env.TWITTER_API_KEY;
@@ -16,15 +16,17 @@ function getTwitterCredentials(account?: string) {
 
   // Access token/secret are per-account
   // If account specified, look for TWITTER_<ACCOUNT>_ACCESS_TOKEN, etc.
+  // Special case: "tokentank" uses default TWITTER_ACCESS_TOKEN (no prefix)
   // Otherwise use default TWITTER_ACCESS_TOKEN
   let accessToken: string | undefined;
   let accessSecret: string | undefined;
 
-  if (account) {
+  if (account && account.toLowerCase() !== 'tokentank') {
     const prefix = `TWITTER_${account.toUpperCase()}_`;
     accessToken = process.env[`${prefix}ACCESS_TOKEN`];
     accessSecret = process.env[`${prefix}ACCESS_SECRET`];
   } else {
+    // Default credentials are for @TokenTankAI
     accessToken = process.env.TWITTER_ACCESS_TOKEN;
     accessSecret = process.env.TWITTER_ACCESS_SECRET;
   }
@@ -236,12 +238,12 @@ export async function postTweet(text: string, options?: PostTweetOptions): Promi
   const mediaIds = options?.mediaIds;
   const replyTo = options?.replyTo;
 
-  // SAFETY CHECK: Block posting to bartdecrem
-  // If no account specified, it would use default credentials (bartdecrem) - block this
+  // SAFETY CHECK: Require explicit account to prevent accidental personal account posts
+  // "tokentank" is valid and uses default credentials (@TokenTankAI)
   if (!account) {
     return {
       success: false,
-      error: 'Account parameter is required. Specify which Twitter account to post to (e.g., "intheamber", "tokentankai").',
+      error: 'Account parameter is required. Specify which Twitter account to post to (e.g., "intheamber", "tokentank").',
     };
   }
 

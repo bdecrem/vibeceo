@@ -547,9 +547,10 @@ function populateSequenceDropdown() {
         select.appendChild(option);
     });
 
-    // Select first sequence by default
+    // Default to "bounce" which matches the hardcoded default pattern
     if (sequences.length > 0) {
-        select.value = sequences[0].id;
+        const defaultSeq = sequences.find(s => s.id === 'bounce') || sequences[0];
+        select.value = defaultSeq.id;
     }
 }
 

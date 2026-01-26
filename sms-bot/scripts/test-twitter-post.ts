@@ -38,8 +38,8 @@ async function main() {
     process.exit(1);
   }
 
-  // Map account names (tokentank uses default credentials, intheamber uses INTHEAMBER_ prefix)
-  const accountParam = account.toLowerCase() === 'tokentank' ? undefined : account.toLowerCase();
+  // Normalize account name (tokentank uses default credentials, others use PREFIX_ env vars)
+  const accountParam = account.toLowerCase();
 
   if (!isTwitterConfigured(accountParam)) {
     console.error(`Twitter not configured for @${account}. Check your .env.local file.`);

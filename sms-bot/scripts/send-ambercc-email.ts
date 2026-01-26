@@ -5,6 +5,9 @@
  *   npx tsx --env-file=.env.local scripts/send-ambercc-email.ts "to@email.com" "Subject" "Body text"
  *   npx tsx --env-file=.env.local scripts/send-ambercc-email.ts "to@email.com" "Subject" --file body.txt
  *
+ * Multiple recipients (comma-separated):
+ *   npx tsx --env-file=.env.local scripts/send-ambercc-email.ts "a@x.com,b@y.com" "Subject" "Body"
+ *
  * This script ensures every outbound ambercc email is logged to Supabase
  * so Claude Code can see what was sent in previous sessions.
  */
@@ -27,7 +30,9 @@ async function sendAndLog() {
     process.exit(1);
   }
 
-  const to = args[0];
+  // Support comma-separated recipients (converted to array for SendGrid)
+  const toRaw = args[0];
+  const to = toRaw.includes(',') ? toRaw.split(',').map(e => e.trim()) : toRaw;
   const subject = args[1];
   let body: string;
 
