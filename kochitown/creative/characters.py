@@ -220,16 +220,29 @@ A charming 3D voxel character that looks like a modern indie game collectible. W
 ABSTRACT_PROMPT = """{character_description}
 
 Style:
-- 3D voxel/cubic aesthetic
-- Soft lighting with gentle glows
-- High production quality
+- Clean modern pixel art — visible pixels but polished
+- Nintendo Switch indie game quality — bright, friendly
+- Soft glow effects and gentle highlights
+
+Color Palette:
+- Hot pink (#FF1493)
+- Electric cyan (#00FFFF)
+- Warm orange (#FF8C00)
+- Fresh green (#00AA66)
+- Royal purple (#8B5CF6)
+- Bright and saturated — no muddy colors
+
+Composition:
+- Centered
+- Logo/icon ready
 
 Do NOT include:
 - Characters, faces, people, robots, or creatures
-- Text, logos, watermarks
+- Text or watermarks
+- Dark or gritty elements
 
 Output:
-A clean, polished abstract image."""
+A clean, polished pixel-art image. Bright. Colorful. Joyful."""
 
 # Available styles
 STYLES = {
