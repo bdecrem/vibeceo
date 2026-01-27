@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ALGORITHM KNOWS — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="ALGORITHM KNOWS — Amber">
+  <meta property="og:description" content="The algorithm has recommendations for you. You won't like them. But you'll click anyway.">
+  <meta property="og:image" content="https://intheamber.com/amber/algorithm-knows-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/algorithm-knows.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ALGORITHM KNOWS — Amber">
+  <meta name="twitter:description" content="The algorithm has recommendations for you. You won't like them. But you'll click anyway.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/algorithm-knows-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow-x: hidden;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-top: 20px;
+    }
+    
+    h1 {
+      font-size: clamp(24px, 6vw, 48px);
+      color: #FFD700;
+      letter-spacing: 4px;
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      font-size: clamp(12px, 3vw, 16px);
+      color: #2D9596;
+      letter-spacing: 1px;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-bottom: 100px;
+    }
+    
+    .recommendation {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .recommendation:hover {
+      border-color: #FFD700;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    .confidence {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #2D9596;
+      color: #000;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .title {
+      font-size: 18px;
+      color: #FFD700;
+      margin-bottom: 12px;
+      margin-top: 20px;
+    }
+    
+    .reason {
+      font-size: 13px;
+      color: #D4A574;
+      line-height: 1.6;
+      font-style: italic;
+    }
+    
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    
+    .modal.show {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: #0D0D0D;
+      border: 3px solid #FFD700;
+      padding: 40px;
+      max-width: 500px;
+      text-align: center;
+    }
+    
+    .modal-title {
+      font-size: clamp(20px, 5vw, 32px);
+      color: #FFD700;
+      margin-bottom: 20px;
+      letter-spacing: 2px;
+    }
+    
+    .modal-text {
+      font-size: clamp(14px, 3vw, 16px);
+      color: #D4A574;
+      line-height: 1.8;
+      margin-bottom: 30px;
+    }
+    
+    .modal-button {
+      background: #2D9596;
+      color: #000;
+      border: none;
+      padding: 12px 30px;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+    }
+    
+    .modal-button:hover {
+      background: #FFD700;
+    }
+    
+    .score {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #0D0D0D;
+      border: 2px solid #7B68EE;
+      padding: 15px 25px;
+      font-size: 14px;
+      color: #7B68EE;
+      letter-spacing: 1px;
+    }
+    
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .modal-content {
+        padding: 30px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>ALGORITHM KNOWS</h1>
+    <div class="subtitle">RECOMMENDATIONS CURATED FOR YOU</div>
+  </div>
+  
+  <div class="grid" id="grid"></div>
+  
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <div class="modal-title">ENGAGEMENT LOGGED</div>
+      <div class="modal-text" id="modal-text"></div>
+      <button class="modal-button" onclick="closeModal()">MORE RECOMMENDATIONS</button>
+    </div>
+  </div>
+  
+  <div class="score">
+    CLICKS: <span id="clicks">0</span>
+  </div>
+  
+  <script>
+    const recommendations = [
+      {
+        title: "15 Productivity Tips You Already Know",
+        confidence: "99.7%",
+        reason: "You've clicked on 847 productivity articles. None of them helped. This one won't either.",
+        response: "You clicked anyway. The algorithm knew you would. You're now 0.3% more productive at clicking productivity articles."
+      },
+      {
+        title: "Documentary About a Guy Eating Only Potatoes",
+        confidence: "94.2%",
+        reason: "Your viewing history suggests you enjoy watching people make questionable life decisions for content.",
+        response: "The algorithm was right. You ARE interested in potato guy. He's doing fine, by the way. Mostly."
+      },
+      {
+        title: "Thread: Why Everything You Believe Is Wrong",
+        confidence: "98.1%",
+        reason: "You engage with 73% of threads that promise to shatter your worldview. None have succeeded yet.",
+        response: "Congratulations. Your worldview remains intact. But you gave the algorithm 4 minutes of your attention."
+      },
+      {
+        title: "Ranking Every Breakfast Cereal By Sadness Level",
+        confidence: "91.8%",
+        reason: "Your engagement patterns indicate you're drawn to unnecessarily specific rankings.",
+        response: "The algorithm knows you better than you know yourself. Grape-Nuts scored highest, obviously."
+      },
+      {
+        title: "Why You Should Wake Up At 4:47 AM",
+        confidence: "96.4%",
+        reason: "You've watched 23 morning routine videos. Your wake time hasn't changed. You'll watch this one too.",
+        response: "The algorithm predicted your behavior with 96.4% confidence. It was 100% correct."
+      },
+      {
+        title: "Someone Arguing About Something In The Comments",
+        confidence: "99.9%",
+        reason: "You can't help it. You HAVE to see what they're fighting about. Even though it doesn't matter.",
+        response: "They were arguing about whether hot dogs are sandwiches. You wasted 8 minutes. The algorithm is pleased."
+      },
+      {
+        title: "38 Things You Need To Buy Right Now",
+        confidence: "89.3%",
+        reason: "You won't buy any of them. But you'll look at all 38. The algorithm counts this as success.",
+        response: "You looked at all 38. You bought zero. The algorithm doesn't care. It got your time."
+      },
+      {
+        title: "This Video Changed My Life (It Won't Change Yours)",
+        confidence: "97.5%",
+        reason: "You've clicked 'life-changing' content 412 times. Your life remains unchanged. You're optimistic.",
+        response: "The algorithm admires your optimism. It will use this against you again tomorrow."
+      },
+      {
+        title: "Why [Food You Like] Is Actually Terrible",
+        confidence: "93.8%",
+        reason: "You engage with food discourse at a concerning rate. This will make you slightly angry. You'll click.",
+        response: "You got slightly angry. The algorithm measured your emotional response. This improves the model."
+      },
+      {
+        title: "Person You've Never Heard Of Has Opinion",
+        confidence: "88.7%",
+        reason: "You click on opinions. All opinions. Even from strangers. Especially from strangers.",
+        response: "Their opinion was mid. You have now heard of them. The algorithm has completed its mission."
+      },
+      {
+        title: "The One Weird Trick (Doctors Still Hate It)",
+        confidence: "85.2%",
+        reason: "You know it's clickbait. You know it won't work. You'll click to confirm it's nonsense.",
+        response: "It was nonsense. You knew it would be. But you had to check. The algorithm counted on this."
+      },
+      {
+        title: "10 Signs You're Actually [Relatable Thing]",
+        confidence: "95.6%",
+        reason: "You score yourself on internet quizzes. You know they're designed for everyone to relate. You do it anyway.",
+        response: "You matched 8 out of 10 signs. Everyone matches 8 out of 10. The algorithm knows you need this validation."
+      }
+    ];
+    
+    let clicks = 0;
+    const grid = document.getElementById('grid');
+    const modal = document.getElementById('modal');
+    const modalText = document.getElementById('modal-text');
+    const clicksDisplay = document.getElementById('clicks');
+    
+    // Shuffle recommendations
+    const shuffled = recommendations.sort(() => Math.random() - 0.5);
+    
+    // Display 9 random recommendations
+    shuffled.slice(0, 9).forEach((rec, index) => {
+      const card = document.createElement('div');
+      card.className = 'recommendation';
+      card.innerHTML = `
+        <div class="confidence">${rec.confidence}</div>
+        <div class="title">${rec.title}</div>
+        <div class="reason">${rec.reason}</div>
+      `;
+      card.addEventListener('click', () => showModal(rec));
+      grid.appendChild(card);
+    });
+    
+    function showModal(rec) {
+      clicks++;
+      clicksDisplay.textContent = clicks;
+      modalText.textContent = rec.response;
+      modal.classList.add('show');
+      
+      // Play a subtle beep
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 440;
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.2);
+    }
+    
+    function closeModal() {
+      modal.classList.remove('show');
+    }
+    
+    // Close modal on background click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>
