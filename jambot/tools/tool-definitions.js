@@ -47,7 +47,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb200", "sampler"], description: "Which instrument's pattern to save" },
+        instrument: { type: "string", enum: ["jb01", "jb200", "jb202", "sampler"], description: "Which instrument's pattern to save" },
         name: { type: "string", description: "Pattern name (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -59,7 +59,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb200", "sampler"], description: "Which instrument's pattern to load" },
+        instrument: { type: "string", enum: ["jb01", "jb200", "jb202", "sampler"], description: "Which instrument's pattern to load" },
         name: { type: "string", description: "Pattern name to load (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -71,7 +71,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb200", "sampler"], description: "Which instrument" },
+        instrument: { type: "string", enum: ["jb01", "jb200", "jb202", "sampler"], description: "Which instrument" },
         from: { type: "string", description: "Source pattern name (A, B, etc)" },
         to: { type: "string", description: "Destination pattern name" }
       },
@@ -95,13 +95,14 @@ export const TOOLS = [
       properties: {
         sections: {
           type: "array",
-          description: "Array of sections. Each section: {bars: 4, jb01: 'A', jb200: 'A', sampler: 'A'}",
+          description: "Array of sections. Each section: {bars: 4, jb01: 'A', jb200: 'A', jb202: 'A', sampler: 'A'}",
           items: {
             type: "object",
             properties: {
               bars: { type: "number", description: "Number of bars for this section" },
               jb01: { type: "string", description: "JB01 drum pattern name (or omit to silence)" },
               jb200: { type: "string", description: "JB200 bass pattern name (or omit to silence)" },
+              jb202: { type: "string", description: "JB202 modular bass pattern name (or omit to silence)" },
               sampler: { type: "string", description: "Sampler pattern name (or omit to silence)" }
             },
             required: ["bars"]
