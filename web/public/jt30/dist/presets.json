@@ -1,56 +1,188 @@
 {
-  "Acid": {
+  "default": {
+    "name": "Default",
+    "bpm": 130,
     "waveform": "sawtooth",
-    "cutoff": 0.25,
-    "resonance": 0.7,
-    "envMod": 0.8,
-    "decay": 0.2,
-    "accent": 0.9,
-    "level": 0.8
+    "parameters": {
+      "cutoff": 0.3,
+      "resonance": 0.5,
+      "envMod": 0.6,
+      "decay": 0.3,
+      "accent": 0.8,
+      "level": 0.8
+    },
+    "pattern": [
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C3", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "D#2", "gate": true, "accent": false, "slide": false },
+      { "note": "D2", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "G2", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "D#2", "gate": true, "accent": false, "slide": false },
+      { "note": "F2", "gate": true, "accent": false, "slide": true }
+    ]
   },
-  "Squelch": {
+  "acid": {
+    "name": "Classic Acid",
+    "bpm": 138,
     "waveform": "sawtooth",
-    "cutoff": 0.15,
-    "resonance": 0.85,
-    "envMod": 0.9,
-    "decay": 0.15,
-    "accent": 1.0,
-    "level": 0.75
+    "parameters": {
+      "cutoff": 0.25,
+      "resonance": 0.7,
+      "envMod": 0.8,
+      "decay": 0.2,
+      "accent": 0.9,
+      "level": 0.8
+    },
+    "pattern": [
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C3", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "D#2", "gate": true, "accent": true, "slide": false },
+      { "note": "D2", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "G2", "gate": true, "accent": true, "slide": false },
+      { "note": "F2", "gate": true, "accent": false, "slide": true },
+      { "note": "D#2", "gate": true, "accent": false, "slide": true },
+      { "note": "D2", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C3", "gate": true, "accent": false, "slide": true }
+    ]
   },
-  "Mellow": {
+  "squelch": {
+    "name": "Squelch",
+    "bpm": 145,
     "waveform": "sawtooth",
-    "cutoff": 0.4,
-    "resonance": 0.3,
-    "envMod": 0.4,
-    "decay": 0.4,
-    "accent": 0.6,
-    "level": 0.8
+    "parameters": {
+      "cutoff": 0.15,
+      "resonance": 0.85,
+      "envMod": 0.9,
+      "decay": 0.15,
+      "accent": 1.0,
+      "level": 0.75
+    },
+    "pattern": [
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C3", "gate": true, "accent": true, "slide": true },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "D#2", "gate": true, "accent": true, "slide": false },
+      { "note": "F2", "gate": true, "accent": false, "slide": true },
+      { "note": "F#2", "gate": true, "accent": true, "slide": true },
+      { "note": "G2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C3", "gate": true, "accent": true, "slide": true },
+      { "note": "A#2", "gate": true, "accent": false, "slide": true },
+      { "note": "G2", "gate": true, "accent": false, "slide": true },
+      { "note": "F2", "gate": true, "accent": true, "slide": true },
+      { "note": "D#2", "gate": true, "accent": false, "slide": true }
+    ]
   },
-  "Square": {
+  "square": {
+    "name": "Square Wave",
+    "bpm": 128,
     "waveform": "square",
-    "cutoff": 0.3,
-    "resonance": 0.5,
-    "envMod": 0.6,
-    "decay": 0.25,
-    "accent": 0.8,
-    "level": 0.8
+    "parameters": {
+      "cutoff": 0.3,
+      "resonance": 0.5,
+      "envMod": 0.6,
+      "decay": 0.25,
+      "accent": 0.8,
+      "level": 0.8
+    },
+    "pattern": [
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "G2", "gate": true, "accent": false, "slide": false },
+      { "note": "G2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "D#2", "gate": true, "accent": false, "slide": true },
+      { "note": "D2", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "F2", "gate": true, "accent": false, "slide": false },
+      { "note": "G2", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "D#2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": true }
+    ]
   },
-  "Dark": {
+  "dark": {
+    "name": "Dark Bass",
+    "bpm": 120,
     "waveform": "sawtooth",
-    "cutoff": 0.1,
-    "resonance": 0.4,
-    "envMod": 0.3,
-    "decay": 0.5,
-    "accent": 0.5,
-    "level": 0.85
+    "parameters": {
+      "cutoff": 0.1,
+      "resonance": 0.4,
+      "envMod": 0.3,
+      "decay": 0.5,
+      "accent": 0.5,
+      "level": 0.85
+    },
+    "pattern": [
+      { "note": "C1", "gate": true, "accent": true, "slide": false },
+      { "note": "C1", "gate": false, "accent": false, "slide": false },
+      { "note": "C1", "gate": false, "accent": false, "slide": false },
+      { "note": "C1", "gate": false, "accent": false, "slide": false },
+      { "note": "C1", "gate": true, "accent": false, "slide": false },
+      { "note": "C1", "gate": false, "accent": false, "slide": false },
+      { "note": "D#1", "gate": true, "accent": false, "slide": true },
+      { "note": "D1", "gate": true, "accent": false, "slide": true },
+      { "note": "C1", "gate": true, "accent": true, "slide": false },
+      { "note": "C1", "gate": false, "accent": false, "slide": false },
+      { "note": "C1", "gate": false, "accent": false, "slide": false },
+      { "note": "C1", "gate": false, "accent": false, "slide": false },
+      { "note": "G1", "gate": true, "accent": false, "slide": false },
+      { "note": "G1", "gate": false, "accent": false, "slide": false },
+      { "note": "F1", "gate": true, "accent": false, "slide": true },
+      { "note": "C1", "gate": true, "accent": false, "slide": true }
+    ]
   },
-  "Screamer": {
+  "screamer": {
+    "name": "Screamer",
+    "bpm": 150,
     "waveform": "square",
-    "cutoff": 0.2,
-    "resonance": 0.95,
-    "envMod": 1.0,
-    "decay": 0.1,
-    "accent": 1.0,
-    "level": 0.7
+    "parameters": {
+      "cutoff": 0.2,
+      "resonance": 0.95,
+      "envMod": 1.0,
+      "decay": 0.1,
+      "accent": 1.0,
+      "level": 0.7
+    },
+    "pattern": [
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C3", "gate": true, "accent": true, "slide": true },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C3", "gate": true, "accent": true, "slide": true },
+      { "note": "D#2", "gate": true, "accent": true, "slide": false },
+      { "note": "D#3", "gate": true, "accent": true, "slide": true },
+      { "note": "D#2", "gate": true, "accent": true, "slide": false },
+      { "note": "D#3", "gate": true, "accent": true, "slide": true },
+      { "note": "F2", "gate": true, "accent": true, "slide": false },
+      { "note": "F3", "gate": true, "accent": true, "slide": true },
+      { "note": "F2", "gate": true, "accent": true, "slide": false },
+      { "note": "G2", "gate": true, "accent": true, "slide": true },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C3", "gate": true, "accent": true, "slide": true }
+    ]
   }
 }

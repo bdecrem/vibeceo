@@ -11,12 +11,12 @@ import {
   SawtoothOscillator,
   SquareOscillator,
   createOscillatorSync
-} from '../../../jb202/dist/dsp/oscillators/index.js';
-import { MoogLadderFilter, normalizedToHz } from '../../../jb202/dist/dsp/filters/index.js';
-import { ADSREnvelope } from '../../../jb202/dist/dsp/envelopes/index.js';
-import { Drive } from '../../../jb202/dist/dsp/effects/index.js';
-import { clamp, fastTanh } from '../../../jb202/dist/dsp/utils/math.js';
-import { noteToMidi, midiToFreq, transpose, detune } from '../../../jb202/dist/dsp/utils/note.js';
+} from '../../../../jb202/dist/dsp/oscillators/index.js';
+import { MoogLadderFilter, normalizedToHz } from '../../../../jb202/dist/dsp/filters/index.js';
+import { ADSREnvelope } from '../../../../jb202/dist/dsp/envelopes/index.js';
+import { Drive } from '../../../../jb202/dist/dsp/effects/index.js';
+import { clamp, fastTanh } from '../../../../jb202/dist/dsp/utils/math.js';
+import { noteToMidi, midiToFreq, transpose, detune } from '../../../../jb202/dist/dsp/utils/note.js';
 import { JT30Sequencer } from './sequencer.js';
 
 // Default parameters (engine units, 0-1 unless noted)
@@ -270,6 +270,10 @@ export class JT30Engine {
     return next;
   }
 
+  getWaveform() {
+    return this.params.waveform;
+  }
+
   // === Sequencer API ===
 
   setBpm(bpm) { this.sequencer.setBpm(bpm); }
@@ -282,7 +286,15 @@ export class JT30Engine {
   // === Real-time Playback ===
 
   async startSequencer() {
-    if (!this.context) return;
+    // Create audio context if needed
+    if (!this.context) {
+      this.context = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    // Resume if suspended (for autoplay policy)
+    if (this.context.state === 'suspended') {
+      await this.context.resume();
+    }
 
     this._ensureVoice();
 
@@ -355,7 +367,15 @@ export class JT30Engine {
   }
 
   async playNote(note, accent = false, slide = false) {
-    if (!this.context) return;
+    // Create audio context if needed
+    if (!this.context) {
+      this.context = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    // Resume if suspended
+    if (this.context.state === 'suspended') {
+      await this.context.resume();
+    }
 
     this._ensureVoice();
 
@@ -431,6 +451,58 @@ export class JT30Engine {
   }
 
   getOutput() { return this._scriptNode ?? null; }
+
+  // === WAV Export ===
+
+  async audioBufferToBlob(buffer) {
+    const numChannels = 1;
+    const sampleRate = buffer.sampleRate;
+    const data = buffer._data ?? buffer.getChannelData(0);
+    const length = data.length;
+    const bytesPerSample = 2;
+    const blockAlign = numChannels * bytesPerSample;
+    const byteRate = sampleRate * blockAlign;
+    const dataSize = length * blockAlign;
+
+    const bufferSize = 44 + dataSize;
+    const arrayBuffer = new ArrayBuffer(bufferSize);
+    const view = new DataView(arrayBuffer);
+
+    // RIFF header
+    this._writeString(view, 0, 'RIFF');
+    view.setUint32(4, bufferSize - 8, true);
+    this._writeString(view, 8, 'WAVE');
+
+    // fmt chunk
+    this._writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bytesPerSample * 8, true);
+
+    // data chunk
+    this._writeString(view, 36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+      const sample = Math.max(-1, Math.min(1, data[i]));
+      const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+      view.setInt16(offset, intSample, true);
+      offset += 2;
+    }
+
+    return new Blob([arrayBuffer], { type: 'audio/wav' });
+  }
+
+  _writeString(view, offset, str) {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
+    }
+  }
 
   dispose() {
     this.stopSequencer();

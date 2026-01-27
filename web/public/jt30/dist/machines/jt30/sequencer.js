@@ -15,7 +15,31 @@ function createEmptyPattern() {
   }));
 }
 
+// Note sequence for cycling
+const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
 export class JT30Sequencer {
+  // Static method to cycle notes
+  static cycleNote(currentNote, direction = 1) {
+    const match = currentNote.match(/^([A-G]#?)(\d)$/);
+    if (!match) return currentNote;
+
+    const [, note, octave] = match;
+    let noteIndex = NOTES.indexOf(note);
+    let octaveNum = parseInt(octave);
+
+    noteIndex += direction;
+    if (noteIndex >= NOTES.length) {
+      noteIndex = 0;
+      octaveNum = Math.min(4, octaveNum + 1);
+    } else if (noteIndex < 0) {
+      noteIndex = NOTES.length - 1;
+      octaveNum = Math.max(1, octaveNum - 1);
+    }
+
+    return `${NOTES[noteIndex]}${octaveNum}`;
+  }
+
   constructor(options = {}) {
     this.steps = options.steps ?? 16;
     this.bpm = options.bpm ?? 130;
