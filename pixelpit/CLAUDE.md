@@ -120,10 +120,15 @@ cd web && npm run build
 
 ## OG Images
 
-Every game needs an OG image for social sharing:
+Every game needs OG images for social sharing:
 
 ```
-web/app/pixelpit/arcade/{game}/opengraph-image.tsx
+web/app/pixelpit/arcade/{game}/opengraph-image.tsx         # Game promo
+web/app/pixelpit/arcade/{game}/share/[score]/opengraph-image.tsx  # Score share
 ```
 
-Use Edge Runtime, 1200x630, Pixelpit colors.
+**CRITICAL: Read `web/app/pixelpit/components/og/README.md` before creating OG images!**
+
+Satori (Edge runtime) has strict CSS limitations that cause silent 502 errors:
+- NO React fragments, rgba(), radial-gradient, borderRadius percentages
+- Use wrapper divs, hex colors with alpha (`#ffffff80`), linear-gradient, numeric borderRadius

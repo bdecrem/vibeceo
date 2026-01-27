@@ -137,7 +137,9 @@ Verdict: APPROVED / NEEDS FIXES
 3. **Joy** — Does it feel welcoming and fun?
 4. **Distinctiveness** — Would you remember this?
 5. **Social Integration** — ScoreFlow, Leaderboard, Share button present?
-6. **OG Images** — Both game OG and score OG exist and look good?
+6. **OG Images** — Both game OG and score OG exist and render correctly?
+   - **Test URL directly**: `/arcade/[game]/share/42/opengraph-image`
+   - If 502 error → Satori CSS violation (see `web/app/pixelpit/components/og/README.md`)
 
 ### After Review: REQUIRED Task Creation
 

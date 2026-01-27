@@ -112,6 +112,13 @@ import {
    import { createScoreShareImage, OG_SIZE, GAME_COLORS } from '@/app/pixelpit/components';
    ```
 
+   **CRITICAL: Read `web/app/pixelpit/components/og/README.md` for Satori limitations!**
+   - NO React fragments (`<>...</>`) — use wrapper `<div>`
+   - NO `rgba()` — use hex with alpha: `#ffffff80`
+   - NO `radial-gradient` with positions — use `linear-gradient`
+   - NO `borderRadius: '50%'` — use numeric: `borderRadius: 14`
+   - Violations cause silent 502 errors on Edge runtime
+
 ### Colors
 
 Define colors matching `ScoreFlowColors` interface:
