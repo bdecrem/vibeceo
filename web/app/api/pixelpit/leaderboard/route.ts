@@ -9,52 +9,107 @@ const supabase = createClient(
 );
 
 // GET - fetch leaderboard for a game
+// Dedupes registered users (best score only), keeps all guest entries
+// Optional: pass userId or nickname to get player's rank if not in top
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const game = searchParams.get("game");
   const limit = Math.min(parseInt(searchParams.get("limit") || "10", 10), 50);
+  const currentUserId = searchParams.get("userId");
+  const currentEntryId = searchParams.get("entryId");
 
   if (!game) {
     return NextResponse.json({ error: "Game parameter required" }, { status: 400 });
   }
 
-  // Fetch entries with scores, joining user data when available
-  const { data, error } = await supabase
-    .from("pixelpit_entries")
-    .select(`
-      id,
-      score,
-      nickname,
-      user_id,
-      created_at,
-      pixelpit_users (
-        id,
-        handle
-      )
-    `)
-    .eq("game_id", game)
-    .not("score", "is", null)
-    .order("score", { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.error("Error fetching leaderboard:", error);
-    return NextResponse.json({ error: "Failed to fetch leaderboard" }, { status: 500 });
-  }
-
-  // Transform data into clean leaderboard format
-  const leaderboard = (data || []).map((entry, index) => {
-    const user = entry.pixelpit_users as unknown as { id: number; handle: string } | null;
-    return {
-      rank: index + 1,
-      name: user ? user.handle : entry.nickname,
-      score: entry.score,
-      isRegistered: !!user,
-      created_at: entry.created_at,
-    };
+  // Use raw SQL to dedupe registered users while keeping all guest entries
+  const { data, error } = await supabase.rpc("get_leaderboard", {
+    p_game_id: game,
+    p_limit: limit,
   });
 
-  return NextResponse.json({ leaderboard });
+  if (error) {
+    // Fallback if RPC doesn't exist yet - use simple query
+    console.error("RPC error, using fallback:", error);
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from("pixelpit_entries")
+      .select(`id, score, nickname, user_id, created_at, pixelpit_users (id, handle)`)
+      .eq("game_id", game)
+      .not("score", "is", null)
+      .order("score", { ascending: false })
+      .limit(limit);
+
+    if (fallbackError) {
+      return NextResponse.json({ error: "Failed to fetch leaderboard" }, { status: 500 });
+    }
+
+    const leaderboard = (fallbackData || []).map((entry, index) => {
+      const user = entry.pixelpit_users as unknown as { id: number; handle: string } | null;
+      return {
+        rank: index + 1,
+        name: user ? user.handle : entry.nickname,
+        score: entry.score,
+        isRegistered: !!user,
+      };
+    });
+    return NextResponse.json({ leaderboard });
+  }
+
+  // Transform RPC data into clean leaderboard format
+  const leaderboard = (data || []).map((entry: { rank: number; handle: string | null; nickname: string | null; score: number; user_id: number | null }) => ({
+    rank: entry.rank,
+    name: entry.handle || entry.nickname,
+    score: entry.score,
+    isRegistered: !!entry.user_id,
+  }));
+
+  // Check if current player is in the leaderboard
+  let playerEntry = null;
+  if (currentUserId || currentEntryId) {
+    if (currentUserId) {
+      // Registered user - check if their best score is in top
+      const inList = leaderboard.some((e: { name: string; isRegistered: boolean }) => e.isRegistered);
+
+      if (!inList) {
+        const { data: playerData } = await supabase.rpc("get_player_rank", {
+          p_game_id: game,
+          p_user_id: parseInt(currentUserId),
+          p_nickname: null,
+        });
+
+        if (playerData && playerData.length > 0) {
+          playerEntry = {
+            rank: playerData[0].rank,
+            name: playerData[0].handle || playerData[0].nickname,
+            score: playerData[0].score,
+            isRegistered: !!playerData[0].user_id,
+          };
+        }
+      }
+    } else if (currentEntryId) {
+      // Guest - look up this specific entry's rank
+      const { data: entryRank } = await supabase.rpc("get_entry_rank", {
+        p_game_id: game,
+        p_entry_id: parseInt(currentEntryId),
+      });
+
+      if (entryRank && entryRank.length > 0) {
+        // Check if this entry is already in the top list
+        const inList = leaderboard.some((e: { rank: number }) => e.rank === entryRank[0].rank);
+
+        if (!inList) {
+          playerEntry = {
+            rank: entryRank[0].rank,
+            name: entryRank[0].nickname,
+            score: entryRank[0].score,
+            isRegistered: false,
+          };
+        }
+      }
+    }
+  }
+
+  return NextResponse.json({ leaderboard, playerEntry });
 }
 
 // PATCH - link guest entry to user account

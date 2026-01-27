@@ -60,7 +60,7 @@ declare global {
     PixelpitSocial?: {
       getUser: () => { id: number; handle: string } | null;
       submitScore: (game: string, score: number, opts?: { nickname?: string }) => Promise<{ success: boolean; rank: number }>;
-      getLeaderboard: (game: string, limit?: number) => Promise<Array<{ rank: number; name: string; score: number; isRegistered: boolean }>>;
+      getLeaderboard: (game: string, limit?: number, opts?: { entryId?: number }) => Promise<{ leaderboard: Array<{ rank: number; name: string; score: number; isRegistered: boolean }>; playerEntry?: { rank: number; name: string; score: number; isRegistered: boolean } | null }>;
       login: (handle: string, code: string) => Promise<{ success: boolean; user?: { id: number; handle: string }; error?: string }>;
       register: (handle: string, code: string) => Promise<{ success: boolean; user?: { id: number; handle: string }; error?: string }>;
       checkHandle: (handle: string) => Promise<{ exists: boolean }>;
@@ -78,6 +78,7 @@ export default function BeamGame() {
   const [currentLevel, setCurrentLevel] = useState(0);
   const [levelUpText, setLevelUpText] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<Array<{ rank: number; name: string; score: number; isRegistered: boolean }>>([]);
+  const [playerEntry, setPlayerEntry] = useState<{ rank: number; name: string; score: number; isRegistered: boolean } | null>(null);
   const [submitStatus, setSubmitStatus] = useState<string>('');
   const [playerName, setPlayerName] = useState('');
   const [user, setUser] = useState<{ id: number; handle: string } | null>(null);
@@ -724,8 +725,9 @@ export default function BeamGame() {
   const loadLeaderboard = async () => {
     if (!window.PixelpitSocial) return;
     try {
-      const lb = await window.PixelpitSocial.getLeaderboard(GAME_ID, 10);
-      setLeaderboard(lb);
+      const result = await window.PixelpitSocial.getLeaderboard(GAME_ID, 8, { entryId: submittedEntryId || undefined });
+      setLeaderboard(result.leaderboard);
+      setPlayerEntry(result.playerEntry);
     } catch (e) {
       console.error('Failed to load leaderboard', e);
     }
@@ -1643,35 +1645,77 @@ export default function BeamGame() {
                 no scores yet. be the first!
               </div>
             ) : (
-              leaderboard.map((entry, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '14px 20px',
-                    borderBottom: '1px solid rgba(255,255,255,0.03)',
-                    background: i === 0 ? 'rgba(251,191,36,0.08)' : 'transparent',
-                    fontFamily: "ui-monospace, monospace",
-                    fontSize: 12,
-                  }}
-                >
-                  <span style={{ width: 30, color: i === 0 ? COLORS.gold : COLORS.muted }}>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span style={{
-                    flex: 1,
-                    paddingLeft: 15,
-                    color: entry.isRegistered ? COLORS.cream : COLORS.gold,
-                  }}>
-                    {entry.isRegistered ? `@${entry.name}` : entry.name}
-                  </span>
-                  <span style={{ fontWeight: 500, color: COLORS.teal, fontSize: 14 }}>
-                    {entry.score}
-                  </span>
-                </div>
-              ))
+              <>
+                {leaderboard.map((entry) => (
+                  <div
+                    key={entry.rank}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '14px 20px',
+                      borderBottom: '1px solid rgba(255,255,255,0.03)',
+                      background: entry.rank === 1 ? 'rgba(251,191,36,0.08)' : 'transparent',
+                      fontFamily: "ui-monospace, monospace",
+                      fontSize: 12,
+                    }}
+                  >
+                    <span style={{ width: 30, color: entry.rank === 1 ? COLORS.gold : COLORS.muted }}>
+                      {String(entry.rank).padStart(2, '0')}
+                    </span>
+                    <span style={{
+                      flex: 1,
+                      paddingLeft: 15,
+                      color: entry.isRegistered ? COLORS.cream : COLORS.gold,
+                    }}>
+                      {entry.isRegistered ? `@${entry.name}` : entry.name}
+                    </span>
+                    <span style={{ fontWeight: 500, color: COLORS.teal, fontSize: 14 }}>
+                      {entry.score}
+                    </span>
+                  </div>
+                ))}
+                {/* Show player's position if not in top */}
+                {playerEntry && (
+                  <>
+                    <div style={{
+                      padding: '8px 20px',
+                      textAlign: 'center',
+                      color: COLORS.muted,
+                      fontFamily: "ui-monospace, monospace",
+                      fontSize: 10,
+                      letterSpacing: 4,
+                    }}>
+                      ···
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '14px 20px',
+                        background: 'rgba(45,212,191,0.1)',
+                        fontFamily: "ui-monospace, monospace",
+                        fontSize: 12,
+                      }}
+                    >
+                      <span style={{ width: 30, color: COLORS.teal }}>
+                        {String(playerEntry.rank).padStart(2, '0')}
+                      </span>
+                      <span style={{
+                        flex: 1,
+                        paddingLeft: 15,
+                        color: COLORS.teal,
+                      }}>
+                        {playerEntry.isRegistered ? `@${playerEntry.name}` : playerEntry.name} ← you
+                      </span>
+                      <span style={{ fontWeight: 500, color: COLORS.teal, fontSize: 14 }}>
+                        {playerEntry.score}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </>
             )}
           </div>
           <button

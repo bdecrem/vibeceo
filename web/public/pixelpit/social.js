@@ -144,12 +144,26 @@ window.PixelpitSocial = (function() {
    * Get leaderboard for a game
    * @param {string} gameId
    * @param {number} [limit=10]
-   * @returns {Promise<Array<{ rank: number, name: string, score: number, isRegistered: boolean, created_at: string }>>}
+   * @param {{ nickname?: string, entryId?: number }} [opts] - Pass entryId to get that specific entry's rank
+   * @returns {Promise<{ leaderboard: Array<{ rank: number, name: string, score: number, isRegistered: boolean }>, playerEntry?: object }>}
    */
-  async function getLeaderboard(gameId, limit = 10) {
-    const res = await fetch(`${API_BASE}/leaderboard?game=${encodeURIComponent(gameId)}&limit=${limit}`);
+  async function getLeaderboard(gameId, limit = 10, opts = {}) {
+    const user = getUser();
+    let url = `${API_BASE}/leaderboard?game=${encodeURIComponent(gameId)}&limit=${limit}`;
+
+    // Pass current player info to get their rank if not in top
+    if (user) {
+      url += `&userId=${user.id}`;
+    } else if (opts.entryId) {
+      url += `&entryId=${opts.entryId}`;
+    }
+
+    const res = await fetch(url);
     const data = await res.json();
-    return data.leaderboard || [];
+    return {
+      leaderboard: data.leaderboard || [],
+      playerEntry: data.playerEntry || null,
+    };
   }
 
   // ============ Creations ============
