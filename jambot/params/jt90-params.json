@@ -1,0 +1,70 @@
+{
+  "_meta": {
+    "name": "JT90",
+    "description": "Drum Machine - 909-style drums with modular DSP voices",
+    "version": "1.0",
+    "units": {
+      "0-100": "Knob position (like hardware)",
+      "cents": "Pitch adjustment in cents",
+      "seconds": "Time in seconds"
+    }
+  },
+  "kick": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "kick level" },
+    "tune": { "unit": "cents", "min": -1200, "max": 1200, "default": 0, "hint": "kick pitch" },
+    "decay": { "unit": "0-100", "min": 5, "max": 100, "default": 80, "hint": "kick decay" },
+    "attack": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "kick click/attack" },
+    "sweep": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "pitch envelope depth" }
+  },
+  "snare": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "snare level" },
+    "tune": { "unit": "cents", "min": -1200, "max": 1200, "default": 0, "hint": "snare pitch" },
+    "decay": { "unit": "0-100", "min": 5, "max": 100, "default": 50, "hint": "snare decay" },
+    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "tone vs noise balance" },
+    "snappy": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "snare wire intensity" }
+  },
+  "clap": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "clap level" },
+    "decay": { "unit": "0-100", "min": 5, "max": 100, "default": 50, "hint": "clap decay" },
+    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "clap tone" }
+  },
+  "rimshot": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "rimshot level" },
+    "tune": { "unit": "cents", "min": -600, "max": 600, "default": 0, "hint": "rimshot pitch" }
+  },
+  "lowtom": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "low tom level" },
+    "tune": { "unit": "cents", "min": -1200, "max": 1200, "default": 0, "hint": "low tom pitch" },
+    "decay": { "unit": "0-100", "min": 5, "max": 100, "default": 50, "hint": "low tom decay" }
+  },
+  "midtom": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "mid tom level" },
+    "tune": { "unit": "cents", "min": -1200, "max": 1200, "default": 0, "hint": "mid tom pitch" },
+    "decay": { "unit": "0-100", "min": 5, "max": 100, "default": 50, "hint": "mid tom decay" }
+  },
+  "hitom": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "high tom level" },
+    "tune": { "unit": "cents", "min": -1200, "max": 1200, "default": 0, "hint": "high tom pitch" },
+    "decay": { "unit": "0-100", "min": 5, "max": 100, "default": 50, "hint": "high tom decay" }
+  },
+  "ch": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "closed hi-hat level" },
+    "tune": { "unit": "cents", "min": -600, "max": 600, "default": 0, "hint": "hi-hat pitch" },
+    "decay": { "unit": "0-100", "min": 5, "max": 100, "default": 30, "hint": "closed hi-hat decay" }
+  },
+  "oh": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "open hi-hat level" },
+    "tune": { "unit": "cents", "min": -600, "max": 600, "default": 0, "hint": "hi-hat pitch" },
+    "decay": { "unit": "0-100", "min": 5, "max": 100, "default": 70, "hint": "open hi-hat decay" }
+  },
+  "crash": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "crash cymbal level" },
+    "tune": { "unit": "cents", "min": -600, "max": 600, "default": 0, "hint": "crash pitch" },
+    "decay": { "unit": "0-100", "min": 5, "max": 100, "default": 80, "hint": "crash decay" }
+  },
+  "ride": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "ride cymbal level" },
+    "tune": { "unit": "cents", "min": -600, "max": 600, "default": 0, "hint": "ride pitch" },
+    "decay": { "unit": "0-100", "min": 5, "max": 100, "default": 60, "hint": "ride decay" }
+  }
+}

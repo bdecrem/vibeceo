@@ -1,0 +1,86 @@
+{
+  "Arp1": {
+    "name": "Arpeggio Up",
+    "pattern": [
+      { "note": "C3", "gate": true, "accent": true, "slide": false },
+      { "note": "E3", "gate": true, "accent": false, "slide": false },
+      { "note": "G3", "gate": true, "accent": false, "slide": false },
+      { "note": "C4", "gate": true, "accent": true, "slide": false },
+      { "note": "G3", "gate": true, "accent": false, "slide": false },
+      { "note": "E3", "gate": true, "accent": false, "slide": false },
+      { "note": "C3", "gate": true, "accent": true, "slide": false },
+      { "note": "E3", "gate": true, "accent": false, "slide": false },
+      { "note": "G3", "gate": true, "accent": false, "slide": false },
+      { "note": "C4", "gate": true, "accent": true, "slide": false },
+      { "note": "E4", "gate": true, "accent": false, "slide": true },
+      { "note": "G4", "gate": true, "accent": false, "slide": true },
+      { "note": "C4", "gate": true, "accent": true, "slide": false },
+      { "note": "G3", "gate": true, "accent": false, "slide": true },
+      { "note": "E3", "gate": true, "accent": false, "slide": true },
+      { "note": "C3", "gate": true, "accent": false, "slide": true }
+    ]
+  },
+  "Bass1": {
+    "name": "Simple Bass",
+    "pattern": [
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "G2", "gate": true, "accent": false, "slide": false },
+      { "note": "G2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "A#1", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false }
+    ]
+  },
+  "Lead1": {
+    "name": "Melodic Lead",
+    "pattern": [
+      { "note": "C4", "gate": true, "accent": true, "slide": false },
+      { "note": "C4", "gate": false, "accent": false, "slide": false },
+      { "note": "D4", "gate": true, "accent": false, "slide": false },
+      { "note": "D#4", "gate": true, "accent": false, "slide": true },
+      { "note": "F4", "gate": true, "accent": true, "slide": false },
+      { "note": "F4", "gate": false, "accent": false, "slide": false },
+      { "note": "D#4", "gate": true, "accent": false, "slide": false },
+      { "note": "D4", "gate": true, "accent": false, "slide": true },
+      { "note": "C4", "gate": true, "accent": true, "slide": false },
+      { "note": "C4", "gate": false, "accent": false, "slide": false },
+      { "note": "G3", "gate": true, "accent": false, "slide": false },
+      { "note": "G3", "gate": false, "accent": false, "slide": false },
+      { "note": "A#3", "gate": true, "accent": false, "slide": false },
+      { "note": "C4", "gate": true, "accent": true, "slide": true },
+      { "note": "C4", "gate": true, "accent": false, "slide": false },
+      { "note": "C4", "gate": false, "accent": false, "slide": false }
+    ]
+  },
+  "Test": {
+    "name": "Single Note Test",
+    "pattern": [
+      { "note": "C3", "gate": true, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false },
+      { "note": "C3", "gate": false, "accent": false, "slide": false }
+    ]
+  }
+}

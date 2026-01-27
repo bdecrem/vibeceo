@@ -33,6 +33,11 @@ export const JB200_PARAMS = loadParams('jb200-params.json');
 export const JB202_PARAMS = loadParams('jb202-params.json');
 export const JB01_PARAMS = loadParams('jb01-params.json');
 
+// JT Series (modular DSP instruments)
+export const JT30_PARAMS = loadParams('jt30-params.json');
+export const JT10_PARAMS = loadParams('jt10-params.json');
+export const JT90_PARAMS = loadParams('jt90-params.json');
+
 const SYNTH_PARAMS = {
   r9d9: R9D9_PARAMS,
   r3d3: R3D3_PARAMS,
@@ -41,6 +46,9 @@ const SYNTH_PARAMS = {
   jb200: JB200_PARAMS,
   jb202: JB202_PARAMS,
   jb01: JB01_PARAMS,
+  jt30: JT30_PARAMS,
+  jt10: JT10_PARAMS,
+  jt90: JT90_PARAMS,
 };
 
 /**

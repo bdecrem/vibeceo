@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JT-90 Drum Machine</title>
+    <meta name="description" content="Modular drum machine built with Jambot DSP">
+    <meta property="og:title" content="JT-90 Drum Machine">
+    <meta property="og:description" content="Modular drum machine built with Jambot DSP">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <div class="header-row">
+        <h1>JT-90</h1>
+        <div class="header-controls">
+          <button id="share-btn" class="header-icon-btn" title="Export / Import">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
+          <button id="info-btn" class="voice-info-btn" title="Synthesis info">i</button>
+        </div>
+      </div>
+
+      <section class="controls">
+        <!-- Kit & Pattern selectors -->
+        <div class="kit-pattern-row">
+          <label class="kit-label">
+            Kit
+            <select id="kit-select">
+              <option value="">-- Kit --</option>
+            </select>
+          </label>
+          <label class="pattern-label">
+            Pattern
+            <select id="pattern-select">
+              <option value="">-- Pattern --</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="controls-divider"></div>
+
+        <label>
+          BPM
+          <input id="bpm" type="number" min="37" max="290" step="1" value="128" />
+        </label>
+        <label>
+          Swing
+          <input id="swing" type="range" min="0" max="100" step="1" value="0" />
+          <span id="swing-value">0%</span>
+        </label>
+        <label>
+          Accent
+          <input id="accent" type="range" min="0" max="100" step="1" value="100" />
+          <span id="accent-value">100%</span>
+        </label>
+        <label class="compact-select">
+          <span>Len</span>
+          <select id="pattern-length">
+            <option value="4">4</option>
+            <option value="8">8</option>
+            <option value="12">12</option>
+            <option value="16" selected>16</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="controls controls-row-2">
+        <label>
+          Volume
+          <input id="volume" type="range" min="0" max="100" step="1" value="80" />
+          <span id="volume-value">80%</span>
+        </label>
+        <div class="controls-spacer"></div>
+        <div class="controls-divider"></div>
+        <button id="play-toggle" type="button">Play</button>
+      </section>
+
+      <div id="status"></div>
+
+      <div class="step-page-toggle">
+        <button class="step-page-btn active" data-page="1">1-8</button>
+        <button class="step-page-btn" data-page="2">9-16</button>
+      </div>
+
+      <section id="sequencer" class="sequencer"></section>
+
+      <section class="voice-controls">
+        <h2>Voice Parameters</h2>
+        <div id="voice-params" class="params-grid"></div>
+      </section>
+
+      <div class="keyboard-hints">
+        <kbd>Space</kbd> Play/Stop &nbsp;|&nbsp;
+        <kbd>1</kbd>-<kbd>0</kbd> Trigger sounds (BD, SD, CP, RS, LT, MT, HT, CH, OH, CC)
+      </div>
+    </main>
+
+    <!-- Info Modal -->
+    <div id="info-modal" class="voice-info-modal">
+      <div class="voice-info-content">
+        <div class="voice-info-header">
+          <span class="voice-info-title">JT-90 Drum Machine</span>
+          <button class="voice-info-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="voice-info-body">
+          <div class="voice-info-section">
+            <div class="voice-info-label">Modular DSP</div>
+            <div class="voice-info-text">Built with Jambot's modular DSP architecture. Each voice uses pure JavaScript synthesis with deterministic noise generators for consistent output.</div>
+          </div>
+          <div class="voice-info-section">
+            <div class="voice-info-label">Voices</div>
+            <div class="voice-info-text">
+              BD - Kick with pitch envelope and click<br>
+              SD - Snare with tuned oscillators + noise<br>
+              CP - Clap with multiple noise bursts<br>
+              RS - Rimshot<br>
+              LT/MT/HT - Toms (low, mid, high)<br>
+              CH/OH - Hi-hats (closed, open)<br>
+              CC/RC - Cymbals (crash, ride)
+            </div>
+          </div>
+          <div class="voice-info-section">
+            <div class="voice-info-label">Cross-Platform</div>
+            <div class="voice-info-text">Same sound engine works in browser and Jambot CLI. Sample-accurate synthesis ensures identical output.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export/Import Modal -->
+    <div id="share-modal" class="share-modal">
+      <div class="share-modal-content">
+        <div class="share-modal-header">
+          <span class="share-modal-title">Export / Import</span>
+          <button class="share-modal-close">&times;</button>
+        </div>
+        <div class="share-modal-body">
+          <button id="export-wav" class="share-option">
+            <span class="share-option-icon">~</span>
+            <span class="share-option-text">
+              <strong>Export WAV</strong>
+              <small>Download audio file</small>
+            </span>
+          </button>
+          <button id="export-json" class="share-option">
+            <span class="share-option-icon">{ }</span>
+            <span class="share-option-text">
+              <strong>Export Pattern</strong>
+              <small>Save as JSON file</small>
+            </span>
+          </button>
+          <button id="import-json" class="share-option">
+            <span class="share-option-icon">^</span>
+            <span class="share-option-text">
+              <strong>Load Pattern</strong>
+              <small>Import from JSON</small>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display: none" />
+
+    <script type="module" src="../../dist/ui/jt90/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,56 @@
+{
+  "Acid": {
+    "waveform": "sawtooth",
+    "cutoff": 0.25,
+    "resonance": 0.7,
+    "envMod": 0.8,
+    "decay": 0.2,
+    "accent": 0.9,
+    "level": 0.8
+  },
+  "Squelch": {
+    "waveform": "sawtooth",
+    "cutoff": 0.15,
+    "resonance": 0.85,
+    "envMod": 0.9,
+    "decay": 0.15,
+    "accent": 1.0,
+    "level": 0.75
+  },
+  "Mellow": {
+    "waveform": "sawtooth",
+    "cutoff": 0.4,
+    "resonance": 0.3,
+    "envMod": 0.4,
+    "decay": 0.4,
+    "accent": 0.6,
+    "level": 0.8
+  },
+  "Square": {
+    "waveform": "square",
+    "cutoff": 0.3,
+    "resonance": 0.5,
+    "envMod": 0.6,
+    "decay": 0.25,
+    "accent": 0.8,
+    "level": 0.8
+  },
+  "Dark": {
+    "waveform": "sawtooth",
+    "cutoff": 0.1,
+    "resonance": 0.4,
+    "envMod": 0.3,
+    "decay": 0.5,
+    "accent": 0.5,
+    "level": 0.85
+  },
+  "Screamer": {
+    "waveform": "square",
+    "cutoff": 0.2,
+    "resonance": 0.95,
+    "envMod": 1.0,
+    "decay": 0.1,
+    "accent": 1.0,
+    "level": 0.7
+  }
+}

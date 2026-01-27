@@ -1,0 +1,25 @@
+{
+  "_meta": {
+    "name": "JT30",
+    "description": "Acid Bass Synth - 303-style monosynth with Moog ladder filter",
+    "version": "1.0",
+    "units": {
+      "0-100": "Knob position (like hardware)",
+      "Hz": "Filter frequency",
+      "choice": "Discrete option"
+    }
+  },
+  "bass": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "output level" },
+
+    "waveform": { "unit": "choice", "options": ["sawtooth", "square"], "default": "sawtooth", "hint": "oscillator waveform" },
+
+    "cutoff": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter cutoff" },
+    "resonance": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter resonance" },
+    "envMod": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter envelope depth" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter envelope decay" },
+    "accent": { "unit": "0-100", "min": 0, "max": 100, "default": 80, "hint": "accent intensity" },
+
+    "drive": { "unit": "0-100", "min": 0, "max": 100, "default": 20, "hint": "output saturation" }
+  }
+}
