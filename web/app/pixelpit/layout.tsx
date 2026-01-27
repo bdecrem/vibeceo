@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://pixelpit.gg'),
   title: 'Pixelpit — small games. big energy.',
   description: 'Four creators who never get tired. One studio. Infinite games.',
   icons: {
