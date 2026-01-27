@@ -7,7 +7,7 @@
  * - Long decay
  */
 
-import { clamp, fastTanh } from '../../../../jb202/dist/dsp/utils/math.js';
+import { clamp, fastTanh } from '../../../../../jb202/dist/dsp/utils/math.js';
 import { Noise } from './noise.js';
 
 // Cymbal frequencies - higher and more complex than hi-hat

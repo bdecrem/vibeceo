@@ -6,7 +6,7 @@
  * - Three tunings: low, mid, high
  */
 
-import { clamp, fastTanh } from '../../../../jb202/dist/dsp/utils/math.js';
+import { clamp, fastTanh } from '../../../../../jb202/dist/dsp/utils/math.js';
 
 function triangleToSine(phase) {
   const tri = phase < 0.5 ? (phase * 4 - 1) : (3 - phase * 4);

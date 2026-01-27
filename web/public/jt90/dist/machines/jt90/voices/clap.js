@@ -7,8 +7,8 @@
  * - Reverb-like tail
  */
 
-import { clamp, fastTanh } from '../../../../jb202/dist/dsp/utils/math.js';
-import { Noise } from '../../../../jb202/dist/dsp/generators/index.js';
+import { clamp, fastTanh } from '../../../../../jb202/dist/dsp/utils/math.js';
+import { Noise } from '../../../../../jb202/dist/dsp/generators/index.js';
 
 export class ClapVoice {
   constructor(sampleRate = 44100) {

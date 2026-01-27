@@ -7,7 +7,7 @@
  * - Very short decay
  */
 
-import { clamp, fastTanh } from '../../../../jb202/dist/dsp/utils/math.js';
+import { clamp, fastTanh } from '../../../../../jb202/dist/dsp/utils/math.js';
 import { Noise } from './noise.js';
 
 export class RimshotVoice {
