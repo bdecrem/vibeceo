@@ -462,6 +462,24 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // SPECIFIC FIX: Bypass JT10 lead synth
+  if (pathname === '/jt10' || pathname.startsWith('/jt10/')) {
+    log(`[Middleware] JT10 bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
+  // SPECIFIC FIX: Bypass JT30 acid bass
+  if (pathname === '/jt30' || pathname.startsWith('/jt30/')) {
+    log(`[Middleware] JT30 bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
+  // SPECIFIC FIX: Bypass JT90 drum machine
+  if (pathname === '/jt90' || pathname.startsWith('/jt90/')) {
+    log(`[Middleware] JT90 bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
   // SPECIFIC FIX: Bypass synthmachine landing page
   if (pathname === '/synthmachine' || pathname.startsWith('/synthmachine/')) {
     log(`[Middleware] SynthMachine bypassed: ${pathname}`)
