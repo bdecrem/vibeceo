@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch games from pixelpit state table
     let query = supabase
-      .from("kochitown_state")
+      .from("pixelpit_state")
       .select("key, data, created_at")
       .eq("type", "game")
       .order("created_at", { ascending: true });

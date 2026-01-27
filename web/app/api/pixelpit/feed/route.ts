@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch activity logs
     const { data: logs, error: logsError } = await supabase
-      .from("kochitown_state")
+      .from("pixelpit_state")
       .select("key, data, created_at")
       .eq("type", "log")
       .order("created_at", { ascending: false })
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     // Also fetch recent task completions for the feed
     const { data: tasks, error: tasksError } = await supabase
-      .from("kochitown_state")
+      .from("pixelpit_state")
       .select("key, data, created_at")
       .eq("type", "task")
       .order("created_at", { ascending: false })

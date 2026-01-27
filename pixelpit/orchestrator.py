@@ -45,7 +45,7 @@ from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient, tool, create_s
 
 # Paths
 REPO_ROOT = Path(__file__).parent.parent
-KOCHITOWN_PATH = Path(__file__).parent
+PIXELPIT_PATH = Path(__file__).parent
 GAMES_OUTPUT_PATH = REPO_ROOT / "web" / "app" / "pixelpit"
 
 OPERATING_HOURS = {
@@ -637,7 +637,7 @@ def is_operating_hours() -> bool:
     # Check day (Monday=0, Sunday=6)
     if now.weekday() not in OPERATING_HOURS["days"]:
         # Allow Sunday for launch day (can be toggled)
-        if os.environ.get("KOCHITOWN_ALLOW_SUNDAY") == "1":
+        if os.environ.get("PIXELPIT_ALLOW_SUNDAY") == "1":
             pass
         else:
             return False
@@ -816,7 +816,7 @@ def main():
 
     # Allow running outside hours with --force
     if args.force:
-        os.environ["KOCHITOWN_ALLOW_SUNDAY"] = "1"
+        os.environ["PIXELPIT_ALLOW_SUNDAY"] = "1"
         OPERATING_HOURS["start"] = 0
         OPERATING_HOURS["end"] = 24
         OPERATING_HOURS["days"] = [0, 1, 2, 3, 4, 5, 6]
