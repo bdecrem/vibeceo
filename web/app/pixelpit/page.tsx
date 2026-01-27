@@ -96,8 +96,8 @@ export default function PixelpitLanding() {
         </h2>
         <div className="max-w-4xl mx-auto grid grid-cols-3 md:grid-cols-6 gap-4">
           {[
-            { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true },
-            { icon: '💧', name: 'Rain', href: '/pixelpit/arcade/rain', playable: true },
+            { icon: '⚡', name: 'Beam', href: '/arcade/beam', playable: true },
+            { icon: '💧', name: 'Rain', href: '/arcade/rain', playable: true },
             { icon: '🧠', name: 'Memory', href: null, playable: false },
             { icon: '🐍', name: 'Snake', href: null, playable: false },
             { icon: '🔨', name: 'Whack', href: null, playable: false },
