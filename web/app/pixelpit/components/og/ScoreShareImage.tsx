@@ -194,23 +194,22 @@ export function BeamDecorations() {
 
 /**
  * RAIN-specific decorations: falling drops.
+ * Note: Satori (next/og) has limited support for fragments and some CSS.
+ * Using explicit wrapper div and simplified styles.
  */
 export function RainDecorations() {
-  // Positions for decorative drops
-  const drops = [
-    { x: 200, y: 120 },
-    { x: 400, y: 80 },
-    { x: 800, y: 150 },
-    { x: 1000, y: 100 },
-    { x: 150, y: 480 },
-    { x: 350, y: 520 },
-    { x: 850, y: 460 },
-    { x: 1050, y: 500 },
-  ];
-
   return (
-    <>
-      {/* Ambient gradient */}
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Ambient glow at bottom */}
       <div
         style={{
           position: 'absolute',
@@ -218,27 +217,83 @@ export function RainDecorations() {
           left: 0,
           right: 0,
           height: 200,
-          background: 'linear-gradient(transparent, rgba(34, 211, 238, 0.15))',
+          background: 'linear-gradient(180deg, #0f172a00 0%, #22d3ee26 100%)',
         }}
       />
 
-      {/* Decorative drops */}
-      {drops.map((drop, i) => (
-        <div
-          key={i}
-          style={{
-            position: 'absolute',
-            left: drop.x,
-            top: drop.y,
-            width: 20,
-            height: 28,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #fbbf24 0%, #f472b6 100%)',
-            boxShadow: '0 0 20px rgba(244, 114, 182, 0.5)',
-            opacity: 0.6,
-          }}
-        />
-      ))}
-    </>
+      {/* Decorative drops - using fixed positions like BEAM does */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 200,
+          top: 120,
+          width: 20,
+          height: 28,
+          borderRadius: 14,
+          background: '#fbbf24',
+          opacity: 0.5,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 400,
+          top: 80,
+          width: 20,
+          height: 28,
+          borderRadius: 14,
+          background: '#f472b6',
+          opacity: 0.5,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 800,
+          top: 150,
+          width: 20,
+          height: 28,
+          borderRadius: 14,
+          background: '#fbbf24',
+          opacity: 0.5,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 1000,
+          top: 100,
+          width: 20,
+          height: 28,
+          borderRadius: 14,
+          background: '#f472b6',
+          opacity: 0.5,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 150,
+          top: 480,
+          width: 20,
+          height: 28,
+          borderRadius: 14,
+          background: '#fbbf24',
+          opacity: 0.5,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 1050,
+          top: 500,
+          width: 20,
+          height: 28,
+          borderRadius: 14,
+          background: '#f472b6',
+          opacity: 0.5,
+        }}
+      />
+    </div>
   );
 }
