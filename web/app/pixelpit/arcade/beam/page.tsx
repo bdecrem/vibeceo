@@ -145,7 +145,7 @@ export default function BeamGame() {
         if (container) {
           container.innerHTML = ''; // Clear any existing button
           window.PixelpitSocial!.ShareButton('share-btn-container', {
-            url: `${window.location.origin}/pixelpit/arcade/beam`,
+            url: `${window.location.origin}/pixelpit/arcade/beam/share/${score}`,
             text: `I scored ${score} on BEAM! Can you beat me?`,
             style: 'minimal',
           });
