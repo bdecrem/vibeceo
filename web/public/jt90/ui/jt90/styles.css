@@ -368,6 +368,87 @@ h1::before {
   text-align: left;
 }
 
+/* Voice row (909-style naming) */
+.voice-row {
+  display: grid;
+  grid-template-columns: 80px repeat(16, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.voice-label {
+  display: none;
+  align-items: center;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.voice-label:hover {
+  background: var(--bg-elevated);
+  color: var(--red-400);
+}
+
+.voice-label-short {
+  display: flex;
+  align-items: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  transition: all 0.15s;
+}
+
+.voice-label-short:hover {
+  background: var(--bg-elevated);
+  color: var(--red-400);
+}
+
+/* Step button (909-style) */
+.step {
+  aspect-ratio: 1;
+  min-height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-dark);
+  cursor: pointer;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.step:hover {
+  border-color: var(--red-800);
+}
+
+.step--on {
+  background: var(--red-700);
+  border-color: var(--red-600);
+}
+
+.step--accent {
+  background: var(--red-500);
+  border-color: var(--red-400);
+}
+
+.step--playing {
+  box-shadow: 0 0 8px var(--red-500);
+}
+
+/* Legacy seq- classes for backwards compatibility */
 .seq-row {
   display: grid;
   grid-template-columns: 60px repeat(16, 1fr);
@@ -426,6 +507,11 @@ h1::before {
 
 .seq-step.playing {
   box-shadow: 0 0 8px var(--red-500);
+}
+
+/* Voice row dimmed state */
+.voice-row--dimmed {
+  opacity: 0.4;
 }
 
 /* Voice Controls */
@@ -617,6 +703,15 @@ h1::before {
   color: var(--text-secondary);
 }
 
+.voice-info-note {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 /* Share Modal */
 .share-modal {
   display: none;
@@ -733,6 +828,260 @@ h1::before {
   color: var(--text-muted);
 }
 
+/* Manage Modals */
+.manage-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.manage-modal.active {
+  display: flex;
+}
+
+.manage-modal-content {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  padding: 1rem;
+  width: 320px;
+  max-height: 70vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.manage-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.manage-modal-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--red-400);
+}
+
+.manage-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.manage-modal-close:hover {
+  color: var(--text-primary);
+}
+
+.manage-modal-body {
+  padding: 0;
+}
+
+.manage-patterns-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.manage-pattern-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.manage-pattern-item:last-child {
+  margin-bottom: 0;
+}
+
+.manage-pattern-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manage-pattern-bpm {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+.manage-pattern-actions {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.75rem;
+  flex-shrink: 0;
+}
+
+.manage-pattern-actions button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-accent);
+  border-radius: 4px;
+  background: var(--bg-dark);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.manage-pattern-actions button:hover {
+  background: var(--bg-elevated);
+  color: var(--red-400);
+  border-color: var(--red-700);
+}
+
+.manage-pattern-actions .delete-btn:hover {
+  color: var(--red-500);
+}
+
+.manage-empty {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 1.5rem;
+}
+
+/* Voice Panels with LEDs */
+.voice-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0.75rem;
+  min-width: 120px;
+}
+
+.voice-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.voice-panel-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #333;
+  transition: all 0.1s;
+}
+
+.voice-panel-led.active {
+  background: var(--red-500);
+  box-shadow: 0 0 8px var(--red-500);
+}
+
+.voice-panel-name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.voice-panel .voice-info-btn {
+  width: 14px;
+  height: 14px;
+  font-size: 0.5rem;
+}
+
+.knobs-container {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.knob-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.knob-wrapper .knob {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #3a3a3a, #1a1a1a 70%);
+  border: 2px solid #2a2a2a;
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+  touch-action: none;
+}
+
+.knob-wrapper .knob::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 10px;
+  background: linear-gradient(to bottom, var(--red-400), var(--red-600));
+  border-radius: 1px;
+  transform-origin: center bottom;
+  transform: translate(-50%, -100%);
+  box-shadow: 0 0 4px var(--red-500);
+}
+
+.knob-wrapper .knob::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--bg-dark);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid #333;
+}
+
+.knob-label {
+  font-size: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.knob-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--red-400);
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   body {
@@ -767,6 +1116,29 @@ h1::before {
     padding: 0.75rem;
   }
 
+  /* Voice row mobile - show only 8 steps at a time */
+  .voice-row {
+    grid-template-columns: 40px repeat(8, 1fr);
+  }
+
+  .voice-row .step:nth-child(n+10) {
+    display: none;
+  }
+
+  .sequencer.page-2 .voice-row .step:nth-child(n+10) {
+    display: flex;
+  }
+
+  .sequencer.page-2 .voice-row .step:nth-child(-n+9):not(.voice-label):not(.voice-label-short) {
+    display: none;
+  }
+
+  .voice-label-short {
+    font-size: 0.55rem;
+    padding: 0.2rem 0.3rem;
+  }
+
+  /* Legacy seq classes */
   .seq-row {
     grid-template-columns: 40px repeat(8, 1fr);
   }
@@ -780,6 +1152,40 @@ h1::before {
   }
 
   .keyboard-hints {
+    display: none;
+  }
+
+  /* Voice panels on mobile */
+  .params-grid {
+    gap: 0.5rem;
+  }
+
+  .voice-panel {
+    min-width: 100px;
+    padding: 0.5rem;
+  }
+
+  .knobs-container {
+    gap: 0.5rem;
+  }
+
+  .knob-wrapper .knob {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Desktop - show full labels */
+@media (min-width: 769px) {
+  .voice-row {
+    grid-template-columns: 100px repeat(16, 1fr);
+  }
+
+  .voice-label {
+    display: flex;
+  }
+
+  .voice-label-short {
     display: none;
   }
 }

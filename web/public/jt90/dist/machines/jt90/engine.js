@@ -73,7 +73,114 @@ export class JT90Engine {
     return this._voices;
   }
 
+  // === Volume and Accent ===
+
+  setVolume(level) {
+    this.masterVolume = Math.max(0, Math.min(1, level));
+  }
+
+  getVolume() {
+    return this.masterVolume;
+  }
+
+  setAccentLevel(level) {
+    this._accentLevel = Math.max(0, Math.min(1, level));
+  }
+
+  getAccentLevel() {
+    return this._accentLevel ?? 1.0;
+  }
+
   // === Parameter API ===
+
+  // Voice parameter descriptors for UI
+  static VOICE_PARAMS = {
+    kick: [
+      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'attack', label: 'Attack', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'sweep', label: 'Sweep', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
+    ],
+    snare: [
+      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.4 },
+      { id: 'snappy', label: 'Snappy', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
+    ],
+    clap: [
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
+    ],
+    rimshot: [
+      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.3 },
+      { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
+    ],
+    ch: [
+      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.2 },
+      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
+    ],
+    oh: [
+      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
+    ],
+    ltom: [
+      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
+    ],
+    mtom: [
+      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
+    ],
+    htom: [
+      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
+    ],
+    crash: [
+      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.7 },
+      { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
+    ],
+    ride: [
+      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.6 },
+      { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
+    ],
+  };
+
+  getVoiceParams(voiceId) {
+    return JT90Engine.VOICE_PARAMS[voiceId] ?? [];
+  }
+
+  getAllVoiceParams() {
+    this._ensureVoices();
+    const result = {};
+    for (const voiceId of VOICE_IDS) {
+      const params = JT90Engine.VOICE_PARAMS[voiceId];
+      if (!params) continue;
+      result[voiceId] = {};
+      for (const param of params) {
+        const value = this._voices[voiceId]?.[param.id];
+        if (value !== undefined && value !== param.defaultValue) {
+          result[voiceId][param.id] = value;
+        }
+      }
+      if (Object.keys(result[voiceId]).length === 0) {
+        delete result[voiceId];
+      }
+    }
+    return result;
+  }
 
   setVoiceParameter(voiceId, paramId, value) {
     this._ensureVoices();
@@ -87,6 +194,21 @@ export class JT90Engine {
     this._ensureVoices();
     const voice = this._voices[voiceId];
     return voice?.[paramId] ?? 0;
+  }
+
+  // === Track API (aliases for sequencer) ===
+
+  getTrackPattern(voiceId) {
+    const pattern = this.sequencer.getPattern();
+    return pattern[voiceId] ?? [];
+  }
+
+  setTrackStep(voiceId, step, data) {
+    this.sequencer.setStep(voiceId, step, data);
+  }
+
+  getFullPattern() {
+    return this.sequencer.getPattern();
   }
 
   // === Trigger API ===
@@ -109,6 +231,11 @@ export class JT90Engine {
     }
   }
 
+  // Alias for trigger
+  triggerVoice(voiceId, velocity = 1.0) {
+    this.trigger(voiceId, velocity);
+  }
+
   // === Sequencer API ===
 
   setBpm(bpm) { this.sequencer.setBpm(bpm); }
@@ -119,11 +246,23 @@ export class JT90Engine {
   getStep(voiceId, step) { return this.sequencer.getStep(voiceId, step); }
   setSwing(amount) { this.sequencer.setSwing(amount); }
   getSwing() { return this.sequencer.getSwing(); }
+  setPatternLength(length) { this.sequencer.setPatternLength(length); }
+  getPatternLength() { return this.sequencer.getPatternLength(); }
+  setScale(scale) { this.sequencer.setScale(scale); }
+  getScale() { return this.sequencer.getScale(); }
 
   // === Real-time Playback ===
 
   async startSequencer() {
-    if (!this.context) return;
+    // Create audio context if needed
+    if (!this.context) {
+      this.context = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    // Resume if suspended (for autoplay policy)
+    if (this.context.state === 'suspended') {
+      await this.context.resume();
+    }
 
     this._ensureVoices();
 
@@ -353,6 +492,60 @@ export class JT90Engine {
   }
 
   getOutput() { return this._scriptNode ?? null; }
+
+  // === WAV Export ===
+
+  async audioBufferToBlob(buffer) {
+    // Simple WAV encoding
+    const numChannels = 1;
+    const sampleRate = buffer.sampleRate;
+    const data = buffer._data ?? buffer.getChannelData(0);
+    const length = data.length;
+    const bytesPerSample = 2;
+    const blockAlign = numChannels * bytesPerSample;
+    const byteRate = sampleRate * blockAlign;
+    const dataSize = length * blockAlign;
+
+    const bufferSize = 44 + dataSize;
+    const arrayBuffer = new ArrayBuffer(bufferSize);
+    const view = new DataView(arrayBuffer);
+
+    // RIFF header
+    this._writeString(view, 0, 'RIFF');
+    view.setUint32(4, bufferSize - 8, true);
+    this._writeString(view, 8, 'WAVE');
+
+    // fmt chunk
+    this._writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bytesPerSample * 8, true);
+
+    // data chunk
+    this._writeString(view, 36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    // Write samples
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+      const sample = Math.max(-1, Math.min(1, data[i]));
+      const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+      view.setInt16(offset, intSample, true);
+      offset += 2;
+    }
+
+    return new Blob([arrayBuffer], { type: 'audio/wav' });
+  }
+
+  _writeString(view, offset, str) {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
+    }
+  }
 
   dispose() {
     this.stopSequencer();

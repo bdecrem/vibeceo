@@ -20,11 +20,21 @@ function createEmptyPattern() {
   return pattern;
 }
 
+// Scale modes: how to interpret 16 steps
+const SCALE_DIVISORS = {
+  '16th': 4,        // 4 steps per beat (default)
+  '8th-triplet': 3, // 3 steps per beat (triplet feel)
+  '16th-triplet': 6,// 6 steps per beat
+  '32nd': 8         // 8 steps per beat (double speed)
+};
+
 export class JT90Sequencer {
   constructor(options = {}) {
     this.steps = options.steps ?? 16;
+    this.patternLength = options.patternLength ?? 16;
     this.bpm = options.bpm ?? 125;
     this.swing = 0;
+    this.scale = '16th';
     this.pattern = createEmptyPattern();
 
     // Playback state
@@ -57,6 +67,24 @@ export class JT90Sequencer {
 
   getSwing() {
     return this.swing;
+  }
+
+  setPatternLength(length) {
+    this.patternLength = Math.max(1, Math.min(16, length));
+  }
+
+  getPatternLength() {
+    return this.patternLength;
+  }
+
+  setScale(scale) {
+    if (SCALE_DIVISORS[scale]) {
+      this.scale = scale;
+    }
+  }
+
+  getScale() {
+    return this.scale;
   }
 
   setPattern(pattern) {
@@ -114,7 +142,8 @@ export class JT90Sequencer {
       if (!this.running || !this.context) return;
 
       const currentTime = this.context.currentTime;
-      const baseStepDuration = 60 / this.bpm / 4;
+      const divisor = SCALE_DIVISORS[this.scale] ?? 4;
+      const baseStepDuration = 60 / this.bpm / divisor;
 
       while (this.nextStepTime < currentTime + lookahead) {
         this._triggerStep(this.currentStep, this.nextStepTime);
@@ -126,7 +155,7 @@ export class JT90Sequencer {
           : baseStepDuration;
 
         this.nextStepTime += stepDuration;
-        this.currentStep = (this.currentStep + 1) % 16;
+        this.currentStep = (this.currentStep + 1) % this.patternLength;
       }
     }, scheduleInterval);
   }

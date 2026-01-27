@@ -22,10 +22,8 @@
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
           </button>
-          <button id="info-btn" class="voice-info-btn" title="Synthesis info">i</button>
         </div>
       </div>
-
       <section class="controls">
         <!-- Kit & Pattern selectors -->
         <div class="kit-pattern-row">
@@ -68,6 +66,15 @@
             <option value="16" selected>16</option>
           </select>
         </label>
+        <label class="compact-select">
+          <span>Scale</span>
+          <select id="scale-mode">
+            <option value="16th">16th</option>
+            <option value="8th-triplet">8T</option>
+            <option value="16th-triplet">16T</option>
+            <option value="32nd">32nd</option>
+          </select>
+        </label>
       </section>
 
       <section class="controls controls-row-2">
@@ -80,14 +87,11 @@
         <div class="controls-divider"></div>
         <button id="play-toggle" type="button">Play</button>
       </section>
-
       <div id="status"></div>
-
       <div class="step-page-toggle">
         <button class="step-page-btn active" data-page="1">1-8</button>
         <button class="step-page-btn" data-page="2">9-16</button>
       </div>
-
       <section id="sequencer" class="sequencer"></section>
 
       <section class="voice-controls">
@@ -100,38 +104,6 @@
         <kbd>1</kbd>-<kbd>0</kbd> Trigger sounds (BD, SD, CP, RS, LT, MT, HT, CH, OH, CC)
       </div>
     </main>
-
-    <!-- Info Modal -->
-    <div id="info-modal" class="voice-info-modal">
-      <div class="voice-info-content">
-        <div class="voice-info-header">
-          <span class="voice-info-title">JT-90 Drum Machine</span>
-          <button class="voice-info-close" aria-label="Close">&times;</button>
-        </div>
-        <div class="voice-info-body">
-          <div class="voice-info-section">
-            <div class="voice-info-label">Modular DSP</div>
-            <div class="voice-info-text">Built with Jambot's modular DSP architecture. Each voice uses pure JavaScript synthesis with deterministic noise generators for consistent output.</div>
-          </div>
-          <div class="voice-info-section">
-            <div class="voice-info-label">Voices</div>
-            <div class="voice-info-text">
-              BD - Kick with pitch envelope and click<br>
-              SD - Snare with tuned oscillators + noise<br>
-              CP - Clap with multiple noise bursts<br>
-              RS - Rimshot<br>
-              LT/MT/HT - Toms (low, mid, high)<br>
-              CH/OH - Hi-hats (closed, open)<br>
-              CC/RC - Cymbals (crash, ride)
-            </div>
-          </div>
-          <div class="voice-info-section">
-            <div class="voice-info-label">Cross-Platform</div>
-            <div class="voice-info-text">Same sound engine works in browser and Jambot CLI. Sample-accurate synthesis ensures identical output.</div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Export/Import Modal -->
     <div id="share-modal" class="share-modal">
@@ -166,6 +138,34 @@
       </div>
     </div>
     <input type="file" id="import-file" accept=".json" style="display: none" />
+
+    <!-- Manage Patterns Modal -->
+    <div id="manage-modal" class="manage-modal">
+      <div class="manage-modal-content">
+        <div class="manage-modal-header">
+          <span class="manage-modal-title">Manage Patterns</span>
+          <button class="manage-modal-close">&times;</button>
+        </div>
+        <div class="manage-modal-body">
+          <ul id="manage-patterns-list" class="manage-patterns-list"></ul>
+          <div class="manage-empty" id="manage-empty">No saved patterns yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manage Kits Modal -->
+    <div id="manage-kits-modal" class="manage-modal">
+      <div class="manage-modal-content">
+        <div class="manage-modal-header">
+          <span class="manage-modal-title">Manage Kits</span>
+          <button class="manage-modal-close">&times;</button>
+        </div>
+        <div class="manage-modal-body">
+          <ul id="manage-kits-list" class="manage-patterns-list"></ul>
+          <div class="manage-empty" id="manage-kits-empty">No saved kits yet.</div>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="../../dist/ui/jt90/app.js"></script>
   </body>
