@@ -344,7 +344,7 @@ export const TOOLS = [
   // JB01 (Reference Drum Machine)
   {
     name: "add_jb01",
-    description: "Add JB01 drum pattern (reference drum machine). 8 voices: kick, snare, clap, ch (closed hat), oh (open hat), perc, tom, cymbal. Pass step arrays [0,4,8,12] for each voice. Use clear:true when creating a fresh pattern (e.g., for song mode variations).",
+    description: "Add JB01 drum pattern (reference drum machine). 8 voices: kick, snare, clap, ch (closed hat), oh (open hat), lowtom, hitom, cymbal. Pass step arrays [0,4,8,12] for each voice. Use clear:true when creating a fresh pattern (e.g., for song mode variations).",
     input_schema: {
       type: "object",
       properties: {
@@ -355,8 +355,8 @@ export const TOOLS = [
         clap: { type: "array", items: { type: "number" }, description: "Clap steps (0-15 for 1 bar)" },
         ch: { type: "array", items: { type: "number" }, description: "Closed hi-hat steps (0-15 for 1 bar)" },
         oh: { type: "array", items: { type: "number" }, description: "Open hi-hat steps (0-15 for 1 bar)" },
-        perc: { type: "array", items: { type: "number" }, description: "Percussion steps (0-15 for 1 bar)" },
-        tom: { type: "array", items: { type: "number" }, description: "Tom steps (0-15 for 1 bar)" },
+        lowtom: { type: "array", items: { type: "number" }, description: "Low tom steps (0-15 for 1 bar)" },
+        hitom: { type: "array", items: { type: "number" }, description: "Hi tom steps (0-15 for 1 bar)" },
         cymbal: { type: "array", items: { type: "number" }, description: "Cymbal steps (0-15 for 1 bar)" }
       },
       required: []
@@ -368,7 +368,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        voice: { type: "string", enum: ["kick", "snare", "clap", "ch", "oh", "perc", "tom", "cymbal"], description: "Voice to tweak (required)" },
+        voice: { type: "string", enum: ["kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Voice to tweak (required)" },
         mute: { type: "boolean", description: "Mute voice (sets level to -60dB)" },
         level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
         tune: { type: "number", description: "Pitch in semitones (-12 to +12)" },
@@ -605,7 +605,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["jb01", "jb200", "sampler", "kick", "snare", "clap", "ch", "oh", "perc", "tom", "cymbal"], description: "Instrument or JB01 voice to add effect to" },
+        channel: { type: "string", enum: ["jb01", "jb200", "sampler", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to add effect to" },
         effect: { type: "string", enum: ["eq", "filter", "ducker"], description: "Type of effect" },
         preset: { type: "string", description: "Effect preset (eq: 'acidBass'/'crispHats'/'warmPad'; filter: 'dubDelay'/'telephone'/'lofi')" },
         params: {
@@ -622,7 +622,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["jb01", "jb200", "sampler", "kick", "snare", "clap", "ch", "oh", "perc", "tom", "cymbal"], description: "Instrument or JB01 voice to remove effect from" },
+        channel: { type: "string", enum: ["jb01", "jb200", "sampler", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to remove effect from" },
         effect: { type: "string", enum: ["eq", "filter", "ducker", "all"], description: "Type of effect to remove, or 'all' to clear all inserts" }
       },
       required: ["channel"]
@@ -968,7 +968,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        preset: { type: "string", enum: ["basic", "pluck", "dualBass", "empty"], description: "Preset patch to load. 'basic' = osc->filter->vca, 'pluck' = Karplus-Strong string, 'dualBass' = dual osc bass. Default: empty" }
+        preset: { type: "string", enum: ["basic", "pluck", "dualBass", "empty"], description: "Preset patch to load. 'basic' = osc->filter->vca with envelope on filter+vca (full synth voice), 'pluck' = Karplus-Strong string->filter->drive (NO envelope - static filter, add env-adsr and connect to filter1.cutoffCV for filter movement), 'dualBass' = dual osc bass with envelope. Default: empty" }
       },
       required: []
     }
@@ -998,12 +998,12 @@ export const TOOLS = [
   },
   {
     name: "connect_modules",
-    description: "Connect two module ports in the JP9000. Format: 'moduleId.portName' (e.g., 'osc1.audio' -> 'filter1.audio').",
+    description: "Connect two module ports in the JP9000. Format: 'moduleId.portName'. COMMON PATCHES: Audio routing: 'osc1.audio'->'filter1.audio'->'vca1.audio'. Filter envelope: 'env1.cv'->'filter1.cutoffCV' (then set filter1.envAmount). VCA envelope: 'env1.cv'->'vca1.cv'. Envelopes auto-trigger on pattern notes.",
     input_schema: {
       type: "object",
       properties: {
-        from: { type: "string", description: "Source port (e.g., 'osc1.audio', 'env1.cv')" },
-        to: { type: "string", description: "Destination port (e.g., 'filter1.audio', 'vca1.cv')" }
+        from: { type: "string", description: "Source port (e.g., 'osc1.audio', 'env1.cv', 'string1.audio')" },
+        to: { type: "string", description: "Destination port (e.g., 'filter1.audio', 'filter1.cutoffCV', 'vca1.cv')" }
       },
       required: ["from", "to"]
     }
@@ -1034,7 +1034,7 @@ export const TOOLS = [
   },
   {
     name: "tweak_module",
-    description: "Adjust a parameter on a JP9000 module. Common params by type: osc-* (frequency, octave, detune), filter-* (cutoff, resonance, envAmount), env-adsr (attack, decay, sustain, release), string (decay, brightness, pluckPosition), drive (amount, type, mix), vca (gain), mixer (gain1-4).",
+    description: "Adjust a parameter on a JP9000 module. PARAMS BY TYPE: osc-* (frequency, octave, detune), filter-* (cutoff 20-16000Hz, resonance 0-100, envAmount -100 to +100 - REQUIRES env connected to cutoffCV), env-adsr (attack/decay/sustain/release 0-100), string (decay, brightness, pluckPosition), drive (amount, type, mix), vca (gain), mixer (gain1-4). NOTE: filter envAmount only works if an envelope CV is connected to the filter's cutoffCV input.",
     input_schema: {
       type: "object",
       properties: {

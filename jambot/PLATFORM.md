@@ -138,7 +138,7 @@ Instruments extend `InstrumentNode` from `core/node.js`. Each instrument:
 class JB01Node extends InstrumentNode {
   constructor() {
     super('jb01');
-    this._voices = ['kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
+    this._voices = ['kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
     this._registerParams();  // From jb01-params.json
   }
 
@@ -272,7 +272,7 @@ These could also register in ParamSystem as `levels.*` for `tweak()` access.
 Three instruments ready to play:
 
 ### drums (JB01)
-8 voices: `kick`, `snare`, `clap`, `ch` (closed hat), `oh` (open hat), `perc`, `tom`, `cymbal`
+8 voices: `kick`, `snare`, `clap`, `ch` (closed hat), `oh` (open hat), `lowtom`, `hitom`, `cymbal`
 
 ```
 add_drums({ kick: [0,4,8,12], snare: [4,12], ch: [0,2,4,6,8,10,12,14] })

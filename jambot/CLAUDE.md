@@ -40,7 +40,7 @@ Core files:
 
 | Instrument | ID | Description |
 |------------|-----|-------------|
-| **JB01** | `jb01` | Drum machine (8 voices: kick, snare, clap, ch, oh, perc, tom, cymbal) |
+| **JB01** | `jb01` | Drum machine (8 voices: kick, snare, clap, ch, oh, lowtom, hitom, cymbal) |
 | **JB200** | `jb200` | Bass monosynth (2-osc, filter, drive) |
 | **JB202** | `jb202` | Modular bass synth with custom DSP (cross-platform consistent) |
 | **JP9000** | `jp9000` | True modular synth with patchable modules (oscillators, filters, Karplus-Strong strings) |
@@ -90,7 +90,7 @@ JP9000 is a fully patchable modular synthesizer where you connect modules togeth
 
 **API**: Module-based patching with `add_module`, `connect_modules`, `tweak_module`.
 
-**Presets**: `basic` (osc→filter→vca), `pluck` (string→filter→drive), `dualBass` (dual osc bass)
+**Presets**: `basic` (osc→filter→vca WITH envelope), `pluck` (string→filter→drive, NO envelope), `dualBass` (dual osc bass WITH envelope)
 
 **Example workflow:**
 ```
@@ -99,6 +99,18 @@ tweak_module({ module: 'string1', param: 'brightness', value: 70 })
 add_jp9000_pattern({ pattern: [...] })   # Set melodic pattern
 render()
 ```
+
+**Adding filter envelope to pluck preset** (pluck has NO envelope by default):
+```
+add_module({ type: 'env-adsr', id: 'env1' })              # Add envelope
+connect_modules({ from: 'env1.cv', to: 'filter1.cutoffCV' })  # Connect to filter
+tweak_module({ module: 'filter1', param: 'envAmount', value: 50 })  # Scale modulation
+tweak_module({ module: 'env1', param: 'attack', value: 0 })
+tweak_module({ module: 'env1', param: 'decay', value: 30 })
+tweak_module({ module: 'env1', param: 'sustain', value: 20 })
+tweak_module({ module: 'env1', param: 'release', value: 10 })
+```
+Note: Envelopes auto-trigger when pattern notes play.
 
 ## Synth Sources
 
@@ -594,7 +606,7 @@ tweak({ path: 'sampler.s1.level', value: 0 })        → Sets sampler slot 1 to 
 
 | Tool | Instrument | Description |
 |------|------------|-------------|
-| `add_jb01` | JB01 | Drum machine (8 voices: kick, snare, clap, ch, oh, perc, tom, cymbal). Use `bars` param for multi-bar patterns. |
+| `add_jb01` | JB01 | Drum machine (8 voices: kick, snare, clap, ch, oh, lowtom, hitom, cymbal). Use `bars` param for multi-bar patterns. |
 | `add_jb200` | JB200 | Bass monosynth pattern with note, gate, accent, slide. Use `bars` param for multi-bar patterns. |
 | `add_jb202` | JB202 | Modular bass synth pattern (same format as JB200). Cross-platform consistent output. |
 | `add_jp9000` | JP9000 | Initialize modular synth with optional preset (basic, pluck, dualBass). |

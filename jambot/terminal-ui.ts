@@ -916,6 +916,12 @@ class TerminalUI {
         onTool: (name: string) => this.printTool(name),
         onToolResult: (result: string) => this.printResult(result),
         onResponse: (text: string) => this.printResponse(text),
+        onAfterTool: (_toolName: string, session: any) => {
+          // AUTO-SAVE after every tool execution
+          if (currentProject) {
+            updateSession(currentProject, session);
+          }
+        },
       }, {
         getRenderPath: () => {
           currentProject = this.ensureProject(this.firstPrompt || input);

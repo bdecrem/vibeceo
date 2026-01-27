@@ -522,6 +522,9 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
 
           callbacks.onToolResult?.(result);
 
+          // AUTO-SAVE after every tool that modifies state
+          callbacks.onAfterTool?.(block.name, session);
+
           toolResults.push({
             type: "tool_result",
             tool_use_id: block.id,

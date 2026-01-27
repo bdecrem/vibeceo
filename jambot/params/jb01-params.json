@@ -41,12 +41,12 @@
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 60, "hint": "length" },
     "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "brightness" }
   },
-  "perc": {
+  "lowtom": {
     "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "pitch" },
-    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 30, "hint": "length" }
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "length" }
   },
-  "tom": {
+  "hitom": {
     "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "length" }

@@ -10,7 +10,7 @@ import { JB01Engine, VOICES as ENGINE_VOICES } from '../../dist/machines/jb01/en
 // Audio engine
 let engine = null;
 
-const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
+const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
 const STEPS = 16;
 
 // State

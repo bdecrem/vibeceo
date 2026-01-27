@@ -813,6 +813,12 @@ function App() {
           onResponse: (text) => {
             addMessage('response', text);
           },
+          onAfterTool: (_toolName, sess) => {
+            // AUTO-SAVE after every tool execution
+            if (currentProject) {
+              updateSession(currentProject, sess);
+            }
+          },
         },
         {
           // Called before render to get the path

@@ -2,7 +2,7 @@
  * JB01 Engine - Reference Drum Machine
  *
  * 8-voice drum machine with:
- * - kick, snare, clap, ch, oh, perc, tom, cymbal
+ * - kick, snare, clap, ch, oh, lowtom, hitom, cymbal
  * - Hi-hat choke (ch cuts oh)
  * - Pattern rendering
  */
@@ -12,8 +12,8 @@ import { KickVoice } from './voices/kick.js';
 import { SnareVoice } from './voices/snare.js';
 import { ClapVoice } from './voices/clap.js';
 import { HiHatVoice } from './voices/hihat.js';
-import { PercVoice } from './voices/perc.js';
-import { TomVoice } from './voices/tom.js';
+import { LowTomVoice } from './voices/lowtom.js';
+import { HiTomVoice } from './voices/hitom.js';
 import { CymbalVoice } from './voices/cymbal.js';
 
 export class JB01Engine extends SynthEngine {
@@ -42,8 +42,8 @@ export class JB01Engine extends SynthEngine {
     const clap = new ClapVoice('clap', this.context, noiseBuffer);
     const ch = new HiHatVoice('ch', this.context, noiseBuffer, 'closed');
     const oh = new HiHatVoice('oh', this.context, noiseBuffer, 'open');
-    const perc = new PercVoice('perc', this.context);
-    const tom = new TomVoice('tom', this.context);
+    const lowtom = new LowTomVoice('lowtom', this.context);
+    const hitom = new HiTomVoice('hitom', this.context);
     const cymbal = new CymbalVoice('cymbal', this.context, noiseBuffer);
 
     // Register voices
@@ -52,8 +52,8 @@ export class JB01Engine extends SynthEngine {
     this.registerVoice('clap', clap);
     this.registerVoice('ch', ch);
     this.registerVoice('oh', oh);
-    this.registerVoice('perc', perc);
-    this.registerVoice('tom', tom);
+    this.registerVoice('lowtom', lowtom);
+    this.registerVoice('hitom', hitom);
     this.registerVoice('cymbal', cymbal);
 
     // Track open hat for choke
@@ -172,8 +172,8 @@ export class JB01Engine extends SynthEngine {
       ['clap', new ClapVoice('clap', context, noiseBuffer)],
       ['ch', new HiHatVoice('ch', context, noiseBuffer, 'closed')],
       ['oh', new HiHatVoice('oh', context, noiseBuffer, 'open')],
-      ['perc', new PercVoice('perc', context)],
-      ['tom', new TomVoice('tom', context)],
+      ['lowtom', new LowTomVoice('lowtom', context)],
+      ['hitom', new HiTomVoice('hitom', context)],
       ['cymbal', new CymbalVoice('cymbal', context, noiseBuffer)],
     ]);
 
@@ -275,4 +275,4 @@ export class JB01Engine extends SynthEngine {
 }
 
 export const STEPS_PER_BAR = 16;
-export const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
+export const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];

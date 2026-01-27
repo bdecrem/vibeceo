@@ -237,6 +237,11 @@ export function updateSession(project, session) {
     // JB200 (bass) - active instrument
     jb200Pattern: session.jb200Pattern,
     jb200Params: session.jb200Params,
+    // JB202 (modular bass) - active instrument
+    jb202Pattern: session.jb202Pattern,
+    jb202Params: session.jb202Params,
+    // JP9000 (modular synth) - active instrument
+    jp9000State: session._nodes?.jp9000?.serialize?.() || null,
     // R9D9 (drums) - dormant
     drumKit: session.drumKit,
     drumPattern: session.drumPattern,
@@ -304,6 +309,15 @@ export function restoreSession(project) {
   if (saved.jb200Pattern) session.jb200Pattern = saved.jb200Pattern;
   if (saved.jb200Params) session.jb200Params = saved.jb200Params;
 
+  // Restore JB202 (modular bass) pattern and params
+  if (saved.jb202Pattern) session.jb202Pattern = saved.jb202Pattern;
+  if (saved.jb202Params) session.jb202Params = saved.jb202Params;
+
+  // Restore JP9000 (modular synth) full state
+  if (saved.jp9000State && session._nodes?.jp9000?.deserialize) {
+    session._nodes.jp9000.deserialize(saved.jp9000State);
+  }
+
   // Restore sampler kit and pattern
   if (saved.samplerKitId) {
     try {
@@ -331,11 +345,15 @@ export function restoreSession(project) {
   session.patterns = saved.patterns || {
     jb01: {},
     jb200: {},
+    jb202: {},
+    jp9000: {},
     sampler: {},
   };
   session.currentPattern = saved.currentPattern || {
     jb01: 'A',
     jb200: 'A',
+    jb202: 'A',
+    jp9000: 'A',
     sampler: 'A',
   };
   session.arrangement = saved.arrangement || [];

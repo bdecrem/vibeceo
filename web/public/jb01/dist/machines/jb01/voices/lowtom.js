@@ -1,7 +1,7 @@
 /**
- * JB01 Tom Voice
+ * JB01 Low Tom Voice
  *
- * 909-style tom with multiple oscillators:
+ * Lower-pitched tom (909-style):
  * - tune: pitch
  * - decay: length
  * - level: output level
@@ -12,7 +12,7 @@ import { Voice } from '../../../core/voice.js';
 const FREQ_RATIOS = [1, 1.5, 2.77];
 const OSC_GAINS = [1.0, 0.5, 0.25];
 
-export class TomVoice extends Voice {
+export class LowTomVoice extends Voice {
   constructor(id, context) {
     super(id, context);
     this.tune = 0;      // cents
@@ -22,14 +22,15 @@ export class TomVoice extends Voice {
 
   trigger(time, velocity) {
     const level = Math.max(0, Math.min(1, velocity * this.level));
-    const baseFreq = 150 * Math.pow(2, this.tune / 1200);
+    // Low tom: 100Hz base (lower than hi tom)
+    const baseFreq = 100 * Math.pow(2, this.tune / 1200);
 
-    // Pitch envelope parameters
-    const pitchMod = 0.6;
-    const pitchEnvTime = 0.05;
+    // Pitch envelope parameters - longer for low tom
+    const pitchMod = 0.7;
+    const pitchEnvTime = 0.06;
 
     const masterGain = this.context.createGain();
-    masterGain.gain.value = level * 0.7;
+    masterGain.gain.value = level * 0.75;
     masterGain.connect(this.output);
 
     // Create three oscillators at frequency ratios
@@ -49,10 +50,10 @@ export class TomVoice extends Voice {
       waveshaper.curve = this.createSoftClipCurve();
       waveshaper.oversample = '2x';
 
-      // Individual gain
+      // Individual gain - longer decay for low tom
       const oscGain = this.context.createGain();
       oscGain.gain.setValueAtTime(OSC_GAINS[i], time);
-      const decayTime = (0.2 + this.decay * 0.8) * (1 - i * 0.15);
+      const decayTime = (0.25 + this.decay * 0.9) * (1 - i * 0.12);
       oscGain.gain.exponentialRampToValueAtTime(0.001, time + decayTime);
 
       osc.connect(waveshaper);
@@ -63,19 +64,19 @@ export class TomVoice extends Voice {
       osc.stop(time + decayTime + 0.2);
     });
 
-    // Click transient
+    // Click transient - lower frequency for low tom
     const clickOsc = this.context.createOscillator();
     clickOsc.type = 'sine';
-    clickOsc.frequency.value = baseFreq * 4;
+    clickOsc.frequency.value = baseFreq * 3;
 
     const clickGain = this.context.createGain();
-    clickGain.gain.setValueAtTime(0.15, time);
-    clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.01);
+    clickGain.gain.setValueAtTime(0.12, time);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.015);
 
     clickOsc.connect(clickGain);
     clickGain.connect(masterGain);
     clickOsc.start(time);
-    clickOsc.stop(time + 0.02);
+    clickOsc.stop(time + 0.025);
   }
 
   createSoftClipCurve() {

@@ -15,7 +15,7 @@ import { registerTools } from './index.js';
 import { getParamDef, toEngine, fromEngine, formatValue } from '../params/converters.js';
 import { listKits, loadKit, listSequences, loadSequence } from '../presets/loader.js';
 
-const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
+const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
 
 /**
  * Convert step array (e.g., [0, 4, 8, 12]) to pattern array

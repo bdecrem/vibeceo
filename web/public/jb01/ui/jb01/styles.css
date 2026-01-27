@@ -36,8 +36,8 @@
     --voice-clap: #58a078;
     --voice-ch: #5898a8;
     --voice-oh: #8878a0;
-    --voice-perc: #a87888;
-    --voice-tom: #68a090;
+    --voice-lowtom: #a87888;
+    --voice-hitom: #68a090;
     --voice-cymbal: #8090a0;
 }
 
@@ -181,8 +181,8 @@ body {
 .voice-channel[data-voice="clap"] .voice-name { background: var(--voice-clap); }
 .voice-channel[data-voice="ch"] .voice-name { background: var(--voice-ch); }
 .voice-channel[data-voice="oh"] .voice-name { background: var(--voice-oh); color: #fff; }
-.voice-channel[data-voice="perc"] .voice-name { background: var(--voice-perc); }
-.voice-channel[data-voice="tom"] .voice-name { background: var(--voice-tom); }
+.voice-channel[data-voice="lowtom"] .voice-name { background: var(--voice-lowtom); }
+.voice-channel[data-voice="hitom"] .voice-name { background: var(--voice-hitom); }
 .voice-channel[data-voice="cymbal"] .voice-name { background: var(--voice-cymbal); }
 
 .mute-btn {
@@ -408,8 +408,8 @@ body {
 .voice-label.clap { background: var(--voice-clap); }
 .voice-label.ch { background: var(--voice-ch); }
 .voice-label.oh { background: var(--voice-oh); color: #fff; }
-.voice-label.perc { background: var(--voice-perc); }
-.voice-label.tom { background: var(--voice-tom); }
+.voice-label.lowtom { background: var(--voice-lowtom); }
+.voice-label.hitom { background: var(--voice-hitom); }
 .voice-label.cymbal { background: var(--voice-cymbal); }
 
 .seq-steps {

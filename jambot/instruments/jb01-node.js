@@ -12,7 +12,7 @@ import { JB01Engine } from '../../web/public/jb01/dist/machines/jb01/engine.js';
 import { OfflineAudioContext } from 'node-web-audio-api';
 
 // Voice IDs
-const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
+const VOICES = ['kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
 
 /**
  * Create an empty pattern for one voice

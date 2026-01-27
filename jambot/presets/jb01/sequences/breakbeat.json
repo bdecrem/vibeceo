@@ -92,7 +92,7 @@
       { "velocity": 0, "accent": false },
       { "velocity": 1, "accent": false }
     ],
-    "perc": [
+    "lowtom": [
       { "velocity": 0, "accent": false },
       { "velocity": 0, "accent": false },
       { "velocity": 0, "accent": false },
@@ -110,7 +110,7 @@
       { "velocity": 0, "accent": false },
       { "velocity": 0, "accent": false }
     ],
-    "tom": [
+    "hitom": [
       { "velocity": 0, "accent": false },
       { "velocity": 0, "accent": false },
       { "velocity": 0, "accent": false },

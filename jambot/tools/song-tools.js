@@ -8,9 +8,9 @@
 import { registerTools } from './index.js';
 
 // JB01 voices
-const JB01_VOICES = ['jb01', 'kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
+const JB01_VOICES = ['jb01', 'kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
 // Legacy drums = jb01
-const DRUM_VOICES = ['drums', 'kick', 'snare', 'clap', 'ch', 'oh', 'perc', 'tom', 'cymbal'];
+const DRUM_VOICES = ['drums', 'kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
 
 // Helper: get channel inserts for an instrument
 function getInsertsForInstrument(session, inst) {
