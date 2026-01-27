@@ -233,7 +233,7 @@ export function RainDecorations() {
             width: 20,
             height: 28,
             borderRadius: '50%',
-            background: `radial-gradient(circle at 30% 30%, #fbbf24, #f472b6)`,
+            background: 'linear-gradient(135deg, #fbbf24 0%, #f472b6 100%)',
             boxShadow: '0 0 20px rgba(244, 114, 182, 0.5)',
             opacity: 0.6,
           }}
