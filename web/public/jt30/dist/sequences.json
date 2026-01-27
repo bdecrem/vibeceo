@@ -1,0 +1,86 @@
+{
+  "Acid1": {
+    "name": "Classic Acid",
+    "pattern": [
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "D#2", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "G2", "gate": true, "accent": false, "slide": false },
+      { "note": "F2", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "A#1", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false }
+    ]
+  },
+  "Acid2": {
+    "name": "Squelch Run",
+    "pattern": [
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "D#2", "gate": true, "accent": false, "slide": true },
+      { "note": "F2", "gate": true, "accent": false, "slide": true },
+      { "note": "G2", "gate": true, "accent": true, "slide": false },
+      { "note": "F2", "gate": true, "accent": false, "slide": true },
+      { "note": "D#2", "gate": true, "accent": false, "slide": true },
+      { "note": "C2", "gate": true, "accent": false, "slide": true },
+      { "note": "A#1", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": true },
+      { "note": "D#2", "gate": true, "accent": false, "slide": true },
+      { "note": "F2", "gate": true, "accent": true, "slide": false },
+      { "note": "G2", "gate": true, "accent": false, "slide": true },
+      { "note": "A#2", "gate": true, "accent": false, "slide": true },
+      { "note": "G2", "gate": true, "accent": false, "slide": true },
+      { "note": "F2", "gate": true, "accent": true, "slide": false },
+      { "note": "D#2", "gate": true, "accent": false, "slide": true }
+    ]
+  },
+  "Minimal": {
+    "name": "Minimal Pulse",
+    "pattern": [
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": true, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false }
+    ]
+  },
+  "Test": {
+    "name": "Single Note Test",
+    "pattern": [
+      { "note": "C2", "gate": true, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false },
+      { "note": "C2", "gate": false, "accent": false, "slide": false }
+    ]
+  }
+}

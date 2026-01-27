@@ -1,0 +1,132 @@
+{
+  "FourFloor": {
+    "name": "Four on the Floor",
+    "pattern": {
+      "kick": [
+        {"velocity": 1, "accent": true}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false}
+      ],
+      "snare": [
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": true}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": true}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false}
+      ],
+      "ch": [
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false}
+      ]
+    }
+  },
+  "House": {
+    "name": "Classic House",
+    "pattern": {
+      "kick": [
+        {"velocity": 1, "accent": true}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0.7, "accent": false}
+      ],
+      "clap": [
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": true}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": true}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false}
+      ],
+      "ch": [
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0.7, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0.7, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0.7, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0.7, "accent": false}, {"velocity": 0, "accent": false}
+      ],
+      "oh": [
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0.8, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0.8, "accent": false}
+      ]
+    }
+  },
+  "Techno": {
+    "name": "Minimal Techno",
+    "pattern": {
+      "kick": [
+        {"velocity": 1, "accent": true}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0.6, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0.6, "accent": false}, {"velocity": 0, "accent": false}
+      ],
+      "ch": [
+        {"velocity": 0.8, "accent": false}, {"velocity": 0.6, "accent": false},
+        {"velocity": 0.8, "accent": false}, {"velocity": 0.6, "accent": false},
+        {"velocity": 0.8, "accent": false}, {"velocity": 0.6, "accent": false},
+        {"velocity": 0.8, "accent": false}, {"velocity": 0.6, "accent": false},
+        {"velocity": 0.8, "accent": false}, {"velocity": 0.6, "accent": false},
+        {"velocity": 0.8, "accent": false}, {"velocity": 0.6, "accent": false},
+        {"velocity": 0.8, "accent": false}, {"velocity": 0.6, "accent": false},
+        {"velocity": 0.8, "accent": false}, {"velocity": 0.6, "accent": false}
+      ],
+      "rimshot": [
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0.8, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0.6, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0.8, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0.6, "accent": false}
+      ]
+    }
+  },
+  "Test": {
+    "name": "Single Kick Test",
+    "pattern": {
+      "kick": [
+        {"velocity": 1, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false},
+        {"velocity": 0, "accent": false}, {"velocity": 0, "accent": false}
+      ]
+    }
+  }
+}

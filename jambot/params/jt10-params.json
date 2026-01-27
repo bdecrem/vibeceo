@@ -1,0 +1,38 @@
+{
+  "_meta": {
+    "name": "JT10",
+    "description": "Lead/Bass Synth - 101-style monosynth with sub-oscillator and LFO",
+    "version": "1.0",
+    "units": {
+      "0-100": "Knob position (like hardware)",
+      "Hz": "Filter frequency",
+      "choice": "Discrete option"
+    }
+  },
+  "lead": {
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 80, "hint": "output level" },
+
+    "sawLevel": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "sawtooth oscillator level" },
+    "pulseLevel": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "pulse oscillator level" },
+    "pulseWidth": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "pulse width" },
+    "range": { "unit": "choice", "options": [16, 8, 4, 2], "default": 8, "hint": "oscillator octave range" },
+
+    "subLevel": { "unit": "0-100", "min": 0, "max": 100, "default": 30, "hint": "sub oscillator level" },
+    "subMode": { "unit": "choice", "options": [0, 1, 2], "default": 0, "hint": "sub mode: 0=off, 1=-1oct, 2=-2oct" },
+
+    "cutoff": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter cutoff" },
+    "resonance": { "unit": "0-100", "min": 0, "max": 100, "default": 30, "hint": "filter resonance" },
+    "envMod": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter envelope depth" },
+
+    "attack": { "unit": "0-100", "min": 0, "max": 100, "default": 1, "hint": "envelope attack" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 30, "hint": "envelope decay" },
+    "sustain": { "unit": "0-100", "min": 0, "max": 100, "default": 70, "hint": "envelope sustain" },
+    "release": { "unit": "0-100", "min": 0, "max": 100, "default": 30, "hint": "envelope release" },
+
+    "lfoRate": { "unit": "0-100", "min": 0, "max": 100, "default": 30, "hint": "LFO rate" },
+    "lfoWaveform": { "unit": "choice", "options": ["triangle", "square", "sh"], "default": "triangle", "hint": "LFO waveform" },
+    "lfoToPitch": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "LFO to pitch depth" },
+    "lfoToFilter": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "LFO to filter depth" },
+    "lfoToPW": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "LFO to pulse width depth" }
+  }
+}

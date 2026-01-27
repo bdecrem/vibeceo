@@ -1,0 +1,54 @@
+{
+  "Default": {
+    "kick": { "tune": 0, "decay": 0.5, "attack": 0.5, "sweep": 0.5, "level": 1.0 },
+    "snare": { "tune": 0, "decay": 0.5, "tone": 0.5, "snappy": 0.5, "level": 1.0 },
+    "clap": { "tone": 0.5, "decay": 0.5, "level": 1.0 },
+    "rimshot": { "tune": 0, "decay": 0.3, "level": 1.0 },
+    "ch": { "tune": 0, "decay": 0.3, "tone": 0.5, "level": 1.0 },
+    "oh": { "tune": 0, "decay": 0.7, "tone": 0.5, "level": 1.0 },
+    "ltom": { "tune": 0, "decay": 0.5, "level": 1.0 },
+    "mtom": { "tune": 0, "decay": 0.5, "level": 1.0 },
+    "htom": { "tune": 0, "decay": 0.5, "level": 1.0 },
+    "crash": { "tune": 0, "decay": 0.7, "tone": 0.5, "level": 1.0 },
+    "ride": { "tune": 0, "decay": 0.5, "tone": 0.5, "level": 1.0 }
+  },
+  "Punchy": {
+    "kick": { "tune": 0, "decay": 0.3, "attack": 0.8, "sweep": 0.7, "level": 1.0 },
+    "snare": { "tune": 100, "decay": 0.3, "tone": 0.7, "snappy": 0.7, "level": 1.0 },
+    "clap": { "tone": 0.6, "decay": 0.3, "level": 1.0 },
+    "rimshot": { "tune": 0, "decay": 0.2, "level": 1.0 },
+    "ch": { "tune": 0, "decay": 0.2, "tone": 0.6, "level": 1.0 },
+    "oh": { "tune": 0, "decay": 0.5, "tone": 0.6, "level": 1.0 },
+    "ltom": { "tune": -100, "decay": 0.4, "level": 1.0 },
+    "mtom": { "tune": 0, "decay": 0.4, "level": 1.0 },
+    "htom": { "tune": 100, "decay": 0.4, "level": 1.0 },
+    "crash": { "tune": 0, "decay": 0.6, "tone": 0.6, "level": 1.0 },
+    "ride": { "tune": 0, "decay": 0.4, "tone": 0.6, "level": 1.0 }
+  },
+  "Deep": {
+    "kick": { "tune": -200, "decay": 0.8, "attack": 0.3, "sweep": 0.3, "level": 1.0 },
+    "snare": { "tune": -100, "decay": 0.6, "tone": 0.3, "snappy": 0.3, "level": 1.0 },
+    "clap": { "tone": 0.3, "decay": 0.7, "level": 0.9 },
+    "rimshot": { "tune": -100, "decay": 0.4, "level": 0.8 },
+    "ch": { "tune": -100, "decay": 0.4, "tone": 0.3, "level": 0.9 },
+    "oh": { "tune": -100, "decay": 0.8, "tone": 0.3, "level": 0.9 },
+    "ltom": { "tune": -200, "decay": 0.7, "level": 1.0 },
+    "mtom": { "tune": -100, "decay": 0.6, "level": 1.0 },
+    "htom": { "tune": 0, "decay": 0.6, "level": 1.0 },
+    "crash": { "tune": -100, "decay": 0.8, "tone": 0.3, "level": 0.9 },
+    "ride": { "tune": -50, "decay": 0.6, "tone": 0.3, "level": 0.9 }
+  },
+  "Bright": {
+    "kick": { "tune": 100, "decay": 0.4, "attack": 0.7, "sweep": 0.6, "level": 1.0 },
+    "snare": { "tune": 200, "decay": 0.4, "tone": 0.8, "snappy": 0.8, "level": 1.0 },
+    "clap": { "tone": 0.8, "decay": 0.4, "level": 1.0 },
+    "rimshot": { "tune": 100, "decay": 0.3, "level": 1.0 },
+    "ch": { "tune": 100, "decay": 0.2, "tone": 0.8, "level": 1.0 },
+    "oh": { "tune": 100, "decay": 0.5, "tone": 0.8, "level": 1.0 },
+    "ltom": { "tune": 100, "decay": 0.4, "level": 1.0 },
+    "mtom": { "tune": 200, "decay": 0.4, "level": 1.0 },
+    "htom": { "tune": 300, "decay": 0.4, "level": 1.0 },
+    "crash": { "tune": 100, "decay": 0.6, "tone": 0.8, "level": 1.0 },
+    "ride": { "tune": 100, "decay": 0.4, "tone": 0.8, "level": 1.0 }
+  }
+}
