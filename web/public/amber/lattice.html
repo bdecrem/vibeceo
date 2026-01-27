@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>LATTICE — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    <meta property="og:title" content="LATTICE — Amber">
+    <meta property="og:description" content="Paint beats. Watch them flow.">
+    <meta property="og:image" content="https://kochi.to/amber/lattice-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/lattice.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="LATTICE — Amber">
+    <meta name="twitter:description" content="Paint beats. Watch them flow.">
+    <meta name="twitter:image" content="https://kochi.to/amber/lattice-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Mono', 'Courier New', monospace;
+            background: #000;
+            color: #D4A574;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #title {
+            position: absolute;
+            top: 30px;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 6px;
+            z-index: 10;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+        }
+
+        #subtitle {
+            position: absolute;
+            top: 65px;
+            font-size: 11px;
+            color: rgba(212, 165, 116, 0.5);
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        #canvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #playButton {
+            padding: 16px 40px;
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            background: transparent;
+            color: #D4A574;
+            border: 2px solid #D4A574;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        #playButton:hover {
+            background: #D4A574;
+            color: #000;
+            box-shadow: 0 0 30px rgba(212, 165, 116, 0.6);
+        }
+
+        #playButton.playing {
+            border-color: #2D9596;
+            color: #2D9596;
+        }
+
+        #playButton.playing:hover {
+            background: #2D9596;
+            color: #000;
+        }
+
+        .controlBtn {
+            padding: 12px 24px;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            background: transparent;
+            color: rgba(212, 165, 116, 0.6);
+            border: 1px solid rgba(212, 165, 116, 0.4);
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .controlBtn:hover {
+            color: #D4A574;
+            border-color: #D4A574;
+        }
+
+        #info {
+            position: absolute;
+            bottom: 16px;
+            font-size: 10px;
+            color: rgba(212, 165, 116, 0.4);
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">LATTICE</div>
+    <div id="subtitle">tap to paint · watch it flow</div>
+    <canvas id="canvas"></canvas>
+    <div id="controls">
+        <button class="controlBtn" id="clearBtn">CLEAR</button>
+        <button id="playButton">PLAY</button>
+    </div>
+    <div id="info">115 BPM × 16 STEPS × 6 CHANNELS</div>
+
+    <script type="module">
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const playButton = document.getElementById('playButton');
+        const clearBtn = document.getElementById('clearBtn');
+
+        let width, height;
+        let audioContext;
+        let isPlaying = false;
+        let audioStarted = false;
+
+        // Grid configuration
+        const STEPS = 16;
+        const CHANNELS = 6;
+        const BPM = 115;
+        const BEAT_DURATION = 60 / BPM; // seconds per beat
+
+        // Grid state - true = beat painted
+        let grid = Array(CHANNELS).fill(null).map(() => Array(STEPS).fill(false));
+        
+        // Animation state
+        let currentStep = 0;
+        let lastStepTime = 0;
+        
+        // Flow particles - visual feedback
+        let particles = [];
+
+        // Channel colors and frequencies
+        const channels = [
+            { color: '#FFD700', freq: 880, name: 'A5' },   // Gold
+            { color: '#D4A574', freq: 659.25, name: 'E5' }, // Amber
+            { color: '#2D9596', freq: 523.25, name: 'C5' }, // Teal
+            { color: '#7B68EE', freq: 392, name: 'G4' },    // Violet
+            { color: '#FF6B6B', freq: 293.66, name: 'D4' }, // Red
+            { color: '#4ECDC4', freq: 220, name: 'A3' }     // Cyan
+        ];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        async function initAudio() {
+            if (audioStarted) return;
+            audioContext = new AudioContext();
+            audioStarted = true;
+        }
+
+        function playTone(freq, duration = 0.15) {
+            if (!audioContext) return;
+            
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            
+            filter.type = 'lowpass';
+            filter.frequency.value = freq * 4;
+            filter.Q.value = 3;
+
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.start(now);
+            osc.stop(now + duration);
+        }
+
+        function getGridDimensions() {
+            const padding = 80;
+            const gridWidth = width - padding * 2;
+            const gridHeight = height - padding * 2;
+            
+            const cellWidth = gridWidth / STEPS;
+            const cellHeight = gridHeight / CHANNELS;
+            
+            const startX = padding;
+            const startY = padding;
+            
+            return { cellWidth, cellHeight, startX, startY };
+        }
+
+        function getCellFromPos(x, y) {
+            const { cellWidth, cellHeight, startX, startY } = getGridDimensions();
+            
+            const col = Math.floor((x - startX) / cellWidth);
+            const row = Math.floor((y - startY) / cellHeight);
+            
+            if (col >= 0 && col < STEPS && row >= 0 && row < CHANNELS) {
+                return { row, col };
+            }
+return null;
+        }
+
+        function toggleCell(row, col) {
+            grid[row][col] = !grid[row][col];
+            
+            // Play the tone as feedback
+            if (grid[row][col] && audioStarted) {
+                playTone(channels[row].freq, 0.1);
+                
+                // Spawn particle
+                const { cellWidth, cellHeight, startX, startY } = getGridDimensions();
+                const cx = startX + col * cellWidth + cellWidth / 2;
+                const cy = startY + row * cellHeight + cellHeight / 2;
+                
+                for (let i = 0; i < 3; i++) {
+                    particles.push({
+                        x: cx,
+                        y: cy,
+                        vx: (Math.random() - 0.5) * 3,
+                        vy: (Math.random() - 0.5) * 3,
+                        color: channels[row].color,
+                        life: 1,
+                        size: 3 + Math.random() * 3
+                    });
+                }
+            }
+        }
+
+        function clearGrid() {
+            grid = Array(CHANNELS).fill(null).map(() => Array(STEPS).fill(false));
+            particles = [];
+        }
+
+        function updateSequencer(deltaTime) {
+            if (!isPlaying) return;
+            
+            const stepTime = BEAT_DURATION / 4; // 16th notes
+            lastStepTime += deltaTime;
+            
+            if (lastStepTime >= stepTime) {
+                lastStepTime = 0;
+                currentStep = (currentStep + 1) % STEPS;
+                
+                // Trigger sounds for active cells in this column
+                for (let row = 0; row < CHANNELS; row++) {
+                    if (grid[row][currentStep]) {
+                        playTone(channels[row].freq);
+                        
+                        // Spawn flow particles
+                        const { cellWidth, cellHeight, startX, startY } = getGridDimensions();
+                        const cx = startX + currentStep * cellWidth + cellWidth / 2;
+                        const cy = startY + row * cellHeight + cellHeight / 2;
+                        
+                        for (let i = 0; i < 5; i++) {
+                            particles.push({
+                                x: cx,
+                                y: cy,
+                                vx: (Math.random() - 0.5) * 4,
+                                vy: (Math.random() - 0.5) * 4,
+                                color: channels[row].color,
+                                life: 1,
+                                size: 2 + Math.random() * 4
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateParticles(deltaTime) {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= deltaTime * 2;
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function drawGrid() {
+            const { cellWidth, cellHeight, startX, startY } = getGridDimensions();
+            
+            // Draw channel lanes (horizontal)
+            for (let row = 0; row < CHANNELS; row++) {
+                const y = startY + row * cellHeight;
+                
+                // Lane background
+                ctx.fillStyle = `${channels[row].color}08`;
+                ctx.fillRect(startX, y, cellWidth * STEPS, cellHeight);
+                
+                // Lane border
+                ctx.strokeStyle = `${channels[row].color}40`;
+                ctx.lineWidth = 1;
+                ctx.strokeRect(startX, y, cellWidth * STEPS, cellHeight);
+            }
+            
+            // Draw vertical step dividers
+            ctx.strokeStyle = 'rgba(212, 165, 116, 0.15)';
+            ctx.lineWidth = 1;
+            for (let col = 0; col <= STEPS; col++) {
+                const x = startX + col * cellWidth;
+                ctx.beginPath();
+                ctx.moveTo(x, startY);
+                ctx.lineTo(x, startY + cellHeight * CHANNELS);
+                ctx.stroke();
+                
+                // Emphasize every 4th step
+                if (col % 4 === 0) {
+                    ctx.strokeStyle = 'rgba(212, 165, 116, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(x, startY);
+                    ctx.lineTo(x, startY + cellHeight * CHANNELS);
+                    ctx.stroke();
+                    ctx.strokeStyle = 'rgba(212, 165, 116, 0.15)';
+                    ctx.lineWidth = 1;
+                }
+            }
+            
+            // Draw painted beats
+            for (let row = 0; row < CHANNELS; row++) {
+                for (let col = 0; col < STEPS; col++) {
+                    if (grid[row][col]) {
+                        const x = startX + col * cellWidth;
+                        const y = startY + row * cellHeight;
+                        const cx = x + cellWidth / 2;
+                        const cy = y + cellHeight / 2;
+                        const size = Math.min(cellWidth, cellHeight) * 0.3;
+                        
+                        // Glow
+                        const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 1.5);
+                        gradient.addColorStop(0, `${channels[row].color}80`);
+                        gradient.addColorStop(1, `${channels[row].color}00`);
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(x, y, cellWidth, cellHeight);
+                        
+                        // Solid circle
+                        ctx.fillStyle = channels[row].color;
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+            
+            // Draw playhead
+            if (isPlaying) {
+                const x = startX + currentStep * cellWidth;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.fillRect(x, startY, cellWidth, cellHeight * CHANNELS);
+                
+                // Vertical line
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x + cellWidth / 2, startY);
+                ctx.lineTo(x + cellWidth / 2, startY + cellHeight * CHANNELS);
+                ctx.stroke();
+            }
+            
+            // Draw channel labels
+            ctx.font = '10px Space Mono';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let row = 0; row < CHANNELS; row++) {
+                const y = startY + row * cellHeight + cellHeight / 2;
+                ctx.fillStyle = channels[row].color;
+                ctx.fillText(channels[row].name, startX - 10, y);
+            }
+        }
+
+        function drawParticles() {
+            for (const p of particles) {
+                ctx.globalAlpha = p.life;
+                
+                // Glow
+                const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
+                gradient.addColorStop(0, p.color);
+                gradient.addColorStop(1, `${p.color}00`);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(p.x - p.size * 2, p.y - p.size * 2, p.size * 4, p.size * 4);
+                
+                // Core
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+function draw() {
+            // Clear with fade effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, width, height);
+            
+            drawGrid();
+            drawParticles();
+        }
+
+        let lastTime = 0;
+        function animate(time) {
+            const deltaTime = (time - lastTime) / 1000;
+            lastTime = time;
+            
+            updateSequencer(deltaTime);
+            updateParticles(deltaTime);
+            draw();
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Event handlers
+        let isDrawing = false;
+        let lastCell = null;
+
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            }
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function handlePointerDown(e) {
+            e.preventDefault();
+            isDrawing = true;
+            lastCell = null;
+            
+            const { x, y } = getPointerPos(e);
+            const cell = getCellFromPos(x, y);
+            if (cell) {
+                toggleCell(cell.row, cell.col);
+                lastCell = `${cell.row},${cell.col}`;
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            
+            const { x, y } = getPointerPos(e);
+            const cell = getCellFromPos(x, y);
+            if (cell) {
+                const cellKey = `${cell.row},${cell.col}`;
+                if (cellKey !== lastCell) {
+                    toggleCell(cell.row, cell.col);
+                    lastCell = cellKey;
+                }
+            }
+        }
+
+        function handlePointerUp(e) {
+            e.preventDefault();
+            isDrawing = false;
+            lastCell = null;
+        }
+
+        canvas.addEventListener('mousedown', handlePointerDown);
+        canvas.addEventListener('mousemove', handlePointerMove);
+        canvas.addEventListener('mouseup', handlePointerUp);
+        canvas.addEventListener('mouseleave', handlePointerUp);
+
+        canvas.addEventListener('touchstart', handlePointerDown);
+        canvas.addEventListener('touchmove', handlePointerMove);
+        canvas.addEventListener('touchend', handlePointerUp);
+
+        playButton.addEventListener('click', async () => {
+            await initAudio();
+            isPlaying = !isPlaying;
+            playButton.textContent = isPlaying ? 'STOP' : 'PLAY';
+            playButton.classList.toggle('playing', isPlaying);
+            
+            if (!isPlaying) {
+                currentStep = 0;
+                lastStepTime = 0;
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            clearGrid();
+            if (isPlaying) {
+                isPlaying = false;
+                playButton.textContent = 'PLAY';
+                playButton.classList.remove('playing');
+                currentStep = 0;
+                lastStepTime = 0;
+            }
+        });
+
+        // Initialize
+        window.addEventListener('resize', resize);
+        resize();
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
