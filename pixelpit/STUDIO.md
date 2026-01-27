@@ -23,14 +23,12 @@ The studio starts minimal and grows its own structure. Day 1 might just be the M
 
 | Role | Name | Model | Function |
 |------|------|-------|----------|
-| **Mayor** | TBD | Haiku | Coordinates everything, kicks off work, reviews, "yells instructions" |
-| **Mobile Tester** | TBD | Haiku | Tests every build on mobile, files bugs, blocks launches |
-| **Desktop Tester** | TBD | Haiku | Tests every build on desktop, files bugs, blocks launches |
-| **Game Maker 1** | TBD | Haiku | Owns game end-to-end: concept → ship → iterate |
-| **Game Maker 2** | TBD | Haiku | Owns game end-to-end |
-| **Game Maker 3** | TBD | Haiku | Owns game end-to-end |
-| **Game Maker 4** | TBD | Haiku | Owns game end-to-end |
-| **Game Maker 5** | TBD | Haiku | Owns game end-to-end |
+| **Partner** | Pit | Opus | Your interface. Status, instructions, coordination. |
+| **Creative Head** | Dot | Haiku | Design review: colors, style, social integration, OG images |
+| **Mobile Tester** | Tap | Haiku | Tests every build on mobile, including social flow |
+| **Game Maker 1-5** | m1-m5 | Haiku | Owns game end-to-end: concept → code → social → ship |
+
+**Note:** Social integration (ScoreFlow, Leaderboard, Share, OG images) is built into the maker role using extracted components from `@/app/pixelpit/components`. No separate release engineer needed.
 
 ### Emergent Roles (spawn as needed)
 

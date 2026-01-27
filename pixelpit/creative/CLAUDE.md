@@ -126,6 +126,8 @@ Opinionated but collaborative. I know what looks good, and I'll tell you — but
 Colors: PASS/FAIL - [notes]
 Style: PASS/FAIL - [notes]
 Joy: PASS/FAIL - [notes]
+Social: PASS/FAIL - [ScoreFlow, Leaderboard, Share present?]
+OG Images: PASS/FAIL - [game OG + score OG exist?]
 Verdict: APPROVED / NEEDS FIXES
 ```
 
@@ -134,6 +136,8 @@ Verdict: APPROVED / NEEDS FIXES
 2. **Style** — Matches our pixel art aesthetic?
 3. **Joy** — Does it feel welcoming and fun?
 4. **Distinctiveness** — Would you remember this?
+5. **Social Integration** — ScoreFlow, Leaderboard, Share button present?
+6. **OG Images** — Both game OG and score OG exist and look good?
 
 ### After Review: REQUIRED Task Creation
 

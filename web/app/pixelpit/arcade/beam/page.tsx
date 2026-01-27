@@ -2,6 +2,15 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  usePixelpitSocial,
+  type PixelpitUser,
+  type ScoreFlowColors,
+  type LeaderboardColors,
+} from '@/app/pixelpit/components';
 
 // RAIN theme - soft glows, warm amber/teal
 const THEME = {
@@ -24,6 +33,26 @@ const COLORS = {
   coral: '#f87171',       // soft red
   cream: '#f8fafc',       // light text
   muted: '#94a3b8',       // muted text
+};
+
+// Color mappings for extracted components
+const SCORE_FLOW_COLORS: ScoreFlowColors = {
+  bg: COLORS.bg,
+  surface: COLORS.surface,
+  primary: COLORS.gold,
+  secondary: COLORS.teal,
+  text: COLORS.cream,
+  muted: COLORS.muted,
+  error: COLORS.coral,
+};
+
+const LEADERBOARD_COLORS: LeaderboardColors = {
+  bg: COLORS.bg,
+  surface: COLORS.surface,
+  primary: COLORS.gold,
+  secondary: COLORS.teal,
+  text: COLORS.cream,
+  muted: COLORS.muted,
 };
 
 // Particle system for visual juice
@@ -55,48 +84,22 @@ const LEVELS = [
   { name: 'insane', minScore: 100, speed: 8, wallInterval: 600, gapChance: 0.2 },
 ];
 
-declare global {
-  interface Window {
-    PixelpitSocial?: {
-      getUser: () => { id: number; handle: string } | null;
-      submitScore: (game: string, score: number, opts?: { nickname?: string }) => Promise<{ success: boolean; rank?: number; entry?: { id: number }; error?: string }>;
-      getLeaderboard: (game: string, limit?: number, opts?: { entryId?: number }) => Promise<{ leaderboard: Array<{ rank: number; name: string; score: number; isRegistered: boolean }>; playerEntry?: { rank: number; name: string; score: number; isRegistered: boolean } | null }>;
-      login: (handle: string, code: string) => Promise<{ success: boolean; user?: { id: number; handle: string }; error?: string }>;
-      register: (handle: string, code: string) => Promise<{ success: boolean; user?: { id: number; handle: string }; error?: string }>;
-      checkHandle: (handle: string) => Promise<{ exists: boolean }>;
-      logout: () => void;
-      ShareButton: (containerId: string, opts: { url: string; text: string; style?: 'button' | 'icon' | 'minimal' }) => void;
-      showToast: (message: string, duration?: number) => void;
-    };
-  }
-}
+// Note: PixelpitSocial types are defined in @/app/pixelpit/components/types
 
 export default function BeamGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard' | 'auth'>('start');
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard'>('start');
   const [score, setScore] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(0);
   const [levelUpText, setLevelUpText] = useState<string | null>(null);
-  const [leaderboard, setLeaderboard] = useState<Array<{ rank: number; name: string; score: number; isRegistered: boolean }>>([]);
-  const [playerEntry, setPlayerEntry] = useState<{ rank: number; name: string; score: number; isRegistered: boolean } | null>(null);
-  const [submitStatus, setSubmitStatus] = useState<string>('');
-  const [playerName, setPlayerName] = useState('');
-  const [user, setUser] = useState<{ id: number; handle: string } | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [socialLoaded, setSocialLoaded] = useState(false);
 
-  // Auth state
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [authHandle, setAuthHandle] = useState('');
-  const [authCode, setAuthCode] = useState('');
-  const [authError, setAuthError] = useState('');
-
-  // New score flow state
-  const [scoreFlow, setScoreFlow] = useState<'input' | 'checking' | 'returning' | 'submitted' | 'saving' | 'handleTaken' | 'saved'>('input');
-  const [codeDigits, setCodeDigits] = useState(['', '', '', '']);
-  const [submittedRank, setSubmittedRank] = useState<number | null>(null);
+  // Track submitted entry for leaderboard positioning
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
-  const [flowError, setFlowError] = useState('');
+
+  // Use the social hook for user state
+  const { user } = usePixelpitSocial(socialLoaded);
 
   // Game refs
   const gameRef = useRef({
@@ -125,34 +128,8 @@ export default function BeamGame() {
   const LANES = 5;
   const GAME_ID = 'beam';
 
-  // Initialize user from social lib
-  useEffect(() => {
-    if (socialLoaded && window.PixelpitSocial) {
-      const u = window.PixelpitSocial.getUser();
-      setUser(u);
-      // Load saved name for guests
-      const savedName = localStorage.getItem('pixelpit_guest_name');
-      if (savedName) setPlayerName(savedName);
-    }
-  }, [socialLoaded]);
-
-  // Initialize share button on game over
-  useEffect(() => {
-    if (gameState === 'gameover' && socialLoaded && window.PixelpitSocial) {
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        const container = document.getElementById('share-btn-container');
-        if (container) {
-          container.innerHTML = ''; // Clear any existing button
-          window.PixelpitSocial!.ShareButton('share-btn-container', {
-            url: `${window.location.origin}/pixelpit/arcade/beam/share/${score}`,
-            text: `I scored ${score} on BEAM! Can you beat me?`,
-            style: 'minimal',
-          });
-        }
-      }, 100);
-    }
-  }, [gameState, socialLoaded, score]);
+  // Note: User state is now managed by usePixelpitSocial hook
+  // Share button is now handled by ShareButtonContainer component
 
   // Audio functions
   const initAudio = () => {
@@ -453,13 +430,8 @@ export default function BeamGame() {
     stopMusic();
     crashSound();
     setScore(game.score);
-    // Reset score flow for new game over
-    setScoreFlow('input');
-    setCodeDigits(['', '', '', '']);
-    setFlowError('');
-    setSubmittedRank(null);
+    // Reset entry ID for new game
     setSubmittedEntryId(null);
-    setSubmitStatus('');
     setTimeout(() => setGameState('gameover'), 600);
   };
 
@@ -730,235 +702,8 @@ export default function BeamGame() {
     };
   }, []);
 
-  // Leaderboard functions
-  const loadLeaderboard = async () => {
-    if (!window.PixelpitSocial) return;
-    try {
-      const result = await window.PixelpitSocial.getLeaderboard(GAME_ID, 8, { entryId: submittedEntryId || undefined });
-      setLeaderboard(result.leaderboard);
-      setPlayerEntry(result.playerEntry ?? null);
-    } catch (e) {
-      console.error('Failed to load leaderboard', e);
-    }
-  };
-
-  const submitScore = async () => {
-    if (!window.PixelpitSocial) return;
-
-    const currentUser = window.PixelpitSocial.getUser();
-
-    if (currentUser) {
-      // Logged in user - simple submit
-      setSubmitStatus('Submitting...');
-      try {
-        const result = await window.PixelpitSocial.submitScore(GAME_ID, score);
-        if (result.success && result.rank) {
-          setSubmitStatus(`Rank #${result.rank}!`);
-          setSubmittedRank(result.rank);
-        } else {
-          setSubmitStatus('Failed to submit');
-        }
-      } catch (e) {
-        setSubmitStatus('Network error');
-      }
-      return;
-    }
-
-    // Guest flow - submit immediately, no uniqueness check
-    if (!playerName.trim()) {
-      setFlowError('Enter a name first!');
-      return;
-    }
-
-    setScoreFlow('checking');
-    setFlowError('');
-
-    try {
-      // Submit as guest immediately
-      localStorage.setItem('pixelpit_guest_name', playerName);
-      const result = await window.PixelpitSocial.submitScore(GAME_ID, score, { nickname: playerName });
-      if (result.success) {
-        setSubmittedRank(result.rank ?? 0);
-        setSubmittedEntryId(result.entry?.id ?? null);
-        setScoreFlow('submitted');
-      } else {
-        setFlowError('Failed to submit');
-        setScoreFlow('input');
-      }
-    } catch (e) {
-      setFlowError('Network error');
-      setScoreFlow('input');
-    }
-  };
-
-  const handleCodeInput = (index: number, value: string) => {
-    if (value.length > 1) value = value[0];
-    if (value && !/^[a-zA-Z0-9]$/.test(value)) return;
-
-    const newDigits = [...codeDigits];
-    newDigits[index] = value;
-    setCodeDigits(newDigits);
-
-    // Auto-focus next input
-    if (value && index < 3) {
-      const nextInput = document.getElementById(`code-${index + 1}`);
-      nextInput?.focus();
-    }
-  };
-
-  const handleCodeKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !codeDigits[index] && index > 0) {
-      const prevInput = document.getElementById(`code-${index - 1}`);
-      prevInput?.focus();
-    }
-  };
-
-  const getFullCode = () => codeDigits.join('');
-
-  const handleReturningUserSubmit = async () => {
-    if (!window.PixelpitSocial) return;
-    const code = getFullCode();
-    if (code.length !== 4) {
-      setFlowError('Enter 4 characters');
-      return;
-    }
-
-    setScoreFlow('checking');
-    try {
-      const result = await window.PixelpitSocial.login(playerName, code);
-      if (result.success && result.user) {
-        setUser(result.user);
-        // Now submit score as logged in user
-        const scoreResult = await window.PixelpitSocial.submitScore(GAME_ID, score);
-        if (scoreResult.success && scoreResult.rank) {
-          setSubmittedRank(scoreResult.rank);
-          setScoreFlow('saved');
-        }
-      } else {
-        setFlowError(result.error || 'Wrong code');
-        setScoreFlow('returning');
-        setCodeDigits(['', '', '', '']);
-      }
-    } catch (e) {
-      setFlowError('Network error');
-      setScoreFlow('returning');
-    }
-  };
-
-  const linkEntryToUser = async (userId: number) => {
-    if (!submittedEntryId) return;
-    try {
-      await fetch('/api/pixelpit/leaderboard', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryId: submittedEntryId, userId }),
-      });
-    } catch (e) {
-      // Silent fail - not critical
-    }
-  };
-
-  const handleSaveAccount = async () => {
-    if (!window.PixelpitSocial) return;
-    const code = getFullCode();
-    if (code.length !== 4) {
-      setFlowError('Enter 4 characters');
-      return;
-    }
-
-    setScoreFlow('saving');
-    try {
-      // First try to register
-      const result = await window.PixelpitSocial.register(playerName, code);
-      if (result.success && result.user) {
-        setUser(result.user);
-        await linkEntryToUser(result.user.id);
-        setScoreFlow('saved');
-      } else if (result.error?.includes('taken')) {
-        // Handle taken - try to login with this code instead
-        const loginResult = await window.PixelpitSocial.login(playerName, code);
-        if (loginResult.success && loginResult.user) {
-          // They knew the code! Log them in and link the entry
-          setUser(loginResult.user);
-          await linkEntryToUser(loginResult.user.id);
-          setScoreFlow('saved');
-        } else {
-          // Wrong code for existing account
-          setFlowError('Name taken (wrong code)');
-          setScoreFlow('handleTaken');
-          setCodeDigits(['', '', '', '']);
-        }
-      } else {
-        setFlowError(result.error || 'Failed to save');
-        setScoreFlow('submitted');
-      }
-    } catch (e) {
-      setFlowError('Network error');
-      setScoreFlow('submitted');
-    }
-  };
-
-  const handleRetryWithNewHandle = async () => {
-    if (!window.PixelpitSocial) return;
-    const code = getFullCode();
-    if (code.length !== 4) {
-      setFlowError('Enter 4 characters');
-      return;
-    }
-    if (!playerName.trim()) {
-      setFlowError('Enter a handle');
-      return;
-    }
-
-    setScoreFlow('saving');
-    try {
-      const result = await window.PixelpitSocial.register(playerName, code);
-      if (result.success && result.user) {
-        setUser(result.user);
-        setScoreFlow('saved');
-      } else if (result.error?.includes('taken')) {
-        setFlowError('Also taken! Try another');
-        setScoreFlow('handleTaken');
-        setCodeDigits(['', '', '', '']);
-      } else {
-        setFlowError(result.error || 'Failed to save');
-        setScoreFlow('handleTaken');
-      }
-    } catch (e) {
-      setFlowError('Network error');
-      setScoreFlow('handleTaken');
-    }
-  };
-
-  const resetScoreFlow = () => {
-    setScoreFlow('input');
-    setCodeDigits(['', '', '', '']);
-    setFlowError('');
-    setSubmittedRank(null);
-  };
-
-  const handleAuth = async () => {
-    if (!window.PixelpitSocial) return;
-    setAuthError('');
-
-    if (authMode === 'register') {
-      const result = await window.PixelpitSocial.register(authHandle, authCode);
-      if (result.success && result.user) {
-        setUser(result.user);
-        setGameState('gameover');
-      } else {
-        setAuthError(result.error || 'Registration failed');
-      }
-    } else {
-      const result = await window.PixelpitSocial.login(authHandle, authCode);
-      if (result.success && result.user) {
-        setUser(result.user);
-        setGameState('gameover');
-      } else {
-        setAuthError(result.error || 'Login failed');
-      }
-    }
-  };
+  // Note: Leaderboard and score submission functions are now handled by
+  // the Leaderboard and ScoreFlow components respectively
 
   return (
     <>
@@ -1210,372 +955,20 @@ export default function BeamGame() {
             {score}
           </div>
 
-          {/* Score Submission - New Flow */}
-          <div style={{ marginBottom: 20, width: '100%', maxWidth: 300 }}>
-
-            {/* Already logged in user */}
-            {user ? (
-              <>
-                <div style={{
-                  color: COLORS.teal,
-                  marginBottom: 10,
-                  fontFamily: "ui-monospace, monospace",
-                  fontSize: 14,
-                }}>
-                  @{user.handle}
-                </div>
-                <button
-                  onClick={submitScore}
-                  style={{
-                    background: COLORS.gold,
-                    color: COLORS.bg,
-                    border: 'none',
-                    borderRadius: 6,
-                    padding: '12px 25px',
-                    fontSize: 13,
-                    fontFamily: "ui-monospace, monospace",
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    boxShadow: '0 6px 20px rgba(251,191,36,0.25)',
-                    letterSpacing: 1,
-                  }}
-                >
-                  submit
-                </button>
-                {submitStatus && (
-                  <div style={{
-                    marginTop: 10,
-                    color: submitStatus.includes('#') ? COLORS.teal : COLORS.coral,
-                    fontSize: 12,
-                    fontFamily: "ui-monospace, monospace",
-                  }}>
-                    {submitStatus}
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                {/* Flow: input - initial handle entry */}
-                {scoreFlow === 'input' && (
-                  <>
-                    <input
-                      type="text"
-                      placeholder="your name"
-                      value={playerName}
-                      onChange={(e) => setPlayerName(e.target.value)}
-                      maxLength={20}
-                      style={{
-                        width: '100%',
-                        padding: '15px 20px',
-                        fontSize: 14,
-                        fontFamily: "ui-monospace, monospace",
-                        background: COLORS.surface,
-                        border: '1px solid rgba(251,191,36,0.3)',
-                        borderRadius: 8,
-                        color: COLORS.gold,
-                        textAlign: 'center',
-                        marginBottom: 10,
-                        letterSpacing: 2,
-                      }}
-                    />
-                    <button
-                      onClick={submitScore}
-                      style={{
-                        background: COLORS.gold,
-                        color: COLORS.bg,
-                        border: 'none',
-                        borderRadius: 6,
-                        padding: '12px 25px',
-                        fontSize: 13,
-                        fontFamily: "ui-monospace, monospace",
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        boxShadow: '0 6px 20px rgba(251,191,36,0.25)',
-                        letterSpacing: 1,
-                      }}
-                    >
-                      submit
-                    </button>
-                    {flowError && (
-                      <div style={{ marginTop: 10, color: COLORS.coral, fontSize: 12, fontFamily: "ui-monospace, monospace" }}>
-                        {flowError}
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* Flow: checking - loading */}
-                {(scoreFlow === 'checking' || scoreFlow === 'saving') && (
-                  <div style={{ color: COLORS.muted, fontSize: 12, fontFamily: "ui-monospace, monospace" }}>
-                    {scoreFlow === 'checking' ? 'checking...' : 'saving...'}
-                  </div>
-                )}
-
-                {/* Flow: returning - name is taken */}
-                {scoreFlow === 'returning' && (
-                  <div style={{
-                    background: COLORS.surface,
-                    border: '1px solid rgba(251,191,36,0.3)',
-                    borderRadius: 12,
-                    padding: 20,
-                  }}>
-                    <div style={{ color: COLORS.gold, fontSize: 13, fontFamily: "ui-monospace, monospace", marginBottom: 15 }}>
-                      "{playerName}" is taken
-                    </div>
-                    <div style={{ color: COLORS.muted, fontSize: 11, fontFamily: "ui-monospace, monospace", marginBottom: 12 }}>
-                      enter code if it's you:
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 15 }}>
-                      {[0, 1, 2, 3].map((i) => (
-                        <input
-                          key={i}
-                          id={`code-${i}`}
-                          type="text"
-                          value={codeDigits[i]}
-                          onChange={(e) => handleCodeInput(i, e.target.value)}
-                          onKeyDown={(e) => handleCodeKeyDown(i, e)}
-                          maxLength={1}
-                          style={{
-                            width: 40,
-                            height: 48,
-                            fontSize: 20,
-                            fontFamily: "ui-monospace, monospace",
-                            background: COLORS.bg,
-                            border: '1px solid rgba(251,191,36,0.4)',
-                            borderRadius: 6,
-                            color: COLORS.cream,
-                            textAlign: 'center',
-                            textTransform: 'uppercase',
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <button
-                      onClick={handleReturningUserSubmit}
-                      style={{
-                        background: COLORS.gold,
-                        color: COLORS.bg,
-                        border: 'none',
-                        borderRadius: 6,
-                        padding: '10px 20px',
-                        fontSize: 12,
-                        fontFamily: "ui-monospace, monospace",
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      submit
-                    </button>
-                    <button
-                      onClick={resetScoreFlow}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: COLORS.muted,
-                        fontSize: 11,
-                        fontFamily: "ui-monospace, monospace",
-                        cursor: 'pointer',
-                        marginLeft: 10,
-                      }}
-                    >
-                      try another →
-                    </button>
-                    {flowError && (
-                      <div style={{ marginTop: 10, color: COLORS.coral, fontSize: 11, fontFamily: "ui-monospace, monospace" }}>
-                        {flowError}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Flow: submitted - guest score saved, offer account */}
-                {scoreFlow === 'submitted' && (
-                  <div style={{
-                    background: COLORS.surface,
-                    border: '1px solid rgba(251,191,36,0.3)',
-                    borderRadius: 12,
-                    padding: 20,
-                  }}>
-                    <div style={{ color: COLORS.teal, fontSize: 14, fontFamily: "ui-monospace, monospace", marginBottom: 5 }}>
-                      ✓ {playerName} — Rank #{submittedRank}
-                    </div>
-                    <div style={{ color: COLORS.muted, fontSize: 11, fontFamily: "ui-monospace, monospace", marginBottom: 15 }}>
-                      keep this name? add a code:
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 15 }}>
-                      {[0, 1, 2, 3].map((i) => (
-                        <input
-                          key={i}
-                          id={`code-${i}`}
-                          type="text"
-                          value={codeDigits[i]}
-                          onChange={(e) => handleCodeInput(i, e.target.value)}
-                          onKeyDown={(e) => handleCodeKeyDown(i, e)}
-                          maxLength={1}
-                          style={{
-                            width: 40,
-                            height: 48,
-                            fontSize: 20,
-                            fontFamily: "ui-monospace, monospace",
-                            background: COLORS.bg,
-                            border: '1px solid rgba(251,191,36,0.4)',
-                            borderRadius: 6,
-                            color: COLORS.cream,
-                            textAlign: 'center',
-                            textTransform: 'uppercase',
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <button
-                      onClick={handleSaveAccount}
-                      style={{
-                        background: COLORS.gold,
-                        color: COLORS.bg,
-                        border: 'none',
-                        borderRadius: 6,
-                        padding: '10px 20px',
-                        fontSize: 12,
-                        fontFamily: "ui-monospace, monospace",
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      save
-                    </button>
-                    <button
-                      onClick={() => setScoreFlow('saved')}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: COLORS.muted,
-                        fontSize: 11,
-                        fontFamily: "ui-monospace, monospace",
-                        cursor: 'pointer',
-                        marginLeft: 10,
-                      }}
-                    >
-                      skip →
-                    </button>
-                    {flowError && (
-                      <div style={{ marginTop: 10, color: COLORS.coral, fontSize: 11, fontFamily: "ui-monospace, monospace" }}>
-                        {flowError}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Flow: handleTaken - pick new handle */}
-                {scoreFlow === 'handleTaken' && (
-                  <div style={{
-                    background: COLORS.surface,
-                    border: '1px solid rgba(248,113,113,0.3)',
-                    borderRadius: 12,
-                    padding: 20,
-                  }}>
-                    <div style={{ color: COLORS.teal, fontSize: 12, fontFamily: "ui-monospace, monospace", marginBottom: 4 }}>
-                      ✓ score saved
-                    </div>
-                    <div style={{ color: COLORS.coral, fontSize: 12, fontFamily: "ui-monospace, monospace", marginBottom: 12 }}>
-                      "{playerName}" is taken — try another:
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="try another"
-                      value={playerName}
-                      onChange={(e) => setPlayerName(e.target.value)}
-                      maxLength={20}
-                      style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        fontSize: 14,
-                        fontFamily: "ui-monospace, monospace",
-                        background: COLORS.bg,
-                        border: '1px solid rgba(251,191,36,0.3)',
-                        borderRadius: 6,
-                        color: COLORS.gold,
-                        textAlign: 'center',
-                        marginBottom: 12,
-                        letterSpacing: 2,
-                      }}
-                    />
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 15 }}>
-                      {[0, 1, 2, 3].map((i) => (
-                        <input
-                          key={i}
-                          id={`code-${i}`}
-                          type="text"
-                          value={codeDigits[i]}
-                          onChange={(e) => handleCodeInput(i, e.target.value)}
-                          onKeyDown={(e) => handleCodeKeyDown(i, e)}
-                          maxLength={1}
-                          style={{
-                            width: 40,
-                            height: 48,
-                            fontSize: 20,
-                            fontFamily: "ui-monospace, monospace",
-                            background: COLORS.bg,
-                            border: '1px solid rgba(251,191,36,0.4)',
-                            borderRadius: 6,
-                            color: COLORS.cream,
-                            textAlign: 'center',
-                            textTransform: 'uppercase',
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <button
-                      onClick={handleRetryWithNewHandle}
-                      style={{
-                        background: COLORS.gold,
-                        color: COLORS.bg,
-                        border: 'none',
-                        borderRadius: 6,
-                        padding: '10px 20px',
-                        fontSize: 12,
-                        fontFamily: "ui-monospace, monospace",
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      save
-                    </button>
-                    <button
-                      onClick={() => setScoreFlow('saved')}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: COLORS.muted,
-                        fontSize: 11,
-                        fontFamily: "ui-monospace, monospace",
-                        cursor: 'pointer',
-                        marginLeft: 10,
-                      }}
-                    >
-                      skip →
-                    </button>
-                    {flowError && (
-                      <div style={{ marginTop: 10, color: COLORS.coral, fontSize: 11, fontFamily: "ui-monospace, monospace" }}>
-                        {flowError}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Flow: saved - done */}
-                {scoreFlow === 'saved' && (
-                  <div style={{ color: COLORS.teal, fontSize: 14, fontFamily: "ui-monospace, monospace" }}>
-                    Rank #{submittedRank}!
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          {/* Score Submission - Using extracted ScoreFlow component */}
+          <ScoreFlow
+            score={score}
+            gameId={GAME_ID}
+            colors={SCORE_FLOW_COLORS}
+            onRankReceived={(rank, entryId) => {
+              setSubmittedEntryId(entryId ?? null);
+            }}
+          />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 15, alignItems: 'center' }}>
             <button
               className="btn-primary"
-              onClick={() => { resetScoreFlow(); startGame(); }}
+              onClick={startGame}
               style={{
                 background: COLORS.teal,
                 color: COLORS.bg,
@@ -1593,10 +986,7 @@ export default function BeamGame() {
               play again
             </button>
             <button
-              onClick={() => {
-                setGameState('leaderboard');
-                loadLeaderboard();
-              }}
+              onClick={() => setGameState('leaderboard')}
               style={{
                 background: 'transparent',
                 border: '1px solid rgba(255,255,255,0.1)',
@@ -1611,275 +1001,26 @@ export default function BeamGame() {
             >
               leaderboard
             </button>
-            <div id="share-btn-container" style={{ marginTop: 10 }} />
+            <ShareButtonContainer
+              id="share-btn-container"
+              url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/beam/share/${score}` : ''}
+              text={`I scored ${score} on BEAM! Can you beat me?`}
+              style="minimal"
+              socialLoaded={socialLoaded}
+            />
           </div>
         </div>
       )}
 
-      {/* Leaderboard Screen */}
+      {/* Leaderboard Screen - Using extracted Leaderboard component */}
       {gameState === 'leaderboard' && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: COLORS.bg,
-          zIndex: 100,
-          padding: 40,
-        }}>
-          <h2 style={{
-            fontFamily: "ui-monospace, monospace",
-            fontSize: 18,
-            fontWeight: 300,
-            color: COLORS.gold,
-            marginBottom: 30,
-            letterSpacing: 4,
-          }}>
-            leaderboard
-          </h2>
-          <div style={{
-            width: '100%',
-            maxWidth: 400,
-            marginBottom: 30,
-            background: COLORS.surface,
-            border: '1px solid rgba(255,255,255,0.05)',
-            borderRadius: 12,
-            boxShadow: '0 15px 40px rgba(0,0,0,0.4)',
-            overflow: 'hidden',
-          }}>
-            {leaderboard.length === 0 ? (
-              <div style={{ color: COLORS.muted, textAlign: 'center', padding: 40, fontFamily: "ui-monospace, monospace", fontSize: 12 }}>
-                no scores yet. be the first!
-              </div>
-            ) : (
-              <>
-                {leaderboard.map((entry) => (
-                  <div
-                    key={entry.rank}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '14px 20px',
-                      borderBottom: '1px solid rgba(255,255,255,0.03)',
-                      background: entry.rank === 1 ? 'rgba(251,191,36,0.08)' : 'transparent',
-                      fontFamily: "ui-monospace, monospace",
-                      fontSize: 12,
-                    }}
-                  >
-                    <span style={{ width: 30, color: entry.rank === 1 ? COLORS.gold : COLORS.muted }}>
-                      {String(entry.rank).padStart(2, '0')}
-                    </span>
-                    <span style={{
-                      flex: 1,
-                      paddingLeft: 15,
-                      color: entry.isRegistered ? COLORS.cream : COLORS.gold,
-                    }}>
-                      {entry.isRegistered ? `@${entry.name}` : entry.name}
-                    </span>
-                    <span style={{ fontWeight: 500, color: COLORS.teal, fontSize: 14 }}>
-                      {entry.score}
-                    </span>
-                  </div>
-                ))}
-                {/* Show player's position if not in top */}
-                {playerEntry && (
-                  <>
-                    <div style={{
-                      padding: '8px 20px',
-                      textAlign: 'center',
-                      color: COLORS.muted,
-                      fontFamily: "ui-monospace, monospace",
-                      fontSize: 10,
-                      letterSpacing: 4,
-                    }}>
-                      ···
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '14px 20px',
-                        background: 'rgba(45,212,191,0.1)',
-                        fontFamily: "ui-monospace, monospace",
-                        fontSize: 12,
-                      }}
-                    >
-                      <span style={{ width: 30, color: COLORS.teal }}>
-                        {String(playerEntry.rank).padStart(2, '0')}
-                      </span>
-                      <span style={{
-                        flex: 1,
-                        paddingLeft: 15,
-                        color: COLORS.teal,
-                      }}>
-                        {playerEntry.isRegistered ? `@${playerEntry.name}` : playerEntry.name} ← you
-                      </span>
-                      <span style={{ fontWeight: 500, color: COLORS.teal, fontSize: 14 }}>
-                        {playerEntry.score}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-          <button
-            onClick={() => setGameState('gameover')}
-            style={{
-              background: COLORS.teal,
-              color: COLORS.bg,
-              border: 'none',
-              borderRadius: 6,
-              padding: '14px 40px',
-              fontSize: 13,
-              fontFamily: "ui-monospace, monospace",
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 6px 20px rgba(45,212,191,0.25)',
-              letterSpacing: 1,
-            }}
-          >
-            back
-          </button>
-        </div>
-      )}
-
-      {/* Auth Screen */}
-      {gameState === 'auth' && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: COLORS.bg,
-          zIndex: 100,
-          padding: 40,
-        }}>
-          <h2 style={{
-            fontFamily: "ui-monospace, monospace",
-            fontSize: 16,
-            fontWeight: 300,
-            color: COLORS.teal,
-            marginBottom: 30,
-            letterSpacing: 4,
-          }}>
-            {authMode === 'login' ? 'login' : 'sign up'}
-          </h2>
-
-          <div style={{
-            width: '100%',
-            maxWidth: 300,
-            marginBottom: 20,
-            background: COLORS.surface,
-            border: '1px solid rgba(255,255,255,0.05)',
-            borderRadius: 12,
-            padding: 24,
-            boxShadow: '0 15px 40px rgba(0,0,0,0.4)',
-          }}>
-            <input
-              type="text"
-              placeholder="handle"
-              value={authHandle}
-              onChange={(e) => setAuthHandle(e.target.value)}
-              maxLength={20}
-              style={{
-                width: '100%',
-                padding: '15px 20px',
-                fontSize: 14,
-                fontFamily: "ui-monospace, monospace",
-                background: COLORS.bg,
-                border: '1px solid rgba(45,212,191,0.3)',
-                borderRadius: 8,
-                color: COLORS.cream,
-                marginBottom: 12,
-              }}
-            />
-            <input
-              type="text"
-              placeholder="code"
-              value={authCode}
-              onChange={(e) => setAuthCode(e.target.value)}
-              maxLength={4}
-              style={{
-                width: '100%',
-                padding: '15px 20px',
-                fontSize: 20,
-                fontFamily: "ui-monospace, monospace",
-                background: COLORS.bg,
-                border: '1px solid rgba(45,212,191,0.3)',
-                borderRadius: 8,
-                color: COLORS.cream,
-                marginBottom: 12,
-                letterSpacing: 12,
-                textAlign: 'center',
-              }}
-            />
-            {authError && (
-              <div style={{ color: COLORS.coral, fontSize: 11, marginBottom: 12, fontFamily: "ui-monospace, monospace" }}>
-                {authError}
-              </div>
-            )}
-            <button
-              onClick={handleAuth}
-              style={{
-                width: '100%',
-                background: COLORS.teal,
-                color: COLORS.bg,
-                border: 'none',
-                borderRadius: 6,
-                padding: '15px',
-                fontSize: 13,
-                fontFamily: "ui-monospace, monospace",
-                fontWeight: 600,
-                cursor: 'pointer',
-                marginBottom: 15,
-                boxShadow: '0 6px 20px rgba(45,212,191,0.25)',
-                letterSpacing: 1,
-              }}
-            >
-              {authMode === 'login' ? 'login' : 'create'}
-            </button>
-            <button
-              onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-              style={{
-                width: '100%',
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 6,
-                color: COLORS.muted,
-                padding: '10px',
-                fontSize: 11,
-                fontFamily: "ui-monospace, monospace",
-                cursor: 'pointer',
-              }}
-            >
-              {authMode === 'login' ? 'need an account?' : 'have an account?'}
-            </button>
-          </div>
-
-          <button
-            onClick={() => setGameState('gameover')}
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 6,
-              color: COLORS.cream,
-              padding: '12px 30px',
-              fontSize: 11,
-              fontFamily: "ui-monospace, monospace",
-              cursor: 'pointer',
-              marginTop: 20,
-            }}
-          >
-            back
-          </button>
-        </div>
+        <Leaderboard
+          gameId={GAME_ID}
+          limit={8}
+          entryId={submittedEntryId ?? undefined}
+          colors={LEADERBOARD_COLORS}
+          onClose={() => setGameState('gameover')}
+        />
       )}
     </>
   );

@@ -1,13 +1,13 @@
 import { ImageResponse } from 'next/og';
 import {
   createScoreShareImage,
-  BeamDecorations,
+  RainDecorations,
   OG_SIZE,
   GAME_COLORS,
 } from '@/app/pixelpit/components';
 
 export const runtime = 'edge';
-export const alt = 'BEAM Score - Pixelpit Arcade';
+export const alt = 'RAIN Score - Pixelpit Arcade';
 export const size = OG_SIZE;
 export const contentType = 'image/png';
 
@@ -17,10 +17,10 @@ export default async function Image({ params }: { params: { score: string } }) {
   return new ImageResponse(
     createScoreShareImage({
       score,
-      gameName: 'BEAM',
-      tagline: 'CAN YOU BEAT ME?',
-      colors: GAME_COLORS.beam,
-      decorations: <BeamDecorations />,
+      gameName: 'RAIN',
+      tagline: 'CAN YOU CATCH MORE?',
+      colors: GAME_COLORS.rain,
+      decorations: <RainDecorations />,
     }),
     { ...size }
   );

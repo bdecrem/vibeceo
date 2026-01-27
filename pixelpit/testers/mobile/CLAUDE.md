@@ -81,7 +81,14 @@ For every build:
 - [ ] Audio works (if applicable)
 - [ ] No accidental browser gestures (pull-to-refresh, back swipe)
 
-### 5. Device Test
+### 5. Social Flow Test
+- [ ] Game over shows ScoreFlow (name input or logged-in submit)
+- [ ] Score submits successfully, shows rank
+- [ ] Leaderboard button works, shows entries
+- [ ] Share button works (native share or clipboard)
+- [ ] OG image renders at `/arcade/[game]/share/[score]`
+
+### 6. Device Test
 - [ ] iPhone Safari
 - [ ] Android Chrome
 - [ ] Tablet (if applicable)

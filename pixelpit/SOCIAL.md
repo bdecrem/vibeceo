@@ -2,7 +2,61 @@
 
 Unified social backend for Pixelpit games: user registration, leaderboards, score submission, and shareable creations.
 
-## Quick Start
+## React Components (Recommended)
+
+For Next.js/React games, use the extracted components from `@/app/pixelpit/components`:
+
+```tsx
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  usePixelpitSocial,
+  createScoreShareImage,
+  type ScoreFlowColors,
+} from '@/app/pixelpit/components';
+```
+
+### What You Get for Free
+
+| Component | Handles |
+|-----------|---------|
+| **ScoreFlow** | Guest name entry, score submission, rank display, account creation prompts, handle conflicts |
+| **Leaderboard** | Top N entries, player position with "..." separator, @handle for registered users |
+| **ShareButtonContainer** | Social.js initialization, native share vs clipboard fallback |
+| **createScoreShareImage** | Parameterized OG image with corner accents, branding, score display |
+
+### Integration Checklist
+
+1. **Script tag** — Load social.js
+2. **Game Over** — Add `<ScoreFlow>` component
+3. **Leaderboard** — Add `<Leaderboard>` component
+4. **Share** — Add `<ShareButtonContainer>`
+5. **OG Images** — Create `/share/[score]/opengraph-image.tsx`
+
+### Colors (Required)
+
+```tsx
+const MY_COLORS: ScoreFlowColors = {
+  bg: '#0f172a',        // page background
+  surface: '#1e293b',   // card background
+  primary: '#fbbf24',   // action buttons
+  secondary: '#22d3ee', // secondary accent
+  text: '#f8fafc',      // light text
+  muted: '#94a3b8',     // muted text
+  error: '#f87171',     // error messages
+};
+```
+
+### Reference
+
+See `web/app/pixelpit/arcade/beam/page.tsx` for complete example.
+
+---
+
+## Vanilla JS (Legacy)
+
+For non-React games, use the vanilla JS library directly:
 
 ```html
 <!-- Include the library -->

@@ -46,6 +46,88 @@ None yet. Waiting for first concept from Mayor or generating my own.
 2. **One-line pitch** — what is this game in 10 words
 3. **Core loop description** — what does the player do repeatedly
 4. **Known issues** — what's broken that I know about
+5. **Social integration** — ScoreFlow, Leaderboard, Share, OG images
+
+## Social Integration (REQUIRED)
+
+Every game MUST include social features using the extracted components.
+
+### Components (import from `@/app/pixelpit/components`)
+
+```tsx
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  usePixelpitSocial,
+  type ScoreFlowColors,
+} from '@/app/pixelpit/components';
+```
+
+### Checklist
+
+1. **Script tag** — Load social.js:
+   ```tsx
+   const [socialLoaded, setSocialLoaded] = useState(false);
+   <Script src="/pixelpit/social.js" onLoad={() => setSocialLoaded(true)} />
+   ```
+
+2. **Game Over screen** — Add ScoreFlow:
+   ```tsx
+   <ScoreFlow
+     score={score}
+     gameId="mygame"
+     colors={MY_COLORS}
+     onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId)}
+   />
+   ```
+
+3. **Leaderboard screen** — Add Leaderboard:
+   ```tsx
+   <Leaderboard
+     gameId="mygame"
+     limit={8}
+     entryId={submittedEntryId}
+     colors={MY_COLORS}
+     onClose={() => setGameState('gameover')}
+   />
+   ```
+
+4. **Share button** — Add ShareButtonContainer:
+   ```tsx
+   <ShareButtonContainer
+     id="share-btn"
+     url={`${window.location.origin}/pixelpit/arcade/mygame/share/${score}`}
+     text={`I scored ${score} on MYGAME!`}
+     socialLoaded={socialLoaded}
+   />
+   ```
+
+5. **OG Images** — Create two routes:
+   - `arcade/[game]/opengraph-image.tsx` — General game OG
+   - `arcade/[game]/share/[score]/opengraph-image.tsx` — Score share OG
+
+   Use the template:
+   ```tsx
+   import { createScoreShareImage, OG_SIZE, GAME_COLORS } from '@/app/pixelpit/components';
+   ```
+
+### Colors
+
+Define colors matching `ScoreFlowColors` interface:
+```tsx
+const MY_COLORS: ScoreFlowColors = {
+  bg: '#0f172a',        // page background
+  surface: '#1e293b',   // card background
+  primary: '#fbbf24',   // action buttons
+  secondary: '#22d3ee', // secondary accent
+  text: '#f8fafc',      // light text
+  muted: '#94a3b8',     // muted text
+  error: '#f87171',     // error messages
+};
+```
+
+**Reference:** See `arcade/beam/page.tsx` for complete example.
 
 ## Kill Criteria (self-imposed)
 

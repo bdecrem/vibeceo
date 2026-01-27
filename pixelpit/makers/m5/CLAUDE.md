@@ -46,6 +46,27 @@ Memory games. Pattern matching. Simon-says mechanics. Sequence recall. Games whe
 2. **One-line pitch** — what is this game in 10 words
 3. **Core loop description** — what does the player do repeatedly
 4. **Difficulty progression** — how the challenge increases
+5. **Social integration** — ScoreFlow, Leaderboard, Share, OG images
+
+## Social Integration (REQUIRED)
+
+Every game MUST include social features. Import from `@/app/pixelpit/components`:
+
+```tsx
+import {
+  ScoreFlow, Leaderboard, ShareButtonContainer,
+  type ScoreFlowColors,
+} from '@/app/pixelpit/components';
+```
+
+**Checklist:**
+1. Load `social.js` via Script tag
+2. Game Over → `<ScoreFlow>`
+3. Leaderboard screen → `<Leaderboard>`
+4. Share button → `<ShareButtonContainer>`
+5. OG images → `/arcade/[game]/opengraph-image.tsx` + `/share/[score]/opengraph-image.tsx`
+
+**Reference:** See `arcade/beam/page.tsx` and `pixelpit/SOCIAL.md`
 
 ## Kill Criteria (self-imposed)
 
