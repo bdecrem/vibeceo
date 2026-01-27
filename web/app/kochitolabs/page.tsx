@@ -608,10 +608,11 @@ export default function KochitoLabsAscii() {
               href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs hover:opacity-80 transition-opacity"
-              style={{ color: "#333", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}
+              className="hover:opacity-80 transition-opacity"
+              style={{ color: "#444", fontSize: "16px" }}
+              title="Platform Overview"
             >
-              github.com/bdecrem/vibeceo
+              ⚙
             </a>
           </div>
 
