@@ -384,6 +384,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
+    // Don't double-rewrite paths already under /pixelpit
+    if (pathname.startsWith('/pixelpit')) {
+      return NextResponse.next()
+    }
+
     // All other paths → /pixelpit/*
     const newUrl = new URL(`/pixelpit${pathname}`, request.url)
     log(`[Middleware] Pixelpit domain rewrite ${pathname} -> ${newUrl.pathname}`)
