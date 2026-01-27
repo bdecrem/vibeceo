@@ -17,5 +17,11 @@ export * from './envelopes/index.js';
 // Effects
 export * from './effects/index.js';
 
+// Modulators
+export * from './modulators/index.js';
+
+// Generators
+export * from './generators/index.js';
+
 // Utilities
 export * from './utils/index.js';

@@ -8,7 +8,7 @@
  */
 
 import { clamp, fastTanh } from '../../../../jb202/dist/dsp/utils/math.js';
-import { Noise } from './noise.js';
+import { Noise } from '../../../../jb202/dist/dsp/generators/index.js';
 
 // Classic 909 hi-hat frequencies (Hz) - metallic ring
 const HIHAT_FREQUENCIES = [

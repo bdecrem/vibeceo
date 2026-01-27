@@ -9,7 +9,7 @@
  */
 
 import { clamp, fastTanh } from '../../../../jb202/dist/dsp/utils/math.js';
-import { Noise } from './noise.js';
+import { Noise } from '../../../../jb202/dist/dsp/generators/index.js';
 
 function triangleToSine(phase) {
   const tri = phase < 0.5 ? (phase * 4 - 1) : (3 - phase * 4);

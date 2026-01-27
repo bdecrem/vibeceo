@@ -23,6 +23,7 @@ import {
 import { MoogLadderFilter, normalizedToHz } from '../../../jb202/dist/dsp/filters/index.js';
 import { ADSREnvelope } from '../../../jb202/dist/dsp/envelopes/index.js';
 import { Drive } from '../../../jb202/dist/dsp/effects/index.js';
+import { LFO } from '../../../jb202/dist/dsp/modulators/index.js';
 import { clamp, fastTanh, TWO_PI } from '../../../jb202/dist/dsp/utils/math.js';
 import { noteToMidi, midiToFreq, transpose, detune } from '../../../jb202/dist/dsp/utils/note.js';
 import { JT10Sequencer } from './sequencer.js';
@@ -66,60 +67,7 @@ const DEFAULT_PARAMS = {
   level: 0.8,                // Output level (0-1)
 };
 
-/**
- * Simple LFO implementation
- */
-class LFO {
-  constructor(sampleRate) {
-    this.sampleRate = sampleRate;
-    this.phase = 0;
-    this.frequency = 5;      // Hz
-    this.waveform = 'triangle';
-    this.shValue = 0;        // Sample & hold value
-    this.shPhase = 0;
-  }
-
-  setRate(normalized) {
-    // 0-1 maps to 0.1-30 Hz (exponential)
-    this.frequency = 0.1 * Math.pow(300, normalized);
-  }
-
-  setWaveform(waveform) {
-    this.waveform = waveform;
-  }
-
-  reset() {
-    this.phase = 0;
-    this.shPhase = 0;
-  }
-
-  processSample() {
-    const phaseIncrement = this.frequency / this.sampleRate;
-    this.phase += phaseIncrement;
-    if (this.phase >= 1) this.phase -= 1;
-
-    let value;
-    switch (this.waveform) {
-      case 'triangle':
-        value = this.phase < 0.5 ? (this.phase * 4 - 1) : (3 - this.phase * 4);
-        break;
-      case 'square':
-        value = this.phase < 0.5 ? 1 : -1;
-        break;
-      case 'sh':
-        // Sample & hold: update value once per cycle
-        if (this.phase < phaseIncrement) {
-          this.shValue = Math.random() * 2 - 1;
-        }
-        value = this.shValue;
-        break;
-      default:
-        value = 0;
-    }
-
-    return value;
-  }
-}
+// LFO imported from jb202/dist/dsp/modulators/index.js
 
 /**
  * Pulse oscillator with variable width

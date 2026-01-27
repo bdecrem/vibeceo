@@ -11,7 +11,7 @@
  */
 
 import { clamp, fastTanh } from '../../../../jb202/dist/dsp/utils/math.js';
-import { Noise } from './noise.js';
+import { Noise } from '../../../../jb202/dist/dsp/generators/index.js';
 
 /**
  * Simple sine approximation using triangle + saturation

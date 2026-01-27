@@ -130,6 +130,32 @@ R9DS uses local files:
 
 **Do NOT duplicate synth code** - always import from web/public/ (except R9DS which is local).
 
+### Shared DSP Library
+
+**Location:** `web/public/jb202/dist/dsp/`
+
+This folder contains the canonical shared DSP primitives for all instruments. Despite living under `jb202/`, it's the platform-wide DSP library.
+
+| Category | Modules |
+|----------|---------|
+| **Oscillators** | `SawtoothOscillator`, `SquareOscillator`, `TriangleOscillator` (PolyBLEP) |
+| **Filters** | `Lowpass24Filter`, `BiquadFilter`, `MoogLadderFilter` |
+| **Envelopes** | `ADSREnvelope` |
+| **Effects** | `Drive` (soft-clip saturation) |
+| **Modulators** | `LFO` (triangle, square, sine, S&H, ramp) |
+| **Generators** | `Noise` (seeded PRNG white noise) |
+| **Utils** | `clamp`, `fastTanh`, `noteToMidi`, `midiToFreq` |
+
+**Usage:**
+```javascript
+import { SawtoothOscillator } from '../../../jb202/dist/dsp/oscillators/index.js';
+import { MoogLadderFilter } from '../../../jb202/dist/dsp/filters/index.js';
+import { LFO } from '../../../jb202/dist/dsp/modulators/index.js';
+import { Noise } from '../../../jb202/dist/dsp/generators/index.js';
+```
+
+**Rule:** When building new instruments, import from this library rather than duplicating DSP code. JP9000, JT10, JT30, and JT90 all follow this pattern.
+
 ## Synth Development Guide
 
 This section covers creating new synth libraries and web clients for the Jambot synth machine system.

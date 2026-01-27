@@ -8,6 +8,7 @@
 export { OscSawModule } from './osc-saw.js';
 export { OscSquareModule } from './osc-square.js';
 export { OscTriangleModule } from './osc-triangle.js';
+export { NoiseModule, createNoise as createNoiseModule } from './noise.js';
 export { StringModule, createString } from './string.js';
 
 // Filters
@@ -17,6 +18,7 @@ export { FilterBiquadModule } from './filter-biquad.js';
 // Modulation
 export { EnvADSRModule } from './env-adsr.js';
 export { SequencerModule } from './sequencer.js';
+export { LFOModule, createLFO } from './lfo.js';
 
 // Utilities
 export { VCAModule } from './vca.js';
@@ -29,11 +31,13 @@ export { DriveModule } from './drive.js';
 import { OscSawModule } from './osc-saw.js';
 import { OscSquareModule } from './osc-square.js';
 import { OscTriangleModule } from './osc-triangle.js';
+import { NoiseModule } from './noise.js';
 import { StringModule } from './string.js';
 import { FilterLP24Module } from './filter-lp24.js';
 import { FilterBiquadModule } from './filter-biquad.js';
 import { EnvADSRModule } from './env-adsr.js';
 import { SequencerModule } from './sequencer.js';
+import { LFOModule } from './lfo.js';
 import { VCAModule } from './vca.js';
 import { MixerModule } from './mixer.js';
 import { DriveModule } from './drive.js';
@@ -46,6 +50,7 @@ const MODULE_REGISTRY = {
   'osc-saw': OscSawModule,
   'osc-square': OscSquareModule,
   'osc-triangle': OscTriangleModule,
+  'noise': NoiseModule,
   'string': StringModule,
 
   // Filters
@@ -55,6 +60,7 @@ const MODULE_REGISTRY = {
   // Modulation
   'env-adsr': EnvADSRModule,
   'sequencer': SequencerModule,
+  'lfo': LFOModule,
 
   // Utilities
   'vca': VCAModule,
@@ -100,9 +106,9 @@ export function createModule(type, id, sampleRate = 44100) {
  * Module type categories for UI organization
  */
 export const MODULE_CATEGORIES = {
-  'Sound Sources': ['osc-saw', 'osc-square', 'osc-triangle', 'string'],
+  'Sound Sources': ['osc-saw', 'osc-square', 'osc-triangle', 'noise', 'string'],
   'Filters': ['filter-lp24', 'filter-biquad'],
-  'Modulation': ['env-adsr', 'sequencer'],
+  'Modulation': ['env-adsr', 'lfo', 'sequencer'],
   'Utilities': ['vca', 'mixer'],
   'Effects': ['drive'],
 };
@@ -114,10 +120,12 @@ export const MODULE_NAMES = {
   'osc-saw': 'Sawtooth Oscillator',
   'osc-square': 'Square Oscillator',
   'osc-triangle': 'Triangle Oscillator',
+  'noise': 'Noise Generator',
   'string': 'String (Karplus-Strong)',
   'filter-lp24': '24dB Lowpass Filter',
   'filter-biquad': 'Biquad Filter',
   'env-adsr': 'ADSR Envelope',
+  'lfo': 'LFO',
   'sequencer': 'Step Sequencer',
   'vca': 'VCA',
   'mixer': '4-Channel Mixer',
