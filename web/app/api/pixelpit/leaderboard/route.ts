@@ -57,6 +57,45 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ leaderboard });
 }
 
+// PATCH - link guest entry to user account
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { entryId, userId } = body;
+
+    if (!entryId || !userId) {
+      return NextResponse.json({ error: "entryId and userId required" }, { status: 400 });
+    }
+
+    // Verify user exists
+    const { data: user, error: userError } = await supabase
+      .from("pixelpit_users")
+      .select("id")
+      .eq("id", userId)
+      .single();
+
+    if (userError || !user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Update entry to link to user
+    const { error: updateError } = await supabase
+      .from("pixelpit_entries")
+      .update({ user_id: userId, nickname: null })
+      .eq("id", entryId)
+      .is("user_id", null); // Only update if not already linked
+
+    if (updateError) {
+      console.error("Error linking entry:", updateError);
+      return NextResponse.json({ error: "Failed to link entry" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+}
+
 // POST - submit score to leaderboard
 export async function POST(request: NextRequest) {
   try {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
 
 // RAIN theme - soft glows, warm amber/teal
@@ -89,6 +89,13 @@ export default function BeamGame() {
   const [authHandle, setAuthHandle] = useState('');
   const [authCode, setAuthCode] = useState('');
   const [authError, setAuthError] = useState('');
+
+  // New score flow state
+  const [scoreFlow, setScoreFlow] = useState<'input' | 'checking' | 'returning' | 'submitted' | 'saving' | 'handleTaken' | 'saved'>('input');
+  const [codeDigits, setCodeDigits] = useState(['', '', '', '']);
+  const [submittedRank, setSubmittedRank] = useState<number | null>(null);
+  const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
+  const [flowError, setFlowError] = useState('');
 
   // Game refs
   const gameRef = useRef({
@@ -436,6 +443,13 @@ export default function BeamGame() {
     stopMusic();
     crashSound();
     setScore(game.score);
+    // Reset score flow for new game over
+    setScoreFlow('input');
+    setCodeDigits(['', '', '', '']);
+    setFlowError('');
+    setSubmittedRank(null);
+    setSubmittedEntryId(null);
+    setSubmitStatus('');
     setTimeout(() => setGameState('gameover'), 600);
   };
 
@@ -723,37 +737,193 @@ export default function BeamGame() {
     const currentUser = window.PixelpitSocial.getUser();
 
     if (currentUser) {
-      // Logged in user
+      // Logged in user - simple submit
       setSubmitStatus('Submitting...');
       try {
         const result = await window.PixelpitSocial.submitScore(GAME_ID, score);
         if (result.success) {
           setSubmitStatus(`Rank #${result.rank}!`);
+          setSubmittedRank(result.rank);
         } else {
           setSubmitStatus('Failed to submit');
         }
       } catch (e) {
         setSubmitStatus('Network error');
       }
-    } else {
-      // Guest
-      if (!playerName.trim()) {
-        setSubmitStatus('Enter a name first!');
-        return;
-      }
-      setSubmitStatus('Submitting...');
-      localStorage.setItem('pixelpit_guest_name', playerName);
-      try {
-        const result = await window.PixelpitSocial.submitScore(GAME_ID, score, { nickname: playerName });
-        if (result.success) {
-          setSubmitStatus(`Rank #${result.rank}!`);
-        } else {
-          setSubmitStatus('Failed to submit');
-        }
-      } catch (e) {
-        setSubmitStatus('Network error');
-      }
+      return;
     }
+
+    // Guest flow - submit immediately, no uniqueness check
+    if (!playerName.trim()) {
+      setFlowError('Enter a name first!');
+      return;
+    }
+
+    setScoreFlow('checking');
+    setFlowError('');
+
+    try {
+      // Submit as guest immediately
+      localStorage.setItem('pixelpit_guest_name', playerName);
+      const result = await window.PixelpitSocial.submitScore(GAME_ID, score, { nickname: playerName });
+      if (result.success) {
+        setSubmittedRank(result.rank);
+        setSubmittedEntryId(result.entry?.id || null);
+        setScoreFlow('submitted');
+      } else {
+        setFlowError('Failed to submit');
+        setScoreFlow('input');
+      }
+    } catch (e) {
+      setFlowError('Network error');
+      setScoreFlow('input');
+    }
+  };
+
+  const handleCodeInput = (index: number, value: string) => {
+    if (value.length > 1) value = value[0];
+    if (value && !/^[a-zA-Z0-9]$/.test(value)) return;
+
+    const newDigits = [...codeDigits];
+    newDigits[index] = value;
+    setCodeDigits(newDigits);
+
+    // Auto-focus next input
+    if (value && index < 3) {
+      const nextInput = document.getElementById(`code-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+
+  const handleCodeKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !codeDigits[index] && index > 0) {
+      const prevInput = document.getElementById(`code-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
+
+  const getFullCode = () => codeDigits.join('');
+
+  const handleReturningUserSubmit = async () => {
+    if (!window.PixelpitSocial) return;
+    const code = getFullCode();
+    if (code.length !== 4) {
+      setFlowError('Enter 4 characters');
+      return;
+    }
+
+    setScoreFlow('checking');
+    try {
+      const result = await window.PixelpitSocial.login(playerName, code);
+      if (result.success && result.user) {
+        setUser(result.user);
+        // Now submit score as logged in user
+        const scoreResult = await window.PixelpitSocial.submitScore(GAME_ID, score);
+        if (scoreResult.success) {
+          setSubmittedRank(scoreResult.rank);
+          setScoreFlow('saved');
+        }
+      } else {
+        setFlowError(result.error || 'Wrong code');
+        setScoreFlow('returning');
+        setCodeDigits(['', '', '', '']);
+      }
+    } catch (e) {
+      setFlowError('Network error');
+      setScoreFlow('returning');
+    }
+  };
+
+  const linkEntryToUser = async (userId: number) => {
+    if (!submittedEntryId) return;
+    try {
+      await fetch('/api/pixelpit/leaderboard', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entryId: submittedEntryId, userId }),
+      });
+    } catch (e) {
+      // Silent fail - not critical
+    }
+  };
+
+  const handleSaveAccount = async () => {
+    if (!window.PixelpitSocial) return;
+    const code = getFullCode();
+    if (code.length !== 4) {
+      setFlowError('Enter 4 characters');
+      return;
+    }
+
+    setScoreFlow('saving');
+    try {
+      // First try to register
+      const result = await window.PixelpitSocial.register(playerName, code);
+      if (result.success && result.user) {
+        setUser(result.user);
+        await linkEntryToUser(result.user.id);
+        setScoreFlow('saved');
+      } else if (result.error?.includes('taken')) {
+        // Handle taken - try to login with this code instead
+        const loginResult = await window.PixelpitSocial.login(playerName, code);
+        if (loginResult.success && loginResult.user) {
+          // They knew the code! Log them in and link the entry
+          setUser(loginResult.user);
+          await linkEntryToUser(loginResult.user.id);
+          setScoreFlow('saved');
+        } else {
+          // Wrong code for existing account
+          setFlowError('Name taken (wrong code)');
+          setScoreFlow('handleTaken');
+          setCodeDigits(['', '', '', '']);
+        }
+      } else {
+        setFlowError(result.error || 'Failed to save');
+        setScoreFlow('submitted');
+      }
+    } catch (e) {
+      setFlowError('Network error');
+      setScoreFlow('submitted');
+    }
+  };
+
+  const handleRetryWithNewHandle = async () => {
+    if (!window.PixelpitSocial) return;
+    const code = getFullCode();
+    if (code.length !== 4) {
+      setFlowError('Enter 4 characters');
+      return;
+    }
+    if (!playerName.trim()) {
+      setFlowError('Enter a handle');
+      return;
+    }
+
+    setScoreFlow('saving');
+    try {
+      const result = await window.PixelpitSocial.register(playerName, code);
+      if (result.success && result.user) {
+        setUser(result.user);
+        setScoreFlow('saved');
+      } else if (result.error?.includes('taken')) {
+        setFlowError('Also taken! Try another');
+        setScoreFlow('handleTaken');
+        setCodeDigits(['', '', '', '']);
+      } else {
+        setFlowError(result.error || 'Failed to save');
+        setScoreFlow('handleTaken');
+      }
+    } catch (e) {
+      setFlowError('Network error');
+      setScoreFlow('handleTaken');
+    }
+  };
+
+  const resetScoreFlow = () => {
+    setScoreFlow('input');
+    setCodeDigits(['', '', '', '']);
+    setFlowError('');
+    setSubmittedRank(null);
   };
 
   const handleAuth = async () => {
@@ -1029,93 +1199,372 @@ export default function BeamGame() {
             {score}
           </div>
 
-          {/* Score Submission */}
+          {/* Score Submission - New Flow */}
           <div style={{ marginBottom: 20, width: '100%', maxWidth: 300 }}>
+
+            {/* Already logged in user */}
             {user ? (
-              <div style={{
-                color: COLORS.teal,
-                marginBottom: 10,
-                fontFamily: "ui-monospace, monospace",
-                fontSize: 12,
-              }}>
-                @{user.handle}
-              </div>
-            ) : (
-              <input
-                type="text"
-                placeholder="your name"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                maxLength={20}
-                style={{
-                  width: '100%',
-                  padding: '15px 20px',
-                  fontSize: 14,
-                  fontFamily: "ui-monospace, monospace",
-                  background: COLORS.surface,
-                  border: '1px solid rgba(251,191,36,0.3)',
-                  borderRadius: 8,
-                  color: COLORS.gold,
-                  textAlign: 'center',
+              <>
+                <div style={{
+                  color: COLORS.teal,
                   marginBottom: 10,
-                  letterSpacing: 2,
-                }}
-              />
-            )}
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <button
-                onClick={submitScore}
-                style={{
-                  background: COLORS.gold,
-                  color: COLORS.bg,
-                  border: 'none',
-                  borderRadius: 6,
-                  padding: '12px 25px',
-                  fontSize: 13,
                   fontFamily: "ui-monospace, monospace",
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: '0 6px 20px rgba(251,191,36,0.25)',
-                  letterSpacing: 1,
-                }}
-              >
-                submit
-              </button>
-              {!user && (
+                  fontSize: 14,
+                }}>
+                  @{user.handle}
+                </div>
                 <button
-                  onClick={() => setGameState('auth')}
+                  onClick={submitScore}
                   style={{
-                    background: 'transparent',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: COLORS.gold,
+                    color: COLORS.bg,
+                    border: 'none',
                     borderRadius: 6,
-                    color: COLORS.tealLight,
-                    padding: '12px 20px',
-                    fontSize: 11,
+                    padding: '12px 25px',
+                    fontSize: 13,
                     fontFamily: "ui-monospace, monospace",
+                    fontWeight: 600,
                     cursor: 'pointer',
+                    boxShadow: '0 6px 20px rgba(251,191,36,0.25)',
                     letterSpacing: 1,
                   }}
                 >
-                  login
+                  submit
                 </button>
-              )}
-            </div>
-            {submitStatus && (
-              <div style={{
-                marginTop: 10,
-                color: submitStatus.includes('#') ? COLORS.teal : COLORS.coral,
-                fontSize: 12,
-                fontFamily: "ui-monospace, monospace",
-              }}>
-                {submitStatus}
-              </div>
+                {submitStatus && (
+                  <div style={{
+                    marginTop: 10,
+                    color: submitStatus.includes('#') ? COLORS.teal : COLORS.coral,
+                    fontSize: 12,
+                    fontFamily: "ui-monospace, monospace",
+                  }}>
+                    {submitStatus}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {/* Flow: input - initial handle entry */}
+                {scoreFlow === 'input' && (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="your name"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      maxLength={20}
+                      style={{
+                        width: '100%',
+                        padding: '15px 20px',
+                        fontSize: 14,
+                        fontFamily: "ui-monospace, monospace",
+                        background: COLORS.surface,
+                        border: '1px solid rgba(251,191,36,0.3)',
+                        borderRadius: 8,
+                        color: COLORS.gold,
+                        textAlign: 'center',
+                        marginBottom: 10,
+                        letterSpacing: 2,
+                      }}
+                    />
+                    <button
+                      onClick={submitScore}
+                      style={{
+                        background: COLORS.gold,
+                        color: COLORS.bg,
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '12px 25px',
+                        fontSize: 13,
+                        fontFamily: "ui-monospace, monospace",
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: '0 6px 20px rgba(251,191,36,0.25)',
+                        letterSpacing: 1,
+                      }}
+                    >
+                      submit
+                    </button>
+                    {flowError && (
+                      <div style={{ marginTop: 10, color: COLORS.coral, fontSize: 12, fontFamily: "ui-monospace, monospace" }}>
+                        {flowError}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Flow: checking - loading */}
+                {(scoreFlow === 'checking' || scoreFlow === 'saving') && (
+                  <div style={{ color: COLORS.muted, fontSize: 12, fontFamily: "ui-monospace, monospace" }}>
+                    {scoreFlow === 'checking' ? 'checking...' : 'saving...'}
+                  </div>
+                )}
+
+                {/* Flow: returning - name is taken */}
+                {scoreFlow === 'returning' && (
+                  <div style={{
+                    background: COLORS.surface,
+                    border: '1px solid rgba(251,191,36,0.3)',
+                    borderRadius: 12,
+                    padding: 20,
+                  }}>
+                    <div style={{ color: COLORS.gold, fontSize: 13, fontFamily: "ui-monospace, monospace", marginBottom: 15 }}>
+                      "{playerName}" is taken
+                    </div>
+                    <div style={{ color: COLORS.muted, fontSize: 11, fontFamily: "ui-monospace, monospace", marginBottom: 12 }}>
+                      enter code if it's you:
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 15 }}>
+                      {[0, 1, 2, 3].map((i) => (
+                        <input
+                          key={i}
+                          id={`code-${i}`}
+                          type="text"
+                          value={codeDigits[i]}
+                          onChange={(e) => handleCodeInput(i, e.target.value)}
+                          onKeyDown={(e) => handleCodeKeyDown(i, e)}
+                          maxLength={1}
+                          style={{
+                            width: 40,
+                            height: 48,
+                            fontSize: 20,
+                            fontFamily: "ui-monospace, monospace",
+                            background: COLORS.bg,
+                            border: '1px solid rgba(251,191,36,0.4)',
+                            borderRadius: 6,
+                            color: COLORS.cream,
+                            textAlign: 'center',
+                            textTransform: 'uppercase',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      onClick={handleReturningUserSubmit}
+                      style={{
+                        background: COLORS.gold,
+                        color: COLORS.bg,
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '10px 20px',
+                        fontSize: 12,
+                        fontFamily: "ui-monospace, monospace",
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      submit
+                    </button>
+                    <button
+                      onClick={resetScoreFlow}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: COLORS.muted,
+                        fontSize: 11,
+                        fontFamily: "ui-monospace, monospace",
+                        cursor: 'pointer',
+                        marginLeft: 10,
+                      }}
+                    >
+                      try another →
+                    </button>
+                    {flowError && (
+                      <div style={{ marginTop: 10, color: COLORS.coral, fontSize: 11, fontFamily: "ui-monospace, monospace" }}>
+                        {flowError}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Flow: submitted - guest score saved, offer account */}
+                {scoreFlow === 'submitted' && (
+                  <div style={{
+                    background: COLORS.surface,
+                    border: '1px solid rgba(251,191,36,0.3)',
+                    borderRadius: 12,
+                    padding: 20,
+                  }}>
+                    <div style={{ color: COLORS.teal, fontSize: 14, fontFamily: "ui-monospace, monospace", marginBottom: 5 }}>
+                      ✓ {playerName} — Rank #{submittedRank}
+                    </div>
+                    <div style={{ color: COLORS.muted, fontSize: 11, fontFamily: "ui-monospace, monospace", marginBottom: 15 }}>
+                      keep this name? add a code:
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 15 }}>
+                      {[0, 1, 2, 3].map((i) => (
+                        <input
+                          key={i}
+                          id={`code-${i}`}
+                          type="text"
+                          value={codeDigits[i]}
+                          onChange={(e) => handleCodeInput(i, e.target.value)}
+                          onKeyDown={(e) => handleCodeKeyDown(i, e)}
+                          maxLength={1}
+                          style={{
+                            width: 40,
+                            height: 48,
+                            fontSize: 20,
+                            fontFamily: "ui-monospace, monospace",
+                            background: COLORS.bg,
+                            border: '1px solid rgba(251,191,36,0.4)',
+                            borderRadius: 6,
+                            color: COLORS.cream,
+                            textAlign: 'center',
+                            textTransform: 'uppercase',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      onClick={handleSaveAccount}
+                      style={{
+                        background: COLORS.gold,
+                        color: COLORS.bg,
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '10px 20px',
+                        fontSize: 12,
+                        fontFamily: "ui-monospace, monospace",
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      save
+                    </button>
+                    <button
+                      onClick={() => setScoreFlow('saved')}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: COLORS.muted,
+                        fontSize: 11,
+                        fontFamily: "ui-monospace, monospace",
+                        cursor: 'pointer',
+                        marginLeft: 10,
+                      }}
+                    >
+                      skip →
+                    </button>
+                    {flowError && (
+                      <div style={{ marginTop: 10, color: COLORS.coral, fontSize: 11, fontFamily: "ui-monospace, monospace" }}>
+                        {flowError}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Flow: handleTaken - pick new handle */}
+                {scoreFlow === 'handleTaken' && (
+                  <div style={{
+                    background: COLORS.surface,
+                    border: '1px solid rgba(248,113,113,0.3)',
+                    borderRadius: 12,
+                    padding: 20,
+                  }}>
+                    <div style={{ color: COLORS.teal, fontSize: 12, fontFamily: "ui-monospace, monospace", marginBottom: 4 }}>
+                      ✓ score saved
+                    </div>
+                    <div style={{ color: COLORS.coral, fontSize: 12, fontFamily: "ui-monospace, monospace", marginBottom: 12 }}>
+                      "{playerName}" is taken — try another:
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="try another"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      maxLength={20}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        fontSize: 14,
+                        fontFamily: "ui-monospace, monospace",
+                        background: COLORS.bg,
+                        border: '1px solid rgba(251,191,36,0.3)',
+                        borderRadius: 6,
+                        color: COLORS.gold,
+                        textAlign: 'center',
+                        marginBottom: 12,
+                        letterSpacing: 2,
+                      }}
+                    />
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 15 }}>
+                      {[0, 1, 2, 3].map((i) => (
+                        <input
+                          key={i}
+                          id={`code-${i}`}
+                          type="text"
+                          value={codeDigits[i]}
+                          onChange={(e) => handleCodeInput(i, e.target.value)}
+                          onKeyDown={(e) => handleCodeKeyDown(i, e)}
+                          maxLength={1}
+                          style={{
+                            width: 40,
+                            height: 48,
+                            fontSize: 20,
+                            fontFamily: "ui-monospace, monospace",
+                            background: COLORS.bg,
+                            border: '1px solid rgba(251,191,36,0.4)',
+                            borderRadius: 6,
+                            color: COLORS.cream,
+                            textAlign: 'center',
+                            textTransform: 'uppercase',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      onClick={handleRetryWithNewHandle}
+                      style={{
+                        background: COLORS.gold,
+                        color: COLORS.bg,
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '10px 20px',
+                        fontSize: 12,
+                        fontFamily: "ui-monospace, monospace",
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      save
+                    </button>
+                    <button
+                      onClick={() => setScoreFlow('saved')}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: COLORS.muted,
+                        fontSize: 11,
+                        fontFamily: "ui-monospace, monospace",
+                        cursor: 'pointer',
+                        marginLeft: 10,
+                      }}
+                    >
+                      skip →
+                    </button>
+                    {flowError && (
+                      <div style={{ marginTop: 10, color: COLORS.coral, fontSize: 11, fontFamily: "ui-monospace, monospace" }}>
+                        {flowError}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Flow: saved - done */}
+                {scoreFlow === 'saved' && (
+                  <div style={{ color: COLORS.teal, fontSize: 14, fontFamily: "ui-monospace, monospace" }}>
+                    {user ? `saved! you're @${user.handle}` : `Rank #${submittedRank}!`}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 15, alignItems: 'center' }}>
             <button
               className="btn-primary"
-              onClick={startGame}
+              onClick={() => { resetScoreFlow(); startGame(); }}
               style={{
                 background: COLORS.teal,
                 color: COLORS.bg,
