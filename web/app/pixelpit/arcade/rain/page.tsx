@@ -2,6 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  type ScoreFlowColors,
+} from '@/app/pixelpit/components';
 
 // RAIN theme: Soft glows, warm, cozy
 const THEME = {
@@ -9,6 +15,17 @@ const THEME = {
   accent: '#f472b6',      // pink
   secondary: '#22d3ee',   // cyan
   highlight: '#fbbf24',   // gold
+};
+
+// Colors for social components
+const RAIN_COLORS: ScoreFlowColors = {
+  bg: '#0f172a',
+  surface: '#1e293b',
+  primary: '#fbbf24',     // gold - action buttons
+  secondary: '#22d3ee',   // cyan - secondary accent
+  text: '#f472b6',        // pink - main text
+  muted: '#94a3b8',
+  error: '#f87171',
 };
 
 // Legacy colors object (for compatibility)
@@ -37,39 +54,14 @@ interface Drop {
   speed: number;
 }
 
-declare global {
-  interface Window {
-    PixelpitSocial?: {
-      getUser: () => { id: number; handle: string } | null;
-      submitScore: (game: string, score: number, opts?: { nickname?: string }) => Promise<{ success: boolean; rank?: number; entry?: { id: number }; error?: string }>;
-      getLeaderboard: (game: string, limit?: number, opts?: { entryId?: number }) => Promise<{ leaderboard: Array<{ rank: number; name: string; score: number; isRegistered: boolean }>; playerEntry?: { rank: number; name: string; score: number; isRegistered: boolean } | null }>;
-      login: (handle: string, code: string) => Promise<{ success: boolean; user?: { id: number; handle: string }; error?: string }>;
-      register: (handle: string, code: string) => Promise<{ success: boolean; user?: { id: number; handle: string }; error?: string }>;
-      checkHandle: (handle: string) => Promise<{ exists: boolean }>;
-      logout: () => void;
-      ShareButton: (containerId: string, opts: { url: string; text: string; style?: 'button' | 'icon' | 'minimal' }) => void;
-      showToast: (message: string, duration?: number) => void;
-    };
-  }
-}
-
 export default function RainGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard' | 'auth'>('start');
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard'>('start');
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
-  const [leaderboard, setLeaderboard] = useState<Array<{ rank: number; name: string; score: number; isRegistered: boolean }>>([]);
-  const [submitStatus, setSubmitStatus] = useState<string>('');
-  const [playerName, setPlayerName] = useState('');
-  const [user, setUser] = useState<{ id: number; handle: string } | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [socialLoaded, setSocialLoaded] = useState(false);
-
-  // Auth state
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [authHandle, setAuthHandle] = useState('');
-  const [authCode, setAuthCode] = useState('');
-  const [authError, setAuthError] = useState('');
+  const [submittedEntryId, setSubmittedEntryId] = useState<number | undefined>(undefined);
 
   // Game refs
   const gameRef = useRef({
@@ -94,33 +86,6 @@ export default function RainGame() {
   });
 
   const GAME_ID = 'rain';
-
-  // Initialize user from social lib
-  useEffect(() => {
-    if (socialLoaded && window.PixelpitSocial) {
-      const u = window.PixelpitSocial.getUser();
-      setUser(u);
-      const savedName = localStorage.getItem('pixelpit_guest_name');
-      if (savedName) setPlayerName(savedName);
-    }
-  }, [socialLoaded]);
-
-  // Initialize share button on game over
-  useEffect(() => {
-    if (gameState === 'gameover' && socialLoaded && window.PixelpitSocial) {
-      setTimeout(() => {
-        const container = document.getElementById('share-btn-container');
-        if (container) {
-          container.innerHTML = '';
-          window.PixelpitSocial!.ShareButton('share-btn-container', {
-            url: `${window.location.origin}/pixelpit/arcade/rain`,
-            text: `I caught ${score} drops in RAIN! Can you beat me?`,
-            style: 'minimal',
-          });
-        }
-      }, 100);
-    }
-  }, [gameState, socialLoaded, score]);
 
   // Audio
   const initAudio = () => {
@@ -579,77 +544,6 @@ export default function RainGame() {
     };
   }, []);
 
-  // Leaderboard functions
-  const loadLeaderboard = async () => {
-    if (!window.PixelpitSocial) return;
-    try {
-      const result = await window.PixelpitSocial.getLeaderboard(GAME_ID, 10);
-      setLeaderboard(result.leaderboard);
-    } catch (e) {
-      console.error('Failed to load leaderboard', e);
-    }
-  };
-
-  const submitScore = async () => {
-    if (!window.PixelpitSocial) return;
-
-    const currentUser = window.PixelpitSocial.getUser();
-
-    if (currentUser) {
-      setSubmitStatus('Submitting...');
-      try {
-        const result = await window.PixelpitSocial.submitScore(GAME_ID, score);
-        if (result.success) {
-          setSubmitStatus(`Rank #${result.rank}!`);
-        } else {
-          setSubmitStatus('Failed to submit');
-        }
-      } catch (e) {
-        setSubmitStatus('Network error');
-      }
-    } else {
-      if (!playerName.trim()) {
-        setSubmitStatus('Enter a name first!');
-        return;
-      }
-      setSubmitStatus('Submitting...');
-      localStorage.setItem('pixelpit_guest_name', playerName);
-      try {
-        const result = await window.PixelpitSocial.submitScore(GAME_ID, score, { nickname: playerName });
-        if (result.success) {
-          setSubmitStatus(`Rank #${result.rank}!`);
-        } else {
-          setSubmitStatus('Failed to submit');
-        }
-      } catch (e) {
-        setSubmitStatus('Network error');
-      }
-    }
-  };
-
-  const handleAuth = async () => {
-    if (!window.PixelpitSocial) return;
-    setAuthError('');
-
-    if (authMode === 'register') {
-      const result = await window.PixelpitSocial.register(authHandle, authCode);
-      if (result.success && result.user) {
-        setUser(result.user);
-        setGameState('gameover');
-      } else {
-        setAuthError(result.error || 'Registration failed');
-      }
-    } else {
-      const result = await window.PixelpitSocial.login(authHandle, authCode);
-      if (result.success && result.user) {
-        setUser(result.user);
-        setGameState('gameover');
-      } else {
-        setAuthError(result.error || 'Login failed');
-      }
-    }
-  };
-
   return (
     <>
       <Script
@@ -887,78 +781,17 @@ export default function RainGame() {
             {score}
           </div>
 
-          {/* Score Submission */}
-          <div style={{ marginBottom: 20, width: '100%', maxWidth: 300 }}>
-            {user ? (
-              <div style={{ color: COLORS.teal, marginBottom: 10 }}>
-                Playing as @{user.handle}
-              </div>
-            ) : (
-              <input
-                type="text"
-                placeholder="YOUR NAME"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                maxLength={20}
-                style={{
-                  width: '100%',
-                  padding: '15px 20px',
-                  fontSize: 16,
-                  fontFamily: "'Space Mono', monospace",
-                  background: `${COLORS.gold}15`,
-                  border: `2px solid ${COLORS.gold}`,
-                  color: COLORS.gold,
-                  textAlign: 'center',
-                  letterSpacing: 2,
-                  marginBottom: 10,
-                }}
-              />
-            )}
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <button
-                onClick={submitScore}
-                style={{
-                  background: COLORS.gold,
-                  color: COLORS.black,
-                  border: 'none',
-                  padding: '12px 25px',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  borderRadius: 4,
-                }}
-              >
-                SUBMIT
-              </button>
-              {!user && (
-                <button
-                  onClick={() => setGameState('auth')}
-                  style={{
-                    background: 'transparent',
-                    border: `2px solid ${COLORS.amber}`,
-                    color: COLORS.amber,
-                    padding: '12px 20px',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                    borderRadius: 4,
-                  }}
-                >
-                  LOGIN
-                </button>
-              )}
-            </div>
-            {submitStatus && (
-              <div style={{
-                marginTop: 10,
-                color: submitStatus.includes('#') ? COLORS.teal : COLORS.amber,
-                fontSize: 14,
-              }}>
-                {submitStatus}
-              </div>
-            )}
-          </div>
+          {/* Score Submission Flow */}
+          <ScoreFlow
+            score={score}
+            gameId={GAME_ID}
+            colors={RAIN_COLORS}
+            onRankReceived={(rank, entryId) => {
+              setSubmittedEntryId(entryId);
+            }}
+          />
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 15, alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 15, alignItems: 'center', marginTop: 20 }}>
             <button
               className="btn-primary"
               onClick={startGame}
@@ -976,10 +809,7 @@ export default function RainGame() {
               PLAY AGAIN
             </button>
             <button
-              onClick={() => {
-                setGameState('leaderboard');
-                loadLeaderboard();
-              }}
+              onClick={() => setGameState('leaderboard')}
               style={{
                 background: 'transparent',
                 border: `2px solid ${THEME.accent}60`,
@@ -992,198 +822,25 @@ export default function RainGame() {
             >
               LEADERBOARD
             </button>
-            <div id="share-btn-container" style={{ marginTop: 10 }} />
+            <ShareButtonContainer
+              id="rain-share-btn"
+              url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/rain/share/${score}` : ''}
+              text={`I caught ${score} drops in RAIN! Can you beat me?`}
+              socialLoaded={socialLoaded}
+            />
           </div>
         </div>
       )}
 
       {/* Leaderboard Screen */}
       {gameState === 'leaderboard' && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: `rgba(0,0,0,0.98)`,
-          zIndex: 100,
-          padding: 40,
-        }}>
-          <h2 style={{
-            fontSize: 24,
-            color: COLORS.gold,
-            marginBottom: 30,
-            letterSpacing: 4,
-          }}>
-            LEADERBOARD
-          </h2>
-          <div style={{ width: '100%', maxWidth: 400, marginBottom: 30 }}>
-            {leaderboard.length === 0 ? (
-              <div style={{ color: COLORS.amber, textAlign: 'center', padding: 40, opacity: 0.6 }}>
-                No scores yet. Be the first!
-              </div>
-            ) : (
-              leaderboard.map((entry, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px 20px',
-                    borderBottom: `1px solid ${COLORS.amber}20`,
-                    background: i === 0 ? `${COLORS.gold}15` : 'transparent',
-                  }}
-                >
-                  <span style={{ width: 30, color: i === 0 ? COLORS.gold : `${COLORS.amber}60` }}>
-                    {i + 1}
-                  </span>
-                  <span style={{
-                    flex: 1,
-                    paddingLeft: 15,
-                    color: entry.isRegistered ? COLORS.amber : COLORS.gold,
-                    fontStyle: entry.isRegistered ? 'normal' : 'italic',
-                  }}>
-                    {entry.isRegistered ? `@${entry.name}` : entry.name}
-                  </span>
-                  <span style={{ fontWeight: 700, color: COLORS.teal, fontSize: 18 }}>
-                    {entry.score.toLocaleString()}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-          <button
-            onClick={() => setGameState('gameover')}
-            style={{
-              background: COLORS.teal,
-              color: COLORS.black,
-              border: 'none',
-              padding: '14px 35px',
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: 'pointer',
-              borderRadius: 4,
-            }}
-          >
-            BACK
-          </button>
-        </div>
-      )}
-
-      {/* Auth Screen */}
-      {gameState === 'auth' && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: `rgba(0,0,0,0.98)`,
-          zIndex: 100,
-          padding: 40,
-        }}>
-          <h2 style={{
-            fontSize: 20,
-            color: COLORS.teal,
-            marginBottom: 30,
-            letterSpacing: 2,
-          }}>
-            {authMode === 'login' ? 'LOGIN' : 'SIGN UP'}
-          </h2>
-
-          <div style={{ width: '100%', maxWidth: 300, marginBottom: 20 }}>
-            <input
-              type="text"
-              placeholder="Handle"
-              value={authHandle}
-              onChange={(e) => setAuthHandle(e.target.value)}
-              maxLength={20}
-              style={{
-                width: '100%',
-                padding: '15px 20px',
-                fontSize: 16,
-                fontFamily: "'Space Mono', monospace",
-                background: `${COLORS.teal}20`,
-                border: `2px solid ${COLORS.teal}`,
-                color: COLORS.amber,
-                marginBottom: 10,
-              }}
-            />
-            <input
-              type="text"
-              placeholder="4-digit code"
-              value={authCode}
-              onChange={(e) => setAuthCode(e.target.value)}
-              maxLength={4}
-              style={{
-                width: '100%',
-                padding: '15px 20px',
-                fontSize: 16,
-                fontFamily: "'Space Mono', monospace",
-                background: `${COLORS.teal}20`,
-                border: `2px solid ${COLORS.teal}`,
-                color: COLORS.amber,
-                marginBottom: 10,
-                letterSpacing: 8,
-                textAlign: 'center',
-              }}
-            />
-            {authError && (
-              <div style={{ color: '#FF6B6B', fontSize: 14, marginBottom: 10 }}>
-                {authError}
-              </div>
-            )}
-            <button
-              onClick={handleAuth}
-              style={{
-                width: '100%',
-                background: COLORS.teal,
-                color: COLORS.black,
-                border: 'none',
-                padding: '15px',
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: 'pointer',
-                marginBottom: 15,
-              }}
-            >
-              {authMode === 'login' ? 'LOGIN' : 'CREATE ACCOUNT'}
-            </button>
-            <button
-              onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-              style={{
-                width: '100%',
-                background: 'transparent',
-                border: `1px solid ${COLORS.amber}40`,
-                color: COLORS.amber,
-                padding: '10px',
-                fontSize: 12,
-                cursor: 'pointer',
-              }}
-            >
-              {authMode === 'login' ? 'Need an account? Sign up' : 'Have an account? Login'}
-            </button>
-          </div>
-
-          <button
-            onClick={() => setGameState('gameover')}
-            style={{
-              background: 'transparent',
-              border: `2px solid ${COLORS.amber}`,
-              color: COLORS.amber,
-              padding: '12px 30px',
-              fontSize: 12,
-              cursor: 'pointer',
-              marginTop: 20,
-              borderRadius: 4,
-            }}
-          >
-            BACK
-          </button>
-        </div>
+        <Leaderboard
+          gameId={GAME_ID}
+          limit={10}
+          entryId={submittedEntryId}
+          colors={RAIN_COLORS}
+          onClose={() => setGameState('gameover')}
+        />
       )}
     </>
   );
