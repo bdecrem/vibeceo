@@ -426,6 +426,15 @@ export default function BeamGame() {
     game.running = false;
     game.screenShake.intensity = 35; // Big shake on death
 
+    // Track play for analytics (fire-and-forget)
+    if (game.score >= 1) {
+      fetch('/api/pixelpit/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: GAME_ID }),
+      }).catch(() => {}); // Silent fail
+    }
+
     // Death explosion particles
     for (let i = 0; i < 25; i++) {
       const deathColor = THEME.particleColors[Math.floor(Math.random() * THEME.particleColors.length)];
