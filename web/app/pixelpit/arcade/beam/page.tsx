@@ -59,7 +59,7 @@ declare global {
   interface Window {
     PixelpitSocial?: {
       getUser: () => { id: number; handle: string } | null;
-      submitScore: (game: string, score: number, opts?: { nickname?: string }) => Promise<{ success: boolean; rank: number }>;
+      submitScore: (game: string, score: number, opts?: { nickname?: string }) => Promise<{ success: boolean; rank?: number; entry?: { id: number }; error?: string }>;
       getLeaderboard: (game: string, limit?: number, opts?: { entryId?: number }) => Promise<{ leaderboard: Array<{ rank: number; name: string; score: number; isRegistered: boolean }>; playerEntry?: { rank: number; name: string; score: number; isRegistered: boolean } | null }>;
       login: (handle: string, code: string) => Promise<{ success: boolean; user?: { id: number; handle: string }; error?: string }>;
       register: (handle: string, code: string) => Promise<{ success: boolean; user?: { id: number; handle: string }; error?: string }>;
@@ -752,7 +752,7 @@ export default function BeamGame() {
       setSubmitStatus('Submitting...');
       try {
         const result = await window.PixelpitSocial.submitScore(GAME_ID, score);
-        if (result.success) {
+        if (result.success && result.rank) {
           setSubmitStatus(`Rank #${result.rank}!`);
           setSubmittedRank(result.rank);
         } else {
@@ -778,8 +778,8 @@ export default function BeamGame() {
       localStorage.setItem('pixelpit_guest_name', playerName);
       const result = await window.PixelpitSocial.submitScore(GAME_ID, score, { nickname: playerName });
       if (result.success) {
-        setSubmittedRank(result.rank);
-        setSubmittedEntryId(result.entry?.id || null);
+        setSubmittedRank(result.rank ?? 0);
+        setSubmittedEntryId(result.entry?.id ?? null);
         setScoreFlow('submitted');
       } else {
         setFlowError('Failed to submit');
@@ -830,7 +830,7 @@ export default function BeamGame() {
         setUser(result.user);
         // Now submit score as logged in user
         const scoreResult = await window.PixelpitSocial.submitScore(GAME_ID, score);
-        if (scoreResult.success) {
+        if (scoreResult.success && scoreResult.rank) {
           setSubmittedRank(scoreResult.rank);
           setScoreFlow('saved');
         }
