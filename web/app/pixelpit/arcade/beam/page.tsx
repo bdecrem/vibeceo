@@ -736,7 +736,7 @@ export default function BeamGame() {
     try {
       const result = await window.PixelpitSocial.getLeaderboard(GAME_ID, 8, { entryId: submittedEntryId || undefined });
       setLeaderboard(result.leaderboard);
-      setPlayerEntry(result.playerEntry);
+      setPlayerEntry(result.playerEntry ?? null);
     } catch (e) {
       console.error('Failed to load leaderboard', e);
     }
