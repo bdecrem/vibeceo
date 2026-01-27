@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 const team = [
   {
     name: 'Dot',
@@ -94,20 +96,31 @@ export default function PixelpitLanding() {
         </h2>
         <div className="max-w-4xl mx-auto grid grid-cols-3 md:grid-cols-6 gap-4">
           {[
-            { icon: '🧠', name: 'Memory' },
-            { icon: '🐍', name: 'Snake' },
-            { icon: '⚡', name: 'Dodge' },
-            { icon: '🔨', name: 'Whack' },
-            { icon: '👆', name: 'Reaction' },
-            { icon: '✨', name: 'Soon' },
+            { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true },
+            { icon: '💧', name: 'Rain', href: '/pixelpit/arcade/rain', playable: true },
+            { icon: '🧠', name: 'Memory', href: null, playable: false },
+            { icon: '🐍', name: 'Snake', href: null, playable: false },
+            { icon: '🔨', name: 'Whack', href: null, playable: false },
+            { icon: '✨', name: 'Soon', href: null, playable: false },
           ].map((game) => (
-            <div
-              key={game.name}
-              className="bg-[#2a2a4e] rounded-2xl p-4 text-center hover:bg-[#3a3a5e] transition-colors cursor-pointer"
-            >
-              <div className="text-4xl mb-2">{game.icon}</div>
-              <div className="text-sm text-gray-400">{game.name}</div>
-            </div>
+            game.href ? (
+              <Link
+                key={game.name}
+                href={game.href}
+                className="bg-[#2a2a4e] rounded-2xl p-4 text-center hover:bg-[#3a3a5e] hover:scale-105 transition-all cursor-pointer ring-2 ring-[#FFD700]/50"
+              >
+                <div className="text-4xl mb-2">{game.icon}</div>
+                <div className="text-sm text-[#FFD700] font-bold">{game.name}</div>
+              </Link>
+            ) : (
+              <div
+                key={game.name}
+                className="bg-[#2a2a4e] rounded-2xl p-4 text-center hover:bg-[#3a3a5e] transition-colors cursor-pointer"
+              >
+                <div className="text-4xl mb-2">{game.icon}</div>
+                <div className="text-sm text-gray-400">{game.name}</div>
+              </div>
+            )
           ))}
         </div>
       </section>
