@@ -36,6 +36,16 @@ interface Project {
 
 const projects: Project[] = [
   {
+    name: "Pixelpit",
+    slug: "pixelpit",
+    url: "https://pixelpit.gg",
+    image: null,
+    shortDesc: "One arcade game a day",
+    fullDesc: "~Autonomous AI game studio. One game a day, created by a swarm of unruly Haiku agents that come up with ideas, build, test and ship. Small games, big smiles.",
+    status: "wip",
+    order: 0,
+  },
+  {
     name: "Amber",
     slug: "amber",
     url: "https://intheamber.com",
@@ -120,6 +130,7 @@ function AsciiLogo() {
     [3,0,3,0,3,0,3],
     [3,0,3,0,3,0,3],
     [3,0,0,0,0,0,3],
+    [3,3,3,3,3,3,3],
     [3,3,3,3,3,3,3],
     [2,2,2,2,2,2,2],
   ];
@@ -466,10 +477,10 @@ function ProjectRow({ project, isExpanded, onToggle }: {
               target="_blank"
               rel="noopener noreferrer"
               className={`${jetbrains.className} inline-flex items-center gap-2 text-sm transition-colors hover:opacity-80`}
-              style={{ color: statusColor }}
+              style={{ color: "#888", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}
             >
               {project.url.replace('https://', '')}
-              <span className="text-xs">↗</span>
+              <span className="text-xs" style={{ textDecoration: "none" }}>↗</span>
             </Link>
             {project.artifacts?.map((artifact, i) => (
               <a
@@ -569,12 +580,12 @@ export default function KochitoLabsAscii() {
           className={`${poppins.className} w-full max-w-3xl text-sm leading-relaxed mb-8 px-1`}
           style={{ color: "#555" }}
         >
-          Tools and prototypes <a href="https://linkedin.com/in/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: "#777", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>we</a> built with AI over 8 months, all running on the <a href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md" target="_blank" rel="noopener noreferrer" style={{ color: "#777", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>KL plotfarm</a>: agentic search over 300k AI research papers on Neo4j, an agent that posts reflections and games on Twitter and trades stocks (up $7 on $500 after the first few days), Claude Code for music, and more. Named after our favorite <a href="https://www.maruwuseicha.us" target="_blank" rel="noopener noreferrer" style={{ color: "#777", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>yuzu</a>.
+          Tools and prototypes <a href="https://linkedin.com/in/bartdecrem" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>we</a> built with AI over 8 months, all running on the <a href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>KL plotfarm</a>: agentic search over 300k AI research papers on Neo4j, an agent that posts reflections and games on Twitter and trades stocks (up $7 on $500 after the first few days), Claude Code for music, and more. Named after our favorite <a href="https://www.maruwuseicha.us" target="_blank" rel="noopener noreferrer" style={{ color: "#555", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}>yuzu</a>.
         </p>
 
         {/* Terminal window */}
         <div
-          className={`${jetbrains.className} w-full max-w-3xl rounded-lg overflow-hidden relative`}
+          className={`${jetbrains.className} w-full max-w-3xl overflow-hidden relative`}
           style={{
             backgroundColor: "#0d0d0d",
             border: "1px solid #1a1a1a",
@@ -586,9 +597,9 @@ export default function KochitoLabsAscii() {
             className="flex items-center gap-2 px-4 py-3 select-none"
             style={{ backgroundColor: "#111", borderBottom: "1px solid #1a1a1a" }}
           >
-            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#ff5f56", opacity: 0.8 }} />
-            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#ffbd2e", opacity: 0.8 }} />
-            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#27ca40", opacity: 0.8 }} />
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#6b4a4a" }} />
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#6b5c4a" }} />
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "#4a5c4a" }} />
             <span className="text-xs ml-4" style={{ color: "#333" }}>
               ~/projects
             </span>
@@ -597,11 +608,10 @@ export default function KochitoLabsAscii() {
               href="https://github.com/bdecrem/vibeceo/blob/main/PLATFORM-OVERVIEW.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm hover:opacity-80 transition-opacity"
-              style={{ color: "#333" }}
-              title="Platform Overview"
+              className="text-xs hover:opacity-80 transition-opacity"
+              style={{ color: "#333", textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "2px" }}
             >
-              ⚙
+              github.com/bdecrem/vibeceo
             </a>
           </div>
 
