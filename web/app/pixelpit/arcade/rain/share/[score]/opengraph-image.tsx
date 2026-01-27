@@ -1,7 +1,6 @@
 import { ImageResponse } from 'next/og';
 import {
   createScoreShareImage,
-  RainDecorations,
   OG_SIZE,
   GAME_COLORS,
 } from '@/app/pixelpit/components';
@@ -20,7 +19,6 @@ export default async function Image({ params }: { params: { score: string } }) {
       gameName: 'RAIN',
       tagline: 'CAN YOU CATCH MORE?',
       colors: GAME_COLORS.rain,
-      decorations: <RainDecorations />,
     }),
     { ...size }
   );
