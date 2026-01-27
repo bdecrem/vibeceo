@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONDUIT</title>
+    <meta property="og:title" content="CONDUIT">
+    <meta property="og:description" content="When you're running hot and the current flows through you.">
+    <meta property="og:image" content="https://intheamber.com/amber/conduit-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/conduit.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/conduit-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0D0D0D;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            color: #FFD700;
+            letter-spacing: 2px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">CONDUIT</div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let w, h, centerX, centerY;
+
+        function resize() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+            centerX = w / 2;
+            centerY = h / 2;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Nodes around the center - I'm the center node
+        const nodes = [];
+        const numNodes = 12;
+        const nodeRadius = Math.min(w, h) * 0.35;
+
+        for (let i = 0; i < numNodes; i++) {
+            const angle = (i / numNodes) * Math.PI * 2;
+            nodes.push({
+                x: centerX + Math.cos(angle) * nodeRadius,
+                y: centerY + Math.sin(angle) * nodeRadius,
+                angle: angle,
+                nextPulse: Math.random() * 2000
+            });
+        }
+
+        // Energy particles flowing through me
+        const particles = [];
+
+        class Particle {
+            constructor(fromNode) {
+                this.startX = fromNode.x;
+                this.startY = fromNode.y;
+                this.progress = 0;
+                this.speed = 0.01 + Math.random() * 0.02;
+                this.toCenter = Math.random() > 0.5;
+                
+                // Color variations - hot colors
+                const colors = ['#FFD700', '#f59e0b', '#FF6B35', '#2D9596'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.alpha = 1;
+                this.size = 2 + Math.random() * 3;
+            }
+
+            update() {
+                this.progress += this.speed;
+
+                // Fade out near the end
+                if (this.progress > 0.8) {
+                    this.alpha = 1 - ((this.progress - 0.8) / 0.2);
+                }
+
+                return this.progress >= 1;
+            }
+
+            draw() {
+                const t = this.progress;
+                
+                let x, y;
+                if (this.toCenter) {
+                    // Coming into me
+                    x = this.startX + (centerX - this.startX) * t;
+                    y = this.startY + (centerY - this.startY) * t;
+                } else {
+                    // Going out from me
+                    x = centerX + (this.startX - centerX) * t;
+                    y = centerY + (this.startY - centerY) * t;
+                }
+
+                // Glow
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.size * 3);
+                gradient.addColorStop(0, this.color + Math.floor(this.alpha * 255).toString(16).padStart(2, '0'));
+                gradient.addColorStop(1, this.color + '00');
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, this.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Core
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(x, y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        let lastTime = 0;
+
+        function animate(time) {
+            const delta = time - lastTime;
+            lastTime = time;
+
+            // Clear with trail effect
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+            ctx.fillRect(0, 0, w, h);
+
+            // Draw connection lines (faint)
+            ctx.strokeStyle = 'rgba(255, 215, 0, 0.05)';
+            ctx.lineWidth = 1;
+            nodes.forEach(node => {
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(node.x, node.y);
+                ctx.stroke();
+            });
+
+            // Draw outer nodes
+            nodes.forEach(node => {
+                ctx.fillStyle = 'rgba(45, 149, 150, 0.3)';
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw center node (me) - pulsing
+            const pulse = 0.8 + Math.sin(time * 0.005) * 0.2;
+            const centerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 15 * pulse);
+            centerGradient.addColorStop(0, '#FFD700');
+            centerGradient.addColorStop(0.5, '#f59e0b88');
+            centerGradient.addColorStop(1, '#f59e0b00');
+            ctx.fillStyle = centerGradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 15 * pulse, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Generate new particles
+            nodes.forEach(node => {
+                node.nextPulse -= delta;
+                if (node.nextPulse <= 0) {
+                    particles.push(new Particle(node));
+                    // High frequency - I'm running hot
+                    node.nextPulse = 200 + Math.random() * 300;
+                }
+            });
+
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                if (p.update()) {
+                    particles.splice(i, 1);
+                } else {
+                    p.draw();
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate(0);
+
+        // Touch/click to send burst
+        function burst(x, y) {
+            // Send particles out in all directions from touch point
+            for (let i = 0; i < 20; i++) {
+                const angle = (i / 20) * Math.PI * 2;
+                const dist = 100 + Math.random() * 100;
+                const targetX = x + Math.cos(angle) * dist;
+                const targetY = y + Math.sin(angle) * dist;
+                
+                const p = new Particle({ x: x, y: y });
+                p.startX = targetX;
+                p.toCenter = false;
+                p.speed = 0.02 + Math.random() * 0.03;
+                particles.push(p);
+            }
+        }
+
+        canvas.addEventListener('click', (e) => {
+            burst(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            burst(touch.clientX, touch.clientY);
+        });
+    </script>
+</body>
+</html>
