@@ -1,28 +1,28 @@
-import { redirect } from 'next/navigation';
-import type { Metadata } from 'next';
+'use client';
 
-interface Props {
-  params: { score: string };
-}
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-export function generateMetadata({ params }: Props): Metadata {
-  return {
-    title: `RAIN Score: ${params.score} - Pixelpit Arcade`,
-    description: `I caught ${params.score} drops in RAIN! Can you catch more?`,
-    openGraph: {
-      title: `RAIN Score: ${params.score}`,
-      description: `I caught ${params.score} drops in RAIN! Can you catch more?`,
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `RAIN Score: ${params.score}`,
-      description: `I caught ${params.score} drops in RAIN! Can you catch more?`,
-    },
-  };
-}
+export default function SharePage() {
+  const router = useRouter();
 
-export default function SharePage({ params }: Props) {
-  // Redirect to the game
-  redirect('/pixelpit/arcade/rain');
+  useEffect(() => {
+    router.replace('/pixelpit/arcade/rain');
+  }, [router]);
+
+  return (
+    <div style={{
+      background: '#0f172a',
+      color: '#fbbf24',
+      fontFamily: 'ui-monospace, monospace',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100vh',
+      fontSize: 24,
+      letterSpacing: 4,
+    }}>
+      loading...
+    </div>
+  );
 }
