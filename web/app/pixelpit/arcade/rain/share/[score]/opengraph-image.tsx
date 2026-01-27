@@ -7,6 +7,7 @@ import {
 } from '@/app/pixelpit/components';
 
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 export const alt = 'RAIN Score - Pixelpit Arcade';
 export const size = OG_SIZE;
 export const contentType = 'image/png';
