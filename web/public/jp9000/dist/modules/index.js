@@ -8,6 +8,7 @@
 export { OscSawModule } from './osc-saw.js';
 export { OscSquareModule } from './osc-square.js';
 export { OscTriangleModule } from './osc-triangle.js';
+export { OscPulseModule, createOscPulse } from './osc-pulse.js';
 export { NoiseModule, createNoise as createNoiseModule } from './noise.js';
 export { StringModule, createString } from './string.js';
 
@@ -31,6 +32,7 @@ export { DriveModule } from './drive.js';
 import { OscSawModule } from './osc-saw.js';
 import { OscSquareModule } from './osc-square.js';
 import { OscTriangleModule } from './osc-triangle.js';
+import { OscPulseModule } from './osc-pulse.js';
 import { NoiseModule } from './noise.js';
 import { StringModule } from './string.js';
 import { FilterLP24Module } from './filter-lp24.js';
@@ -50,6 +52,7 @@ const MODULE_REGISTRY = {
   'osc-saw': OscSawModule,
   'osc-square': OscSquareModule,
   'osc-triangle': OscTriangleModule,
+  'osc-pulse': OscPulseModule,
   'noise': NoiseModule,
   'string': StringModule,
 
@@ -106,7 +109,7 @@ export function createModule(type, id, sampleRate = 44100) {
  * Module type categories for UI organization
  */
 export const MODULE_CATEGORIES = {
-  'Sound Sources': ['osc-saw', 'osc-square', 'osc-triangle', 'noise', 'string'],
+  'Sound Sources': ['osc-saw', 'osc-square', 'osc-triangle', 'osc-pulse', 'noise', 'string'],
   'Filters': ['filter-lp24', 'filter-biquad'],
   'Modulation': ['env-adsr', 'lfo', 'sequencer'],
   'Utilities': ['vca', 'mixer'],
@@ -120,6 +123,7 @@ export const MODULE_NAMES = {
   'osc-saw': 'Sawtooth Oscillator',
   'osc-square': 'Square Oscillator',
   'osc-triangle': 'Triangle Oscillator',
+  'osc-pulse': 'Pulse Oscillator (PWM)',
   'noise': 'Noise Generator',
   'string': 'String (Karplus-Strong)',
   'filter-lp24': '24dB Lowpass Filter',

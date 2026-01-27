@@ -138,7 +138,7 @@ This folder contains the canonical shared DSP primitives for all instruments. De
 
 | Category | Modules |
 |----------|---------|
-| **Oscillators** | `SawtoothOscillator`, `SquareOscillator`, `TriangleOscillator` (PolyBLEP) |
+| **Oscillators** | `SawtoothOscillator`, `SquareOscillator`, `TriangleOscillator`, `PulseOscillator` (PolyBLEP) |
 | **Filters** | `Lowpass24Filter`, `BiquadFilter`, `MoogLadderFilter` |
 | **Envelopes** | `ADSREnvelope` |
 | **Effects** | `Drive` (soft-clip saturation) |

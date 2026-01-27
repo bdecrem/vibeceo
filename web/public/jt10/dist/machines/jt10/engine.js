@@ -18,6 +18,7 @@ import {
   SawtoothOscillator,
   SquareOscillator,
   TriangleOscillator,
+  PulseOscillator,
   createOscillatorSync
 } from '../../../jb202/dist/dsp/oscillators/index.js';
 import { MoogLadderFilter, normalizedToHz } from '../../../jb202/dist/dsp/filters/index.js';
@@ -68,66 +69,7 @@ const DEFAULT_PARAMS = {
 };
 
 // LFO imported from jb202/dist/dsp/modulators/index.js
-
-/**
- * Pulse oscillator with variable width
- */
-class PulseOscillator {
-  constructor(sampleRate) {
-    this.sampleRate = sampleRate;
-    this.phase = 0;
-    this.frequency = 440;
-    this.phaseIncrement = 0;
-    this.pulseWidth = 0.5;
-    this._updatePhaseIncrement();
-  }
-
-  setFrequency(freq) {
-    this.frequency = freq;
-    this._updatePhaseIncrement();
-  }
-
-  setPulseWidth(width) {
-    this.pulseWidth = clamp(width, 0.05, 0.95);
-  }
-
-  _updatePhaseIncrement() {
-    this.phaseIncrement = this.frequency / this.sampleRate;
-  }
-
-  reset() {
-    this.phase = 0;
-  }
-
-  _generateSample() {
-    // Simple pulse with PolyBLEP for anti-aliasing
-    const dt = this.phaseIncrement;
-    let sample = this.phase < this.pulseWidth ? 1 : -1;
-
-    // PolyBLEP at rising edge (phase = 0)
-    sample += this._polyBlep(this.phase, dt);
-    // PolyBLEP at falling edge (phase = pulseWidth)
-    sample -= this._polyBlep((this.phase - this.pulseWidth + 1) % 1, dt);
-
-    return sample;
-  }
-
-  _polyBlep(t, dt) {
-    if (t < dt) {
-      t = t / dt;
-      return t + t - t * t - 1;
-    } else if (t > 1 - dt) {
-      t = (t - 1) / dt;
-      return t * t + t + t + 1;
-    }
-    return 0;
-  }
-
-  _advancePhase() {
-    this.phase += this.phaseIncrement;
-    if (this.phase >= 1) this.phase -= 1;
-  }
-}
+// PulseOscillator imported from jb202/dist/dsp/oscillators/index.js
 
 /**
  * SynthVoice - THE lead synth. One class, used everywhere.
