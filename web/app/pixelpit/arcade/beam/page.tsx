@@ -1565,7 +1565,7 @@ export default function BeamGame() {
                 {/* Flow: saved - done */}
                 {scoreFlow === 'saved' && (
                   <div style={{ color: COLORS.teal, fontSize: 14, fontFamily: "ui-monospace, monospace" }}>
-                    {user ? `saved! you're @${user.handle}` : `Rank #${submittedRank}!`}
+                    Rank #{submittedRank}!
                   </div>
                 )}
               </>
