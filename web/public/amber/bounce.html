@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOUNCE — Drop balls and watch them dance</title>
+    <meta name="description" content="Drop golden balls and watch them bounce forever. Physics toy by Amber.">
+    <meta property="og:title" content="BOUNCE">
+    <meta property="og:description" content="Drop golden balls and watch them bounce forever. Physics toy by Amber.">
+    <meta property="og:image" content="https://intheamber.com/amber/bounce-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/bounce.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/bounce-og.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #score {
+            font-size: 48px;
+            font-weight: 700;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+        #info {
+            font-size: 14px;
+            color: #2D9596;
+            margin-top: 8px;
+        }
+        #clear {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: rgba(212, 165, 116, 0.1);
+            border: 2px solid #D4A574;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            pointer-events: auto;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        #clear:hover {
+            background: rgba(212, 165, 116, 0.2);
+            transform: scale(1.05);
+        }
+        #clear:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="ui">
+        <div id="score">0</div>
+        <div id="info">TAP TO DROP BALLS</div>
+    </div>
+    <button id="clear">CLEAR</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const infoEl = document.getElementById('info');
+        const clearBtn = document.getElementById('clear');
+
+        let width, height;
+        let balls = [];
+        let score = 0;
+        let audioContext;
+        let isAudioReady = false;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        class Ball {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = 0;
+                this.radius = 15 + Math.random() * 15;
+                this.color = Math.random() > 0.3 ? '#FFD700' : '#D4A574';
+                this.glow = this.color === '#FFD700' ? 'rgba(255, 215, 0, 0.5)' : 'rgba(212, 165, 116, 0.5)';
+                this.gravity = 0.4;
+                this.damping = 0.85;
+                this.friction = 0.99;
+                this.bounces = 0;
+            }
+
+            update() {
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Floor bounce
+                if (this.y + this.radius > height) {
+                    this.y = height - this.radius;
+                    this.vy *= -this.damping;
+                    this.vx *= this.friction;
+                    this.bounces++;
+                    
+                    if (Math.abs(this.vy) > 2) {
+                        playBounce(this.radius);
+                        createParticles(this.x, this.y + this.radius);
+                        score++;
+                        scoreEl.textContent = score;
+                    }
+                }
+
+                // Wall bounces
+                if (this.x - this.radius < 0) {
+                    this.x = this.radius;
+                    this.vx *= -this.damping;
+                    playBounce(this.radius);
+                } else if (this.x + this.radius > width) {
+                    this.x = width - this.radius;
+                    this.vx *= -this.damping;
+                    playBounce(this.radius);
+                }
+
+                // Ceiling bounce
+                if (this.y - this.radius < 0) {
+                    this.y = this.radius;
+                    this.vy *= -this.damping;
+                }
+            }
+
+            draw() {
+                // Glow
+                ctx.save();
+                ctx.shadowColor = this.glow;
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+
+                // Highlight
+                ctx.beginPath();
+                ctx.arc(this.x - this.radius * 0.3, this.y - this.radius * 0.3, this.radius * 0.3, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.fill();
+            }
+        }
+
+        let particles = [];
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = -Math.random() * 8 - 2;
+                this.life = 1;
+                this.decay = 0.02;
+                this.radius = 2 + Math.random() * 3;
+                this.color = Math.random() > 0.5 ? '#FFD700' : '#2D9596';
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.3;
+                this.life -= this.decay;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                particles.push(new Particle(x, y));
+            }
+        }
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                isAudioReady = true;
+            }
+        }
+
+        function playBounce(radius) {
+            if (!isAudioReady) return;
+
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            // Higher pitch for smaller balls
+            const freq = 200 + (30 - radius) * 20;
+            osc.frequency.setValueAtTime(freq, now);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.5, now + 0.1);
+
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.1);
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Update and draw balls
+            balls.forEach(ball => {
+                ball.update();
+                ball.draw();
+            });
+
+            // Ball-to-ball collisions
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    const dx = balls[j].x - balls[i].x;
+                    const dy = balls[j].y - balls[i].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const minDist = balls[i].radius + balls[j].radius;
+
+                    if (distance < minDist) {
+                        // Collision response
+                        const angle = Math.atan2(dy, dx);
+                        const sin = Math.sin(angle);
+                        const cos = Math.cos(angle);
+
+                        // Separate balls
+                        const overlap = minDist - distance;
+                        const separateX = (overlap * cos) / 2;
+                        const separateY = (overlap * sin) / 2;
+
+                        balls[i].x -= separateX;
+                        balls[i].y -= separateY;
+                        balls[j].x += separateX;
+                        balls[j].y += separateY;
+
+                        // Exchange velocities (simplified elastic collision)
+                        const vx1 = balls[i].vx;
+                        const vy1 = balls[i].vy;
+                        balls[i].vx = balls[j].vx * 0.9;
+                        balls[i].vy = balls[j].vy * 0.9;
+                        balls[j].vx = vx1 * 0.9;
+                        balls[j].vy = vy1 * 0.9;
+
+                        playBounce((balls[i].radius + balls[j].radius) / 2);
+                    }
+                }
+            }
+
+            // Update and draw particles
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        function addBall(x, y) {
+            initAudio();
+            balls.push(new Ball(x, y));
+            if (balls.length === 1) {
+                infoEl.textContent = 'TAP TO ADD MORE';
+            }
+        }
+
+        canvas.addEventListener('click', (e) => {
+            addBall(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            addBall(touch.clientX, touch.clientY);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            balls = [];
+            particles = [];
+            score = 0;
+            scoreEl.textContent = '0';
+            infoEl.textContent = 'TAP TO DROP BALLS';
+        });
+
+        animate();
+    </script>
+</body>
+</html>
