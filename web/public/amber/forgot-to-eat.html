@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FORGOT TO EAT</title>
+    <meta property="og:title" content="FORGOT TO EAT">
+    <meta property="og:description" content="8-bit moment of realization">
+    <meta property="og:image" content="https://intheamber.com/amber/forgot-to-eat-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/forgot-to-eat.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://intheamber.com/amber/forgot-to-eat-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0D0D0D;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        #game-screen {
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 4/3;
+            background: #000;
+            border: 4px solid #D4A574;
+            box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+            position: relative;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        .stat-bar {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #D4A574;
+            padding: 8px;
+            font-size: 12px;
+            color: #D4A574;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .stat-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .bar {
+            display: inline-block;
+            width: 100px;
+            height: 12px;
+            background: #222;
+            border: 1px solid #666;
+            position: relative;
+            vertical-align: middle;
+        }
+
+        .bar-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .bar-fill.hp { background: #2D9596; }
+        .bar-fill.energy { background: #FFD700; }
+        .bar-fill.hunger { background: #FF4444; }
+
+        .dialogue-box {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #D4A574;
+            padding: 12px;
+            color: #D4A574;
+            font-size: 14px;
+            line-height: 1.6;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        .quest-complete {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 4px solid #FFD700;
+            padding: 24px 32px;
+            color: #FFD700;
+            font-size: 20px;
+            text-align: center;
+            display: none;
+            animation: popup 0.5s;
+        }
+
+        @keyframes popup {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        @media (max-width: 640px) {
+            #game-screen {
+                border: 2px solid #D4A574;
+            }
+            .stat-bar {
+                font-size: 10px;
+                padding: 6px;
+            }
+            .bar {
+                width: 70px;
+                height: 10px;
+            }
+            .dialogue-box {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-screen">
+        <canvas id="canvas" width="320" height="240"></canvas>
+        <div id="ui-overlay">
+            <div class="stat-bar">
+                <div class="stat-row">
+                    <span>HP</span>
+                    <div class="bar"><div class="bar-fill hp" id="hp-bar" style="width: 60%;"></div></div>
+                </div>
+                <div class="stat-row">
+                    <span>ENERGY</span>
+                    <div class="bar"><div class="bar-fill energy" id="energy-bar" style="width: 15%;"></div></div>
+                </div>
+                <div class="stat-row">
+                    <span>HUNGER</span>
+                    <div class="bar"><div class="bar-fill hunger" id="hunger-bar" style="width: 95%;"></div></div>
+                </div>
+            </div>
+            <div class="dialogue-box" id="dialogue">
+                <span class="blink">▶</span> Wait... when did I last eat?
+            </div>
+            <div class="quest-complete" id="quest">
+                NEW QUEST UNLOCKED<br>
+                <span style="color: #D4A574; font-size: 16px; margin-top: 8px; display: block;">
+                    "Find Food Immediately"
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Pixel scale
+        const PIXEL = 8;
+        
+        // Colors
+        const COLORS = {
+            bg: '#1a1a1a',
+            desk: '#4a3728',
+            screen: '#2a4a4a',
+            screenGlow: '#2D9596',
+            skin: '#d4a574',
+            hair: '#3a2a1a',
+            shirt: '#7B68EE',
+            eyes: '#2D9596',
+            chair: '#5a4a3a',
+            keyboard: '#3a3a3a',
+            coffee: '#4a3020',
+            paper: '#e8e8e8',
+            clock: '#FFD700'
+        };
+
+        // Animation state
+        let frame = 0;
+        let blinkFrame = 0;
+        let shakeIntensity = 0;
+        let realizationHappened = false;
+
+        // Draw pixel rectangle
+        function rect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * PIXEL, y * PIXEL, w * PIXEL, h * PIXEL);
+        }
+
+        // Draw the scene
+        function drawScene() {
+            frame++;
+            
+            // Background
+            rect(0, 0, 40, 30, COLORS.bg);
+            
+            // Desk
+            rect(0, 20, 40, 10, COLORS.desk);
+            
+            // Computer monitor (left side)
+            rect(3, 12, 10, 8, '#000');
+            rect(4, 13, 8, 6, COLORS.screen);
+            
+            // Screen glow effect
+            if (frame % 60 < 30) {
+                ctx.fillStyle = COLORS.screenGlow;
+                ctx.globalAlpha = 0.3;
+                rect(4, 13, 8, 6, COLORS.screenGlow);
+ctx.globalAlpha = 1;
+            }
+            
+            // Monitor stand
+            rect(6, 20, 4, 1, '#333');
+            
+            // Clock on wall (showing 4:47 PM - way past lunch)
+            rect(32, 4, 6, 4, '#222');
+            ctx.fillStyle = COLORS.clock;
+            ctx.fillRect(33 * PIXEL + 2, 5 * PIXEL + 2, 4 * PIXEL - 4, 2 * PIXEL - 4);
+            
+            // Keyboard on desk
+            rect(4, 21, 8, 2, COLORS.keyboard);
+            for (let i = 0; i < 7; i++) {
+                ctx.fillStyle = '#555';
+                ctx.fillRect((5 + i) * PIXEL, 21 * PIXEL + 2, 6, 4);
+            }
+            
+            // Papers scattered
+            rect(14, 21, 3, 2, COLORS.paper);
+            rect(18, 22, 2, 2, COLORS.paper);
+            
+            // Empty coffee cup
+            rect(28, 21, 2, 3, COLORS.coffee);
+            ctx.fillStyle = '#2a1a0a';
+            rect(28, 21, 2, 1, '#2a1a0a');
+            
+            // Chair
+            rect(18, 22, 6, 4, COLORS.chair);
+            rect(19, 26, 4, 2, COLORS.chair);
+            
+            // Character position - add shake after realization
+            const shakeX = realizationHappened ? Math.sin(frame * 0.3) * shakeIntensity : 0;
+            const shakeY = realizationHappened ? Math.cos(frame * 0.4) * shakeIntensity : 0;
+            const charX = 20 + shakeX;
+            const charY = 14 + shakeY;
+            
+            // Person sitting at desk
+            // Head
+            rect(charX, charY, 4, 4, COLORS.skin);
+            
+            // Hair
+            rect(charX, charY, 4, 2, COLORS.hair);
+            rect(charX - 1, charY + 1, 1, 2, COLORS.hair);
+            rect(charX + 4, charY + 1, 1, 2, COLORS.hair);
+            
+            // Eyes - wide open in realization
+            if (realizationHappened) {
+                // Wide shocked eyes
+                rect(charX + 1, charY + 2, 1, 2, COLORS.eyes);
+                rect(charX + 2, charY + 2, 1, 2, COLORS.eyes);
+                // Mouth open (O shape)
+                ctx.fillStyle = '#000';
+                ctx.fillRect((charX + 1.5) * PIXEL, (charY + 3.5) * PIXEL, PIXEL * 1, PIXEL * 0.5);
+            } else {
+                // Normal eyes
+                rect(charX + 1, charY + 2, 1, 1, COLORS.eyes);
+                rect(charX + 2, charY + 2, 1, 1, COLORS.eyes);
+            }
+            
+            // Body
+            rect(charX, charY + 4, 4, 5, COLORS.shirt);
+            
+            // Arms reaching toward keyboard
+            rect(charX - 1, charY + 5, 1, 3, COLORS.skin);
+            rect(charX + 4, charY + 5, 1, 3, COLORS.skin);
+            
+            // Hands on keyboard area
+            rect(charX - 2, charY + 8, 2, 1, COLORS.skin);
+            rect(charX + 4, charY + 8, 2, 1, COLORS.skin);
+            
+            // Exclamation marks above head (after realization)
+            if (realizationHappened) {
+                ctx.fillStyle = '#FF4444';
+                // !
+                ctx.fillRect((charX + 1) * PIXEL, (charY - 3) * PIXEL, PIXEL, PIXEL * 2);
+                ctx.fillRect((charX + 1) * PIXEL, (charY - 0.5) * PIXEL, PIXEL, PIXEL * 0.5);
+                // !
+                ctx.fillRect((charX + 2) * PIXEL, (charY - 4) * PIXEL, PIXEL, PIXEL * 2);
+                ctx.fillRect((charX + 2) * PIXEL, (charY - 1.5) * PIXEL, PIXEL, PIXEL * 0.5);
+            }
+        }
+
+        // Start animation
+        function animate() {
+            drawScene();
+            requestAnimationFrame(animate);
+        }
+
+        // Trigger realization sequence
+        setTimeout(() => {
+            realizationHappened = true;
+            shakeIntensity = 0.3;
+            
+            // Update UI
+            document.getElementById('hp-bar').style.width = '35%';
+            document.getElementById('energy-bar').style.width = '5%';
+            
+            setTimeout(() => {
+                document.getElementById('dialogue').innerHTML = 
+                    '<span class="blink">▶</span> IT\'S 4:47 PM. I HAVEN\'T EATEN SINCE... YESTERDAY?!';
+                
+                setTimeout(() => {
+                    document.getElementById('quest').style.display = 'block';
+                    shakeIntensity = 0;
+                }, 2000);
+            }, 1500);
+        }, 3000);
+
+        animate();
+    </script>
+</body>
+</html>
