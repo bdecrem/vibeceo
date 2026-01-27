@@ -41,8 +41,8 @@ declare global {
   interface Window {
     PixelpitSocial?: {
       getUser: () => { id: number; handle: string } | null;
-      submitScore: (game: string, score: number, opts?: { nickname?: string }) => Promise<{ success: boolean; rank: number }>;
-      getLeaderboard: (game: string, limit?: number) => Promise<Array<{ rank: number; name: string; score: number; isRegistered: boolean }>>;
+      submitScore: (game: string, score: number, opts?: { nickname?: string }) => Promise<{ success: boolean; rank?: number; entry?: { id: number }; error?: string }>;
+      getLeaderboard: (game: string, limit?: number, opts?: { entryId?: number }) => Promise<{ leaderboard: Array<{ rank: number; name: string; score: number; isRegistered: boolean }>; playerEntry?: { rank: number; name: string; score: number; isRegistered: boolean } | null }>;
       login: (handle: string, code: string) => Promise<{ success: boolean; user?: { id: number; handle: string }; error?: string }>;
       register: (handle: string, code: string) => Promise<{ success: boolean; user?: { id: number; handle: string }; error?: string }>;
       checkHandle: (handle: string) => Promise<{ exists: boolean }>;
@@ -583,8 +583,8 @@ export default function RainGame() {
   const loadLeaderboard = async () => {
     if (!window.PixelpitSocial) return;
     try {
-      const lb = await window.PixelpitSocial.getLeaderboard(GAME_ID, 10);
-      setLeaderboard(lb);
+      const result = await window.PixelpitSocial.getLeaderboard(GAME_ID, 10);
+      setLeaderboard(result.leaderboard);
     } catch (e) {
       console.error('Failed to load leaderboard', e);
     }
