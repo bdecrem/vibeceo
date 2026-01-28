@@ -59,6 +59,7 @@ export default function RainGame() {
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard'>('start');
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
+  const [level, setLevel] = useState(1);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [socialLoaded, setSocialLoaded] = useState(false);
   const [submittedEntryId, setSubmittedEntryId] = useState<number | undefined>(undefined);
@@ -305,12 +306,13 @@ export default function RainGame() {
     game.score = 0;
     game.lives = 3;
     game.dropSpeed = 2;
-    game.spawnRate = 1000;
+    game.spawnRate = 1200;
     game.lastSpawn = 0;
     game.running = true;
 
     setScore(0);
     setLives(3);
+    setLevel(1);
     setGameState('playing');
     startMusic();
   };
@@ -414,10 +416,12 @@ export default function RainGame() {
             createParticles(drop.x + 10, drop.y + 14);
             game.drops.splice(i, 1);
 
-            // Increase difficulty every 10 catches
+            // Level up every 10 catches - noticeable speed increase
             if (game.score % 10 === 0) {
-              game.dropSpeed += 0.3;
-              game.spawnRate = Math.max(400, game.spawnRate - 50);
+              const newLevel = Math.floor(game.score / 10) + 1;
+              setLevel(newLevel);
+              game.dropSpeed = 2 + (newLevel - 1) * 0.5;  // +0.5 speed per level
+              game.spawnRate = Math.max(300, 1200 - (newLevel - 1) * 150);  // faster spawns
             }
             continue;
           }
@@ -651,13 +655,22 @@ export default function RainGame() {
           zIndex: 10,
           pointerEvents: 'none',
         }}>
-          <div style={{
-            fontSize: 24,
-            fontWeight: 700,
-            color: THEME.highlight,
-            textShadow: `0 0 20px ${THEME.highlight}80`,
-          }}>
-            {score}
+          <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+            <div style={{
+              fontSize: 14,
+              color: THEME.accent,
+              textShadow: `0 0 10px ${THEME.accent}60`,
+            }}>
+              LVL {level}
+            </div>
+            <div style={{
+              fontSize: 24,
+              fontWeight: 700,
+              color: THEME.highlight,
+              textShadow: `0 0 20px ${THEME.highlight}80`,
+            }}>
+              {score}
+            </div>
           </div>
           <div style={{
             fontSize: 18,
@@ -825,7 +838,7 @@ export default function RainGame() {
             <ShareButtonContainer
               id="rain-share-btn"
               url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/rain/share/${score}` : ''}
-              text={`I caught ${score} drops in RAIN! Can you beat me?`}
+              text={`I caught ${score} drops and reached level ${level} in RAIN! Can you beat me?`}
               socialLoaded={socialLoaded}
             />
           </div>

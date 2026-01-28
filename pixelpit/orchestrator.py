@@ -59,10 +59,14 @@ OPERATING_HOURS = {
 TICK_INTERVAL = 30
 
 # Max concurrent agent workers (parallel-safe via closure-based MCP tools)
-MAX_WORKERS = 2
+MAX_WORKERS = 1
 
-# Model to use for agents (Haiku for speed + cost)
-AGENT_MODEL = "claude-3-5-haiku-20241022"
+# Model to use for agents (Opus 4.5 for quality)
+AGENT_MODEL = "claude-opus-4-5-20251101"
+
+# Default rounds for design/test feedback loops (can be overridden via CLI)
+MAX_DESIGN_ROUNDS = 2
+MAX_TEST_ROUNDS = 2
 
 # Tools granted to game-making agents
 AGENT_TOOLS = [
@@ -86,11 +90,11 @@ def track_tokens(supabase: Client, input_tokens: int, output_tokens: int):
             data = result.data[0]["data"]
             data["input_tokens"] = data.get("input_tokens", 0) + input_tokens
             data["output_tokens"] = data.get("output_tokens", 0) + output_tokens
-            # Haiku pricing: $0.80/1M input, $4.00/1M output
-            data["total_cost_usd"] = (data["input_tokens"] * 0.80 / 1_000_000) + (data["output_tokens"] * 4.00 / 1_000_000)
+            # Opus 4.5 pricing: $15/1M input, $75/1M output
+            data["total_cost_usd"] = (data["input_tokens"] * 15.00 / 1_000_000) + (data["output_tokens"] * 75.00 / 1_000_000)
             supabase.table("pixelpit_state").update({"data": data}).eq("type", "usage").eq("key", key).execute()
         else:
-            cost = (input_tokens * 0.80 / 1_000_000) + (output_tokens * 4.00 / 1_000_000)
+            cost = (input_tokens * 15.00 / 1_000_000) + (output_tokens * 75.00 / 1_000_000)
             supabase.table("pixelpit_state").insert({
                 "type": "usage",
                 "key": key,
@@ -223,6 +227,18 @@ def create_task(supabase: Client, description: str, assignee: str, game: Optiona
     return new_key
 
 
+def update_game_stage(supabase: Client, game_key: str, stage: str):
+    """Update a game's stage for simple status tracking."""
+    try:
+        result = supabase.table("pixelpit_state").select("data").eq("type", "game").eq("key", game_key).single().execute()
+        data = result.data["data"]
+        data["stage"] = stage
+        supabase.table("pixelpit_state").update({"data": data}).eq("type", "game").eq("key", game_key).execute()
+        print(f"[STAGE] {game_key} → {stage}")
+    except Exception as e:
+        print(f"[WARN] Failed to update stage for {game_key}: {e}")
+
+
 def log_activity(supabase: Client, actor: str, action: str, details: str, context: Optional[Dict] = None):
     """Log an activity to Supabase."""
     timestamp = datetime.now(timezone.utc)
@@ -258,7 +274,7 @@ def get_agent_persona(supabase: Client, agent_id: str) -> Optional[Dict[str, Any
 # Agent Tools (MCP) - Factory pattern for parallel execution
 # ============================================================================
 
-def create_pixelpit_mcp_server(supabase: Client, game: str, agent: str, round_num: int):
+def create_pixelpit_mcp_server(supabase: Client, game: str, agent: str, round_num: int, max_design_rounds: int = 2, max_test_rounds: int = 2):
     """
     Create MCP server with context baked in via closures.
     Each agent gets its own isolated context - no globals, no race conditions.
@@ -333,24 +349,24 @@ def create_pixelpit_mcp_server(supabase: Client, game: str, agent: str, round_nu
         design_rounds = game_data.get("design_rounds", 0)
         test_rounds = game_data.get("test_rounds", 0)
 
-        # Creative sending back to coder - only 2 times allowed
+        # Creative sending back to coder - limited rounds allowed
         if current_agent == "creative" and is_fix_task:
-            if design_rounds >= 2:
+            if design_rounds >= max_design_rounds:
                 return {"content": [{"type": "text", "text": json.dumps({
                     "success": False,
                     "blocked": True,
-                    "message": "Design already sent 2 fixes. Must approve now. Use update_game_status to approve."
+                    "message": f"Design already sent {max_design_rounds} fixes. Must approve now. Use update_game_status to approve."
                 })}]}
             game_data["design_rounds"] = design_rounds + 1
             supabase.table("pixelpit_state").update({"data": game_data}).eq("type", "game").eq("key", current_game).execute()
 
-        # Tester sending back to coder - only 2 times allowed
+        # Tester sending back to coder - limited rounds allowed
         if current_agent in ["mobile_tester", "desktop_tester"] and is_fix_task:
-            if test_rounds >= 2:
+            if test_rounds >= max_test_rounds:
                 return {"content": [{"type": "text", "text": json.dumps({
                     "success": False,
                     "blocked": True,
-                    "message": "QA already sent 2 fixes. Must approve now. Use update_game_status to mark playable."
+                    "message": f"QA already sent {max_test_rounds} fixes. Must approve now. Use update_game_status to mark playable."
                 })}]}
             game_data["test_rounds"] = test_rounds + 1
             supabase.table("pixelpit_state").update({"data": game_data}).eq("type", "game").eq("key", current_game).execute()
@@ -362,8 +378,8 @@ def create_pixelpit_mcp_server(supabase: Client, game: str, agent: str, round_nu
         if is_fix_task and current_agent in ["mobile_tester", "desktop_tester"]:
             new_round = current_round + 1
 
-        # If builder is creating a TEST task after round 2, auto-complete
-        if is_test_task and current_round >= 2:
+        # If builder is creating a TEST task after max rounds, auto-complete
+        if is_test_task and current_round >= max_test_rounds:
             try:
                 result = supabase.table("pixelpit_state").select("data").eq("type", "game").eq("key", current_game).single().execute()
                 gd = result.data["data"]
@@ -467,7 +483,15 @@ async def run_agent(agent_id: str, task: Dict[str, Any], supabase: Client, verbo
         game_path.mkdir(parents=True, exist_ok=True)
 
         # Build the prompt
-        prompt = f"""You are an agent in the Pixelpit Game Studio. Here is your persona and role:
+        prompt = f"""You are an agent in the Pixelpit Game Studio.
+
+## CRITICAL RULES
+
+1. **DO NOT use the Task tool** - you must do the work yourself using Read, Write, Edit, Glob, Grep
+2. **WRITE FILES FIRST** - your main job is to create/edit actual code files
+3. **BE DIRECT** - don't over-research, just build
+
+## Your Persona
 
 {persona}
 
@@ -478,45 +502,44 @@ async def run_agent(agent_id: str, task: Dict[str, Any], supabase: Client, verbo
 {f"**Game:** {task['game']}" if task.get('game') else ""}
 {f"**Acceptance Criteria:** {task['acceptance']}" if task.get('acceptance') else ""}
 
-## Working Directory
+## File Locations
 
-You are working in: {game_path}
+- Main game: `web/app/pixelpit/{game_id}/page.tsx`
+- Game OG image: `web/app/pixelpit/{game_id}/opengraph-image.tsx`
+- Score share OG: `web/app/pixelpit/{game_id}/share/[score]/opengraph-image.tsx`
+- Score share page: `web/app/pixelpit/{game_id}/share/[score]/page.tsx`
 
-Game files go in `web/app/pixelpit/{game_id}/page.tsx` (Next.js React page).
+## Reference Files (Read these first)
 
-## Output Format
+- Components: `web/app/pixelpit/components/index.ts` (ScoreFlow, Leaderboard, ShareButtonContainer)
+- Example game: `web/app/pixelpit/arcade/beam/page.tsx`
+- OG image guide: `web/app/pixelpit/components/og/README.md`
 
-When finished, output your status:
+## Technical Requirements
 
-- If successful: `TASK COMPLETED: [brief description of what you did]`
-- If blocked: `TASK BLOCKED: [reason you cannot proceed]`
+- React/TypeScript with 'use client' directive
+- Mobile-first touch controls
+- HTML5 Canvas or pure React (no external game engines)
+- Import social components: `import {{ ScoreFlow, Leaderboard, ShareButtonContainer }} from '@/app/pixelpit/components'`
+- Pixel font: `import {{ Press_Start_2P }} from 'next/font/google'`
 
-## REQUIRED: Follow-up Tasks
+## After Completing Your Task
 
-**Flow: BUILD → DESIGN → TEST → DONE**
+Use the create_task tool to route to the next step:
 
-After completing a [BUILD] or [FIX] task, you MUST use the create_task tool to send to design review:
-```
-create_task(assignee="creative", description="[DESIGN] Review [game name] for pixel art style, colors, typography")
-```
+- After [BUILD] or [FIX]: `create_task(assignee="creative", description="[DESIGN] Review {task.get('game', 'game')} for pixel art style")`
+- Creative after review: `create_task(assignee="mobile_tester", description="[TEST] Test {task.get('game', 'game')} on mobile")` OR send back for fixes
+- Tester after review: Mark game as playable OR send back for fixes
 
-Valid assignees: m1, creative, mobile_tester
+## Output
 
-## Technical Guidelines
+End with: `TASK COMPLETED: [what you did]` or `TASK BLOCKED: [why]`
 
-- Write React/TypeScript for Next.js (use 'use client' directive)
-- Mobile-first: touch controls work, mouse is secondary
-- Single file games: put everything in page.tsx unless it gets too large
-- Use HTML5 Canvas or pure React - no external game engines
-- Aim for 60fps
-- For pixel fonts, use Google Fonts (Press_Start_2P from next/font/google)
-- NEVER use localFont or import font files - they don't exist
-
-Now execute the task. Use the Write/Edit tools to create the actual game code.
+NOW: Read the reference files briefly, then WRITE the game code. Do not overthink.
 """
 
         # Create MCP server with context baked in (no globals, parallel-safe)
-        pixelpit_server = create_pixelpit_mcp_server(supabase, current_game, agent_id, current_round)
+        pixelpit_server = create_pixelpit_mcp_server(supabase, current_game, agent_id, current_round, MAX_DESIGN_ROUNDS, MAX_TEST_ROUNDS)
 
         # Configure agent with file write capabilities + Pixelpit tools
         options = ClaudeAgentOptions(
@@ -714,6 +737,30 @@ async def tick(supabase: Client, verbose: bool = False):
                 log_activity(supabase, agent_id, "completed_task", f"{task['description'][:100]}{files_info}")
                 print(f"[DONE] {agent_id} completed {task['key']}{files_info}")
 
+                # Update game stage based on what just completed
+                game_key = task.get("game")
+                if game_key:
+                    desc_upper = task["description"].upper()
+                    if "[BUILD]" in desc_upper:
+                        update_game_stage(supabase, game_key, "DESIGN")
+                    elif "[DESIGN]" in desc_upper and agent_id == "creative":
+                        # Check if creative sent a FIX or approved
+                        # If there are new tasks with [FIX], it's DESIGN_FIX, otherwise QA
+                        has_fix = any("[FIX]" in t.get("description", "").upper() for t in result.get("new_tasks", []))
+                        if has_fix:
+                            update_game_stage(supabase, game_key, "DESIGN_FIX")
+                        else:
+                            update_game_stage(supabase, game_key, "QA")
+                    elif "[FIX]" in desc_upper and agent_id in ["m1", "m2", "m3", "m4", "m5"]:
+                        # Maker fixed something, goes back to review
+                        update_game_stage(supabase, game_key, "DESIGN")
+                    elif "[TEST]" in desc_upper and agent_id in ["mobile_tester", "desktop_tester"]:
+                        has_fix = any("[FIX]" in t.get("description", "").upper() for t in result.get("new_tasks", []))
+                        if has_fix:
+                            update_game_stage(supabase, game_key, "QA_FIX")
+                        else:
+                            update_game_stage(supabase, game_key, "DONE")
+
                 # Create any follow-up tasks
                 for new_task in result.get("new_tasks", []):
                     new_key = create_task(
@@ -801,7 +848,14 @@ def main():
     parser.add_argument("--test", action="store_true", help="Run a single task then exit (test mode)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed agent output")
     parser.add_argument("--force", action="store_true", help="Run outside operating hours")
+    parser.add_argument("--design-rounds", type=int, default=2, help="Max design feedback rounds (default: 2)")
+    parser.add_argument("--test-rounds", type=int, default=2, help="Max QA feedback rounds (default: 2)")
     args = parser.parse_args()
+
+    # Set global round limits from CLI
+    global MAX_DESIGN_ROUNDS, MAX_TEST_ROUNDS
+    MAX_DESIGN_ROUNDS = args.design_rounds
+    MAX_TEST_ROUNDS = args.test_rounds
 
     print("=" * 60)
     print("PIXELPIT GAME STUDIO ORCHESTRATOR")
@@ -809,6 +863,8 @@ def main():
     print(f"Model: {AGENT_MODEL}")
     print(f"Max workers: {MAX_WORKERS}")
     print(f"Games output: {GAMES_OUTPUT_PATH}")
+    print(f"Design rounds: {MAX_DESIGN_ROUNDS}")
+    print(f"Test rounds: {MAX_TEST_ROUNDS}")
     if not args.test:
         print(f"Tick interval: {TICK_INTERVAL}s")
         print(f"Operating hours: {OPERATING_HOURS['start']}:00 - {OPERATING_HOURS['end']}:00")
