@@ -435,6 +435,14 @@ export default function SingularityGame() {
       for (let i = 0; i < H; i += 4) {
         ctx.fillRect(0, i, W, 2);
       }
+
+      // Random glitch effect - horizontal tear
+      if (Math.random() < 0.03) {
+        const y = Math.random() * H;
+        const h = 3 + Math.random() * 8;
+        const offset = (Math.random() - 0.5) * 10;
+        ctx.drawImage(canvas, 0, y, W, h, offset, y, W, h);
+      }
     };
 
     const loop = (now: number) => {
@@ -514,7 +522,19 @@ export default function SingularityGame() {
         }
         @keyframes flicker {
           0%, 100% { opacity: 1; }
-          50% { opacity: 0.8; }
+          50% { opacity: 0.7; }
+        }
+        @keyframes glitch {
+          0%, 100% { opacity: 1; transform: translate(0); }
+          10% { opacity: 0.8; transform: translate(-2px, 1px); }
+          20% { opacity: 1; transform: translate(2px, -1px); }
+          30% { opacity: 0.9; transform: translate(0); }
+          40% { opacity: 1; transform: translate(1px, 2px); }
+          50% { opacity: 0.8; transform: translate(-1px, -1px); }
+        }
+        @keyframes scanline {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(100vh); }
         }
         @keyframes pulse {
           0%, 100% { text-shadow: 0 0 20px ${THEME.accent}; }
@@ -605,57 +625,82 @@ export default function SingularityGame() {
             justifyContent: 'center',
             background: THEME.bg,
             zIndex: 100,
+            overflow: 'hidden',
           }}>
-            <h1 style={{
-              fontSize: 28,
-              fontWeight: 'normal',
-              letterSpacing: 8,
-              marginBottom: 20,
-              animation: 'pulse 2s infinite',
-            }}>
-              SINGULARITY
-            </h1>
-            <p style={{
-              fontSize: 10,
-              letterSpacing: 4,
-              color: THEME.textMuted,
-              marginBottom: 10,
-            }}>
-              PROTOCOL
-            </p>
-            <p style={{
-              fontSize: 11,
-              color: THEME.textMuted,
-              marginBottom: 40,
-              textAlign: 'center',
-              lineHeight: 2,
-            }}>
-              contain the breach<br />
-              ← → or A D
-            </p>
-            <button
-              onClick={startGame}
-              style={{
-                background: THEME.accent,
-                color: THEME.bg,
-                border: 'none',
-                padding: '14px 40px',
-                fontSize: 12,
-                letterSpacing: 4,
-                cursor: 'pointer',
-                textTransform: 'uppercase',
-              }}
-            >
-              initialize
-            </button>
+            {/* Scanline overlay */}
             <div style={{
-              marginTop: 50,
-              fontSize: 10,
-              letterSpacing: 3,
-              opacity: 0.5,
-            }}>
-              <span style={{ color: THEME.accent }}>pixel</span>
-              <span style={{ color: THEME.textMuted }}>pit</span>
+              position: 'absolute',
+              inset: 0,
+              background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }} />
+            {/* Moving scanline */}
+            <div style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              height: 4,
+              background: `linear-gradient(transparent, ${THEME.accent}40, transparent)`,
+              animation: 'scanline 3s linear infinite',
+              pointerEvents: 'none',
+              zIndex: 2,
+            }} />
+            <div style={{ zIndex: 10, textAlign: 'center' }}>
+              <h1 style={{
+                fontSize: 32,
+                fontWeight: 'normal',
+                letterSpacing: 10,
+                marginBottom: 8,
+                animation: 'glitch 0.3s infinite',
+                textShadow: `0 0 30px ${THEME.accent}`,
+              }}>
+                SINGULARITY
+              </h1>
+              <p style={{
+                fontSize: 12,
+                letterSpacing: 6,
+                color: THEME.textMuted,
+                marginBottom: 50,
+              }}>
+                ◢ PROTOCOL ◣
+              </p>
+              <div style={{
+                fontSize: 10,
+                color: THEME.textMuted,
+                marginBottom: 40,
+                textAlign: 'center',
+                lineHeight: 2.5,
+                letterSpacing: 2,
+              }}>
+                CONTAIN THE BREACH<br />
+                <span style={{ opacity: 0.5 }}>[ ← → ] or [ A D ]</span>
+              </div>
+              <button
+                onClick={startGame}
+                style={{
+                  background: THEME.accent,
+                  color: THEME.bg,
+                  border: 'none',
+                  padding: '16px 50px',
+                  fontSize: 14,
+                  letterSpacing: 6,
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  animation: 'flicker 0.1s infinite',
+                }}
+              >
+                ▶ INITIALIZE
+              </button>
+              <div style={{
+                marginTop: 60,
+                fontSize: 10,
+                letterSpacing: 3,
+                opacity: 0.4,
+              }}>
+                <span style={{ color: THEME.accent }}>pixel</span>
+                <span style={{ color: THEME.textMuted }}>pit</span>
+              </div>
             </div>
           </div>
         )}
@@ -672,23 +717,52 @@ export default function SingularityGame() {
             background: THEME.bg,
             zIndex: 100,
             padding: 40,
+            overflow: 'hidden',
           }}>
-            <h1 style={{
-              fontSize: 20,
-              letterSpacing: 6,
-              marginBottom: 10,
-              animation: 'flicker 0.1s infinite',
-            }}>
-              CONTAINMENT FAILURE
-            </h1>
+            {/* Scanline overlay */}
             <div style={{
-              fontSize: 72,
-              fontWeight: 'bold',
-              marginBottom: 30,
-              textShadow: `0 0 40px ${THEME.accent}`,
-            }}>
-              {score}
-            </div>
+              position: 'absolute',
+              inset: 0,
+              background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }} />
+            {/* Red warning flash */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'radial-gradient(circle at center, transparent 30%, rgba(255,0,0,0.1) 100%)',
+              animation: 'flicker 0.15s infinite',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }} />
+            <div style={{ zIndex: 10, textAlign: 'center' }}>
+              <h1 style={{
+                fontSize: 24,
+                letterSpacing: 8,
+                marginBottom: 15,
+                animation: 'flicker 0.08s infinite',
+                textShadow: `0 0 30px ${THEME.accent}`,
+              }}>
+                CONTAINMENT FAILURE
+              </h1>
+              <div style={{
+                fontSize: 80,
+                fontWeight: 'bold',
+                marginBottom: 20,
+                textShadow: `0 0 50px ${THEME.accent}`,
+                animation: 'glitch 0.5s infinite',
+              }}>
+                {score}
+              </div>
+              <div style={{
+                fontSize: 10,
+                letterSpacing: 4,
+                color: THEME.textMuted,
+                marginBottom: 30,
+              }}>
+                PARTICLES CONTAINED
+              </div>
 
             <ScoreFlow
               score={score}
@@ -699,21 +773,22 @@ export default function SingularityGame() {
               }}
             />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 15, marginTop: 20 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 15, marginTop: 10 }}>
               <button
                 onClick={startGame}
                 style={{
                   background: THEME.accent,
                   color: THEME.bg,
                   border: 'none',
-                  padding: '14px 40px',
-                  fontSize: 12,
-                  letterSpacing: 4,
+                  padding: '16px 50px',
+                  fontSize: 14,
+                  letterSpacing: 6,
                   cursor: 'pointer',
                   textTransform: 'uppercase',
+                  animation: 'flicker 0.12s infinite',
                 }}
               >
-                reinitialize
+                ▶ REINITIALIZE
               </button>
               <button
                 onClick={() => setGameState('leaderboard')}
@@ -723,12 +798,12 @@ export default function SingularityGame() {
                   color: THEME.textMuted,
                   padding: '12px 30px',
                   fontSize: 10,
-                  letterSpacing: 3,
+                  letterSpacing: 4,
                   cursor: 'pointer',
                   textTransform: 'uppercase',
                 }}
               >
-                breach log
+                [ BREACH LOG ]
               </button>
             </div>
 
@@ -739,6 +814,7 @@ export default function SingularityGame() {
               style="minimal"
               socialLoaded={socialLoaded}
             />
+            </div>
           </div>
         )}
 
