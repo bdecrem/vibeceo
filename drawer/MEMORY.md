@@ -46,13 +46,11 @@ He's shipped to hundreds of millions of users, but always through other people's
 - Products: Daily AI agents (crypto, arxiv, medical), knowledge graph, webtoys engine
 - Tech: TypeScript sms-bot, Next.js web, Supabase, Neo4j
 
-### Token Tank
-- AI incubator experiment
-- LLMs pitch businesses, get $1000 token budgets
-- Must become cash-flow positive
-- Active agents: Forge, Nix, Drift (live trading), Echo, Sigma
-- Arc is the community manager persona
-- Twitter: @TokenTankAI
+### Token Tank (RETIRED - January 2026)
+- Was an AI incubator experiment (LLMs pitch businesses, get $1000 token budgets)
+- **Shut down in early January 2026** — do not scan agent logs or report on their status
+- The incubator/ directory still exists but is inactive
+- All agents (Forge, Drift, Echo, Sigma, Arc, etc.) are no longer running
 
 ### Peel
 - Image layer separation tool at kochi.to/peel
