@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>WAVEFORM SCULPTOR — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    <meta property="og:title" content="WAVEFORM SCULPTOR — Amber">
+    <meta property="og:description" content="Draw waveforms. Sculpt sound. Hear what you create.">
+    <meta property="og:image" content="https://kochi.to/amber/waveform-sculptor-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/waveform-sculptor.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="WAVEFORM SCULPTOR — Amber">
+    <meta name="twitter:description" content="Draw waveforms. Sculpt sound. Hear what you create.">
+    <meta name="twitter:image" content="https://kochi.to/amber/waveform-sculptor-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Mono', 'Courier New', monospace;
+            background: #000;
+            color: #D4A574;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #title {
+            position: absolute;
+            top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            z-index: 10;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+        }
+
+        #subtitle {
+            position: absolute;
+            top: 48px;
+            font-size: 10px;
+            color: rgba(212, 165, 116, 0.6);
+            letter-spacing: 2px;
+            z-index: 10;
+            text-align: center;
+        }
+
+        #canvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        #controls {
+            position: absolute;
+bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .buttonRow {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        button {
+            padding: 14px 30px;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            background: transparent;
+            color: #D4A574;
+            border: 2px solid #D4A574;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #D4A574;
+            color: #000;
+            box-shadow: 0 0 30px rgba(212, 165, 116, 0.6);
+        }
+
+        button.playing {
+            border-color: #2D9596;
+            color: #2D9596;
+        }
+
+        button.playing:hover {
+            background: #2D9596;
+        }
+
+        .smallBtn {
+            padding: 10px 20px;
+            font-size: 11px;
+            border-width: 1px;
+            color: rgba(212, 165, 116, 0.7);
+            border-color: rgba(212, 165, 116, 0.5);
+        }
+
+        .smallBtn:hover {
+            color: #D4A574;
+            border-color: #D4A574;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        #info {
+            position: absolute;
+            bottom: 12px;
+            font-size: 10px;
+            color: rgba(212, 165, 116, 0.4);
+            letter-spacing: 1px;
+        }
+
+        #freqDisplay {
+            position: absolute;
+            top: 75px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #D4A574;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.7);
+        }
+
+        #noteDisplay {
+            position: absolute;
+            top: 110px;
+            font-size: 12px;
+            color: rgba(212, 165, 116, 0.6);
+            letter-spacing: 3px;
+        }
+
+        .preset {
+            padding: 8px 16px;
+            font-size: 10px;
+            border-width: 1px;
+            color: rgba(45, 149, 150, 0.7);
+            border-color: rgba(45, 149, 150, 0.5);
+        }
+
+        .preset:hover {
+            color: #2D9596;
+            border-color: #2D9596;
+            background: transparent;
+        }
+
+        .presetRow {
+            display: flex;
+            gap: 10px;
+            position: absolute;
+            top: 140px;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">WAVEFORM SCULPTOR</div>
+    <div id="subtitle">DRAW · SCULPT · LISTEN</div>
+    <div id="freqDisplay">440 Hz</div>
+    <div id="noteDisplay">A4</div>
+
+    <div class="presetRow">
+        <button class="preset" data-preset="sine">SINE</button>
+        <button class="preset" data-preset="square">SQUARE</button>
+        <button class="preset" data-preset="saw">SAW</button>
+        <button class="preset" data-preset="triangle">TRIANGLE</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="controls">
+        <div class="buttonRow">
+            <button class="smallBtn" id="clearBtn">CLEAR</button>
+            <button id="playButton">PLAY</button>
+            <button class="smallBtn" id="randomBtn">RANDOM</button>
+        </div>
+    </div>
+
+    <div id="info">touch screen to draw waveform · drag up/down to change pitch</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const playButton = document.getElementById('playButton');
+        const clearBtn = document.getElementById('clearBtn');
+        const randomBtn = document.getElementById('randomBtn');
+        const freqDisplay = document.getElementById('freqDisplay');
+        const noteDisplay = document.getElementById('noteDisplay');
+        const presetBtns = document.querySelectorAll('.preset');
+
+        let width, height;
+        let audioContext;
+        let oscillator = null;
+        let gainNode = null;
+        let isPlaying = false;
+        let audioStarted = false;
+
+        // Waveform drawing
+        const SAMPLES = 256; // Number of samples in the waveform
+        let waveform = new Float32Array(SAMPLES);
+        let isDrawing = false;
+        let lastDrawX = -1;
+
+        // Frequency control
+        let baseFrequency = 440; // A4
+        let currentFrequency = 440;
+        let pitchDragStart = null;
+
+        // Visual animation
+        let animTime = 0;
+        let playheadPos = 0;
+
+        // Note names
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        function initWaveform() {
+            // Start with silence (flat line)
+            for (let i = 0; i < SAMPLES; i++) {
+                waveform[i] = 0;
+            }
+        }
+
+        function setPreset(type) {
+            for (let i = 0; i < SAMPLES; i++) {
+                const t = i / SAMPLES;
+                const phase = t * Math.PI * 2;
+                
+                switch(type) {
+                    case 'sine':
+                        waveform[i] = Math.sin(phase);
+                        break;
+                    case 'square':
+                        waveform[i] = phase < Math.PI ? 1 : -1;
+                        break;
+                    case 'saw':
+                        waveform[i] = (t * 2) - 1;
+                        break;
+                    case 'triangle':
+                        waveform[i] = t < 0.5 ? (t * 4 - 1) : (3 - t * 4);
+                        break;
+                }
+            }
+            updateSound();
+        }
+
+        function randomizeWaveform() {
+            // Generate interesting random waveform using multiple harmonics
+            waveform.fill(0);
+            const numHarmonics = 3 + Math.floor(Math.random() * 5);
+            for (let h = 1; h <= numHarmonics; h++) {
+                const amplitude = Math.random() * (1 / h);
+                const phase = Math.random() * Math.PI * 2;
+                for (let i = 0; i < SAMPLES; i++) {
+                    const t = i / SAMPLES;
+                    waveform[i] += amplitude * Math.sin(t * Math.PI * 2 * h + phase);
+                }
+            }
+            // Normalize
+            const max = Math.max(...waveform.map(Math.abs));
+            if (max > 0) {
+                for (let i = 0; i < SAMPLES; i++) {
+                    waveform[i] /= max;
+                }
+            }
+            updateSound();
+        }
+
+        function freqToNote(freq) {
+            const a4 = 440;
+            const semitonesFromA4 = 12 * Math.log2(freq / a4);
+            const rounded = Math.round(semitonesFromA4);
+            const noteIndex = (9 + rounded) % 12; // A = 9
+            const octave = Math.floor((9 + rounded) / 12) + 4;
+            return noteNames[noteIndex] + octave;
+        }
+
+        function updateFrequencyDisplay() {
+            freqDisplay.textContent = Math.round(currentFrequency) + ' Hz';
+            noteDisplay.textContent = freqToNote(currentFrequency);
+        }
+
+        async function initAudio() {
+            if (audioStarted) return;
+            audioContext = new AudioContext();
+            gainNode = audioContext.createGain();
+            gainNode.gain.value = 0.3;
+            gainNode.connect(audioContext.destination);
+            audioStarted = true;
+        }
+
+        function updateSound() {
+            if (!audioStarted || !isPlaying) return;
+
+            // Stop existing oscillator
+            if (oscillator) {
+                oscillator.stop();
+                oscillator.disconnect();
+            }
+
+            // Create new periodic wave from drawn waveform
+const real = new Float32Array(SAMPLES);
+            const imag = new Float32Array(SAMPLES);
+            
+            // Copy waveform (treating it as real component)
+            for (let i = 0; i < SAMPLES; i++) {
+                real[i] = waveform[i];
+            }
+
+            const wave = audioContext.createPeriodicWave(real, imag);
+            
+            oscillator = audioContext.createOscillator();
+            oscillator.setPeriodicWave(wave);
+            oscillator.frequency.value = currentFrequency;
+            oscillator.connect(gainNode);
+            oscillator.start();
+        }
+
+        function startSound() {
+            if (!audioStarted) return;
+            isPlaying = true;
+            updateSound();
+            playButton.textContent = 'STOP';
+            playButton.classList.add('playing');
+        }
+
+        function stopSound() {
+            isPlaying = false;
+            if (oscillator) {
+                oscillator.stop();
+                oscillator.disconnect();
+                oscillator = null;
+            }
+            playButton.textContent = 'PLAY';
+            playButton.classList.remove('playing');
+        }
+
+        function drawWaveform() {
+            // Clear with fade for trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+
+            const centerY = height / 2;
+            const waveWidth = Math.min(width * 0.8, 800);
+            const waveHeight = Math.min(height * 0.5, 300);
+            const startX = (width - waveWidth) / 2;
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(212, 165, 116, 0.1)';
+            ctx.lineWidth = 1;
+            
+            // Horizontal grid lines
+            for (let i = -1; i <= 1; i += 0.5) {
+                const y = centerY + i * waveHeight / 2;
+                ctx.beginPath();
+                ctx.moveTo(startX, y);
+                ctx.lineTo(startX + waveWidth, y);
+                ctx.stroke();
+            }
+
+            // Vertical grid lines
+            for (let i = 0; i <= 8; i++) {
+                const x = startX + (i / 8) * waveWidth;
+                ctx.beginPath();
+                ctx.moveTo(x, centerY - waveHeight / 2);
+                ctx.lineTo(x, centerY + waveHeight / 2);
+                ctx.stroke();
+            }
+
+            // Draw zero line brighter
+            ctx.strokeStyle = 'rgba(212, 165, 116, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(startX, centerY);
+            ctx.lineTo(startX + waveWidth, centerY);
+            ctx.stroke();
+
+            // Draw waveform with glow
+            ctx.strokeStyle = '#D4A574';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#D4A574';
+            
+            ctx.beginPath();
+            for (let i = 0; i < SAMPLES; i++) {
+                const x = startX + (i / (SAMPLES - 1)) * waveWidth;
+                const y = centerY - waveform[i] * (waveHeight / 2);
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+
+            // Draw playhead if playing
+            if (isPlaying) {
+                playheadPos = (playheadPos + 0.05) % 1;
+                const playheadX = startX + playheadPos * waveWidth;
+                
+                ctx.strokeStyle = '#2D9596';
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#2D9596';
+                
+                ctx.beginPath();
+                ctx.moveTo(playheadX, centerY - waveHeight / 2);
+                ctx.lineTo(playheadX, centerY + waveHeight / 2);
+                ctx.stroke();
+
+                // Draw current sample point
+                const sampleIndex = Math.floor(playheadPos * SAMPLES) % SAMPLES;
+                const sampleY = centerY - waveform[sampleIndex] * (waveHeight / 2);
+                
+                ctx.fillStyle = '#2D9596';
+                ctx.shadowBlur = 30;
+                ctx.beginPath();
+                ctx.arc(playheadX, sampleY, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.shadowBlur = 0;
+        }
+
+        function canvasToWaveform(canvasX, canvasY) {
+            const centerY = height / 2;
+            const waveWidth = Math.min(width * 0.8, 800);
+            const waveHeight = Math.min(height * 0.5, 300);
+            const startX = (width - waveWidth) / 2;
+
+            // Convert canvas position to waveform index and value
+            const normalizedX = (canvasX - startX) / waveWidth;
+            const normalizedY = (centerY - canvasY) / (waveHeight / 2);
+
+            if (normalizedX < 0 || normalizedX > 1) return null;
+
+            const index = Math.floor(normalizedX * SAMPLES);
+            const value = Math.max(-1, Math.min(1, normalizedY));
+
+            return { index, value };
+        }
+
+        function smoothWaveform(index, value) {
+            // Smooth interpolation around drawn point
+            const smoothRadius = 3;
+            for (let i = -smoothRadius; i <= smoothRadius; i++) {
+                const idx = index + i;
+                if (idx >= 0 && idx < SAMPLES) {
+                    const weight = 1 - Math.abs(i) / (smoothRadius + 1);
+                    waveform[idx] = waveform[idx] * (1 - weight) + value * weight;
+                }
+            }
+        }
+
+        function handlePointerDown(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+            // Start drawing waveform
+            isDrawing = true;
+            pitchDragStart = { x, y, startFreq: currentFrequency };
+            lastDrawX = -1;
+
+            const point = canvasToWaveform(x, y);
+            if (point) {
+                smoothWaveform(point.index, point.value);
+                lastDrawX = point.index;
+                updateSound();
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+            // Check if this is more of a vertical drag (pitch change) or horizontal (drawing)
+            const dy = Math.abs(y - pitchDragStart.y);
+            const dx = Math.abs(x - pitchDragStart.x);
+
+            if (dy > dx && dy > 10) {
+                // Pitch bend mode
+                const pitchChange = (pitchDragStart.y - y) * 2; // pixels to Hz
+                currentFrequency = Math.max(50, Math.min(2000, pitchDragStart.startFreq + pitchChange));
+                updateFrequencyDisplay();
+                if (oscillator) {
+                    oscillator.frequency.value = currentFrequency;
+                }
+            } else {
+                // Drawing mode
+                const point = canvasToWaveform(x, y);
+                if (point) {
+                    // Interpolate if we moved more than one sample
+                    if (lastDrawX >= 0) {
+                        const steps = Math.abs(point.index - lastDrawX);
+                        for (let i = 0; i <= steps; i++) {
+                            const t = i / steps;
+                            const interpIndex = Math.floor(lastDrawX + (point.index - lastDrawX) * t);
+                            const interpValue = waveform[lastDrawX] + (point.value - waveform[lastDrawX]) * t;
+                            if (interpIndex >= 0 && interpIndex < SAMPLES) {
+                                smoothWaveform(interpIndex, interpValue);
+                            }
+                        }
+} else {
+                        smoothWaveform(point.index, point.value);
+                    }
+                    lastDrawX = point.index;
+                    updateSound();
+                }
+            }
+        }
+
+        function handlePointerUp(e) {
+            isDrawing = false;
+            lastDrawX = -1;
+            // Snap frequency back to base on release
+            if (pitchDragStart) {
+                currentFrequency = baseFrequency;
+                updateFrequencyDisplay();
+                if (oscillator) {
+                    oscillator.frequency.value = currentFrequency;
+                }
+            }
+            pitchDragStart = null;
+        }
+
+        function animate() {
+            drawWaveform();
+            animTime += 0.016;
+            requestAnimationFrame(animate);
+        }
+
+        // Event listeners
+        canvas.addEventListener('mousedown', handlePointerDown);
+        canvas.addEventListener('mousemove', handlePointerMove);
+        canvas.addEventListener('mouseup', handlePointerUp);
+        canvas.addEventListener('mouseleave', handlePointerUp);
+
+        canvas.addEventListener('touchstart', handlePointerDown);
+        canvas.addEventListener('touchmove', handlePointerMove);
+        canvas.addEventListener('touchend', handlePointerUp);
+        canvas.addEventListener('touchcancel', handlePointerUp);
+
+        playButton.addEventListener('click', async () => {
+            await initAudio();
+            if (isPlaying) {
+                stopSound();
+            } else {
+                startSound();
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            initWaveform();
+            updateSound();
+        });
+
+        randomBtn.addEventListener('click', () => {
+            randomizeWaveform();
+        });
+
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const preset = btn.dataset.preset;
+                setPreset(preset);
+            });
+        });
+
+        // Initialize
+        window.addEventListener('resize', resize);
+        resize();
+        initWaveform();
+        updateFrequencyDisplay();
+        
+        // Start with a sine wave
+        setPreset('sine');
+        
+        animate();
+    </script>
+</body>
+</html>
