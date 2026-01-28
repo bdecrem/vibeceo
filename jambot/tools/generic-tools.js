@@ -25,6 +25,7 @@ const NODE_TO_SYNTH = {
   jb01: 'jb01',
   jb202: 'jb202',
   sampler: 'r9ds',
+  jp9000: 'jp9000',
   // Aliases
   drums: 'jb01',
   bass: 'jb202',

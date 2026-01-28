@@ -21,6 +21,7 @@ import { JB01Node } from '../instruments/jb01-node.js';
 import { JT10Node } from '../instruments/jt10-node.js';
 import { JT30Node } from '../instruments/jt30-node.js';
 import { JT90Node } from '../instruments/jt90-node.js';
+import { JP9000Node } from '../instruments/jp9000-node.js';
 
 /**
  * Create a new session with ParamSystem integration
@@ -45,6 +46,7 @@ export function createSession(config = {}) {
   const jt10Node = new JT10Node();
   const jt30Node = new JT30Node();
   const jt90Node = new JT90Node();
+  const jp9000Node = new JP9000Node({ sampleRate: config.sampleRate || 44100 });
 
   // Register instruments with their canonical names
   params.register('jb01', jb01Node);
@@ -53,6 +55,7 @@ export function createSession(config = {}) {
   params.register('jt10', jt10Node);
   params.register('jt30', jt30Node);
   params.register('jt90', jt90Node);
+  params.register('jp9000', jp9000Node);
 
   // Register ALIASES (pointers to the same nodes)
   params.register('drums', jb01Node);      // drums → jb01
@@ -82,6 +85,7 @@ export function createSession(config = {}) {
     jt10Level: config.jt10Level ?? 0,
     jt30Level: config.jt30Level ?? 0,
     jt90Level: config.jt90Level ?? 0,
+    jp9000Level: config.jp9000Level ?? 0,
 
     // ParamSystem instance
     params,
@@ -94,6 +98,7 @@ export function createSession(config = {}) {
       jt10: jt10Node,
       jt30: jt30Node,
       jt90: jt90Node,
+      jp9000: jp9000Node,
       // Aliases point to same nodes
       drums: jb01Node,
       bass: jb202Node,
@@ -201,6 +206,10 @@ export function createSession(config = {}) {
     // JT90 (drum machine)
     get jt90Pattern() { return jt90Node.getPattern(); },
     set jt90Pattern(v) { jt90Node.setPattern(v); },
+
+    // JP9000 (modular synth)
+    get jp9000Pattern() { return jp9000Node.getPattern(); },
+    set jp9000Pattern(v) { jp9000Node.setPattern(v); },
 
     // === PARAM ACCESS (proxies to nodes) ===
 
@@ -466,6 +475,7 @@ export function serializeSession(session) {
     jt10Level: session.jt10Level,
     jt30Level: session.jt30Level,
     jt90Level: session.jt90Level,
+    jp9000Level: session.jp9000Level,
     params: session.params.serialize(),
     mixer: session.mixer,
     patterns: session.patterns,
@@ -492,6 +502,7 @@ export function deserializeSession(data) {
     jt10Level: data.jt10Level,
     jt30Level: data.jt30Level,
     jt90Level: data.jt90Level,
+    jp9000Level: data.jp9000Level,
   });
 
   if (data.params) {
@@ -528,6 +539,7 @@ export function restoreSessionInPlace(existingSession, data) {
   existingSession.jt10Level = data.jt10Level ?? 0;
   existingSession.jt30Level = data.jt30Level ?? 0;
   existingSession.jt90Level = data.jt90Level ?? 0;
+  existingSession.jp9000Level = data.jp9000Level ?? 0;
 
   // Deserialize params into existing nodes
   if (data.params) {
