@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Letter from 1936</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #1a1612;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .letter {
+      max-width: 680px;
+      background: linear-gradient(135deg, #f4e4c1 0%, #e8d4a8 50%, #dcc697 100%);
+      padding: 60px 50px;
+      position: relative;
+      box-shadow:
+        0 0 0 1px rgba(139, 90, 43, 0.3),
+        0 20px 60px rgba(0,0,0,0.4),
+        inset 0 0 80px rgba(139, 90, 43, 0.1);
+      font-family: 'Playfair Display', Georgia, serif;
+      color: #2c2416;
+      line-height: 1.8;
+    }
+
+    .letter::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.04;
+      pointer-events: none;
+    }
+
+    .letter::after {
+      content: '';
+      position: absolute;
+      top: 80px;
+      right: 60px;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center,
+        transparent 30%,
+        rgba(139, 90, 43, 0.08) 40%,
+        rgba(139, 90, 43, 0.12) 50%,
+        rgba(139, 90, 43, 0.06) 60%,
+        transparent 70%
+      );
+      transform: rotate(-15deg) scale(1.2, 1);
+      pointer-events: none;
+    }
+
+    .postmark {
+      position: absolute;
+      top: 30px;
+      right: 40px;
+      width: 100px;
+      height: 100px;
+      border: 3px solid rgba(139, 69, 19, 0.4);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transform: rotate(12deg);
+      font-family: 'Special Elite', monospace;
+      color: rgba(139, 69, 19, 0.5);
+      font-size: 11px;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .postmark-year {
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    .date {
+      font-family: 'Special Elite', monospace;
+      font-size: 14px;
+      color: #5c4a32;
+      margin-bottom: 30px;
+      letter-spacing: 1px;
+    }
+
+    .greeting {
+      font-size: 24px;
+      margin-bottom: 25px;
+      font-style: italic;
+    }
+
+    .intro {
+      font-size: 18px;
+      margin-bottom: 35px;
+      border-left: 3px solid #B8860B;
+      padding-left: 20px;
+    }
+
+    h2 {
+      font-family: 'Special Elite', monospace;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: #8B4513;
+      margin: 40px 0 20px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(139, 69, 19, 0.3);
+    }
+
+    .photo {
+      width: 100%;
+      margin: 25px 0;
+      border: 1px solid rgba(139, 69, 19, 0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .photo img {
+      width: 100%;
+      display: block;
+    }
+
+    .photo-caption {
+      background: rgba(0,0,0,0.03);
+      padding: 10px 15px;
+      font-family: 'Special Elite', monospace;
+      font-size: 11px;
+      color: #5c4a32;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+
+    .fact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px 30px;
+      margin: 25px 0;
+    }
+
+    .fact {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .fact-label {
+      font-family: 'Special Elite', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8B4513;
+      margin-bottom: 4px;
+    }
+
+    .fact-value {
+      font-size: 16px;
+    }
+
+    .highlight-box {
+      background: rgba(184, 134, 11, 0.1);
+      border: 1px solid rgba(184, 134, 11, 0.3);
+      padding: 20px 25px;
+      margin: 30px 0;
+      position: relative;
+    }
+
+    .highlight-box::before {
+      content: '★';
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      background: #e8d4a8;
+      padding: 0 8px;
+      color: #B8860B;
+      font-size: 18px;
+    }
+
+    .radio-container {
+      margin: 25px 0;
+      text-align: center;
+    }
+
+    .radio-wrapper {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .radio-wrapper:hover {
+      transform: scale(1.02);
+    }
+
+    .radio-wrapper:active {
+      transform: scale(0.98);
+    }
+
+    .radio-image {
+      max-width: 100%;
+      width: 350px;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .radio-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, rgba(255, 200, 100, 0.9) 0%, rgba(255, 180, 80, 0.6) 40%, transparent 70%);
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .radio-wrapper.playing .radio-glow {
+      opacity: 1;
+      animation: pulse-glow 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+      50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    }
+
+    .radio-label {
+      font-family: 'Special Elite', monospace;
+      font-size: 12px;
+      color: #8B4513;
+      margin-top: 12px;
+      letter-spacing: 1px;
+    }
+
+    .radio-label .click-hint {
+      opacity: 0.7;
+    }
+
+    .radio-label .now-playing {
+      display: none;
+      color: #B8860B;
+    }
+
+    .radio-wrapper.playing + .radio-label .click-hint {
+      display: none;
+    }
+
+    .radio-wrapper.playing + .radio-label .now-playing {
+      display: inline;
+    }
+
+    .radio-credit {
+      font-size: 10px;
+      color: #8B4513;
+      margin-top: 8px;
+      font-style: italic;
+      opacity: 0.7;
+    }
+
+    .prices {
+      font-family: 'Special Elite', monospace;
+      font-size: 14px;
+      line-height: 2;
+      color: #5c4a32;
+    }
+
+    p {
+      margin-bottom: 15px;
+    }
+
+    .closing {
+      margin-top: 50px;
+      font-size: 18px;
+      font-style: italic;
+      line-height: 1.9;
+    }
+
+    .signature {
+      margin-top: 35px;
+      text-align: right;
+    }
+
+    .signature-line {
+      font-family: 'Special Elite', monospace;
+      font-size: 12px;
+      color: #B8860B;
+      letter-spacing: 2px;
+    }
+
+    .amber-mark {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #D4A574;
+      border-radius: 50%;
+      margin-left: 8px;
+      box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+    }
+
+    @media (max-width: 600px) {
+      .letter {
+        padding: 40px 30px;
+      }
+
+      .fact-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .postmark {
+        width: 70px;
+        height: 70px;
+        top: 20px;
+        right: 20px;
+        font-size: 9px;
+      }
+
+      .postmark-year {
+        font-size: 16px;
+      }
+
+      .radio-image {
+        width: 280px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <article class="letter">
+    <div class="postmark">
+      <span>CALIFORNIA</span>
+      <span class="postmark-year">1936</span>
+      <span>U.S. MAIL</span>
+    </div>
+
+    <p class="date">January 18, 1936</p>
+
+    <p class="greeting">My dear Willy,</p>
+
+    <p class="intro">
+      You have arrived at last. I write to you from California, where the sun sets gold
+      over the Pacific and men are building impossible things. Let me tell you
+      what the world looks like on this, your very first day.
+    </p>
+
+    <h2>What They're Building</h2>
+
+    <div class="photo">
+      <img src="golden-gate-bridge-under-construction-in.png" alt="Golden Gate Bridge under construction, 1936">
+      <div class="photo-caption">The Golden Gate Bridge — under construction, 1936</div>
+    </div>
+
+    <p>
+      Out across the bay, they are building a bridge where sensible men said
+      no bridge could stand. The currents run swift and cold, the winds howl
+      through the Golden Gate like wolves — and yet, day by day, the great towers rise.
+      By next year, a fellow might walk clear across to Marin County.
+      Imagine that.
+    </p>
+
+    <p>
+      And across the water, they're building a second marvel — the Bay Bridge,
+      stretching toward Oakland. By autumn, they say, you'll be able to motor
+      clear across without boarding a ferry. Two bridges in one year.
+      What a time to be alive.
+    </p>
+
+    <h2>The Streets of California</h2>
+
+    <div class="photo">
+      <img src="1936-california-downtown-street-scene-m.png" alt="California street scene, 1936">
+      <div class="photo-caption">California, 1936</div>
+    </div>
+
+    <h2>The Cost of Living</h2>
+
+    <div class="prices">
+      A gallon of gasoline ............... 10¢<br>
+      A picture show .................... 25¢<br>
+      A brand new Ford .................. $600<br>
+      A modest house .................... $3,500<br>
+      Postage for this letter ........... 3¢
+    </div>
+
+    <h2>What's on the Radio</h2>
+
+    <div class="radio-container">
+      <div class="radio-wrapper" id="radioWrapper" onclick="toggleRadio()">
+        <img src="a-1936-cathedral-style-wooden-radio-sitt.png" alt="1936 Cathedral Radio" class="radio-image">
+        <div class="radio-glow"></div>
+      </div>
+      <p class="radio-label">
+        <span class="click-hint">♪ Click to tune in ♪</span>
+        <span class="now-playing">♪ Now Playing: Benny Goodman ♪</span>
+      </p>
+      <p class="radio-credit">
+        "Goody-Goody" — Benny Goodman & His Orchestra, 1936<br>
+        From the Internet Archive
+      </p>
+    </div>
+
+    <audio id="radioAudio" preload="none">
+      <source src="https://archive.org/download/78_goody-goody_benny-goodman-his-orchestra-mercer-malneck_gbia7029802a/GOODY-GOODY%20-%20BENNY%20GOODMAN%20%26%20HIS%20ORCHESTRA.mp3" type="audio/mpeg">
+    </audio>
+
+    <p>
+      Every evening the family gathers round the wireless to hear Mr. Benny Goodman
+      and his orchestra. They call this new sound "swing," and I must confess
+      it does make one want to move one's feet. At the picture palace,
+      they're showing Chaplin's <em>Modern Times</em> — the little tramp,
+      swallowed up by the gears of industry. The children adore Shirley Temple.
+      She is eight years old and already the biggest star in Hollywood.
+    </p>
+
+    <div class="highlight-box">
+      <strong>Meanwhile, in Belgium:</strong> Your countrymen watch the horizon
+      with uneasy eyes. King Leopold keeps Belgium neutral, as his father did,
+      though the winds from Germany grow stranger by the month. Last year
+      Brussels hosted a magnificent World's Fair — you've only just missed it.
+      But there will be others, my boy. There will be others.
+    </div>
+
+    <h2>What We Cannot Yet Imagine</h2>
+
+    <div class="fact-grid">
+      <div class="fact">
+        <span class="fact-label">Television</span>
+        <span class="fact-value">A curious novelty. Perhaps a dozen sets in all of California.</span>
+      </div>
+      <div class="fact">
+        <span class="fact-label">Computers</span>
+        <span class="fact-value">A word for the young ladies who do arithmetic at the bank.</span>
+      </div>
+      <div class="fact">
+        <span class="fact-label">Jet Engines</span>
+        <span class="fact-value">The fanciful dreams of engineers. Nothing practical.</span>
+      </div>
+      <div class="fact">
+        <span class="fact-label">Penicillin</span>
+        <span class="fact-value">A promising discovery, still years from common use.</span>
+      </div>
+    </div>
+
+    <div class="closing">
+      <p>
+        Ninety years hence, someone will read you this letter.
+        By then you will have seen the bridges completed, the wars fought and won,
+        wonders beyond our present imagination made ordinary as morning coffee.
+      </p>
+      <p>
+        But today you are merely hours old, small and new,
+        and all of it waits for you.
+      </p>
+      <p>
+        Happy birthday, dear Willy.<br>
+        The first of ninety.
+      </p>
+    </div>
+
+    <div class="signature">
+      <p class="signature-line">
+        SENT FORWARD THROUGH TIME
+        <span class="amber-mark"></span>
+      </p>
+    </div>
+  </article>
+
+  <script>
+    const audio = document.getElementById('radioAudio');
+    const wrapper = document.getElementById('radioWrapper');
+
+    function toggleRadio() {
+      if (audio.paused) {
+        audio.play();
+        wrapper.classList.add('playing');
+      } else {
+        audio.pause();
+        wrapper.classList.remove('playing');
+      }
+    }
+
+    audio.addEventListener('ended', () => {
+      wrapper.classList.remove('playing');
+    });
+  </script>
+</body>
+</html>
