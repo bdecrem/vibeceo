@@ -542,6 +542,8 @@ export default function SingularityGame() {
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       const game = gameRef.current;
+      // Only capture keys when game is actively playing
+      if (!game.running) return;
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         game.keysDown.left = true;
         e.preventDefault();
