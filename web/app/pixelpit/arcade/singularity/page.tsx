@@ -144,36 +144,68 @@ export default function SingularityGame() {
   const playKick = () => {
     const game = gameRef.current;
     if (!game.audioCtx || !game.masterGain) return;
+    // Industrial kick - distorted, punchy
     const osc = game.audioCtx.createOscillator();
+    const osc2 = game.audioCtx.createOscillator(); // noise layer
+    const distortion = game.audioCtx.createWaveShaper();
     const gain = game.audioCtx.createGain();
-    osc.connect(gain);
+
+    // Distortion curve
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+      const x = (i * 2) / 256 - 1;
+      curve[i] = Math.tanh(x * 3);
+    }
+    distortion.curve = curve;
+
+    osc.connect(distortion);
+    osc2.connect(distortion);
+    distortion.connect(gain);
     gain.connect(game.masterGain);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(150, game.audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(40, game.audioCtx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.5, game.audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.2);
+
+    osc.type = 'square'; // harsher
+    osc.frequency.setValueAtTime(80, game.audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(30, game.audioCtx.currentTime + 0.08);
+
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(60, game.audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(20, game.audioCtx.currentTime + 0.05);
+
+    gain.gain.setValueAtTime(0.4, game.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.15);
     osc.start();
-    osc.stop(game.audioCtx.currentTime + 0.2);
+    osc2.start();
+    osc.stop(game.audioCtx.currentTime + 0.15);
+    osc2.stop(game.audioCtx.currentTime + 0.15);
   };
 
   const playHat = () => {
     const game = gameRef.current;
     if (!game.audioCtx || !game.masterGain) return;
-    const bufferSize = game.audioCtx.sampleRate * 0.04;
+    // Industrial hi-hat - metallic, harsh
+    const bufferSize = game.audioCtx.sampleRate * 0.06;
     const buffer = game.audioCtx.createBuffer(1, bufferSize, game.audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    for (let i = 0; i < bufferSize; i++) {
+      // Add some ring mod character
+      data[i] = (Math.random() * 2 - 1) * Math.sin(i * 0.1);
+    }
     const noise = game.audioCtx.createBufferSource();
     noise.buffer = buffer;
     const hpFilter = game.audioCtx.createBiquadFilter();
     hpFilter.type = 'highpass';
-    hpFilter.frequency.value = 9000;
+    hpFilter.frequency.value = 7000;
+    hpFilter.Q.value = 2; // resonance for metallic tone
+    const bpFilter = game.audioCtx.createBiquadFilter();
+    bpFilter.type = 'bandpass';
+    bpFilter.frequency.value = 10000;
+    bpFilter.Q.value = 1;
     const gain = game.audioCtx.createGain();
-    gain.gain.setValueAtTime(0.06, game.audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.04);
+    gain.gain.setValueAtTime(0.08, game.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.05);
     noise.connect(hpFilter);
-    hpFilter.connect(gain);
+    hpFilter.connect(bpFilter);
+    bpFilter.connect(gain);
     gain.connect(game.masterGain);
     noise.start();
   };
@@ -181,38 +213,78 @@ export default function SingularityGame() {
   const playBass = (freq: number) => {
     const game = gameRef.current;
     if (!game.audioCtx || !game.masterGain || freq === 0) return;
+    // Industrial bass - gritty, distorted
     const osc = game.audioCtx.createOscillator();
+    const osc2 = game.audioCtx.createOscillator();
     const filter = game.audioCtx.createBiquadFilter();
+    const distortion = game.audioCtx.createWaveShaper();
     const gain = game.audioCtx.createGain();
+
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+      const x = (i * 2) / 256 - 1;
+      curve[i] = Math.tanh(x * 2);
+    }
+    distortion.curve = curve;
+
     osc.connect(filter);
-    filter.connect(gain);
+    osc2.connect(filter);
+    filter.connect(distortion);
+    distortion.connect(gain);
     gain.connect(game.masterGain);
+
     osc.type = 'sawtooth';
     osc.frequency.value = freq;
+    osc2.type = 'square';
+    osc2.frequency.value = freq * 0.5; // sub octave
+
     filter.type = 'lowpass';
-    filter.frequency.value = 400;
-    filter.Q.value = 5;
-    gain.gain.setValueAtTime(0.25, game.audioCtx.currentTime);
+    filter.frequency.setValueAtTime(800, game.audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(200, game.audioCtx.currentTime + 0.08);
+    filter.Q.value = 8; // resonant
+
+    gain.gain.setValueAtTime(0.2, game.audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.1);
     osc.start();
+    osc2.start();
     osc.stop(game.audioCtx.currentTime + 0.12);
+    osc2.stop(game.audioCtx.currentTime + 0.12);
   };
 
-  // Musical catch sound - plays a note from the scale
+  // Catch sound - industrial blip, less melodic
   const playCatchSound = () => {
     const game = gameRef.current;
     if (!game.audioCtx || !game.masterGain || !soundEnabled) return;
-    const note = CATCH_NOTES[game.score % CATCH_NOTES.length];
+    // Percussive digital blip instead of melodic
     const osc = game.audioCtx.createOscillator();
+    const osc2 = game.audioCtx.createOscillator();
     const gain = game.audioCtx.createGain();
-    osc.connect(gain);
+    const filter = game.audioCtx.createBiquadFilter();
+
+    osc.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gain);
     gain.connect(game.masterGain);
-    osc.type = 'triangle';
-    osc.frequency.value = note;
-    gain.gain.setValueAtTime(0.15, game.audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.15);
+
+    // High pitched digital blip
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800 + (game.score % 4) * 100, game.audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, game.audioCtx.currentTime + 0.05);
+
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(1200, game.audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(400, game.audioCtx.currentTime + 0.03);
+
+    filter.type = 'bandpass';
+    filter.frequency.value = 1000;
+    filter.Q.value = 2;
+
+    gain.gain.setValueAtTime(0.12, game.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.08);
     osc.start();
-    osc.stop(game.audioCtx.currentTime + 0.15);
+    osc2.start();
+    osc.stop(game.audioCtx.currentTime + 0.08);
+    osc2.stop(game.audioCtx.currentTime + 0.08);
   };
 
   const breachSound = () => {
@@ -727,21 +799,19 @@ export default function SingularityGame() {
               pointerEvents: 'none',
               zIndex: 1,
             }} />
-            {/* Red warning flash */}
+            {/* Red warning flash - no animation to avoid iOS input issues */}
             <div style={{
               position: 'absolute',
               inset: 0,
-              background: 'radial-gradient(circle at center, transparent 30%, rgba(255,0,0,0.1) 100%)',
-              animation: 'flicker 0.15s infinite',
+              background: 'radial-gradient(circle at center, transparent 30%, rgba(255,0,0,0.08) 100%)',
               pointerEvents: 'none',
               zIndex: 1,
             }} />
-            <div style={{ zIndex: 10, textAlign: 'center' }}>
+            <div style={{ zIndex: 10, textAlign: 'center', position: 'relative' }}>
               <h1 style={{
                 fontSize: 24,
                 letterSpacing: 8,
                 marginBottom: 15,
-                animation: 'flicker 0.08s infinite',
                 textShadow: `0 0 30px ${THEME.accent}`,
               }}>
                 CONTAINMENT FAILURE
@@ -751,7 +821,6 @@ export default function SingularityGame() {
                 fontWeight: 'bold',
                 marginBottom: 20,
                 textShadow: `0 0 50px ${THEME.accent}`,
-                animation: 'glitch 0.5s infinite',
               }}>
                 {score}
               </div>
@@ -785,7 +854,6 @@ export default function SingularityGame() {
                   letterSpacing: 6,
                   cursor: 'pointer',
                   textTransform: 'uppercase',
-                  animation: 'flicker 0.12s infinite',
                 }}
               >
                 REINITIALIZE
