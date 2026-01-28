@@ -60,24 +60,66 @@ export default function SingularityGame() {
 
   const { user } = usePixelpitSocial(socialLoaded);
 
+  // Score-based difficulty - smooth curve, no cliffs
+  // Fun 0-40, then gentle ramp. Spawn rate NEVER goes below 2.
+  const getDifficulty = (currentScore: number) => {
+    const level = Math.floor(currentScore / 10);
+    // Speed: fast growth 0-40, then slower after
+    const speedBonus = level <= 4
+      ? level * 0.25                    // 0-40: +0.25 per level
+      : 1.0 + (level - 4) * 0.1;        // 40+: +0.1 per level
+    return {
+      bpm: Math.min(120 + level * 1.5, 150),            // 120 → 150 BPM (gentle)
+      speed: Math.min(3.0 + speedBonus, 6),             // 3.0 → 6.0 max
+      spawnEveryNBeats: Math.max(4 - Math.floor(level / 4), 2), // 4→3→2 at 40,80
+    };
+  };
+
   const gameRef = useRef({
     running: false,
     score: 0,
     breach: 0,
     frame: 0,
-    spawnRate: 60,
-    paddle: { x: 200, w: 80, h: 8 },
+    beatCount: 0,
+    lastBeatTime: 0,
+    beatPulse: 0, // visual pulse intensity 0-1
+    paddle: { x: 200, w: 100, h: 10 },
     particles: [] as Particle[],
     audioCtx: null as AudioContext | null,
     masterGain: null as GainNode | null,
     musicPlaying: false,
-    musicInterval: null as NodeJS.Timeout | null,
-    musicStep: 0,
+    keysDown: { left: false, right: false },
+    keyboardInterval: null as NodeJS.Timeout | null,
   });
 
   const GAME_ID = 'singularity';
   const W = 400;
   const H = 600;
+
+  // Dedicated keyboard input loop - runs at 60fps independent of game loop
+  const startKeyboardLoop = () => {
+    const game = gameRef.current;
+    if (game.keyboardInterval) return;
+
+    game.keyboardInterval = setInterval(() => {
+      if (!game.running) return;
+      const speed = 12; // pixels per tick at 60fps = 720px/sec
+      if (game.keysDown.left) {
+        game.paddle.x = Math.max(game.paddle.w / 2, game.paddle.x - speed);
+      }
+      if (game.keysDown.right) {
+        game.paddle.x = Math.min(W - game.paddle.w / 2, game.paddle.x + speed);
+      }
+    }, 16); // ~60fps
+  };
+
+  const stopKeyboardLoop = () => {
+    const game = gameRef.current;
+    if (game.keyboardInterval) {
+      clearInterval(game.keyboardInterval);
+      game.keyboardInterval = null;
+    }
+  };
 
   // Audio
   const initAudio = () => {
@@ -89,13 +131,15 @@ export default function SingularityGame() {
     game.masterGain.gain.value = soundEnabled ? 0.3 : 0;
   };
 
-  // Techno music engine - dark industrial 4/4 beat
-  const MUSIC = {
-    bpm: 130,
+  // Beat-synced music patterns (16 steps = 1 bar at 4/4)
+  const PATTERNS = {
     kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
     hat:  [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
     bass: [55, 0, 55, 0, 0, 0, 55, 0, 44, 0, 0, 0, 55, 0, 0, 0],
   };
+
+  // Musical catch notes (pentatonic scale in A minor - always sounds good)
+  const CATCH_NOTES = [220, 261.6, 293.7, 349.2, 392, 440, 523.3, 587.3];
 
   const playKick = () => {
     const game = gameRef.current;
@@ -107,7 +151,7 @@ export default function SingularityGame() {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(150, game.audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(40, game.audioCtx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.4, game.audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.5, game.audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.2);
     osc.start();
     osc.stop(game.audioCtx.currentTime + 0.2);
@@ -116,7 +160,7 @@ export default function SingularityGame() {
   const playHat = () => {
     const game = gameRef.current;
     if (!game.audioCtx || !game.masterGain) return;
-    const bufferSize = game.audioCtx.sampleRate * 0.05;
+    const bufferSize = game.audioCtx.sampleRate * 0.04;
     const buffer = game.audioCtx.createBuffer(1, bufferSize, game.audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
@@ -124,10 +168,10 @@ export default function SingularityGame() {
     noise.buffer = buffer;
     const hpFilter = game.audioCtx.createBiquadFilter();
     hpFilter.type = 'highpass';
-    hpFilter.frequency.value = 8000;
+    hpFilter.frequency.value = 9000;
     const gain = game.audioCtx.createGain();
-    gain.gain.setValueAtTime(0.08, game.audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.06, game.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.04);
     noise.connect(hpFilter);
     hpFilter.connect(gain);
     gain.connect(game.masterGain);
@@ -146,73 +190,93 @@ export default function SingularityGame() {
     osc.type = 'sawtooth';
     osc.frequency.value = freq;
     filter.type = 'lowpass';
-    filter.frequency.value = 300;
-    gain.gain.setValueAtTime(0.2, game.audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.12);
+    filter.frequency.value = 400;
+    filter.Q.value = 5;
+    gain.gain.setValueAtTime(0.25, game.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.1);
+    osc.start();
+    osc.stop(game.audioCtx.currentTime + 0.12);
+  };
+
+  // Musical catch sound - plays a note from the scale
+  const playCatchSound = () => {
+    const game = gameRef.current;
+    if (!game.audioCtx || !game.masterGain || !soundEnabled) return;
+    const note = CATCH_NOTES[game.score % CATCH_NOTES.length];
+    const osc = game.audioCtx.createOscillator();
+    const gain = game.audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(game.masterGain);
+    osc.type = 'triangle';
+    osc.frequency.value = note;
+    gain.gain.setValueAtTime(0.15, game.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.15);
     osc.start();
     osc.stop(game.audioCtx.currentTime + 0.15);
   };
 
-  const musicTick = () => {
+  const breachSound = () => {
     const game = gameRef.current;
-    if (!game.audioCtx || !game.musicPlaying || !soundEnabled) return;
-    const step = game.musicStep % 16;
-    if (MUSIC.kick[step]) playKick();
-    if (MUSIC.hat[step]) playHat();
-    if (MUSIC.bass[step]) playBass(MUSIC.bass[step]);
-    game.musicStep++;
-  };
-
-  const startMusic = () => {
-    const game = gameRef.current;
-    if (game.musicPlaying) return;
-    game.musicPlaying = true;
-    game.musicStep = 0;
-    const stepTime = (60 / MUSIC.bpm) * 1000 / 4;
-    game.musicInterval = setInterval(musicTick, stepTime);
-  };
-
-  const stopMusic = () => {
-    const game = gameRef.current;
-    game.musicPlaying = false;
-    if (game.musicInterval) {
-      clearInterval(game.musicInterval);
-      game.musicInterval = null;
-    }
-  };
-
-  const playSound = (freq: number, duration: number, type: OscillatorType = 'sine') => {
-    const game = gameRef.current;
-    if (!game.audioCtx || !soundEnabled || !game.masterGain) return;
+    if (!game.audioCtx || !game.masterGain || !soundEnabled) return;
     const osc = game.audioCtx.createOscillator();
     const gain = game.audioCtx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.1, game.audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + duration);
     osc.connect(gain);
     gain.connect(game.masterGain);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(110, game.audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(55, game.audioCtx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.2, game.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, game.audioCtx.currentTime + 0.3);
     osc.start();
-    osc.stop(game.audioCtx.currentTime + duration);
+    osc.stop(game.audioCtx.currentTime + 0.3);
   };
 
-  const catchSound = () => playSound(880, 0.05, 'square');
-  const breachSound = () => playSound(110, 0.3, 'sawtooth');
   const failSound = () => {
-    playSound(80, 0.5, 'sawtooth');
-    playSound(60, 0.6, 'square');
+    const game = gameRef.current;
+    if (!game.audioCtx || !game.masterGain || !soundEnabled) return;
+    [80, 60, 40].forEach((freq, i) => {
+      const osc = game.audioCtx!.createOscillator();
+      const gain = game.audioCtx!.createGain();
+      osc.connect(gain);
+      gain.connect(game.masterGain!);
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+      const startTime = game.audioCtx!.currentTime + i * 0.1;
+      gain.gain.setValueAtTime(0.2, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+      osc.start(startTime);
+      osc.stop(startTime + 0.3);
+    });
   };
 
-  const spawn = () => {
+  // Master beat callback - drives EVERYTHING
+  const onBeat = (beatNum: number) => {
     const game = gameRef.current;
-    const cols = Math.min(3 + Math.floor(game.score / 10), 7);
-    for (let i = 0; i < cols; i++) {
+    if (!game.running || !soundEnabled) return;
+
+    const step = beatNum % 16;
+    const difficulty = getDifficulty(game.score);
+
+    // Play music on beat
+    if (PATTERNS.kick[step]) playKick();
+    if (PATTERNS.hat[step]) playHat();
+    if (PATTERNS.bass[step]) playBass(PATTERNS.bass[step]);
+
+    // Spawn particle on beat (based on difficulty)
+    if (beatNum % difficulty.spawnEveryNBeats === 0) {
+      const margin = 30;
+      const usableWidth = W - margin * 2;
       game.particles.push({
-        x: 40 + i * (W - 80) / (cols - 1 || 1) + Math.random() * 20 - 10,
-        y: -20,
-        speed: 2 + Math.random() * 2 + game.score * 0.02,
-        size: 6 + Math.random() * 4,
+        x: margin + Math.random() * usableWidth,
+        y: -10,
+        speed: difficulty.speed,
+        size: 10,
       });
+    }
+
+    // Visual pulse on downbeat (every 4 steps)
+    if (step % 4 === 0) {
+      game.beatPulse = 1;
     }
   };
 
@@ -223,19 +287,25 @@ export default function SingularityGame() {
     game.score = 0;
     game.breach = 0;
     game.frame = 0;
+    game.beatCount = 0;
+    game.lastBeatTime = performance.now();
+    game.beatPulse = 0;
     game.particles = [];
     game.paddle.x = W / 2;
+    game.keysDown = { left: false, right: false };
+    game.musicPlaying = true;
+    startKeyboardLoop();
     setScore(0);
     setBreach(0);
     setSubmittedEntryId(null);
     setGameState('playing');
-    startMusic();
   };
 
   const gameOver = () => {
     const game = gameRef.current;
     game.running = false;
-    stopMusic();
+    game.musicPlaying = false;
+    stopKeyboardLoop();
     failSound();
 
     // Track play
@@ -263,29 +333,37 @@ export default function SingularityGame() {
 
     let animationId: number;
 
-    const update = () => {
+    const update = (now: number) => {
       const game = gameRef.current;
       if (!game.running) return;
 
-      game.frame++;
-      if (game.frame % Math.max(20, game.spawnRate - game.score) === 0) {
-        spawn();
+      // Beat timing - check if a new beat should trigger
+      const difficulty = getDifficulty(game.score);
+      const msPerBeat = 60000 / difficulty.bpm / 4; // 16th notes
+      if (now - game.lastBeatTime >= msPerBeat) {
+        game.lastBeatTime = now;
+        game.beatCount++;
+        onBeat(game.beatCount);
       }
 
+      // Decay visual pulse
+      game.beatPulse *= 0.9;
+
+      // Update particles - ALL move at current difficulty speed (no mixed speeds)
       for (let i = game.particles.length - 1; i >= 0; i--) {
         const p = game.particles[i];
-        p.y += p.speed;
+        p.y += difficulty.speed;
 
-        // Caught by paddle
-        if (p.y > H - 30 && p.y < H - 10 &&
-            Math.abs(p.x - game.paddle.x) < game.paddle.w / 2 + p.size / 2) {
+        // Caught by paddle (generous hitbox for fun)
+        if (p.y > H - 35 && p.y < H - 5 &&
+            Math.abs(p.x - game.paddle.x) < game.paddle.w / 2 + p.size) {
           game.particles.splice(i, 1);
           game.score++;
           setScore(game.score);
-          catchSound();
+          playCatchSound();
         }
         // Missed - breach
-        else if (p.y > H) {
+        else if (p.y > H + 10) {
           game.particles.splice(i, 1);
           game.breach++;
           setBreach(game.breach);
@@ -299,23 +377,26 @@ export default function SingularityGame() {
 
     const draw = () => {
       const game = gameRef.current;
+      const pulse = game.beatPulse;
 
-      // Background
+      // Background with subtle pulse
       ctx.fillStyle = THEME.bg;
       ctx.fillRect(0, 0, W, H);
 
-      // Singularity gradient
-      const gradient = ctx.createRadialGradient(W / 2, 0, 0, W / 2, 0, 150);
+      // Singularity gradient - pulses with beat
+      const singularitySize = 150 + pulse * 30;
+      const gradient = ctx.createRadialGradient(W / 2, 0, 0, W / 2, 0, singularitySize);
       gradient.addColorStop(0, THEME.accent);
       gradient.addColorStop(0.3, THEME.accentDark);
       gradient.addColorStop(1, THEME.bg);
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.arc(W / 2, -50, 150, 0, Math.PI * 2);
+      ctx.arc(W / 2, -50, singularitySize, 0, Math.PI * 2);
       ctx.fill();
 
-      // Grid lines
-      ctx.strokeStyle = THEME.grid;
+      // Grid lines - subtle pulse intensity
+      const gridAlpha = 0.15 + pulse * 0.1;
+      ctx.strokeStyle = `rgba(255, 77, 0, ${gridAlpha})`;
       ctx.lineWidth = 1;
       for (let i = 0; i < W; i += 40) {
         ctx.beginPath();
@@ -330,45 +411,39 @@ export default function SingularityGame() {
         ctx.stroke();
       }
 
-      // Particles
+      // Particles with glow
       game.particles.forEach(p => {
         ctx.fillStyle = THEME.accent;
         ctx.shadowColor = THEME.accent;
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 20 + pulse * 10;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
       });
 
-      // Paddle / Containment beam
+      // Paddle / Containment beam - wider, more visible
+      const paddleGlow = 25 + pulse * 15;
       ctx.fillStyle = THEME.accent;
       ctx.shadowColor = THEME.accent;
-      ctx.shadowBlur = 20;
+      ctx.shadowBlur = paddleGlow;
       ctx.fillRect(game.paddle.x - game.paddle.w / 2, H - 25, game.paddle.w, game.paddle.h);
       ctx.shadowBlur = 0;
 
-      // Scanlines
-      ctx.fillStyle = 'rgba(0,0,0,0.1)';
+      // Scanlines (subtle)
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
       for (let i = 0; i < H; i += 4) {
         ctx.fillRect(0, i, W, 2);
       }
-
-      // Glitch effect
-      if (Math.random() < 0.02) {
-        const y = Math.random() * H;
-        const h = 5 + Math.random() * 10;
-        ctx.drawImage(canvas, 0, y, W, h, Math.random() * 10 - 5, y, W, h);
-      }
     };
 
-    const loop = () => {
-      update();
+    const loop = (now: number) => {
+      update(now);
       draw();
       animationId = requestAnimationFrame(loop);
     };
 
-    loop();
+    animationId = requestAnimationFrame(loop);
 
     // Input handlers
     const move = (x: number) => {
@@ -385,15 +460,38 @@ export default function SingularityGame() {
       e.preventDefault();
       move(e.touches[0].clientX);
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const game = gameRef.current;
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        game.keysDown.left = true;
+        e.preventDefault();
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        game.keysDown.right = true;
+        e.preventDefault();
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const game = gameRef.current;
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        game.keysDown.left = false;
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        game.keysDown.right = false;
+      }
+    };
 
     canvas.addEventListener('mousemove', handleMouse);
     canvas.addEventListener('touchmove', handleTouch, { passive: false });
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
 
     return () => {
       cancelAnimationFrame(animationId);
       canvas.removeEventListener('mousemove', handleMouse);
       canvas.removeEventListener('touchmove', handleTouch);
-      stopMusic();
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+      stopKeyboardLoop();
+      gameRef.current.musicPlaying = false;
     };
   }, [soundEnabled]);
 
@@ -533,7 +631,7 @@ export default function SingularityGame() {
               lineHeight: 2,
             }}>
               contain the breach<br />
-              ← drag →
+              ← → or A D
             </p>
             <button
               onClick={startGame}
