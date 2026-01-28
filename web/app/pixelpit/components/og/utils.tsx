@@ -103,4 +103,11 @@ export const GAME_COLORS = {
     accent: '#f472b6',
     branding: '#f8fafc',
   },
+  singularity: {
+    background: '#000000',
+    primary: '#ff4d00',
+    secondary: '#ff4d00',
+    accent: '#331100',
+    branding: '#ff4d0099',
+  },
 };

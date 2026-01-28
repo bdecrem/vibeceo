@@ -193,6 +193,185 @@ export function BeamDecorations() {
 }
 
 /**
+ * SINGULARITY-specific decorations: grid, singularity glow, particles.
+ * VOID PROTOCOL aesthetic: black void, blood orange accent (#ff4d00).
+ */
+export function SingularityDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Singularity radial glow at top (using linear gradient approximation) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: -100,
+          left: 400,
+          width: 400,
+          height: 300,
+          background: 'linear-gradient(180deg, #ff4d0066 0%, #33110033 50%, #00000000 100%)',
+          borderRadius: 200,
+        }}
+      />
+
+      {/* Grid lines - horizontal */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 80,
+          left: 0,
+          right: 0,
+          height: 1,
+          background: '#1a0800',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 160,
+          left: 0,
+          right: 0,
+          height: 1,
+          background: '#1a0800',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 470,
+          left: 0,
+          right: 0,
+          height: 1,
+          background: '#1a0800',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 550,
+          left: 0,
+          right: 0,
+          height: 1,
+          background: '#1a0800',
+        }}
+      />
+
+      {/* Grid lines - vertical */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: 200,
+          width: 1,
+          background: '#1a0800',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: 400,
+          width: 1,
+          background: '#1a0800',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: 800,
+          width: 1,
+          background: '#1a0800',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: 1000,
+          width: 1,
+          background: '#1a0800',
+        }}
+      />
+
+      {/* Falling particles */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 250,
+          top: 100,
+          width: 10,
+          height: 10,
+          borderRadius: 5,
+          background: '#ff4d00',
+          boxShadow: '0 0 15px #ff4d00',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 500,
+          top: 80,
+          width: 14,
+          height: 14,
+          borderRadius: 7,
+          background: '#ff4d00',
+          boxShadow: '0 0 15px #ff4d00',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 700,
+          top: 120,
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          background: '#ff4d00',
+          boxShadow: '0 0 15px #ff4d00',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 900,
+          top: 90,
+          width: 12,
+          height: 12,
+          borderRadius: 6,
+          background: '#ff4d00',
+          boxShadow: '0 0 15px #ff4d00',
+        }}
+      />
+
+      {/* Containment paddle at bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 60,
+          left: 500,
+          width: 200,
+          height: 12,
+          background: '#ff4d00',
+          boxShadow: '0 0 20px #ff4d00',
+        }}
+      />
+    </div>
+  );
+}
+
+/**
  * RAIN-specific decorations: falling drops.
  * Note: Satori (next/og) has limited support for fragments and some CSS.
  * Using explicit wrapper div and simplified styles.

@@ -32,7 +32,7 @@ export default function BoostGame() {
   const [score, setScore] = useState(0);
   const [multiplier, setMultiplier] = useState(1);
   const [socialLoaded, setSocialLoaded] = useState(false);
-  const [submittedEntryId, setSubmittedEntryId] = useState<string | null>(null);
+  const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
 
   // Canvas and Game Logic
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -209,7 +209,7 @@ export default function BoostGame() {
             score={score}
             gameId="boost"
             colors={GAME_COLORS}
-            onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId)}
+            onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
           />
           <ShareButtonContainer
             id="share-btn"

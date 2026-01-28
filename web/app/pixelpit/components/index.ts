@@ -38,6 +38,7 @@ export {
   createScoreShareImage,
   BeamDecorations,
   RainDecorations,
+  SingularityDecorations,
   OG_SIZE,
 } from './og/ScoreShareImage';
 export { CornerAccents, PixelpitBranding, GAME_COLORS } from './og/utils';

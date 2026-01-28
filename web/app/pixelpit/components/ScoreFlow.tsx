@@ -127,24 +127,26 @@ export function ScoreFlow({ score, gameId, colors, onRankReceived, onUserLogin }
               outline: 'none',
             }}
           />
-          <button
-            onClick={submitAsGuest}
-            style={{
-              background: colors.primary,
-              color: colors.bg,
-              border: 'none',
-              borderRadius: 6,
-              padding: '12px 25px',
-              fontSize: 13,
-              fontFamily,
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: `0 6px 20px ${colors.primary}40`,
-              letterSpacing: 1,
-            }}
-          >
-            submit
-          </button>
+          <div style={{ textAlign: 'center' }}>
+            <button
+              onClick={submitAsGuest}
+              style={{
+                background: colors.primary,
+                color: colors.bg,
+                border: 'none',
+                borderRadius: 6,
+                padding: '12px 25px',
+                fontSize: 13,
+                fontFamily,
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: `0 6px 20px ${colors.primary}40`,
+                letterSpacing: 1,
+              }}
+            >
+              submit
+            </button>
+          </div>
           {error && (
             <div style={{ marginTop: 10, color: colors.error, fontSize: 12, fontFamily }}>
               {error}
