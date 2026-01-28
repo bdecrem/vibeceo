@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Volcano Catch</title>
+<style>
+body{margin:0;overflow:hidden;background:#1a0000;font-family:sans-serif;}
+canvas{display:block;}
+#score{position:absolute;top:10px;left:10px;color:#ffcc00;font-size:18px;}
+#msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#ffcc00;font-size:24px;text-align:center;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="score">0</div>
+<div id="msg">Tap to start</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),scoreEl=document.getElementById('score'),msg=document.getElementById('msg');
+let w,h,pw=80,ph=10,px,py,embers=[],score=0,misses=0,state='idle';
+function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;px=w/2;py=h-40;}
+resize();window.addEventListener('resize',resize);
+function start(){state='playing';misses=0;score=0;embers=[];scoreEl.textContent=score;msg.style.display='none';}
+function reset(){state='idle';msg.textContent='Tap to start';msg.style.display='block';}
+function spawn(){embers.push({x:Math.random()*w,y:0,r:12});}
+function update(dt){
+embers.forEach(e=>e.y+=200*dt);
+embers=embers.filter(e=>{
+ if(e.y>h){misses++;return false;}
+ if(Math.abs(e.x-px)<pw/2&&Math.abs(e.y-py)<ph){score++;return false;}
+ return true;
+});
+if(misses>=5){state='gameover';msg.textContent='Game Over! Tap to restart';msg.style.display='block';}
+scoreEl.textContent=score;
+}
+function draw(){
+ctx.clearRect(0,0,w,h);
+ctx.shadowColor='rgba(255,68,0,0.8)';ctx.shadowBlur=15;
+embers.forEach(e=>{ctx.fillStyle='#ff4400';ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill();});
+ctx.shadowBlur=0;
+ctx.fillStyle='#ffcc00';ctx.fillRect(px-pw/2,py,pw,ph);
+}
+let last=0,spawnTimer=0;
+function loop(t){let dt=(t-last)/1000;last=t;
+if(state==='playing'){spawnTimer+=dt;if(spawnTimer>1){spawn();spawnTimer=0;}
+update(dt);draw();}
+requestAnimationFrame(loop);}
+loop(0);
+c.addEventListener('touchstart',e=>{e.preventDefault();if(state==='idle'||state==='gameover')start();});
+c.addEventListener('touchmove',e=>{e.preventDefault();px=e.touches[0].clientX;px=Math.max(pw/2,Math.min(w-pw/2,px));});
+</script>
+</body>
+</html>

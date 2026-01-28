@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Pixel Retro Pop Game</title>
+<style>
+  body{margin:0;background:#000;overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0, targets=[], particles=[];
+
+// spawn a new target (square)
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:15,          // half side length
+    speed:1+Math.random()*2,
+    color:'#4caf50'
+  });
+}
+
+// update positions and particles
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03) spawn();
+
+  // particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx; p.y+=p.vy;
+    p.alpha-=0.04;
+    if(p.alpha<=0) particles.splice(i,1);
+  }
+}
+
+// draw everything
+function draw(){
+  // background
+  ctx.fillStyle='#000';
+  ctx.fillRect(0,0,W,H);
+
+  // grid pattern
+  ctx.strokeStyle='#222';
+  ctx.lineWidth=1;
+  for(let x=0;x<=W;x+=50){
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+  }
+  for(let y=0;y<=H;y+=50){
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+
+  // targets
+  targets.forEach(t=>{
+    ctx.fillStyle=t.color;
+    ctx.fillRect(t.x-t.r, t.y-t.r, t.r*2, t.r*2);
+  });
+
+  // particles
+  particles.forEach(p=>{
+    ctx.fillStyle=`rgba(255,255,255,${p.alpha})`;
+    ctx.fillRect(p.x,p.y,p.size,p.size);
+  });
+
+  // score
+  ctx.font='24px "Courier New", monospace';
+  ctx.textAlign='left';
+  ctx.textBaseline='top';
+  const txt='Score: '+score;
+  ctx.fillStyle='#fff';
+  ctx.strokeStyle='#000';
+  ctx.lineWidth=2;
+  ctx.strokeText(txt,20,20);
+  ctx.fillText(txt,20,20);
+}
+
+// pop logic
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    // square hit test
+    if(Math.abs(x-t.x)<=t.r && Math.abs(y-t.y)<=t.r){
+      targets.splice(i,1);
+      score++;
+      // create particles
+      for(let j=0;j<12;j++){
+        particles.push({
+          x:t.x,
+          y:t.y,
+          vx:(Math.random()*4-2),
+          vy:(Math.random()*4-2),
+          size:4,
+          alpha:1
+        });
+      }
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

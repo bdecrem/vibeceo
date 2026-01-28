@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Dodge</title>
+    <style>
+        body { margin: 0; padding: 0; background: #0f172a; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif; overflow: hidden; }
+        canvas { border: 2px solid #ec4899; border-radius: 10px; box-shadow: 0 0 20px #ec4899; }
+        .ui { position: absolute; color: #22d3ee; text-align: center; pointer-events: none; }
+        .score { top: 20px; left: 50%; transform: translateX(-50%); font-size: 24px; font-weight: bold; text-shadow: 0 0 10px #22d3ee; }
+        .game-over { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 32px; text-shadow: 0 0 20px #fbbf24; }
+    </style>
+</head>
+<body>
+    <canvas id="game" width="400" height="600"></canvas>
+    <div class="ui score" id="score">Score: 0</div>
+    <div class="ui game-over" id="gameOver" style="display: none;">Game Over!<br><span style="font-size: 16px; color: #ec4899;">Tap to restart</span></div>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const gameOverEl = document.getElementById('gameOver');
+
+        let game = {
+            player: { x: 50, y: 300, size: 15, dy: 0, color: '#ec4899' },
+            obstacles: [],
+            score: 0,
+            gameOver: false,
+            spawnTimer: 0
+        };
+
+        function reset() {
+            game = {
+                player: { x: 50, y: 300, size: 15, dy: 0, color: '#ec4899' },
+                obstacles: [],
+                score: 0,
+                gameOver: false,
+                spawnTimer: 0
+            };
+            gameOverEl.style.display = 'none';
+        }
+
+        function spawnObstacle() {
+            const gap = 150;
+            const minHeight = 50;
+            const maxHeight = canvas.height - gap - minHeight;
+            const height = minHeight + Math.random() * (maxHeight - minHeight);
+
+            game.obstacles.push({
+                x: canvas.width,
+                y: 0,
+                width: 30,
+                height: height,
+                color: '#22d3ee',
+                scored: false
+            });
+
+            game.obstacles.push({
+                x: canvas.width,
+                y: height + gap,
+                width: 30,
+                height: canvas.height - height - gap,
+                color: '#22d3ee',
+                scored: false
+            });
+        }
+
+        function update() {
+            if (game.gameOver) return;
+
+            // Player physics
+            game.player.dy += 0.5; // gravity
+            game.player.y += game.player.dy;
+
+            // Spawn obstacles
+            game.spawnTimer++;
+            if (game.spawnTimer > 120) {
+                spawnObstacle();
+                game.spawnTimer = 0;
+            }
+
+            // Update obstacles
+            for (let i = game.obstacles.length - 1; i >= 0; i--) {
+                const obs = game.obstacles[i];
+                obs.x -= 3;
+
+                // Score
+                if (!obs.scored && obs.x + obs.width < game.player.x) {
+                    obs.scored = true;
+                    game.score += 0.5;
+                }
+
+                // Collision
+                if (game.player.x < obs.x + obs.width &&
+                    game.player.x + game.player.size > obs.x &&
+                    game.player.y < obs.y + obs.height &&
+                    game.player.y + game.player.size > obs.y) {
+                    game.gameOver = true;
+                    gameOverEl.style.display = 'block';
+                }
+
+                // Remove off-screen obstacles
+                if (obs.x + obs.width < 0) {
+                    game.obstacles.splice(i, 1);
+                }
+            }
+
+            // Boundary check
+            if (game.player.y < 0 || game.player.y + game.player.size > canvas.height) {
+                game.gameOver = true;
+                gameOverEl.style.display = 'block';
+            }
+
+            scoreEl.textContent = `Score: ${Math.floor(game.score)}`;
+        }
+
+        function draw() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Player with glow
+            ctx.shadowColor = game.player.color;
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = game.player.color;
+            ctx.fillRect(game.player.x, game.player.y, game.player.size, game.player.size);
+
+            // Obstacles with glow
+            game.obstacles.forEach(obs => {
+                ctx.shadowColor = obs.color;
+                ctx.shadowBlur = 15;
+                ctx.fillStyle = obs.color;
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+            });
+
+            ctx.shadowBlur = 0;
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function jump() {
+            if (game.gameOver) {
+                reset();
+                return;
+            }
+            game.player.dy = -8;
+        }
+
+        // Controls
+        canvas.addEventListener('click', jump);
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); jump(); });
+        document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); jump(); } });
+
+        gameLoop();
+    </script>
+</body>
+</html>

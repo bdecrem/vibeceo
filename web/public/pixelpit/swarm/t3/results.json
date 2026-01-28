@@ -1,0 +1,75 @@
+{
+  "timestamp": "2026-01-28T08:07:47.220639",
+  "model": "openai/gpt-oss-20b",
+  "experiment": "Core Mechanic Feel Tests",
+  "agents": 5,
+  "success_count": 5,
+  "total_time": 59.364850997924805,
+  "total_tokens": {
+    "input": 1557,
+    "output": 14703
+  },
+  "cost_usd": 0.00301845,
+  "results": [
+    {
+      "agent_id": 0,
+      "success": true,
+      "mechanic": "JUMP FEEL",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t3/agent_0.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t3/agent_0.html",
+      "tokens": {
+        "input": 316,
+        "output": 1383
+      },
+      "time": 13.482676029205322
+    },
+    {
+      "agent_id": 1,
+      "success": true,
+      "mechanic": "DASH FEEL",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t3/agent_1.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t3/agent_1.html",
+      "tokens": {
+        "input": 316,
+        "output": 3517
+      },
+      "time": 36.50512099266052
+    },
+    {
+      "agent_id": 2,
+      "success": true,
+      "mechanic": "PROJECTILE FEEL",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t3/agent_2.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t3/agent_2.html",
+      "tokens": {
+        "input": 302,
+        "output": 4000
+      },
+      "time": 40.61804676055908
+    },
+    {
+      "agent_id": 3,
+      "success": true,
+      "mechanic": "SWING FEEL",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t3/agent_3.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t3/agent_3.html",
+      "tokens": {
+        "input": 314,
+        "output": 4000
+      },
+      "time": 59.358234882354736
+    },
+    {
+      "agent_id": 4,
+      "success": true,
+      "mechanic": "IMPACT FEEL",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t3/agent_4.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t3/agent_4.html",
+      "tokens": {
+        "input": 309,
+        "output": 1803
+      },
+      "time": 36.50118899345398
+    }
+  ]
+}

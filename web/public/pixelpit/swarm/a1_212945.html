@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Pulse</title>
+    <style>
+        body { margin: 0; padding: 0; background: #0f172a; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; cursor: pointer; }
+        .ui { position: absolute; top: 20px; left: 20px; color: #22d3ee; font-size: 20px; z-index: 10; }
+        .instructions { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; z-index: 10; }
+    </style>
+</head>
+<body>
+    <div class="ui">Score: <span id="score">0</span></div>
+    <div class="instructions">Tap the correct color zone when orbs reach the bottom!</div>
+    <canvas id="game"></canvas>
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const colors = ['#ec4899', '#22d3ee', '#fbbf24'];
+        let score = 0;
+        let orbs = [];
+        let zones = [];
+        let lastSpawn = 0;
+
+        // Create color zones at bottom
+        for(let i = 0; i < 3; i++) {
+            zones.push({
+                x: (canvas.width / 3) * i,
+                width: canvas.width / 3,
+                color: colors[i],
+                glow: 0
+            });
+        }
+
+        function spawnOrb() {
+            orbs.push({
+                x: Math.random() * (canvas.width - 40) + 20,
+                y: -20,
+                color: colors[Math.floor(Math.random() * 3)],
+                speed: 2 + score * 0.1,
+                size: 15 + Math.sin(Date.now() * 0.01) * 3
+            });
+        }
+
+        function updateOrbs() {
+            for(let i = orbs.length - 1; i >= 0; i--) {
+                orbs[i].y += orbs[i].speed;
+                orbs[i].size = 15 + Math.sin(Date.now() * 0.01 + i) * 3;
+
+                if(orbs[i].y > canvas.height + 20) {
+                    orbs.splice(i, 1);
+                    score = Math.max(0, score - 5);
+                }
+            }
+        }
+
+        function drawOrbs() {
+            orbs.forEach(orb => {
+                ctx.shadowColor = orb.color;
+                ctx.shadowBlur = 20;
+                ctx.fillStyle = orb.color;
+                ctx.beginPath();
+                ctx.arc(orb.x, orb.y, orb.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+        }
+
+        function drawZones() {
+            zones.forEach((zone, i) => {
+                zone.glow *= 0.95;
+                ctx.fillStyle = zone.color + Math.floor(zone.glow * 255).toString(16).padStart(2, '0');
+                ctx.fillRect(zone.x, canvas.height - 80, zone.width, 80);
+
+                ctx.strokeStyle = zone.color;
+                ctx.lineWidth = 3;
+                ctx.strokeRect(zone.x, canvas.height - 80, zone.width, 80);
+            });
+        }
+
+        function checkCollision(x, y) {
+            const zoneIndex = Math.floor(x / (canvas.width / 3));
+            if(zoneIndex < 0 || zoneIndex >= 3) return;
+
+            for(let i = orbs.length - 1; i >= 0; i--) {
+                const orb = orbs[i];
+                if(orb.y > canvas.height - 100 && orb.y < canvas.height - 20) {
+                    if(orb.color === colors[zoneIndex]) {
+                        orbs.splice(i, 1);
+                        score += 10;
+                        zones[zoneIndex].glow = 0.5;
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if(Date.now() - lastSpawn > 1500 - score * 10) {
+                spawnOrb();
+                lastSpawn = Date.now();
+            }
+
+            updateOrbs();
+            drawZones();
+            drawOrbs();
+
+            document.getElementById('score').textContent = score;
+            requestAnimationFrame(animate);
+        }
+
+        canvas.addEventListener('click', e => checkCollision(e.clientX, e.clientY));
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            checkCollision(touch.clientX, touch.clientY);
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            zones = [];
+            for(let i = 0; i < 3; i++) {
+                zones.push({
+                    x: (canvas.width / 3) * i,
+                    width: canvas.width / 3,
+                    color: colors[i],
+                    glow: 0
+                });
+            }
+        });
+
+        animate();
+    </script>
+</body>
+</html>

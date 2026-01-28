@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Neon City Catch</title>
+<style>
+body{margin:0;background:#0a0a0a;overflow:hidden}
+canvas{display:block}
+</style></head><body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let w,h;function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight}
+resize();window.addEventListener('resize',resize);
+let state='init',score=0,misses=0,packets=[];
+const paddle={w:120,h:20,x:w/2-60,y:h-30};
+function reset(){score=0;misses=0;packets=[];paddle.x=w/2-60;state='init'}
+function spawn(){packets.push({x:Math.random()*w,y:0,r:15,v:2+Math.random()*2})}
+function update(){packets.forEach(p=>p.y+=p.v);packets=packets.filter(p=>{if(p.y>h){misses++;return false}return true});packets.forEach(p=>{if(p.y+ p.r>=paddle.y && p.y-p.r<=paddle.y+paddle.h && p.x>=paddle.x && p.x<=paddle.x+paddle.w){score++;return false}return true});packets=packets.filter(Boolean);if(misses>=5)state='over'}
+function draw(){ctx.clearRect(0,0,w,h);ctx.shadowBlur=10;ctx.shadowColor='#00ff88';packets.forEach(p=>{ctx.fillStyle='#00ff88';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()});
+ctx.shadowBlur=10;ctx.shadowColor='#ff00ff';ctx.fillStyle='#ff00ff';ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
+ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.fillText('Score:'+score,10,30);
+if(state==='init'){ctx.fillText('Tap to start',w/2-70,h/2);}
+if(state==='over'){ctx.fillText('Game Over! Tap to restart',w/2-140,h/2);}
+}
+function loop(){if(state==='play'){update();if(Math.random()<0.02)spawn();}draw();requestAnimationFrame(loop);}
+loop();
+c.addEventListener('touchstart',e=>{e.preventDefault();if(state==='init'||state==='over'){reset();state='play'}});
+c.addEventListener('touchmove',e=>{e.preventDefault();const x=e.touches[0].clientX-paddle.w/2;paddle.x=Math.max(0,Math.min(w-paddle.w,x))});
+c.addEventListener('mousedown',e=>{paddle.x=Math.max(0,Math.min(w-paddle.w,e.clientX-paddle.w/2))});
+c.addEventListener('mousemove',e=>{if(e.buttons){paddle.x=Math.max(0,Math.min(w-paddle.w,e.clientX-paddle.w/2))}});
+</script>
+</body></html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><title>Dash Feel Test</title>
+<style>
+body{margin:0;background:#1a1a2e;color:#fff;font-family:sans-serif}
+canvas{display:block;background:#1a1a2e}
+#ui{position:absolute;top:10px;left:10px;display:flex;gap:4px}
+button{background:#00ff88;color:#000;border:none;padding:5px 8px;font-size:12px;cursor:pointer}
+#bar{position:absolute;bottom:10px;left:10px;width:200px;height:10px;background:#333}
+#bar div{height:100%;background:#00ff88}
+</style>
+</head>
+<body>
+<canvas id=c></canvas>
+<div id=ui><div>DASH FEEL</div><button id=ninja>Ninja</button><button id=heavy>Heavy</button><button id=blink>Blink</button></div>
+<div id=bar><div id=cooldown></div></div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),w=c.width=window.innerWidth,h=c.height=window.innerHeight;
+window.onresize=_=>{w=c.width=window.innerWidth;h=c.height=window.innerHeight};
+const p={x:w/2,y:h/2,rad:15},presets={ninja:{spd:8,dur:200,inv:100,trail:5,cd:500,shake:5},heavy:{spd:4,dur:600,inv:200,trail:10,cd:1500,shake:8},blink:{spd:0,dur:0,inv:50,trail:0,cd:300,shake:3}};
+let cur=presets.ninja,dash={x:0,y:0,prog:0},inv=false,invT=0,cd=0,shake=0,after=[],keys={};
+document.addEventListener('keydown',e=>keys[e.key]=true);document.addEventListener('keyup',e=>keys[e.key]=false);
+c.addEventListener('mousedown',e=>dashStart(e.clientX,e.clientY));
+c.addEventListener('touchstart',e=>{e.preventDefault();let t=e.touches[0];dashStart(t.clientX,t.clientY);});
+document.getElementById('ninja').onclick=_=>{cur=presets.ninja;reset();};
+document.getElementById('heavy').onclick=_=>{cur=presets.heavy;reset();};
+document.getElementById('blink').onclick=_=>{cur=presets.blink;reset();};
+function reset(){dash={x:0,y:0,prog:0};after=[];}
+function dashStart(x,y){
+if(cd>0||dash.prog>0)return;
+const dx=x-p.x,dy=y-p.y,len=Math.hypot(dx,dy);if(len<1)return;
+const dir={x:dx/len,y:dy/len};
+if(cur.spd===0){p.x=x;p.y=y;}else{dash.x=dir.x*cur.spd;dash.y=dir.y*cur.spd;dash.prog=0;}
+inv=true;invT=cur.inv;cd=cur.cd;shake=cur.shake;
+}
+function upd(dt){
+let mvx=0,mvy=0;if(keys['ArrowLeft'])mvx=-2;if(keys['ArrowRight'])mvx=2;if(keys['ArrowUp'])mvy=-2;if(keys['ArrowDown'])mvy=2;
+if(dash.prog===0){p.x+=mvx;p.y+=mvy;}
+if(dash.prog>0){
+dash.prog+=dt;
+if(dash.prog<cur.dur){p.x+=dash.x*dt/1000;p.y+=dash.y*dt/1000;}
+if(cur.trail>0)after.push({x:p.x,y:p.y,alpha:1});
+if(after.length>cur.trail)after.shift();
+}
+if(inv){invT-=dt; if(invT<=0)inv=false;}
+if(cd>0)cd-=dt;
+if(shake>0)shake-=dt;
+}
+function drw(){
+ctx.clearRect(0,0,w,h);ctx.save();
+if(shake>0){const s=5;ctx.translate((Math.random()-0.5)*s,(Math.random()-0.5)*s);}
+after.forEach(a=>{ctx.globalAlpha=a.alpha;ctx.fillStyle='#00ff88';ctx.beginPath();ctx.arc(a.x,a.y,p.rad,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;});
+ctx.fillStyle=inv?'#ff0088':'#00ff88';
+ctx.beginPath();ctx.arc(p.x,p.y,p.rad,0,Math.PI*2);ctx.fill();
+ctx.restore();
+document.getElementById('cooldown').style.width=`${100-cd/cur.cd*100}%`;
+}
+let last=performance.now();
+function loop(){
+const now=performance.now(),dt=now-last;last=now;
+upd(dt);drw();requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

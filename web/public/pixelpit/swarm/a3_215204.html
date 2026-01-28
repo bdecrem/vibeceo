@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHANTOM CLOCKWORK</title>
+    <style>
+        @import url('data:font/truetype;charset=utf-8;base64,');
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0f0f0f;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            image-rendering: pixelated;
+        }
+        canvas {
+            display: block;
+            background: linear-gradient(180deg, #1a1a0f 0%, #0f0f0f 100%);
+            cursor: crosshair;
+        }
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(61, 90, 69, 0.05) 2px,
+                rgba(61, 90, 69, 0.05) 4px
+            );
+            pointer-events: none;
+            animation: flicker 0.15s infinite linear alternate;
+        }
+        @keyframes flicker {
+            0% { opacity: 0.98; }
+            100% { opacity: 1; }
+        }
+        .glitch {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #3d5a45;
+            font-size: 16px;
+            text-shadow: 2px 0 #8bac0f, -2px 0 #8bac0f;
+            animation: textGlitch 0.3s infinite;
+        }
+        @keyframes textGlitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-1px, 1px); }
+            40% { transform: translate(1px, -1px); }
+            60% { transform: translate(-1px, -1px); }
+            80% { transform: translate(1px, 1px); }
+            100% { transform: translate(0); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="scanlines"></div>
+    <div class="glitch">SCORE: <span id="score">0</span></div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let score = 0;
+        let gameRunning = true;
+        let corruption = 0;
+
+        // Colors
+        const GHOST_GREEN = '#3d5a45';
+        const GLOW_GREEN = '#8bac0f';
+        const DARK_PURPLE = '#2d1b4e';
+        const CORRUPTION_RED = '#4d1a1a';
+
+        class Block {
+            constructor(x, y, width) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = 30;
+                this.moving = true;
+                this.direction = 1;
+                this.speed = 2 + corruption * 0.1;
+                this.corruption = Math.random() * corruption;
+                this.glitchOffset = 0;
+            }
+
+            update() {
+                if (this.moving) {
+                    this.x += this.direction * this.speed;
+                    if (this.x <= 0 || this.x + this.width >= canvas.width) {
+                        this.direction *= -1;
+                    }
+                    // Ghost interference
+                    if (Math.random() < corruption * 0.01) {
+                        this.glitchOffset = (Math.random() - 0.5) * 10;
+                    } else {
+                        this.glitchOffset *= 0.9;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.save();
+
+                // Corruption effect
+                if (this.corruption > 0) {
+                    ctx.globalAlpha = 0.8 - this.corruption * 0.3;
+                    // Draw corrupted pixels
+                    for (let i = 0; i < this.corruption * 20; i++) {
+                        ctx.fillStyle = Math.random() > 0.5 ? CORRUPTION_RED : GHOST_GREEN;
+                        ctx.fillRect(
+                            this.x + Math.random() * this.width,
+                            this.y + Math.random() * this.height,
+                            2, 2
+                        );
+                    }
+                }
+
+                // Main block (clockwork gear style)
+                ctx.fillStyle = GHOST_GREEN;
+                ctx.fillRect(this.x + this.glitchOffset, this.y, this.width, this.height);
+
+                // Gear teeth
+                ctx.fillStyle = GLOW_GREEN;
+                for (let i = 0; i < this.width; i += 8) {
+                    ctx.fillRect(this.x + i + this.glitchOffset, this.y - 2, 4, 4);
+                    ctx.fillRect(this.x + i + this.glitchOffset, this.y + this.height - 2, 4, 4);
+                }
+
+                // Center hole
+                ctx.fillStyle = '#000';
+                ctx.fillRect(this.x + this.width/2 - 4 + this.glitchOffset, this.y + 10, 8, 10);
+
+                ctx.restore();
+            }
+
+            stop(stackedWidth) {
+                this.moving = false;
+                this.width = stackedWidth;
+            }
+        }
+
+        let blocks = [];
+        let currentBlock = null;
+        let lastBlockWidth = 200;
+
+        function createNewBlock() {
+            const startX = Math.random() * (canvas.width - lastBlockWidth);
+            const y = canvas.height - 50 - (blocks.length * 30);
+            currentBlock = new Block(startX, y, lastBlockWidth);
+            blocks.push(currentBlock);
+        }
+
+        function stackBlock() {
+            if (!currentBlock || !currentBlock.moving) return;
+
+            let stackedWidth = lastBlockWidth;
+            let newX = currentBlock.x;
+
+            if (blocks.length > 1) {
+                const prevBlock = blocks[blocks.length - 2];
+                const overlap = Math.min(
+                    currentBlock.x + currentBlock.width,
+                    prevBlock.x + prevBlock.width
+                ) - Math.max(currentBlock.x, prevBlock.x);
+
+                if (overlap <= 0) {
+                    // Complete miss - ghost effect
+                    currentBlock.corruption = 1;
+                    gameRunning = false;
+                    return;
+                }
+
+                stackedWidth = overlap;
+                newX = Math.max(currentBlock.x, prevBlock.x);
+            }
+
+            currentBlock.stop(stackedWidth);
+            currentBlock.x = newX;
+            lastBlockWidth = stackedWidth;
+            score++;
+            corruption = score * 0.1;
+            scoreEl.textContent = score;
+
+            if (stackedWidth < 10) {
+                gameRunning = false;
+                return;
+            }
+
+            setTimeout(createNewBlock, 300);
+        }
+
+        function drawBackground() {
+            // Corruption artifacts
+            if (corruption > 0) {
+                for (let i = 0; i < corruption * 5; i++) {
+                    ctx.fillStyle = Math.random() > 0.5 ? CORRUPTION_RED : DARK_PURPLE;
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillRect(
+                        Math.random() * canvas.width,
+                        Math.random() * canvas.height,
+                        Math.random() * 4 + 1,
+                        Math.random() * 4 + 1
+                    );
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            // Tower base
+            ctx.fillStyle = GHOST_GREEN;
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+
+            // Glitch lines
+            if (Math.random() < corruption * 0.05) {
+                ctx.fillStyle = GLOW_GREEN;
+                const y = Math.random() * canvas.height;
+                ctx.fillRect(0, y, canvas.width, 2);
+            }
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawBackground();
+
+            blocks.forEach(block => {
+                block.update();
+                block.draw();
+            });
+
+            if (gameRunning && blocks.length === 0) {
+                createNewBlock();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Input handlers
+        canvas.addEventListener('click', stackBlock);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            stackBlock();
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Start game
+        createNewBlock();
+        gameLoop();
+    </script>
+</body>
+</html>

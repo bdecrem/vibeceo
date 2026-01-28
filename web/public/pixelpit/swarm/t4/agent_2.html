@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Space Rocks Pop Game</title>
+  <style>
+    body{margin:0;background:#000;overflow:hidden}
+    canvas{display:block}
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){
+  W=c.width=innerWidth;
+  H=c.height=innerHeight;
+  initStars();
+}
+resize();onresize=resize;
+
+// ----------------------------------
+// Starfield
+// ----------------------------------
+let stars=[];
+function initStars(){
+  stars=[];
+  for(let i=0;i<200;i++){
+    stars.push({
+      x:Math.random()*W,
+      y:Math.random()*H,
+      r:Math.random()*1.5,
+      speed:0.4+Math.random()*0.4,
+      alpha:0.3+Math.random()*0.6
+    });
+  }
+}
+function updateStars(){
+  stars.forEach(s=>{
+    s.y+=s.speed;
+    if(s.y>H)s.y-=H;
+  });
+}
+function drawStars(){
+  stars.forEach(s=>{
+    ctx.fillStyle='rgba(255,255,255,'+s.alpha+')';
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+  });
+}
+
+// ----------------------------------
+// Targets
+// ----------------------------------
+let score=0, targets=[], particles=[];
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+Math.random()*100+50,
+    r:30,
+    speed:1+Math.random()*2,
+    color:'#888',
+    angle:Math.random()*Math.PI*2,
+    angSpeed:0.01+Math.random()*0.04
+  });
+}
+function update(){
+  updateStars();
+  targets.forEach(t=>t.y-=t.speed);
+  targets.forEach(t=>t.angle+=t.angSpeed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03)spawn();
+  // particles
+  particles.forEach(p=>{
+    p.x+=p.dx;
+    p.y+=p.dy;
+    p.alpha-=0.02;
+    p.radius*=0.97;
+  });
+  particles=particles.filter(p=>p.alpha>0);
+}
+function drawRock(t){
+  // Simple irregular polygon for rock
+  const sides=8;
+  ctx.beginPath();
+  for(let i=0;i<sides;i++){
+    let ang= (i/sides)*Math.PI*2;
+    let r = t.r + (Math.random()*6-3);
+    let px = r*Math.cos(ang);
+    let py = r*Math.sin(ang);
+    if(i===0)ctx.moveTo(px,py);
+    else ctx.lineTo(px,py);
+  }
+  ctx.closePath();
+  ctx.fillStyle=t.color;
+  ctx.shadowBlur=10;
+  ctx.shadowColor='#fff';
+  ctx.fill();
+  ctx.shadowBlur=0;
+}
+function draw(){
+  ctx.fillStyle='#000';
+  ctx.fillRect(0,0,W,H);
+  drawStars();
+  targets.forEach(t=>{
+    ctx.save();
+    ctx.translate(t.x,t.y);
+    ctx.rotate(t.angle);
+    drawRock({x:0,y:0,r:t.r,color:t.color});
+    ctx.restore();
+  });
+  particles.forEach(p=>{
+    ctx.fillStyle='rgba(255,165,0,'+p.alpha+')';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+    ctx.fill();
+  });
+  // Score
+  ctx.fillStyle='#fff';
+  ctx.font='30px Arial';
+  ctx.shadowBlur=20;
+  ctx.shadowColor='cyan';
+  ctx.fillText('Score: '+score,20,40);
+  ctx.shadowBlur=0;
+}
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      // create particles
+      for(let j=0;j<20;j++){
+        particles.push({
+          x:t.x,
+          y:t.y,
+          dx:(Math.random()*2-1)*4,
+          dy:(Math.random()*2-1)*4,
+          radius:Math.random()*3+2,
+          alpha:1
+        });
+      }
+      targets.splice(i,1);
+      score++;
+      return;
+    }
+  }
+}
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

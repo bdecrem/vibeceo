@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Firefly Pop Game</title>
+<style>
+  body{margin:0;background:#0a0a0a;overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id=c></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0, targets=[], pops=[];
+
+// Firefly spawn
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:12 + Math.random()*4,
+    speed:1+Math.random()*2,
+    color:'#ffcc66',
+    glow:'#ffffaa'
+  });
+}
+
+// Update logic
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  pops.forEach(p=>{p.time+=1; if(p.time>30){p.poped=true}});
+  pops=pops.filter(p=>!p.poped);
+  if(Math.random()<0.03)spawn();
+}
+
+// Draw everything
+function draw(){
+  // Dark forest background
+  const grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#001d1d');
+  grd.addColorStop(0.5,'#003b3b');
+  grd.addColorStop(1,'#001d1d');
+  ctx.fillStyle=grd;
+  ctx.fillRect(0,0,W,H);
+
+  // Fireflies
+  targets.forEach(t=>{
+    ctx.save();
+    ctx.translate(t.x,t.y);
+    ctx.shadowBlur=10;
+    ctx.shadowColor=t.glow;
+    ctx.fillStyle=t.color;
+    ctx.beginPath();
+    ctx.arc(0,0,t.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Pop effects
+  pops.forEach(p=>{
+    const alpha=Math.max(0,1-p.time/30);
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.fillStyle=`rgba(255,255,200,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(0,0,15+5*p.time,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Score
+  ctx.fillStyle='#ffffaa';
+  ctx.font='bold 28px sans-serif';
+  ctx.shadowColor='rgba(0,0,0,0.7)';
+  ctx.shadowBlur=4;
+  ctx.fillText('Score: '+score,20,40);
+}
+
+// Pop detection
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      pops.push({x:x,y:y,time:0,poped:false});
+      return;
+    }
+  }
+}
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){update();draw();requestAnimationFrame(loop)}
+loop();
+</script>
+</body>
+</html>

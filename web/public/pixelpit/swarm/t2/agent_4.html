@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+body{margin:0;background:#1e1e2f;overflow:hidden}
+#c{display:block}
+</style></head><body><canvas id=c></canvas><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');let w=c.width=innerWidth,h=c.height=innerHeight;
+const r=30,ball={x:w/2,y:h/2,vx:2,vy:3,sz:1};let trail=[],particles=[],cnt=0;
+function onBounce(){cnt++;particles.push(...Array(12).fill(0).map(()=>({x:ball.x,y:ball.y,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4,alpha:1})));ball.sz=0.8;}
+c.addEventListener('pointerdown',e=>{ball.vx+=Math.random()*4-2;ball.vy+=Math.random()*4-2});
+function anim(){ball.x+=ball.vx;ball.y+=ball.vy;
+ if(ball.x+r>w||ball.x-r<0){ball.vx=-ball.vx;onBounce();}
+ if(ball.y+r>h||ball.y-r<0){ball.vy=-ball.vy;onBounce();}
+ trail.push({x:ball.x,y:ball.y});if(trail.length>20)trail.shift();
+ ball.sz+= (1-ball.sz)*0.15;
+ ctx.fillStyle='rgba(30,30,47,0.15)';ctx.fillRect(0,0,w,h);
+ ctx.shadowBlur=5;ctx.shadowColor='rgba(0,0,0,0.3)';
+ trail.forEach((p,i)=>{ctx.fillStyle=`rgba(255,159,243,${1-i/20})`;ctx.beginPath();ctx.arc(p.x,p.y,r*ball.sz,0,Math.PI*2);ctx.fill();});
+ ctx.fillStyle='#ff9ff3';ctx.beginPath();ctx.arc(ball.x,ball.y,r*ball.sz,0,Math.PI*2);ctx.fill();
+ particles.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.alpha-=0.02; if(p.alpha<=0)particles.splice(i,1); else{ctx.fillStyle=`rgba(84,160,255,${p.alpha})`;ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();}});
+ ctx.fillStyle='#54a0ff';ctx.font='20px sans-serif';ctx.fillText('Bounces: '+cnt,10,30);
+ requestAnimationFrame(anim);}
+anim();</script></body></html>

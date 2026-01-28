@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Emoji Madness</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;font-family:sans-serif}
+  canvas{display:block}
+</style></head><body><canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'), ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+
+let score=0;
+const targets=[], particles=[];
+
+// List of emojis to use
+const emojis = ['😀','😜','😎','😱','🤪','🥶','🤖','👻','🤡','🎃','😈','🤠','🥳','😇'];
+
+// Spawn new target
+function spawn(){
+  const e = emojis[Math.floor(Math.random()*emojis.length)];
+  targets.push({
+    x: Math.random()*W,
+    y: H+50,
+    r: 30+Math.random()*20,
+    speed: 1+Math.random()*2,
+    emoji: e,
+    angle: Math.random()*Math.PI*2,
+    spinSpeed: (Math.random()*0.1-0.05)
+  });
+}
+
+// Update logic
+function update(){
+  targets.forEach(t=>{ t.y-=t.speed; t.angle+=t.spinSpeed; });
+  // Remove offscreen
+  for(let i=targets.length-1;i>=0;i--) if(targets[i].y<-50) targets.splice(i,1);
+  // Random spawn
+  if(Math.random()<0.03) spawn();
+
+  // Update particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.dx; p.y+=p.dy; p.life-=1;
+    if(p.life<=0) particles.splice(i,1);
+  }
+}
+
+// Draw everything
+function draw(){
+  // Gradient background
+  const bg = ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#1e3c72');
+  bg.addColorStop(1,'#2a5298');
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+
+  // Draw particles
+  particles.forEach(p=>{
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.globalAlpha = p.life/30;
+    ctx.font=`${p.r}px sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='white';
+    ctx.fillText(p.emoji,0,0);
+    ctx.restore();
+  });
+
+  // Draw targets
+  targets.forEach(t=>{
+    ctx.save();
+    ctx.translate(t.x,t.y);
+    ctx.rotate(t.angle);
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font=`${t.r}px sans-serif`;
+    ctx.fillStyle='white';
+    ctx.fillText(t.emoji,0,0);
+    // Glow
+    ctx.shadowColor='rgba(255,255,255,0.7)';
+    ctx.shadowBlur=8;
+    ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.fillText(t.emoji,0,0);
+    ctx.restore();
+  });
+
+  // Score text
+  ctx.fillStyle='white';
+  ctx.font='bold 36px sans-serif';
+  ctx.textAlign='left';
+  ctx.textBaseline='top';
+  const grad = ctx.createLinearGradient(0,0,200,0);
+  grad.addColorStop(0,'#ff416c');
+  grad.addColorStop(1,'#ff4b2b');
+  ctx.fillStyle=grad;
+  ctx.strokeStyle='black';
+  ctx.lineWidth=2;
+  ctx.strokeText(`Score: ${score}`,20,20);
+  ctx.fillText(`Score: ${score}`,20,20);
+}
+
+// Pop logic
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    const dx=x-t.x, dy=y-t.y;
+    if(Math.hypot(dx,dy)<t.r){
+      // create particles
+      for(let k=0;k<15;k++){
+        const angle=Math.random()*Math.PI*2;
+        const speed=1+Math.random()*2;
+        particles.push({
+          x:t.x, y:t.y,
+          dx:Math.cos(angle)*speed,
+          dy:Math.sin(angle)*speed,
+          r:Math.random()*10+5,
+          emoji: emojis[Math.floor(Math.random()*emojis.length)],
+          life:30
+        });
+      }
+      targets.splice(i,1);
+      score++;
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script></body></html>

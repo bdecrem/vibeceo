@@ -1,0 +1,134 @@
+{
+  "timestamp": "2026-01-28T07:56:51.860488",
+  "model": "openai/gpt-oss-20b",
+  "agents": 10,
+  "success_count": 10,
+  "total_time": 14.8821439743042,
+  "total_tokens": {
+    "input": 2827,
+    "output": 18831
+  },
+  "cost_usd": 0.00389844,
+  "results": [
+    {
+      "agent_id": 0,
+      "success": true,
+      "theme": "NEON CITY",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t1/agent_0.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t1/agent_0.html",
+      "tokens": {
+        "input": 290,
+        "output": 1153
+      },
+      "time": 8.111951112747192
+    },
+    {
+      "agent_id": 1,
+      "success": true,
+      "theme": "DEEP OCEAN",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t1/agent_1.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t1/agent_1.html",
+      "tokens": {
+        "input": 284,
+        "output": 2500
+      },
+      "time": 14.874295711517334
+    },
+    {
+      "agent_id": 2,
+      "success": true,
+      "theme": "VOLCANO",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t1/agent_2.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t1/agent_2.html",
+      "tokens": {
+        "input": 286,
+        "output": 1750
+      },
+      "time": 11.493821859359741
+    },
+    {
+      "agent_id": 3,
+      "success": true,
+      "theme": "ARCTIC",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t1/agent_3.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t1/agent_3.html",
+      "tokens": {
+        "input": 279,
+        "output": 2500
+      },
+      "time": 14.38889217376709
+    },
+    {
+      "agent_id": 4,
+      "success": true,
+      "theme": "CANDY LAND",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t1/agent_4.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t1/agent_4.html",
+      "tokens": {
+        "input": 277,
+        "output": 1643
+      },
+      "time": 10.974315881729126
+    },
+    {
+      "agent_id": 5,
+      "success": true,
+      "theme": "SPACE",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t1/agent_5.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t1/agent_5.html",
+      "tokens": {
+        "input": 279,
+        "output": 2500
+      },
+      "time": 13.694199085235596
+    },
+    {
+      "agent_id": 6,
+      "success": true,
+      "theme": "JUNGLE",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t1/agent_6.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t1/agent_6.html",
+      "tokens": {
+        "input": 279,
+        "output": 2500
+      },
+      "time": 14.862022876739502
+    },
+    {
+      "agent_id": 7,
+      "success": true,
+      "theme": "DESERT",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t1/agent_7.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t1/agent_7.html",
+      "tokens": {
+        "input": 281,
+        "output": 1290
+      },
+      "time": 8.883758068084717
+    },
+    {
+      "agent_id": 8,
+      "success": true,
+      "theme": "SYNTHWAVE",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t1/agent_8.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t1/agent_8.html",
+      "tokens": {
+        "input": 283,
+        "output": 1122
+      },
+      "time": 6.862896203994751
+    },
+    {
+      "agent_id": 9,
+      "success": true,
+      "theme": "HAUNTED",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t1/agent_9.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t1/agent_9.html",
+      "tokens": {
+        "input": 289,
+        "output": 1873
+      },
+      "time": 12.089625120162964
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Soap Bubble Pop</title>
+<style>
+  body{margin:0;background:#f0f8ff;overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'), ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0;
+let bubbles=[];
+let particles=[];
+
+// spawn new bubble
+function spawn(){
+  const hue=Math.random()*360;
+  const color=`hsl(${hue},80%,70%)`;
+  const r=30+Math.random()*10;
+  bubbles.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:r,
+    speed:1+Math.random()*2,
+    hue:hue
+  });
+}
+
+// update bubbles and particles
+function update(){
+  bubbles.forEach(b=>b.y-=b.speed);
+  bubbles=bubbles.filter(b=>b.y>-50);
+  if(Math.random()<0.03)spawn();
+
+  // particles
+  particles.forEach(p=>{
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.life--;
+  });
+  particles=particles.filter(p=>p.life>0);
+}
+
+// draw background, bubbles, particles, score
+function draw(){
+  // background gradient
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#e0f7ff');
+  bg.addColorStop(1,'#fff0f3');
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+
+  // bubbles
+  bubbles.forEach(b=>{
+    // radial gradient for iridescence
+    const grad=ctx.createRadialGradient(b.x,b.y,b.r*0.3,b.x,b.y,b.r);
+    grad.addColorStop(0,'rgba(255,255,255,0.8)');
+    grad.addColorStop(0.5,'rgba(255,255,255,0.1)');
+    grad.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.shadowBlur=10;
+    ctx.shadowColor='rgba(255,255,255,0.6)';
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur=0;
+    // rim
+    ctx.strokeStyle='rgba(255,255,255,0.6)';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.stroke();
+  });
+
+  // particles
+  particles.forEach(p=>{
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // score
+  ctx.fillStyle='#ffffff';
+  ctx.font='28px Arial';
+  ctx.textShadow='2px 2px 4px rgba(0,0,0,0.4)';
+  ctx.fillText('Score: '+score,20,40);
+}
+
+// pop bubble and create particle burst
+function pop(x,y){
+  for(let i=bubbles.length-1;i>=0;i--){
+    const b=bubbles[i];
+    if(Math.hypot(x-b.x,y-b.y)<b.r){
+      bubbles.splice(i,1);
+      score++;
+      // particles
+      const cnt=20;
+      for(let j=0;j<cnt;j++){
+        const angle=Math.random()*Math.PI*2;
+        const speed=1+Math.random()*3;
+        particles.push({
+          x:b.x,
+          y:b.y,
+          vx:Math.cos(angle)*speed,
+          vy:Math.sin(angle)*speed,
+          size:2+Math.random()*2,
+          life:30+Math.random()*10
+        });
+      }
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY)};
+
+function loop(){update();draw();requestAnimationFrame(loop)}
+loop();
+</script>
+</body>
+</html>

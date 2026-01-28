@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Synthwave Catch</title>
+<style>
+  body{margin:0;background:#0f0020;font-family:monospace;color:#00ffff;}
+  canvas{display:block;margin:auto;background:#0f0020;touch-action:none;}
+</style>
+</head>
+<body>
+<canvas id="c" width="400" height="600"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+const W=c.width,H=c.height;
+let paddle={x:W/2,y:H-30,w:80,h:10};
+let objs=[],score=0,misses=0,missLimit=5,state='start',lastSpawn=0;
+function spawn(){objs.push({x:Math.random()*W,y:-10,w:20,h:20,speed:2+Math.random()*2});}
+function update(dt){
+  objs.forEach(o=>o.y+=o.speed);
+  objs=objs.filter(o=>{
+    if(o.y>H){misses++;if(misses>=missLimit)state='over';return false;}
+    if(Math.abs(o.x-paddle.x)<paddle.w/2 && Math.abs(o.y-H+20)<20){score++;return false;}
+    return true;
+  });
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.shadowBlur=10;ctx.shadowColor='#ff0080';
+  objs.forEach(o=>{ctx.fillStyle='#ff0080';ctx.fillRect(o.x-o.w/2,o.y-o.h/2,o.w,o.h);});
+  ctx.shadowBlur=0;ctx.fillStyle='#00ffff';
+  ctx.fillRect(paddle.x-paddle.w/2,paddle.y-paddle.h/2,paddle.w,paddle.h);
+  ctx.font='20px monospace';ctx.fillText('Score:'+score,10,30);
+  ctx.fillText('Miss:'+misses,10,60);
+  if(state!='play'){ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#00ffff';ctx.textAlign='center';
+    ctx.font='30px monospace';let txt=state=='start'?'Tap to start':'Game Over\nTap to restart';
+    ctx.fillText(txt,W/2,H/2);}
+}
+function loop(){let now=performance.now();let dt=now-lastSpawn;lastSpawn=now;
+  if(state=='play'){if(dt>800)spawn();update(dt);}
+  draw();requestAnimationFrame(loop);}
+c.addEventListener('pointermove',e=>{paddle.x=e.clientX;});
+c.addEventListener('pointerdown',e=>{if(state!='play'){state='play';score=0;misses=0;objs=[];}});
+c.addEventListener('pointerup',e=>{});
+loop();
+</script>
+</body>
+</html>

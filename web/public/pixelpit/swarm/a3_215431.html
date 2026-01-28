@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>WORMHOLE DESCENT</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Courier New',monospace;touch-action:none}
+canvas{display:block}
+#ui{position:absolute;top:20px;left:20px;color:#ff4d00;font-size:14px;text-transform:uppercase;letter-spacing:2px}
+#start{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#ff4d00;cursor:pointer}
+#start h1{font-size:24px;letter-spacing:4px;margin-bottom:10px}
+#start p{font-size:12px;opacity:0.7;letter-spacing:1px}
+.hidden{display:none!important}
+</style></head><body>
+<div id="ui">DEPTH: <span id="depth">0</span> | RECORD: <span id="record">0</span></div>
+<div id="start"><h1>◢ WORMHOLE DESCENT ◣</h1><p>[ TAP/DRAG TO ROTATE ]</p><p style="margin-top:20px;opacity:0.5">NAVIGATE DATA THROUGH VOID</p></div>
+<canvas id="c"></canvas>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d'),ui=document.getElementById('ui'),startEl=document.getElementById('start');
+let W,H,cx,cy,rings=[],ball={y:0,vy:0,r:8},rot=0,rotV=0,depth=0,record=localStorage.getItem('wd_record')||0,playing=false,dead=false;
+document.getElementById('record').textContent=record;
+const resize=()=>{W=C.width=innerWidth;H=C.height=innerHeight;cx=W/2;cy=H/2};
+resize();window.onresize=resize;
+const RING_GAP=80,GAP_SIZE=Math.PI*0.4,RING_COUNT=10;
+const initRings=()=>{rings=[];for(let i=0;i<RING_COUNT;i++)rings.push({y:200+i*RING_GAP,gap:Math.random()*Math.PI*2,hit:false})};
+const reset=()=>{ball={y:100,vy:0,r:8};rot=0;rotV=0;depth=0;dead=false;initRings();document.getElementById('depth').textContent=0};
+let touch=null,lastX=0;
+const onDown=e=>{if(!playing){playing=true;startEl.classList.add('hidden');reset();return}if(dead){reset();return}touch=true;lastX=e.touches?e.touches[0].clientX:e.clientX};
+const onMove=e=>{if(!touch||dead)return;const x=e.touches?e.touches[0].clientX:e.clientX;rotV+=(x-lastX)*0.008;lastX=x};
+const onUp=()=>{touch=false};
+C.addEventListener('mousedown',onDown);C.addEventListener('mousemove',onMove);C.addEventListener('mouseup',onUp);
+C.addEventListener('touchstart',onDown,{passive:true});C.addEventListener('touchmove',onMove,{passive:true});C.addEventListener('touchend',onUp);
+const loop=()=>{X.fillStyle='#000';X.fillRect(0,0,W,H);
+if(!playing){requestAnimationFrame(loop);return}
+rot+=rotV;rotV*=0.95;ball.vy+=0.4;ball.y+=ball.vy;
+const screenY=cy-50;let onRing=false;
+for(let r of rings){
+  const dy=ball.y-r.y;
+  if(dy>-5&&dy<10&&!r.hit){
+    const a=Math.atan2(0,1)+rot;const ba=(rot)%(Math.PI*2);const ga=(r.gap)%(Math.PI*2);
+    const diff=Math.abs(((ba-ga+Math.PI*3)%(Math.PI*2))-Math.PI);
+    if(diff>GAP_SIZE/2){onRing=true;ball.vy=0;ball.y=r.y-5}
+    else{r.hit=true;depth++;document.getElementById('depth').textContent=depth;if(depth>record){record=depth;localStorage.setItem('wd_record',record);document.getElementById('record').textContent=record}}
+  }
+}
+if(ball.y>rings[rings.length-1].y+50){const newRing={y:rings[rings.length-1].y+RING_GAP,gap:Math.random()*Math.PI*2,hit:false};rings.push(newRing);rings.shift();ball.y-=RING_GAP}
+if(ball.y<50&&ball.vy<0&&onRing){dead=true}
+X.save();X.translate(cx,screenY);
+for(let i=0;i<rings.length;i++){
+  const r=rings[i];const ry=r.y-ball.y;const scale=1-ry*0.001;const alpha=Math.max(0.1,1-Math.abs(ry)*0.003);
+  X.strokeStyle=`rgba(255,77,0,${alpha})`;X.lineWidth=r.hit?1:3;
+  X.beginPath();
+  const start=r.gap+rot+GAP_SIZE/2;const end=r.gap+rot-GAP_SIZE/2+Math.PI*2;
+  X.arc(0,ry*0.7,120*scale,start,end);X.stroke();
+  if(!r.hit){X.strokeStyle=`rgba(255,77,0,${alpha*0.3})`;X.beginPath();X.arc(0,ry*0.7,125*scale,start,end);X.stroke()}
+}
+if(!dead){X.fillStyle='#ff4d00';X.shadowColor='#ff4d00';X.shadowBlur=20;X.beginPath();X.arc(0,0,ball.r,0,Math.PI*2);X.fill();X.shadowBlur=0}
+X.restore();
+if(dead){X.fillStyle='#ff4d00';X.font='20px Courier New';X.textAlign='center';X.fillText('DATA CORRUPTED',cx,cy);X.font='14px Courier New';X.fillText('[ TAP TO RETRY ]',cx,cy+30)}
+X.strokeStyle='rgba(255,77,0,0.1)';for(let i=0;i<5;i++){X.strokeRect(i*20,i*20,W-i*40,H-i*40)}
+requestAnimationFrame(loop)};
+loop();
+</script></body></html>

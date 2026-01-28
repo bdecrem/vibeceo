@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Bounce</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        canvas {
+            border: 2px solid #22d3ee;
+            box-shadow: 0 0 20px #22d3ee50;
+        }
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fbbf24;
+            font-size: 24px;
+            text-shadow: 0 0 10px #fbbf24;
+        }
+        .game-over {
+            position: absolute;
+            color: #ec4899;
+            font-size: 32px;
+            text-align: center;
+            text-shadow: 0 0 15px #ec4899;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game" width="400" height="600"></canvas>
+    <div class="ui">Score: <span id="score">0</span></div>
+    <div class="game-over" id="gameOver" style="display:none;">GAME OVER<br><small>Tap to restart</small></div>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const gameOverEl = document.getElementById('gameOver');
+
+        let game = {
+            ball: { x: 200, y: 300, vx: 0, vy: 0, size: 20 },
+            stars: [],
+            obstacles: [],
+            score: 0,
+            gameOver: false,
+            time: 0
+        };
+
+        function reset() {
+            game = {
+                ball: { x: 200, y: 300, vx: 0, vy: 0, size: 20 },
+                stars: [],
+                obstacles: [],
+                score: 0,
+                gameOver: false,
+                time: 0
+            };
+            gameOverEl.style.display = 'none';
+        }
+
+        function jump() {
+            if (!game.gameOver) {
+                game.ball.vy = -12;
+            } else {
+                reset();
+            }
+        }
+
+        function spawnStar() {
+            if (Math.random() < 0.02) {
+                game.stars.push({
+                    x: Math.random() * 360 + 20,
+                    y: -20,
+                    size: 15,
+                    rotation: 0
+                });
+            }
+        }
+
+        function spawnObstacle() {
+            if (Math.random() < 0.008) {
+                game.obstacles.push({
+                    x: Math.random() * 340 + 30,
+                    y: -30,
+                    width: 40,
+                    height: 40
+                });
+            }
+        }
+
+        function update() {
+            if (game.gameOver) return;
+
+            game.time++;
+            game.ball.vy += 0.6;
+            game.ball.x += game.ball.vx;
+            game.ball.y += game.ball.vy;
+
+            if (game.ball.x < 20 || game.ball.x > 380) game.ball.vx *= -0.8;
+            if (game.ball.y > 580) game.gameOver = true;
+
+            spawnStar();
+            spawnObstacle();
+
+            game.stars = game.stars.filter(star => {
+                star.y += 3;
+                star.rotation += 0.1;
+
+                if (Math.hypot(game.ball.x - star.x, game.ball.y - star.y) < 25) {
+                    game.score += 10;
+                    return false;
+                }
+                return star.y < 620;
+            });
+
+            game.obstacles = game.obstacles.filter(obs => {
+                obs.y += 4;
+
+                if (game.ball.x > obs.x - 20 && game.ball.x < obs.x + obs.width + 20 &&
+                    game.ball.y > obs.y - 20 && game.ball.y < obs.y + obs.height + 20) {
+                    game.gameOver = true;
+                }
+                return obs.y < 640;
+            });
+        }
+
+        function render() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, 400, 600);
+
+            ctx.save();
+            ctx.translate(game.ball.x, game.ball.y);
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, game.ball.size);
+            gradient.addColorStop(0, '#ec4899');
+            gradient.addColorStop(1, '#ec489950');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, game.ball.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            game.stars.forEach(star => {
+                ctx.save();
+                ctx.translate(star.x, star.y);
+                ctx.rotate(star.rotation);
+                ctx.fillStyle = '#fbbf24';
+                ctx.shadowColor = '#fbbf24';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i * Math.PI * 2) / 5;
+                    const x = Math.cos(angle) * star.size;
+                    const y = Math.sin(angle) * star.size;
+                    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            });
+
+            game.obstacles.forEach(obs => {
+                ctx.fillStyle = '#dc2626';
+                ctx.shadowColor = '#dc2626';
+                ctx.shadowBlur = 15;
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+            });
+
+            scoreEl.textContent = game.score;
+
+            if (game.gameOver) {
+                gameOverEl.style.display = 'block';
+            }
+        }
+
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        canvas.addEventListener('click', jump);
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); jump(); });
+        document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); jump(); }});
+
+        gameLoop();
+    </script>
+</body>
+</html>

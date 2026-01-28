@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Ghost Pop</title>
+<style>
+  body{margin:0;background:#2b003e;overflow:hidden;font-family:sans-serif}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id=c></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+
+let score=0, targets=[], particles=[], frame=0;
+
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30,
+    speed:1+Math.random()*2,
+    wobbleOff:Math.random()*Math.PI*2,
+    popped:false,
+    alpha:1
+  });
+}
+
+function update(){
+  frame++;
+  targets.forEach(t=>{
+    if(!t.popped){
+      t.y-=t.speed;
+    }else{
+      t.alpha-=0.02;
+      if(t.alpha<=0) t.removed=true;
+    }
+  });
+  targets=targets.filter(t=>t.y>-50 && !t.removed);
+  if(Math.random()<0.03)spawn();
+
+  particles.forEach(p=>{
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.alpha-=0.03;
+    p.r+=0.1;
+  });
+  particles=particles.filter(p=>p.alpha>0);
+}
+
+function draw(){
+  ctx.fillStyle='#2b003e';
+  ctx.fillRect(0,0,W,H);
+
+  // Draw ghosts
+  targets.forEach(t=>{
+    ctx.save();
+    ctx.translate(t.x,t.y);
+    const wobble=Math.sin(frame/20 + t.wobbleOff)*0.05;
+    ctx.rotate(wobble);
+    ctx.globalAlpha=t.alpha;
+    // Ghost body
+    ctx.fillStyle='#fff';
+    ctx.strokeStyle='#000';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.arc(0,0,t.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+    // Eyes
+    ctx.fillStyle='#000';
+    ctx.beginPath();
+    ctx.arc(-t.r/3,-t.r/4,4,0,Math.PI*2);
+    ctx.arc(t.r/3,-t.r/4,4,0,Math.PI*2);
+    ctx.fill();
+    // Mouth
+    ctx.strokeStyle='#000';
+    ctx.beginPath();
+    ctx.arc(0,0,6,0,Math.PI);
+    ctx.stroke();
+    ctx.restore();
+  });
+
+  // Draw particles
+  particles.forEach(p=>{
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle='#fff';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // Draw score
+  ctx.fillStyle='#fff';
+  ctx.strokeStyle='#ff99ff';
+  ctx.lineWidth=2;
+  ctx.font='bold 32px sans-serif';
+  ctx.shadowColor='#ff99ff';
+  ctx.shadowBlur=8;
+  ctx.fillText('Score: '+score,20,50);
+  ctx.strokeText('Score: '+score,20,50);
+  ctx.shadowBlur=0;
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r && !t.popped){
+      t.popped=true;
+      // create particles
+      for(let j=0;j<15;j++){
+        const angle=Math.random()*Math.PI*2;
+        const speed=Math.random()*1.5+0.5;
+        particles.push({
+          x:t.x,
+          y:t.y,
+          vx:Math.cos(angle)*speed,
+          vy:Math.sin(angle)*speed,
+          r:2,
+          alpha:1
+        });
+      }
+      score++;
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY)};
+
+function loop(){update();draw();requestAnimationFrame(loop)}
+loop();
+</script>
+</body>
+</html>

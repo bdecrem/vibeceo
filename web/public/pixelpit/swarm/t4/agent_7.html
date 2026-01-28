@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fruit Splash</title>
+<style>
+  body{margin:0;background:#f8f9fa;overflow:hidden;font-family:sans-serif;color:#333}
+  canvas{display:block}
+  #score{position:absolute;top:10px;left:10px;font-size:28px;font-weight:bold;background:rgba(255,255,255,.8);padding:8px 12px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="score">Score: 0</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0, targets=[], particles=[];
+
+const fruitTypes=[
+  {name:'orange',color:'#ff8e3b',shadow:'#ff7520'},
+  {name:'apple',color:'#e22e2e',shadow:'#b51e1e'},
+  {name:'lemon',color:'#f3e03a',shadow:'#e3c02a'}
+];
+
+function spawn(){
+  const t=fruitTypes[Math.floor(Math.random()*fruitTypes.length)];
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30,
+    speed:1+Math.random()*2,
+    type:t
+  });
+}
+
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03)spawn();
+
+  particles.forEach((p,i)=>{
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.vy+=0.05; // gravity
+    p.life-=1;
+    if(p.life<=0) particles.splice(i,1);
+  });
+}
+
+function draw(){
+  ctx.fillStyle='#f8f9fa';
+  ctx.fillRect(0,0,W,H);
+
+  targets.forEach(t=>{
+    ctx.save();
+    ctx.translate(t.x,t.y);
+    ctx.shadowBlur=10;
+    ctx.shadowColor=t.type.shadow;
+    let grad=ctx.createRadialGradient(0,0,t.r*0.3,0,0,t.r);
+    grad.addColorStop(0,'#fff');
+    grad.addColorStop(1,t.type.color);
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.arc(0,0,t.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  particles.forEach(p=>{
+    ctx.fillStyle=`rgba(${p.r},${p.g},${p.b},${p.life/20})`;
+    ctx.fillRect(p.x,p.y,p.size,p.size);
+  });
+
+  document.getElementById('score').textContent='Score: '+score;
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      // create juice particles
+      for(let j=0;j<15;j++){
+        const angle=Math.random()*Math.PI*2;
+        const speed=Math.random()*3+1;
+        particles.push({
+          x:t.x,
+          y:t.y,
+          vx:Math.cos(angle)*speed,
+          vy:Math.sin(angle)*speed,
+          life:20,
+          size:2,
+          r:Math.floor(Math.random()*256),
+          g:Math.floor(Math.random()*256),
+          b:Math.floor(Math.random()*256)
+        });
+      }
+      return;
+    }
+  }
+}
+
+c.addEventListener('click',e=>pop(e.clientX,e.clientY));
+c.addEventListener('touchstart',e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY)});
+
+function loop(){update();draw();requestAnimationFrame(loop)}
+loop();
+</script>
+</body>
+</html>

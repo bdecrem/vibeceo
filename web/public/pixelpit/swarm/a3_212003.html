@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Dodge</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f172a;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            border: 2px solid #22d3ee;
+            border-radius: 8px;
+            box-shadow: 0 0 20px #22d3ee33;
+        }
+        .score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fbbf24;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #fbbf24;
+        }
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ec4899;
+            font-size: 32px;
+            font-weight: bold;
+            text-shadow: 0 0 15px #ec4899;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="score" id="score">0</div>
+    <div class="game-over" id="gameOver">GAME OVER<br><small>Touch to restart</small></div>
+    <canvas id="game" width="400" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const gameOverEl = document.getElementById('gameOver');
+
+        let player = { x: 200, y: 500, size: 15, color: '#ec4899' };
+        let obstacles = [];
+        let score = 0;
+        let gameRunning = true;
+        let keys = {};
+
+        function createObstacle() {
+            obstacles.push({
+                x: Math.random() * (canvas.width - 30),
+                y: -20,
+                size: 20 + Math.random() * 20,
+                speed: 2 + score * 0.1,
+                color: Math.random() > 0.5 ? '#22d3ee' : '#fbbf24'
+            });
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            // Move player
+            if (keys.left && player.x > player.size) player.x -= 5;
+            if (keys.right && player.x < canvas.width - player.size) player.x += 5;
+
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].y += obstacles[i].speed;
+
+                // Remove off-screen obstacles
+                if (obstacles[i].y > canvas.height) {
+                    obstacles.splice(i, 1);
+                    score += 10;
+                    continue;
+                }
+
+                // Collision detection
+                const dx = player.x - obstacles[i].x;
+                const dy = player.y - obstacles[i].y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < player.size + obstacles[i].size) {
+                    gameRunning = false;
+                    gameOverEl.style.display = 'block';
+                }
+            }
+
+            // Create new obstacles
+            if (Math.random() < 0.02 + score * 0.0001) createObstacle();
+
+            scoreEl.textContent = score;
+        }
+
+        function draw() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw player with glow
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = player.color;
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw obstacles
+            obstacles.forEach(obs => {
+                ctx.shadowColor = obs.color;
+                ctx.fillStyle = obs.color;
+                ctx.beginPath();
+                ctx.arc(obs.x, obs.y, obs.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.shadowBlur = 0;
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function restart() {
+            player = { x: 200, y: 500, size: 15, color: '#ec4899' };
+            obstacles = [];
+            score = 0;
+            gameRunning = true;
+            gameOverEl.style.display = 'none';
+        }
+
+        // Controls
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+        });
+
+        document.addEventListener('keyup', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+        });
+
+        // Touch controls
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+
+            if (!gameRunning) {
+                restart();
+            } else {
+                keys.left = x < canvas.width / 2;
+                keys.right = x > canvas.width / 2;
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            keys.left = false;
+            keys.right = false;
+        });
+
+        canvas.addEventListener('click', () => {
+            if (!gameRunning) restart();
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>

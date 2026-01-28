@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Bouncy Joy</title>
+<style>
+body{margin:0;background:#0f0f23;font-family:sans-serif;overflow:hidden;}
+canvas{border-radius:10px;box-shadow:0 0 10px #00d1b2;}
+.counter{position:absolute;top:10px;left:10px;color:#fff;font-size:18px;}
+</style>
+</head>
+<body>
+<canvas id=c></canvas>
+<div class=counter id=cnt>0</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let w=window.innerWidth,h=window.innerHeight;
+c.width=w;c.height=h;
+window.addEventListener('resize',()=>{w=window.innerWidth;h=window.innerHeight;c.width=w;c.height=h;});
+const r=20,b={x:w/2,y:h/2,vx:4,vy:3,rad:r,sc:1};
+const trail=[];
+const parts=[];
+let cnt=0;
+function rnd(){return Math.random()*10-5;}
+function addBoost(){b.vx+=rnd();b.vy+=rnd();}
+c.addEventListener('click',addBoost);
+c.addEventListener('touchstart',e=>{e.preventDefault();addBoost();});
+function loop(){
+ctx.fillStyle='rgba(15,15,35,0.1)';ctx.fillRect(0,0,w,h);
+trail.push({x:b.x,y:b.y});
+if(trail.length>20)trail.shift();
+for(let i=0;i<trail.length;i++){let p=trail[i];ctx.globalAlpha=0.2+i/20;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle='#209cee';ctx.fill();}
+ctx.globalAlpha=1;ctx.beginPath();ctx.arc(b.x,b.y,r*b.sc,0,Math.PI*2);
+ctx.fillStyle='#209cee';ctx.shadowBlur=10;ctx.shadowColor='#00d1b2';ctx.fill();ctx.shadowBlur=0;
+for(let i=parts.length-1;i>=0;i--){let p=parts[i];p.life-=1; if(p.life<0){parts.splice(i,1);continue;}ctx.globalAlpha=p.life/20;ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fillStyle='#00d1b2';ctx.fill();}
+b.x+=b.vx; b.y+=b.vy;
+if(b.x+r>w||b.x-r<0){b.vx=-b.vx*0.95;b.sc=0.8;cnt++;createBurst();setTimeout(()=>b.sc=1,50);}
+if(b.y+r>h||b.y-r<0){b.vy=-b.vy*0.95;b.sc=0.8;cnt++;createBurst();setTimeout(()=>b.sc=1,50);}
+document.getElementById('cnt').textContent=cnt;
+requestAnimationFrame(loop);
+}
+function createBurst(){for(let i=0;i<10;i++){parts.push({x:b.x,y:b.y,vx:rnd()*4,vy:rnd()*4,life:20});}}
+loop();
+</script>
+</body>
+</html>

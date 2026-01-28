@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Joy‑Con Bounce</title>
+<style>
+body{margin:0;background:#1a1a2e;overflow:hidden;font-family:sans-serif;}
+canvas{display:block;border-radius:12px;box-shadow:0 4px 12px rgba(255,255,255,.2);}
+#counter{position:absolute;top:10px;left:10px;color:#ffdd57;font-size:18px;}
+</style>
+</head>
+<body>
+<canvas id=c></canvas>
+<div id=counter>0</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let w=innerWidth,h=innerHeight;c.width=w;c.height=h;
+const r=20,ball={x:w/2,y:h/2,vx:2,vy:2,c:#ff3860};
+let trail=[],particles=[],cnt=0;
+let squash=0;
+function rnd(n){return Math.random()*n;}
+function boost(){ball.vx+=rnd(6)-3;ball.vy+=rnd(6)-3;}
+addEventListener('click',boost);addEventListener('touchstart',boost);
+function update(){ball.x+=ball.vx;ball.y+=ball.vy;
+ if(ball.x<r||ball.x> w-r){ball.vx*=-1;squash=20;cnt++;}if(ball.y<r||ball.y> h-r){ball.vy*=-1;squash=20;cnt++;}
+ trail.push({x:ball.x,y:ball.y});if(trail.length>20)trail.shift();
+ particles.push(...Array(12).fill().map(()=>({x:ball.x,y:ball.y,vx:rnd(4)-2,vy:rnd(4)-2,alpha:1})));
+ particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.alpha*=.96;});
+ particles=particles.filter(p=>p.alpha>0.02);
+ if(squash>0)squash--;
+}
+function draw(){ctx.clearRect(0,0,w,h);
+ trail.forEach(p=>{ctx.fillStyle='rgba(255,56,96,0.3)';ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();});
+ ctx.save();if(squash>0){ctx.translate(ball.x,ball.y);ctx.scale(1,0.85);ctx.translate(-ball.x,-ball.y);}
+ ctx.fillStyle=ball.c;ctx.beginPath();ctx.arc(ball.x,ball.y,r,0,Math.PI*2);ctx.fill();ctx.restore();
+ particles.forEach(p=>{ctx.fillStyle='rgba(255,221,87,'+p.alpha+')';ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();});
+ document.getElementById('counter').textContent=cnt;
+}
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Bounce</title>
+    <style>
+        body { margin: 0; padding: 0; background: #0f172a; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; cursor: pointer; }
+        .ui { position: absolute; top: 20px; left: 20px; color: #22d3ee; font-size: 24px; text-shadow: 0 0 10px #22d3ee; }
+        .game-over { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #ec4899; display: none; }
+        .game-over h1 { font-size: 48px; margin: 0; text-shadow: 0 0 20px #ec4899; }
+        .game-over p { font-size: 18px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="ui">Score: <span id="score">0</span></div>
+    <div class="game-over" id="gameOver">
+        <h1>Game Over!</h1>
+        <p>Score: <span id="finalScore">0</span></p>
+        <p>Tap to restart</p>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const gameOverEl = document.getElementById('gameOver');
+        const finalScoreEl = document.getElementById('finalScore');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let ball = { x: canvas.width / 4, y: canvas.height / 2, vy: 0, radius: 20 };
+        let obstacles = [];
+        let score = 0;
+        let gameRunning = true;
+        let time = 0;
+
+        function createObstacle() {
+            const gap = 200;
+            const height = Math.random() * (canvas.height - gap - 100) + 50;
+            obstacles.push({ x: canvas.width, topHeight: height, bottomY: height + gap, width: 80 });
+        }
+
+        function reset() {
+            ball = { x: canvas.width / 4, y: canvas.height / 2, vy: 0, radius: 20 };
+            obstacles = [];
+            score = 0;
+            gameRunning = true;
+            time = 0;
+            gameOverEl.style.display = 'none';
+        }
+
+        function jump() {
+            if (gameRunning) {
+                ball.vy = -15;
+            } else {
+                reset();
+            }
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            time++;
+            ball.vy += 0.8; // gravity
+            ball.y += ball.vy;
+
+            // Ground/ceiling collision
+            if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+                gameRunning = false;
+            }
+
+            // Create obstacles
+            if (time % 120 === 0) createObstacle();
+
+            // Update obstacles
+            obstacles.forEach((obs, i) => {
+                obs.x -= 4;
+
+                // Score when passing obstacle
+                if (obs.x + obs.width < ball.x && !obs.scored) {
+                    score++;
+                    obs.scored = true;
+                }
+
+                // Collision detection
+                if (ball.x + ball.radius > obs.x && ball.x - ball.radius < obs.x + obs.width) {
+                    if (ball.y - ball.radius < obs.topHeight || ball.y + ball.radius > obs.bottomY) {
+                        gameRunning = false;
+                    }
+                }
+
+                // Remove off-screen obstacles
+                if (obs.x + obs.width < 0) obstacles.splice(i, 1);
+            });
+
+            if (!gameRunning) {
+                finalScoreEl.textContent = score;
+                gameOverEl.style.display = 'block';
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw ball with glow
+            const gradient = ctx.createRadialGradient(ball.x, ball.y, 0, ball.x, ball.y, ball.radius * 2);
+            gradient.addColorStop(0, '#ec4899');
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(ball.x - ball.radius * 2, ball.y - ball.radius * 2, ball.radius * 4, ball.radius * 4);
+
+            ctx.fillStyle = '#ec4899';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw obstacles
+            obstacles.forEach(obs => {
+                ctx.fillStyle = '#22d3ee';
+                ctx.fillRect(obs.x, 0, obs.width, obs.topHeight);
+                ctx.fillRect(obs.x, obs.bottomY, obs.width, canvas.height - obs.bottomY);
+
+                // Glow effect
+                ctx.shadowColor = '#22d3ee';
+                ctx.shadowBlur = 20;
+                ctx.fillRect(obs.x, 0, obs.width, obs.topHeight);
+                ctx.fillRect(obs.x, obs.bottomY, obs.width, canvas.height - obs.bottomY);
+                ctx.shadowBlur = 0;
+            });
+
+            scoreEl.textContent = score;
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listeners
+        canvas.addEventListener('click', jump);
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); jump(); });
+        document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); jump(); } });
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+
+        gameLoop();
+    </script>
+</body>
+</html>

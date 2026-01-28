@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Pulse</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        canvas {
+            border: 2px solid #ec4899;
+            border-radius: 10px;
+            box-shadow: 0 0 30px #ec4899;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fbbf24;
+            font-size: 24px;
+            text-shadow: 0 0 10px #fbbf24;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">0</div>
+    <canvas id="game" width="400" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+
+        let player = { x: 200, y: 300, size: 20, pulsing: false, pulseTime: 0 };
+        let barriers = [];
+        let score = 0;
+        let gameSpeed = 2;
+        let time = 0;
+
+        function createBarrier() {
+            const gap = 120;
+            const height = Math.random() * 300 + 100;
+            barriers.push({
+                x: canvas.width,
+                topHeight: height,
+                bottomY: height + gap,
+                bottomHeight: canvas.height - height - gap,
+                passed: false
+            });
+        }
+
+        function update() {
+            time++;
+
+            // Create barriers
+            if (time % 120 === 0) createBarrier();
+
+            // Update barriers
+            barriers.forEach(barrier => {
+                barrier.x -= gameSpeed;
+                if (!barrier.passed && barrier.x + 50 < player.x) {
+                    barrier.passed = true;
+                    score++;
+                    gameSpeed += 0.1;
+                }
+            });
+            barriers = barriers.filter(b => b.x > -50);
+
+            // Update player pulse
+            if (player.pulsing) {
+                player.pulseTime++;
+                if (player.pulseTime > 30) {
+                    player.pulsing = false;
+                    player.pulseTime = 0;
+                }
+            }
+
+            // Collision detection (only when not pulsing)
+            if (!player.pulsing) {
+                barriers.forEach(barrier => {
+                    if (player.x + player.size > barrier.x && player.x - player.size < barrier.x + 50) {
+                        if (player.y - player.size < barrier.topHeight ||
+                            player.y + player.size > barrier.bottomY) {
+                            resetGame();
+                        }
+                    }
+                });
+            }
+
+            // Keep player in bounds
+            if (player.y < 0 || player.y > canvas.height) resetGame();
+        }
+
+        function render() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw barriers with glow
+            barriers.forEach(barrier => {
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#22d3ee';
+                ctx.fillStyle = '#22d3ee';
+                ctx.fillRect(barrier.x, 0, 50, barrier.topHeight);
+                ctx.fillRect(barrier.x, barrier.bottomY, 50, barrier.bottomHeight);
+            });
+
+            // Draw player orb
+            ctx.shadowBlur = player.pulsing ? 40 : 20;
+            ctx.shadowColor = player.pulsing ? '#fbbf24' : '#ec4899';
+            ctx.fillStyle = player.pulsing ? '#fbbf24' : '#ec4899';
+            ctx.beginPath();
+            const size = player.pulsing ? player.size + Math.sin(player.pulseTime * 0.5) * 5 : player.size;
+            ctx.arc(player.x, player.y, size, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            scoreEl.textContent = score;
+        }
+
+        function resetGame() {
+            player.y = 300;
+            barriers = [];
+            score = 0;
+            gameSpeed = 2;
+            time = 0;
+        }
+
+        function pulse() {
+            if (!player.pulsing) {
+                player.pulsing = true;
+                player.pulseTime = 0;
+            }
+        }
+
+        // Controls
+        canvas.addEventListener('click', pulse);
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); pulse(); });
+        document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); pulse(); } });
+
+        // Gravity
+        setInterval(() => { player.y += 3; }, 50);
+
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        createBarrier();
+        gameLoop();
+    </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Impact Feel Test</title>
+<style>
+body{margin:0;background:#1a1a2e;color:#fff;font-family:Arial,Helvetica,sans-serif;}
+#ui{position:absolute;top:10px;left:10px;}
+#ui button{background:#00ff88;color:#000;border:none;padding:5px 10px;margin:0 5px;cursor:pointer;}
+#ui button.active{box-shadow:0 0 5px #00ff88;}
+#health{position:absolute;top:10px;right:10px;width:200px;height:20px;background:#444;}
+#health div{height:100%;background:#00ff88;}
+</style></head>
+<body><canvas id="c" width="800" height="600"></canvas>
+<div id="ui"><span>Impact Feel Test</span>
+<button data="0" class="active">Light</button>
+<button data="1">Heavy</button>
+<button data="2">Combo</button></div>
+<div id="health"><div></div></div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+let enemy={x:w/2,y:h/2,r:30,health:100},hitStop=0,shake=0,shakeDir=1,particles=[],flash=0,comboTimer=0,comboCount=0;
+const presets=[{stop:.1,shake:2,knock:8,parts:10,flash:.3,damage:10},
+{stop:.3,shake:6,knock:16,parts:20,flash:.5,damage:20},
+{stop:.05,shake:4,knock:8,parts:8,flash:.2,damage:5}];
+let pres=0;
+document.querySelectorAll('#ui button').forEach(b=>b.onclick=e=>{
+pres=+b.dataset;document.querySelectorAll('#ui button').forEach(x=>x.classList.remove('active'));b.classList.add('active');});
+canvas.addEventListener('mousedown',attack);canvas.addEventListener('touchstart',e=>{e.preventDefault();attack(e.touches[0]);});
+function attack(e){const {clientX:x0,clientY:y0}=e;let x=x0-canvas.getBoundingClientRect().left,y=y0-canvas.getBoundingClientRect().top;
+if(Math.hypot(x-enemy.x,y-enemy.y)<=enemy.r){const p=presets[pres];hitStop=p.stop*60;shake=p.shake*60;shakeDir=Math.random()<.5?-1:1;
+enemy.health-=p.damage;if(enemy.health<0)enemy.health=0;for(let i=0;i<p.parts;i++){let ang=Math.random()*2*Math.PI,sp=2+Math.random()*3;
+particles.push({x:enemy.x,y:enemy.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:30});}flash=p.flash*60;enemy.vx=-p.knock;}}
+function update(){if(hitStop>0){hitStop--;return;}if(comboTimer>0){comboTimer--;if(comboTimer<0){comboCount=0;}}if(comboCount>0){comboTimer=10;}
+enemy.vx*=.9;if(Math.abs(enemy.vx)<.1)enemy.vx=0;enemy.x+=enemy.vx;if(enemy.x<enemy.r)enemy.x=enemy.r,enemy.vx=0;if(enemy.x>w-enemy.r)enemy.x=w-enemy.r,enemy.vx=0;
+particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--;});particles=particles.filter(p=>p.life>0);
+flash--;shake--;if(shake>0){canvas.style.transform=`translate(${shakeDir*shake/5}px,${shake/5}px)`;shakeDir*=-1;}else{canvas.style.transform='none';}
+let h=document.querySelector('#health div');h.style.width=`${enemy.health}%`;requestAnimationFrame(render);requestAnimationFrame(update);}
+function render(){ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(enemy.x,enemy.y,enemy.r,0,Math.PI*2);ctx.fill();
+if(flash>0){ctx.fillStyle=`rgba(255,255,255,${flash/60})`;ctx.fillRect(0,0,w,h);}
+particles.forEach(p=>{ctx.fillStyle='rgba(255,255,255,0.8)';ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();});}
+requestAnimationFrame(update);
+</script></body></html>

@@ -1,0 +1,135 @@
+{
+  "timestamp": "2026-01-28T08:30:28.005759",
+  "model": "openai/gpt-oss-20b",
+  "experiment": "Pop the Balloon Reskins",
+  "agents": 10,
+  "success_count": 10,
+  "total_time": 27.550933837890625,
+  "total_tokens": {
+    "input": 6638,
+    "output": 16505
+  },
+  "cost_usd": 0.0036329,
+  "results": [
+    {
+      "agent_id": 0,
+      "success": true,
+      "theme": "SOAP BUBBLES",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t4/agent_0.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t4/agent_0.html",
+      "tokens": {
+        "input": 662,
+        "output": 1627
+      },
+      "time": 15.780038118362427
+    },
+    {
+      "agent_id": 1,
+      "success": true,
+      "theme": "FIREFLIES",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t4/agent_1.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t4/agent_1.html",
+      "tokens": {
+        "input": 670,
+        "output": 1680
+      },
+      "time": 15.482775926589966
+    },
+    {
+      "agent_id": 2,
+      "success": true,
+      "theme": "SPACE ROCKS",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t4/agent_2.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t4/agent_2.html",
+      "tokens": {
+        "input": 660,
+        "output": 2012
+      },
+      "time": 18.84052586555481
+    },
+    {
+      "agent_id": 3,
+      "success": true,
+      "theme": "CANDY POP",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t4/agent_3.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t4/agent_3.html",
+      "tokens": {
+        "input": 667,
+        "output": 1520
+      },
+      "time": 13.551899909973145
+    },
+    {
+      "agent_id": 4,
+      "success": true,
+      "theme": "GHOSTS",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t4/agent_4.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t4/agent_4.html",
+      "tokens": {
+        "input": 662,
+        "output": 1584
+      },
+      "time": 13.892398834228516
+    },
+    {
+      "agent_id": 5,
+      "success": true,
+      "theme": "DEEP SEA",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t4/agent_5.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t4/agent_5.html",
+      "tokens": {
+        "input": 665,
+        "output": 1270
+      },
+      "time": 11.151839017868042
+    },
+    {
+      "agent_id": 6,
+      "success": true,
+      "theme": "NEON SIGNS",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t4/agent_6.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t4/agent_6.html",
+      "tokens": {
+        "input": 666,
+        "output": 1069
+      },
+      "time": 9.879158973693848
+    },
+    {
+      "agent_id": 7,
+      "success": true,
+      "theme": "FRUIT SPLASH",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t4/agent_7.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t4/agent_7.html",
+      "tokens": {
+        "input": 662,
+        "output": 1231
+      },
+      "time": 11.559782981872559
+    },
+    {
+      "agent_id": 8,
+      "success": true,
+      "theme": "EMOJI MADNESS",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t4/agent_8.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t4/agent_8.html",
+      "tokens": {
+        "input": 660,
+        "output": 1512
+      },
+      "time": 13.247711896896362
+    },
+    {
+      "agent_id": 9,
+      "success": true,
+      "theme": "PIXEL RETRO",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t4/agent_9.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t4/agent_9.html",
+      "tokens": {
+        "input": 664,
+        "output": 3000
+      },
+      "time": 27.533101081848145
+    }
+  ]
+}

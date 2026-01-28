@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neon Rush</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{background:#0f172a;overflow:hidden;font-family:Arial,sans-serif}
+canvas{display:block;margin:0 auto;border:2px solid #22d3ee;border-radius:8px}
+#ui{position:absolute;top:20px;left:50%;transform:translateX(-50%);color:#22d3ee;font-size:24px;font-weight:bold;text-align:center}
+#game-over{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#ec4899;font-size:32px;text-align:center;display:none}
+</style></head><body>
+<div id="ui">Score: <span id="score">0</span></div>
+<div id="game-over">GAME OVER<br><small style="font-size:16px;color:#fbbf24">Tap to restart</small></div>
+<canvas id="game" width="400" height="600"></canvas>
+<script>
+const canvas=document.getElementById('game');const ctx=canvas.getContext('2d');
+let player={x:50,y:300,vy:0,size:20,color:'#ec4899'};
+let obstacles=[];let score=0;let gameRunning=true;let lastTime=0;
+
+function reset(){player={x:50,y:300,vy:0,size:20,color:'#ec4899'};obstacles=[];score=0;gameRunning=true;
+document.getElementById('game-over').style.display='none';document.getElementById('score').textContent='0';}
+
+function jump(){if(gameRunning)player.vy=-8;else reset();}
+
+function update(dt){if(!gameRunning)return;
+player.vy+=0.4;player.y+=player.vy;
+if(player.y<0||player.y>canvas.height-player.size){gameOver();return;}
+
+if(Math.random()<0.02){obstacles.push({x:canvas.width,y:Math.random()*(canvas.height-100)+50,w:20,h:80,color:'#fbbf24'});}
+
+obstacles.forEach((obs,i)=>{obs.x-=4;
+if(obs.x<player.x+player.size&&obs.x+obs.w>player.x&&obs.y<player.y+player.size&&obs.y+obs.h>player.y){gameOver();return;}
+if(obs.x+obs.w<0){obstacles.splice(i,1);score++;document.getElementById('score').textContent=score;}});
+}
+
+function draw(){ctx.fillStyle='#0f172a';ctx.fillRect(0,0,canvas.width,canvas.height);
+ctx.shadowBlur=10;ctx.shadowColor=player.color;ctx.fillStyle=player.color;ctx.fillRect(player.x,player.y,player.size,player.size);
+obstacles.forEach(obs=>{ctx.shadowColor=obs.color;ctx.fillStyle=obs.color;ctx.fillRect(obs.x,obs.y,obs.w,obs.h);});
+ctx.shadowBlur=0;}
+
+function gameOver(){gameRunning=false;document.getElementById('game-over').style.display='block';}
+
+function gameLoop(time){const dt=(time-lastTime)/16.67;lastTime=time;update(dt);draw();requestAnimationFrame(gameLoop);}
+
+canvas.addEventListener('click',jump);canvas.addEventListener('touchstart',e=>{e.preventDefault();jump();});
+document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();jump();}});
+
+requestAnimationFrame(gameLoop);
+</script></body></html>

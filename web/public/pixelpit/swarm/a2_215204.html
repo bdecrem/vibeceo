@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHANTOM PENDULUM</title>
+    <style>
+        @import url('data:font/woff2;base64,');
+        body { margin:0; background:#0a0a0a; overflow:hidden; font-family:monospace; cursor:none; }
+        canvas { display:block; image-rendering:pixelated; filter:contrast(1.1) brightness(0.9); }
+        #glitch { position:absolute; top:10px; left:10px; color:#8bac0f; font-size:12px; text-shadow:2px 0 #3d5a45; animation:flicker 0.1s infinite; }
+        @keyframes flicker { 0%{opacity:1} 50%{opacity:0.7} 100%{opacity:1} }
+        #scanlines { position:absolute; top:0; left:0; width:100%; height:100%; background:repeating-linear-gradient(transparent, transparent 2px, rgba(139,172,15,0.03) 2px, rgba(139,172,15,0.03) 4px); pointer-events:none; }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <div id="scanlines"></div>
+    <div id="glitch">PHANTOM PENDULUM</div>
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 400; canvas.height = 600;
+
+        // Ghost Cartridge colors
+        const colors = {
+            bg: '#0a0a0a',
+            gear: '#3d5a45',
+            gearLight: '#8bac0f',
+            orb: '#8bac0f',
+            trail: '#3d5a45'
+        };
+
+        let game = {
+            rotation: 0,
+            orb: { x: 200, y: 100, vx: 0, vy: 0, trail: [] },
+            gears: [],
+            score: 0,
+            glitch: 0
+        };
+
+        function initGears() {
+            for(let i = 0; i < 20; i++) {
+                game.gears.push({
+                    y: i * 120 + 200,
+                    rotation: Math.random() * Math.PI * 2,
+                    glitchOffset: Math.random() * 10,
+                    gapAngle: Math.random() * Math.PI * 2,
+                    gapSize: 1.2 + Math.random() * 0.8
+                });
+            }
+        }
+
+        function drawGear(gear) {
+            ctx.save();
+            ctx.translate(200, gear.y);
+            ctx.rotate(game.rotation + gear.rotation);
+
+            // Glitch effect
+            if(Math.random() < 0.1) ctx.translate(Math.random() * 4 - 2, Math.random() * 4 - 2);
+
+            // Draw gear segments
+            for(let i = 0; i < 12; i++) {
+                let angle = (i / 12) * Math.PI * 2;
+                if(Math.abs(angle - gear.gapAngle) > gear.gapSize) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 180, angle, angle + 0.4);
+                    ctx.lineWidth = 20;
+                    ctx.strokeStyle = Math.random() < 0.05 ? colors.gearLight : colors.gear;
+                    ctx.stroke();
+
+                    // Gear teeth
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 200, angle, angle + 0.2);
+                    ctx.lineWidth = 8;
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+        }
+
+        function drawOrb() {
+            // Trail
+            for(let i = 0; i < game.orb.trail.length; i++) {
+                let t = game.orb.trail[i];
+                ctx.fillStyle = colors.trail + (i * 0.1).toString(16).slice(0,2);
+                ctx.fillRect(t.x - 2, t.y - 2, 4, 4);
+            }
+
+            // Orb with glow
+            ctx.shadowColor = colors.gearLight;
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = colors.orb;
+            ctx.beginPath();
+            ctx.arc(game.orb.x, game.orb.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        function update() {
+            // Orb physics
+            game.orb.vy += 0.3;
+            game.orb.x += game.orb.vx;
+            game.orb.y += game.orb.vy;
+            game.orb.vx *= 0.98;
+
+            // Trail
+            game.orb.trail.push({x: game.orb.x, y: game.orb.y});
+            if(game.orb.trail.length > 15) game.orb.trail.shift();
+
+            // Collision with gears
+            for(let gear of game.gears) {
+                let dx = game.orb.x - 200;
+                let dy = game.orb.y - gear.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+
+                if(dist > 170 && dist < 210) {
+                    let angle = Math.atan2(dy, dx) - game.rotation - gear.rotation;
+                    angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+
+                    if(Math.abs(angle - gear.gapAngle) < gear.gapSize) {
+                        // Pass through gap
+                        if(gear.y > game.orb.y) game.score++;
+                    } else {
+                        // Hit gear - reset
+                        game.orb = { x: 200, y: 100, vx: 0, vy: 0, trail: [] };
+                        game.score = 0;
+                        game.glitch = 30;
+                    }
+                }
+            }
+
+            // Move gears up as orb falls
+            if(game.orb.y > 300) {
+                for(let gear of game.gears) gear.y -= 2;
+                game.orb.y -= 2;
+            }
+
+            // Add new gears
+            if(game.gears[game.gears.length - 1].y > -100) {
+                game.gears.push({
+                    y: game.gears[game.gears.length - 1].y - 120,
+                    rotation: Math.random() * Math.PI * 2,
+                    glitchOffset: Math.random() * 10,
+                    gapAngle: Math.random() * Math.PI * 2,
+                    gapSize: 1.2 + Math.random() * 0.8
+                });
+            }
+
+            if(game.glitch > 0) game.glitch--;
+        }
+
+        function render() {
+            // Clear with glitch
+            ctx.fillStyle = game.glitch > 0 ? '#1a1a1a' : colors.bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw gears
+            for(let gear of game.gears) {
+                if(gear.y > -50 && gear.y < 700) drawGear(gear);
+            }
+
+            drawOrb();
+
+            // Score with glitch
+            ctx.fillStyle = colors.gearLight;
+            ctx.font = '16px monospace';
+            let scoreText = 'DEPTH: ' + game.score.toString().padStart(3, '0');
+            if(game.glitch > 0 && Math.random() < 0.5) scoreText = scoreText.replace(/\d/g, '█');
+            ctx.fillText(scoreText, 10, canvas.height - 20);
+        }
+
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Controls
+        let isRotating = false;
+        canvas.addEventListener('mousedown', () => isRotating = true);
+        canvas.addEventListener('mouseup', () => isRotating = false);
+        canvas.addEventListener('mousemove', (e) => {
+            if(isRotating) {
+                let rect = canvas.getBoundingClientRect();
+                let x = e.clientX - rect.left - 200;
+                game.rotation = Math.atan2(e.clientY - rect.top - 300, x);
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isRotating = true;
+        });
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isRotating = false;
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if(isRotating) {
+                let rect = canvas.getBoundingClientRect();
+                let touch = e.touches[0];
+                let x = touch.clientX - rect.left - 200;
+                game.rotation = Math.atan2(touch.clientY - rect.top - 300, x);
+            }
+        });
+
+        initGears();
+        gameLoop();
+    </script>
+</body>
+</html>

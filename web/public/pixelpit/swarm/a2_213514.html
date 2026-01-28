@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Bounce</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0f172a; overflow: hidden; touch-action: none; font-family: Arial, sans-serif; }
+        canvas { display: block; cursor: pointer; }
+        .ui { position: fixed; top: 20px; left: 20px; color: #22d3ee; font-size: 24px; z-index: 10; text-shadow: 0 0 10px #22d3ee; }
+    </style>
+</head>
+<body>
+    <div class="ui">Score: <span id="score">0</span></div>
+    <canvas id="game"></canvas>
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const colors = ['#ec4899', '#22d3ee', '#fbbf24'];
+        let score = 0;
+        let gameRunning = true;
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 100,
+            vx: 0, vy: 0,
+            radius: 20,
+            color: colors[0],
+            trail: []
+        };
+
+        const orbs = [];
+        const particles = [];
+
+        function createOrb() {
+            orbs.push({
+                x: Math.random() * (canvas.width - 40) + 20,
+                y: -20,
+                radius: 15,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                pulse: 0
+            });
+        }
+
+        function createParticles(x, y, color) {
+            for(let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 30,
+                    color: color
+                });
+            }
+        }
+
+        function handleInput(x) {
+            const centerX = canvas.width / 2;
+            const force = (x - centerX) / canvas.width;
+            player.vx += force * 0.5;
+            player.vy -= 0.3;
+        }
+
+        canvas.addEventListener('click', e => handleInput(e.clientX));
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            handleInput(e.touches[0].clientX);
+        });
+
+        function update() {
+            if (!gameRunning) return;
+
+            // Player physics
+            player.vy += 0.02; // gravity
+            player.vx *= 0.98; // friction
+            player.x += player.vx;
+            player.y += player.vy;
+
+            // Boundaries
+            if (player.x < player.radius) { player.x = player.radius; player.vx *= -0.7; }
+            if (player.x > canvas.width - player.radius) { player.x = canvas.width - player.radius; player.vx *= -0.7; }
+            if (player.y > canvas.height - player.radius) { player.y = canvas.height - player.radius; player.vy *= -0.8; }
+            if (player.y < 0) gameRunning = false;
+
+            // Trail
+            player.trail.unshift({x: player.x, y: player.y});
+            if (player.trail.length > 8) player.trail.pop();
+
+            // Orbs
+            if (Math.random() < 0.03) createOrb();
+            orbs.forEach((orb, i) => {
+                orb.y += 3;
+                orb.pulse += 0.2;
+                if (orb.y > canvas.height + 20) orbs.splice(i, 1);
+
+                // Collision
+                const dx = player.x - orb.x;
+                const dy = player.y - orb.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < player.radius + orb.radius) {
+                    if (player.color === orb.color) {
+                        score += 10;
+                        player.radius = Math.min(player.radius + 1, 35);
+                        createParticles(orb.x, orb.y, orb.color);
+                    } else {
+                        player.radius = Math.max(player.radius - 2, 15);
+                        createParticles(orb.x, orb.y, '#ff0000');
+                    }
+                    player.color = colors[(colors.indexOf(player.color) + 1) % colors.length];
+                    orbs.splice(i, 1);
+                    document.getElementById('score').textContent = score;
+                }
+            });
+
+            // Particles
+            particles.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                if (p.life <= 0) particles.splice(i, 1);
+            });
+        }
+
+        function draw() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Player trail
+            player.trail.forEach((pos, i) => {
+                const alpha = (player.trail.length - i) / player.trail.length;
+                ctx.globalAlpha = alpha * 0.3;
+                ctx.fillStyle = player.color;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, player.radius * alpha, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.globalAlpha = 1;
+
+            // Player
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = player.color;
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Orbs
+            orbs.forEach(orb => {
+                const pulseSize = orb.radius + Math.sin(orb.pulse) * 3;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = orb.color;
+                ctx.fillStyle = orb.color;
+                ctx.beginPath();
+                ctx.arc(orb.x, orb.y, pulseSize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Particles
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life / 30;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

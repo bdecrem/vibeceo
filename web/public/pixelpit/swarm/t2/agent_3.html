@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><title>Bouncy Coin</title>
+<style>body{margin:0;background:#16213e;font-family:sans-serif;}canvas{display:block;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.5);margin:auto;background:#16213e;}#counter{position:absolute;top:10px;left:10px;color:#ffd700;font-size:18px;text-shadow:1px1px2px #000;border-radius:5px;background:rgba(0,0,0,0.3);padding:5px 10px;}</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="counter">Bounces: 0</div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let w=window.innerWidth,h=window.innerHeight; c.width=w; c.height=h;
+let x=w/2,y=h/2,vx=2,vy=2,rad=20,boost=5,trail=[],particles=[],bounce=0,scale=1,ctr=document.getElementById('counter');
+function resize(){w=window.innerWidth;h=window.innerHeight;c.width=w;c.height=h;}
+window.addEventListener('resize',resize);
+function random(){return (Math.random()-0.5)*boost;}
+function boostVel(){vx+=random();vy+=random();}
+canvas.addEventListener('mousedown',boostVel);
+canvas.addEventListener('touchstart',e=>{e.preventDefault();boostVel();});
+function bounceBall(){if(x+rad>w||x-rad<0){vx=-vx*0.98;if(vx>0.1||vx<-0.1){bounce++;ctr.textContent='Bounces: '+bounce;createParticles();}scale=1.1;if(x+rad>w)x=w-rad;else if(x-rad<0)x=rad;}
+if(y+rad>h||y-rad<0){vy=-vy*0.98;if(vy>0.1||vy<-0.1){bounce++;ctr.textContent='Bounces: '+bounce;createParticles();}scale=1.1;if(y+rad>h)y=h-rad;else if(y-rad<0)y=rad;}
+}
+function createParticles(){for(let i=0;i<20;i++){let r=Math.random()*8+2;particles.push({x:x,y:y,dx:(Math.random()-0.5)*4,dy:(Math.random()-0.5)*4,alpha:1,r});}}
+function update(){x+=vx; y+=vy; vx*=0.999; vy*=0.999; trail.push({x,y}); if(trail.length>20)trail.shift(); scale=Math.max(scale*0.95,1);}
+function draw(){ctx.clearRect(0,0,w,h); trail.forEach((p,i)=>{ctx.globalAlpha=(i+1)/trail.length;ctx.beginPath();ctx.fillStyle='#ffd700';ctx.arc(p.x,p.y,rad*scale,0,Math.PI*2);ctx.fill();}); ctx.globalAlpha=1; ctx.beginPath();ctx.fillStyle='#ffd700';ctx.arc(x,y,rad*scale,0,Math.PI*2);ctx.fill();
+particles.forEach((p,i)=>{p.x+=p.dx; p.y+=p.dy; p.alpha-=0.02; if(p.alpha<=0){particles.splice(i,1);return;}
+ctx.globalAlpha=p.alpha;ctx.beginPath();ctx.fillStyle='#ff6348';ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});}
+function loop(){update();bounceBall();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

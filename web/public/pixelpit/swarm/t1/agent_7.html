@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Desert Catch</title>
+<style>body{margin:0;background:#1a1100}canvas{display:block;width:100%;height:100%}</style></head>
+<body><canvas id="c"></canvas><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let w,l,h;function resize(){w=c.width=innerWidth;l=c.height=innerHeight}
+resize();addEventListener('resize',resize);
+let paddle={w:120,h:20,x:0,y:l-30,move:0},obj=[],score=0,miss=0,missLimit=5,game='start';
+function spawn(){obj.push({x:Math.random()*w,w:30,h:30,y:-30,spd:3})}
+function update(){ctx.clearRect(0,0,w,l);ctx.shadowBlur=10;ctx.shadowColor='#ffaa00';
+paddle.x+=paddle.move; if(paddle.x<0)paddle.x=0; if(paddle.x+paddle.w>w)paddle.x=w-paddle.w;
+ctx.fillStyle='#ff6600';ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
+obj.forEach(o=>{
+o.y+=o.spd;ctx.fillStyle='#ffaa00';ctx.fillRect(o.x,o.y,o.w,o.h);
+if(o.y+o.h>=paddle.y&&o.x+o.w>=paddle.x&&o.x<=paddle.x+paddle.w){
+score++;obj.splice(obj.indexOf(o),1);return;}
+if(o.y>l){miss++;obj.splice(obj.indexOf(o),1);if(miss>=missLimit){game='over';}}
+});ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='20px sans-serif';
+ctx.fillText('Score: '+score,10,30);ctx.fillText('Misses: '+miss,10,60);
+}
+function loop(){if(game==='play'){update();requestAnimationFrame(loop);}}
+c.addEventListener('touchstart',e=>{
+e.preventDefault();if(game!=='play'){game='play';score=miss=0;obj=[];requestAnimationFrame(loop);}});
+c.addEventListener('touchmove',e=>{
+e.preventDefault();if(game==='play'){paddle.move=(e.touches[0].clientX-paddle.x-paddle.w/2)/10;}})
+c.addEventListener('touchend',e=>{paddle.move=0});
+c.addEventListener('mousedown',e=>{
+if(game!=='play'){game='play';score=miss=0;obj=[];requestAnimationFrame(loop);}});
+c.addEventListener('mousemove',e=>{if(game==='play'){paddle.move=(e.clientX-paddle.x-paddle.w/2)/10;}})
+c.addEventListener('mouseup',e=>{paddle.move=0});
+function overlay(){ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(0,0,w,l);
+ctx.fillStyle='#fff';ctx.font='30px sans-serif';ctx.textAlign='center';
+ctx.fillText(game==='over'?'Game Over! Tap to restart':'Tap to start',w/2,l/2);}
+function main(){overlay();requestAnimationFrame(main);}
+setInterval(spawn,1000);requestAnimationFrame(main);
+</script></body></html>

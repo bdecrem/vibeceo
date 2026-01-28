@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>SINGULARITY PROTOCOL</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Courier New',monospace;color:#ff4d00;user-select:none}
+canvas{display:block}
+#ui{position:absolute;top:10px;left:10px;font-size:12px;letter-spacing:2px}
+#warn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;display:none;text-align:center}
+.blink{animation:b .5s infinite}
+@keyframes b{50%{opacity:0}}
+</style></head><body>
+<div id="ui">CONTAINMENT: <span id="score">0</span> | MASS: <span id="mass">0</span>%</div>
+<div id="warn">SINGULARITY CRITICAL<br><span class="blink">[TAP TO REINITIALIZE]</span></div>
+<canvas id="c"></canvas>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d'),W=C.width=innerWidth,H=C.height=innerHeight;
+let paddle={x:W/2,w:120,h:8},fragments=[],score=0,mass=0,gameOver=false,tick=0;
+const spawnRate=()=>Math.max(15,60-score/2);
+
+function spawn(){
+  if(tick%Math.floor(spawnRate())===0){
+    const cols=Math.min(3,1+Math.floor(score/20));
+    for(let i=0;i<cols;i++)fragments.push({x:Math.random()*(W-20)+10,y:-20,s:3+Math.random()*2,r:4+Math.random()*4});
+  }
+}
+
+function drawHole(){
+  const r=30+mass*2,cx=W/2,cy=H+50;
+  const g=X.createRadialGradient(cx,cy,0,cx,cy,r*3);
+  g.addColorStop(0,'#000');g.addColorStop(0.5,'#1a0a00');g.addColorStop(1,'transparent');
+  X.fillStyle=g;X.beginPath();X.arc(cx,cy,r*3,0,Math.PI*2);X.fill();
+  X.strokeStyle='#ff4d00';X.lineWidth=1;
+  for(let i=0;i<3;i++){X.globalAlpha=0.3-i*0.1;X.beginPath();X.arc(cx,cy,r+i*15,0,Math.PI*2);X.stroke();}
+  X.globalAlpha=1;
+}
+
+function draw(){
+  X.fillStyle='#000';X.fillRect(0,0,W,H);
+  drawHole();
+  X.fillStyle='#ff4d00';X.fillRect(paddle.x-paddle.w/2,H-60,paddle.w,paddle.h);
+  X.strokeStyle='#ff4d00';X.lineWidth=1;
+  X.strokeRect(paddle.x-paddle.w/2-2,H-62,paddle.w+4,paddle.h+4);
+  fragments.forEach(f=>{
+    X.fillStyle='#ff4d00';X.beginPath();X.arc(f.x,f.y,f.r,0,Math.PI*2);X.fill();
+    X.strokeStyle='#ff4d0066';X.beginPath();X.arc(f.x,f.y,f.r+4,0,Math.PI*2);X.stroke();
+  });
+  X.fillStyle='#ff4d00';X.font='10px Courier New';
+  for(let i=0;i<W;i+=80)X.fillText('─',i,H-30);
+}
+
+function update(){
+  if(gameOver)return;
+  tick++;spawn();
+  fragments.forEach(f=>{f.y+=f.s;f.s+=0.05;});
+  fragments=fragments.filter(f=>{
+    if(f.y>H-65&&f.y<H-50&&f.x>paddle.x-paddle.w/2-f.r&&f.x<paddle.x+paddle.w/2+f.r){
+      score++;document.getElementById('score').textContent=score;return false;
+    }
+    if(f.y>H){mass+=5;document.getElementById('mass').textContent=Math.min(100,mass);
+      if(mass>=100){gameOver=true;document.getElementById('warn').style.display='block';}return false;
+    }return true;
+  });
+}
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+C.addEventListener('mousemove',e=>move(e.clientX));
+C.addEventListener('touchmove',e=>{e.preventDefault();move(e.touches[0].clientX);},{passive:false});
+document.addEventListener('click',()=>{
+  if(gameOver){gameOver=false;score=0;mass=0;fragments=[];tick=0;
+    document.getElementById('score').textContent=0;document.getElementById('mass').textContent=0;
+    document.getElementById('warn').style.display='none';}
+});
+loop();
+</script></body></html>

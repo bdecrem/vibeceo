@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bouncing Ball</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0f172a;
+            overflow: hidden;
+            touch-action: none;
+        }
+        canvas {
+            display: block;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const ball = {
+            x: canvas.width / 2,
+            y: 100,
+            vx: 5,
+            vy: 0,
+            radius: 20,
+            gravity: 0.5,
+            bounce: 0.85,
+            color: '#ec4899',
+            trail: []
+        };
+
+        const colors = ['#ec4899', '#22d3ee', '#fbbf24'];
+
+        function updateBall() {
+            ball.vy += ball.gravity;
+            ball.x += ball.vx;
+            ball.y += ball.vy;
+
+            // Wall collisions
+            if (ball.x <= ball.radius || ball.x >= canvas.width - ball.radius) {
+                ball.vx *= -ball.bounce;
+                ball.x = ball.x <= ball.radius ? ball.radius : canvas.width - ball.radius;
+                ball.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            // Floor collision
+            if (ball.y >= canvas.height - ball.radius) {
+                ball.vy *= -ball.bounce;
+                ball.y = canvas.height - ball.radius;
+                ball.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            // Add trail
+            ball.trail.push({x: ball.x, y: ball.y, life: 20});
+            if (ball.trail.length > 30) ball.trail.shift();
+        }
+
+        function drawBall() {
+            // Draw trail
+            ball.trail.forEach((point, i) => {
+                const alpha = (point.life / 20) * 0.5;
+                const size = (i / ball.trail.length) * ball.radius;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = ball.color;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                point.life--;
+            });
+
+            // Draw ball with glow
+            ctx.save();
+            ctx.shadowColor = ball.color;
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = ball.color;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            updateBall();
+            drawBall();
+
+            requestAnimationFrame(animate);
+        }
+
+        // Touch/click events
+        function addEnergy(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+
+            ball.vx += (x - ball.x) * 0.1;
+            ball.vy += (y - ball.y) * 0.1;
+            ball.color = colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        canvas.addEventListener('click', addEnergy);
+        canvas.addEventListener('touchstart', addEnergy);
+
+        animate();
+    </script>
+</body>
+</html>

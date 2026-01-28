@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>HAUNTED HIVE DESCENT</title></head><body>
+<canvas id="game" width="400" height="600"></canvas>
+<style>
+body{margin:0;padding:0;background:#0a0a0a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:monospace}
+canvas{background:#0f1b0f;border:2px solid #3d5a45;box-shadow:0 0 20px #8bac0f;cursor:pointer}
+</style>
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+let rotation=0,ballY=50,ballVy=0,score=0,platforms=[],glitchIntensity=0,gameRunning=true;
+
+// Ghost cartridge colors
+const colors={bg:'#0f1b0f',primary:'#8bac0f',dark:'#3d5a45',ghost:'#4a6b4a',corrupt:'#2d3f2d'};
+
+// Initialize platforms
+for(let i=0;i<20;i++){
+platforms.push({
+y:i*80+200,
+gaps:[Math.random()*6|0],
+glitch:Math.random()<0.3,
+corrupt:false
+});
+}
+
+function drawHexagon(x,y,size,filled=false,glitch=false){
+ctx.save();
+if(glitch&&Math.random()<glitchIntensity){
+ctx.translate(Math.random()*4-2,Math.random()*4-2);
+}
+ctx.beginPath();
+for(let i=0;i<6;i++){
+const angle=i*Math.PI/3;
+const px=x+Math.cos(angle)*size;
+const py=y+Math.sin(angle)*size;
+if(i===0)ctx.moveTo(px,py);
+else ctx.lineTo(px,py);
+}
+ctx.closePath();
+if(filled){
+ctx.fillStyle=glitch?colors.corrupt:colors.primary;
+ctx.fill();
+}
+ctx.strokeStyle=colors.dark;
+ctx.lineWidth=2;
+ctx.stroke();
+ctx.restore();
+}
+
+function drawBall(){
+ctx.save();
+if(Math.random()<glitchIntensity*2){
+ctx.globalAlpha=Math.random()*0.5+0.5;
+}
+ctx.fillStyle=colors.ghost;
+ctx.beginPath();
+ctx.arc(200,ballY,8,0,Math.PI*2);
+ctx.fill();
+if(Math.random()<glitchIntensity){
+ctx.fillStyle=colors.primary;
+ctx.fillRect(192+Math.random()*16,ballY-4,4,8);
+}
+ctx.restore();
+}
+
+function drawPlatforms(){
+platforms.forEach((platform,i)=>{
+const y=platform.y-ballY+300;
+if(y>-100&&y<700){
+for(let j=0;j<6;j++){
+const angle=(rotation+j*60)*Math.PI/180;
+const x=200+Math.cos(angle)*120;
+const py=y+Math.sin(angle)*20;
+const isGap=platform.gaps.includes(j);
+if(!isGap){
+const filled=platform.corrupt||Math.random()<glitchIntensity;
+drawHexagon(x,py,25,filled,platform.glitch);
+}
+}
+// Ghost bee sprites on some platforms
+if(platform.glitch&&Math.random()<0.1){
+const angle=rotation*Math.PI/180;
+const x=200+Math.cos(angle)*140;
+ctx.fillStyle=colors.ghost;
+ctx.fillRect(x-4,y-8,8,6);
+ctx.fillRect(x-2,y-6,4,2);
+}
+}
+});
+}
+
+function checkCollision(){
+platforms.forEach(platform=>{
+const y=platform.y-ballY+300;
+if(Math.abs(y-300)<30&&ballVy>0){
+for(let j=0;j<6;j++){
+const angle=(rotation+j*60)*Math.PI/180;
+const x=200+Math.cos(angle)*120;
+const dist=Math.sqrt((x-200)**2+(y-300)**2);
+if(dist<35&&!platform.gaps.includes(j)){
+ballVy=-8;
+score++;
+platform.corrupt=true;
+glitchIntensity=Math.min(score*0.01,0.3);
+return;
+}
+}
+}
+});
+}
+
+function drawUI(){
+ctx.save();
+if(Math.random()<glitchIntensity){
+ctx.fillStyle=Math.random()<0.5?colors.primary:colors.corrupt;
+}else{
+ctx.fillStyle=colors.primary;
+}
+ctx.font='16px monospace';
+ctx.fillText(`DEPTH: ${score}`,10,30);
+if(Math.random()<glitchIntensity*3){
+ctx.fillText('ERROR_404',10,50);
+}
+// Scanlines
+for(let i=0;i<600;i+=4){
+ctx.globalAlpha=0.1;
+ctx.fillStyle=colors.dark;
+ctx.fillRect(0,i,400,2);
+}
+ctx.restore();
+}
+
+function update(){
+if(!gameRunning)return;
+ballVy+=0.4;
+ballY+=ballVy;
+checkCollision();
+// Add corruption as you descend
+if(ballY>1000){
+platforms.forEach(p=>{
+if(Math.random()<0.05)p.corrupt=true;
+});
+}
+if(ballY>2000)gameRunning=false;
+}
+
+function render(){
+ctx.clearRect(0,0,400,600);
+// CRT glow effect
+ctx.shadowColor=colors.primary;
+ctx.shadowBlur=Math.random()<glitchIntensity?20:5;
+drawPlatforms();
+drawBall();
+drawUI();
+ctx.shadowBlur=0;
+// Random glitch artifacts
+if(Math.random()<glitchIntensity){
+ctx.fillStyle=Math.random()<0.5?colors.primary:colors.corrupt;
+ctx.fillRect(Math.random()*400,Math.random()*600,Math.random()*20+5,Math.random()*3+1);
+}
+}
+
+function gameLoop(){
+update();
+render();
+requestAnimationFrame(gameLoop);
+}
+
+// Controls
+canvas.addEventListener('mousedown',e=>{
+const rect=canvas.getBoundingClientRect();
+const x=e.clientX-rect.left;
+rotation+=x<200?-15:15;
+});
+canvas.addEventListener('touchstart',e=>{
+e.preventDefault();
+const rect=canvas.getBoundingClientRect();
+const x=e.touches[0].clientX-rect.left;
+rotation+=x<200?-15:15;
+});
+
+gameLoop();
+</script>
+</body></html>

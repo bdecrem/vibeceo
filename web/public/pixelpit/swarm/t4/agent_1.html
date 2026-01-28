@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Firefly Pop Game</title>
+<style>
+  body{margin:0;background:#001a33;overflow:hidden}
+  canvas{display:block}
+</style></head><body><canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+
+let score=0, targets=[], fadeTargets=[];
+const treeCount=6; // number of simple tree silhouettes
+const trees=[];
+for(let i=0;i<treeCount;i++){
+  trees.push({x:Math.random()*W, y:H-30, width:20+Math.random()*20, height:60+Math.random()*30});
+}
+
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:25+Math.random()*10,
+    speed:1+Math.random()*2,
+    twinkle:Math.random()*Math.PI*2,
+    color:'#a8ff4f'
+  });
+}
+
+function update(){
+  targets.forEach(t=>{t.y-=t.speed; t.twinkle+=0.04});
+  targets=targets.filter(t=>t.y>-50);
+
+  fadeTargets.forEach(f=>{f.ttl--; f.r*=0.95; f.opacity*=0.95});
+  fadeTargets=fadeTargets.filter(f=>f.ttl>0 && f.opacity>0.01);
+
+  if(Math.random()<0.03) spawn();
+}
+
+function draw(){
+  // Dark forest background
+  ctx.fillStyle='#001a33';
+  ctx.fillRect(0,0,W,H);
+
+  // Draw tree silhouettes
+  trees.forEach(t=>{ctx.fillStyle='rgba(0,30,0,0.6)'; ctx.fillRect(t.x,t.y,t.width,t.height);});
+
+  // Draw active targets with glow
+  targets.forEach(t=>{
+    const brightness=0.5+0.5*Math.sin(t.twinkle);
+    ctx.save();
+    ctx.globalAlpha=brightness;
+    ctx.shadowBlur=15;
+    ctx.shadowColor='rgba(200,255,100,0.8)';
+    const grad=ctx.createRadialGradient(t.x,t.y,0,t.x,t.y,t.r*2);
+    grad.addColorStop(0,'rgba(200,255,100,1)');
+    grad.addColorStop(1,'rgba(200,255,100,0)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  });
+
+  // Draw fading popped targets
+  fadeTargets.forEach(f=>{
+    ctx.save();
+    ctx.globalAlpha=f.opacity;
+    ctx.shadowBlur=15;
+    ctx.shadowColor='rgba(200,255,100,0.8)';
+    const grad=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r*2);
+    grad.addColorStop(0,'rgba(200,255,100,1)');
+    grad.addColorStop(1,'rgba(200,255,100,0)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  });
+
+  // Score display
+  ctx.fillStyle='#ffea00';
+  ctx.font='32px serif';
+  ctx.textShadow='2px 2px 4px #000';
+  ctx.fillText('Score: '+score,20,50);
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      // Create fade-out animation
+      fadeTargets.push({x:t.x,y:t.y,r:t.r,ttl:30,opacity:1});
+      targets.splice(i,1);
+      score++;
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY)};
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script></body></html>

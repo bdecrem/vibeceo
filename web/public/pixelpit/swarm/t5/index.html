@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SWARM T5 - Live Dashboard</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 20px;
+  background: #0a0a0f; color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+h1 { margin: 0 0 10px; font-size: 24px; color: #00ff88; }
+.status { color: #888; margin-bottom: 20px; font-size: 14px; }
+.status.running { color: #ffaa00; }
+.status.done { color: #00ff88; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  max-width: 1200px;
+}
+.card {
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: 20px;
+  border: 2px solid #333;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+.card.pending {
+  opacity: 0.4;
+}
+.card.running {
+  border-color: #ffaa00;
+  animation: pulse 1s infinite;
+}
+.card.done {
+  cursor: pointer;
+  border-color: var(--color);
+  box-shadow: 0 0 20px var(--color-dim);
+}
+.card.done:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 30px var(--color-dim);
+}
+.card.error {
+  border-color: #ff4444;
+  opacity: 0.6;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.card-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+.card-id {
+  color: #666;
+  font-size: 12px;
+}
+.card-desc {
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.card-status {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+.card.pending .card-status { background: #333; color: #666; }
+.card.running .card-status { background: #332200; color: #ffaa00; }
+.card.done .card-status { background: #003322; color: #00ff88; }
+.card.error .card-status { background: #330000; color: #ff4444; }
+.preview {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.9);
+  display: none;
+  z-index: 100;
+}
+.preview.active { display: flex; flex-direction: column; }
+.preview-header {
+  padding: 15px 20px;
+  background: #1a1a2e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.preview-title { font-weight: 600; }
+.preview-close {
+  background: #ff4466;
+  border: none;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.preview iframe {
+  flex: 1;
+  border: none;
+  background: #000;
+}
+</style>
+</head>
+<body>
+<h1>🐝 SWARM T5 — Live Dashboard</h1>
+<div class="status" id="status">Loading...</div>
+<div class="grid" id="grid"></div>
+
+<div class="preview" id="preview">
+  <div class="preview-header">
+    <span class="preview-title" id="preview-title"></span>
+    <button class="preview-close" onclick="closePreview()">✕ Close</button>
+  </div>
+  <iframe id="preview-iframe"></iframe>
+</div>
+
+<script>
+const grid = document.getElementById('grid');
+const statusEl = document.getElementById('status');
+let lastData = null;
+
+function render(data) {
+  // Update status
+  const pending = data.agents.filter(a => a.status === 'pending').length;
+  const running = data.agents.filter(a => a.status === 'running').length;
+  const done = data.agents.filter(a => a.status === 'done').length;
+  const errors = data.agents.filter(a => a.status === 'error').length;
+
+  if (data.completed) {
+    statusEl.className = 'status done';
+    statusEl.textContent = `✓ Complete — ${done} succeeded, ${errors} failed`;
+  } else if (running > 0) {
+    statusEl.className = 'status running';
+    statusEl.textContent = `⟳ Running — ${done} done, ${running} in progress, ${pending} pending`;
+  } else {
+    statusEl.className = 'status';
+    statusEl.textContent = 'Waiting for agents...';
+  }
+
+  // Update grid
+  grid.innerHTML = data.agents.map(a => `
+    <div class="card ${a.status}"
+         style="--color: ${a.color}; --color-dim: ${a.color}44"
+         ${a.status === 'done' ? `onclick="openPreview('${a.name}', '${a.url}')"` : ''}>
+      <div class="card-header">
+        <span class="card-name">${a.name}</span>
+        <span class="card-id">#${a.id}</span>
+      </div>
+      <div class="card-desc">${a.desc}</div>
+      <span class="card-status">
+        ${a.status === 'pending' ? '○ Pending' : ''}
+        ${a.status === 'running' ? '◐ Running...' : ''}
+        ${a.status === 'done' ? `● ${a.time}s` : ''}
+        ${a.status === 'error' ? '✕ Error' : ''}
+      </span>
+    </div>
+  `).join('');
+}
+
+function openPreview(name, url) {
+  document.getElementById('preview-title').textContent = name;
+  document.getElementById('preview-iframe').src = url;
+  document.getElementById('preview').classList.add('active');
+}
+
+function closePreview() {
+  document.getElementById('preview').classList.remove('active');
+  document.getElementById('preview-iframe').src = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePreview();
+});
+
+async function poll() {
+  try {
+    const res = await fetch('status.json?' + Date.now());
+    const data = await res.json();
+    if (JSON.stringify(data) !== JSON.stringify(lastData)) {
+      lastData = data;
+      render(data);
+    }
+  } catch (e) {}
+  setTimeout(poll, 500);
+}
+
+poll();
+</script>
+</body></html>

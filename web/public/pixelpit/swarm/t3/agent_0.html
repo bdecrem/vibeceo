@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Jump Feel Test</title>
+<style>
+ body{margin:0;background:#1a1a2e;color:#fff;font-family:sans-serif}
+ canvas{display:block}
+ .ui{position:absolute;top:10px;left:10px;display:flex;gap:5px}
+ button{background:#00ff88;color:#000;border:none;padding:5px;font-size:12px}
+ .info{position:absolute;bottom:10px;left:10px}
+</style>
+</head>
+<body>
+<canvas id=c width=600 height=400></canvas>
+<div class=ui>
+  <button id=Floaty>Floaty</button>
+  <button id=Snappy>Snappy</button>
+  <button id=Heavy>Heavy</button>
+</div>
+<div class=info id=info></div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+const w=c.width,h=c.height;
+let p={x:50,y:h-50,w:20,h:20,vy:0,ax:0,ay:0,scaleY:1,scaleX:1};
+let ground=h-30;
+let keys={Space:false};
+let jumpPressed=false,holdTime=0,landed=true,bufferTimer=0,coyoteTimer=0;
+const presets={Floaty:{jump:12,gravity:0.3,fallGravity:0.6,coyote:0.2,buffer:0.1},
+Snappy:{jump:18,gravity:0.4,fallGravity:0.8,coyote:0.1,buffer:0.05},
+Heavy:{jump:25,gravity:0.6,fallGravity:1.0,coyote:0.3,buffer:0.15}};
+let cur=presets.Floaty;
+function setPreset(n){cur=presets[n];document.getElementById('info').textContent=`${n}`;}
+['Floaty','Snappy','Heavy'].forEach(b=>document.getElementById(b).onclick(()=>setPreset(b)));
+document.addEventListener('keydown',e=>{if(e.code=='Space'||e.key==' ')keys.Space=true;});
+document.addEventListener('keyup',e=>{if(e.code=='Space'||e.key==' ')keys.Space=false;});
+c.addEventListener('touchstart',e=>{e.preventDefault();keys.Space=true;});
+c.addEventListener('touchend',e=>{e.preventDefault();keys.Space=false;});
+function update(dt){
+ if(landed){
+  if(keys.Space&&coyoteTimer<cur.coyote){p.vy=-cur.jump;landed=false;holdTime=0;bufferTimer=0;}
+ }else{
+  if(keys.Space&&holdTime<0.2)p.vy-=0.05;
+ }
+ if(!landed){p.vy+=cur.fallGravity;}
+ p.y+=p.vy;
+ if(p.y>ground){p.y=ground;p.vy=0;landed=true;coyoteTimer=0;}
+ else if(p.y<ground){coyoteTimer+=dt;}
+ if(landed&&bufferTimer>0){bufferTimer-=dt;if(bufferTimer<0)bufferTimer=0;}
+ if(keys.Space){bufferTimer=cur.buffer;}
+ if(!landed&&p.y>ground){p.vy=0;}
+}
+function draw(){
+ ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,w,h);
+ ctx.fillStyle='#00ff88';
+ ctx.fillRect(p.x,p.y,p.w,p.h);
+}
+function loop(t){const dt=0.016;update(dt);draw();requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

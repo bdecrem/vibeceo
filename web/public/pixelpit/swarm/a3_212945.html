@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Orbiter</title>
+    <style>
+        body { margin: 0; background: #0f172a; overflow: hidden; touch-action: none; }
+        canvas { display: block; }
+        .score { position: absolute; top: 20px; left: 20px; color: #ec4899; font: 24px monospace; z-index: 10; }
+    </style>
+</head>
+<body>
+    <div class="score">Score: <span id="score">0</span></div>
+    <canvas id="game"></canvas>
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let score = 0;
+        let gameRunning = true;
+        let time = 0;
+
+        // Player particle
+        let player = { x: canvas.width/2, y: canvas.height/2, angle: 0, radius: 15, speed: 0 };
+
+        // Moving attractors
+        let attractors = [
+            { x: canvas.width*0.3, y: canvas.height*0.3, dx: 1, dy: 0.7 },
+            { x: canvas.width*0.7, y: canvas.height*0.7, dx: -0.8, dy: -1.2 }
+        ];
+
+        // Pulsing walls
+        let walls = [];
+        for(let i = 0; i < 8; i++) {
+            walls.push({
+                angle: i * Math.PI/4,
+                distance: 80 + Math.random() * 100,
+                pulse: Math.random() * Math.PI * 2,
+                speed: 0.02 + Math.random() * 0.03
+            });
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            time += 0.016;
+            score = Math.floor(time * 10);
+            scoreEl.textContent = score;
+
+            // Update attractors
+            attractors.forEach(attr => {
+                attr.x += attr.dx;
+                attr.y += attr.dy;
+                if (attr.x < 50 || attr.x > canvas.width-50) attr.dx *= -1;
+                if (attr.y < 50 || attr.y > canvas.height-50) attr.dy *= -1;
+            });
+
+            // Calculate gravitational pull
+            let fx = 0, fy = 0;
+            attractors.forEach(attr => {
+                let dx = attr.x - player.x;
+                let dy = attr.y - player.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist > 0) {
+                    fx += dx / (dist * dist) * 50000;
+                    fy += dy / (dist * dist) * 50000;
+                }
+            });
+
+            // Update player orbit
+            player.speed += Math.sqrt(fx*fx + fy*fy) * 0.0001;
+            player.speed *= 0.98; // friction
+            player.angle += player.speed;
+
+            // Find closest attractor for orbiting
+            let closest = attractors[0];
+            let minDist = Infinity;
+            attractors.forEach(attr => {
+                let dist = Math.sqrt((attr.x-player.x)**2 + (attr.y-player.y)**2);
+                if (dist < minDist) { minDist = dist; closest = attr; }
+            });
+
+            // Orbital motion around closest attractor
+            let orbitRadius = Math.min(120, Math.max(60, minDist * 0.7));
+            player.x = closest.x + Math.cos(player.angle) * orbitRadius;
+            player.y = closest.y + Math.sin(player.angle) * orbitRadius;
+
+            // Update walls
+            walls.forEach(wall => {
+                wall.pulse += wall.speed;
+                wall.distance = 80 + Math.sin(wall.pulse) * 40;
+            });
+
+            // Collision detection
+            walls.forEach(wall => {
+                let wx = canvas.width/2 + Math.cos(wall.angle) * wall.distance;
+                let wy = canvas.height/2 + Math.sin(wall.angle) * wall.distance;
+                let dist = Math.sqrt((player.x - wx)**2 + (player.y - wy)**2);
+                if (dist < player.radius + 25) gameRunning = false;
+            });
+        }
+
+        function draw() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw connecting lines
+            ctx.strokeStyle = '#ec4899';
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.moveTo(attractors[0].x, attractors[0].y);
+            ctx.lineTo(attractors[1].x, attractors[1].y);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // Draw attractors
+            attractors.forEach((attr, i) => {
+                ctx.fillStyle = i === 0 ? '#22d3ee' : '#fbbf24';
+                ctx.beginPath();
+                ctx.arc(attr.x, attr.y, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Glow effect
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.shadowBlur = 20;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw walls
+            walls.forEach(wall => {
+                let wx = canvas.width/2 + Math.cos(wall.angle) * wall.distance;
+                let wy = canvas.height/2 + Math.sin(wall.angle) * wall.distance;
+                ctx.fillStyle = '#ec4899';
+                ctx.beginPath();
+                ctx.arc(wx, wy, 25, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.shadowColor = '#ec4899';
+                ctx.shadowBlur = 15;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw player
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 25;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Game over
+            if (!gameRunning) {
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ec4899';
+                ctx.font = '32px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('Game Over!', canvas.width/2, canvas.height/2);
+                ctx.fillText('Tap to restart', canvas.width/2, canvas.height/2 + 50);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function restart() {
+            gameRunning = true;
+            score = 0;
+            time = 0;
+            player.angle = 0;
+            player.speed = 0;
+            player.x = canvas.width/2;
+            player.y = canvas.height/2;
+        }
+
+        // Input handlers
+        canvas.addEventListener('click', () => { if (!gameRunning) restart(); });
+        canvas.addEventListener('touchstart', () => { if (!gameRunning) restart(); });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><title>Haunted Catch</title>
+<style>body{margin:0;background:#0a0a0a;overflow:hidden}canvas{display:block}</style>
+</head>
+<body>
+<canvas id=c></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');let w,w2,h;function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;w2=w/2;}window.addEventListener('resize',resize);resize();
+let paddle={w:100,h:20,x:w2-50,y:h-30};let orbs=[],score=0,miss=0,spawnT=0,state='start';function spawn(){orbs.push({x:Math.random()*w,y:0,r:15,dy:200});}
+function update(dt){if(state!='play')return;spawnT+=dt;if(spawnT>1000){spawn();spawnT=0;}orbs.forEach(o=>o.y+=o.dy*dt/1000);orbs=orbs.filter(o=>{if(o.y>h){miss++;return false;}if(o.y+o.r>=paddle.y&&o.x>=paddle.x&&o.x<=paddle.x+paddle.w){score++;return false;}return true;});if(miss>5)state='gameover';}
+function draw(){ctx.clearRect(0,0,w,h);ctx.fillStyle='#8800ff';orbs.forEach(o=>{ctx.save();ctx.shadowBlur=15;ctx.shadowColor='#8800ff';ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,Math.PI*2);ctx.fill();ctx.restore();});ctx.fillStyle='#00ff88';ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);ctx.fillStyle='#00ff88';ctx.font='20px sans-serif';ctx.fillText('Score:'+score,10,30);if(state!='play'){ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,w,h);ctx.fillStyle='#00ff88';ctx.textAlign='center';ctx.font='30px sans-serif';ctx.fillText(state=='start'?'Tap to Start':'Game Over',w/2,h/2);}}
+let last=0;function loop(t){let dt=t-last;last=t;update(dt);draw();requestAnimationFrame(loop);}requestAnimationFrame(loop);
+function move(e){let x=e.touches?e.touches[0].clientX:e.clientX;paddle.x=x-paddle.w/2;if(paddle.x<0)paddle.x=0;if(paddle.x+paddle.w>w)paddle.x=w-paddle.w;}
+c.addEventListener('mousemove',move);c.addEventListener('touchmove',move);
+c.addEventListener('touchstart',e=>{e.preventDefault();move(e);if(state=='start')state='play';});c.addEventListener('mousedown',e=>{if(state=='start')state='play';});
+c.addEventListener('click',e=>{if(state=='gameover'){score=0;miss=0;orbs=[];state='start';}});
+</script>
+</body>
+</html>

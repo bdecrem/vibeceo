@@ -1,0 +1,106 @@
+{
+  "started": "2026-01-28T08:37:11.044246",
+  "completed": "2026-01-28T08:37:30.060687",
+  "agents": [
+    {
+      "id": 0,
+      "name": "SOAP BUBBLES",
+      "color": "#88ddff",
+      "desc": "Iridescent bubbles with rainbow shimmer",
+      "status": "done",
+      "time": 8.3,
+      "tokens": 1141,
+      "url": "agent_0.html"
+    },
+    {
+      "id": 1,
+      "name": "FIREFLIES",
+      "color": "#aaff44",
+      "desc": "Glowing bugs in a dark forest",
+      "status": "done",
+      "time": 10.8,
+      "tokens": 1190,
+      "url": "agent_1.html"
+    },
+    {
+      "id": 2,
+      "name": "SPACE ROCKS",
+      "color": "#888899",
+      "desc": "Asteroids with explosions",
+      "status": "done",
+      "time": 9.2,
+      "tokens": 1168,
+      "url": "agent_2.html"
+    },
+    {
+      "id": 3,
+      "name": "CANDY POP",
+      "color": "#ff66aa",
+      "desc": "Lollipops and gummies",
+      "status": "done",
+      "time": 19.0,
+      "tokens": 2207,
+      "url": "agent_3.html"
+    },
+    {
+      "id": 4,
+      "name": "GHOSTS",
+      "color": "#ddddff",
+      "desc": "Cute spooky spirits",
+      "status": "done",
+      "time": 12.9,
+      "tokens": 1794,
+      "url": "agent_4.html"
+    },
+    {
+      "id": 5,
+      "name": "DEEP SEA",
+      "color": "#00ffcc",
+      "desc": "Bioluminescent jellyfish",
+      "status": "done",
+      "time": 16.2,
+      "tokens": 1907,
+      "url": "agent_5.html"
+    },
+    {
+      "id": 6,
+      "name": "NEON SIGNS",
+      "color": "#ff00ff",
+      "desc": "Electric glowing shapes",
+      "status": "done",
+      "time": 13.7,
+      "tokens": 1557,
+      "url": "agent_6.html"
+    },
+    {
+      "id": 7,
+      "name": "FRUIT SPLASH",
+      "color": "#ffaa00",
+      "desc": "Juicy fruits splattering",
+      "status": "done",
+      "time": 12.9,
+      "tokens": 1455,
+      "url": "agent_7.html"
+    },
+    {
+      "id": 8,
+      "name": "EMOJI MADNESS",
+      "color": "#ffdd00",
+      "desc": "Random emoji faces",
+      "status": "done",
+      "time": 13.7,
+      "tokens": 1597,
+      "url": "agent_8.html"
+    },
+    {
+      "id": 9,
+      "name": "PIXEL RETRO",
+      "color": "#00ff00",
+      "desc": "8-bit arcade style",
+      "status": "done",
+      "time": 18.5,
+      "tokens": 2113,
+      "url": "agent_9.html"
+    }
+  ]
+}

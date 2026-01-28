@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Candy Catch</title>
+<style>body{margin:0;background:#220022;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden}</style></head>
+<body><canvas id=c></canvas><script>
+const c=document.getElementById('c'),ctx=c.getContext('2d'),w=window.innerWidth,h=window.innerHeight;
+c.width=w;c.height=h;
+let paddle={w:120,h:20,x:w/2-60,dx:0},candies=[],score=0,misses=0,state='start',last=0;
+function spawn(){candies.push({x:Math.random()*w,y:-20,r:20,vy:3+score/10});}
+function upd(){if(state!='play')return;paddle.x+=paddle.dx;paddle.x=Math.max(0,paddle.x);paddle.x=Math.min(w-paddle.w,paddle.x);
+candies.forEach(c=>c.y+=c.vy);candies.forEach(c=>{if(c.y>h){misses++;if(misses>=5)state='over';}});
+candies=candies.filter(c=>{if(c.y>h)return false;
+if(c.y+c.r>h-paddle.h&&c.x>paddle.x&&c.x<paddle.w+paddle.x){score++;return false;}return true;});}
+function dr(){ctx.clearRect(0,0,w,h);
+if(state=='start'){ctx.fillStyle='#ffff00';ctx.font='48px sans-serif';ctx.textAlign='center';ctx.fillText('Tap to start',w/2,h/2);}
+else{candies.forEach(c=>{ctx.shadowBlur=10;ctx.shadowColor='#ff66cc';ctx.fillStyle='#ff66cc';
+ctx.beginPath();ctx.arc(c.x,c.y,c.r,0,2*Math.PI);ctx.fill();});ctx.shadowBlur=0;
+ctx.fillStyle='#ffff00';ctx.fillRect(paddle.x,h-30,paddle.w,20);
+ctx.fillStyle='#ffff00';ctx.font='24px sans-serif';ctx.textAlign='left';ctx.fillText('Score: '+score,10,30);
+if(state=='over'){ctx.fillStyle='#ffff00';ctx.font='48px sans-serif';ctx.textAlign='center';
+ctx.fillText('Game Over',w/2,h/2-30);ctx.font='24px sans-serif';ctx.fillText('Tap to restart',w/2,h/2+10);}}}
+function loop(t){upd();dr();if(state=='play'&&Math.random()<.02)spawn();requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+c.addEventListener('touchstart',e=>{e.preventDefault();let x=e.touches[0].clientX;
+if(state!='play'){state='play';score=0;misses=0;candies=[];}paddle.dx=x-paddle.x;});
+c.addEventListener('touchmove',e=>{e.preventDefault();paddle.dx=e.touches[0].clientX-paddle.x;});
+c.addEventListener('touchend',e=>{paddle.dx=0;});
+</script></body></html>

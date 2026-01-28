@@ -1,0 +1,74 @@
+{
+  "timestamp": "2026-01-28T08:03:20.055184",
+  "model": "openai/gpt-oss-20b",
+  "agents": 5,
+  "success_count": 5,
+  "total_time": 21.967997074127197,
+  "total_tokens": {
+    "input": 1457,
+    "output": 15286
+  },
+  "cost_usd": 0.00313005,
+  "results": [
+    {
+      "agent_id": 0,
+      "success": true,
+      "theme": "JOY-CON RED",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t2/agent_0.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t2/agent_0.html",
+      "tokens": {
+        "input": 292,
+        "output": 2889
+      },
+      "time": 16.617602109909058
+    },
+    {
+      "agent_id": 1,
+      "success": true,
+      "theme": "JOY-CON BLUE",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t2/agent_1.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t2/agent_1.html",
+      "tokens": {
+        "input": 292,
+        "output": 2330
+      },
+      "time": 13.324692964553833
+    },
+    {
+      "agent_id": 2,
+      "success": true,
+      "theme": "SPLATOON",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t2/agent_2.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t2/agent_2.html",
+      "tokens": {
+        "input": 294,
+        "output": 4000
+      },
+      "time": 21.9638671875
+    },
+    {
+      "agent_id": 3,
+      "success": true,
+      "theme": "MARIO COIN",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t2/agent_3.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t2/agent_3.html",
+      "tokens": {
+        "input": 286,
+        "output": 3965
+      },
+      "time": 21.824235916137695
+    },
+    {
+      "agent_id": 4,
+      "success": true,
+      "theme": "KIRBY PINK",
+      "file": "/Users/bart/Documents/code/vibeceo/web/public/pixelpit/swarm/t2/agent_4.html",
+      "url": "http://localhost:3000/pixelpit/swarm/t2/agent_4.html",
+      "tokens": {
+        "input": 293,
+        "output": 2102
+      },
+      "time": 12.065163135528564
+    }
+  ]
+}

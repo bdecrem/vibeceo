@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Candy Pop</title>
+<style>
+  body{margin:0;background:linear-gradient(135deg,#ffd1dc,#ffe4f1);overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0, targets=[], flashes=[];
+
+function randColor(){
+  const colors=['#ff69b4','#d8a8ff','#a0e7a0','#ffb347'];
+  return colors[Math.floor(Math.random()*colors.length)];
+}
+
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30,
+    speed:1+Math.random()*2,
+    color:randColor()
+  });
+}
+
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03) spawn();
+  for(let i=flashes.length-1;i>=0;i--){
+    flashes[i].life--;
+    if(flashes[i].life<=0) flashes.splice(i,1);
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  targets.forEach(t=>{
+    // stick
+    ctx.fillStyle='#8b4513';
+    ctx.fillRect(t.x-5, t.y, 10, t.r+10);
+    // candy
+    ctx.fillStyle=t.color;
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, t.r, 0, Math.PI*2);
+    ctx.fill();
+  });
+  flashes.forEach(f=>{
+    const pct=f.life/15;
+    const rad=30*(1-pct);
+    ctx.fillStyle=`rgba(255,255,255,${pct})`;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, rad, 0, Math.PI*2);
+    ctx.fill();
+  });
+  ctx.fillStyle='#ff69b4';
+  ctx.font='bold 32px "Comic Sans MS", cursive';
+  ctx.textAlign='left';
+  ctx.textBaseline='top';
+  ctx.shadowColor='rgba(0,0,0,0.5)';
+  ctx.shadowBlur=4;
+  ctx.fillText('Score: '+score,20,20);
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      flashes.push({x,y,life:15});
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY);};
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

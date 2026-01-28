@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Swarm</title></head><body style="margin:0;padding:0;overflow:hidden;background:#0f172a;color:#22d3ee;font:20px monospace;user-select:none;">
+<canvas id="c"></canvas>
+<div id="ui" style="position:absolute;top:10px;left:10px;z-index:1;">Score: <span id="score">0</span></div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let score = 0;
+let bubbles = [];
+let particles = [];
+let spawnRate = 0.02;
+let lastSpawn = 0;
+
+const colors = ['#ec4899', '#22d3ee', '#fbbf24'];
+
+class Bubble {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.vx = (Math.random() - 0.5) * 2;
+    this.vy = -Math.random() * 3 - 1;
+    this.r = Math.random() * 20 + 10;
+    this.color = colors[Math.floor(Math.random() * colors.length)];
+    this.life = 1;
+    this.pulse = Math.random() * Math.PI * 2;
+  }
+
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += 0.1;
+    this.pulse += 0.2;
+
+    if (this.x < 0 || this.x > canvas.width) this.vx *= -0.8;
+    if (this.y > canvas.height + 50) {
+      spawnRate += 0.005;
+      return false;
+    }
+    return true;
+  }
+
+  draw() {
+    const glow = Math.sin(this.pulse) * 5 + 5;
+    ctx.shadowBlur = glow;
+    ctx.shadowColor = this.color;
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  hit(x, y) {
+    return Math.hypot(x - this.x, y - this.y) < this.r;
+  }
+}
+
+class Particle {
+  constructor(x, y, color) {
+    this.x = x;
+    this.y = y;
+    this.vx = (Math.random() - 0.5) * 10;
+    this.vy = (Math.random() - 0.5) * 10;
+    this.color = color;
+    this.life = 1;
+  }
+
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vx *= 0.98;
+    this.vy *= 0.98;
+    this.life -= 0.02;
+    return this.life > 0;
+  }
+
+  draw() {
+    ctx.fillStyle = this.color;
+    ctx.globalAlpha = this.life;
+    ctx.fillRect(this.x, this.y, 3, 3);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function popBubble(x, y) {
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    if (bubbles[i].hit(x, y)) {
+      const bubble = bubbles.splice(i, 1)[0];
+      score += 10;
+      scoreEl.textContent = score;
+
+      for (let j = 0; j < 8; j++) {
+        particles.push(new Particle(bubble.x, bubble.y, bubble.color));
+      }
+      break;
+    }
+  }
+}
+
+function handleTouch(e) {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const touches = e.touches || [e];
+  for (let touch of touches) {
+    popBubble(touch.clientX - rect.left, touch.clientY - rect.top);
+  }
+}
+
+canvas.addEventListener('click', e => popBubble(e.offsetX, e.offsetY));
+canvas.addEventListener('touchstart', handleTouch);
+canvas.addEventListener('touchmove', handleTouch);
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (Math.random() < spawnRate) {
+    bubbles.push(new Bubble(Math.random() * canvas.width, canvas.height));
+  }
+
+  bubbles = bubbles.filter(b => b.update());
+  particles = particles.filter(p => p.update());
+
+  bubbles.forEach(b => b.draw());
+  particles.forEach(p => p.draw());
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body></html>

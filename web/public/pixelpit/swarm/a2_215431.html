@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>SINGULARITY PROTOCOL</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;display:flex;justify-content:center;align-items:center;height:100vh;font-family:'Courier New',monospace;overflow:hidden}
+canvas{display:block;image-rendering:pixelated}
+#ui{position:absolute;top:10px;left:10px;color:#ff4d00;font-size:12px;text-transform:uppercase;letter-spacing:2px}
+#title{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#ff4d00;text-align:center;display:none}
+#title h1{font-size:24px;letter-spacing:4px;margin-bottom:10px;animation:flicker 0.1s infinite}
+#title p{font-size:10px;opacity:0.7}
+@keyframes flicker{0%,100%{opacity:1}50%{opacity:0.8}}
+.gameover #title{display:block}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="ui">BREACH: <span id="breach">0</span>/5 | CONTAINED: <span id="score">0</span></div>
+<div id="title"><h1>CONTAINMENT FAILURE</h1><p>TAP TO REINITIALIZE</p></div>
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d'),W=400,H=600;
+C.width=W;C.height=H;
+let paddle={x:W/2,w:80,h:8},particles=[],score=0,breach=0,gameOver=false,spawnRate=60,frame=0;
+function spawn(){
+  const cols=Math.min(3+Math.floor(score/10),7);
+  for(let i=0;i<cols;i++){
+    particles.push({x:40+i*(W-80)/(cols-1||1)+Math.random()*20-10,y:-20,speed:2+Math.random()*2+score*0.02,size:6+Math.random()*4});
+  }
+}
+function update(){
+  if(gameOver)return;
+  frame++;
+  if(frame%Math.max(20,spawnRate-score)===0)spawn();
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.y+=p.speed;
+    if(p.y>H-30&&p.y<H-10&&Math.abs(p.x-paddle.x)<paddle.w/2+p.size/2){
+      particles.splice(i,1);score++;document.getElementById('score').textContent=score;
+    }else if(p.y>H){
+      particles.splice(i,1);breach++;document.getElementById('breach').textContent=breach;
+      if(breach>=5){gameOver=true;document.body.classList.add('gameover');}
+    }
+  }
+}
+function draw(){
+  X.fillStyle='#000';X.fillRect(0,0,W,H);
+  // Singularity
+  const gradient=X.createRadialGradient(W/2,0,0,W/2,0,150);
+  gradient.addColorStop(0,'#ff4d00');gradient.addColorStop(0.3,'#331100');gradient.addColorStop(1,'#000');
+  X.fillStyle=gradient;X.beginPath();X.arc(W/2,-50,150,0,Math.PI*2);X.fill();
+  // Grid lines
+  X.strokeStyle='#1a0800';X.lineWidth=1;
+  for(let i=0;i<W;i+=40){X.beginPath();X.moveTo(i,0);X.lineTo(i,H);X.stroke();}
+  for(let i=0;i<H;i+=40){X.beginPath();X.moveTo(0,i);X.lineTo(W,i);X.stroke();}
+  // Particles
+  particles.forEach(p=>{
+    X.fillStyle='#ff4d00';X.shadowColor='#ff4d00';X.shadowBlur=15;
+    X.beginPath();X.arc(p.x,p.y,p.size/2,0,Math.PI*2);X.fill();
+    X.shadowBlur=0;
+  });
+  // Paddle/Containment beam
+  X.fillStyle='#ff4d00';X.shadowColor='#ff4d00';X.shadowBlur=20;
+  X.fillRect(paddle.x-paddle.w/2,H-25,paddle.w,paddle.h);
+  X.shadowBlur=0;
+  // Scanlines
+  X.fillStyle='rgba(0,0,0,0.1)';
+  for(let i=0;i<H;i+=4)X.fillRect(0,i,W,2);
+  // Glitch effect
+  if(Math.random()<0.02){
+    const y=Math.random()*H,h=5+Math.random()*10;
+    X.drawImage(C,0,y,W,h,Math.random()*10-5,y,W,h);
+  }
+}
+function loop(){update();draw();requestAnimationFrame(loop);}
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+C.addEventListener('mousemove',e=>{const r=C.getBoundingClientRect();move((e.clientX-r.left)*(W/r.width));});
+C.addEventListener('touchmove',e=>{e.preventDefault();const r=C.getBoundingClientRect();move((e.touches[0].clientX-r.left)*(W/r.width));},{passive:false});
+document.addEventListener('click',()=>{
+  if(gameOver){gameOver=false;score=0;breach=0;particles=[];frame=0;
+    document.getElementById('score').textContent=0;document.getElementById('breach').textContent=0;
+    document.body.classList.remove('gameover');}
+});
+loop();
+</script></body></html>
