@@ -253,8 +253,8 @@ STYLES = {
     "abstract": ABSTRACT_PROMPT,
 }
 
-# Active prompt - default to voxel (use ABSTRACT_PROMPT for non-character images)
-STYLE_PROMPT = VOXEL_PROMPT
+# Active prompt - default to pixelpit (use ABSTRACT_PROMPT for non-character images)
+STYLE_PROMPT = PIXELPIT_PROMPT
 
 
 def main():

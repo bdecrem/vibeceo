@@ -57,7 +57,7 @@ The character generator (`characters.py`) supports multiple styles:
 | **Retro** | NES/Game Boy, chunky, nostalgic | Retro-themed games |
 | **Abstract** | Non-character imagery | Patterns, backgrounds |
 
-**Default style:** Voxel (set `STYLE_PROMPT` in `characters.py`)
+**Default style:** Pixelpit (colorful pixel art with pink/cyan accents — this is our signature look)
 
 ### The Team
 
