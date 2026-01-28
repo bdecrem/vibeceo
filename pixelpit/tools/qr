@@ -1,0 +1,7 @@
+#!/bin/bash
+# Quick alias for local-qr.py
+# Usage: ./qr [port] [path]
+# Example: ./qr 3000 /pixelpit/arcade
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+python3 "$SCRIPT_DIR/local-qr.py" "$@"

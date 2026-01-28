@@ -153,3 +153,4 @@ __pycache__/
 ngrok.yml
 sms-bot/ENV.sat
 .env.local.old
+pixelpit/tools/qr.html

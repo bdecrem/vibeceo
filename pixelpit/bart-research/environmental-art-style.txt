@@ -1,0 +1,69 @@
+Here are some search terms to Google:
+Games to look up:
+
+"Alto's Odyssey art style" - soft gradients, layered landscapes
+"Monument Valley environments" - clean geometric, dreamy colors
+"Ori and the Blind Forest backgrounds" - lush, glowing, painterly
+"Rayman Legends art" - vibrant, layered, playful
+"Gris game art style" - watercolor, atmospheric
+"Firewatch art style" - flat color, layered depth
+"Loco Roco visuals" - super simple, bold, bubbly
+"Badland game art" - silhouette layers, atmospheric
+"Cut the Rope backgrounds" - clean, friendly, colorful
+
+Style terms:
+
+"Flat vector game art"
+"Layered parallax game backgrounds"
+"Low poly stylized environments"
+"Soft gradient illustration game"
+"Paper cutout game aesthetic"
+"Vector jungle illustration"
+"Cute mobile game backgrounds"
+
+Artists/Studios:
+
+"Ustwo games art" (Monument Valley studio)
+"Team Cherry Hollow Knight environments" (if you want more detailed)
+"Snowman Alto art direction"
+
+Which vibe resonates most with what you're imagining? I can help narrow it down further!
+
+
+
+CUT THE ROPE STYLE
+========
+Core style description:
+
+Clean vector illustration, soft gradient background, simple geometric shapes, friendly and playful, bright saturated colors, minimal detail, smooth rounded edges, mobile game art style, no outlines, soft ambient shadows
+
+
+For a jungle scene:
+
+Jungle background in Cut the Rope mobile game style, soft gradient sky, simple rounded leaf shapes, layered foliage silhouettes, bright greens and teals, friendly cartoon aesthetic, clean vector art, no harsh edges, warm sunlight glow, minimal detail, bokeh light spots, playful and inviting
+
+
+For a waterfall:
+
+Waterfall scene in casual mobile game style, soft blue gradients, simple curved water shapes, rounded rocks, lush green foliage, clean vector illustration, friendly cartoon look, glowing light particles, no outlines, layered depth, bright and cheerful colors, smooth soft shadows
+
+
+Key style words to mix in:
+
+"soft gradients" (not flat)
+"rounded shapes"
+"clean vector"
+"no outlines" or "minimal linework"
+"layered depth"
+"friendly / playful / inviting"
+"casual mobile game art"
+"bokeh / light particles / glow spots"
+"saturated but not neon"
+"simple geometry"
+"smooth shadows"
+
+
+Negative prompts to add:
+
+pixelated, 8-bit, retro, harsh shadows, realistic, photographic, sketchy, lineart, dark, gritty, complex detail, sharp edges
+

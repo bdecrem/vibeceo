@@ -511,6 +511,12 @@ async def run_agent(agent_id: str, task: Dict[str, Any], supabase: Client, verbo
 
 ## Reference Files (Read these first)
 
+- **STYLEGUIDE** (CRITICAL): `web/app/pixelpit/styleguide/page.tsx` — "Neon Playroom" style
+  - Dark bg: `#0f172a`
+  - Pink leads: `#ec4899`, Cyan supports: `#22d3ee`, Yellow energy: `#fbbf24`
+  - Hard pixel shadows: `boxShadow: '4px 4px 0px 0px rgba(0,0,0,0.8)'`
+  - Font: `font-mono tracking-tight`
+  - NO scanlines, NO CRT noise, clean pixels
 - Components: `web/app/pixelpit/components/index.ts` (ScoreFlow, Leaderboard, ShareButtonContainer)
 - Example game: `web/app/pixelpit/arcade/beam/page.tsx`
 - OG image guide: `web/app/pixelpit/components/og/README.md`
@@ -522,6 +528,23 @@ async def run_agent(agent_id: str, task: Dict[str, Any], supabase: Client, verbo
 - HTML5 Canvas or pure React (no external game engines)
 - Import social components: `import {{ ScoreFlow, Leaderboard, ShareButtonContainer }} from '@/app/pixelpit/components'`
 - Pixel font: `import {{ Press_Start_2P }} from 'next/font/google'`
+
+## For Testers: MANDATORY Playwright Testing
+
+If you are mobile_tester or desktop_tester:
+
+**YOU CANNOT APPROVE BASED ON CODE REVIEW. YOU MUST RUN PLAYWRIGHT.**
+
+1. Write the test script from your CLAUDE.md
+2. Save it as `test-game.mjs`
+3. Run: `node test-game.mjs`
+4. If output says "FAIL" → REJECT the game
+5. If output says "PASS" → you may approve
+
+**If you approve without showing Playwright test output, you have FAILED your job.**
+
+Dev server: `localhost:3000`
+Game URL: `http://localhost:3000/pixelpit/arcade/{game_id}`
 
 ## After Completing Your Task
 
