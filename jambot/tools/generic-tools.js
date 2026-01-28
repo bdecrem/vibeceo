@@ -13,23 +13,23 @@ import { getParamDef, toEngine, fromEngine, formatValue } from '../params/conver
  *
  * REAL INSTRUMENTS:
  *   - jb01 (drum machine)
- *   - jb200 (bass/synth)
+ *   - jb202 (bass/synth)
  *   - sampler
  *
  * ALIASES (point to same instruments):
  *   - drums → jb01
- *   - bass, lead, synth → jb200
+ *   - bass, lead, synth → jb202
  */
 const NODE_TO_SYNTH = {
   // Real instruments
   jb01: 'jb01',
-  jb200: 'jb200',
+  jb202: 'jb202',
   sampler: 'r9ds',
   // Aliases
   drums: 'jb01',
-  bass: 'jb200',
-  lead: 'jb200',
-  synth: 'jb200',
+  bass: 'jb202',
+  lead: 'jb202',
+  synth: 'jb202',
 };
 
 /**
@@ -47,7 +47,7 @@ function parsePath(path) {
 
   // Single-voice instruments: bass.cutoff → voice='bass', param='cutoff'
   // Multi-voice instruments: drums.kick.decay → voice='kick', param='decay'
-  // JB200: jb200.bass.filterCutoff → voice='bass', param='filterCutoff'
+  // JB202: jb202.bass.filterCutoff → voice='bass', param='filterCutoff'
 
   if (parts.length === 2) {
     // bass.cutoff, lead.resonance
@@ -56,7 +56,7 @@ function parsePath(path) {
   }
 
   if (parts.length >= 3) {
-    // drums.kick.decay, sampler.s1.level, jb200.bass.filterCutoff
+    // drums.kick.decay, sampler.s1.level, jb202.bass.filterCutoff
     return { nodeId, voice: parts[1], param: parts.slice(2).join('.') };
   }
 
@@ -126,21 +126,27 @@ const genericTools = {
    *   - semitones → cents (tune: +3 → 300)
    *   - pan → -1 to +1 (pan: -50 → -0.5)
    *
-   * Examples:
+   * Use `value` for absolute values, `delta` for relative adjustments:
+   *
+   * Absolute examples:
    *   tweak({ path: 'drums.kick.decay', value: 75 })       → Sets decay to 75%
    *   tweak({ path: 'bass.cutoff', value: 2000 })          → Sets filter to 2000Hz
    *   tweak({ path: 'drums.kick.level', value: -6 })       → Sets level to -6dB
-   *   tweak({ path: 'jb200.bass.filterCutoff', value: 800 }) → Sets JB200 filter
+   *
+   * Relative examples (delta):
+   *   tweak({ path: 'jb202.bass.level', delta: -5 })       → Reduce level by 5
+   *   tweak({ path: 'drums.kick.decay', delta: 10 })       → Increase decay by 10
+   *   tweak({ path: 'bass.filterCutoff', delta: -200 })    → Lower cutoff by 200Hz
    */
   tweak: async (input, session, context) => {
-    const { path, value } = input;
+    const { path, value, delta } = input;
 
     if (!path) {
       return 'Error: path required (e.g., "drums.kick.decay")';
     }
 
-    if (value === undefined) {
-      return 'Error: value required';
+    if (value === undefined && delta === undefined) {
+      return 'Error: value or delta required';
     }
 
     // Validate node exists
@@ -152,15 +158,35 @@ const genericTools = {
     // Get descriptor for unit conversion
     const descriptor = getDescriptorForPath(path);
 
+    let finalProducerValue;
+
+    if (delta !== undefined) {
+      // Relative adjustment: get current value, add delta
+      const currentEngineValue = session.get(path);
+      if (currentEngineValue === undefined) {
+        return `Error: Cannot apply delta - ${path} has no current value`;
+      }
+      // Convert current engine value back to producer units
+      const currentProducerValue = descriptor ? fromEngine(currentEngineValue, descriptor) : currentEngineValue;
+      finalProducerValue = currentProducerValue + delta;
+      // Clamp to valid range if we have a descriptor
+      if (descriptor) {
+        finalProducerValue = Math.max(descriptor.min, Math.min(descriptor.max, finalProducerValue));
+      }
+    } else {
+      finalProducerValue = value;
+    }
+
     // Convert producer units to engine units if descriptor exists
-    const engineValue = descriptor ? toEngine(value, descriptor) : value;
+    const engineValue = descriptor ? toEngine(finalProducerValue, descriptor) : finalProducerValue;
 
     const success = session.set(path, engineValue);
 
     if (success) {
       // Format the display value
-      const displayValue = descriptor ? formatValue(value, descriptor) : JSON.stringify(value);
-      return `Set ${path} = ${displayValue}`;
+      const displayValue = descriptor ? formatValue(finalProducerValue, descriptor) : JSON.stringify(finalProducerValue);
+      const action = delta !== undefined ? `Adjusted ${path} by ${delta > 0 ? '+' : ''}${delta} →` : 'Set';
+      return `${action} ${path} = ${displayValue}`;
     } else {
       return `Error: Could not set ${path}`;
     }

@@ -185,22 +185,78 @@ export class JT30Node extends InstrumentNode {
   }
 
   /**
-   * Serialize full state
+   * Serialize JT30 state (sparse format)
+   * - Pattern: only store steps with gate=true
+   * - Params: only store values that differ from defaults
+   * @returns {Object}
    */
   serialize() {
+    // Sparse pattern: only store active steps
+    const sparsePattern = [];
+    this._pattern.forEach((step, i) => {
+      if (step.gate) {
+        const s = { i, n: step.note };
+        if (step.accent) s.a = true;
+        if (step.slide) s.s = true;
+        sparsePattern.push(s);
+      }
+    });
+
+    // Sparse params: only store non-default values
+    const sparseParams = {};
+    const bassDef = JT30_PARAMS.bass;
+    for (const [path, value] of Object.entries(this._params)) {
+      const paramName = path.replace('bass.', '');
+      const paramDef = bassDef?.[paramName];
+      if (paramDef) {
+        const defaultEngine = toEngine(paramDef.default, paramDef);
+        if (typeof value === 'string' ? value !== paramDef.default : Math.abs(value - defaultEngine) > 0.001) {
+          sparseParams[path] = value;
+        }
+      }
+    }
+
     return {
       id: this.id,
-      pattern: JSON.parse(JSON.stringify(this._pattern)),
-      params: { ...this._params },
+      pattern: sparsePattern.length > 0 ? sparsePattern : undefined,
+      patternLength: this._pattern.length,
+      params: Object.keys(sparseParams).length > 0 ? sparseParams : undefined,
     };
   }
 
   /**
-   * Deserialize state
+   * Deserialize JT30 state
+   * Handles both sparse and legacy full formats
+   * @param {Object} data
    */
   deserialize(data) {
-    if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
-    if (data.params) this._params = { ...data.params };
+    if (data.pattern) {
+      const length = data.patternLength || 16;
+      // Check if sparse format (array of {i, n, ...}) or legacy full format
+      const isSparse = Array.isArray(data.pattern) && data.pattern[0]?.i !== undefined;
+
+      if (isSparse) {
+        // Expand sparse pattern to full
+        this._pattern = createEmptyPattern(length);
+        for (const step of data.pattern) {
+          if (step.i < length) {
+            this._pattern[step.i] = {
+              note: step.n,
+              gate: true,
+              accent: step.a || false,
+              slide: step.s || false,
+            };
+          }
+        }
+      } else {
+        // Legacy full format
+        this._pattern = JSON.parse(JSON.stringify(data.pattern));
+      }
+    }
+
+    if (data.params) {
+      Object.assign(this._params, data.params);
+    }
   }
 
   /**

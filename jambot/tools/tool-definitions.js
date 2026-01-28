@@ -47,7 +47,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb200", "jb202", "sampler"], description: "Which instrument's pattern to save" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "sampler", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to save" },
         name: { type: "string", description: "Pattern name (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -59,7 +59,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb200", "jb202", "sampler"], description: "Which instrument's pattern to load" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "sampler", "jt10", "jt30", "jt90"], description: "Which instrument's pattern to load" },
         name: { type: "string", description: "Pattern name to load (A, B, C, etc)" }
       },
       required: ["instrument", "name"]
@@ -71,7 +71,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb200", "jb202", "sampler"], description: "Which instrument" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "sampler", "jt10", "jt30", "jt90"], description: "Which instrument" },
         from: { type: "string", description: "Source pattern name (A, B, etc)" },
         to: { type: "string", description: "Destination pattern name" }
       },
@@ -95,15 +95,17 @@ export const TOOLS = [
       properties: {
         sections: {
           type: "array",
-          description: "Array of sections. Each section: {bars: 4, jb01: 'A', jb200: 'A', jb202: 'A', sampler: 'A'}",
+          description: "Array of sections. Each section: {bars: 4, jb01: 'A', jb202: 'A', sampler: 'A', jt10: 'A', jt30: 'A', jt90: 'A'}",
           items: {
             type: "object",
             properties: {
               bars: { type: "number", description: "Number of bars for this section" },
               jb01: { type: "string", description: "JB01 drum pattern name (or omit to silence)" },
-              jb200: { type: "string", description: "JB200 bass pattern name (or omit to silence)" },
-              jb202: { type: "string", description: "JB202 modular bass pattern name (or omit to silence)" },
-              sampler: { type: "string", description: "Sampler pattern name (or omit to silence)" }
+              jb202: { type: "string", description: "JB202 bass pattern name (or omit to silence)" },
+              sampler: { type: "string", description: "Sampler pattern name (or omit to silence)" },
+              jt10: { type: "string", description: "JT10 lead pattern name (or omit to silence)" },
+              jt30: { type: "string", description: "JT30 acid bass pattern name (or omit to silence)" },
+              jt90: { type: "string", description: "JT90 drum pattern name (or omit to silence)" }
             },
             required: ["bars"]
           }
@@ -130,110 +132,6 @@ export const TOOLS = [
       required: []
     }
   },
-  // JB200 (Bass Monosynth)
-  {
-    name: "add_jb200",
-    description: "Add a bass pattern using JB200 (2-oscillator bass monosynth). Provide an array of 16 steps. Each step has: note, gate, accent, slide.",
-    input_schema: {
-      type: "object",
-      properties: {
-        pattern: {
-          type: "array",
-          description: "Array of 16 steps. Each step: {note: 'C2', gate: true, accent: false, slide: false}. Bass range: C1-C3",
-          items: {
-            type: "object",
-            properties: {
-              note: { type: "string", description: "Note name (C1, D2, E2, etc)" },
-              gate: { type: "boolean", description: "true = play note, false = rest" },
-              accent: { type: "boolean", description: "Accent for extra attack and filter opening" },
-              slide: { type: "boolean", description: "Glide/portamento to this note from previous" }
-            }
-          }
-        }
-      },
-      required: ["pattern"]
-    }
-  },
-  {
-    name: "tweak_jb200",
-    description: "Adjust JB200 bass synth parameters. UNITS: level in dB (-60 to +6), filterCutoff in Hz (20-16000), detune in cents (-50 to +50), filterEnvAmount (-100 to +100), octaves in semitones, all others 0-100. Use mute:true to silence.",
-    input_schema: {
-      type: "object",
-      properties: {
-        // Output
-        mute: { type: "boolean", description: "Mute bass (sets level to -60dB)" },
-        level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
-        // Oscillator 1
-        osc1Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 1 waveform" },
-        osc1Octave: { type: "number", description: "Osc 1 octave shift in semitones (-24 to +24)" },
-        osc1Detune: { type: "number", description: "Osc 1 fine tune (-50 to +50)" },
-        osc1Level: { type: "number", description: "Osc 1 level 0-100" },
-        // Oscillator 2
-        osc2Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 2 waveform" },
-        osc2Octave: { type: "number", description: "Osc 2 octave shift in semitones (-24 to +24). -12 = one octave down" },
-        osc2Detune: { type: "number", description: "Osc 2 fine tune (-50 to +50). 5-10 adds fatness" },
-        osc2Level: { type: "number", description: "Osc 2 level 0-100" },
-        // Filter
-        filterCutoff: { type: "number", description: "Filter cutoff in Hz (20-16000). 400=warm, 1200=present, 4000=bright" },
-        filterResonance: { type: "number", description: "Filter resonance 0-100. Adds bite at 40-60" },
-        filterEnvAmount: { type: "number", description: "Filter envelope depth -100 to +100. Positive opens filter on attack" },
-        // Filter envelope
-        filterAttack: { type: "number", description: "Filter envelope attack 0-100" },
-        filterDecay: { type: "number", description: "Filter envelope decay 0-100. Short (10-40) for plucky bass" },
-        filterSustain: { type: "number", description: "Filter envelope sustain 0-100" },
-        filterRelease: { type: "number", description: "Filter envelope release 0-100" },
-        // Amp envelope
-        ampAttack: { type: "number", description: "Amp envelope attack 0-100. 0 for punchy" },
-        ampDecay: { type: "number", description: "Amp envelope decay 0-100" },
-        ampSustain: { type: "number", description: "Amp envelope sustain 0-100. 50-80 for bass" },
-        ampRelease: { type: "number", description: "Amp envelope release 0-100. 10-30 for tight bass" },
-        // Drive
-        drive: { type: "number", description: "Output saturation 0-100. Adds harmonics and grit" }
-      },
-      required: []
-    }
-  },
-  // JB200 Kit/Sequence tools
-  {
-    name: "list_jb200_kits",
-    description: "List available JB200 sound presets (kits). Use when user asks 'what JB200 sounds are there' or 'show bass presets'.",
-    input_schema: {
-      type: "object",
-      properties: {},
-      required: []
-    }
-  },
-  {
-    name: "load_jb200_kit",
-    description: "Load a JB200 kit (sound preset). Applies oscillator, filter, envelope, and drive settings. Use 'default' for the classic sound.",
-    input_schema: {
-      type: "object",
-      properties: {
-        kit: { type: "string", description: "Kit ID or name (e.g., 'default', 'acid', 'sub')" }
-      },
-      required: ["kit"]
-    }
-  },
-  {
-    name: "list_jb200_sequences",
-    description: "List available JB200 pattern presets (sequences). Use when user asks 'what JB200 patterns are there' or 'show bass lines'.",
-    input_schema: {
-      type: "object",
-      properties: {},
-      required: []
-    }
-  },
-  {
-    name: "load_jb200_sequence",
-    description: "Load a JB200 sequence (pattern preset). Applies the note pattern with gates, accents, and slides. Use 'default' for the classic acid line.",
-    input_schema: {
-      type: "object",
-      properties: {
-        sequence: { type: "string", description: "Sequence ID or name (e.g., 'default', 'minimal', 'busy')" }
-      },
-      required: ["sequence"]
-    }
-  },
   {
     name: "test_tone",
     description: "Render a pure test tone for audio analysis. Outputs a clean saw wave with flat envelope (no ADSR shaping). Default is A440 (A4) for 1 second.",
@@ -248,7 +146,7 @@ export const TOOLS = [
   // JB202 (Modular Bass Synth with Custom DSP)
   {
     name: "add_jb202",
-    description: "Add a bass pattern using JB202 (modular bass synth with custom DSP). Same API as JB200 but uses PolyBLEP oscillators, 24dB cascaded biquad filter, and soft-clip drive. Produces identical output in browser and Node.js.",
+    description: "Add a bass pattern using JB202 (modular bass synth with custom DSP). Uses PolyBLEP oscillators, 24dB cascaded biquad filter, and soft-clip drive. Produces identical output in browser and Node.js.",
     input_schema: {
       type: "object",
       properties: {
@@ -271,12 +169,13 @@ export const TOOLS = [
   },
   {
     name: "tweak_jb202",
-    description: "Adjust JB202 bass synth parameters (custom DSP version). UNITS: level 0-100, filterCutoff in Hz (20-16000), detune in cents (-50 to +50), filterEnvAmount (-100 to +100), octaves in semitones, all others 0-100. Use mute:true to silence.",
+    description: "Adjust JB202 bass synth parameters (custom DSP version). UNITS: level in dB (-60 to +6, 0=unity), filterCutoff in Hz (20-16000), detune in cents (-50 to +50), filterEnvAmount (-100 to +100), octaves in semitones, all others 0-100. Use mute:true to silence. Use levelDelta for relative dB adjustments (e.g., levelDelta:-5 to reduce by 5dB).",
     input_schema: {
       type: "object",
       properties: {
-        mute: { type: "boolean", description: "Mute bass (sets level to 0)" },
-        level: { type: "number", description: "Output level 0-100" },
+        mute: { type: "boolean", description: "Mute bass (sets level to -60dB)" },
+        level: { type: "number", description: "Output level in dB (-60 to +6, 0=unity gain)" },
+        levelDelta: { type: "number", description: "Relative level adjustment in dB (e.g., -5 to reduce by 5dB, +3 to boost by 3dB)" },
         osc1Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 1 waveform" },
         osc1Octave: { type: "number", description: "Osc 1 octave shift in semitones (-24 to +24)" },
         osc1Detune: { type: "number", description: "Osc 1 fine tune (-50 to +50)" },
@@ -428,6 +327,145 @@ export const TOOLS = [
       type: "object",
       properties: {},
       required: []
+    }
+  },
+  // JT10 (Lead/Bass Synth - 101-style)
+  {
+    name: "add_jt10",
+    description: "Add a lead pattern using JT10 (101-style lead synth). Features PolyBLEP oscillators, sub-oscillator, Moog ladder filter, LFO modulation.",
+    input_schema: {
+      type: "object",
+      properties: {
+        pattern: {
+          type: "array",
+          description: "Array of 16 steps. Each step: {note: 'C3', gate: true, accent: false, slide: false}. Lead range: C2-C5",
+          items: {
+            type: "object",
+            properties: {
+              note: { type: "string", description: "Note name (C2, D3, E4, etc)" },
+              gate: { type: "boolean", description: "true = play note, false = rest" },
+              accent: { type: "boolean", description: "Accent for extra attack" },
+              slide: { type: "boolean", description: "Glide/portamento to this note" }
+            }
+          }
+        }
+      },
+      required: ["pattern"]
+    }
+  },
+  {
+    name: "tweak_jt10",
+    description: "Adjust JT10 lead synth parameters. Use mute:true to silence.",
+    input_schema: {
+      type: "object",
+      properties: {
+        mute: { type: "boolean", description: "Mute lead (sets level to 0)" },
+        level: { type: "number", description: "Output level 0-100" },
+        waveform: { type: "string", enum: ["sawtooth", "pulse"], description: "Oscillator waveform" },
+        pulseWidth: { type: "number", description: "Pulse width 0-100 (pulse waveform only)" },
+        subLevel: { type: "number", description: "Sub-oscillator level 0-100" },
+        subOctave: { type: "number", description: "Sub-oscillator octave (-1 or -2)" },
+        filterCutoff: { type: "number", description: "Filter cutoff in Hz (20-16000)" },
+        filterResonance: { type: "number", description: "Filter resonance 0-100" },
+        filterEnvAmount: { type: "number", description: "Filter envelope depth 0-100" },
+        filterAttack: { type: "number", description: "Filter envelope attack 0-100" },
+        filterDecay: { type: "number", description: "Filter envelope decay 0-100" },
+        filterSustain: { type: "number", description: "Filter envelope sustain 0-100" },
+        filterRelease: { type: "number", description: "Filter envelope release 0-100" },
+        ampAttack: { type: "number", description: "Amp envelope attack 0-100" },
+        ampDecay: { type: "number", description: "Amp envelope decay 0-100" },
+        ampSustain: { type: "number", description: "Amp envelope sustain 0-100" },
+        ampRelease: { type: "number", description: "Amp envelope release 0-100" },
+        lfoRate: { type: "number", description: "LFO rate 0-100" },
+        lfoAmount: { type: "number", description: "LFO modulation amount 0-100" },
+        lfoDestination: { type: "string", enum: ["pitch", "filter", "pulseWidth"], description: "LFO destination" }
+      },
+      required: []
+    }
+  },
+  // JT30 (Acid Bass - 303-style)
+  {
+    name: "add_jt30",
+    description: "Add an acid bass pattern using JT30 (303-style acid synth). Features saw/square oscillators, Moog ladder filter, classic acid sound.",
+    input_schema: {
+      type: "object",
+      properties: {
+        pattern: {
+          type: "array",
+          description: "Array of 16 steps. Each step: {note: 'C2', gate: true, accent: false, slide: false}. Bass range: C1-C3",
+          items: {
+            type: "object",
+            properties: {
+              note: { type: "string", description: "Note name (C1, D2, E2, etc)" },
+              gate: { type: "boolean", description: "true = play note, false = rest" },
+              accent: { type: "boolean", description: "Accent for harder attack and filter opening" },
+              slide: { type: "boolean", description: "Glide/portamento to this note" }
+            }
+          }
+        }
+      },
+      required: ["pattern"]
+    }
+  },
+  {
+    name: "tweak_jt30",
+    description: "Adjust JT30 acid bass parameters. Use mute:true to silence.",
+    input_schema: {
+      type: "object",
+      properties: {
+        mute: { type: "boolean", description: "Mute bass (sets level to 0)" },
+        level: { type: "number", description: "Output level 0-100" },
+        waveform: { type: "string", enum: ["sawtooth", "square"], description: "Oscillator waveform" },
+        filterCutoff: { type: "number", description: "Filter cutoff in Hz (20-16000). 300=deep, 800=present, 2000=bright" },
+        filterResonance: { type: "number", description: "Filter resonance 0-100. Classic acid squelch at 60-80" },
+        filterEnvAmount: { type: "number", description: "Filter envelope depth 0-100. Higher = more acid" },
+        filterDecay: { type: "number", description: "Filter envelope decay 0-100. Short for punchy, long for sweep" },
+        accentLevel: { type: "number", description: "Accent intensity 0-100" },
+        drive: { type: "number", description: "Output saturation 0-100" }
+      },
+      required: []
+    }
+  },
+  // JT90 (Drum Machine - 909-style)
+  {
+    name: "add_jt90",
+    description: "Add JT90 drum pattern (909-style drum machine). 11 voices: kick, snare, clap, rimshot, lowtom, midtom, hitom, ch (closed hat), oh (open hat), crash, ride. Pass step arrays [0,4,8,12] for each voice.",
+    input_schema: {
+      type: "object",
+      properties: {
+        clear: { type: "boolean", description: "Clear ALL voices first before adding" },
+        bars: { type: "number", description: "Pattern length in bars (default 1)" },
+        kick: { type: "array", items: { type: "number" }, description: "Kick steps (0-15 for 1 bar)" },
+        snare: { type: "array", items: { type: "number" }, description: "Snare steps (0-15 for 1 bar)" },
+        clap: { type: "array", items: { type: "number" }, description: "Clap steps (0-15 for 1 bar)" },
+        rimshot: { type: "array", items: { type: "number" }, description: "Rimshot steps (0-15 for 1 bar)" },
+        lowtom: { type: "array", items: { type: "number" }, description: "Low tom steps (0-15 for 1 bar)" },
+        midtom: { type: "array", items: { type: "number" }, description: "Mid tom steps (0-15 for 1 bar)" },
+        hitom: { type: "array", items: { type: "number" }, description: "Hi tom steps (0-15 for 1 bar)" },
+        ch: { type: "array", items: { type: "number" }, description: "Closed hi-hat steps (0-15 for 1 bar)" },
+        oh: { type: "array", items: { type: "number" }, description: "Open hi-hat steps (0-15 for 1 bar)" },
+        crash: { type: "array", items: { type: "number" }, description: "Crash cymbal steps (0-15 for 1 bar)" },
+        ride: { type: "array", items: { type: "number" }, description: "Ride cymbal steps (0-15 for 1 bar)" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "tweak_jt90",
+    description: "Adjust JT90 drum voice parameters. UNITS: level 0-100, tune in cents (-1200 to +1200), decay/attack/tone 0-100. Use mute:true to silence.",
+    input_schema: {
+      type: "object",
+      properties: {
+        voice: { type: "string", enum: ["kick", "snare", "clap", "rimshot", "lowtom", "midtom", "hitom", "ch", "oh", "crash", "ride"], description: "Voice to tweak (required)" },
+        mute: { type: "boolean", description: "Mute voice (sets level to 0)" },
+        level: { type: "number", description: "Volume 0-100" },
+        tune: { type: "number", description: "Pitch in cents (-1200 to +1200)" },
+        decay: { type: "number", description: "Decay time 0-100" },
+        attack: { type: "number", description: "Attack/click amount 0-100 (kick only)" },
+        tone: { type: "number", description: "Tone/brightness 0-100" },
+        snappy: { type: "number", description: "Snare snappiness 0-100 (snare only)" }
+      },
+      required: ["voice"]
     }
   },
   {
@@ -592,7 +630,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        voice: { type: "string", description: "Voice to route (e.g., 'kick', 'snare', 'ch', 'oh', 'jb200', 'sampler')" },
+        voice: { type: "string", description: "Voice to route (e.g., 'kick', 'snare', 'ch', 'oh', 'jb202', 'sampler')" },
         send: { type: "string", description: "Name of the send bus to route to" },
         level: { type: "number", description: "Send level (0-1, default 0.3)" }
       },
@@ -605,7 +643,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["jb01", "jb200", "sampler", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to add effect to" },
+        channel: { type: "string", enum: ["jb01", "jb202", "sampler", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to add effect to" },
         effect: { type: "string", enum: ["eq", "filter", "ducker"], description: "Type of effect" },
         preset: { type: "string", description: "Effect preset (eq: 'acidBass'/'crispHats'/'warmPad'; filter: 'dubDelay'/'telephone'/'lofi')" },
         params: {
@@ -622,7 +660,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["jb01", "jb200", "sampler", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to remove effect from" },
+        channel: { type: "string", enum: ["jb01", "jb202", "sampler", "kick", "snare", "clap", "ch", "oh", "lowtom", "hitom", "cymbal"], description: "Instrument or JB01 voice to remove effect from" },
         effect: { type: "string", enum: ["eq", "filter", "ducker", "all"], description: "Type of effect to remove, or 'all' to clear all inserts" }
       },
       required: ["channel"]
@@ -634,7 +672,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        target: { type: "string", description: "What to duck (e.g., 'jb200', 'sampler')" },
+        target: { type: "string", description: "What to duck (e.g., 'jb202', 'sampler')" },
         trigger: { type: "string", description: "What triggers the duck (e.g., 'kick')" },
         amount: { type: "number", description: "How much to duck (0-1, default 0.5)" }
       },
@@ -794,7 +832,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        target: { type: "string", description: "Target for effect: instrument (jb01, jb200), voice (jb01.ch, jb01.kick, jb01.snare), or 'master'" },
+        target: { type: "string", description: "Target for effect: instrument (jb01, jb202), voice (jb01.ch, jb01.kick, jb01.snare), or 'master'" },
         effect: { type: "string", enum: ["delay", "reverb"], description: "Type of effect to add" },
         after: { type: "string", description: "Insert after this effect type/ID (for ordering). Omit to append." },
         // Delay params
@@ -868,11 +906,11 @@ export const TOOLS = [
   // === PRESET TOOLS (Generic) ===
   {
     name: "save_preset",
-    description: "Save current instrument settings as a user preset. Works for any instrument (jb01, jb200, sampler). Presets are stored in ~/Documents/Jambot/presets/.",
+    description: "Save current instrument settings as a user preset. Works for any instrument (jb01, jb202, sampler). Presets are stored in ~/Documents/Jambot/presets/.",
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb200", "sampler"], description: "Which instrument to save preset for" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "sampler"], description: "Which instrument to save preset for" },
         id: { type: "string", description: "Preset ID (lowercase, hyphenated, e.g., 'my-deep-kick')" },
         name: { type: "string", description: "Display name (e.g., 'My Deep Kick')" },
         description: { type: "string", description: "Optional description of the preset's sound" }
@@ -886,7 +924,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb200", "sampler"], description: "Which instrument to load preset for" },
+        instrument: { type: "string", enum: ["jb01", "jb202", "sampler"], description: "Which instrument to load preset for" },
         id: { type: "string", description: "Preset ID to load" }
       },
       required: ["instrument", "id"]
@@ -898,7 +936,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        instrument: { type: "string", enum: ["jb01", "jb200", "sampler"], description: "Filter by instrument (optional, shows all if omitted)" }
+        instrument: { type: "string", enum: ["jb01", "jb202", "sampler"], description: "Filter by instrument (optional, shows all if omitted)" }
       },
       required: []
     }
@@ -906,25 +944,26 @@ export const TOOLS = [
   // === GENERIC PARAMETER TOOLS (Unified System) ===
   {
     name: "get_param",
-    description: "Get any parameter value via unified path. Works for ALL instruments and parameters. Examples: 'jb01.kick.decay' → 37, 'jb200.filterCutoff' → 2000, 'sampler.s1.level' → 0",
+    description: "Get any parameter value via unified path. Works for ALL instruments and parameters. Examples: 'jb01.kick.decay' → 37, 'jb202.filterCutoff' → 2000, 'sampler.s1.level' → 0",
     input_schema: {
       type: "object",
       properties: {
-        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb200.filterCutoff', 'sampler.s1.level')" }
+        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb202.filterCutoff', 'sampler.s1.level')" }
       },
       required: ["path"]
     }
   },
   {
     name: "tweak",
-    description: "Set any parameter value via unified path. Works for ALL instruments. Examples: tweak jb01.kick.decay to 50, tweak jb200.filterCutoff to 3000, tweak sampler.s1.level to -6",
+    description: "Set any parameter value via unified path. Use 'value' for absolute values, 'delta' for relative adjustments (e.g., 'lower by 5'). Examples: tweak({path:'jb202.level',value:50}) sets to 50, tweak({path:'jb202.level',delta:-5}) reduces by 5.",
     input_schema: {
       type: "object",
       properties: {
-        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb200.filterCutoff', 'sampler.s1.level')" },
-        value: { description: "Value to set (number, string, or boolean depending on parameter)" }
+        path: { type: "string", description: "Parameter path (e.g., 'jb01.kick.decay', 'jb202.filterCutoff', 'sampler.s1.level')" },
+        value: { type: "number", description: "Absolute value to set" },
+        delta: { type: "number", description: "Relative adjustment (positive to increase, negative to decrease). Use this for 'increase by X' or 'reduce by X' requests." }
       },
-      required: ["path", "value"]
+      required: ["path"]
     }
   },
   {
@@ -933,7 +972,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        params: { type: "object", description: "Object mapping paths to values, e.g., { 'jb01.kick.decay': 50, 'jb200.filterCutoff': 2000 }" }
+        params: { type: "object", description: "Object mapping paths to values, e.g., { 'jb01.kick.decay': 50, 'jb202.filterCutoff': 2000 }" }
       },
       required: ["params"]
     }
@@ -944,7 +983,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        node: { type: "string", description: "Node to list params for (jb01, jb200, sampler). Omit to list all available nodes." }
+        node: { type: "string", description: "Node to list params for (jb01, jb202, sampler). Omit to list all available nodes." }
       },
       required: []
     }
@@ -955,7 +994,7 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        node: { type: "string", description: "Node to get state for (jb01, jb200, sampler)" },
+        node: { type: "string", description: "Node to get state for (jb01, jb202, sampler)" },
         voice: { type: "string", description: "Optional: filter to specific voice (e.g., 'kick', 'snare')" }
       },
       required: ["node"]

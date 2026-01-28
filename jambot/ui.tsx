@@ -14,7 +14,6 @@ import {
   HELP_TEXT,
   CHANGELOG_TEXT,
   JB01_GUIDE,
-  JB200_GUIDE,
   JB202_GUIDE,
   JP9000_GUIDE,
   DELAY_GUIDE,
@@ -35,6 +34,7 @@ import {
   addToHistory,
   updateSession,
   restoreSession,
+  restoreProjectInPlace,
   extractProjectName,
   ensureDirectories,
   exportProject,
@@ -304,17 +304,17 @@ function InputBar({ value, onChange, onSubmit, isProcessing, suggestions, select
 function StatusBar({ session, project }) {
   // Build list of active synths
   const synths = [];
-  if (session?.drumPattern && Object.keys(session.drumPattern).length > 0) {
-    synths.push('R9D9');
+  // JB01 drums
+  if (session?.jb01Pattern && Object.values(session.jb01Pattern).some(v => v?.some?.(s => s?.velocity > 0))) {
+    synths.push('JB01');
   }
-  if (session?.bassPattern?.some(s => s.gate)) {
-    synths.push('R3D3');
+  // JB202 bass synth
+  if (session?.jb202Pattern?.some(s => s.gate)) {
+    synths.push('JB202');
   }
-  if (session?.leadPattern?.some(s => s.gate)) {
-    synths.push('R1D1');
-  }
+  // Sampler
   if (session?.samplerKit && session?.samplerPattern && Object.keys(session.samplerPattern).length > 0) {
-    synths.push('R9DS');
+    synths.push('Sampler');
   }
   const synthList = synths.length > 0 ? synths.join('+') : 'empty';
   const swing = session?.swing > 0 ? ` swing ${session.swing}%` : '';
@@ -565,9 +565,9 @@ function App() {
       const loadedProject = loadProject(folderName);
       setProject(loadedProject);
 
-      // Restore session from project
-      const restoredSession = restoreSession(loadedProject);
-      setSession(restoredSession);
+      // Restore session in-place for consistency with onOpenProject
+      restoreProjectInPlace(session, loadedProject);
+      setSession({ ...session }); // Force React re-render
       setAgentMessages([]);
 
       addMessage('project', `Opened project: ${loadedProject.name}`);
@@ -578,7 +578,7 @@ function App() {
     } catch (err) {
       addMessage('system', `Error opening project: ${err.message}`);
     }
-  }, [addMessage]);
+  }, [session, addMessage]);
 
   const showProjects = useCallback(() => {
     const projects = listProjects();
@@ -699,10 +699,6 @@ function App() {
 
       case '/jb01':
         addMessage('info', JB01_GUIDE);
-        break;
-
-      case '/jb200':
-        addMessage('info', JB200_GUIDE);
         break;
 
       case '/delay':
@@ -856,17 +852,20 @@ function App() {
           onOpenProject: (folderName) => {
             try {
               const loadedProject = loadProject(folderName);
-              const restoredSession = restoreSession(loadedProject);
+              // CRITICAL: Update existing session in-place so the running agent loop
+              // sees the changes (setSession creates a new object that wouldn't be visible
+              // to code holding the old reference)
+              restoreProjectInPlace(session, loadedProject);
               // Update state
               setProject(loadedProject);
-              setSession(restoredSession);
+              setSession({ ...session }); // Force React re-render with same object
               currentProject = loadedProject;
               // Clear agent messages for fresh start
               setAgentMessages([]);
               addMessage('project', `Opened: ${loadedProject.name}`);
               return {
                 name: loadedProject.name,
-                bpm: restoredSession.bpm,
+                bpm: session.bpm,
                 renderCount: loadedProject.renders?.length || 0,
               };
             } catch (e) {

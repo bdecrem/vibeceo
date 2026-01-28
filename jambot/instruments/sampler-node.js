@@ -329,27 +329,98 @@ export class SamplerNode extends InstrumentNode {
   }
 
   /**
-   * Serialize full sampler state
+   * Get pattern length (uses s1 as reference)
+   * @returns {number}
+   */
+  getPatternLength() {
+    return this._pattern.s1?.length || 16;
+  }
+
+  /**
+   * Serialize sampler state (sparse format)
+   * - Pattern: only store slots with hits, only store steps with velocity > 0
+   * - Params: only store values that differ from defaults
    * @returns {Object}
    */
   serialize() {
+    // Sparse pattern: only store active steps
+    const sparsePattern = {};
+    for (const [slot, steps] of Object.entries(this._pattern)) {
+      if (!Array.isArray(steps)) continue;
+      const activeSteps = [];
+      steps.forEach((step, i) => {
+        if (step?.velocity > 0) {
+          activeSteps.push({ i, v: step.velocity });
+        }
+      });
+      if (activeSteps.length > 0) {
+        sparsePattern[slot] = activeSteps;
+      }
+    }
+
+    // Sparse params: only store non-default values
+    // Note: sampler stores producer units, so compare against producer defaults
+    const sparseParams = {};
+    const slotDef = R9DS_PARAMS.slot;
+    for (const [path, value] of Object.entries(this._params)) {
+      const [slot, paramName] = path.split('.');
+      const paramDef = slotDef?.[paramName];
+      if (paramDef) {
+        // Compare producer values directly
+        if (Math.abs(value - paramDef.default) > 0.001) {
+          sparseParams[path] = value;
+        }
+      }
+    }
+
     return {
       id: this.id,
       kitId: this._kit?.id || null,
-      level: this._level,
-      pattern: this._pattern,
-      params: { ...this._params },
+      level: this._level !== -6 ? this._level : undefined,
+      pattern: Object.keys(sparsePattern).length > 0 ? sparsePattern : undefined,
+      patternLength: this.getPatternLength(),
+      params: Object.keys(sparseParams).length > 0 ? sparseParams : undefined,
     };
   }
 
   /**
    * Deserialize sampler state
+   * Handles both sparse and legacy full formats
    * @param {Object} data
    */
   deserialize(data) {
     // Note: kit must be reloaded separately (contains audio buffers)
     if (data.level !== undefined) this._level = data.level;
-    if (data.pattern) this._pattern = data.pattern;
-    if (data.params) this._params = { ...data.params };
+
+    if (data.pattern) {
+      const length = data.patternLength || 16;
+      // Check if sparse format (array of {i, v}) or legacy full format
+      const firstSlot = Object.values(data.pattern)[0];
+      const isSparse = Array.isArray(firstSlot) && firstSlot[0]?.i !== undefined;
+
+      if (isSparse) {
+        // Expand sparse pattern to full
+        this._pattern = {};
+        for (const slot of SLOTS) {
+          this._pattern[slot] = Array(length).fill(null).map(() => ({ velocity: 0 }));
+        }
+        for (const [slot, steps] of Object.entries(data.pattern)) {
+          if (this._pattern[slot]) {
+            for (const step of steps) {
+              if (step.i < length) {
+                this._pattern[slot][step.i] = { velocity: step.v };
+              }
+            }
+          }
+        }
+      } else {
+        // Legacy full format
+        this._pattern = data.pattern;
+      }
+    }
+
+    if (data.params) {
+      Object.assign(this._params, data.params);
+    }
   }
 }

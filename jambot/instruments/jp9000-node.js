@@ -384,26 +384,70 @@ export class JP9000Node extends InstrumentNode {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /**
-   * Serialize full JP9000 state
+   * Serialize JP9000 state (sparse format for pattern)
    * @returns {Object}
    */
   serialize() {
+    // Sparse pattern: only store active steps
+    const sparsePattern = [];
+    this._pattern.forEach((step, i) => {
+      if (step.gate) {
+        const s = { i };
+        if (step.note) s.n = step.note;
+        if (step.velocity !== undefined && step.velocity !== 1) s.v = step.velocity;
+        sparsePattern.push(s);
+      }
+    });
+
+    // Only store non-default node params
+    const sparseParams = {};
+    const levelValue = this._params['modular.level'];
+    if (levelValue !== undefined && Math.abs(levelValue - 0.5) > 0.001) {
+      sparseParams['modular.level'] = levelValue;
+    }
+
     return {
       id: this.id,
-      pattern: JSON.parse(JSON.stringify(this._pattern)),
-      params: { ...this._params },
+      pattern: sparsePattern.length > 0 ? sparsePattern : undefined,
+      patternLength: this._pattern.length,
+      params: Object.keys(sparseParams).length > 0 ? sparseParams : undefined,
       rack: this.rack.toJSON(),
-      triggerModules: [...this._triggerModules],
+      triggerModules: this._triggerModules.length > 0 ? [...this._triggerModules] : undefined,
     };
   }
 
   /**
    * Deserialize JP9000 state
+   * Handles both sparse and legacy full formats
    * @param {Object} data
    */
   deserialize(data) {
-    if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
-    if (data.params) this._params = { ...data.params };
+    if (data.pattern) {
+      const length = data.patternLength || 16;
+      // Check if sparse format (array of {i, n, ...}) or legacy full format
+      const isSparse = Array.isArray(data.pattern) && data.pattern[0]?.i !== undefined;
+
+      if (isSparse) {
+        // Expand sparse pattern to full
+        this._pattern = createEmptyPattern(length);
+        for (const step of data.pattern) {
+          if (step.i < length) {
+            this._pattern[step.i] = {
+              note: step.n || null,
+              gate: true,
+              velocity: step.v ?? 1,
+            };
+          }
+        }
+      } else {
+        // Legacy full format
+        this._pattern = JSON.parse(JSON.stringify(data.pattern));
+      }
+    }
+
+    if (data.params) {
+      Object.assign(this._params, data.params);
+    }
     if (data.rack) this.rack = Rack.fromJSON(data.rack);
     if (data.triggerModules) this._triggerModules = [...data.triggerModules];
   }

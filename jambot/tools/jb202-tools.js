@@ -50,34 +50,53 @@ const jb202Tools = {
    *
    * Examples with generic tweak:
    *   tweak({ path: 'jb202.bass.filterCutoff', value: 800 })     -> 800Hz
-   *   tweak({ path: 'jb202.bass.filterResonance', value: 40 })   -> 40%
-   *   tweak({ path: 'jb202.bass.drive', value: 50 })             -> 50%
-   *   tweak({ path: 'jb202.bass.level', value: 80 })             -> 80%
+   *   tweak({ path: 'jb202.bass.level', delta: -5 })             -> Reduce level by 5
    *
    * This tool still works but is no longer the recommended approach.
-   * The generic tweak() handles unit conversion automatically.
+   * The generic tweak() handles unit conversion automatically AND supports
+   * relative adjustments via delta parameter.
    *
    * @deprecated
    */
   tweak_jb202: async (input, session, context) => {
     const tweaks = [];
+    const { fromEngine } = await import('../params/converters.js');
 
-    // Mute: convenience alias for level=0, Unmute: restore to 100
+    // Mute: set level to -60dB (minimum), Unmute: restore to 0dB (unity)
     if (input.mute === true) {
       const def = getParamDef('jb202', 'bass', 'level');
-      session.jb202Params.level = def ? toEngine(0, def) : 0;
-      tweaks.push('muted');
+      const engineLevel = def ? toEngine(-60, def) : 0; // -60dB = silent
+      session.set('jb202.bass.level', engineLevel);
+      session.jb202Params.level = engineLevel;
+      tweaks.push('muted (-60dB)');
     } else if (input.mute === false) {
       const def = getParamDef('jb202', 'bass', 'level');
-      session.jb202Params.level = def ? toEngine(100, def) : 1;
-      tweaks.push('unmuted');
+      const engineLevel = def ? toEngine(0, def) : 0.91; // 0dB = unity
+      session.set('jb202.bass.level', engineLevel);
+      session.jb202Params.level = engineLevel;
+      tweaks.push('unmuted (0dB)');
     }
 
-    // Level: 0-100
-    if (input.level !== undefined) {
+    // Level: dB (-60 to +6), supports delta for relative adjustment
+    if (input.level !== undefined || input.levelDelta !== undefined) {
       const def = getParamDef('jb202', 'bass', 'level');
-      session.jb202Params.level = def ? toEngine(input.level, def) : input.level / 100;
-      tweaks.push(`level=${input.level}`);
+      const minLevel = def?.min ?? -60;
+      const maxLevel = def?.max ?? 6;
+      let newLevel;
+      if (input.levelDelta !== undefined) {
+        // Relative adjustment - get current from NODE (not session.jb202Params)
+        const currentEngine = session.get('jb202.bass.level') ?? (def ? toEngine(def.default, def) : 0.5);
+        const currentProducer = def ? fromEngine(currentEngine, def) : 0;
+        newLevel = Math.max(minLevel, Math.min(maxLevel, currentProducer + input.levelDelta));
+        tweaks.push(`level=${Math.round(newLevel)}dB (was ${Math.round(currentProducer)}dB, ${input.levelDelta > 0 ? '+' : ''}${input.levelDelta})`);
+      } else {
+        newLevel = input.level;
+        tweaks.push(`level=${input.level}dB`);
+      }
+      const engineLevel = def ? toEngine(newLevel, def) : (newLevel + 60) / 66; // Approximate if no def
+      // Update BOTH the node (via ParamSystem) and legacy session.jb202Params
+      session.set('jb202.bass.level', engineLevel);
+      session.jb202Params.level = engineLevel;
     }
 
     // Oscillator 1

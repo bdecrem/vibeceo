@@ -6,22 +6,21 @@
  *
  * INSTRUMENTS:
  *   - jb01 (drum machine) — aliases: 'drums'
- *   - jb200 (bass/synth) — aliases: 'bass', 'lead', 'synth'
+ *   - jb202 (bass synth) — aliases: 'bass', 'lead', 'synth'
  *   - sampler (sample player)
+ *   - jp9000 (modular synth) — managed separately via tools
  *
- * These are the ONLY real instruments. The aliases are just pointers.
- * Future: 909, 303, 101 will be added as separate instruments when modernized.
+ * These are the canonical instruments. The aliases are just pointers.
  */
 
 import { ParamSystem } from './params.js';
 import { Clock } from './clock.js';
 import { SamplerNode } from '../instruments/sampler-node.js';
-import { JB200Node } from '../instruments/jb200-node.js';
 import { JB202Node } from '../instruments/jb202-node.js';
 import { JB01Node } from '../instruments/jb01-node.js';
-import { TR909Node } from '../instruments/tr909-node.js';
-import { TB303Node } from '../instruments/tb303-node.js';
-import { SH101Node } from '../instruments/sh101-node.js';
+import { JT10Node } from '../instruments/jt10-node.js';
+import { JT30Node } from '../instruments/jt30-node.js';
+import { JT90Node } from '../instruments/jt90-node.js';
 
 /**
  * Create a new session with ParamSystem integration
@@ -39,29 +38,27 @@ export function createSession(config = {}) {
   // Create param system
   const params = new ParamSystem();
 
-  // Create the canonical instruments (7 total)
+  // Create the canonical instruments
   const jb01Node = new JB01Node();
-  const jb200Node = new JB200Node();
   const jb202Node = new JB202Node();
   const samplerNode = new SamplerNode();
-  const tr909Node = new TR909Node();
-  const tb303Node = new TB303Node();
-  const sh101Node = new SH101Node();
+  const jt10Node = new JT10Node();
+  const jt30Node = new JT30Node();
+  const jt90Node = new JT90Node();
 
   // Register instruments with their canonical names
   params.register('jb01', jb01Node);
-  params.register('jb200', jb200Node);
   params.register('jb202', jb202Node);
   params.register('sampler', samplerNode);
-  params.register('r9d9', tr909Node);
-  params.register('r3d3', tb303Node);
-  params.register('r1d1', sh101Node);
+  params.register('jt10', jt10Node);
+  params.register('jt30', jt30Node);
+  params.register('jt90', jt90Node);
 
   // Register ALIASES (pointers to the same nodes)
   params.register('drums', jb01Node);      // drums → jb01
-  params.register('bass', jb200Node);      // bass → jb200
-  params.register('lead', jb200Node);      // lead → jb200
-  params.register('synth', jb200Node);     // synth → jb200
+  params.register('bass', jb202Node);      // bass → jb202
+  params.register('lead', jb202Node);      // lead → jb202
+  params.register('synth', jb202Node);     // synth → jb202
 
   // Create session object with convenience methods
   const session = {
@@ -80,12 +77,11 @@ export function createSession(config = {}) {
 
     // Instrument output levels in dB (-60 to +6, 0 = unity)
     jb01Level: config.jb01Level ?? 0,
-    jb200Level: config.jb200Level ?? 0,
     jb202Level: config.jb202Level ?? 0,
     samplerLevel: config.samplerLevel ?? 0,
-    r9d9Level: config.r9d9Level ?? 0,
-    r3d3Level: config.r3d3Level ?? 0,
-    r1d1Level: config.r1d1Level ?? 0,
+    jt10Level: config.jt10Level ?? 0,
+    jt30Level: config.jt30Level ?? 0,
+    jt90Level: config.jt90Level ?? 0,
 
     // ParamSystem instance
     params,
@@ -93,17 +89,16 @@ export function createSession(config = {}) {
     // Direct node references
     _nodes: {
       jb01: jb01Node,
-      jb200: jb200Node,
       jb202: jb202Node,
       sampler: samplerNode,
-      r9d9: tr909Node,
-      r3d3: tb303Node,
-      r1d1: sh101Node,
+      jt10: jt10Node,
+      jt30: jt30Node,
+      jt90: jt90Node,
       // Aliases point to same nodes
       drums: jb01Node,
-      bass: jb200Node,
-      lead: jb200Node,
-      synth: jb200Node,
+      bass: jb202Node,
+      lead: jb202Node,
+      synth: jb202Node,
     },
 
     // === UNIFIED PARAMETER ACCESS ===
@@ -172,7 +167,7 @@ export function createSession(config = {}) {
 
     // === PATTERN ACCESS ===
     // drums/jb01 share the same pattern (they're the same node)
-    // bass/lead/synth/jb200 share the same pattern (they're the same node)
+    // bass/lead/synth/jb202 share the same pattern (they're the same node)
 
     get drumPattern() { return jb01Node.getPattern(); },
     set drumPattern(v) { jb01Node.setPattern(v); },
@@ -180,14 +175,11 @@ export function createSession(config = {}) {
     get jb01Pattern() { return jb01Node.getPattern(); },
     set jb01Pattern(v) { jb01Node.setPattern(v); },
 
-    get bassPattern() { return jb200Node.getPattern(); },
-    set bassPattern(v) { jb200Node.setPattern(v); },
+    get bassPattern() { return jb202Node.getPattern(); },
+    set bassPattern(v) { jb202Node.setPattern(v); },
 
-    get leadPattern() { return jb200Node.getPattern(); },
-    set leadPattern(v) { jb200Node.setPattern(v); },
-
-    get jb200Pattern() { return jb200Node.getPattern(); },
-    set jb200Pattern(v) { jb200Node.setPattern(v); },
+    get leadPattern() { return jb202Node.getPattern(); },
+    set leadPattern(v) { jb202Node.setPattern(v); },
 
     get jb202Pattern() { return jb202Node.getPattern(); },
     set jb202Pattern(v) { jb202Node.setPattern(v); },
@@ -197,6 +189,18 @@ export function createSession(config = {}) {
 
     get samplerPattern() { return samplerNode.getPattern(); },
     set samplerPattern(v) { samplerNode.setPattern(v); },
+
+    // JT10 (lead synth)
+    get jt10Pattern() { return jt10Node.getPattern(); },
+    set jt10Pattern(v) { jt10Node.setPattern(v); },
+
+    // JT30 (acid bass)
+    get jt30Pattern() { return jt30Node.getPattern(); },
+    set jt30Pattern(v) { jt30Node.setPattern(v); },
+
+    // JT90 (drum machine)
+    get jt90Pattern() { return jt90Node.getPattern(); },
+    set jt90Pattern(v) { jt90Node.setPattern(v); },
 
     // === PARAM ACCESS (proxies to nodes) ===
 
@@ -254,46 +258,6 @@ export function createSession(config = {}) {
 
     get bassParams() {
       return new Proxy({}, {
-        get: (_, param) => jb200Node.getParam(`bass.${param}`),
-        set: (_, param, value) => {
-          jb200Node.setParam(`bass.${param}`, value);
-          return true;
-        },
-        ownKeys: () => {
-          return Object.keys(jb200Node.getParameterDescriptors())
-            .map(path => path.replace('bass.', ''));
-        },
-        getOwnPropertyDescriptor: (_, prop) => {
-          const path = `bass.${prop}`;
-          if (jb200Node.getParameterDescriptors()[path] !== undefined) {
-            return { enumerable: true, configurable: true, writable: true };
-          }
-          if (jb200Node.getParam(path) !== undefined) {
-            return { enumerable: true, configurable: true, writable: true };
-          }
-          return undefined;
-        },
-        has: (_, prop) => {
-          const path = `bass.${prop}`;
-          return jb200Node.getParameterDescriptors()[path] !== undefined ||
-                 jb200Node.getParam(path) !== undefined;
-        },
-      });
-    },
-    set bassParams(v) {
-      for (const [param, value] of Object.entries(v)) {
-        jb200Node.setParam(`bass.${param}`, value);
-      }
-    },
-
-    get leadParams() { return this.bassParams; },
-    set leadParams(v) { this.bassParams = v; },
-
-    get jb200Params() { return this.bassParams; },
-    set jb200Params(v) { this.bassParams = v; },
-
-    get jb202Params() {
-      return new Proxy({}, {
         get: (_, param) => jb202Node.getParam(`bass.${param}`),
         set: (_, param, value) => {
           jb202Node.setParam(`bass.${param}`, value);
@@ -320,11 +284,17 @@ export function createSession(config = {}) {
         },
       });
     },
-    set jb202Params(v) {
+    set bassParams(v) {
       for (const [param, value] of Object.entries(v)) {
         jb202Node.setParam(`bass.${param}`, value);
       }
     },
+
+    get leadParams() { return this.bassParams; },
+    set leadParams(v) { this.bassParams = v; },
+
+    get jb202Params() { return this.bassParams; },
+    set jb202Params(v) { this.bassParams = v; },
 
     get samplerParams() {
       return new Proxy({}, {
@@ -352,6 +322,75 @@ export function createSession(config = {}) {
       }
     },
 
+    // JT10 params (lead synth - single voice 'lead')
+    get jt10Params() {
+      return new Proxy({}, {
+        get: (_, param) => jt10Node.getParam(`lead.${param}`),
+        set: (_, param, value) => {
+          jt10Node.setParam(`lead.${param}`, value);
+          return true;
+        },
+      });
+    },
+    set jt10Params(v) {
+      for (const [param, value] of Object.entries(v)) {
+        jt10Node.setParam(`lead.${param}`, value);
+      }
+    },
+
+    // JT30 params (acid bass - single voice 'bass')
+    get jt30Params() {
+      return new Proxy({}, {
+        get: (_, param) => jt30Node.getParam(`bass.${param}`),
+        set: (_, param, value) => {
+          jt30Node.setParam(`bass.${param}`, value);
+          return true;
+        },
+      });
+    },
+    set jt30Params(v) {
+      for (const [param, value] of Object.entries(v)) {
+        jt30Node.setParam(`bass.${param}`, value);
+      }
+    },
+
+    // JT90 params (drum machine - multi-voice)
+    get jt90Params() {
+      const voices = jt90Node._voices;
+      return new Proxy({}, {
+        get: (_, voice) => {
+          if (typeof voice !== 'string') return undefined;
+          return new Proxy({}, {
+            get: (__, param) => jt90Node.getParam(`${voice}.${param}`),
+            set: (__, param, value) => {
+              jt90Node.setParam(`${voice}.${param}`, value);
+              return true;
+            },
+          });
+        },
+        set: (_, voice, params) => {
+          for (const [param, value] of Object.entries(params)) {
+            jt90Node.setParam(`${voice}.${param}`, value);
+          }
+          return true;
+        },
+        ownKeys: () => voices,
+        getOwnPropertyDescriptor: (_, voice) => {
+          if (voices.includes(voice)) {
+            return { enumerable: true, configurable: true, writable: true };
+          }
+          return undefined;
+        },
+      });
+    },
+    set jt90Params(v) {
+      for (const [voice, params] of Object.entries(v)) {
+        for (const [param, value] of Object.entries(params)) {
+          jt90Node.setParam(`${voice}.${param}`, value);
+        }
+      }
+    },
+
     // Mixer (placeholder)
     mixer: {
       sends: {},
@@ -361,28 +400,28 @@ export function createSession(config = {}) {
       masterVolume: 0.8,
       // Effect chains for flexible routing (delay, reverb, etc.)
       // Structure: { 'target': [{ id, type, params }, ...] }
-      // Targets: 'jb01.ch', 'jb01.kick', 'jb200', 'master'
+      // Targets: 'jb01.ch', 'jb01.kick', 'jb202', 'master'
       effectChains: {},
     },
 
     // Song mode - patterns stored by canonical instrument ID only
     patterns: {
       jb01: {},
-      jb200: {},
       jb202: {},
+      jp9000: {},
       sampler: {},
-      r9d9: {},
-      r3d3: {},
-      r1d1: {},
+      jt10: {},
+      jt30: {},
+      jt90: {},
     },
     currentPattern: {
       jb01: 'A',
-      jb200: 'A',
       jb202: 'A',
+      jp9000: 'A',
       sampler: 'A',
-      r9d9: 'A',
-      r3d3: 'A',
-      r1d1: 'A',
+      jt10: 'A',
+      jt30: 'A',
+      jt90: 'A',
     },
     arrangement: [],
 
@@ -393,7 +432,7 @@ export function createSession(config = {}) {
      * @returns {Array<{id: string, node: InstrumentNode}>}
      */
     getCanonicalInstruments() {
-      return ['jb01', 'jb200', 'jb202', 'sampler', 'r9d9', 'r3d3', 'r1d1']
+      return ['jb01', 'jb202', 'sampler', 'jt10', 'jt30', 'jt90']
         .map(id => ({ id, node: this._nodes[id] }))
         .filter(({ node }) => node);
     },
@@ -422,12 +461,11 @@ export function serializeSession(session) {
     clock: session.clock.serialize(),
     bars: session.bars,
     jb01Level: session.jb01Level,
-    jb200Level: session.jb200Level,
     jb202Level: session.jb202Level,
     samplerLevel: session.samplerLevel,
-    r9d9Level: session.r9d9Level,
-    r3d3Level: session.r3d3Level,
-    r1d1Level: session.r1d1Level,
+    jt10Level: session.jt10Level,
+    jt30Level: session.jt30Level,
+    jt90Level: session.jt90Level,
     params: session.params.serialize(),
     mixer: session.mixer,
     patterns: session.patterns,
@@ -449,12 +487,11 @@ export function deserializeSession(data) {
     swing: clockData.swing,
     bars: data.bars,
     jb01Level: data.jb01Level ?? data.drumLevel,
-    jb200Level: data.jb200Level ?? data.bassLevel,
-    jb202Level: data.jb202Level,
+    jb202Level: data.jb202Level ?? data.bassLevel,
     samplerLevel: data.samplerLevel,
-    r9d9Level: data.r9d9Level,
-    r3d3Level: data.r3d3Level,
-    r1d1Level: data.r1d1Level,
+    jt10Level: data.jt10Level,
+    jt30Level: data.jt30Level,
+    jt90Level: data.jt90Level,
   });
 
   if (data.params) {
@@ -467,4 +504,39 @@ export function deserializeSession(data) {
   if (data.arrangement) session.arrangement = data.arrangement;
 
   return session;
+}
+
+/**
+ * Restore session state IN-PLACE (updates existing session object)
+ * Used when loading a project during an active agent loop to ensure
+ * the running code sees the updated state.
+ * @param {Object} existingSession - The session object to update
+ * @param {Object} data - Serialized session data
+ */
+export function restoreSessionInPlace(existingSession, data) {
+  const clockData = data.clock || { bpm: data.bpm, swing: data.swing };
+
+  // Update clock
+  existingSession.clock.bpm = clockData.bpm || 128;
+  existingSession.clock.swing = clockData.swing || 0;
+
+  // Update session properties
+  existingSession.bars = data.bars || 2;
+  existingSession.jb01Level = data.jb01Level ?? data.drumLevel ?? 0;
+  existingSession.jb202Level = data.jb202Level ?? data.bassLevel ?? 0;
+  existingSession.samplerLevel = data.samplerLevel ?? 0;
+  existingSession.jt10Level = data.jt10Level ?? 0;
+  existingSession.jt30Level = data.jt30Level ?? 0;
+  existingSession.jt90Level = data.jt90Level ?? 0;
+
+  // Deserialize params into existing nodes
+  if (data.params) {
+    existingSession.params.deserialize(data.params);
+  }
+
+  // Update mixer, patterns, etc.
+  if (data.mixer) existingSession.mixer = data.mixer;
+  if (data.patterns) existingSession.patterns = data.patterns;
+  if (data.currentPattern) existingSession.currentPattern = data.currentPattern;
+  if (data.arrangement) existingSession.arrangement = data.arrangement;
 }

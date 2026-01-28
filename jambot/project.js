@@ -226,54 +226,18 @@ export function addToHistory(project, prompt) {
 }
 
 // Update session state in project
+// Uses serializeSession() for complete, consistent serialization
 export function updateSession(project, session) {
-  project.session = {
-    bpm: session.bpm,
-    bars: session.bars,
-    swing: session.swing,
-    // JB01 (drums) - active instrument
-    jb01Pattern: session.jb01Pattern,
-    jb01Params: session.jb01Params,
-    // JB200 (bass) - active instrument
-    jb200Pattern: session.jb200Pattern,
-    jb200Params: session.jb200Params,
-    // JB202 (modular bass) - active instrument
-    jb202Pattern: session.jb202Pattern,
-    jb202Params: session.jb202Params,
-    // JP9000 (modular synth) - active instrument
-    jp9000State: session._nodes?.jp9000?.serialize?.() || null,
-    // R9D9 (drums) - dormant
-    drumKit: session.drumKit,
-    drumPattern: session.drumPattern,
-    drumParams: session.drumParams,
-    drumFlam: session.drumFlam,
-    drumPatternLength: session.drumPatternLength,
-    drumScale: session.drumScale,
-    drumGlobalAccent: session.drumGlobalAccent,
-    drumVoiceEngines: session.drumVoiceEngines,
-    drumUseSample: session.drumUseSample,
-    drumAutomation: session.drumAutomation,
-    // R3D3 (bass) - dormant
-    bassPattern: session.bassPattern,
-    bassParams: session.bassParams,
-    // R1D1 (lead) - dormant
-    leadPreset: session.leadPreset,
-    leadPattern: session.leadPattern,
-    leadParams: session.leadParams,
-    leadArp: session.leadArp,
-    // R9DS (sampler) - save kit ID only, not the actual buffers
-    samplerKitId: session.samplerKit?.id || null,
-    samplerPattern: session.samplerPattern,
-    samplerParams: session.samplerParams,
-    // Mixer
-    mixer: session.mixer,
-    // Effect chains
-    effectChains: session.effectChains,
-    // Song mode (patterns + arrangement)
-    patterns: session.patterns,
-    currentPattern: session.currentPattern,
-    arrangement: session.arrangement,
-  };
+  // Get complete serialized state from all instruments via ParamSystem
+  const serialized = serializeSession(session);
+
+  // Store in project (serializeSession captures everything correctly)
+  project.session = serialized;
+
+  // Also store sampler kit ID separately (audio buffers can't be serialized)
+  // The kit data is in params.nodes.sampler.kitId, but we duplicate here for clarity
+  project.session.samplerKitId = session._nodes?.sampler?.serialize?.()?.kitId || null;
+
   saveProject(project);
   return project;
 }
@@ -281,84 +245,46 @@ export function updateSession(project, session) {
 // === SESSION RESTORE ===
 
 import { loadKit } from './kit-loader.js';
-import { createSession } from './core/session.js';
+import { createSession, serializeSession, deserializeSession, restoreSessionInPlace } from './core/session.js';
 
 // Restore session state from a project
-// Creates a proper session object with clock, nodes, params, etc.
+// Uses deserializeSession() for complete, consistent deserialization
 export function restoreSession(project) {
   const saved = project.session || {};
 
-  // Create a proper session with clock, nodes, and params
-  const session = createSession({
-    bpm: saved.bpm || 128,
-    swing: saved.swing || 0,
-    bars: saved.bars || 2,
-    jb01Level: saved.jb01Level ?? 0,
-    jb200Level: saved.jb200Level ?? 0,
-    samplerLevel: saved.samplerLevel ?? 0,
-    r9d9Level: saved.r9d9Level ?? 0,
-    r3d3Level: saved.r3d3Level ?? 0,
-    r1d1Level: saved.r1d1Level ?? 0,
-  });
+  // Use deserializeSession for complete restore via ParamSystem
+  const session = deserializeSession(saved);
 
-  // Restore JB01 (drums) pattern and params
-  if (saved.jb01Pattern) session.jb01Pattern = saved.jb01Pattern;
-  if (saved.jb01Params) session.jb01Params = saved.jb01Params;
-
-  // Restore JB200 (bass) pattern and params
-  if (saved.jb200Pattern) session.jb200Pattern = saved.jb200Pattern;
-  if (saved.jb200Params) session.jb200Params = saved.jb200Params;
-
-  // Restore JB202 (modular bass) pattern and params
-  if (saved.jb202Pattern) session.jb202Pattern = saved.jb202Pattern;
-  if (saved.jb202Params) session.jb202Params = saved.jb202Params;
-
-  // Restore JP9000 (modular synth) full state
-  if (saved.jp9000State && session._nodes?.jp9000?.deserialize) {
-    session._nodes.jp9000.deserialize(saved.jp9000State);
-  }
-
-  // Restore sampler kit and pattern
-  if (saved.samplerKitId) {
+  // Special case: reload sampler kit (audio buffers can't be serialized)
+  const kitId = saved.samplerKitId || saved.params?.nodes?.sampler?.kitId;
+  if (kitId) {
     try {
-      session.samplerKit = loadKit(saved.samplerKitId);
+      session.samplerKit = loadKit(kitId);
     } catch (e) {
-      console.warn(`Could not reload sampler kit ${saved.samplerKitId}:`, e.message);
+      console.warn(`Could not reload sampler kit ${kitId}:`, e.message);
     }
   }
-  if (saved.samplerPattern) session.samplerPattern = saved.samplerPattern;
-  if (saved.samplerParams) session.samplerParams = saved.samplerParams;
-
-  // Restore mixer
-  session.mixer = saved.mixer || {
-    sends: {},
-    voiceRouting: {},
-    channelInserts: {},
-    masterInserts: [],
-    masterVolume: 0.8,
-  };
-
-  // Restore effect chains
-  session.effectChains = saved.effectChains || {};
-
-  // Restore song mode (patterns + arrangement)
-  session.patterns = saved.patterns || {
-    jb01: {},
-    jb200: {},
-    jb202: {},
-    jp9000: {},
-    sampler: {},
-  };
-  session.currentPattern = saved.currentPattern || {
-    jb01: 'A',
-    jb200: 'A',
-    jb202: 'A',
-    jp9000: 'A',
-    sampler: 'A',
-  };
-  session.arrangement = saved.arrangement || [];
 
   return session;
+}
+
+// Restore session state INTO an existing session object (in-place)
+// This is critical for UI callbacks that hold a reference to the session
+export function restoreProjectInPlace(existingSession, project) {
+  const saved = project.session || {};
+
+  // Update existing session in-place via ParamSystem
+  restoreSessionInPlace(existingSession, saved);
+
+  // Special case: reload sampler kit (audio buffers can't be serialized)
+  const kitId = saved.samplerKitId || saved.params?.nodes?.sampler?.kitId;
+  if (kitId) {
+    try {
+      existingSession.samplerKit = loadKit(kitId);
+    } catch (e) {
+      console.warn(`Could not reload sampler kit ${kitId}:`, e.message);
+    }
+  }
 }
 
 // === EXPORT ===
@@ -366,18 +292,18 @@ export function restoreSession(project) {
 import { copyFileSync } from 'fs';
 import {
   generateJB01Midi,
-  generateJB200Midi,
-  generateDrumsMidi,
-  generateBassMidi,
-  generateLeadMidi,
+  generateJB202Midi,
   generateFullMidi,
   hasContent,
 } from './midi.js';
 
+// Legacy alias
+export const generateJB200Midi = generateJB202Midi;
+
 // Generate README.md content for export
 function generateReadme(project, session) {
   const lines = [];
-  const { hasJB01, hasJB200, hasR9D9, hasR3D3, hasR1D1 } = hasContent(session);
+  const { hasJB01, hasJB202 } = hasContent(session);
 
   lines.push(`# ${project.name}`);
   lines.push('');
@@ -398,7 +324,7 @@ function generateReadme(project, session) {
   // JB01 Drums
   lines.push('### JB01 (Drums)');
   if (hasJB01) {
-    const drumPattern = session.jb01Pattern || session.drumPattern || {};
+    const drumPattern = session.jb01Pattern || {};
     for (const [voice, pattern] of Object.entries(drumPattern)) {
       const steps = (pattern || [])
         .map((s, i) => s?.velocity > 0 ? i : null)
@@ -412,56 +338,11 @@ function generateReadme(project, session) {
   }
   lines.push('');
 
-  // JB200 Bass
-  lines.push('### JB200 (Bass)');
-  if (hasJB200) {
-    const bassPattern = session.jb200Pattern || [];
+  // JB202 Bass
+  lines.push('### JB202 (Bass)');
+  if (hasJB202) {
+    const bassPattern = session.jb202Pattern || [];
     const activeNotes = bassPattern.filter(s => s?.gate);
-    const notes = activeNotes.map(s => s.note);
-    const uniqueNotes = [...new Set(notes)];
-    lines.push(`- ${activeNotes.length} notes`);
-    lines.push(`- Notes used: ${uniqueNotes.join(', ')}`);
-  } else {
-    lines.push('- (not used)');
-  }
-  lines.push('');
-
-  // R9D9 Drums
-  lines.push('### R9D9 (TR-909 Drums)');
-  if (hasR9D9) {
-    const drumPattern = session._nodes?.r9d9?.getPattern?.() || {};
-    for (const [voice, pattern] of Object.entries(drumPattern)) {
-      const steps = (pattern || [])
-        .map((s, i) => s?.velocity > 0 ? i : null)
-        .filter(i => i !== null);
-      if (steps.length > 0) {
-        lines.push(`- ${voice}: steps ${steps.join(', ')}`);
-      }
-    }
-  } else {
-    lines.push('- (not used)');
-  }
-  lines.push('');
-
-  // R3D3 Bass
-  lines.push('### R3D3 (TB-303 Bass)');
-  if (hasR3D3) {
-    const bassPattern = session._nodes?.r3d3?.getPattern?.() || [];
-    const activeNotes = bassPattern.filter(s => s?.gate);
-    const notes = activeNotes.map(s => s.note);
-    const uniqueNotes = [...new Set(notes)];
-    lines.push(`- ${activeNotes.length} notes`);
-    lines.push(`- Notes used: ${uniqueNotes.join(', ')}`);
-  } else {
-    lines.push('- (not used)');
-  }
-  lines.push('');
-
-  // R1D1 Lead
-  lines.push('### R1D1 (SH-101 Lead)');
-  if (hasR1D1) {
-    const leadPattern = session._nodes?.r1d1?.getPattern?.() || [];
-    const activeNotes = leadPattern.filter(s => s?.gate);
     const notes = activeNotes.map(s => s.note);
     const uniqueNotes = [...new Set(notes)];
     lines.push(`- ${activeNotes.length} notes`);
@@ -484,10 +365,7 @@ function generateReadme(project, session) {
   lines.push('## Files');
   lines.push(`- \`${project.name}.mid\` — Full arrangement (import into any DAW)`);
   if (hasJB01) lines.push('- `jb01-drums.mid` — JB01 drum pattern');
-  if (hasJB200) lines.push('- `jb200-bass.mid` — JB200 bass pattern');
-  if (hasR9D9) lines.push('- `r9d9-drums.mid` — R9D9 (909) drum pattern');
-  if (hasR3D3) lines.push('- `r3d3-bass.mid` — R3D3 (303) bass pattern');
-  if (hasR1D1) lines.push('- `r1d1-lead.mid` — R1D1 (101) lead pattern');
+  if (hasJB202) lines.push('- `jb202-bass.mid` — JB202 bass pattern');
   lines.push('- `latest.wav` — Rendered mix');
   lines.push('');
 
@@ -504,7 +382,8 @@ export function exportProject(project, session) {
     mkdirSync(exportPath, { recursive: true });
   }
 
-  const { hasJB01, hasJB200, hasR9D9, hasR3D3, hasR1D1, any } = hasContent(session);
+  const { hasJB01, hasJB202 } = hasContent(session);
+  const any = hasJB01 || hasJB202;
   const files = [];
 
   // Generate README
@@ -529,32 +408,11 @@ export function exportProject(project, session) {
     files.push('jb01-drums.mid');
   }
 
-  // JB200 bass
-  if (hasJB200) {
-    const jb200MidiPath = join(exportPath, 'jb200-bass.mid');
-    generateJB200Midi(exportSession, jb200MidiPath);
-    files.push('jb200-bass.mid');
-  }
-
-  // R9D9 drums (909)
-  if (hasR9D9) {
-    const drumsMidiPath = join(exportPath, 'r9d9-drums.mid');
-    generateDrumsMidi(exportSession, drumsMidiPath);
-    files.push('r9d9-drums.mid');
-  }
-
-  // R3D3 bass (303)
-  if (hasR3D3) {
-    const bassMidiPath = join(exportPath, 'r3d3-bass.mid');
-    generateBassMidi(exportSession, bassMidiPath);
-    files.push('r3d3-bass.mid');
-  }
-
-  // R1D1 lead (101)
-  if (hasR1D1) {
-    const leadMidiPath = join(exportPath, 'r1d1-lead.mid');
-    generateLeadMidi(exportSession, leadMidiPath);
-    files.push('r1d1-lead.mid');
+  // JB202 bass
+  if (hasJB202) {
+    const jb202MidiPath = join(exportPath, 'jb202-bass.mid');
+    generateJB202Midi(exportSession, jb202MidiPath);
+    files.push('jb202-bass.mid');
   }
 
   // Copy latest render

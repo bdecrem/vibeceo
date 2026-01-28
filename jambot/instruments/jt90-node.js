@@ -20,8 +20,23 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const JT90_PARAMS = require('../params/jt90-params.json');
 
-// All drum voices
+// All drum voices (user-facing names)
 const VOICES = ['kick', 'snare', 'clap', 'rimshot', 'lowtom', 'midtom', 'hitom', 'ch', 'oh', 'crash', 'ride'];
+
+// Map from user-facing voice names to engine voice names
+const VOICE_TO_ENGINE = {
+  kick: 'kick',
+  snare: 'snare',
+  clap: 'clap',
+  rimshot: 'rimshot',
+  lowtom: 'ltom',
+  midtom: 'mtom',
+  hitom: 'htom',
+  ch: 'ch',
+  oh: 'oh',
+  crash: 'crash',
+  ride: 'ride',
+};
 
 /**
  * Convert producer units to engine units (0-1)
@@ -266,24 +281,85 @@ export class JT90Node extends InstrumentNode {
   }
 
   /**
-   * Serialize full state
+   * Serialize JT90 state (sparse format)
+   * - Patterns: only store steps with velocity > 0
+   * - Params: only store values that differ from defaults
+   * @returns {Object}
    */
   serialize() {
+    // Sparse pattern: only store active steps
+    const sparsePattern = {};
+    for (const [voice, steps] of Object.entries(this._pattern)) {
+      const activeSteps = [];
+      steps.forEach((step, i) => {
+        if (step.velocity > 0) {
+          activeSteps.push({ i, v: step.velocity, a: step.accent || undefined });
+        }
+      });
+      if (activeSteps.length > 0) {
+        sparsePattern[voice] = activeSteps;
+      }
+    }
+
+    // Sparse params: only store non-default values
+    const sparseParams = {};
+    for (const [path, value] of Object.entries(this._params)) {
+      const [voice, paramName] = path.split('.');
+      const paramDef = JT90_PARAMS[voice]?.[paramName];
+      if (paramDef) {
+        const defaultEngine = toEngine(paramDef.default, paramDef);
+        if (Math.abs(value - defaultEngine) > 0.001) {
+          sparseParams[path] = value;
+        }
+      }
+    }
+
     return {
       id: this.id,
-      pattern: JSON.parse(JSON.stringify(this._pattern)),
-      params: { ...this._params },
-      swing: this._swing,
-      accentLevel: this._accentLevel,
+      pattern: Object.keys(sparsePattern).length > 0 ? sparsePattern : undefined,
+      patternLength: this._pattern[VOICES[0]]?.length || 16,
+      params: Object.keys(sparseParams).length > 0 ? sparseParams : undefined,
+      swing: this._swing !== 0 ? this._swing : undefined,
+      accentLevel: this._accentLevel !== 1.0 ? this._accentLevel : undefined,
     };
   }
 
   /**
-   * Deserialize state
+   * Deserialize JT90 state
+   * Handles both sparse and legacy full formats
+   * @param {Object} data
    */
   deserialize(data) {
-    if (data.pattern) this._pattern = JSON.parse(JSON.stringify(data.pattern));
-    if (data.params) this._params = { ...data.params };
+    if (data.pattern) {
+      const length = data.patternLength || 16;
+      // Check if sparse format (array of {i, v, a}) or legacy full format
+      const firstVoice = Object.values(data.pattern)[0];
+      const isSparse = Array.isArray(firstVoice) && firstVoice[0]?.i !== undefined;
+
+      if (isSparse) {
+        // Expand sparse pattern to full
+        this._pattern = createEmptyPattern(length);
+        for (const [voice, steps] of Object.entries(data.pattern)) {
+          if (this._pattern[voice]) {
+            for (const step of steps) {
+              if (step.i < length) {
+                this._pattern[voice][step.i] = {
+                  velocity: step.v,
+                  accent: step.a || false,
+                };
+              }
+            }
+          }
+        }
+      } else {
+        // Legacy full format
+        this._pattern = JSON.parse(JSON.stringify(data.pattern));
+      }
+    }
+
+    if (data.params) {
+      Object.assign(this._params, data.params);
+    }
     if (data.swing !== undefined) this._swing = data.swing;
     if (data.accentLevel !== undefined) this._accentLevel = data.accentLevel;
   }
@@ -316,18 +392,24 @@ export class JT90Node extends InstrumentNode {
     const context = new OfflineAudioContext(2, sampleRate, sampleRate);
     const engine = new JT90Engine({ context });
 
-    // Apply voice params
+    // Apply voice params (convert voice names to engine names)
     const voiceParams = params || this.getAllVoiceParams();
     Object.entries(voiceParams).forEach(([voiceId, voiceParamSet]) => {
+      const engineVoice = VOICE_TO_ENGINE[voiceId] || voiceId;
       Object.entries(voiceParamSet).forEach(([paramName, value]) => {
-        engine.setVoiceParameter(voiceId, paramName, value);
+        engine.setVoiceParameter(engineVoice, paramName, value);
       });
     });
 
-    // Set pattern
+    // Convert pattern voice names to engine names
+    const enginePattern = {};
     Object.entries(pattern).forEach(([voiceId, trackPattern]) => {
-      engine.setTrackPattern(voiceId, trackPattern);
+      const engineVoice = VOICE_TO_ENGINE[voiceId] || voiceId;
+      enginePattern[engineVoice] = trackPattern;
     });
+
+    // Set pattern
+    engine.setPattern(enginePattern);
 
     // Set swing
     engine.setSwing(this._swing);
