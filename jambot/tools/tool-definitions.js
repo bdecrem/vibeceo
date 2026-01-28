@@ -490,7 +490,7 @@ export const TOOLS = [
   },
   {
     name: "open_project",
-    description: "Open an existing project by name or folder. Use 'recent' or 'latest' to open the most recently modified project. Use when user says 'open project X', 'continue working on X', 'open my recent project', or 'continue where we left off'.",
+    description: "Open an existing project by name or folder. Use 'recent' or 'latest' to open the most recently modified project. Use when user says 'open project X', 'continue working on X', 'open my recent project', or 'continue where we left off'. IMPORTANT: After opening, call show_jb01, show_jb202, etc. to see what patterns are in the session. Do NOT rely on list_patterns or show_arrangement alone - those only show song mode data, not the current working patterns.",
     input_schema: {
       type: "object",
       properties: {
