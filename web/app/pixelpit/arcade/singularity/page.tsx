@@ -690,7 +690,7 @@ export default function SingularityGame() {
                   animation: 'flicker 0.1s infinite',
                 }}
               >
-                ▶ INITIALIZE
+                INITIALIZE
               </button>
               <div style={{
                 marginTop: 60,
@@ -788,7 +788,7 @@ export default function SingularityGame() {
                   animation: 'flicker 0.12s infinite',
                 }}
               >
-                ▶ REINITIALIZE
+                REINITIALIZE
               </button>
               <button
                 onClick={() => setGameState('leaderboard')}
