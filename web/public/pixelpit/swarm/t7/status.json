@@ -1,0 +1,197 @@
+{
+  "started": "2026-01-28T11:31:40.876332",
+  "completed": "2026-01-28T11:35:18.624549",
+  "phase": "done",
+  "agents": [
+    {
+      "id": 0,
+      "name": "SOAP BUBBLES",
+      "color": "#88ddff",
+      "desc": "Iridescent bubbles with rainbow shimmer",
+      "status": "done",
+      "time": 15.8,
+      "tokens": 1562,
+      "url": "agent_0.html",
+      "screenshot": "agent_0.png",
+      "scores": {
+        "alive": 3,
+        "theme": 8,
+        "polish": 6,
+        "verdict": "NEEDS_WORK"
+      },
+      "enhanced_url": "agent_0_v2.html",
+      "enhance_status": "done"
+    },
+    {
+      "id": 1,
+      "name": "FIREFLIES",
+      "color": "#aaff44",
+      "desc": "Glowing bugs in a dark forest",
+      "status": "done",
+      "time": 16.4,
+      "tokens": 1418,
+      "url": "agent_1.html",
+      "screenshot": "agent_1.png",
+      "scores": {
+        "alive": 1,
+        "theme": 1,
+        "polish": 1,
+        "verdict": "BROKEN"
+      },
+      "enhanced_url": null,
+      "enhance_status": null
+    },
+    {
+      "id": 2,
+      "name": "SPACE ROCKS",
+      "color": "#888899",
+      "desc": "Asteroids with explosions",
+      "status": "done",
+      "time": 16.4,
+      "tokens": 1413,
+      "url": "agent_2.html",
+      "screenshot": "agent_2.png",
+      "scores": {
+        "alive": 1,
+        "theme": 1,
+        "polish": 1,
+        "verdict": "BROKEN"
+      },
+      "enhanced_url": null,
+      "enhance_status": null
+    },
+    {
+      "id": 3,
+      "name": "CANDY POP",
+      "color": "#ff66aa",
+      "desc": "Lollipops and gummies",
+      "status": "done",
+      "time": 14.2,
+      "tokens": 1402,
+      "url": "agent_3.html",
+      "screenshot": "agent_3.png",
+      "scores": {
+        "alive": 2,
+        "theme": 8,
+        "polish": 4,
+        "verdict": "NEEDS_WORK"
+      },
+      "enhanced_url": "agent_3_v2.html",
+      "enhance_status": "done"
+    },
+    {
+      "id": 4,
+      "name": "GHOSTS",
+      "color": "#ddddff",
+      "desc": "Cute spooky spirits",
+      "status": "done",
+      "time": 34.3,
+      "tokens": 3000,
+      "url": "agent_4.html",
+      "screenshot": "agent_4.png",
+      "scores": {
+        "alive": 1,
+        "theme": 1,
+        "polish": 1,
+        "verdict": "BROKEN"
+      },
+      "enhanced_url": null,
+      "enhance_status": null
+    },
+    {
+      "id": 5,
+      "name": "DEEP SEA",
+      "color": "#00ffcc",
+      "desc": "Bioluminescent jellyfish",
+      "status": "done",
+      "time": 24.4,
+      "tokens": 2075,
+      "url": "agent_5.html",
+      "screenshot": "agent_5.png",
+      "scores": {
+        "alive": 1,
+        "theme": 1,
+        "polish": 1,
+        "verdict": "BROKEN"
+      },
+      "enhanced_url": null,
+      "enhance_status": null
+    },
+    {
+      "id": 6,
+      "name": "NEON SIGNS",
+      "color": "#ff00ff",
+      "desc": "Electric glowing shapes",
+      "status": "done",
+      "time": 12.3,
+      "tokens": 1219,
+      "url": "agent_6.html",
+      "screenshot": "agent_6.png",
+      "scores": {
+        "alive": 3,
+        "theme": 8,
+        "polish": 4,
+        "verdict": "NEEDS_WORK"
+      },
+      "enhanced_url": "agent_6_v2.html",
+      "enhance_status": "done"
+    },
+    {
+      "id": 7,
+      "name": "FRUIT SPLASH",
+      "color": "#ffaa00",
+      "desc": "Juicy fruits splattering",
+      "status": "done",
+      "time": 21.9,
+      "tokens": 2177,
+      "url": "agent_7.html",
+      "screenshot": "agent_7.png",
+      "scores": {
+        "alive": 2,
+        "theme": 4,
+        "polish": 6,
+        "verdict": "NEEDS_WORK"
+      },
+      "enhanced_url": "agent_7_v2.html",
+      "enhance_status": "done"
+    },
+    {
+      "id": 8,
+      "name": "EMOJI MADNESS",
+      "color": "#ffdd00",
+      "desc": "Random emoji faces",
+      "status": "done",
+      "time": 13.7,
+      "tokens": 1427,
+      "url": "agent_8.html",
+      "screenshot": "agent_8.png",
+      "scores": {
+        "alive": 2,
+        "theme": 3,
+        "polish": 3,
+        "verdict": "BROKEN"
+      },
+      "enhanced_url": null,
+      "enhance_status": null
+    },
+    {
+      "id": 9,
+      "name": "PIXEL RETRO",
+      "color": "#00ff00",
+      "desc": "8-bit arcade style",
+      "status": "done",
+      "time": 29.9,
+      "tokens": 2961,
+      "url": "agent_9.html",
+      "screenshot": "agent_9.png",
+      "scores": {
+        "alive": 3,
+        "theme": 8,
+        "polish": 4,
+        "verdict": "NEEDS_WORK"
+      },
+      "enhanced_url": "agent_9_v2.html",
+      "enhance_status": "done"
+    }
+  ]
+}

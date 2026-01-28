@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Firefly Pop</title>
+<style>
+  body{margin:0;background:#000;overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0, targets=[], pops=[];
+
+// Firefly spawn
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:20+Math.random()*10,
+    speed:1+Math.random()*2,
+    color:'#c8ff00'
+  });
+}
+
+// Update positions
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03)spawn();
+
+  // Update pop effects
+  for(let i=pops.length-1;i>=0;i--){
+    const p=pops[i];
+    p.r+=3;
+    p.alpha-=0.08;
+    if(p.alpha<=0)pops.splice(i,1);
+  }
+}
+
+// Draw everything
+function draw(){
+  // Dark forest background
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#001e0f');
+  grad.addColorStop(0.5,'#003b1e');
+  grad.addColorStop(1,'#000c02');
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,W,H);
+
+  // Fireflies
+  targets.forEach(t=>{
+    ctx.save();
+    ctx.shadowBlur=15;
+    ctx.shadowColor='#ffffaa';
+    ctx.fillStyle=t.color;
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Pop effects
+  pops.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle='#ffffaa';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Score
+  ctx.fillStyle='#ffcc00';
+  ctx.font='bold 28px "Courier New", monospace';
+  ctx.shadowColor='rgba(0,0,0,0.7)';
+  ctx.shadowBlur=4;
+  ctx.fillText('Score: '+score,20,40);
+  ctx.shadowBlur=0;
+}
+
+// Pop logic
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      pops.push({x,y,r:0,alpha:1});
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

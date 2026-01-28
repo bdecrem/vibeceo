@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Deep Sea Pop</title>
+<style>
+body{margin:0;background:#001122;overflow:hidden}
+canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight;initStars();}
+resize();
+onresize=resize;
+
+let score=0, targets=[], pops=[], stars=[];
+
+// Generate static star field
+function initStars(){
+    stars=[];
+    for(let i=0;i<200;i++){
+        stars.push({x:Math.random()*W, y:Math.random()*H});
+    }
+}
+
+function spawn(){
+    targets.push({
+        x:Math.random()*W,
+        y:H+50,
+        r:30,
+        speed:1+Math.random()*2,
+        color:'#00b7ff' // placeholder, not used directly
+    });
+}
+
+function update(){
+    targets.forEach(t=>t.y-=t.speed);
+    targets=targets.filter(t=>t.y>-50);
+    if(Math.random()<0.03) spawn();
+
+    // update pop effects
+    for(let i=pops.length-1;i>=0;i--){
+        let p=pops[i];
+        p.r+=4;
+        p.alpha-=0.04;
+        if(p.alpha<=0) pops.splice(i,1);
+    }
+}
+
+function draw(){
+    // background gradient
+    const grad=ctx.createLinearGradient(0,0,W,H);
+    grad.addColorStop(0,'#000020');
+    grad.addColorStop(1,'#001a2a');
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,0,W,H);
+
+    // stars
+    ctx.fillStyle='#fff';
+    stars.forEach(s=>{
+        ctx.beginPath();
+        ctx.arc(s.x,s.y,1.5,0,Math.PI*2);
+        ctx.fill();
+    });
+
+    // pop ripple effects
+    pops.forEach(p=>{
+        ctx.beginPath();
+        ctx.strokeStyle=`rgba(0,255,255,${p.alpha})`;
+        ctx.lineWidth=2;
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.stroke();
+    });
+
+    // jellyfish targets
+    targets.forEach(t=>{
+        // jellyfish glow
+        ctx.shadowBlur=15;
+        ctx.shadowColor='#00ffff';
+        const grd=ctx.createRadialGradient(t.x,t.y,0,t.x,t.y,t.r);
+        grd.addColorStop(0,'#00ffff');
+        grd.addColorStop(1,'rgba(0,255,255,0.2)');
+        ctx.fillStyle=grd;
+        ctx.beginPath();
+        ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
+        ctx.fill();
+        ctx.shadowBlur=0; // reset
+    });
+
+    // score display
+    ctx.fillStyle='#0ff';
+    ctx.font='bold 28px sans-serif';
+    ctx.textShadow='0 0 10px #0ff';
+    ctx.fillText('Score: '+score,20,40);
+}
+
+function pop(x,y){
+    for(let i=targets.length-1;i>=0;i--){
+        const t=targets[i];
+        if(Math.hypot(x-t.x,y-t.y)<t.r){
+            targets.splice(i,1);
+            score++;
+            // create ripple effect
+            pops.push({x,t.y,r:0,alpha:1});
+            return;
+        }
+    }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+    e.preventDefault();
+    pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fireflies Pop Game</title>
+<style>
+  body{margin:0;background:linear-gradient(180deg,#0a0a0a,#001f00);overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0, targets=[], pops=[];
+
+// Spawn a glowing firefly
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:20,
+    speed:1+Math.random()*2,
+    color:'#88ff44'
+  });
+}
+
+// Update targets and pops
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  pops.forEach(p=>{p.r+=p.s; p.o-=0.02});
+  pops=pops.filter(p=>p.o>0);
+  if(Math.random()<0.03)spawn();
+}
+
+// Draw everything
+function draw(){
+  ctx.fillStyle='#0a0a0a';
+  ctx.fillRect(0,0,W,H);
+
+  // Draw fireflies
+  targets.forEach(t=>{
+    ctx.save();
+    ctx.translate(t.x,t.y);
+    ctx.shadowBlur=15;
+    ctx.shadowColor='#88ff44';
+    ctx.fillStyle=t.color;
+    ctx.beginPath();
+    ctx.arc(0,0,t.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Draw pop effects
+  pops.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha=p.o;
+    ctx.shadowBlur=20;
+    ctx.shadowColor='#ffffaa';
+    ctx.fillStyle='#ffffaa';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Score display
+  ctx.fillStyle='#88ff44';
+  ctx.font='32px Arial';
+  ctx.textShadow='0 0 10px #44ff44';
+  ctx.fillText('Score: '+score,20,50);
+}
+
+// Pop a firefly
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      // Create pop effect
+      pops.push({x:t.x,y:t.y,r:0,o:1,s:4});
+      targets.splice(i,1);
+      score++;
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

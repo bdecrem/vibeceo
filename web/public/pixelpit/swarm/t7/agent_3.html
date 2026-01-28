@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Candy Pop</title>
+<style>
+  body{margin:0;background:#e0c3fc;overflow:hidden;font-family:Arial,Helvetica,sans-serif}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+
+let score=0, targets=[], particles=[];
+
+// pastel candy colors
+const colors=["#ff6b6b","#ffb6b9","#ff9e42","#ffecb3","#ffd6e7","#ffe156","#c3e88d","#90caf9"];
+
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30,
+    speed:1+Math.random()*2,
+    color:colors[Math.floor(Math.random()*colors.length)]
+  });
+}
+
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03)spawn();
+
+  // particles update
+  particles.forEach(p=>{p.x+=p.vx; p.y+=p.vy; p.alpha-=0.02;});
+  particles=particles.filter(p=>p.alpha>0);
+}
+
+function draw(){
+  // background gradient
+  const grd=ctx.createLinearGradient(0,0,W,H);
+  grd.addColorStop(0,"#ffefba");
+  grd.addColorStop(1,"#ffffff");
+  ctx.fillStyle=grd;
+  ctx.fillRect(0,0,W,H);
+
+  // draw lollipops
+  targets.forEach(t=>{
+    // stick
+    ctx.fillStyle="#8b5c2c";
+    ctx.fillRect(t.x-t.r/8, t.y, t.r/4, t.r*1.5);
+    // candy
+    ctx.fillStyle=t.color;
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // draw particles
+  particles.forEach(p=>{
+    ctx.fillStyle="rgba(255,0,0,"+p.alpha+")";
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // score
+  ctx.fillStyle="#ff69b4";
+  ctx.font="bold 28px 'Comic Sans MS',cursive";
+  ctx.textShadow="2px 2px 4px #555";
+  ctx.fillText('Score: '+score,20,40);
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      // create pop particles
+      for(let j=0;j<15;j++){
+        particles.push({
+          x:t.x,
+          y:t.y,
+          vx:(Math.random()-0.5)*6,
+          vy:(Math.random()-0.5)*6,
+          r:Math.random()*4+2,
+          alpha:1
+        });
+      }
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

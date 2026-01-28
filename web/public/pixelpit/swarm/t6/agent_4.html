@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Ghost Pop Game</title>
+<style>
+  body{margin:0;background:#000;overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'), ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0, targets=[], pops=[];
+
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30,
+    speed:1+Math.random()*2,
+    color:'#fff'
+  });
+}
+
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03)spawn();
+
+  // pop effects
+  pops.forEach(p=>{p.r+=4; p.alpha-=0.07});
+  pops=pops.filter(p=>p.alpha>0);
+}
+
+function draw(){
+  // background gradient
+  const grd=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H));
+  grd.addColorStop(0,'#111');
+  grd.addColorStop(1,'#000');
+  ctx.fillStyle=grd;
+  ctx.fillRect(0,0,W,H);
+
+  // draw ghosts
+  targets.forEach(t=>{
+    ctx.fillStyle=t.color;
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
+    ctx.fill();
+
+    // eyes
+    const eyeR=t.r/8;
+    const eyeXOff=t.r/4;
+    const eyeYOff=t.r/4;
+    ctx.fillStyle='#000';
+    ctx.beginPath();
+    ctx.arc(t.x-eyeXOff,t.y-eyeYOff,eyeR,0,Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(t.x+eyeXOff,t.y-eyeYOff,eyeR,0,Math.PI*2);
+    ctx.fill();
+
+    // mouth (simple semicircle)
+    ctx.strokeStyle='#000';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.arc(t.x,t.y+eyeYOff,t.r/4,0,Math.PI);
+    ctx.stroke();
+  });
+
+  // draw pop effects
+  pops.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle='rgba(255,255,255,0.8)';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // score
+  ctx.fillStyle='#0f0';
+  ctx.font='28px "Comic Sans MS", sans-serif';
+  ctx.fillText('👻 Score: '+score,20,40);
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      // create pop effect
+      pops.push({x,y,r:0,alpha:1});
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){update();draw();requestAnimationFrame(loop)}
+loop();
+</script>
+</body>
+</html>

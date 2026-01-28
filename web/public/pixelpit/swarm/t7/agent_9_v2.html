@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Pop Game - Pixel Retro</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#000;overflow:hidden;font-family:'Press Start 2P', monospace;color:#fff;}
+  canvas{display:block}
+  #info{position:absolute;top:0;left:0;padding:10px;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+let W,H;
+
+// Starfield
+const STAR_COUNT=300;
+const stars=[];
+for(let i=0;i<STAR_COUNT;i++){
+  stars.push({x:Math.random()*W,y:Math.random()*H,dx:0.5+Math.random()*0.5,dy:0.5+Math.random()*0.5});
+}
+
+// Colors for targets (8-bit palette)
+const COLORS=['#FF5555','#55FF55','#5555FF','#FFFF55','#FF55FF','#55FFFF','#FFAA00','#00AAFF'];
+const BORDER='#000';
+let score=0;
+const targets=[];
+const pops=[];
+
+// Resize canvas
+function resize(){
+  W=canvas.width=innerWidth;
+  H=canvas.height=innerHeight;
+  stars.length=0;
+  for(let i=0;i<STAR_COUNT;i++){
+    stars.push({x:Math.random()*W,y:Math.random()*H,dx:0.5+Math.random()*0.5,dy:0.5+Math.random()*0.5});
+  }
+}
+resize();window.onresize=resize;
+
+// Create a target
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30,
+    speed:1+Math.random()*2,
+    color:COLORS[Math.floor(Math.random()*COLORS.length)]
+  });
+}
+
+// Game loop
+function update(){
+  // Starfield
+  stars.forEach(s=>{
+    s.x-=s.dx;
+    s.y-=s.dy;
+    if(s.x<0)s.x=W;
+    if(s.y<0)s.y=H;
+  });
+
+  // Targets
+  targets.forEach(t=>t.y-=t.speed);
+  targets.splice(0,targets.length, ...targets.filter(t=>t.y>-50));
+  if(Math.random()<0.1) spawn(); // more frequent
+
+  // Pops
+  pops.forEach(p=>p.t+=1);
+  pops.splice(0,pops.length, ...pops.filter(p=>p.t<=10));
+}
+
+function draw(){
+  // Background
+  ctx.fillStyle='#111';
+  ctx.fillRect(0,0,W,H);
+
+  // Starfield
+  ctx.fillStyle='#fff';
+  stars.forEach(s=>ctx.fillRect(s.x,s.y,2,2));
+
+  // Targets
+  targets.forEach(t=>{
+    ctx.fillStyle=t.color;
+    ctx.fillRect(t.x-t.r, t.y-t.r, t.r*2, t.r*2);
+    ctx.strokeStyle=BORDER;
+    ctx.lineWidth=2;
+    ctx.strokeRect(t.x-t.r, t.y-t.r, t.r*2, t.r*2);
+  });
+
+  // Pops
+  pops.forEach(p=>{
+    const alpha=1-p.t/10;
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle='#FF0';
+    const size=20+p.t*10;
+    ctx.fillRect(p.x-size/2, p.y-size/2, size, size);
+    ctx.globalAlpha=1;
+  });
+
+  // Score
+  ctx.fillStyle='#fff';
+  ctx.font='24px "Press Start 2P"';
+  ctx.fillText('Score: '+score, 20, 40);
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      pops.push({x,y,t:0});
+      return;
+    }
+  }
+}
+
+canvas.onclick=e=>pop(e.clientX,e.clientY);
+canvas.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

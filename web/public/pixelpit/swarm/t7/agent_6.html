@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Neon Pop Game</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0, targets=[], pops=[];
+const neonColors=['#0ff','#ff0','#f0f','#ff69b4','#00ff7f'];
+
+function spawn(){
+  const color=neonColors[Math.floor(Math.random()*neonColors.length)];
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30,
+    speed:1+Math.random()*2,
+    color
+  });
+}
+
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03)spawn();
+
+  pops.forEach(p=>{
+    p.r+=p.growth;
+    p.alpha-=p.fade;
+  });
+  pops=pops.filter(p=>p.alpha>0);
+}
+
+function draw(){
+  // Background
+  ctx.fillStyle='black';
+  ctx.fillRect(0,0,W,H);
+
+  // Neon glow targets
+  targets.forEach(t=>{
+    ctx.save();
+    ctx.shadowBlur=20;
+    ctx.shadowColor=t.color;
+    ctx.fillStyle=t.color;
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Pop effects
+  pops.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle='rgba(255,255,255,0.8)';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Score
+  ctx.save();
+  ctx.font='36px sans-serif';
+  ctx.fillStyle='#0ff';
+  ctx.shadowBlur=20;
+  ctx.shadowColor='#0ff';
+  ctx.fillText('Score: '+score,20,50);
+  ctx.restore();
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      pops.push({x,y,r:0,growth:2,alpha:1,fade:0.04});
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

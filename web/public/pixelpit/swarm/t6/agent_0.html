@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Pop the Bubbles</title>
+<style>
+body{margin:0;background:#111;overflow:hidden}
+canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0, targets=[], pops=[];
+
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30+Math.random()*15,
+    speed:1+Math.random()*2
+  });
+}
+
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03)spawn();
+
+  pops.forEach(p=>{p.r+=4;p.alpha-=0.04});
+  pops=pops.filter(p=>p.alpha>0);
+}
+
+function draw(){
+  // background gradient
+  let bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#111');
+  bg.addColorStop(1,'#000');
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+
+  // draw pop effects
+  pops.forEach(p=>{
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle='rgba(255,255,255,1)';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  });
+
+  // draw bubbles
+  targets.forEach(t=>{
+    ctx.shadowColor='rgba(255,255,255,0.8)';
+    ctx.shadowBlur=12;
+    let grad=ctx.createRadialGradient(t.x,t.y,t.r*0.1,t.x,t.y,t.r);
+    grad.addColorStop(0,'#fff');
+    grad.addColorStop(0.3,'#ff00ff');
+    grad.addColorStop(0.5,'#00ffff');
+    grad.addColorStop(0.7,'#ffff00');
+    grad.addColorStop(0.9,'#ff0000');
+    grad.addColorStop(1,'#fff');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.lineWidth=2;
+    ctx.strokeStyle='rgba(255,255,255,0.4)';
+    ctx.stroke();
+    ctx.shadowBlur=0;
+  });
+
+  // score
+  ctx.fillStyle='rgba(255,255,255,0.9)';
+  ctx.font='bold 32px sans-serif';
+  ctx.shadowColor='#fff';
+  ctx.shadowBlur=10;
+  ctx.fillText('Score: '+score,20,50);
+  ctx.shadowBlur=0;
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      pops.push({x:t.x,y:t.y,r:0,alpha:1});
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY)};
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

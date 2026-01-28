@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Fruit Splash Pop Game</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0, targets=[], splashes=[];
+
+// fruit colors
+const fruitColors=['#ff4d4d','#ffa500','#f9d71c'];
+
+// spawn fruit
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30,
+    speed:1+Math.random()*2,
+    color:fruitColors[Math.floor(Math.random()*fruitColors.length)]
+  });
+}
+
+// update game state
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  splashes.forEach(s=>{
+    s.x+=s.vx; s.y+=s.vy; s.opacity-=0.02;
+  });
+  splashes=splashes.filter(s=>s.opacity>0);
+  if(Math.random()<0.03) spawn();
+}
+
+// draw everything
+function draw(){
+  // background splash
+  const grad=ctx.createRadialGradient(W/2,H/2,W/4,W/2,H/2, W/2);
+  grad.addColorStop(0,'#cde1eb');
+  grad.addColorStop(0.3,'#a5c7d2');
+  grad.addColorStop(1,'#5b9db2');
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,W,H);
+
+  // splashes
+  splashes.forEach(s=>{
+    ctx.globalAlpha=s.opacity;
+    ctx.fillStyle=s.color;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  });
+
+  // fruits
+  targets.forEach(t=>{
+    // radial gradient for juicy effect
+    const fgrad=ctx.createRadialGradient(t.x,t.y,t.r*0.3,t.x,t.y,t.r);
+    fgrad.addColorStop(0,'#fff');
+    fgrad.addColorStop(1,t.color);
+    ctx.fillStyle=fgrad;
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
+    ctx.fill();
+    // small sparkle
+    ctx.strokeStyle='#fff';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(t.x-5,t.y-5);
+    ctx.lineTo(t.x+5,t.y+5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(t.x+5,t.y-5);
+    ctx.lineTo(t.x-5,t.y+5);
+    ctx.stroke();
+  });
+
+  // score
+  ctx.fillStyle='#fff';
+  ctx.font='28px sans-serif';
+  ctx.lineWidth=4;
+  ctx.strokeStyle='#000';
+  ctx.strokeText('Score: '+score,20,40);
+  ctx.fillText('Score: '+score,20,40);
+}
+
+// pop logic
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      // create splash
+      for(let j=0;j<12;j++){
+        const angle=Math.random()*Math.PI*2;
+        const speed=Math.random()*3+1;
+        splashes.push({
+          x:t.x, y:t.y,
+          vx:Math.cos(angle)*speed,
+          vy:Math.sin(angle)*speed,
+          r:Math.random()*3+2,
+          color:t.color,
+          opacity:1
+        });
+      }
+      targets.splice(i,1);
+      score++;
+      return;
+    }
+  }
+}
+
+// touch support
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{e.preventDefault(); pop(e.touches[0].clientX, e.touches[0].clientY);};
+
+// main loop
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

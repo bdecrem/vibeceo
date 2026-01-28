@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Neon Pop</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;font-family:Arial,Helvetica,sans-serif}
+  canvas{display:block}
+</style></head><body><canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+
+let score=0, targets=[], pops=[];
+const neonColors=['#0ff','#f0f','#ff0','#ff69b4','#00ff7f'];
+function spawn(){targets.push({x:Math.random()*W, y:H+50, r:30, speed:1+Math.random()*2, color:neonColors[Math.floor(Math.random()*neonColors.length)]});}
+function update(){targets.forEach(t=>t.y-=t.speed);targets=targets.filter(t=>t.y>-50);
+  pops.forEach(p=>p.r+=3);
+  pops=pops.filter(p=>p.r<p.max);
+  if(Math.random()<0.03)spawn();}
+function draw(){
+  ctx.fillStyle='#111';ctx.fillRect(0,0,W,H);
+  targets.forEach(t=>{
+    ctx.shadowColor=t.color;ctx.shadowBlur=15;
+    ctx.fillStyle=t.color;ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+  });
+  pops.forEach(p=>{
+    const alpha=1-p.r/p.max;
+    ctx.globalAlpha=alpha;
+    ctx.shadowColor=p.color;ctx.shadowBlur=20;
+    ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;ctx.globalAlpha=1;
+  });
+  ctx.fillStyle='#fff';ctx.strokeStyle='#0ff';ctx.lineWidth=2;
+  ctx.font='36px sans-serif';
+  ctx.strokeText('Score: '+score,20,50);
+  ctx.fillText('Score: '+score,20,50);
+}
+function pop(x,y){for(let i=targets.length-1;i>=0;i--){const t=targets[i];if(Math.hypot(x-t.x,y-t.y)<t.r){targets.splice(i,1);score++;pops.push({x,t.y,r:0,max:60,color:t.color});return;}}}
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY)};
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script></body></html>

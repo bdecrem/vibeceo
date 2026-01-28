@@ -1,0 +1,177 @@
+{
+  "started": "2026-01-28T11:21:14.867448",
+  "completed": "2026-01-28T11:23:15.008042",
+  "phase": "done",
+  "agents": [
+    {
+      "id": 0,
+      "name": "SOAP BUBBLES",
+      "color": "#88ddff",
+      "desc": "Iridescent bubbles with rainbow shimmer",
+      "status": "done",
+      "time": 21.6,
+      "tokens": 2453,
+      "url": "agent_0.html",
+      "screenshot": "agent_0.png",
+      "scores": {
+        "alive": 6,
+        "theme": 8,
+        "polish": 7,
+        "verdict": "SHIP"
+      }
+    },
+    {
+      "id": 1,
+      "name": "FIREFLIES",
+      "color": "#aaff44",
+      "desc": "Glowing bugs in a dark forest",
+      "status": "done",
+      "time": 14.3,
+      "tokens": 2079,
+      "url": "agent_1.html",
+      "screenshot": "agent_1.png",
+      "scores": {
+        "alive": 3,
+        "theme": 8,
+        "polish": 5,
+        "verdict": "NEEDS_WORK"
+      }
+    },
+    {
+      "id": 2,
+      "name": "SPACE ROCKS",
+      "color": "#888899",
+      "desc": "Asteroids with explosions",
+      "status": "done",
+      "time": 14.0,
+      "tokens": 1676,
+      "url": "agent_2.html",
+      "screenshot": "agent_2.png",
+      "scores": {
+        "alive": 1,
+        "theme": 1,
+        "polish": 1,
+        "verdict": "BROKEN"
+      }
+    },
+    {
+      "id": 3,
+      "name": "CANDY POP",
+      "color": "#ff66aa",
+      "desc": "Lollipops and gummies",
+      "status": "done",
+      "time": 8.6,
+      "tokens": 1147,
+      "url": "agent_3.html",
+      "screenshot": "agent_3.png",
+      "scores": {
+        "alive": 4,
+        "theme": 8,
+        "polish": 5,
+        "verdict": "NEEDS_WORK"
+      }
+    },
+    {
+      "id": 4,
+      "name": "GHOSTS",
+      "color": "#ddddff",
+      "desc": "Cute spooky spirits",
+      "status": "done",
+      "time": 18.5,
+      "tokens": 2242,
+      "url": "agent_4.html",
+      "screenshot": "agent_4.png",
+      "scores": {
+        "alive": 3,
+        "theme": 4,
+        "polish": 2,
+        "verdict": "BROKEN"
+      }
+    },
+    {
+      "id": 5,
+      "name": "DEEP SEA",
+      "color": "#00ffcc",
+      "desc": "Bioluminescent jellyfish",
+      "status": "done",
+      "time": 10.3,
+      "tokens": 1133,
+      "url": "agent_5.html",
+      "screenshot": "agent_5.png",
+      "scores": {
+        "alive": 3,
+        "theme": 8,
+        "polish": 6,
+        "verdict": "NEEDS_WORK"
+      }
+    },
+    {
+      "id": 6,
+      "name": "NEON SIGNS",
+      "color": "#ff00ff",
+      "desc": "Electric glowing shapes",
+      "status": "done",
+      "time": 11.7,
+      "tokens": 977,
+      "url": "agent_6.html",
+      "screenshot": "agent_6.png",
+      "scores": {
+        "alive": 1,
+        "theme": 1,
+        "polish": 1,
+        "verdict": "BROKEN"
+      }
+    },
+    {
+      "id": 7,
+      "name": "FRUIT SPLASH",
+      "color": "#ffaa00",
+      "desc": "Juicy fruits splattering",
+      "status": "done",
+      "time": 19.5,
+      "tokens": 1683,
+      "url": "agent_7.html",
+      "screenshot": "agent_7.png",
+      "scores": {
+        "alive": 3,
+        "theme": 2,
+        "polish": 6,
+        "verdict": "NEEDS_WORK"
+      }
+    },
+    {
+      "id": 8,
+      "name": "EMOJI MADNESS",
+      "color": "#ffdd00",
+      "desc": "Random emoji faces",
+      "status": "done",
+      "time": 14.2,
+      "tokens": 1583,
+      "url": "agent_8.html",
+      "screenshot": "agent_8.png",
+      "scores": {
+        "alive": 7,
+        "theme": 9,
+        "polish": 6,
+        "verdict": "SHIP"
+      }
+    },
+    {
+      "id": 9,
+      "name": "PIXEL RETRO",
+      "color": "#00ff00",
+      "desc": "8-bit arcade style",
+      "status": "done",
+      "time": 22.4,
+      "tokens": 2761,
+      "url": "agent_9.html",
+      "screenshot": "agent_9.png",
+      "scores": {
+        "alive": 3,
+        "theme": 8,
+        "polish": 4,
+        "verdict": "NEEDS_WORK"
+      }
+    }
+  ]
+}

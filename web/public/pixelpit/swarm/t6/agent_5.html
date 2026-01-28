@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Deep Sea Pop Game</title>
+<style>
+  body{margin:0;background:#001f3f;overflow:hidden}
+  canvas{display:block}
+  @font-face{font-family:'SeaFont';src:local('Arial');}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+
+let score=0, targets=[], effects=[];
+
+// Spawn a jellyfish-like target
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30,
+    speed:1+Math.random()*2,
+    color:'#00b5ff'
+  });
+}
+
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03)spawn();
+
+  // Update pop effects
+  for(let i=effects.length-1;i>=0;i--){
+    const e=effects[i];
+    e.radius+=2;
+    e.alpha-=0.05;
+    if(e.alpha<=0) effects.splice(i,1);
+  }
+}
+
+function draw(){
+  // Background
+  ctx.fillStyle='#001f3f';
+  ctx.fillRect(0,0,W,H);
+
+  // Draw jellyfish targets
+  targets.forEach(t=>{
+    ctx.save();
+    ctx.translate(t.x,t.y);
+    const grad=ctx.createRadialGradient(0,0,t.r*0.3,0,0,t.r);
+    grad.addColorStop(0,'#00d2ff');
+    grad.addColorStop(1,'#001f3f');
+    ctx.fillStyle=grad;
+    ctx.shadowBlur=15;
+    ctx.shadowColor='#00d2ff';
+    ctx.beginPath();
+    ctx.arc(0,0,t.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Draw pop effects
+  effects.forEach(e=>{
+    ctx.save();
+    const grad=ctx.createRadialGradient(e.x,e.y,0,e.x,e.y,e.radius);
+    grad.addColorStop(0,'rgba(0,210,255,0.8)');
+    grad.addColorStop(1,'rgba(0,210,255,0)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Draw score
+  ctx.fillStyle='#00ffe0';
+  ctx.font='28px SeaFont';
+  ctx.fillText('Score: '+score,20,40);
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      // Create pop effect
+      effects.push({x:t.x,y:t.y,radius:0,alpha:1});
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

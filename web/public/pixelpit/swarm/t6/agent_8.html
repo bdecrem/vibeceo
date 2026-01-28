@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Emoji Madness</title>
+<style>
+  body{margin:0;overflow:hidden;background:#111}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'), ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize(); onresize=resize;
+
+let score=0, targets=[], effects=[];
+const faces=['😀','😜','😎','🤪','🤨','😈','👽','👻','🤖','🛸'];
+
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30+Math.random()*20,
+    speed:1+Math.random()*2,
+    emoji:faces[Math.floor(Math.random()*faces.length)]
+  });
+}
+
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03) spawn();
+
+  effects.forEach(e=>{e.radius+=4; e.alpha-=0.05});
+  effects=effects.filter(e=>e.alpha>0);
+}
+
+function draw(){
+  const grad=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W);
+  grad.addColorStop(0,'#222');
+  grad.addColorStop(1,'#111');
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,W,H);
+
+  targets.forEach(t=>{
+    ctx.font=`${t.r*2}px serif`;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillStyle='#ff6ec7';
+    ctx.fillText(t.emoji,t.x,t.y);
+  });
+
+  effects.forEach(e=>{
+    ctx.globalAlpha=e.alpha;
+    ctx.beginPath();
+    ctx.arc(e.x,e.y,e.radius,0,2*Math.PI);
+    ctx.strokeStyle='rgba(255,255,255,0.7)';
+    ctx.lineWidth=4;
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  });
+
+  ctx.fillStyle='#ff6ec7';
+  ctx.font='bold 28px sans-serif';
+  ctx.fillText(`Score: ${score}`,20,40);
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      effects.push({x:t.x,y:t.y,radius:0,alpha:1});
+      targets.splice(i,1);
+      score++;
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY)};
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

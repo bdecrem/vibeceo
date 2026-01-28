@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SWARM T7 - Triage Dashboard</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 20px;
+  background: #0a0a0f; color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+h1 { margin: 0 0 10px; font-size: 24px; color: #00ff88; }
+.status { color: #888; margin-bottom: 20px; font-size: 14px; }
+.status.generating { color: #ffaa00; }
+.status.judging { color: #ff66aa; }
+.status.enhancing { color: #00ddff; }
+.status.done { color: #00ff88; }
+
+.triage {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  max-width: 1400px;
+}
+.column {
+  background: #111118;
+  border-radius: 12px;
+  padding: 15px;
+  min-height: 400px;
+}
+.column h2 {
+  margin: 0 0 15px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid;
+}
+.column.green h2 { color: #00ff88; border-color: #00ff88; }
+.column.yellow h2 { color: #ffaa00; border-color: #ffaa00; }
+.column.red h2 { color: #ff4466; border-color: #ff4466; }
+.column.pending h2 { color: #666; border-color: #333; }
+
+.cards { display: flex; flex-direction: column; gap: 10px; }
+
+.card {
+  background: #1a1a2e;
+  border-radius: 10px;
+  padding: 12px;
+  border: 2px solid #333;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.card:hover { transform: translateX(5px); }
+.card.enhancing {
+  animation: enhancePulse 1s infinite;
+}
+@keyframes enhancePulse {
+  0%, 100% { border-color: #00ddff; }
+  50% { border-color: #ff66aa; }
+}
+
+.column.green .card { border-color: #00ff8844; }
+.column.yellow .card { border-color: #ffaa0044; }
+.column.red .card { border-color: #ff446644; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.card-name { font-weight: 600; font-size: 12px; }
+.card-badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #333;
+}
+.card-badge.music { background: #003322; color: #00ff88; }
+.card-badge.v2 { background: #332200; color: #ffaa00; }
+.card-badge.working { background: #002233; color: #00ddff; }
+
+.scores {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  color: #888;
+}
+.score { background: #0f0f1a; padding: 2px 6px; border-radius: 3px; }
+
+.screenshot-thumb {
+  width: 100%;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-top: 8px;
+  opacity: 0.7;
+}
+
+/* Pending area */
+.pending-area {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #111118;
+  border-radius: 12px;
+}
+.pending-area h3 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.pending-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pending-chip {
+  background: #1a1a2e;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #666;
+  border: 1px solid #333;
+}
+.pending-chip.running {
+  color: #ffaa00;
+  border-color: #ffaa00;
+  animation: pulse 1s infinite;
+}
+.pending-chip.judging {
+  color: #ff66aa;
+  border-color: #ff66aa;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.preview {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.95);
+  display: none;
+  z-index: 100;
+}
+.preview.active { display: flex; flex-direction: column; }
+.preview-header {
+  padding: 15px 20px;
+  background: #1a1a2e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+.preview-title { font-weight: 600; }
+.preview-btns { display: flex; gap: 10px; }
+.preview-btn {
+  background: #333;
+  border: none;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.preview-btn.active { background: #00ff88; color: #000; }
+.preview-btn.close { background: #ff4466; }
+.preview iframe {
+  flex: 1;
+  border: none;
+  background: #000;
+}
+</style>
+</head>
+<body>
+<h1>SWARM T7 — Triage + Enhance</h1>
+<div class="status" id="status">Loading...</div>
+
+<div class="pending-area" id="pending-area">
+  <h3>In Progress</h3>
+  <div class="pending-grid" id="pending-grid"></div>
+</div>
+
+<div class="triage">
+  <div class="column green">
+    <h2>Ship (+ Music)</h2>
+    <div class="cards" id="green-cards"></div>
+  </div>
+  <div class="column yellow">
+    <h2>Needs Work (→ v2)</h2>
+    <div class="cards" id="yellow-cards"></div>
+  </div>
+  <div class="column red">
+    <h2>Broken</h2>
+    <div class="cards" id="red-cards"></div>
+  </div>
+</div>
+
+<div class="preview" id="preview">
+  <div class="preview-header">
+    <span class="preview-title" id="preview-title"></span>
+    <div class="preview-btns">
+      <button class="preview-btn" id="btn-original" onclick="showOriginal()">Original</button>
+      <button class="preview-btn" id="btn-enhanced" onclick="showEnhanced()">Enhanced</button>
+      <button class="preview-btn close" onclick="closePreview()">Close</button>
+    </div>
+  </div>
+  <iframe id="preview-iframe"></iframe>
+</div>
+
+<script>
+const statusEl = document.getElementById('status');
+const pendingArea = document.getElementById('pending-area');
+const pendingGrid = document.getElementById('pending-grid');
+const greenCards = document.getElementById('green-cards');
+const yellowCards = document.getElementById('yellow-cards');
+const redCards = document.getElementById('red-cards');
+let lastData = null;
+let currentAgent = null;
+
+function getVerdict(a) {
+  if (!a.scores) return null;
+  const v = a.scores.verdict?.toUpperCase() || '';
+  if (v.includes('SHIP')) return 'green';
+  if (v.includes('NEEDS') || v.includes('WORK')) return 'yellow';
+  return 'red';
+}
+
+function getBadge(a) {
+  if (a.enhance_status === 'adding_music') return '<span class="card-badge working">Adding music...</span>';
+  if (a.enhance_status === 'redesigning') return '<span class="card-badge working">Redesigning...</span>';
+  if (a.enhanced_url && getVerdict(a) === 'green') return '<span class="card-badge music">+ Music</span>';
+  if (a.enhanced_url && getVerdict(a) === 'yellow') return '<span class="card-badge v2">v2</span>';
+  return '';
+}
+
+function renderCard(a) {
+  const isEnhancing = a.enhance_status === 'adding_music' || a.enhance_status === 'redesigning';
+  return `
+    <div class="card ${isEnhancing ? 'enhancing' : ''}" onclick="openPreview(${a.id})">
+      <div class="card-header">
+        <span class="card-name">${a.name}</span>
+        ${getBadge(a)}
+      </div>
+      ${a.scores ? `
+        <div class="scores">
+          <span class="score">A:${a.scores.alive}</span>
+          <span class="score">T:${a.scores.theme}</span>
+          <span class="score">P:${a.scores.polish}</span>
+        </div>
+      ` : ''}
+      ${a.screenshot ? `<img class="screenshot-thumb" src="screenshots/${a.screenshot}" />` : ''}
+    </div>
+  `;
+}
+
+function render(data) {
+  // Status line
+  const phase = data.phase;
+  const done = data.agents.filter(a => a.scores).length;
+  const enhanced = data.agents.filter(a => a.enhanced_url).length;
+
+  statusEl.className = 'status ' + phase;
+  if (phase === 'done') {
+    statusEl.textContent = `✓ Complete — ${enhanced} enhanced`;
+  } else if (phase === 'enhancing') {
+    statusEl.textContent = `✨ Enhancing — ${enhanced} done`;
+  } else if (phase === 'judging') {
+    statusEl.textContent = `🔍 Judging — ${done} rated`;
+  } else {
+    statusEl.textContent = `⟳ Generating...`;
+  }
+
+  // Pending chips
+  const pending = data.agents.filter(a => !a.scores);
+  if (pending.length > 0) {
+    pendingArea.style.display = 'block';
+    pendingGrid.innerHTML = pending.map(a => {
+      let cls = 'pending-chip';
+      let label = a.name;
+      if (a.status === 'running') { cls += ' running'; label += ' (building)'; }
+      else if (a.status === 'judging') { cls += ' judging'; label += ' (judging)'; }
+      return `<div class="${cls}">${label}</div>`;
+    }).join('');
+  } else {
+    pendingArea.style.display = 'none';
+  }
+
+  // Triage columns
+  const greens = data.agents.filter(a => getVerdict(a) === 'green');
+  const yellows = data.agents.filter(a => getVerdict(a) === 'yellow');
+  const reds = data.agents.filter(a => getVerdict(a) === 'red');
+
+  greenCards.innerHTML = greens.map(renderCard).join('');
+  yellowCards.innerHTML = yellows.map(renderCard).join('');
+  redCards.innerHTML = reds.map(renderCard).join('');
+}
+
+function openPreview(id) {
+  currentAgent = lastData.agents[id];
+  document.getElementById('preview-title').textContent = currentAgent.name;
+
+  const hasEnhanced = currentAgent.enhanced_url;
+  document.getElementById('btn-enhanced').style.display = hasEnhanced ? 'block' : 'none';
+
+  // Default to enhanced if available
+  if (hasEnhanced) {
+    showEnhanced();
+  } else {
+    showOriginal();
+  }
+
+  document.getElementById('preview').classList.add('active');
+}
+
+function showOriginal() {
+  document.getElementById('preview-iframe').src = currentAgent.url;
+  document.getElementById('btn-original').classList.add('active');
+  document.getElementById('btn-enhanced').classList.remove('active');
+}
+
+function showEnhanced() {
+  document.getElementById('preview-iframe').src = currentAgent.enhanced_url || currentAgent.url;
+  document.getElementById('btn-enhanced').classList.add('active');
+  document.getElementById('btn-original').classList.remove('active');
+}
+
+function closePreview() {
+  document.getElementById('preview').classList.remove('active');
+  document.getElementById('preview-iframe').src = '';
+  currentAgent = null;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePreview();
+});
+
+async function poll() {
+  try {
+    const res = await fetch('status.json?' + Date.now());
+    const data = await res.json();
+    if (JSON.stringify(data) !== JSON.stringify(lastData)) {
+      lastData = data;
+      render(data);
+    }
+  } catch (e) {}
+  setTimeout(poll, 500);
+}
+
+poll();
+</script>
+</body></html>

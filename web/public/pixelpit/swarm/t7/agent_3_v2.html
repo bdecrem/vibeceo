@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Candy Pop</title>
+<style>
+  body{margin:0;background:#fce1f7;overflow:hidden;font-family:'Comic Sans MS',cursive}
+  canvas{display:block}
+  #overlay{position:absolute;top:0;left:0;color:#ff69b4;font-size:28px;font-weight:bold;text-shadow:2px 2px 4px #555;padding:10px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="overlay"></div>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();addEventListener('resize',resize);
+
+let score=0, targets=[], particles=[], sparkle=[];
+const colors=["#ff6b6b","#ffb6b9","#ff9e42","#ffecb3","#ffd6e7","#ffe156","#c3e88d","#90caf9"];
+
+function spawn(){
+  targets.push({
+    x:Math.random()*W,
+    y:-50,
+    r:30,
+    speed:1+Math.random()*1.5,
+    drift:(Math.random()-0.5)*0.5,
+    color:colors[Math.floor(Math.random()*colors.length)],
+    rotation:0,
+    rotSpeed:(Math.random()-0.5)*0.02
+  });
+}
+
+function update(){
+  // spawn more frequently
+  if(Math.random()<0.07) spawn();
+
+  // update candies
+  targets.forEach(t=>{
+    t.y+=t.speed;
+    t.x+=t.drift;
+    t.rotation+=t.rotSpeed;
+  });
+  targets=targets.filter(t=>t.y<H+50 && t.x>-100 && t.x<W+100);
+
+  // update particles
+  particles.forEach(p=>{p.x+=p.vx; p.y+=p.vy; p.alpha-=0.02; p.vy+=0.05;});
+  particles=particles.filter(p=>p.alpha>0);
+
+  // update sparkle
+  sparkle.forEach(s=>{s.x+=s.vx; s.y+=s.vy; s.alpha-=0.04;});
+  sparkle=sparkle.filter(s=>s.alpha>0);
+}
+
+function draw(){
+  // background
+  const grd=ctx.createLinearGradient(0,0,W,H);
+  grd.addColorStop(0,"#ffe0f0");
+  grd.addColorStop(1,"#ffffff");
+  ctx.fillStyle=grd;
+  ctx.fillRect(0,0,W,H);
+
+  // draw background sugar dust
+  ctx.fillStyle="rgba(255,255,255,0.2)";
+  for(let i=0;i<30;i++){
+    const x=Math.random()*W, y=Math.random()*H;
+    ctx.beginPath();
+    ctx.arc(x,y,Math.random()*3+1,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  // draw candies
+  targets.forEach(t=>{
+    ctx.save();
+    ctx.translate(t.x,t.y);
+    ctx.rotate(t.rotation);
+    // stick
+    ctx.fillStyle="#8b5c2c";
+    ctx.fillRect(-t.r/8,0,t.r/4,t.r*1.5);
+    // candy
+    ctx.shadowColor="rgba(0,0,0,0.3)";
+    ctx.shadowBlur=10;
+    ctx.fillStyle=t.color;
+    ctx.beginPath();
+    ctx.arc(0,0,t.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // draw particles
+  particles.forEach(p=>{
+    ctx.fillStyle="rgba(255,255,255,"+p.alpha+")";
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // draw sparkle
+  sparkle.forEach(s=>{
+    ctx.fillStyle="rgba(255,255,255,"+s.alpha+")";
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // score
+  document.getElementById('overlay').textContent='Score: '+score;
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      // particles
+      for(let j=0;j<20;j++){
+        particles.push({
+          x:t.x,
+          y:t.y,
+          vx:(Math.random()-0.5)*6,
+          vy:(Math.random()-0.5)*6,
+          r:Math.random()*3+2,
+          alpha:1
+        });
+      }
+      // sparkle
+      for(let j=0;j<10;j++){
+        sparkle.push({
+          x:t.x,
+          y:t.y,
+          vx:(Math.random()-0.5)*4,
+          vy:(Math.random()-0.5)*4,
+          r:Math.random()*2+1,
+          alpha:1
+        });
+      }
+      return;
+    }
+  }
+}
+
+c.addEventListener('click',e=>pop(e.clientX,e.clientY));
+c.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+});
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

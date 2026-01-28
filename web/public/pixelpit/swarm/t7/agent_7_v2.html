@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fruit Splash Pop</title>
+<style>
+  html,body{margin:0;height:100%;background:#111;overflow:hidden;font-family:sans-serif}
+  canvas{display:block}
+  #overlay{
+    position:absolute;top:10px;left:10px;color:#fff;font-size:24px;pointer-events:none;
+    background:rgba(0,0,0,0.3);padding:6px 12px;border-radius:8px;
+  }
+  #hint{
+    position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+    color:#fff;font-size:18px;text-align:center;
+    background:rgba(0,0,0,0.5);padding:8px 16px;border-radius:8px;
+  }
+</style>
+</head>
+<body>
+<div id="overlay">🍎 Score: <span id="score">0</span></div>
+<div id="hint">Tap a fruit to pop it!</div>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W=innerWidth,H=innerHeight;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();window.addEventListener('resize',resize);
+
+const scoreEl=document.getElementById('score');
+let score=0,highScore=0,fruits=[],particles=[];
+
+// fruit types
+const types=[
+  {emoji:'🍎',color:'#f44336',r:30},
+  {emoji:'🍊',color:'#ff9800',r:28},
+  {emoji:'🍇',color:'#9c27b0',r:22},
+  {emoji:'🍌',color:'#ffeb3b',r:26},
+  {emoji:'🍓',color:'#e91e63',r:24}
+];
+
+function spawn(){
+  const t=types[Math.floor(Math.random()*types.length)];
+  fruits.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:t.r,
+    speed:3+Math.random()*2,
+    color:t.color,
+    emoji:t.emoji,
+    type:t
+  });
+}
+
+function update(){
+  fruits.forEach(f=>f.y-=f.speed);
+  fruits=fruits.filter(f=>f.y>-f.r-10);
+  if(Math.random()<0.07) spawn();
+
+  particles.forEach(p=>{
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.alpha-=0.03;
+    p.size*=0.98;
+  });
+  particles=particles.filter(p=>p.alpha>0);
+}
+
+function draw(){
+  // background
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#e0f7fa');
+  bg.addColorStop(1,'#006064');
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+
+  // fruits
+  fruits.forEach(f=>{
+    ctx.shadowColor='rgba(0,0,0,0.3)';
+    ctx.shadowBlur=10;
+    ctx.shadowOffsetX=2;
+    ctx.shadowOffsetY=2;
+    ctx.font=`${f.r*2.5}px sans-serif`;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(f.emoji,f.x,f.y);
+    ctx.shadowBlur=0;
+  });
+
+  // particles
+  particles.forEach(p=>{
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // score UI handled separately
+}
+
+function pop(x,y){
+  for(let i=fruits.length-1;i>=0;i--){
+    const f=fruits[i];
+    if(Math.hypot(x-f.x,y-f.y)<f.r){
+      fruits.splice(i,1);
+      score++;
+      if(score>highScore) highScore=score;
+      scoreEl.innerText=score;
+      // splash particles
+      for(let j=0;j<30;j++){
+        const angle=Math.random()*Math.PI*2;
+        const speed=Math.random()*3+1;
+        particles.push({
+          x:f.x,
+          y:f.y,
+          vx:Math.cos(angle)*speed,
+          vy:Math.sin(angle)*speed,
+          size:Math.random()*4+2,
+          alpha:1,
+          color:f.color
+        });
+      }
+      return;
+    }
+  }
+}
+
+c.addEventListener('click',e=>pop(e.clientX,e.clientY));
+c.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+});
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

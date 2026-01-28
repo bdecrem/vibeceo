@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Candy Pop</title>
+<style>
+  body{margin:0;background:#ffe6e6;overflow:hidden}
+  canvas{display:block}
+  @keyframes pop{
+    0%{transform:scale(1);opacity:1;}
+    100%{transform:scale(1.5);opacity:0;}
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
+resize();onresize=resize;
+
+let score=0, targets=[], pops=[];
+const colors=['#ff69b4','#ffb6c1','#ff8c00','#ffdf00','#00e676','#00bcd4'];
+
+function spawn(){
+  const r=30;
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:r,
+    speed:1+Math.random()*2,
+    color:colors[Math.floor(Math.random()*colors.length)]
+  });
+}
+
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  pops.forEach(p=>p.alpha-=0.05);
+  pops=pops.filter(p=>p.alpha>0);
+  if(Math.random()<0.03)spawn();
+}
+
+function draw(){
+  ctx.fillStyle='#ffe6e6';
+  ctx.fillRect(0,0,W,H);
+  targets.forEach(t=>{
+    ctx.fillStyle=t.color;
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle='#654321';
+    ctx.fillRect(t.x-5,t.y+t.r,10,t.r/2);
+  });
+  pops.forEach(p=>{
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle='#ff3366';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  });
+  ctx.fillStyle='#ff3366';
+  ctx.font='28px Comic Sans MS';
+  ctx.fillText('Score: '+score,20,40);
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      pops.push({x:t.x,y:t.y,r:t.r,alpha:1});
+      targets.splice(i,1);
+      score++;
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
+};
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

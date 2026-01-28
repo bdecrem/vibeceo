@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Soap Bubble Pop</title>
+<style>
+  body{margin:0;background:#001f3f;overflow:hidden}
+  canvas{display:block}
+  @font-face{font-family:'BubbleFont';src:url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap')}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+let score=0, targets=[], pops=[];
+function spawn(){targets.push({
+  x:Math.random()*W,
+  y:H+50,
+  r:30+Math.random()*15,
+  speed:1+Math.random()*2,
+  color:'#fff'
+})}
+function update(){targets.forEach(t=>t.y-=t.speed);targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03)spawn();
+  pops.forEach((p,i)=>{p.r+=1.5; p.alpha-=0.02; if(p.alpha<=0)pops.splice(i,1);});
+}
+function draw(){ctx.fillStyle='#001f3f';ctx.fillRect(0,0,W,H);
+  targets.forEach(t=>{
+    const g=ctx.createRadialGradient(t.x,t.y,0,t.x,t.y,t.r);
+    g.addColorStop(0,'rgba(255,255,255,1)');
+    g.addColorStop(0.25,'rgba(255,255,255,0.8)');
+    g.addColorStop(0.5,'rgba(255,204,255,0.6)');
+    g.addColorStop(0.75,'rgba(204,255,255,0.4)');
+    g.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill();
+    ctx.lineWidth=2;
+    ctx.strokeStyle='rgba(255,255,255,0.3)';
+    ctx.stroke();
+  });
+  pops.forEach(p=>{
+    ctx.fillStyle='rgba(255,255,255,'+p.alpha+')';
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+  });
+  ctx.font='32px "BubbleFont", sans-serif';
+  ctx.textAlign='left';ctx.textBaseline='top';
+  const gradient=ctx.createLinearGradient(20,20,300,20);
+  gradient.addColorStop(0,'#ff6ec4');
+  gradient.addColorStop(0.5,'#fca311');
+  gradient.addColorStop(1,'#2ed573');
+  ctx.fillStyle=gradient;
+  ctx.fillText('Score: '+score,20,20);
+}
+function pop(x,y){for(let i=targets.length-1;i>=0;i--){const t=targets[i];
+  if(Math.hypot(x-t.x,y-t.y)<t.r){targets.splice(i,1);score++;pops.push({x:t.x,y:t.y,r:0,alpha:0.9});return;}
+}}
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY)};
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

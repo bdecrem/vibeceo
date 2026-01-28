@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Space Rocks Pop Game</title>
+<style>
+  body{margin:0;background:#000;overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight;generateStars();}
+resize();onresize=resize;
+
+let score=0, targets=[], explosions=[], stars=[];
+
+function generateStars(){stars=[];for(let i=0;i<200;i++){stars.push({x:Math.random()*W,y:Math.random()*H,size:0.5+Math.random()*1.5});}}
+
+function spawn(){targets.push({x:Math.random()*W, y:H+50, r:30, speed:1+Math.random()*2, color:'#888'});}
+
+function update(){
+  // Update rocks
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  // Random spawn
+  if(Math.random()<0.03)spawn();
+  // Update explosions
+  explosions.forEach((exp,i)=>{exp.forEach((p,j)=>{p.x+=p.dx;p.y+=p.dy;p.alpha-=0.02;p.size*=0.98;});});
+  // Remove finished particles
+  explosions=explosions.filter(exp=>exp.some(p=>p.alpha>0));
+}
+
+function draw(){
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  // Draw stars
+  ctx.fillStyle='#fff';
+  stars.forEach(s=>{ctx.beginPath();ctx.arc(s.x,s.y,s.size,0,Math.PI*2);ctx.fill();});
+  // Draw explosions
+  explosions.forEach(exp=>exp.forEach(p=>{
+    ctx.fillStyle='rgba(255,255,255,'+p.alpha+')';
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
+  }));
+  // Draw rocks
+  targets.forEach(t=>{
+    ctx.fillStyle=t.color;
+    ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#555';ctx.lineWidth=3;ctx.stroke();
+  });
+  // Draw score
+  ctx.fillStyle='#ffd700';
+  ctx.font='32px Arial';
+  ctx.textAlign='left';
+  ctx.textBaseline='top';
+  ctx.fillText('Score: '+score,20,20);
+}
+
+function pop(x,y){
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      // Create explosion particles
+      const exp=[];
+      for(let k=0;k<30;k++){
+        const angle=Math.random()*Math.PI*2;
+        const speed=Math.random()*4+1;
+        exp.push({x:t.x,y:t.y,dx:Math.cos(angle)*speed,dy:Math.sin(angle)*speed,alpha:1,size:3+Math.random()*3});
+      }
+      explosions.push(exp);
+      targets.splice(i,1);
+      score++;
+      return;
+    }
+  }
+}
+
+c.onclick=e=>pop(e.clientX,e.clientY);
+c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY)};
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>
