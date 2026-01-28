@@ -1,8 +1,8 @@
 {
   "_meta": {
     "name": "JT30",
-    "description": "Acid Bass Synth - 303-style monosynth with Moog ladder filter",
-    "version": "1.0",
+    "description": "Acid Bass Synth - 303-style monosynth with resonant filter. Accent boosts both cutoff AND resonance for authentic squelch.",
+    "version": "1.1",
     "units": {
       "0-100": "Knob position (like hardware)",
       "Hz": "Filter frequency",
@@ -10,15 +10,15 @@
     }
   },
   "bass": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "output level" },
+    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 80, "hint": "output level" },
 
-    "waveform": { "unit": "choice", "options": ["sawtooth", "square"], "default": "sawtooth", "hint": "oscillator waveform" },
+    "waveform": { "unit": "choice", "options": ["sawtooth", "square"], "default": "sawtooth", "hint": "oscillator waveform - saw is brighter/aggressive, square is hollow/rounder" },
 
-    "cutoff": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter cutoff" },
-    "resonance": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter resonance" },
-    "envMod": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter envelope depth" },
-    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "filter envelope decay" },
-    "accent": { "unit": "0-100", "min": 0, "max": 100, "default": 80, "hint": "accent intensity" },
+    "cutoff": { "unit": "0-100", "min": 0, "max": 100, "default": 15, "hint": "filter cutoff - keep LOW so envelope can open it dramatically" },
+    "resonance": { "unit": "0-100", "min": 0, "max": 100, "default": 35, "hint": "filter resonance - accent will boost this for squelch" },
+    "envMod": { "unit": "0-100", "min": 0, "max": 100, "default": 75, "hint": "filter envelope depth - how much envelope opens the filter" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 45, "hint": "filter envelope decay - longer = more dramatic 'wow'" },
+    "accent": { "unit": "0-100", "min": 0, "max": 100, "default": 80, "hint": "accent intensity - boosts volume, cutoff AND resonance" },
 
     "drive": { "unit": "0-100", "min": 0, "max": 100, "default": 20, "hint": "output saturation" }
   }

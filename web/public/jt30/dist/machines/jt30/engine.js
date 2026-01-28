@@ -20,12 +20,17 @@ import { noteToMidi, midiToFreq, transpose, detune } from '../../../../jb202/dis
 import { JT30Sequencer } from './sequencer.js';
 
 // Default parameters (engine units, 0-1 unless noted)
+// Tuned based on TB-303 research:
+// - Low cutoff so envelope can "open" the filter dramatically
+// - Moderate resonance (accent will boost it for squelch)
+// - Strong envelope modulation for that acid "wow"
+// - Medium decay for sustaining filter sweep
 const DEFAULT_PARAMS = {
   waveform: 'sawtooth',      // 'sawtooth' or 'square'
-  cutoff: 0.3,               // Filter cutoff (0-1)
-  resonance: 0.5,            // Filter resonance (0-1)
-  envMod: 0.6,               // Filter envelope amount (0-1)
-  decay: 0.3,                // Envelope decay (0-1)
+  cutoff: 0.15,              // Filter cutoff (0-1) - LOW so envelope opens it
+  resonance: 0.35,           // Filter resonance (0-1) - moderate, accent boosts it
+  envMod: 0.75,              // Filter envelope amount (0-1) - aggressive for acid
+  decay: 0.45,               // Envelope decay (0-1) - medium for "wow" sweep
   accent: 0.8,               // Accent intensity (0-1)
   level: 0.8,                // Output level (0-1)
   slideTime: 0.06,           // Portamento time in seconds
@@ -54,6 +59,7 @@ class SynthVoice {
     this.slideDuration = params.slideTime;
     this.gateOpen = false;
     this.accentActive = false;
+    this.accentResonanceBoost = 0;  // For 303-style accent resonance boost
 
     // Apply params
     this.updateParams(params);
@@ -99,6 +105,11 @@ class SynthVoice {
 
   /**
    * Trigger a new note
+   *
+   * 303 accent behavior (from research):
+   * - Accent boosts volume
+   * - Accent boosts filter envelope amount
+   * - Accent boosts resonance (crucial for squelch!)
    */
   triggerNote(freq, accent, slide = false) {
     if (slide && this.gateOpen) {
@@ -122,6 +133,9 @@ class SynthVoice {
       this.filterEnv.trigger(filterVel);
 
       this.accentActive = accent;
+      // 303-style: accent boosts resonance for that squelch!
+      // This decays quickly but gives the characteristic "wow"
+      this.accentResonanceBoost = accent ? 25 : 0;  // +25% resonance on accent
     }
 
     this.gateOpen = true;
@@ -182,13 +196,25 @@ class SynthVoice {
     const ampValue = this.ampEnv.processSample();
     const filterEnvValue = this.filterEnv.processSample();
 
+    // Decay the accent resonance boost over time (fast decay for snappy squelch)
+    if (this.accentResonanceBoost > 0) {
+      this.accentResonanceBoost *= 0.9995;  // ~50ms decay at 44.1kHz
+      if (this.accentResonanceBoost < 0.5) this.accentResonanceBoost = 0;
+    }
+
     // Filter modulation - 303 has aggressive envelope modulation
     const baseCutoff = normalizedToHz(params.cutoff);
     const envAmount = params.envMod;
-    // Accent boosts envelope effect
-    const accentBoost = this.accentActive ? 1.3 : 1.0;
-    const modCutoff = clamp(baseCutoff + envAmount * filterEnvValue * 8000 * accentBoost, 20, 16000);
-    this.filter.setCutoff(modCutoff);
+    // Accent boosts envelope effect AND cutoff
+    const accentCutoffBoost = this.accentActive ? 1.4 : 1.0;
+    const modCutoff = clamp(baseCutoff + envAmount * filterEnvValue * 10000 * accentCutoffBoost, 20, 18000);
+
+    // 303-style: accent also boosts resonance for that squelch!
+    const baseResonance = params.resonance * 100;
+    const modResonance = clamp(baseResonance + this.accentResonanceBoost, 0, 95);
+
+    // Update filter with modulated cutoff and resonance
+    this.filter.setParameters(modCutoff, modResonance);
 
     // Filter
     sample = this.filter.processSample(sample);
