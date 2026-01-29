@@ -29,9 +29,9 @@ await esbuild.build({
   },
 });
 
-// Copy genres.json
-if (existsSync('genres.json')) {
-  copyFileSync('genres.json', 'dist/genres.json');
+// Copy library.json (producer knowledge: genres, artists, moods)
+if (existsSync('library.json')) {
+  copyFileSync('library.json', 'dist/library.json');
 }
 
 // Create package.json for dist

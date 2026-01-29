@@ -3,453 +3,576 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PULSE GRID — Amber</title>
-  
+  <title>PULSE GRID — 909 Minimal Techno</title>
+
   <!-- OpenGraph -->
-  <meta property="og:title" content="PULSE GRID">
-  <meta property="og:description" content="16 pulsing circles, each one a TR-909 drum voice. They breathe together at 120 BPM. Tap to start the machine.">
+  <meta property="og:title" content="PULSE GRID — 909 Minimal Techno">
+  <meta property="og:description" content="Geometric shapes pulse with 909 drums. 128 BPM. Berlin evening.">
   <meta property="og:image" content="https://intheamber.com/amber/pulse-grid-og.png">
   <meta property="og:url" content="https://kochi.to/amber/pulse-grid.html">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://intheamber.com/amber/pulse-grid-og.png">
-  
+
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
       background: #000;
-      color: #D4A574;
-      font-family: 'Space Mono', monospace;
       overflow: hidden;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      touch-action: none;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
     }
-    
+
     #canvas {
       display: block;
+      width: 100vw;
+      height: calc(100vh - 180px);
       cursor: pointer;
-      background: #000;
     }
-    
-    #ui {
-      position: absolute;
-      top: 20px;
-      left: 0;
-      right: 0;
+
+    #controls {
+      position: fixed;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       text-align: center;
       pointer-events: none;
       z-index: 10;
+      transition: opacity 0.5s;
     }
-    
-    h1 {
-      font-size: 18px;
-      letter-spacing: 4px;
-      color: #FFD700;
-      margin-bottom: 8px;
-      text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+
+    #controls.hidden {
+      opacity: 0;
     }
-    
-    #status {
-      font-size: 11px;
-      letter-spacing: 2px;
-      color: #D4A574;
-      opacity: 0.8;
-    }
-    
-    #start-prompt {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+
+    .ctrl-btn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
       font-size: 14px;
+      font-family: 'Space Mono', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      pointer-events: all;
+      text-transform: uppercase;
       letter-spacing: 2px;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+      transition: all 0.3s;
+      margin: 5px;
+    }
+
+    .ctrl-btn:hover {
+      background: #FFD700;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+    }
+
+    .ctrl-btn.active {
+      background: #FF6B6B;
+      box-shadow: 0 0 30px rgba(255, 107, 107, 0.7);
+    }
+
+    #info {
+      position: fixed;
+      top: 30px;
+      left: 30px;
+      font-size: 12px;
+      letter-spacing: 1px;
+      opacity: 0.6;
+      z-index: 5;
+    }
+
+    #title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
       color: #FFD700;
-      animation: pulse 2s ease-in-out infinite;
-      pointer-events: none;
     }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 1; }
+
+    /* Sequencer Grid */
+    #sequencer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 15px;
+      border-top: 1px solid rgba(212, 165, 116, 0.3);
+      z-index: 20;
     }
-    
-    .hidden {
-      display: none;
+
+    #grid-container {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .grid-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .row-label {
+      width: 50px;
+      font-size: 10px;
+      text-transform: uppercase;
+      opacity: 0.6;
+      text-align: right;
+      padding-right: 8px;
+    }
+
+    .grid-cell {
+      flex: 1;
+      aspect-ratio: 1;
+      max-width: 40px;
+      background: rgba(212, 165, 116, 0.1);
+      border: 1px solid rgba(212, 165, 116, 0.2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .grid-cell:hover {
+      background: rgba(212, 165, 116, 0.3);
+    }
+
+    .grid-cell.active {
+      background: #D4A574;
+      box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+    }
+
+    .grid-cell.playing {
+      border-color: #FFD700;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+    }
+
+    /* Row-specific colors */
+    .grid-row[data-row="kick"] .grid-cell.active { background: #FFD700; }
+    .grid-row[data-row="snare"] .grid-cell.active { background: #2D9596; }
+    .grid-row[data-row="ch"] .grid-cell.active { background: #D4A574; }
+    .grid-row[data-row="oh"] .grid-cell.active { background: #7B68EE; }
+
+    #button-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    #button-row .ctrl-btn {
+      padding: 10px 20px;
+      font-size: 12px;
+    }
+
+    #status {
+      text-align: center;
+      font-size: 10px;
+      opacity: 0.5;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 600px) {
+      .ctrl-btn {
+        padding: 12px 20px;
+        font-size: 12px;
+      }
+      #info {
+        top: 20px;
+        left: 20px;
+        font-size: 10px;
+      }
+      .row-label {
+        width: 35px;
+        font-size: 8px;
+      }
+      .grid-cell {
+        max-width: 30px;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="ui">
-    <h1>PULSE GRID</h1>
-    <div id="status">IDLE</div>
-  </div>
-  
-  <div id="start-prompt">TAP TO START</div>
-  
   <canvas id="canvas"></canvas>
 
+  <div id="controls">
+    <button id="play-btn" class="ctrl-btn">▶ START</button>
+  </div>
+
+  <div id="info">
+    <div id="title">PULSE GRID</div>
+    <div>909 Minimal Techno / 128 BPM</div>
+    <div style="margin-top: 5px; opacity: 0.4;">TAP GRID TO ADD BEATS</div>
+  </div>
+
+  <div id="sequencer">
+    <div id="grid-container">
+      <div class="grid-row" data-row="kick">
+        <span class="row-label">KICK</span>
+      </div>
+      <div class="grid-row" data-row="snare">
+        <span class="row-label">SNARE</span>
+      </div>
+      <div class="grid-row" data-row="ch">
+        <span class="row-label">HI-HAT</span>
+      </div>
+      <div class="grid-row" data-row="oh">
+        <span class="row-label">OPEN</span>
+      </div>
+    </div>
+    <div id="button-row">
+      <button id="save-btn" class="ctrl-btn">SAVE</button>
+      <button id="rndm-btn" class="ctrl-btn">RNDM</button>
+      <button id="clear-btn" class="ctrl-btn">CLEAR</button>
+    </div>
+    <div id="status"></div>
+  </div>
+
   <script type="module">
-    // TR-909 Drum Synthesis (lightweight inline version)
-    class Voice {
-      constructor(ctx) {
-        this.ctx = ctx;
-        this.output = ctx.createGain();
-        this.output.gain.value = 1;
-      }
-      
-      trigger(time, velocity = 1) {}
-      connect(dest) { this.output.connect(dest); }
-    }
-    
-    class Kick extends Voice {
-      trigger(time, velocity = 1) {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        
-        osc.frequency.setValueAtTime(150, time);
-        osc.frequency.exponentialRampToValueAtTime(40, time + 0.2);
-        
-        gain.gain.setValueAtTime(velocity * 0.8, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
-        
-        osc.connect(gain);
-        gain.connect(this.output);
-        
-        osc.start(time);
-        osc.stop(time + 0.4);
-      }
-    }
-    
-    class Snare extends Voice {
-      trigger(time, velocity = 1) {
-        // Tone
-        const osc = this.ctx.createOscillator();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(180, time);
-        
-        const toneGain = this.ctx.createGain();
-        toneGain.gain.setValueAtTime(velocity * 0.3, time);
-        toneGain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
-        
-        // Noise
-        const noise = this.ctx.createBufferSource();
-        const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.2, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < data.length; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
-        noise.buffer = buffer;
-        
-        const noiseGain = this.ctx.createGain();
-        noiseGain.gain.setValueAtTime(velocity * 0.5, time);
-        noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
-        
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.value = 2000;
-        
-        osc.connect(toneGain).connect(this.output);
-        noise.connect(filter).connect(noiseGain).connect(this.output);
-        
-        osc.start(time);
-        osc.stop(time + 0.2);
-        noise.start(time);
-      }
-    }
-    
-    class Hat extends Voice {
-      constructor(ctx, freq) {
-        super(ctx);
-        this.freq = freq;
-      }
-      
-      trigger(time, velocity = 1) {
-        const noise = this.ctx.createBufferSource();
-        const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.05, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < data.length; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
-        noise.buffer = buffer;
-        
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = this.freq;
-        filter.Q.value = 2;
-        
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(velocity * 0.4, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
-        
-        noise.connect(filter).connect(gain).connect(this.output);
-        noise.start(time);
-      }
-    }
-    
-    class Tom extends Voice {
-      constructor(ctx, freq) {
-        super(ctx);
-        this.freq = freq;
-      }
-      
-      trigger(time, velocity = 1) {
-        const osc = this.ctx.createOscillator();
-        osc.frequency.setValueAtTime(this.freq, time);
-        osc.frequency.exponentialRampToValueAtTime(this.freq * 0.5, time + 0.15);
-        
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(velocity * 0.6, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
-        
-        osc.connect(gain).connect(this.output);
-        osc.start(time);
-        osc.stop(time + 0.25);
-      }
-    }
-    
-    class Crash extends Voice {
-      trigger(time, velocity = 1) {
-        const noise = this.ctx.createBufferSource();
-        const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.8, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < data.length; i++) {
-          data[i] = Math.random() * 2 - 1;
-        }
-        noise.buffer = buffer;
-        
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.value = 4000;
-        
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(velocity * 0.6, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.8);
-        
-        noise.connect(filter).connect(gain).connect(this.output);
-        noise.start(time);
-      }
-    }
-    
-    // Visual setup
+    import { TR909Controller } from '/909/dist/api/index.js';
+
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const statusEl = document.getElementById('status');
-    const promptEl = document.getElementById('start-prompt');
-    
+    const playBtn = document.getElementById('play-btn');
+    const saveBtn = document.getElementById('save-btn');
+    const rndmBtn = document.getElementById('rndm-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const controls = document.getElementById('controls');
+    const status = document.getElementById('status');
+
+    let width, height;
+    let drums;
+    let isPlaying = false;
+    let beatIndex = 0;
+    let currentStep = 0;
+
+    const APP_ID = 'pulse-grid-patterns';
+
+    // Pulse state for visualization
+    const pulses = {
+      kick: 0,
+      snare: 0,
+      ch: 0,
+      oh: 0
+    };
+
     function resize() {
-      const size = Math.min(window.innerWidth, window.innerHeight, 600);
-      canvas.width = size;
-      canvas.height = size;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight - 180;
     }
     resize();
     window.addEventListener('resize', resize);
-    
-    // Audio setup
-    let audioCtx = null;
-    let voices = [];
-    let isPlaying = false;
-    let step = 0;
-    let lastStepTime = 0;
-    
-    const BPM = 120;
-    const STEP_INTERVAL = (60 / BPM) * 1000 / 4; // 16th notes
-    
-    // 4x4 grid of circles
-    const grid = [];
-    const colors = [
-      '#FFD700', // gold - kick
-      '#D4A574', // amber - snare
-      '#f59e0b', // orange - hats
-      '#2D9596', // teal - toms
-      '#7B68EE', // violet - crash
-    ];
-    
-    const voiceNames = [
-      'KICK', 'SNARE', 'CH', 'OH',
-      'TOM L', 'TOM M', 'TOM H', 'CLAP',
-      'RIM', 'COWB', 'RIDE', 'CRASH',
-      'PERC1', 'PERC2', 'PERC3', 'PERC4'
-    ];
-    
-    // Pattern (1 bar, 16 steps)
-    const pattern = [
-      [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], // kick
-      [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], // snare
-      [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], // ch
-      [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0], // oh
-      [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0], // tom l
-      [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], // tom m
-      [0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], // tom h
-      [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0], // clap
-      [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], // rim
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], // cowbell
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // ride
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // crash
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // perc1
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // perc2
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // perc3
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // perc4
-    ];
-    
-    function initAudio() {
-      audioCtx = new AudioContext();
-      const master = audioCtx.createGain();
-      master.gain.value = 0.7;
-      master.connect(audioCtx.destination);
-      
-      voices = [
-        new Kick(audioCtx),
-        new Snare(audioCtx),
-        new Hat(audioCtx, 8000),  // ch
-        new Hat(audioCtx, 10000), // oh
-        new Tom(audioCtx, 80),    // low
-        new Tom(audioCtx, 120),   // mid
-        new Tom(audioCtx, 180),   // high
-        new Hat(audioCtx, 1000),  // clap
-        new Hat(audioCtx, 1500),  // rim
-        new Tom(audioCtx, 300),   // cowbell
-        new Hat(audioCtx, 12000), // ride
-        new Crash(audioCtx),      // crash
-        new Hat(audioCtx, 2000),  // perc1
-        new Hat(audioCtx, 3000),  // perc2
-        new Hat(audioCtx, 5000),  // perc3
-        new Hat(audioCtx, 7000),  // perc4
-      ];
-      
-      voices.forEach(v => v.connect(master));
-    }
-    
-    function initGrid() {
-      const size = canvas.width;
-      const padding = size * 0.1;
-      const cellSize = (size - padding * 2) / 4;
-      
-      for (let row = 0; row < 4; row++) {
-        for (let col = 0; col < 4; col++) {
-          const idx = row * 4 + col;
-          const colorIdx = idx % colors.length;
-          grid.push({
-            x: padding + col * cellSize + cellSize / 2,
-            y: padding + row * cellSize + cellSize / 2,
-            radius: cellSize * 0.3,
-            baseRadius: cellSize * 0.3,
-            color: colors[colorIdx],
-            pulse: 0,
-            name: voiceNames[idx],
-            voiceIdx: idx,
-          });
-        }
-      }
-    }
-    initGrid();
-    
-    function trigger() {
+
+    // Editable pattern
+    const pattern = {
+      kick: Array(16).fill(null).map(() => ({ velocity: 0 })),
+      snare: Array(16).fill(null).map(() => ({ velocity: 0 })),
+      ch: Array(16).fill(null).map(() => ({ velocity: 0 })),
+      oh: Array(16).fill(null).map(() => ({ velocity: 0 }))
+    };
+
+    // Initialize with a basic pattern
+    function loadDefaultPattern() {
+      // Classic four-on-the-floor
+      [0, 4, 8, 12].forEach(i => pattern.kick[i].velocity = 1);
+      // Snare on 4 and 12
+      [4, 12].forEach(i => pattern.snare[i].velocity = 0.8);
+      // Hi-hats on every beat
       for (let i = 0; i < 16; i++) {
-        if (pattern[i][step]) {
-          const now = audioCtx.currentTime;
-          voices[i].trigger(now, 1.0);
-          grid[i].pulse = 1;
-        }
+        pattern.ch[i].velocity = i % 2 === 0 ? 0.6 : 0.4;
       }
-      step = (step + 1) % 16;
+      // Open hat
+      [6, 14].forEach(i => pattern.oh[i].velocity = 0.5);
+      updateGridUI();
     }
-    
-    function animate(timestamp) {
-      requestAnimationFrame(animate);
-      
-      // Draw background
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Check if we should step
-      if (isPlaying && timestamp - lastStepTime >= STEP_INTERVAL) {
-        trigger();
-        lastStepTime = timestamp;
-      }
-      
-      // Draw grid
-      grid.forEach(cell => {
-        // Decay pulse
-        cell.pulse *= 0.85;
-        
-        // Base breathing animation (even when not playing)
-        const breathe = Math.sin(timestamp * 0.002) * 0.5 + 0.5;
-        const baseScale = 0.7 + breathe * 0.3;
-        
-        // Active pulse on top of breathing
-        const scale = baseScale + cell.pulse * 0.3;
-        const radius = cell.baseRadius * scale;
-        
-        // Outer glow
-        const gradient = ctx.createRadialGradient(
-          cell.x, cell.y, radius * 0.3,
-          cell.x, cell.y, radius * 1.5
-        );
-        gradient.addColorStop(0, cell.color + 'aa');
-        gradient.addColorStop(0.5, cell.color + '44');
-        gradient.addColorStop(1, cell.color + '00');
-        
-        ctx.fillStyle = gradient;
-        ctx.fillRect(cell.x - radius * 2, cell.y - radius * 2, radius * 4, radius * 4);
-        
-        // Circle
-        ctx.strokeStyle = cell.color;
-        ctx.lineWidth = 2 + cell.pulse * 3;
-        ctx.globalAlpha = 0.6 + cell.pulse * 0.4;
-        ctx.beginPath();
-        ctx.arc(cell.x, cell.y, radius, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // Label
-        ctx.fillStyle = cell.color;
-        ctx.globalAlpha = 0.5;
-        ctx.font = '8px Space Mono';
-        ctx.textAlign = 'center';
-        ctx.fillText(cell.name, cell.x, cell.y + 3);
-        
-        ctx.globalAlpha = 1;
-      });
-      
-      // Step indicator
-      if (isPlaying) {
-        const barWidth = (canvas.width - canvas.width * 0.2) / 16;
-        const startX = canvas.width * 0.1;
-        const y = canvas.height - 30;
-        
+
+    // Build the grid UI
+    function buildGrid() {
+      const rows = ['kick', 'snare', 'ch', 'oh'];
+      rows.forEach(rowName => {
+        const row = document.querySelector(`.grid-row[data-row="${rowName}"]`);
         for (let i = 0; i < 16; i++) {
-          ctx.fillStyle = i === step ? '#FFD700' : '#D4A57444';
-          ctx.fillRect(startX + i * barWidth, y, barWidth - 2, 4);
+          const cell = document.createElement('div');
+          cell.className = 'grid-cell';
+          cell.dataset.step = i;
+          cell.addEventListener('click', () => toggleCell(rowName, i));
+          row.appendChild(cell);
         }
+      });
+    }
+
+    function toggleCell(rowName, step) {
+      const vel = pattern[rowName][step].velocity;
+      pattern[rowName][step].velocity = vel > 0 ? 0 : 0.8;
+      updateGridUI();
+      if (drums) {
+        drums.setPattern(pattern);
       }
     }
-    
-    canvas.addEventListener('click', async () => {
-      if (!audioCtx) {
-        initAudio();
-        await audioCtx.resume();
+
+    function updateGridUI() {
+      const rows = ['kick', 'snare', 'ch', 'oh'];
+      rows.forEach(rowName => {
+        const row = document.querySelector(`.grid-row[data-row="${rowName}"]`);
+        const cells = row.querySelectorAll('.grid-cell');
+        cells.forEach((cell, i) => {
+          cell.classList.toggle('active', pattern[rowName][i].velocity > 0);
+        });
+      });
+    }
+
+    function highlightStep(step) {
+      document.querySelectorAll('.grid-cell').forEach(cell => {
+        cell.classList.remove('playing');
+      });
+      document.querySelectorAll(`.grid-cell[data-step="${step}"]`).forEach(cell => {
+        cell.classList.add('playing');
+      });
+    }
+
+    // SAVE pattern to ZAD
+    async function savePattern() {
+      status.textContent = 'Saving...';
+      try {
+        const response = await fetch('/api/zad/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            app_id: APP_ID,
+            action_type: 'pattern',
+            content_data: pattern,
+            participant_data: {
+              saved_at: new Date().toISOString(),
+              user_agent: navigator.userAgent.slice(0, 100)
+            }
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          status.textContent = 'Saved!';
+        } else {
+          status.textContent = 'Save failed';
+        }
+      } catch (e) {
+        status.textContent = 'Save error';
       }
-      
-      if (!isPlaying) {
-        isPlaying = true;
-        statusEl.textContent = `PLAYING — ${BPM} BPM`;
-        promptEl.classList.add('hidden');
-        lastStepTime = performance.now();
-      } else {
+      setTimeout(() => { status.textContent = ''; }, 2000);
+    }
+
+    // RNDM - load random pattern
+    async function loadRandomPattern() {
+      status.textContent = 'Loading...';
+      try {
+        const response = await fetch(`/api/zad/load?app_id=${APP_ID}&action_type=pattern`);
+        const patterns = await response.json();
+        if (patterns.length === 0) {
+          status.textContent = 'No patterns saved yet!';
+        } else {
+          const random = patterns[Math.floor(Math.random() * patterns.length)];
+          const loaded = random.content_data;
+          // Apply loaded pattern
+          ['kick', 'snare', 'ch', 'oh'].forEach(row => {
+            if (loaded[row]) {
+              for (let i = 0; i < 16; i++) {
+                pattern[row][i].velocity = loaded[row][i]?.velocity || 0;
+              }
+            }
+          });
+          updateGridUI();
+          if (drums) {
+            drums.setPattern(pattern);
+          }
+          status.textContent = 'Loaded random pattern!';
+        }
+      } catch (e) {
+        status.textContent = 'Load error';
+      }
+      setTimeout(() => { status.textContent = ''; }, 2000);
+    }
+
+    // CLEAR pattern
+    function clearPattern() {
+      ['kick', 'snare', 'ch', 'oh'].forEach(row => {
+        for (let i = 0; i < 16; i++) {
+          pattern[row][i].velocity = 0;
+        }
+      });
+      updateGridUI();
+      if (drums) {
+        drums.setPattern(pattern);
+      }
+      status.textContent = 'Cleared';
+      setTimeout(() => { status.textContent = ''; }, 1000);
+    }
+
+    // Button handlers
+    saveBtn.addEventListener('click', savePattern);
+    rndmBtn.addEventListener('click', loadRandomPattern);
+    clearBtn.addEventListener('click', clearPattern);
+
+    playBtn.addEventListener('click', async () => {
+      if (isPlaying) {
+        // Stop
+        if (drums) drums.stop();
         isPlaying = false;
-        statusEl.textContent = 'IDLE';
+        playBtn.textContent = '▶ START';
+        playBtn.classList.remove('active');
+        return;
       }
+
+      // Initialize 909
+      drums = new TR909Controller();
+      drums.setPattern(pattern);
+      drums.setBpm(128);
+
+      // Start playback
+      await drums.play();
+      isPlaying = true;
+      playBtn.textContent = '■ STOP';
+      playBtn.classList.add('active');
+
+      // Start beat tracking
+      startBeatTracking();
     });
-    
-    animate(0);
+
+    function startBeatTracking() {
+      const stepDuration = (60 / 128 / 4) * 1000; // ms per 16th note
+
+      const interval = setInterval(() => {
+        if (!isPlaying) {
+          clearInterval(interval);
+          return;
+        }
+
+        const step = beatIndex % 16;
+        currentStep = step;
+        highlightStep(step);
+
+        // Trigger pulses based on pattern
+        if (pattern.kick[step].velocity > 0) {
+          pulses.kick = pattern.kick[step].velocity;
+        }
+        if (pattern.snare[step].velocity > 0) {
+          pulses.snare = pattern.snare[step].velocity;
+        }
+        if (pattern.ch[step].velocity > 0) {
+          pulses.ch = pattern.ch[step].velocity;
+        }
+        if (pattern.oh[step].velocity > 0) {
+          pulses.oh = pattern.oh[step].velocity;
+        }
+
+        beatIndex++;
+      }, stepDuration);
+    }
+
+    // Visualization
+    function draw() {
+      // Decay pulses
+      pulses.kick *= 0.85;
+      pulses.snare *= 0.85;
+      pulses.ch *= 0.92;
+      pulses.oh *= 0.88;
+
+      // Clear
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, width, height);
+
+      const cx = width / 2;
+      const cy = height / 2;
+      const time = Date.now() * 0.0005;
+
+      // Background grid (subtle, always visible)
+      ctx.strokeStyle = 'rgba(212, 165, 116, 0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < width; i += 60) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, height);
+        ctx.stroke();
+      }
+      for (let i = 0; i < height; i += 60) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(width, i);
+        ctx.stroke();
+      }
+
+      // KICK: Central expanding square
+      const kickSize = 100 + pulses.kick * 200;
+      const kickAlpha = 0.3 + pulses.kick * 0.7;
+      ctx.strokeStyle = `rgba(255, 215, 0, ${kickAlpha})`;
+      ctx.lineWidth = 3 + pulses.kick * 5;
+      ctx.strokeRect(cx - kickSize/2, cy - kickSize/2, kickSize, kickSize);
+
+      // SNARE: Rotating diagonal lines
+      const snareIntensity = pulses.snare;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(time);
+      ctx.strokeStyle = `rgba(45, 149, 150, ${0.4 + snareIntensity * 0.6})`;
+      ctx.lineWidth = 2 + snareIntensity * 6;
+      const snareSize = 150 + snareIntensity * 100;
+      ctx.beginPath();
+      ctx.moveTo(-snareSize, -snareSize);
+      ctx.lineTo(snareSize, snareSize);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(snareSize, -snareSize);
+      ctx.lineTo(-snareSize, snareSize);
+      ctx.stroke();
+      ctx.restore();
+
+      // CLOSED HAT: Corner circles
+      const chRadius = 15 + pulses.ch * 30;
+      const chAlpha = 0.3 + pulses.ch * 0.5;
+      ctx.fillStyle = `rgba(212, 165, 116, ${chAlpha})`;
+      const margin = 80;
+      ctx.beginPath();
+      ctx.arc(margin, margin, chRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(width - margin, margin, chRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(margin, height - margin, chRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(width - margin, height - margin, chRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // OPEN HAT: Expanding rings from corners
+      if (pulses.oh > 0.05) {
+        const ohRadius = 50 + pulses.oh * 250;
+        const ohAlpha = pulses.oh * 0.6;
+        ctx.strokeStyle = `rgba(123, 104, 238, ${ohAlpha})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(margin, margin, ohRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(width - margin, height - margin, ohRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Scanline effect
+      ctx.fillStyle = 'rgba(212, 165, 116, 0.02)';
+      for (let i = 0; i < height; i += 4) {
+        ctx.fillRect(0, i, width, 2);
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    // Initialize
+    buildGrid();
+    loadDefaultPattern();
+    draw();
   </script>
 </body>
 </html>

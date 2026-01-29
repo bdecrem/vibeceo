@@ -1,66 +1,63 @@
-// jambot/index.js - Milestone 1: Basic 909 session
-// Create a session with 909 and render to WAV
+// jambot/index.js - Minimal test: Bart Deep kick + closed hats
+// Just kick and ch, nothing else
 
 import { OfflineAudioContext } from 'node-web-audio-api';
-import { TR909Engine } from '../web/public/909/dist/machines/tr909/engine.js';
+import { TR909Engine } from '../web/public/909/dist/machines/tr909/engine-v3.js';
 import { writeFileSync } from 'fs';
 
-// Make OfflineAudioContext available globally (synths expect it)
 globalThis.OfflineAudioContext = OfflineAudioContext;
 
 async function test909() {
-  console.log('Creating 909 session...');
+  console.log('Bart Deep kick + closed hats only...');
 
   const bpm = 128;
   const bars = 2;
   const stepsPerBar = 16;
   const totalSteps = bars * stepsPerBar;
-  const stepDuration = 60 / bpm / 4; // seconds per step
-  const totalDuration = totalSteps * stepDuration + 1; // +1 for tail
+  const stepDuration = 60 / bpm / 4;
+  const totalDuration = totalSteps * stepDuration + 2; // tail for kick decay
   const sampleRate = 44100;
 
-  // Create offline context for rendering
   const context = new OfflineAudioContext(2, totalDuration * sampleRate, sampleRate);
-
-  // Create 909
   const drums = new TR909Engine({ context });
 
-  // Simple four-on-floor kick pattern
+  // Bart Deep kit: E1 engine, decay 55 for deep sub
+  drums.setEngine('E1');
+  drums.setVoiceParam('kick', 'decay', 0.55);  // 55/100 = medium-long decay
+
+  // Pattern: kick on 1-2-3-4, ch on every 8th
   const pattern = {
-    kick: Array(16).fill(null).map((_, i) => ({ velocity: i % 4 === 0 ? 1 : 0 })),
-    ch: Array(16).fill(null).map((_, i) => ({ velocity: i % 2 === 0 ? 0.7 : 0 })),
+    kick: [0, 4, 8, 12],  // four-on-floor
+    ch: [0, 2, 4, 6, 8, 10, 12, 14],  // 8th notes
   };
 
-  console.log('Pattern:', JSON.stringify(pattern.kick.map(s => s.velocity)));
-
-  // Schedule the hits
   const kick = drums.voices.get('kick');
   const ch = drums.voices.get('ch');
 
-  // Connect to destination
+  // Connect ONLY kick and ch to output
   kick.connect(context.destination);
   ch.connect(context.destination);
 
+  // Schedule hits
   for (let i = 0; i < totalSteps; i++) {
     const time = i * stepDuration;
     const step = i % 16;
 
-    if (pattern.kick[step].velocity > 0) {
-      kick.trigger(time, pattern.kick[step].velocity);
+    if (pattern.kick.includes(step)) {
+      kick.trigger(time, 1);
     }
-    if (pattern.ch[step].velocity > 0) {
-      ch.trigger(time, pattern.ch[step].velocity);
+    if (pattern.ch.includes(step)) {
+      ch.trigger(time, 0.7);
     }
   }
 
   console.log('Rendering...');
   const buffer = await context.startRendering();
 
-  // Convert to WAV
   const wav = audioBufferToWav(buffer);
   writeFileSync('output.wav', Buffer.from(wav));
 
-  console.log('✅ Rendered to output.wav');
+  console.log('✅ output.wav - kick + ch only');
 }
 
 // Simple WAV encoder

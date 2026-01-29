@@ -11,7 +11,7 @@ let initialized = false;
 
 /**
  * Register a tool handler
- * @param {string} name - Tool name (e.g., "add_jb01")
+ * @param {string} name - Tool name (e.g., "add_drums")
  * @param {Function} handler - async (input, session, context) => string
  */
 export function registerTool(name, handler) {
@@ -40,16 +40,17 @@ export async function initializeTools() {
 
   // Dynamic imports ensure toolHandlers is initialized first
   await import('./session-tools.js');
+  await import('./drum-tools.js');
+  await import('./bass-tools.js');
+  await import('./lead-tools.js');
   await import('./sampler-tools.js');
-  await import('./jb200-tools.js');
-  await import('./jb202-tools.js');
-  await import('./jb01-tools.js');
   await import('./mixer-tools.js');
   await import('./song-tools.js');
   await import('./render-tools.js');
+  await import('./automation-tools.js');
   await import('./generic-tools.js');
-  await import('./analyze-tools.js');
-  await import('./jp9000-tools.js');
+  await import('./routing-tools.js');
+  await import('./preset-tools.js');
 
   initialized = true;
 }

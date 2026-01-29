@@ -38,13 +38,15 @@ function encrypt(text: string): string {
   return combined.toString('base64');
 }
 
+const REDIRECT_URI = 'http://localhost:8080';
+
 async function exchangeAndStore(authCode: string) {
   console.log('Exchanging auth code for tokens...');
 
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    'https://webtoys.ai/api/oauth/gmail/callback'
+    REDIRECT_URI
   );
 
   const { tokens } = await oauth2Client.getToken(authCode);
@@ -90,14 +92,15 @@ function generateAuthUrl() {
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    'https://webtoys.ai/api/oauth/gmail/callback'
+    REDIRECT_URI
   );
 
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: [
       'https://www.googleapis.com/auth/gmail.readonly',
-      'https://www.googleapis.com/auth/userinfo.email'
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/calendar'
     ],
     state: `subscriber_id:${BART_ID}`,
     prompt: 'consent'

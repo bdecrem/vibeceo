@@ -13,32 +13,25 @@ import {
   SPLASH,
   HELP_TEXT,
   CHANGELOG_TEXT,
-  JB01_GUIDE,
-  JB202_GUIDE,
-  JP9000_GUIDE,
-  JT10_GUIDE,
-  JT30_GUIDE,
-  JT90_GUIDE,
-  DELAY_GUIDE,
-  ANALYZE_GUIDE,
+  R9D9_GUIDE,
+  R3D3_GUIDE,
+  R1D1_GUIDE,
+  R9DS_GUIDE,
   getApiKey,
   saveApiKey,
   getApiKeyPath,
-  buildMixOverview,
 } from './jambot.js';
 import { getAvailableKits, getKitPaths } from './kit-loader.js';
 import {
   createProject,
   loadProject,
   listProjects,
-  getMostRecentProject,
   saveProject,
   getRenderPath,
   recordRender,
   addToHistory,
   updateSession,
   restoreSession,
-  restoreProjectInPlace,
   extractProjectName,
   ensureDirectories,
   exportProject,
@@ -308,17 +301,17 @@ function InputBar({ value, onChange, onSubmit, isProcessing, suggestions, select
 function StatusBar({ session, project }) {
   // Build list of active synths
   const synths = [];
-  // JB01 drums
-  if (session?.jb01Pattern && Object.values(session.jb01Pattern).some(v => v?.some?.(s => s?.velocity > 0))) {
-    synths.push('JB01');
+  if (session?.drumPattern && Object.keys(session.drumPattern).length > 0) {
+    synths.push('R9D9');
   }
-  // JB202 bass synth
-  if (session?.jb202Pattern?.some(s => s.gate)) {
-    synths.push('JB202');
+  if (session?.bassPattern?.some(s => s.gate)) {
+    synths.push('R3D3');
   }
-  // Sampler
+  if (session?.leadPattern?.some(s => s.gate)) {
+    synths.push('R1D1');
+  }
   if (session?.samplerKit && session?.samplerPattern && Object.keys(session.samplerPattern).length > 0) {
-    synths.push('Sampler');
+    synths.push('R9DS');
   }
   const synthList = synths.length > 0 ? synths.join('+') : 'empty';
   const swing = session?.swing > 0 ? ` swing ${session.swing}%` : '';
@@ -569,9 +562,9 @@ function App() {
       const loadedProject = loadProject(folderName);
       setProject(loadedProject);
 
-      // Restore session in-place for consistency with onOpenProject
-      restoreProjectInPlace(session, loadedProject);
-      setSession({ ...session }); // Force React re-render
+      // Restore session from project
+      const restoredSession = restoreSession(loadedProject);
+      setSession(restoredSession);
       setAgentMessages([]);
 
       addMessage('project', `Opened project: ${loadedProject.name}`);
@@ -582,7 +575,7 @@ function App() {
     } catch (err) {
       addMessage('system', `Error opening project: ${err.message}`);
     }
-  }, [session, addMessage]);
+  }, [addMessage]);
 
   const showProjects = useCallback(() => {
     const projects = listProjects();
@@ -643,15 +636,6 @@ function App() {
         }
         break;
 
-      case '/recent':
-        const recentProject = getMostRecentProject();
-        if (recentProject) {
-          openProject(recentProject.folderName);
-        } else {
-          addMessage('system', 'No projects found. Create a beat first!');
-        }
-        break;
-
       case '/projects':
         showProjects();
         break;
@@ -666,10 +650,6 @@ function App() {
         } else {
           addMessage('system', 'Session cleared');
         }
-        break;
-
-      case '/mix':
-        addMessage('info', buildMixOverview(session, project));
         break;
 
       case '/status':
@@ -701,37 +681,45 @@ function App() {
         addMessage('info', CHANGELOG_TEXT);
         break;
 
-      case '/jb01':
-        addMessage('info', JB01_GUIDE);
+      case '/r9d9':
+      case '/909':  // Legacy alias
+        addMessage('info', R9D9_GUIDE);
         break;
 
-      case '/delay':
-        addMessage('info', DELAY_GUIDE);
+      case '/r3d3':
+      case '/303':  // Legacy alias
+        addMessage('info', R3D3_GUIDE);
         break;
 
-      case '/jb202':
-        addMessage('info', JB202_GUIDE);
+      case '/r1d1':
+      case '/101':  // Legacy alias
+        addMessage('info', R1D1_GUIDE);
         break;
 
-      case '/jp9000':
-        addMessage('info', JP9000_GUIDE);
+      case '/r9ds':
+      case '/sampler':  // Alias
+        addMessage('info', R9DS_GUIDE);
         break;
 
-      case '/jt10':
-        addMessage('info', JT10_GUIDE);
+      case '/kits': {
+        const kits = getAvailableKits();
+        const paths = getKitPaths();
+        let kitsText = 'Available Sample Kits\n\n';
+        if (kits.length === 0) {
+          kitsText += '  No kits found.\n\n';
+        } else {
+          for (const kit of kits) {
+            const source = kit.source === 'user' ? '[user]' : '[bundled]';
+            kitsText += `  ${kit.id.padEnd(12)} ${kit.name.padEnd(20)} ${source}\n`;
+          }
+          kitsText += '\n';
+        }
+        kitsText += `Bundled: ${paths.bundled}\n`;
+        kitsText += `User:    ${paths.user}\n`;
+        kitsText += '\nSay "load the 808 kit" or use load_kit tool.';
+        addMessage('info', kitsText);
         break;
-
-      case '/jt30':
-        addMessage('info', JT30_GUIDE);
-        break;
-
-      case '/jt90':
-        addMessage('info', JT90_GUIDE);
-        break;
-
-      case '/analyze':
-        addMessage('info', ANALYZE_GUIDE);
-        break;
+      }
 
       case '/export':
         if (!project) {
@@ -829,12 +817,6 @@ function App() {
           onResponse: (text) => {
             addMessage('response', text);
           },
-          onAfterTool: (_toolName, sess) => {
-            // AUTO-SAVE after every tool execution
-            if (currentProject) {
-              updateSession(currentProject, sess);
-            }
-          },
         },
         {
           // Called before render to get the path
@@ -872,20 +854,22 @@ function App() {
           onOpenProject: (folderName) => {
             try {
               const loadedProject = loadProject(folderName);
-              // CRITICAL: Update existing session in-place so the running agent loop
-              // sees the changes (setSession creates a new object that wouldn't be visible
-              // to code holding the old reference)
-              restoreProjectInPlace(session, loadedProject);
-              // Update state
+              const restoredSession = restoreSession(loadedProject);
+              // MUTATE the existing session object in-place
+              // This is critical: the closure's reference to `session` must remain valid
+              // so that updateSession() at the end saves the loaded project's data
+              Object.keys(session).forEach(key => delete session[key]);
+              Object.assign(session, restoredSession);
+              // Update React state (spread to trigger re-render)
               setProject(loadedProject);
-              setSession({ ...session }); // Force React re-render with same object
+              setSession({ ...session });
               currentProject = loadedProject;
               // Clear agent messages for fresh start
               setAgentMessages([]);
               addMessage('project', `Opened: ${loadedProject.name}`);
               return {
                 name: loadedProject.name,
-                bpm: session.bpm,
+                bpm: restoredSession.bpm,
                 renderCount: loadedProject.renders?.length || 0,
               };
             } catch (e) {

@@ -195,11 +195,11 @@ const mixerTools = {
   show_mixer: async (input, session, context) => {
     const lines = ['MIXER CONFIGURATION:', ''];
 
-    // Node output levels
-    const drums = session.get('drums.level') ?? 0;
-    const bass = session.get('bass.level') ?? 0;
-    const lead = session.get('lead.level') ?? 0;
-    const sampler = session.get('sampler.level') ?? 0;
+    // Node output levels (direct properties on session)
+    const drums = session.drumLevel ?? 0;
+    const bass = session.bassLevel ?? 0;
+    const lead = session.leadLevel ?? 0;
+    const sampler = session.samplerLevel ?? 0;
 
     const formatLevel = (dB) => {
       if (dB === 0) return '0dB';
