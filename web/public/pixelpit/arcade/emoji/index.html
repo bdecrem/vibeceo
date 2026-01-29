@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>EMOJI MADNESS</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  background: #fef3c7;
+  overflow: hidden;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  position: fixed;
+  inset: 0;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+
+let W, H;
+function resize() {
+  // Use visualViewport for accurate mobile sizing
+  const vv = window.visualViewport;
+  W = c.width = vv ? vv.width : innerWidth;
+  H = c.height = vv ? vv.height : innerHeight;
+  // Also set CSS size to prevent scaling issues
+  c.style.width = W + 'px';
+  c.style.height = H + 'px';
+}
+resize();
+window.addEventListener('resize', resize);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', resize);
+}
+
+// ==================== THEME (Bright & Playful) ====================
+const THEME = {
+  bgTop: '#fef3c7',      // warm cream
+  bgBottom: '#fce7f3',   // soft pink
+  pink: '#ec4899',       // hot pink
+  pinkLight: '#f472b6',
+  yellow: '#facc15',     // sunny yellow
+  yellowLight: '#fde047',
+  cyan: '#06b6d4',       // pop cyan
+  cyanLight: '#22d3ee',
+  orange: '#f97316',     // energetic orange
+  purple: '#a855f7',     // fun purple
+  red: '#ef4444',        // danger red
+  white: '#ffffff',
+  dark: '#1e1b4b',       // deep purple-black for text
+};
+
+// ==================== AUDIO (Bouncy & Playful - same production quality) ====================
+let audioCtx = null;
+let masterGain = null;
+let musicInterval = null;
+let musicStep = 0;
+let arpStep = 0;
+
+// Brighter, bouncier music - major key, faster
+const MUSIC = {
+  bpm: 140, // faster, more energetic
+  // Bouncy bass - major key feel
+  bass: [130.8, 0, 130.8, 0, 164.8, 0, 196, 0, 174.6, 0, 174.6, 0, 146.8, 0, 164.8, 0], // C-E-G-F pattern
+  // Playful bright arpeggios - pentatonic happy vibes
+  arp: [
+    [523, 659, 784, 1047],  // C major high
+    [587, 740, 880, 1175],  // D major
+    [523, 659, 784, 1047],  // C major
+    [440, 554, 659, 880],   // A major
+  ],
+  // Punchy kick
+  kick: [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0], // syncopated bounce
+  // Bright shaker/hat
+  hat: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // constant energy
+  // Stab hits
+  stab: [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0],
+};
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.7;
+  masterGain.connect(audioCtx.destination);
+}
+
+function playSoftSound(freq, dur, type, vol, cutoff) {
+  if (!audioCtx || !masterGain) return;
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  osc.connect(flt);
+  flt.connect(gain);
+  gain.connect(masterGain);
+  osc.type = type;
+  osc.frequency.value = freq;
+  flt.type = 'lowpass';
+  flt.frequency.value = cutoff;
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  osc.start();
+  osc.stop(audioCtx.currentTime + dur);
+}
+
+function playKick() {
+  if (!audioCtx || !masterGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(150, audioCtx.currentTime); // higher attack = punchier
+  osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.08);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.15);
+}
+
+function playHat() {
+  if (!audioCtx || !masterGain) return;
+  const bufferSize = audioCtx.sampleRate * 0.025;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const hpFilter = audioCtx.createBiquadFilter();
+  hpFilter.type = 'highpass';
+  hpFilter.frequency.value = 8000;
+  const lpFilter = audioCtx.createBiquadFilter();
+  lpFilter.type = 'lowpass';
+  lpFilter.frequency.value = 14000;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+  noise.connect(hpFilter);
+  hpFilter.connect(lpFilter);
+  lpFilter.connect(gain);
+  gain.connect(masterGain);
+  noise.start();
+}
+
+function playBass(freq) {
+  if (!audioCtx || !masterGain || freq === 0) return;
+  const osc = audioCtx.createOscillator();
+  const osc2 = audioCtx.createOscillator();
+  const filter = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  osc.connect(filter);
+  osc2.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'sine';
+  osc2.type = 'triangle';
+  osc.frequency.value = freq;
+  osc2.frequency.value = freq * 2; // octave up for brightness
+  filter.type = 'lowpass';
+  filter.frequency.value = 400; // brighter than BEAM
+  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+  osc.start();
+  osc2.start();
+  osc.stop(audioCtx.currentTime + 0.15);
+  osc2.stop(audioCtx.currentTime + 0.15);
+}
+
+function playArp(freqs) {
+  if (!audioCtx || !masterGain) return;
+  const freq = freqs[arpStep % freqs.length];
+  const osc = audioCtx.createOscillator();
+  const filter = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'square'; // brighter, more 8-bit playful
+  osc.frequency.value = freq;
+  filter.type = 'lowpass';
+  filter.frequency.value = 3000; // brighter cutoff
+  filter.Q.value = 2;
+  gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.12);
+}
+
+function playStab(freq) {
+  if (!audioCtx || !masterGain) return;
+  // Bright chord stab
+  [1, 1.25, 1.5].forEach((mult, i) => {
+    const osc = audioCtx.createOscillator();
+    const filter = audioCtx.createBiquadFilter();
+    const gain = audioCtx.createGain();
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGain);
+    osc.type = 'sawtooth';
+    osc.frequency.value = 220 * mult;
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2000, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.18);
+  });
+}
+
+function musicTick() {
+  if (!audioCtx || state !== 'playing') return;
+  if (MUSIC.kick[musicStep % 16]) playKick();
+  if (MUSIC.hat[musicStep % 16]) playHat();
+  if (MUSIC.stab[musicStep % 16]) playStab();
+  if (musicStep % 2 === 0) playBass(MUSIC.bass[(musicStep / 2) % 16]);
+  const barIndex = Math.floor(musicStep / 16) % 4;
+  playArp(MUSIC.arp[barIndex]);
+  arpStep++;
+  musicStep++;
+}
+
+function startMusic() {
+  if (musicInterval) return;
+  musicStep = 0;
+  arpStep = 0;
+  const bpm = MUSIC.bpm + (60 - timeLeft) * 0.3;
+  const stepTime = (60 / bpm) * 1000 / 4;
+  musicInterval = setInterval(musicTick, stepTime);
+}
+
+function updateMusicTempo() {
+  if (!musicInterval) return;
+  clearInterval(musicInterval);
+  const bpm = MUSIC.bpm + (60 - timeLeft) * 0.5;
+  const stepTime = (60 / bpm) * 1000 / 4;
+  musicInterval = setInterval(musicTick, stepTime);
+}
+
+function stopMusic() {
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
+}
+
+// SFX - Bright & Satisfying
+function playPop() {
+  // Bouncy pop
+  playSoftSound(880 + Math.random() * 200, 0.08, 'sine', 0.12, 4000);
+  setTimeout(() => playSoftSound(1200, 0.06, 'sine', 0.08, 3500), 30);
+}
+
+function playGolden() {
+  // Sparkly success
+  const notes = [784, 988, 1175, 1568, 1175, 1568];
+  notes.forEach((freq, i) => {
+    setTimeout(() => playSoftSound(freq, 0.15, 'sine', 0.1, 5000), i * 50);
+  });
+}
+
+function playBad() {
+  // Cartoon bonk
+  if (!audioCtx || !masterGain) return;
+  playSoftSound(200, 0.1, 'square', 0.15, 800);
+  setTimeout(() => playSoftSound(120, 0.15, 'square', 0.12, 500), 50);
+}
+
+function playMiss() {
+  // Whoops slide down
+  if (!audioCtx || !masterGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.2);
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.2);
+}
+
+function playComboUp(level) {
+  // Ascending happy notes
+  const base = 600 + level * 100;
+  [0, 60, 120].forEach((delay, i) => {
+    setTimeout(() => playSoftSound(base * (1 + i * 0.25), 0.1, 'square', 0.08, 4000), delay);
+  });
+}
+
+function playFlowUp(level) {
+  // Dreamy rising shimmer
+  const base = 800 + level * 80;
+  playSoftSound(base, 0.15, 'sine', 0.1, 5000);
+  setTimeout(() => playSoftSound(base * 1.5, 0.12, 'sine', 0.08, 4500), 50);
+}
+
+function playFlowBreak() {
+  // Soft "aww" down
+  playSoftSound(500, 0.1, 'triangle', 0.06, 1500);
+}
+
+function playGameOver() {
+  // Sad trombone (but cute)
+  const notes = [392, 370, 349, 330];
+  notes.forEach((freq, i) => {
+    setTimeout(() => playSoftSound(freq, 0.3, 'triangle', 0.12, 1200), i * 200);
+  });
+}
+
+function playHighScore() {
+  // Victory fanfare!
+  const notes = [523, 523, 523, 698, 880, 784, 698, 880];
+  notes.forEach((freq, i) => {
+    setTimeout(() => playSoftSound(freq, 0.12, 'square', 0.1, 4000), i * 80);
+  });
+}
+
+// ==================== GAME ====================
+const GOOD = ['😀','😃','😄','😁','😎','🤩','🥳','🐱','🐶','🐰'];
+const BAD = ['💀','☠️','💣','😡','🤬','👿','😈'];
+const GOLDEN = '⭐';
+
+// Color rings - max contrast for similar-looking smileys
+const EMOJI_COLORS = {
+  '😀': '#facc15', // yellow
+  '😃': '#3b82f6', // blue
+  '😄': '#ec4899', // pink
+  '😁': '#22c55e', // green
+  '😎': '#a855f7', // purple
+  '🤩': '#8b5cf6', // violet
+  '🥳': '#d946ef', // fuchsia
+  '🐱': '#f97316', // orange
+  '🐶': '#f59e0b', // amber
+  '🐰': '#fb7185', // rose
+};
+
+let state = 'ready';
+let score = 0;
+let lives = 3;
+let combo = 1;
+let comboCount = 0;
+let prevCombo = 1;
+let timeLeft = 60;
+let lastEmoji = null;
+let emojiStreak = 0;
+let flowMultiplier = 1;
+let flowTimeLeft = 0;
+let flowEmoji = null;
+let lastTime = 0;
+let targets = [];
+let particles = [];
+let screenShake = 0;
+let lastSpawn = 0;
+let isHighScore = false;
+let pulsePhase = 0;
+let lastTempoUpdate = 60;
+
+// Floating background shapes
+let bgShapes = [];
+for (let i = 0; i < 15; i++) {
+  bgShapes.push({
+    x: Math.random() * 1000,
+    y: Math.random() * 1000,
+    size: 20 + Math.random() * 60,
+    speed: 0.2 + Math.random() * 0.3,
+    color: [THEME.pink, THEME.yellow, THEME.cyan, THEME.purple, THEME.orange][Math.floor(Math.random() * 5)],
+    rotation: Math.random() * Math.PI * 2
+  });
+}
+
+function getSpawnInterval() {
+  if (timeLeft > 40) return 800;
+  if (timeLeft > 20) return 500;
+  return 300;
+}
+
+function getSpeed() {
+  if (timeLeft > 40) return 1.5;
+  if (timeLeft > 20) return 2.5;
+  return 3.5;
+}
+
+function getBadRatio() {
+  if (timeLeft > 40) return 0.20;
+  if (timeLeft > 20) return 0.25;
+  return 0.30;
+}
+
+function spawn() {
+  const rand = Math.random();
+  let emoji, type;
+
+  if (rand < 0.05) {
+    emoji = GOLDEN;
+    type = 'golden';
+  } else if (rand < 0.05 + getBadRatio()) {
+    emoji = BAD[Math.floor(Math.random() * BAD.length)];
+    type = 'bad';
+  } else {
+    emoji = GOOD[Math.floor(Math.random() * GOOD.length)];
+    type = 'good';
+  }
+
+  targets.push({
+    x: 40 + Math.random() * (W - 80),
+    y: H + 40,
+    r: 30,
+    speed: getSpeed() + Math.random() * 1.5,
+    emoji,
+    type,
+    rotation: Math.random() * 0.3 - 0.15,
+    wobble: Math.random() * Math.PI * 2,
+    color: EMOJI_COLORS[emoji] || THEME.pink
+  });
+}
+
+function spawnParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 3 + Math.random() * 5;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 2,
+      r: 4 + Math.random() * 8,
+      color,
+      alpha: 1,
+      decay: 0.025 + Math.random() * 0.02
+    });
+  }
+}
+
+function spawnText(x, y, text, color) {
+  particles.push({
+    x, y,
+    vx: 0,
+    vy: -2,
+    text,
+    color,
+    alpha: 1,
+    decay: 0.02,
+    isText: true,
+    scale: 1.5
+  });
+}
+
+function updateCombo(hit) {
+  prevCombo = combo;
+  if (hit) {
+    comboCount++;
+    if (comboCount >= 10) combo = 5;
+    else if (comboCount >= 6) combo = 3;
+    else if (comboCount >= 3) combo = 2;
+    else combo = 1;
+    if (combo > prevCombo) playComboUp(combo);
+  } else {
+    comboCount = 0;
+    combo = 1;
+  }
+}
+
+function handleTap(x, y) {
+  if (state === 'ready') {
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    startGame();
+    return;
+  }
+
+  if (state === 'gameover') {
+    resetGame();
+    state = 'ready';
+    return;
+  }
+
+  if (state !== 'playing') return;
+
+  for (let i = targets.length - 1; i >= 0; i--) {
+    const t = targets[i];
+    const dist = Math.hypot(x - t.x, y - t.y);
+
+    if (dist < t.r + 15) {
+      targets.splice(i, 1);
+
+      if (t.type === 'bad') {
+        lives--;
+        updateCombo(false);
+        if (flowMultiplier >= 2) playFlowBreak();
+        lastEmoji = null;
+        emojiStreak = 0;
+        flowMultiplier = 1;
+        flowTimeLeft = 0;
+        flowEmoji = null;
+        screenShake = 15;
+        spawnParticles(t.x, t.y, THEME.red, 15);
+        spawnText(t.x, t.y - 30, '💔', THEME.red);
+        playBad();
+        if (lives <= 0) endGame();
+      } else if (t.type === 'golden') {
+        const pts = 5 * combo;
+        score += pts;
+        updateCombo(true);
+        screenShake = 5;
+        spawnParticles(t.x, t.y, THEME.yellow, 30);
+        spawnText(t.x, t.y - 30, '+' + pts, THEME.yellow);
+        playGolden();
+      } else {
+        // FLOW bonus (timed multiplier)
+        if (t.emoji === lastEmoji) {
+          emojiStreak++;
+          if (emojiStreak === 2) {
+            flowMultiplier = 2;
+            flowTimeLeft = 3;
+            flowEmoji = t.emoji;
+            playFlowUp(2);
+          } else if (emojiStreak >= 3) {
+            flowMultiplier = 3;
+            flowTimeLeft = 5;
+            flowEmoji = t.emoji;
+            playFlowUp(3);
+          }
+        } else {
+          emojiStreak = 1;
+          lastEmoji = t.emoji;
+        }
+        const pts = combo * flowMultiplier;
+        score += pts;
+        updateCombo(true);
+        spawnParticles(t.x, t.y, t.color, 12 + flowMultiplier * 3);
+        playPop();
+        if (pts > 1) spawnText(t.x, t.y - 30, '+' + pts, THEME.pink);
+        if (flowMultiplier >= 2 && emojiStreak >= 2) spawnText(t.x, t.y - 55, 'FLOW ×' + flowMultiplier, THEME.purple);
+      }
+      return;
+    }
+  }
+}
+
+function update(dt) {
+  if (state !== 'playing') return;
+
+  pulsePhase += dt * 4;
+
+  timeLeft -= dt;
+  if (timeLeft <= 0) {
+    timeLeft = 0;
+    endGame();
+    return;
+  }
+
+  if (Math.floor(timeLeft / 10) < Math.floor(lastTempoUpdate / 10)) {
+    updateMusicTempo();
+    lastTempoUpdate = timeLeft;
+  }
+
+  // FLOW timer countdown
+  if (flowTimeLeft > 0) {
+    flowTimeLeft -= dt;
+    if (flowTimeLeft <= 0) {
+      flowTimeLeft = 0;
+      if (flowMultiplier >= 2) playFlowBreak();
+      flowMultiplier = 1;
+      flowEmoji = null;
+      emojiStreak = 0;
+      lastEmoji = null;
+    }
+  }
+
+  lastSpawn += dt * 1000;
+  if (lastSpawn > getSpawnInterval()) {
+    spawn();
+    lastSpawn = 0;
+  }
+
+  // Update background shapes
+  bgShapes.forEach(s => {
+    s.y -= s.speed;
+    s.rotation += 0.005;
+    if (s.y < -s.size) {
+      s.y = H + s.size;
+      s.x = Math.random() * W;
+    }
+  });
+
+  for (let i = targets.length - 1; i >= 0; i--) {
+    const t = targets[i];
+    t.y -= t.speed;
+    t.wobble += 0.1;
+    t.x += Math.sin(t.wobble) * 0.5; // gentle wobble
+
+    if (t.y < -50) {
+      targets.splice(i, 1);
+      if (t.type === 'good' || t.type === 'golden') {
+        lives--;
+        updateCombo(false);
+        if (flowMultiplier >= 2) playFlowBreak();
+        lastEmoji = null;
+        emojiStreak = 0;
+        flowMultiplier = 1;
+        flowTimeLeft = 0;
+        flowEmoji = null;
+        screenShake = 8;
+        spawnText(W / 2, 100, 'MISSED!', THEME.red);
+        playMiss();
+        if (lives <= 0) endGame();
+      }
+    }
+  }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx || 0;
+    p.y += p.vy || 0;
+    if (p.vy && !p.isText) p.vy += 0.12;
+    if (p.scale) p.scale *= 0.95;
+    p.alpha -= p.decay;
+    if (p.alpha <= 0) particles.splice(i, 1);
+  }
+
+  if (screenShake > 0) screenShake *= 0.85;
+}
+
+function draw() {
+  ctx.save();
+  if (screenShake > 0.5 && state === 'playing') {
+    ctx.translate(
+      (Math.random() - 0.5) * screenShake,
+      (Math.random() - 0.5) * screenShake
+    );
+  }
+
+  // Bright gradient background
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, THEME.bgTop);
+  bgGrad.addColorStop(1, THEME.bgBottom);
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(-10, -10, W + 20, H + 20);
+
+  // Floating background shapes
+  bgShapes.forEach(s => {
+    ctx.save();
+    ctx.translate(s.x % W, s.y);
+    ctx.rotate(s.rotation);
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.arc(0, 0, s.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  if (state === 'ready') {
+    drawReady();
+  } else if (state === 'playing') {
+    drawGame();
+  } else if (state === 'gameover') {
+    drawGameOver();
+  }
+
+  ctx.restore();
+}
+
+function drawReady() {
+  // Fun card
+  const cardW = Math.min(320, W - 40);
+  const cardH = 300;
+  const cardX = (W - cardW) / 2;
+  const cardY = (H - cardH) / 2;
+
+  // Card shadow
+  ctx.fillStyle = THEME.pink + '30';
+  ctx.beginPath();
+  ctx.roundRect(cardX + 8, cardY + 8, cardW, cardH, 24);
+  ctx.fill();
+
+  // Card
+  ctx.fillStyle = THEME.white;
+  ctx.shadowBlur = 30;
+  ctx.shadowColor = THEME.pink + '40';
+  ctx.beginPath();
+  ctx.roundRect(cardX, cardY, cardW, cardH, 24);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Title with color
+  ctx.font = '700 38px ui-rounded, system-ui, sans-serif';
+  ctx.fillStyle = THEME.pink;
+  ctx.fillText('EMOJI', W/2, cardY + 70);
+  ctx.fillStyle = THEME.yellow;
+  ctx.fillText('MADNESS', W/2, cardY + 115);
+
+  // Fun emojis
+  ctx.font = '40px sans-serif';
+  ctx.fillText('😀 🎯 💀', W/2, cardY + 170);
+
+  // Instructions
+  ctx.font = '500 15px ui-rounded, system-ui, sans-serif';
+  ctx.fillStyle = THEME.dark;
+  ctx.fillText('tap the happy ones!', W/2, cardY + 220);
+
+  // Start button
+  ctx.fillStyle = THEME.pink;
+  ctx.beginPath();
+  ctx.roundRect(W/2 - 60, cardY + 245, 120, 40, 20);
+  ctx.fill();
+  ctx.font = '600 14px ui-rounded, system-ui, sans-serif';
+  ctx.fillStyle = THEME.white;
+  ctx.fillText('PLAY', W/2, cardY + 266);
+
+  // Branding
+  ctx.font = '600 11px ui-rounded, system-ui, sans-serif';
+  ctx.fillStyle = THEME.pink;
+  ctx.fillText('pixel', W/2 - 15, H - 30);
+  ctx.fillStyle = THEME.cyan;
+  ctx.fillText('pit', W/2 + 15, H - 30);
+}
+
+function drawGame() {
+  // Targets with bouncy style
+  targets.forEach(t => {
+    ctx.save();
+    ctx.translate(t.x, t.y);
+    const bounce = 1 + Math.sin(pulsePhase + t.wobble) * 0.05;
+    ctx.scale(bounce, bounce);
+    ctx.rotate(t.rotation);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    ctx.beginPath();
+    ctx.ellipse(3, 5, t.r * 0.9, t.r * 0.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Circle
+    const bgColor = t.type === 'bad' ? '#fee2e2' :
+                    t.type === 'golden' ? '#fef9c3' : THEME.white;
+    ctx.fillStyle = bgColor;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = t.type === 'bad' ? THEME.red + '50' :
+                      t.type === 'golden' ? THEME.yellow + '80' : t.color + '40';
+    ctx.beginPath();
+    ctx.arc(0, 0, t.r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = t.type === 'bad' ? THEME.red :
+                      t.type === 'golden' ? THEME.yellow : t.color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Emoji
+    ctx.font = '36px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(t.emoji, 0, 2);
+
+    ctx.restore();
+  });
+
+  // Particles
+  particles.forEach(p => {
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+
+    if (p.isText) {
+      const scale = p.scale || 1;
+      ctx.font = `700 ${24 * scale}px ui-rounded, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = p.color;
+      ctx.fillText(p.text, p.x, p.y);
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * p.alpha, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  });
+
+  // HUD - Score (top center, big!)
+  ctx.textAlign = 'center';
+  ctx.font = '800 52px ui-rounded, system-ui, sans-serif';
+  ctx.fillStyle = THEME.pink;
+  ctx.fillText(score, W/2, 50);
+
+  // Combo (below score)
+  if (combo > 1) {
+    ctx.font = '700 16px ui-rounded, system-ui, sans-serif';
+    ctx.fillStyle = THEME.purple;
+    ctx.fillText('×' + combo + ' COMBO', W/2, 78);
+  }
+
+  // FLOW neon border
+  if (flowMultiplier >= 2 && flowTimeLeft > 0) {
+    const flowColor = EMOJI_COLORS[flowEmoji] || THEME.purple;
+    const shimmer = Math.sin(pulsePhase * 6) * 0.4 + 0.6;
+    const borderWidth = 4 + shimmer * 2;
+
+    ctx.save();
+    ctx.strokeStyle = flowColor;
+    ctx.lineWidth = borderWidth;
+    ctx.shadowBlur = 25 + shimmer * 20;
+    ctx.shadowColor = flowColor;
+
+    // Draw glowing border
+    ctx.beginPath();
+    ctx.roundRect(borderWidth/2, borderWidth/2, W - borderWidth, H - borderWidth, 0);
+    ctx.stroke();
+
+    // Second pass for extra glow
+    ctx.shadowBlur = 50 + shimmer * 30;
+    ctx.globalAlpha = 0.5;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // FLOW indicator (timed, shimmering)
+  if (flowMultiplier >= 2 && flowTimeLeft > 0) {
+    const flowY = combo > 1 ? 105 : 82;
+    const shimmer = Math.sin(pulsePhase * 8) * 0.5 + 0.5; // fast shimmer
+    const pulse = 1 + Math.sin(pulsePhase * 3) * 0.08;
+    const flowColor = EMOJI_COLORS[flowEmoji] || THEME.purple;
+
+    ctx.save();
+    ctx.translate(W/2, flowY);
+    ctx.scale(pulse, pulse);
+
+    // Glowing background bar
+    const barW = 140;
+    const barH = 28;
+    ctx.fillStyle = flowColor + '30';
+    ctx.shadowBlur = 20 + shimmer * 15;
+    ctx.shadowColor = flowColor;
+    ctx.beginPath();
+    ctx.roundRect(-barW/2, -barH/2, barW, barH, 14);
+    ctx.fill();
+
+    // Time remaining bar
+    const timeRatio = flowTimeLeft / (flowMultiplier === 3 ? 5 : 3);
+    ctx.fillStyle = flowColor + '60';
+    ctx.beginPath();
+    ctx.roundRect(-barW/2 + 3, -barH/2 + 3, (barW - 6) * timeRatio, barH - 6, 11);
+    ctx.fill();
+
+    // Text
+    ctx.shadowBlur = 10 + shimmer * 10;
+    ctx.font = '700 14px ui-rounded, system-ui, sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(flowEmoji + ' FLOW ×' + flowMultiplier, 0, 1);
+
+    ctx.restore();
+  }
+
+  // HUD - Timer (top left)
+  ctx.font = '700 22px ui-rounded, system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = timeLeft <= 10 ? THEME.red : THEME.dark;
+  ctx.fillText(Math.ceil(timeLeft) + 's', 20, 38);
+
+  // HUD - Lives (top right)
+  ctx.textAlign = 'right';
+  ctx.font = '22px sans-serif';
+  ctx.fillText('❤️'.repeat(lives), W - 20, 38);
+}
+
+function drawGameOver() {
+  // Overlay
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Title
+  ctx.font = '600 24px ui-rounded, system-ui, sans-serif';
+  ctx.fillStyle = THEME.dark;
+  ctx.fillText('GAME OVER', W/2, H/2 - 100);
+
+  // Score
+  ctx.font = '800 80px ui-rounded, system-ui, sans-serif';
+  ctx.fillStyle = THEME.pink;
+  ctx.fillText(score, W/2, H/2);
+
+  // High score
+  const storedHigh = parseInt(localStorage.getItem('emoji_madness_high') || '0');
+  if (isHighScore) {
+    ctx.font = '700 22px ui-rounded, system-ui, sans-serif';
+    ctx.fillStyle = THEME.yellow;
+    ctx.fillText('🎉 NEW BEST! 🎉', W/2, H/2 + 60);
+  } else {
+    ctx.font = '500 16px ui-rounded, system-ui, sans-serif';
+    ctx.fillStyle = THEME.dark + '80';
+    ctx.fillText('best: ' + storedHigh, W/2, H/2 + 60);
+  }
+
+  // Play again button
+  ctx.fillStyle = THEME.cyan;
+  ctx.beginPath();
+  ctx.roundRect(W/2 - 70, H/2 + 100, 140, 45, 22);
+  ctx.fill();
+  ctx.font = '600 15px ui-rounded, system-ui, sans-serif';
+  ctx.fillStyle = THEME.white;
+  ctx.fillText('PLAY AGAIN', W/2, H/2 + 123);
+}
+
+function startGame() {
+  state = 'playing';
+  lastTime = performance.now();
+  lastTempoUpdate = 60;
+  startMusic();
+}
+
+function endGame() {
+  state = 'gameover';
+  stopMusic();
+
+  const storedHigh = parseInt(localStorage.getItem('emoji_madness_high') || '0');
+  if (score > storedHigh) {
+    localStorage.setItem('emoji_madness_high', score);
+    isHighScore = true;
+    playHighScore();
+  } else {
+    isHighScore = false;
+    playGameOver();
+  }
+}
+
+function resetGame() {
+  score = 0;
+  lives = 3;
+  combo = 1;
+  comboCount = 0;
+  prevCombo = 1;
+  timeLeft = 60;
+  targets = [];
+  particles = [];
+  screenShake = 0;
+  lastSpawn = 0;
+  isHighScore = false;
+  pulsePhase = 0;
+  lastEmoji = null;
+  emojiStreak = 0;
+  flowMultiplier = 1;
+  flowTimeLeft = 0;
+  flowEmoji = null;
+}
+
+c.addEventListener('click', e => handleTap(e.clientX, e.clientY));
+c.addEventListener('touchstart', e => {
+  e.preventDefault();
+  handleTap(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
+
+function loop(now) {
+  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+resetGame();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
