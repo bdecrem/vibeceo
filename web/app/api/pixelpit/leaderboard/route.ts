@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getLevel,
   getXpProgress,
+  getXpNeeded,
   getStreakMultiplier,
   calculateXpGain,
-  XP_PER_LEVEL,
   type ProgressionResult,
 } from "@/lib/pixelpit/progression";
 
@@ -292,7 +292,7 @@ export async function POST(request: NextRequest) {
         xpTotal: newXp,
         level: newLevel,
         levelProgress: getXpProgress(newXp),
-        levelNeeded: XP_PER_LEVEL,
+        levelNeeded: getXpNeeded(newXp),
         leveledUp: newLevel > oldLevel,
         streak: newStreak,
         multiplier: getStreakMultiplier(newStreak),

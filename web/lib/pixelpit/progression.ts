@@ -3,22 +3,33 @@
  *
  * Shared utilities for XP, levels, and streaks.
  * Used by both API routes and client-side code.
+ *
+ * Leveling: 200 XP to level 2, then 500 XP per level after
+ * Level 1: 0, Level 2: 200, Level 3: 700, Level 4: 1200, ...
  */
-
-export const XP_PER_LEVEL = 200;
 
 /**
  * Get level from total XP
  */
 export function getLevel(xp: number): number {
-  return Math.floor(xp / XP_PER_LEVEL) + 1;
+  if (xp < 200) return 1;
+  return Math.floor((xp - 200) / 500) + 2;
 }
 
 /**
- * Get XP progress within current level (0 to XP_PER_LEVEL-1)
+ * Get XP progress within current level
  */
 export function getXpProgress(xp: number): number {
-  return xp % XP_PER_LEVEL;
+  if (xp < 200) return xp;
+  return (xp - 200) % 500;
+}
+
+/**
+ * Get XP needed to complete current level
+ */
+export function getXpNeeded(xp: number): number {
+  if (xp < 200) return 200;
+  return 500;
 }
 
 /**
@@ -49,8 +60,8 @@ export interface ProgressionResult {
   xpEarned: number;
   xpTotal: number;
   level: number;
-  levelProgress: number; // XP into current level
-  levelNeeded: number; // XP needed for next level (always XP_PER_LEVEL)
+  levelProgress: number;
+  levelNeeded: number;
   leveledUp: boolean;
   streak: number;
   multiplier: number;

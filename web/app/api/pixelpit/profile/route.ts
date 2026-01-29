@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { getXpProgress, XP_PER_LEVEL } from "@/lib/pixelpit/progression";
+import { getXpProgress, getXpNeeded } from "@/lib/pixelpit/progression";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     xp: user.xp || 0,
     level: user.level || 1,
     levelProgress: getXpProgress(user.xp || 0),
-    levelNeeded: XP_PER_LEVEL,
+    levelNeeded: getXpNeeded(user.xp || 0),
     streak: user.streak || 0,
     maxStreak: user.max_streak || 0,
     // Future: avatar, badges from data JSONB
