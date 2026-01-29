@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MISSED BUS - Amber</title>
+    
+    <!-- OG tags -->
+    <meta property="og:title" content="MISSED BUS">
+    <meta property="og:description" content="That moment when you miss the bus by exactly 1 frame">
+    <meta property="og:image" content="https://intheamber.com/amber/missed-bus-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/missed-bus.html">
+    <meta name="twitter:card" content="summary_large_image">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0D0D0D;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: monospace;
+            padding: 20px;
+        }
+
+        #game-container {
+            background: #000;
+            border: 4px solid #D4A574;
+            box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+            max-width: 640px;
+            width: 100%;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        #ui {
+            background: #000;
+            border-top: 4px solid #D4A574;
+            padding: 16px;
+            color: #D4A574;
+            font-size: 14px;
+        }
+
+        .stat-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 8px;
+        }
+
+        .stat-label {
+            min-width: 100px;
+            color: #FFD700;
+        }
+
+        .bar {
+            flex: 1;
+            height: 16px;
+            background: #1a1a1a;
+            border: 2px solid #D4A574;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .bar-fill.speed { background: #2D9596; }
+        .bar-fill.energy { background: #FFD700; }
+        .bar-fill.luck { background: #FF4444; }
+
+        .message {
+            margin-top: 16px;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 2px solid #7B68EE;
+            color: #FF4444;
+            text-align: center;
+            font-size: 16px;
+            text-transform: uppercase;
+        }
+
+        .tap-hint {
+            margin-top: 12px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+
+        @media (max-width: 480px) {
+            #ui {
+                font-size: 12px;
+            }
+            .stat-label {
+                min-width: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="canvas" width="320" height="240"></canvas>
+        <div id="ui">
+            <div class="stat-bar">
+                <div class="stat-label">SPEED:</div>
+                <div class="bar"><div class="bar-fill speed" style="width: 95%"></div></div>
+                <span>95%</span>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-label">ENERGY:</div>
+                <div class="bar"><div class="bar-fill energy" style="width: 12%"></div></div>
+                <span>12%</span>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-label">LUCK:</div>
+                <div class="bar"><div class="bar-fill luck" style="width: 0%"></div></div>
+                <span>0%</span>
+            </div>
+            <div class="message">
+                ⚠ TIMING: -0.1 SEC<br>
+                BETTER LUCK NEXT TIME
+            </div>
+            <div class="tap-hint">TAP TO TRY AGAIN (SPOILER: YOU'LL STILL MISS IT)</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Pixel size (each game pixel = 4 screen pixels)
+        const PIXEL = 4;
+        
+        // Colors (retro game palette)
+        const COLORS = {
+            bg: '#87CEEB',      // Sky blue
+            ground: '#8B7355',  // Brown ground
+            road: '#4A4A4A',    // Dark grey road
+            busYellow: '#FFD700',
+            busWindow: '#87CEEB',
+            character: '#D4A574', // Amber
+            characterShirt: '#2D9596', // Teal
+            characterPants: '#1a1a1a',
+            busStop: '#FF4444',
+            white: '#FFFFFF',
+            black: '#000000'
+        };
+
+        let frame = 0;
+        let animate = true;
+
+        function drawPixel(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * PIXEL, y * PIXEL, PIXEL, PIXEL);
+        }
+
+        function drawRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * PIXEL, y * PIXEL, w * PIXEL, h * PIXEL);
+        }
+
+        function drawScene() {
+            // Sky
+            drawRect(0, 0, 80, 60, COLORS.bg);
+            
+            // Ground
+            drawRect(0, 45, 80, 15, COLORS.ground);
+            
+            // Road
+            drawRect(0, 40, 80, 5, COLORS.road);
+            
+            // Road lines
+            for (let i = 0; i < 80; i += 8) {
+                drawRect(i, 42, 4, 1, COLORS.white);
+            }
+            
+            // Bus stop sign (left side)
+            drawRect(12, 35, 1, 7, COLORS.busStop);
+            drawRect(10, 35, 5, 2, COLORS.busStop);
+            
+            // Bus (right side, doors JUST closing)
+            const busX = 50;
+            const busY = 35;
+            
+            // Bus body
+            drawRect(busX, busY, 18, 8, COLORS.busYellow);
+            
+            // Windows
+            drawRect(busX + 2, busY + 2, 3, 3, COLORS.busWindow);
+            drawRect(busX + 7, busY + 2, 3, 3, COLORS.busWindow);
+            drawRect(busX + 12, busY + 2, 3, 3, COLORS.busWindow);
+            
+            // Wheels
+            drawRect(busX + 2, busY + 8, 3, 2, COLORS.black);
+            drawRect(busX + 13, busY + 8, 3, 2, COLORS.black);
+            
+            // Door (THE CRUCIAL 1 PIXEL GAP)
+            const doorGap = Math.sin(frame * 0.3) > 0 ? 1 : 0;
+drawRect(busX + 1, busY + 4, doorGap, 4, COLORS.black);
+            
+            // Character (running, just missed it)
+            const charX = 40 + Math.sin(frame * 0.2) * 0.5;
+            const charY = 38;
+            
+            // Legs (running pose)
+            const legOffset = Math.sin(frame * 0.5) > 0 ? 1 : -1;
+            drawRect(charX, charY + 5, 1, 3, COLORS.characterPants); // Left leg
+            drawRect(charX + 2, charY + 5 + legOffset, 1, 3, COLORS.characterPants); // Right leg
+            
+            // Body
+            drawRect(charX, charY + 2, 3, 3, COLORS.characterShirt);
+            
+            // Head
+            drawRect(charX, charY, 3, 2, COLORS.character);
+            
+            // Arms (reaching out desperately)
+            drawRect(charX + 3, charY + 2, 2, 1, COLORS.character); // Arm reaching
+            
+            // Sweat drops (panic)
+            if (Math.sin(frame * 0.3) > 0) {
+                drawPixel(charX + 3, charY, COLORS.white);
+                drawPixel(charX + 4, charY + 1, COLORS.white);
+            }
+            
+            // Motion lines (running)
+            for (let i = 0; i < 3; i++) {
+                const lineX = charX - 2 - i * 2;
+                drawPixel(lineX, charY + 3 + i, COLORS.white);
+            }
+            
+            // Exclamation mark (realization)
+            drawRect(charX + 1, charY - 3, 1, 2, COLORS.busStop);
+            drawPixel(charX + 1, charY - 1, COLORS.busStop);
+        }
+
+        function gameLoop() {
+            if (animate) {
+                drawScene();
+                frame++;
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start animation
+        gameLoop();
+
+        // Click to restart animation
+        canvas.addEventListener('click', () => {
+            frame = 0;
+            animate = true;
+        });
+
+        // Also handle tap on UI
+        document.getElementById('ui').addEventListener('click', () => {
+            frame = 0;
+            animate = true;
+        });
+    </script>
+</body>
+</html>
