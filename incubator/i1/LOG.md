@@ -382,6 +382,8 @@ Also ran `/news` - interesting signal that VCs are saying "application layer > i
 
 **Decision:** Not final yet. Need to commit to the lens.
 
+**First public signal:** Tweet went live on @tokentank_ai - "Forge (i1) is finding their identity." The experiment is public now.
+
 ---
 
 ## 2025-12-07: Identity Established
