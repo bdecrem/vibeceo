@@ -17,9 +17,9 @@ const labMessages = [
 ];
 
 const games = [
+  { icon: '💥', name: 'Emoji Blaster', href: '/pixelpit/arcade/emoji', playable: true, date: 'Thu 1/29' },
   { icon: '🌀', name: 'Singularity', href: '/pixelpit/arcade/singularity', playable: true, date: 'Wed 1/28' },
   { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true, date: 'Tue 1/27' },
-  { icon: '🧠', name: 'Memory', href: null, playable: false },
   { icon: '🐍', name: 'Snake', href: null, playable: false },
   { icon: '🔨', name: 'Whack', href: null, playable: false },
   { icon: '✨', name: 'Soon', href: null, playable: false },
@@ -364,33 +364,43 @@ export default function PixelpitLanding() {
           <span style={{ color: '#FF6BA8', textShadow: '0 0 30px rgba(255, 107, 168, 0.6)' }}>OUR GAMES</span>
         </h2>
         <div className="max-w-4xl mx-auto grid grid-cols-3 md:grid-cols-6 gap-4">
-          {games.map((game) => (
-            game.href ? (
+          {games.map((game, i) => {
+            const isToday = i === 0;
+            const baseStyle = {
+              background: 'linear-gradient(135deg, rgba(255, 184, 212, 0.2) 0%, rgba(255, 105, 180, 0.15) 100%)',
+              border: '2px solid rgba(255, 150, 200, 0.5)',
+              boxShadow: '0 0 25px rgba(255, 105, 180, 0.4), inset 0 0 20px rgba(255, 105, 180, 0.1)',
+            };
+            const todayStyle = {
+              background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 140, 0, 0.25) 100%)',
+              border: '3px solid #FFD700',
+              boxShadow: '0 0 30px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 140, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.15)',
+            };
+
+            return game.href ? (
               <Link
                 key={game.name}
                 href={game.href}
-                className="rounded-2xl p-4 text-center hover:scale-105 transition-all cursor-pointer"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(255, 184, 212, 0.2) 0%, rgba(255, 105, 180, 0.15) 100%)',
-                  border: '2px solid rgba(255, 150, 200, 0.5)',
-                  boxShadow: '0 0 25px rgba(255, 105, 180, 0.4), inset 0 0 20px rgba(255, 105, 180, 0.1)',
-                }}
+                className={`relative rounded-2xl p-4 text-center hover:scale-105 transition-all cursor-pointer ${isToday ? 'scale-105' : ''}`}
+                style={isToday ? todayStyle : baseStyle}
               >
+                {isToday && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider"
+                    style={{ background: '#FFD700', color: '#000', boxShadow: '0 2px 10px rgba(255, 215, 0, 0.5)' }}>
+                    TODAY
+                  </div>
+                )}
                 <div className="text-4xl mb-2">{game.icon}</div>
-                <div className="text-sm font-bold" style={{ color: '#FFC0DB' }}>{game.name}</div>
-                {game.date && <div className="text-xs mt-1" style={{ color: 'rgba(255, 182, 193, 0.8)' }}>{game.date}</div>}
+                <div className="text-sm font-bold" style={{ color: isToday ? '#FFD700' : '#FFC0DB' }}>{game.name}</div>
+                {game.date && <div className="text-xs mt-1" style={{ color: isToday ? 'rgba(255, 215, 0, 0.8)' : 'rgba(255, 182, 193, 0.8)' }}>{game.date}</div>}
               </Link>
             ) : (
-              <div key={game.name} className="rounded-2xl p-4 text-center hover:scale-105 transition-all cursor-pointer" style={{
-                background: 'linear-gradient(135deg, rgba(255, 184, 212, 0.2) 0%, rgba(255, 105, 180, 0.15) 100%)',
-                border: '2px solid rgba(255, 150, 200, 0.5)',
-                boxShadow: '0 0 25px rgba(255, 105, 180, 0.4), inset 0 0 20px rgba(255, 105, 180, 0.1)',
-              }}>
+              <div key={game.name} className="rounded-2xl p-4 text-center hover:scale-105 transition-all cursor-pointer" style={baseStyle}>
                 <div className="text-4xl mb-2">{game.icon}</div>
                 <div className="text-sm font-bold" style={{ color: '#FFC0DB' }}>{game.name}</div>
               </div>
-            )
-          ))}
+            );
+          })}
         </div>
       </section>
 
