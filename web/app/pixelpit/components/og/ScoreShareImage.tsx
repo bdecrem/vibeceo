@@ -583,3 +583,272 @@ export function RainDecorations() {
     </div>
   );
 }
+
+/**
+ * SURGE-specific decorations: grid cells and black holes.
+ */
+export function SurgeDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Ambient glow at bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 200,
+          background: 'linear-gradient(180deg, #0a0a1200 0%, #facc1520 100%)',
+        }}
+      />
+
+      {/* Decorative energized grid cells */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 120,
+          top: 100,
+          width: 45,
+          height: 45,
+          borderRadius: 4,
+          background: '#facc15',
+          opacity: 0.5,
+          boxShadow: '0 0 25px #facc15',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 180,
+          top: 100,
+          width: 45,
+          height: 45,
+          borderRadius: 4,
+          background: '#facc15',
+          opacity: 0.4,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 120,
+          top: 160,
+          width: 45,
+          height: 45,
+          borderRadius: 4,
+          background: '#facc15',
+          opacity: 0.4,
+        }}
+      />
+
+      {/* Black holes */}
+      <div
+        style={{
+          position: 'absolute',
+          right: 150,
+          top: 120,
+          width: 55,
+          height: 55,
+          borderRadius: 27,
+          background: '#7c3aed',
+          opacity: 0.6,
+          boxShadow: '0 0 35px #a855f7',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          right: 250,
+          top: 180,
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          background: '#7c3aed',
+          opacity: 0.5,
+        }}
+      />
+
+      {/* Bottom decorations */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 100,
+          bottom: 100,
+          width: 50,
+          height: 50,
+          borderRadius: 25,
+          background: '#7c3aed',
+          opacity: 0.5,
+          boxShadow: '0 0 30px #a855f7',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          right: 120,
+          bottom: 120,
+          width: 45,
+          height: 45,
+          borderRadius: 4,
+          background: '#facc15',
+          opacity: 0.5,
+          boxShadow: '0 0 25px #facc15',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          right: 180,
+          bottom: 120,
+          width: 45,
+          height: 45,
+          borderRadius: 4,
+          background: '#facc15',
+          opacity: 0.4,
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * FUSE-specific decorations: bombs and fuse lines.
+ */
+export function FuseDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Ambient glow at bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 200,
+          background: 'linear-gradient(180deg, #0d0d1400 0%, #ff6b3520 100%)',
+        }}
+      />
+
+      {/* Decorative bombs */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 150,
+          top: 100,
+          width: 50,
+          height: 50,
+          borderRadius: 25,
+          background: 'linear-gradient(135deg, #ffe066 0%, #ffd93d 50%, #cc8800 100%)',
+          opacity: 0.6,
+          boxShadow: '0 0 30px #ffd93d',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 350,
+          top: 150,
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          background: 'linear-gradient(135deg, #ff8c5a 0%, #ff6b35 50%, #cc4400 100%)',
+          opacity: 0.5,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 900,
+          top: 120,
+          width: 45,
+          height: 45,
+          borderRadius: 22,
+          background: 'linear-gradient(135deg, #ffe066 0%, #ffd93d 50%, #cc8800 100%)',
+          opacity: 0.6,
+          boxShadow: '0 0 25px #ffd93d',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 1050,
+          top: 180,
+          width: 35,
+          height: 35,
+          borderRadius: 17,
+          background: 'linear-gradient(135deg, #ff8c5a 0%, #ff6b35 50%, #cc4400 100%)',
+          opacity: 0.5,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 100,
+          top: 480,
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          background: 'linear-gradient(135deg, #ffe066 0%, #ffd93d 50%, #cc8800 100%)',
+          opacity: 0.5,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 1080,
+          top: 450,
+          width: 45,
+          height: 45,
+          borderRadius: 22,
+          background: 'linear-gradient(135deg, #ff8c5a 0%, #ff6b35 50%, #cc4400 100%)',
+          opacity: 0.6,
+          boxShadow: '0 0 20px #ff6b35',
+        }}
+      />
+
+      {/* Fuse line connecting some bombs */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 175,
+          top: 125,
+          width: 175,
+          height: 4,
+          background: '#ff6b35',
+          transform: 'rotate(15deg)',
+          opacity: 0.5,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 925,
+          top: 145,
+          width: 125,
+          height: 4,
+          background: '#ff6b35',
+          transform: 'rotate(25deg)',
+          opacity: 0.5,
+        }}
+      />
+    </div>
+  );
+}

@@ -2,120 +2,143 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Space Rocks</title>
+<title>Asteroid Pop Game</title>
 <style>
-body{margin:0;background:#000;overflow:hidden}
-canvas{display:block}
+  body{margin:0;background:#000;overflow:hidden}
+  canvas{display:block}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <script>
-const c=document.getElementById('c'), ctx=c.getContext('2d');
-let W,H;
-function resize(){W=c.width=innerWidth; H=c.height=innerHeight}
-resize(); onresize=resize;
+const c = document.getElementById('c'), ctx = c.getContext('2d');
+let W, H;
 
-let score=0;
-let targets=[];
-let particles=[];
+function resize() {
+  W = c.width = innerWidth;
+  H = c.height = innerHeight;
+  initStars();
+}
+resize();
+onresize = resize;
 
-// Populate a starry background
-const stars=[];
-function initStars(){ for(let i=0;i<200;i++){ stars.push({x:Math.random()*W, y:Math.random()*H, r:1+Math.random()*2, bright:0.5+Math.random()*0.5}); } }
-initStars();
+let score = 0;
+let targets = [];
+let explosions = [];
+let stars = [];
 
-function spawn(){
-  const r=30;
+// Create a simple star field
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 200; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: 0.5 + Math.random() * 1.5
+    });
+  }
+}
+
+function spawn() {
   targets.push({
-    x:Math.random()*W,
-    y:H+50,
-    r:r,
-    speed:1+Math.random()*2,
-    color:`hsl(${Math.random()*120+60},70%,40%)`
+    x: Math.random() * W,
+    y: H + 50,
+    r: 30,
+    speed: 1 + Math.random() * 2,
+    color: '#888'
   });
 }
 
-function update(){
-  targets.forEach(t=>t.y-=t.speed);
-  targets=targets.filter(t=>t.y>-50);
-  if(Math.random()<0.03) spawn();
+function update() {
+  targets.forEach(t => t.y -= t.speed);
+  targets = targets.filter(t => t.y > -50);
 
-  particles.forEach(p=>{p.x+=p.vx; p.y+=p.vy; p.life-=0.02;});
-  particles=particles.filter(p=>p.life>0);
+  // Update explosions
+  explosions.forEach((e, i) => {
+    e.r += 3;
+    e.alpha -= 0.03;
+    if (e.alpha <= 0) explosions.splice(i, 1);
+  });
+
+  if (Math.random() < 0.03) spawn();
 }
 
-function drawStars(){
-  ctx.fillStyle='#000';
-  ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='#fff';
-  stars.forEach(s=>{ ctx.globalAlpha=s.bright; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill(); });
-  ctx.globalAlpha=1;
+function drawBackground() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#fff';
+  stars.forEach(s => ctx.fillRect(s.x, s.y, s.r, s.r));
 }
 
-function drawTargets(){
-  targets.forEach(t=>{
-    ctx.fillStyle=t.color;
+function drawTargets() {
+  targets.forEach(t => {
+    // Draw a rocky asteroid with a radial gradient
+    const grd = ctx.createRadialGradient(t.x, t.y, t.r * 0.2, t.x, t.y, t.r);
+    grd.addColorStop(0, '#444');
+    grd.addColorStop(1, t.color);
+    ctx.fillStyle = grd;
     ctx.beginPath();
-    for(let i=0;i<6;i++){
-      const angle= Math.PI/3*i;
-      const x=t.x+r*Math.cos(angle);
-      const y=t.y+r*Math.sin(angle);
-      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    }
-    ctx.closePath();
+    ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
     ctx.fill();
   });
 }
 
-function drawParticles(){
-  particles.forEach(p=>{
-    const alpha=p.life;
-    ctx.fillStyle=`rgba(255,165,0,${alpha})`;
-    ctx.fillRect(p.x-2,p.y-2,4,4);
+function drawExplosions() {
+  explosions.forEach(e => {
+    ctx.globalAlpha = e.alpha;
+    ctx.fillStyle = e.color;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
   });
 }
 
-function drawScore(){
-  ctx.fillStyle='rgba(255,255,255,0.8)';
-  ctx.font='28px "Press Start 2P", monospace';
-  ctx.textAlign='left';
-  ctx.fillText(`🌟 ${score}`, 20, 40);
+function drawScore() {
+  ctx.fillStyle = '#ffcc33';
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.font = '28px Arial';
+  ctx.textBaseline = 'top';
+  ctx.strokeText('Score: ' + score, 20, 20);
+  ctx.fillText('Score: ' + score, 20, 20);
 }
 
-function pop(x,y){
-  for(let i=targets.length-1;i>=0;i--){
-    const t=targets[i];
-    const dx=x-t.x, dy=y-t.y;
-    if(Math.hypot(dx,dy)<t.r){
-      targets.splice(i,1);
-      // create explosion particles
-      for(let j=0;j<25;j++){
-        const angle=Math.random()*Math.PI*2;
-        const speed=Math.random()*3+1;
-        particles.push({
-          x:t.x,
-          y:t.y,
-          vx:Math.cos(angle)*speed,
-          vy:Math.sin(angle)*speed,
-          life:1
-        });
-      }
+function draw() {
+  drawBackground();
+  drawTargets();
+  drawExplosions();
+  drawScore();
+}
+
+function pop(x, y) {
+  for (let i = targets.length - 1; i >= 0; i--) {
+    const t = targets[i];
+    if (Math.hypot(x - t.x, y - t.y) < t.r) {
+      targets.splice(i, 1);
       score++;
+      // Add explosion effect
+      explosions.push({
+        x: t.x,
+        y: t.y,
+        r: 10,
+        alpha: 1,
+        color: '#ffcc33'
+      });
       return;
     }
   }
 }
 
-c.onclick=e=>pop(e.clientX,e.clientY);
-c.ontouchstart=e=>{e.preventDefault(); pop(e.touches[0].clientX, e.touches[0].clientY);};
+c.onclick = e => pop(e.clientX, e.clientY);
+c.ontouchstart = e => {
+  e.preventDefault();
+  pop(e.touches[0].clientX, e.touches[0].clientY);
+};
 
-function loop(){
+function loop() {
   update();
-  drawStars();
-  drawTargets();
-  drawParticles();
-  drawScore();
+  draw();
   requestAnimationFrame(loop);
 }
 loop();

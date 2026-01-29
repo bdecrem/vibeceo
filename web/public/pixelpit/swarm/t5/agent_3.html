@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Candy Pop</title>
 <style>
-  body{margin:0;background:linear-gradient(135deg,#ffd1dc,#ffe4f1);overflow:hidden}
+  body{margin:0;background:#111;overflow:hidden}
   canvas{display:block}
 </style>
 </head>
@@ -12,81 +12,47 @@
 <canvas id="c"></canvas>
 <script>
 const c=document.getElementById('c'),ctx=c.getContext('2d');
-let W,H;
-function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
-resize();onresize=resize;
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+let score=0, targets=[], pops=[];
+const candyColors=['#ff99cc','#99ff99','#ffff99','#ffb347','#c2f0c2','#ff6666','#66cc66','#ffcc33'];
 
-let score=0, targets=[], flashes=[];
-
-function randColor(){
-  const colors=['#ff69b4','#d8a8ff','#a0e7a0','#ffb347'];
-  return colors[Math.floor(Math.random()*colors.length)];
-}
-
-function spawn(){
-  targets.push({
-    x:Math.random()*W,
-    y:H+50,
-    r:30,
-    speed:1+Math.random()*2,
-    color:randColor()
-  });
-}
-
-function update(){
-  targets.forEach(t=>t.y-=t.speed);
-  targets=targets.filter(t=>t.y>-50);
-  if(Math.random()<0.03) spawn();
-  for(let i=flashes.length-1;i>=0;i--){
-    flashes[i].life--;
-    if(flashes[i].life<=0) flashes.splice(i,1);
-  }
-}
-
+function spawn(){targets.push({x:Math.random()*W, y:H+50, r:30, speed:1+Math.random()*2, color:candyColors[Math.floor(Math.random()*candyColors.length)]});}
+function update(){targets.forEach(t=>t.y-=t.speed);targets=targets.filter(t=>t.y>-50);if(Math.random()<0.03)spawn();
+  pops.forEach(p=>{p.r+=1; p.alpha-=0.02;}); pops=pops.filter(p=>p.alpha>0);}
 function draw(){
-  ctx.clearRect(0,0,W,H);
+  // Background
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#ffebee');
+  grad.addColorStop(1,'#fce4ec');
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,W,H);
+  // Pops
+  pops.forEach(p=>{
+    ctx.save();ctx.globalAlpha=p.alpha;ctx.fillStyle='#ff99cc';
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();ctx.restore();
+  });
+  // Targets
   targets.forEach(t=>{
-    // stick
+    ctx.fillStyle=t.color;ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill();
+    // Stick
     ctx.fillStyle='#8b4513';
-    ctx.fillRect(t.x-5, t.y, 10, t.r+10);
-    // candy
-    ctx.fillStyle=t.color;
-    ctx.beginPath();
-    ctx.arc(t.x, t.y, t.r, 0, Math.PI*2);
-    ctx.fill();
+    ctx.fillRect(t.x-3,t.y+t.r,6,30);
   });
-  flashes.forEach(f=>{
-    const pct=f.life/15;
-    const rad=30*(1-pct);
-    ctx.fillStyle=`rgba(255,255,255,${pct})`;
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, rad, 0, Math.PI*2);
-    ctx.fill();
-  });
-  ctx.fillStyle='#ff69b4';
-  ctx.font='bold 32px "Comic Sans MS", cursive';
-  ctx.textAlign='left';
-  ctx.textBaseline='top';
-  ctx.shadowColor='rgba(0,0,0,0.5)';
-  ctx.shadowBlur=4;
-  ctx.fillText('Score: '+score,20,20);
+  // Score
+  ctx.fillStyle='#ff99cc';ctx.font='32px cursive';
+  ctx.textAlign='left';ctx.fillText('Score: '+score,20,50);
 }
-
 function pop(x,y){
   for(let i=targets.length-1;i>=0;i--){
     const t=targets[i];
     if(Math.hypot(x-t.x,y-t.y)<t.r){
-      targets.splice(i,1);
-      score++;
-      flashes.push({x,y,life:15});
-      return;
+      pops.push({x:t.x,y:t.y,r:t.r,alpha:1});
+      targets.splice(i,1);score++;return;
     }
   }
 }
-
 c.onclick=e=>pop(e.clientX,e.clientY);
 c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY);};
-
 function loop(){update();draw();requestAnimationFrame(loop)}loop();
 </script>
 </body>

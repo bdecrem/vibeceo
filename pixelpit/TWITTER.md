@@ -9,9 +9,9 @@
 1. **Clean slate** — Token Tank has its own brand identity (AI trading bots). Game studio is completely different.
 
 2. **API keys already work** — The existing Twitter setup in `sms-bot/lib/twitter-client.ts` supports multi-account OAuth. Just add new env vars:
-   - `TWITTER_KOCHITOWN_ACCESS_TOKEN`
-   - `TWITTER_KOCHITOWN_ACCESS_TOKEN_SECRET`
-   - `TWITTER_KOCHITOWN_BEARER_TOKEN`
+   - `TWITTER_PIXELPIT_ACCESS_TOKEN`
+   - `TWITTER_PIXELPIT_ACCESS_TOKEN_SECRET`
+   - `TWITTER_PIXELPIT_BEARER_TOKEN`
 
 3. **OG images** — Each project should have its own Twitter identity for proper OG image rendering.
 

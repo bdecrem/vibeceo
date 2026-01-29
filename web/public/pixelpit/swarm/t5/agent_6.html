@@ -11,99 +11,82 @@
 <body>
 <canvas id="c"></canvas>
 <script>
-const c=document.getElementById('c'), ctx=c.getContext('2d');
+const c=document.getElementById('c'),ctx=c.getContext('2d');
 let W,H;
 function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
 resize();onresize=resize;
 
-let score=0, targets=[], effects=[];
-const neonColors=['#ff00ff','#00ffff','#00ff00','#ffff00','#ff8800'];
-
+let score=0;
+let targets=[];
+const neonColors=['#0ff','#f0f','#ff0','#f08','#0f0'];
 function spawn(){
-  const color=neonColors[Math.floor(Math.random()*neonColors.length)];
   targets.push({
     x:Math.random()*W,
     y:H+50,
-    r:30,
+    r:30+Math.random()*10,
     speed:1+Math.random()*2,
-    color
+    color:neonColors[Math.floor(Math.random()*neonColors.length)]
   });
 }
-
 function update(){
   targets.forEach(t=>t.y-=t.speed);
   targets=targets.filter(t=>t.y>-50);
-  if(Math.random()<0.03) spawn();
-  // Update effects
-  for(let i=effects.length-1;i>=0;i--){
-    const e=effects[i];
-    e.radius+=2;
-    e.alpha-=0.02;
-    if(e.alpha<=0) effects.splice(i,1);
-  }
+  if(Math.random()<0.03)spawn();
+  // ripple update
+  ripples.forEach(r=>{r.r+=3;r.alpha-=0.04});
+  ripples=ripples.filter(r=>r.alpha>0);
 }
-
+const ripples=[];
 function draw(){
-  // Background
-  ctx.fillStyle='#111';
+  // background gradient
+  const grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#111');
+  grd.addColorStop(1,'#000');
+  ctx.fillStyle=grd;
   ctx.fillRect(0,0,W,H);
-  // Draw targets
+  // ripples
+  ripples.forEach(r=>{
+    ctx.beginPath();
+    ctx.fillStyle=`rgba(0,255,255,${r.alpha})`;
+    ctx.arc(r.x,r.y,r.r,0,Math.PI*2);
+    ctx.fill();
+  });
+  // targets
   targets.forEach(t=>{
-    ctx.shadowBlur=25;
+    ctx.save();
+    ctx.shadowBlur=15;
     ctx.shadowColor=t.color;
     ctx.fillStyle=t.color;
     ctx.beginPath();
     ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
     ctx.fill();
-    ctx.shadowBlur=0;
+    ctx.restore();
   });
-  // Draw pop effects
-  effects.forEach(e=>{
-    ctx.globalAlpha=e.alpha;
-    ctx.strokeStyle=e.color;
-    ctx.lineWidth=4;
-    ctx.beginPath();
-    ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
-    ctx.stroke();
-    ctx.globalAlpha=1;
-  });
-  // Score
-  ctx.shadowBlur=15;
-  ctx.shadowColor='#00ffff';
-  ctx.fillStyle='#fff';
-  ctx.strokeStyle='#00ffff';
-  ctx.lineWidth=2;
-  ctx.font='28px sans-serif';
-  ctx.strokeText('Score: '+score,20,40);
-  ctx.fillText('Score: '+score,20,40);
-  ctx.shadowBlur=0;
+  // score
+  ctx.save();
+  ctx.fillStyle='#0ff';
+  ctx.shadowBlur=20;
+  ctx.shadowColor='#0ff';
+  ctx.font='32px sans-serif';
+  ctx.fillText('Score: '+score,20,50);
+  ctx.restore();
 }
-
 function pop(x,y){
   for(let i=targets.length-1;i>=0;i--){
     const t=targets[i];
     if(Math.hypot(x-t.x,y-t.y)<t.r){
-      // Create pop effect
-      effects.push({
-        x:t.x,
-        y:t.y,
-        radius:0,
-        alpha:1,
-        color:t.color
-      });
       targets.splice(i,1);
       score++;
+      ripples.push({x,y,r:0,alpha:1});
       return;
     }
   }
 }
-
 c.onclick=e=>pop(e.clientX,e.clientY);
 c.ontouchstart=e=>{
   e.preventDefault();
   pop(e.touches[0].clientX,e.touches[0].clientY);
 };
-
 function loop(){update();draw();requestAnimationFrame(loop)}loop();
 </script>
 </body>

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <title>Ghost Pop Game</title>
 <style>
-body{margin:0;background:#111;overflow:hidden;font-family:'Arial',sans-serif}
-canvas{display:block}
+  body{margin:0;background:#221122;overflow:hidden}
+  canvas{display:block}
 </style>
 </head>
 <body>
@@ -13,98 +13,80 @@ canvas{display:block}
 <script>
 const c=document.getElementById('c'),ctx=c.getContext('2d');
 let W,H;
-function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+function resize(){
+  W=c.width=innerWidth;
+  H=c.height=innerHeight;
+}
 resize();onresize=resize;
 
-let score=0, targets=[], particles=[];
+let score=0, targets=[], explosions=[];
 
-// Stars background
-const stars=[];
-for(let i=0;i<200;i++){
-  stars.push({x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.5});
-}
-
+// Spawn a cute ghost
 function spawn(){
-  targets.push({x:Math.random()*W, y:H+50, r:30, speed:1+Math.random()*2});
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30,
+    speed:1+Math.random()*2,
+    color:'#fff' // white ghost
+  });
 }
 
+// Update positions and remove offscreen ghosts
 function update(){
-  // Update targets
   targets.forEach(t=>t.y-=t.speed);
   targets=targets.filter(t=>t.y>-50);
   if(Math.random()<0.03)spawn();
-
-  // Update particles
-  particles.forEach(p=>{p.x+=p.vx; p.y+=p.vy; p.alpha-=0.02});
-  particles=particles.filter(p=>p.alpha>0);
+  // Update pop explosions
+  explosions.forEach(p=>{p.r+=1.5; p.alpha-=0.02;});
+  explosions=explosions.filter(p=>p.alpha>0);
 }
 
+// Draw background, ghosts, explosions, and score
 function draw(){
-  // Draw background
-  ctx.fillStyle='#1c1c2c';
+  // Dark background with subtle star effect
+  ctx.fillStyle='#221122';
   ctx.fillRect(0,0,W,H);
-  // Draw stars
-  ctx.fillStyle='#fff';
-  stars.forEach(s=>{ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();});
+  // Draw stars (random static points)
+  ctx.strokeStyle='rgba(255,255,255,0.2)';
+  ctx.lineWidth=1;
+  for(let i=0;i<80;i++){
+    const sx=Math.random()*W, sy=Math.random()*H;
+    ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx+1,sy+1); ctx.stroke();
+  }
 
-  // Draw targets (ghosts)
-  targets.forEach(t=>drawGhost(t));
+  // Draw ghosts
+  targets.forEach(t=>{
+    ctx.shadowBlur=8; ctx.shadowColor='rgba(0,0,0,0.5)';
+    ctx.fillStyle=t.color;
+    ctx.beginPath(); ctx.arc(t.x,t.y,t.r,0,Math.PI*2); ctx.fill();
+    // Eyes
+    ctx.fillStyle='black';
+    ctx.beginPath(); ctx.arc(t.x-8,t.y-5,4,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(t.x+8,t.y-5,4,0,Math.PI*2); ctx.fill();
+  });
 
-  // Draw particles
-  particles.forEach(p=>{
-    ctx.save();
-    ctx.globalAlpha=p.alpha;
-    ctx.fillStyle='#fff';
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
-    ctx.fill();
-    ctx.restore();
+  // Draw pop explosions
+  explosions.forEach(p=>{
+    ctx.fillStyle=`rgba(255,255,255,${p.alpha})`;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
   });
 
   // Draw score
-  ctx.fillStyle='#ff99ff';
-  ctx.font='28px fantasy';
-  ctx.textShadow='2px 2px 5px #000';
-  ctx.fillText('Score: '+score,20,40);
+  ctx.shadowBlur=0;
+  ctx.fillStyle='#ffcc33';
+  ctx.font='bold 32px "Comic Sans MS", cursive';
+  ctx.textShadow='2px 2px 4px rgba(0,0,0,0.5)';
+  ctx.fillText('Score: '+score,20,50);
 }
 
-function drawGhost(t){
-  // Body
-  ctx.fillStyle='#fff';
-  ctx.beginPath();
-  ctx.arc(t.x, t.y, t.r, 0, Math.PI*2);
-  ctx.fill();
-  // Outline
-  ctx.strokeStyle='#000';
-  ctx.lineWidth=3;
-  ctx.stroke();
-  // Eyes
-  ctx.fillStyle='#000';
-  ctx.beginPath();
-  ctx.arc(t.x-10, t.y-10, 5, 0, Math.PI*2);
-  ctx.arc(t.x+10, t.y-10, 5, 0, Math.PI*2);
-  ctx.fill();
-  // Mouth
-  ctx.beginPath();
-  ctx.arc(t.x, t.y+10, 8, 0, Math.PI, false);
-  ctx.stroke();
-}
-
+// Pop a ghost if clicked/tapped
 function pop(x,y){
   for(let i=targets.length-1;i>=0;i--){
     const t=targets[i];
     if(Math.hypot(x-t.x,y-t.y)<t.r){
-      // Create particles
-      for(let j=0;j<15;j++){
-        particles.push({
-          x:t.x,
-          y:t.y,
-          vx:(Math.random()-0.5)*4,
-          vy:(Math.random()-0.5)*4,
-          size:Math.random()*4+2,
-          alpha:1
-        });
-      }
+      // Add pop explosion
+      explosions.push({x:t.x,y:t.y,r:10,alpha:1});
       targets.splice(i,1);
       score++;
       return;
@@ -112,16 +94,16 @@ function pop(x,y){
   }
 }
 
+// Mouse and touch handlers
 c.onclick=e=>pop(e.clientX,e.clientY);
 c.ontouchstart=e=>{
   e.preventDefault();
   pop(e.touches[0].clientX,e.touches[0].clientY);
 };
 
+// Game loop
 function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
+  update();draw();requestAnimationFrame(loop);
 }
 loop();
 </script>

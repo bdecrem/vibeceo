@@ -2,123 +2,85 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Deep Sea Pop</title>
+<title>Deep Sea Pop Game</title>
 <style>
-    body{margin:0;background:#000;overflow:hidden}
-    canvas{display:block}
+  body{margin:0;background:#001a33;overflow:hidden}
+  canvas{display:block}
+  #score{position:absolute;top:10px;left:10px;color:#00ffff;font-family:'Courier New',monospace;font-size:28px;text-shadow:0 0 8px #00ffff}
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
+<canvas id=c></canvas>
+<div id=score>Score: 0</div>
 <script>
 const c=document.getElementById('c'),ctx=c.getContext('2d');
 let W,H;
 function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
 resize();onresize=resize;
 
-let score=0, targets=[], effects=[];
+let score=0, targets=[], pops=[];
 
 function spawn(){
-    targets.push({
-        x:Math.random()*W,
-        y:H+50,
-        r:30,
-        speed:1+Math.random()*2,
-        color:'#00ffff' // bioluminescent color
-    });
+  targets.push({
+    x:Math.random()*W,
+    y:H+50,
+    r:30+Math.random()*10,
+    speed:1+Math.random()*2,
+    color:'#00ffff'
+  });
 }
 
 function update(){
-    targets.forEach(t=>t.y-=t.speed);
-    targets=targets.filter(t=>t.y>-50);
-    if(Math.random()<0.03)spawn();
-
-    // update pop effects
-    for(let i=effects.length-1;i>=0;i--){
-        const e=effects[i];
-        e.r+=2;
-        e.alpha-=0.02;
-        if(e.alpha<=0)effects.splice(i,1);
-    }
-}
-
-function drawJellyfish(t){
-    // body with radial gradient
-    const grad=ctx.createRadialGradient(t.x,t.y,t.r/4,t.x,t.y,t.r);
-    grad.addColorStop(0,'#00ffff');
-    grad.addColorStop(1,'rgba(0,255,255,0.3)');
-    ctx.fillStyle=grad;
-    ctx.beginPath();
-    ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
-    ctx.fill();
-
-    // tentacles
-    ctx.strokeStyle='rgba(0,255,255,0.5)';
-    ctx.lineWidth=2;
-    const tentacleCount=8;
-    for(let i=0;i<tentacleCount;i++){
-        const angle=Math.PI*2*i/tentacleCount;
-        ctx.beginPath();
-        ctx.moveTo(t.x, t.y + t.r/2);
-        ctx.lineTo(t.x+Math.cos(angle)*t.r/2, t.y + t.r/2 + Math.sin(angle)*t.r/2);
-        ctx.stroke();
-    }
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  pops.forEach(p=>{p.r+=4;p.alpha-=0.05});
+  pops=pops.filter(p=>p.alpha>0);
+  if(Math.random()<0.03)spawn();
 }
 
 function draw(){
-    // deep sea background gradient
-    const bg=ctx.createLinearGradient(0,0,0,H);
-    bg.addColorStop(0,'#001a1a');
-    bg.addColorStop(1,'#000000');
-    ctx.fillStyle=bg;
-    ctx.fillRect(0,0,W,H);
-
-    // draw jellyfish
-    targets.forEach(t=>drawJellyfish(t));
-
-    // draw pop effects
-    effects.forEach(e=>{
-        ctx.save();
-        ctx.globalAlpha=e.alpha;
-        ctx.fillStyle='#00ffff';
-        ctx.beginPath();
-        ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
-        ctx.fill();
-        ctx.restore();
-    });
-
-    // score text
-    ctx.fillStyle='#0ff';
-    ctx.font='bold 32px "Courier New", monospace';
-    ctx.strokeStyle='#006';
-    ctx.lineWidth=2;
-    ctx.strokeText('Score: '+score,20,40);
-    ctx.fillText('Score: '+score,20,40);
+  ctx.fillStyle='#001a33';
+  ctx.fillRect(0,0,W,H);
+  targets.forEach(t=>{
+    const grd=ctx.createRadialGradient(t.x,t.y,t.r*0.3,t.x,t.y,t.r);
+    grd.addColorStop(0,'#00ffff');
+    grd.addColorStop(1,'#001a33');
+    ctx.fillStyle=grd;
+    ctx.shadowBlur=15;
+    ctx.shadowColor='#00ffff';
+    ctx.beginPath();
+    ctx.ellipse(t.x,t.y,t.r*0.5,t.r,Math.PI/4,0,Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur=0;
+  });
+  pops.forEach(p=>{
+    ctx.fillStyle=`rgba(0,255,255,${p.alpha})`;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+  });
+  document.getElementById('score').textContent='Score: '+score;
 }
 
 function pop(x,y){
-    for(let i=targets.length-1;i>=0;i--){
-        const t=targets[i];
-        if(Math.hypot(x-t.x,y-t.y)<t.r){
-            targets.splice(i,1);
-            score++;
-            effects.push({x:t.x, y:t.y, r:10, alpha:1});
-            return;
-        }
+  for(let i=targets.length-1;i>=0;i--){
+    const t=targets[i];
+    if(Math.hypot(x-t.x,y-t.y)<t.r){
+      targets.splice(i,1);
+      score++;
+      pops.push({x,y,r:20,alpha:1});
+      return;
     }
+  }
 }
 
 c.onclick=e=>pop(e.clientX,e.clientY);
 c.ontouchstart=e=>{
-    e.preventDefault();
-    pop(e.touches[0].clientX,e.touches[0].clientY);
+  e.preventDefault();
+  pop(e.touches[0].clientX,e.touches[0].clientY);
 };
 
-function loop(){
-    update();
-    draw();
-    requestAnimationFrame(loop);
-}
+function loop(){update();draw();requestAnimationFrame(loop)}
 loop();
 </script>
 </body>

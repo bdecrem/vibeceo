@@ -43,6 +43,8 @@ export {
   EmojiDecorations,
   RainDecorations,
   SingularityDecorations,
+  FuseDecorations,
+  SurgeDecorations,
   OG_SIZE,
 } from './og/ScoreShareImage';
 export { CornerAccents, PixelpitBranding, GAME_COLORS } from './og/utils';

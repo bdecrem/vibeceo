@@ -4,38 +4,68 @@
 <meta charset="utf-8">
 <title>Soap Bubble Pop</title>
 <style>
-  body{margin:0;background:linear-gradient(#001f3f,#003366,#000022);overflow:hidden}
-  canvas{display:block}
-  #score{position:absolute;top:20px;left:20px;font-family:Helvetica,sans-serif;color:#ffd700;font-size:28px;text-shadow:2px 2px 4px #000}
+body{margin:0;background:#cce7ff;overflow:hidden}
+canvas{display:block}
 </style>
 </head>
 <body>
-<div id="score">Score: 0</div>
 <canvas id="c"></canvas>
 <script>
 const c=document.getElementById('c'),ctx=c.getContext('2d');
 let W,H;
 function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
-resize();onresize=resize;
+resize(); onresize=resize;
 
 let score=0, targets=[], pops=[];
-
-// Create a rainbow gradient for bubbles
-function bubbleGradient(x,y,r){
-  const grad=ctx.createRadialGradient(x,y,r*0.3,x,y,r);
-  grad.addColorStop(0,'rgba(255,255,255,0.9)');
-  grad.addColorStop(0.7,'rgba(255,255,255,0.6)');
-  grad.addColorStop(1,'rgba(255,255,255,0.3)');
-  return grad;
-}
 
 function spawn(){
   targets.push({
     x:Math.random()*W,
     y:H+50,
-    r:30+Math.random()*10,
-    speed:1+Math.random()*2
+    r:30,
+    speed:1+Math.random()*2,
+    hue:Math.random()*360
   });
+}
+
+function update(){
+  targets.forEach(t=>t.y-=t.speed);
+  targets=targets.filter(t=>t.y>-50);
+  if(Math.random()<0.03) spawn();
+
+  // update pop effects
+  pops.forEach(p=>{p.r+=2; p.alpha-=0.02});
+  pops=pops.filter(p=>p.alpha>0);
+}
+
+function draw(){
+  ctx.fillStyle='#cce7ff';
+  ctx.fillRect(0,0,W,H);
+  // draw bubbles
+  targets.forEach(t=>{
+    const grad=ctx.createRadialGradient(t.x,t.y,t.r*0.3,t.x,t.y,t.r);
+    grad.addColorStop(0,'rgba(255,255,255,0.9)');
+    grad.addColorStop(0.6,`hsl(${t.hue},80%,70%)`);
+    grad.addColorStop(1,'rgba(255,255,255,0.1)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();ctx.arc(t.x,t.y,t.r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=2;ctx.stroke();
+  });
+  // draw pop ripples
+  pops.forEach(p=>{
+    ctx.save();
+    ctx.strokeStyle=`rgba(255,255,255,${p.alpha})`;
+    ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.stroke();
+    ctx.restore();
+  });
+  // score display
+  ctx.fillStyle='#fff';
+  ctx.font='bold 28px Arial';
+  ctx.shadowColor='rgba(0,0,0,0.5)';
+  ctx.shadowOffsetX=2;ctx.shadowOffsetY=2;ctx.shadowBlur=4;
+  ctx.fillText('Score: '+score,20,40);
+  ctx.shadowColor='transparent';
 }
 
 function pop(x,y){
@@ -44,53 +74,17 @@ function pop(x,y){
     if(Math.hypot(x-t.x,y-t.y)<t.r){
       targets.splice(i,1);
       score++;
-      document.getElementById('score').textContent='Score: '+score;
-      // Create pop effect
-      pops.push({
-        x:t.x, y:t.y, r:t.r, alpha:1, grow:2
-      });
+      pops.push({x,y,r:0,alpha:1});
       return;
     }
   }
 }
 
-function update(){
-  targets.forEach(t=>t.y-=t.speed);
-  targets=targets.filter(t=>t.y>-50);
-  pops.forEach(p=>{p.r+=p.grow; p.alpha*=0.90;});
-  pops=pops.filter(p=>p.alpha>0.02);
-
-  if(Math.random()<0.03)spawn();
-}
-
-function draw(){
-  ctx.fillStyle='#111';
-  ctx.fillRect(0,0,W,H);
-
-  // Draw pops first
-  pops.forEach(p=>{
-    ctx.save();
-    ctx.globalAlpha=p.alpha;
-    ctx.fillStyle='rgba(255,255,255,0.8)';
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  });
-
-  // Draw bubbles
-  targets.forEach(t=>{
-    ctx.fillStyle=bubbleGradient(t.x,t.y,t.r);
-    ctx.beginPath();
-    ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
-    ctx.fill();
-  });
-}
-
 c.onclick=e=>pop(e.clientX,e.clientY);
 c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY)};
 
-function loop(){update();draw();requestAnimationFrame(loop)}loop();
+function loop(){update();draw();requestAnimationFrame(loop)}
+loop();
 </script>
 </body>
 </html>

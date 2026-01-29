@@ -2,10 +2,10 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Emoji Madness</title>
+<title>Emoji Madness Pop Game</title>
 <style>
-  body{margin:0;background:linear-gradient(#000, #001f3f);overflow:hidden}
-  canvas{display:block}
+    body{margin:0;background:linear-gradient(135deg,#000046,#1a0d2b);overflow:hidden}
+    canvas{display:block}
 </style>
 </head>
 <body>
@@ -13,105 +13,76 @@
 <script>
 const c=document.getElementById('c'),ctx=c.getContext('2d');
 let W,H;
-function resize(){
-  W=c.width=innerWidth;
-  H=c.height=innerHeight;
-}
-resize();
-onresize=resize;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
 
-const emojis=['😀','😜','🤖','👻','🐵','🌟','💥','🍕','⚡','🎉','😎','🙈','😺','🤩'];
 let score=0, targets=[], explosions=[];
+const emojis=["😀","😂","😜","😎","🤓","🤖","👻","🐱","🐶","🦊","🐸","🦄","🌈","💥"];
 
 function spawn(){
-  targets.push({
-    x:Math.random()*W,
-    y:H+50,
-    r:30,
-    speed:1+Math.random()*2,
-    color:'#ff4466',
-    emoji:emojis[Math.floor(Math.random()*emojis.length)]
-  });
-}
-
-function createExplosion(x,y){
-  for(let i=0;i<8;i++){
-    explosions.push({
-      x:x,
-      y:y,
-      emoji:emojis[Math.floor(Math.random()*emojis.length)],
-      angle:Math.random()*2*Math.PI,
-      speed:2+Math.random()*2,
-      life:30
+    const face=emojis[Math.floor(Math.random()*emojis.length)];
+    targets.push({
+        x:Math.random()*W,
+        y:H+50,
+        r:20+Math.random()*10,
+        speed:1+Math.random()*2,
+        face:face
     });
-  }
 }
 
 function update(){
-  targets.forEach(t=>t.y-=t.speed);
-  targets=targets.filter(t=>t.y>-50);
-  explosions.forEach(p=>{
-    p.x+=Math.cos(p.angle)*p.speed;
-    p.y+=Math.sin(p.angle)*p.speed;
-    p.life--;
-  });
-  explosions=explosions.filter(p=>p.life>0);
-  if(Math.random()<0.03)spawn();
+    targets.forEach(t=>t.y-=t.speed);
+    targets=targets.filter(t=>t.y>-50);
+    if(Math.random()<0.03) spawn();
+
+    explosions.forEach(e=>{e.size+=2; e.alpha-=0.05});
+    explosions=explosions.filter(e=>e.alpha>0);
 }
 
 function draw(){
-  ctx.fillStyle='#111';
-  ctx.fillRect(0,0,W,H);
-  // Draw targets
-  targets.forEach(t=>{
-    ctx.fillStyle=t.color;
-    ctx.beginPath();
-    ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle='#fff';
-    ctx.font='36px sans-serif';
+    ctx.fillStyle='#111';
+    ctx.fillRect(0,0,W,H);
+
     ctx.textAlign='center';
     ctx.textBaseline='middle';
-    ctx.fillText(t.emoji,t.x,t.y);
-  });
-  // Draw explosions
-  explosions.forEach(p=>{
-    ctx.fillStyle='#fff';
-    ctx.font='24px sans-serif';
-    ctx.textAlign='center';
-    ctx.textBaseline='middle';
-    ctx.fillText(p.emoji,p.x,p.y);
-  });
-  // Score
-  ctx.fillStyle='#fff';
-  ctx.font='32px sans-serif';
-  ctx.fillText('💎 Score: '+score,20,40);
+    targets.forEach(t=>{
+        ctx.font='30px sans-serif';
+        ctx.fillStyle='#ffcc00';
+        ctx.fillText(t.face, t.x, t.y);
+    });
+
+    explosions.forEach(e=>{
+        ctx.globalAlpha=e.alpha;
+        ctx.font='40px sans-serif';
+        ctx.fillStyle='#ff4444';
+        ctx.fillText(e.emoji, e.x, e.y);
+        ctx.globalAlpha=1;
+    });
+
+    ctx.fillStyle='#00ffcc';
+    ctx.font='bold 28px sans-serif';
+    ctx.fillText('Score: '+score,20,50);
 }
 
 function pop(x,y){
-  for(let i=targets.length-1;i>=0;i--){
-    const t=targets[i];
-    if(Math.hypot(x-t.x,y-t.y)<t.r){
-      targets.splice(i,1);
-      score++;
-      createExplosion(t.x,t.y);
-      return;
+    for(let i=targets.length-1;i>=0;i--){
+        const t=targets[i];
+        if(Math.hypot(x-t.x,y-t.y)<t.r){
+            targets.splice(i,1);
+            score++;
+            explosions.push({x:t.x,y:t.y,size:30,alpha:1,emoji:'💥'});
+            return;
+        }
     }
-  }
 }
 
 c.onclick=e=>pop(e.clientX,e.clientY);
 c.ontouchstart=e=>{
-  e.preventDefault();
-  pop(e.touches[0].clientX,e.touches[0].clientY);
+    e.preventDefault();
+    pop(e.touches[0].clientX,e.touches[0].clientY);
 };
 
-function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-loop();
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
 </script>
 </body>
 </html>

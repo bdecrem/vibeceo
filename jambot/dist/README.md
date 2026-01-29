@@ -48,4 +48,4 @@ Type `/` for menu, or:
 
 ## Version
 
-v0.0.3 — Jan 21, 2026
+v0.1.0 — Jan 28, 2025

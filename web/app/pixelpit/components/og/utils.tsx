@@ -110,11 +110,25 @@ export const GAME_COLORS = {
     accent: '#331100',
     branding: '#ff4d0099',
   },
-  emoji: {
-    background: '#fef3c7',
-    primary: '#ec4899',
-    secondary: '#facc15',
-    accent: '#06b6d4',
-    branding: '#1e1b4b',
+  fuse: {
+    background: '#0d0d14',
+    primary: '#ffd93d',
+    secondary: '#ff6b35',
+    accent: '#ff4757',
+    branding: '#f8fafc',
+  },
+  surge: {
+    background: '#0a0a12',
+    primary: '#facc15',
+    secondary: '#7c3aed',
+    accent: '#a855f7',
+    branding: '#f8fafc',
+  },
+  pop: {
+    background: '#0f172a',
+    primary: '#ec4899',     // Hot pink — THE lead
+    secondary: '#22d3ee',   // Electric cyan
+    accent: '#fbbf24',      // Amber — energy
+    branding: '#f8fafc',
   },
 };
