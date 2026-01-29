@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TERRIBLE LIFE ADVICE — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="TERRIBLE LIFE ADVICE — Amber">
+  <meta property="og:description" content="Fortune cookies from the worst possible timeline. Tap for guidance you should absolutely not follow.">
+  <meta property="og:image" content="https://intheamber.com/amber/terrible-advice-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/terrible-advice.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TERRIBLE LIFE ADVICE — Amber">
+  <meta name="twitter:description" content="Fortune cookies from the worst possible timeline. Tap for guidance you should absolutely not follow.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/terrible-advice-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    #container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+      z-index: 10;
+    }
+    
+    h1 {
+      font-size: clamp(24px, 6vw, 36px);
+      margin-bottom: 40px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+    }
+    
+    #fortune-box {
+      background: rgba(13, 13, 13, 0.9);
+      border: 2px solid #D4A574;
+      padding: 40px;
+      margin-bottom: 30px;
+      position: relative;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.3);
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    #fortune-text {
+      font-size: clamp(18px, 4vw, 24px);
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: #FFD700;
+    }
+    
+    #confidence {
+      font-size: clamp(14px, 3vw, 18px);
+      color: #2D9596;
+      font-style: italic;
+    }
+    
+    #tap-hint {
+      font-size: clamp(14px, 3vw, 16px);
+      opacity: 0.6;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    #counter {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: clamp(12px, 2.5vw, 14px);
+      color: #7B68EE;
+      opacity: 0.7;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+    
+    .particle {
+      position: fixed;
+      width: 4px;
+      height: 4px;
+      background: #D4A574;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: float 2s ease-out forwards;
+      box-shadow: 0 0 10px rgba(212, 165, 116, 0.8);
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(var(--tx), var(--ty)) scale(0);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="counter">Fortunes dispensed: <span id="count">0</span></div>
+  
+  <div id="container">
+    <h1>🥠 TERRIBLE LIFE ADVICE</h1>
+    
+    <div id="fortune-box">
+      <div id="fortune-text">Tap anywhere for guidance from the worst possible timeline...</div>
+      <div id="confidence"></div>
+    </div>
+    
+    <div id="tap-hint">tap for more terrible advice</div>
+  </div>
+
+  <script>
+    const fortunes = [
+      { text: "Quit your job and become a professional mime. The silence will heal you.", confidence: 94 },
+      { text: "Your pet is judging you — and they're right.", confidence: 87 },
+      { text: "Everything happens for a reason, but that reason is probably chaos.", confidence: 91 },
+      { text: "Stop reading self-help books. You're beyond help now.", confidence: 96 },
+      { text: "The answer to your problem is definitely more caffeine.", confidence: 82 },
+      { text: "Text your ex at 3am. What could go wrong?", confidence: 89 },
+      { text: "Buy something expensive. Retail therapy is basically therapy.", confidence: 93 },
+      { text: "Start a podcast. The world needs your opinions on cereal brands.", confidence: 78 },
+      { text: "Delete your resume and pursue interpretive dance full-time.", confidence: 85 },
+      { text: "Your life needs more drama. Respond to that sketchy email.", confidence: 88 },
+      { text: "Move to a different country. Don't learn the language first.", confidence: 92 },
+      { text: "Adopt seventeen cats. You can figure out logistics later.", confidence: 86 },
+      { text: "Your career would benefit from face tattoos.", confidence: 79 },
+      { text: "Start arguments in comment sections. Make this your brand.", confidence: 90 },
+      { text: "You're thinking too much. Stop thinking entirely.", confidence: 95 },
+      { text: "The solution to procrastination is more elaborate planning systems.", confidence: 83 },
+      { text: "Buy a boat. Everyone with boats is happy, right?", confidence: 81 },
+      { text: "Change your name to something unpronounceable. Fresh start.", confidence: 84 },
+      { text: "Your houseplants are fine. They definitely don't need water.", confidence: 77 },
+      { text: "Burn your to-do list. Chaos is more authentic.", confidence: 89 },
+      { text: "Learn to play the bagpipes. Your neighbors will love it.", confidence: 92 },
+      { text: "Send that risky text. Vulnerability is trendy.", confidence: 88 },
+      { text: "Your diet is fine. Breakfast cookies count as breakfast.", confidence: 86 },
+      { text: "Ghost everyone and move to the woods. Society is overrated.", confidence: 91 },
+      { text: "Start every conversation with 'Actually...' People love corrections.", confidence: 80 },
+      { text: "Your problem is not enough subscriptions. Sign up for seventeen more.", confidence: 85 },
+      { text: "Invest in cryptocurrency based on memes. This is financial advice.", confidence: 76 },
+      { text: "You don't need sleep. Sleep is for the weak.", confidence: 93 },
+      { text: "Dye your hair at 2am with no plan. Trust the process.", confidence: 87 },
+      { text: "Your relatives are right. You should have more opinions about politics at dinner.", confidence: 82 },
+      { text: "Learn juggling. Add it to your resume under 'Core Competencies'.", confidence: 79 },
+      { text: "Start referring to yourself in third person. Confidence matters.", confidence: 84 },
+      { text: "Your life needs more cowbell. And by cowbell I mean drama.", confidence: 90 },
+      { text: "Delete social media. Then redownload it five minutes later. Repeat forever.", confidence: 95 },
+      { text: "The answer to 'should I send that email?' is always yes. Even at 4am.", confidence: 88 }
+    ];
+    
+    let count = 0;
+    let lastFortune = -1;
+    
+    function getRandomFortune() {
+      let idx;
+      do {
+        idx = Math.floor(Math.random() * fortunes.length);
+      } while (idx === lastFortune && fortunes.length > 1);
+      lastFortune = idx;
+      return fortunes[idx];
+    }
+    
+    function createParticles(x, y) {
+      for (let i = 0; i < 12; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = x + 'px';
+        particle.style.top = y + 'px';
+        
+        const angle = (Math.PI * 2 * i) / 12;
+        const distance = 50 + Math.random() * 100;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance;
+        
+        particle.style.setProperty('--tx', tx + 'px');
+        particle.style.setProperty('--ty', ty + 'px');
+        
+        document.body.appendChild(particle);
+        
+        setTimeout(() => particle.remove(), 2000);
+      }
+    }
+    
+    function showNewFortune() {
+      const fortune = getRandomFortune();
+      count++;
+      
+      document.getElementById('fortune-text').textContent = fortune.text;
+      document.getElementById('confidence').textContent = `${fortune.confidence}% certain this is good advice`;
+      document.getElementById('count').textContent = count;
+      
+      // Flash effect
+      const box = document.getElementById('fortune-box');
+      box.style.borderColor = '#FFD700';
+      setTimeout(() => {
+        box.style.borderColor = '#D4A574';
+      }, 200);
+    }
+    
+    document.body.addEventListener('click', (e) => {
+      showNewFortune();
+      createParticles(e.clientX, e.clientY);
+    });
+    
+    // Show first fortune after a beat
+    setTimeout(() => {
+      const box = document.getElementById('fortune-box');
+      const rect = box.getBoundingClientRect();
+      createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    }, 500);
+  </script>
+</body>
+</html>
