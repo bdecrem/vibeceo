@@ -1,15 +1,17 @@
 # Jambot Release Engineering
 
-Plan for shipping v0.0.2 and beyond with a proper user experience.
+Plan for shipping releases with a proper user experience.
 
-## Current Problems (v0.0.1)
+## Current Version: v0.1.0
+
+## Historical Problems (pre-v0.1)
 
 1. **API Key**: Code looks for `../sms-bot/.env.local` — external users don't have this
 2. **No setup instructions**: README doesn't explain where to get API key
 3. **No first-run experience**: Missing key = crash with no guidance
 4. **Dependencies unclear**: Node version? Native bindings?
 
-## v0.0.2 Release Plan
+## v0.1.x Release Plan
 
 ### 1. API Key Handling
 
@@ -29,7 +31,7 @@ Save to ~/.jambot/.env? (y/n)
 
 ### 2. Release README
 
-Update `releases/v0.0.1/README.md` (the public repo) to:
+Update `releases/v0.1.0/README.md` (the public repo) to:
 
 ```markdown
 # Jambot
@@ -141,11 +143,11 @@ Or reinstall:
 
 Optional: On startup, check for updates:
 ```
-Update available: v0.0.3 (you have v0.0.2)
+Update available: v0.1.1 (you have v0.1.x)
 → github.com/bdecrem/jambot
 ```
 
-Not critical for v0.0.2.
+Not critical for v0.1.x.
 
 ## Release Checklist
 
@@ -161,8 +163,8 @@ For each release:
   - [ ] `npm install`
   - [ ] Run with no API key (should prompt gracefully)
   - [ ] Run with valid key (should work)
-- [ ] Copy `dist/*` to `releases/v0.0.1/`
-- [ ] Update `releases/v0.0.1/README.md` if needed
+- [ ] Copy `dist/*` to `releases/v0.1.0/`
+- [ ] Update `releases/v0.1.0/README.md` if needed
 - [ ] Commit and push release repo
 - [ ] (Optional) Create GitHub release with tag
 
@@ -174,7 +176,7 @@ For each release:
 | `build.js` | Bundler config (version in output package.json) |
 | `package.json` | Dev package (version) |
 | `dist/` | Build output |
-| `releases/v0.0.1/` | Public release repo → github.com/bdecrem/jambot |
+| `releases/v0.1.0/` | Public release repo → github.com/bdecrem/jambot |
 | `genres.json` | Genre knowledge (bundled in build) |
 
 ## Implementation Order
@@ -184,4 +186,4 @@ For each release:
 3. Graceful error messages
 4. Update release README
 5. Test full flow
-6. Ship v0.0.2
+6. Ship v0.1.x
