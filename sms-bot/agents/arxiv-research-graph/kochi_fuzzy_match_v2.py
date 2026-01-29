@@ -54,6 +54,10 @@ RETRY_DELAY = 2  # Seconds to wait between retries
 # Checkpoint file
 CHECKPOINT_DIR = Path(__file__).parent / '.fuzzy_match_checkpoints'
 
+# Default backlog window (newest first)
+DEFAULT_PAPER_DATE_END = "2024-11-14"   # Today
+DEFAULT_PAPER_DATE_START = "2024-10-15"  # Crawl back to mid-October
+
 
 def retry_on_connection_error(func):
     """Decorator to retry Neo4j operations on connection errors."""
@@ -359,6 +363,24 @@ def main():
     parser.add_argument("--paper-date-end", help="Process authors by paper published date range end (for backlog)")
 
     args = parser.parse_args()
+
+    # Default to the latest backlog window unless a filter is provided
+    if not any([
+        args.all,
+        args.date,
+        args.date_start,
+        args.date_end,
+        args.paper_date_start,
+        args.paper_date_end
+    ]):
+        args.paper_date_start = DEFAULT_PAPER_DATE_START
+        args.paper_date_end = DEFAULT_PAPER_DATE_END
+        print(f"ℹ️  No date filters provided. Defaulting to papers from {args.paper_date_end} back to {args.paper_date_start}.")
+
+    if args.paper_date_start and args.paper_date_end:
+        if args.paper_date_start > args.paper_date_end:
+            print("❌ paper-date-start must be earlier than or equal to paper-date-end")
+            sys.exit(1)
 
     # Validate environment
     if not all([NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD]):
