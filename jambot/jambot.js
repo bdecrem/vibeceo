@@ -120,16 +120,10 @@ function getClient() {
   return _client;
 }
 
-// === 909 KITS - imported from web app (single source of truth) ===
-import { TR909_KITS } from '../web/public/909/dist/machines/tr909/presets.js';
-
-// === 101 PRESETS - imported from web app (single source of truth) ===
-import SH101Presets from '../web/public/101/dist/machines/sh101/presets.js';
-const SH101_PRESETS = Object.values(SH101Presets);
 
 // === SESSION STATE ===
 // Now uses the unified session system from core/session.js
-// JB200 is the reference implementation that correctly uses the node-based architecture
+// JB202 is the reference implementation that correctly uses the node-based architecture
 export function createSession() {
   // Ensure user kits directory exists
   ensureUserKitsDir();
@@ -152,9 +146,11 @@ export const SLASH_COMMANDS = [
   { name: '/projects', description: 'List all projects' },
   { name: '/mix', description: 'Show mix overview (instruments, tweaks, effects)' },
   { name: '/jb01', description: 'JB01 drum machine guide' },
-  { name: '/jb200', description: 'JB200 bass synth guide' },
-  { name: '/jb202', description: 'JB202 modular bass synth guide (custom DSP)' },
+  { name: '/jb202', description: 'JB202 bass synth guide (custom DSP)' },
   { name: '/jp9000', description: 'JP9000 modular synth guide (patch-based)' },
+  { name: '/jt10', description: 'JT10 lead synth (101-style)' },
+  { name: '/jt30', description: 'JT30 acid bass (303-style)' },
+  { name: '/jt90', description: 'JT90 drum machine (909-style)' },
   { name: '/delay', description: 'Delay effect guide' },
   { name: '/status', description: 'Show current session state' },
   { name: '/clear', description: 'Clear session (stay in project)' },
@@ -166,7 +162,7 @@ export const SLASH_COMMANDS = [
 
 // === MIX OVERVIEW ===
 // Builds a human-readable summary of the current mix state
-import { JB01_PARAMS, JB200_PARAMS, JB202_PARAMS, fromEngine } from './params/converters.js';
+import { JB01_PARAMS, JB202_PARAMS, fromEngine } from './params/converters.js';
 
 export function buildMixOverview(session, project = null) {
   const lines = [];
@@ -189,15 +185,6 @@ export function buildMixOverview(session, project = null) {
     active.push(`jb01: ${jb01Voices.join(' ')} (${jb01Voices.length} voices)`);
   }
 
-  // JB200 bass
-  const jb200Pattern = session.jb200Pattern || [];
-  const jb200Notes = jb200Pattern.filter(s => s?.gate);
-  if (jb200Notes.length > 0) {
-    const noteNames = [...new Set(jb200Notes.map(s => s.note))];
-    const range = noteNames.length > 1 ? `${noteNames[0]}-${noteNames[noteNames.length - 1]}` : noteNames[0];
-    active.push(`jb200: ${jb200Notes.length} notes, ${range}`);
-  }
-
   // JB202 bass (custom DSP)
   const jb202Pattern = session.jb202Pattern || [];
   const jb202Notes = jb202Pattern.filter(s => s?.gate);
@@ -205,29 +192,6 @@ export function buildMixOverview(session, project = null) {
     const noteNames = [...new Set(jb202Notes.map(s => s.note))];
     const range = noteNames.length > 1 ? `${noteNames[0]}-${noteNames[noteNames.length - 1]}` : noteNames[0];
     active.push(`jb202: ${jb202Notes.length} notes, ${range}`);
-  }
-
-  // R9D9 drums
-  const r9d9Pattern = session._nodes?.r9d9?.getPattern?.() || {};
-  const r9d9Voices = Object.entries(r9d9Pattern)
-    .filter(([_, pattern]) => Array.isArray(pattern) && pattern.some(s => s?.velocity > 0))
-    .map(([voice]) => voice);
-  if (r9d9Voices.length > 0) {
-    active.push(`r9d9: ${r9d9Voices.join(' ')} (${r9d9Voices.length} voices)`);
-  }
-
-  // R3D3 bass
-  const r3d3Pattern = session._nodes?.r3d3?.getPattern?.() || [];
-  const r3d3Notes = r3d3Pattern.filter(s => s?.gate);
-  if (r3d3Notes.length > 0) {
-    active.push(`r3d3: ${r3d3Notes.length} notes`);
-  }
-
-  // R1D1 lead
-  const r1d1Pattern = session._nodes?.r1d1?.getPattern?.() || [];
-  const r1d1Notes = r1d1Pattern.filter(s => s?.gate);
-  if (r1d1Notes.length > 0) {
-    active.push(`r1d1: ${r1d1Notes.length} notes`);
   }
 
   // Sampler
@@ -283,31 +247,6 @@ export function buildMixOverview(session, project = null) {
     }
   }
 
-  // JB200 tweaks
-  if (jb200Notes.length > 0 && session._nodes?.jb200 && JB200_PARAMS?.bass) {
-    const node = session._nodes.jb200;
-    const nonDefault = [];
-    for (const [param, def] of Object.entries(JB200_PARAMS.bass)) {
-      const path = `bass.${param}`;
-      const engineVal = node.getParam(path);
-      if (engineVal === undefined) continue;
-
-      const producerVal = fromEngine(engineVal, def);
-      if (Math.abs(producerVal - def.default) > 0.5) {
-        if (def.unit === 'Hz') {
-          nonDefault.push(`${param} ${Math.round(producerVal)}Hz`);
-        } else if (def.unit === 'dB' && producerVal !== 0) {
-          nonDefault.push(`${param} ${producerVal > 0 ? '+' : ''}${Math.round(producerVal)}dB`);
-        } else if (def.unit === '0-100') {
-          nonDefault.push(`${param} ${Math.round(producerVal)}%`);
-        }
-      }
-    }
-    if (nonDefault.length > 0) {
-      tweaks.push(`jb200: ${nonDefault.join(', ')}`);
-    }
-  }
-
   // JB202 tweaks (custom DSP bass synth)
   if (jb202Notes.length > 0 && session._nodes?.jb202 && JB202_PARAMS?.bass) {
     const node = session._nodes.jb202;
@@ -360,7 +299,7 @@ export function buildMixOverview(session, project = null) {
 
   // Levels (only show non-zero)
   const levels = [];
-  const instruments = ['jb01', 'jb200', 'jb202', 'r9d9', 'r3d3', 'r1d1', 'sampler'];
+  const instruments = ['jb01', 'jb202', 'sampler'];
   for (const inst of instruments) {
     const level = session[`${inst}Level`];
     if (level !== undefined && level !== 0) {
@@ -400,20 +339,21 @@ function buildSessionContext(session) {
   }
 
   // Summary of what's programmed
-  const hasDrums = Object.keys(session.drumPattern).some(k =>
-    session.drumPattern[k]?.some(s => s.velocity > 0)
+  const jb01Pattern = session.jb01Pattern || session.drumPattern || {};
+  const hasJB01 = Object.keys(jb01Pattern).some(k =>
+    jb01Pattern[k]?.some(s => s?.velocity > 0)
   );
-  const hasBass = session.bassPattern?.some(s => s.gate);
-  const hasLead = session.leadPattern?.some(s => s.gate);
-  const hasSamples = Object.keys(session.samplerPattern).some(k =>
-    session.samplerPattern[k]?.some(s => s.velocity > 0)
+  const jb202Pattern = session.jb202Pattern || session.bassPattern || [];
+  const hasJB202 = jb202Pattern?.some(s => s?.gate);
+  const samplerPattern = session.samplerPattern || {};
+  const hasSamples = Object.keys(samplerPattern).some(k =>
+    samplerPattern[k]?.some(s => s?.velocity > 0)
   );
 
   const programmed = [];
-  if (hasDrums) programmed.push('R9D9 drums');
-  if (hasBass) programmed.push('R3D3 bass');
-  if (hasLead) programmed.push('R1D1 lead');
-  if (hasSamples) programmed.push('R9DS samples');
+  if (hasJB01) programmed.push('JB01 drums');
+  if (hasJB202) programmed.push('JB202 bass');
+  if (hasSamples) programmed.push('Sampler');
 
   if (programmed.length > 0) {
     parts.push(`Programmed: ${programmed.join(', ')}`);
@@ -551,14 +491,15 @@ export const SPLASH = `
 
   🤖 Your AI just learned to funk 🎛️
  ─────────────────────────────────────────────────
-  v0.0.2 — What's New
-  ✓ R9D9 drums + R3D3 acid bass + R1D1 lead synth
-  ✓ R9DS sampler — load your own kits
+  v0.0.3 — What's New
+  ✓ JB01 drums + JB202 bass synth
+  ✓ JP9000 modular synth with Karplus-Strong
+  ✓ Sampler — load your own kits
   ✓ 17 genres of production knowledge
   ✓ Projects saved to ~/Documents/Jambot/
  ─────────────────────────────────────────────────
   "make me an acid track at 130"
-  "add a squelchy 303 bass line"
+  "add a squelchy bass line"
   "render it"
  ─────────────────────────────────────────────────
 
@@ -575,9 +516,11 @@ Slash Commands
   /projects     List all projects (with timestamps)
   /mix          Show mix overview
   /jb01         JB01 drum machine guide (kochi.to/jb01)
-  /jb200        JB200 bass synth guide (kochi.to/jb200)
-  /jb202        JB202 bass synth guide (custom DSP)
+  /jb202        JB202 bass synth guide (kochi.to/jb202)
   /jp9000       JP9000 modular synth guide
+  /jt10         JT10 lead synth (kochi.to/jt10)
+  /jt30         JT30 acid bass (kochi.to/jt30)
+  /jt90         JT90 drum machine (kochi.to/jt90)
   /delay        Delay effect guide
   /status       Show current session state
   /clear        Clear session (stay in project)
@@ -594,20 +537,19 @@ Or just talk:
 export const CHANGELOG_TEXT = `
 Changelog
 
-  v0.0.2 — Jan 15, 2026
+  v0.0.3 — Jan 27, 2026
 
-  Synths
-  • R9D9 (TR-909) drums — 11 voices, full parameter control
-  • R3D3 (TB-303) acid bass — filter, resonance, envelope
-  • R1D1 (SH-101) lead — VCO, filter, envelope
-  • R9DS sampler — sample-based drums, load your own kits
-  • Multi-synth rendering to single WAV
+  Instruments
+  • JB01 drum machine — 8 voices (kick, snare, clap, ch, oh, lowtom, hitom, cymbal)
+  • JB202 bass synth — custom DSP, cross-platform consistent
+  • JP9000 modular — patchable synth with Karplus-Strong strings
+  • Sampler — 10-slot sample player with custom kits
 
   Features
   • Genre knowledge (17 genres with production tips)
+  • Song mode with patterns A, B, C...
+  • Effect chains (delay, reverb)
   • Project system: ~/Documents/Jambot/
-  • Ink TUI with slash commands
-  • First-run API key wizard
   • MIDI export (/export)
   • Natural language everything
 
@@ -615,110 +557,8 @@ Changelog
   • Initial prototype
 `;
 
-export const R9D9_GUIDE = `
-R9D9 — Drum Machine (TR-909)
-
-  KITS (sound presets)
-  default    Standard 909 (E2 engine)
-  bart-deep  Subby, warm kick (E1 engine, decay 0.55)
-  punchy     Snappy attack
-  boomy      Long decay, deep sub
-  e1-classic Simple sine-based engine
-
-  > "load the bart deep kit"
-  > "use the punchy 909 kit"
-
-  VOICES
-  kick     Bass drum        snare    Snare drum
-  clap     Handclap         ch       Closed hi-hat
-  oh       Open hi-hat      ltom     Low tom
-  mtom     Mid tom          htom     High tom
-  rimshot  Rim click        crash    Crash cymbal
-  ride     Ride cymbal
-
-  PARAMETERS  "tweak the kick..."
-  decay    Length (0.1-1). Low = punch, high = boom
-  tune     Pitch (-12 to +12). Negative = deeper
-  tone     Brightness (0-1). Snare only
-  level    Volume (0-1)
-
-  SWING    Pushes off-beats for groove
-  > "add 50% swing"
-  > "make it shuffle"
-
-  EXAMPLES
-  > "four on the floor with offbeat hats"
-  > "ghost notes on the snare"
-  > "tune the kick down, make it longer"
-`;
-
-export const R3D3_GUIDE = `
-R3D3 — Acid Bass (TB-303)
-
-  PATTERN FORMAT
-  16 steps, each with: note, gate, accent, slide
-  Notes: C1-C3 range (bass territory)
-  Gate: true = play, false = rest
-  Accent: extra punch on that note
-  Slide: portamento glide to next note
-
-  PARAMETERS  "tweak the bass..."
-  waveform   sawtooth or square
-  cutoff     Filter brightness (0-1)
-  resonance  Squelch/acid amount (0-1)
-  envMod     Filter envelope depth (0-1)
-  decay      How fast filter closes (0-1)
-  accent     Accent intensity (0-1)
-  level      Master volume (0-1) for mixing
-
-  THE ACID SOUND
-  High resonance + envelope mod = classic squelch
-  Slides between notes = that rubbery feel
-
-  EXAMPLES
-  > "add an acid bass line in A minor"
-  > "make it more squelchy"
-  > "turn the bass down to 0.5"
-`;
-
-export const R1D1_GUIDE = `
-R1D1 — Lead Synth (SH-101)
-
-  PATTERN FORMAT
-  16 steps, each with: note, gate, accent, slide
-  Notes: C2-C5 range (lead territory)
-  Gate: true = play, false = rest
-  Accent: emphasized note
-  Slide: glide to next note
-
-  OSCILLATOR
-  vcoSaw      Sawtooth level (0-1)
-  vcoPulse    Pulse wave level (0-1)
-  pulseWidth  PWM width (0-1, 0.5 = square)
-  subLevel    Sub-oscillator beef (0-1)
-
-  FILTER
-  cutoff      Filter brightness (0-1)
-  resonance   Filter emphasis (0-1)
-  envMod      Envelope to filter (0-1)
-
-  ENVELOPE
-  attack      Note fade-in (0-1)
-  decay       Initial decay (0-1)
-  sustain     Held level (0-1)
-  release     Note fade-out (0-1)
-
-  MIXER
-  level       Master volume (0-1) for mixing
-
-  EXAMPLES
-  > "add a synth lead melody"
-  > "make it more plucky with short decay"
-  > "turn the lead down to 0.3"
-`;
-
-export const R9DS_GUIDE = `
-R9DS — Sampler
+export const SAMPLER_GUIDE = `
+Sampler — Sample Player
 
   KITS
   Load sample kits from bundled or user folders.
@@ -726,7 +566,7 @@ R9DS — Sampler
   User:    ~/Documents/Jambot/kits/ (add your own)
 
   Each kit has 10 slots: s1 through s10
-  Use /kits to see available kits
+  Use list_kits to see available kits
 
   WORKFLOW
   1. list_kits     See what's available
@@ -735,12 +575,12 @@ R9DS — Sampler
   4. tweak_samples Adjust sound per slot
 
   PARAMETERS  "tweak slot s1..."
-  level    Volume (0-1)
-  tune     Pitch in semitones (-12 to +12)
-  attack   Fade-in time (0-1)
-  decay    Length as % of sample (0-1)
-  filter   Lowpass cutoff (0-1, 1 = bright)
-  pan      Stereo position (-1 to +1)
+  level    Volume in dB (-60 to +6)
+  tune     Pitch in semitones (-24 to +24)
+  attack   Fade-in 0-100
+  decay    Length 0-100
+  filter   Lowpass in Hz (200-20000)
+  pan      Stereo position (-100 to +100)
 
   ADDING YOUR OWN KITS
   Just tell me about your samples folder:
@@ -755,9 +595,6 @@ R9DS — Sampler
   > "tune the kick down and add more decay"
   > "make a kit from ~/Music/breaks called jungle-breaks"
 `;
-
-// Legacy alias
-export const TR909_GUIDE = R9D9_GUIDE;
 
 // === ACTIVE INSTRUMENT GUIDES ===
 
@@ -794,51 +631,6 @@ JB01 — Drum Machine
   > "tune the kick down 2 semitones"
   > "mute the snare"
   > "add 30% swing"
-`;
-
-export const JB200_GUIDE = `
-JB200 — Bass Monosynth
-
-  Web UI: kochi.to/jb200
-
-  ARCHITECTURE
-  2 oscillators → filter → amp → drive
-  Each step: note, gate, accent, slide
-
-  PARAMETERS  "tweak the bass..."
-  Oscillators:
-    osc1Waveform   sawtooth/square/triangle
-    osc1Octave     Octave shift (-24 to +24 semitones)
-    osc1Detune     Fine tune (-50 to +50 cents)
-    osc1Level      Mix level 0-100
-    (same for osc2)
-
-  Filter:
-    filterCutoff     Frequency in Hz (20-16000)
-    filterResonance  Q amount 0-100
-    filterEnvAmount  Envelope depth -100 to +100
-
-  Envelopes:
-    filterAttack/Decay/Sustain/Release  0-100
-    ampAttack/Decay/Sustain/Release     0-100
-
-  Output:
-    drive    Saturation 0-100
-    level    Volume in dB (-60 to +6)
-
-  PATTERNS
-  > add_jb200({ pattern: [{note:'C2',gate:true}, ...] })
-  > "add an acid bass line"
-  > "make it squelchy"
-
-  PRESETS
-  > "list jb200 kits"      (sound presets)
-  > "list jb200 sequences" (pattern presets)
-
-  EXAMPLES
-  > "open the filter"
-  > "add more resonance"
-  > "detune osc2 by 7 cents for fatness"
 `;
 
 export const JB202_GUIDE = `
@@ -914,7 +706,7 @@ DELAY — Echo Effect
   spread     Stereo width 0-100 (pingpong mode only)
 
   TARGETS
-  Instrument:  jb01, jb200, sampler
+  Instrument:  jb01, jb202, sampler
   Voice:       jb01.ch, jb01.kick, jb01.snare (per-voice)
   Master:      master
 
@@ -997,4 +789,65 @@ JP9000 — Modular Synthesizer
   > "connect osc1 to the filter"
   > "tweak the string decay to 80"
   > "save this as fat-pluck"
+`;
+
+export const JT10_GUIDE = `
+JT10 — Lead Synth (101-style)
+
+  Web UI: kochi.to/jt10
+
+  Monosynth with PolyBLEP oscillators, sub-osc, Moog ladder filter, LFO.
+  Good for leads and bass.
+
+  PATTERN (16 steps)
+  add_jt10({ pattern: [
+    { note: 'C3', gate: true, accent: false, slide: false },
+    { note: 'C3', gate: false, accent: false, slide: false },
+    ...
+  ]})
+
+  TWEAKS
+  tweak_jt10({ filterCutoff: 2000, filterResonance: 40, lfoRate: 5 })
+
+  PARAMS: level, waveform, pulseWidth, subLevel, filterCutoff,
+          filterResonance, filterEnvAmount, ADSR, lfoRate, lfoAmount
+`;
+
+export const JT30_GUIDE = `
+JT30 — Acid Bass (303-style)
+
+  Web UI: kochi.to/jt30
+
+  Classic acid synth. Saw/square oscillator, Moog filter tuned for
+  303-style resonance (no self-oscillation), accent boosts resonance.
+
+  PATTERN (16 steps)
+  add_jt30({ pattern: [
+    { note: 'C2', gate: true, accent: true, slide: false },
+    { note: 'C2', gate: true, accent: false, slide: true },
+    ...
+  ]})
+
+  TWEAKS
+  tweak_jt30({ filterCutoff: 800, filterResonance: 70, filterEnvAmount: 80 })
+
+  KEY: Keep cutoff LOW, env mod HIGH, use ACCENTS for squelch.
+`;
+
+export const JT90_GUIDE = `
+JT90 — Drum Machine (909-style)
+
+  Web UI: kochi.to/jt90
+
+  11 voices: kick, snare, clap, rimshot, lowtom, midtom, hitom,
+             ch, oh, crash, ride
+
+  PATTERN
+  add_jt90({ kick: [0, 8], snare: [4, 12], ch: [0,2,4,6,8,10,12,14] })
+
+  TWEAKS
+  tweak_jt90({ voice: 'kick', decay: 60, attack: 30 })
+  tweak_jt90({ voice: 'snare', snappy: 70, tone: 50 })
+
+  PARAMS: level, tune, decay, attack (kick), tone, snappy (snare)
 `;

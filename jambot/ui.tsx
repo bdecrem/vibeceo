@@ -16,6 +16,9 @@ import {
   JB01_GUIDE,
   JB202_GUIDE,
   JP9000_GUIDE,
+  JT10_GUIDE,
+  JT30_GUIDE,
+  JT90_GUIDE,
   DELAY_GUIDE,
   getApiKey,
   saveApiKey,
@@ -711,6 +714,18 @@ function App() {
 
       case '/jp9000':
         addMessage('info', JP9000_GUIDE);
+        break;
+
+      case '/jt10':
+        addMessage('info', JT10_GUIDE);
+        break;
+
+      case '/jt30':
+        addMessage('info', JT30_GUIDE);
+        break;
+
+      case '/jt90':
+        addMessage('info', JT90_GUIDE);
         break;
 
       case '/export':

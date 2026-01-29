@@ -12,9 +12,11 @@ import {
   HELP_TEXT,
   CHANGELOG_TEXT,
   JB01_GUIDE,
-  JB200_GUIDE,
   JB202_GUIDE,
   JP9000_GUIDE,
+  JT10_GUIDE,
+  JT30_GUIDE,
+  JT90_GUIDE,
   DELAY_GUIDE,
   getApiKey,
   saveApiKey,
@@ -197,15 +199,16 @@ class TerminalUI {
   // === DRAWING: STATUS BAR ===
   private drawStatusBar(): void {
     const synths: string[] = [];
-    if (this.session?.drumPattern && Object.values(this.session.drumPattern).some((v: any) => v?.some?.((s: any) => s?.velocity > 0))) {
-      synths.push('R9D9');
+    // JB01 drums
+    if (this.session?.jb01Pattern && Object.values(this.session.jb01Pattern).some((v: any) => v?.some?.((s: any) => s?.velocity > 0))) {
+      synths.push('JB01');
     }
-    if (this.session?.bassPattern?.some((s: any) => s.gate)) synths.push('R3D3');
-    if (this.session?.leadPattern?.some((s: any) => s.gate)) synths.push('R1D1');
+    // JB202 bass synth
+    if (this.session?.jb202Pattern?.some((s: any) => s.gate)) synths.push('JB202');
+    // Sampler
     if (this.session?.samplerKit && Object.values(this.session.samplerPattern || {}).some((v: any) => v?.some?.((s: any) => s?.velocity > 0))) {
-      synths.push('R9DS');
+      synths.push('Sampler');
     }
-    if (this.session?.jb200Pattern?.some((s: any) => s.gate)) synths.push('JB200');
 
     const synthList = synths.length > 0 ? synths.join('+') : 'empty';
     const swing = this.session?.swing > 0 ? ` swing ${this.session.swing}%` : '';
@@ -816,9 +819,11 @@ class TerminalUI {
       case '/help': this.printInfo(HELP_TEXT); break;
       case '/changelog': this.printInfo(CHANGELOG_TEXT); break;
       case '/jb01': this.printInfo(JB01_GUIDE); break;
-      case '/jb200': this.printInfo(JB200_GUIDE); break;
       case '/jb202': this.printInfo(JB202_GUIDE); break;
       case '/jp9000': this.printInfo(JP9000_GUIDE); break;
+      case '/jt10': this.printInfo(JT10_GUIDE); break;
+      case '/jt30': this.printInfo(JT30_GUIDE); break;
+      case '/jt90': this.printInfo(JT90_GUIDE); break;
       case '/delay': this.printInfo(DELAY_GUIDE); break;
       case '/export': this.exportCurrentProject(); break;
       default: this.printSystem(`Unknown command: ${cmd}`);

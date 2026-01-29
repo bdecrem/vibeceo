@@ -202,6 +202,12 @@ function initKnobs() {
         const rotation = valueToRotation(value);
         knob.style.transform = `rotate(${rotation}deg)`;
 
+        // Also update the value display
+        const valueEl = document.getElementById(`${param}-value`);
+        if (valueEl) {
+            valueEl.textContent = Math.round(value * 100).toString();
+        }
+
         knob.addEventListener('mousedown', (e) => {
             e.preventDefault();
             startKnobDrag(e.clientY, knob, param);
@@ -260,11 +266,12 @@ function handleKnobEnd() {
 }
 
 function resetKnob(knobEl, paramId) {
+    // Match engine defaults (tuned for acid sound with new resonance curve)
     const defaults = {
-        cutoff: 0.5,
-        resonance: 0.5,
-        envMod: 0.5,
-        decay: 0.5,
+        cutoff: 0.15,     // Low so envelope can open it
+        resonance: 0.45,  // Audible squelch with gentler resonance curve
+        envMod: 0.75,     // Strong for acid "wow"
+        decay: 0.45,      // Medium for sweep
         accent: 0.8,
     };
 

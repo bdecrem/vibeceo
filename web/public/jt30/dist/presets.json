@@ -4,10 +4,10 @@
     "bpm": 130,
     "waveform": "sawtooth",
     "parameters": {
-      "cutoff": 0.3,
-      "resonance": 0.5,
-      "envMod": 0.6,
-      "decay": 0.3,
+      "cutoff": 0.15,
+      "resonance": 0.45,
+      "envMod": 0.75,
+      "decay": 0.45,
       "accent": 0.8,
       "level": 0.8
     },
@@ -35,10 +35,10 @@
     "bpm": 138,
     "waveform": "sawtooth",
     "parameters": {
-      "cutoff": 0.25,
-      "resonance": 0.7,
+      "cutoff": 0.20,
+      "resonance": 0.55,
       "envMod": 0.8,
-      "decay": 0.2,
+      "decay": 0.25,
       "accent": 0.9,
       "level": 0.8
     },
@@ -67,7 +67,7 @@
     "waveform": "sawtooth",
     "parameters": {
       "cutoff": 0.15,
-      "resonance": 0.85,
+      "resonance": 0.70,
       "envMod": 0.9,
       "decay": 0.15,
       "accent": 1.0,
@@ -160,7 +160,7 @@
     "waveform": "square",
     "parameters": {
       "cutoff": 0.2,
-      "resonance": 0.95,
+      "resonance": 0.80,
       "envMod": 1.0,
       "decay": 0.1,
       "accent": 1.0,

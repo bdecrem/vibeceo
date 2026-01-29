@@ -114,15 +114,16 @@ export class MoogLadderFilter {
     // Derived coefficient for feedback path
     this.k = this.p * 2.0 - 1.0;
 
-    // Resonance curve: logarithmic for musical response
-    // 0-50% = gentle warmth (0-1.2), 50-80% = singing (1.2-2.5), 80-100% = self-osc (2.5-3.6)
-    // This gives most of the usable range in the first half of the knob
+    // Resonance curve: 303-style - never self-oscillates, goes into overdrive instead
+    // Real 303 is 18dB/oct with mismatched caps that prevent true oscillation
+    // Gentler curve (x^0.5) with lower max (1.3) to stay below self-oscillation
     const resNorm = this._resonance / 100;
-    const resCurved = resNorm * resNorm;  // Square curve - gentle at start
-    this.r = resCurved * 3.6;  // Max 3.6 (just into self-oscillation, not screaming)
+    const resCurved = Math.pow(resNorm, 0.5);  // Square root - very gentle
+    this.r = resCurved * 1.8;  // Max 1.8
 
-    // Gain compensation: subtle, avoid boosting the squelch
-    this._gainCompensation = 1.0 + resCurved * 0.15;
+    // 303-style resonance compensation: bass loss increases with resonance
+    // This prevents the "thin then painful" character
+    this._gainCompensation = 1.0 / (1.0 + resCurved * 0.5);
   }
 
   /**

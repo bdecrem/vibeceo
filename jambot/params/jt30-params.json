@@ -15,7 +15,7 @@
     "waveform": { "unit": "choice", "options": ["sawtooth", "square"], "default": "sawtooth", "hint": "oscillator waveform - saw is brighter/aggressive, square is hollow/rounder" },
 
     "cutoff": { "unit": "0-100", "min": 0, "max": 100, "default": 15, "hint": "filter cutoff - keep LOW so envelope can open it dramatically" },
-    "resonance": { "unit": "0-100", "min": 0, "max": 100, "default": 35, "hint": "filter resonance - accent will boost this for squelch" },
+    "resonance": { "unit": "0-100", "min": 0, "max": 100, "default": 45, "hint": "filter resonance - gentle curve, accent boosts for squelch" },
     "envMod": { "unit": "0-100", "min": 0, "max": 100, "default": 75, "hint": "filter envelope depth - how much envelope opens the filter" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 45, "hint": "filter envelope decay - longer = more dramatic 'wow'" },
     "accent": { "unit": "0-100", "min": 0, "max": 100, "default": 80, "hint": "accent intensity - boosts volume, cutoff AND resonance" },

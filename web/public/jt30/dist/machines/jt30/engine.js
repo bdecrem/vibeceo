@@ -28,7 +28,7 @@ import { JT30Sequencer } from './sequencer.js';
 const DEFAULT_PARAMS = {
   waveform: 'sawtooth',      // 'sawtooth' or 'square'
   cutoff: 0.15,              // Filter cutoff (0-1) - LOW so envelope opens it
-  resonance: 0.35,           // Filter resonance (0-1) - moderate, accent boosts it
+  resonance: 0.45,           // Filter resonance (0-1) - audible squelch with new curve
   envMod: 0.75,              // Filter envelope amount (0-1) - aggressive for acid
   decay: 0.45,               // Envelope decay (0-1) - medium for "wow" sweep
   accent: 0.8,               // Accent intensity (0-1)
@@ -135,7 +135,7 @@ class SynthVoice {
       this.accentActive = accent;
       // 303-style: accent boosts resonance for that squelch!
       // This decays quickly but gives the characteristic "wow"
-      this.accentResonanceBoost = accent ? 25 : 0;  // +25% resonance on accent
+      this.accentResonanceBoost = accent ? 35 : 0;  // +35% resonance on accent (more with gentler curve)
     }
 
     this.gateOpen = true;
@@ -209,9 +209,11 @@ class SynthVoice {
     const accentCutoffBoost = this.accentActive ? 1.4 : 1.0;
     const modCutoff = clamp(baseCutoff + envAmount * filterEnvValue * 10000 * accentCutoffBoost, 20, 18000);
 
-    // 303-style: accent also boosts resonance for that squelch!
+    // 303-style: accent boosts resonance multiplicatively (not additive)
+    // This prevents accidental overshoot past 100 and scales naturally
     const baseResonance = params.resonance * 100;
-    const modResonance = clamp(baseResonance + this.accentResonanceBoost, 0, 95);
+    const accentMult = 1.0 + (this.accentResonanceBoost / 100);  // +35 becomes 1.35x
+    const modResonance = clamp(baseResonance * accentMult, 0, 85);  // Cap at 85 to stay musical
 
     // Update filter with modulated cutoff and resonance
     this.filter.setParameters(modCutoff, modResonance);
