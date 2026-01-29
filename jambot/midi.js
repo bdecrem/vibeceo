@@ -255,8 +255,8 @@ export function generateJB01Midi(session, outputPath) {
   return outputPath;
 }
 
-// Generate JB200 bass MIDI file
-export function generateJB200Midi(session, outputPath) {
+// Generate JB202 bass MIDI file
+export function generateJB202Midi(session, outputPath) {
   const bars = session.bars || 2;
   const ppq = 96;
 
@@ -434,3 +434,6 @@ export function hasContent(session) {
     any: hasJB01 || hasJB200 || hasR9D9 || hasR3D3 || hasR1D1,
   };
 }
+
+// Legacy alias
+export const generateJB200Midi = generateJB202Midi;
