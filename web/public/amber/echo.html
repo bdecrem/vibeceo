@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECHO — Memory sequence game</title>
+    
+    <!-- OG tags -->
+    <meta property="og:title" content="ECHO">
+    <meta property="og:description" content="Listen. Remember. Echo it back. A memory sequence game.">
+    <meta property="og:image" content="https://intheamber.com/amber/echo-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/echo.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ECHO">
+    <meta name="twitter:description" content="Listen. Remember. Echo it back. A memory sequence game.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/echo-og.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #000;
+            color: #D4A574;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .container {
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #2D9596;
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+        }
+        
+        .status {
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            margin-bottom: 30px;
+            min-height: 30px;
+            color: #FFD700;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        
+        .pad {
+            aspect-ratio: 1;
+            border: 2px solid rgba(212, 165, 116, 0.3);
+            border-radius: 12px;
+            background: rgba(212, 165, 116, 0.05);
+            cursor: pointer;
+            transition: all 0.1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pad::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--pad-color);
+            opacity: 0;
+            transition: opacity 0.1s ease;
+        }
+        
+        .pad:active {
+            transform: scale(0.95);
+        }
+        
+        .pad.flash::before {
+            opacity: 0.8;
+        }
+        
+        .pad.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .pad:nth-child(1) { --pad-color: #D4A574; }
+        .pad:nth-child(2) { --pad-color: #FFD700; }
+        .pad:nth-child(3) { --pad-color: #2D9596; }
+        .pad:nth-child(4) { --pad-color: #7B68EE; }
+        
+        .score-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+        }
+        
+        .score-item {
+            text-align: center;
+        }
+        
+        .score-label {
+            color: #666;
+            font-size: 11px;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        
+        .score-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FFD700;
+        }
+        
+        .start-button {
+            font-family: 'Space Mono', monospace;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            padding: 16px 40px;
+            background: rgba(212, 165, 116, 0.1);
+            border: 2px solid #D4A574;
+            border-radius: 8px;
+            color: #D4A574;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .start-button:hover {
+            background: rgba(212, 165, 116, 0.2);
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+        }
+        
+        .start-button:active {
+            transform: scale(0.95);
+        }
+        
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status.listening {
+            animation: pulse 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particles"></canvas>
+    
+    <div class="container">
+        <h1>ECHO</h1>
+        <div class="subtitle">LISTEN • REMEMBER • REPEAT</div>
+        
+        <div class="status" id="status">TAP TO START</div>
+        
+        <div class="grid" id="grid">
+            <div class="pad" data-index="0"></div>
+            <div class="pad" data-index="1"></div>
+            <div class="pad" data-index="2"></div>
+            <div class="pad" data-index="3"></div>
+        </div>
+        
+        <div class="score-container">
+            <div class="score-item">
+                <div class="score-label">LEVEL</div>
+                <div class="score-value" id="level">1</div>
+            </div>
+            <div class="score-item">
+                <div class="score-label">BEST</div>
+                <div class="score-value" id="best">0</div>
+            </div>
+        </div>
+        
+        <button class="start-button" id="startBtn">START</button>
+    </div>
+    
+    <script>
+        // Audio context
+        let audioContext;
+        const frequencies = [261.63, 329.63, 392.00, 493.88]; // C4, E4, G4, B4
+        
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        function playTone(index, duration = 300) {
+            initAudio();
+            const now = audioContext.currentTime;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequencies[index];
+            
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start(now);
+            oscillator.stop(now + duration / 1000);
+        }
+        
+        function playError() {
+            initAudio();
+            const now = audioContext.currentTime;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.value = 100;
+            
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start(now);
+            oscillator.stop(now + 0.3);
+        }
+        
+        // Particle system
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const particles = [];
+        
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.life = 1;
+                this.color = color;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.02;
+            }
+            
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function createBurst(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+        
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalAlpha = 1;
+            
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            requestAnimationFrame(animateParticles);
+        }
+        
+        animateParticles();
+        
+        // Game logic
+        const pads = document.querySelectorAll('.pad');
+        const statusEl = document.getElementById('status');
+        const levelEl = document.getElementById('level');
+        const bestEl = document.getElementById('best');
+        const startBtn = document.getElementById('startBtn');
+        
+        let sequence = [];
+        let playerSequence = [];
+        let level = 1;
+        let best = parseInt(localStorage.getItem('echoBest') || '0');
+        let isPlaying = false;
+        let isPlayerTurn = false;
+        
+        bestEl.textContent = best;
+        
+        const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE'];
+        
+        function flashPad(index, duration = 300) {
+            const pad = pads[index];
+            pad.classList.add('flash');
+            playTone(index, duration);
+            
+            const rect = pad.getBoundingClientRect();
+            createBurst(
+                rect.left + rect.width / 2,
+                rect.top + rect.height / 2,
+                colors[index]
+            );
+            
+            setTimeout(() => {
+                pad.classList.remove('flash');
+            }, duration);
+        }
+        
+        async function playSequence() {
+            isPlayerTurn = false;
+            setAllPadsDisabled(true);
+            statusEl.textContent = 'LISTEN...';
+            statusEl.classList.add('listening');
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            for (let i = 0; i < sequence.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                flashPad(sequence[i]);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            statusEl.classList.remove('listening');
+            statusEl.textContent = 'YOUR TURN';
+            isPlayerTurn = true;
+            setAllPadsDisabled(false);
+            playerSequence = [];
+        }
+        
+        function setAllPadsDisabled(disabled) {
+            pads.forEach(pad => {
+                if (disabled) {
+                    pad.classList.add('disabled');
+                } else {
+                    pad.classList.remove('disabled');
+                }
+            });
+        }
+        
+        async function startGame() {
+            initAudio();
+            sequence = [];
+            playerSequence = [];
+            level = 1;
+            levelEl.textContent = level;
+            isPlaying = true;
+            startBtn.style.display = 'none';
+            
+            nextRound();
+        }
+        
+        function nextRound() {
+            sequence.push(Math.floor(Math.random() * 4));
+            playSequence();
+        }
+        
+        function checkSequence(index) {
+            if (!isPlayerTurn || !isPlaying) return;
+            
+            playerSequence.push(index);
+            flashPad(index, 200);
+            
+            // Check if this press was correct
+            const currentStep = playerSequence.length - 1;
+            if (playerSequence[currentStep] !== sequence[currentStep]) {
+                // Wrong!
+                gameOver();
+                return;
+            }
+            
+            // Check if sequence is complete
+            if (playerSequence.length === sequence.length) {
+                // Success!
+                level++;
+                levelEl.textContent = level;
+                
+                if (level > best) {
+                    best = level;
+                    bestEl.textContent = best;
+                    localStorage.setItem('echoBest', best.toString());
+                }
+                
+                statusEl.textContent = 'CORRECT!';
+                setTimeout(() => {
+                    nextRound();
+                }, 1000);
+            }
+        }
+        
+        function gameOver() {
+            isPlaying = false;
+            isPlayerTurn = false;
+            playError();
+            statusEl.textContent = `WRONG! LEVEL ${level}`;
+            setAllPadsDisabled(true);
+            
+            // Flash all pads red
+            pads.forEach((pad, i) => {
+                setTimeout(() => {
+                    pad.style.borderColor = '#ff0000';
+                    setTimeout(() => {
+                        pad.style.borderColor = 'rgba(212, 165, 116, 0.3)';
+                    }, 100);
+                }, i * 50);
+            });
+            
+            setTimeout(() => {
+                startBtn.style.display = 'block';
+                startBtn.textContent = 'TRY AGAIN';
+                statusEl.textContent = 'TAP TO START';
+            }, 2000);
+        }
+        
+        // Event listeners
+        pads.forEach((pad, index) => {
+            pad.addEventListener('click', () => checkSequence(index));
+        });
+        
+        startBtn.addEventListener('click', startGame);
+        
+        // Resize handler
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
