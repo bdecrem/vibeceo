@@ -132,10 +132,22 @@ def fetch_papers(target_date: datetime, max_results: int = 1000) -> list[dict[st
             and isinstance(exc, UnexpectedEmptyPage)
         ) or ("unexpectedly empty" in str(exc).lower())
 
+        # Handle HTTP 429 (rate limit) gracefully - return partial results
+        handled_rate_limit = (
+            "429" in str(exc) or
+            "rate limit" in str(exc).lower() or
+            "too many requests" in str(exc).lower()
+        )
+
         if handled_empty_page:
             print(
                 "Warning: Received an empty page from arXiv pagination; "
                 "treating this as the end of available results."
+            )
+        elif handled_rate_limit:
+            print(
+                f"Warning: Hit arXiv API rate limit after fetching {len(papers)} papers; "
+                "returning partial results. This is normal for large queries."
             )
         else:
             raise
