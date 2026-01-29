@@ -4,13 +4,38 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
+interface TextStyle {
+  fontFamily: 'Arial' | 'Georgia' | 'Montserrat' | 'Impact';
+  color: string;
+  shadowStyle: 'none' | 'subtle' | 'bold';
+  size: 'small' | 'medium' | 'large';
+}
+
+interface AnimationSettings {
+  type: 'zoom-in' | 'zoom-out' | 'pan-left' | 'pan-right' | 'ken-burns' | 'static';
+  speed: 'slow' | 'medium' | 'fast';
+  focusPoint: 'upper' | 'center' | 'lower';
+}
+
 interface VideoRequest {
   mode: 'video' | 'wall-of-text' | 'image';
-  images: string[];  // base64 encoded images
-  audio: string;     // base64 encoded audio
-  script?: string;   // for wall-of-text mode
-  overlays?: string[]; // text overlays for video mode
+  images: string[];
+  audio: string;
+  script?: string;
+  overlays?: string[];
+  textStyle?: TextStyle;
+  animation?: AnimationSettings;
 }
+
+// Text style helpers
+const FONT_SIZES: Record<string, number> = { small: 48, medium: 72, large: 96 };
+const SHADOW_PARAMS: Record<string, string> = {
+  none: '',
+  subtle: ':shadowcolor=black@0.5:shadowx=1:shadowy=1',
+  bold: ':shadowcolor=black@0.9:shadowx=3:shadowy=3',
+};
+const FOCUS_POINTS: Record<string, number> = { upper: 0.25, center: 0.5, lower: 0.75 };
+const SPEED_MULTIPLIERS: Record<string, number> = { slow: 0.5, medium: 1.0, fast: 1.5 };
 
 function runFFmpeg(args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -64,11 +89,73 @@ async function getAudioDuration(audioPath: string): Promise<number> {
   });
 }
 
+// Get zoom/pan filter based on animation settings
+function getAnimationFilter(
+  animation: AnimationSettings,
+  totalFrames: number,
+  videoWidth: number,
+  videoHeight: number
+): string {
+  const focusY = FOCUS_POINTS[animation.focusPoint];
+  const speedMult = SPEED_MULTIPLIERS[animation.speed];
+  const baseZoom = 1.0 + (0.03 * speedMult); // Base 3% zoom, scaled by speed
+  const zoomIncrement = (baseZoom - 1) / totalFrames;
+
+  switch (animation.type) {
+    case 'zoom-in':
+      return `zoompan=z='1+${zoomIncrement}*on':x='iw/2-(iw/zoom/2)':y='ih*${focusY}-(ih/zoom*${focusY})':d=${totalFrames}:s=${videoWidth}x${videoHeight}:fps=30`;
+
+    case 'zoom-out':
+      return `zoompan=z='${baseZoom}-${zoomIncrement}*on':x='iw/2-(iw/zoom/2)':y='ih*${focusY}-(ih/zoom*${focusY})':d=${totalFrames}:s=${videoWidth}x${videoHeight}:fps=30`;
+
+    case 'pan-left':
+      const panLeftSpeed = (0.1 * speedMult) / totalFrames;
+      return `zoompan=z='1':x='iw*${panLeftSpeed}*on':y='ih*${focusY}':d=${totalFrames}:s=${videoWidth}x${videoHeight}:fps=30`;
+
+    case 'pan-right':
+      const panRightSpeed = (0.1 * speedMult) / totalFrames;
+      return `zoompan=z='1':x='iw-iw*${panRightSpeed}*on':y='ih*${focusY}':d=${totalFrames}:s=${videoWidth}x${videoHeight}:fps=30`;
+
+    case 'static':
+      return `zoompan=z='1':x='(iw-${videoWidth})/2':y='(ih-${videoHeight})/2':d=${totalFrames}:s=${videoWidth}x${videoHeight}:fps=30`;
+
+    case 'ken-burns':
+    default:
+      // Subtle slow zoom with gentle movement
+      const kbZoom = 0.0005 * speedMult;
+      return `zoompan=z='1+${kbZoom}*on':x='iw/2-(iw/zoom/2)':y='ih*${focusY}-(ih/zoom*${focusY})':d=${totalFrames}:s=${videoWidth}x${videoHeight}:fps=30`;
+  }
+}
+
+// Get drawtext params based on text style
+function getDrawtextParams(textStyle: TextStyle, text: string, x: string, y: string): string {
+  const fontSize = FONT_SIZES[textStyle.size];
+  const color = textStyle.color.replace('#', '0x');
+  const shadow = SHADOW_PARAMS[textStyle.shadowStyle];
+  const escapedText = text.replace(/'/g, "'\\''").replace(/:/g, '\\:');
+
+  return `drawtext=text='${escapedText}':fontsize=${fontSize}:fontcolor=${color}:font=${textStyle.fontFamily}:x=${x}:y=${y}${shadow}`;
+}
+
 export async function POST(request: NextRequest) {
   const tmpDir = path.join(os.tmpdir(), `inspiration-video-${Date.now()}`);
 
   try {
-    const { mode, images, audio, script, overlays } = await request.json() as VideoRequest;
+    const body = await request.json() as VideoRequest;
+    const { mode, images, audio, script, overlays, textStyle, animation } = body;
+
+    // Defaults
+    const txtStyle: TextStyle = textStyle || {
+      fontFamily: 'Arial',
+      color: '#FFFFFF',
+      shadowStyle: 'subtle',
+      size: 'medium',
+    };
+    const anim: AnimationSettings = animation || {
+      type: 'ken-burns',
+      speed: 'medium',
+      focusPoint: 'center',
+    };
 
     if (!images || images.length === 0) {
       return NextResponse.json({ error: 'Images required' }, { status: 400 });
@@ -101,12 +188,11 @@ export async function POST(request: NextRequest) {
 
     // Generate video based on mode
     if (mode === 'wall-of-text' && script) {
-      await generateWallOfTextVideo(imagePaths[0], audioPath, script, audioDuration, outputPath);
+      await generateWallOfTextVideo(imagePaths[0], audioPath, script, audioDuration, outputPath, txtStyle, anim);
     } else if (mode === 'video' && imagePaths.length >= 2) {
-      await generateTwoSceneVideo(imagePaths, audioPath, audioDuration, outputPath, overlays);
+      await generateTwoSceneVideo(imagePaths, audioPath, audioDuration, outputPath, overlays, txtStyle, anim);
     } else {
-      // Single image mode - just image + audio
-      await generateSingleImageVideo(imagePaths[0], audioPath, audioDuration, outputPath);
+      await generateSingleImageVideo(imagePaths[0], audioPath, audioDuration, outputPath, anim);
     }
 
     // Read output video
@@ -139,27 +225,30 @@ async function generateWallOfTextVideo(
   audioPath: string,
   script: string,
   duration: number,
-  outputPath: string
+  outputPath: string,
+  textStyle: TextStyle,
+  animation: AnimationSettings
 ) {
   const tmpDir = path.dirname(outputPath);
   const textFilePath = path.join(tmpDir, 'script.txt');
 
-  // Video dimensions
   const videoWidth = 1080;
   const videoHeight = 1920;
+  const fps = 30;
+  const totalFrames = Math.ceil(duration * fps);
 
-  // Text styling - large, readable text that fills the screen
-  const fontSize = 52;
-  const lineHeight = 72;
-  const marginX = 80; // Left/right margins
+  // Text styling from user settings
+  const fontSize = FONT_SIZES[textStyle.size];
+  const lineHeight = Math.ceil(fontSize * 1.4);
+  const marginX = 80;
   const maxTextWidth = videoWidth - (marginX * 2);
 
-  // Estimate characters per line based on font size (monospace approximation)
-  // For Arial at 52px, roughly 0.5 * fontSize = char width, so ~1080-160 = 920 / 26 ≈ 35 chars
-  const avgCharWidth = fontSize * 0.52;
+  // Character width estimation (varies by font)
+  const charWidthMultiplier = textStyle.fontFamily === 'Impact' ? 0.45 : textStyle.fontFamily === 'Georgia' ? 0.55 : 0.52;
+  const avgCharWidth = fontSize * charWidthMultiplier;
   const charsPerLine = Math.floor(maxTextWidth / avgCharWidth);
 
-  // Word-wrap the script to fit the screen
+  // Word-wrap
   const words = script.split(/\s+/);
   const lines: string[] = [];
   let currentLine = '';
@@ -175,36 +264,25 @@ async function generateWallOfTextVideo(
   }
   if (currentLine) lines.push(currentLine);
 
-  // Write word-wrapped text to file
   const wrappedText = lines.join('\n');
   fs.writeFileSync(textFilePath, wrappedText, 'utf8');
 
-  // Calculate scroll parameters
+  // Scroll params
   const totalTextHeight = lines.length * lineHeight;
-
-  // Text starts at bottom of screen and scrolls up until last line reaches top
-  // Total scroll distance = screen height + total text height
   const totalScrollDistance = videoHeight + totalTextHeight;
   const scrollSpeed = totalScrollDistance / duration;
 
-  const fps = 30;
-  const totalFrames = Math.ceil(duration * fps);
-
-  // Escape the file path for FFmpeg
   const escapedTextPath = textFilePath.replace(/:/g, '\\:').replace(/'/g, "'\\''");
+  const color = textStyle.color.replace('#', '0x');
+  const shadow = SHADOW_PARAMS[textStyle.shadowStyle];
 
-  // Filter complex:
-  // 1. Ken Burns slow zoom on background
-  // 2. Dark gradient overlay for text readability
-  // 3. Scrolling text - starts from bottom, scrolls up
+  // Animation filter
+  const animFilter = getAnimationFilter(animation, totalFrames, videoWidth, videoHeight);
+
   const filterComplex = [
-    // Ken Burns zoom on background (subtle 3% zoom over duration)
-    `[0:v]zoompan=z='1+0.0005*on':x='iw/2-(iw/zoom/2)':y='ih*0.4-(ih/zoom*0.4)':d=${totalFrames}:s=${videoWidth}x${videoHeight}:fps=${fps}[bg]`,
-    // Add dark gradient overlay for better text readability
-    `[bg]drawbox=x=0:y=0:w=iw:h=ih:color=black@0.55:t=fill[bgdark]`,
-    // Scrolling text - y starts at screen height (bottom), decreases to scroll up
-    // y = h - (t * scrollSpeed) means at t=0, y=h (text at bottom), at t=end, y=h-totalScroll (text scrolled up)
-    `[bgdark]drawtext=textfile='${escapedTextPath}':fontsize=${fontSize}:fontcolor=white:x=${marginX}:y=h-(t*${scrollSpeed.toFixed(2)}):line_spacing=${lineHeight - fontSize}:shadowcolor=black@0.8:shadowx=2:shadowy=2[outv]`,
+    `[0:v]format=rgba,${animFilter},format=yuv420p[bg]`,
+    `[bg]drawbox=x=0:y=0:w=iw:h=ih:color=black@0.35:t=fill[bgdark]`,
+    `[bgdark]drawtext=textfile='${escapedTextPath}':fontsize=${fontSize}:fontcolor=${color}:font=${textStyle.fontFamily}:x=${marginX}:y=h-(t*${scrollSpeed.toFixed(2)}):line_spacing=${lineHeight - fontSize}${shadow}[outv]`,
   ].join(';');
 
   const args = [
@@ -220,7 +298,9 @@ async function generateWallOfTextVideo(
     '-c:a', 'aac',
     '-b:a', '192k',
     '-shortest',
-    '-pix_fmt', 'yuv420p',
+    '-colorspace', 'bt709',
+    '-color_primaries', 'bt709',
+    '-color_trc', 'bt709',
     outputPath,
   ];
 
@@ -232,31 +312,50 @@ async function generateTwoSceneVideo(
   audioPath: string,
   duration: number,
   outputPath: string,
-  overlays?: string[]
+  overlays: string[] | undefined,
+  textStyle: TextStyle,
+  animation: AnimationSettings
 ) {
   const fps = 30;
   const sceneDuration = duration / 2;
   const transitionDuration = 0.5;
   const totalFrames = Math.ceil(sceneDuration * fps);
-  const zoomSpeed = 1.03;
-  const zoomIncrement = (zoomSpeed - 1) / totalFrames;
-  const focusY = 0.35;
+
+  const focusY = FOCUS_POINTS[animation.focusPoint];
+  const speedMult = SPEED_MULTIPLIERS[animation.speed];
+  const baseZoom = 1.0 + (0.03 * speedMult);
+  const zoomIncrement = (baseZoom - 1) / totalFrames;
+
+  // Scene animations based on type
+  let scene1Anim: string, scene2Anim: string;
+
+  if (animation.type === 'ken-burns') {
+    // Classic Ken Burns: zoom in on scene 1, zoom out on scene 2
+    scene1Anim = `zoompan=z='1+${zoomIncrement}*on':x='iw/2-(iw/zoom/2)':y='ih*${focusY}-(ih/zoom*${focusY})':d=${totalFrames}:s=1080x1920:fps=${fps}`;
+    scene2Anim = `zoompan=z='${baseZoom}-${zoomIncrement}*on':x='iw/2-(iw/zoom/2)':y='ih*${focusY}-(ih/zoom*${focusY})':d=${totalFrames}:s=1080x1920:fps=${fps}`;
+  } else {
+    // Same animation for both scenes
+    const animFilter = getAnimationFilter(animation, totalFrames, 1080, 1920);
+    scene1Anim = animFilter;
+    scene2Anim = animFilter;
+  }
 
   let filterComplex = [
-    // Scene 1: zoom in
-    `[0:v]zoompan=z='1+${zoomIncrement}*on':x='iw/2-(iw/zoom/2)':y='ih*${focusY}-(ih/zoom*${focusY})':d=${totalFrames}:s=1080x1920:fps=${fps},setsar=1[v0]`,
-    // Scene 2: zoom out
-    `[1:v]zoompan=z='${zoomSpeed}-${zoomIncrement}*on':x='iw/2-(iw/zoom/2)':y='ih*${focusY}-(ih/zoom*${focusY})':d=${totalFrames}:s=1080x1920:fps=${fps},setsar=1[v1]`,
+    `[0:v]format=rgba,${scene1Anim},format=yuv420p,setsar=1[v0]`,
+    `[1:v]format=rgba,${scene2Anim},format=yuv420p,setsar=1[v1]`,
   ];
 
-  // Add text overlays if provided
+  // Add text overlays
   if (overlays && overlays.length >= 2) {
+    const fontSize = FONT_SIZES[textStyle.size];
+    const color = textStyle.color.replace('#', '0x');
+    const shadow = SHADOW_PARAMS[textStyle.shadowStyle];
     const escaped1 = overlays[0].replace(/'/g, "'\\''").replace(/:/g, '\\:');
     const escaped2 = overlays[1].replace(/'/g, "'\\''").replace(/:/g, '\\:');
 
     filterComplex.push(
-      `[v0]drawtext=text='${escaped1}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=h*0.8:font=Arial:shadowcolor=black@0.7:shadowx=2:shadowy=2[v0t]`,
-      `[v1]drawtext=text='${escaped2}':fontsize=72:fontcolor=white:x=(w-text_w)/2:y=h*0.8:font=Arial:shadowcolor=black@0.7:shadowx=2:shadowy=2[v1t]`,
+      `[v0]drawtext=text='${escaped1}':fontsize=${fontSize}:fontcolor=${color}:x=(w-text_w)/2:y=h*0.8:font=${textStyle.fontFamily}${shadow}[v0t]`,
+      `[v1]drawtext=text='${escaped2}':fontsize=${fontSize}:fontcolor=${color}:x=(w-text_w)/2:y=h*0.8:font=${textStyle.fontFamily}${shadow}[v1t]`,
       `[v0t][v1t]xfade=transition=fade:duration=${transitionDuration}:offset=${sceneDuration - transitionDuration}[outv]`
     );
   } else {
@@ -279,7 +378,9 @@ async function generateTwoSceneVideo(
     '-c:a', 'aac',
     '-b:a', '192k',
     '-shortest',
-    '-pix_fmt', 'yuv420p',
+    '-colorspace', 'bt709',
+    '-color_primaries', 'bt709',
+    '-color_trc', 'bt709',
     outputPath,
   ];
 
@@ -290,14 +391,14 @@ async function generateSingleImageVideo(
   imagePath: string,
   audioPath: string,
   duration: number,
-  outputPath: string
+  outputPath: string,
+  animation: AnimationSettings
 ) {
   const fps = 30;
   const totalFrames = Math.ceil(duration * fps);
-  const zoomSpeed = 1.03;
-  const zoomIncrement = (zoomSpeed - 1) / totalFrames;
 
-  const filterComplex = `[0:v]zoompan=z='1+${zoomIncrement}*on':x='iw/2-(iw/zoom/2)':y='ih*0.35-(ih/zoom*0.35)':d=${totalFrames}:s=1080x1920:fps=${fps}[outv]`;
+  const animFilter = getAnimationFilter(animation, totalFrames, 1080, 1920);
+  const filterComplex = `[0:v]format=rgba,${animFilter},format=yuv420p[outv]`;
 
   const args = [
     '-y',
@@ -312,7 +413,9 @@ async function generateSingleImageVideo(
     '-c:a', 'aac',
     '-b:a', '192k',
     '-shortest',
-    '-pix_fmt', 'yuv420p',
+    '-colorspace', 'bt709',
+    '-color_primaries', 'bt709',
+    '-color_trc', 'bt709',
     outputPath,
   ];
 

@@ -48,7 +48,7 @@ SCENE 2 IMAGE: [detailed AI image prompt with visual medium, lighting, compositi
 SCENE 2 OVERLAY: [1-3 words]`;
 
 // Prompt for Wall of Text mode (1 image, scrolling text)
-const WALL_OF_TEXT_PROMPT = `You are a creative director creating a "wall of text" video. This is a 30-60 second piece with scrolling text over a single atmospheric background image.
+const WALL_OF_TEXT_PROMPT = `You are a creative director creating a "wall of text" video. This is a 20 second piece with scrolling text over a single atmospheric background image.
 
 Video topic/theme: {subject}
 
@@ -61,7 +61,7 @@ For each comp, provide:
 Also provide the shared script (the full narration text that will scroll on screen).
 
 Guidelines:
-- Script: ~100-150 words, conversational, engaging, punchy paragraphs
+- Script: ~50-60 words MAXIMUM (this is critical - it must be speakable in 20 seconds), conversational, punchy
 - Background image: MUST include specific details for high-quality AI generation:
   * Visual medium (e.g., "cinematic photography", "professional studio shot", "editorial photography")
   * Lighting description (e.g., "golden hour rim lighting", "soft diffused light", "dramatic side lighting")

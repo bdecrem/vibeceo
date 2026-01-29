@@ -27,6 +27,7 @@ TRADING_MODE = "live"
 # Assets
 GOLD_SYMBOL = "SGOL"  # Physical gold ETF
 OIL_INVERSE_SYMBOL = "SCO"  # 2x inverse oil ETF
+COPPER_SYMBOL = "CPER"  # United States Copper Index Fund
 
 # Trigger indicators (for regime check)
 DOLLAR_ETF = "UUP"  # Dollar bull ETF (inverse = gold bullish)
@@ -72,11 +73,12 @@ def print_config():
     """Print current configuration."""
     print(f"""
 ╔══════════════════════════════════════════════════════════════╗
-║  GOLD/OIL TRADER - Amber's Roxi Project                      ║
+║  GOLD/OIL/COPPER TRADER - Amber's Roxi Project               ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Trading Mode:     LIVE  ⚠️  REAL MONEY!
 ║  Gold Asset:       {GOLD_SYMBOL}
 ║  Oil Asset:        {OIL_INVERSE_SYMBOL}
+║  Copper Asset:     {COPPER_SYMBOL}
 ║  Budget/Side:      ${BUDGET_PER_SIDE}
 ║  Pullback Entry:   {abs(PULLBACK_THRESHOLD)*100}%
 ║  Profit Target:    +{PROFIT_TARGET*100}%

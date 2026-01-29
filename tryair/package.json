@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "tsx app.ts",
-    "dev": "tsx watch app.ts"
+    "dev": "tsx watch app.ts",
+    "talking-head": "tsx talking-head.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

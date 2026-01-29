@@ -1,5 +1,7 @@
 {
   "kits": [
+    { "id": "bartdekit", "name": "Bart DeKit", "path": "/90s/kits/bartdekit" },
+    { "id": "909kicks", "name": "909 Kicks", "path": "/90s/kits/909kicks" },
     { "id": "amber", "name": "Amber Kit", "path": "/90s/kits/amber" },
     { "id": "808", "name": "808 Kit", "path": "/90s/kits/808" }
   ]

@@ -4,6 +4,15 @@ import { useState, useCallback } from "react";
 
 type Mode = "image" | "video" | "wall-of-text" | "talking-head";
 type Style = "illuminated-wellness" | "paper-cut-wellness" | "tech-dark";
+type ImageModel = "flux-dev" | "flux-max" | "gpt-image-1.5" | "recraft-v3" | "nano-banana";
+
+const IMAGE_MODELS: Record<ImageModel, { label: string; desc: string; icon: string }> = {
+  "flux-dev": { label: "FLUX Dev", desc: "Fast quality", icon: "⚡" },
+  "flux-max": { label: "FLUX Max", desc: "Best quality", icon: "★" },
+  "gpt-image-1.5": { label: "GPT-Image", desc: "Sharp details", icon: "✦" },
+  "recraft-v3": { label: "Recraft", desc: "Design focus", icon: "◉" },
+  "nano-banana": { label: "Banana", desc: "Fastest", icon: "🍌" },
+};
 
 interface VideoComp {
   mood: string;
@@ -81,6 +90,23 @@ export default function InspirationPage() {
   const [topic, setTopic] = useState("");
   const [mode, setMode] = useState<Mode>("video");
   const [style, setStyle] = useState<Style>("illuminated-wellness");
+  const [imageModel, setImageModel] = useState<ImageModel>("flux-dev");
+
+  // Text styling
+  const [textStyle, setTextStyle] = useState({
+    fontFamily: "Arial" as "Arial" | "Georgia" | "Montserrat" | "Impact",
+    color: "#FFFFFF",
+    shadowStyle: "subtle" as "none" | "subtle" | "bold",
+    size: "medium" as "small" | "medium" | "large",
+  });
+
+  // Animation settings
+  const [animationSettings, setAnimationSettings] = useState({
+    type: "ken-burns" as "zoom-in" | "zoom-out" | "pan-left" | "pan-right" | "ken-burns" | "static",
+    speed: "medium" as "slow" | "medium" | "fast",
+    focusPoint: "center" as "upper" | "center" | "lower",
+  });
+
   const [loading, setLoading] = useState(false);
   const [generatingImages, setGeneratingImages] = useState(false);
   const [generatingVideo, setGeneratingVideo] = useState(false);
@@ -207,6 +233,7 @@ export default function InspirationPage() {
             body: JSON.stringify({
               prompt: `${comp.imageDescription}\n\n${stylePrompt}\n\nIMPORTANT: Generate an image with NO TEXT, NO WORDS, NO LABELS.`,
               size: mode === "image" ? "1024x1024" : "1024x1536",
+              model: imageModel,
             }),
           });
 
@@ -411,6 +438,7 @@ export default function InspirationPage() {
           body: JSON.stringify({
             prompt: `${videoComp.scene2.image}\n\n${STYLE_PROMPTS[style]}\n\nIMPORTANT: Generate an image with NO TEXT, NO WORDS, NO LABELS.`,
             size: "1024x1536",
+            model: imageModel,
           }),
         });
 
@@ -440,6 +468,8 @@ export default function InspirationPage() {
           audio: audioData.audio,
           script: storyboard.type === "wall-of-text" ? storyboard.script : undefined,
           overlays: getOverlays(),
+          textStyle,
+          animation: animationSettings,
         }),
       });
 
@@ -630,6 +660,30 @@ export default function InspirationPage() {
             </section>
             )}
 
+            {/* Image Model Selector (not for talking-head) */}
+            {mode !== "talking-head" && (
+            <section className="mb-10 sm:mb-14">
+              <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3 sm:mb-4">Image Model</label>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+                {(Object.entries(IMAGE_MODELS) as [ImageModel, { label: string; desc: string; icon: string }][]).map(([value, opt]) => (
+                  <button
+                    key={value}
+                    onClick={() => setImageModel(value)}
+                    className={`group px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-medium transition-all flex flex-col items-center gap-1 ${
+                      imageModel === value
+                        ? "bg-white text-black"
+                        : "bg-white/[0.03] text-white/60 border border-white/[0.06] hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <span className={`text-base sm:text-lg ${imageModel === value ? "opacity-100" : "opacity-50"}`}>{opt.icon}</span>
+                    <span className="font-medium">{opt.label}</span>
+                    <span className={`text-[10px] sm:text-xs ${imageModel === value ? "text-black/60" : "text-white/40"}`}>{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+            )}
+
             {/* Generate Button */}
             {mode === "talking-head" ? (
               <button
@@ -770,6 +824,183 @@ export default function InspirationPage() {
               })}
             </div>
 
+            {/* Customization Panel - shown when comp selected */}
+            {selectedCompId && (
+              <div className="mb-6 p-4 sm:p-5 bg-white/[0.02] rounded-xl sm:rounded-2xl border border-white/[0.06]">
+                <div className="text-xs font-medium text-white/50 uppercase tracking-wider mb-4">Customize Your Video</div>
+
+                {/* Text Style Section */}
+                <div className="mb-5">
+                  <div className="text-xs text-white/40 mb-2">Text Style</div>
+
+                  {/* Font */}
+                  <div className="grid grid-cols-4 gap-2 mb-3">
+                    {(["Arial", "Georgia", "Montserrat", "Impact"] as const).map((font) => (
+                      <button
+                        key={font}
+                        onClick={() => setTextStyle(s => ({ ...s, fontFamily: font }))}
+                        className={`py-2 px-2 rounded-lg text-xs font-medium transition-all ${
+                          textStyle.fontFamily === font
+                            ? "bg-white text-black"
+                            : "bg-white/[0.03] text-white/60 border border-white/[0.06] hover:bg-white/[0.06]"
+                        }`}
+                        style={{ fontFamily: font }}
+                      >
+                        {font}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Color */}
+                  <div className="flex gap-2 mb-3">
+                    <button
+                      onClick={() => setTextStyle(s => ({ ...s, color: "#FFFFFF" }))}
+                      className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2 ${
+                        textStyle.color === "#FFFFFF"
+                          ? "bg-white text-black"
+                          : "bg-white/[0.03] text-white/60 border border-white/[0.06] hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      <span className="w-3 h-3 rounded-full bg-white border border-black/20"></span> White
+                    </button>
+                    <button
+                      onClick={() => setTextStyle(s => ({ ...s, color: "#000000" }))}
+                      className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2 ${
+                        textStyle.color === "#000000"
+                          ? "bg-white text-black"
+                          : "bg-white/[0.03] text-white/60 border border-white/[0.06] hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      <span className="w-3 h-3 rounded-full bg-black border border-white/30"></span> Black
+                    </button>
+                    <input
+                      type="color"
+                      value={textStyle.color}
+                      onChange={(e) => setTextStyle(s => ({ ...s, color: e.target.value }))}
+                      className="w-10 h-9 rounded-lg cursor-pointer bg-transparent"
+                      title="Custom color"
+                    />
+                  </div>
+
+                  {/* Shadow */}
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {([
+                      { value: "none", label: "No Shadow" },
+                      { value: "subtle", label: "Subtle" },
+                      { value: "bold", label: "Bold" },
+                    ] as const).map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setTextStyle(s => ({ ...s, shadowStyle: opt.value }))}
+                        className={`py-2 rounded-lg text-xs font-medium transition-all ${
+                          textStyle.shadowStyle === opt.value
+                            ? "bg-white text-black"
+                            : "bg-white/[0.03] text-white/60 border border-white/[0.06] hover:bg-white/[0.06]"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Size */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { value: "small", label: "Small" },
+                      { value: "medium", label: "Medium" },
+                      { value: "large", label: "Large" },
+                    ] as const).map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setTextStyle(s => ({ ...s, size: opt.value }))}
+                        className={`py-2 rounded-lg text-xs font-medium transition-all ${
+                          textStyle.size === opt.value
+                            ? "bg-white text-black"
+                            : "bg-white/[0.03] text-white/60 border border-white/[0.06] hover:bg-white/[0.06]"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Animation Section */}
+                {mode !== "image" && (
+                  <div>
+                    <div className="text-xs text-white/40 mb-2">Animation</div>
+
+                    {/* Type */}
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
+                      {([
+                        { value: "zoom-in", label: "Zoom In", icon: "↗" },
+                        { value: "zoom-out", label: "Zoom Out", icon: "↙" },
+                        { value: "pan-left", label: "Pan Left", icon: "←" },
+                        { value: "pan-right", label: "Pan Right", icon: "→" },
+                        { value: "ken-burns", label: "Ken Burns", icon: "✦" },
+                        { value: "static", label: "Static", icon: "◻" },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setAnimationSettings(s => ({ ...s, type: opt.value }))}
+                          className={`py-2 rounded-lg text-xs font-medium transition-all flex flex-col items-center gap-1 ${
+                            animationSettings.type === opt.value
+                              ? "bg-white text-black"
+                              : "bg-white/[0.03] text-white/60 border border-white/[0.06] hover:bg-white/[0.06]"
+                          }`}
+                        >
+                          <span className="text-sm">{opt.icon}</span>
+                          <span className="hidden sm:inline">{opt.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Speed */}
+                    <div className="grid grid-cols-3 gap-2 mb-3">
+                      {([
+                        { value: "slow", label: "Slow" },
+                        { value: "medium", label: "Medium" },
+                        { value: "fast", label: "Fast" },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setAnimationSettings(s => ({ ...s, speed: opt.value }))}
+                          className={`py-2 rounded-lg text-xs font-medium transition-all ${
+                            animationSettings.speed === opt.value
+                              ? "bg-white text-black"
+                              : "bg-white/[0.03] text-white/60 border border-white/[0.06] hover:bg-white/[0.06]"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Focus Point */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {([
+                        { value: "upper", label: "Upper" },
+                        { value: "center", label: "Center" },
+                        { value: "lower", label: "Lower" },
+                      ] as const).map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setAnimationSettings(s => ({ ...s, focusPoint: opt.value }))}
+                          className={`py-2 rounded-lg text-xs font-medium transition-all ${
+                            animationSettings.focusPoint === opt.value
+                              ? "bg-white text-black"
+                              : "bg-white/[0.03] text-white/60 border border-white/[0.06] hover:bg-white/[0.06]"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="space-y-3">
               {/* Video Progress Indicator */}
@@ -883,7 +1114,7 @@ export default function InspirationPage() {
         })()}
 
         <footer className="mt-20 text-center">
-          <p className="text-xs text-white/20">TryAir v2 • Powered by Claude & GPT Image</p>
+          <p className="text-xs text-white/20">TryAir v2 • Powered by Claude, FLUX, GPT Image & fal.ai</p>
         </footer>
       </div>
     </div>

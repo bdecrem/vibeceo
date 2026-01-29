@@ -17,6 +17,8 @@
 
 // Fallback kits if index.json fails to load
 const FALLBACK_KITS = [
+  { id: 'bartdekit', name: 'Bart DeKit', path: '/90s/kits/bartdekit' },
+  { id: '909kicks', name: '909 Kicks', path: '/90s/kits/909kicks' },
   { id: 'amber', name: 'Amber Kit', path: '/90s/kits/amber' },
   { id: '808', name: '808 Kit', path: '/90s/kits/808' }
 ];
@@ -33,7 +35,7 @@ export async function getAvailableKits() {
   }
 
   try {
-    const response = await fetch('/90s/kits/index.json');
+    const response = await fetch('/90s/kits/index.json?v=' + Date.now());
     if (response.ok) {
       const data = await response.json();
       cachedKitList = data.kits || FALLBACK_KITS;
@@ -97,7 +99,7 @@ export class KitLoader {
    */
   async loadKitFromPath(basePath) {
     // Load kit.json
-    const metaResponse = await fetch(`${basePath}/kit.json`);
+    const metaResponse = await fetch(`${basePath}/kit.json?v=` + Date.now());
     if (!metaResponse.ok) {
       throw new Error(`Failed to load kit.json from ${basePath}`);
     }

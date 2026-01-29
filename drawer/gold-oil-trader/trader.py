@@ -31,6 +31,7 @@ PT = pytz.timezone('America/Los_Angeles')
 # Assets
 GOLD_SYMBOL = "SGOL"  # Physical gold ETF (low expense ratio)
 OIL_INVERSE_SYMBOL = "SCO"  # 2x inverse oil ETF
+COPPER_SYMBOL = "CPER"  # United States Copper Index Fund
 
 # Position sizing
 BUDGET_PER_SIDE = 250.0  # $250 gold, $250 oil
@@ -64,6 +65,7 @@ def load_state() -> dict:
     return {
         "gold_position": None,  # {"entry_price": x, "qty": y, "entry_time": z}
         "oil_position": None,
+        "copper_position": None,
         "day": 1,
         "last_check": None,
     }
@@ -164,10 +166,12 @@ def run_check():
     # Get current prices
     gold_price = client.get_latest_price(GOLD_SYMBOL)
     oil_inv_price = client.get_latest_price(OIL_INVERSE_SYMBOL)
+    copper_price = client.get_latest_price(COPPER_SYMBOL)
 
     print(f"\nPrices:")
     print(f"  {GOLD_SYMBOL}: ${gold_price:.2f}" if gold_price else f"  {GOLD_SYMBOL}: N/A")
     print(f"  {OIL_INVERSE_SYMBOL}: ${oil_inv_price:.2f}" if oil_inv_price else f"  {OIL_INVERSE_SYMBOL}: N/A")
+    print(f"  {COPPER_SYMBOL}: ${copper_price:.2f}" if copper_price else f"  {COPPER_SYMBOL}: N/A")
 
     # Get account info
     account = client.get_account()
@@ -179,6 +183,7 @@ def run_check():
     positions = client.get_positions()
     gold_pos = next((p for p in positions if p['symbol'] == GOLD_SYMBOL), None)
     oil_pos = next((p for p in positions if p['symbol'] == OIL_INVERSE_SYMBOL), None)
+    copper_pos = next((p for p in positions if p['symbol'] == COPPER_SYMBOL), None)
 
     if gold_pos:
         print(f"\nGold position: {gold_pos['qty']:.4f} shares @ ${gold_pos['avg_entry_price']:.2f}")
@@ -187,6 +192,10 @@ def run_check():
     if oil_pos:
         print(f"\nOil position: {oil_pos['qty']:.4f} shares @ ${oil_pos['avg_entry_price']:.2f}")
         print(f"  Current: ${oil_pos['current_price']:.2f}, P&L: {oil_pos['unrealized_plpc']:.1f}%")
+
+    if copper_pos:
+        print(f"\nCopper position: {copper_pos['qty']:.4f} shares @ ${copper_pos['avg_entry_price']:.2f}")
+        print(f"  Current: ${copper_pos['current_price']:.2f}, P&L: {copper_pos['unrealized_plpc']:.1f}%")
 
     # =================================
     # EXIT LOGIC
@@ -238,8 +247,31 @@ def run_check():
                 })
                 state["oil_position"] = None
 
+    # Check copper exit
+    if copper_pos:
+        should_exit, reason = check_exit_conditions(
+            copper_pos['avg_entry_price'],
+            copper_pos['current_price']
+        )
+
+        if should_exit or is_end_of_day():
+            exit_reason = reason if should_exit else "end_of_day"
+            print(f"\n🔴 SELLING {COPPER_SYMBOL}: {exit_reason}")
+
+            result = client.sell(COPPER_SYMBOL, reason=exit_reason)
+            if result:
+                log_event("SELL", {
+                    "symbol": COPPER_SYMBOL,
+                    "qty": copper_pos['qty'],
+                    "entry_price": copper_pos['avg_entry_price'],
+                    "exit_price": copper_pos['current_price'],
+                    "pnl_pct": copper_pos['unrealized_plpc'],
+                    "reason": exit_reason,
+                })
+                state["copper_position"] = None
+
     # =================================
-    # ENTRY LOGIC (Day 1: Gold only)
+    # ENTRY LOGIC
     # =================================
 
     if not gold_pos and gold_price:
@@ -265,6 +297,33 @@ def run_check():
                     })
                     state["gold_position"] = {
                         "entry_price": gold_price,
+                        "entry_time": datetime.now(PT).isoformat(),
+                    }
+
+    # Copper entry (same pullback logic as gold)
+    if not copper_pos and copper_price:
+        recent_high = get_recent_high(client, COPPER_SYMBOL)
+        if recent_high:
+            pullback = calculate_pullback(copper_price, recent_high)
+            print(f"\nCopper analysis:")
+            print(f"  Recent high: ${recent_high:.2f}")
+            print(f"  Pullback: {pullback*100:.1f}%")
+
+            if pullback <= PULLBACK_THRESHOLD:
+                print(f"\n🟢 BUYING {COPPER_SYMBOL}: {pullback*100:.1f}% pullback detected")
+
+                result = client.buy(COPPER_SYMBOL, BUDGET_PER_SIDE, reason=f"pullback {pullback*100:.1f}%")
+                if result:
+                    log_event("BUY", {
+                        "symbol": COPPER_SYMBOL,
+                        "notional": BUDGET_PER_SIDE,
+                        "price": copper_price,
+                        "recent_high": recent_high,
+                        "pullback_pct": pullback * 100,
+                        "reason": "pullback_entry",
+                    })
+                    state["copper_position"] = {
+                        "entry_price": copper_price,
                         "entry_time": datetime.now(PT).isoformat(),
                     }
 

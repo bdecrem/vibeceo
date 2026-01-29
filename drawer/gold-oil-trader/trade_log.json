@@ -38,5 +38,15 @@
     "exit_price": 42.63,
     "pnl_pct": 1.0670959911932298,
     "reason": "end_of_day"
+  },
+  {
+    "timestamp": "2026-01-12T06:58:32.217847-08:00",
+    "type": "BUY",
+    "symbol": "CPER",
+    "notional": 250.0,
+    "price": 36.6,
+    "recent_high": 37.349,
+    "pullback_pct": -2.005408444670527,
+    "reason": "pullback_entry"
   }
 ]

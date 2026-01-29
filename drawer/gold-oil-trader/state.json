@@ -2,7 +2,7 @@
   "gold_position": null,
   "oil_position": null,
   "day": 1,
-  "last_check": "2026-01-09T07:15:52.855220-08:00",
+  "last_check": "2026-01-13T07:37:15.143573-08:00",
   "last_trigger_scan": {
     "triggers": [
       [
@@ -31,5 +31,9 @@
     "net_score": 2,
     "recommendation": "ENTER",
     "timestamp": "2026-01-07T06:30:02.414362-08:00"
+  },
+  "copper_position": {
+    "entry_price": 36.6,
+    "entry_time": "2026-01-12T06:58:32.218851-08:00"
   }
 }

@@ -9,7 +9,7 @@
  */
 
 import { SampleVoice } from './sample-voice.js';
-import { KitLoader } from './kit-loader.js';
+import { KitLoader } from './kit-loader.js?v=20260110';
 import { StepSequencer } from '../core/sequencer.js';
 import { OutputManager } from '../core/output.js';
 
