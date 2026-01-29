@@ -16,11 +16,9 @@ An autonomous AI game studio. Haiku agents build games 24/7, coordinated by a Ma
 
 ```
 pixelpit/
-├── mayor/           # Mayor agent
-├── makers/m1-m5/    # Game maker agents
-├── testers/         # Mobile + Desktop testers
-├── release/         # Ship (release engineer)
-├── creative/        # Dot (design review)
+├── creative/        # Dither (design review)
+├── testers/         # Tap (QA)
+├── swarmspeed/      # Orchestrators (t1-t7)
 ├── orchestrator.py  # Main execution script
 
 web/app/pixelpit/
@@ -28,6 +26,10 @@ web/app/pixelpit/
 │   └── beam/        # First arcade game
 ├── g1/ - g10/       # Agent-built games
 └── page.tsx         # Studio index
+
+web/public/pixelpit/swarm/
+├── t6/              # Visual QA experiment
+└── t7/              # Triage + Enhance experiment
 ```
 
 ## Mobile Testing
@@ -75,12 +77,26 @@ See `SOCIAL.md` for full API and `arcade/beam/page.tsx` for reference implementa
 
 ## Agent Roster
 
-| Role | Name | Color | Folder |
-|------|------|-------|--------|
-| Partner | Pit | — | `/pit` command |
-| Creative Head | Dot | Magenta | `creative/` |
-| Mobile Tester | Tap | Hot Pink | `testers/mobile/` |
-| Makers | m1-m5 | — | `makers/` |
+| Role | Name | Folder |
+|------|------|--------|
+| Partner | **Pit** | `/pit` command |
+| Creative Head | **Dither** | `creative/` |
+| QA Tester | **Tap** | `testers/` |
+
+### The Makers (Game Builders)
+
+| # | Name |
+|---|------|
+| 1 | AmyThe1st |
+| 2 | BobThe2nd |
+| 3 | ChetThe3rd |
+| 4 | DaleThe4th |
+| 5 | EarlThe5th |
+| 6 | FranThe6th |
+| 7 | GusThe7th |
+| 8 | HankThe8th |
+| 9 | IdaThe9th |
+| 10 | JoanThe10th |
 
 **Note:** Ship (Release Engineer) deprecated — social integration now built into maker role via components.
 
@@ -89,8 +105,27 @@ See `SOCIAL.md` for full API and `arcade/beam/page.tsx` for reference implementa
 | Slash Command | Purpose |
 |---------------|---------|
 | `/pit` | Daily partner interface — status, instructions, task management |
-| `/dot` | Design review with Creative Head |
+| `/dither` | Design review with Creative Head |
 | `/pixelpit` | Alias for /pit |
+
+## SwarmSpeed Experiments
+
+Batch game generation experiments. Base game is a simple "pop the balls" test game — we picked the simplest thing we could think of for our first experiment.
+
+```bash
+# Run from repo root with venv
+pixelpit/swarmspeed/venv/bin/python pixelpit/swarmspeed/t7-orchestrator.py
+```
+
+| Experiment | What it does |
+|------------|--------------|
+| **t5** | 10 agents race, live dashboard |
+| **t6** | + Visual QA (Claude Vision rates each game) |
+| **t7** | + Triage (GREEN/YELLOW/RED) + Enhancement (music for ships, v2 for needs-work) |
+
+Output goes to `web/public/pixelpit/swarm/t*/` — commit and push to deploy.
+
+**Dashboard URLs:** `/pixelpit/swarm/t7/index.html` (need `.html` extension)
 
 ## Database
 

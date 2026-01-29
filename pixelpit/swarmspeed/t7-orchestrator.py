@@ -2,11 +2,16 @@
 """
 T7 EXPERIMENT: Triage + Enhance
 
-Same pipeline as T6, but with:
-1. Dashboard organized by verdict: GREEN | YELLOW | RED columns
-2. Post-judgment enhancement phase:
+Base game is a simple "pop the balls" test game — we picked the simplest thing
+we could think of for our first experiment. Balls float up, you tap to pop them.
+
+Pipeline:
+1. 10 Makers generate themed variants in parallel
+2. Dither (Creative Head) reviews via Claude Vision — scores ALIVE/THEME/POLISH
+3. Triage dashboard sorts into GREEN | YELLOW | RED columns
+4. Enhancement phase:
    - GREEN (SHIP) → Add procedural music
-   - YELLOW (NEEDS_WORK) → Send to AI for v2 redesign
+   - YELLOW (NEEDS_WORK) → Send back to Maker for v2 redesign
    - RED (BROKEN) → Left alone
 
 Usage:
@@ -56,6 +61,8 @@ SCREENSHOT_DELAY = 6
 STATUS_FILE = OUTPUT_DIR / "status.json"
 status_lock = threading.Lock()
 
+# Base game: pop the balls — simplest thing we could think of for first experiment
+# Balls float up from bottom, tap to pop, score increments
 REFERENCE_CODE = '''<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Pop Game</title>
 <style>body{margin:0;background:#111;overflow:hidden}canvas{display:block}</style>
@@ -72,6 +79,20 @@ c.onclick=e=>pop(e.clientX,e.clientY);
 c.ontouchstart=e=>{e.preventDefault();pop(e.touches[0].clientX,e.touches[0].clientY)};
 function loop(){update();draw();requestAnimationFrame(loop)}loop();
 </script></body></html>'''
+
+# The Makers - Pixelpit's game builders
+MAKERS = [
+    "AmyThe1st",
+    "BobThe2nd",
+    "ChetThe3rd",
+    "DaleThe4th",
+    "EarlThe5th",
+    "FranThe6th",
+    "GusThe7th",
+    "HankThe8th",
+    "IdaThe9th",
+    "JoanThe10th",
+]
 
 THEMES = [
     {"name": "SOAP BUBBLES", "color": "#88ddff", "desc": "Iridescent bubbles with rainbow shimmer", "music": "dreamy"},
@@ -233,7 +254,8 @@ def init_status():
         "agents": [
             {
                 "id": i,
-                "name": THEMES[i]["name"],
+                "maker": MAKERS[i],
+                "theme": THEMES[i]["name"],
                 "color": THEMES[i]["color"],
                 "desc": THEMES[i]["desc"],
                 "status": "pending",
@@ -339,9 +361,10 @@ h1 { margin: 0 0 10px; font-size: 24px; color: #00ff88; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .card-name { font-weight: 600; font-size: 12px; }
+.card-maker { font-size: 10px; color: #888; margin-bottom: 6px; }
 .card-badge {
   font-size: 9px;
   padding: 2px 6px;
@@ -513,9 +536,10 @@ function renderCard(a) {
   return `
     <div class="card ${isEnhancing ? 'enhancing' : ''}" onclick="openPreview(${a.id})">
       <div class="card-header">
-        <span class="card-name">${a.name}</span>
+        <span class="card-name">${a.theme}</span>
         ${getBadge(a)}
       </div>
+      <div class="card-maker">by ${a.maker}</div>
       ${a.scores ? `
         <div class="scores">
           <span class="score">A:${a.scores.alive}</span>
@@ -551,7 +575,7 @@ function render(data) {
     pendingArea.style.display = 'block';
     pendingGrid.innerHTML = pending.map(a => {
       let cls = 'pending-chip';
-      let label = a.name;
+      let label = a.maker;
       if (a.status === 'running') { cls += ' running'; label += ' (building)'; }
       else if (a.status === 'judging') { cls += ' judging'; label += ' (judging)'; }
       return `<div class="${cls}">${label}</div>`;
@@ -668,6 +692,7 @@ OUTPUT: Complete fixed HTML file. No explanation. Start with <!DOCTYPE html>
 
 
 def run_agent(agent_id: int, client: Together) -> dict:
+    maker = MAKERS[agent_id]
     theme = THEMES[agent_id]
     update_status(agent_id, {"status": "running"})
 
@@ -680,7 +705,7 @@ def run_agent(agent_id: int, client: Together) -> dict:
     filename = f"agent_{agent_id}.html"
     output_path = OUTPUT_DIR / filename
 
-    print(f"[Agent {agent_id}] Starting: {theme['name']}")
+    print(f"[{maker}] Starting: {theme['name']}")
     start_time = time.time()
 
     try:
@@ -709,7 +734,7 @@ def run_agent(agent_id: int, client: Together) -> dict:
         elapsed = round(time.time() - start_time, 1)
         tokens = response.usage.completion_tokens if response.usage else 0
 
-        print(f"[Agent {agent_id}] Built in {elapsed}s")
+        print(f"[{maker}] Built in {elapsed}s")
 
         update_status(agent_id, {
             "status": "done",
@@ -718,12 +743,12 @@ def run_agent(agent_id: int, client: Together) -> dict:
             "url": filename,
         })
 
-        return {"success": True, "agent_id": agent_id}
+        return {"success": True, "agent_id": agent_id, "maker": maker}
 
     except Exception as e:
-        print(f"[Agent {agent_id}] Error: {str(e)[:80]}")
+        print(f"[{maker}] Error: {str(e)[:80]}")
         update_status(agent_id, {"status": "error"})
-        return {"success": False, "agent_id": agent_id, "error": str(e)}
+        return {"success": False, "agent_id": agent_id, "maker": maker, "error": str(e)}
 
 
 def take_screenshot(agent_id: int) -> str | None:
@@ -909,10 +934,11 @@ def run_judge_phase(anthropic_client: anthropic.Anthropic):
 
     for agent in completed:
         agent_id = agent["id"]
+        maker = MAKERS[agent_id]
         theme = THEMES[agent_id]
 
         update_status(agent_id, {"status": "judging"})
-        print(f"[Judge {agent_id}] {theme['name']}...")
+        print(f"[Dither] Reviewing {maker}'s {theme['name']}...")
 
         screenshot = take_screenshot(agent_id)
         if screenshot:
@@ -941,7 +967,8 @@ def run_enhance_phase(together_client: Together):
     # Add music to SHIP games
     for agent in ships:
         agent_id = agent["id"]
-        print(f"[Music {agent_id}] Adding music to {THEMES[agent_id]['name']}...")
+        maker = MAKERS[agent_id]
+        print(f"[{maker}] Adding music to {THEMES[agent_id]['name']}...")
         update_status(agent_id, {"enhance_status": "adding_music"})
 
         enhanced_url = add_music(agent_id)
@@ -954,7 +981,8 @@ def run_enhance_phase(together_client: Together):
     # Redesign NEEDS_WORK games
     for agent in needs_work:
         agent_id = agent["id"]
-        print(f"[Redesign {agent_id}] Fixing {THEMES[agent_id]['name']}...")
+        maker = MAKERS[agent_id]
+        print(f"[{maker}] Redesigning {THEMES[agent_id]['name']} (v2)...")
         update_status(agent_id, {"enhance_status": "redesigning"})
 
         enhanced_url = redesign_game(agent_id, together_client)
