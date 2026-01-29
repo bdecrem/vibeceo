@@ -372,6 +372,113 @@ export function SingularityDecorations() {
 }
 
 /**
+ * EMOJI BLASTER-specific decorations: floating circles and emojis.
+ * Bright, playful aesthetic with cream/pink gradient.
+ */
+export function EmojiDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Floating circles background */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 60,
+          left: 100,
+          width: 120,
+          height: 120,
+          borderRadius: 60,
+          background: '#ec489930',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 200,
+          right: 150,
+          width: 80,
+          height: 80,
+          borderRadius: 40,
+          background: '#06b6d430',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 100,
+          left: 200,
+          width: 100,
+          height: 100,
+          borderRadius: 50,
+          background: '#facc1530',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 150,
+          right: 100,
+          width: 140,
+          height: 140,
+          borderRadius: 70,
+          background: '#a855f730',
+        }}
+      />
+
+      {/* Emoji decorations */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 80,
+          left: 150,
+          fontSize: 70,
+        }}
+      >
+        😀
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          top: 120,
+          right: 180,
+          fontSize: 55,
+        }}
+      >
+        🎯
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 120,
+          left: 180,
+          fontSize: 60,
+        }}
+      >
+        ⭐
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 100,
+          right: 150,
+          fontSize: 55,
+        }}
+      >
+        💀
+      </div>
+    </div>
+  );
+}
+
+/**
  * RAIN-specific decorations: falling drops.
  * Note: Satori (next/og) has limited support for fragments and some CSS.
  * Using explicit wrapper div and simplified styles.

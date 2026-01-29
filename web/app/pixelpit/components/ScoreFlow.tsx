@@ -60,7 +60,7 @@ export function ScoreFlow({ score, gameId, colors, onRankReceived, onUserLogin }
   // Already logged in user - simple submit
   if (user) {
     return (
-      <div style={{ marginBottom: 20, width: '100%', maxWidth: 300 }}>
+      <div style={{ marginBottom: 20, width: '100%', maxWidth: 300, textAlign: 'center' }}>
         <div style={{
           color: colors.secondary,
           marginBottom: 10,

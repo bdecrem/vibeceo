@@ -37,6 +37,7 @@ export type {
 export {
   createScoreShareImage,
   BeamDecorations,
+  EmojiDecorations,
   RainDecorations,
   SingularityDecorations,
   OG_SIZE,
