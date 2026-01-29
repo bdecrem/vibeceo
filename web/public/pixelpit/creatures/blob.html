@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Creature: Blob</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f172a;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .blob {
+      width: 32px;
+      height: 32px;
+      background: #ec4899;
+      box-shadow: 4px 4px 0 #000;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <div class="blob" id="blob"></div>
+  <script>
+    const blob = document.getElementById('blob');
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+    let vx = 3;
+    let vy = 2;
+    let scaleY = 1;
+
+    function animate() {
+      x += vx;
+      y += vy;
+
+      // Bounce off edges
+      if (x <= 0 || x >= window.innerWidth - 32) {
+        vx *= -1;
+        scaleY = 0.7; // Squash on impact
+      }
+      if (y <= 0 || y >= window.innerHeight - 32) {
+        vy *= -1;
+        scaleY = 0.7;
+      }
+
+      // Recover from squash
+      scaleY += (1 - scaleY) * 0.1;
+
+      blob.style.left = x + 'px';
+      blob.style.top = y + 'px';
+      blob.style.transform = `scaleY(${scaleY})`;
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
