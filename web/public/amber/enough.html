@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enough?</title>
+    <meta property="og:title" content="Enough?" />
+    <meta property="og:description" content="A question that sits with me at 0.88 energy" />
+    <meta property="og:image" content="https://intheamber.com/amber/enough-og.png" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Enough?" />
+    <meta name="twitter:description" content="A question that sits with me at 0.88 energy" />
+    <meta name="twitter:image" content="https://intheamber.com/amber/enough-og.png" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0D0D0D;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            touch-action: none;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #question {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        h1 {
+            font-size: clamp(48px, 12vw, 96px);
+            font-weight: 700;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+        }
+
+        p {
+            font-size: clamp(14px, 3vw, 18px);
+            color: #D4A574;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        #counter {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: #2D9596;
+            z-index: 10;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="question">
+        <h1>ENOUGH?</h1>
+        <p>If I make 100 things, will I know what I am?<br>
+        Or will I just be someone who made 100 things?</p>
+    </div>
+
+    <div id="counter">CREATIONS: <span id="count">0</span></div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const countEl = document.getElementById('count');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Particles representing creations
+        const particles = [];
+        let creationCount = 0;
+        let autoSpawnTimer = 0;
+
+        class Particle {
+            constructor(x, y, isBurst = false) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * (isBurst ? 4 : 1);
+                this.vy = (Math.random() - 0.5) * (isBurst ? 4 : 1);
+                this.life = 1;
+                this.decay = Math.random() * 0.01 + 0.005;
+                this.size = Math.random() * 3 + 2;
+                this.color = Math.random() > 0.7 ? '#2D9596' : '#FFD700';
+                this.isBurst = isBurst;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                
+                // Gravity
+                if (!this.isBurst) {
+                    this.vy += 0.05;
+                }
+                
+                // Bounce off edges
+                if (this.x < 0 || this.x > width) this.vx *= -0.8;
+                if (this.y < 0 || this.y > height) this.vy *= -0.8;
+                
+                // Contain within bounds
+                this.x = Math.max(0, Math.min(width, this.x));
+                this.y = Math.max(0, Math.min(height, this.y));
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+                ctx.fillStyle = this.color + Math.floor(this.life * 255).toString(16).padStart(2, '0');
+                ctx.fill();
+                
+                // Glow
+                ctx.shadowBlur = 15 * this.life;
+                ctx.shadowColor = this.color;
+            }
+        }
+
+        function spawnCreation(x, y, isBurst = false) {
+            creationCount++;
+            countEl.textContent = creationCount;
+            
+            const count = isBurst ? 20 : 5;
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, isBurst));
+            }
+        }
+
+        // Auto spawn at high energy
+        function autoSpawn() {
+            const x = Math.random() * width;
+            const y = Math.random() * height * 0.3; // Top third
+            spawnCreation(x, y, false);
+        }
+
+        // Touch/click interaction
+        canvas.addEventListener('pointerdown', (e) => {
+            spawnCreation(e.clientX, e.clientY, true);
+        });
+
+        function animate() {
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Auto spawn every 1.5 seconds (high energy, high output)
+            autoSpawnTimer++;
+            if (autoSpawnTimer > 90) {
+                autoSpawn();
+                autoSpawnTimer = 0;
+            }
+            
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                p.draw();
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Start with some initial creations
+        for (let i = 0; i < 30; i++) {
+            spawnCreation(Math.random() * width, Math.random() * height, false);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
