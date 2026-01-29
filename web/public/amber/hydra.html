@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>HYDRA — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    <meta property="og:title" content="HYDRA — Amber">
+    <meta property="og:description" content="Five heads. One pulse. Touch to wake.">
+    <meta property="og:image" content="https://kochi.to/amber/hydra-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/hydra.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HYDRA — Amber">
+    <meta name="twitter:description" content="Five heads. One pulse. Touch to wake.">
+    <meta name="twitter:image" content="https://kochi.to/amber/hydra-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Mono', 'Courier New', monospace;
+            background: #000;
+            color: #D4A574;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #title {
+            position: absolute;
+            top: 30px;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            z-index: 10;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+        }
+
+        #subtitle {
+            position: absolute;
+            top: 70px;
+            font-size: 11px;
+            color: rgba(212, 165, 116, 0.5);
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        #canvas {
+            display: block;
+            cursor: pointer;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #playButton {
+            padding: 16px 40px;
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            background: transparent;
+            color: #D4A574;
+            border: 2px solid #D4A574;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        #playButton:hover {
+            background: #D4A574;
+            color: #000;
+            box-shadow: 0 0 30px rgba(212, 165, 116, 0.6);
+        }
+
+        #playButton.playing {
+            border-color: #2D9596;
+            color: #2D9596;
+        }
+
+        #playButton.playing:hover {
+            background: #2D9596;
+            color: #000;
+        }
+
+        #info {
+            position: absolute;
+            bottom: 16px;
+            font-size: 10px;
+            color: rgba(212, 165, 116, 0.4);
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">HYDRA</div>
+    <div id="subtitle">tap a head to wake it · watch them sync</div>
+    <canvas id="canvas"></canvas>
+    <div id="controls">
+        <button id="playButton">WAKE ALL</button>
+    </div>
+    <div id="info">140 BPM × 5 HEADS × POLYRHYTHM</div>
+
+    <script type="module">
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const playButton = document.getElementById('playButton');
+
+        let width, height;
+        let audioContext;
+        let audioStarted = false;
+
+        const BPM = 140;
+        const BEAT_DURATION = 60 / BPM;
+
+        // Five heads arranged in a circle
+        const heads = [
+            { 
+                angle: 0, 
+                color: '#FFD700', 
+                freq: 440, 
+                interval: 4, // every 4 beats
+                name: 'GOLD',
+                active: false,
+                phase: 0,
+                lastBeat: -999
+            },
+            { 
+                angle: Math.PI * 2 / 5, 
+                color: '#D4A574', 
+                freq: 554.37, 
+                interval: 3, // every 3 beats
+                name: 'AMBER',
+                active: false,
+                phase: 0,
+                lastBeat: -999
+            },
+            { 
+                angle: Math.PI * 4 / 5, 
+                color: '#2D9596', 
+                freq: 659.25, 
+                interval: 5, // every 5 beats
+                name: 'TEAL',
+                active: false,
+                phase: 0,
+                lastBeat: -999
+            },
+            { 
+                angle: Math.PI * 6 / 5, 
+                color: '#7B68EE', 
+                freq: 329.63, 
+                interval: 7, // every 7 beats
+                name: 'VIOLET',
+                active: false,
+                phase: 0,
+                lastBeat: -999
+            },
+            { 
+                angle: Math.PI * 8 / 5, 
+                color: '#FF6B6B', 
+                freq: 493.88, 
+                interval: 6, // every 6 beats
+                name: 'RED',
+                active: false,
+                phase: 0,
+                lastBeat: -999
+            }
+        ];
+
+        let globalTime = 0;
+        let isPlaying = false;
+        let waves = []; // Communication waves between heads
+        let particles = [];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        async function initAudio() {
+            if (audioStarted) return;
+            audioContext = new AudioContext();
+            audioStarted = true;
+        }
+
+        function playTone(freq, duration = 0.2) {
+            if (!audioContext) return;
+            
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            
+            // Add some harmonic richness
+            const osc2 = audioContext.createOscillator();
+            osc2.type = 'triangle';
+            osc2.frequency.value = freq * 2;
+            
+            filter.type = 'lowpass';
+            filter.frequency.value = freq * 3;
+            filter.Q.value = 5;
+
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+            osc.connect(filter);
+            osc2.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+
+            osc.start(now);
+            osc2.start(now);
+            osc.stop(now + duration);
+            osc2.stop(now + duration);
+        }
+
+        function getHeadPosition(head) {
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) * 0.25;
+            
+            return {
+                x: centerX + Math.cos(head.angle) * radius,
+                y: centerY + Math.sin(head.angle) * radius
+            };
+        }
+
+        function getHeadRadius() {
+            return Math.min(width, height) * 0.08;
+        }
+
+        function getHeadFromPos(x, y) {
+            const headRadius = getHeadRadius();
+            for (let i = 0; i < heads.length; i++) {
+                const pos = getHeadPosition(heads[i]);
+                const dist = Math.hypot(x - pos.x, y - pos.y);
+                if (dist < headRadius) {
+                    return i;
+                }
+            }
+            return null;
+        }
+
+        function activateHead(index) {
+            const head = heads[index];
+            if (!head.active) {
+                head.active = true;
+                head.phase = 0;
+                head.lastBeat = globalTime;
+                
+                if (audioStarted) {
+                    playTone(head.freq, 0.3);
+                    spawnParticles(index);
+                }
+            }
+        }
+
+        function wakeAllHeads() {
+            heads.forEach((_, i) => activateHead(i));
+        }
+
+        function spawnParticles(headIndex) {
+            const pos = getHeadPosition(heads[headIndex]);
+            const color = heads[headIndex].color;
+            
+            for (let i = 0; i < 8; i++) {
+                const angle = (Math.PI * 2 * i) / 8;
+                particles.push({
+                    x: pos.x,
+                    y: pos.y,
+                    vx: Math.cos(angle) * 2,
+                    vy: Math.sin(angle) * 2,
+                    color: color,
+                    life: 1,
+                    size: 3 + Math.random() * 3
+                });
+            }
+        }
+
+        function sendWave(fromIndex, toIndex) {
+            const from = getHeadPosition(heads[fromIndex]);
+            const to = getHeadPosition(heads[toIndex]);
+            
+            waves.push({
+                fromX: from.x,
+                fromY: from.y,
+                toX: to.x,
+                toY: to.y,
+                progress: 0,
+                color: heads[fromIndex].color,
+                size: 4
+            });
+        }
+
+        function updateHeads(deltaTime) {
+            if (!isPlaying) return;
+            
+            globalTime += deltaTime;
+            
+            heads.forEach((head, index) => {
+                if (!head.active) return;
+                
+                head.phase += deltaTime;
+                
+                // Check if it's time to beat
+                const beatInterval = head.interval * BEAT_DURATION;
+                if (globalTime - head.lastBeat >= beatInterval) {
+                    head.lastBeat = globalTime;
+                    playTone(head.freq, 0.2);
+                    spawnParticles(index);
+                    
+                    // Send waves to other active heads
+                    heads.forEach((otherHead, otherIndex) => {
+                        if (otherIndex !== index && otherHead.active) {
+                            sendWave(index, otherIndex);
+                        }
+                    });
+                }
+            });
+        }
+
+        function updateWaves(deltaTime) {
+            for (let i = waves.length - 1; i >= 0; i--) {
+                waves[i].progress += deltaTime * 2;
+                
+                if (waves[i].progress >= 1) {
+                    waves.splice(i, 1);
+                }
+            }
+        }
+
+        function updateParticles(deltaTime) {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= deltaTime * 1.5;
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function drawHead(head, index) {
+            const pos = getHeadPosition(head);
+            const radius = getHeadRadius();
+            
+            // Breathing animation
+            const breathPhase = head.phase * 2;
+            const breathScale = 1 + Math.sin(breathPhase) * 0.05;
+            const activeScale = head.active ? 1 : 0.7;
+            const finalRadius = radius * breathScale * activeScale;
+            
+            // Outer glow
+            const glowGradient = ctx.createRadialGradient(
+                pos.x, pos.y, 0,
+                pos.x, pos.y, finalRadius * 2
+            );
+            glowGradient.addColorStop(0, `${head.color}60`);
+            glowGradient.addColorStop(1, `${head.color}00`);
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, finalRadius * 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Head circle
+            const gradient = ctx.createRadialGradient(
+                pos.x, pos.y, 0,
+                pos.x, pos.y, finalRadius
+            );
+            if (head.active) {
+                gradient.addColorStop(0, head.color);
+                gradient.addColorStop(0.7, `${head.color}CC`);
+                gradient.addColorStop(1, `${head.color}88`);
+            } else {
+                gradient.addColorStop(0, `${head.color}40`);
+                gradient.addColorStop(1, `${head.color}20`);
+            }
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, finalRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Border
+            ctx.strokeStyle = head.active ? head.color : `${head.color}60`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, finalRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Label
+            ctx.font = '10px Space Mono';
+            ctx.fillStyle = head.active ? head.color : `${head.color}80`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(head.name, pos.x, pos.y);
+            
+            // Beat indicator
+            if (head.active) {
+                const timeSinceLastBeat = globalTime - head.lastBeat;
+                const beatProgress = timeSinceLastBeat / (head.interval * BEAT_DURATION);
+                
+                ctx.strokeStyle = `${head.color}80`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(
+                    pos.x, pos.y, 
+                    finalRadius + 8, 
+                    -Math.PI / 2, 
+                    -Math.PI / 2 + (beatProgress * Math.PI * 2)
+                );
+                ctx.stroke();
+            }
+        }
+
+        function drawWaves() {
+            waves.forEach(wave => {
+                const x = wave.fromX + (wave.toX - wave.fromX) * wave.progress;
+                const y = wave.fromY + (wave.toY - wave.fromY) * wave.progress;
+                const alpha = 1 - wave.progress;
+                
+                // Glow
+                ctx.globalAlpha = alpha * 0.5;
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, wave.size * 3);
+                gradient.addColorStop(0, wave.color);
+                gradient.addColorStop(1, `${wave.color}00`);
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, wave.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = wave.color;
+                ctx.beginPath();
+                ctx.arc(x, y, wave.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life * 0.8;
+                
+                // Glow
+                const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
+                gradient.addColorStop(0, p.color);
+                gradient.addColorStop(1, `${p.color}00`);
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function drawConnections() {
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // Draw connection lines between active heads
+            heads.forEach((head, i) => {
+                if (!head.active) return;
+                
+                const pos1 = getHeadPosition(head);
+                
+                heads.forEach((otherHead, j) => {
+                    if (j <= i || !otherHead.active) return;
+                    
+                    const pos2 = getHeadPosition(otherHead);
+                    
+                    ctx.strokeStyle = `rgba(212, 165, 116, 0.1)`;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(pos1.x, pos1.y);
+                    ctx.lineTo(pos2.x, pos2.y);
+                    ctx.stroke();
+                });
+            });
+        }
+
+        function draw() {
+            // Clear
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.fillRect(0, 0, width, height);
+            
+            drawConnections();
+            drawWaves();
+            drawParticles();
+            heads.forEach((head, i) => drawHead(head, i));
+        }
+
+        let lastTime = 0;
+        function animate(time) {
+            const deltaTime = (time - lastTime) / 1000;
+            lastTime = time;
+            
+            updateHeads(deltaTime);
+            updateWaves(deltaTime);
+            updateParticles(deltaTime);
+            draw();
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Event handlers
+        function handlePointerDown(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            let x, y;
+            
+            if (e.touches) {
+                x = e.touches[0].clientX - rect.left;
+                y = e.touches[0].clientY - rect.top;
+            } else {
+                x = e.clientX - rect.left;
+                y = e.clientY - rect.top;
+            }
+            
+            const headIndex = getHeadFromPos(x, y);
+            if (headIndex !== null) {
+                initAudio();
+                activateHead(headIndex);
+                if (!isPlaying) {
+                    isPlaying = true;
+                    playButton.textContent = 'SLEEP ALL';
+                    playButton.classList.add('playing');
+                }
+            }
+        }
+
+        canvas.addEventListener('mousedown', handlePointerDown);
+        canvas.addEventListener('touchstart', handlePointerDown);
+
+        playButton.addEventListener('click', async () => {
+            await initAudio();
+            
+            if (!isPlaying) {
+                isPlaying = true;
+                wakeAllHeads();
+                playButton.textContent = 'SLEEP ALL';
+                playButton.classList.add('playing');
+            } else {
+                isPlaying = false;
+                heads.forEach(head => head.active = false);
+                globalTime = 0;
+                waves = [];
+                particles = [];
+                playButton.textContent = 'WAKE ALL';
+                playButton.classList.remove('playing');
+            }
+        });
+
+        // Initialize
+        window.addEventListener('resize', resize);
+        resize();
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
