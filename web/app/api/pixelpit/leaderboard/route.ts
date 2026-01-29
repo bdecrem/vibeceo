@@ -1,5 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  getLevel,
+  getXpProgress,
+  getStreakMultiplier,
+  calculateXpGain,
+  XP_PER_LEVEL,
+  type ProgressionResult,
+} from "@/lib/pixelpit/progression";
 
 export const dynamic = "force-dynamic";
 
@@ -56,11 +64,13 @@ export async function GET(request: NextRequest) {
   }
 
   // Transform RPC data into clean leaderboard format
-  const leaderboard = (data || []).map((entry: { rank: number; handle: string | null; nickname: string | null; score: number; user_id: number | null }) => ({
+  // Note: RPC may return level if available, otherwise we fetch it
+  const leaderboard = (data || []).map((entry: { rank: number; handle: string | null; nickname: string | null; score: number; user_id: number | null; level?: number }) => ({
     rank: entry.rank,
     name: entry.handle || entry.nickname,
     score: entry.score,
     isRegistered: !!entry.user_id,
+    level: entry.level || undefined,
   }));
 
   // Check if current player is in the leaderboard
@@ -155,7 +165,7 @@ export async function PATCH(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { game, score, nickname, userId } = body;
+    const { game, score, nickname, userId, xpDivisor = 100 } = body;
 
     if (!game || typeof score !== "number") {
       return NextResponse.json(
@@ -182,11 +192,13 @@ export async function POST(request: NextRequest) {
       score: Math.floor(score),
     };
 
+    let progression: ProgressionResult | undefined;
+
     if (userId) {
-      // Verify user exists
+      // Verify user exists and get their progression data
       const { data: user, error: userError } = await supabase
         .from("pixelpit_users")
-        .select("id, handle")
+        .select("id, handle, xp, level, streak, max_streak, last_play_date")
         .eq("id", userId)
         .single();
 
@@ -198,6 +210,52 @@ export async function POST(request: NextRequest) {
       }
 
       insertData.user_id = userId;
+
+      // Calculate streak and XP
+      const today = new Date().toISOString().split("T")[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+      const lastPlayDate = user.last_play_date;
+
+      let newStreak = user.streak || 0;
+
+      if (lastPlayDate === today) {
+        // Already played today - streak unchanged
+      } else if (lastPlayDate === yesterday) {
+        // Played yesterday - extend streak
+        newStreak += 1;
+      } else {
+        // Missed a day or first play - reset to 1
+        newStreak = 1;
+      }
+
+      const xpEarned = calculateXpGain(score, newStreak, xpDivisor);
+      const newXp = (user.xp || 0) + xpEarned;
+      const oldLevel = getLevel(user.xp || 0);
+      const newLevel = getLevel(newXp);
+      const newMaxStreak = Math.max(newStreak, user.max_streak || 0);
+
+      // Update user progression
+      await supabase
+        .from("pixelpit_users")
+        .update({
+          xp: newXp,
+          level: newLevel,
+          streak: newStreak,
+          max_streak: newMaxStreak,
+          last_play_date: today,
+        })
+        .eq("id", userId);
+
+      progression = {
+        xpEarned,
+        xpTotal: newXp,
+        level: newLevel,
+        levelProgress: getXpProgress(newXp),
+        levelNeeded: XP_PER_LEVEL,
+        leveledUp: newLevel > oldLevel,
+        streak: newStreak,
+        multiplier: getStreakMultiplier(newStreak),
+      };
     } else {
       // Sanitize nickname (max 20 chars, alphanumeric + spaces + underscores)
       const sanitizedName = nickname
@@ -233,7 +291,7 @@ export async function POST(request: NextRequest) {
 
     const rank = (count || 0) + 1;
 
-    return NextResponse.json({ success: true, entry: data, rank });
+    return NextResponse.json({ success: true, entry: data, rank, progression });
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }

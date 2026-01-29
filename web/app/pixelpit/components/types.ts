@@ -16,6 +16,29 @@ export interface LeaderboardEntry {
   name: string;
   score: number;
   isRegistered: boolean;
+  level?: number;
+}
+
+// Progression types
+export interface ProgressionResult {
+  xpEarned: number;
+  xpTotal: number;
+  level: number;
+  levelProgress: number;
+  levelNeeded: number;
+  leveledUp: boolean;
+  streak: number;
+  multiplier: number;
+}
+
+export interface ProfileResult {
+  handle: string;
+  xp: number;
+  level: number;
+  levelProgress: number;
+  levelNeeded: number;
+  streak: number;
+  maxStreak: number;
 }
 
 // API Response types
@@ -24,6 +47,7 @@ export interface ScoreSubmitResult {
   rank?: number;
   entry?: { id: number };
   error?: string;
+  progression?: ProgressionResult;
 }
 
 export interface LeaderboardResult {
@@ -66,8 +90,11 @@ export interface ScoreFlowProps {
   score: number;
   gameId: string;
   colors: ScoreFlowColors;
+  /** XP divisor for this game. Default 100 (score/100 = XP). Use 1 for full score as XP. */
+  xpDivisor?: number;
   onRankReceived?: (rank: number, entryId?: number) => void;
   onUserLogin?: (user: PixelpitUser) => void;
+  onProgression?: (progression: ProgressionResult) => void;
 }
 
 export interface LeaderboardColors {
@@ -121,8 +148,9 @@ declare global {
 
 export interface PixelpitSocialAPI {
   getUser: () => PixelpitUser | null;
-  submitScore: (game: string, score: number, opts?: { nickname?: string }) => Promise<ScoreSubmitResult>;
+  submitScore: (game: string, score: number, opts?: { nickname?: string; xpDivisor?: number }) => Promise<ScoreSubmitResult>;
   getLeaderboard: (game: string, limit?: number, opts?: { entryId?: number }) => Promise<LeaderboardResult>;
+  getProfile: (userId: number) => Promise<ProfileResult | null>;
   login: (handle: string, code: string) => Promise<AuthResult>;
   register: (handle: string, code: string) => Promise<AuthResult>;
   checkHandle: (handle: string) => Promise<HandleCheckResult>;

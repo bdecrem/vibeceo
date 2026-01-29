@@ -14,6 +14,7 @@ export { ShareButtonContainer } from './ShareButtonContainer';
 export { usePixelpitSocial, getGuestName, saveGuestName } from './hooks/usePixelpitSocial';
 export { useScoreSubmit } from './hooks/useScoreSubmit';
 export { useLeaderboard } from './hooks/useLeaderboard';
+export { useProfile } from './hooks/useProfile';
 
 // Types
 export type {
@@ -31,6 +32,8 @@ export type {
   HandleCheckResult,
   PixelpitSocialAPI,
   ScoreShareImageProps,
+  ProgressionResult,
+  ProfileResult,
 } from './types';
 
 // OG Image utilities

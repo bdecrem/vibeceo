@@ -114,8 +114,8 @@ window.PixelpitSocial = (function() {
    * Submit a score to the leaderboard
    * @param {string} gameId - Game identifier (e.g., 'g1', 'tap-tempo')
    * @param {number} score
-   * @param {{ nickname?: string }} [opts] - If not logged in, provide nickname
-   * @returns {Promise<{ success: boolean, rank?: number, entry?: object, error?: string }>}
+   * @param {{ nickname?: string, xpDivisor?: number }} [opts] - If not logged in, provide nickname. xpDivisor controls XP (default 100, use 1 for full score as XP)
+   * @returns {Promise<{ success: boolean, rank?: number, entry?: object, progression?: object, error?: string }>}
    */
   async function submitScore(gameId, score, opts = {}) {
     const user = getUser();
@@ -130,6 +130,10 @@ window.PixelpitSocial = (function() {
       body.nickname = opts.nickname;
     } else {
       return { success: false, error: 'Must be logged in or provide nickname' };
+    }
+
+    if (opts.xpDivisor !== undefined) {
+      body.xpDivisor = opts.xpDivisor;
     }
 
     const res = await fetch(`${API_BASE}/leaderboard`, {
@@ -210,6 +214,24 @@ window.PixelpitSocial = (function() {
   async function getCreation(slug) {
     const res = await fetch(`${API_BASE}/creation/${encodeURIComponent(slug)}`);
     return res.json();
+  }
+
+  // ============ Profile ============
+
+  /**
+   * Fetch user profile with progression data
+   * @param {number} userId
+   * @returns {Promise<{ handle: string, xp: number, level: number, levelProgress: number, levelNeeded: number, streak: number, maxStreak: number } | null>}
+   */
+  async function getProfile(userId) {
+    try {
+      const res = await fetch(`${API_BASE}/profile?userId=${userId}`);
+      if (!res.ok) return null;
+      return res.json();
+    } catch (e) {
+      console.error('PixelpitSocial: Error fetching profile', e);
+      return null;
+    }
   }
 
   // ============ Share ============
@@ -469,6 +491,9 @@ window.PixelpitSocial = (function() {
     // Scores
     submitScore,
     getLeaderboard,
+
+    // Profile
+    getProfile,
 
     // Creations
     saveCreation,
