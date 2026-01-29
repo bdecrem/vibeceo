@@ -1,8 +1,39 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLeaderboard } from './hooks/useLeaderboard';
 import type { LeaderboardProps } from './types';
+
+// Level badge colors by tier
+function getLevelBadgeColor(level: number): string {
+  if (level >= 20) return '#f59e0b'; // Gold
+  if (level >= 10) return '#a855f7'; // Purple
+  if (level >= 5) return '#3b82f6';  // Blue
+  return '#6b7280';                   // Gray
+}
+
+// Level badge component
+function LevelBadge({ level }: { level: number }) {
+  const bgColor = getLevelBadgeColor(level);
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 18,
+      height: 18,
+      borderRadius: '50%',
+      background: bgColor,
+      color: '#fff',
+      fontSize: 10,
+      fontWeight: 700,
+      marginLeft: 6,
+      flexShrink: 0,
+    }}>
+      {level}
+    </span>
+  );
+}
 
 /**
  * Leaderboard display component.
@@ -34,6 +65,7 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
     limit,
     entryId,
   });
+  const [showXpInfo, setShowXpInfo] = useState(false);
 
   const fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
 
@@ -60,16 +92,19 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
         leaderboard
       </h2>
 
-      <div style={{
-        width: '100%',
-        maxWidth: 400,
-        marginBottom: 30,
-        background: colors.surface,
-        border: '1px solid rgba(255,255,255,0.05)',
-        borderRadius: 12,
-        boxShadow: '0 15px 40px rgba(0,0,0,0.4)',
-        overflow: 'hidden',
-      }}>
+      <div
+        onClick={() => setShowXpInfo(true)}
+        style={{
+          width: '100%',
+          maxWidth: 400,
+          marginBottom: 30,
+          background: colors.surface,
+          border: '1px solid rgba(255,255,255,0.05)',
+          borderRadius: 12,
+          boxShadow: '0 15px 40px rgba(0,0,0,0.4)',
+          overflow: 'hidden',
+          cursor: 'pointer',
+        }}>
         {loading ? (
           <div style={{
             color: colors.muted,
@@ -126,8 +161,11 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
                   flex: 1,
                   paddingLeft: 15,
                   color: entry.isRegistered ? colors.text : colors.primary,
+                  display: 'flex',
+                  alignItems: 'center',
                 }}>
                   {entry.isRegistered ? `@${entry.name}` : entry.name}
+                  {entry.isRegistered && entry.level && <LevelBadge level={entry.level} />}
                 </span>
                 <span style={{
                   fontWeight: 500,
@@ -170,8 +208,12 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
                     flex: 1,
                     paddingLeft: 15,
                     color: colors.secondary,
+                    display: 'flex',
+                    alignItems: 'center',
                   }}>
-                    {playerEntry.isRegistered ? `@${playerEntry.name}` : playerEntry.name} ← you
+                    {playerEntry.isRegistered ? `@${playerEntry.name}` : playerEntry.name}
+                    {playerEntry.isRegistered && playerEntry.level && <LevelBadge level={playerEntry.level} />}
+                    <span style={{ marginLeft: 6, opacity: 0.7 }}>← you</span>
                   </span>
                   <span style={{
                     fontWeight: 500,
@@ -206,6 +248,101 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
         >
           back
         </button>
+      )}
+
+      {/* XP Info Modal */}
+      {showXpInfo && (
+        <div
+          onClick={() => setShowXpInfo(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 200,
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: colors.surface,
+              borderRadius: 16,
+              padding: '24px 28px',
+              maxWidth: 320,
+              boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+            }}
+          >
+            <h3 style={{
+              fontFamily,
+              fontSize: 14,
+              fontWeight: 600,
+              color: colors.primary,
+              marginBottom: 16,
+              letterSpacing: 1,
+            }}>
+              Level Up!
+            </h3>
+            <p style={{
+              fontFamily,
+              fontSize: 12,
+              color: colors.text,
+              lineHeight: 1.6,
+              marginBottom: 12,
+            }}>
+              Registered players earn <span style={{ color: colors.primary }}>XP</span> for every game.
+            </p>
+            <p style={{
+              fontFamily,
+              fontSize: 12,
+              color: colors.text,
+              lineHeight: 1.6,
+              marginBottom: 12,
+            }}>
+              Play daily to build a <span style={{ color: colors.secondary }}>streak</span> and earn bonus XP:
+            </p>
+            <div style={{
+              fontFamily,
+              fontSize: 11,
+              color: colors.muted,
+              lineHeight: 1.8,
+              marginBottom: 16,
+              paddingLeft: 8,
+            }}>
+              <div>3+ days: <span style={{ color: colors.text }}>1.5x XP</span></div>
+              <div>7+ days: <span style={{ color: colors.text }}>2x XP</span></div>
+              <div>14+ days: <span style={{ color: colors.text }}>2.5x XP</span></div>
+            </div>
+            <p style={{
+              fontFamily,
+              fontSize: 11,
+              color: colors.muted,
+              lineHeight: 1.6,
+              marginBottom: 20,
+            }}>
+              The colored badge shows your level.
+            </p>
+            <button
+              onClick={() => setShowXpInfo(false)}
+              style={{
+                width: '100%',
+                background: colors.primary,
+                color: colors.bg,
+                border: 'none',
+                borderRadius: 6,
+                padding: '12px 20px',
+                fontSize: 12,
+                fontFamily,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              got it
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
