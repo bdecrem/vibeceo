@@ -43,6 +43,7 @@ export function ScoreFlow({ score, gameId, colors, onRankReceived, onUserLogin }
     submittedRank,
     error,
     user,
+    isRegisteredHandle,
     setPlayerName,
     setCodeDigits,
     submitAsGuest,
@@ -237,7 +238,9 @@ export function ScoreFlow({ score, gameId, colors, onRankReceived, onUserLogin }
             ✓ {playerName} — Rank #{submittedRank}
           </div>
           <div style={{ color: colors.muted, fontSize: 11, fontFamily, marginBottom: 15 }}>
-            keep this name? add a code:
+            {isRegisteredHandle
+              ? 'this is you? enter your code:'
+              : 'keep this name? add a code:'}
           </div>
           <div style={{ marginBottom: 15 }}>
             <CodeInput
@@ -264,7 +267,7 @@ export function ScoreFlow({ score, gameId, colors, onRankReceived, onUserLogin }
               cursor: 'pointer',
             }}
           >
-            save
+            {isRegisteredHandle ? 'login' : 'save'}
           </button>
           <button
             onClick={skipSave}
@@ -278,7 +281,7 @@ export function ScoreFlow({ score, gameId, colors, onRankReceived, onUserLogin }
               marginLeft: 10,
             }}
           >
-            skip →
+            {isRegisteredHandle ? 'not me →' : 'skip →'}
           </button>
           {error && (
             <div style={{ marginTop: 10, color: colors.error, fontSize: 11, fontFamily }}>

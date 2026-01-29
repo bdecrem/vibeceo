@@ -20,6 +20,8 @@ interface UseScoreSubmitReturn {
   submittedEntryId: number | null;
   error: string;
   user: PixelpitUser | null;
+  /** True if the submitted handle belongs to a registered user (for login prompt) */
+  isRegisteredHandle: boolean;
 
   // Setters
   setPlayerName: (name: string) => void;
@@ -70,6 +72,7 @@ export function useScoreSubmit({
     }
     return null;
   });
+  const [isRegisteredHandle, setIsRegisteredHandle] = useState(false);
 
   const getCode = () => codeDigits.join('');
 
@@ -96,6 +99,7 @@ export function useScoreSubmit({
 
     setFlowState('checking');
     setError('');
+    setIsRegisteredHandle(false);
 
     try {
       saveGuestName(playerName);
@@ -105,6 +109,14 @@ export function useScoreSubmit({
         setSubmittedEntryId(result.entry?.id ?? null);
         setFlowState('submitted');
         onRankReceived?.(result.rank ?? 0, result.entry?.id);
+
+        // Check if this handle is already registered (for better UX messaging)
+        try {
+          const handleCheck = await window.PixelpitSocial.checkHandle(playerName);
+          setIsRegisteredHandle(handleCheck.exists);
+        } catch {
+          // Silent fail - not critical
+        }
       } else {
         setError('Failed to submit');
         setFlowState('input');
@@ -162,7 +174,7 @@ export function useScoreSubmit({
       setError('Network error');
       setFlowState('returning');
     }
-  }, [playerName, gameId, score, onRankReceived, onUserLogin]);
+  }, [playerName, codeDigits, gameId, score, onRankReceived, onUserLogin]);
 
   const saveAccount = useCallback(async () => {
     if (!window.PixelpitSocial) return;
@@ -204,7 +216,7 @@ export function useScoreSubmit({
       setError('Network error');
       setFlowState('submitted');
     }
-  }, [playerName, onUserLogin]);
+  }, [playerName, codeDigits, onUserLogin]);
 
   const retryWithNewHandle = useCallback(async () => {
     if (!window.PixelpitSocial) return;
@@ -237,7 +249,7 @@ export function useScoreSubmit({
       setError('Network error');
       setFlowState('handleTaken');
     }
-  }, [playerName, onUserLogin]);
+  }, [playerName, codeDigits, onUserLogin]);
 
   const skipSave = useCallback(() => {
     setFlowState('saved');
@@ -249,6 +261,7 @@ export function useScoreSubmit({
     setError('');
     setSubmittedRank(null);
     setSubmittedEntryId(null);
+    setIsRegisteredHandle(false);
   }, []);
 
   return {
@@ -259,6 +272,7 @@ export function useScoreSubmit({
     submittedEntryId,
     error,
     user,
+    isRegisteredHandle,
     setPlayerName,
     setCodeDigits,
     submitAsGuest,
