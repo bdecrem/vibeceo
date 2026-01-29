@@ -145,6 +145,7 @@ export const SLASH_COMMANDS = [
   { name: '/recent', description: 'Resume most recent project' },
   { name: '/projects', description: 'List all projects' },
   { name: '/mix', description: 'Show mix overview (instruments, tweaks, effects)' },
+  { name: '/analyze', description: 'Analyze last render (levels, frequencies, recommendations)' },
   { name: '/jb01', description: 'JB01 drum machine guide' },
   { name: '/jb202', description: 'JB202 bass synth guide (custom DSP)' },
   { name: '/jp9000', description: 'JP9000 modular synth guide (patch-based)' },
@@ -489,21 +490,22 @@ export const SPLASH = `
 ╚█████╔╝██║  ██║██║ ╚═╝ ██║██████╔╝╚██████╔╝   ██║
  ╚════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═════╝  ╚═════╝    ╚═╝
 
-  🤖 Your AI just learned to funk 🎛️
+  AI groovebox — or at least, it's trying to be
  ─────────────────────────────────────────────────
-  v0.0.3 — What's New
-  ✓ JB01 drums + JB202 bass synth
-  ✓ JP9000 modular synth with Karplus-Strong
-  ✓ Sampler — load your own kits
-  ✓ 17 genres of production knowledge
-  ✓ Projects saved to ~/Documents/Jambot/
+  v0.1 — It makes noise. Sometimes music.
+
+  ✓ JB01 drums, JB202 bass — these actually work
+  ~ JP9000 modular — works-ish
+  ~ JT10/JT30/JT90 tributes — they exist
+  ~ Song mode, effects, persistence — mostly
+  · Many features untested. It's v0.1.
  ─────────────────────────────────────────────────
-  "make me an acid track at 130"
-  "add a squelchy bass line"
-  "render it"
+  "make me a techno beat"
+  "the hats are too loud"
+  "bounce"
  ─────────────────────────────────────────────────
 
-  / for commands • github.com/bdecrem/jambot
+  /help for commands
 `;
 
 // === HELP TEXT ===
@@ -515,6 +517,7 @@ Slash Commands
   /recent       Resume most recent project
   /projects     List all projects (with timestamps)
   /mix          Show mix overview
+  /analyze      Analyze your last render (levels, frequencies)
   /jb01         JB01 drum machine guide (kochi.to/jb01)
   /jb202        JB202 bass synth guide (kochi.to/jb202)
   /jp9000       JP9000 modular synth guide
@@ -850,4 +853,26 @@ JT90 — Drum Machine (909-style)
   tweak_jt90({ voice: 'snare', snappy: 70, tone: 50 })
 
   PARAMS: level, tune, decay, attack (kick), tone, snappy (snare)
+`;
+
+export const ANALYZE_GUIDE = `
+ANALYZE — Audio Analysis Tools
+
+  Analyze your renders to check levels, find problems, get mixing tips.
+  Requires sox: brew install sox
+
+  COMMANDS (or just ask the agent)
+  analyze_render()       Full analysis: levels, frequency balance, tips
+  detect_resonance()     Find filter squelch peaks (acid detection)
+  detect_mud()           Find 200-600Hz buildup
+  show_spectrum()        ASCII 8-band spectrum analyzer
+  get_spectral_peaks()   Dominant frequencies with note names
+  measure_spectral_flux() Filter movement detection
+  detect_waveform()      Identify saw/square/triangle/sine
+
+  EXAMPLE
+  > render
+  > analyze that — is the bass too loud?
+
+  The agent can run these tools and interpret the results for you.
 `;

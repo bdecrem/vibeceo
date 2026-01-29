@@ -20,6 +20,7 @@ import {
   JT30_GUIDE,
   JT90_GUIDE,
   DELAY_GUIDE,
+  ANALYZE_GUIDE,
   getApiKey,
   saveApiKey,
   getApiKeyPath,
@@ -726,6 +727,10 @@ function App() {
 
       case '/jt90':
         addMessage('info', JT90_GUIDE);
+        break;
+
+      case '/analyze':
+        addMessage('info', ANALYZE_GUIDE);
         break;
 
       case '/export':

@@ -18,6 +18,7 @@ import {
   JT30_GUIDE,
   JT90_GUIDE,
   DELAY_GUIDE,
+  ANALYZE_GUIDE,
   getApiKey,
   saveApiKey,
   getApiKeyPath,
@@ -825,6 +826,7 @@ class TerminalUI {
       case '/jt30': this.printInfo(JT30_GUIDE); break;
       case '/jt90': this.printInfo(JT90_GUIDE); break;
       case '/delay': this.printInfo(DELAY_GUIDE); break;
+      case '/analyze': this.printInfo(ANALYZE_GUIDE); break;
       case '/export': this.exportCurrentProject(); break;
       default: this.printSystem(`Unknown command: ${cmd}`);
     }
