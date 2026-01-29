@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-console.log('🔨 Building Jambot v0.0.3 for distribution...\n');
+console.log('🔨 Building Jambot v0.1.0 for distribution...\n');
 
 // Create dist folder
 mkdirSync('dist', { recursive: true });
@@ -37,7 +37,7 @@ if (existsSync('genres.json')) {
 // Create package.json for dist
 const pkg = {
   name: "jambot",
-  version: "0.0.3",
+  version: "0.1.0",
   type: "module",
   description: "AI-powered music creation CLI",
   bin: {
@@ -105,7 +105,7 @@ Type \`/\` for menu, or:
 
 ## Version
 
-v0.0.3 — Jan 21, 2026
+v0.1.0 — Jan 28, 2025
 `;
 
 writeFileSync('dist/README.md', readme);

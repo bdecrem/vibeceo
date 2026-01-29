@@ -1,6 +1,6 @@
 {
   "name": "jambot",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "type": "module",
   "description": "AI-powered music creation CLI",
   "scripts": {

@@ -540,23 +540,30 @@ Or just talk:
 export const CHANGELOG_TEXT = `
 Changelog
 
-  v0.0.3 — Jan 27, 2026
+  v0.1.0 — Jan 28, 2025
+
+  "It makes noise. Sometimes music."
 
   Instruments
-  • JB01 drum machine — 8 voices (kick, snare, clap, ch, oh, lowtom, hitom, cymbal)
+  • JB01 drum machine — 8 voices, works well
   • JB202 bass synth — custom DSP, cross-platform consistent
-  • JP9000 modular — patchable synth with Karplus-Strong strings
-  • Sampler — 10-slot sample player with custom kits
+  • JP9000 modular — patchable synth, works-ish
+  • JT10/JT30/JT90 — tribute synths, they exist
+  • Sampler — 10-slot sample player
 
   Features
-  • Genre knowledge (17 genres with production tips)
-  • Song mode with patterns A, B, C...
-  • Effect chains (delay, reverb)
-  • Project system: ~/Documents/Jambot/
-  • MIDI export (/export)
-  • Natural language everything
+  • Song mode with patterns and arrangements
+  • Effect chains (delay works, reverb exists)
+  • Analyze tools (spectral analysis, mixing feedback)
+  • Project persistence to ~/Documents/Jambot/
+  • Web UIs at kochi.to/jb01, /jb202, etc.
 
-  v0.0.1 — Jan 13, 2026
+  See RELEASE-NOTES-v0.1.md for the full (honest) story.
+
+  v0.0.3 — Jan 27, 2025
+  • Pre-release development
+
+  v0.0.1 — Jan 13, 2025
   • Initial prototype
 `;
 
