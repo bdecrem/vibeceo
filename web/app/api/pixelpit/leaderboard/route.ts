@@ -182,6 +182,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fat-finger prevention: check for duplicate submission within last 10 seconds
+    const tenSecondsAgo = new Date(Date.now() - 10000).toISOString();
+    const duplicateQuery = supabase
+      .from("pixelpit_entries")
+      .select("id")
+      .eq("game_id", game)
+      .eq("score", Math.floor(score))
+      .gte("created_at", tenSecondsAgo);
+
+    if (userId) {
+      duplicateQuery.eq("user_id", userId);
+    } else {
+      duplicateQuery.eq("nickname", nickname.slice(0, 20).replace(/[^a-zA-Z0-9 _]/g, "").trim());
+    }
+
+    const { data: existingEntry } = await duplicateQuery.limit(1).single();
+    if (existingEntry) {
+      // Return success with existing entry - don't create duplicate
+      // Use same rank logic as new entries: hypothetical for logged-in, actual for guest
+      let rank = 1;
+      if (userId) {
+        const { data: rankResult } = await supabase.rpc("get_score_rank", {
+          p_game_id: game,
+          p_score: Math.floor(score),
+        });
+        rank = rankResult || 1;
+      } else {
+        const { data: rankData } = await supabase.rpc("get_entry_rank", {
+          p_game_id: game,
+          p_entry_id: existingEntry.id,
+        });
+        rank = rankData?.[0]?.rank || 1;
+      }
+      return NextResponse.json({
+        success: true,
+        entry: existingEntry,
+        rank,
+        duplicate: true,
+      });
+    }
+
     let insertData: {
       game_id: string;
       score: number;
@@ -281,15 +322,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to add score" }, { status: 500 });
     }
 
-    // Get rank
-    const { count } = await supabase
-      .from("pixelpit_entries")
-      .select("*", { count: "exact", head: true })
-      .eq("game_id", game)
-      .not("score", "is", null)
-      .gt("score", score);
+    // For guests: prune excess entries (keep only highest + most recent)
+    if (!userId && insertData.nickname) {
+      await supabase.rpc("prune_guest_entries", {
+        p_game_id: game,
+        p_nickname: insertData.nickname,
+        p_keep_entry_id: data.id, // Always keep the just-created entry
+      });
+    }
 
-    const rank = (count || 0) + 1;
+    // Get rank - different logic for logged-in vs guest:
+    // - Logged-in: hypothetical rank ("where would this score place among best scores?")
+    // - Guest: actual rank (their entry IS on the leaderboard)
+    let rank = 1;
+    if (userId) {
+      const { data: rankResult } = await supabase.rpc("get_score_rank", {
+        p_game_id: game,
+        p_score: Math.floor(score),
+      });
+      rank = rankResult || 1;
+    } else {
+      const { data: rankData } = await supabase.rpc("get_entry_rank", {
+        p_game_id: game,
+        p_entry_id: data.id,
+      });
+      rank = rankData?.[0]?.rank || 1;
+    }
 
     return NextResponse.json({ success: true, entry: data, rank, progression });
   } catch {
