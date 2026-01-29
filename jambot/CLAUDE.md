@@ -33,6 +33,14 @@ Core files:
 - `jambot.js` — Agent loop, tools, WAV encoder, synth integration
 - `ui.tsx` — Ink-based terminal UI
 - `project.js` — Project persistence
+- `midi.js` — MIDI file generation for exports
+
+### Naming Conventions
+
+**JB202 vs JB200**: The bass synth was renamed from JB200 to JB202. Code uses the canonical name `JB202` but legacy aliases exist for backwards compatibility:
+- Function names: `generateJB202Midi` (canonical), `generateJB200Midi` (legacy alias)
+- Session state: `jb202Pattern`, `jb202Params` (canonical), `jb200Pattern` (legacy alias in some places)
+- Always use JB202 in new code. Legacy aliases exist only to prevent breaking old saved projects.
 
 ## Instruments
 
