@@ -111,7 +111,7 @@ export const GAME_COLORS = {
     branding: '#ff4d0099',
   },
   emoji: {
-    background: 'linear-gradient(180deg, #fef3c7 0%, #fce7f3 100%)',
+    background: '#fef3c7',
     primary: '#ec4899',
     secondary: '#facc15',
     accent: '#06b6d4',
