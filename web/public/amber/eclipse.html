@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ECLIPSE — Amber</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="ECLIPSE">
+  <meta property="og:description" content="Celestial dance of light and shadow — animated art by Amber">
+  <meta property="og:image" content="https://intheamber.com/amber/eclipse-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/eclipse.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ECLIPSE">
+  <meta name="twitter:description" content="Celestial dance of light and shadow — animated art by Amber">
+  <meta name="twitter:image" content="https://intheamber.com/amber/eclipse-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    #title {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 20vw;
+      font-weight: 900;
+      color: #FFD700;
+      text-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      animation: titleFade 8s ease-in-out infinite;
+      letter-spacing: -0.05em;
+    }
+    
+    @keyframes titleFade {
+      0%, 100% { opacity: 0; }
+      10%, 30% { opacity: 1; }
+      40%, 100% { opacity: 0; }
+    }
+    
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+      font-weight: 300;
+      pointer-events: none;
+      text-align: center;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="title">ECLIPSE</div>
+  <div id="info">touch to disturb the orbit</div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width, height, centerX, centerY;
+    
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      centerX = width / 2;
+      centerY = height / 2;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Eclipse state
+    let time = 0;
+    const eclipseDuration = 600; // frames for full cycle
+    
+    // Celestial bodies
+    const sun = {
+      x: centerX,
+      y: centerY,
+      radius: Math.min(width, height) * 0.15,
+      color: '#FFD700',
+      glowColor: '#FFC107'
+    };
+    
+    const moon = {
+      angle: 0,
+      distance: 0,
+      radius: Math.min(width, height) * 0.15,
+      color: '#0D0D0D',
+      rimColor: '#f97316' // Coral rim light
+    };
+    
+    // Corona particles
+    const coronaParticles = [];
+    for (let i = 0; i < 200; i++) {
+      coronaParticles.push({
+        angle: Math.random() * Math.PI * 2,
+        distance: sun.radius + Math.random() * 100,
+        speed: 0.001 + Math.random() * 0.002,
+        size: 1 + Math.random() * 3,
+        brightness: Math.random(),
+        color: Math.random() > 0.5 ? '#FFD700' : '#f59e0b'
+      });
+    }
+    
+    // Shadow particles (totality effect)
+    const shadowParticles = [];
+    for (let i = 0; i < 100; i++) {
+      shadowParticles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        size: 2 + Math.random() * 4,
+        opacity: 0
+      });
+    }
+    
+    // Interaction
+    let disturbance = 0;
+    canvas.addEventListener('touchstart', handleTouch);
+    canvas.addEventListener('mousedown', handleTouch);
+    
+    function handleTouch(e) {
+      e.preventDefault();
+      disturbance = 20;
+    }
+    
+    function draw() {
+      // Dark sky background
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, width, height);
+      
+      time++;
+      
+      // Calculate eclipse phase (0 = separated, 1 = total eclipse)
+      const cycleProgress = (time % eclipseDuration) / eclipseDuration;
+      const eclipsePhase = Math.sin(cycleProgress * Math.PI); // 0 -> 1 -> 0
+      
+      // Moon orbit
+      moon.angle = cycleProgress * Math.PI * 2;
+      moon.distance = sun.radius * 3 * (1 - eclipsePhase * 0.9);
+      const moonX = centerX + Math.cos(moon.angle + disturbance * 0.1) * moon.distance;
+      const moonY = centerY + Math.sin(moon.angle + disturbance * 0.1) * moon.distance;
+      
+      // Calculate overlap (for totality effects)
+      const overlap = Math.max(0, 1 - moon.distance / (sun.radius * 2));
+      
+      // Background stars (visible during totality)
+      if (overlap > 0.3) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${overlap * 0.8})`;
+        for (let i = 0; i < 50; i++) {
+          const x = (i * 137.5) % width;
+          const y = (i * 73.2) % height;
+          ctx.fillRect(x, y, 2, 2);
+        }
+      }
+      
+      // Sun with dynamic glow
+      const sunGlow = 100 + Math.sin(time * 0.05) * 20;
+      const gradient = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, sun.radius + sunGlow);
+      gradient.addColorStop(0, '#FFC107');
+      gradient.addColorStop(0.5, '#FFD700');
+      gradient.addColorStop(0.8, '#f59e0b');
+      gradient.addColorStop(1, 'rgba(245, 158, 11, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+      
+      // Sun core
+      ctx.fillStyle = sun.color;
+      ctx.beginPath();
+      ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Corona particles (rotate and pulse)
+      coronaParticles.forEach(p => {
+        p.angle += p.speed;
+        const x = sun.x + Math.cos(p.angle) * p.distance;
+        const y = sun.y + Math.sin(p.angle) * p.distance;
+        const pulse = Math.sin(time * 0.1 + p.brightness * Math.PI * 2) * 0.5 + 0.5;
+        
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = pulse * 0.8 * (1 - overlap * 0.7);
+        ctx.beginPath();
+        ctx.arc(x, y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+      
+      // TOTALITY EFFECTS
+      if (overlap > 0.8) {
+        // Diamond ring effect (just before/after totality)
+        const ringIntensity = (1 - Math.abs(overlap - 0.95) * 20);
+        if (ringIntensity > 0) {
+          ctx.strokeStyle = `rgba(255, 215, 0, ${ringIntensity})`;
+          ctx.lineWidth = 8;
+          ctx.shadowBlur = 30;
+          ctx.shadowColor = '#FFD700';
+          ctx.beginPath();
+          ctx.arc(moonX, moonY, moon.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        }
+        
+        // Corona burst during totality
+        if (overlap > 0.9) {
+          const burstCount = 12;
+          for (let i = 0; i < burstCount; i++) {
+            const angle = (i / burstCount) * Math.PI * 2 + time * 0.02;
+            const length = sun.radius * 1.5 + Math.sin(time * 0.1 + i) * 20;
+            const x1 = sun.x + Math.cos(angle) * sun.radius;
+            const y1 = sun.y + Math.sin(angle) * sun.radius;
+            const x2 = sun.x + Math.cos(angle) * length;
+            const y2 = sun.y + Math.sin(angle) * length;
+            
+            const coronaGrad = ctx.createLinearGradient(x1, y1, x2, y2);
+            coronaGrad.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
+            coronaGrad.addColorStop(0.5, 'rgba(249, 115, 22, 0.4)'); // Coral
+            coronaGrad.addColorStop(1, 'rgba(45, 149, 150, 0)'); // Teal
+            
+            ctx.strokeStyle = coronaGrad;
+            ctx.lineWidth = 3;
+            ctx.globalAlpha = overlap - 0.8;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+      
+      // Shadow particles (move during totality)
+      shadowParticles.forEach(p => {
+        p.opacity = overlap * 0.6;
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+        
+        ctx.fillStyle = `rgba(139, 92, 246, ${p.opacity})`; // Purple particles
+        ctx.globalAlpha = p.opacity;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+      
+      // Moon (dark silhouette)
+      ctx.fillStyle = moon.color;
+      ctx.beginPath();
+      ctx.arc(moonX, moonY, moon.radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Moon rim light (from sun)
+      if (overlap < 0.9) {
+        const rimAngle = Math.atan2(sun.y - moonY, sun.x - moonX);
+        const rimGrad = ctx.createRadialGradient(
+          moonX + Math.cos(rimAngle) * moon.radius * 0.5,
+          moonY + Math.sin(rimAngle) * moon.radius * 0.5,
+          0,
+          moonX,
+          moonY,
+          moon.radius
+        );
+        rimGrad.addColorStop(0, 'rgba(249, 115, 22, 0.3)');
+        rimGrad.addColorStop(1, 'rgba(249, 115, 22, 0)');
+        ctx.fillStyle = rimGrad;
+        ctx.beginPath();
+        ctx.arc(moonX, moonY, moon.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Decay disturbance
+      if (disturbance > 0) disturbance *= 0.95;
+      
+      requestAnimationFrame(draw);
+    }
+    
+    draw();
+  </script>
+</body>
+</html>
