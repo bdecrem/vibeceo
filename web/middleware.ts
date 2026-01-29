@@ -108,6 +108,24 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // JT10 lead synth at /jt10
+    if (pathname.startsWith('/jt10')) {
+      log(`[Middleware] JT10 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // JT30 acid bass at /jt30
+    if (pathname.startsWith('/jt30')) {
+      log(`[Middleware] JT30 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // JT90 drum machine at /jt90
+    if (pathname.startsWith('/jt90')) {
+      log(`[Middleware] JT90 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // SynthMachine landing page at /synthmachine
     if (pathname === '/synthmachine' || pathname.startsWith('/synthmachine/')) {
       log(`[Middleware] synthmachine route bypassed: ${pathname}`)
@@ -323,6 +341,24 @@ export function middleware(request: NextRequest) {
     // JB-01 drum machine at /jb01
     if (pathname.startsWith('/jb01')) {
       log(`[Middleware] intheamber.com JB01 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // JT10 lead synth at /jt10
+    if (pathname.startsWith('/jt10')) {
+      log(`[Middleware] intheamber.com JT10 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // JT30 acid bass at /jt30
+    if (pathname.startsWith('/jt30')) {
+      log(`[Middleware] intheamber.com JT30 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // JT90 drum machine at /jt90
+    if (pathname.startsWith('/jt90')) {
+      log(`[Middleware] intheamber.com JT90 route bypassed: ${pathname}`)
       return NextResponse.next()
     }
 
