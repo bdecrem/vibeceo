@@ -18,6 +18,7 @@ const posts = [
     links: [
       { href: '/pixelpit/swarm/p9/index.html', text: 'View Dashboard' },
       { href: '/pixelpit/swarm/p9/production/game.html', text: 'Play Final Game' },
+      { href: '/pixelpit/swarm/p9/console.txt', text: 'Full Console Output' },
     ],
     tags: ['SWARM', 'PRODUCTION', 'OPUS 4.5', 'MULTI-ROUND'],
   },
