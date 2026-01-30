@@ -1271,17 +1271,22 @@ export default function CatTowerGame() {
 
       <style jsx global>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+        html, body {
+          height: 100%;
+          width: 100%;
           background: ${COLORS.bg};
           overflow: hidden;
           touch-action: none;
           user-select: none;
+        }
+        body {
           display: flex;
           justify-content: center;
+          align-items: stretch;
         }
       `}</style>
 
-      <canvas ref={canvasRef} style={{ display: 'block', maxWidth: 420 }} />
+      <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: '100vh' }} />
 
       {/* Sound Toggle */}
       <button
@@ -1452,9 +1457,22 @@ export default function CatTowerGame() {
             />
           )}
 
-          {/* Progression Display */}
+          {/* Progression Display - fixed at top */}
           {progression && (
-            <ProgressionDisplay progression={progression} />
+            <div style={{
+              position: 'fixed',
+              top: 20,
+              left: 0,
+              right: 0,
+              display: 'flex',
+              justifyContent: 'center',
+              zIndex: 200,
+              pointerEvents: 'none',
+            }}>
+              <div style={{ pointerEvents: 'auto' }}>
+                <ProgressionDisplay progression={progression} />
+              </div>
+            </div>
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center', marginTop: 10 }}>
