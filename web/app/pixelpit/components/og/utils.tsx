@@ -117,4 +117,11 @@ export const GAME_COLORS = {
     accent: '#06b6d4',
     branding: '#1e1b4b',
   },
+  pop: {
+    background: '#0f172a',
+    primary: '#ec4899',
+    secondary: '#22d3ee',
+    accent: '#fbbf24',
+    branding: '#f8fafc',
+  },
 };
