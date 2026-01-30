@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PRISM - Amber</title>
+  <meta name="description" content="A playable frequency spectrum. Touch the bars to play notes. Watch sound become color.">
+  <meta property="og:title" content="PRISM">
+  <meta property="og:description" content="A playable frequency spectrum. Touch the bars to play notes. Watch sound become color.">
+  <meta property="og:image" content="https://intheamber.com/amber/prism-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/prism.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #000;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #title {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(48px, 12vw, 120px);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: rgba(255, 255, 255, 0.95);
+      text-shadow: 0 0 40px rgba(255, 255, 255, 0.6);
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      z-index: 10;
+    }
+
+    #title.hidden {
+      opacity: 0;
+    }
+
+    #info {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 14px;
+      letter-spacing: 0.05em;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      text-align: center;
+    }
+
+    #info.hidden {
+      opacity: 0;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="title">PRISM</div>
+  <div id="info">TOUCH THE SPECTRUM TO PLAY</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const title = document.getElementById('title');
+    const info = document.getElementById('info');
+
+    let width, height;
+    let audioContext;
+    let audioStarted = false;
+
+    const notes = [
+      { name: 'C', freq: 523.25, color: '#ff0000' }, // C5 - red
+      { name: 'D', freq: 587.33, color: '#ff7f00' }, // D5 - orange
+      { name: 'E', freq: 659.25, color: '#ffff00' }, // E5 - yellow
+      { name: 'F', freq: 698.46, color: '#00ff00' }, // F5 - green
+      { name: 'G', freq: 783.99, color: '#0000ff' }, // G5 - blue
+      { name: 'A', freq: 880.00, color: '#4b0082' }, // A5 - indigo
+      { name: 'B', freq: 987.77, color: '#9400d3' }  // B5 - violet
+    ];
+
+    const bars = notes.map((note, i) => ({
+      ...note,
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      intensity: 0,
+      targetIntensity: 0,
+      oscillator: null,
+      gainNode: null,
+      particles: []
+    }));
+
+    let activeTouches = new Map();
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      
+      const barWidth = width / bars.length;
+      bars.forEach((bar, i) => {
+        bar.x = i * barWidth;
+        bar.y = 0;
+        bar.width = barWidth;
+        bar.height = height;
+      });
+    }
+
+    function initAudio() {
+      if (audioStarted) return;
+      audioStarted = true;
+
+      audioContext = new AudioContext();
+      
+      bars.forEach(bar => {
+        bar.oscillator = audioContext.createOscillator();
+        bar.oscillator.frequency.value = bar.freq;
+        bar.oscillator.type = 'sine';
+        
+        bar.gainNode = audioContext.createGain();
+        bar.gainNode.gain.value = 0;
+        
+        bar.oscillator.connect(bar.gainNode);
+        bar.gainNode.connect(audioContext.destination);
+        
+        bar.oscillator.start();
+      });
+
+      title.classList.add('hidden');
+      info.classList.add('hidden');
+    }
+
+    function playNote(bar) {
+      if (!audioStarted) initAudio();
+      bar.targetIntensity = 1;
+      
+      // Spawn particles at top of bar
+      for (let i = 0; i < 5; i++) {
+        bar.particles.push({
+          x: bar.x + bar.width / 2 + (Math.random() - 0.5) * bar.width * 0.5,
+          y: 60,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4 - 2,
+          life: 1,
+          size: Math.random() * 4 + 2
+        });
+      }
+    }
+
+    function stopNote(bar) {
+      bar.targetIntensity = 0;
+    }
+
+    function getTouchBar(x, y) {
+      return bars.find(bar => x >= bar.x && x <= bar.x + bar.width);
+    }
+
+    function handleTouchStart(e) {
+      e.preventDefault();
+      
+      if (!audioStarted) {
+        initAudio();
+      }
+
+      for (let touch of e.changedTouches) {
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        const bar = getTouchBar(x, y);
+        
+        if (bar) {
+          activeTouches.set(touch.identifier, bar);
+          playNote(bar);
+        }
+      }
+    }
+
+    function handleTouchMove(e) {
+      e.preventDefault();
+      
+      for (let touch of e.changedTouches) {
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        const bar = getTouchBar(x, y);
+        const prevBar = activeTouches.get(touch.identifier);
+        
+        if (bar !== prevBar) {
+          if (prevBar) stopNote(prevBar);
+          if (bar) {
+            playNote(bar);
+            activeTouches.set(touch.identifier, bar);
+          } else {
+            activeTouches.delete(touch.identifier);
+          }
+        }
+      }
+    }
+
+    function handleTouchEnd(e) {
+      e.preventDefault();
+      
+      for (let touch of e.changedTouches) {
+        const bar = activeTouches.get(touch.identifier);
+        if (bar) {
+          stopNote(bar);
+          activeTouches.delete(touch.identifier);
+        }
+      }
+    }
+
+    function handleMouseDown(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const bar = getTouchBar(x, y);
+      
+      if (bar) {
+        if (!audioStarted) initAudio();
+        activeTouches.set('mouse', bar);
+        playNote(bar);
+      }
+    }
+
+    function handleMouseMove(e) {
+      if (!activeTouches.has('mouse')) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const bar = getTouchBar(x, y);
+      const prevBar = activeTouches.get('mouse');
+      
+      if (bar !== prevBar) {
+        if (prevBar) stopNote(prevBar);
+        if (bar) {
+          playNote(bar);
+          activeTouches.set('mouse', bar);
+        } else {
+          activeTouches.delete('mouse');
+        }
+      }
+    }
+
+    function handleMouseUp() {
+      const bar = activeTouches.get('mouse');
+      if (bar) {
+        stopNote(bar);
+        activeTouches.delete('mouse');
+      }
+    }
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mouseleave', handleMouseUp);
+
+    function animate() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, width, height);
+
+      bars.forEach(bar => {
+        // Smooth intensity transitions
+        bar.intensity += (bar.targetIntensity - bar.intensity) * 0.15;
+        
+        if (bar.gainNode) {
+          bar.gainNode.gain.value = bar.intensity * 0.3;
+        }
+
+        // Draw bar with gradient
+        const gradient = ctx.createLinearGradient(bar.x, height, bar.x, 0);
+        const alpha = 0.2 + bar.intensity * 0.6;
+        gradient.addColorStop(0, bar.color + Math.floor(alpha * 255).toString(16).padStart(2, '0'));
+        gradient.addColorStop(1, bar.color + '00');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(bar.x, 0, bar.width, height);
+
+        // Pulsing glow when active
+        if (bar.intensity > 0.1) {
+          const glowHeight = 80 + bar.intensity * 40;
+          const glowGradient = ctx.createRadialGradient(
+            bar.x + bar.width / 2, 60, 0,
+            bar.x + bar.width / 2, 60, bar.width * 0.8
+          );
+          glowGradient.addColorStop(0, bar.color + Math.floor(bar.intensity * 180).toString(16).padStart(2, '0'));
+          glowGradient.addColorStop(1, bar.color + '00');
+          
+          ctx.fillStyle = glowGradient;
+          ctx.fillRect(bar.x, 0, bar.width, glowHeight);
+        }
+
+        // Note label at bottom
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + bar.intensity * 0.4})`;
+        ctx.font = 'bold 24px Space Mono';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(bar.name, bar.x + bar.width / 2, height - 20);
+
+        // Update and draw particles
+        bar.particles = bar.particles.filter(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.15; // gravity
+          p.life -= 0.02;
+          
+          if (p.life <= 0) return false;
+          
+          ctx.fillStyle = bar.color + Math.floor(p.life * 255).toString(16).padStart(2, '0');
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fill();
+          
+          return true;
+        });
+      });
+
+      // Idle breathing animation when nothing is playing
+      const anyActive = bars.some(bar => bar.intensity > 0.05);
+      if (!anyActive && audioStarted) {
+        const breathe = Math.sin(Date.now() * 0.001) * 0.5 + 0.5;
+        bars.forEach(bar => {
+          const shimmer = breathe * 0.1;
+          ctx.fillStyle = bar.color + Math.floor(shimmer * 100).toString(16).padStart(2, '0');
+          ctx.fillRect(bar.x, 0, bar.width, height);
+        });
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    animate();
+  </script>
+</body>
+</html>
