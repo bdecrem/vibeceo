@@ -124,4 +124,11 @@ export const GAME_COLORS = {
     accent: '#fbbf24',
     branding: '#f8fafc',
   },
+  catTower: {
+    background: '#1a1a2e',
+    primary: '#FFB347',
+    secondary: '#70A1FF',
+    accent: '#FFD700',
+    branding: '#f8fafc',
+  },
 };

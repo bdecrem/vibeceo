@@ -1,15 +1,31 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import Script from 'next/script';
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  usePixelpitSocial,
+  type ScoreFlowColors,
+  type LeaderboardColors,
+  type ProgressionResult,
+} from '@/app/pixelpit/components';
 
-// VERSION 4: REAL STACK MECHANICS + DROP PHYSICS + AUDIO
-// - Smooth drop animation with gravity
-// - Satisfying landing + slice
-// - 5 perfect placements = block grows back
-// - Escalating flash feedback on streaks
-// - Music and sound effects
+// =============================================================================
+// CAT TOWER — Stack game with cats
+// =============================================================================
 
-// ============ AUDIO SYSTEM ============
+const GAME_ID = 'cat-tower';
+
+// Thresholds for name prompt
+const PLAYS_UNTIL_NAME_PROMPT = 3;
+const SCORE_FOR_IMMEDIATE_NAME_PROMPT = 5;
+
+// =============================================================================
+// AUDIO SYSTEM - Modern Electronic / Techno
+// =============================================================================
+
 class GameAudio {
   ctx: AudioContext | null = null;
   masterGain: GainNode | null = null;
@@ -18,7 +34,35 @@ class GameAudio {
   musicPlaying = false;
   musicInterval: NodeJS.Timeout | null = null;
   musicStep = 0;
+  arpStep = 0;
   enabled = true;
+
+  // Electronic dance config - 124 BPM, four-on-the-floor
+  music = {
+    bpm: 124,
+    // Sub bass pattern (A minor pentatonic root notes)
+    bass: [55, 0, 55, 0, 55, 0, 55, 65, 55, 0, 55, 0, 55, 0, 73, 65],
+    // Four-on-the-floor kick
+    kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+    // Offbeat hi-hats
+    hat: [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+    // Closed hats for texture
+    closedHat: [1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+    // Dreamy arpeggio notes (Am - F - C - G progression)
+    arp: [
+      [220, 262, 330, 392, 440],  // Am
+      [175, 220, 262, 330, 349],  // F
+      [196, 262, 330, 392, 523],  // C
+      [196, 247, 294, 392, 494],  // G
+    ],
+    // Pad chord stabs
+    pad: [
+      [220, 262, 330],  // Am
+      [175, 220, 262],  // F
+      [196, 262, 330],  // C
+      [196, 247, 392],  // G
+    ],
+  };
 
   init() {
     if (!this.ctx) {
@@ -30,13 +74,12 @@ class GameAudio {
 
       this.musicGain = this.ctx.createGain();
       this.musicGain.connect(this.masterGain);
-      this.musicGain.gain.value = 0.4;
+      this.musicGain.gain.value = 0.5;
 
       this.sfxGain = this.ctx.createGain();
       this.sfxGain.connect(this.masterGain);
-      this.sfxGain.gain.value = 0.6;
+      this.sfxGain.gain.value = 0.4;
     }
-    // Always try to resume (browser requires user gesture)
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
@@ -49,65 +92,54 @@ class GameAudio {
     }
   }
 
-  // Simple filtered oscillator
-  playTone(freq: number, duration: number, type: OscillatorType, volume: number, target: 'music' | 'sfx' = 'sfx') {
-    if (!this.ctx || !this.enabled) return;
-    const gain = target === 'music' ? this.musicGain : this.sfxGain;
-    if (!gain) return;
-
+  playSoftTone(freq: number, duration: number, type: OscillatorType, volume: number, cutoff: number) {
+    if (!this.ctx || !this.sfxGain) return;
     const osc = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
     const filter = this.ctx.createBiquadFilter();
-
+    const g = this.ctx.createGain();
     osc.connect(filter);
     filter.connect(g);
-    g.connect(gain);
-
+    g.connect(this.sfxGain);
     osc.type = type;
     osc.frequency.value = freq;
     filter.type = 'lowpass';
-    filter.frequency.value = 2000;
-
+    filter.frequency.value = cutoff;
     g.gain.setValueAtTime(volume, this.ctx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-
     osc.start();
     osc.stop(this.ctx.currentTime + duration);
   }
 
-  // Sound effects
   playDrop() {
-    this.playTone(200, 0.1, 'sine', 0.3);
-    setTimeout(() => this.playTone(150, 0.08, 'sine', 0.2), 30);
+    this.playSoftTone(200, 0.08, 'sine', 0.15, 1500);
+    setTimeout(() => this.playSoftTone(150, 0.06, 'sine', 0.1, 1000), 40);
   }
 
   playLand() {
     if (!this.ctx || !this.sfxGain) return;
-    // Thud sound
     const osc = this.ctx.createOscillator();
     const g = this.ctx.createGain();
     osc.connect(g);
     g.connect(this.sfxGain);
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+    osc.frequency.setValueAtTime(120, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.1);
-    g.gain.setValueAtTime(0.4, this.ctx.currentTime);
+    g.gain.setValueAtTime(0.2, this.ctx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
     osc.start();
     osc.stop(this.ctx.currentTime + 0.15);
   }
 
   playPerfect(streak: number) {
-    // Rising chime based on streak
-    const baseFreq = 440 + streak * 50;
-    this.playTone(baseFreq, 0.15, 'sine', 0.25);
-    setTimeout(() => this.playTone(baseFreq * 1.25, 0.15, 'sine', 0.2), 80);
-    setTimeout(() => this.playTone(baseFreq * 1.5, 0.2, 'sine', 0.15), 160);
+    // Bright synth arp
+    const baseFreq = 523 + streak * 50;
+    [0, 80, 160].forEach((delay, i) => {
+      setTimeout(() => this.playSoftTone(baseFreq * (1 + i * 0.25), 0.12, 'square', 0.06, 3000), delay);
+    });
   }
 
   playSlice() {
     if (!this.ctx || !this.sfxGain) return;
-    // Quick noise burst
     const bufferSize = this.ctx.sampleRate * 0.05;
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -116,35 +148,32 @@ class GameAudio {
     }
     const noise = this.ctx.createBufferSource();
     noise.buffer = buffer;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.value = 2000;
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 2000;
     const g = this.ctx.createGain();
-    g.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    g.gain.setValueAtTime(0.08, this.ctx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
-    noise.connect(filter);
-    filter.connect(g);
+    noise.connect(hp);
+    hp.connect(g);
     g.connect(this.sfxGain);
     noise.start();
   }
 
   playGrow() {
-    // Sparkly ascending
-    [0, 50, 100, 150].forEach((delay, i) => {
-      setTimeout(() => {
-        this.playTone(600 + i * 100, 0.12, 'sine', 0.15);
-      }, delay);
+    // Rising synth sweep
+    [0, 100, 200, 300].forEach((delay, i) => {
+      setTimeout(() => this.playSoftTone(440 + i * 110, 0.15, 'sawtooth', 0.05, 2500), delay);
     });
   }
 
   playGameOver() {
-    // Sad descending
-    this.playTone(300, 0.2, 'triangle', 0.3);
-    setTimeout(() => this.playTone(250, 0.2, 'triangle', 0.25), 150);
-    setTimeout(() => this.playTone(200, 0.3, 'triangle', 0.2), 300);
+    // Descending tones
+    [0, 200, 400].forEach((delay, i) => {
+      setTimeout(() => this.playSoftTone(440 - i * 80, 0.25, 'triangle', 0.08, 1500), delay);
+    });
   }
 
-  // Music - chill lofi vibes
   startMusic() {
     if (this.musicPlaying || !this.ctx) return;
     this.init();
@@ -152,52 +181,51 @@ class GameAudio {
 
     this.musicPlaying = true;
     this.musicStep = 0;
+    this.arpStep = 0;
 
-    const bpm = 95;
-    const stepTime = (60 / bpm) * 1000 / 4;
-
-    // Chord progression (lofi jazzy)
-    const chords = [
-      [261, 329, 392], // C maj
-      [293, 369, 440], // D maj
-      [329, 415, 493], // E maj
-      [261, 329, 392], // C maj
-    ];
-
-    // Bass notes
-    const bass = [130, 146, 164, 130];
+    const stepTime = (60 / this.music.bpm) * 1000 / 4; // 16th notes
 
     this.musicInterval = setInterval(() => {
       if (!this.musicPlaying || !this.ctx) return;
-
-      const bar = Math.floor(this.musicStep / 16) % 4;
-      const beat = this.musicStep % 16;
-
-      // Kick on 1 and 9
-      if (beat === 0 || beat === 8) {
-        this.playKick();
-      }
-
-      // Hi-hat on off-beats
-      if (beat % 4 === 2) {
-        this.playHat();
-      }
-
-      // Bass on 1
-      if (beat === 0) {
-        this.playBass(bass[bar]);
-      }
-
-      // Chord stabs
-      if (beat === 0 || beat === 6 || beat === 10) {
-        const chord = chords[bar];
-        chord.forEach(freq => {
-          this.playTone(freq, 0.3, 'triangle', 0.06, 'music');
-        });
-      }
-
-      this.musicStep++;
+      this.musicTick();
     }, stepTime);
+  }
+
+  musicTick() {
+    const beat = this.musicStep % 16;
+    const bar = Math.floor(this.musicStep / 16) % 4;
+
+    // Four-on-the-floor kick
+    if (this.music.kick[beat]) {
+      this.playKick();
+    }
+
+    // Offbeat open hi-hat
+    if (this.music.hat[beat]) {
+      this.playOpenHat();
+    }
+
+    // Closed hats for groove
+    if (this.music.closedHat[beat]) {
+      this.playClosedHat();
+    }
+
+    // Sub bass
+    const bassNote = this.music.bass[beat];
+    if (bassNote > 0) {
+      this.playSubBass(bassNote);
+    }
+
+    // Dreamy arpeggiator - plays on every 16th note
+    this.playArp(this.music.arp[bar]);
+
+    // Pad stab on beat 1 of each bar
+    if (beat === 0) {
+      this.playPad(this.music.pad[bar]);
+    }
+
+    this.musicStep++;
+    this.arpStep++;
   }
 
   playKick() {
@@ -207,17 +235,17 @@ class GameAudio {
     osc.connect(g);
     g.connect(this.musicGain);
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(100, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.1);
-    g.gain.setValueAtTime(0.5, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.08);
+    g.gain.setValueAtTime(0.35, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
     osc.start();
-    osc.stop(this.ctx.currentTime + 0.15);
+    osc.stop(this.ctx.currentTime + 0.2);
   }
 
-  playHat() {
+  playOpenHat() {
     if (!this.ctx || !this.musicGain) return;
-    const bufferSize = this.ctx.sampleRate * 0.03;
+    const bufferSize = this.ctx.sampleRate * 0.08;
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
@@ -225,17 +253,37 @@ class GameAudio {
     noise.buffer = buffer;
     const hp = this.ctx.createBiquadFilter();
     hp.type = 'highpass';
-    hp.frequency.value = 8000;
+    hp.frequency.value = 7000;
     const g = this.ctx.createGain();
-    g.gain.setValueAtTime(0.08, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
+    g.gain.setValueAtTime(0.06, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
     noise.connect(hp);
     hp.connect(g);
     g.connect(this.musicGain);
     noise.start();
   }
 
-  playBass(freq: number) {
+  playClosedHat() {
+    if (!this.ctx || !this.musicGain) return;
+    const bufferSize = this.ctx.sampleRate * 0.02;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 9000;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.03, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.025);
+    noise.connect(hp);
+    hp.connect(g);
+    g.connect(this.musicGain);
+    noise.start();
+  }
+
+  playSubBass(freq: number) {
     if (!this.ctx || !this.musicGain) return;
     const osc = this.ctx.createOscillator();
     const filter = this.ctx.createBiquadFilter();
@@ -243,14 +291,61 @@ class GameAudio {
     osc.connect(filter);
     filter.connect(g);
     g.connect(this.musicGain);
-    osc.type = 'triangle';
+    osc.type = 'sine';
     osc.frequency.value = freq;
     filter.type = 'lowpass';
-    filter.frequency.value = 300;
-    g.gain.setValueAtTime(0.35, this.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+    filter.frequency.value = 200;
+    g.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
     osc.start();
-    osc.stop(this.ctx.currentTime + 0.4);
+    osc.stop(this.ctx.currentTime + 0.15);
+  }
+
+  playArp(notes: number[]) {
+    if (!this.ctx || !this.musicGain) return;
+    const note = notes[this.arpStep % notes.length];
+    const osc = this.ctx.createOscillator();
+    const filter = this.ctx.createBiquadFilter();
+    const g = this.ctx.createGain();
+    osc.connect(filter);
+    filter.connect(g);
+    g.connect(this.musicGain);
+    osc.type = 'sawtooth';
+    osc.frequency.value = note;
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(3500, this.ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.15);
+    filter.Q.value = 3;
+    g.gain.setValueAtTime(0.04, this.ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.15);
+  }
+
+  playPad(freqs: number[]) {
+    if (!this.ctx || !this.musicGain) return;
+    freqs.forEach((freq) => {
+      const osc = this.ctx!.createOscillator();
+      const osc2 = this.ctx!.createOscillator();
+      const filter = this.ctx!.createBiquadFilter();
+      const g = this.ctx!.createGain();
+      osc.connect(filter);
+      osc2.connect(filter);
+      filter.connect(g);
+      g.connect(this.musicGain!);
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+      osc2.type = 'sawtooth';
+      osc2.frequency.value = freq * 1.003; // Slight detune for width
+      filter.type = 'lowpass';
+      filter.frequency.value = 1500;
+      g.gain.setValueAtTime(0.025, this.ctx!.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, this.ctx!.currentTime + 0.8);
+      osc.start();
+      osc2.start();
+      osc.stop(this.ctx!.currentTime + 0.85);
+      osc2.stop(this.ctx!.currentTime + 0.85);
+    });
   }
 
   stopMusic() {
@@ -264,16 +359,18 @@ class GameAudio {
 
 const gameAudio = new GameAudio();
 
-// ============ GAME CODE ============
+// =============================================================================
+// GAME TYPES & CONSTANTS
+// =============================================================================
 
 const CAT_COLORS = [
-  { body: '#FF6B6B', stripe: '#E85555' },  // Red
-  { body: '#FFB347', stripe: '#E8941A' },  // Orange
-  { body: '#FFE66D', stripe: '#E8D14A' },  // Yellow
-  { body: '#7BED9F', stripe: '#5ED17F' },  // Green
-  { body: '#70A1FF', stripe: '#5588E8' },  // Blue
-  { body: '#9B59B6', stripe: '#7D3C98' },  // Purple
-  { body: '#FF85C0', stripe: '#E86AA8' },  // Pink
+  { body: '#FF6B6B', stripe: '#E85555' },
+  { body: '#FFB347', stripe: '#E8941A' },
+  { body: '#FFE66D', stripe: '#E8D14A' },
+  { body: '#7BED9F', stripe: '#5ED17F' },
+  { body: '#70A1FF', stripe: '#5588E8' },
+  { body: '#9B59B6', stripe: '#7D3C98' },
+  { body: '#FF85C0', stripe: '#E86AA8' },
 ];
 
 const CAT_FACES = ['=^.^=', '>^.^<', '=^o^=', '>^w^<', '=^_^='];
@@ -283,7 +380,6 @@ interface StackedCat {
   y: number;
   width: number;
   colorIndex: number;
-  // Landing animation
   squash: number;
 }
 
@@ -299,52 +395,253 @@ interface FallingPiece {
   rotationSpeed: number;
 }
 
-export default function CatStack4Game() {
+// =============================================================================
+// COLORS (matching Neon Playroom style)
+// =============================================================================
+
+const COLORS = {
+  bg: '#1a1a2e',
+  surface: '#16213e',
+  primary: '#FFB347',
+  secondary: '#70A1FF',
+  text: '#f8fafc',
+  muted: '#64748b',
+};
+
+const LEADERBOARD_COLORS: LeaderboardColors = {
+  bg: COLORS.bg,
+  surface: COLORS.surface,
+  primary: COLORS.primary,
+  secondary: COLORS.secondary,
+  text: COLORS.text,
+  muted: COLORS.muted,
+};
+
+const SCORE_FLOW_COLORS: ScoreFlowColors = {
+  bg: COLORS.bg,
+  surface: COLORS.surface,
+  primary: COLORS.primary,
+  secondary: COLORS.secondary,
+  text: COLORS.text,
+  muted: COLORS.muted,
+  error: '#f87171',
+};
+
+// =============================================================================
+// PROGRESSION DISPLAY COMPONENT
+// =============================================================================
+
+function ProgressionDisplay({ progression }: { progression: ProgressionResult }) {
+  const [animatedXp, setAnimatedXp] = useState(0);
+  const [animatedProgress, setAnimatedProgress] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [barPulse, setBarPulse] = useState(false);
+
+  useEffect(() => {
+    const startDelay = setTimeout(() => {
+      const startProgress = progression.leveledUp
+        ? 0
+        : Math.max(0, progression.levelProgress - progression.xpEarned);
+
+      setAnimatedProgress(startProgress);
+      setAnimatedXp(0);
+
+      const xpDuration = 800;
+      const xpSteps = 30;
+      const xpIncrement = progression.xpEarned / xpSteps;
+      let currentXp = 0;
+
+      const xpInterval = setInterval(() => {
+        currentXp += xpIncrement;
+        if (currentXp >= progression.xpEarned) {
+          setAnimatedXp(progression.xpEarned);
+          clearInterval(xpInterval);
+        } else {
+          setAnimatedXp(Math.floor(currentXp));
+        }
+      }, xpDuration / xpSteps);
+
+      const barDelay = setTimeout(() => {
+        setBarPulse(true);
+
+        if (progression.leveledUp) {
+          setAnimatedProgress(progression.levelNeeded);
+
+          setTimeout(() => {
+            setShowLevelUp(true);
+            setAnimatedProgress(0);
+
+            setTimeout(() => {
+              setAnimatedProgress(progression.levelProgress);
+              setBarPulse(false);
+            }, 300);
+          }, 500);
+        } else {
+          setAnimatedProgress(progression.levelProgress);
+          setTimeout(() => setBarPulse(false), 600);
+        }
+      }, 200);
+
+      return () => {
+        clearInterval(xpInterval);
+        clearTimeout(barDelay);
+      };
+    }, 100);
+
+    return () => clearTimeout(startDelay);
+  }, [progression]);
+
+  const progressPercent = (animatedProgress / progression.levelNeeded) * 100;
+
+  return (
+    <div style={{
+      background: COLORS.surface,
+      border: `1px solid ${COLORS.primary}30`,
+      borderRadius: 12,
+      padding: '14px 20px',
+      marginBottom: 15,
+      textAlign: 'center',
+      minWidth: 200,
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        marginBottom: 8,
+      }}>
+        <span style={{
+          fontFamily: 'monospace',
+          fontSize: 16,
+          fontWeight: 700,
+          color: COLORS.primary,
+        }}>
+          +{animatedXp} XP
+        </span>
+        {progression.streak > 1 && (
+          <span style={{
+            background: COLORS.secondary,
+            color: COLORS.bg,
+            padding: '3px 8px',
+            borderRadius: 10,
+            fontSize: 10,
+            fontWeight: 600,
+            fontFamily: 'monospace',
+          }}>
+            {progression.multiplier}x streak
+          </span>
+        )}
+      </div>
+
+      {/* XP Progress Bar */}
+      <div style={{
+        background: COLORS.bg,
+        borderRadius: 6,
+        height: 8,
+        overflow: 'hidden',
+        marginBottom: 6,
+        position: 'relative',
+      }}>
+        <div style={{
+          background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.secondary})`,
+          height: '100%',
+          width: `${progressPercent}%`,
+          borderRadius: 6,
+          transition: 'width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          boxShadow: barPulse ? `0 0 12px ${COLORS.primary}` : 'none',
+        }} />
+      </div>
+
+      <div style={{
+        fontFamily: 'monospace',
+        fontSize: 11,
+        color: COLORS.muted,
+      }}>
+        Level {progression.level} • {Math.floor(animatedProgress)}/{progression.levelNeeded} XP
+      </div>
+
+      {showLevelUp && (
+        <div style={{
+          marginTop: 10,
+          padding: '8px 16px',
+          background: `linear-gradient(135deg, ${COLORS.primary}, #E8941A)`,
+          borderRadius: 10,
+          fontFamily: 'monospace',
+          fontSize: 13,
+          fontWeight: 700,
+          color: COLORS.bg,
+        }}>
+          LEVEL UP!
+        </div>
+      )}
+
+      {progression.streak >= 3 && (
+        <div style={{
+          marginTop: 8,
+          fontFamily: 'monospace',
+          fontSize: 10,
+          color: COLORS.secondary,
+        }}>
+          🔥 {progression.streak} day streak
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =============================================================================
+// MAIN COMPONENT
+// =============================================================================
+
+export default function CatTowerGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard'>('start');
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isNewBest, setIsNewBest] = useState(false);
 
-  // Load best score from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('catstack_best');
-    if (saved) setBestScore(parseInt(saved, 10));
-  }, []);
+  // Social state
+  const [socialLoaded, setSocialLoaded] = useState(false);
+  const [playCount, setPlayCount] = useState(0);
+  const [sessionPlays, setSessionPlays] = useState(0); // Games played this session (in a row)
+  const [entryId, setEntryId] = useState<number | null>(null);
+  const [progression, setProgression] = useState<ProgressionResult | null>(null);
+  const [hasHandle, setHasHandle] = useState(false); // User has submitted a handle before
 
+  // User from social library (logged in user)
+  const { user } = usePixelpitSocial(socialLoaded);
+
+  // Show Leaderboard/Share when: user has handle OR (3 games OR score >= 5)
+  const shouldShowLeaderboardShare = hasHandle || user || sessionPlays >= PLAYS_UNTIL_NAME_PROMPT || score >= SCORE_FOR_IMMEDIATE_NAME_PROMPT;
+
+  // Show ScoreFlow (handle input) ONLY when: conditions met AND user doesn't have a handle yet
+  const shouldShowScoreFlow = !hasHandle && !user && (sessionPlays >= PLAYS_UNTIL_NAME_PROMPT || score >= SCORE_FOR_IMMEDIATE_NAME_PROMPT);
+
+  // Game state ref
   const gameRef = useRef({
     running: false,
     score: 0,
     perfectStreak: 0,
     colorIndex: 0,
-
-    // Current cat state
     currentCat: {
       x: 0,
       y: 0,
       width: 120,
-      vy: 0,           // vertical velocity
+      vy: 0,
       direction: 1,
       speed: 3,
       state: 'sliding' as 'sliding' | 'dropping' | 'landed',
     },
-
-    // The stack
     stack: [] as StackedCat[],
-    ghostStack: [] as StackedCat[], // Starting base cats (visual only)
+    ghostStack: [] as StackedCat[],
     fallingPieces: [] as FallingPiece[],
-
-    // Visual effects
     flashIntensity: 0,
     shake: 0,
-
-    // Layout - FIXED play area, tower sinks down
-    slideY: 0,         // Fixed Y where cat slides (set in startGame)
-    landingY: 0,       // Fixed Y where cats land on top of stack
+    slideY: 0,
+    landingY: 0,
     baseWidth: 120,
     catHeight: 35,
-
-    // Game over state
     gameOverPending: false,
   });
 
@@ -353,11 +650,47 @@ export default function CatStack4Game() {
   const GROW_AMOUNT = 3;
   const MIN_WIDTH = 15;
   const GRAVITY = 0.8;
-  const DROP_GAP = 20; // Small gap - cat slides just above stack
+  const DROP_GAP = 20;
 
   const getColor = (index: number) => CAT_COLORS[index % CAT_COLORS.length];
 
-  const startGame = () => {
+  // Load persisted state on mount
+  useEffect(() => {
+    const savedBest = localStorage.getItem('cattower_best');
+    if (savedBest) setBestScore(parseInt(savedBest, 10));
+
+    const savedPlays = localStorage.getItem('cattower_plays');
+    if (savedPlays) setPlayCount(parseInt(savedPlays, 10));
+
+    // Check if user already has a handle from previous sessions
+    const savedGuestName = localStorage.getItem('pixelpit_guest_name');
+    if (savedGuestName) setHasHandle(true);
+  }, []);
+
+  // Auto-submit score when user has a handle (logged in or guest name saved)
+  const autoSubmitScore = useCallback(async (finalScore: number) => {
+    if (!window.PixelpitSocial || !socialLoaded) return;
+
+    try {
+      const nickname = user?.handle || localStorage.getItem('pixelpit_guest_name');
+      if (!nickname) return;
+
+      const result = await window.PixelpitSocial.submitScore(GAME_ID, finalScore, { nickname });
+      if (result.success) {
+        if (result.entry?.id) {
+          setEntryId(result.entry.id);
+        }
+        if (result.progression) {
+          setProgression(result.progression);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to auto-submit score:', e);
+    }
+  }, [socialLoaded, user]);
+
+  // Start game
+  const startGame = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -372,26 +705,22 @@ export default function CatStack4Game() {
     game.shake = 0;
     game.gameOverPending = false;
 
-    // FIXED layout - play area stays centered on screen
-    // landingY is where the TOP of the stack always is (cats stack down from here)
-    game.landingY = canvas.height * 0.55; // slightly below center
-    game.slideY = game.landingY - game.catHeight - DROP_GAP; // cat slides just above
+    game.landingY = canvas.height * 0.55;
+    game.slideY = game.landingY - game.catHeight - DROP_GAP;
 
-    // Create ghost stack - fill from landingY to bottom of viewport
     const baseX = (canvas.width - game.baseWidth) / 2;
     const ghostStackCount = Math.ceil((canvas.height - game.landingY) / game.catHeight) + 1;
     game.ghostStack = [];
     for (let i = 0; i < ghostStackCount; i++) {
       game.ghostStack.push({
         x: baseX,
-        y: game.landingY + (i * game.catHeight), // Stack downward from landing position
+        y: game.landingY + (i * game.catHeight),
         width: game.baseWidth,
         colorIndex: i,
         squash: 1,
       });
     }
 
-    // First cat starts sliding
     game.currentCat = {
       x: baseX,
       y: game.slideY,
@@ -404,24 +733,77 @@ export default function CatStack4Game() {
 
     game.running = true;
     setScore(0);
+    setIsNewBest(false);
     setGameState('playing');
 
-    // Start audio
     gameAudio.init();
     gameAudio.startMusic();
-  };
+  }, []);
 
-  const dropCat = () => {
+  // Drop cat
+  const dropCat = useCallback(() => {
     const game = gameRef.current;
     if (!game.running || game.currentCat.state !== 'sliding') return;
 
-    // Start dropping from current position
     game.currentCat.state = 'dropping';
     game.currentCat.vy = 0;
     gameAudio.playDrop();
-  };
+  }, []);
 
-  const handleLanding = () => {
+  // Handle game over
+  const handleGameOver = useCallback((finalScore: number) => {
+    const game = gameRef.current;
+    game.running = false;
+
+    // Check if user has a handle now (from previous game's ScoreFlow submission)
+    const guestName = localStorage.getItem('pixelpit_guest_name');
+    if (guestName && !hasHandle) {
+      setHasHandle(true);
+    }
+
+    // Update play counts (total and session)
+    const newPlayCount = playCount + 1;
+    setPlayCount(newPlayCount);
+    setSessionPlays(prev => prev + 1);
+    localStorage.setItem('cattower_plays', newPlayCount.toString());
+
+    // Check for new best
+    const isNew = finalScore > bestScore;
+    if (isNew) {
+      setBestScore(finalScore);
+      localStorage.setItem('cattower_best', finalScore.toString());
+      setIsNewBest(true);
+    }
+
+    gameAudio.playGameOver();
+    gameAudio.stopMusic();
+
+    // Track play for analytics (fire-and-forget)
+    if (finalScore >= 1) {
+      fetch('/api/pixelpit/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: GAME_ID }),
+      }).catch(() => {}); // Silent fail
+    }
+
+    // Reset for new game
+    setEntryId(null);
+    setProgression(null);
+
+    // Auto-submit score if user has a handle
+    const savedGuestName = localStorage.getItem('pixelpit_guest_name');
+    if (user || savedGuestName) {
+      autoSubmitScore(finalScore);
+    }
+
+    setTimeout(() => {
+      setGameState('gameover');
+    }, 600);
+  }, [playCount, bestScore, user, hasHandle, autoSubmitScore]);
+
+  // Handle landing
+  const handleLanding = useCallback(() => {
     const game = gameRef.current;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -429,13 +811,11 @@ export default function CatStack4Game() {
     const cat = game.currentCat;
     const catHeight = game.catHeight;
 
-    // Target position - top of stack, or top ghost cat if stack is empty
     let targetX: number;
     let targetWidth: number;
 
     if (game.stack.length === 0) {
-      // First landing - target the top ghost cat
-      const topGhost = game.ghostStack[0]; // Top ghost is first in array
+      const topGhost = game.ghostStack[0];
       targetX = topGhost.x;
       targetWidth = topGhost.width;
     } else {
@@ -444,7 +824,6 @@ export default function CatStack4Game() {
       targetWidth = topCat.width;
     }
 
-    // Calculate overlap
     const catLeft = cat.x;
     const catRight = cat.x + cat.width;
     const targetLeft = targetX;
@@ -454,28 +833,15 @@ export default function CatStack4Game() {
     const overlapRight = Math.min(catRight, targetRight);
     const overlapWidth = overlapRight - overlapLeft;
 
-    // Helper to trigger game over
     const triggerGameOver = () => {
       game.shake = 15;
       game.gameOverPending = true;
       game.currentCat.state = 'landed';
       setScore(game.score);
-      // Update best score
-      if (game.score > bestScore) {
-        setBestScore(game.score);
-        localStorage.setItem('catstack_best', game.score.toString());
-      }
-      gameAudio.playGameOver();
-      gameAudio.stopMusic();
-      setTimeout(() => {
-        game.running = false;
-        setGameState('gameover');
-      }, 800);
+      handleGameOver(game.score);
     };
 
-    // Complete miss?
     if (overlapWidth <= 0) {
-      // Whole cat falls off
       game.fallingPieces.push({
         x: cat.x,
         y: game.landingY,
@@ -491,7 +857,6 @@ export default function CatStack4Game() {
       return;
     }
 
-    // Check if perfect
     const offset = Math.abs(cat.x - targetX);
     const isPerfect = offset <= PERFECT_THRESHOLD;
 
@@ -499,7 +864,6 @@ export default function CatStack4Game() {
     let newCatWidth: number;
 
     if (isPerfect) {
-      // PERFECT! Snap to exact position
       game.perfectStreak++;
       game.flashIntensity = Math.min(1, 0.3 + game.perfectStreak * 0.15);
 
@@ -514,15 +878,12 @@ export default function CatStack4Game() {
 
       gameAudio.playPerfect(game.perfectStreak);
       gameAudio.playLand();
-
     } else {
-      // NOT PERFECT - slice off overhang
       game.perfectStreak = 0;
       game.flashIntensity = 0;
       gameAudio.playLand();
       gameAudio.playSlice();
 
-      // Create falling pieces for overhang
       if (catLeft < targetLeft) {
         const pieceWidth = targetLeft - catLeft;
         game.fallingPieces.push({
@@ -563,20 +924,16 @@ export default function CatStack4Game() {
       newCatWidth = overlapWidth;
     }
 
-    // TOWER SINKS DOWN: Push all existing cats down by catHeight
     game.stack.forEach(stackedCat => {
       stackedCat.y += catHeight;
     });
-    // Push ghost stack down too
     game.ghostStack.forEach(ghostCat => {
       ghostCat.y += catHeight;
     });
-    // Also push falling pieces down
     game.fallingPieces.forEach(piece => {
       piece.y += catHeight;
     });
 
-    // Add the new cat at the FIXED landing position (top of visible stack)
     game.stack.push({
       x: newCatX,
       y: game.landingY,
@@ -587,17 +944,14 @@ export default function CatStack4Game() {
 
     game.currentCat.width = newCatWidth;
 
-    // Score!
     game.score++;
     setScore(game.score);
     game.colorIndex++;
 
-    // Speed up every 15 blocks
     if (game.score % 15 === 0 && game.currentCat.speed < 7) {
       game.currentCat.speed += 0.5;
     }
 
-    // Spawn next cat at fixed travel bound (invisible walls ~one baseWidth from center)
     const startFromLeft = game.score % 2 === 0;
 
     const centerX = canvas.width / 2;
@@ -610,8 +964,9 @@ export default function CatStack4Game() {
     game.currentCat.vy = 0;
     game.currentCat.direction = startFromLeft ? 1 : -1;
     game.currentCat.state = 'sliding';
-  };
+  }, [handleGameOver]);
 
+  // Game loop effect
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -635,12 +990,10 @@ export default function CatStack4Game() {
       const cat = game.currentCat;
 
       if (cat.state === 'sliding') {
-        // Move horizontally
         cat.x += cat.speed * cat.direction;
 
-        // Fixed travel bounds - always ~one baseWidth from center (like invisible walls)
         const centerX = canvas.width / 2;
-        const travelRange = game.baseWidth * 1.2; // Fixed distance, doesn't shrink with cat
+        const travelRange = game.baseWidth * 1.2;
         const leftBound = centerX - travelRange;
         const rightBound = centerX + travelRange - cat.width;
 
@@ -649,16 +1002,12 @@ export default function CatStack4Game() {
         } else if (cat.x >= rightBound) {
           cat.direction = -1;
         }
-
       } else if (cat.state === 'dropping') {
-        // Apply gravity
         cat.vy += GRAVITY;
         cat.y += cat.vy;
 
-        // Landing Y is always the fixed position
         const landingY = game.landingY;
 
-        // Check for landing
         if (cat.y >= landingY) {
           cat.y = landingY;
           cat.state = 'landed';
@@ -670,17 +1019,15 @@ export default function CatStack4Game() {
     const updateEffects = () => {
       const game = gameRef.current;
 
-      // Update falling pieces
       game.fallingPieces = game.fallingPieces.filter(piece => {
         piece.vy += GRAVITY;
         piece.y += piece.vy;
         piece.x += piece.vx;
-        piece.vx *= 0.99; // Air resistance
+        piece.vx *= 0.99;
         piece.rotation += piece.rotationSpeed;
         return piece.y < canvas.height + 300;
       });
 
-      // Animate squash recovery on stacked cats
       game.stack.forEach(cat => {
         if (cat.squash < 1) {
           cat.squash += (1 - cat.squash) * 0.2;
@@ -688,7 +1035,6 @@ export default function CatStack4Game() {
         }
       });
 
-      // Decay effects
       game.flashIntensity *= 0.92;
       game.shake *= 0.88;
     };
@@ -709,11 +1055,10 @@ export default function CatStack4Game() {
       ctx.save();
       ctx.translate(x + width / 2, y + height);
       ctx.rotate(rotation);
-      ctx.scale(1 + (1 - squash) * 0.3, squash); // Squash and stretch
+      ctx.scale(1 + (1 - squash) * 0.3, squash);
 
       const drawHeight = height;
 
-      // Shadow
       if (squash === 1 && rotation === 0) {
         ctx.fillStyle = 'rgba(0,0,0,0.2)';
         ctx.beginPath();
@@ -721,19 +1066,16 @@ export default function CatStack4Game() {
         ctx.fill();
       }
 
-      // Body
       ctx.fillStyle = color.body;
       ctx.beginPath();
       ctx.roundRect(-width / 2, -drawHeight, width, drawHeight, Math.min(10, width / 5));
       ctx.fill();
 
-      // Highlight
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
       ctx.beginPath();
       ctx.roundRect(-width / 2 + 3, -drawHeight + 3, width - 6, drawHeight / 3, 5);
       ctx.fill();
 
-      // Stripes
       if (width > 20) {
         ctx.fillStyle = color.stripe;
         const stripeCount = Math.max(1, Math.floor(width / 30));
@@ -745,7 +1087,6 @@ export default function CatStack4Game() {
         }
       }
 
-      // Face and ears
       if (drawFace && width > 40) {
         const earSize = Math.min(8, width / 10);
         ctx.fillStyle = color.body;
@@ -791,7 +1132,6 @@ export default function CatStack4Game() {
 
       ctx.save();
 
-      // Screen shake
       if (game.shake > 0.5) {
         ctx.translate(
           (Math.random() - 0.5) * game.shake * 2,
@@ -799,7 +1139,6 @@ export default function CatStack4Game() {
         );
       }
 
-      // Background gradient
       const bgHue = (game.colorIndex * 12) % 360;
       const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
       grad.addColorStop(0, `hsl(${bgHue}, 25%, 15%)`);
@@ -807,13 +1146,11 @@ export default function CatStack4Game() {
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Perfect flash
       if (game.flashIntensity > 0.05) {
         ctx.fillStyle = `rgba(255, 255, 255, ${game.flashIntensity * 0.5})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // Draw ghost stack (starting base - darkened/faded)
       ctx.globalAlpha = 0.25;
       game.ghostStack.forEach((cat) => {
         if (cat.y < canvas.height + catHeight && cat.y > -catHeight) {
@@ -822,24 +1159,19 @@ export default function CatStack4Game() {
       });
       ctx.globalAlpha = 1;
 
-      // Draw stacked cats (they sink down from the fixed landing position)
       game.stack.forEach((cat) => {
-        // Only draw if visible on screen
         if (cat.y < canvas.height + catHeight && cat.y > -catHeight) {
           drawCat(cat.x, cat.y, cat.width, catHeight, cat.colorIndex, 0, cat.squash, true);
         }
       });
 
-      // Draw falling pieces
       game.fallingPieces.forEach(piece => {
         drawCat(piece.x, piece.y, piece.width, piece.height, piece.colorIndex, piece.rotation, 1, false);
       });
 
-      // Draw current cat (sliding or dropping)
       if (game.running && !game.gameOverPending) {
         const cat = game.currentCat;
         if (cat.state === 'sliding' || cat.state === 'dropping') {
-          // Draw drop shadow when dropping
           if (cat.state === 'dropping') {
             const landingY = game.landingY;
             const shadowScale = Math.max(0.3, 1 - (landingY - cat.y) / 200);
@@ -847,7 +1179,7 @@ export default function CatStack4Game() {
             ctx.beginPath();
             ctx.ellipse(
               cat.x + cat.width / 2,
-              landingY + catHeight, // Shadow at bottom of landing spot
+              landingY + catHeight,
               (cat.width / 2) * shadowScale,
               4 * shadowScale,
               0, 0, Math.PI * 2
@@ -859,7 +1191,6 @@ export default function CatStack4Game() {
         }
       }
 
-      // UI - Perfect streak indicator
       if (game.perfectStreak > 0 && game.running && !game.gameOverPending) {
         const streakY = 95;
 
@@ -874,7 +1205,6 @@ export default function CatStack4Game() {
         } else {
           ctx.font = 'bold 14px monospace';
           ctx.textAlign = 'center';
-          // Progress dots
           for (let i = 0; i < PERFECTS_TO_GROW; i++) {
             const dotX = canvas.width / 2 - (PERFECTS_TO_GROW - 1) * 10 + i * 20;
             ctx.fillStyle = i < game.perfectStreak ? '#FFD700' : '#444';
@@ -899,7 +1229,6 @@ export default function CatStack4Game() {
 
     gameLoop();
 
-    // Input handlers
     const handleInput = (e?: Event) => {
       e?.preventDefault();
       if (gameRef.current.running && !gameRef.current.gameOverPending) {
@@ -925,14 +1254,25 @@ export default function CatStack4Game() {
       document.removeEventListener('keydown', handleKey);
       gameAudio.stopMusic();
     };
-  }, []);
+  }, [dropCat, handleLanding]);
+
+  // Get share URL
+  const shareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/pixelpit/arcade/cattower/share/${score}`
+    : '';
 
   return (
     <>
+      {/* PixelpitSocial Script */}
+      <Script
+        src="/pixelpit/social.js"
+        onLoad={() => setSocialLoaded(true)}
+      />
+
       <style jsx global>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-          background: #1a1a2e;
+          background: ${COLORS.bg};
           overflow: hidden;
           touch-action: none;
           user-select: none;
@@ -969,7 +1309,7 @@ export default function CatStack4Game() {
         {soundEnabled ? '♪' : '♪̶'}
       </button>
 
-      {/* Score */}
+      {/* Score Display */}
       {gameState === 'playing' && (
         <div style={{
           position: 'fixed',
@@ -1000,7 +1340,7 @@ export default function CatStack4Game() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)',
+          background: `linear-gradient(180deg, ${COLORS.bg} 0%, ${COLORS.surface} 100%)`,
           textAlign: 'center',
           fontFamily: 'monospace',
           color: '#fff',
@@ -1008,16 +1348,16 @@ export default function CatStack4Game() {
         }}>
           <div style={{ fontSize: 80, marginBottom: 15 }}>🐱</div>
           <h1 style={{
-            fontSize: 48,
-            color: '#FFB347',
+            fontSize: 42,
+            color: COLORS.primary,
             marginBottom: 25,
-            textShadow: '0 0 40px rgba(255,179,71,0.4)',
+            textShadow: `0 0 40px ${COLORS.primary}66`,
             letterSpacing: 4,
           }}>
             CAT TOWER
           </h1>
           <p style={{
-            color: '#888',
+            color: COLORS.muted,
             marginBottom: 35,
             fontSize: 16,
             lineHeight: 2,
@@ -1029,8 +1369,8 @@ export default function CatStack4Game() {
           <button
             onClick={startGame}
             style={{
-              background: 'linear-gradient(180deg, #FFB347 0%, #E8941A 100%)',
-              color: '#1a1a2e',
+              background: `linear-gradient(180deg, ${COLORS.primary} 0%, #E8941A 100%)`,
+              color: COLORS.bg,
               border: 'none',
               padding: '22px 70px',
               fontSize: 24,
@@ -1038,19 +1378,24 @@ export default function CatStack4Game() {
               fontWeight: 'bold',
               borderRadius: 14,
               cursor: 'pointer',
-              boxShadow: '0 10px 40px rgba(255,179,71,0.4)',
+              boxShadow: `0 10px 40px ${COLORS.primary}66`,
             }}
           >
             PLAY
           </button>
+          {bestScore > 0 && (
+            <div style={{ marginTop: 30, fontSize: 14, color: COLORS.muted }}>
+              BEST: {bestScore}
+            </div>
+          )}
           <div style={{
             marginTop: 60,
             fontSize: 12,
             letterSpacing: 4,
             color: '#444',
           }}>
-            <span style={{ color: '#FFB347' }}>pixel</span>
-            <span style={{ color: '#70A1FF' }}>pit</span>
+            <span style={{ color: COLORS.primary }}>pixel</span>
+            <span style={{ color: COLORS.secondary }}>pit</span>
           </div>
         </div>
       )}
@@ -1069,50 +1414,112 @@ export default function CatStack4Game() {
           fontFamily: 'monospace',
           color: '#fff',
           padding: 30,
+          overflowY: 'auto',
         }}>
-          <div style={{ fontSize: 64, marginBottom: 20 }}>😿</div>
+          <div style={{ fontSize: 48, marginBottom: 15 }}>
+            {isNewBest ? '🎉' : '😿'}
+          </div>
           <div style={{
-            fontSize: 80,
+            fontSize: 72,
             fontWeight: 'bold',
-            color: '#FFB347',
+            color: COLORS.primary,
             marginBottom: 8,
-            textShadow: '0 0 30px rgba(255,179,71,0.3)',
+            textShadow: `0 0 30px ${COLORS.primary}4d`,
           }}>
             {score}
           </div>
-          <div style={{ fontSize: 16, color: '#666', marginBottom: 20 }}>
-            cats stacked
-          </div>
-          {/* Best score */}
           <div style={{
             fontSize: 14,
-            color: score >= bestScore && score > 0 ? '#FFD700' : '#888',
-            marginBottom: 40,
+            color: isNewBest ? '#FFD700' : COLORS.muted,
+            marginBottom: 20,
           }}>
-            {score >= bestScore && score > 0 ? (
-              'NEW BEST!'
-            ) : (
-              `BEST: ${bestScore}`
+            {isNewBest ? 'NEW BEST!' : `BEST: ${bestScore}`}
+          </div>
+
+          {/* ScoreFlow for nickname entry - ONLY shown once until user submits */}
+          {shouldShowScoreFlow && (
+            <ScoreFlow
+              score={score}
+              gameId={GAME_ID}
+              colors={SCORE_FLOW_COLORS}
+              xpDivisor={1}
+              onRankReceived={(rank, newEntryId) => {
+                setEntryId(newEntryId ?? null);
+              }}
+              onProgression={(prog) => {
+                setProgression(prog);
+              }}
+            />
+          )}
+
+          {/* Progression Display */}
+          {progression && (
+            <ProgressionDisplay progression={progression} />
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center', marginTop: 10 }}>
+            <button
+              onClick={startGame}
+              style={{
+                background: `linear-gradient(180deg, ${COLORS.primary} 0%, #E8941A 100%)`,
+                color: COLORS.bg,
+                border: 'none',
+                padding: '16px 50px',
+                fontSize: 18,
+                fontFamily: 'monospace',
+                fontWeight: 'bold',
+                borderRadius: 10,
+                cursor: 'pointer',
+                boxShadow: `0 8px 30px ${COLORS.primary}50`,
+                letterSpacing: 2,
+              }}
+            >
+              TRY AGAIN
+            </button>
+
+            {/* Leaderboard & Share - always show once user has a handle */}
+            {shouldShowLeaderboardShare && (
+              <>
+                <button
+                  onClick={() => setGameState('leaderboard')}
+                  style={{
+                    background: 'transparent',
+                    border: `1px solid ${COLORS.secondary}40`,
+                    borderRadius: 8,
+                    color: COLORS.muted,
+                    padding: '12px 35px',
+                    fontSize: 12,
+                    fontFamily: 'monospace',
+                    cursor: 'pointer',
+                    letterSpacing: 2,
+                  }}
+                >
+                  leaderboard
+                </button>
+                {socialLoaded && (
+                  <ShareButtonContainer
+                    id="cat-tower-share"
+                    url={shareUrl}
+                    text={`I scored ${score} on CAT TOWER! Can you beat me? 🐱`}
+                    style="minimal"
+                    socialLoaded={socialLoaded}
+                  />
+                )}
+              </>
             )}
           </div>
-          <button
-            onClick={startGame}
-            style={{
-              background: 'linear-gradient(180deg, #FFB347 0%, #E8941A 100%)',
-              color: '#1a1a2e',
-              border: 'none',
-              padding: '22px 70px',
-              fontSize: 24,
-              fontFamily: 'monospace',
-              fontWeight: 'bold',
-              borderRadius: 14,
-              cursor: 'pointer',
-              boxShadow: '0 10px 40px rgba(255,179,71,0.4)',
-            }}
-          >
-            TRY AGAIN
-          </button>
         </div>
+      )}
+
+      {/* Leaderboard Screen */}
+      {gameState === 'leaderboard' && (
+        <Leaderboard
+          gameId={GAME_ID}
+          limit={10}
+          entryId={entryId ?? undefined}
+          colors={LEADERBOARD_COLORS}
+          onClose={() => setGameState('gameover')}
+        />
       )}
     </>
   );

@@ -583,3 +583,122 @@ export function RainDecorations() {
     </div>
   );
 }
+
+/**
+ * CAT TOWER-specific decorations: stacked cat boxes.
+ * Colorful tower aesthetic with cat silhouettes.
+ */
+export function CatTowerDecorations() {
+  const catColors = ['#FF6B6B', '#FFB347', '#FFE66D', '#7BED9F', '#70A1FF', '#9B59B6', '#FF85C0'];
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Left tower stack */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 80,
+          bottom: 80,
+          display: 'flex',
+          flexDirection: 'column-reverse',
+          alignItems: 'center',
+          gap: 4,
+        }}
+      >
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            style={{
+              width: 100 - i * 8,
+              height: 30,
+              background: catColors[i % catColors.length],
+              borderRadius: 8,
+              opacity: 0.4,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Right tower stack */}
+      <div
+        style={{
+          position: 'absolute',
+          right: 80,
+          bottom: 80,
+          display: 'flex',
+          flexDirection: 'column-reverse',
+          alignItems: 'center',
+          gap: 4,
+        }}
+      >
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            style={{
+              width: 90 - i * 6,
+              height: 30,
+              background: catColors[(i + 3) % catColors.length],
+              borderRadius: 8,
+              opacity: 0.4,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Floating cat face decorations */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 80,
+          left: 200,
+          fontSize: 50,
+          opacity: 0.3,
+        }}
+      >
+        🐱
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          top: 120,
+          right: 220,
+          fontSize: 40,
+          opacity: 0.3,
+        }}
+      >
+        😺
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 160,
+          left: 300,
+          fontSize: 35,
+          opacity: 0.25,
+        }}
+      >
+        😸
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 200,
+          right: 280,
+          fontSize: 45,
+          opacity: 0.25,
+        }}
+      >
+        🐈
+      </div>
+    </div>
+  );
+}

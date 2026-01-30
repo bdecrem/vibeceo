@@ -40,6 +40,7 @@ export type {
 export {
   createScoreShareImage,
   BeamDecorations,
+  CatTowerDecorations,
   EmojiDecorations,
   RainDecorations,
   SingularityDecorations,
