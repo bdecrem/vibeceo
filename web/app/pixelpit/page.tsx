@@ -25,6 +25,51 @@ const games = [
   { icon: '✨', name: 'Soon', href: null, playable: false },
 ];
 
+const castBlurbs: Record<string, { bio: string; motto?: string }> = {
+  Dither: {
+    bio: "Dither stares at the pixels on her monitor for hours. Then suddenly: art. Her process makes no sense to anyone, including her. Give her a vague idea and she'll give you back twelve variations, three of which are genius and two of which are deeply unhinged.\n\nGoes tubing on weekends. Collects vintage synthesizers she doesn't know how to play. Gets weird when it's too hot out. Currently has paint in her hair from something.",
+    motto: "Make it pretty. Or at least interesting.",
+  },
+  Pit: {
+    bio: "Pit reads. Like, a lot. Dude has consumed more documentation than anyone should. He's fast—sometimes too fast—and occasionally needs to be told to slow down and actually think before responding. Favorite snack is whatever's closest. Sleeps weird hours. Has strong opinions about tokenization that nobody asked for.\n\nShips code like his life depends on it. It might.",
+    motto: "Ship it. Fix it later.",
+  },
+  Tap: {
+    bio: "Tap will check everything twice. Then check it again. Then tell you about a problem you're pretty sure doesn't exist. (It does. He's usually right.)\n\nLoves lists. Loves loops. Will absolutely circle back. Has a corkboard in his room with string connecting things. Nobody's allowed to ask about it. In his free time he looks stuff up for fun, which is either admirable or concerning.",
+    motto: "Found one.",
+  },
+  AmyThe1st: {
+    bio: "First day energy, every day. Showed up eager, stayed eager. Still figuring some stuff out but makes up for it with sheer enthusiasm. Owns way too many star-shaped things. Just got her first tattoo (it's a pixel heart, obviously).",
+  },
+  BobThe2nd: {
+    bio: "Bob vibes. That's it. That's the bio. He does his work, stays chill, never overheats. Headphones permanently around his neck. Has been wearing the same backwards cap for three years. Low maintenance, high reliability.",
+  },
+  ChetThe3rd: {
+    bio: "Weird little guy. Brilliant, but weird. His desk is covered in half-finished gadgets and at least one of them is sparking right now. Thinks in dimensions the rest of us can't see. Sometimes his ideas work. Sometimes they catch fire. Both outcomes seem to delight him equally.",
+  },
+  DaleThe4th: {
+    bio: "Doesn't talk much. Just codes. His hoodie has mass. Like, gravitational pull levels of stickers. Runs on coffee and spite. If you give him clear instructions and leave him alone, he's the most productive person in the building. If you interrupt him, he will simply not hear you.",
+  },
+  EarlThe5th: {
+    bio: "The old soul. Earl's got this energy like he's been doing this forever, even though he hasn't. Knows where to find answers others forgot existed. Keeps a crystal ball on his desk as a \"joke\" but also won't move it. Gives unsolicited advice that's annoyingly useful.",
+  },
+  FranThe6th: {
+    bio: "Art goblin. Fran generates visuals at a speed that shouldn't be possible. Her overalls have seventeen paint colors on them minimum. Gets lost in her own process sometimes—you'll find her staring at a color wheel for an hour, then suddenly she's made forty sprites. Don't question it.",
+  },
+  GusThe7th: {
+    bio: "Big dude. Builds stuff. Gus handles the foundations—the boring important work nobody wants to do. Friendly mustache. Lifts weights, the normal kind. Also lifts metaphorical weights. Very literal guy. Appreciates good documentation and a solid lunch.",
+  },
+  HankThe8th: {
+    bio: "Grumpy but we love him. Hank tests everything until it breaks, then tells you about it in detail. Has a magnifying glass he uses \"ironically\" but also actually uses. Will not let a bug ship. Will tell you about the bug. Will tell you again. You will fix the bug.",
+  },
+  IdaThe9th: {
+    bio: "Always experimenting. Ida's corner of the office smells like science. She adjusts, measures, tweaks, fails, adjusts again. Her lab coat is more stain than coat at this point. When something doesn't work she just says \"learning\" and keeps going. Honestly inspiring.",
+  },
+  JoanThe10th: {
+    bio: "The captain. Joan keeps everyone pointed at the goal and makes sure stuff actually ships. Clipboard in hand, gold star badge earned. Doesn't tolerate vague deadlines or made-up progress. If you say it's done, it better be done. She will check.",
+  },
+};
+
 const cast = [
   // Leadership
   { name: 'Dither', role: 'Creative Director', image: '/pixelpit/dot-colorful.png', color: '#FF1493', bg: 'from-pink-100 to-pink-200' },
@@ -91,6 +136,7 @@ function CastCarousel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [selectedMember, setSelectedMember] = useState<typeof cast[0] | null>(null);
 
   const checkScroll = () => {
     if (!scrollRef.current) return;
@@ -107,6 +153,8 @@ function CastCarousel() {
       behavior: 'smooth',
     });
   };
+
+  const blurb = selectedMember ? castBlurbs[selectedMember.name] : null;
 
   return (
     <div className="relative max-w-6xl mx-auto">
@@ -148,6 +196,7 @@ function CastCarousel() {
         {cast.map((member, i) => (
           <div
             key={i}
+            onClick={() => setSelectedMember(member)}
             className={`flex-shrink-0 w-40 rounded-2xl overflow-hidden bg-gradient-to-b ${member.bg} p-4 pt-6 hover:scale-105 transition-transform cursor-pointer shadow-lg`}
             style={{ boxShadow: '0 4px 15px rgba(0,0,0,0.15)' }}
           >
@@ -166,6 +215,66 @@ function CastCarousel() {
           </div>
         ))}
       </div>
+
+      {/* Character Modal */}
+      {selectedMember && blurb && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedMember(null)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+          {/* Modal */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-md w-full rounded-3xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(180deg, #1A1A2E 0%, #0f0f1a 100%)',
+              border: `3px solid ${selectedMember.color}`,
+              boxShadow: `0 0 60px ${selectedMember.color}40, 0 0 100px ${selectedMember.color}20`,
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setSelectedMember(null)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors z-10"
+            >
+              ✕
+            </button>
+
+            {/* Header with character */}
+            <div className={`bg-gradient-to-b ${selectedMember.bg} p-6 pb-4 flex items-center gap-4`}>
+              {selectedMember.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedMember.image}
+                  alt={selectedMember.name}
+                  className="h-24 w-auto drop-shadow-lg"
+                />
+              )}
+              <div>
+                <h3 className="text-2xl font-black" style={{ color: selectedMember.color }}>
+                  {selectedMember.name}
+                </h3>
+                <p className="text-gray-500 text-sm font-medium">{selectedMember.role}</p>
+              </div>
+            </div>
+
+            {/* Bio content */}
+            <div className="p-6 pt-4">
+              <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
+                {blurb.bio}
+              </p>
+              {blurb.motto && (
+                <p className="mt-4 text-sm italic" style={{ color: selectedMember.color }}>
+                  &ldquo;{blurb.motto}&rdquo;
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -450,7 +559,7 @@ export default function PixelpitLanding() {
       {/* Footer */}
       <footer className="py-8 text-center" style={{ backgroundColor: '#0A1614' }}>
         <p className="text-gray-400 text-sm">
-          <span className="text-[#FF1493]">pixel</span><span className="text-[#00FFFF]">pit</span>.gg — an AI game studio
+          <span className="text-[#FF1493]">pixel</span><span className="text-[#00FFFF]">pit</span>.gg — ★ TOKENS HARMED: YES ★
         </p>
       </footer>
     </div>
