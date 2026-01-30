@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VORTEX — Amber</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="VORTEX">
+    <meta property="og:description" content="The spiral pulls everything in. Touch to feed the storm.">
+    <meta property="og:image" content="https://intheamber.com/amber/vortex-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/vortex.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="VORTEX">
+    <meta name="twitter:description" content="The spiral pulls everything in. Touch to feed the storm.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/vortex-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Space Mono', 'Courier New', monospace;
+            touch-action: none;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .title {
+            position: fixed;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #FFD700;
+            font-size: clamp(32px, 8vw, 64px);
+            font-weight: bold;
+            letter-spacing: 8px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
+                         0 0 40px rgba(255, 215, 0, 0.4);
+            pointer-events: none;
+            z-index: 10;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 1; text-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 215, 0, 0.6); }
+        }
+
+        .hint {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 215, 0, 0.6);
+            font-size: 14px;
+            letter-spacing: 2px;
+            pointer-events: none;
+            z-index: 10;
+            animation: fadeInOut 3s ease-in-out infinite;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        .counter {
+            position: fixed;
+            top: 40px;
+            right: 40px;
+            color: #2D9596;
+            font-size: 16px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(45, 149, 150, 0.6);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                top: 30px;
+                font-size: 48px;
+                letter-spacing: 4px;
+            }
+            .hint {
+                bottom: 30px;
+                font-size: 12px;
+            }
+            .counter {
+                top: 30px;
+                right: 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="title">VORTEX</div>
+    <div class="hint">TOUCH TO FEED THE STORM</div>
+    <div class="counter">DEBRIS: <span id="count">0</span></div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const countEl = document.getElementById('count');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Particle system
+        const particles = [];
+        const debrisCount = { value: 0 };
+
+        class Particle {
+            constructor(x, y, forced = false) {
+                this.x = x;
+                this.y = y;
+                this.angle = Math.atan2(y - centerY, x - centerX);
+                this.distance = Math.hypot(x - centerX, y - centerY);
+                this.speed = forced ? Math.random() * 2 + 3 : Math.random() * 1 + 0.5;
+                this.rotationSpeed = forced ? Math.random() * 0.15 + 0.1 : Math.random() * 0.05 + 0.02;
+                this.size = forced ? Math.random() * 4 + 3 : Math.random() * 3 + 1;
+                this.hue = Math.random() * 60 + (Math.random() > 0.5 ? 0 : 160); // Gold/amber or teal/cyan
+                this.alpha = 1;
+                this.trail = [];
+                this.maxTrail = 20;
+                
+                // Color palette
+                const colors = [
+                    { h: 45, s: 100, l: 50 },   // Gold
+                    { h: 35, s: 100, l: 50 },   // Amber
+                    { h: 180, s: 55, l: 45 },   // Teal
+                    { h: 320, s: 75, l: 60 },   // Hot pink
+                    { h: 265, s: 70, l: 60 },   // Purple
+                    { h: 195, s: 80, l: 55 },   // Electric blue
+                    { h: 20, s: 95, l: 60 },    // Coral
+                ];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                this.hsl = color;
+            }
+
+            update() {
+                // Store trail
+                this.trail.push({ x: this.x, y: this.y, alpha: this.alpha });
+                if (this.trail.length > this.maxTrail) {
+                    this.trail.shift();
+                }
+
+                // Spiral inward
+                this.angle += this.rotationSpeed;
+                this.distance -= this.speed;
+
+                // Update position
+                this.x = centerX + Math.cos(this.angle) * this.distance;
+                this.y = centerY + Math.sin(this.angle) * this.distance;
+
+                // Fade as approaching center
+                if (this.distance < 100) {
+                    this.alpha = this.distance / 100;
+                }
+
+                return this.distance > 0;
+            }
+
+            draw() {
+                // Draw trail
+                this.trail.forEach((point, i) => {
+                    const trailAlpha = (i / this.trail.length) * point.alpha * 0.3;
+                    ctx.fillStyle = `hsla(${this.hsl.h}, ${this.hsl.s}%, ${this.hsl.l}%, ${trailAlpha})`;
+                    const trailSize = this.size * (i / this.trail.length);
+                    ctx.fillRect(point.x - trailSize/2, point.y - trailSize/2, trailSize, trailSize);
+                });
+
+                // Draw particle with glow
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2);
+                gradient.addColorStop(0, `hsla(${this.hsl.h}, ${this.hsl.s}%, ${this.hsl.l}%, ${this.alpha})`);
+                gradient.addColorStop(0.5, `hsla(${this.hsl.h}, ${this.hsl.s}%, ${this.hsl.l}%, ${this.alpha * 0.5})`);
+                gradient.addColorStop(1, `hsla(${this.hsl.h}, ${this.hsl.s}%, ${this.hsl.l}%, 0)`);
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Spawn ambient particles
+        function spawnAmbientParticles() {
+            if (particles.length < 200) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.max(width, height) * 0.7;
+                const x = centerX + Math.cos(angle) * distance;
+                const y = centerY + Math.sin(angle) * distance;
+                particles.push(new Particle(x, y));
+            }
+        }
+
+        // Spawn particles on interaction
+        function spawnBurst(x, y) {
+            for (let i = 0; i < 30; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 100 + 50;
+                const px = x + Math.cos(angle) * distance;
+                const py = y + Math.sin(angle) * distance;
+                particles.push(new Particle(px, py, true));
+                debrisCount.value++;
+            }
+            countEl.textContent = debrisCount.value;
+        }
+
+        // Draw eye of the storm
+        function drawEye() {
+            // Outer glow
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 150);
+            gradient.addColorStop(0, 'rgba(255, 215, 0, 0.1)');
+            gradient.addColorStop(0.5, 'rgba(139, 92, 246, 0.05)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Inner eye with rotating rays
+            const time = Date.now() * 0.001;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2 + time;
+                const x1 = centerX + Math.cos(angle) * 30;
+                const y1 = centerY + Math.sin(angle) * 30;
+                const x2 = centerX + Math.cos(angle) * 80;
+                const y2 = centerY + Math.sin(angle) * 80;
+
+                const rayGradient = ctx.createLinearGradient(x1, y1, x2, y2);
+                rayGradient.addColorStop(0, 'rgba(255, 215, 0, 0.4)');
+                rayGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+
+                ctx.strokeStyle = rayGradient;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+
+            // Core
+            const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 25);
+            coreGradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
+            coreGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+            ctx.fillStyle = coreGradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 25, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Animation loop
+        function animate() {
+            // Fade trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+ctx.fillRect(0, 0, width, height);
+
+            // Draw eye
+            drawEye();
+
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                if (!p.update()) {
+                    particles.splice(i, 1);
+                } else {
+                    p.draw();
+                }
+            }
+
+            // Spawn ambient particles
+            if (Math.random() < 0.3) {
+                spawnAmbientParticles();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Interaction
+        let touchTimeout;
+        function handleInteraction(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+            
+            // Scale to canvas coordinates
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            spawnBurst(x * scaleX, y * scaleY);
+        }
+
+        canvas.addEventListener('mousedown', handleInteraction);
+        canvas.addEventListener('touchstart', handleInteraction);
+        canvas.addEventListener('mousemove', (e) => {
+            if (e.buttons === 1) handleInteraction(e);
+        });
+        canvas.addEventListener('touchmove', (e) => {
+            clearTimeout(touchTimeout);
+            touchTimeout = setTimeout(() => handleInteraction(e), 50);
+        });
+
+        // Start
+        animate();
+        
+        // Initial burst
+        setTimeout(() => {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 200 + 200;
+                    const x = centerX + Math.cos(angle) * distance;
+                    const y = centerY + Math.sin(angle) * distance;
+                    spawnBurst(x, y);
+                }, i * 200);
+            }
+        }, 500);
+    </script>
+</body>
+</html>
