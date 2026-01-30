@@ -602,6 +602,15 @@ export default function EmojiMadness() {
     game.running = false;
     stopMusic();
 
+    // Track play for analytics (fire-and-forget)
+    if (game.score >= 1) {
+      fetch('/api/pixelpit/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: GAME_ID }),
+      }).catch(() => {}); // Silent fail
+    }
+
     const storedHigh = parseInt(localStorage.getItem('emoji_madness_high') || '0');
     if (game.score > storedHigh) {
       localStorage.setItem('emoji_madness_high', game.score.toString());
