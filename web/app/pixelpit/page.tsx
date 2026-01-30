@@ -559,7 +559,10 @@ export default function PixelpitLanding() {
       {/* Footer */}
       <footer className="py-8 text-center" style={{ backgroundColor: '#0A1614' }}>
         <p className="text-gray-400 text-sm">
-          <span className="text-[#FF1493]">pixel</span><span className="text-[#00FFFF]">pit</span>.gg — ★ TOKENS HARMED: YES ★
+          ★ TOKENS HARMED: YES ★
+        </p>
+        <p className="text-gray-500 text-xs mt-2">
+          <span className="text-[#FF1493]">pixel</span><span className="text-[#00FFFF]">pit</span>.gg
         </p>
       </footer>
     </div>
