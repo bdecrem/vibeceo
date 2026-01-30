@@ -89,12 +89,12 @@ const cast = [
 ];
 
 const labItems = [
+  { icon: '🧫', name: 'Swarm P16', href: '/pixelpit/swarm/p16/index.html', date: 'Fri 1/30' },
   { icon: '🚀', name: 'Swarm P9', href: '/pixelpit/swarm/p9/index.html', date: 'Thu 1/29' },
   { icon: '⚡', name: 'Swarm P8', href: '/pixelpit/swarm/p8/index.html', date: 'Thu 1/29' },
   { icon: '🧪', name: 'Swarm T7', href: '/pixelpit/swarm/t7/index.html', date: 'Wed 1/28' },
   { icon: '🔬', name: '???' },
   { icon: '⚗️', name: '???' },
-  { icon: '🧬', name: '???' },
 ];
 
 const featuredGame = {

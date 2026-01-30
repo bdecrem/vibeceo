@@ -6,29 +6,146 @@
 <style>
 * { box-sizing: border-box; }
 body {
-  margin: 0; padding: 20px;
-  background: #0a0a0f; color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 0; padding: 0;
+  background: #121216;
+  background-image:
+    linear-gradient(90deg, transparent 49px, rgba(100, 100, 100, 0.08) 49px, rgba(100, 100, 100, 0.08) 51px, transparent 51px),
+    linear-gradient(0deg, transparent 49px, rgba(100, 100, 100, 0.08) 49px, rgba(100, 100, 100, 0.08) 51px, transparent 51px),
+    radial-gradient(circle at 50px 50px, rgba(100, 100, 100, 0.1) 1px, transparent 1px);
+  background-size: 100px 100px;
+  color: #ccc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
 }
-h1 { margin: 0 0 5px; font-size: 24px; color: #00ff88; }
-h2 { margin: 20px 0 10px; font-size: 16px; color: #888; }
-.status { color: #888; margin-bottom: 15px; }
+
+.lab-header {
+  background: #1a1a1e;
+  border-bottom: 1px solid #2a2a2e;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.lab-brand {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #00FFAA;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.lab-brand a { color: inherit; text-decoration: none; }
+.lab-brand a:hover { opacity: 1; }
+.lab-sep { color: #333; }
+
+.main-content { padding: 24px; }
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  color: #fff;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+}
+h1 .version {
+  font-size: 12px;
+  color: #666;
+  font-weight: 400;
+  margin-left: 8px;
+}
+
+.status {
+  color: #666;
+  margin-bottom: 24px;
+  font-size: 13px;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+}
 .status.discovery { color: #ffaa00; }
 .status.building { color: #00ddff; }
-.status.done { color: #00ff88; }
+.status.done { color: #00FFAA; }
 
-.agents {
+.phase-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  background: #18181c;
+  border: 1px solid #2a2a2e;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.phase {
+  padding: 10px 20px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #444;
+  border-bottom: 2px solid transparent;
+}
+.phase.active { color: #00ff88; border-bottom-color: #00ff88; background: #1a1a1e; }
+.phase.done { color: #666; }
+
+.pending-area {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: #18181c;
+  border: 1px solid #2a2a2e;
+  border-radius: 8px;
+}
+.pending-area h3 {
+  margin: 0 0 12px;
+  font-size: 10px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+.pending-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pending-chip {
+  background: #1e1e24;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  color: #555;
+  border: 1px solid #2a2a2e;
+}
+.pending-chip.searching {
+  color: #ffaa00;
+  border-color: rgba(255, 170, 0, 0.3);
+  background: rgba(255, 170, 0, 0.05);
+  animation: pulse 1s infinite;
+}
+.pending-chip.building {
+  color: #00ddff;
+  border-color: rgba(0, 221, 255, 0.3);
+  background: rgba(0, 221, 255, 0.05);
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.games-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  max-width: 1400px;
 }
 
 .card {
-  background: #111118;
-  border-radius: 8px;
-  padding: 12px;
+  background: #1a1a2e;
+  border-radius: 10px;
+  padding: 14px;
   border: 2px solid #333;
+  cursor: pointer;
+  transition: all 0.2s;
 }
+.card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
 .card.done { border-color: #00ff8844; }
 .card.building { border-color: #00ddff44; }
 .card.searching { border-color: #ffaa0044; }
@@ -37,103 +154,326 @@ h2 { margin: 20px 0 10px; font-size: 16px; color: #888; }
 .card-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 8px;
-  font-size: 12px;
 }
-.phase-tag {
+.card-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+}
+.card-id {
+  font-size: 9px;
+  color: #666;
+  background: #0a0a0f;
   padding: 2px 6px;
   border-radius: 3px;
-  font-size: 10px;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
 }
-.phase-tag.discovery { background: #ffaa0022; color: #ffaa00; }
-.phase-tag.build { background: #00ddff22; color: #00ddff; }
-.phase-tag.done { background: #00ff8822; color: #00ff88; }
-.phase-tag.failed { background: #ff446622; color: #ff4466; }
 
-.blurb { font-size: 13px; color: #aaa; line-height: 1.4; margin-bottom: 8px; }
-.theme { font-size: 11px; color: #00ddff; margin-bottom: 6px; }
-.play-link { font-size: 12px; }
-.play-link a { color: #00ff88; }
+.card-theme {
+  font-size: 11px;
+  color: #00ddff;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-blurb {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-status {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  align-items: center;
+}
+.status-tag {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.status-tag.done {
+  background: rgba(0, 255, 136, 0.15);
+  color: #00ff88;
+}
+.status-tag.building {
+  background: rgba(0, 221, 255, 0.15);
+  color: #00ddff;
+}
+.status-tag.searching {
+  background: rgba(255, 170, 0, 0.15);
+  color: #ffaa00;
+}
+.status-tag.failed {
+  background: rgba(255, 68, 102, 0.15);
+  color: #ff4466;
+}
+
+.attempts {
+  color: #555;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+}
+
+.play-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: #00ff88;
+  color: #000;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.play-btn:hover { background: #00dd77; }
+
+.preview {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10, 10, 14, 0.98);
+  display: none;
+  z-index: 100;
+}
+.preview.active { display: flex; flex-direction: column; }
+.preview-header {
+  padding: 12px 20px;
+  background: #1a1a1e;
+  border-bottom: 1px solid #2a2a2e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+.preview-title {
+  font-weight: 500;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-size: 14px;
+}
+.preview-btn {
+  background: rgba(255, 68, 102, 0.1);
+  border: 1px solid rgba(255, 68, 102, 0.2);
+  color: #ff4466;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+.preview-btn:hover { background: rgba(255, 68, 102, 0.2); }
+.preview iframe {
+  flex: 1;
+  border: none;
+  background: #0a0a0e;
+}
 </style>
 </head>
 <body>
-<h1>P16 — Discover (OSS) & Build (Haiku)</h1>
+<div class="lab-header">
+  <span class="lab-brand"><a href="/pixelpit">pixelpit</a></span>
+  <span class="lab-sep">/</span>
+  <span class="lab-brand"><a href="/pixelpit/lab">lab</a></span>
+  <span class="lab-sep">/</span>
+  <span class="lab-brand" style="opacity: 0.5;">swarm-p16</span>
+</div>
+
+<div class="main-content">
+<h1>swarm-p16 <span class="version">discover (OSS) & build (Haiku)</span></h1>
+<a href="/pixelpit/lab#swarm-p16" style="display: inline-block; margin-bottom: 12px; font-size: 11px; font-family: 'SF Mono', 'Monaco', 'Menlo', monospace; color: #00FFAA; text-decoration: none; padding: 4px 10px; background: rgba(0, 255, 170, 0.08); border: 1px solid rgba(0, 255, 170, 0.2); border-radius: 4px; opacity: 0.8;">read the blog</a>
 <div class="status" id="status">Loading...</div>
 
-<div class="agents" id="agents"></div>
+<div class="phase-bar">
+  <div class="phase" id="phase-discovery">1. Discovery</div>
+  <div class="phase" id="phase-build">2. Build</div>
+  <div class="phase" id="phase-done">3. Complete</div>
+</div>
+
+<div class="pending-area" id="pending-area" style="display:none">
+  <h3>In Progress</h3>
+  <div class="pending-grid" id="pending-grid"></div>
+</div>
+
+<div class="games-grid" id="games-grid"></div>
+</div>
+
+<div class="preview" id="preview">
+  <div class="preview-header">
+    <span class="preview-title" id="preview-title"></span>
+    <button class="preview-btn" onclick="closePreview()">Close</button>
+  </div>
+  <iframe id="preview-iframe"></iframe>
+</div>
 
 <script>
 const statusEl = document.getElementById('status');
-const agentsEl = document.getElementById('agents');
+const pendingArea = document.getElementById('pending-area');
+const pendingGrid = document.getElementById('pending-grid');
+const gamesGrid = document.getElementById('games-grid');
+let lastData = null;
 
 function render(data) {
   const discovered = data.agents.filter(a => a.discovery_status === 'done').length;
   const built = data.agents.filter(a => a.build_status === 'done').length;
+  const total = data.agents.length;
 
+  // Status line
   statusEl.className = 'status ' + data.phase;
   if (data.phase === 'done') {
     statusEl.textContent = `✓ Complete — ${built} games built`;
   } else if (data.phase === 'building') {
     statusEl.textContent = `⚙ Building — ${built}/${discovered} games`;
   } else {
-    statusEl.textContent = `⟳ Discovering — ${discovered}/10 games found`;
+    statusEl.textContent = `⟳ Discovering — ${discovered}/${total} games found`;
   }
 
-  agentsEl.innerHTML = data.agents.map(a => {
+  // Phase bar
+  const isBuilding = data.phase === 'building' || (discovered === total && built < total);
+  const isDone = data.phase === 'done';
+
+  document.getElementById('phase-discovery').className = 'phase ' +
+    (data.phase === 'discovery' ? 'active' : 'done');
+  document.getElementById('phase-build').className = 'phase ' +
+    (isBuilding && !isDone ? 'active' : (isDone ? 'done' : ''));
+  document.getElementById('phase-done').className = 'phase ' +
+    (isDone ? 'active' : '');
+
+  // Pending chips
+  const pending = data.agents.filter(a =>
+    a.discovery_status === 'searching' || a.build_status === 'building'
+  );
+  if (pending.length > 0) {
+    pendingArea.style.display = 'block';
+    pendingGrid.innerHTML = pending.map(a => {
+      let cls = 'pending-chip';
+      let label = `Agent ${a.id}`;
+      if (a.build_status === 'building') {
+        cls += ' building';
+        label += ' (building)';
+      } else if (a.discovery_status === 'searching') {
+        cls += ' searching';
+        label += ' (searching)';
+      }
+      return `<div class="${cls}">${label}</div>`;
+    }).join('');
+  } else {
+    pendingArea.style.display = 'none';
+  }
+
+  // Game cards - show completed ones first
+  const sortedAgents = [...data.agents].sort((a, b) => {
+    if (a.build_status === 'done' && b.build_status !== 'done') return -1;
+    if (b.build_status === 'done' && a.build_status !== 'done') return 1;
+    if (a.discovery_status === 'done' && b.discovery_status !== 'done') return -1;
+    if (b.discovery_status === 'done' && a.discovery_status !== 'done') return 1;
+    return a.id - b.id;
+  });
+
+  gamesGrid.innerHTML = sortedAgents.map(a => {
     let cardClass = 'card';
-    let phaseText = '';
-    let phaseClass = '';
+    let statusText = '';
+    let statusClass = '';
 
     if (a.build_status === 'done') {
       cardClass += ' done';
-      phaseText = '✓ Built';
-      phaseClass = 'done';
+      statusText = '✓ Built';
+      statusClass = 'done';
     } else if (a.build_status === 'building') {
       cardClass += ' building';
-      phaseText = 'Building...';
-      phaseClass = 'build';
+      statusText = 'Building...';
+      statusClass = 'building';
     } else if (a.build_status === 'failed') {
       cardClass += ' failed';
-      phaseText = 'Build failed';
-      phaseClass = 'failed';
+      statusText = 'Build failed';
+      statusClass = 'failed';
     } else if (a.discovery_status === 'done') {
       cardClass += ' done';
-      phaseText = 'Discovered';
-      phaseClass = 'discovery';
+      statusText = 'Discovered';
+      statusClass = 'done';
     } else if (a.discovery_status === 'searching') {
       cardClass += ' searching';
-      phaseText = 'Searching...';
-      phaseClass = 'discovery';
+      statusText = 'Searching...';
+      statusClass = 'searching';
     } else if (a.discovery_status === 'failed') {
       cardClass += ' failed';
-      phaseText = 'Discovery failed';
-      phaseClass = 'failed';
+      statusText = 'Failed';
+      statusClass = 'failed';
     } else {
-      phaseText = 'Pending';
-      phaseClass = 'discovery';
+      statusText = 'Pending';
+      statusClass = 'searching';
     }
 
+    // Extract game name from blurb (first bold text)
+    let gameName = `Game ${a.id}`;
+    if (a.blurb) {
+      const match = a.blurb.match(/\*\*([^*]+)\*\*/);
+      if (match) gameName = match[1].replace(/\s*\([^)]*\)/, '').trim();
+    }
+
+    const blurbText = a.blurb ? a.blurb.replace(/\*\*/g, '').slice(0, 200) : '';
+
     return `
-      <div class="${cardClass}">
+      <div class="${cardClass}" ${a.game_url ? `onclick="openPreview(${a.id})"` : ''}>
         <div class="card-header">
-          <span>Agent ${a.id}</span>
-          <span class="phase-tag ${phaseClass}">${phaseText}</span>
+          <span class="card-name">${gameName}</span>
+          <span class="card-id">Agent ${a.id}</span>
         </div>
-        ${a.blurb ? `<div class="blurb">${a.blurb.slice(0, 200)}${a.blurb.length > 200 ? '...' : ''}</div>` : ''}
-        ${a.theme ? `<div class="theme">🎨 ${a.theme}</div>` : ''}
-        ${a.game_url ? `<div class="play-link"><a href="${a.game_url}" target="_blank">▶ Play Game</a></div>` : ''}
+        ${a.theme ? `<div class="card-theme">🎨 ${a.theme}</div>` : ''}
+        ${blurbText ? `<div class="card-blurb">${blurbText}...</div>` : ''}
+        <div class="card-status">
+          <span class="status-tag ${statusClass}">${statusText}</span>
+          ${a.build_attempts ? `<span class="attempts">${a.build_attempts} build attempts</span>` : ''}
+        </div>
+        ${a.game_url ? `<a class="play-btn" href="${a.game_url}" target="_blank" onclick="event.stopPropagation()">▶ Play Game</a>` : ''}
       </div>
     `;
   }).join('');
 }
 
+function openPreview(id) {
+  const a = lastData.agents.find(agent => agent.id === id);
+  if (!a || !a.game_url) return;
+
+  // Extract game name from blurb
+  let gameName = `Game ${a.id}`;
+  if (a.blurb) {
+    const match = a.blurb.match(/\*\*([^*]+)\*\*/);
+    if (match) gameName = match[1].replace(/\s*\([^)]*\)/, '').trim();
+  }
+
+  document.getElementById('preview-title').textContent = gameName + (a.theme ? ` — ${a.theme}` : '');
+  document.getElementById('preview-iframe').src = a.game_url;
+  document.getElementById('preview').classList.add('active');
+}
+
+function closePreview() {
+  document.getElementById('preview').classList.remove('active');
+  document.getElementById('preview-iframe').src = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePreview(); });
+
 async function poll() {
   try {
-    const data = await (await fetch('status.json?' + Date.now())).json();
-    render(data);
+    const res = await fetch('status.json?' + Date.now());
+    const data = await res.json();
+    if (JSON.stringify(data) !== JSON.stringify(lastData)) {
+      lastData = data;
+      render(data);
+    }
   } catch (e) {}
   setTimeout(poll, 500);
 }
+
 poll();
 </script>
 </body></html>

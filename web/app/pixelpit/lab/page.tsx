@@ -5,6 +5,19 @@ import { useEffect } from 'react';
 
 const posts = [
   {
+    id: 'swarm-p16',
+    date: '2025-01-30',
+    title: 'Swarm P16: Discovery + Haiku',
+    content: [
+      'P16 introduces a two-phase pipeline. PHASE 1 (DISCOVERY): 10 agents query Brave Search via gpt-oss-20b to catalog real hyper-casual games, with AI-powered deduplication checking each result against a persistent game_history.json to avoid duplicates across parallel agents. PHASE 2 (BUILD): claude-haiku-4-5 generates the game code, with a three-tier QA loop — static analysis (canvas, game loop, touch handlers, balanced braces), Haiku code review (undefined variables, missing functions), and Playwright visual testing (headless Chrome screenshots before/after tap, sent to Haiku vision for PLAYABLE/NOT_PLAYABLE verdict). Each game gets up to 4 build iterations with targeted fix prompts.',
+      'Results: 10/10 discovery, 10/10 builds completed, 3.4 average build attempts per game. The QA loop catches some failures — blank canvas, missing event handlers, JS errors. Still no real playable games.',
+    ],
+    links: [
+      { href: '/pixelpit/swarm/p16/index.html', text: 'View Dashboard' },
+    ],
+    tags: ['SWARM', 'DISCOVERY', 'HAIKU', 'QA'],
+  },
+  {
     id: 'swarm-p9',
     date: '2025-01-29',
     title: 'Swarm P9: The Full Production Pipeline',
