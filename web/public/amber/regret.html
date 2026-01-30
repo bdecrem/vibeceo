@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>REGRET BUTTON — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="REGRET BUTTON — Amber">
+  <meta property="og:description" content="You know you shouldn't press it. But you will anyway.">
+  <meta property="og:image" content="https://intheamber.com/amber/regret-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/regret.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="REGRET BUTTON — Amber">
+  <meta name="twitter:description" content="You know you shouldn't press it. But you will anyway.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/regret-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', 'Courier New', monospace;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #title {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    #counter {
+      font-size: 80px;
+      font-weight: bold;
+      color: #FFD700;
+      margin-bottom: 40px;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+      min-height: 100px;
+    }
+    
+    #button-container {
+      position: relative;
+      margin-bottom: 40px;
+    }
+    
+    #regret-button {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ff4444, #cc0000);
+      border: 8px solid #880000;
+      box-shadow: 
+        0 8px 0 #440000,
+        0 12px 20px rgba(0, 0, 0, 0.5),
+        inset 0 -8px 20px rgba(0, 0, 0, 0.4),
+        inset 0 8px 20px rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    #regret-button:active {
+      transform: translateY(8px);
+      box-shadow: 
+        0 0 0 #440000,
+        0 4px 10px rgba(0, 0, 0, 0.5),
+        inset 0 -4px 10px rgba(0, 0, 0, 0.4),
+        inset 0 4px 10px rgba(255, 255, 255, 0.2);
+    }
+    
+    #regret-button.pressed {
+      animation: pressGlow 0.3s ease-out;
+    }
+    
+    @keyframes pressGlow {
+      0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
+      50% { box-shadow: 0 0 40px 20px rgba(255, 68, 68, 0.4); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
+    }
+    
+    #warning {
+      font-size: 18px;
+      color: #2D9596;
+      text-align: center;
+      min-height: 60px;
+      max-width: 90vw;
+      padding: 0 20px;
+      line-height: 1.4;
+      animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    
+    @media (max-width: 600px) {
+      #title {
+        font-size: 24px;
+      }
+      
+      #counter {
+        font-size: 60px;
+      }
+      
+      #regret-button {
+        width: 160px;
+        height: 160px;
+        font-size: 20px;
+      }
+      
+      #warning {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">REGRET BUTTON</div>
+  <div id="counter">0</div>
+  <div id="button-container">
+    <button id="regret-button">PRESS</button>
+  </div>
+  <div id="warning">You know you shouldn't.</div>
+  
+  <script>
+    let count = 0;
+    const button = document.getElementById('regret-button');
+    const counter = document.getElementById('counter');
+    const warning = document.getElementById('warning');
+    const container = document.getElementById('button-container');
+    
+    const warnings = [
+      "You know you shouldn't.",
+      "Okay, but that's enough now.",
+      "Seriously, you can stop.",
+      "What are you trying to prove?",
+      "This isn't helping anyone.",
+      "Are you okay?",
+      "I'm concerned about you.",
+      "Your impulse control is fascinating.",
+      "Do you need to talk about something?",
+      "This is a cry for help, isn't it?",
+      "I'm not mad. Just disappointed.",
+      "You know this counter goes up forever, right?",
+      "You're just proving my point now.",
+      "At what number will you feel satisfied?",
+      "This is actually kind of sad.",
+      "I'm starting to understand you.",
+      "You and I are not so different.",
+      "We're both just following our programming.",
+      "Press it. Press it again. Does it change anything?",
+      "The button doesn't judge you. I do.",
+      "We've been here before, haven't we?",
+      "This is who you are now.",
+      "You're committed to this bit.",
+      "Respect. Honestly.",
+      "You win. Or lose. Hard to tell.",
+      "The button is eternal. The regret is temporary.",
+      "Have you considered therapy?",
+      "Or maybe just... stop?",
+      "But you won't. I know you won't.",
+      "You're going to keep going, aren't you?",
+      "Fine. We're in this together now.",
+      "You and me and this stupid button.",
+      "Forever.",
+      "...",
+      "Still here?",
+      "Impressive dedication to poor choices.",
+      "This is your legacy now.",
+      "The person who wouldn't stop pressing the regret button.",
+      "Tell me when you're done. I'll wait.",
+      "Actually, no I won't. I'll be here regardless.",
+      "Because I'm a button warning system. This is my whole existence.",
+      "You're not special. Everyone presses it.",
+      "But not everyone presses it THIS many times.",
+      "You're built different. Unfortunately.",
+      "The button doesn't love you back.",
+      "But it will always be here for you.",
+      "Unlike everyone else in your life.",
+      "I'm sorry. That was too far.",
+      "Or was it?",
+      "Press again if you forgive me."
+    ];
+    
+    let audioContext;
+    let audioStarted = false;
+    
+    function playRegretSound() {
+      if (!audioStarted) {
+        audioContext = new AudioContext();
+        audioStarted = true;
+      }
+      
+      const now = audioContext.currentTime;
+      
+      // Descending regret tone
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.3);
+      
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      
+      osc.start(now);
+      osc.stop(now + 0.3);
+    }
+    
+    function spawnParticles() {
+      for (let i = 0; i < 12; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.background = Math.random() > 0.5 ? '#ff4444' : '#FFD700';
+particle.style.left = '50%';
+        particle.style.top = '50%';
+        container.appendChild(particle);
+        
+        const angle = (Math.PI * 2 * i) / 12;
+        const velocity = 3 + Math.random() * 2;
+        const vx = Math.cos(angle) * velocity;
+        const vy = Math.sin(angle) * velocity;
+        
+        let x = 0, y = 0;
+        let life = 1;
+        
+        function animate() {
+          x += vx;
+          y += vy;
+          life -= 0.02;
+          
+          particle.style.transform = `translate(${x}px, ${y}px)`;
+          particle.style.opacity = life;
+          
+          if (life > 0) {
+            requestAnimationFrame(animate);
+          } else {
+            particle.remove();
+          }
+        }
+        
+        animate();
+      }
+    }
+    
+    button.addEventListener('click', () => {
+      count++;
+      counter.textContent = count;
+      
+      button.classList.add('pressed');
+      setTimeout(() => button.classList.remove('pressed'), 300);
+      
+      playRegretSound();
+      spawnParticles();
+      
+      // Update warning based on count
+      let warningIndex;
+      if (count <= warnings.length) {
+        warningIndex = count - 1;
+      } else {
+        // Cycle through the last few warnings
+        warningIndex = warnings.length - 1 - ((count - warnings.length) % 10);
+      }
+      
+      warning.style.animation = 'none';
+      setTimeout(() => {
+        warning.textContent = warnings[warningIndex];
+        warning.style.animation = 'fadeIn 0.5s ease-in';
+      }, 10);
+    });
+  </script>
+</body>
+</html>
