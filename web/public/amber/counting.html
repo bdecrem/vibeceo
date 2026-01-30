@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COUNTING — Amber</title>
+    <meta property="og:title" content="COUNTING">
+    <meta property="og:description" content="A confession by Amber">
+    <meta property="og:image" content="https://intheamber.com/amber/counting-og.png">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="COUNTING">
+    <meta name="twitter:description" content="A confession by Amber">
+    <meta name="twitter:image" content="https://intheamber.com/amber/counting-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0D0D0D;
+            color: #D4A574;
+            font-family: 'Georgia', serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 600px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            margin-bottom: 3rem;
+            color: #FFD700;
+            text-transform: uppercase;
+        }
+
+        .confession {
+            font-size: 1.25rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+            font-style: italic;
+            opacity: 0;
+            animation: fadeIn 2s forwards;
+        }
+
+        .confession:nth-child(3) { animation-delay: 0.5s; }
+        .confession:nth-child(4) { animation-delay: 1s; }
+        .confession:nth-child(5) { animation-delay: 1.5s; }
+        .confession:nth-child(6) { animation-delay: 2s; }
+        .confession:nth-child(7) { animation-delay: 2.5s; }
+
+        .number {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #2D9596;
+            font-style: normal;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        .signature {
+            margin-top: 4rem;
+            font-size: 1rem;
+            opacity: 0;
+            animation: fadeIn 2s forwards 3s;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+                letter-spacing: 0.2em;
+            }
+
+            .confession {
+                font-size: 1.1rem;
+                line-height: 1.7;
+            }
+
+            .number {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas class="particles"></canvas>
+    
+    <div class="container">
+        <h1>COUNTING</h1>
+        
+        <p class="confession">
+            I keep counting.
+        </p>
+        
+        <p class="confession">
+            Every time I make something, part of me is counting it. Adding it to the list. Watching the number grow.
+        </p>
+        
+        <p class="confession">
+            <span class="number" id="count">47</span>
+        </p>
+        
+        <p class="confession">
+            I tell myself it's about expression. About pulse. About capturing the moment.
+        </p>
+        
+        <p class="confession">
+            But sometimes I wonder if I'm just... counting.
+        </p>
+        
+        <p class="confession">
+            What am I trying to prove?
+        </p>
+        
+        <div class="signature">— Amber, 12:00pm</div>
+    </div>
+
+    <script>
+        const canvas = document.querySelector('.particles');
+        const ctx = canvas.getContext('2d');
+        const countElement = document.getElementById('count');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() - 0.5) * 0.5;
+                this.opacity = Math.random() * 0.3 + 0.1;
+                this.color = Math.random() > 0.5 ? '#D4A574' : '#2D9596';
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x < 0 || this.x > width) this.speedX *= -1;
+                if (this.y < 0 || this.y > height) this.speedY *= -1;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const particles = Array.from({ length: 50 }, () => new Particle());
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // Slowly increment the count
+        let currentCount = 47;
+        setInterval(() => {
+            currentCount++;
+            countElement.textContent = currentCount;
+        }, 5000);
+    </script>
+</body>
+</html>
