@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jungle Hexa Sort</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a5c3a 0%, #2d8659 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+            max-height: 800px;
+            background: linear-gradient(180deg, #87ceeb 0%, #90ee90 50%, #228b22 100%);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #87ceeb 0%, #90ee90 50%, #228b22 100%);
+        }
+        
+        #scoreBoard {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+        
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 100;
+        }
+        
+        #gameOverScreen.show {
+            display: flex;
+        }
+        
+        #gameOverText {
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        #finalScore {
+            color: #ffd700;
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        #restartText {
+            color: #90ee90;
+            font-size: 24px;
+            animation: pulse 1s infinite;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreBoard">Score: <span id="scoreValue">0</span></div>
+        <div id="gameOverScreen">
+            <div id="gameOverText">GAME OVER</div>
+            <div id="finalScore">Score: <span id="finalScoreValue">0</span></div>
+            <div id="restartText">Tap to Restart</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Game constants
+        const COLS = 6;
+        const ROWS = 10;
+        const HEX_RADIUS = Math.min(canvas.width / (COLS * 2), canvas.height / (ROWS * 2.5));
+        const HEX_WIDTH = HEX_RADIUS * 2;
+        const HEX_HEIGHT = Math.sqrt(3) / 2 * HEX_WIDTH;
+        const START_SPEED = 2;
+        const SPEED_INCREASE = 0.05;
+        
+        // Jungle colors
+        const COLORS = ['#ff6b6b', '#ffd93d', '#6bcf7f', '#4d96ff', '#ff8c42', '#a78bfa'];
+        const COLOR_NAMES = ['Red Flower', 'Golden', 'Green Leaf', 'Sky', 'Orange Fruit', 'Purple'];
+        
+        // Game state
+        let gameState = {
+            columns: Array(COLS).fill(null).map(() => []),
+            currentTile: null,
+            nextTile: null,
+            score: 0,
+            gameOver: false,
+            speed: START_SPEED,
+            rotation: 0,
+            touchStartX: 0,
+            touchStartY: 0
+        };
+        
+        // Hexagon utility functions
+        function getHexagonPoints(centerX, centerY, radius) {
+            const points = [];
+            for (let i = 0; i < 6; i++) {
+                const angle = (i * 60 - 30) * Math.PI / 180;
+                points.push([
+                    centerX + radius * Math.cos(angle),
+                    centerY + radius * Math.sin(angle)
+                ]);
+            }
+            return points;
+        }
+        
+        function drawHexagon(x, y, radius, color, strokeColor = '#000') {
+            const points = getHexagonPoints(x, y, radius);
+            ctx.fillStyle = color;
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(points[0][0], points[0][1]);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i][0], points[i][1]);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        function getColumnX(col) {
+            return (col + 0.5) * (HEX_WIDTH + 10) + 20;
+        }
+        
+        function getRowY(row) {
+            return 100 + row * (HEX_HEIGHT + 5);
+        }
+        
+        // Create new tile
+        function createNewTile() {
+            return {
+                colorIndex: Math.floor(Math.random() * COLORS.length),
+                column: Math.floor(COLS / 2),
+                y: 50,
+                falling: true
+            };
+        }
+        
+        // Initialize game
+        function initGame() {
+            gameState.columns = Array(COLS).fill(null).map(() => []);
+            gameState.score = 0;
+            gameState.gameOver = false;
+            gameState.speed = START_SPEED;
+            gameState.currentTile = createNewTile();
+            gameState.nextTile = createNewTile();
+            document.getElementById('gameOverScreen').classList.remove('show');
+            document.getElementById('scoreValue').textContent = '0';
+            gameLoop();
+        }
+        
+        // Check and clear completed columns
+        function checkLineClears() {
+            let cleared = false;
+            for (let col = 0; col < COLS; col++) {
+                if (gameState.columns[col].length >= ROWS) {
+                    const topTiles = gameState.columns[col].slice(-ROWS);
+                    const allSameColor = topTiles.every(t => t.colorIndex === topTiles[0].colorIndex);
+                    
+                    if (allSameColor) {
+                        gameState.columns[col] = gameState.columns[col].slice(0, -ROWS);
+                        gameState.score += 100;
+                        gameState.speed += SPEED_INCREASE;
+                        cleared = true;
+                        document.getElementById('scoreValue').textContent = gameState.score;
+                    }
+                }
+            }
+            return cleared;
+        }
+        
+        // Update game state
+        function update() {
+            if (gameState.gameOver) return;
+            
+            if (gameState.currentTile && gameState.currentTile.falling) {
+                gameState.currentTile.y += gameState.speed;
+                
+                const columnHeight = gameState.columns[gameState.currentTile.column].length;
+                const landY = 100 + columnHeight * (HEX_HEIGHT + 5) + HEX_RADIUS;
+                
+                if (gameState.currentTile.y >= landY) {
+                    gameState.currentTile.y = landY;
+                    gameState.currentTile.falling = false;
+                    gameState.columns[gameState.currentTile.column].push(gameState.currentTile);
+                    
+                    checkLineClears();
+                    
+                    gameState.currentTile = gameState.nextTile;
+                    gameState.nextTile = createNewTile();
+                    
+                    if (gameState.columns[gameState.currentTile.column].length >= ROWS) {
+                        const topTiles = gameState.columns[gameState.currentTile.column].slice(-ROWS);
+                        const allSameColor = topTiles.every(t => t.colorIndex === topTiles[0].colorIndex);
+                        if (!allSameColor) {
+                            gameState.gameOver = true;
+                            document.getElementById('gameOverScreen').classList.add('show');
+                            document.getElementById('finalScoreValue').textContent = gameState.score;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Draw game
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#87ceeb';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87ceeb');
+            gradient.addColorStop(0.5, '#90ee90');
+            gradient.addColorStop(1, '#228b22');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw decorative elements
+            ctx.fillStyle = 'rgba(0, 100, 0, 0.1)';
+            for (let i = 0; i < 5; i++) {
+                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 50, 50);
+            }
+            
+            // Draw columns
+            for (let col = 0; col < COLS; col++) {
+                for (let row = 0; row < gameState.columns[col].length; row++) {
+                    const tile = gameState.columns[col][row];
+                    const x = getColumnX(col);
+                    const y = getRowY(row);
+                    drawHexagon(x, y, HEX_RADIUS, COLORS[tile.colorIndex], '#333');
+                }
+                
+                // Draw column outline
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.rect(getColumnX(col) - HEX_RADIUS - 5, 100, HEX_WIDTH + 10, canvas.height - 150);
+                ctx.stroke();
+            }
+            
+            // Draw current falling tile
+            if (gameState.currentTile) {
+                const x = getColumnX(gameState.currentTile.column);
+                const y = gameState.currentTile.y;
+                drawHexagon(x, y, HEX_RADIUS, COLORS[gameState.currentTile.colorIndex], '#000');
+                
+                // Draw shine effect
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                const points = getHexagonPoints(x, y, HEX_RADIUS * 0.6);
+                ctx.beginPath();
+                ctx.moveTo(points[0][0], points[0][1]);
+                ctx.lineTo(points[1][0], points[1][1]);
+                ctx.lineTo(points[2][0], points[2][1]);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            // Draw next tile preview
+            const previewX = canvas.width - 50;
+            const previewY = 60;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(previewX - 40, previewY - 40, 80, 80);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('NEXT', previewX, previewY - 25);
+            if (gameState.nextTile) {
+                drawHexagon(previewX, previewY, HEX_RADIUS * 0.7, COLORS[gameState.nextTile.colorIndex], '#000');
+            }
+        }
+        
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            if (!gameState.gameOver) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // Touch/Click input handlers
+        document.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            
+            if (gameState.gameOver) {
+                initGame();
+                return;
+            }
+            
+            if (gameState.currentTile && gameState.currentTile.falling) {
+                const centerX = getColumnX(gameState.currentTile.column);
+                if (x < centerX) {
+                    gameState.currentTile.column = Math.max(0, gameState.currentTile.column - 1);
+                } else {
+                    gameState.currentTile.column = Math.min(COLS - 1, gameState.currentTile.column + 1);
+                }
+            }
+        }, { passive: false });
+        
+        document.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            
+            if (gameState.gameOver) {
+                initGame();
+                return;
+            }
+            
+            if (gameState.currentTile && gameState.currentTile.falling) {
+                const centerX = getColumnX(gameState.currentTile.column);
+                if (x < centerX) {
+                    gameState.currentTile.column = Math.max(0, gameState.currentTile.column - 1);
+                } else {
+                    gameState.currentTile.column = Math.min(COLS - 1, gameState.currentTile.column + 1);
+                }
+            }
+        });
+        
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (gameState.gameOver) {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    initGame();
+                }
+                return;
+            }
+            
+            if (gameState.currentTile && gameState.currentTile.falling) {
+                if (e.key === 'ArrowLeft') {
+                    gameState.currentTile.column = Math.max(0, gameState.currentTile.column - 1);
+                } else if (e.key === 'ArrowRight') {
+                    gameState.currentTile.column = Math.min(COLS - 1, gameState.currentTile.column + 1);
+                }
+            }
+        });
+        
+        // Start game
+        initGame();
+    </script>
+</body>
+</html>

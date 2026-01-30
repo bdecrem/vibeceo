@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Candy Stacker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#f8e1ff; }
+  canvas { display:block; background:#ffe6f0; }
+  #overlay {
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.6); color:#fff; font-family:sans-serif;
+    text-align:center; font-size:1.5rem; padding:20px; box-sizing:border-box;
+    visibility:hidden;
+  }
+  #overlay span { display:block; margin-top:10px; font-size:1rem; color:#ffccff; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="overlay"><span>Tap to restart</span></div>
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  let width, height;
+  const platformHeight = 20;
+  const blockHeight = 40;
+  const platformSpeed = 3;
+  const blockFallSpeed = 5;
+  const colors = ['#ff9999','#ffcc99','#ffff99','#ccff99','#99ffcc','#99ccff','#cc99ff','#ff99cc'];
+  let platform, block, stack, score, state;
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight * 0.8;
+    restart();
+  }
+
+  function init() {
+    window.addEventListener('resize', resize);
+    canvas.addEventListener('mousedown', handleInput);
+    canvas.addEventListener('touchstart', handleInput);
+    resize();
+    requestAnimationFrame(loop);
+  }
+
+  function restart() {
+    stack = [];
+    score = 0;
+    state = 'running';
+    overlay.style.visibility = 'hidden';
+    platform = { x: width/2 - 50, y: height - 80, w: 100, dir: 1 };
+    block = null;
+  }
+
+  function randomColor() {
+    return colors[Math.floor(Math.random()*colors.length)];
+  }
+
+  function spawnBlock() {
+    block = {
+      x: platform.x,
+      y: platform.y - blockHeight,
+      w: platform.w,
+      h: blockHeight,
+      color: randomColor()
+    };
+  }
+
+  function handleInput(e) {
+    e.preventDefault();
+    if (state === 'running') {

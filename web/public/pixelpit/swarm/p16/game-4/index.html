@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean Stack</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a472a 0%, #0d2818 100%);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 500px;
+            max-height: 800px;
+            background: linear-gradient(180deg, #1e90ff 0%, #00bfff 50%, #006994 100%);
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        #gameOverScreen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        #gameOverScreen.show {
+            display: flex;
+        }
+
+        .gameOverContent {
+            text-align: center;
+            color: #fff;
+        }
+
+        .gameOverContent h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #ffeb3b;
+        }
+
+        .gameOverContent p {
+            font-size: 32px;
+            margin-bottom: 30px;
+            color: #00bfff;
+        }
+
+        .gameOverContent .restartMessage {
+            font-size: 18px;
+            color: #fff;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="score">Score: 0</div>
+        <div id="gameOverScreen">
+            <div class="gameOverContent">
+                <h1>Game Over!</h1>
+                <p id="finalScore">Final Score: 0</p>
+                <div class="restartMessage">Tap to restart</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreDisplay = document.getElementById('finalScore');
+
+        // Set canvas size
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game variables
+        const BLOCK_WIDTH = 60;
+        const BLOCK_HEIGHT = 20;
+        const FALL_SPEED = 3;
+        const MOVE_SPEED = 4;
+
+        let gameActive = true;
+        let score = 0;
+        let blocks = [];
+        let fallingBlock = null;
+        let nextBlockX = canvas.width / 2 - BLOCK_WIDTH / 2;
+        let blockMovingLeft = false;
+        let blockMovingRight = false;
+
+        // Colors for ocean theme
+        const oceanColors = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
+            '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'
+        ];
+
+        class Block {
+            constructor(x, y, width, height, color) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+            }
+
+            draw() {
+                // Draw block with ocean theme
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                // Add border
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+
+                // Add water wave effect
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 1;
+                for (let i = 1; i < 3; i++) {
+                    const offset = i * 5;
+                    ctx.strokeRect(this.x + offset, this.y + offset, this.width - offset * 2, this.height - offset * 2);
+                }
+            }
+        }
+
+        function getOverlap(block1, block2) {
+            const left = Math.max(block1.x, block2.x);
+            const right = Math.min(block1.x + block1.width, block2.x + block2.width);
+            const overlap = right - left;
+            return overlap > 0 ? overlap : 0;
+        }
+
+        function placeBlock() {
+            if (!fallingBlock || blocks.length === 0) {
+                return;
+            }
+
+            const lastBlock = blocks[blocks.length - 1];
+            const overlap = getOverlap(fallingBlock, lastBlock);
+
+            if (overlap <= 0) {
+                endGame();
+                return;
+            }
+
+            if (overlap < fallingBlock.width * 0.3) {
+                endGame();
+                return;
+            }
+
+            // Adjust falling block position to be on top of last block
+            fallingBlock.y = lastBlock.y - fallingBlock.height;
+
+            // Trim the block width if it overhangs
+            if (fallingBlock.x < lastBlock.x) {
+                const trimLeft = lastBlock.x - fallingBlock.x;
+                fallingBlock.x += trimLeft;
+                fallingBlock.width -= trimLeft;
+            }
+
+            if (fallingBlock.x + fallingBlock.width > lastBlock.x + lastBlock.width) {
+                const trimRight = (fallingBlock.x + fallingBlock.width) - (lastBlock.x + lastBlock.width);
+                fallingBlock.width -= trimRight;
+            }
+
+            blocks.push(fallingBlock);
+            score++;
+            scoreDisplay.textContent = 'Score: ' + score;
+
+            // Create new falling block
+            const newColor = oceanColors[score % oceanColors.length];
+            fallingBlock = new Block(nextBlockX, -BLOCK_HEIGHT, BLOCK_WIDTH, BLOCK_HEIGHT, newColor);
+            blockMovingLeft = false;
+            blockMovingRight = false;
+        }
+
+        function drawBubbles() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            for (let i = 0; i < 5; i++) {
+                const x = (Math.sin(Date.now() / 1000 + i) + 1) * canvas.width * 0.5;
+                const y = (Date.now() / 20 + i * 100) % canvas.height;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawFish() {
+            const fishX = (Math.sin(Date.now() / 2000) + 1) * canvas.width * 0.5;
+            const fishY = canvas.height - 100;
+
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.ellipse(fishX, fishY, 15, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Fish eye
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(fishX + 8, fishY - 3, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Fish tail
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.moveTo(fishX - 15, fishY);
+            ctx.lineTo(fishX - 25, fishY - 8);
+            ctx.lineTo(fishX - 25, fishY + 8);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // Move falling block
+            if (blockMovingLeft && fallingBlock.x > 0) {
+                fallingBlock.x -= MOVE_SPEED;
+            }
+            if (blockMovingRight && fallingBlock.x + fallingBlock.width < canvas.width) {
+                fallingBlock.x += MOVE_SPEED;
+            }
+
+            // Fall block
+            if (fallingBlock) {
+                fallingBlock.y += FALL_SPEED;
+
+                // Check collision with last block
+                if (blocks.length > 0) {
+                    const lastBlock = blocks[blocks.length - 1];
+                    if (fallingBlock.y + fallingBlock.height >= lastBlock.y) {
+                        placeBlock();
+                    }
+                }
+
+                // Check if block fell off screen
+                if (fallingBlock.y > canvas.height) {
+                    endGame();
+                }
+            }
+        }
+
+        function draw() {
+            // Draw background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#1e90ff');
+            gradient.addColorStop(0.5, '#00bfff');
+            gradient.addColorStop(1, '#006994');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw bubbles
+            drawBubbles();
+
+            // Draw fish
+            drawFish();
+
+            // Draw blocks
+            for (let block of blocks) {
+                block.draw();
+            }
+
+            // Draw falling block
+            if (fallingBlock) {
+                fallingBlock.draw();
+            }
+
+            // Draw ground line
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 20);
+            ctx.lineTo(canvas.width, canvas.height - 20);
+            ctx.stroke();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameActive = false;
+            finalScoreDisplay.textContent = 'Final Score: ' + score;
+            gameOverScreen.classList.add('show');
+        }
+
+        function restartGame() {
+            gameActive = true;
+            score = 0;
+            blocks = [];
+            scoreDisplay.textContent = 'Score: 0';
+            gameOverScreen.classList.remove('show');
+
+            // Create first block
+            const firstColor = oceanColors[0];
+            const firstBlock = new Block(
+                canvas.width / 2 - BLOCK_WIDTH / 2,
+                canvas.height - 40,
+                BLOCK_WIDTH,
+                BLOCK_HEIGHT,
+                firstColor
+            );
+            blocks.push(firstBlock);
+
+            // Create falling block
+            fallingBlock = new Block(
+                canvas.width / 2 - BLOCK_WIDTH / 2,
+                -BLOCK_HEIGHT,
+                BLOCK_WIDTH,
+                BLOCK_HEIGHT,
+                oceanColors[1]
+            );
+        }
+
+        // Touch and click controls
+        document.addEventListener('touchstart', (e) => {
+            if (!gameActive) {
+                restartGame();
+                return;
+            }
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+
+            if (x < canvas.width / 2) {
+                blockMovingLeft = true;
+                blockMovingRight = false;
+            } else {
+                blockMovingRight = true;
+                blockMovingLeft = false;
+            }
+        });
+
+        document.addEventListener('touchend', () => {
+            blockMovingLeft = false;
+            blockMovingRight = false;
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!gameActive) {
+                restartGame();
+                return;
+            }
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+
+            if (x < canvas.width / 2) {
+                blockMovingLeft = true;
+                blockMovingRight = false;
+            } else {
+                blockMovingRight = true;
+                blockMovingLeft = false;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            blockMovingLeft = false;
+            blockMovingRight = false;
+        });
+
+        // Initialize game
+        restartGame();
+        gameLoop();
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Drop the Ball – Minimalist</title>
+<style>
+    html, body {margin:0; padding:0; height:100%; overflow:hidden; background:#fff;}
+    #gameCanvas {display:block; background:#fff;}
+    #score {position:absolute; top:10px; left:50%; transform:translateX(-50%); font-family:Arial,Helvetica,sans-serif; font-size:24px; color:#000;}
+    #gameOver {position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:20px; text-align:center; font-family:Arial,Helvetica,sans-serif; font-size:24px; display:none;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="score">Score: 0</div>
+<div id="gameOver">Game Over<br>Score: 0<br>Tap to restart</div>
+<script>
+(() => {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDiv = document.getElementById('score');
+    const gameOverDiv = document.get

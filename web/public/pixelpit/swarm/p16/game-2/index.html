@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Jump</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a2e;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 100%;
+            background: linear-gradient(to bottom, #0f3460, #16213e);
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        #scoreDisplay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff41;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        #gameOverScreen.show {
+            display: flex;
+        }
+        
+        #gameOverText {
+            font-size: 48px;
+            color: #ff0055;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
+            font-family: 'Courier New', monospace;
+        }
+        
+        #finalScore {
+            font-size: 32px;
+            color: #00ff41;
+            margin-bottom: 40px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #restartText {
+            font-size: 24px;
+            color: #00d4ff;
+            animation: blink 0.8s infinite;
+            font-family: 'Courier New', monospace;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreDisplay">SCORE: 0</div>
+        <div id="gameOverScreen">
+            <div id="gameOverText">GAME OVER</div>
+            <div id="finalScore">FINAL SCORE: 0</div>
+            <div id="restartText">TAP TO RESTART</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Game constants
+        const PIXEL_SIZE = 8;
+        const PLAYER_SIZE = 16;
+        const GROUND_Y = canvas.height - 40;
+        const GRAVITY = 0.5;
+        const JUMP_POWER = -12;
+        
+        // Game state
+        let game = {
+            score: 0,
+            gameOver: false,
+            playerX: 50,
+            playerY: GROUND_Y,
+            playerVelY: 0,
+            isJumping: false,
+            obstacles: [],
+            pips: [],
+            spawnCounter: 0,
+            spawnRate: 100
+        };
+        
+        // Draw pixel-art rectangle
+        function drawPixelRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(Math.round(x), Math.round(y), w, h);
+        }
+        
+        // Draw pixel-art player (square)
+        function drawPlayer(x, y) {
+            drawPixelRect(x, y, PLAYER_SIZE, PLAYER_SIZE, '#00ff41');
+            drawPixelRect(x + 4, y + 4, 8, 8, '#00aa00');
+        }
+        
+        // Draw obstacle (red bar)
+        function drawObstacle(x, y, w, h) {
+            drawPixelRect(x, y, w, h, '#ff0055');
+            drawPixelRect(x + 2, y + 2, w - 4, h - 4, '#ff3377');
+        }
+        
+        // Draw pip (collectible)
+        function drawPip(x, y) {
+            drawPixelRect(x, y, 8, 8, '#ffff00');
+            drawPixelRect(x + 2, y + 2, 4, 4, '#ffaa00');
+        }
+        
+        // Draw ground
+        function drawGround() {
+            drawPixelRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y, '#1a1a1a');
+            for (let i = 0; i < canvas.width; i += 16) {
+                drawPixelRect(i, GROUND_Y - 4, 8, 4, '#333333');
+            }
+        }
+        
+        // Update game state
+        function update() {
+            if (game.gameOver) return;
+            
+            // Apply gravity
+            game.playerVelY += GRAVITY;
+            game.playerY += game.playerVelY;
+            
+            // Ground collision
+            if (game.playerY >= GROUND_Y) {
+                game.playerY = GROUND_Y;
+                game.playerVelY = 0;
+                game.isJumping = false;
+            }
+            
+            // Spawn obstacles
+            game.spawnCounter++;
+            if (game.spawnCounter > game.spawnRate) {
+                game.obstacles.push({
+                    x: canvas.width,
+                    y: GROUND_Y - 20,
+                    width: 20,
+                    height: 20,
+                    speed: 6
+                });
+                game.spawnCounter = 0;
+                game.spawnRate = Math.max(60, game.spawnRate - 2);
+            }
+            
+            // Spawn pips
+            if (Math.random() < 0.02) {
+                game.pips.push({
+                    x: canvas.width,
+                    y: GROUND_Y - 60,
+                    width: 8,
+                    height: 8,
+                    speed: 6
+                });
+            }
+            
+            // Update obstacles
+            for (let i = game.obstacles.length - 1; i >= 0; i--) {
+                game.obstacles[i].x -= game.obstacles[i].speed;
+                
+                // Check collision with player
+                if (checkCollision(game.playerX, game.playerY, PLAYER_SIZE, PLAYER_SIZE,
+                                   game.obstacles[i].x, game.obstacles[i].y,
+                                   game.obstacles[i].width, game.obstacles[i].height)) {
+                    game.gameOver = true;
+                    showGameOver();
+                    return;
+                }
+                
+                // Remove off-screen
+                if (game.obstacles[i].x < -30) {
+                    game.obstacles.splice(i, 1);
+                    game.score += 10;
+                }
+            }
+            
+            // Update pips
+            for (let i = game.pips.length - 1; i >= 0; i--) {
+                game.pips[i].x -= game.pips[i].speed;
+                
+                // Check collection
+                if (checkCollision(game.playerX, game.playerY, PLAYER_SIZE, PLAYER_SIZE,
+                                   game.pips[i].x, game.pips[i].y,
+                                   game.pips[i].width, game.pips[i].height)) {
+                    game.pips.splice(i, 1);
+                    game.score += 50;
+                } else if (game.pips[i].x < -10) {
+                    game.pips.splice(i, 1);
+                }
+            }
+            
+            updateScore();
+        }
+        
+        // Check collision between two rectangles
+        function checkCollision(x1, y1, w1, h1, x2, y2, w2, h2) {
+            return x1 < x2 + w2 && x1 + w1 > x2 && y1 < y2 + h2 && y1 + h1 > y2;
+        }
+        
+        // Draw everything
+        function draw() {
+            // Clear canvas with gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#0f3460');
+            gradient.addColorStop(1, '#16213e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw ground
+            drawGround();
+            
+            // Draw obstacles
+            for (let obstacle of game.obstacles) {
+                drawObstacle(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            }
+            
+            // Draw pips
+            for (let pip of game.pips) {
+                drawPip(pip.x, pip.y);
+            }
+            
+            // Draw player
+            drawPlayer(game.playerX, game.playerY);
+        }
+        
+        // Update score display
+        function updateScore() {
+            document.getElementById('scoreDisplay').textContent = 'SCORE: ' + game.score;
+        }
+        
+        // Show game over screen
+        function showGameOver() {
+            document.getElementById('finalScore').textContent = 'FINAL SCORE: ' + game.score;
+            document.getElementById('gameOverScreen').classList.add('show');
+        }
+        
+        // Handle jump
+        function jump() {
+            if (!game.gameOver && !game.isJumping) {
+                game.playerVelY = JUMP_POWER;
+                game.isJumping = true;
+            }
+        }
+        
+        // Handle restart
+        function restart() {
+            game = {
+                score: 0,
+                gameOver: false,
+                playerX: 50,
+                playerY: GROUND_Y,
+                playerVelY: 0,
+                isJumping: false,
+                obstacles: [],
+                pips: [],
+                spawnCounter: 0,
+                spawnRate: 100
+            };
+            document.getElementById('gameOverScreen').classList.remove('show');
+            updateScore();
+        }
+        
+        // Input handling
+        document.addEventListener('click', function(e) {
+            if (game.gameOver) {
+                restart();
+            } else {
+                jump();
+            }
+        });
+        
+        document.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            if (game.gameOver) {
+                restart();
+            } else {
+                jump();
+            }
+        });
+        
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start game
+        updateScore();
+        gameLoop();
+    </script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frozen Drop - Winter Ice Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            background: linear-gradient(180deg, #e0f4ff 0%, #b3e5fc 100%);
+        }
+        
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #87ceeb 0%, #e0f6ff 100%);
+            touch-action: none;
+        }
+        
+        #scoreDisplay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #003d82;
+            z-index: 100;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.7);
+        }
+        
+        #gameOverScreen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        #gameOverScreen.show {
+            display: flex;
+        }
+        
+        .gameOverContent {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .gameOverContent h1 {
+            font-size: 48px;
+            color: #003d82;
+            margin-bottom: 20px;
+        }
+        
+        .gameOverContent p {
+            font-size: 36px;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+        
+        .gameOverContent .tapText {
+            font-size: 24px;
+            color: #666;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreDisplay">Score: 0</div>
+        <div id="gameOverScreen">
+            <div class="gameOverContent">
+                <h1>Game Over!</h1>
+                <p id="finalScore">Score: 0</p>
+                <div class="tapText">Tap to restart</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const finalScoreDisplay = document.getElementById('finalScore');
+
+        // Canvas size
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game variables
+        let score = 0;
+        let gameOver = false;
+        let ball = null;
+        let slots = [];
+        let particles = [];
+
+        // Ball class
+        class Ball {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 15;
+                this.vx = 0;
+                this.vy = 0;
+                this.gravity = 0.6;
+                this.friction = 0.99;
+                this.active = true;
+            }
+
+            update() {
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= this.friction;
+
+                // Bounce off walls
+                if (this.x - this.radius < 0) {
+                    this.x = this.radius;
+                    this.vx *= -0.7;
+                }
+                if (this.x + this.radius > canvas.width) {
+                    this.x = canvas.width - this.radius;
+                    this.vx *= -0.7;
+                }
+
+                // Remove if falls off screen
+                if (this.y > canvas.height + 50) {
+                    this.active = false;
+                    gameOver = true;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = '#fff';
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowColor = 'transparent';
+
+                // Icy shine
+                ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                ctx.beginPath();
+                ctx.arc(this.x - 5, this.y - 5, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            checkSlotCollision(slot) {
+                const dx = this.x - slot.x;
+                const dy = this.y - slot.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                return dist < this.radius + slot.width / 2;
+            }
+        }
+
+        // Slot class
+        class Slot {
+            constructor(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.vx = 3 + Math.random() * 2;
+                this.direction = Math.random() > 0.5 ? 1 : -1;
+                this.vx *= this.direction;
+            }
+
+            update() {
+                this.x += this.vx;
+
+                // Bounce off walls
+                if (this.x - this.width / 2 < 0 || this.x + this.width / 2 > canvas.width) {
+                    this.vx *= -1;
+                    this.x = Math.max(this.width / 2, Math.min(canvas.width - this.width / 2, this.x));
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = '#4dd0e1';
+                ctx.strokeStyle = '#0097a7';
+                ctx.lineWidth = 3;
+                ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+                ctx.strokeRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+
+                // Ice effect
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width / 3, this.height / 2);
+            }
+
+            isPointInside(x, y) {
+                return x > this.x - this.width / 2 && x < this.x + this.width / 2 &&
+                       y > this.y - this.height / 2 && y < this.y + this.height / 2;
+            }
+        }
+
+        // Particle class
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8 - 2;
+                this.life = 40;
+                this.size = Math.random() * 6 + 4;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.3;
+                this.life--;
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(200, 220, 255, ${this.life / 40})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Initialize game
+        function init() {
+            score = 0;
+            gameOver = false;
+            ball = null;
+            slots = [];
+            particles = [];
+            gameOverScreen.classList.remove('show');
+
+            // Create initial slots
+            const slotY = canvas.height * 0.4;
+            const slotSpacing = 80;
+            const numSlots = Math.floor(canvas.width / slotSpacing);
+
+            for (let i = 0; i < numSlots; i++) {
+                const x = (i + 0.5) * (canvas.width / numSlots) + 20;
+                slots.push(new Slot(x, slotY, 60, 15));
+            }
+        }
+
+        // Handle tap/click
+        function handleTap(e) {
+            if (gameOver) {
+                init();
+                return;
+            }
+
+            if (!ball) {
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = 50;
+                ball = new Ball(x, y);
+            }
+        }
+
+        // Draw background with snowflakes
+        function drawBackground() {
+            ctx.fillStyle = 'rgba(224, 244, 255, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw some snowflakes
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            for (let i = 0; i < 20; i++) {
+                const x = (Date.now() * 0.01 + i * 50) % canvas.width;
+                const y = (Date.now() * 0.02 + i * 30) % canvas.height;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Update game
+        function update() {
+            if (gameOver) return;
+
+            if (ball && ball.active) {
+                ball.update();
+
+                // Check slot collisions
+                for (let slot of slots) {
+                    if (ball.checkSlotCollision(slot)) {
+                        score += 10;
+                        ball.active = false;
+                        ball = null;
+                        scoreDisplay.textContent = `Score: ${score}`;
+
+                        // Create particles
+                        for (let i = 0; i < 8; i++) {
+                            particles.push(new Particle(slot.x, slot.y));
+                        }
+                    }
+                }
+            }
+
+            // Update slots
+            for (let slot of slots) {
+                slot.update();
+            }
+
+            // Update particles
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => p.update());
+        }
+
+        // Draw game
+        function draw() {
+            drawBackground();
+
+            // Draw slots
+            slots.forEach(slot => slot.draw());
+
+            // Draw ball
+            if (ball && ball.active) {
+                ball.draw();
+            }
+
+            // Draw particles
+            particles.forEach(p => p.draw());
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+
+            if (gameOver) {
+                finalScoreDisplay.textContent = `Score: ${score}`;
+                gameOverScreen.classList.add('show');
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listeners
+        canvas.addEventListener('click', handleTap);
+        canvas.addEventListener('touchstart', handleTap);
+        gameOverScreen.addEventListener('click', () => {
+            if (gameOver) init();
+        });
+
+        // Start game
+        init();
+        gameLoop();
+    </script>
+</body>
+</html>

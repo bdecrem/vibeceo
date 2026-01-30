@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spooky Slide</title>
+<style>
+  html, body {margin:0; padding:0; overflow:hidden; background:#111; font-family:sans-serif;}
+  canvas {display:block; width:100%; height:100vh; background:#222;}
+  #overlay {
+    position:absolute; top:0; left:0; width:100%; height:100vh;
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    background:rgba(0,0,0,0.7); color:#fff; font-size:2rem; text-align:center;
+  }
+  #score {font-size:1.2rem; margin-bottom:1rem;}
+  #restart {padding:0.5rem 1rem; background:#ff0; color:#000; border:none; border-radius:5px;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="overlay" style="display:none;">
+  <div id="score"></div>
+  <button id="restart">Tap to Restart</button>
+</div>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const scoreEl = document.getElementById('score');
+const restartBtn = document.getElementById('restart');
+
+let width, height;
+function resize() {
+  width = canvas.width = window.innerWidth;
+  height = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const PLAYER_SIZE = 50;
+const PLAYER_Y = height - PLAYER_SIZE - 20;
+let playerX = (width - PLAYER_SIZE) / 2;
+
+const OBSTACLE_WIDTH = 60;
+const OBSTACLE_HEIGHT = 60;
+const OBSTACLE_GAP = 30;
+let obstacles = [];
+let obstacleSpeed = 4;
+let spawnTimer = 0;
+const SPAWN_INTERVAL = 90;
+
+let score = 0;
+let gameState = 'PLAYING';
+
+function resetGame() {
+  playerX = (width - PLAYER_SIZE) / 2;
+  obstacles = [];
+  obstacleSpeed = 4;
+  spawnTimer = 0;
+  score = 0;
+  gameState = 'PLAYING';
+  overlay.style.display = 'none';
+}
+
+function spawnObstacle() {
+  const side = Math.random() < 0.5 ? 'left' : 'right';
+  const x = side === 'left' ? -OBSTACLE_WIDTH : width;
+  const y = PLAYER_Y - OBSTACLE_HEIGHT - Math.random() * 150;
+  obstacles.push({x, y, side});
+}
+
+function update() {
+  if (gameState !== 'PLAYING') return;
+
+  // spawn obstacles
+  spawnTimer++;
+  if (spawnTimer >= SPAWN_INTERVAL) {
+    spawnTimer = 0;
+    spawnObstacle();
+  }
+
+  // move obstacles
+  obstacles.forEach(ob => {
+    ob.x += ob.side === 'left' ? obstacleSpeed : -obstacleSpeed;
+  });
+
+  // remove off-screen obstacles
+  obstacles = obstacles.filter(ob => {
+    return ob.side === 'left' ? ob.x < width + OBSTACLE_WIDTH : ob.x > -OBSTACLE_WIDTH;
+  });
+
+  // collision detection
+  for (const ob of obstacles) {
+    if (rectIntersect(playerX, PLAYER_Y, PLAYER_SIZE, PLAYER_SIZE,
+                      ob.x, ob.y, OBSTACLE_WIDTH, OBSTACLE_HEIGHT)) {
+      gameOver();
+      return;
+    }
+    // score when passed
+    if (!ob.passed && ob.side === 'left' && ob.x > width) {
+      ob.passed = true;
+      score++;
+    }
+    if (!ob.passed && ob.side === 'right' && ob.x + OBSTACLE_WIDTH < 0) {
+      ob.passed = true;
+      score++;
+    }
+  }
+
+  render();
+  requestAnimationFrame(update);
+}
+
+function rectIntersect(x1,y1,w1,h1,x2,y2,w2,h2) {
+  return !(x2 > x1 + w1 || x2 + w2 < x1 || y2 > y1 + h1 || y2 + h2 < y1);
+}
+
+function render() {
+  ctx.clearRect(0,0,width,height);
+
+  // draw player (ghost)
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(playerX + PLAYER_SIZE/2, PLAYER_Y + PLAYER_SIZE/2, PLAYER_SIZE/2, 0, Math.PI*2);
+  ctx.fill();
+
+  // draw obstacles (spikes)
+  ctx.fillStyle = '#f33';
+  obstacles.forEach(ob => {
+    ctx.beginPath();
+    ctx.moveTo(ob.x + OBSTACLE_WIDTH/2, ob.y);
+    ctx.lineTo(ob.x, ob.y + OBSTACLE_HEIGHT);
+    ctx.lineTo(ob.x + OBSTACLE_WIDTH, ob.y + OBSTACLE_HEIGHT);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // score
+  ctx.fillStyle = '#fff';
+  ctx.font = '24px sans-serif';
+  ctx.fillText(`Score: ${score}`, 20, 40);
+}
+
+function gameOver() {
+  gameState = 'GAMEOVER';
+  overlay.style.display = 'flex';
+  scoreEl.textContent = `Your Score: ${score}`;
+}
+
+function movePlayer(direction) {
+  const step = 80;
+  if (direction === 'left') {
+    playerX = Math.max(0, playerX - step);
+  } else if (direction === 'right') {
+    playerX = Math.min(width - PLAYER_SIZE, playerX + step);
+  }
+}
+
+// touch controls
+let touchStartX = 0;
+canvas.addEventListener('touchstart', e => {
+  if (gameState !== 'PLAYING') return;
+  touchStartX = e.touches[0].clientX;
+});
+canvas.addEventListener('touchend', e => {
+  if (gameState !== 'PLAYING') return;
+  const touchEndX = e.changedTouches[0].clientX;
+  const diff = touchEndX - touchStartX;
+  if (Math.abs(diff) > 30) {
+    movePlayer(diff > 0 ? 'right' : 'left');
+  }
+});
+
+restartBtn.addEventListener('click', resetGame);
+canvas.addEventListener('click', () => {
+  if (gameState === 'GAMEOVER') resetGame();
+});
+
+resetGame();
+update();
+</script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Jungle Drop</title>
+<style>
+  body{margin:0;overflow:hidden;background:#e8f5e9;font-family:sans-serif;}
+  canvas{display:block;margin:auto;background:#c8e6c9;}
+  #score{position:absolute;top:10px;left:10px;font-size:18px;color:#1b5e20;}
+  #overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;font-size:24px;display:none;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="score">Score: 0</div>
+<div id="overlay"><div id="overlayText"></div></div>
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const overlay = document.getElementById('overlay');
+  const overlayText = document.getElementById('overlayText');
+
+  const cols = 8;
+  const rows = 12;
+  let cellSize;
+  let board = [];
+  const colors = ['#4caf50','#8bc34a','#ffeb3b','#ff9800','#f44336'];
+  let score = 0;
+  let gameOver = false;
+
+  function init() {
+    resizeCanvas();
+    board = Array.from({length: rows}, () => Array(cols).fill(null));
+    score = 0;
+    gameOver = false;
+    overlay.style.display = 'none';
+    updateScore();
+    draw();
+  }
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth - 20;
+    canvas.height = canvas.width * rows / cols;
+    cellSize = canvas.width / cols;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Draw grid lines
+    ctx.strokeStyle = '#388e3c';
+    ctx.lineWidth = 2;
+    for (let c = 0; c <= cols; c++) {
+      ctx.beginPath();
+      ctx.moveTo(c * cellSize, 0);
+      ctx.lineTo(c * cellSize, canvas.height);
+      ctx.stroke();
+    }
+    for (let r = 0; r <= rows; r++) {
+      ctx.beginPath();
+      ctx.moveTo(0, r * cellSize);
+      ctx.lineTo(canvas.width, r * cellSize);
+      ctx.stroke();
+    }
+    // Draw balls
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const color = board[r][c];
+        if (color) {
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          const x = c * cellSize + cellSize / 2;
+          const y = r * cellSize + cellSize / 2;
+          const radius = cellSize * 0.35;
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fill();
+          // Jungle leaf outline
+          ctx.strokeStyle = '#1b5e20';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function updateScore() {
+    scoreEl.textContent = 'Score: ' + score;
+  }
+
+  function dropBall(col) {
+    if (gameOver) return;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    // Find lowest empty cell
+    let targetRow = -1;
+    for (let r = rows - 1; r >= 0; r--) {
+      if (!board[r][col]) {
+        targetRow = r;
+        break;
+      }
+    }
+    if (targetRow === -1) {
+      endGame();
+      return;
+    }
+    board[targetRow][col] = color;
+    processMatches();
+    addNewBall();
+    draw();
+  }
+
+  function processMatches() {
+    while (true) {
+      const groups = findAllGroups();
+      if (groups.length === 0) break;
+      clearGroups(groups);
+      collapseColumns();
+    }
+  }
+
+  function findAllGroups() {
+    const visited = Array.from({length: rows}, () => Array(cols).fill(false));
+    const groups = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (!visited[r][c] && board[r][c]) {
+          const group = getGroup(r, c, board[r][c], visited);
+          if (group.length >= 3) groups.push(group);
+        }
+      }
+    }
+    return groups;
+  }
+
+  function getGroup(r, c, color, visited) {
+    const stack = [[r, c]];
+    const group = [];
+    while (stack.length) {
+      const [cr, cc] = stack.pop();
+      if (cr < 0 || cr >= rows || cc < 0 || cc >= cols) continue;
+      if (visited[cr][cc]) continue;
+      if (board[cr][cc] !== color) continue;
+      visited[cr][cc]

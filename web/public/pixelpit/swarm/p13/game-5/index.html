@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Space Paper Flight</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:100%;height:100%;overflow:hidden;background:#000;}
+  canvas{display:block;background:#000;}
+  #ui{position:absolute;top:10px;left:10px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-size:24px;}
+  #gameover{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.8);color:#fff;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;
+    font-family:Arial,Helvetica,sans-serif;font-size:32px;
+  }
+  #gameover .restart{margin-top:20px;font-size:20px;}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui"><span id="score">0</span></div>
+<div id="gameover" style="display:none;">
+  <div class="message">Game Over</div>
+  <div class="score">Score: <span id="finalScore">0</span></div>
+  <div class="restart">Tap to Restart</div>
+</div>
+<script>
+(function(){
+  const canvas=document.getElementById('game');
+  const ctx=canvas.getContext('2d');
+  const scoreEl=document.getElementById('score');
+  const finalScoreEl=document.getElementById('finalScore');
+  const gameoverEl=document.getElementById('gameover');
+  let W,H,player,bullets,enemies,score,gameOver,enemyTimer;
+
+  function resize(){
+    W=canvas.width=window.innerWidth;
+    H=canvas.height=window.innerHeight;
+    if(player){player.y=H-80;}
+  }
+  window.addEventListener('resize',resize);
+
+  function init(){
+    score=0;scoreEl.textContent=score;
+    bullets=[];enemies=[];
+    player={x:W/2,y:H-80,w:50,h:50,move:20};
+    enemyTimer=0;
+    gameOver=false;
+    gameoverEl.style.display='none';
+    requestAnimationFrame(loop);
+  }
+
+  function spawnEnemy(){
+    const size=30;
+    const x=Math.random()*(W-size);
+    enemies.push({x:x,y:-size,w:size,h:size,speed:80+Math.random()*60});
+  }
+
+  function update(dt){
+    enemyTimer+=dt;
+    if(enemyTimer>1.5){spawnEnemy();enemyTimer=0;}
+    // bullets
+    for(let i=bullets.length-1;i>=0;i--){
+      bullets[i].y-=bullets[i].speed*dt;
+      if(bullets[i].y<-10)bullets.splice(i,1);
+    }
+    // enemies
+    for(let i=enemies.length-1;i>=0;i--){
+      enemies[i].y+=enemies[i].speed*dt;
+      if(enemies[i].y>H+20)enemies.splice(i,1);
+    }
+    // collisions
+    for(let i=enemies.length-1;i>=0;i--){
+      const e=enemies[i];
+      // enemy-player
+      if(rectIntersect(e,player)){triggerGameOver();return;}
+      // enemy-bullet
+      for(let j=bullets.length-1;j>=0;j--){
+        if(rectIntersect(e,bullets[j])){
+          enemies.splice(i,1);
+          bullets.splice(j,1);
+          score+=10;scoreEl.textContent=score;
+          break;
+        }
+      }
+    }
+  }
+
+  function rectIntersect(a,b){
+    return a.x<a.x+b.w && a.x+a.w>a.x && a.y<a.y+b.h && a.y+a.h>a.y;
+  }
+
+  function draw(){
+    ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+    // player
+    ctx.fillStyle='#0ff';
+    ctx.beginPath();
+    ctx.moveTo(player.x,player.y);
+    ctx.lineTo(player.x+player.w/2,player.y+player.h);
+    ctx.lineTo(player.x+player.w,player.y);
+    ctx.closePath();
+    ctx.fill();
+    // bullets
+    ctx.fillStyle='#ff0';
+    bullets.forEach(b=>{
+      ctx.fillRect(b.x,b.y,b.w,b.h);
+    });
+    // enemies
+    ctx.fillStyle='#f00';
+    enemies.forEach(e=>{
+      ctx.beginPath();
+      ctx.arc(e.x+e.w/2,e.y+e.h/2,e.w/2,0,Math.PI*2);
+      ctx.fill();
+    });
+  }
+
+  function loop(timestamp){
+    if(!this.last){this.last=timestamp;return requestAnimationFrame(loop);}
+    const dt=(timestamp-this.last)/1000;
+    this.last=timestamp;
+    if(!gameOver){
+      update(dt);draw();
+      requestAnimationFrame(loop);
+    }
+  }
+
+  function triggerGameOver(){
+    gameOver=true;
+    finalScoreEl.textContent=score;
+    gameoverEl.style.display='flex';
+  }
+
+  function restart(){
+    init();
+  }
+
+  // Touch controls
+  let touchStartX, touchStartY, touchStartTime;
+  canvas.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    const t=e.touches[0];
+    touchStartX=t.clientX;touchStartY=t.clientY;
+    touchStartTime=Date.now();
+  },{passive:false});
+  canvas.addEventListener('touchend',e=>{
+    e.preventDefault();
+    const t=e.changedTouches[0];
+    const dx=t.clientX-touchStartX;
+    const dy=t.clientY-touchStartY;
+    const dt=Date.now()-touchStartTime;
+    const dist=Math.hypot(dx,dy);
+    if(dt<200 && dist<10){ // tap
+      fireBullet();
+      if(gameOver)restart();
+    }else if(dist>30){
+      if(Math.abs(dx)>Math.abs(dy)){
+        if(dx>0)movePlayer('right');else movePlayer('left');
+      }
+    }
+  },{passive:false});
+
+  function fireBullet(){
+    bullets.push({x:player.x+player.w/2-2.5,y:player.y-10,w:5,h:10,speed:500});
+  }
+
+  function movePlayer(dir){
+    if(dir==='left'){
+      player.x=Math.max(0,player.x-player.move);
+    }else{
+      player.x=Math.min(W-player.w,player.x+player.move);
+    }
+  }
+
+  // Prevent scrolling
+  document.body.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+
+  init();
+})();
+</script>
+</body>
+</html>

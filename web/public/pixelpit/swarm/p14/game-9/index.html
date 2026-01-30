@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Snowy Jump</title>
+<style>
+    html, body { margin:0; padding:0; overflow:hidden; background:#87CEEB; }
+    canvas { width:100vw; height:100vh; display:block; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+(() => {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    let cw, ch, groundY;
+
+    function resize() {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cw = rect.width;
+        ch = rect.height;
+        groundY = ch - 30;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Game state
+    let state = 'playing';
+    let score = 0;
+    const obstacles = [];
+    const collectibles = [];
+    let lastObstacle = 0;
+    let lastCollectible = 0;
+
+    // Character
+    const player = {
+        x: cw * 0.2,
+        y: 0,
+        r: 18,
+        vy: 0,
+        onGround: false
+    };
+
+    const gravity = 0.6;
+    const jumpVelocity = -12;
+    const obstacleSpeed = 3;
+
+    function reset() {
+        state = 'playing';
+        score = 0;
+        obstacles.length = 0;
+        collectibles.length = 0;
+        lastObstacle = 0;
+        lastCollectible = 0;
+        player.y = groundY - player.r;
+        player.vy = 0;
+        player.onGround = true;
+    }
+
+    reset();
+
+    function spawnObstacle() {
+        const h = 30;
+        const w = 20;
+        const y = groundY - h;
+        obstacles.push({x: cw + w, y, w, h, passed: false});
+    }
+
+    function spawnCollectible() {
+        const r = 10;
+        const y = groundY - Math.random() * 150 - 50;
+        collectibles.push({x: cw + r, y, r, collected: false});
+    }
+
+    function update(dt) {
+        if (state !== 'playing') return;
+
+        // Player physics
+        player.vy += gravity;
+        player.y += player.vy;
+        if (player.y + player.r >= groundY) {
+            player.y = groundY - player.r;
+            player.vy = 0;
+            player.onGround = true;
+        } else {
+            player.onGround = false;
+        }
+
+        // Spawn obstacles
+        if (Date.now() - lastObstacle > 1500 + Math.random() * 1000) {
+            spawnObstacle();
+            lastObstacle = Date.now();
+        }
+
+        // Spawn collectibles
+        if (Date.now() - lastCollectible > 2000 + Math.random() * 1500) {
+            spawnCollectible();
+            lastCollectible = Date.now();
+        }
+
+        // Move obstacles
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            const o = obstacles[i];
+            o.x -= obstacleSpeed;
+            if (!o.passed && o.x + o.w < player.x) {
+                o.passed = true;
+                score++;
+            }
+            if (o.x + o.w < 0) obstacles.splice(i, 1);
+            // Collision
+            if (circleRectCollision(player, o)) {
+                state = 'gameover';
+            }
+        }
+
+        // Move collectibles
+        for (let i = collectibles.length - 1; i >= 0; i--) {
+            const c = collectibles[i];
+            c.x -= obstacleSpeed;
+            if (c.x + c.r < 0) collectibles.splice(i, 1);
+            if (!c.collected && circleCircleCollision(player, c)) {
+                c.collected = true;
+                score += 5;
+            }
+        }
+    }
+
+    function circleRectCollision(c, r) {
+        const distX = Math.abs(c.x - (r.x + r.w / 2));
+        const distY = Math.abs(c.y - (r.y + r.h / 2));
+
+        if (distX > (r.w / 2 + c.r)) { return false; }
+        if (distY > (r.h / 2 + c.r)) { return false; }
+
+        if (distX <= (r.w / 2)) { return true; }
+        if (distY <= (r.h / 2)) { return true; }
+
+        const dx = distX - r.w / 2;
+        const dy = distY - r.h / 2;
+        return (dx * dx + dy * dy <= (c.r * c.r));
+    }
+
+    function circleCircleCollision(c1, c2) {
+        const dx = c1.x - c2.x;
+        const dy = c1.y - c2.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        return dist < c1.r + c2.r;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, cw, ch);
+
+        // Background
+        ctx.fillStyle = '#87CEEB';
+        ctx.fillRect(0, 0, cw, ch);
+        // Snow
+        ctx.fillStyle = '#FFFFFF';
+        for (let i = 0; i < 30; i++) {
+            const x = Math.random() * cw;
+            const y = Math.random() * ch;
+            ctx.fillRect(x, y, 2, 2);
+        }
+
+        // Ground
+        ctx.fillStyle = '#ADD8E6';
+        ctx.fillRect(0, groundY, cw, ch - groundY);
+
+        // Obstacles
+        ctx.fillStyle = '#FFFFFF';
+        obstacles.forEach(o => {
+            ctx.beginPath();
+            ctx.moveTo(o.x, o.y + o.h);
+            ctx.lineTo(o.x + o.w / 2, o.y);
+            ctx.lineTo(o.x + o.w, o.y + o.h);
+            ctx.closePath();
+            ctx.fill();
+        });
+
+        // Collectibles
+        collectibles.forEach(c => {
+            if (!c.collected) {
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+
+        // Player
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Score
+        ctx.fillStyle = '#000000';
+        ctx.font = '24px Arial';
+        ctx.fillText('Score: ' + score, 10, 30);
+
+        if (state === 'gameover') {
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(0, 0, cw, ch);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '36px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Game Over', cw / 2, ch / 2 - 20);
+            ctx.font = '24px Arial';
+            ctx.fillText('Score: ' + score, cw / 2, ch / 2 + 20);
+            ctx.fillText('Tap to restart', cw / 2, ch / 2 + 60);
+            ctx.textAlign = 'left';
+        }
+    }
+
+    let lastTime = 0;
+    function gameLoop(timestamp) {
+        const dt = timestamp - lastTime;
+        lastTime = timestamp;
+        update(dt);
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+    requestAnimationFrame(gameLoop);
+
+    function tap(event) {
+        event.preventDefault();
+        if (state === 'playing') {
+            if (player.onGround) {
+                player.vy = jumpVelocity;
+                player.onGround = false;
+            }
+        } else if (state === 'gameover') {
+            reset();
+        }
+    }
+
+    canvas.addEventListener('click', tap);
+    canvas.addEventListener('touchstart', tap);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spooky Runner</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#111;}
+  canvas{display:block;width:100%;height:100%;}
+  #overlay{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,0.7);color:#fff;font-size:2em;visibility:hidden;
+    text-align:center;cursor:pointer;
+  }
+  #score{position:absolute;top:10px;left:10px;color:#ffd700;font-size:1.5em;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="score">0</div>
+<div id="overlay">Game Over<br>Tap to Restart</div>
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const scoreEl = document.getElementById('score');
+  let W, H;
+  const GRAVITY = 0.7;
+  const JUMP_VEL = -15;
+  const GROUND = 0.9; // percentage of height
+  const SPEED = 6;
+  const OBSTACLE_INTERVAL = 1400; // ms
+  const COIN_INTERVAL = 1000; // ms
+
+  let player = {x: 80, y: 0, size: 30, vy: 0, onGround: false};
+  let obstacles = [];
+  let coins = [];
+  let lastObs = 0, lastCoin = 0;
+  let score = 0, isGameOver = false;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    player.y = H * GROUND - player.size;
+    player.onGround = true;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function reset() {
+    obstacles = [];
+    coins = [];
+    lastObs = 0;
+    lastCoin = 0;
+    player.y = H * GROUND - player.size;
+    player.vy = 0;
+    player.onGround = true;
+    score = 0;
+    scoreEl.textContent = score;
+    isGameOver = false;
+    overlay.style.visibility = 'hidden';
+    requestAnimationFrame(loop);
+  }
+
+  function jump() {
+    if (player.onGround) {
+      player.vy = JUMP_VEL;
+      player.onGround = false;
+    }
+  }
+
+  function spawnObstacle() {
+    const w = 40 + Math.random()*20;
+    const h = 60 + Math.random()*40;
+    obstacles.push({
+      x: W,
+      y: H * GROUND - h,
+      w, h
+    });
+  }
+
+  function spawnCoin() {
+    const r = 12 + Math.random()*8;
+    coins.push({
+      x: W,
+      y: H * GROUND - 100 - Math.random()*100,
+      r
+    });
+  }
+
+  function update(dt) {
+    // Player physics
+    player.vy += GRAVITY;
+    player.y += player.vy;
+    if (player.y >= H * GROUND - player.size) {
+      player.y = H * GROUND - player.size;
+      player.vy = 0;
+      player.onGround = true;
+    }
+
+    // Obstacles
+    obstacles.forEach(o => o.x -= SPEED);
+    obstacles = obstacles.filter(o => o.x + o.w > 0);
+    // Coins
+    coins.forEach(c => c.x -= SPEED);
+    coins = coins.filter(c => c.x + c.r > 0);
+
+    // Collision
+    for (let o of obstacles) {
+      if (rectCircleCollide(
+        o.x, o.y, o.w, o.h,
+        player.x + player.size/2, player.y + player.size/2, player.size/2
+      )) {
+        isGameOver = true;
+      }
+    }
+    // Coin collection
+    for (let i = 0; i < coins.length; i++) {
+      let c = coins[i];
+      if (circleCircleCollide(
+        c.x, c.y, c.r,
+        player.x + player.size/2, player.y + player.size/2, player.size/2
+      )) {
+        score += 10;
+        scoreEl.textContent = score;
+        coins.splice(i,1);
+        i--;
+      }
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    // Background
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0,0,W,H);
+    // Ground
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, H * GROUND, W, H * (1-GROUND));
+
+    // Player
+    ctx.fillStyle = '#ff8800';
+    ctx.beginPath();
+    ctx.arc(player.x + player.size/2, player.y + player.size/2, player.size/2, 0, Math.PI*2);
+    ctx.fill();
+
+    // Obstacles
+    ctx.fillStyle = '#aa00ff';
+    obstacles.forEach(o => ctx.fillRect(o.x, o.y, o.w, o.h));
+
+    // Coins
+    ctx.fillStyle = '#ffd700';
+    coins.forEach(c => {
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
+      ctx.fill();
+    });
+  }
+
+  function loop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const dt = timestamp - lastTime;
+    lastTime = timestamp;
+    if (!isGameOver) {
+      update(dt);
+      draw();
+      // spawn obstacles
+      if (timestamp - lastObs > OBSTACLE_INTERVAL) {
+        spawnObstacle();
+        lastObs = timestamp;
+      }
+      // spawn coins
+      if (timestamp - lastCoin > COIN_INTERVAL) {
+        spawnCoin();
+        lastCoin = timestamp;
+      }
+      requestAnimationFrame(loop);
+    }
+  }
+
+  function rectCircleCollide(rx, ry, rw, rh, cx, cy, cr) {
+    const nearestX = Math.max(rx, Math.min(cx, rx + rw));
+    const nearestY = Math.max(ry, Math.min(cy, ry + rh));
+    const dx = cx - nearestX;
+    const dy = cy - nearestY;
+    return (dx*dx + dy*dy) < (cr*cr);
+  }
+
+  function circleCircleCollide(x1,y1,r1,x2,y2,r2) {
+    const dx = x1 - x2, dy = y1 - y2;
+    const dist = Math.hypot(dx,dy);
+    return dist < r1 + r2;
+  }
+
+  overlay.addEventListener('click', reset);
+  canvas.addEventListener('click', () => { if (!isGameOver) jump(); });
+
+  let lastTime = 0;
+  reset();
+})();
+</script>
+</body>
+</html>

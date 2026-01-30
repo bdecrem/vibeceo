@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Ball Drop</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a4d 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            background: radial-gradient(circle at center, #0f0f2e 0%, #050510 100%);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.3), inset 0 0 40px rgba(255, 0, 255, 0.1);
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #0a0e27 0%, #1a0033 100%);
+            cursor: pointer;
+            touch-action: none;
+        }
+        
+        #scoreDisplay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #ff00ff;
+            z-index: 10;
+            font-weight: bold;
+        }
+        
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 39, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+        
+        #gameOverScreen.show {
+            display: flex;
+        }
+        
+        .gameOverText {
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff, 0 0 40px #ff00ff;
+            margin: 20px;
+            text-align: center;
+        }
+        
+        .gameOverTitle {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .gameOverScore {
+            font-size: 32px;
+            margin-bottom: 30px;
+            color: #ff00ff;
+            text-shadow: 0 0 20px #ff00ff;
+        }
+        
+        .gameOverRestart {
+            font-size: 24px;
+            margin-top: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreDisplay">Score: 0</div>
+        <div id="gameOverScreen">
+            <div class="gameOverText gameOverTitle">GAME OVER</div>
+            <div class="gameOverText gameOverScore">Final Score: <span id="finalScore">0</span></div>
+            <div class="gameOverText gameOverRestart">TAP TO RESTART</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const finalScoreDisplay = document.getElementById('finalScore');
+
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (canvas.width > 600) {
+                canvas.width = 600;
+            }
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game variables
+        let gameRunning = true;
+        let score = 0;
+        let ballX = canvas.width / 2;
+        let ballY = canvas.height / 2;
+        let ballVelX = 0;
+        let ballVelY = 0;
+        let ballRadius = 12;
+        let ballColor = '#00ffff';
+        let ballGlow = '#00ffff';
+
+        let platformX = canvas.width / 2 - 50;
+        let platformY = canvas.height - 80;
+        let platformWidth = 100;
+        let platformHeight = 12;
+        let platformColor = '#ff00ff';
+
+        let obstacles = [];
+        let powerUps = [];
+        let particles = [];
+
+        const gravity = 0.6;
+        const friction = 0.99;
+        const jumpPower = -15;
+
+        // Input handling
+        let isTouching = false;
+
+        function handleInput(e) {
+            if (!gameRunning) {
+                restartGame();
+                return;
+            }
+            isTouching = true;
+            ballVelY = jumpPower;
+        }
+
+        function handleInputEnd() {
+            isTouching = false;
+        }
+
+        canvas.addEventListener('touchstart', handleInput);
+        canvas.addEventListener('touchend', handleInputEnd);
+        canvas.addEventListener('click', handleInput);
+        document.addEventListener('touchmove', (e) => {
+            if (e.target === canvas) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Particle system
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 1,
+                    color: color
+                });
+            }
+        }
+
+        // Obstacle generation
+        function addObstacle() {
+            const width = 60 + Math.random() * 40;
+            const x = Math.random() * (canvas.width - width);
+            const y = -50;
+            obstacles.push({
+                x: x,
+                y: y,
+                width: width,
+                height: 15,
+                color: '#ff0080',
+                glow: '#ff0080'
+            });
+        }
+
+        // Power-up generation
+        function addPowerUp(x, y) {
+            powerUps.push({
+                x: x,
+                y: y,
+                radius: 8,
+                color: '#ffff00',
+                glow: '#ffff00',
+                type: Math.random() > 0.5 ? 'score' : 'shield'
+            });
+        }
+
+        // Update game state
+        function update() {
+            if (!gameRunning) return;
+
+            // Physics
+            ballVelY += gravity;
+            ballVelY *= friction;
+            ballVelX *= friction;
+            ballX += ballVelX;
+            ballY += ballVelY;
+
+            // Boundaries
+            if (ballX - ballRadius < 0) {
+                ballX = ballRadius;
+                ballVelX *= -0.8;
+            }
+            if (ballX + ballRadius > canvas.width) {
+                ballX = canvas.width - ballRadius;
+                ballVelX *= -0.8;
+            }
+
+            // Platform collision
+            if (ballY + ballRadius >= platformY &&
+                ballY - ballRadius <= platformY + platformHeight &&
+                ballX >= platformX &&
+                ballX <= platformX + platformWidth) {
+                ballVelY = jumpPower;
+                score += 10;
+                createParticles(ballX, ballY, '#00ffff');
+                ballColor = '#00ffff';
+                ballGlow = '#00ffff';
+            }
+
+            // Obstacle collision
+            for (let obs of obstacles) {
+                if (ballX + ballRadius > obs.x &&
+                    ballX - ballRadius < obs.x + obs.width &&
+                    ballY + ballRadius > obs.y &&
+                    ballY - ballRadius < obs.y + obs.height) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            // Power-up collision
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                const pu = powerUps[i];
+                const dist = Math.hypot(ballX - pu.x, ballY - pu.y);
+                if (dist < ballRadius + pu.radius) {
+                    if (pu.type === 'score') {
+                        score += 50;
+                    }
+                    createParticles(pu.x, pu.y, pu.color);
+                    powerUps.splice(i, 1);
+                }
+            }
+
+            // Update obstacles
+            for (let obs of obstacles) {
+                obs.y += 3;
+            }
+            obstacles = obstacles.filter(obs => obs.y < canvas.height);
+
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2;
+                p.life -= 0.02;
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Game over condition
+            if (ballY > canvas.height) {
+                gameOver();
+            }
+
+            // Spawn obstacles periodically
+            if (Math.random() < 0.02) {
+                addObstacle();
+            }
+
+            // Spawn power-ups occasionally
+            if (Math.random() < 0.005) {
+                addPowerUp(Math.random() * canvas.width, -30);
+            }
+
+            scoreDisplay.textContent = 'Score: ' + score;
+        }
+
+        // Draw game
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = 'rgba(10, 14, 39, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background grid
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvas.height; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+
+            // Draw particles
+            for (let p of particles) {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+
+            // Draw obstacles
+            for (let obs of obstacles) {
+                ctx.fillStyle = obs.color;
+                ctx.shadowColor = obs.glow;
+                ctx.shadowBlur = 20;
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                ctx.strokeStyle = obs.glow;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
+            }
+            ctx.shadowBlur = 0;
+
+            // Draw power-ups
+            for (let pu of powerUps) {
+                ctx.fillStyle = pu.color;
+                ctx.shadowColor = pu.glow;
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.arc(pu.x, pu.y, pu.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = pu.glow;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            ctx.shadowBlur = 0;
+
+            // Draw platform
+            ctx.fillStyle = platformColor;
+            ctx.shadowColor = platformColor;
+            ctx.shadowBlur = 25;
+            ctx.fillRect(platformX, platformY, platformWidth, platformHeight);
+            ctx.strokeStyle = platformColor;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(platformX, platformY, platformWidth, platformHeight);
+            ctx.shadowBlur = 0;
+
+            // Draw ball
+            ctx.fillStyle = ballColor;
+            ctx.shadowColor = ballGlow;
+            ctx.shadowBlur = 30;
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = ballGlow;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Inner glow
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius - 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            finalScoreDisplay.textContent = score;
+            gameOverScreen.classList.add('show');
+        }
+
+        // Restart game
+        function restartGame() {
+            gameRunning = true;
+            score = 0;
+            ballX = canvas.width / 2;
+            ballY = canvas.height / 2;
+            ballVelX = 0;
+            ballVelY = 0;
+            platformX = canvas.width / 2 - 50;
+            platformY = canvas.height - 80;
+            obstacles = [];
+            powerUps = [];
+            particles = [];
+            gameOverScreen.classList.remove('show');
+            scoreDisplay.textContent = 'Score: 0';
+        }
+
+        // Start game
+        gameLoop();
+    </script>
+</body>
+</html>

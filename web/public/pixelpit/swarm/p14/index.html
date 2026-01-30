@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P14 - Discover & Build</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 20px;
+  background: #0a0a0f; color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+h1 { margin: 0 0 5px; font-size: 24px; color: #00ff88; }
+h2 { margin: 20px 0 10px; font-size: 16px; color: #888; }
+.status { color: #888; margin-bottom: 15px; }
+.status.discovery { color: #ffaa00; }
+.status.building { color: #00ddff; }
+.status.done { color: #00ff88; }
+
+.agents {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
+}
+
+.card {
+  background: #111118;
+  border-radius: 8px;
+  padding: 12px;
+  border: 2px solid #333;
+}
+.card.done { border-color: #00ff8844; }
+.card.building { border-color: #00ddff44; }
+.card.searching { border-color: #ffaa0044; }
+.card.failed { border-color: #ff446644; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.phase-tag {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+.phase-tag.discovery { background: #ffaa0022; color: #ffaa00; }
+.phase-tag.build { background: #00ddff22; color: #00ddff; }
+.phase-tag.done { background: #00ff8822; color: #00ff88; }
+.phase-tag.failed { background: #ff446622; color: #ff4466; }
+
+.blurb { font-size: 13px; color: #aaa; line-height: 1.4; margin-bottom: 8px; }
+.theme { font-size: 11px; color: #00ddff; margin-bottom: 6px; }
+.play-link { font-size: 12px; }
+.play-link a { color: #00ff88; }
+</style>
+</head>
+<body>
+<h1>P14 — Discover & Build</h1>
+<div class="status" id="status">Loading...</div>
+
+<div class="agents" id="agents"></div>
+
+<script>
+const statusEl = document.getElementById('status');
+const agentsEl = document.getElementById('agents');
+
+function render(data) {
+  const discovered = data.agents.filter(a => a.discovery_status === 'done').length;
+  const built = data.agents.filter(a => a.build_status === 'done').length;
+
+  statusEl.className = 'status ' + data.phase;
+  if (data.phase === 'done') {
+    statusEl.textContent = `✓ Complete — ${built} games built`;
+  } else if (data.phase === 'building') {
+    statusEl.textContent = `⚙ Building — ${built}/${discovered} games`;
+  } else {
+    statusEl.textContent = `⟳ Discovering — ${discovered}/10 games found`;
+  }
+
+  agentsEl.innerHTML = data.agents.map(a => {
+    let cardClass = 'card';
+    let phaseText = '';
+    let phaseClass = '';
+
+    if (a.build_status === 'done') {
+      cardClass += ' done';
+      phaseText = '✓ Built';
+      phaseClass = 'done';
+    } else if (a.build_status === 'building') {
+      cardClass += ' building';
+      phaseText = 'Building...';
+      phaseClass = 'build';
+    } else if (a.build_status === 'failed') {
+      cardClass += ' failed';
+      phaseText = 'Build failed';
+      phaseClass = 'failed';
+    } else if (a.discovery_status === 'done') {
+      cardClass += ' done';
+      phaseText = 'Discovered';
+      phaseClass = 'discovery';
+    } else if (a.discovery_status === 'searching') {
+      cardClass += ' searching';
+      phaseText = 'Searching...';
+      phaseClass = 'discovery';
+    } else if (a.discovery_status === 'failed') {
+      cardClass += ' failed';
+      phaseText = 'Discovery failed';
+      phaseClass = 'failed';
+    } else {
+      phaseText = 'Pending';
+      phaseClass = 'discovery';
+    }
+
+    return `
+      <div class="${cardClass}">
+        <div class="card-header">
+          <span>Agent ${a.id}</span>
+          <span class="phase-tag ${phaseClass}">${phaseText}</span>
+        </div>
+        ${a.blurb ? `<div class="blurb">${a.blurb.slice(0, 200)}${a.blurb.length > 200 ? '...' : ''}</div>` : ''}
+        ${a.theme ? `<div class="theme">🎨 ${a.theme}</div>` : ''}
+        ${a.game_url ? `<div class="play-link"><a href="${a.game_url}" target="_blank">▶ Play Game</a></div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+async function poll() {
+  try {
+    const data = await (await fetch('status.json?' + Date.now())).json();
+    render(data);
+  } catch (e) {}
+  setTimeout(poll, 500);
+}
+poll();
+</script>
+</body></html>

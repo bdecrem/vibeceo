@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body{margin:0;overflow:hidden;background:black;font-family:sans-serif;}
+#score{position:absolute;top:10px;left:10px;color:white;font-size:20px;}
+#gameover{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:white;padding:20px 40px;border-radius:10px;font-size:24px;text-align:center;display:none;}
+canvas{display:block;}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="score">Score: 0</div>
+<div id="gameover">Game Over<br>Tap to restart</div>
+<script>
+... JS ...
+</script>
+</body>
+</html>
+
+Now the JavaScript inside script tag.
+
+Now we need to ensure the script runs after DOM load. Since script placed after elements, it's fine.
+
+Now implement JS.
+
+Edge Cases: chain reaction may cause removal of many cells; we need to apply gravity then check again.
+
+Now consider that after removal, some cells may fall, causing new matches. So we loop until no matches.
+
+Now we need to ensure that game over overlay shows on game over. We set overlay.style.display='block'.
+
+Now we need to ensure that after game over, tapping anywhere restarts the game: We captured that in handleInput: if !running -> initGame.
+
+Now we need to ensure that overlay click also triggers restart; but overlay is over canvas. We can add event listener to overlay as well: overlay.addEventListener('click', initGame). But if we handle input on canvas only, overlay is not clickable. So we need to add overlay click.
+
+Simpler: we can add event listener to overlay.
+
+Alternatively, we keep canvas overlay to block: we can set overlay style pointer-events: auto; but we can just add event listener to overlay.
+
+Implementation:
+
+document.getElementById('gameover').addEventListener('click', initGame);
+
+Now we need to ensure that when overlay is visible, clicking on overlay triggers restart. Good.
+
+Now we need to ensure that when overlay hidden, clicks go to canvas.
+
+Now we need to ensure that we call initGame on page load: window.onload = initGame; but we can just call initGame() after definitions.
+
+Now we need to set up stars: generateStars(200).
+
+Now we need to ensure resize handling: on window resize, we adjust canvas size: width = window.innerWidth; height = width * rows / cols. Then regenerate stars: generateStars(200). Then re-render.
+
+Now we need to define cellSize variable.
+
+Now we need to define global variables: canvas, ctx, grid, etc.
+
+Now we need to ensure that we use 'use strict'.
+
+Now we need to ensure that the code is inside <script> tags.
+
+Now we need to ensure that the code is valid.
+
+Now we need to produce final code.
+
+Let's write the JS code fully.
+
+Let's write:
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const scoreDiv = document.getElementById('score');
+const gameOverDiv = document.getElementById('gameover');
+const colors = ['#ff4b4b','#4bff4b','#4b4bff','#fffb4b'];
+const cols = 6;
+const rows = 6;
+let cellSize;
+let grid;
+let score;
+let running;
+let stars = [];
+
+function initGame() {
+  grid = Array.from({length: rows}, () => Array(cols).fill(null));
+  score = 0;
+  updateScore();
+  running = true;
+  gameOverDiv.style.display = 'none';
+  render();
+}
+
+function updateScore() {
+  scoreDiv.textContent = 'Score: ' + score;
+}
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = canvas.width * rows / cols;
+  cellSize = canvas.width / cols;
+  generateStars(200);
+  render();
+}
+
+function generateStars(n) {
+  stars = [];
+  for (let i=0; i<n; i++) {
+    stars.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      size: Math.random()*1.5+0.5
+    });
+  }
+}
+
+function dropBall(col) {
+  for (let r = rows-1; r>=0; r--) {
+    if (!grid[r][col]) {
+      grid[r][col] = colors[Math.floor(Math.random()*colors.length)];
+      processMatches();
+      render();
+      return;
+    }
+  }
+  // column full
+  gameOver();
+}
+
+function processMatches() {
+  while (true) {
+    const toRemove = Array.from({length: rows}, () => Array(cols).fill(false));
+    let any = false;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const color = grid[r][c];
+        if (!color) continue;
+        const dirs = [
+          [0,1], [1,0], [1,1], [1,-1]
+        ];
+        for (const [dr,dc] of dirs) {
+          let indices = [];
+          let rr = r, cc = c;
+          while (rr>=0 && rr<rows && cc>=0 && cc<cols && grid[rr][cc]===color) {
+            indices.push([rr,cc]);
+            rr += dr; cc += dc;
+          }
+          if (indices.length >= 3) {
+            for (const [rr,cc] of indices) {
+              if (!toRemove[rr][cc]) {
+                toRemove[rr][cc] = true;
+                any = true;
+              }
+            }
+          }
+        }
+      }
+    }
+    if (!any) break;
+    let removedCount = 0;
+    for (let r=0;r<rows;r++) {
+      for (let c=0;c<cols;c++) {
+        if (toRemove[r][c]) {
+          grid[r][c] = null;
+          removedCount++;
+        }
+      }
+    }
+    score += removedCount * 10;
+    updateScore();
+    applyGravity();
+  }
+}
+
+function applyGravity() {
+  for (let c = 0; c < cols; c++) {
+    let writeRow = rows - 1;
+    for (let r = rows - 1; r >= 0; r--) {
+      if (grid[r][c]) {
+        grid[writeRow][c] = grid[r][c];
+        writeRow--;
+      }
+    }
+    for (let r = writeRow; r >= 0; r--) {
+      grid[r][c] = null;
+    }
+  }
+}
+
+function gameOver() {
+  running = false;
+  gameOverDiv.style.display = 'block';
+}
+
+function render() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  // stars
+  ctx.fillStyle = 'white';
+  for (const star of stars) {
+    ctx.beginPath();
+    ctx.arc(star.x, star.y, star.size, 0, Math.PI*2);
+    ctx.fill();
+  }
+  // grid
+  for (let r=0;r<rows;r++) {
+    for (let c=0;c<cols;c++) {
+      const color = grid[r][c];
+      if (!color) continue;
+      const x = c*cellSize + cellSize/2;
+      const y = r*cellSize + cellSize/2;
+      ctx.beginPath();
+      ctx.arc(x, y, cellSize*0.35, 0, Math.PI*2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+  }
+}
+
+function handleInput(e) {
+  if (!running) {
+    initGame();
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const col = Math.floor(x / cellSize);
+  if (col >= 0 && col < cols) {
+    dropBall(col);
+  }
+}
+
+function handleTouch(e) {
+  e.preventDefault();
+  if (!running) {
+    initGame();
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  const x = touch.clientX - rect.left;
+  const col = Math.floor(x / cellSize);
+  if (col >= 0 && col < cols) {
+    dropBall(col);
+  }
+}
+
+canvas.addEventListener('click', handleInput);
+canvas.addEventListener('touchstart', handleTouch);
+gameOverDiv.addEventListener('click', initGame);
+window.addEventListener('resize', resizeCanvas);
+
+resizeCanvas();
+initGame(); // start
+
+Now we need to ensure that on page load, we call resizeCanvas to set initial size.
+
+Also we need to call initGame after resizing.
+
+Now we need to ensure that we use requestAnimationFrame only if we want continuous; not necessary.
+
+Now we need to ensure that we set pointer-events for overlay to capture click: overlay is block, so fine.
+
+Now we need to ensure that canvas is displayed correctly: we set canvas style to block. Already in CSS.
+
+Now we need to check that we correctly handle star generation after resize. But we call generateStars after resizing. Good.
+
+Now we need to ensure that we call render after initGame; we do.
+
+Now we need to ensure that we handle the case when user taps on overlay to restart: overlay click triggers initGame. But overlay click may also trigger canvas click? But overlay sits on top; but we have overlay display block only when game over. So overlay click triggers initGame, which hides overlay and resets. Good.
+
+Now we need to ensure that after initGame, overlay hidden. Good.
+
+Now we need to ensure that we remove any event listeners or not? Not necessary.
+
+Now we need to ensure that we handle double tapping: not needed.
+
+Now we need to test logic: dropBall: find lowest empty cell; if none, gameOver.
+
+But we need to processMatches after drop; we call processMatches; that loops until no matches. After processMatches, we render.
+
+But we also need to apply gravity after removal; processMatches applies gravity after each removal. Good.
+
+Now we need to consider if after removal, new matches may form due to gravity. processMatches loops again until no matches.
+
+Now we need to ensure that we call applyGravity after removal inside processMatches; but we also need to apply gravity after removal before checking again. Yes we call applyGravity inside loop, then next iteration will check again. Good.
+
+Now we need to ensure that we update score accordingly.
+
+Now we need to ensure that we use 10 points per ball elimination. Good.
+
+Now we need to ensure that we don't double count removed cells across chain. Since we mark removed cells and set them to null before next iteration, we should be fine.
+
+Now we need to ensure that we handle scenario where removal occurs across multiple lines that share cells; e.g., an X shape. Our algorithm will mark all cells in all lines; duplicates will be removed once. Good.
+
+Now we need to ensure that we don't miss removal of lines that start not at first cell. But scanning each cell will catch them.
+
+Now we need to ensure that we don't over-remove cells that are part of a line of 3 but also part of a line of 4; but we remove all cells in both lines. That's fine.
+
+Now we need to ensure that we don't produce infinite loop: processMatches will break when no matches.
+
+Now we need to ensure that we handle the case where we drop ball but grid full: we call gameOver; overlay shows.
+
+Now we need to ensure that after restart, we clear grid and score.
+
+Now we need to ensure that we update score display after restart: updateScore sets to 0.
+
+Now we need to ensure that we set overlay style display to none.
+
+Now we need to ensure that we set canvas size properly.
+
+Now we need to ensure that we set 'overflow:hidden' to body to avoid scroll.
+
+Now we need to set meta viewport for mobile: <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no"> maybe.
+
+Add to head.
+
+Now we need to ensure that we disable touchmove default: e.preventDefault in touchstart is enough.
+
+Now we need to ensure that we handle orientation changes.
+
+Now produce final HTML.
+
+Let's write final code.
+
+Check for syntax errors: Use let, const.
+
+We need to ensure that we have closing tags.
+
+Let's produce final code.<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+<title>Cosmic Drop</title>
+<style>
+  body{margin:0;overflow:hidden;background:#000;font-family:sans-serif;}
+  #score{position:absolute;top:10px;left:10px;color:#fff;font-size:20px;}
+  #gameover{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+            background:rgba(0,0,0,0.7);color:#fff;padding:20px 40px;
+            border-radius:10px;font-size:24px;text-align:center;display:none;}
+  canvas{display:block;}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="score">Score: 0</div>
+<div id="gameover">Game Over<br>Tap to restart</div>
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const scoreDiv=document.getElementById('score');
+const gameOverDiv=document.getElementById('gameover');
+const colors=['#ff4b4b','#4bff4b','#4b4bff','#fffb4b'];
+const cols=6, rows=6;
+let cellSize, grid, score, running, stars=[];
+
+function initGame(){
+  grid=Array.from({length:rows},()=>Array(cols).fill(null));
+  score=0; updateScore();
+  running=true; gameOverDiv.style.display='none';
+  render();
+}
+
+function updateScore(){scoreDiv.textContent='Score: '+score;}
+
+function resizeCanvas(){
+  canvas.width=window.innerWidth;
+  canvas.height=canvas.width*rows/cols;
+  cellSize=canvas.width/cols;
+  generateStars(200);
+  render();
+}
+
+function generateStars(n){
+  stars=[];
+  for(let i=0;i<n;i++){
+    stars.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*canvas.height,
+      size:Math.random()*1.5+0.5
+    });
+  }
+}
+
+function dropBall(col){
+  for(let r=rows-1;r>=0;r--){
+    if(!grid[r][col]){
+      grid[r][col]=colors[Math.floor(Math.random()*colors.length)];
+      processMatches();
+      render();
+      return;
+    }
+  }
+  gameOver();
+}
+
+function processMatches(){
+  while(true){
+    const toRemove=Array.from({length:rows},()=>Array(cols).fill(false));
+    let any=false;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const color=grid[r][c];
+        if(!color) continue;
+        const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+        for(const [dr,dc] of dirs){
+          let indices=[];
+          let rr=r,cc=c;
+          while(rr>=0&&rr<rows&&cc>=0&&cc<cols&&grid[rr][cc]===color){
+            indices.push([rr,cc]); rr+=dr; cc+=dc;
+          }
+          if(indices.length>=3){
+            for(const [rr,cc] of indices){
+              if(!toRemove[rr][cc]){toRemove[rr][cc]=true; any=true;}
+            }
+          }
+        }
+      }
+    }
+    if(!any) break;
+    let removed=0;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        if(toRemove[r][c]){grid[r][c]=null; removed++;}
+      }
+    }
+    score+=removed*10; updateScore();
+    applyGravity();
+  }
+}
+
+function applyGravity(){
+  for(let c=0;c<cols;c++){
+    let write=rows-1;
+    for(let r=rows-1;r>=0;r--){
+      if(grid[r][c]){grid[write][c]=grid[r][c]; write--;}
+    }
+    for(let r=write;r>=0;r--)grid[r][c]=null;
+  }
+}
+
+function gameOver(){running=false; gameOverDiv.style.display='block';}
+
+function render(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#fff';
+  for(const s of stars){ctx.beginPath();ctx.arc(s.x,s.y,s.size,0,Math.PI*2);ctx.fill();}
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const color=grid[r][c];
+      if(!color) continue;
+      const x=c*cellSize+cellSize/2;
+      const y=r*cellSize+cellSize/2;
+      ctx.beginPath();ctx.arc(x,y,cellSize*0.35,0,Math.PI*2);
+      ctx.fillStyle=color; ctx.fill();
+    }
+  }
+}
+
+function handleInput(e){
+  if(!running){initGame();return;}
+  const rect=canvas.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const col=Math.floor(x/cellSize);
+  if(col>=0&&col<cols) dropBall(col);
+}
+
+function handleTouch(e){
+  e.preventDefault();
+  if(!running){initGame();return;}
+  const rect=canvas.getBoundingClientRect();
+  const touch=e.touches[0];
+  const x=touch.clientX-rect.left;
+  const col=Math.floor(x/cellSize);
+  if(col>=0&&col<cols) dropBall(col);
+}
+
+canvas.addEventListener('click',handleInput);
+canvas.addEventListener('touchstart',handleTouch);
+gameOverDiv.addEventListener('click',initGame);
+window.addEventListener('resize',resizeCanvas);
+resizeCanvas(); initGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T10 - Game Discovery</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 20px;
+  background: #0a0a0f; color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+h1 { margin: 0 0 10px; font-size: 24px; color: #00ff88; }
+.status { color: #888; margin-bottom: 20px; }
+.status.searching { color: #ffaa00; }
+.status.done { color: #00ff88; }
+
+.games {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  background: #111118;
+  border-radius: 10px;
+  padding: 14px;
+  border: 2px solid #333;
+}
+.card.done { border-color: #00ff8844; }
+.card.searching { border-color: #ffaa0044; animation: pulse 1s infinite; }
+.card.failed { border-color: #ff446644; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.card-id { font-size: 11px; color: #666; }
+.card-status {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.card-status.done { background: #00ff8822; color: #00ff88; }
+.card-status.searching { background: #ffaa0022; color: #ffaa00; }
+.card-status.failed { background: #ff446622; color: #ff4466; }
+.card-status.pending { background: #33333344; color: #666; }
+
+.blurb {
+  font-size: 14px;
+  color: #ccc;
+  line-height: 1.5;
+}
+.attempts { font-size: 10px; color: #555; margin-top: 8px; }
+</style>
+</head>
+<body>
+<h1>T10 — Hyper-Casual Game Discovery</h1>
+<div class="status" id="status">Loading...</div>
+<div class="games" id="games"></div>
+
+<script>
+const statusEl = document.getElementById('status');
+const gamesEl = document.getElementById('games');
+
+function render(data) {
+  const done = data.agents.filter(a => a.status === 'done').length;
+  const searching = data.agents.filter(a => a.status === 'searching').length;
+
+  statusEl.className = 'status ' + data.phase;
+  statusEl.textContent = data.phase === 'done'
+    ? `✓ Complete — ${done} unique games`
+    : `⟳ Searching — ${done}/10 found, ${searching} active`;
+
+  gamesEl.innerHTML = data.agents.map(a => `
+    <div class="card ${a.status}">
+      <div class="card-header">
+        <span class="card-id">Agent ${a.id}</span>
+        <span class="card-status ${a.status}">${a.status}</span>
+      </div>
+      <div class="blurb">${a.blurb || '<span style="color:#555">Searching...</span>'}</div>
+      <div class="attempts">Attempts: ${a.attempts || 0}</div>
+    </div>
+  `).join('');
+}
+
+async function poll() {
+  try {
+    const data = await (await fetch('status.json?' + Date.now())).json();
+    render(data);
+  } catch (e) {}
+  setTimeout(poll, 500);
+}
+poll();
+</script>
+</body></html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Stack Jump</title>
+<style>
+  body{margin:0;overflow:hidden;background:black}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+let width,height,blockSize,leftMargin;
+function resize(){
+  width=window.innerWidth;
+  height=window.innerHeight;
+  canvas.width=width;
+  canvas.height=height;
+  blockSize=width/3*0.9;
+  leftMargin=(width-blockSize*3)/2;
+}
+resize();
+window.addEventListener('resize',resize);
+
+let blocks=[];
+let currentLayer=null;
+let layerState=0; // 0 rotate, 1 drop
+let score=0;
+let towerHeight=0;
+let gameOver=false;
+const gravity=0.3;
+
+function createRandomLayer(){
+  const layer=[];
+  for(let r=0;r<3;r++){
+    const row=[];
+    for(let c=0;c<3;c++){
+      row.push(Math.random()<0.5);
+    }
+    layer.push(row);
+  }
+  return layer;
+}
+
+function rotateGrid(grid){
+  const newGrid=[];
+  for(let r=0;r<3;r++){
+    const newRow=[];
+    for(let c=0;c<3;c++){
+      newRow.push(grid[2-c][r]);
+    }
+    newGrid.push(newRow);
+  }
+  return newGrid;
+}
+
+function startGame(){
+  blocks=[];
+  towerHeight=0;
+  score=0;
+  gameOver=false;
+  layerState=0;
+  currentLayer=createRandomLayer();
+}
+
+function dropLayer(){
+  const y=height-towerHeight*blockSize-blockSize; // position of new layer
+  for(let r=0;r<3;r++){
+    for(let c=0;c<3;c++){
+      if(currentLayer[r][c]){
+        const x=leftMargin+c*blockSize;
+        const block={x:x,y:y,vx:0,vy:0,support:true};
+        const belowY=y+blockSize;
+        const supported=blocks.some(b=>Math.abs(b.x-x)<1e-6&&Math.abs(b.y-belowY)<1e-6);
+        if(!supported && !(y+blockSize>=height-1e-6)){
+          block.support=false;
+          block.vy=0;
+        }
+        blocks.push(block);
+      }
+    }
+  }
+  towerHeight++;
+  score++;
+  currentLayer=createRandomLayer();
+  layerState=0;
+}
+
+function update(){
+  ctx.fillStyle='black';
+  ctx.fillRect(0,0,width,height);
+  if(!gameOver){
+    for(const b of blocks){
+      if(!b.support){
+        b.vy+=gravity;
+        b.y+=b.vy;
+        if(b.y>height){
+          gameOver=true;
+        }
+      }
+    }
+  }
+  ctx.fillStyle='white';
+  for(const b of blocks){
+    ctx.fillRect(b.x,b.y,blockSize,blockSize);
+  }
+  ctx.fillStyle='white';
+  ctx.font='20px Arial';
+  ctx.fillText('Score: '+score,10,30);
+  if(gameOver){
+    ctx.fillStyle='white';
+    ctx.font='40px Arial';
+    ctx.textAlign='center';
+    ctx.fillText('Game Over',width/2,height/2-20);
+    ctx.font='20px Arial';
+    ctx.fillText('Tap to restart',width/2,height/2+20);
+    ctx.textAlign='left';
+  }
+  requestAnimationFrame(update);
+}
+
+function handleTap(){
+  if(gameOver){
+    startGame();
+    return;
+  }
+  if(layerState===0){
+    currentLayer=rotateGrid(currentLayer);
+    layerState=1;
+  }else{
+    dropLayer();
+  }
+}
+
+canvas.addEventListener('touchstart',e=>{e.preventDefault();handleTap();});
+canvas.addEventListener('mousedown',e=>{e.preventDefault();handleTap();});
+
+startGame();
+update();
+</script>
+</body>
+</html>

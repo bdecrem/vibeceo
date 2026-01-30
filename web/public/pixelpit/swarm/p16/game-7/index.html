@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Territory</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 100vw;
+            max-height: 100vh;
+            background: #fff;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff1493;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        #gameOverScreen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gameOverScreen.show {
+            display: flex;
+        }
+
+        #gameOverContent {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb6c1 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        #gameOverContent h1 {
+            font-size: 48px;
+            color: #ff1493;
+            margin-bottom: 20px;
+        }
+
+        #gameOverContent p {
+            font-size: 32px;
+            color: #fff;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        #gameOverContent .tapText {
+            font-size: 20px;
+            color: #fff;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: #999;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="score">Score: 0</div>
+        <div id="controls">Tap to move</div>
+        <div id="gameOverScreen">
+            <div id="gameOverContent">
+                <h1>GAME OVER!</h1>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <p class="tapText">Tap to Restart</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreDisplay = document.getElementById('finalScore');
+
+        // Resize canvas to fill screen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game variables
+        const GRID_SIZE = 20;
+        const PLAYER_SIZE = 15;
+        const AI_COUNT = 3;
+        let gameActive = true;
+        let gameState = {};
+
+        // Candy colors palette
+        const colors = [
+            '#FF1493', '#FFB6C1', '#FFA500', '#FFD700',
+            '#FF69B4', '#FF6347', '#FF4500', '#FFDAB9',
+            '#FF00FF', '#FF8C00', '#FFC0CB', '#FFAF60'
+        ];
+
+        class CandyPlayer {
+            constructor(x, y, color, isAI = false) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.trail = [];
+                this.territory = new Set();
+                this.isAI = isAI;
+                this.direction = { x: 0, y: 0 };
+                this.nextDirection = { x: 0, y: 0 };
+                this.alive = true;
+                this.score = 0;
+            }
+
+            update(gridWidth, gridHeight, allPlayers) {
+                if (!this.alive) return;
+
+                // For AI, update direction randomly
+                if (this.isAI) {
+                    if (Math.random() < 0.02) {
+                        const directions = [
+                            { x: 1, y: 0 }, { x: -1, y: 0 },
+                            { x: 0, y: 1 }, { x: 0, y: -1 }
+                        ];
+                        this.nextDirection = directions[Math.floor(Math.random() * directions.length)];
+                    }
+                }
+
+                // Update direction
+                if (this.nextDirection.x !== 0 || this.nextDirection.y !== 0) {
+                    this.direction = this.nextDirection;
+                    this.nextDirection = { x: 0, y: 0 };
+                }
+
+                // Move
+                this.x += this.direction.x * 2;
+                this.y += this.direction.y * 2;
+
+                // Wrap around
+                if (this.x < 0) this.x = gridWidth - 1;
+                if (this.x >= gridWidth) this.x = 0;
+                if (this.y < 0) this.y = gridHeight - 1;
+                if (this.y >= gridHeight) this.y = 0;
+
+                // Check collisions
+                const key = `${Math.floor(this.x)},${Math.floor(this.y)}`;
+
+                // Check collision with own trail
+                if (this.trail.length > 20) {
+                    for (let i = 0; i < this.trail.length - 20; i++) {
+                        const trailKey = `${Math.floor(this.trail[i].x)},${Math.floor(this.trail[i].y)}`;
+                        if (trailKey === key) {
+                            this.alive = false;
+                        }
+                    }
+                }
+
+                // Check collision with other players' territory
+                for (let other of allPlayers) {
+                    if (other === this || !other.alive) continue;
+                    if (other.territory.has(key)) {
+                        this.alive = false;
+                    }
+                }
+
+                // Add to trail
+                if (this.direction.x !== 0 || this.direction.y !== 0) {
+                    this.trail.push({ x: this.x, y: this.y });
+                    if (this.trail.length > 200) {
+                        this.trail.shift();
+                    }
+                }
+            }
+
+            claimTerritory() {
+                if (!this.alive) return;
+                
+                // Claim trail as territory
+                for (let point of this.trail) {
+                    const key = `${Math.floor(point.x)},${Math.floor(point.y)}`;
+                    this.territory.add(key);
+                }
+                this.score = this.territory.size;
+                this.trail = [];
+            }
+
+            draw(ctx) {
+                if (!this.alive) return;
+
+                // Draw trail
+                if (this.trail.length > 0) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = PLAYER_SIZE * 0.8;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                    for (let i = 1; i < this.trail.length; i++) {
+                        ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                    }
+                    ctx.stroke();
+                }
+
+                // Draw territory
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = 0.3;
+                for (let key of this.territory) {
+                    const [x, y] = key.split(',').map(Number);
+                    ctx.fillRect(x, y, GRID_SIZE, GRID_SIZE);
+                }
+                ctx.globalAlpha = 1.0;
+
+                // Draw player
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, PLAYER_SIZE, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw highlight
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, PLAYER_SIZE - 3, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        function initGame() {
+            gameActive = true;
+            gameOverScreen.classList.remove('show');
+            gameState = {};
+
+            const gridWidth = canvas.width;
+            const gridHeight = canvas.height;
+
+            // Create player
+            gameState.player = new CandyPlayer(
+                gridWidth / 4,
+                gridHeight / 2,
+                '#FF1493',
+                false
+            );
+
+            // Create AI players
+            gameState.aiPlayers = [];
+            for (let i = 0; i < AI_COUNT; i++) {
+                const x = (gridWidth * (i + 2)) / (AI_COUNT + 1);
+                const y = Math.random() * gridHeight;
+                const color = colors[i + 1];
+                gameState.aiPlayers.push(new CandyPlayer(x, y, color, true));
+            }
+
+            gameState.allPlayers = [gameState.player, ...gameState.aiPlayers];
+        }
+
+        function updateGame() {
+            if (!gameActive) return;
+
+            const gridWidth = canvas.width;
+            const gridHeight = canvas.height;
+
+            // Update all players
+            for (let player of gameState.allPlayers) {
+                player.update(gridWidth, gridHeight, gameState.allPlayers);
+            }
+
+            // Claim territory
+            for (let player of gameState.allPlayers) {
+                player.claimTerritory();
+            }
+
+            // Update score
+            if (gameState.player.alive) {
+                scoreDisplay.textContent = `Score: ${gameState.player.score}`;
+            }
+
+            // Check if player is dead
+            if (!gameState.player.alive) {
+                gameActive = false;
+                finalScoreDisplay.textContent = gameState.player.score;
+                gameOverScreen.classList.add('show');
+            }
+        }
+
+        function drawGame() {
+            // Clear canvas with gradient background
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#E6E6FA');
+            gradient.addColorStop(1, '#FFE4E1');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(200, 200, 200, 0.1)';
+            ctx.lineWidth = 0.5;
+            for (let x = 0; x < canvas.width; x += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw players
+            for (let player of gameState.allPlayers) {
+                player.draw(ctx);
+            }
+        }
+
+        function gameLoop() {
+            updateGame();
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Touch/Click controls
+        document.addEventListener('touchstart', handleInput, false);
+        document.addEventListener('touchmove', handleInput, false);
+        document.addEventListener('mousedown', handleInput, false);
+        document.addEventListener('mousemove', handleInput, false);
+
+        let lastTouchX = canvas.width / 2;
+        let lastTouchY = canvas.height / 2;
+
+        function handleInput(e) {
+            if (!gameActive || !gameState.player) return;
+
+            let clientX, clientY;
+
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const touchX = clientX - rect.left;
+            const touchY = clientY - rect.top;
+
+            // Calculate direction
+            const dx = touchX - gameState.player.x;
+            const dy = touchY - gameState.player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 10) {
+                gameState.player.nextDirection = {
+                    x: dx / distance,
+                    y: dy / distance
+                };
+            }
+        }
+
+        // Restart on game over screen tap
+        gameOverScreen.addEventListener('touchstart', () => {
+            if (!gameActive) {
+                initGame();
+                gameLoop();
+            }
+        });
+
+        gameOverScreen.addEventListener('click', () => {
+            if (!gameActive) {
+                initGame();
+                gameLoop();
+            }
+        });
+
+        // Start game
+        initGame();
+        gameLoop();
+    </script>
+</body>
+</html>

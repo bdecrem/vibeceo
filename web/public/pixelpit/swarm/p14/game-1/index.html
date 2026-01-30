@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stack Jump Kawaii</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#f0e4f7;overflow:hidden;display:flex;justify-content:center;align-items:center;height:100vh;}
+  canvas{display:block;background:#f0e4f7;}
+  #overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;justify-content:center;align-items:center;flex-direction:column;background:rgba(0,0,0,0.5);color:#fff;font-family:sans-serif;font-size:2rem;visibility:hidden;}
+  #score{position:absolute;top:10px;left:10px;font-family:sans-serif;font-size:1.5rem;color:#333;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="overlay">Game Over<br>Tap to Restart</div>
+<div id="score">Score: 0</div>
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const scoreDisplay = document.getElementById('score');
+  let width, height;
+  let ball, platforms, lastPlatformY, score, cameraY, gameOver;
+  const gravity = 0.4;
+  const restitution = 0.8;
+  const platformGap = 150;
+  const platformHeight = 12;
+  const platformColors = ['#ffb6c1','#ffb6d5','#ffd1dc','#ffe4ed'];
+  const ballColors = ['#ff6b81','#ff8da1','#ffb4c5','#ffd6e8'];
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    init();
+  }
+  function init() {
+    ball = {
+      x: width / 2,
+      y: height * 0.6,
+      radius: 20,
+      vx: 3,
+      vy: 0,
+      color: ballColors[0]
+    };
+    platforms = [];
+    lastPlatformY = ball.y;
+    for (let i = 0; i < 10; i++) {
+      addPlatform(lastPlatformY + platformGap);
+    }
+    score = 0;
+    cameraY = 0;
+    gameOver = false;
+    overlay.style.visibility = 'hidden';
+    scoreDisplay.textContent = 'Score: 0';
+    requestAnimationFrame(update);
+  }
+  function addPlatform(y) {
+    const w = Math.random() * 60 + 60;
+    const x = Math.random() * (width - w);
+    platforms.push({
+      x: x,
+      y: y,
+      w: w,
+      h: platformHeight,
+      color: platformColors[Math.floor(Math.random()*platformColors.length)]
+    });
+    lastPlatformY = y;
+  }
+  function update() {
+    if (gameOver) return;
+    // Physics
+    ball.vy += gravity;
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+    // Wall collision
+    if (ball.x - ball.radius < 0) { ball.x = ball.radius; ball.vx = Math.abs(ball.vx); }
+    if (ball.x + ball.radius > width) { ball.x = width - ball.radius; ball.vx = -Math.abs(ball.vx); }
+    // Camera
+    if (ball.y < height * 0.4) cameraY = height * 0.4 - ball.y;
+    else cameraY = 0;
+    // Generate new platforms
+    while (lastPlatformY - cameraY < height + 200) {
+      addPlatform(lastPlatformY - platformGap);
+    }
+    // Remove off-screen platforms
+    platforms = platforms.filter(p => p.y - cameraY < height + 50);
+    // Collision detection
+    for (const p of platforms) {
+      const py = p.y - cameraY;
+      if (ball.vy > 0 &&
+          ball.y + ball.radius >= py &&
+          ball.y + ball.radius <= py + p.h &&
+          ball.x > p.x &&
+          ball.x < p.x + p.w) {
+        ball.vy = -ball.vy * restitution;
+        score++;
+        scoreDisplay.textContent = 'Score: ' + score;
+      }
+    }
+    // Game over
+    if (ball.y - cameraY > height + 50) {
+      gameOver = true;
+      overlay.style.visibility = 'visible';
+      return;
+    }
+    // Render
+    ctx.clearRect(0,0,width,height);
+    // Draw platforms
+    for (const p of platforms) {
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y - cameraY, p.w, p.h);
+    }
+    // Draw ball
+    ctx.beginPath();
+    ctx.fillStyle = ball.color;
+    ctx.arc(ball.x, ball.y - cameraY, ball.radius, 0, Math.PI*2);
+    ctx.fill();
+    requestAnimationFrame(update);
+  }
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (gameOver) {
+      init();
+    } else {
+      ball.vx = -ball.vx;
+    }
+  });
+  window.addEventListener('resize', resize);
+  resize();
+})();
+</script>
+</body>
+</html>

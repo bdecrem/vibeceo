@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Jungle Drop</title>
+<style>
+  body{margin:0;overflow:hidden;background:#87ceeb;}
+  canvas{display:block;background:#5e5e5e;}
+  #score{position:absolute;top:10px;left:10px;color:#fff;font-size:24px;font-family:sans-serif;}
+  #overlay{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,0.7);color:#fff;font-size:32px;font-family:sans-serif;
+    text-align:center;pointer-events:none;
+  }
+  #overlay.visible{pointer-events:auto;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="score">Score: 0</div>
+<div id="overlay">Game Over<br>Tap to Restart</div>
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const overlay = document.getElementById('overlay');
+
+  const gridCols = 5;
+  const gridRows = 10;
+  let cellSize = 0;
+  let grid = [];
+  let block = null;
+  let score = 0;
+  let gameOver = false;
+  let lastTime = 0;
+  const blockSpeed = 200; // pixels per second
+  const colors = ['#228B22','#556B2F','#8B4513','#DAA520','#B22222']; // forestgreen, olive, saddlebrown, goldenrod, firebrick
+
+  function initGrid(){
+    grid = Array.from({length:gridRows},()=>Array(gridCols).fill(null));
+  }
+
+  function spawnBlock(){
+    const col = Math.floor(gridCols/2);
+    block = {
+      col,
+      y: -cellSize,
+      color: colors[Math.floor(Math.random()*colors.length)]
+    };
+  }
+
+  function lockBlock(){
+    const row = Math.floor((block.y + cellSize) / cellSize) - 1;
+    if(row < 0 || row >= gridRows || grid[row][block.col]){
+      gameOver = true;
+      overlay.classList.add('visible');
+    } else {
+      grid[row][block.col] = block.color;
+      score++;
+      scoreEl.textContent = 'Score: '+score;
+      spawnBlock();
+    }
+  }
+
+  function update(delta){
+    if(gameOver) return;
+    block.y += blockSpeed * delta;
+    const nextRow = Math.floor((block.y + cellSize*2) / cellSize);
+    if(nextRow >= gridRows || (nextRow < gridRows && grid[nextRow][block.col])){
+      block.y = (nextRow-1)*cellSize;
+      lockBlock();
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // draw grid
+    for(let r=0;r<gridRows;r++){
+      for(let c=0;c<gridCols;c++){
+        if(grid[r][c]){
+          ctx.fillStyle = grid[r][c];
+          ctx.fillRect(c*cellSize, r*cellSize, cellSize, cellSize);
+          ctx.strokeStyle='#000';
+          ctx.strokeRect(c*cellSize, r*cellSize, cellSize, cellSize);
+        }
+      }
+    }
+    // draw falling block
+    if(block){
+      ctx.fillStyle = block.color;
+      ctx.fillRect(block.col*cellSize, block.y, cellSize, cellSize);
+      ctx.strokeStyle='#000';
+      ctx.strokeRect(block.col*cellSize, block.y, cellSize, cellSize);
+    }
+  }
+
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = canvas.width * 2;
+    cellSize = canvas.width / gridCols;
+    draw();
+  }
+
+  function touchHandler(e){
+    e.preventDefault();
+    if(gameOver){
+      restart();
+      return;
+    }
+    const touch = e.touches[0];
+    const x = touch.clientX - canvas.getBoundingClientRect().left;
+    if(x < canvas.width/2){
+      if(block && block.col > 0) block.col--;
+    } else {
+      if(block && block.col < gridCols-1) block.col++;
+    }
+    draw();
+  }
+
+  function restart(){
+    gameOver = false;
+    overlay.classList.remove('visible');
+    score = 0;
+    scoreEl.textContent = 'Score: 0';
+    initGrid();
+    spawnBlock();
+  }
+
+  function loop(timestamp){
+    const delta = (timestamp - lastTime)/1000;
+    lastTime = timestamp;
+    update(delta);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', resize);
+  canvas.addEventListener('touchstart', touchHandler, {passive:false});
+  canvas.addEventListener('mousedown', (e)=>{touchHandler({preventDefault(){}, touches:[{clientX:e.clientX}]});});
+
+  resize();
+  initGrid();
+  spawnBlock();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

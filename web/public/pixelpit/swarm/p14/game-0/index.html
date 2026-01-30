@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Neon Jump</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#111;color:#fff;font-family:Arial,Helvetica,sans-serif;}
+  canvas{display:block;width:100vw;height:100vh;}
+  #overlay{
+    position:absolute;top:0;left:0;width:100%;height:100%;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,0.6);font-size:2em;
+    text-align:center;cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="overlay" style="display:none;">
+  <div>
+    <div id="finalScore"></div>
+    <div>Tap to restart</div>
+  </div>
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const finalScoreEl = document.getElementById('finalScore');
+
+  let width, height;
+  const resize = () => {
+    width = canvas.clientWidth;
+    height = canvas.clientHeight;
+    canvas.width = width;
+    canvas.height = height;
+  };
+  window.addEventListener('resize', resize);
+  resize();
+
+  const gravity = 0.4;
+  const jumpVelocity = -10;
+  const platformSpeed = 2;
+  const platformGapMin = 120;
+  const platformGapMax = 180;
+  const platformWidthMin = 80;
+  const platformWidthMax = 140;
+
+  let ball = null;
+  let platforms = [];
+  let score = 0;
+  let gameState = 'playing';
+
+  const init = () => {
+    ball = {x: width * 0.2, y: height / 2, r: 20, vy: 0, onGround: false};
+    platforms = [];
+    const firstPlatform = {x: 0, y: height * 0.7, w: width, h: 20};
+    platforms.push(firstPlatform);
+    score = 0;
+    gameState = 'playing';
+    overlay.style.display = 'none';
+  };
+
+  const spawnPlatform = () => {
+    const last = platforms[platforms.length - 1];
+    const gap = platformGapMin + Math.random() * (platformGapMax - platformGapMin);
+    const w = platformWidthMin + Math.random() * (platformWidthMax - platformWidthMin);
+    const y = height * (0.5 + Math.random() * 0.4);
+    const p = {x: last.x + last.w + gap, y: y, w: w, h: 20};
+    platforms.push(p);
+  };
+
+  const update = () => {
+    if (gameState !== 'playing') return;
+
+    // Move platforms
+    for (let p of platforms) {
+      p.x -= platformSpeed;
+    }
+    // Remove off-screen platforms
+    if (platforms[0].x + platforms[0].w < 0) platforms.shift();
+
+    // Spawn new platform if needed
+    if (platforms[platforms.length - 1].x < width) spawnPlatform();
+
+    // Apply gravity
+    ball.vy += gravity;
+    ball.y += ball.vy;
+
+    // Collision detection
+    let landed = false;
+    for (let p of platforms) {
+      if (ball.vy >= 0 && // falling
+          ball.y + ball.r >= p.y &&
+          ball.y + ball.r <= p.y + p.h &&
+          ball.x >= p.x &&
+          ball.x <= p.x + p.w) {
+        ball.y = p.y - ball.r;
+        ball.vy = 0;
+        landed = true;
+        break;
+      }
+    }
+    ball.onGround = landed;
+
+    // Score
+    for (let p of platforms) {
+      if (!p.passed && ball.x > p.x + p.w) {
+        p.passed = true;
+        score++;
+      }
+    }
+
+    // Game over conditions
+    if (ball.y - ball.r > height || ball.y + ball.r < 0) {
+      gameState = 'gameover';
+      finalScoreEl.textContent = 'Score: ' + score;
+      overlay.style.display = 'flex';
+    }
+
+    draw();
+    requestAnimationFrame(update);
+  };
+
+  const draw = () => {
+    ctx.clearRect(0, 0, width, height);
+
+    // Draw background
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, width, height);
+
+    // Draw platforms
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#0ff';
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#0ff';
+    for (let p of platforms) {
+      ctx.strokeRect(p.x, p.y, p.w, p.h);
+    }
+
+    // Draw ball
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fillStyle = '#0ff';
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = '#0ff';
+    ctx.fill();
+  };
+
+  const startTap = () => {
+    if (gameState === 'playing' && !ball.onGround) return;
+    ball.vy = jumpVelocity;
+    ball.onGround = false;
+  };
+
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (gameState === 'gameover') {
+      init();
+      update();
+    } else {
+      startTap();
+    }
+  });
+
+  canvas.addEventListener('mousedown', e => {
+    e.preventDefault();
+    if (gameState === 'gameover') {
+      init();
+      update();
+    } else {
+      startTap();
+    }
+  });
+
+  init();
+  update();
+})();
+</script>
+</body>
+</html>

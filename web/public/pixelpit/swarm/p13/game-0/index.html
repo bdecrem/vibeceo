@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Neon Cyber Runner</title>
+<style>
+  html, body {margin:0; padding:0; overflow:hidden; background:#111;}
+  canvas {display:block; touch-action: none;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  let w = canvas.width = window.innerWidth;
+  let h = canvas.height = window.innerHeight;
+  const player = {w:40, h:40, x:w/2, y:h-60, shift:0};
+  const shiftDist = 80;
+  const obstacles = [];
+  const spawnInterval = 1200; // ms
+  let lastSpawn = Date.now();
+  let score = 0;
+  let scoreTimer = 0;
+  let gameState = 'play'; // 'play' or 'over'
+  const bgGradient = ctx.createLinearGradient(0,0,0,h);
+  bgGradient.addColorStop(0,'#0a0a0a');
+  bgGradient.addColorStop(1,'#222222');
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    player.x = w/2;
+  }
+  window.addEventListener('resize', resize);
+
+  function resetGame() {
+    obstacles.length = 0;
+    lastSpawn = Date.now();
+    score = 0;
+    scoreTimer = 0;
+    player.x = w/2;
+    gameState = 'play';
+    requestAnimationFrame(loop);
+  }
+
+  function spawnObstacle() {
+    const width = 50 + Math.random()*40;
+    const height = 20;
+    const x = Math.random()*(w-width);
+    obstacles.push({x, y:h, w:width, h:height});
+  }
+
+  function update(dt) {
+    if (gameState !== 'play') return;
+    // move obstacles
+    for (let i = obstacles.length-1; i>=0; i--) {
+      obstacles[i].y -= 3;
+      if (obstacles[i].y + obstacles[i].h < 0) obstacles.splice(i,1);
+    }
+    // spawn
+    if (Date.now() - lastSpawn > spawnInterval) {
+      spawnObstacle();
+      lastSpawn = Date.now();
+    }
+    // score
+    scoreTimer += dt;
+    if (scoreTimer > 1000) {score++; scoreTimer=0;}
+    // collision
+    for (const o of obstacles) {
+      if (o.x < player.x + player.w && o.x + o.w > player.x &&
+          o.y < player.y + player.h && o.y + o.h > player.y) {
+        gameState = 'over';
+      }
+    }
+  }
+
+  function draw() {
+    // background
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0,0,w,h);
+    // neon path
+    ctx.strokeStyle = '#0ff';
+    ctx.lineWidth = 20;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(w/2-150,0);
+    ctx.lineTo(w/2-150,h);
+    ctx.moveTo(w/2+150,0);
+    ctx.lineTo(w/2+150,h);
+    ctx.stroke();
+    // player
+    ctx.fillStyle = '#ff0';
+    ctx.shadowColor = '#ff0';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.lineTo(player.x+player.w/2, player.y+player.h);
+    ctx.lineTo(player.x-player.w/2, player.y+player.h);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // obstacles
+    ctx.fillStyle = '#f0f';
+    ctx.shadowColor = '#f0f';
+    ctx.shadowBlur = 10;
+    for (const o of obstacles) {
+      ctx.fillRect(o.x, o.y, o.w, o.h);
+    }
+    ctx.shadowBlur = 0;
+    // score
+    ctx.fillStyle = '#fff';
+    ctx.font = '24px sans-serif';
+    ctx.fillText('Score: '+score, 20, 40);
+    // game over
+    if (gameState === 'over') {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0,0,w,h);
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.font = '48px sans-serif';
+      ctx.fillText('Game Over', w/2, h/2-20);
+      ctx.font = '24px sans-serif';
+      ctx.fillText('Tap to Restart', w/2, h/2+20);
+    }
+  }
+
+  function loop(timestamp) {
+    if (!lastFrame) lastFrame = timestamp;
+    const dt = timestamp - lastFrame;
+    lastFrame = timestamp;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+  let lastFrame = null;
+
+  canvas.addEventListener('click', () => {
+    if (gameState === 'play') {
+      const newX = player.x + shiftDist * (player.shift===0?-1:1);
+      if (newX > 0 && newX + player.w < w) player.x = newX;
+      player.shift = 1 - player.shift;
+    } else if (gameState === 'over') {
+      resetGame();
+    }
+  });
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    canvas.dispatchEvent(new MouseEvent('click'));
+  });
+
+  resetGame();
+})();
+</script>
+</body>
+</html>

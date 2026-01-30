@@ -1,0 +1,107 @@
+{
+  "started": "2026-01-30T10:11:36.158178",
+  "completed": "2026-01-30T10:13:42.432742",
+  "phase": "done",
+  "agents": [
+    {
+      "id": 0,
+      "discovery_status": "done",
+      "discovery_attempts": 2,
+      "blurb": "**Ski\u202fJump (Ketchapp, Jan\u202f2024)**  \nIn this hyper\u2011casual runner you glide a skier down an endless, ever\u2011shifting slope. One tap shifts the skier left or right, letting you dodge rocks, trees and other obstacles while you chase the highest score. The game\u2019s instant \u201ctap\u2011to\u2011shift\u201d feel, bright neon graphics, and endlessly replayable runs make it addictive and perfect for quick, shareable sessions.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "neon cyberpunk with glowing edges",
+      "game_url": "/pixelpit/swarm/p13/game-0/index.html"
+    },
+    {
+      "id": 1,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Hyper\u2011casual game that was trending about 12\u202fmonths ago (early\u202f2025)**  \n\n- **Stack** \u2013 Players tap the screen to drop a block onto a rotating stack. The core loop is to line up the block perfectly; a mis\u2011alignment causes the stack to collapse, driving the frantic, one\u2011tap gameplay that made the title a viral hit on both iOS and Android.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "cute kawaii with pastel colors",
+      "game_url": "/pixelpit/swarm/p13/game-1/index.html"
+    },
+    {
+      "id": 2,
+      "discovery_status": "failed",
+      "discovery_attempts": 2,
+      "blurb": null,
+      "build_status": "pending",
+      "build_attempts": 0,
+      "theme": null,
+      "game_url": null
+    },
+    {
+      "id": 3,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Game:** **Drop the Ball**  \n**Core mechanic:** One\u2011tap \u201cdrop\u201d and \u201chold\u201d controls that let you swing a ball through a series of moving obstacles.\n\n**Why it went viral (early\u202f2024)**  \n* **Ultra\u2011simple input:** A single tap to drop the ball and a quick press to hold it in place gives instant, satisfying feedback\u2014perfect for the bite\u2011size, \u201cjust\u2011one\u2011click\u201d loop that TikTok users love to record and remix.  \n* **Addictive feedback loop:** Each successful pass earns a score and a burst of confetti, while a miss ends the run. The quick reset encourages a \u201cnext try\u201d mentality, making the game feel like a race against time and your own high score.  \n* **Social shareability:** The game's short, high\u2011score\u2011centric sessions translate directly into short clips that went viral on TikTok, turning players into content creators and driving a self\u2011reinforcing download spike.  \n\nIn short, Drop the Ball\u2019s one\u2011tap control, instant visual reward, and perfect fit for short\u2011form video made it the hyper\u2011casual hit of early 2024.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "minimalist black and white",
+      "game_url": "/pixelpit/swarm/p13/game-3/index.html"
+    },
+    {
+      "id": 4,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Just\u202fJump** \u2013 a vertical\u2011scrolling platformer that became a hit in 2024.  \n*Core mechanic*: Tap the screen to make the character jump from one platform to the next, collecting coins and power\u2011ups while dodging spikes, enemies, and other hazards. The endless\u2011run format and instant\u2011play setup made it a go\u2011to pick\u2011up\u2011and\u2011play title for quick sessions. (Source: Google\u202fPlay store description, 2024)",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "underwater ocean theme",
+      "game_url": "/pixelpit/swarm/p13/game-4/index.html"
+    },
+    {
+      "id": 5,
+      "discovery_status": "done",
+      "discovery_attempts": 2,
+      "blurb": "**Game:** *Paper Flight \u2013 Future Battles* (2024 update)  \n**Core mechanic:** Players control a lightweight paper balloon in a clean, low\u2011poly 2\u2011D environment, using only two simple gestures\u2014tap to fire a burst of paper shrapnel and swipe to dodge incoming enemy balloons. The objective is to survive successive waves of adversaries while collecting power\u2011ups, all rendered in a minimalist style that keeps the focus on quick reflexes and timing.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "space and stars cosmic theme",
+      "game_url": "/pixelpit/swarm/p13/game-5/index.html"
+    },
+    {
+      "id": 6,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Drop the Ball** \u2013 released to both the App Store and Google Play in **January\u202f2024**, this hyper\u2011casual puzzle game quickly became a download\u2011hit.\n\n**Core mechanic**  \n- The screen is a vertical grid that fills from the top with colored balls.  \n- The player taps to drop a single ball into the column of their choice.  \n- When **three or more** balls of the same color line up (horizontally, vertically, or diagonally), they instantly clear, causing the remaining balls to fall and potentially trigger chain reactions.  \n- The goal is to clear the board or keep it from overflowing as the stack rises; each new level introduces extra colors, obstacles, or faster\u2011filling patterns to keep the gameplay fresh.  \n\nDrop the Ball\u2019s one\u2011tap control scheme, bright visuals, and simple \u201cclear\u2011all\u2011before\u2011top\u201d objective make it a textbook example of a hyper\u2011casual puzzle/arcade title from early\u202f2024.",
+      "build_status": "done",
+      "build_attempts": 2,
+      "theme": "jungle and nature theme",
+      "game_url": "/pixelpit/swarm/p13/game-6/index.html"
+    },
+    {
+      "id": 7,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Stack** \u2013 *Hyper\u2011casual stacker/runner*  \nIn \u201cStack\u201d you tap the screen to drop a cube onto an ever\u2011moving platform. The goal is to stack the cubes as high as possible, aligning each one perfectly; a mistimed tap causes the stack to collapse and the game ends. The simple, one\u2011handed mechanic keeps players glued, and a global leaderboard adds a competitive edge that has kept the title among the top\u2011downloaded hyper\u2011casual games on the App Store a year ago.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "candy and sweets colorful theme",
+      "game_url": "/pixelpit/swarm/p13/game-7/index.html"
+    },
+    {
+      "id": 8,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Slide: The Game** \u2013 released in January\u202f2024, this hyper\u2011casual title puts a single character on a never\u2011ending path.  \nThe core mechanic is *left\u2011and\u2011right swiping*: players glide the character past spikes, gaps and moving platforms by simply sliding their finger.  \nIts minimalist UI and instant\u2011on\u2011next\u2011obstacle design make it a perfect \u201cone\u2011finger\u201d pick\u2011up for on\u2011the\u2011go casual gaming.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "spooky halloween theme",
+      "game_url": "/pixelpit/swarm/p13/game-8/index.html"
+    },
+    {
+      "id": 9,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Stacker 2024** \u2013 a free\u2011to\u2011play hyper\u2011casual title released in March\u202f2024.  \nThe core mechanic is a single\u2011tap block\u2011dropping puzzle: tap to launch a block, time the hit so it lands on a moving platform and stacks on the growing tower. Every successful stack triggers a satisfying \u201cclack\u201d sound and visual ripple, giving the game a quick\u2011fire, gratifying feel that keeps players coming back for more.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "winter snow and ice theme",
+      "game_url": "/pixelpit/swarm/p13/game-9/index.html"
+    }
+  ]
+}

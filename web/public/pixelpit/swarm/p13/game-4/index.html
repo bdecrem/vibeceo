@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Underwater Jump</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+  html, body {margin:0; padding:0; overflow:hidden; background:#001f3f;}
+  canvas {display:block;}
+  #overlay {
+    position: absolute;
+    top:0; left:0; right:0; bottom:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,0.6);
+    color:#fff;
+    font-family:Arial, sans-serif;
+    font-size:24px;
+    text-align:center;
+    visibility:hidden;
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="overlay">Game Over<br>Score: <span id="finalScore">0</span><br>Tap to restart</div>
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const finalScoreEl = document.getElementById('finalScore');
+  let width, height;
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const gravity = 0.5;
+  const jumpStrength = -12;
+  const platformWidth = 120;
+  const platformHeight = 20;
+  const platformGap = 200;
+  const coinRadius = 8;
+  const hazardWidth = 40;
+  const hazardHeight = 20;
+
+  let player = {x: width/2, y: height-80, vy:0, radius:20};
+  let platforms = [];
+  let coins = [];
+  let hazards = [];
+  let score = 0;
+  let gameState = 'playing';
+  let worldOffsetY = 0;
+
+  function init() {
+    player = {x: width/2, y: height-80, vy:0, radius:20};
+    platforms = [];
+    coins = [];
+    hazards = [];
+    score = 0;
+    worldOffsetY = 0;
+    spawnInitialPlatforms();
+    gameState = 'playing';
+    overlay.style.visibility = 'hidden';
+    requestAnimationFrame(update);
+  }
+
+  function spawnInitialPlatforms() {
+    let y = height - 100;
+    while (y > -2000) {
+      createPlatform(y);
+      y -= platformGap + Math.random()*80;
+    }
+  }
+
+  function createPlatform(y) {
+    const x = 50 + Math.random()*(width-100);
+    platforms.push({x:x, y:y, w:platformWidth, h:platformHeight});
+    // 30% chance to add coin
+    if (Math.random()<0.3) {
+      coins.push({x:x+platformWidth/2, y:y-30, r:coinRadius});
+    }
+    // 20% chance to add hazard
+    if (Math.random()<0.2) {
+      hazards.push({x:x+platformWidth/2-hazardWidth/2, y:y-15, w:hazardWidth, h:hazardHeight});
+    }
+  }
+
+  function update() {
+    if (gameState !== 'playing') return;
+    // Physics
+    player.vy += gravity;
+    player.y += player.vy;
+
+    // Camera
+    if (player.y < worldOffsetY + height/2) {
+      worldOffsetY = player.y - height/2;
+    }
+
+    // Collision with platforms
+    platforms.forEach(p=>{
+      const screenY = p.y - worldOffsetY;
+      if (player.vy > 0 && player.y + player.radius >= p.y && player.y + player.radius <= p.y + p.h &&
+          player.x >= p.x && player.x <= p.x + p.w) {
+        player.y = p.y - player.radius;
+        player.vy = 0;
+      }
+    });
+
+    // Collision with hazards
+    hazards.forEach(h=>{
+      const screenX = h.x;
+      const screenY = h.y - worldOffsetY;
+      if (player.x > h.x && player.x < h.x + h.w &&
+          player.y + player.radius > h.y && player.y - player.radius < h.y + h.h) {
+        gameOver();
+      }
+    });
+
+    // Coin collection
+    coins = coins.filter(c=>{
+      const screenY = c.y - worldOffsetY;
+      const dx = c.x - player.x;
+      const dy = c.y - (player.y);
+      if (dx*dx + dy*dy < (c.r + player.radius)*(c.r + player.radius)) {
+        score++;
+        return false;
+      }
+      return true;
+    });
+
+    // Remove off-screen objects
+    platforms = platforms.filter(p=>p.y - worldOffsetY < height + 200);
+    coins = coins.filter(c=>c.y - worldOffsetY < height + 200);
+    hazards = hazards.filter(h=>h.y - worldOffsetY < height + 200);
+
+    // Generate new platforms above
+    let topPlatformY = platforms.reduce((min,p)=>Math.min(min,p.y), Infinity);
+    while (topPlatformY > worldOffsetY - platformGap*2) {
+      createPlatform(topPlatformY - platformGap - Math.random()*80);
+      topPlatformY -= platformGap + Math.random()*80;
+    }
+
+    // Game over if player falls below screen
+    if (player.y - player.radius > worldOffsetY + height + 200) {
+      gameOver();
+    }
+
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,width,height);
+    // Background
+    ctx.fillStyle = '#001f3f';
+    ctx.fillRect(0,0,width,height);
+    // Draw platforms
+    ctx.fillStyle = '#4a90e2';
+    platforms.forEach(p=>{
+      const screenY = p.y - worldOffsetY;
+      ctx.fillRect(p.x, screenY, p.w, p.h);
+    });
+    // Draw hazards
+    ctx.fillStyle = '#c0392b';
+    hazards.forEach(h=>{
+      const screenY = h.y - worldOffsetY;
+      ctx.fillRect(h.x, screenY, h.w, h.h);
+    });
+    // Draw coins
+    ctx.fillStyle = '#f1c40f';
+    coins.forEach(c=>{
+      const screenY = c.y - worldOffsetY;
+      ctx.beginPath();
+      ctx.arc(c.x, screenY, c.r, 0, Math.PI*2);
+      ctx.fill();
+    });
+    // Draw player
+    ctx.fillStyle = '#27ae60';
+    const screenY = player.y - worldOffsetY;
+    ctx.beginPath();
+    ctx.arc(player.x, screenY, player.radius, 0, Math.PI*2);
+    ctx.fill();
+    // Score
+    ctx.fillStyle = '#fff';
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Score: ${score}`, 20, 40);
+  }
+
+  function gameOver() {
+    gameState = 'gameover';
+    finalScoreEl.textContent = score;
+    overlay.style.visibility = 'visible';
+  }
+
+  function touchStart(e) {
+    e.preventDefault();
+    if (gameState === 'playing') {
+      player.vy = jumpStrength;
+    } else if (gameState === 'gameover') {
+      init();
+    }
+  }
+
+  canvas.addEventListener('touchstart', touchStart);
+  canvas.addEventListener('mousedown', touchStart);
+  init();
+})();
+</script>
+</body>
+</html>

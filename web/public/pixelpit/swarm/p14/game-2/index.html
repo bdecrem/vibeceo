@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pixel Race Clicker</title>
+<style>
+  body, html {margin:0;padding:0;overflow:hidden;background:#000;}
+  #gameCanvas {display:block;background:#87CEEB;touch-action:manipulation;}
+  #ui{position:absolute;top:10px;left:50%;transform:translateX(-50%);color:#fff;font-family:monospace;font-size:20px;text-align:center;}
+  #gameOver{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:32px;color:#fff;display:none;flex-direction:column;}
+  #gameOver span{margin-top:20px;font-size:18px;cursor:pointer;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="ui">Score: <span id="score">0</span></div>
+<div id="gameOver">
+  <div>Game Over</div>
+  <span>Tap to restart</span>
+</div>
+<script>
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+let w=window.innerWidth; let h=window.innerHeight;
+canvas.width=w; canvas.height=h;
+const car={w:40,h:20,x:w/2-20,y:h-70,baseSpeed:2,boostSpeed:6,boostFrames:0};
+const obstacles=[];
+const obstacleSize=30;
+const spawnInterval=80; // frames
+let frameCount=0;
+let score=0;
+let gameOver=false;
+const scoreEl=document.getElementById('score');
+const gameOverEl=document.getElementById('gameOver');
+
+function resize(){
+  w=window.innerWidth; h=window.innerHeight;
+  canvas.width=w; canvas.height=h;
+  car.x=w/2-car.w/2; car.y=h-70;
+}
+window.addEventListener('resize',resize);
+resize();
+
+function spawnObstacle(){
+  const x=Math.random()*(w-obstacleSize);
+  obstacles.push({x:x,y:-obstacleSize,w:obstacleSize,h:obstacleSize});
+}
+
+function collision(a,b){
+  return a.x < b.x+b.w && a.x+a.w > b.x &&
+         a.y < b.y+b.h && a.y+a.h > b.y;
+}
+
+function update(){
+  if(gameOver) return;
+  frameCount++;
+  if(frameCount%spawnInterval===0) spawnObstacle();
+  const speed=car.boostFrames>0?car.boostSpeed:car.baseSpeed;
+  if(car.boostFrames>0) car.boostFrames--;
+  car.y+=speed;
+  if(car.y>h) gameOver=true;
+  obstacles.forEach(o=>o.y+=speed);
+  obstacles.splice(0,obstacles.length, ...obstacles.filter(o=>o.y< h+obstacleSize));
+  obstacles.forEach(o=>{ if(collision(car,o)) gameOver=true;});
+  if(!gameOver) score+=1;
+  scoreEl.textContent=score;
+}
+
+function draw(){
+  ctx.clearRect(0,0,w,h);
+  // road
+  ctx.fillStyle='#555';
+  ctx.fillRect(0,0,w,h);
+  // car
+  ctx.fillStyle='#ff0';
+  ctx.fillRect(car.x,car.y,car.w,car.h);
+  // obstacles
+  ctx.fillStyle='#f00';
+  obstacles.forEach(o=>ctx.fillRect(o.x,o.y,o.w,o.h));
+}
+
+function loop(){
+  update();
+  draw();
+  if(gameOver) gameOverEl.style.display='flex';
+  requestAnimationFrame(loop);
+}
+loop();
+
+canvas.addEventListener('click',()=>{ if(gameOver){reset();} else {car.boostFrames=10;}});
+canvas.addEventListener('touchstart',(e)=>{e.preventDefault(); if(gameOver){reset();} else {car.boostFrames=10;}});
+
+function reset(){
+  obstacles.length=0;
+  frameCount=0;
+  score=0;
+  scoreEl.textContent=score;
+  car.x=w/2-car.w/2; car.y=h-70; car.boostFrames=0;
+  gameOver=false;
+  gameOverEl.style.display='none';
+}
+</script>
+</body>
+</html>

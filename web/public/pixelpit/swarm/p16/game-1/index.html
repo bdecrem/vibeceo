@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bumper Buddy - Kawaii Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #ffd6e8 0%, #c7ceea 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            max-height: 800px;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #fff5fb 0%, #e8d5f2 100%);
+            cursor: pointer;
+            touch-action: none;
+        }
+        
+        #scoreDisplay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff69b4;
+            z-index: 10;
+            text-shadow: 2px 2px 4px rgba(255, 192, 203, 0.5);
+        }
+        
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(200, 150, 200, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+        
+        #gameOverScreen.show {
+            display: flex;
+        }
+        
+        .gameOverContent {
+            text-align: center;
+            color: white;
+        }
+        
+        .gameOverTitle {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #fff;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .finalScore {
+            font-size: 36px;
+            margin-bottom: 30px;
+            color: #ffeb3b;
+        }
+        
+        .restartHint {
+            font-size: 20px;
+            color: #fff;
+            margin-top: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreDisplay">Score: 0</div>
+        <div id="gameOverScreen">
+            <div class="gameOverContent">
+                <div class="gameOverTitle">Game Over! 🎀</div>
+                <div class="finalScore" id="finalScore">Score: 0</div>
+                <div class="restartHint">Tap to restart</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const finalScoreDisplay = document.getElementById('finalScore');
+
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (canvas.width > 600) canvas.width = 600;
+            if (canvas.height > 800) canvas.height = 800;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game variables
+        let gameActive = true;
+        let score = 0;
+        let gameSpeed = 2;
+        let boostActive = false;
+        let boostCooldown = 0;
+
+        // Player object
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 80,
+            width: 40,
+            height: 40,
+            velocityX: 0,
+            velocityY: 0,
+            boostPower: 12,
+            gravity: 0.4,
+            isJumping: false
+        };
+
+        // Obstacles array
+        let obstacles = [];
+
+        // Particle effects array
+        let particles = [];
+
+        class Obstacle {
+            constructor() {
+                this.width = 50 + Math.random() * 40;
+                this.height = 20;
+                this.x = Math.random() * (canvas.width - this.width);
+                this.y = -this.height;
+                this.speed = gameSpeed;
+            }
+
+            update() {
+                this.y += this.speed;
+            }
+
+            draw() {
+                // Cute obstacle with gradient
+                const gradient = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.height);
+                gradient.addColorStop(0, '#ff99cc');
+                gradient.addColorStop(1, '#ff66b2');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.roundRect(this.x, this.y, this.width, this.height, 8);
+                ctx.fill();
+                
+                // Cute eyes
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(this.x + this.width * 0.3, this.y + this.height / 2, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(this.x + this.width * 0.7, this.y + this.height / 2, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.life = 1;
+                this.velocityX = (Math.random() - 0.5) * 4;
+                this.velocityY = Math.random() * -3 - 2;
+                this.size = Math.random() * 8 + 4;
+            }
+
+            update() {
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+                this.life -= 0.02;
+                this.velocityY += 0.1;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function spawnObstacle() {
+            obstacles.push(new Obstacle());
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 8; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function drawPlayer() {
+            // Main body
+            const gradient = ctx.createRadialGradient(player.x, player.y, 5, player.x, player.y, 25);
+            gradient.addColorStop(0, '#ffb3d9');
+            gradient.addColorStop(1, '#ff85c1');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Cute eyes
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(player.x - 8, player.y - 5, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(player.x + 8, player.y - 5, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Smile
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y + 2, 6, 0, Math.PI);
+            ctx.stroke();
+            
+            // Cute blush
+            ctx.fillStyle = 'rgba(255, 192, 203, 0.6)';
+            ctx.beginPath();
+            ctx.ellipse(player.x - 15, player.y + 2, 5, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(player.x + 15, player.y + 2, 5, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Boost indicator
+            if (boostActive) {
+                ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.width / 2 + 8, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // Player physics
+            player.velocityY += player.gravity;
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+
+            // Friction
+            player.velocityX *= 0.95;
+
+            // Boundaries
+            if (player.x - player.width / 2 < 0) player.x = player.width / 2;
+            if (player.x + player.width / 2 > canvas.width) player.x = canvas.width - player.width / 2;
+
+            // Ground collision
+            if (player.y + player.height / 2 > canvas.height - 10) {
+                player.y = canvas.height - 10 - player.height / 2;
+                player.velocityY = 0;
+                player.isJumping = false;
+            }
+
+            // Boost cooldown
+            if (boostCooldown > 0) {
+                boostCooldown--;
+            }
+            if (boostCooldown === 0) {
+                boostActive = false;
+            }
+
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].update();
+
+                // Collision detection
+                if (checkCollision(player, obstacles[i])) {
+                    gameActive = false;
+                    showGameOver();
+                    return;
+                }
+
+                // Remove off-screen obstacles
+                if (obstacles[i].y > canvas.height) {
+                    obstacles.splice(i, 1);
+                    score += 10;
+                    gameSpeed += 0.1;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                }
+            }
+
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function checkCollision(rect1, rect2) {
+            return rect1.x - rect1.width / 2 < rect2.x + rect2.width &&
+                   rect1.x + rect1.width / 2 > rect2.x &&
+                   rect1.y - rect1.height / 2 < rect2.y + rect2.height &&
+                   rect1.y + rect1.height / 2 > rect2.y;
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background gradient
+            const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bgGradient.addColorStop(0, '#fff5fb');
+            bgGradient.addColorStop(1, '#e8d5f2');
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw ground
+            ctx.fillStyle = 'rgba(255, 200, 221, 0.3)';
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+
+            // Draw obstacles
+            obstacles.forEach(obstacle => obstacle.draw());
+
+            // Draw particles
+            particles.forEach(particle => particle.draw());
+
+            // Draw player
+            drawPlayer();
+
+            // Draw decorative stars
+            ctx.fillStyle = 'rgba(255, 192, 203, 0.2)';
+            for (let i = 0; i < 5; i++) {
+                const starX = (i * 120 + score / 10) % canvas.width;
+                ctx.beginPath();
+                ctx.arc(starX, 30, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function showGameOver() {
+            finalScoreDisplay.textContent = `Score: ${score}`;
+            gameOverScreen.classList.add('show');
+        }
+
+        function restartGame() {
+            gameActive = true;
+            score = 0;
+            gameSpeed = 2;
+            boostActive = false;
+            boostCooldown = 0;
+            obstacles = [];
+            particles = [];
+            
+            player.x = canvas.width / 2;
+            player.y = canvas.height - 80;
+            player.velocityX = 0;
+            player.velocityY = 0;
+            player.isJumping = false;
+            
+            scoreDisplay.textContent = `Score: ${score}`;
+            gameOverScreen.classList.remove('show');
+        }
+
+        // Input handling
+        canvas.addEventListener('click', (e) => {
+            if (!gameActive) {
+                restartGame();
+                return;
+            }
+
+            // Apply boost
+            if (boostCooldown === 0) {
+                const rect = canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                
+                if (clickX < canvas.width / 2) {
+                    player.velocityX = -player.boostPower;
+                } else {
+                    player.velocityX = player.boostPower;
+                }
+                
+                boostActive = true;
+                boostCooldown = 15;
+                createParticles(player.x, player.y, '#ffeb3b');
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (!gameActive) {
+                restartGame();
+                return;
+            }
+
+            // Apply boost
+            if (boostCooldown === 0) {
+                const rect = canvas.getBoundingClientRect();
+                const touchX = e.touches[0].clientX - rect.left;
+                
+                if (touchX < canvas.width / 2) {
+                    player.velocityX = -player.boostPower;
+                } else {
+                    player.velocityX = player.boostPower;
+                }
+                
+                boostActive = true;
+                boostCooldown = 15;
+                createParticles(player.x, player.y, '#ffeb3b');
+            }
+            e.preventDefault();
+        });
+
+        // Spawn obstacles
+        setInterval(() => {
+            if (gameActive) {
+                spawnObstacle();
+            }
+        }, 1200);
+
+        // Start game loop
+        gameLoop();
+
+        // Initial draw to ensure canvas is visible
+        draw();
+    </script>
+</body>
+</html>

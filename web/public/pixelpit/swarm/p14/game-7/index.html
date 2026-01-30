@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Candy Stack</title>
+<style>
+  body{margin:0;background:#f8e6d8;font-family:sans-serif;overflow:hidden;}
+  canvas{display:block;background:#ffe4e1;}
+  #score{position:absolute;top:10px;left:10px;color:#d2691e;font-size:24px;}
+  #gameover{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;color:#fff;font-size:32px;flex-direction:column;display:none;}
+  #gameover button{margin-top:20px;padding:10px 20px;font-size:24px;background:#d2691e;border:none;color:#fff;border-radius:5px;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="score">Score: 0</div>
+<div id="gameover">
+  <div id="overText">Game Over</div>
+  <div id="overScore"></div>
+  <button id="restartBtn">Tap to Restart</button>
+</div>
+<script>
+(function(){
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const gameOverEl = document.getElementById('gameover');
+  const overScoreEl = document.getElementById('overScore');
+  const restartBtn = document.getElementById('restartBtn');
+
+  let blocks = [];
+  let moving = null;
+  let score = 0;
+  let gameOver = false;
+  const blockHeight = 20;
+  const speed = 4;
+  const initialBlockWidth = 200;
+  const minOverlap = 5; // minimum pixel overlap to survive
+
+  function resizeCanvas(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    // reposition blocks vertically
+    for(let i=0;i<blocks.length;i++){
+      blocks[i].y = canvas.height - (blocks.length - i)*blockHeight;
+    }
+    if(moving){
+      moving.y = canvas.height - (blocks.length + 1)*blockHeight;
+    }
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+
+  function resetGame(){
+    blocks = [];
+    score = 0;
+    gameOver = false;
+    scoreEl.textContent = 'Score: 0';
+    gameOverEl.style.display = 'none';
+    // initial block
+    const startX = (canvas.width - initialBlockWidth)/2;
+    const startY = canvas.height - blockHeight;
+    blocks.push({x:startX, y:startY, w:initialBlockWidth});
+    spawnMovingBlock();
+    requestAnimationFrame(gameLoop);
+  }
+
+  function spawnMovingBlock(){
+    moving = {
+      x: 0,
+      y: canvas.height - (blocks.length + 1)*blockHeight,
+      w: blocks[blocks.length-1].w,
+      dir: 1
+    };
+  }
+
+  function handleTap(e){
+    e.preventDefault();
+    if(gameOver){
+      resetGame();
+    } else if(moving){
+      // drop moving block
+      const last = blocks[blocks.length-1];
+      const overlapStart = Math.max(last.x, moving.x);
+      const overlapEnd = Math.min(last.x + last.w, moving.x + moving.w);
+      const overlap = overlapEnd - overlapStart;
+      if(overlap > minOverlap){
+        // success
+        const newW = overlap;
+        const center = (overlapStart + overlapEnd)/2;
+        const newX = center - newW/2;
+        const newY = canvas.height - blocks.length*blockHeight - blockHeight;
+        blocks.push({x:newX, y:newY, w:newW});
+        score++;
+        scoreEl.textContent = 'Score: '+score;
+        moving = null;
+        spawnMovingBlock();
+      } else {
+        // game over
+        gameOver = true;
+        overScoreEl.textContent = 'Score: '+score;
+        gameOverEl.style.display = 'flex';
+      }
+    }
+  }
+
+  canvas.addEventListener('click', handleTap);
+  canvas.addEventListener('touchstart', handleTap);
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // draw stack blocks
+    blocks.forEach(block=>{
+      ctx.fillStyle = '#ff69b4';
+      ctx.fillRect(block.x, block.y, block.w, blockHeight);
+      ctx.strokeStyle = '#fff';
+      ctx.strokeRect(block.x, block.y, block.w, blockHeight);
+    });
+    // draw moving block
+    if(moving){
+      ctx.fillStyle = '#ff1493';
+      ctx.fillRect(moving.x, moving.y, moving.w, blockHeight);
+      ctx.strokeStyle = '#fff';
+      ctx.strokeRect(moving.x, moving.y, moving.w, blockHeight);
+    }
+  }
+
+  function update(){
+    if(moving){
+      moving.x += speed * moving.dir;
+      if(moving.x <= 0){
+        moving.x = 0;
+        moving.dir = 1;
+      } else if(moving.x + moving.w >= canvas.width){
+        moving.x = canvas.width - moving.w;
+        moving.dir = -1;
+      }
+    }
+  }
+
+  function gameLoop(){
+    if(!gameOver){
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+  }
+
+  // start
+  resizeCanvas();
+  resetGame();
+})();
+</script>
+</body>
+</html>

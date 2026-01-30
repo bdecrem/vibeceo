@@ -1,0 +1,107 @@
+{
+  "started": "2026-01-30T11:05:51.241849",
+  "completed": "2026-01-30T11:07:48.325533",
+  "phase": "done",
+  "agents": [
+    {
+      "id": 0,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Jump\u202fJump** \u2013 launched in March\u202f2024 by Yodo1, this hyper\u2011casual title puts you in control of a bouncing ball that must stay on a series of increasingly tight platforms. The core mechanic is a single tap that makes the ball leap, and you must time those taps to avoid gaps, spikes, and rising speed. It\u2019s fun because the instant feedback and steadily rising difficulty create a quick, addictive loop that\u2019s perfect for short play sessions.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "neon cyberpunk with glowing edges",
+      "game_url": "/pixelpit/swarm/p14/game-0/index.html"
+    },
+    {
+      "id": 1,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Stack\u202fJump\u202f2025**\n\n*Core mechanic:* In this one\u2011touch endless runner, a small ball continuously bounces upward while the player taps to change the ball\u2019s direction. Each tap must land the ball on the next platform before gravity pulls it down, earning points for every successful bounce and unlocking new skins and power\u2011ups. The game\u2019s ultra\u2011simple \u201ctap\u2011to\u2011jump\u201d loop made it a quick\u2011fire hit on both iOS and Android in early\u202f2025.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "cute kawaii with pastel colors",
+      "game_url": "/pixelpit/swarm/p14/game-1/index.html"
+    },
+    {
+      "id": 2,
+      "discovery_status": "failed",
+      "discovery_attempts": 2,
+      "blurb": null,
+      "build_status": "pending",
+      "build_attempts": 0,
+      "theme": null,
+      "game_url": null
+    },
+    {
+      "id": 3,
+      "discovery_status": "done",
+      "discovery_attempts": 2,
+      "blurb": "**Game:** **Stack Jump 2** (2024)\n\n**Core mechanic:** Players tap to rotate a 3\u2011by\u20113 grid of blocks and then tap again to drop the rotated layer onto the stack. The goal is to keep the tower balanced while avoiding falling blocks.  \n\n**Why it\u2019s addictive:** The mechanics are razor\u2011simple\u2014just two taps per layer\u2014yet the physics create a quick \u201cwhat\u2011if\u201d loop: each tap can either keep the tower going or cause a spectacular collapse. The instant visual feedback, coupled with a progressively higher, risk\u2011reward challenge, keeps players guessing and replaying until they hit that perfect, impossible\u2011looking height. The short, snappy sessions fit the hyper\u2011casual format and feed the social\u2011media loop, fueling its viral spread in early 2024.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "minimalist black and white",
+      "game_url": "/pixelpit/swarm/p14/game-3/index.html"
+    },
+    {
+      "id": 4,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Balloon Pop**\n\n- **Core mechanic:** Swipe or tap to pop balloons that drift upward while avoiding falling obstacles; each burst earns points and can trigger power\u2011ups that clear the screen or double the score.  \n- **Why it was popular a year ago:** Its one\u2011handed, instant\u2011on gameplay made it perfect for commuters and short\u2011break sessions, and the endless\u2011mode replayability kept players chasing higher scores without any long commitment.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "underwater ocean theme",
+      "game_url": "/pixelpit/swarm/p14/game-4/index.html"
+    },
+    {
+      "id": 5,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Color Drop (2024)** \u2013 A minimalist physics\u2011puzzle game where you tap to drop colored balls into a grid. The goal is to line up three or more matching colors horizontally, vertically, or diagonally, causing them to vanish and clearing space for the next drops. Its clean, monochrome art style and one\u2011hand\u2011friendly controls make it a perfect quick\u2011play title for on\u2011the\u2011go sessions.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "space and stars cosmic theme",
+      "game_url": "/pixelpit/swarm/p14/game-5/index.html"
+    },
+    {
+      "id": 6,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Game:** **Block\u202fDrop** (released\u202fJan\u202f2024, published by Voodoo)  \n**Core mechanic:** Blocks of various colors fall from the top of the screen,",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "jungle and nature theme",
+      "game_url": "/pixelpit/swarm/p14/game-6/index.html"
+    },
+    {
+      "id": 7,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Stack** \u2013 a hyper\u2011casual title that dominated the App Store in early\u202f2023.  \nYou tap to drop a cube onto a moving stack of cubes; the goal is to align it perfectly so the stack keeps rising. The core mechanic is pure timing and precision: a single tap can make you win or lose, making the game instantly addictive.",
+      "build_status": "done",
+      "build_attempts": 2,
+      "theme": "candy and sweets colorful theme",
+      "game_url": "/pixelpit/swarm/p14/game-7/index.html"
+    },
+    {
+      "id": 8,
+      "discovery_status": "done",
+      "discovery_attempts": 2,
+      "blurb": "**Run & Jump\u202f3** \u2013 an early\u20112024 hyper\u2011casual runner where the player taps the screen to make the character hop over gaps, ramps, and moving hazards. The core mechanic is a single\u2011tap \u201cjump\u201d that keeps the action fast and intuitive, while the goal is to survive as long as possible and rack up points by collecting coins and power\u2011ups. The game\u2019s minimal controls make it perfect for quick, pick\u2011up\u2011and\u2011play sessions on mobile.",
+      "build_status": "done",
+      "build_attempts": 1,
+      "theme": "spooky halloween theme",
+      "game_url": "/pixelpit/swarm/p14/game-8/index.html"
+    },
+    {
+      "id": 9,
+      "discovery_status": "failed",
+      "discovery_attempts": 2,
+      "blurb": null,
+      "build_status": "pending",
+      "build_attempts": 0,
+      "theme": null,
+      "game_url": null
+    }
+  ]
+}

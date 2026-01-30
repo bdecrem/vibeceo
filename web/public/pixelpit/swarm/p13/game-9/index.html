@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Snow Stack</title>
+<style>
+  html, body {margin:0; padding:0; overflow:hidden; background:#e0f7ff;}
+  canvas {display:block;}
+  #score{position:absolute; top:10px; left:50%; transform:translateX(-50%); font-family:sans-serif; font-size:24px; color:#004d99;}
+  #gameOver{position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(255,255,255,0.9); padding:20px 40px; border-radius:10px; font-family:sans-serif; font-size:28px; text-align:center; display:none; cursor:pointer;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="score">Score: 0</div>
+<div id="gameOver">Game Over!<br>Tap to restart</div>
+<script>
+(() => {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const gameOverEl = document.getElementById('gameOver');
+  let width, height;
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+    resetGame();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const blockSize = 40;
+  const platformWidth = 120;
+  const platformSpeed = 3;
+  const blockSpeed = 5;
+  const tolerance = 20;
+
+  let platform = {x: (width - platformWidth)/2, y: height - 80, w: platformWidth, h: 20};
+  let block = null;
+  let stack = [];
+  let ripples = [];
+  let score = 0;
+  let gameOver = false;
+  let audioCtx, oscillator;
+
+  function initAudio() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    oscillator = audioCtx.createOscillator();
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+    oscillator.connect(audioCtx.destination);
+    oscillator.start();
+    oscillator.stop();
+  }
+
+  function playClack() {
+    const osc = audioCtx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  }
+
+  function resetGame() {
+    platform.x = (width - platformWidth)/2;
+    block = createBlock();
+    stack = [];
+    ripples = [];
+    score = 0;
+    updateScore();
+    gameOver = false;
+    gameOverEl.style.display = 'none';
+  }
+
+  function createBlock() {
+    return {x: width/2 - blockSize/2, y: height - blockSize, w: blockSize, h: blockSize, vy: 0, moving: false};
+  }
+
+  function launchBlock() {
+    if (block && !block.moving) {
+      block.vy = -blockSpeed;
+      block.moving = true;
+    }
+  }
+
+  function update() {
+    if (!gameOver) {
+      movePlatform();
+      if (block && block.moving) {
+        block.y += block.vy;
+        if (block.y <= platform.y - block.h) {
+          block.moving = false;
+          block.vy = 0;
+          checkLanding();
+        }
+      }
+      updateRipples();
+      draw();
+      requestAnimationFrame(update);
+    }
+  }
+
+  function movePlatform() {
+    platform.x += platformSpeed;
+    if (platform.x <= 0 || platform.x + platform.w >= width) platformSpeed *= -1;
+  }
+
+  function checkLanding() {
+    const centerDiff = Math.abs((block.x + block.w/2) - (platform.x + platform.w/2));
+    if (centerDiff > tolerance) {
+      gameOver = true;
+      gameOverEl.style.display = 'block';
+    } else {
+      stack.push({x: block.x, y: block.y});
+      playClack();
+      ripples.push({x: block.x + block.w/2, y: block.y, r: 0, max: 30, alpha: 1});
+      score++;
+      updateScore();
+      block = createBlock();
+    }
+  }
+
+  function updateRipples() {
+    ripples = ripples.filter(r => r.alpha > 0);
+    ripples.forEach(r => {
+      r.r += 1;
+      r.alpha -= 0.02;
+      if (r.alpha < 0) r.alpha = 0;
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+    // draw platform
+    ctx.fillStyle = '#00aaff';
+    ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
+    // draw stack
+    ctx.fillStyle = '#66ccff';
+    stack.forEach(s => ctx.fillRect(s.x, s.y, s.w, s.h));
+    // draw block
+    if (block) {
+      ctx.fillStyle = '#ffcc00';
+      ctx.fillRect(block.x, block.y, block.w, block.h);
+    }
+    // draw ripples
+    ripples.forEach(r => {
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.r, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(255,255,255,${r.alpha})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+  }
+
+  function updateScore() {
+    scoreEl.textContent = `Score: ${score}`;
+  }
+
+  canvas.addEventListener('click', launchBlock);
+  canvas.addEventListener('touchstart', (e) => {e.preventDefault(); launchBlock();});
+  gameOverEl.addEventListener('click', resetGame);
+  gameOverEl.addEventListener('touchstart', (e) => {e.preventDefault(); resetGame();});
+
+  initAudio();
+  requestAnimationFrame(update);
+})();
+</script>
+</body>
+</html>

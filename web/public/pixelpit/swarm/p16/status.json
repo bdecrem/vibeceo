@@ -1,0 +1,107 @@
+{
+  "started": "2026-01-30T14:34:50.077850",
+  "completed": "2026-01-30T14:38:26.432664",
+  "phase": "done",
+  "agents": [
+    {
+      "id": 0,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Drop the Ball 2**  \nReleased in early\u202f2024 by Voodoo, this hyper\u2011casual title puts you in control of a bouncing ball that you must keep in play by tapping the screen to keep it from falling off the endless platform. The core mechanic is simple: tap to lift, swipe to dodge obstacles, and try to survive as long as possible while collecting power\u2011ups that boost your score. It\u2019s fun because the physics are instant\u2011feedback, the visuals are bright and clean, and every new run feels like a fresh challenge that rewards quick reflexes and high\u2011score chasing.",
+      "build_status": "done",
+      "build_attempts": 4,
+      "theme": "neon cyberpunk with glowing edges",
+      "game_url": "/pixelpit/swarm/p16/game-0/index.html"
+    },
+    {
+      "id": 1,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Bumper.io** \u2013 This hyper\u2011casual title was one of the most\u2011downloaded free games on the App Store and Google Play around early\u202f2025.  \nThe core mechanic is a simple tap\u2011and\u2011bounce loop: you tap the screen to give your character a quick horizontal boost, then time the taps to dodge oncoming obstacles and stay alive as long as possible. The game\u2019s minimal controls, bright neon visuals, and instant\u2011replayable \u201chigh\u2011score\u201d loop made it a top\u2011trending pick for both iOS and Android users.",
+      "build_status": "done",
+      "build_attempts": 4,
+      "theme": "cute kawaii with pastel colors",
+      "game_url": "/pixelpit/swarm/p16/game-1/index.html"
+    },
+    {
+      "id": 2,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "{\"error\":\"Brave API error 429\"}**One More Jump (2024)**  \n- **Core mechanic**: You guide a small square that slides along a straight line. With a single tap you make it jump over obstacles and collect \u201cpips.\u201d The goal is to keep jumping as far as possible while avoiding the highlighted line segments that instantly end the run.  \n\n**Tap the Cube (2024)**  \n- **Core mechanic**: The screen is a 3\u2011D cube that rotates automatically. A single tap instantly flips the cube to the next face, and you must time the flips to hit the target face before the timer runs out. The game is all\u2011in\u2011one tap, making it quick\u2011play and endlessly repeatable.",
+      "build_status": "done",
+      "build_attempts": 3,
+      "theme": "pixel art retro 8-bit style",
+      "game_url": "/pixelpit/swarm/p16/game-2/index.html"
+    },
+    {
+      "id": 3,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Neko\u2019s Tail** \u2013 the hyper\u2011casual game that exploded on TikTok and other short\u2011form platforms in March\u202f2024.  \n\n- **Core mechanic**: Tap the screen to keep a cartoon cat\u2019s tail from falling off while a stream of coins scrolls past.  \n- **Addictive hook**: The game offers instant visual feedback (the tail stays upright), very short play sessions that finish in under a minute, and a simple leaderboard that rewards quick, high\u2011score runs\u2014making it perfect for micro\u2011gaming bursts that feel satisfying and encourage players to keep trying for that next \u201cbest\u201d streak.",
+      "build_status": "done",
+      "build_attempts": 3,
+      "theme": "minimalist black and white",
+      "game_url": "/pixelpit/swarm/p16/game-3/index.html"
+    },
+    {
+      "id": 4,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Stack** \u2013 In this hyper\u2011casual hit that surged in popularity around 2025, players tap the screen to lift a falling block and stack it on top of a rapidly moving tower. The core mechanic is keeping each new block perfectly aligned; a slight mis\u2011placement causes the tower to tumble and the game ends. Its ultra\u2011simple tap\u2011to\u2011move controls and instant\u2011feedback loop make it a classic pick\u2011up\u2011and\u2011play experience.",
+      "build_status": "done",
+      "build_attempts": 3,
+      "theme": "underwater ocean theme",
+      "game_url": "/pixelpit/swarm/p16/game-4/index.html"
+    },
+    {
+      "id": 5,
+      "discovery_status": "done",
+      "discovery_attempts": 2,
+      "blurb": "**Windowframe (2024)**  \nA minimal\u2011ist puzzle where the player slides rectangular blocks within a grid to line up a series of window frames. The only input is a single drag or tap to shift a block, and each level introduces tighter spacing and moving obstacles, keeping the mechanic simple yet increasingly challenging.\n\n**Tiny Kingdom (2024)**  \nA hyper\u2011casual city\u2011builder that boils down to placing buildings with a single tap. The core loop is to grow your town by strategically stacking structures on a clean, flat map, and the game rewards quick, instinctive decisions with a clean visual style and short play sessions.",
+      "build_status": "done",
+      "build_attempts": 3,
+      "theme": "space and stars cosmic theme",
+      "game_url": "/pixelpit/swarm/p16/game-5/index.html"
+    },
+    {
+      "id": 6,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Game:** **Hexa Sort**  \n**Release window:** Early\u202f2024 (first\u2011quarter launch)  \n\n**Core mechanic:**  \nHexa\u202fSort is a hyper\u2011casual puzzle\u2011arcade title in which a single hexagonal tile falls from the top of the screen. Players tap to rotate the tile and then release it to drop into a column of like\u2011colored tiles. The goal is to fill columns with matching colors before they reach the top; when a column is completed it disappears, and the game speeds up as the player progresses. The one\u2011touch, one\u2011rotate loop makes it instantly learnable while the increasing pace keeps the gameplay engaging.  \n\n*Source \u2013 \u201cThe state of the hypercasual genre in\u202f2024\u201d (Pocket Gamer,\u202fMay\u202f2024), which cites Hexa\u202fSort as the top puzzle game of the year.*",
+      "build_status": "done",
+      "build_attempts": 3,
+      "theme": "jungle and nature theme",
+      "game_url": "/pixelpit/swarm/p16/game-6/index.html"
+    },
+    {
+      "id": 7,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Paper.io\u202f2** \u2013 In this fast\u2011paced, multiplayer \u201cterritory\u2011control\u201d game you drive a small paper square around a grid, leaving a solid trail behind you. The goal is to claim as much of the map as possible while avoiding other players\u2019 trails; touching an opponent\u2019s trail eliminates you. The core mechanic is one\u2011finger movement plus strategic expansion of your territory, making the game instantly graspable and endlessly replayable.",
+      "build_status": "done",
+      "build_attempts": 3,
+      "theme": "candy and sweets colorful theme",
+      "game_url": "/pixelpit/swarm/p16/game-7/index.html"
+    },
+    {
+      "id": 8,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Bubble Pop Frenzy** \u2013 released on Android and iOS in early 2024, this hyper\u2011casual title keeps the classic bubble\u2011popping formula fresh. The core mechanic is a single\u2011finger swipe: players drag across the screen to burst clusters of bubbles, earning points and chaining combos for higher scores. The ultra\u2011simple, one\u2011motion control scheme makes it instantly playable and endlessly addictive, perfect for quick pick\u2011up sessions.",
+      "build_status": "done",
+      "build_attempts": 4,
+      "theme": "spooky halloween theme",
+      "game_url": "/pixelpit/swarm/p16/game-8/index.html"
+    },
+    {
+      "id": 9,
+      "discovery_status": "done",
+      "discovery_attempts": 1,
+      "blurb": "**Drop\u202f2** \u2013 a 2024 free\u2011to\u2011play hyper\u2011casual title  \n- **Core mechanic:** Players tap the screen to drop a ball into a series of moving slots. The simple tap\u2011and\u2011drop control, responsive physics, and crisp feedback give the game a satisfying, addictive feel.  \n\n*Source:* Brave search results for \u201cDrop\u202f2 hyper casual 2024 free\u201d (Ketchapp, Google\u202fPlay, App\u202fStore reviews).",
+      "build_status": "done",
+      "build_attempts": 4,
+      "theme": "winter snow and ice theme",
+      "game_url": "/pixelpit/swarm/p16/game-9/index.html"
+    }
+  ]
+}

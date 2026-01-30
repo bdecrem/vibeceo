@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spooky Bubble Pop Frenzy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a0033 0%, #330066 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 600px;
+            max-height: 800px;
+            background: linear-gradient(180deg, #2d0052 0%, #1a0033 100%);
+            box-shadow: 0 0 40px rgba(138, 43, 226, 0.5);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #3d1063 0%, #1a0033 100%);
+            touch-action: none;
+            cursor: crosshair;
+        }
+        
+        #scoreDisplay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 10px #00ff88;
+            z-index: 100;
+        }
+        
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            color: white;
+        }
+        
+        #gameOverScreen.show {
+            display: flex;
+        }
+        
+        #gameOverScreen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #ff6b9d;
+            text-shadow: 0 0 20px #ff6b9d;
+            text-align: center;
+        }
+        
+        #gameOverScreen p {
+            font-size: 32px;
+            margin-bottom: 40px;
+            color: #00ff88;
+            text-shadow: 0 0 10px #00ff88;
+        }
+        
+        #gameOverScreen .tap-message {
+            font-size: 20px;
+            color: #ffd700;
+            animation: pulse 1s infinite;
+            text-align: center;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        #comboDisplay {
+            position: absolute;
+            top: 70px;
+            left: 20px;
+            font-size: 18px;
+            color: #ff6b9d;
+            text-shadow: 0 0 10px #ff6b9d;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreDisplay">Score: 0</div>
+        <div id="comboDisplay">Combo: 0</div>
+        <div id="gameOverScreen">
+            <h1>👻 Game Over 👻</h1>
+            <p id="finalScore">Final Score: 0</p>
+            <div class="tap-message">Tap to Restart</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const comboDisplay = document.getElementById('comboDisplay');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreDisplay = document.getElementById('finalScore');
+
+        // Canvas sizing
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game variables
+        let score = 0;
+        let combo = 0;
+        let gameRunning = true;
+        let particles = [];
+        let bubbles = [];
+        let isDrawing = false;
+        let swipePath = [];
+
+        // Bubble class
+        class Bubble {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 20 + Math.random() * 15;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4 - 2;
+                this.gravity = 0.2;
+                this.color = ['#ff6b9d', '#00ff88', '#ffd700', '#ff69b4', '#00ffff'][Math.floor(Math.random() * 5)];
+                this.alpha = 1;
+                this.life = 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += this.gravity;
+                this.life -= 0.01;
+                this.alpha = Math.max(0, this.life);
+
+                // Bounce off walls
+                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                    this.vx *= -0.8;
+                    this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                }
+                if (this.y - this.radius < 0) {
+                    this.vy *= -0.8;
+                    this.y = Math.max(this.radius, this.y);
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                
+                // Bubble gradient
+                const gradient = ctx.createRadialGradient(this.x - 5, this.y - 5, 0, this.x, this.y, this.radius);
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                gradient.addColorStop(0.7, this.color);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+
+            contains(x, y) {
+                const dx = x - this.x;
+                const dy = y - this.y;
+                return dx * dx + dy * dy < this.radius * this.radius;
+            }
+        }
+
+        // Particle class
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8 - 2;
+                this.gravity = 0.3;
+                this.alpha = 1;
+                this.color = color;
+                this.size = Math.random() * 8 + 4;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += this.gravity;
+                this.alpha -= 0.02;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Initialize bubbles
+        function initBubbles() {
+            bubbles = [];
+            for (let i = 0; i < 12; i++) {
+                const x = Math.random() * (canvas.width - 80) + 40;
+                const y = Math.random() * (canvas.height * 0.6) + 60;
+                bubbles.push(new Bubble(x, y));
+            }
+        }
+
+        // Add new bubbles
+        function addNewBubbles() {
+            if (bubbles.length < 12) {
+                for (let i = bubbles.length; i < 12; i++) {
+                    const x = Math.random() * (canvas.width - 80) + 40;
+                    const y = -30;
+                    bubbles.push(new Bubble(x, y));
+                }
+            }
+        }
+
+        // Distance between two points
+        function distance(x1, y1, x2, y2) {
+            return Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
+        }
+
+        // Check if point is near line segment
+        function pointNearLine(px, py, x1, y1, x2, y2, threshold = 35) {
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+
+            let param = -1;
+            if (lenSq !== 0) param = dot / lenSq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            } else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            } else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            const dx = px - xx;
+            const dy = py - yy;
+            return Math.sqrt(dx * dx + dy * dy) < threshold;
+        }
+
+        // Draw swipe trail
+        function drawSwipePath() {
+            if (swipePath.length < 2) return;
+
+            ctx.save();
+            ctx.globalAlpha = 0.6;
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            ctx.beginPath();
+            ctx.moveTo(swipePath[0].x, swipePath[0].y);
+            for (let i = 1; i < swipePath.length; i++) {
+                ctx.lineTo(swipePath[i].x, swipePath[i].y);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Update game
+        function update() {
+            // Update bubbles
+            const bubblesMarkedForRemoval = new Set();
+
+            bubbles.forEach(bubble => {
+                bubble.update();
+
+                // Check if bubble is off screen and dead
+                if (bubble.y > canvas.height + 100 && bubble.life < 0) {
+                    bubblesMarkedForRemoval.add(bubble);
+                }
+            });
+
+            // Remove dead bubbles
+            bubbles = bubbles.filter(b => !bubblesMarkedForRemoval.has(b));
+
+            // Update particles
+            particles.forEach(particle => {
+                particle.update();
+            });
+            particles = particles.filter(p => p.alpha > 0);
+
+            // Add new bubbles if needed
+            addNewBubbles();
+
+            // Check game over
+            if (bubbles.some(b => b.y + b.radius > canvas.height)) {
+                endGame();
+            }
+        }
+
+        // Render game
+        function render() {
+            // Clear canvas with background
+            ctx.fillStyle = 'transparent';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw stars/background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            for (let i = 0; i < 50; i++) {
+                const x = (i * 73 + Date.now() * 0.01) % canvas.width;
+                const y = (i * 137) % canvas.height;
+                ctx.fillRect(x, y, 2, 2);
+            }
+
+            // Draw bubbles
+            bubbles.forEach(bubble => bubble.draw());
+
+            // Draw swipe path
+            if (isDrawing) {
+                drawSwipePath();
+            }
+
+            // Draw particles
+            particles.forEach(particle => particle.draw());
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (gameRunning) {
+                update();
+                render();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Handle mouse/touch down
+        function handlePointerDown(e) {
+            if (!gameRunning) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            isDrawing = true;
+            swipePath = [{x, y}];
+        }
+
+        // Handle mouse/touch move
+        function handlePointerMove(e) {
+            if (!gameRunning || !isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            swipePath.push({x, y});
+
+            // Check for bubble collisions along the swipe
+            const toRemove = [];
+            bubbles.forEach(bubble => {
+                if (toRemove.includes(bubble)) return;
+
+                for (let i = 0; i < swipePath.length - 1; i++) {
+                    const p1 = swipePath[i];
+                    const p2 = swipePath[i + 1];
+
+                    if (pointNearLine(bubble.x, bubble.y, p1.x, p1.y, p2.x, p2.y, bubble.radius)) {
+                        toRemove.push(bubble);
+                        break;
+                    }
+                }
+            });
+
+            // Remove hit bubbles and create particles
+            toRemove.forEach(bubble => {
+                const index = bubbles.indexOf(bubble);
+                if (index > -1) {
+                    bubbles.splice(index, 1);
+                    combo++;
+                    score += 10 * combo;
+
+                    // Create particles
+                    for (let i = 0; i < 8; i++) {
+                        particles.push(new Particle(bubble.x, bubble.y, bubble.color));
+                    }
+
+                    // Sound effect (visual feedback)
+                    comboDisplay.textContent = 'Combo: ' + combo;
+                    scoreDisplay.textContent = 'Score: ' + score;
+                    comboDisplay.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        comboDisplay.style.transform = 'scale(1)';
+                    }, 100);
+                }
+            });
+        }
+
+        // Handle mouse/touch up
+        function handlePointerUp(e) {
+            if (!gameRunning) return;
+            isDrawing = false;
+            swipePath = [];
+            combo = 0;
+            comboDisplay.textContent = 'Combo: 0';
+        }
+
+        // End game
+        function endGame() {
+            gameRunning = false;
+            finalScoreDisplay.textContent = 'Final Score: ' + score;
+            gameOverScreen.classList.add('show');
+        }
+
+        // Restart game
+        function restartGame() {
+            score = 0;
+            combo = 0;
+            gameRunning = true;
+            particles = [];
+            swipePath = [];
+            isDrawing = false;
+            scoreDisplay.textContent = 'Score: 0';
+            comboDisplay.textContent = 'Combo: 0';
+            gameOverScreen.classList.remove('show');
+            initBubbles();
+        }
+
+        // Event listeners
+        canvas.addEventListener('mousedown', handlePointerDown);
+        canvas.addEventListener('mousemove', handlePointerMove);
+        canvas.addEventListener('mouseup', handlePointerUp);
+        canvas.addEventListener('mouseleave', handlePointerUp);
+
+        canvas.addEventListener('touchstart', handlePointerDown);
+        canvas.addEventListener('touchmove', handlePointerMove);
+        canvas.addEventListener('touchend', handlePointerUp);
+
+        gameOverScreen.addEventListener('click', restartGame);
+        gameOverScreen.addEventListener('touchstart', restartGame);
+
+        // Initialize and start
+        initBubbles();
+        gameLoop();
+    </script>
+</body>
+</html>
