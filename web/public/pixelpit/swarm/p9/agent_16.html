@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Music Note Catch</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+let score=0,drops=[],paddle={x:W/2,w:80,h:20},effects=[];
+function spawn(){drops.push({x:Math.random()*(W-40)+20,y:-30,r:15,speed:2+Math.random()*2,color:'#'+Math.floor(Math.random()*16777215).toString(16)});}
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  drops=drops.filter(d=>{
+    if(d.y>H-50&&d.y<H-20&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;effects.push({x:d.x,y:d.y,r:0,alpha:1});return false;
+    }
+    return d.y<H+50;
+  });
+  if(Math.random()<0.02)spawn();
+}
+function draw(){
+  // Background gradient
+  let bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#111');
+  bg.addColorStop(1,'#000');
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+  // Static speaker
+  let spW=80,spH=120,spX=W/2-spW/2,spY=H-spH;
+  ctx.fillStyle='#444';
+  ctx.fillRect(spX,spY,spW,spH);
+  ctx.strokeStyle='#fff';
+  ctx.lineWidth=8;
+  ctx.beginPath();
+  ctx.arc(spX+spW/2,spY+spH/2,spH/3,0,Math.PI*2);
+  ctx.stroke();
+  // Notes
+  drops.forEach(d=>{
+    ctx.fillStyle=d.color;
+    ctx.beginPath();
+    ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle=d.color;
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(d.x+d.r/2,d.y);
+    ctx.lineTo(d.x+d.r/2,d.y-30);
+    ctx.stroke();
+  });
+  // Catch effects
+  effects.forEach(e=>{
+    ctx.save();
+    ctx.globalAlpha=e.alpha;
+    ctx.strokeStyle='#fff';
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+    e.r+=4;
+    e.alpha-=0.02;
+  });
+  effects=effects.filter(e=>e.alpha>0);
+  // Paddle as moving speaker mouth
+  let y=H-40;
+  ctx.fillStyle='#222';
+  ctx.fillRect(paddle.x-paddle.w/2,y,paddle.w,paddle.h);
+  ctx.strokeStyle='#fff';
+  ctx.lineWidth=6;
+  ctx.strokeRect(paddle.x-paddle.w/2,y,paddle.w,paddle.h);
+  let r=paddle.h/2;
+  ctx.beginPath();
+  ctx.arc(paddle.x,y+r,r,0,Math.PI*2);
+  ctx.stroke();
+  // Score
+  ctx.fillStyle='#ffcc00';
+  ctx.font='32px sans-serif';
+  ctx.fillText('Score: '+score,20,50);
+}
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

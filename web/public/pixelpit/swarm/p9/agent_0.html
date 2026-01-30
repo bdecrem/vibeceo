@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Raindrop Catch</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+
+let score=0,drops=[],paddle={x:W/2,w:120,h:30};
+let particles=[];
+
+// Stars for background twinkles
+const stars=[];
+for(let i=0;i<80;i++){
+  stars.push({x:Math.random()*W,y:Math.random()*H,alpha:Math.random()});
+}
+
+function spawn(){
+  drops.push({
+    x:Math.random()*(W-40)+20,
+    y:-30,
+    r:15,
+    speed:2+Math.random()*2,
+    color:'#44aaff'
+  });
+}
+
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  drops=drops.filter(d=>{
+    if(d.y>H-80 && d.y<H-40 && Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;
+      // create sparkle particles
+      for(let i=0;i<12;i++){
+        particles.push({
+          x:d.x,
+          y:d.y,
+          vx:(Math.random()-0.5)*4,
+          vy:(Math.random()-0.5)*4,
+          size:3+Math.random()*3,
+          alpha:1
+        });
+      }
+      return false;
+    }
+    return d.y<H+50;
+  });
+  if(Math.random()<0.02)spawn();
+
+  particles.forEach(p=>{
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.alpha-=0.02;
+  });
+  particles=particles.filter(p=>p.alpha>0);
+}
+
+function draw(){
+  // Background gradient
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#0a0e2d');
+  bg.addColorStop(1,'#022c54');
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+
+  // Twinkling stars
+  stars.forEach(st=>{
+    st.alpha+=0.01;
+    if(st.alpha>1) st.alpha=0;
+    ctx.globalAlpha=st.alpha*0.7;
+    ctx.fillStyle='#fff';
+    ctx.beginPath();
+    ctx.arc(st.x,st.y,1.5,0,Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // Draw drops
+  drops.forEach(d=>{
+    // Drop body
+    const grd=ctx.createRadialGradient(d.x,d.y,d.r*0.5,d.x,d.y,d.r);
+    grd.addColorStop(0,'#88cfff');
+    grd.addColorStop(1,'#003d88');
+    ctx.fillStyle=grd;
+    ctx.beginPath();
+    ctx.moveTo(d.x,d.y);
+    ctx.bezierCurveTo(d.x-d.r,d.y-d.r*3,d.x+d.r,d.y-d.r*3,d.x,d.y+d.r*2);
+    ctx.bezierCurveTo(d.x-d.r,d.y-d.r*3,d.x+d.r,d.y-d.r*3,d.x,d.y);
+    ctx.fill();
+
+    // Sparkles on drop
+    for(let i=0;i<3;i++){
+      const ox=d.x+(Math.random()-0.5)*d.r*0.8;
+      const oy=d.y-(Math.random()*d.r*0.6);
+      ctx.fillStyle='#fff';
+      ctx.beginPath();
+      ctx.arc(ox,oy,1.2,0,Math.PI*2);
+      ctx.fill();
+    }
+  });
+
+  // Draw bucket (paddle)
+  ctx.fillStyle='#8b4513'; // wood color
+  ctx.fillRect(paddle.x-paddle.w/2,H-50,paddle.w,20);
+  ctx.fillStyle='#a0522d'; // rim
+  ctx.fillRect(paddle.x-paddle.w/2-10,H-60,paddle.w+20,10);
+
+  // Draw particles
+  particles.forEach(p=>{
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle='#fff';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // Score
+  ctx.fillStyle='#fff';
+  ctx.shadowBlur=10;
+  ctx.shadowColor='rgba(255,255,255,0.8)';
+  ctx.font='bold 32px serif';
+  ctx.fillText('Score: '+score,20,40);
+  ctx.shadowBlur=0;
+}
+
+function move(x){
+  paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));
+}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

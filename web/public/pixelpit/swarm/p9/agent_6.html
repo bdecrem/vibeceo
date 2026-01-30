@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Music Catch</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0,drops=[],effects=[];
+const paddle={x:W/2,w:120,h:20};
+
+function spawn(){
+  drops.push({
+    x:Math.random()*(W-40)+20,
+    y:-30,
+    r:15,
+    speed:2+Math.random()*2,
+    color:'#ff4081'
+  });
+}
+
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  drops=drops.filter(d=>{
+    if(d.y>H-50&&d.y<H-20&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;
+      effects.push({x:d.x,y:d.y,t:performance.now()});
+      return false;
+    }
+    return d.y<H+50;
+  });
+  if(Math.random()<0.02)spawn();
+  // update effects
+  const now=performance.now();
+  effects=effects.filter(e=>now-e.t<500);
+}
+
+function drawNote(x,y,r,color){
+  ctx.fillStyle=color;
+  ctx.strokeStyle='#000';
+  ctx.lineWidth=4;
+  // note head
+  ctx.beginPath();
+  ctx.ellipse(x, y, r*0.6, r*0.8, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  // stem
+  ctx.beginPath();
+  ctx.moveTo(x+r*0.6, y);
+  ctx.lineTo(x+r*0.6, y-r*1.5);
+  ctx.stroke();
+}
+
+function drawPaddle(){
+  // speaker body
+  ctx.fillStyle='#444';
+  ctx.fillRect(paddle.x-paddle.w/2, H-40, paddle.w, paddle.h);
+  ctx.strokeStyle='#222';
+  ctx.lineWidth=4;
+  ctx.strokeRect(paddle.x-paddle.w/2, H-40, paddle.w, paddle.h);
+  // speaker grill
+  ctx.fillStyle='#777';
+  ctx.beginPath();
+  ctx.arc(paddle.x, H-40+paddle.h/2, paddle.w/4, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawEffects(){
+  const now=performance.now();
+  ctx.fillStyle='#ffeb3b';
+  effects.forEach(e=>{
+    const t=(now-e.t)/500;
+    const alpha=1-t;
+    ctx.globalAlpha=alpha;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, t*30, 0, Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+}
+
+function draw(){
+  ctx.fillStyle='#111';
+  ctx.fillRect(0,0,W,H);
+  drops.forEach(d=>drawNote(d.x,d.y,d.r,d.color));
+  drawEffects();
+  drawPaddle();
+  ctx.fillStyle='#ffeb3b';
+  ctx.font='bold 30px Arial';
+  ctx.textAlign='left';
+  ctx.textBaseline='top';
+  ctx.fillText('Score: '+score,20,20);
+}
+
+function move(x){
+  paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));
+}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Autumn Leaves Catcher</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a0a00;overflow:hidden;touch-action:none;font-family:'Georgia',serif}
+canvas{display:block;position:absolute;top:0;left:0}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();
+window.addEventListener('resize',resize);
+
+// Audio context for sounds
+let audioCtx;
+function initAudio(){
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+}
+
+function playSound(type){
+  if(!audioCtx)return;
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  
+  if(type==='catch'){
+    osc.type='sine';
+    osc.frequency.setValueAtTime(600+Math.random()*400,audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200,audioCtx.currentTime+0.1);
+    gain.gain.setValueAtTime(0.15,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.15);
+    osc.start();osc.stop(audioCtx.currentTime+0.15);
+  }else if(type==='miss'){
+    osc.type='triangle';
+    osc.frequency.setValueAtTime(200,audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(80,audioCtx.currentTime+0.2);
+    gain.gain.setValueAtTime(0.1,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.2);
+    osc.start();osc.stop(audioCtx.currentTime+0.2);
+  }
+}
+
+let score=0,leaves=[],particles=[],scorePops=[],windGusts=[];
+let gameTime=0,comboCount=0,lastCatchTime=0;
+
+const basket={x:W/2,y:H-60,w:140,h:50};
+
+// CHAOTIC wind system
+function updateWind(){
+  if(Math.random()<0.03){
+    windGusts.push({
+      strength:(Math.random()-0.5)*8,
+      duration:60+Math.random()*120,
+      life:0
+    });
+  }
+  windGusts.forEach(w=>{w.life++});
+  windGusts=windGusts.filter(w=>w.life<w.duration);
+}
+
+function getWindForce(){
+  let force=Math.sin(gameTime*0.01)*0.5; // Base sway
+  windGusts.forEach(w=>{
+    const progress=w.life/w.duration;
+    const intensity=Math.sin(progress*Math.PI);
+    force+=w.strength*intensity;
+  });
+  return force;
+}
+
+// Leaf colors - autumn palette
+const leafColors=[
+  {fill:'#ff4500',stroke:'#cc3700',vein:'#ff6a33'}, // Red-orange
+  {fill:'#ff6b35',stroke:'#cc5529',vein:'#ff8c5c'}, // Orange
+  {fill:'#f4a259',stroke:'#c28247',vein:'#f7b87a'}, // Golden
+  {fill:'#bc4749',stroke:'#96393a',vein:'#c96b6c'}, // Crimson
+  {fill:'#e76f51',stroke:'#b85941',vein:'#ec8c74'}, // Burnt orange
+  {fill:'#d4a373',stroke:'#a9825c',vein:'#ddb590'}, // Tan
+  {fill:'#9b2226',stroke:'#7c1b1e',vein:'#af4a4d'}, // Deep red
+];
+
+function spawnLeaf(){
+  const colorSet=leafColors[Math.floor(Math.random()*leafColors.length)];
+  // CHAOTIC: Random sizes with more variance
+  const size=15+Math.random()*35+Math.random()*20;
+  const leafType=Math.floor(Math.random()*3); // Different leaf shapes
+  
+  leaves.push({
+    x:Math.random()*(W-60)+30,
+    y:-50-Math.random()*100,
+    size:size,
+    speed:1.5+Math.random()*3+Math.random()*2, // CHAOTIC: More speed variance
+    colors:colorSet,
+    angle:Math.random()*Math.PI*2,
+    rotationSpeed:(Math.random()-0.5)*0.15, // CHAOTIC: Faster rotation
+    wobblePhase:Math.random()*Math.PI*2,
+    wobbleSpeed:0.03+Math.random()*0.05,
+    wobbleAmp:20+Math.random()*40, // CHAOTIC: Wild wobble
+    leafType:leafType,
+    flipAngle:Math.random()*Math.PI*2,
+    flipSpeed:(Math.random()-0.5)*0.08,
+    chaosOffset:Math.random()*1000 // Individual chaos timing
+  });
+}
+
+function drawLeaf(leaf){
+  const {x,y,size,colors,angle,leafType,flipAngle}=leaf;
+  
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(angle);
+  
+  // 3D flip effect
+  const scaleX=Math.cos(flipAngle)*0.5+0.5;
+  ctx.scale(scaleX,1);
+  
+  ctx.beginPath();
+  
+  if(leafType===0){
+    // Maple-like leaf
+    ctx.moveTo(0,-size);
+    ctx.bezierCurveTo(size*0.3,-size*0.7,size*0.8,-size*0.3,size*0.6,0);
+    ctx.bezierCurveTo(size*0.9,size*0.2,size*0.7,size*0.6,size*0.3,size*0.5);
+    ctx.bezierCurveTo(size*0.2,size*0.8,0,size,0,size*0.7);
+    ctx.bezierCurveTo(0,size,-size*0.2,size*0.8,-size*0.3,size*0.5);
+    ctx.bezierCurveTo(-size*0.7,size*0.6,-size*0.9,size*0.2,-size*0.6,0);
+    ctx.bezierCurveTo(-size*0.8,-size*0.3,-size*0.3,-size*0.7,0,-size);
+  }else if(leafType===1){
+    // Oak-like leaf
+    ctx.moveTo(0,-size);
+    for(let i=0;i<6;i++){
+      const angle1=(-0.4+i*0.16)*Math.PI;
+      const angle2=(-0.32+i*0.16)*Math.PI;
+      const r1=size*(0.6+Math.sin(i*1.5)*0.3);
+      const r2=size*0.4;
+      ctx.quadraticCurveTo(Math.cos(angle1)*r1,Math.sin(angle1)*r1+size*0.2,
+                          Math.cos(angle2)*r2,Math.sin(angle2)*r2+size*0.2);
+    }
+    ctx.lineTo(0,size*0.8);
+    ctx.closePath();
+  }else{
+    // Simple oval leaf
+    ctx.ellipse(0,0,size*0.5,size*0.9,0,0,Math.PI*2);
+  }
+  
+  // Fill with gradient
+  const grad=ctx.createLinearGradient(-size,-size,size,size);
+  grad.addColorStop(0,colors.fill);
+  grad.addColorStop(0.5,colors.stroke);
+  grad.addColorStop(1,colors.fill);
+  ctx.fillStyle=grad;
+  ctx.fill();
+  ctx.strokeStyle=colors.stroke;
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+  
+  // Draw vein
+  ctx.beginPath();
+  ctx.moveTo(0,-size*0.8);
+  ctx.lineTo(0,size*0.7);
+  ctx.strokeStyle=colors.vein;
+  ctx.lineWidth=1;
+  ctx.globalAlpha=0.6;
+  ctx.stroke();
+  ctx.globalAlpha=1;
+  
+  ctx.restore();
+}
+
+function createCatchParticles(leaf){
+  // CHAOTIC: More particles with wild movement
+  const count=20+Math.floor(Math.random()*15);
+  for(let i=0;i<count;i++){
+    const angle=Math.random()*Math.PI*2;
+    const speed=3+Math.random()*8; // CHAOTIC: Faster particles
+    particles.push({
+      x:leaf.x,
+      y:leaf.y,
+      vx:Math.cos(angle)*speed+(Math.random()-0.5)*4,
+      vy:Math.sin(angle)*speed-Math.random()*5,
+      life:40+Math.random()*30,
+      maxLife:70,
+      size:3+Math.random()*leaf.size*0.4,
+      color:leaf.colors.fill,
+      rotation:Math.random()*Math.PI*2,
+      rotSpeed:(Math.random()-0.5)*0.3,
+      type:Math.random()>0.5?'leaf':'spark'
+    });
+  }
+  
+  // Sparkle burst
+  for(let i=0;i<8;i++){
+    const angle=(i/8)*Math.PI*2;
+    particles.push({
+      x:leaf.x,
+      y:leaf.y,
+      vx:Math.cos(angle)*6,
+      vy:Math.sin(angle)*6-2,
+      life:25,
+      maxLife:25,
+      size:4,
+      color:'#fff',
+      rotation:0,
+      rotSpeed:0,
+      type:'sparkle'
+    });
+  }
+}
+
+function createScorePop(x,y,points){
+  scorePops.push({
+    x:x,
+    y:y,
+    points:points,
+    life:60,
+    vy:-3,
+    scale:0
+  });
+}
+
+function drawBasket(){
+  const {x,y,w,h}=basket;
+  
+  ctx.save();
+  ctx.translate(x,y);
+  
+  // Basket shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(5,h+5,w/2+5,15,0,0,Math.PI*2);
+  ctx.fill();
+  
+  // Basket body - woven texture
+  const basketGrad=ctx.createLinearGradient(-w/2,0,w/2,0);
+  basketGrad.addColorStop(0,'#8B4513');
+  basketGrad.addColorStop(0.3,'#A0522D');
+  basketGrad.addColorStop(0.5,'#CD853F');
+  basketGrad.addColorStop(0.7,'#A0522D');
+  basketGrad.addColorStop(1,'#8B4513');
+  
+  // Main basket shape
+  ctx.beginPath();
+  ctx.moveTo(-w/2,0);
+  ctx.quadraticCurveTo(-w/2-10,h/2,-w/2+15,h);
+  ctx.lineTo(w/2-15,h);
+  ctx.quadraticCurveTo(w/2+10,h/2,w/2,0);
+  ctx.closePath();
+  ctx.fillStyle=basketGrad;
+  ctx.fill();
+  ctx.strokeStyle='#5D3A1A';
+  ctx.lineWidth=3;
+  ctx.stroke();
+  
+  // Woven pattern
+  ctx.strokeStyle='rgba(93,58,26,0.5)';
+  ctx.lineWidth=2;
+  for(let i=0;i<8;i++){
+    const yOff=i*(h/7);
+    ctx.beginPath();
+    ctx.moveTo(-w/2+5+i*2,yOff);
+    ctx.lineTo(w/2-5-i*2,yOff);
+    ctx.stroke();
+  }
+  
+  // Vertical weave lines
+  for(let i=0;i<10;i++){
+    const xOff=-w/2+20+i*(w-40)/9;
+    ctx.beginPath();
+    ctx.moveTo(xOff,2);
+    ctx.quadraticCurveTo(xOff+(i%2?5:-5),h/2,xOff,h-5);
+    ctx.stroke();
+  }
+  
+  // Basket rim
+  ctx.beginPath();
+  ctx.ellipse(0,0,w/2,12,0,0,Math.PI*2);
+  ctx.fillStyle='#A0522D';
+  ctx.fill();
+  ctx.strokeStyle='#5D3A1A';
+  ctx.lineWidth=2;
+  ctx.stroke();
+  
+  // Inner rim shadow
+  ctx.beginPath();
+  ctx.ellipse(0,3,w/2-8,8,0,0,Math.PI);
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.fill();
+  
+  ctx.restore();
+}
+
+function update(){
+  gameTime++;
+  updateWind();
+  const wind=getWindForce();
+  
+  // Update basket position smoothly
+  basket.y=H-70;
+  
+  // CHAOTIC spawn rate - sometimes bursts of leaves
+  let spawnChance=0.025;
+  if(Math.sin(gameTime*0.02)>0.7)spawnChance=0.08; // Leaf bursts!
+  if(Math.random()<spawnChance)spawnLeaf();
+  
+  // Update leaves with CHAOTIC motion
+  leaves.forEach(leaf=>{
+    leaf.y+=leaf.speed;
+    leaf.angle+=leaf.rotationSpeed;
+    leaf.flipAngle+=leaf.flipSpeed;
+    leaf.wobblePhase+=leaf.wobbleSpeed;
+    
+    // CHAOTIC horizontal movement
+    const wobble=Math.sin(leaf.wobblePhase)*leaf.wobbleAmp*0.1;
+    const chaos=Math.sin(gameTime*0.05+leaf.chaosOffset)*3;
+    leaf.x+=wobble+wind*0.5+chaos*(Math.sin(leaf.y*0.02));
+    
+    // Keep in bounds with bounce
+    if(leaf.x<leaf.size){leaf.x=leaf.size;leaf.rotationSpeed*=-1;}
+    if(leaf.x>W-leaf.size){leaf.x=W-leaf.size;leaf.rotationSpeed*=-1;}
+  });
+  
+  // Check catches
+  leaves=leaves.filter(leaf=>{
+    const catchY=basket.y-10;
+    const catchH=40;
+    if(leaf.y>catchY&&leaf.y<catchY+catchH){
+      const dx=Math.abs(leaf.x-basket.x);
+      if(dx<basket.w/2+leaf.size*0.3){
+        // Caught!
+        const now=Date.now();
+        if(now-lastCatchTime<500)comboCount++;
+        else comboCount=1;
+        lastCatchTime=now;
+        
+        const points=comboCount;
+        score+=points;
+        createCatchParticles(leaf);
+        createScorePop(leaf.x,leaf.y,points);
+        playSound('catch');
+        return false;
+      }
+    }
+    // Missed leaf
+    if(leaf.y>H+50){
+      if(comboCount>2)playSound('miss');
+      comboCount=0;
+      return false;
+    }
+    return true;
+  });
+  
+  // Update particles
+  particles.forEach(p=>{
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.vy+=0.2; // Gravity
+    p.vx*=0.98; // Air resistance
+    p.rotation+=p.rotSpeed;
+    p.life--;
+  });
+  particles=particles.filter(p=>p.life>0);
+  
+  // Update score pops
+  scorePops.forEach(sp=>{
+    sp.y+=sp.vy;
+    sp.vy*=0.95;
+    sp.life--;
+    sp.scale=Math.min(1,sp.scale+0.15);
+  });
+  scorePops=scorePops.filter(sp=>sp.life>0);
+}
+
+function draw(){
+  // Autumn sky gradient
+  const skyGrad=ctx.createLinearGradient(0,0,0,H);
+  skyGrad.addColorStop(0,'#ff7b00');
+  skyGrad.addColorStop(0.3,'#ff9a3c');
+  skyGrad.addColorStop(0.6,'#ffb366');
+  skyGrad.addColorStop(1,'#8B4513');
+  ctx.fillStyle=skyGrad;
+  ctx.fillRect(0,0,W,H);
+  
+  // Background trees silhouette
+  ctx.fillStyle='rgba(60,30,15,0.4)';
+  for(let i=0;i<5;i++){
+    const tx=i*W/4-50;
+    const th=150+Math.sin(i*2)*50;
+    ctx.beginPath();
+    ctx.moveTo(tx,H);
+    ctx.lineTo(tx+40,H-th);
+    ctx.lineTo(tx+80,H);
+    ctx.fill();
+  }
+  
+  // Draw particles behind leaves
+  particles.forEach(p=>{
+    const alpha=p.life/p.maxLife;
+    ctx.globalAlpha=alpha;
+    
+    if(p.type==='sparkle'){
+      ctx.fillStyle='#fff';
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.size*alpha,0,Math.PI*2);
+      ctx.fill();
+    }else if(p.type==='spark'){
+      ctx.fillStyle=p.color;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.size*0.5,0,Math.PI*2);
+      ctx.fill();
+    }else{
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rotation);
+      ctx.fillStyle=p.color;
+      ctx.beginPath();
+      ctx.ellipse(0,0,p.size*0.4,p.size*0.7,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+  });
+  ctx.globalAlpha=1;
+  
+  // Draw leaves
+  leaves.forEach(drawLeaf);
+  
+  // Draw basket
+  drawBasket();
+  
+  // Draw score pops
+  scorePops.forEach(sp=>{
+    const alpha=sp.life/60;
+    ctx.globalAlpha=alpha;
+    ctx.save();
+    ctx.translate(sp.x,sp.y);
+    ctx.scale(sp.scale,sp.scale);
+    
+    ctx.fillStyle='#fff';
+    ctx.strokeStyle='#ff6b35';
+    ctx.lineWidth=3;
+    ctx.font='bold 36px Georgia';
+    ctx.textAlign='center';
+    const text=sp.points>1?`+${sp.points} COMBO!`:`+${sp.points}`;
+    ctx.strokeText(text,0,0);
+    ctx.fillText(text,0,0);
+    
+    ctx.restore();
+    ctx.globalAlpha=1;
+  });
+  
+  // Draw UI
+  // Score background
+  ctx.fillStyle='rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.roundRect(15,15,180,55,10);
+  ctx.fill();
+  
+  // Score text
+  ctx.fillStyle='#fff';
+  ctx.font='bold 18px Georgia';
+  ctx.textAlign='left';
+  ctx.fillText('LEAVES CAUGHT',25,38);
+  ctx.font='bold 32px Georgia';
+  ctx.fillStyle='#ffcc4d';
+  ctx.fillText(score,25,62);
+  
+  // Combo indicator
+  if(comboCount>1){
+    ctx.fillStyle='rgba(255,107,53,0.9)';
+    ctx.beginPath();
+    ctx.roundRect(200,15,100,55,10);
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.font='bold 14px Georgia';
+    ctx.textAlign='center';
+    ctx.fillText('COMBO',250,35);
+    ctx.font='bold 28px Georgia';
+    ctx.fillText(`x${comboCount}`,250,60);
+  }
+  ctx.textAlign='left';
+}
+
+// Input handling
+function moveBasket(clientX){
+  initAudio();
+  basket.x=Math.max(basket.w/2+10,Math.min(W-basket.w/2-10,clientX));
+}
+
+c.addEventListener('mousemove',e=>moveBasket(e.clientX));
+c.addEventListener('touchmove',e=>{e.preventDefault();moveBasket(e.touches[0].clientX);},{passive:false});
+c.addEventListener('touchstart',e=>{e.preventDefault();initAudio();moveBasket(e.touches[0].clientX);},{passive:false});
+c.addEventListener('click',()=>initAudio());
+
+// Game loop
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

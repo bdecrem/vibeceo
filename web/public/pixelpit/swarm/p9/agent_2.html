@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Autumn Catch</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id=c></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0;
+const drops=[];
+const particles=[];
+const paddle={x:W/2,w:100,h:20};
+
+const leafColors=['#ff4d4d','#ff6f00','#ff8c00','#d35400','#e67e22'];
+
+function spawn(){
+  const rX=10+Math.random()*15;
+  const rY=15+Math.random()*20;
+  const color=leafColors[Math.floor(Math.random()*leafColors.length)];
+  drops.push({
+    x:Math.random()*(W-40)+20,
+    y:-30,
+    radiusX:rX,
+    radiusY:rY,
+    rotation:Math.random()*2*Math.PI,
+    spinSpeed:0.02-0.04*Math.random(),
+    speed:2+Math.random()*2,
+    color
+  });
+}
+
+function update(){
+  drops.forEach(d=>{
+    d.y+=d.speed;
+    d.rotation+=d.spinSpeed;
+    d.x+=Math.sin(d.y*0.05)*0.5; // horizontal drift
+  });
+  const remaining=[];
+  drops.forEach(d=>{
+    if(d.y>H-50 && d.y<H-20 && Math.abs(d.x-paddle.x)<paddle.w/2+d.radiusX){
+      score++;
+      createParticles(d);
+      // don't keep this drop
+    }else if(d.y<H+50){
+      remaining.push(d);
+    }
+  });
+  drops.length=0; drops.push(...remaining);
+  if(Math.random()<0.02)spawn();
+
+  // update particles
+  const live=[];
+  particles.forEach(p=>{
+    p.life-=1;
+    if(p.life>0){
+      p.x+=p.vx;
+      p.y+=p.vy;
+      live.push(p);
+    }
+  });
+  particles.length=0; particles.push(...live);
+}
+
+function createParticles(d){
+  for(let i=0;i<12;i++){
+    particles.push({
+      x:d.x,
+      y:d.y,
+      vx:(Math.random()-0.5)*2,
+      vy:(Math.random()-0.5)*2,
+      life:30,
+      size:2+Math.random()*3,
+      color:d.color
+    });
+  }
+}
+
+function draw(){
+  // background gradient
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#ffcc99');
+  grad.addColorStop(1,'#552200');
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,W,H);
+
+  drops.forEach(d=>{
+    ctx.save();
+    ctx.translate(d.x,d.y);
+    ctx.rotate(d.rotation);
+    ctx.fillStyle=d.color;
+    ctx.beginPath();
+    ctx.ellipse(0,0,d.radiusX,d.radiusY,0,0,2*Math.PI);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // particles
+  particles.forEach(p=>{
+    ctx.fillStyle=p.color;
+    ctx.globalAlpha=p.life/30;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,2*Math.PI);
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // basket
+  ctx.fillStyle='#8B4513';
+  ctx.beginPath();
+  ctx.rect(paddle.x-paddle.w/2,H-40,paddle.w,paddle.h);
+  ctx.arc(paddle.x, H-40, paddle.w/2, Math.PI, 0, false);
+  ctx.fill();
+  ctx.strokeStyle='#5D3313';
+  ctx.lineWidth=3;
+  ctx.stroke();
+
+  // score
+  ctx.fillStyle='#ff8c00';
+  ctx.font='bold 28px sans-serif';
+  ctx.shadowColor='rgba(0,0,0,0.5)';
+  ctx.shadowBlur=4;
+  ctx.fillText('Score: '+score,20,40);
+}
+
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Gemstone Catcher</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none;font-family:'Arial',sans-serif}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0;
+let drops=[];
+let sparks=[];
+const paddle={x:W/2,w:120,h:30};
+
+function spawn(){
+  const r=10+Math.random()*8;
+  drops.push({
+    x:Math.random()*(W-2*r)+r,
+    y:-30,
+    r:r,
+    speed:2+Math.random()*2,
+    angle:Math.random()*Math.PI*2,
+    angVel:0.01+Math.random()*0.02,
+    color:`hsl(${Math.random()*360},70%,60%)`
+  });
+}
+
+function update(){
+  // update gems
+  drops.forEach(d=>{d.y+=d.speed;d.angle+=d.angVel});
+  // catch logic
+  drops=drops.filter(d=>{
+    if(d.y>H-50 && d.y<H-20 && Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;
+      // sparkles
+      for(let i=0;i<8;i++){
+        sparks.push({
+          x:d.x+Math.random()*20-10,
+          y:d.y+Math.random()*20-10,
+          r:2+Math.random()*2,
+          opacity:1
+        });
+      }
+      return false;
+    }
+    return d.y<H+50;
+  });
+  // update sparks
+  sparks.forEach(s=>{s.opacity-=0.02; s.r+=0.05});
+  sparks=sparks.filter(s=>s.opacity>0);
+  // spawn new gem
+  if(Math.random()<0.02) spawn();
+}
+
+// background pattern
+const bgCanvas=document.createElement('canvas');
+bgCanvas.width=200;bgCanvas.height=200;
+const bgCtx=bgCanvas.getContext('2d');
+bgCtx.fillStyle='#111';
+bgCtx.fillRect(0,0,200,200);
+bgCtx.fillStyle='rgba(255,255,255,0.05)';
+for(let i=0;i<500;i++){
+  const x=Math.random()*200;
+  const y=Math.random()*200;
+  bgCtx.beginPath();
+  bgCtx.arc(x,y,1,0,Math.PI*2);
+  bgCtx.fill();
+}
+const bgPattern=c.createPattern(bgCanvas,'repeat');
+
+function drawGem(d){
+  ctx.save();
+  ctx.translate(d.x,d.y);
+  ctx.rotate(d.angle);
+  // hexagon path
+  const sides=6;
+  const r=d.r;
+  ctx.beginPath();
+  for(let i=0;i<sides;i++){
+    const a=i*(2*Math.PI)/sides;
+    const px=r*Math.cos(a);
+    const py=r*Math.sin(a);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.closePath();
+  // gradient shine
+  const grd=ctx.createRadialGradient(0,0,r*0.3,0,0,r);
+  grd.addColorStop(0,'#fff');
+  grd.addColorStop(0.4,d.color);
+  grd.addColorStop(1,'#000');
+  ctx.fillStyle=grd;
+  ctx.fill();
+  // subtle edge
+  ctx.strokeStyle='rgba(0,0,0,0.3)';
+  ctx.lineWidth=1;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawSparks(){
+  sparks.forEach(s=>{
+    ctx.fillStyle=`rgba(255,255,255,${s.opacity})`;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+  });
+}
+
+function draw(){
+  ctx.fillStyle=bgPattern;
+  ctx.fillRect(0,0,W,H);
+  // draw gems
+  drops.forEach(drawGem);
+  // draw sparks
+  drawSparks();
+  // draw paddle (jewel box)
+  ctx.save();
+  ctx.translate(paddle.x,H-40);
+  // base
+  const baseW=paddle.w, baseH=paddle.h;
+  const lidH=10;
+  ctx.fillStyle='#333';
+  ctx.fillRect(-baseW/2,0,baseW,baseH);
+  // lid with glass effect
+  ctx.fillStyle='rgba(200,200,255,0.1)';
+  ctx.fillRect(-baseW/2,lidH,baseW,1);
+  ctx.fillStyle='#222';
+  ctx.fillRect(-baseW/2,lidH,baseW,1);
+  // glass shine
+  ctx.fillStyle='rgba(255,255,255,0.2)';
+  ctx.beginPath();
+  ctx.moveTo(-baseW/2,lidH);
+  ctx.lineTo(0,lidH-5);
+  ctx.lineTo(baseW/2,lidH);
+  ctx.closePath();
+  ctx.fill();
+  // subtle glow
+  ctx.shadowColor='rgba(255,215,0,0.4)';
+  ctx.shadowBlur=10;
+  ctx.fillStyle='rgba(255,215,0,0.1)';
+  ctx.fillRect(-baseW/2-5,lidH-5,baseW+10,baseH+5);
+  ctx.restore();
+  // score
+  ctx.font='28px Arial Black';
+  ctx.fillStyle='#ffd700';
+  ctx.strokeStyle='#000';
+  ctx.lineWidth=2;
+  ctx.strokeText('Score: '+score,20,40);
+  ctx.fillText('Score: '+score,20,40);
+}
+
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);}
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);}
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Note Drop - Music Catcher</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0812;overflow:hidden;touch-action:none;font-family:'Segoe UI',Arial,sans-serif}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();
+window.onresize=resize;
+
+// Audio
+let audioCtx=null;
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();}
+function playTone(f,t='triangle',d=0.22){
+  if(!audioCtx)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.connect(g);g.connect(audioCtx.destination);
+  o.frequency.value=f;o.type=t;
+  g.gain.setValueAtTime(0.2,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d);
+  o.start();o.stop(audioCtx.currentTime+d);
+}
+function comboSound(){[523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,'sine',0.12),i*45));}
+
+// State
+let score=0,combo=0,time=0;
+let notes=[],particles=[],popups=[],waves=[];
+let pulse=0,bass=0,shake={x:0,y:0};
+
+// Catcher
+const catcher={x:W/2,tx:W/2,w:180,h:80};
+const catchY=()=>H-120;
+
+// Bold vibrant colors
+const colors=[
+  {fill:'#FF1744',stroke:'#880022',glow:'#FF1744'},
+  {fill:'#00E5FF',stroke:'#006688',glow:'#00E5FF'},
+  {fill:'#FFEA00',stroke:'#AA8800',glow:'#FFEA00'},
+  {fill:'#00E676',stroke:'#006633',glow:'#00E676'},
+  {fill:'#E040FB',stroke:'#6600AA',glow:'#E040FB'},
+  {fill:'#FF6D00',stroke:'#884400',glow:'#FF6D00'}
+];
+const freqs=[262,294,330,349,392,440];
+
+// Unicode music note characters for clear recognition
+const noteChars=['♩','♪','♫','♬'];
+
+function spawn(){
+  const ci=Math.floor(Math.random()*colors.length);
+  notes.push({
+    x:Math.random()*(W-200)+100,
+    y:-100,
+    sz:70+Math.random()*20,
+    spd:2.5+Math.random()*1.2+Math.min(score*0.003,1.5),
+    rot:(Math.random()-0.5)*0.08,
+    rotV:(Math.random()-0.5)*0.008,
+    ci,
+    char:noteChars[Math.floor(Math.random()*noteChars.length)],
+    phase:Math.random()*Math.PI*2,
+    amp:0.3+Math.random()*0.2
+  });
+}
+
+function burst(x,y,color){
+  for(let i=0;i<26;i++){
+    const a=Math.PI*2*i/26;
+    const s=9+Math.random()*13;
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-5,r:15+Math.random()*18,color,alpha:1,decay:0.015,shape:'circle'});
+  }
+  for(let i=0;i<22;i++){
+    particles.push({
+      x:x+(Math.random()-0.5)*90,y:y+(Math.random()-0.5)*50,
+      vx:(Math.random()-0.5)*9,vy:-8-Math.random()*9,
+      r:7+Math.random()*8,color:'#fff',alpha:1,decay:0.024,shape:'star'
+    });
+  }
+  // Flying note symbols
+  for(let i=0;i<6;i++){
+    particles.push({
+      x:x+(Math.random()-0.5)*60,y,
+      vx:(Math.random()-0.5)*11,vy:-7-Math.random()*8,
+      r:35+Math.random()*20,color,alpha:1,decay:0.02,shape:'noteChar',
+      char:noteChars[Math.floor(Math.random()*noteChars.length)],
+      rot:0,rotV:(Math.random()-0.5)*0.15
+    });
+  }
+}
+
+function addWave(x,y){
+  for(let i=0;i<5;i++)waves.push({x,y:y-35,r:45,maxR:180+i*50,alpha:1,delay:i*0.025});
+}
+
+function popup(x,y,txt,col='#fff',sc=1){popups.push({x,y,txt,alpha:1,vy:-5,sc,col});}
+
+function update(){
+  time+=0.016;
+  catcher.x+=(catcher.tx-catcher.x)*0.22;
+  pulse*=0.8;bass*=0.84;
+  shake.x*=0.74;shake.y*=0.74;
+  
+  notes.forEach(n=>{
+    n.y+=n.spd;
+    n.rot+=n.rotV;
+    n.phase+=0.05;
+    n.x+=Math.sin(n.phase)*n.amp;
+  });
+  
+  const cy=catchY();
+  notes=notes.filter(n=>{
+    if(n.y>cy-60&&n.y<cy+50&&Math.abs(n.x-catcher.x)<catcher.w/2+n.sz*0.3){
+      combo++;
+      const pts=10*Math.min(combo,15);
+      score+=pts;
+      pulse=1;bass=1;
+      shake.x=(Math.random()-0.5)*20;
+      shake.y=-Math.random()*16;
+      burst(n.x,n.y,colors[n.ci].fill);
+      addWave(catcher.x,cy);
+      popup(n.x,n.y-90,'+'+pts);
+      if(combo%5===0&&combo>0){popup(catcher.x,cy-130,combo+'× COMBO!','#FFEA00',1.9);comboSound();}
+      else playTone(freqs[n.ci],'triangle',0.3);
+      return false;
+    }
+    if(n.y>H+110){combo=0;return false;}
+    return true;
+  });
+  
+  particles.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.55;p.vx*=0.93;p.alpha-=p.decay;
+    if(p.rotV)p.rot+=p.rotV;
+  });
+  particles=particles.filter(p=>p.alpha>0);
+  
+  waves.forEach(w=>{if(w.delay>0){w.delay-=0.016;return;}w.r+=(w.maxR-w.r)*0.11;w.alpha-=0.032;});
+  waves=waves.filter(w=>w.alpha>0);
+  
+  popups.forEach(p=>{p.y+=p.vy;p.vy*=0.86;p.alpha-=0.016;});
+  popups=popups.filter(p=>p.alpha>0);
+  
+  if(Math.random()<0.028+Math.min(score*0.00003,0.012))spawn();
+}
+
+// Draw music note using Unicode character - clear and recognizable
+function drawMusicNote(n){
+  const col=colors[n.ci];
+  const {x,y,sz,rot,char}=n;
+  
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(rot);
+  
+  // Outer glow
+  ctx.shadowColor=col.glow;
+  ctx.shadowBlur=40;
+  
+  // Draw the actual music note character - VERY visible
+  ctx.font=`bold ${sz}px "Segoe UI Symbol", "Apple Color Emoji", Arial, sans-serif`;
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  
+  // Dark outline for contrast
+  ctx.strokeStyle=col.stroke;
+  ctx.lineWidth=8;
+  ctx.strokeText(char,0,0);
+  
+  // Bright fill
+  ctx.fillStyle=col.fill;
+  ctx.fillText(char,0,0);
+  
+  // Inner highlight
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(255,255,255,0.3)';
+  ctx.font=`bold ${sz*0.9}px "Segoe UI Symbol", "Apple Color Emoji", Arial, sans-serif`;
+  ctx.fillText(char,-sz*0.03,-sz*0.05);
+  
+  ctx.restore();
+}
+
+function drawCatcher(){
+  const x=catcher.x,y=catchY();
+  const w=catcher.w+pulse*50,h=catcher.h+pulse*28;
+  
+  ctx.save();
+  
+  if(pulse>0.05){
+    ctx.shadowColor='#00E676';
+    ctx.shadowBlur=90*pulse;
+  }
+  
+  // Catch zone
+  ctx.fillStyle=`rgba(0,230,118,${0.04+pulse*0.3})`;
+  ctx.beginPath();
+  ctx.ellipse(x,y-30,w*1.1,55,0,0,Math.PI*2);
+  ctx.fill();
+  
+  // Speaker cabinet - SOLID style
+  const cab=ctx.createLinearGradient(x-w/2,y-h/2,x-w/2,y+h/2+35);
+  cab.addColorStop(0,'#5e5e80');
+  cab.addColorStop(0.4,'#4c4c68');
+  cab.addColorStop(1,'#3c3c55');
+  
+  ctx.fillStyle=cab;
+  ctx.strokeStyle='#757598';
+  ctx.lineWidth=14;
+  ctx.beginPath();
+  ctx.roundRect(x-w/2,y-h/2,w,h+35,24);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Inner border
+  ctx.strokeStyle='#2a2a40';
+  ctx.lineWidth=6;
+  ctx.beginPath();
+  ctx.roundRect(x-w/2+18,y-h/2+18,w-36,h,18);
+  ctx.stroke();
+  
+  // Cone
+  const cr=h*0.95+pulse*25+bass*14;
+  const cone=ctx.createRadialGradient(x,y,cr*0.02,x,y,cr);
+  cone.addColorStop(0,'#8888a5');
+  cone.addColorStop(0.3,'#666680');
+  cone.addColorStop(0.65,'#505068');
+  cone.addColorStop(1,'#404058');
+  
+  ctx.fillStyle=cone;
+  ctx.strokeStyle='#70708a';
+  ctx.lineWidth=10;
+  ctx.beginPath();
+  ctx.arc(x,y,cr,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Ridges
+  ctx.strokeStyle='#505068';
+  ctx.lineWidth=3;
+  [0.28,0.48,0.68].forEach(r=>{ctx.beginPath();ctx.arc(x,y,cr*r,0,Math.PI*2);ctx.stroke();});
+  
+  // Dome
+  const dr=cr*0.28+pulse*16+bass*10;
+  const dome=ctx.createRadialGradient(x-8,y-8,0,x,y,dr);
+  dome.addColorStop(0,'#c0c0d8');
+  dome.addColorStop(0.5,'#8888a0');
+  dome.addColorStop(1,'#606080');
+  
+  ctx.fillStyle=dome;
+  ctx.strokeStyle='#75758d';
+  ctx.lineWidth=6;
+  ctx.beginPath();
+  ctx.arc(x,y,dr,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Sound waves
+  waves.forEach(w=>{
+    if(w.delay>0)return;
+    ctx.strokeStyle=`rgba(0,230,118,${w.alpha*0.95})`;
+    ctx.lineWidth=8;
+    ctx.beginPath();
+    ctx.arc(w.x,w.y,w.r,Math.PI*1.02,Math.PI*1.98);
+    ctx.stroke();
+  });
+  
+  ctx.restore();
+}
+
+function drawBG(){
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#201a3a');
+  bg.addColorStop(0.5,'#161025');
+  bg.addColorStop(1,'#0e0812');
+  ctx.fillStyle=bg;
+  ctx.fillRect(-30,-30,W+60,H+60);
+  
+  // Musical staff lines
+  ctx.strokeStyle='rgba(150,140,200,0.06)';
+  ctx.lineWidth=2;
+  const gap=38,scrollOff=(time*50)%(gap*6);
+  for(let g=-1;g<Math.ceil(H/(gap*6))+2;g++){
+    for(let i=0;i<5;i++){
+      const lineY=g*gap*6+i*gap+scrollOff;
+      ctx.beginPath();ctx.moveTo(0,lineY);ctx.lineTo(W,lineY);ctx.stroke();
+    }
+  }
+  
+  // Treble clef decorations
+  ctx.globalAlpha=0.04;
+  ctx.font='180px serif';
+  ctx.fillStyle='#8080a0';
+  ctx.fillText('𝄞',W*0.1,H*0.4);
+  ctx.fillText('𝄞',W*0.8,H*0.6);
+  ctx.globalAlpha=1;
+  
+  // EQ bars
+  ctx.globalAlpha=0.25;
+  const bars=35,bw=W/bars-2;
+  for(let i=0;i<bars;i++){
+    const bx=i*(W/bars)+1;
+    const w1=Math.sin(time*5+i*0.65)*0.5+0.5;
+    const w2=Math.sin(time*3.2+i*0.95)*0.4+0.6;
+    const bh=30+w1*w2*75+bass*60;
+    ctx.fillStyle=colors[i%colors.length].fill;
+    ctx.fillRect(bx,H-bh,bw,bh);
+  }
+  ctx.globalAlpha=1;
+  
+  // Spotlight
+  const spot=ctx.createRadialGradient(W/2,-150,0,W/2,H*0.5,H);
+  spot.addColorStop(0,'rgba(130,110,220,0.22)');
+  spot.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=spot;
+  ctx.fillRect(0,0,W,H);
+}
+
+function drawParticle(p){
+  ctx.globalAlpha=p.alpha;
+  if(p.shape==='circle'){
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r*p.alpha,0,Math.PI*2);
+    ctx.fill();
+  }else if(p.shape==='star'){
+    ctx.fillStyle=p.color;
+    const s=p.r*p.alpha;
+    ctx.beginPath();
+    for(let i=0;i<4;i++){
+      const a=Math.PI/2*i;
+      ctx.lineTo(p.x+Math.cos(a)*s,p.y+Math.sin(a)*s);
+      ctx.lineTo(p.x+Math.cos(a+Math.PI/4)*s*0.22,p.y+Math.sin(a+Math.PI/4)*s*0.22);
+    }
+    ctx.closePath();ctx.fill();
+  }else if(p.shape==='noteChar'){
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.rot);
+    ctx.font=`bold ${p.r}px "Segoe UI Symbol", Arial`;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillStyle=p.color;
+    ctx.fillText(p.char,0,0);
+    ctx.restore();
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawUI(){
+  ctx.fillStyle='rgba(30,28,55,0.92)';
+  ctx.strokeStyle='#606090';
+  ctx.lineWidth=6;
+  ctx.beginPath();
+  ctx.roundRect(26,26,210,100,22);
+  ctx.fill();ctx.stroke();
+  
+  ctx.fillStyle='#ddd';
+  ctx.font='30px serif';
+  ctx.fillText('♪',48,68);
+  
+  ctx.fillStyle='#ddd';
+  ctx.font='bold 15px "Segoe UI",Arial,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('SCORE',85,65);
+  
+  ctx.fillStyle='#FFEA00';
+  ctx.font='bold 54px "Segoe UI",Arial,sans-serif';
+  ctx.fillText(score.toString(),48,116);
+  
+  if(combo>1){
+    ctx.fillStyle='#00E676';
+    ctx.font='bold 30px "Segoe UI",Arial,sans-serif';
+    ctx.textAlign='right';
+    ctx.fillText('×'+combo,224,112);
+    ctx.textAlign='left';
+  }
+  
+  popups.forEach(p=>{
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle=p.col;
+    ctx.textAlign='center';
+    ctx.font=`bold ${32*p.sc}px "Segoe UI",Arial,sans-serif`;
+    ctx.shadowColor=p.col;
+    ctx.shadowBlur=28;
+    ctx.fillText(p.txt,p.x,p.y);
+    ctx.shadowBlur=0;
+  });
+  ctx.globalAlpha=1;
+  ctx.textAlign='left';
+}
+
+function draw(){
+  ctx.save();
+  ctx.translate(shake.x,shake.y);
+  drawBG();
+  particles.forEach(drawParticle);
+  notes.forEach(drawMusicNote);
+  drawCatcher();
+  ctx.restore();
+  drawUI();
+}
+
+function setTgt(px){
+  initAudio();
+  catcher.tx=Math.max(catcher.w/2+35,Math.min(W-catcher.w/2-35,px));
+}
+
+c.addEventListener('mousemove',e=>setTgt(e.clientX));
+c.addEventListener('mousedown',e=>{initAudio();setTgt(e.clientX);});
+c.addEventListener('touchstart',e=>{e.preventDefault();initAudio();setTgt(e.touches[0].clientX);},{passive:false});
+c.addEventListener('touchmove',e=>{e.preventDefault();setTgt(e.touches[0].clientX);},{passive:false});
+
+(function loop(){update();draw();requestAnimationFrame(loop);})();
+</script>
+</body>
+</html>

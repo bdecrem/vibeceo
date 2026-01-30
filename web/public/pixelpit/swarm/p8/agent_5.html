@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sushi Drop</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id=c></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+let score=0,drops=[],particles=[];
+const sushiColors=['#ff6b6b','#ffcc5c','#f9ca24','#ff6f91','#6c5ce7','#00cec9'];
+const paddle={x:W/2,w:120,h:30};
+
+function spawn(){drops.push({x:Math.random()*(W-40)+20,y:-30,r:15,speed:2+Math.random()*2,color:sushiColors[Math.floor(Math.random()*sushiColors.length)]});}
+
+function spawnParticles(x,y){
+  for(let i=0;i<12;i++){
+    particles.push({x:x,y:y,vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3,alpha:1,radius:Math.random()*3+1});
+  }
+}
+
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  drops=drops.filter(d=>{
+    if(d.y>H-50&&d.y<H-20&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;spawnParticles(d.x,d.y);return false;
+    }
+    return d.y<H+50;
+  });
+  if(Math.random()<0.02)spawn();
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.alpha-=0.02;});
+  particles=particles.filter(p=>p.alpha>0);
+}
+
+function draw(){
+  // Background gradient
+  const bgGrad=ctx.createLinearGradient(0,0,W,H);
+  bgGrad.addColorStop(0,'#001b44');
+  bgGrad.addColorStop(1,'#0b3d91');
+  ctx.fillStyle=bgGrad;
+  ctx.fillRect(0,0,W,H);
+  // Draw drops
+  drops.forEach(d=>{
+    const g=ctx.createRadialGradient(d.x,d.y,d.r*0.5,d.x,d.y,d.r);
+    g.addColorStop(0,'#fff');
+    g.addColorStop(1,d.color);
+    ctx.fillStyle=g;
+    ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fill();
+  });
+  // Draw paddle (plate)
+  const grad=ctx.createLinearGradient(paddle.x-paddle.w/2,H-40,paddle.x+paddle.w/2,H-40);
+  grad.addColorStop(0,'#ff8a00');
+  grad.addColorStop(0.5,'#ff0000');
+  grad.addColorStop(1,'#ff8a00');
+  ctx.fillStyle=grad;
+  ctx.fillRect(paddle.x-paddle.w/2,H-40,paddle.w,paddle.h);
+  ctx.strokeStyle='#fff';
+  ctx.lineWidth=3;
+  ctx.strokeRect(paddle.x-paddle.w/2,H-40,paddle.w,paddle.h);
+  // Draw particles
+  particles.forEach(p=>{
+    ctx.fillStyle=`rgba(255,255,255,${p.alpha})`;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);ctx.fill();
+  });
+  // Score with rainbow gradient
+  const scoreGrad=ctx.createLinearGradient(0,0,200,0);
+  scoreGrad.addColorStop(0,'#ff0000');
+  scoreGrad.addColorStop(0.2,'#ff7f00');
+  scoreGrad.addColorStop(0.4,'#ffff00');
+  scoreGrad.addColorStop(0.6,'#00ff00');
+  scoreGrad.addColorStop(0.8,'#0000ff');
+  scoreGrad.addColorStop(1,'#8b00ff');
+  ctx.font='bold 36px sans-serif';
+  ctx.fillStyle=scoreGrad;
+  ctx.fillText('Score: '+score,20,50);
+}
+
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

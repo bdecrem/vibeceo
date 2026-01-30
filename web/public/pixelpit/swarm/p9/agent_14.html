@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Snowflake Catch</title>
+<style>
+  body{margin:0;background:#000022;overflow:hidden;touch-action:none}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0;
+let drops=[];
+let effects=[];
+let paddle={x:W/2,w:80,h:20};
+
+function spawn(){
+  drops.push({
+    x:Math.random()*(W-40)+20,
+    y:-30,
+    r:10,
+    speed:2+Math.random()*2,
+    color:'#FFFFFF'
+  });
+}
+
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  drops=drops.filter(d=>{
+    if(d.y>H-50&&d.y<H-20&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;
+      effects.push({
+        x:d.x,
+        y:H-40,
+        r:0,
+        age:20
+      });
+      return false;
+    }
+    return d.y<H+50;
+  });
+
+  effects.forEach(e=>{e.r+=1;e.age--;});
+  effects=effects.filter(e=>e.age>0);
+
+  if(Math.random()<0.02)spawn();
+}
+
+function draw(){
+  // background
+  ctx.fillStyle='#000022';
+  ctx.fillRect(0,0,W,H);
+
+  // drop snowflakes
+  drops.forEach(d=>{
+    ctx.fillStyle=d.color;
+    ctx.beginPath();
+    ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // effects
+  effects.forEach(e=>{
+    const alpha=e.age/20;
+    ctx.fillStyle=`rgba(255,255,255,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // paddle (mittens)
+  ctx.fillStyle='#888888'; // mitten base
+  ctx.fillRect(paddle.x-paddle.w/2,H-50,paddle.w,20);
+  ctx.strokeStyle='#555555'; // border
+  ctx.lineWidth=2;
+  ctx.strokeRect(paddle.x-paddle.w/2,H-50,paddle.w,20);
+
+  // mitten fingers
+  ctx.fillStyle='#555555';
+  const fingerW=12, fingerH=10, spacing=4;
+  for(let i=0;i<3;i++){
+    ctx.fillRect(paddle.x-paddle.w/2+spacing+ i*(fingerW+spacing),H-60, fingerW, fingerH);
+  }
+
+  // score
+  ctx.fillStyle='#FFFFFF';
+  ctx.font='24px monospace';
+  ctx.textBaseline='top';
+  ctx.fillText('Score: '+score,20,20);
+}
+
+function move(x){
+  paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));
+}
+
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Rain Catch Game</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id=c></canvas>
+<script>
+const c=document.getElementById('c'), ctx=c.getContext('2d');
+let W,H;
+function resize(){
+  W=c.width=innerWidth;
+  H=c.height=innerHeight;
+  initStars();
+}
+resize();
+onresize=resize;
+
+let score=0;
+let drops=[];
+let particles=[];
+let stars=[];
+const paddle={x:W/2,w:80,h:20};
+
+function initStars(){
+  stars=[];
+  for(let i=0;i<80;i++){
+    stars.push({
+      x:Math.random()*W,
+      y:Math.random()*H,
+      radius:Math.random()*1.7+0.3,
+      alpha:Math.random(),
+      twinkle:Math.random()<0.4
+    });
+  }
+}
+
+function spawn(){
+  drops.push({
+    x:Math.random()*(W-40)+20,
+    y:-30,
+    r:15,
+    speed:2+Math.random()*2,
+    color:'#88cfff'
+  });
+}
+
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  drops=drops.filter(d=>{
+    if(d.y>H-50&&d.y<H-20&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;
+      // spawn particles
+      for(let i=0;i<12;i++){
+        const ang=Math.random()*2*Math.PI;
+        const spd=Math.random()*2+1;
+        particles.push({
+          x:d.x,
+          y:d.y,
+          vx:Math.cos(ang)*spd,
+          vy:Math.sin(ang)*spd,
+          life:20,
+          size:2
+        });
+      }
+      return false;
+    }
+    return d.y<H+50;
+  });
+  if(Math.random()<0.02)spawn();
+
+  // particles update
+  particles.forEach(p=>{p.x+=p.vx; p.y+=p.vy; p.life-=1;});
+  particles=particles.filter(p=>p.life>0);
+
+  // stars twinkle
+  stars.forEach(st=>{
+    if(st.twinkle && Math.random()<0.02) st.alpha = st.alpha>0.5?0:1;
+  });
+}
+
+function draw(){
+  // background gradient
+  const bg = ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#87CEFA');
+  bg.addColorStop(1,'#0d1b2a');
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+
+  // stars
+  stars.forEach(st=>{
+    ctx.fillStyle='rgba(255,255,255,'+st.alpha+')';
+    ctx.beginPath();
+    ctx.arc(st.x, st.y, st.radius, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // drops
+  drops.forEach(d=>{
+    // drop circle
+    ctx.fillStyle=d.color;
+    ctx.beginPath();
+    ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+    ctx.fill();
+    // sparkle on drop
+    ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.beginPath();
+    ctx.arc(d.x+Math.random()*4-2,d.y+Math.random()*4-2,2,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // particles
+  particles.forEach(p=>{
+    ctx.fillStyle='rgba(255,255,255,'+p.life/20+')';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // bucket (paddle)
+  const bucketGrad=ctx.createLinearGradient(0,paddle.y-paddle.h/2,0,paddle.y+paddle.h/2);
+  bucketGrad.addColorStop(0,'#5a3d2c');
+  bucketGrad.addColorStop(1,'#c69e4e');
+  ctx.fillStyle=bucketGrad;
+  ctx.fillRect(paddle.x-paddle.w/2,paddle.y-paddle.h/2,paddle.w,paddle.h);
+  // bucket shine
+  const shine=ctx.createLinearGradient(0,paddle.y-paddle.h/2,0,paddle.y-paddle.h/2+5);
+  shine.addColorStop(0,'rgba(255,255,255,0.3)');
+  shine.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=shine;
+  ctx.fillRect(paddle.x-paddle.w/2,paddle.y-paddle.h/2,paddle.w,5);
+
+  // score text with glow
+  ctx.font='28px sans-serif';
+  ctx.fillStyle='#fff';
+  ctx.textAlign='left';
+  ctx.fillText('Score: '+score, 20, 40);
+  ctx.strokeStyle='rgba(0,128,255,0.6)';
+  ctx.lineWidth=3;
+  ctx.strokeText('Score: '+score,20,40);
+}
+
+function move(x){
+  paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));
+}
+
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);}
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

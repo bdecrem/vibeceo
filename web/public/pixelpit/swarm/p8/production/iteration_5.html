@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🍁 Autumn Catch</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{margin:0;background:#2a1508;overflow:hidden;touch-action:none}
+canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+var c=document.getElementById('c');
+var ctx=c.getContext('2d');
+var W=c.width=window.innerWidth;
+var H=c.height=window.innerHeight;
+
+window.onresize=function(){
+  W=c.width=window.innerWidth;
+  H=c.height=window.innerHeight;
+  basket.y=H-90;
+  basket.w=Math.min(170,W*0.32);
+};
+
+// Game state
+var score=0;
+var highScore=0;
+var gameTime=0;
+var comboCount=0;
+var lastCatchTime=0;
+var leaves=[];
+var particles=[];
+var scorePops=[];
+var trails=[];
+var bgLeaves=[]; // Background floating leaves
+var shakeX=0,shakeY=0,shakeIntensity=0;
+var windForce=0;
+var windGusts=[];
+
+try{highScore=parseInt(localStorage.getItem('autumnHS'))||0;}catch(e){}
+
+// Basket
+var basket={
+  x:W/2,
+  y:H-90,
+  targetX:W/2,
+  w:Math.min(170,W*0.32),
+  h:55
+};
+
+// Audio
+var audioCtx=null;
+function initAudio(){
+  if(!audioCtx){
+    try{
+      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx.state==='suspended')audioCtx.resume();
+    }catch(e){}
+  }
+}
+
+function playSound(type){
+  if(!audioCtx)return;
+  try{
+    if(type==='catch'){
+      var osc=audioCtx.createOscillator();
+      var gain=audioCtx.createGain();
+      osc.connect(gain);gain.connect(audioCtx.destination);
+      osc.type='sine';
+      osc.frequency.setValueAtTime(523,audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880,audioCtx.currentTime+0.08);
+      gain.gain.setValueAtTime(0.18,audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.1);
+      osc.start();osc.stop(audioCtx.currentTime+0.1);
+    }else if(type==='combo'){
+      [523,659,784,1047].forEach(function(f,i){
+        var o=audioCtx.createOscillator();
+        var g=audioCtx.createGain();
+        o.connect(g);g.connect(audioCtx.destination);
+        o.type='sine';o.frequency.value=f;
+        g.gain.setValueAtTime(0,audioCtx.currentTime+i*0.04);
+        g.gain.linearRampToValueAtTime(0.12,audioCtx.currentTime+i*0.04+0.02);
+        g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+i*0.04+0.08);
+        o.start(audioCtx.currentTime+i*0.04);
+        o.stop(audioCtx.currentTime+i*0.04+0.1);
+      });
+    }else if(type==='mega'){
+      [523,784,1047,1318].forEach(function(f,i){
+        var o=audioCtx.createOscillator();
+        var g=audioCtx.createGain();
+        o.connect(g);g.connect(audioCtx.destination);
+        o.type='triangle';o.frequency.value=f;
+        g.gain.setValueAtTime(0,audioCtx.currentTime+i*0.03);
+        g.gain.linearRampToValueAtTime(0.15,audioCtx.currentTime+i*0.03+0.02);
+        g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+i*0.03+0.12);
+        o.start(audioCtx.currentTime+i*0.03);
+        o.stop(audioCtx.currentTime+i*0.03+0.15);
+      });
+    }
+  }catch(e){}
+}
+
+// Leaf colors with point values
+var leafTypes=[
+  {fill:'#ff3300',stroke:'#cc2200',points:1,name:'Red Maple'},
+  {fill:'#ff6600',stroke:'#cc5200',points:1,name:'Orange'},
+  {fill:'#ff9900',stroke:'#cc7a00',points:1,name:'Golden'},
+  {fill:'#ffcc00',stroke:'#cca300',points:2,name:'Gold Rare'},
+  {fill:'#cc3300',stroke:'#992600',points:1,name:'Crimson'},
+  {fill:'#dd5500',stroke:'#aa4400',points:1,name:'Rust'},
+  {fill:'#ee7700',stroke:'#bb5f00',points:1,name:'Amber'},
+  {fill:'#FFD700',stroke:'#DAA520',points:3,name:'Golden Leaf'} // Rare golden leaf!
+];
+
+function spawnLeaf(startY){
+  // Rare golden leaf chance
+  var typeIndex;
+  if(Math.random()<0.05){
+    typeIndex=7; // Golden rare
+  }else if(Math.random()<0.15){
+    typeIndex=3; // Gold
+  }else{
+    typeIndex=Math.floor(Math.random()*7);
+  }
+  var col=leafTypes[typeIndex];
+  var size=28+Math.random()*45;
+  
+  leaves.push({
+    x:50+Math.random()*(W-100),
+    y:startY!==undefined?startY:-60-Math.random()*100,
+    size:size,
+    speed:2+Math.random()*4,
+    color:col,
+    points:col.points,
+    angle:Math.random()*Math.PI*2,
+    rotSpeed:(Math.random()-0.5)*0.25,
+    wobble:Math.random()*Math.PI*2,
+    wobbleSpeed:0.04+Math.random()*0.06,
+    wobbleAmp:35+Math.random()*60,
+    chaos:Math.random()*1000,
+    type:Math.floor(Math.random()*4),
+    flip:Math.random()*Math.PI*2,
+    flipSpeed:(Math.random()-0.5)*0.12,
+    isGolden:typeIndex>=7
+  });
+}
+
+// Spawn background decorative leaves
+for(var i=0;i<12;i++){
+  bgLeaves.push({
+    x:Math.random()*W,
+    y:Math.random()*H,
+    size:8+Math.random()*15,
+    speed:0.3+Math.random()*0.8,
+    color:leafTypes[Math.floor(Math.random()*7)],
+    angle:Math.random()*Math.PI*2,
+    rotSpeed:(Math.random()-0.5)*0.03
+  });
+}
+
+// Spawn starting leaves
+for(var i=0;i<7;i++){
+  spawnLeaf(Math.random()*H*0.5);
+}
+
+function drawLeaf(leaf,alpha){
+  ctx.save();
+  ctx.translate(leaf.x,leaf.y);
+  ctx.rotate(leaf.angle);
+  var scaleX=0.5+Math.abs(Math.cos(leaf.flip||0))*0.5;
+  ctx.scale(scaleX||1,1);
+  if(alpha)ctx.globalAlpha=alpha;
+  
+  // Golden glow for rare leaves
+  if(leaf.isGolden){
+    ctx.shadowColor='#FFD700';
+    ctx.shadowBlur=25;
+  }else{
+    ctx.shadowColor=leaf.color.fill;
+    ctx.shadowBlur=12;
+  }
+  
+  ctx.beginPath();
+  var s=leaf.size;
+  var t=leaf.type||0;
+  
+  if(t===0){
+    // Maple style
+    ctx.moveTo(0,-s);
+    ctx.bezierCurveTo(s*0.5,-s*0.5,s*1.1,-s*0.1,s*0.7,s*0.2);
+    ctx.bezierCurveTo(s*1.2,s*0.5,s*0.8,s*0.9,s*0.35,s*0.65);
+    ctx.quadraticCurveTo(0,s*1.15,0,s*0.85);
+    ctx.quadraticCurveTo(0,s*1.15,-s*0.35,s*0.65);
+    ctx.bezierCurveTo(-s*0.8,s*0.9,-s*1.2,s*0.5,-s*0.7,s*0.2);
+    ctx.bezierCurveTo(-s*1.1,-s*0.1,-s*0.5,-s*0.5,0,-s);
+  }else if(t===1){
+    // Oval leaf
+    ctx.ellipse(0,0,s*0.55,s*0.9,0,0,Math.PI*2);
+  }else if(t===2){
+    // Pointed leaf
+    ctx.moveTo(0,-s);
+    ctx.quadraticCurveTo(s*0.75,0,s*0.45,s*0.55);
+    ctx.quadraticCurveTo(0,s*1.05,0,s*0.85);
+    ctx.quadraticCurveTo(0,s*1.05,-s*0.45,s*0.55);
+    ctx.quadraticCurveTo(-s*0.75,0,0,-s);
+  }else{
+    // Oak style
+    ctx.moveTo(0,-s*0.9);
+    for(var i=0;i<5;i++){
+      var ang=(-0.4+i*0.2)*Math.PI;
+      var lx=Math.sin(ang*0.8)*s*0.7;
+      var ly=-s*0.9+i*s*0.4;
+      ctx.quadraticCurveTo(lx*1.5,ly,lx*0.5,ly+s*0.15);
+    }
+    ctx.lineTo(0,s*0.9);
+    for(var i=4;i>=0;i--){
+      var ang=(-0.4+i*0.2)*Math.PI;
+      var lx=-Math.sin(ang*0.8)*s*0.7;
+      var ly=-s*0.9+i*s*0.4;
+      ctx.quadraticCurveTo(lx*1.5,ly+s*0.15,lx*0.5,ly);
+    }
+    ctx.closePath();
+  }
+  
+  var grad=ctx.createRadialGradient(s*0.2,-s*0.25,0,0,0,s*1.1);
+  grad.addColorStop(0,leaf.color.fill);
+  grad.addColorStop(0.7,leaf.color.fill);
+  grad.addColorStop(1,leaf.color.stroke);
+  ctx.fillStyle=grad;
+  ctx.fill();
+  
+  ctx.shadowBlur=0;
+  ctx.strokeStyle=leaf.color.stroke;
+  ctx.lineWidth=2;
+  ctx.stroke();
+  
+  // Vein
+  ctx.beginPath();
+  ctx.moveTo(0,-s*0.65);
+  ctx.lineTo(0,s*0.75);
+  ctx.moveTo(0,-s*0.2);ctx.lineTo(s*0.3,s*0.05);
+  ctx.moveTo(0,-s*0.2);ctx.lineTo(-s*0.3,s*0.05);
+  ctx.moveTo(0,s*0.25);ctx.lineTo(s*0.25,s*0.45);
+  ctx.moveTo(0,s*0.25);ctx.lineTo(-s*0.25,s*0.45);
+  ctx.strokeStyle='rgba(255,255,255,0.35)';
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+  
+  ctx.restore();
+}
+
+function burstParticles(leaf){
+  shakeIntensity=leaf.isGolden?18:12;
+  var count=leaf.isGolden?40:28;
+  
+  for(var i=0;i<count;i++){
+    var ang=Math.random()*Math.PI*2;
+    var spd=5+Math.random()*12;
+    particles.push({
+      x:leaf.x,y:leaf.y,
+      vx:Math.cos(ang)*spd+(Math.random()-0.5)*6,
+      vy:Math.sin(ang)*spd-Math.random()*8,
+      life:55+Math.random()*35,
+      size:5+Math.random()*leaf.size*0.45,
+      color:leaf.color.fill,
+      rot:Math.random()*Math.PI*2,
+      rotSpd:(Math.random()-0.5)*0.3
+    });
+  }
+  
+  // Sparkles
+  var sparkCount=leaf.isGolden?20:12;
+  for(var i=0;i<sparkCount;i++){
+    var ang=(i/sparkCount)*Math.PI*2;
+    particles.push({
+      x:leaf.x,y:leaf.y,
+      vx:Math.cos(ang)*(leaf.isGolden?12:9),
+      vy:Math.sin(ang)*(leaf.isGolden?12:9)-3,
+      life:leaf.isGolden?40:28,
+      size:leaf.isGolden?10:7,
+      color:leaf.isGolden?'#FFD700':'#ffdd00',
+      rot:0,sparkle:true
+    });
+  }
+  
+  // Ring burst
+  for(var i=0;i<16;i++){
+    var ang=(i/16)*Math.PI*2;
+    particles.push({
+      x:leaf.x+Math.cos(ang)*40,
+      y:leaf.y+Math.sin(ang)*40,
+      vx:Math.cos(ang)*2,
+      vy:Math.sin(ang)*2,
+      life:18,size:5,
+      color:'#ffffff',
+      rot:0,ring:true
+    });
+  }
+}
+
+function addScorePop(x,y,pts,combo,golden){
+  scorePops.push({
+    x:x,y:y,pts:pts,combo:combo,golden:golden,
+    life:80,vy:-4.5,scale:0,rotation:(Math.random()-0.5)*0.15
+  });
+}
+
+function drawBasket(){
+  var x=basket.x,y=basket.y,w=basket.w,h=basket.h;
+  
+  ctx.save();
+  ctx.translate(x,y);
+  
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.45)';
+  ctx.beginPath();
+  ctx.ellipse(10,h+12,w/2+12,20,0,0,Math.PI*2);
+  ctx.fill();
+  
+  // Basket body
+  var grad=ctx.createLinearGradient(-w/2,-h*0.2,w/2,h*1.1);
+  grad.addColorStop(0,'#D2691E');
+  grad.addColorStop(0.25,'#CD853F');
+  grad.addColorStop(0.5,'#B8733D');
+  grad.addColorStop(0.75,'#A0522D');
+  grad.addColorStop(1,'#704020');
+  
+  ctx.beginPath();
+  ctx.moveTo(-w/2,0);
+  ctx.bezierCurveTo(-w/2-18,h*0.5,-w/2+28,h+5,-w/2+32,h);
+  ctx.lineTo(w/2-32,h);
+  ctx.bezierCurveTo(w/2-28,h+5,w/2+18,h*0.5,w/2,0);
+  ctx.closePath();
+  ctx.fillStyle=grad;
+  ctx.fill();
+  ctx.strokeStyle='#4A2A15';
+  ctx.lineWidth=5;
+  ctx.stroke();
+  
+  // Weave pattern - horizontal
+  ctx.strokeStyle='rgba(55,30,15,0.65)';
+  ctx.lineWidth=2.5;
+  for(var i=1;i<7;i++){
+    var yy=i*h/6;
+    var shrink=i*4;
+    ctx.beginPath();
+    ctx.moveTo(-w/2+12+shrink,yy);
+    ctx.lineTo(w/2-12-shrink,yy);
+    ctx.stroke();
+  }
+  
+  // Weave pattern - vertical
+  ctx.lineWidth=2;
+  for(var i=0;i<12;i++){
+    var xx=-w/2+28+i*(w-56)/11;
+    ctx.beginPath();
+    ctx.moveTo(xx,6);
+    ctx.bezierCurveTo(xx+(i%2?10:-10),h*0.4,xx+(i%2?-10:10),h*0.65,xx,h-7);
+    ctx.stroke();
+  }
+  
+  // Rim highlight
+  ctx.beginPath();
+  ctx.ellipse(0,0,w/2+7,17,0,0,Math.PI*2);
+  var rimGrad=ctx.createLinearGradient(-w/2,-17,w/2,17);
+  rimGrad.addColorStop(0,'#8B5A2B');
+  rimGrad.addColorStop(0.3,'#DEB887');
+  rimGrad.addColorStop(0.5,'#F5DEB3');
+  rimGrad.addColorStop(0.7,'#DEB887');
+  rimGrad.addColorStop(1,'#8B5A2B');
+  ctx.fillStyle=rimGrad;
+  ctx.fill();
+  ctx.strokeStyle='#4A2A15';
+  ctx.lineWidth=3;
+  ctx.stroke();
+  
+  // Inner shadow
+  ctx.beginPath();
+  ctx.ellipse(0,7,w/2-14,11,0,0,Math.PI);
+  ctx.fillStyle='rgba(0,0,0,0.5)';
+  ctx.fill();
+  
+  ctx.restore();
+}
+
+function updateWind(){
+  // Random gusts
+  if(Math.random()<0.04){
+    windGusts.push({
+      strength:(Math.random()-0.5)*18,
+      duration:30+Math.random()*50,
+      life:0
+    });
+  }
+  for(var i=windGusts.length-1;i>=0;i--){
+    windGusts[i].life++;
+    if(windGusts[i].life>=windGusts[i].duration){
+      windGusts.splice(i,1);
+    }
+  }
+  
+  // Calculate total wind
+  windForce=Math.sin(gameTime*0.008)*2.5;
+  for(var i=0;i<windGusts.length;i++){
+    var g=windGusts[i];
+    var progress=g.life/g.duration;
+    windForce+=g.strength*Math.sin(progress*Math.PI);
+  }
+}
+
+function update(){
+  gameTime++;
+  updateWind();
+  
+  // Shake decay
+  shakeX=(Math.random()-0.5)*shakeIntensity;
+  shakeY=(Math.random()-0.5)*shakeIntensity;
+  shakeIntensity*=0.85;
+  
+  // Smooth basket
+  basket.x+=(basket.targetX-basket.x)*0.22;
+  
+  // Spawn - chaotic bursts
+  var spawnRate=0.038;
+  if(Math.sin(gameTime*0.012)>0.4)spawnRate=0.13;
+  if(Math.random()<spawnRate)spawnLeaf();
+  
+  // Update background leaves
+  for(var i=0;i<bgLeaves.length;i++){
+    var bl=bgLeaves[i];
+    bl.y+=bl.speed;
+    bl.angle+=bl.rotSpeed;
+    bl.x+=Math.sin(gameTime*0.01+i)*0.5+windForce*0.15;
+    if(bl.y>H+20){bl.y=-20;bl.x=Math.random()*W;}
+  }
+  
+  // Update leaves
+  for(var i=leaves.length-1;i>=0;i--){
+    var L=leaves[i];
+    L.y+=L.speed;
+    L.angle+=L.rotSpeed;
+    L.flip+=L.flipSpeed;
+    L.wobble+=L.wobbleSpeed;
+    
+    // Chaotic motion
+    var wx=Math.sin(L.wobble)*L.wobbleAmp*0.13;
+    var cx=Math.sin(gameTime*0.025+L.chaos)*6;
+    var turb=Math.sin(L.y*0.01+L.chaos)*3;
+    L.x+=wx+windForce*0.6+cx+turb;
+    
+    // Random speed changes
+    if(Math.random()<0.008)L.speed+=(Math.random()-0.5)*1.5;
+    L.speed=Math.max(1.5,Math.min(7,L.speed));
+    
+    // Bounce off walls
+    if(L.x<L.size){L.x=L.size;L.rotSpeed*=-0.9;}
+    if(L.x>W-L.size){L.x=W-L.size;L.rotSpeed*=-0.9;}
+    
+    // Trail
+    if(gameTime%3===0){
+      trails.push({x:L.x,y:L.y,size:L.size*0.3,color:L.color.fill,life:10});
+    }
+    
+    // Check catch
+    if(L.y>basket.y-22&&L.y<basket.y+45){
+      if(Math.abs(L.x-basket.x)<basket.w/2+L.size*0.45){
+        var now=Date.now();
+        if(now-lastCatchTime<650)comboCount++;
+        else comboCount=1;
+        lastCatchTime=now;
+        
+        var pts=L.points*comboCount;
+        score+=pts;
+        if(score>highScore){
+          highScore=score;
+          try{localStorage.setItem('autumnHS',highScore);}catch(e){}
+        }
+        
+        burstParticles(L);
+        addScorePop(L.x,L.y-35,pts,comboCount>1,L.isGolden);
+        
+        if(L.isGolden)playSound('mega');
+        else if(comboCount>2)playSound('combo');
+        else playSound('catch');
+        
+        leaves.splice(i,1);
+        continue;
+      }
+    }
+    
+    if(L.y>H+100){
+      comboCount=0;
+      leaves.splice(i,1);
+    }
+  }
+  
+  // Update trails
+  for(var i=trails.length-1;i>=0;i--){
+    trails[i].life--;
+    if(trails[i].life<=0)trails.splice(i,1);
+  }
+  
+  // Update particles
+  for(var i=particles.length-1;i>=0;i--){
+    var p=particles[i];
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.vy+=0.32;
+    p.vx*=0.96;
+    p.rot+=p.rotSpd||0;
+    p.life--;
+    if(p.life<=0)particles.splice(i,1);
+  }
+  
+  // Update score pops
+  for(var i=scorePops.length-1;i>=0;i--){
+    var sp=scorePops[i];
+    sp.y+=sp.vy;
+    sp.vy*=0.9;
+    sp.life--;
+    sp.scale=Math.min(1.3,sp.scale+0.18);
+    if(sp.life<22)sp.scale*=0.93;
+    if(sp.life<=0)scorePops.splice(i,1);
+  }
+}
+
+function draw(){
+  // Background gradient
+  var bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#ff4400');
+  bg.addColorStop(0.2,'#ff6622');
+  bg.addColorStop(0.45,'#ff8844');
+  bg.addColorStop(0.7,'#cc7744');
+  bg.addColorStop(1,'#553322');
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+  
+  // Sun glow
+  var sun=ctx.createRadialGradient(W*0.72,H*0.08,0,W*0.72,H*0.08,220);
+  sun.addColorStop(0,'rgba(255,235,160,0.8)');
+  sun.addColorStop(0.4,'rgba(255,200,80,0.3)');
+  sun.addColorStop(1,'rgba(255,150,0,0)');
+  ctx.fillStyle=sun;
+  ctx.fillRect(0,0,W,H);
+  
+  // Far hills
+  ctx.fillStyle='rgba(70,40,25,0.55)';
+  ctx.beginPath();
+  ctx.moveTo(0,H);
+  for(var x=0;x<=W;x+=40){
+    ctx.lineTo(x,H-170-Math.sin(x*0.009)*65-Math.sin(x*0.018)*30);
+  }
+  ctx.lineTo(W,H);
+  ctx.fill();
+  
+  // Background leaves (parallax)
+  for(var i=0;i<bgLeaves.length;i++){
+    drawLeaf(bgLeaves[i],0.25);
+  }
+  
+  // Trees
+  ctx.fillStyle='rgba(45,28,15,0.75)';
+  var treeX=[W*0.08,W*0.25,W*0.42,W*0.58,W*0.75,W*0.92];
+  for(var i=0;i<treeX.length;i++){
+    var tx=treeX[i];
+    var th=130+Math.sin(i*2.3)*45;
+    var tw=55+Math.sin(i*1.8)*20;
+    
+    // Trunk
+    ctx.fillRect(tx-8,H-th*0.35,16,th*0.35+10);
+    
+    // Crown
+    ctx.beginPath();
+    ctx.moveTo(tx-tw*0.6,H-th*0.25);
+    ctx.quadraticCurveTo(tx-tw*0.7,H-th*0.6,tx-tw*0.35,H-th*0.7);
+    ctx.quadraticCurveTo(tx-tw*0.4,H-th*0.95,tx,H-th);
+    ctx.quadraticCurveTo(tx+tw*0.4,H-th*0.95,tx+tw*0.35,H-th*0.7);
+    ctx.quadraticCurveTo(tx+tw*0.7,H-th*0.6,tx+tw*0.6,H-th*0.25);
+    ctx.fill();
+  }
+  
+  // Ground
+  var gnd=ctx.createLinearGradient(0,H-50,0,H);
+  gnd.addColorStop(0,'#5d4037');
+  gnd.addColorStop(1,'#3e2723');
+  ctx.fillStyle=gnd;
+  ctx.fillRect(0,H-45,W,45);
+  
+  // Ground texture
+  ctx.fillStyle='rgba(80,50,30,0.35)';
+  for(var i=0;i<15;i++){
+    ctx.beginPath();
+    ctx.ellipse(i*W/14+Math.sin(i)*20,H-18+Math.sin(i*1.5)*8,18+Math.random()*12,5,0,0,Math.PI*2);
+    ctx.fill();
+  }
+  
+  ctx.save();
+  ctx.translate(shakeX,shakeY);
+  
+  // Draw trails
+  for(var i=0;i<trails.length;i++){
+    var t=trails[i];
+    ctx.globalAlpha=t.life/10*0.45;
+    ctx.fillStyle=t.color;
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,t.size,0,Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  
+  // Draw particles
+  for(var i=0;i<particles.length;i++){
+    var p=particles[i];
+    var alpha=p.life/(p.sparkle?28:55);
+    ctx.globalAlpha=alpha;
+    
+    if(p.sparkle){
+      ctx.fillStyle=p.color;
+      ctx.shadowColor=p.color;
+      ctx.shadowBlur=15;
+      ctx.beginPath();
+      // Star shape for sparkles
+      var starSize=p.size*alpha;
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(gameTime*0.1);
+      ctx.beginPath();
+      for(var j=0;j<5;j++){
+        var ang=(j/5)*Math.PI*2-Math.PI/2;
+        var r=j%2===0?starSize:starSize*0.4;
+        if(j===0)ctx.moveTo(Math.cos(ang)*r,Math.sin(ang)*r);
+        else ctx.lineTo(Math.cos(ang)*r,Math.sin(ang)*r);
+        ang+=Math.PI/5;
+        r=j%2===0?starSize*0.4:starSize;
+        ctx.lineTo(Math.cos(ang)*r,Math.sin(ang)*r);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      ctx.shadowBlur=0;
+    }else if(p.ring){
+      ctx.strokeStyle=p.color;
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      ctx.stroke();
+    }else{
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle=p.color;
+      ctx.beginPath();
+      ctx.ellipse(0,0,p.size*0.45,p.size*0.75,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.globalAlpha=1;
+  
+  // Draw leaves
+  for(var i=0;i<leaves.length;i++){
+    drawLeaf(leaves[i]);
+  }
+  
+  // Draw basket
+  drawBasket();
+  
+  // Draw score pops
+  for(var i=0;i<scorePops.length;i++){
+    var sp=scorePops[i];
+    ctx.globalAlpha=Math.min(1,sp.life/22);
+    ctx.save();
+    ctx.translate(sp.x,sp.y);
+    ctx.rotate(sp.rotation);
+    ctx.scale(sp.scale,sp.scale);
+    
+    var txt=sp.combo?'+'+sp.pts+' COMBO!':'+'+sp.pts;
+    if(sp.golden)txt='⭐ +'+sp.pts+' ⭐';
+    ctx.font='bold 46px Georgia';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    
+    ctx.shadowColor=sp.golden?'#FFD700':(sp.combo?'#ff4400':'#ffaa00');
+    ctx.shadowBlur=25;
+    ctx.strokeStyle='#2a1508';
+    ctx.lineWidth=8;
+    ctx.strokeText(txt,0,0);
+    ctx.fillStyle=sp.golden?'#FFD700':(sp.combo?'#ff6633':'#ffffff');
+    ctx.fillText(txt,0,0);
+    
+    ctx.restore();
+    ctx.shadowBlur=0;
+  }
+  ctx.globalAlpha=1;
+  
+  ctx.restore();
+  
+  // UI Panel
+  ctx.fillStyle='rgba(25,12,5,0.8)';
+  ctx.beginPath();
+  ctx.roundRect(12,12,215,88,16);
+  ctx.fill();
+  ctx.strokeStyle='rgba(255,180,80,0.7)';
+  ctx.lineWidth=3;
+  ctx.stroke();
+  
+  // Label
+  ctx.fillStyle='#ffcc44';
+  ctx.font='bold 15px Georgia';
+  ctx.textAlign='left';
+  ctx.fillText('🍁 LEAVES CAUGHT',25,38);
+  
+  // Score with glow
+  ctx.font='bold 44px Georgia';
+  ctx.fillStyle='#ffffff';
+  ctx.shadowColor='#ff6600';
+  ctx.shadowBlur=15;
+  ctx.fillText(score,25,82);
+  ctx.shadowBlur=0;
+  
+  // High score
+  ctx.font='15px Georgia';
+  ctx.fillStyle='rgba(255,220,150,0.85)';
+  ctx.fillText('Best: '+highScore,140,82);
+  
+  // Combo indicator
+  if(comboCount>1){
+    var pulse=1+Math.sin(gameTime*0.22)*0.12;
+    ctx.save();
+    ctx.translate(W-88,58);
+    ctx.scale(pulse,pulse);
+    
+    var comboGrad=ctx.createLinearGradient(-62,-40,62,40);
+    comboGrad.addColorStop(0,'rgba(255,80,20,0.95)');
+    comboGrad.addColorStop(1,'rgba(200,50,10,0.95)');
+    ctx.fillStyle=comboGrad;
+    ctx.beginPath();
+    ctx.roundRect(-62,-42,124,84,16);
+    ctx.fill();
+    ctx.strokeStyle='#ffcc00';
+    ctx.lineWidth=4;
+    ctx.stroke();
+    
+    ctx.fillStyle='#ffffff';
+    ctx.font='bold 14px Georgia';
+    ctx.textAlign='center';
+    ctx.fillText('🔥 COMBO 🔥',0,-14);
+    ctx.font='bold 36px Georgia';
+    ctx.shadowColor='#ffcc00';
+    ctx.shadowBlur=10;
+    ctx.fillText('x'+comboCount,0,28);
+    ctx.shadowBlur=0;
+    ctx.restore();
+  }
+  
+  // Instructions fade
+  if(gameTime<160){
+    ctx.globalAlpha=(160-gameTime)/160;
+    ctx.fillStyle='rgba(0,0,0,0.6)';
+    ctx.beginPath();
+    ctx.roundRect(W/2-180,H-135,360,40,10);
+    ctx.fill();
+    ctx.fillStyle='#ffffff';
+    ctx.font='18px Georgia';
+    ctx.textAlign='center';
+    ctx.fillText('Move mouse or touch to catch leaves!',W/2,H-108);
+    ctx.globalAlpha=1;
+  }
+}
+
+// Input
+function moveBasket(clientX){
+  initAudio();
+  basket.targetX=Math.max(basket.w/2+18,Math.min(W-basket.w/2-18,clientX));
+}
+
+c.addEventListener('mousemove',function(e){moveBasket(e.clientX);});
+c.addEventListener('touchmove',function(e){e.preventDefault();moveBasket(e.touches[0].clientX);},{passive:false});
+c.addEventListener('touchstart',function(e){e.preventDefault();initAudio();moveBasket(e.touches[0].clientX);},{passive:false});
+c.addEventListener('click',initAudio);
+
+// Game loop
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

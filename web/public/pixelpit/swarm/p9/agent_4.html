@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Snowflake Catch</title>
+<style>
+  body{margin:0;background:#001122;overflow:hidden;touch-action:none;font-family:"Press Start 2P",monospace}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0,drops=[],paddle={x:W/2,w:80,h:20};
+let effects=[];
+
+// snowflake spawn
+function spawn(){drops.push({x:Math.random()*(W-40)+20,y:-30,r:15,speed:2+Math.random()*2,color:'#fff'});}
+
+// update logic
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  drops=drops.filter(d=>{
+    if(d.y>H-50&&d.y<H-20&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;
+      effects.push({x:d.x,y:d.y,age:0,maxAge:10});
+      return false;
+    }
+    return d.y<H+50;
+  });
+  if(Math.random()<0.02)spawn();
+  effects.forEach(e=>e.age++);
+  effects=effects.filter(e=>e.age<=e.maxAge);
+}
+
+// draw everything
+function draw(){
+  ctx.fillStyle='#001122';ctx.fillRect(0,0,W,H);
+  
+  // snowflakes
+  drops.forEach(d=>{
+    ctx.fillStyle=d.color;
+    ctx.beginPath();
+    ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+    ctx.fill();
+  });
+  
+  // catch effects
+  effects.forEach(e=>{
+    ctx.fillStyle='#fff';
+    let scale=1-(e.age/e.maxAge);
+    ctx.beginPath();
+    ctx.arc(e.x,e.y,8*scale,0,Math.PI*2);
+    ctx.fill();
+  });
+  
+  // mittens
+  ctx.fillStyle='#aaaaaa';
+  ctx.fillRect(paddle.x-paddle.w/2,H-40,paddle.w,paddle.h);
+  ctx.fillStyle='#444444';
+  ctx.beginPath();
+  ctx.arc(paddle.x-paddle.w/4,H-30,10,0,Math.PI*2);
+  ctx.arc(paddle.x+paddle.w/4,H-30,10,0,Math.PI*2);
+  ctx.fill();
+  
+  // score text
+  ctx.fillStyle='#fff';
+  ctx.font='20px "Press Start 2P",monospace';
+  ctx.fillText('Score: '+score,20,40);
+}
+
+// paddle movement
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

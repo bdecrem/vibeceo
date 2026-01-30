@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Golden Star Catch</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none}
+  canvas{display:block}
+  #score{position:absolute;top:20px;left:20px;color:#fff;font-family:Arial,sans-serif;font-size:28px;text-shadow:0 0 8px #ffdd00}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="score">Score: 0</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+let W,H;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}
+resize();onresize=resize;
+
+let score=0;
+const drops=[];
+const sparks=[];
+const paddle={x:W/2,w:120,h:30};
+
+function spawn(){
+  const r=12;
+  drops.push({
+    id:Date.now()+Math.random(),
+    x:Math.random()*(W-2*r)+r,
+    y:-30,
+    r,
+    speed:2+Math.random()*2,
+    color:'#ffd700',
+    angle:Math.random()*Math.PI*2
+  });
+}
+
+function update(){
+  const toRemove=[];
+  drops.forEach(d=>{
+    d.y+=d.speed;
+    d.angle+=0.02;
+    if(d.y>H-50&&d.y<H-20&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++; document.getElementById('score').textContent='Score: '+score;
+      sparks.push({x:d.x,y:d.y,r:0,alpha:1});
+      toRemove.push(d);
+    }
+  });
+  drops.splice(0, drops.length, ...drops.filter(d=>!toRemove.includes(d)));
+  sparks.forEach(s=>{s.alpha-=0.02; if(s.alpha<=0)s.alpha=0});
+  sparks.filter(s=>s.alpha>0);
+
+  if(Math.random()<0.02) spawn();
+}
+
+function draw(){
+  // background
+  const grd=ctx.createRadialGradient(W/2,H/2,W/2,0,0,0);
+  grd.addColorStop(0,'#0b0b0b');
+  grd.addColorStop(1,'#111111');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  // stars
+  drops.forEach(d=>{
+    ctx.save();
+    ctx.translate(d.x,d.y);
+    ctx.rotate(d.angle);
+    ctx.fillStyle=d.color;
+    ctx.beginPath();
+    for(let i=0;i<5;i++){
+      ctx.lineTo(0,0);
+      ctx.translate(d.r,0);
+      ctx.rotate(Math.PI/5);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // sparks
+  sparks.forEach(s=>{
+    const grad=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r);
+    grad.addColorStop(0,'rgba(255, 221, 0, '+s.alpha+')');
+    grad.addColorStop(1,'rgba(255, 221, 0, 0)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r+=0.5,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // paddle / net
+  ctx.fillStyle='rgba(255,255,255,0.1)';
+  ctx.strokeStyle='rgba(255,255,255,0.4)';
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(paddle.x-paddle.w/2,paddle.y=H-35);
+  ctx.lineTo(paddle.x,paddle.y-30);
+  ctx.lineTo(paddle.x+paddle.w/2,paddle.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // optional slight glow around paddle
+  ctx.shadowBlur=20; ctx.shadowColor='#ffdd00'; 
+  ctx.beginPath();ctx.arc(paddle.x,paddle.y-30,paddle.w/2,0,Math.PI*2);ctx.fill();
+  ctx.shadowBlur=0;
+}
+
+function move(x){
+  paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));
+}
+canvas.addEventListener('mousemove',e=>move(e.clientX));
+canvas.addEventListener('touchmove',e=>{e.preventDefault();move(e.touches[0].clientX);});
+canvas.addEventListener('touchstart',e=>{e.preventDefault();move(e.touches[0].clientX);});
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

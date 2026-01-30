@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P9 Production Pipeline (Multi-Round)</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 20px;
+  background: #0a0a0f; color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+h1 { margin: 0 0 10px; font-size: 24px; color: #00ff88; }
+.status { color: #888; margin-bottom: 20px; font-size: 14px; }
+.status.exploration { color: #ffaa00; }
+.status.judging { color: #ff66aa; }
+.status.selection { color: #00ddff; }
+.status.production { color: #ff66aa; }
+.status.done { color: #00ff88; }
+
+.phase-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  background: #111118;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.phase {
+  padding: 10px 20px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #444;
+  border-bottom: 2px solid transparent;
+}
+.phase.active { color: #00ff88; border-bottom-color: #00ff88; background: #0a0a0f; }
+.phase.done { color: #666; }
+
+.triage {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  max-width: 1400px;
+}
+.column {
+  background: #111118;
+  border-radius: 12px;
+  padding: 15px;
+  min-height: 400px;
+}
+.column h2 {
+  margin: 0 0 15px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid;
+}
+.column.green h2 { color: #00ff88; border-color: #00ff88; }
+.column.yellow h2 { color: #ffaa00; border-color: #ffaa00; }
+.column.red h2 { color: #ff4466; border-color: #ff4466; }
+
+.cards { display: flex; flex-direction: column; gap: 10px; }
+
+.card {
+  background: #1a1a2e;
+  border-radius: 10px;
+  padding: 12px;
+  border: 2px solid #333;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.card:hover { transform: translateX(5px); }
+.card.winner {
+  border-color: #00ff88 !important;
+  box-shadow: 0 0 15px #00ff8844;
+}
+.card.winner::before {
+  content: "★ WINNER";
+  display: block;
+  font-size: 9px;
+  color: #00ff88;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.column.green .card { border-color: #00ff8844; }
+.column.yellow .card { border-color: #ffaa0044; }
+.column.red .card { border-color: #ff446644; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.card-name { font-weight: 600; font-size: 12px; }
+.card-round {
+  font-size: 9px;
+  color: #666;
+  background: #0a0a0f;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.card-maker {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.maker-avatar {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid #333;
+  transition: all 0.15s;
+  display: block;
+}
+.maker-avatar:hover {
+  border-color: #00ff88;
+  transform: scale(1.1);
+}
+.maker-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  color: #888;
+}
+.score { background: #0f0f1a; padding: 2px 6px; border-radius: 3px; }
+
+.screenshot-thumb {
+  width: 100%;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-top: 8px;
+  opacity: 0.7;
+}
+
+/* Pending area */
+.pending-area {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #111118;
+  border-radius: 12px;
+}
+.pending-area h3 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.pending-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pending-chip {
+  background: #1a1a2e;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #666;
+  border: 1px solid #333;
+}
+.pending-chip.running {
+  color: #ffaa00;
+  border-color: #ffaa00;
+  animation: pulse 1s infinite;
+}
+.pending-chip.judging {
+  color: #ff66aa;
+  border-color: #ff66aa;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Production box */
+.production-box {
+  margin-top: 20px;
+  padding: 20px;
+  background: #111118;
+  border: 2px solid #00ff8844;
+  border-radius: 12px;
+}
+.production-box h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #00ff88;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.production-status { font-size: 13px; color: #888; }
+.production-link {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 10px 20px;
+  background: #00ff88;
+  color: #000;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.production-link:hover { background: #00dd77; }
+
+.preview {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.95);
+  display: none;
+  z-index: 100;
+}
+.preview.active { display: flex; flex-direction: column; }
+.preview-header {
+  padding: 15px 20px;
+  background: #1a1a2e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+.preview-title { font-weight: 600; }
+.preview-btn {
+  background: #333;
+  border: none;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.preview-btn.close { background: #ff4466; }
+.preview iframe {
+  flex: 1;
+  border: none;
+  background: #000;
+}
+</style>
+</head>
+<body>
+<h1>P9 — Multi-Round Production Pipeline</h1>
+<div class="status" id="status">Loading...</div>
+
+<div class="phase-bar">
+  <div class="phase" id="phase-exploration">1. Exploration</div>
+  <div class="phase" id="phase-selection">2. Selection</div>
+  <div class="phase" id="phase-production">3. Production</div>
+</div>
+
+<div class="pending-area" id="pending-area" style="display:none">
+  <h3>In Progress</h3>
+  <div class="pending-grid" id="pending-grid"></div>
+</div>
+
+<div class="triage">
+  <div class="column green">
+    <h2>Ship</h2>
+    <div class="cards" id="green-cards"></div>
+  </div>
+  <div class="column yellow">
+    <h2>Needs Work</h2>
+    <div class="cards" id="yellow-cards"></div>
+  </div>
+  <div class="column red">
+    <h2>Broken</h2>
+    <div class="cards" id="red-cards"></div>
+  </div>
+</div>
+
+<div class="production-box" id="production-box" style="display:none">
+  <h3>Production Build</h3>
+  <div class="production-status" id="production-status">Waiting for selection...</div>
+  <a class="production-link" id="production-link" href="#" style="display:none">Play Final Game</a>
+</div>
+
+<div class="preview" id="preview">
+  <div class="preview-header">
+    <span class="preview-title" id="preview-title"></span>
+    <button class="preview-btn close" onclick="closePreview()">Close</button>
+  </div>
+  <iframe id="preview-iframe"></iframe>
+</div>
+
+<script>
+const statusEl = document.getElementById('status');
+const pendingArea = document.getElementById('pending-area');
+const pendingGrid = document.getElementById('pending-grid');
+const greenCards = document.getElementById('green-cards');
+const yellowCards = document.getElementById('yellow-cards');
+const redCards = document.getElementById('red-cards');
+let lastData = null;
+
+function getVerdict(a) {
+  if (!a.scores) return null;
+  const v = a.scores.verdict?.toUpperCase() || '';
+  if (v.includes('SHIP')) return 'green';
+  if (v.includes('NEEDS') || v.includes('WORK')) return 'yellow';
+  return 'red';
+}
+
+function renderCard(a, winnerId) {
+  const isWinner = winnerId === a.id;
+  const roundLabel = a.round > 0 ? `R${a.round + 1}` : '';
+  return `
+    <div class="card ${isWinner ? 'winner' : ''}" onclick="openPreview(${a.id})">
+      <div class="card-header">
+        <span class="card-name">${a.theme}</span>
+        ${roundLabel ? `<span class="card-round">${roundLabel}</span>` : ''}
+      </div>
+      <div class="card-maker">
+        <a href="/pixelpit" class="maker-avatar" onclick="event.stopPropagation()">
+          <img src="${a.avatar}" alt="${a.maker}" />
+        </a>
+        <span>by ${a.maker} · <em style="color:#666">${a.trait}</em></span>
+      </div>
+      ${a.scores ? `
+        <div class="scores">
+          <span class="score">A:${a.scores.alive}</span>
+          <span class="score">T:${a.scores.theme}</span>
+          <span class="score">P:${a.scores.polish}</span>
+        </div>
+      ` : ''}
+      ${a.screenshot ? `<img class="screenshot-thumb" src="screenshots/${a.screenshot}" />` : ''}
+    </div>
+  `;
+}
+
+function render(data) {
+  // Status line
+  const phase = data.phase;
+  const total = data.agents.length;
+  const judged = data.agents.filter(a => a.scores).length;
+  const viable = data.agents.filter(a => {
+    const v = a.scores?.verdict?.toUpperCase() || '';
+    return v.includes('SHIP') || v.includes('NEEDS') || v.includes('WORK');
+  }).length;
+
+  statusEl.className = 'status ' + phase;
+  if (phase === 'done') {
+    statusEl.textContent = `✓ Complete — ${total} prototypes, ${viable} viable`;
+  } else if (phase === 'production') {
+    statusEl.textContent = `🏭 Production — building final game...`;
+  } else if (phase === 'selection') {
+    statusEl.textContent = `🎯 Selection — Dither choosing winner...`;
+  } else if (phase === 'judging') {
+    statusEl.textContent = `🔍 Judging — ${judged}/${total} rated`;
+  } else {
+    const round = (data.round || 0) + 1;
+    statusEl.textContent = `⟳ Exploration Round ${round} — generating prototypes...`;
+  }
+
+  // Phase bar
+  document.getElementById('phase-exploration').className = 'phase ' +
+    (phase === 'exploration' || phase === 'judging' ? 'active' : 'done');
+  document.getElementById('phase-selection').className = 'phase ' +
+    (phase === 'selection' ? 'active' : (data.winner !== null ? 'done' : ''));
+  document.getElementById('phase-production').className = 'phase ' +
+    (phase === 'production' ? 'active' : (data.production_status?.startsWith('done') ? 'done' : ''));
+
+  // Pending chips
+  const pending = data.agents.filter(a => !a.scores);
+  if (pending.length > 0) {
+    pendingArea.style.display = 'block';
+    pendingGrid.innerHTML = pending.map(a => {
+      let cls = 'pending-chip';
+      let label = a.maker;
+      const roundLabel = a.round > 0 ? ` (R${a.round + 1})` : '';
+      if (a.status === 'running') { cls += ' running'; label += ' (building)' + roundLabel; }
+      else if (a.status === 'judging') { cls += ' judging'; label += ' (judging)' + roundLabel; }
+      else { label += roundLabel; }
+      return `<div class="${cls}">${label}</div>`;
+    }).join('');
+  } else {
+    pendingArea.style.display = 'none';
+  }
+
+  // Triage columns
+  const greens = data.agents.filter(a => getVerdict(a) === 'green');
+  const yellows = data.agents.filter(a => getVerdict(a) === 'yellow');
+  const reds = data.agents.filter(a => getVerdict(a) === 'red');
+
+  greenCards.innerHTML = greens.map(a => renderCard(a, data.winner)).join('');
+  yellowCards.innerHTML = yellows.map(a => renderCard(a, data.winner)).join('');
+  redCards.innerHTML = reds.map(a => renderCard(a, data.winner)).join('');
+
+  // Production box
+  const prodBox = document.getElementById('production-box');
+  const prodStatus = document.getElementById('production-status');
+  const prodLink = document.getElementById('production-link');
+
+  if (data.winner !== null) {
+    prodBox.style.display = 'block';
+    const winner = data.agents.find(a => a.id === data.winner);
+
+    if (data.production_status?.startsWith('done')) {
+      prodStatus.textContent = `Complete! Built ${winner?.theme} by ${winner?.maker}`;
+      prodLink.style.display = 'inline-block';
+      prodLink.href = 'production/game.html';
+    } else if (data.production_status) {
+      prodStatus.textContent = `Building: ${data.production_status}`;
+    } else {
+      prodStatus.textContent = `Selected: ${winner?.theme} by ${winner?.maker}. ${data.winner_reason || ''}`;
+    }
+  }
+}
+
+function openPreview(id) {
+  const a = lastData.agents.find(agent => agent.id === id);
+  if (!a) return;
+  document.getElementById('preview-title').textContent = a.theme + ' by ' + a.maker;
+  document.getElementById('preview-iframe').src = a.url || `agent_${id}.html`;
+  document.getElementById('preview').classList.add('active');
+}
+
+function closePreview() {
+  document.getElementById('preview').classList.remove('active');
+  document.getElementById('preview-iframe').src = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePreview(); });
+
+async function poll() {
+  try {
+    const res = await fetch('status.json?' + Date.now());
+    const data = await res.json();
+    if (JSON.stringify(data) !== JSON.stringify(lastData)) {
+      lastData = data;
+      render(data);
+    }
+  } catch (e) {}
+  setTimeout(poll, 500);
+}
+
+poll();
+</script>
+</body></html>

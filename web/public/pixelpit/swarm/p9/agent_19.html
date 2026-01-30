@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Pixel Food Catch</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none;font-family:'Press Start 2P',monospace;}
+  @font-face{font-family:'Press Start 2P';src:url('https://fonts.gstatic.com/s/pressstart2p/v14/e3t5Tw4Lr3G_8a8L7YVj8Y8vA4c.woff2') format('woff2');}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'), ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0,drops=[],paddle={x:W/2,w:120,h:40};
+
+function spawn(){
+  const type=Math.random()<0.5?'burger':'fries';
+  let obj={x:Math.random()*(W-40)+20,y:-30,r:20,speed:2+Math.random()*2,color:'#44aaff',type};
+  drops.push(obj);
+}
+
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  drops=drops.filter(d=>{
+    if(d.y>H-80&&d.y<H-40&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++; return false;
+    }
+    return d.y<H+50;
+  });
+  if(Math.random()<0.02)spawn();
+}
+
+function drawBackground(){
+  ctx.fillStyle='#111';ctx.fillRect(0,0,W,H);
+  // kitchen tile pattern
+  const tileSize=40;
+  ctx.fillStyle='#222';
+  for(let x=0;x<W;x+=tileSize){
+    for(let y=0;y<H;y+=tileSize){
+      if((x+y)/tileSize%2===0) ctx.fillRect(x,y,tileSize,tileSize);
+    }
+  }
+}
+
+function drawBurger(x,y,r){
+  // bun top
+  ctx.fillStyle='#deb887';
+  ctx.beginPath();ctx.arc(x,y-r/2,r*0.6,0,Math.PI);ctx.closePath();ctx.fill();
+  // cheese
+  ctx.fillStyle='#ffcc00';
+  ctx.beginPath();ctx.arc(x,y,r*0.5,0,Math.PI);ctx.closePath();ctx.fill();
+  // patty
+  ctx.fillStyle='#8b4513';
+  ctx.beginPath();ctx.arc(x,y+r/2,r*0.4,0,Math.PI);ctx.closePath();ctx.fill();
+  // bun bottom
+  ctx.fillStyle='#deb887';
+  ctx.beginPath();ctx.arc(x,y+r,r*0.6,0,Math.PI);ctx.closePath();ctx.fill();
+}
+
+function drawFries(x,y,r){
+  ctx.fillStyle='#ffe4b5';
+  ctx.fillRect(x-r*0.1,y-r*0.6,r*0.2,r*0.8);
+  ctx.fillStyle='#d2691e';
+  ctx.fillRect(x-r*0.1,y+r*0.2,r*0.2,r*0.2);
+}
+
+function drawDrops(){
+  drops.forEach(d=>{
+    ctx.save();ctx.translate(d.x,d.y);
+    if(d.type==='burger') drawBurger(0,0,d.r);
+    else drawFries(0,0,d.r);
+    ctx.restore();
+  });
+}
+
+function drawCatcher(){
+  // lunchbox lid
+  ctx.fillStyle='#008000';
+  ctx.fillRect(paddle.x-paddle.w/2,H-60,paddle.w,20);
+  // handle
+  ctx.fillStyle='#654321';
+  ctx.fillRect(paddle.x-paddle.w/4,H-80,paddle.w/2,20);
+  // shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.fillRect(paddle.x-paddle.w/2,H-60,paddle.w,20);
+}
+
+function drawScore(){
+  ctx.fillStyle='#fff';
+  ctx.font='24px Press Start 2P';
+  ctx.fillText('SCORE: '+score,20,40);
+}
+
+function draw(){
+  drawBackground();
+  drawDrops();
+  drawCatcher();
+  drawScore();
+}
+
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script>
+</body>
+</html>

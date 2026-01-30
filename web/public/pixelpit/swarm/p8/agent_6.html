@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Music Catch Game</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0,drops=[],particles=[];
+const paddle={x:W/2,w:80,h:20};
+
+const colors=['#ff5555','#55ff55','#5555ff','#ffdd55','#55ffdd','#dd55ff'];
+
+function spawn(){
+  drops.push({
+    x:Math.random()*(W-40)+20,
+    y:-30,
+    r:15,
+    speed:2+Math.random()*2,
+    color:colors[Math.floor(Math.random()*colors.length)]
+  });
+}
+
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  drops=drops.filter(d=>{
+    if(d.y>H-50&&d.y<H-20&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;
+      // create catch particles
+      for(let i=0;i<8;i++){
+        particles.push({
+          x:d.x,
+          y:d.y,
+          r:5+Math.random()*5,
+          alpha:1,
+          speedX:(Math.random()*2-1),
+          speedY:(Math.random()*2-1)
+        });
+      }
+      return false;
+    }
+    return d.y<H+50;
+  });
+
+  particles.forEach(p=>{
+    p.x+=p.speedX;
+    p.y+=p.speedY;
+    p.alpha-=0.02;
+  });
+  particles=particles.filter(p=>p.alpha>0);
+
+  if(Math.random()<0.02)spawn();
+}
+
+function draw(){
+  // background
+  ctx.fillStyle='#111';
+  ctx.fillRect(0,0,W,H);
+
+  // draw notes
+  drops.forEach(d=>{
+    ctx.fillStyle=d.color;
+    ctx.strokeStyle='#000';
+    ctx.lineWidth=2;
+    // note head
+    ctx.beginPath();
+    ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+    // stem
+    ctx.beginPath();
+    ctx.moveTo(d.x + d.r*0.6, d.y - d.r*0.1);
+    ctx.lineTo(d.x + d.r*0.6, d.y - d.r*1.5);
+    ctx.lineWidth=2;
+    ctx.stroke();
+  });
+
+  // draw particles
+  particles.forEach(p=>{
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle='#fff';
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  });
+
+  // draw paddle as speaker
+  const rectX=paddle.x-paddle.w/2;
+  const rectY=H-40;
+  ctx.fillStyle='#555';
+  ctx.strokeStyle='#000';
+  ctx.lineWidth=3;
+  ctx.fillRect(rectX,rectY,paddle.w,paddle.h);
+  ctx.strokeRect(rectX,rectY,paddle.w,paddle.h);
+  // speaker icon
+  const spX=rectX+10, spY=rectY+10;
+  ctx.fillStyle='#fff';
+  ctx.beginPath();
+  ctx.arc(spX,spY,5,0,Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(spX+10,spY-5);
+  ctx.lineTo(spX+10,spY+5);
+  ctx.lineTo(spX+20,spY);
+  ctx.closePath();
+  ctx.fill();
+
+  // score
+  ctx.fillStyle='#fff';
+  ctx.font='30px Arial';
+  ctx.fillText('Score: '+score,20,40);
+}
+
+function move(x){
+  paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));
+}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+
+function loop(){update();draw();requestAnimationFrame(loop)}
+loop();
+</script>
+</body>
+</html>

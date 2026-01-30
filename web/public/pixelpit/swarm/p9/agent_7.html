@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Gemstones Catch Game</title>
+<style>
+  body{margin:0;background:#000;overflow:hidden;touch-action:none}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0;
+const drops=[];
+const sparkles=[];
+const gemColors=['#ff5555','#55ff55','#5555ff','#ffdd55','#ff55ff','#55ffff'];
+const paddle={x:W/2,w:120,h:30};
+
+function spawn(){
+  const r=15+Math.random()*5;
+  drops.push({
+    x:Math.random()*(W-2*r)+r,
+    y:-30,
+    r:r,
+    speed:2+Math.random()*2,
+    color:gemColors[Math.floor(Math.random()*gemColors.length)]
+  });
+}
+
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  const remaining=[];
+  drops.forEach(d=>{
+    if(d.y>H-50 && d.y<H-20 && Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;
+      createSparkles(d.x,d.y);
+      return;
+    }
+    if(d.y<H+50) remaining.push(d);
+  });
+  drops.length=0;drops.push(...remaining);
+
+  // sparkles update
+  const spRem=[];
+  sparkles.forEach(s=>{
+    s.x+=s.vx;
+    s.y+=s.vy;
+    s.alpha-=0.02;
+    if(s.alpha>0) spRem.push(s);
+  });
+  sparkles.length=0;sparkles.push(...spRem);
+
+  if(Math.random()<0.02) spawn();
+}
+
+function createSparkles(x,y){
+  for(let i=0;i<12;i++){
+    const angle=Math.random()*Math.PI*2;
+    const speed=Math.random()*3+1;
+    sparkles.push({
+      x:x,
+      y:y,
+      vx:Math.cos(angle)*speed,
+      vy:Math.sin(angle)*speed,
+      alpha:1,
+      size:3+Math.random()*2
+    });
+  }
+}
+
+function draw(){
+  // background gradient with subtle star field
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#111');
+  bg.addColorStop(1,'#000');
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+  // Draw stars
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  for(let i=0;i<30;i++){
+    const sx=Math.random()*W;
+    const sy=Math.random()*H;
+    ctx.fillRect(sx,sy,1.5,1.5);
+  }
+
+  // draw gems
+  drops.forEach(d=>{
+    ctx.save();
+    ctx.translate(d.x,d.y);
+    ctx.shadowBlur=8;
+    ctx.shadowColor='rgba(255,255,255,0.6)';
+    const grd=ctx.createRadialGradient(0,0,d.r*0.4,0,0,d.r);
+    grd.addColorStop(0,'#fff');
+    grd.addColorStop(1,d.color);
+    ctx.fillStyle=grd;
+    ctx.beginPath();
+    ctx.arc(0,0,d.r,0,Math.PI*2);
+    ctx.fill();
+    // subtle sparkle inside gem
+    ctx.fillStyle='rgba(255,255,255,0.8)';
+    ctx.beginPath();
+    ctx.arc(-d.r*0.25,-d.r*0.25,d.r*0.15,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // draw paddle as jewel box
+  ctx.save();
+  ctx.translate(paddle.x-paddle.w/2,paddle.y-paddle.h);
+  ctx.shadowBlur=12;
+  ctx.shadowColor='rgba(255,255,255,0.3)';
+  const grd=ctx.createLinearGradient(0,0,paddle.w,paddle.h);
+  grd.addColorStop(0,'#222');
+  grd.addColorStop(1,'#444');
+  ctx.fillStyle=grd;
+  ctx.fillRect(0,0,paddle.w,paddle.h);
+  // inner glass
+  ctx.fillStyle='rgba(255,255,255,0.1)';
+  ctx.fillRect(2,2,paddle.w-4,paddle.h-4);
+  // frame
+  ctx.strokeStyle='rgba(255,255,255,0.2)';
+  ctx.lineWidth=2;
+  ctx.strokeRect(0,0,paddle.w,paddle.h);
+  ctx.restore();
+
+  // draw sparkles
+  sparkles.forEach(s=>{
+    ctx.fillStyle='rgba(255,255,255,'+s.alpha+')';
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.size,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // score
+  ctx.fillStyle='#fff';
+  ctx.font='28px serif';
+  ctx.fillText('Score: '+score,20,40);
+}
+
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

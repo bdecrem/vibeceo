@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Note Drop - Music Catcher</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a12;overflow:hidden;touch-action:none;font-family:'Segoe UI',Arial,sans-serif}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();
+window.onresize=resize;
+
+// Audio context for sounds
+let audioCtx=null;
+function initAudio(){
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+}
+function playNote(freq,duration=0.15){
+  if(!audioCtx)return;
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.value=freq;
+  osc.type='sine';
+  gain.gain.setValueAtTime(0.3,audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+duration);
+  osc.start();
+  osc.stop(audioCtx.currentTime+duration);
+}
+
+// Game state
+let score=0;
+let combo=0;
+let maxCombo=0;
+let notes=[];
+let particles=[];
+let scorePopups=[];
+let speakerPulse=0;
+let screenShake={x:0,y:0};
+let time=0;
+
+// Catcher (speaker)
+const catcher={
+  x:W/2,
+  y:H-80,
+  w:120,
+  h:50,
+  targetX:W/2
+};
+
+// Note colors - vibrant music theme
+const noteColors=[
+  {fill:'#FF4B6E',stroke:'#CC3A57',glow:'#FF4B6E'},
+  {fill:'#4BFFB3',stroke:'#3ACC8F',glow:'#4BFFB3'},
+  {fill:'#FFD94B',stroke:'#CCB03A',glow:'#FFD94B'},
+  {fill:'#4B9FFF',stroke:'#3A7FCC',glow:'#4B9FFF'},
+  {fill:'#B34BFF',stroke:'#8F3ACC',glow:'#B34BFF'},
+  {fill:'#FF8F4B',stroke:'#CC723A',glow:'#FF8F4B'}
+];
+
+// Musical frequencies for each color
+const noteFreqs=[523.25,587.33,659.25,698.46,783.99,880];
+
+function spawnNote(){
+  const colorIdx=Math.floor(Math.random()*noteColors.length);
+  const note={
+    x:Math.random()*(W-100)+50,
+    y:-60,
+    size:28+Math.random()*12,
+    speed:2+Math.random()*1.5+score*0.01,
+    rotation:Math.random()*0.3-0.15,
+    rotationSpeed:(Math.random()-0.5)*0.05,
+    colorIdx:colorIdx,
+    wobble:Math.random()*Math.PI*2,
+    wobbleSpeed:0.05+Math.random()*0.03
+  };
+  notes.push(note);
+}
+
+function spawnParticles(x,y,color,count=12){
+  for(let i=0;i<count;i++){
+    const angle=Math.PI*2*i/count+Math.random()*0.3;
+    const speed=4+Math.random()*6;
+    particles.push({
+      x:x,
+      y:y,
+      vx:Math.cos(angle)*speed,
+      vy:Math.sin(angle)*speed-2,
+      size:6+Math.random()*8,
+      color:color,
+      life:1,
+      decay:0.02+Math.random()*0.02
+    });
+  }
+  // Add sparkles
+  for(let i=0;i<8;i++){
+    particles.push({
+      x:x+Math.random()*40-20,
+      y:y+Math.random()*20-10,
+      vx:(Math.random()-0.5)*3,
+      vy:-3-Math.random()*4,
+      size:3+Math.random()*3,
+      color:'#fff',
+      life:1,
+      decay:0.03+Math.random()*0.02,
+      sparkle:true
+    });
+  }
+}
+
+function addScorePopup(x,y,points,isCombo=false){
+  scorePopups.push({
+    x:x,
+    y:y,
+    text:isCombo?`${combo}x COMBO!`:'+'+points,
+    life:1,
+    vy:-2,
+    scale:isCombo?1.5:1,
+    color:isCombo?'#FFD94B':'#fff'
+  });
+}
+
+function update(){
+  time+=0.016;
+  
+  // Smooth catcher movement
+  catcher.x+=(catcher.targetX-catcher.x)*0.15;
+  catcher.y=H-80;
+  
+  // Speaker pulse decay
+  speakerPulse*=0.9;
+  
+  // Screen shake decay
+  screenShake.x*=0.85;
+  screenShake.y*=0.85;
+  
+  // Update notes
+  notes.forEach(n=>{
+    n.y+=n.speed;
+    n.rotation+=n.rotationSpeed;
+    n.wobble+=n.wobbleSpeed;
+    n.x+=Math.sin(n.wobble)*0.5;
+  });
+  
+  // Check catches
+  notes=notes.filter(n=>{
+    const catchY=catcher.y-10;
+    const catchZone=40;
+    
+    if(n.y>catchY-catchZone && n.y<catchY+catchZone){
+      const dx=n.x-catcher.x;
+      if(Math.abs(dx)<catcher.w/2+n.size/2){
+        // Caught!
+        combo++;
+        maxCombo=Math.max(maxCombo,combo);
+        const points=10*Math.min(combo,10);
+        score+=points;
+        
+        speakerPulse=1;
+        screenShake.x=(Math.random()-0.5)*8;
+        screenShake.y=(Math.random()-0.5)*4;
+        
+        const col=noteColors[n.colorIdx];
+        spawnParticles(n.x,n.y,col.fill);
+        addScorePopup(n.x,n.y-30,points);
+        if(combo>1&&combo%5===0){
+          addScorePopup(catcher.x,catcher.y-60,0,true);
+        }
+        
+        playNote(noteFreqs[n.colorIdx],0.2);
+        return false;
+      }
+    }
+    
+    // Missed
+    if(n.y>H+50){
+      combo=0;
+      return false;
+    }
+    return true;
+  });
+  
+  // Update particles
+  particles.forEach(p=>{
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.vy+=0.3;
+    p.life-=p.decay;
+    p.size*=0.97;
+  });
+  particles=particles.filter(p=>p.life>0);
+  
+  // Update score popups
+  scorePopups.forEach(s=>{
+    s.y+=s.vy;
+    s.life-=0.025;
+    s.scale*=1.01;
+  });
+  scorePopups=scorePopups.filter(s=>s.life>0);
+  
+  // Spawn notes
+  const spawnRate=0.025+Math.min(score*0.0001,0.03);
+  if(Math.random()<spawnRate)spawnNote();
+}
+
+function drawNote(n){
+  const col=noteColors[n.colorIdx];
+  const x=n.x;
+  const y=n.y;
+  const s=n.size;
+  
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(n.rotation);
+  
+  // Glow
+  ctx.shadowColor=col.glow;
+  ctx.shadowBlur=15;
+  
+  // Note head (oval)
+  ctx.fillStyle=col.fill;
+  ctx.strokeStyle=col.stroke;
+  ctx.lineWidth=4;
+  
+  ctx.beginPath();
+  ctx.ellipse(0,0,s*0.7,s*0.5,Math.PI*0.2,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Note stem
+  ctx.lineWidth=5;
+  ctx.beginPath();
+  ctx.moveTo(s*0.5,-s*0.2);
+  ctx.lineTo(s*0.5,-s*1.8);
+  ctx.stroke();
+  
+  // Note flag
+  ctx.lineWidth=4;
+  ctx.beginPath();
+  ctx.moveTo(s*0.5,-s*1.8);
+  ctx.quadraticCurveTo(s*1.2,-s*1.2,s*0.6,-s*0.8);
+  ctx.stroke();
+  
+  // Highlight
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(-s*0.2,-s*0.15,s*0.25,s*0.15,Math.PI*0.2,0,Math.PI*2);
+  ctx.fill();
+  
+  ctx.restore();
+}
+
+function drawCatcher(){
+  const x=catcher.x;
+  const y=catcher.y;
+  const w=catcher.w+speakerPulse*20;
+  const h=catcher.h+speakerPulse*10;
+  
+  ctx.save();
+  
+  // Speaker glow when catching
+  if(speakerPulse>0.1){
+    ctx.shadowColor='#4BFFB3';
+    ctx.shadowBlur=30*speakerPulse;
+  }
+  
+  // Speaker cabinet - solid style with thick outline
+  const gradient=ctx.createLinearGradient(x-w/2,y-h/2,x-w/2,y+h/2);
+  gradient.addColorStop(0,'#3a3a4a');
+  gradient.addColorStop(0.5,'#2a2a3a');
+  gradient.addColorStop(1,'#1a1a2a');
+  
+  ctx.fillStyle=gradient;
+  ctx.strokeStyle='#555';
+  ctx.lineWidth=6;
+  
+  // Main body with rounded corners
+  const radius=12;
+  ctx.beginPath();
+  ctx.roundRect(x-w/2,y-h/2,w,h,radius);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Speaker cone
+  const coneR=h*0.6+speakerPulse*8;
+  const coneGrad=ctx.createRadialGradient(x,y,0,x,y,coneR);
+  coneGrad.addColorStop(0,'#4a4a5a');
+  coneGrad.addColorStop(0.5,'#3a3a4a');
+  coneGrad.addColorStop(1,'#2a2a3a');
+  
+  ctx.fillStyle=coneGrad;
+  ctx.strokeStyle='#666';
+  ctx.lineWidth=5;
+  ctx.beginPath();
+  ctx.arc(x,y,coneR,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Inner cone
+  ctx.fillStyle='#222';
+  ctx.strokeStyle='#444';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.arc(x,y,coneR*0.5,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Center dome
+  const domeGrad=ctx.createRadialGradient(x-5,y-5,0,x,y,coneR*0.25);
+  domeGrad.addColorStop(0,'#666');
+  domeGrad.addColorStop(1,'#333');
+  ctx.fillStyle=domeGrad;
+  ctx.beginPath();
+  ctx.arc(x,y,coneR*0.2+speakerPulse*4,0,Math.PI*2);
+  ctx.fill();
+  
+  // Sound waves when catching
+  if(speakerPulse>0.2){
+    ctx.strokeStyle=`rgba(75,255,179,${speakerPulse*0.5})`;
+    ctx.lineWidth=3;
+    for(let i=0;i<3;i++){
+      const waveR=coneR+20+i*15+(1-speakerPulse)*30;
+      ctx.beginPath();
+      ctx.arc(x,y-10,waveR,Math.PI*1.2,Math.PI*1.8);
+      ctx.stroke();
+    }
+  }
+  
+  ctx.restore();
+}
+
+function draw(){
+  ctx.save();
+  ctx.translate(screenShake.x,screenShake.y);
+  
+  // Background - dark stage
+  const bgGrad=ctx.createLinearGradient(0,0,0,H);
+  bgGrad.addColorStop(0,'#12121a');
+  bgGrad.addColorStop(0.5,'#0a0a12');
+  bgGrad.addColorStop(1,'#050508');
+  ctx.fillStyle=bgGrad;
+  ctx.fillRect(-10,-10,W+20,H+20);
+  
+  // Animated background music bars
+  ctx.globalAlpha=0.1;
+  for(let i=0;i<15;i++){
+    const barX=i*(W/15)+20;
+    const barH=50+Math.sin(time*2+i*0.5)*30+Math.sin(time*3+i)*20;
+    ctx.fillStyle=noteColors[i%noteColors.length].fill;
+    ctx.fillRect(barX,H-barH,W/20,barH);
+  }
+  ctx.globalAlpha=1;
+  
+  // Stage lights (subtle)
+  const lightGrad=ctx.createRadialGradient(W/2,0,0,W/2,0,H);
+  lightGrad.addColorStop(0,'rgba(100,80,150,0.15)');
+  lightGrad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=lightGrad;
+  ctx.fillRect(0,0,W,H);
+  
+  // Draw particles behind
+  particles.filter(p=>!p.sparkle).forEach(p=>{
+    ctx.globalAlpha=p.life;
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+  
+  // Draw notes
+  notes.forEach(drawNote);
+  
+  // Draw catcher
+  drawCatcher();
+  
+  // Draw sparkle particles
+  particles.filter(p=>p.sparkle).forEach(p=>{
+    ctx.globalAlpha=p.life;
+    ctx.fillStyle=p.color;
+    const s=p.size;
+    ctx.beginPath();
+    ctx.moveTo(p.x,p.y-s);
+    ctx.lineTo(p.x+s*0.3,p.y);
+    ctx.lineTo(p.x,p.y+s);
+    ctx.lineTo(p.x-s*0.3,p.y);
+    ctx.closePath();
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+  
+  // Score popups
+  scorePopups.forEach(s=>{
+    ctx.globalAlpha=s.life;
+    ctx.fillStyle=s.color;
+    ctx.font=`bold ${24*s.scale}px 'Segoe UI',Arial,sans-serif`;
+    ctx.textAlign='center';
+    ctx.fillText(s.text,s.x,s.y);
+  });
+  ctx.globalAlpha=1;
+  
+  // UI - Score display
+  ctx.textAlign='left';
+  
+  // Score box
+  ctx.fillStyle='rgba(0,0,0,0.5)';
+  ctx.strokeStyle='#444';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.roundRect(15,15,180,70,10);
+  ctx.fill();
+  ctx.stroke();
+  
+  ctx.fillStyle='#888';
+  ctx.font='bold 14px "Segoe UI",Arial,sans-serif';
+  ctx.fillText('SCORE',25,35);
+  
+  ctx.fillStyle='#FFD94B';
+  ctx.font='bold 36px "Segoe UI",Arial,sans-serif';
+  ctx.fillText(score.toString(),25,70);
+  
+  // Combo display
+  if(combo>1){
+    ctx.fillStyle='#4BFFB3';
+    ctx.font='bold 18px "Segoe UI",Arial,sans-serif';
+    ctx.fillText(`${combo}x`,140,70);
+  }
+  
+  ctx.restore();
+}
+
+function setTarget(x){
+  initAudio();
+  catcher.targetX=Math.max(catcher.w/2,Math.min(W-catcher.w/2,x));
+}
+
+// Input handlers
+c.addEventListener('mousemove',e=>setTarget(e.clientX));
+c.addEventListener('mousedown',e=>{initAudio();setTarget(e.clientX);});
+c.addEventListener('touchstart',e=>{e.preventDefault();initAudio();setTarget(e.touches[0].clientX);},{passive:false});
+c.addEventListener('touchmove',e=>{e.preventDefault();setTarget(e.touches[0].clientX);},{passive:false});
+
+// Game loop
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

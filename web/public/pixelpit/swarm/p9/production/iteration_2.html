@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Note Drop - Music Catcher</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a12;overflow:hidden;touch-action:none;font-family:'Segoe UI',Arial,sans-serif}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();
+window.onresize=resize;
+
+// Audio context
+let audioCtx=null;
+function initAudio(){
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+}
+function playNote(freq,duration=0.2){
+  if(!audioCtx)return;
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.value=freq;
+  osc.type='triangle';
+  gain.gain.setValueAtTime(0.25,audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+duration);
+  osc.start();
+  osc.stop(audioCtx.currentTime+duration);
+}
+
+// Game state
+let score=0, combo=0, missed=0;
+let notes=[], particles=[], scorePopups=[], soundWaves=[];
+let speakerPulse=0, time=0;
+let screenShake={x:0,y:0};
+
+// Catcher
+const catcher={x:W/2,y:H-90,w:130,h:55,targetX:W/2};
+
+// Music note colors - bright and bold
+const noteColors=[
+  {fill:'#FF3366',stroke:'#CC2952',shadow:'#FF3366'},
+  {fill:'#33FF99',stroke:'#29CC7A',shadow:'#33FF99'},
+  {fill:'#FFCC33',stroke:'#CCA329',shadow:'#FFCC33'},
+  {fill:'#3399FF',stroke:'#297ACC',shadow:'#3399FF'},
+  {fill:'#CC33FF',stroke:'#A329CC',shadow:'#CC33FF'},
+  {fill:'#FF9933',stroke:'#CC7A29',shadow:'#FF9933'}
+];
+
+// Note types with different visual styles
+const noteTypes=['quarter','eighth','double-eighth','half'];
+const noteFreqs=[261.63,293.66,329.63,349.23,392.00,440.00];
+
+function spawnNote(){
+  const colorIdx=Math.floor(Math.random()*noteColors.length);
+  const type=noteTypes[Math.floor(Math.random()*noteTypes.length)];
+  notes.push({
+    x:Math.random()*(W-120)+60,
+    y:-80,
+    size:30+Math.random()*10,
+    speed:2.5+Math.random()*1.5+Math.min(score*0.008,2),
+    rotation:(Math.random()-0.5)*0.2,
+    rotSpeed:(Math.random()-0.5)*0.03,
+    colorIdx:colorIdx,
+    type:type,
+    wobble:Math.random()*Math.PI*2,
+    wobbleAmp:0.8+Math.random()*0.5
+  });
+}
+
+function spawnParticles(x,y,color,count=15){
+  for(let i=0;i<count;i++){
+    const angle=Math.PI*2*i/count;
+    const speed=5+Math.random()*7;
+    particles.push({
+      x:x,y:y,
+      vx:Math.cos(angle)*speed,
+      vy:Math.sin(angle)*speed-3,
+      size:8+Math.random()*10,
+      color:color,
+      life:1,
+      decay:0.018+Math.random()*0.015,
+      type:'circle'
+    });
+  }
+  // Musical sparkles
+  for(let i=0;i<10;i++){
+    particles.push({
+      x:x+(Math.random()-0.5)*50,
+      y:y+(Math.random()-0.5)*30,
+      vx:(Math.random()-0.5)*4,
+      vy:-4-Math.random()*5,
+      size:4+Math.random()*4,
+      color:'#fff',
+      life:1,
+      decay:0.025+Math.random()*0.02,
+      type:'star'
+    });
+  }
+  // Note fragments
+  for(let i=0;i<4;i++){
+    particles.push({
+      x:x+(Math.random()-0.5)*20,
+      y:y,
+      vx:(Math.random()-0.5)*6,
+      vy:-2-Math.random()*4,
+      size:10+Math.random()*8,
+      color:color,
+      life:1,
+      decay:0.02,
+      type:'note',
+      rot:Math.random()*Math.PI,
+      rotSpeed:(Math.random()-0.5)*0.2
+    });
+  }
+}
+
+function addSoundWave(x,y){
+  for(let i=0;i<3;i++){
+    soundWaves.push({
+      x:x,y:y-20,
+      radius:20+i*15,
+      maxRadius:80+i*30,
+      life:1,
+      delay:i*0.1
+    });
+  }
+}
+
+function addScorePopup(x,y,text,color='#fff',scale=1){
+  scorePopups.push({x,y,text,life:1,vy:-2.5,scale,color});
+}
+
+function update(){
+  time+=0.016;
+  
+  catcher.x+=(catcher.targetX-catcher.x)*0.18;
+  catcher.y=H-90;
+  
+  speakerPulse*=0.88;
+  screenShake.x*=0.85;
+  screenShake.y*=0.85;
+  
+  // Notes
+  notes.forEach(n=>{
+    n.y+=n.speed;
+    n.rotation+=n.rotSpeed;
+    n.wobble+=0.06;
+    n.x+=Math.sin(n.wobble)*n.wobbleAmp;
+  });
+  
+  // Catch detection
+  notes=notes.filter(n=>{
+    const catchY=catcher.y;
+    if(n.y>catchY-35&&n.y<catchY+25){
+      if(Math.abs(n.x-catcher.x)<catcher.w/2+n.size*0.6){
+        // Caught!
+        combo++;
+        const multiplier=Math.min(combo,10);
+        const points=10*multiplier;
+        score+=points;
+        
+        speakerPulse=1;
+        screenShake.x=(Math.random()-0.5)*10;
+        screenShake.y=-Math.random()*6;
+        
+        const col=noteColors[n.colorIdx];
+        spawnParticles(n.x,n.y,col.fill);
+        addSoundWave(catcher.x,catcher.y);
+        addScorePopup(n.x,n.y-40,'+'+points);
+        
+        if(combo>1&&combo%5===0){
+          addScorePopup(catcher.x,catcher.y-80,combo+'x COMBO!','#FFCC33',1.4);
+        }
+        
+        playNote(noteFreqs[n.colorIdx],0.25);
+        return false;
+      }
+    }
+    
+    if(n.y>H+60){
+      combo=0;
+      missed++;
+      return false;
+    }
+    return true;
+  });
+  
+  // Particles
+  particles.forEach(p=>{
+    p.x+=p.vx;
+    p.y+=p.vy;
+    p.vy+=0.35;
+    p.vx*=0.98;
+    p.life-=p.decay;
+    if(p.rot!==undefined)p.rot+=p.rotSpeed;
+  });
+  particles=particles.filter(p=>p.life>0);
+  
+  // Sound waves
+  soundWaves.forEach(w=>{
+    if(w.delay>0){w.delay-=0.016;return;}
+    w.radius+=(w.maxRadius-w.radius)*0.15;
+    w.life-=0.04;
+  });
+  soundWaves=soundWaves.filter(w=>w.life>0);
+  
+  // Score popups
+  scorePopups.forEach(s=>{
+    s.y+=s.vy;
+    s.vy*=0.95;
+    s.life-=0.022;
+  });
+  scorePopups=scorePopups.filter(s=>s.life>0);
+  
+  // Spawn
+  const rate=0.028+Math.min(score*0.00008,0.025);
+  if(Math.random()<rate)spawnNote();
+}
+
+function drawMusicNote(x,y,size,rotation,colorIdx,type){
+  const col=noteColors[colorIdx];
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(rotation);
+  
+  ctx.shadowColor=col.shadow;
+  ctx.shadowBlur=20;
+  ctx.fillStyle=col.fill;
+  ctx.strokeStyle=col.stroke;
+  ctx.lineWidth=4;
+  
+  const headW=size*0.8;
+  const headH=size*0.6;
+  const stemH=size*2;
+  
+  if(type==='quarter'||type==='eighth'){
+    // Note head - filled oval
+    ctx.beginPath();
+    ctx.ellipse(0,0,headW,headH,-0.3,0,Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Stem
+    ctx.lineWidth=5;
+    ctx.beginPath();
+    ctx.moveTo(headW*0.7,-headH*0.3);
+    ctx.lineTo(headW*0.7,-stemH);
+    ctx.stroke();
+    
+    // Flag for eighth note
+    if(type==='eighth'){
+      ctx.lineWidth=4;
+      ctx.beginPath();
+      ctx.moveTo(headW*0.7,-stemH);
+      ctx.bezierCurveTo(headW*1.8,-stemH+size*0.4,headW*1.5,-stemH+size*1.2,headW*0.8,-stemH+size*1.4);
+      ctx.stroke();
+    }
+    
+    // Highlight
+    ctx.fillStyle='rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(-headW*0.25,-headH*0.2,headW*0.35,headH*0.25,-0.3,0,Math.PI*2);
+    ctx.fill();
+  }
+  else if(type==='double-eighth'){
+    // Two connected eighth notes
+    const gap=size*1.2;
+    for(let i=0;i<2;i++){
+      const ox=i*gap-gap/2;
+      ctx.fillStyle=col.fill;
+      ctx.beginPath();
+      ctx.ellipse(ox,0,headW*0.7,headH*0.5,-0.3,0,Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.lineWidth=4;
+      ctx.beginPath();
+      ctx.moveTo(ox+headW*0.5,-headH*0.2);
+      ctx.lineTo(ox+headW*0.5,-stemH*0.8);
+      ctx.stroke();
+    }
+    // Connecting beam
+    ctx.lineWidth=6;
+    ctx.beginPath();
+    ctx.moveTo(-gap/2+headW*0.5,-stemH*0.8);
+    ctx.lineTo(gap/2+headW*0.5,-stemH*0.8);
+    ctx.stroke();
+  }
+  else if(type==='half'){
+    // Half note - hollow head
+    ctx.lineWidth=5;
+    ctx.beginPath();
+    ctx.ellipse(0,0,headW,headH,-0.3,0,Math.PI*2);
+    ctx.stroke();
+    
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(headW*0.7,-headH*0.3);
+    ctx.lineTo(headW*0.7,-stemH);
+    ctx.stroke();
+  }
+  
+  ctx.restore();
+}
+
+function drawSpeaker(){
+  const x=catcher.x;
+  const y=catcher.y;
+  const w=catcher.w+speakerPulse*25;
+  const h=catcher.h+speakerPulse*12;
+  
+  ctx.save();
+  
+  // Glow effect
+  if(speakerPulse>0.1){
+    ctx.shadowColor='#33FF99';
+    ctx.shadowBlur=40*speakerPulse;
+  }
+  
+  // Main cabinet - SOLID style with thick outlines
+  const grad=ctx.createLinearGradient(x-w/2,y-h/2,x-w/2,y+h/2+10);
+  grad.addColorStop(0,'#4a4a5a');
+  grad.addColorStop(0.3,'#3a3a4a');
+  grad.addColorStop(1,'#252530');
+  
+  ctx.fillStyle=grad;
+  ctx.strokeStyle='#666';
+  ctx.lineWidth=7;
+  
+  // Cabinet shape
+  ctx.beginPath();
+  ctx.roundRect(x-w/2,y-h/2,w,h+10,14);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Inner dark border
+  ctx.strokeStyle='#222';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.roundRect(x-w/2+8,y-h/2+8,w-16,h-6,8);
+  ctx.stroke();
+  
+  // Speaker cone
+  const coneR=h*0.7+speakerPulse*10;
+  const coneGrad=ctx.createRadialGradient(x,y,coneR*0.1,x,y,coneR);
+  coneGrad.addColorStop(0,'#5a5a6a');
+  coneGrad.addColorStop(0.4,'#404050');
+  coneGrad.addColorStop(0.8,'#303040');
+  coneGrad.addColorStop(1,'#252535');
+  
+  ctx.fillStyle=coneGrad;
+  ctx.strokeStyle='#555';
+  ctx.lineWidth=6;
+  ctx.beginPath();
+  ctx.arc(x,y,coneR,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Cone ridges
+  ctx.strokeStyle='#3a3a4a';
+  ctx.lineWidth=2;
+  for(let i=1;i<=3;i++){
+    ctx.beginPath();
+    ctx.arc(x,y,coneR*0.3*i,0,Math.PI*2);
+    ctx.stroke();
+  }
+  
+  // Center dome
+  const domeGrad=ctx.createRadialGradient(x-3,y-3,0,x,y,coneR*0.22);
+  domeGrad.addColorStop(0,'#777');
+  domeGrad.addColorStop(0.5,'#555');
+  domeGrad.addColorStop(1,'#333');
+  
+  ctx.fillStyle=domeGrad;
+  ctx.strokeStyle='#444';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.arc(x,y,coneR*0.18+speakerPulse*5,0,Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Sound waves
+  soundWaves.forEach(w=>{
+    if(w.delay>0)return;
+    ctx.strokeStyle=`rgba(51,255,153,${w.life*0.6})`;
+    ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.arc(w.x,w.y,w.radius,Math.PI*1.15,Math.PI*1.85);
+    ctx.stroke();
+  });
+  
+  ctx.restore();
+}
+
+function drawStaffLines(){
+  ctx.strokeStyle='rgba(100,100,120,0.15)';
+  ctx.lineWidth=2;
+  
+  const spacing=25;
+  const groups=Math.ceil(H/(spacing*6))+1;
+  
+  for(let g=0;g<groups;g++){
+    const baseY=g*spacing*6+((time*20)%(spacing*6));
+    for(let i=0;i<5;i++){
+      const y=baseY+i*spacing;
+      ctx.beginPath();
+      ctx.moveTo(0,y);
+      ctx.lineTo(W,y);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawBackground(){
+  // Dark gradient
+  const bgGrad=ctx.createLinearGradient(0,0,0,H);
+  bgGrad.addColorStop(0,'#151520');
+  bgGrad.addColorStop(0.5,'#0d0d15');
+  bgGrad.addColorStop(1,'#08080c');
+  ctx.fillStyle=bgGrad;
+  ctx.fillRect(-20,-20,W+40,H+40);
+  
+  // Staff lines
+  drawStaffLines();
+  
+  // Animated EQ bars at bottom
+  ctx.globalAlpha=0.12;
+  const barCount=20;
+  const barW=W/barCount-4;
+  for(let i=0;i<barCount;i++){
+    const barX=i*(W/barCount)+2;
+    const wave1=Math.sin(time*3+i*0.4)*0.5+0.5;
+    const wave2=Math.sin(time*2.3+i*0.6)*0.3+0.7;
+    const barH=30+wave1*wave2*60+(speakerPulse*40);
+    ctx.fillStyle=noteColors[i%noteColors.length].fill;
+    ctx.fillRect(barX,H-barH,barW,barH);
+  }
+  ctx.globalAlpha=1;
+  
+  // Subtle spotlight
+  const spotGrad=ctx.createRadialGradient(W/2,-100,0,W/2,H/2,H);
+  spotGrad.addColorStop(0,'rgba(80,60,120,0.12)');
+  spotGrad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=spotGrad;
+  ctx.fillRect(0,0,W,H);
+}
+
+function drawParticle(p){
+  ctx.globalAlpha=p.life;
+  
+  if(p.type==='circle'){
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);
+    ctx.fill();
+  }
+  else if(p.type==='star'){
+    ctx.fillStyle=p.color;
+    const s=p.size*p.life;
+    ctx.beginPath();
+    ctx.moveTo(p.x,p.y-s);
+    ctx.lineTo(p.x+s*0.35,p.y);
+    ctx.lineTo(p.x,p.y+s);
+    ctx.lineTo(p.x-s*0.35,p.y);
+    ctx.closePath();
+    ctx.fill();
+  }
+  else if(p.type==='note'){
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.rot);
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.ellipse(0,0,p.size*0.5*p.life,p.size*0.35*p.life,-0.3,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+  
+  ctx.globalAlpha=1;
+}
+
+function drawUI(){
+  // Score panel
+  ctx.fillStyle='rgba(10,10,20,0.75)';
+  ctx.strokeStyle='#444';
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.roundRect(15,15,170,75,12);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Label
+  ctx.fillStyle='#888';
+  ctx.font='bold 13px "Segoe UI",Arial,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('♪ SCORE',28,36);
+  
+  // Score value
+  ctx.fillStyle='#FFCC33';
+  ctx.font='bold 38px "Segoe UI",Arial,sans-serif';
+  ctx.fillText(score.toString(),28,75);
+  
+  // Combo
+  if(combo>1){
+    ctx.fillStyle='#33FF99';
+    ctx.font='bold 20px "Segoe UI",Arial,sans-serif';
+    ctx.fillText('×'+combo,145,75);
+  }
+  
+  // Score popups
+  scorePopups.forEach(s=>{
+    ctx.globalAlpha=s.life;
+    ctx.fillStyle=s.color;
+    ctx.font=`bold ${22*s.scale}px "Segoe UI",Arial,sans-serif`;
+    ctx.textAlign='center';
+    ctx.shadowColor=s.color;
+    ctx.shadowBlur=10;
+    ctx.fillText(s.text,s.x,s.y);
+    ctx.shadowBlur=0;
+  });
+  ctx.globalAlpha=1;
+}
+
+function draw(){
+  ctx.save();
+  ctx.translate(screenShake.x,screenShake.y);
+  
+  drawBackground();
+  
+  // Particles (back layer)
+  particles.forEach(drawParticle);
+  
+  // Notes
+  notes.forEach(n=>{
+    drawMusicNote(n.x,n.y,n.size,n.rotation,n.colorIdx,n.type);
+  });
+  
+  // Speaker/Catcher
+  drawSpeaker();
+  
+  ctx.restore();
+  
+  // UI (not affected by shake)
+  drawUI();
+}
+
+function setTarget(x){
+  initAudio();
+  catcher.targetX=Math.max(catcher.w/2+10,Math.min(W-catcher.w/2-10,x));
+}
+
+// Input
+c.addEventListener('mousemove',e=>setTarget(e.clientX));
+c.addEventListener('mousedown',e=>{initAudio();setTarget(e.clientX);});
+c.addEventListener('touchstart',e=>{e.preventDefault();initAudio();setTarget(e.touches[0].clientX);},{passive:false});
+c.addEventListener('touchmove',e=>{e.preventDefault();setTarget(e.touches[0].clientX);},{passive:false});
+
+// Game loop
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Love Hearts Catch Game</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id=c></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+resize();onresize=resize;
+
+let score=0,drops=[],paddle={x:W/2,w:120,h:25};
+let effects=[];
+
+function randomHeartColor(){
+  const colors=['#ff6f91','#ff4da6','#ff1493','#ff69b4'];
+  return colors[Math.floor(Math.random()*colors.length)];
+}
+
+function spawn(){
+  drops.push({
+    x:Math.random()*(W-40)+20,
+    y:-30,
+    r:15,
+    speed:2+Math.random()*2,
+    color:randomHeartColor()
+  });
+}
+
+function drawHeart(x,y,r,color){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.beginPath();
+  ctx.moveTo(0,-r/2);
+  ctx.bezierCurveTo(r/2,-r/2,r/2,r/2,0,r/2);
+  ctx.bezierCurveTo(-r/2,r/2,-r/2,-r/2,0,-r/2);
+  ctx.closePath();
+  ctx.fillStyle=color;
+  ctx.shadowBlur=10;
+  ctx.shadowColor=color;
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawJar(){
+  const x=paddle.x, y=H-40, w=paddle.w, h=paddle.h;
+  ctx.save();
+  ctx.shadowBlur=20;
+  ctx.shadowColor='#fff';
+  ctx.fillStyle='#fff';
+  ctx.beginPath();
+  ctx.moveTo(x-w/2, y);
+  ctx.lineTo(x+w/2, y);
+  ctx.lineTo(x+w/2, y+h);
+  ctx.lineTo(x-w/2, y+h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle='#fff';
+  ctx.lineWidth=2;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x, y, w/2, Math.PI, 0, false);
+  ctx.fill();
+  ctx.restore();
+}
+
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  drops=drops.filter(d=>{
+    if(d.y>H-50&&d.y<H-20&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;
+      effects.push({x:d.x,y:d.y,r:0,maxR:30,opacity:1});
+      return false;
+    }
+    return d.y<H+50;
+  });
+  if(Math.random()<0.02)spawn();
+  effects.forEach(e=>{
+    e.r+=1.5;
+    e.opacity-=0.03;
+  });
+  effects=effects.filter(e=>e.opacity>0);
+}
+
+function draw(){
+  ctx.fillStyle='#111';
+  ctx.fillRect(0,0,W,H);
+  drops.forEach(d=>drawHeart(d.x,d.y,d.r,d.color));
+  effects.forEach(e=>{
+    ctx.save();
+    ctx.globalAlpha=e.opacity;
+    ctx.fillStyle='#ff69b4';
+    ctx.beginPath();
+    ctx.arc(e.x,e.y,e.r,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+  drawJar();
+  ctx.save();
+  ctx.font='bold 30px sans-serif';
+  ctx.fillStyle='#ff69b4';
+  ctx.shadowBlur=15;
+  ctx.shadowColor='#ff69b4';
+  ctx.fillText('❤ '+score,20,40);
+  ctx.restore();
+}
+
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

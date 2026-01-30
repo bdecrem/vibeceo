@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Snowflake Catch</title>
+<style>body{margin:0;background:#001a33;overflow:hidden;touch-action:none}canvas{display:block}</style>
+</head><body><canvas id=c></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+let score=0,drops=[],puffs=[],paddle={x:W/2,w:80,h:20};
+function spawn(){drops.push({x:Math.random()*(W-40)+20,y:-30,r:12,speed:2+Math.random()*2,color:'#ffffff'});}
+function update(){
+  drops.forEach(d=>d.y+=d.speed);
+  drops=drops.filter(d=>{
+    if(d.y>H-50&&d.y<H-20&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;puffs.push({x:d.x,y:H-40,size:5,alpha:1});return false;
+    }
+    return d.y<H+50;
+  });
+  if(Math.random()<0.02)spawn();
+  puffs.forEach(p=>{p.size+=0.3;p.alpha-=0.015;});
+  puffs=puffs.filter(p=>p.alpha>0);
+}
+function drawSnowflake(d){
+  const s=d.r;
+  ctx.fillStyle=d.color;
+  // Draw a simple cross shape for pixelated snowflake
+  ctx.fillRect(d.x-s/2,d.y-s*1.5,s, s*3);
+  ctx.fillRect(d.x-s*1.5,d.y-s/2,s*3, s);
+}
+function draw(){
+  ctx.fillStyle='#001a33';ctx.fillRect(0,0,W,H);
+  drops.forEach(d=>drawSnowflake(d));
+  puffs.forEach(p=>{
+    ctx.fillStyle=`rgba(255,255,255,${p.alpha})`;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
+  });
+  ctx.fillStyle='#ffcc99';ctx.fillRect(paddle.x-paddle.w/2,H-40,paddle.w,paddle.h);
+  ctx.strokeStyle='#663300';ctx.lineWidth=2;ctx.strokeRect(paddle.x-paddle.w/2,H-40,paddle.w,paddle.h);
+  ctx.fillStyle='#ffddaa';ctx.font='32px monospace';ctx.fillText('Score: '+score,20,50);
+}
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script></body></html>

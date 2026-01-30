@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Love Catch</title>
+<style>
+  body{margin:0;background:#111;overflow:hidden;touch-action:none}
+  canvas{display:block}
+</style>
+</head><body><canvas id=c></canvas>
+<script>
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}resize();onresize=resize;
+
+let score=0,drops=[],paddle={x:W/2,w:80,h:20};
+
+const heartPath=new Path2D();
+heartPath.moveTo(0,0);
+heartPath.bezierCurveTo(-15,-30,-30,-15,-20,10);
+heartPath.bezierCurveTo(-10,35,0,30,10,35);
+heartPath.bezierCurveTo(20,30,20,10,0,0);
+heartPath.closePath();
+
+const catcherPath=new Path2D();
+catcherPath.moveTo(-30,-20);catcherPath.lineTo(30,-20);catcherPath.quadraticCurveTo(40,-10,30,0);
+catcherPath.lineTo(30,20);catcherPath.lineTo(-30,20);catcherPath.quadraticCurveTo(-40,10,-30,0);
+catcherPath.lineTo(-30,-20);catcherPath.closePath();
+
+function spawn(){
+  const r=15+Math.random()*5;
+  drops.push({x:Math.random()*(W-40)+20,y:-30,r,color:'#ff6ec7',speed:2+Math.random()*2,trail:[]});
+}
+function update(){
+  drops.forEach(d=>{d.y+=d.speed;d.trail.push({x:d.x,y:d.y});if(d.trail.length>10)d.trail.shift();});
+  drops=drops.filter(d=>{
+    if(d.y>H-50&&d.y<H-20&&Math.abs(d.x-paddle.x)<paddle.w/2+d.r){
+      score++;d.caught=true;return false;
+    }
+    return d.y<H+50;
+  });
+  if(Math.random()<0.02)spawn();
+}
+function draw(){
+  // Background gradient like a glass jar
+  const bg=ctx.createRadialGradient(W/2,H/2,20,W/2,H/2,Math.max(W,H));
+  bg.addColorStop(0,'#ffe0f7');
+  bg.addColorStop(1,'#ffb6c1');
+  ctx.fillStyle=bg;
+  ctx.fillRect(0,0,W,H);
+
+  // Draw falling hearts
+  drops.forEach(d=>{
+    ctx.save();
+    ctx.translate(d.x,d.y);
+    ctx.shadowBlur=15;
+    ctx.shadowColor='#ff6ec7';
+    ctx.fillStyle=d.color;
+    ctx.scale(d.r/30, d.r/30);
+    ctx.fill(heartPath);
+    ctx.restore();
+  });
+
+  // Draw catcher
+  ctx.save();
+  ctx.translate(paddle.x,H-40);
+  ctx.rotate(-Math.PI/10);
+  ctx.shadowBlur=20;
+  ctx.shadowColor='rgba(255,110,199,0.8)';
+  ctx.fillStyle='#ff6ec7';
+  ctx.fill(catcherPath);
+  ctx.restore();
+
+  // Draw score
+  ctx.fillStyle='#ff6ec7';
+  ctx.font='bold 28px cursive';
+  ctx.textAlign='left';
+  ctx.shadowBlur=10;
+  ctx.shadowColor='rgba(255,110,199,0.9)';
+  ctx.fillText('💖 '+score,20,40);
+}
+function move(x){paddle.x=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x));}
+c.onmousemove=e=>move(e.clientX);
+c.ontouchmove=e=>{e.preventDefault();move(e.touches[0].clientX);};
+c.ontouchstart=e=>{e.preventDefault();move(e.touches[0].clientX);};
+
+function loop(){update();draw();requestAnimationFrame(loop)}loop();
+</script></body></html>
