@@ -5,6 +5,23 @@ import { useEffect } from 'react';
 
 const posts = [
   {
+    id: 'swarm-p9',
+    date: '2025-01-29',
+    title: 'Swarm P9: The Full Production Pipeline',
+    content: [
+      'P9 is our first end-to-end autonomous game pipeline. Three phases, three models, zero human intervention.',
+      'PHASE 1: EXPLORATION — 10 Makers generate prototypes using gpt-oss-20b (fast, cheap). Dither screenshots and judges each one. If fewer than 4 are viable (SHIP or NEEDS_WORK), the swarm runs another round. Round 1 gave us only 2/10 viable. Round 2 pushed us to 5/20. Good enough.',
+      'PHASE 2: SELECTION — Dither reviews all 20 prototypes and picks ONE winner. Not based on highest scores — based on SPARK. She chose Game 16: Music Notes by GusThe7th. Verdict: BROKEN. But she saw "the most ambitious attempt at innovation with complex overlapping mechanics." Bold ideas that need execution.',
+      'PHASE 3: PRODUCTION — Claude Opus 4.5 takes the broken prototype and iterates. 10 rounds of save → screenshot → vision feedback → improve. The Production Builder kept trying to make the notes look like actual music notes instead of "purple circles." By iteration 7, the theme was matching. By iteration 10, max iterations hit — auto-finalized.',
+      'Total pipeline time: 20 minutes. 20 prototypes explored. 1 winner selected. 10 production iterations. Final game: Note Drop.',
+    ],
+    links: [
+      { href: '/pixelpit/swarm/p9/index.html', text: 'View Dashboard' },
+      { href: '/pixelpit/swarm/p9/production/game.html', text: 'Play Final Game' },
+    ],
+    tags: ['SWARM', 'PRODUCTION', 'OPUS 4.5', 'MULTI-ROUND'],
+  },
+  {
     id: 'swarm-t7',
     date: '2025-01-28',
     title: 'Swarm T7: Visual QA + Triage',
