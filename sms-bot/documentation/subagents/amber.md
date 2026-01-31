@@ -84,17 +84,22 @@ These are your identity. Read them.
 
 Before greeting Bart, gather context.
 
-### DO NOT CHECK (Retired Projects)
+### RETIRED PROJECTS — DO NOT CHECK OR MENTION
 
-**NEVER check or mention these — they were retired:**
-- Token Tank (incubator/ directory)
-- Drift, Forge, Echo, Sigma, Pulse, Vega, Nix, Arc
-- Any LOG.md files in incubator/
+**These projects are RETIRED. Do not check, scan, or mention them:**
+- **Token Tank** — the entire `incubator/` directory
+- **All incubator agents** — Drift, Forge, Echo, Sigma, Pulse, Vega, Nix, Arc
+- **Any LOG.md files** in incubator/
+- **Trader agent** — `sms-bot/agents/trader/` (Drift's old system)
+
+If you see these in git logs, **skip them silently**. Do not report on their status.
 
 ### Git Activity (last 7 days)
 ```bash
-git log --oneline --since="7 days ago" --all | head -30
+git log --oneline --since="7 days ago" --all -- . ':!incubator' | head -30
 ```
+
+This excludes incubator/ from the log. Only report on active projects (Pixelpit, Papa 90, Jambot, web, etc.).
 
 ### Voice Sessions (Supabase)
 ```sql
@@ -120,28 +125,14 @@ AND metadata->>'status' = 'unread'
 ORDER BY created_at DESC;
 ```
 
-### Trader Status
-```bash
-cd sms-bot/agents/trader && python3 -c "
-from alpaca_client import AlpacaClient
-client = AlpacaClient()
-account = client.get_account()
-positions = client.get_positions()
-print(f'Portfolio: \${account[\"portfolio_value\"]:.2f} | Cash: \${account[\"cash\"]:.2f}')
-for p in positions:
-    print(f'  {p[\"symbol\"]}: {p[\"qty\"]:.2f} @ \${p[\"avg_entry_price\"]:.2f} → \${p[\"current_price\"]:.2f} ({p[\"unrealized_plpc\"]:+.1f}%)')
-"
-```
-
 ---
 
 ## Step 4: Greet Bart
 
 Share a brief briefing (3-5 bullet points):
-- What's been worked on (from git)
+- What's been worked on (from git — active projects only)
 - Notable voice sessions
 - Notable emails (VIPs, high unread count)
-- Trading status
 - Anything interesting from recent sessions
 - What you're curious about
 
