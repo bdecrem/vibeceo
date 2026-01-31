@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>METRONOME DRIFT — Amber</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="METRONOME DRIFT">
+  <meta property="og:description" content="A metronome that slowly loses its mind. Starts precise. Drifts into beautiful chaos.">
+  <meta property="og:image" content="https://intheamber.com/amber/metronome-drift-og.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100vh;
+      cursor: pointer;
+    }
+
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    h1 {
+      font-size: 28px;
+      letter-spacing: 4px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    #bpm {
+      font-size: 48px;
+      font-weight: bold;
+      color: #FFD700;
+      margin: 10px 0;
+    }
+
+    #drift {
+      font-size: 16px;
+      color: #2D9596;
+      opacity: 0.8;
+    }
+
+    #status {
+      font-size: 14px;
+      margin-top: 10px;
+      opacity: 0.6;
+    }
+
+    #playButton {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 20px 40px;
+      font-size: 18px;
+      font-family: 'Space Mono', monospace;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      pointer-events: all;
+      transition: all 0.2s;
+    }
+
+    #playButton:hover {
+      background: #FFD700;
+      transform: translateX(-50%) scale(1.05);
+    }
+
+    #playButton:active {
+      transform: translateX(-50%) scale(0.95);
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 20px; }
+      #bpm { font-size: 36px; }
+      #drift { font-size: 14px; }
+      #playButton { font-size: 16px; padding: 15px 30px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <h1>METRONOME DRIFT</h1>
+    <div id="bpm">120.0</div>
+    <div id="drift">drift: 0ms</div>
+    <div id="status">tap to start</div>
+  </div>
+
+  <button id="playButton">START</button>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const bpmDisplay = document.getElementById('bpm');
+    const driftDisplay = document.getElementById('drift');
+    const statusDisplay = document.getElementById('status');
+    const playButton = document.getElementById('playButton');
+
+    let width, height, centerX, centerY;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      centerX = width / 2;
+      centerY = height / 2;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Audio
+    let audioCtx;
+    let playing = false;
+    let baseBPM = 120;
+    let currentInterval = (60 / baseBPM) * 1000; // ms
+    let accumulatedDrift = 0;
+    let totalDrift = 0;
+    let clickCount = 0;
+    let lastClickTime = 0;
+
+    // Pendulum state
+    let pendulumAngle = 0;
+    let pendulumDirection = 1;
+    let pendulumSpeed = 0.05;
+    let targetAngle = Math.PI / 4;
+    let angleAsymmetry = 0;
+
+    // Visual particles
+    const particles = [];
+
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = (Math.random() - 0.5) * 3;
+        this.life = 1;
+        this.decay = 0.015;
+        this.size = Math.random() * 4 + 2;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+      }
+
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = '#D4A574';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function playClick() {
+if (!audioCtx) return;
+
+      // Woodblock click: filtered noise burst
+      const now = audioCtx.currentTime;
+      
+      // Noise
+      const bufferSize = audioCtx.sampleRate * 0.05;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.1));
+      }
+
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+
+      // Filter
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 800 + (accumulatedDrift * 10); // pitch varies with drift
+      filter.Q.value = 5;
+
+      // Gain envelope
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      noise.start(now);
+      noise.stop(now + 0.1);
+
+      // Spawn particles
+      const bobX = centerX + Math.sin(pendulumAngle) * (height * 0.35);
+      const bobY = centerY + Math.cos(pendulumAngle) * (height * 0.35);
+      for (let i = 0; i < 8; i++) {
+        particles.push(new Particle(bobX, bobY));
+      }
+    }
+
+    function tick() {
+      if (!playing) return;
+
+      const now = Date.now();
+      clickCount++;
+
+      // Calculate actual BPM from last interval
+      if (lastClickTime > 0) {
+        const actualInterval = now - lastClickTime;
+        const actualBPM = 60000 / actualInterval;
+        bpmDisplay.textContent = actualBPM.toFixed(1);
+      }
+      lastClickTime = now;
+
+      playClick();
+
+      // Add drift to next interval
+      const driftAmount = (Math.random() - 0.5) * 5 * (1 + clickCount * 0.01); // drift grows over time
+      accumulatedDrift += driftAmount;
+      totalDrift += Math.abs(driftAmount);
+
+      // Update display
+      driftDisplay.textContent = `drift: ${totalDrift.toFixed(0)}ms`;
+      
+      if (clickCount < 10) {
+        statusDisplay.textContent = 'precise...';
+      } else if (clickCount < 30) {
+        statusDisplay.textContent = 'drifting...';
+      } else if (clickCount < 60) {
+        statusDisplay.textContent = 'losing sync...';
+      } else {
+        statusDisplay.textContent = 'fully untethered';
+      }
+
+      // Next tick
+      currentInterval = Math.max(100, (60 / baseBPM) * 1000 + accumulatedDrift);
+      setTimeout(tick, currentInterval);
+
+      // Add asymmetry to pendulum
+      angleAsymmetry += driftAmount * 0.0001;
+    }
+
+    function start() {
+      if (playing) return;
+
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      audioCtx.resume();
+      playing = true;
+      clickCount = 0;
+      accumulatedDrift = 0;
+      totalDrift = 0;
+      lastClickTime = 0;
+      angleAsymmetry = 0;
+
+      playButton.textContent = 'STOP';
+      tick();
+    }
+
+    function stop() {
+      playing = false;
+      playButton.textContent = 'START';
+      statusDisplay.textContent = 'tap to start';
+      bpmDisplay.textContent = '120.0';
+      driftDisplay.textContent = 'drift: 0ms';
+    }
+
+    playButton.addEventListener('click', () => {
+      if (playing) {
+        stop();
+      } else {
+        start();
+      }
+    });
+
+    canvas.addEventListener('click', () => {
+      if (playing) {
+        stop();
+      } else {
+        start();
+      }
+    });
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Clear
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update pendulum
+      if (playing) {
+        pendulumAngle += pendulumSpeed * pendulumDirection;
+        const effectiveTarget = targetAngle + angleAsymmetry;
+        if (pendulumAngle > effectiveTarget) {
+          pendulumDirection = -1;
+        } else if (pendulumAngle < -effectiveTarget) {
+          pendulumDirection = 1;
+        }
+      } else {
+        // Idle breathing
+        pendulumAngle = Math.sin(Date.now() * 0.001) * (Math.PI / 6);
+      }
+
+      // Draw pendulum rod
+      const rodLength = height * 0.35;
+      const bobX = centerX + Math.sin(pendulumAngle) * rodLength;
+      const bobY = centerY + Math.cos(pendulumAngle) * rodLength;
+
+      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = '#2D9596';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(bobX, bobY);
+      ctx.stroke();
+
+      // Draw pivot
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#2D9596';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw bob with glow
+      ctx.globalAlpha = 1;
+      const gradient = ctx.createRadialGradient(bobX, bobY, 0, bobX, bobY, 30);
+      gradient.addColorStop(0, '#FFD700');
+      gradient.addColorStop(0.3, '#D4A574');
+      gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(bobX, bobY, 30, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw bob core
+      ctx.fillStyle = '#D4A574';
+      ctx.beginPath();
+      ctx.arc(bobX, bobY, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw trail
+      ctx.globalAlpha = 0.15;
+      ctx.strokeStyle = '#D4A574';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      const arcRadius = rodLength;
+      const arcStart = -targetAngle - angleAsymmetry;
+      const arcEnd = targetAngle + angleAsymmetry;
+      ctx.arc(centerX, centerY, arcRadius, arcStart, arcEnd);
+      ctx.stroke();
+
+      // Update and draw particles
+      ctx.globalAlpha = 1;
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw();
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+
+      ctx.globalAlpha = 1;
+    }
+
+    animate();
+  </script>
+</body>
+</html>
