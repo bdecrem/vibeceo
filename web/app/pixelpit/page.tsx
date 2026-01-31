@@ -827,7 +827,7 @@ export default function PixelpitLanding() {
         <CastCarousel />
       </section>
 
-      {/* The Lab */}
+      {/* The Pit */}
       <section className="py-16 px-4 relative overflow-hidden" style={{
         backgroundColor: '#0D1F1C',
         backgroundImage: `
@@ -840,7 +840,7 @@ export default function PixelpitLanding() {
         backgroundSize: '100px 100px, 100px 100px, 100px 100px, 50px 50px, 50px 50px',
       }}>
         <h2 className="text-center text-3xl font-black mb-10">
-          <span style={{ color: '#00FFAA', textShadow: '0 0 30px rgba(0, 255, 170, 0.6)' }}>THE LAB</span>
+          <span style={{ color: '#00FFAA', textShadow: '0 0 30px rgba(0, 255, 170, 0.6)' }}>THE PIT</span>
         </h2>
         <LabGrid />
         <div className="text-center mt-10">

@@ -95,7 +95,7 @@ export default function LabBlog() {
           className="text-4xl font-black mb-2"
           style={{ color: '#00FFAA', textShadow: '0 0 30px rgba(0, 255, 170, 0.6)' }}
         >
-          THE LAB
+          THE PIT
         </h1>
         <p className="text-[#00FFAA]/60 font-mono mb-12">// experiments, prototypes, and dev notes</p>
 
