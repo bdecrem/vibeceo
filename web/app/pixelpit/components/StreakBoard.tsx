@@ -82,11 +82,22 @@ export function StreakBoard({ group, colors, onClose }: StreakBoardProps) {
         fontSize: 14,
         fontWeight: 300,
         color: colors.muted,
-        marginBottom: 10,
+        marginBottom: 6,
         letterSpacing: 3,
       }}>
         {group.name}
       </h2>
+
+      {/* Group Code */}
+      <div style={{
+        fontFamily,
+        fontSize: 10,
+        color: colors.muted,
+        marginBottom: 10,
+        opacity: 0.6,
+      }}>
+        code: {group.code}
+      </div>
 
       {/* Streak Count */}
       <div style={{

@@ -155,6 +155,19 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose, grou
         />
       )}
 
+      {/* Group Code (when viewing a group) */}
+      {activeTab !== 'global' && (
+        <div style={{
+          fontFamily,
+          fontSize: 10,
+          color: colors.muted,
+          marginBottom: 12,
+          opacity: 0.6,
+        }}>
+          code: {activeTab}
+        </div>
+      )}
+
       <div
         onClick={() => setShowXpInfo(true)}
         style={{
