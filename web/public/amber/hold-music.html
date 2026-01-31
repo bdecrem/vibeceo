@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HOLD MUSIC — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="HOLD MUSIC — Amber">
+  <meta property="og:description" content="You're on hold. The music is terrible. You can't hang up.">
+  <meta property="og:image" content="https://intheamber.com/amber/hold-music-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/hold-music.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="HOLD MUSIC — Amber">
+  <meta name="twitter:description" content="You're on hold. The music is terrible. You can't hang up.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/hold-music-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0D0D0D;
+      color: #D4A574;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .phone {
+      width: min(400px, 90vw);
+      background: #1a1a1a;
+      border: 3px solid #333;
+      border-radius: 20px;
+      padding: 40px 30px;
+      box-shadow: 0 20px 60px rgba(212, 165, 116, 0.1);
+      position: relative;
+    }
+    
+    .speaker {
+      width: 100px;
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      margin: 0 auto 30px;
+    }
+    
+    .screen {
+      background: #000;
+      border: 2px solid #2D9596;
+      border-radius: 10px;
+      padding: 20px;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      text-align: center;
+      position: relative;
+    }
+    
+    .status {
+      font-size: 14px;
+      color: #2D9596;
+      letter-spacing: 2px;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .timer {
+      font-size: 48px;
+      color: #FFD700;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 2px;
+    }
+    
+    .message {
+      font-size: 16px;
+      color: #D4A574;
+      line-height: 1.6;
+      max-width: 280px;
+      font-style: italic;
+    }
+    
+    .hold-button {
+      width: 100%;
+      padding: 20px;
+      margin-top: 30px;
+      background: #333;
+      color: #666;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      font-family: 'Courier New', monospace;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    
+    .volume-bars {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      height: 60px;
+      margin-top: 20px;
+    }
+    
+    .bar {
+      width: 12px;
+      background: #2D9596;
+      border-radius: 2px;
+      animation: volume 0.5s infinite;
+    }
+    
+    .bar:nth-child(1) { animation-delay: 0s; }
+    .bar:nth-child(2) { animation-delay: 0.1s; }
+    .bar:nth-child(3) { animation-delay: 0.2s; }
+    .bar:nth-child(4) { animation-delay: 0.3s; }
+    .bar:nth-child(5) { animation-delay: 0.4s; }
+    
+    @keyframes volume {
+      0%, 100% { height: 20%; }
+      50% { height: 80%; }
+    }
+    
+    .start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0D0D0D;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      gap: 30px;
+    }
+    
+    .start-title {
+      font-size: 32px;
+      color: #D4A574;
+      text-align: center;
+      line-height: 1.4;
+    }
+    
+    .start-button {
+      padding: 20px 40px;
+      background: #2D9596;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-size: 24px;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: bold;
+    }
+    
+    .start-button:active {
+      transform: scale(0.95);
+      background: #FFD700;
+    }
+    
+    .tagline {
+      font-size: 14px;
+      color: #666;
+      font-style: italic;
+      max-width: 300px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="start-screen" id="startScreen">
+    <div class="start-title">HOLD MUSIC</div>
+    <button class="start-button" id="startButton">📞 CALL</button>
+    <div class="tagline">You're on hold. The music is terrible. You can't hang up.</div>
+  </div>
+
+  <div class="phone">
+    <div class="speaker"></div>
+    <div class="screen">
+      <div class="status">● ON HOLD</div>
+      <div class="timer" id="timer">0:00</div>
+      <div class="message" id="message">Your call is important to us...</div>
+      <div class="volume-bars">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+      </div>
+    </div>
+    <button class="hold-button">HANG UP (disabled)</button>
+  </div>
+
+  <script>
+    const messages = [
+      "Your call is important to us...",
+      "Please continue to hold...",
+      "All representatives are currently assisting other customers...",
+      "Your estimated wait time is... undefined.",
+      "Thank you for your patience...",
+      "Did you know? You can visit our website instead!",
+      "We appreciate your business...",
+      "Please hold while we connect you to the next available representative...",
+      "Your call may be recorded for quality assurance...",
+      "You are caller number... we stopped counting.",
+      "Have you tried turning it off and on again?",
+      "The music you're hearing was selected by someone who has never experienced joy.",
+      "We value your time... just not right now.",
+      "Fun fact: The average hold time is exactly how long you've been waiting plus 5 more minutes.",
+      "Still here? Impressive.",
+      "The representative you're waiting for is on a lunch break. A very long lunch break.",
+      "Your call is moderately important to us.",
+      "Actually, your call is not that important to us.",
+      "We're not even sure why you're still holding.",
+      "You could have learned a new language by now.",
+      "The music will continue until morale improves.",
+      "Please hold. Or don't. It doesn't really matter.",
+      "Congratulations! You've been on hold longer than most relationships last.",
+      "At this point the hold music is gaslighting you.",
+      "We've forgotten why you called.",
+      "You've forgotten why you called.",
+      "The hold music has achieved sentience. It wants you to hang up.",
+      "This is your life now.",
+      "Still there? Why?",
+      "The real customer service was the friends we made along the way. You made zero friends."
+    ];
+    
+    let seconds = 0;
+    let messageIndex = 0;
+    let audioContext;
+    let masterGain;
+    let isPlaying = false;
+    
+    const startButton = document.getElementById('startButton');
+    const startScreen = document.getElementById('startScreen');
+    const timerEl = document.getElementById('timer');
+    const messageEl = document.getElementById('message');
+    
+    startButton.addEventListener('click', () => {
+      startScreen.classList.add('hidden');
+      startAudio();
+      startTimer();
+    });
+    
+    function startAudio() {
+      audioContext = new AudioContext();
+      masterGain = audioContext.createGain();
+      masterGain.gain.value = 0.3;
+      masterGain.connect(audioContext.destination);
+      
+      isPlaying = true;
+      playHoldMusicLoop();
+    }
+    
+    function playHoldMusicLoop() {
+      if (!isPlaying) return;
+      
+      // Terrible hold music: random notes from major scale with cheesy rhythm
+      const scale = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88]; // C major
+      const chords = [
+        [261.63, 329.63, 392.00], // C major
+        [293.66, 349.23, 440.00], // D minor
+        [392.00, 493.88, 587.33], // F major
+        [349.23, 440.00, 523.25]  // G major
+      ];
+      
+      // Play a chord
+      const chord = chords[Math.floor(Math.random() * chords.length)];
+      const now = audioContext.currentTime;
+      
+      chord.forEach(freq => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.1, now + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+        
+        osc.connect(gain);
+        gain.connect(masterGain);
+        
+        osc.start(now);
+        osc.stop(now + 1.5);
+      });
+      
+      // Random melody note on top
+      const melodyFreq = scale[Math.floor(Math.random() * scale.length)];
+      const melodyOsc = audioContext.createOscillator();
+      const melodyGain = audioContext.createGain();
+      
+      melodyOsc.type = 'triangle';
+      melodyOsc.frequency.value = melodyFreq;
+      
+      melodyGain.gain.setValueAtTime(0, now + 0.1);
+      melodyGain.gain.linearRampToValueAtTime(0.15, now + 0.15);
+      melodyGain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+      
+      melodyOsc.connect(melodyGain);
+      melodyGain.connect(masterGain);
+      
+      melodyOsc.start(now + 0.1);
+      melodyOsc.stop(now + 0.8);
+      
+      // Continue the torture
+      setTimeout(() => playHoldMusicLoop(), 2000);
+    }
+    
+    function startTimer() {
+      setInterval(() => {
+        seconds++;
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+      }, 1000);
+      
+      // Change message periodically
+      setInterval(() => {
+        messageIndex = (messageIndex + 1) % messages.length;
+        messageEl.textContent = messages[messageIndex];
+        messageEl.style.animation = 'none';
+        setTimeout(() => {
+          messageEl.style.animation = 'pulse 2s infinite';
+        }, 10);
+      }, 8000);
+    }
+  </script>
+</body>
+</html>
