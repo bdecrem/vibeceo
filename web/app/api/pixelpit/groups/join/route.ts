@@ -54,12 +54,23 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Add as member
+    // Check if user played today (to set last_play_at on join)
+    const { data: user } = await supabase
+      .from("pixelpit_users")
+      .select("last_play_date")
+      .eq("id", userId)
+      .single();
+
+    const today = new Date().toISOString().split("T")[0];
+    const playedToday = user?.last_play_date === today;
+
+    // Add as member (with last_play_at if they played today)
     const { error: memberError } = await supabase
       .from("pixelpit_group_members")
       .insert({
         group_id: group.id,
         user_id: userId,
+        last_play_at: playedToday ? new Date().toISOString() : null,
       });
 
     if (memberError) {

@@ -484,10 +484,11 @@ export async function POST(request: NextRequest) {
             .single();
 
           if (!existing) {
-            // Join the group
+            // Join the group (with last_play_at since they're playing now)
             await supabase.from("pixelpit_group_members").insert({
               group_id: group.id,
               user_id: userId,
+              last_play_at: new Date().toISOString(),
             });
           }
 
