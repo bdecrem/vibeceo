@@ -1,396 +1,135 @@
-# Claude Agent SDK Guide - Python
+Claude Agent SDK - Official Documentation
+
+
+MORE / CURRENT INFO IS AT https://www.anthropic.com/learn/build-with-claude
+
 
 ## Overview
+The Claude Agent SDK is a library that lets you build production AI agents in Python and TypeScript. It provides the same tools, agent loop, and context management that power Claude Code, but programmable. It was renamed from “Claude Code SDK” to “Claude Agent SDK”.
 
-Complete guide for using the Python `claude-agent-sdk` to build autonomous AI agents. Covers setup, authentication, implementation patterns, and critical lessons learned from production use.
+The SDK gives you autonomous agents that can:
+Read files
+- Run commands
+- Search the web
+- Edit code
+- And more
+## Key Features & Capabilities
 
----
+### Built-in Tools
+Your agent can read files, run commands, and search codebases out of the box:
 
-## Quick Start
+**Read** - Read any file in the working directory
+- **Write** - Create new files
+- **Edit** - Make precise edits to existing files
+- **Bash** - Run terminal commands, scripts, git operations
+- **Glob** - Find files by pattern (e.g., **/*.ts, src/**/*.py)
+- **Grep** - Search file contents with regex
+- **WebSearch** - Search the web for current information
+- **WebFetch** - Fetch and parse web page content
+- **AskUserQuestion** - Ask users clarifying questions with multiple choice options
+### Advanced Capabilities
+**Hooks** - Customize agent behavior
+- **Subagents** - Delegate tasks to other agents
+- **MCP (Model Context Protocol)** - Integration with external tools
+- **Permissions** - Control what operations agents can perform
+- **Sessions** - Persist agent state across interactions
+### Claude Code Features (When setting_sources=[“project”])
+**Skills** - Specialized capabilities defined in Markdown (.claude/skills/SKILL.md)
+- **Slash Commands** - Custom commands for common tasks (.claude/commands/*.md)
+- **Memory** - Project context and instructions (CLAUDE.md or .claude/CLAUDE.md)
+- **Plugins** - Extend with custom commands, agents, and MCP servers
+## Getting Started
 
-### Installation
+### 1. Install Claude Code
+The SDK uses Claude Code as its runtime:
 
+macOS/Linux/WSL:
 ```bash
-# Requires Python 3.10+
-python3 -m venv .venv
-source .venv/bin/activate
-pip install claude-agent-sdk==0.1.6
+Brew install claude-ai/tap/claude-code
 ```
 
-### Authentication
-
-**Use ANTHROPIC_API_KEY (not OAuth tokens):**
-
+Or using the install script:
 ```bash
-# In .env.local
-ANTHROPIC_API_KEY=sk-ant-api03-YOUR_KEY_HERE
-CLAUDE_AGENT_SDK_TOKEN=sk-ant-api03-YOUR_KEY_HERE  # Same key
+Curl -fsSL https://claude.ai/install.sh | bash
 ```
 
-**Why API key instead of OAuth?**
-- OAuth tokens from `claude setup-token` may link to different accounts
-- API keys from console.anthropic.com ensure correct account/credits
-- Keeps Claude Code on Max plan (don't set tokens in shell)
+See Claude Code setup for Windows and other options.
 
-**Critical**: Only set in .env.local, NOT in ~/.zshrc or shell environment!
+### 2. Install the SDK
 
-### Basic Usage
+**Python:**
+```bash
+Pip install claude-agent-sdk
+```
 
+**TypeScript/JavaScript:**
+```bash
+Npm install @anthropic-ai/claude-agent-sdk```### 3. Set Your API Key```bashexport ANTHROPIC_API_KEY=your-api-key```Get your key from the Claude Console at https://platform.claude.com/The SDK also supports authentication via third-party API providers:
+**Amazon Bedrock**: Set CLAUDE_CODE_USE_BEDROCK=1 and configure AWS credentials
+- **Google Vertex AI**: Set CLAUDE_CODE_USE_VERTEX=1 and configure Google Cloud credentials
+- **Microsoft Foundry**: Set CLAUDE_CODE_USE_FOUNDRY=1 and configure Azure credentials
+### 4. Run Your First Agent
+
+**Python Example:**
 ```python
-from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient
+Import asyncio
+From claude_agent_sdk import query, ClaudeAgentOptions
 
-options = ClaudeAgentOptions(
-    model="claude-sonnet-4-5-20250929",
-    permission_mode="acceptEdits",  # Auto-approve for non-interactive
-    allowed_tools=["WebSearch", "Write", "Read"]
-)
+Async def main():
+    Async for message in query(
+        prompt=”What files are in this directory?”,
+        options=ClaudeAgentOptions(allowed_tools=[“Bash”, “Glob”])
+    ):
+        If hasattr(message, “result”):
+            print(message.result)
 
-async with ClaudeSDKClient(options=options) as client:
-    await client.query("Your high-level task")
+asyncio.run(main())
+```
 
-    async for message in client.receive_response():
-        # Process messages
+**Bug-Fixing Agent Example:**
+```python
+Import asyncio
+From claude_agent_sdk import query, ClaudeAgentOptions
+
+Async def main():
+    Async for message in query(
+        prompt=”Find and fix the bug in auth.py”,
+        options=ClaudeAgentOptions(allowed_tools=[“Read”, “Edit”, “Bash”])
+    ):
         print(message)
+        # Claude reads the file, finds the bug, edits it
+
+asyncio.run(main())
 ```
 
----
-
-## Critical Lessons Learned
-
-This section documents important patterns and gotchas discovered from production use.
-
----
-
-## ✅ SDK MCP Tools DO WORK (But Message Parsing is Tricky!)
-
-### The Problem We Hit
-
-When implementing custom MCP tools with `create_sdk_mcp_server()`, we initially got **0 tool calls** despite following the official documentation. The tools appeared configured correctly but Claude never called them.
-
-### The Root Cause
-
-**We were checking for the WRONG message type!**
-
-The SDK returns typed message objects (`AssistantMessage`, `UserMessage`, `SystemMessage`) - not simple objects with a `.type` attribute. Tool use is indicated by `ToolUseBlock` objects within the message content.
-
-### ❌ INCORRECT Pattern (Doesn't Work):
-
-```python
-async for message in client.receive_response():
-    message_type = getattr(message, "type", "")
-
-    if message_type == "tool_use":  # This is NEVER true!
-        tool_call_count += 1
-```
-
-**Result**: Reports 0 tool calls even though tools ARE being called.
-
-### ✅ CORRECT Pattern (Works):
-
-```python
-async for message in client.receive_response():
-    message_type = type(message).__name__  # "AssistantMessage", etc.
-
-    # Check for ToolUseBlock in content
-    content = getattr(message, "content", None)
-    if isinstance(content, list):
-        for block in content:
-            if type(block).__name__ == "ToolUseBlock":
-                tool_call_count += 1
-                tool_name = getattr(block, "name", "unknown")
-                print(f"Tool called: {tool_name}")
-```
-
-**Result**: Correctly detects all tool calls.
-
----
-
-## SDK MCP Server Pattern (In-Process Tools)
-
-### When to Use
-
-- Need custom tools (database queries, API calls, etc.)
-- Running in non-interactive environment (Railway, Lambda, etc.)
-- Want in-process tools (no external MCP server needed)
-
-### Implementation
-
-**1. Define Tools with @tool Decorator:**
-
-```python
-from claude_agent_sdk import tool, create_sdk_mcp_server
-
-@tool(
-    "execute_query",
-    "Execute a database query and return results",
-    {"query": str, "params": dict}
-)
-async def execute_query_tool(args: dict) -> dict:
-    """Tool implementation."""
-    query = args.get("query", "")
-    params = args.get("params", {})
-
-    # Your logic here
-    results = your_database.execute(query, params)
-
-    return {
-        "content": [{
-            "type": "text",
-            "text": json.dumps(results, default=str)
-        }]
-    }
-
-@tool("get_schema", "Get database schema", {})
-async def get_schema_tool(args: dict) -> dict:
-    """Get schema tool."""
-    schema = your_database.get_schema()
-
-    return {
-        "content": [{
-            "type": "text",
-            "text": json.dumps(schema)
-        }]
-    }
-```
-
-**2. Create SDK MCP Server:**
-
-```python
-server = create_sdk_mcp_server(
-    name="database",
-    version="1.0.0",
-    tools=[execute_query_tool, get_schema_tool]
-)
-```
-
-**3. Configure and Use:**
-
-```python
-from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient
-
-options = ClaudeAgentOptions(
-    model="claude-sonnet-4-5-20250929",
-    permission_mode="acceptEdits",  # Auto-approve (non-interactive)
-    mcp_servers={"db": server},
-    allowed_tools=[
-        "mcp__db__execute_query",
-        "mcp__db__get_schema"
-    ]
-)
-
-async with ClaudeSDKClient(options=options) as client:
-    await client.query("Query the database for user data")
-
-    async for message in client.receive_response():
-        # Process messages (see correct pattern above)
-        pass
-```
-
----
-
-## Tool Naming Convention
-
-**Format:** `mcp__{server_name}__{tool_name}`
-
-**Example:**
-- Server name: `"database"`
-- Tool name (from @tool): `"execute_query"`
-- Allowed tool name: `"mcp__database__execute_query"`
-
----
-
-## Message Types Reference
-
-### Common Message Types:
-
-- `SystemMessage` - System initialization, includes available tools
-- `AssistantMessage` - Claude's responses (text or tool use)
-- `UserMessage` - Tool results being returned to Claude
-- `ResultMessage` - Final result with usage stats
-
-### Message Content Blocks:
-
-- `TextBlock` - Text content from Claude
-- `ToolUseBlock` - Claude calling a tool
-- `ToolResultBlock` - Tool execution results
-
-### Example Message Flow:
-
-```
-1. SystemMessage(subtype='init')
-   - Lists all available tools
-   - Shows mcp_servers status
-
-2. AssistantMessage(content=[TextBlock(...)])
-   - Claude thinking/planning
-
-3. AssistantMessage(content=[ToolUseBlock(name='mcp__db__execute_query', input={...})])
-   - Claude calling tool
-
-4. UserMessage(content=[ToolResultBlock(...)])
-   - Tool results returned
-
-5. AssistantMessage(content=[TextBlock(...)])
-   - Claude's final response
-
-6. ResultMessage(usage={...})
-   - Cost and token stats
-```
-
----
-
-## Debugging Tips
-
-### 1. Enable Debug Logging
-
-```python
-async for message in client.receive_response():
-    msg_type = type(message).__name__
-    print(f"[DEBUG] Message type: {msg_type}")
-    print(f"[DEBUG] Message: {message}")
-```
-
-### 2. Check Tool Registration
-
-```python
-options = ClaudeAgentOptions(
-    mcp_servers={"db": server},
-    allowed_tools=["mcp__db__execute_query"]
-)
-
-print(f"MCP servers: {options.mcp_servers}")
-print(f"Allowed tools: {options.allowed_tools}")
-```
-
-Look for:
-- `{'type': 'sdk', 'name': 'your-server', 'instance': <Server object>}`
-- If you see this, tools are configured correctly
-
-### 3. Check SystemMessage Init
-
-The first message includes registered tools:
-
-```python
-async for message in client.receive_response():
-    if type(message).__name__ == "SystemMessage":
-        data = getattr(message, "data", {})
-        tools = data.get("tools", [])
-        mcp_servers = data.get("mcp_servers", [])
-
-        print(f"Available tools: {tools}")
-        print(f"MCP server status: {mcp_servers}")
-        break
-```
-
-Expected:
-- `tools` includes your `mcp__*` tool names
-- `mcp_servers` shows `{'name': 'your-server', 'status': 'connected'}`
-
----
-
-## Permission Modes
-
-### Interactive Mode (Default):
-```python
-permission_mode="prompt"  # or omit
-```
-- Prompts user for each tool call
-- Only works in interactive CLI environments
-
-### Auto-Approve Mode (Production):
-```python
-permission_mode="acceptEdits"
-```
-- Automatically approves all tool calls
-- Required for non-interactive environments (Railway, Lambda, etc.)
-- Still respects `allowed_tools` list
-
----
-
-## Common Pitfalls
-
-### ❌ Pitfall 1: Wrong Message Type Check
-```python
-if message.type == "tool_use":  # Never works!
-```
-
-### ❌ Pitfall 2: Forgetting Tool Name Prefix
-```python
-allowed_tools=["execute_query"]  # Wrong - missing mcp__ prefix
-```
-
-### ❌ Pitfall 3: Using query() Instead of ClaudeSDKClient
-```python
-async for message in query(prompt=prompt, options=options):
-    # This works but ClaudeSDKClient is recommended for custom tools
-```
-
-### ❌ Pitfall 4: Hardcoding Prompt Instead of Letting Claude Iterate
-```python
-# Bad: Pre-query and inject data
-data = database.query(hardcoded_query)
-prompt = f"Here's the data: {data}"
-
-# Good: Let Claude query iteratively
-prompt = "Find users in the database"
-# Claude will call tools multiple times as needed
-```
-
----
-
-## Working Examples
-
-### Example 1: Neo4j Query Agent
-Location: `sms-bot/agents/kg-query/`
-
-Shows:
-- SDK MCP server with Neo4j tools
-- Iterative querying (15+ tool calls)
-- Proper message parsing
-- Error handling in tools
-
-### Example 2: Simple Test
-Location: `sms-bot/agents/kg-query/test-simple.py`
-
-Minimal example proving tools work:
-- Single tool: greet user
-- Demonstrates correct message parsing
-- Good starting point for testing
-
----
-
-## SDK Versions Tested
-
-- ✅ **v0.1.6** (latest as of Jan 2025) - Works with correct parsing
-- ✅ **v0.1.4** - Works with correct parsing
-- Note: Earlier reports of tools not working were due to incorrect message parsing
-
----
-
-## Resources
-
-- **Official Docs**: https://docs.claude.com/en/api/agent-sdk/
-- **GitHub**: https://github.com/anthropics/claude-agent-sdk-python
-- **MCP Spec**: https://docs.claude.com/en/api/agent-sdk/mcp
-
----
-
-## Quick Checklist
-
-When tools aren't being called, check:
-
-- [ ] Tool names use correct format: `mcp__{server}__{tool}`
-- [ ] Tools are in `allowed_tools` list
-- [ ] Using `ClaudeSDKClient` not just `query()`
-- [ ] Message parsing checks for `ToolUseBlock` in content
-- [ ] `permission_mode="acceptEdits"` for non-interactive
-- [ ] Tool functions return correct format (content array)
-- [ ] SystemMessage shows tools registered and server connected
-
----
-
-## Summary
-
-**The key insight**: SDK MCP tools work perfectly, but you must parse messages correctly. Always check for `ToolUseBlock` objects in message content, not a `.type` attribute on the message itself.
-
-This pattern enables true agentic behavior where Claude iteratively calls tools until it solves the problem.
+## Comparison to Other Claude Tools
+
+### Agent SDK vs Client SDK (Anthropic SDK)
+**Client SDK**: Direct API access - you send prompts and implement tool execution yourself
+- **Agent SDK**: Claude handles autonomous tool execution - you just provide the prompt and tools
+### Agent SDK vs Claude Code CLI
+**Claude Code CLI**: Interactive development environment with UI
+- **Agent SDK**: Programmatic SDK for building agents as libraries
+## Changelog & Resources
+
+**Official Docs**: https://platform.claude.com/docs/en/agent-sdk/overview
+- **TypeScript Changelog**: https://github.com/anthropics/claude-agent-sdk-typescript/blob/main/CHANGELOG.md
+- **Python Changelog**: https://github.com/anthropics/claude-agent-sdk-python/blob/main/CHANGELOG.md
+## Reporting Issues
+
+**TypeScript SDK**: https://github.com/anthropics/claude-agent-sdk-typescript/issues
+- **Python SDK**: https://github.com/anthropics/claude-agent-sdk-python/issues
+## Branding Guidelines
+
+When referencing Claude in your product:
+
+**Allowed:**
+“Claude Agent” (preferred for dropdown menus)
+- “Claude” (when within a menu already labeled “Agents”)
+- “{YourAgentName} Powered by Claude”
+**Not Permitted:**
+“Claude Code” or “Claude Code Agent”
+- Claude Code-branded ASCII art or visual elements
+## License & Terms
+
+Use of the Claude Agent SDK is governed by Anthropic’s Commercial Terms of Service, including when you use it to power products and services for your own customers and end users.

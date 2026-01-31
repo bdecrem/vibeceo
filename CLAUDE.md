@@ -251,6 +251,31 @@ echo "down $6.39"
 echo "down \$6.39"
 ```
 
+## Posting Tweets
+
+Use `sms-bot/lib/twitter-client.ts` for all Twitter posting. Requires account parameter.
+
+**Available accounts:**
+| Account | Handle | Env Vars |
+|---------|--------|----------|
+| `pp` | @pixelpitgames | `TWITTER_PP_API_KEY`, `TWITTER_PP_API_SECRET`, `TWITTER_PP_ACCESS_TOKEN`, `TWITTER_PP_ACCESS_SECRET` |
+| `intheamber` | @intheamber | Uses shared API keys + `TWITTER_INTHEAMBER_ACCESS_TOKEN/SECRET` |
+| `tokentank` | @TokenTankAI | Default `TWITTER_*` env vars |
+
+**Quick post (inline script):**
+```javascript
+import dotenv from 'dotenv';
+dotenv.config({ path: './sms-bot/.env.local' });
+import { postTweet } from './sms-bot/lib/twitter-client.ts';
+
+const result = await postTweet("Tweet text here", { account: 'pp' });
+console.log(result.success ? result.tweetUrl : result.error);
+```
+
+Run with: `node --experimental-strip-types script.mjs`
+
+**Note:** PP (Pixelpit) has its own Twitter app with separate API keys. Other accounts share the default app credentials.
+
 ## Twitter / Token Tank
 
 When tweeting links to Token Tank blog posts or log entries:

@@ -1,0 +1,172 @@
+Pixelpit Social Components — Usage Guide                                                 
+                                                                                           
+  What You Get for Free                                                                    
+                                                                                           
+  When you add these imports to any Pixelpit game:                                         
+                                                                                           
+  import {                                                                                 
+    ScoreFlow,                                                                             
+    Leaderboard,                                                                           
+    ShareButtonContainer,                                                                  
+    usePixelpitSocial,                                                                     
+  } from '@/app/pixelpit/components';                                                      
+                                                                                           
+  ScoreFlow handles automatically:                                                         
+  - Guest name entry (with localStorage persistence)                                       
+  - Score submission to API                                                                
+  - Rank display after submission                                                          
+  - "Name taken" flow (enter code to prove ownership)                                      
+  - Account creation prompts (save your name with a code)                                  
+  - Handle conflict resolution (pick a new name)                                           
+  - Already-logged-in user flow (just shows @handle + submit button)                       
+  - Loading/error states                                                                   
+                                                                                           
+  Leaderboard handles automatically:                                                       
+  - Fetching top N entries from API                                                        
+  - Player position with "..." separator if not in top                                     
+  - Registered users shown as @handle                                                      
+  - Loading/empty states                                                                   
+                                                                                           
+  ShareButtonContainer handles automatically:                                              
+  - Waiting for social.js to load                                                          
+  - Initializing the share button                                                          
+  - Native share vs clipboard fallback                                                     
+                                                                                           
+  OG Image template handles automatically:                                                 
+  - Corner accents                                                                         
+  - Pixelpit Arcade branding                                                               
+  - Score display with glow effects                                                        
+  - Game name header                                                                       
+  - "CAN YOU BEAT ME?" tagline (customizable)                                              
+                                                                                           
+  ---                                                                                      
+  What You Must Provide Per Game                                                           
+                                                                                           
+  1. Colors (required)                                                                     
+                                                                                           
+  Each game defines its own palette:                                                       
+                                                                                           
+  const SCORE_FLOW_COLORS: ScoreFlowColors = {                                             
+    bg: '#0f172a',        // page background                                               
+    surface: '#1e293b',   // card background                                               
+    primary: '#fbbf24',   // action buttons (gold/amber)                                   
+    secondary: '#22d3ee', // secondary accent (teal/cyan)                                  
+    text: '#f8fafc',      // light text                                                    
+    muted: '#94a3b8',     // muted text                                                    
+    error: '#f87171',     // error messages                                                
+  };                                                                                       
+                                                                                           
+  2. Game ID (required)                                                                    
+                                                                                           
+  const GAME_ID = 'rain'; // matches API leaderboard key                                   
+                                                                                           
+  3. Score value (required)                                                                
+                                                                                           
+  Pass the current score to ScoreFlow:                                                     
+  <ScoreFlow score={score} gameId={GAME_ID} colors={SCORE_FLOW_COLORS} />                  
+                                                                                           
+  4. OG Image decorations (optional)                                                       
+                                                                                           
+  For game-specific visual flair in share images:                                          
+  // Use existing decorations                                                              
+  import { BeamDecorations, RainDecorations } from '@/app/pixelpit/components';            
+                                                                                           
+  // Or create your own                                                                    
+  function MyGameDecorations() {                                                           
+    return <>{/* game-specific background elements */}</>;                                 
+  }                                                                                        
+                                                                                           
+  ---                                                                                      
+  Minimal Integration Checklist                                                            
+                                                                                           
+  For a new game to have full social features:                                             
+                                                                                           
+  1. Add Script tag (once per page):                                                       
+  const [socialLoaded, setSocialLoaded] = useState(false);                                 
+  <Script src="/pixelpit/social.js" onLoad={() => setSocialLoaded(true)} />                
+  2. Game Over screen — add ScoreFlow:                                                     
+  <ScoreFlow                                                                               
+    score={score}                                                                          
+    gameId="mygame"                                                                        
+    colors={MY_COLORS}                                                                     
+    onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId)}                       
+  />                                                                                       
+  3. Leaderboard screen — add Leaderboard:                                                 
+  <Leaderboard                                                                             
+    gameId="mygame"                                                                        
+    limit={8}                                                                              
+    entryId={submittedEntryId}                                                             
+    colors={MY_COLORS}                                                                     
+    onClose={() => setGameState('gameover')}                                               
+  />                                                                                       
+  4. Share button — add ShareButtonContainer:                                              
+  <ShareButtonContainer                                                                    
+    id="share-btn"                                                                         
+    url={`${window.location.origin}/pixelpit/arcade/mygame/share/${score}`}                
+    text={`I scored ${score} on MYGAME!`}                                                  
+    socialLoaded={socialLoaded}                                                            
+  />                                                                                       
+  5. OG route — create share/[score]/opengraph-image.tsx:                                  
+  import { createScoreShareImage, OG_SIZE, GAME_COLORS } from '@/app/pixelpit/components'; 
+                                                                                           
+  export default async function Image({ params }) {                                        
+    return new ImageResponse(                                                              
+      createScoreShareImage({                                                              
+        score: params.score,                                                               
+        gameName: 'MYGAME',                                                                
+        colors: GAME_COLORS.mygame, // or custom colors                                    
+        decorations: <MyGameDecorations />,                                                
+      }),                                                                                  
+      { ...OG_SIZE }                                                                       
+    );                                                                                     
+  }                                                                                        
+                                                                                           
+  ---                                                                                      
+  What's NOT in the Library                                                                
+                                                                                           
+  - Game logic (canvas, physics, audio)                                                    
+  - Theme constants (each game defines its own COLORS/THEME)                               
+  - API routes (unchanged: /api/pixelpit/auth, /api/pixelpit/leaderboard)                  
+  - The social.js library itself (stays in public/pixelpit/)                               
+                                                                                           
+  ---                                                                                      
+  Prompt/Workflow Instructions                                                             
+                                                                                           
+  When creating a new Pixelpit game, include:                                              
+                                                                                           
+  "Use the extracted social components from @/app/pixelpit/components. Define game-specific
+   colors matching ScoreFlowColors interface. Create a share route at                      
+  arcade/[game]/share/[score]/ using createScoreShareImage with custom decorations."  
+
+
+
+PIT STATUS — Social Components Extraction Complete                                       
+                                                                                           
+  VERIFIED:                                                                                
+  - Components library at web/app/pixelpit/components/ — all exports working               
+  - Maker docs (m1-m5) — all have social integration requirements                          
+  - Dot's review checklist — includes social + OG verification                             
+  - Tap's test protocol — includes social flow testing                                     
+  - Ship role — deprecated (social baked into maker workflow)                              
+  - RAIN share route — exists at /arcade/rain/share/[score]/                               
+                                                                                           
+  WHAT MAKERS GET FOR FREE:                                                                
+  import {                                                                                 
+    ScoreFlow,           // Full guest→account flow                                        
+    Leaderboard,         // Top scores + player position                                   
+    ShareButtonContainer,// Copy/share URL                                                 
+    usePixelpitSocial,   // User state hook                                                
+    createScoreShareImage, // OG image generator                                           
+  } from '@/app/pixelpit/components';                                                      
+                                                                                           
+  WHAT MAKERS MUST DO:                                                                     
+  1. Define game colors (ScoreFlowColors)                                                  
+  2. Wire up <ScoreFlow> on game over                                                      
+  3. Wire up <Leaderboard> screen                                                          
+  4. Add <ShareButtonContainer>                                                            
+  5. Create two OG routes (game + score)                                                   
+                                                                                           
+  WORKFLOW:                                                                                
+  Maker builds game with social → Dot reviews (incl social/OG) → Tap tests flow → DONE     
+                                                                                           
+  Reference implementation: arcade/beam/page.tsx     
