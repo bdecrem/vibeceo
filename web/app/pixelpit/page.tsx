@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const labMessages = [
   'BUBBLING...',
@@ -17,11 +17,11 @@ const labMessages = [
 ];
 
 const games = [
+  { icon: '🐱', name: 'Cat Tower', href: '/pixelpit/arcade/cattower', playable: true, date: 'Fri 1/30' },
   { icon: '💥', name: 'Emoji Blaster', href: '/pixelpit/arcade/emoji', playable: true, date: 'Thu 1/29' },
   { icon: '🌀', name: 'Singularity', href: '/pixelpit/arcade/singularity', playable: true, date: 'Wed 1/28' },
   { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true, date: 'Tue 1/27' },
   { icon: '🐍', name: 'Snake', href: null, playable: false },
-  { icon: '🔨', name: 'Whack', href: null, playable: false },
   { icon: '✨', name: 'Soon', href: null, playable: false },
 ];
 
@@ -97,12 +97,68 @@ const labItems = [
   { icon: '⚗️', name: '???' },
 ];
 
-const featuredGame = {
-  name: 'BEAM',
-  tagline: 'DODGE THE WALLS',
-  href: '/pixelpit/arcade/beam',
-  colors: { primary: '#4ECDC4', secondary: '#C44DFF', accent: '#E8B87D' },
-};
+const featuredGames = [
+  {
+    name: 'CAT TOWER',
+    tagline: 'STACK THE CATS',
+    href: '/pixelpit/arcade/cattower',
+    icon: '🐱',
+    decorations: ['🐱', '🐾', '✨', '😺', '⭐'],
+    variant: 'frame',
+    colors: {
+      bg: 'linear-gradient(180deg, #FFE4E1 0%, #FFB6C1 30%, #FFA07A 70%, #FF8C69 100%)',
+      title: '#8B4513',
+      titleShadow: '3px 3px 0 #FF69B4, 6px 6px 0 rgba(255, 140, 0, 0.5)',
+      tagline: '#A0522D',
+      button: 'linear-gradient(135deg, #FF8C69 0%, #FFA07A 100%)',
+      buttonShadow: '#CD5C5C',
+      glow1: 'rgba(255, 105, 180, 0.3)',
+      glow2: 'rgba(255, 165, 0, 0.35)',
+      accent1: '#FF8C69',
+      accent2: '#FFB6C1',
+    },
+  },
+  {
+    name: 'BEAM',
+    tagline: 'DODGE THE WALLS',
+    href: '/pixelpit/arcade/beam',
+    icon: '⚡',
+    decorations: ['⚡', '💥', '✨', '🔥', '💫'],
+    variant: 'frame',
+    colors: {
+      bg: 'linear-gradient(180deg, #FFF8E7 0%, #FFEFC9 30%, #FFE4B5 70%, #F5DEB3 100%)',
+      title: '#00868B',
+      titleShadow: '3px 3px 0 #FF1493, 6px 6px 0 rgba(255, 165, 0, 0.5)',
+      tagline: '#B8860B',
+      button: 'linear-gradient(135deg, #FF1493 0%, #FF69B4 100%)',
+      buttonShadow: '#C71585',
+      glow1: 'rgba(255, 20, 147, 0.3)',
+      glow2: 'rgba(0, 206, 209, 0.35)',
+      accent1: '#FF1493',
+      accent2: '#00CED1',
+    },
+  },
+  {
+    name: 'EMOJI BLASTER',
+    tagline: 'BLAST EM ALL',
+    href: '/pixelpit/arcade/emoji',
+    icon: '💥',
+    decorations: ['💥', '😈', '👾', '🎯', '💀', '🤖', '👻', '🔥', '⚡', '✨'],
+    variant: 'explosion',
+    colors: {
+      bg: 'radial-gradient(ellipse at center, #1a1a3e 0%, #0d0d1a 50%, #000000 100%)',
+      title: '#FFD700',
+      titleShadow: '0 0 20px #FFD700, 0 0 40px #FF6600, 0 0 60px #FF0000',
+      tagline: '#FF6B6B',
+      button: 'linear-gradient(135deg, #FF0000 0%, #FF6600 50%, #FFD700 100%)',
+      buttonShadow: '#AA0000',
+      glow1: 'rgba(255, 215, 0, 0.4)',
+      glow2: 'rgba(255, 0, 0, 0.3)',
+      accent1: '#FFD700',
+      accent2: '#FF0000',
+    },
+  },
+];
 
 function playLabSound() {
   const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -156,12 +212,15 @@ function CastCarousel() {
 
   const blurb = selectedMember ? castBlurbs[selectedMember.name] : null;
 
+  // 6 cards * 160px + 5 gaps * 16px = 1040px
+  const containerWidth = 6 * 160 + 5 * 16;
+
   return (
-    <div className="relative max-w-6xl mx-auto">
+    <div className="relative mx-auto overflow-hidden" style={{ maxWidth: containerWidth }}>
       {/* Left Arrow */}
       <button
         onClick={() => scroll('left')}
-        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all ${canScrollLeft ? 'opacity-100 hover:scale-110' : 'opacity-40 cursor-default'}`}
+        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all ${canScrollLeft ? 'opacity-100 hover:scale-110' : 'opacity-0 pointer-events-none'}`}
         style={{
           background: 'linear-gradient(135deg, rgba(255, 105, 180, 0.4) 0%, rgba(255, 20, 147, 0.3) 100%)',
           border: '2px solid rgba(255, 105, 180, 0.7)',
@@ -175,7 +234,7 @@ function CastCarousel() {
       {/* Right Arrow */}
       <button
         onClick={() => scroll('right')}
-        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all ${canScrollRight ? 'opacity-100 hover:scale-110' : 'opacity-40 cursor-default'}`}
+        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all ${canScrollRight ? 'opacity-100 hover:scale-110' : 'opacity-0 pointer-events-none'}`}
         style={{
           background: 'linear-gradient(135deg, rgba(255, 105, 180, 0.4) 0%, rgba(255, 20, 147, 0.3) 100%)',
           border: '2px solid rgba(255, 105, 180, 0.7)',
@@ -190,7 +249,7 @@ function CastCarousel() {
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="flex gap-4 overflow-x-auto scrollbar-hide px-12 py-4"
+        className="flex gap-4 overflow-x-auto scrollbar-hide py-4"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {cast.map((member, i) => (
@@ -350,6 +409,45 @@ function LabGrid() {
 }
 
 export default function PixelpitLanding() {
+  const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [autoPaused, setAutoPaused] = useState(false);
+  const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const featuredGame = featuredGames[featuredIndex];
+
+  // Auto-rotate featured games (unless paused)
+  useEffect(() => {
+    if (autoPaused) return;
+    const interval = setInterval(() => {
+      setFeaturedIndex((prev) => (prev + 1) % featuredGames.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [autoPaused]);
+
+  // Handle manual selection - pause auto-rotate for 30s
+  const handleDotClick = (index: number) => {
+    setFeaturedIndex(index);
+    setAutoPaused(true);
+
+    // Clear any existing timeout
+    if (pauseTimeoutRef.current) {
+      clearTimeout(pauseTimeoutRef.current);
+    }
+
+    // Resume after 30 seconds
+    pauseTimeoutRef.current = setTimeout(() => {
+      setAutoPaused(false);
+    }, 30000);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (pauseTimeoutRef.current) {
+        clearTimeout(pauseTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#0f0f1a] text-white">
       {/* Mini Header */}
@@ -362,108 +460,314 @@ export default function PixelpitLanding() {
       </header>
 
       {/* Featured Game Hero */}
-      <section className="relative overflow-hidden" style={{
-        background: 'linear-gradient(180deg, #FFF8E7 0%, #FFEFC9 30%, #FFE4B5 70%, #F5DEB3 100%)',
-      }}>
-        {/* Colorful radial glows */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div style={{
-            position: 'absolute',
-            width: 500,
-            height: 300,
-            left: '20%',
-            top: '30%',
-            background: 'radial-gradient(ellipse, rgba(255, 20, 147, 0.3) 0%, transparent 60%)',
-            filter: 'blur(40px)',
+      {featuredGame.variant === 'explosion' ? (
+        /* EXPLOSION VARIANT - Dark, chaotic, emojis bursting outward */
+        <section className="relative overflow-hidden transition-all duration-700" style={{
+          background: featuredGame.colors.bg,
+          minHeight: 420,
+        }}>
+          <style jsx>{`
+            @keyframes float1 {
+              0%, 100% { transform: translate(0, 0) rotate(-30deg); }
+              50% { transform: translate(5px, -8px) rotate(-25deg); }
+            }
+            @keyframes float2 {
+              0%, 100% { transform: translate(0, 0) rotate(30deg); }
+              50% { transform: translate(-6px, -6px) rotate(35deg); }
+            }
+            @keyframes float3 {
+              0%, 100% { transform: translate(0, 0) rotate(12deg); }
+              50% { transform: translate(4px, 6px) rotate(8deg); }
+            }
+            @keyframes float4 {
+              0%, 100% { transform: translate(0, 0) rotate(-12deg); }
+              50% { transform: translate(-5px, 5px) rotate(-8deg); }
+            }
+            @keyframes pulse-glow {
+              0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 15px rgba(255,100,0,0.7)); }
+              50% { opacity: 1; filter: drop-shadow(0 0 25px rgba(255,150,0,0.9)); }
+            }
+            @keyframes drift {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-4px); }
+            }
+          `}</style>
+
+          {/* Central glow burst */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div style={{
+              width: 600,
+              height: 600,
+              background: `radial-gradient(circle, ${featuredGame.colors.glow1} 0%, ${featuredGame.colors.glow2} 30%, transparent 70%)`,
+              filter: 'blur(60px)',
+              opacity: 0.6,
+            }} />
+          </div>
+
+          {/* Explosion ring emojis - radiating outward */}
+          {/* Inner ring - close to center, larger */}
+          <span className="absolute top-[20%] left-1/2 -translate-x-1/2 text-6xl" style={{ filter: 'drop-shadow(0 0 20px rgba(255,100,0,0.8))', animation: 'pulse-glow 3s ease-in-out infinite' }}>
+            {featuredGame.decorations[0]}
+          </span>
+          <span className="absolute top-[35%] left-[20%] text-5xl" style={{ filter: 'drop-shadow(0 0 15px rgba(255,200,0,0.7))', animation: 'float1 4s ease-in-out infinite' }}>
+            {featuredGame.decorations[1]}
+          </span>
+          <span className="absolute top-[35%] right-[20%] text-5xl" style={{ filter: 'drop-shadow(0 0 15px rgba(255,50,50,0.7))', animation: 'float2 4.5s ease-in-out infinite' }}>
+            {featuredGame.decorations[2]}
+          </span>
+          <span className="absolute bottom-[30%] left-[25%] text-5xl" style={{ filter: 'drop-shadow(0 0 15px rgba(255,150,0,0.7))', animation: 'float3 5s ease-in-out infinite' }}>
+            {featuredGame.decorations[3]}
+          </span>
+          <span className="absolute bottom-[30%] right-[25%] text-5xl" style={{ filter: 'drop-shadow(0 0 15px rgba(255,100,100,0.7))', animation: 'float4 4.8s ease-in-out infinite' }}>
+            {featuredGame.decorations[4]}
+          </span>
+
+          {/* Outer ring - edges, smaller, more chaotic */}
+          <span className="absolute top-[8%] left-[15%] text-4xl opacity-80" style={{ filter: 'drop-shadow(0 0 12px rgba(255,200,0,0.6))', animation: 'float2 6s ease-in-out infinite' }}>
+            {featuredGame.decorations[5]}
+          </span>
+          <span className="absolute top-[8%] right-[15%] text-4xl opacity-80" style={{ filter: 'drop-shadow(0 0 12px rgba(255,50,0,0.6))', animation: 'float1 5.5s ease-in-out infinite' }}>
+            {featuredGame.decorations[6]}
+          </span>
+          <span className="absolute top-[12%] left-[40%] text-3xl opacity-70" style={{ animation: 'drift 3.5s ease-in-out infinite' }}>
+            {featuredGame.decorations[7]}
+          </span>
+          <span className="absolute top-[12%] right-[40%] text-3xl opacity-70" style={{ animation: 'drift 4s ease-in-out infinite 0.5s' }}>
+            {featuredGame.decorations[8]}
+          </span>
+          <span className="absolute bottom-[15%] left-[8%] text-4xl opacity-75" style={{ filter: 'drop-shadow(0 0 10px rgba(255,150,0,0.5))', animation: 'float3 5.5s ease-in-out infinite' }}>
+            {featuredGame.decorations[9]}
+          </span>
+          <span className="absolute bottom-[15%] right-[8%] text-4xl opacity-75" style={{ filter: 'drop-shadow(0 0 10px rgba(255,100,0,0.5))', animation: 'float4 6s ease-in-out infinite' }}>
+            {featuredGame.decorations[0]}
+          </span>
+          <span className="absolute bottom-[8%] left-[30%] text-3xl opacity-60" style={{ animation: 'drift 4.5s ease-in-out infinite 0.3s' }}>
+            {featuredGame.decorations[2]}
+          </span>
+          <span className="absolute bottom-[8%] right-[30%] text-3xl opacity-60" style={{ animation: 'drift 4.2s ease-in-out infinite 0.7s' }}>
+            {featuredGame.decorations[4]}
+          </span>
+
+          {/* Far corners - tiny, fading */}
+          <span className="absolute top-4 left-4 text-2xl opacity-40" style={{ animation: 'drift 5s ease-in-out infinite' }}>{featuredGame.decorations[6]}</span>
+          <span className="absolute top-4 right-4 text-2xl opacity-40" style={{ animation: 'drift 5.5s ease-in-out infinite 0.2s' }}>{featuredGame.decorations[7]}</span>
+          <span className="absolute bottom-8 left-4 text-2xl opacity-40" style={{ animation: 'drift 4.8s ease-in-out infinite 0.4s' }}>{featuredGame.decorations[8]}</span>
+          <span className="absolute bottom-8 right-4 text-2xl opacity-40" style={{ animation: 'drift 5.2s ease-in-out infinite 0.6s' }}>{featuredGame.decorations[9]}</span>
+
+          {/* Content */}
+          <div className="relative z-10 py-20 px-4 text-center">
+            <div className="text-xs font-bold tracking-[0.3em] mb-4" style={{
+              color: featuredGame.colors.accent1,
+              textShadow: `0 0 10px ${featuredGame.colors.accent1}`,
+            }}>🔥 NOW PLAYING 🔥</div>
+            <h2 className="text-6xl md:text-8xl font-black mb-4 transition-all duration-500" style={{
+              color: featuredGame.colors.title,
+              textShadow: featuredGame.colors.titleShadow,
+              letterSpacing: '-0.02em',
+            }}>
+              {featuredGame.name}
+            </h2>
+            <p className="text-xl tracking-[0.2em] mb-10 font-bold" style={{
+              color: featuredGame.colors.tagline,
+              textShadow: `0 0 20px ${featuredGame.colors.glow2}`,
+            }}>{featuredGame.tagline}</p>
+
+            <Link
+              href={featuredGame.href}
+              className="relative z-10 inline-block px-14 py-6 rounded-full font-black text-2xl transition-all hover:scale-110"
+              style={{
+                background: featuredGame.colors.button,
+                color: 'white',
+                boxShadow: `0 6px 0 ${featuredGame.colors.buttonShadow}, 0 0 40px ${featuredGame.colors.glow1}, 0 0 80px ${featuredGame.colors.glow2}`,
+              }}
+            >
+              PLAY NOW
+            </Link>
+          </div>
+
+          {/* Pagination dots */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            {featuredGames.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => handleDotClick(i)}
+                className="transition-all duration-300"
+                style={{
+                  width: i === featuredIndex ? 24 : 8,
+                  height: 8,
+                  borderRadius: 4,
+                  background: i === featuredIndex ? featuredGame.colors.accent1 : 'rgba(255,255,255,0.3)',
+                  boxShadow: i === featuredIndex ? `0 0 10px ${featuredGame.colors.accent1}` : 'none',
+                }}
+              />
+            ))}
+          </div>
+        </section>
+      ) : (
+        /* FRAME VARIANT - Light, structured, playful */
+        <section className="relative overflow-hidden transition-all duration-700" style={{
+          background: featuredGame.colors.bg,
+        }}>
+          {/* Colorful radial glows */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-700">
+            <div style={{
+              position: 'absolute',
+              width: 500,
+              height: 300,
+              left: '20%',
+              top: '30%',
+              background: `radial-gradient(ellipse, ${featuredGame.colors.glow1} 0%, transparent 60%)`,
+              filter: 'blur(40px)',
+            }} />
+            <div style={{
+              position: 'absolute',
+              width: 500,
+              height: 300,
+              right: '20%',
+              top: '40%',
+              background: `radial-gradient(ellipse, ${featuredGame.colors.glow2} 0%, transparent 60%)`,
+              filter: 'blur(40px)',
+            }} />
+            <div style={{
+              position: 'absolute',
+              width: 400,
+              height: 250,
+              left: '40%',
+              bottom: '20%',
+              background: 'radial-gradient(ellipse, rgba(255, 165, 0, 0.25) 0%, transparent 60%)',
+              filter: 'blur(30px)',
+            }} />
+          </div>
+
+          {/* Playful dots pattern */}
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle, ${featuredGame.colors.glow1} 2px, transparent 2px), radial-gradient(circle, ${featuredGame.colors.glow2} 2px, transparent 2px)`,
+            backgroundSize: '40px 40px, 60px 60px',
+            backgroundPosition: '0 0, 20px 20px',
+            opacity: 0.5,
           }} />
-          <div style={{
-            position: 'absolute',
-            width: 500,
-            height: 300,
-            right: '20%',
-            top: '40%',
-            background: 'radial-gradient(ellipse, rgba(0, 206, 209, 0.35) 0%, transparent 60%)',
-            filter: 'blur(40px)',
+
+          {/* Top bar */}
+          <div className="absolute top-6 left-[15%] right-[15%] h-3 rounded-full" style={{
+            background: `linear-gradient(90deg, transparent 0%, ${featuredGame.colors.accent1} 20%, ${featuredGame.colors.accent1} 40%, transparent 41%, transparent 59%, ${featuredGame.colors.accent1} 60%, ${featuredGame.colors.accent1} 80%, transparent 100%)`,
+            boxShadow: `0 4px 20px ${featuredGame.colors.glow1}`,
           }} />
-          <div style={{
-            position: 'absolute',
-            width: 400,
-            height: 250,
-            left: '40%',
-            bottom: '20%',
-            background: 'radial-gradient(ellipse, rgba(255, 165, 0, 0.25) 0%, transparent 60%)',
-            filter: 'blur(30px)',
+
+          {/* Bottom bar */}
+          <div className="absolute bottom-6 left-[20%] right-[20%] h-3 rounded-full" style={{
+            background: `linear-gradient(90deg, ${featuredGame.colors.accent2} 0%, ${featuredGame.colors.accent2} 30%, transparent 31%, transparent 69%, ${featuredGame.colors.accent2} 70%, ${featuredGame.colors.accent2} 100%)`,
+            boxShadow: `0 -4px 20px ${featuredGame.colors.glow2}`,
           }} />
-        </div>
 
-        {/* Playful dots pattern */}
-        <div className="absolute inset-0" style={{
-          backgroundImage: 'radial-gradient(circle, rgba(255, 20, 147, 0.15) 2px, transparent 2px), radial-gradient(circle, rgba(0, 206, 209, 0.15) 2px, transparent 2px)',
-          backgroundSize: '40px 40px, 60px 60px',
-          backgroundPosition: '0 0, 20px 20px',
-        }} />
+          {/* Side accent bars */}
+          <div className="absolute top-1/4 left-8 w-3 h-32 rounded-full hidden md:block" style={{
+            background: `linear-gradient(180deg, ${featuredGame.colors.accent1} 0%, #FFA500 100%)`,
+            boxShadow: `4px 0 20px ${featuredGame.colors.glow1}`,
+          }} />
+          <div className="absolute top-1/4 right-8 w-3 h-32 rounded-full hidden md:block" style={{
+            background: `linear-gradient(180deg, ${featuredGame.colors.accent2} 0%, ${featuredGame.colors.accent1} 100%)`,
+            boxShadow: `-4px 0 20px ${featuredGame.colors.glow2}`,
+          }} />
 
-        {/* Top magenta bar */}
-        <div className="absolute top-6 left-[15%] right-[15%] h-3 rounded-full" style={{
-          background: 'linear-gradient(90deg, transparent 0%, #FF1493 20%, #FF1493 40%, transparent 41%, transparent 59%, #FF1493 60%, #FF1493 80%, transparent 100%)',
-          boxShadow: '0 4px 20px rgba(255, 20, 147, 0.5)',
-        }} />
+          <div className="relative z-10 py-20 px-4 text-center">
+            <div className="text-xs font-bold tracking-[0.3em] mb-4" style={{
+              color: featuredGame.colors.accent1,
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+            }}>NOW PLAYING</div>
+            <h2 className="text-7xl md:text-9xl font-black mb-4 transition-all duration-500" style={{
+              color: featuredGame.colors.title,
+              textShadow: featuredGame.colors.titleShadow,
+            }}>
+              {featuredGame.name}
+            </h2>
+            <p className="text-xl tracking-[0.2em] mb-10 font-bold" style={{
+              color: featuredGame.colors.tagline,
+            }}>{featuredGame.tagline}</p>
 
-        {/* Bottom cyan bar */}
-        <div className="absolute bottom-6 left-[20%] right-[20%] h-3 rounded-full" style={{
-          background: 'linear-gradient(90deg, #00CED1 0%, #00CED1 30%, transparent 31%, transparent 69%, #00CED1 70%, #00CED1 100%)',
-          boxShadow: '0 -4px 20px rgba(0, 206, 209, 0.5)',
-        }} />
+            <Link
+              href={featuredGame.href}
+              className="relative z-10 inline-block px-14 py-6 rounded-full font-black text-2xl transition-all hover:scale-110 hover:rotate-1"
+              style={{
+                background: featuredGame.colors.button,
+                color: 'white',
+                boxShadow: `0 6px 0 ${featuredGame.colors.buttonShadow}, 0 10px 30px ${featuredGame.colors.glow1}`,
+              }}
+            >
+              PLAY NOW
+            </Link>
 
-        {/* Side accent bars */}
-        <div className="absolute top-1/4 left-8 w-3 h-32 rounded-full hidden md:block" style={{
-          background: 'linear-gradient(180deg, #FF1493 0%, #FFA500 100%)',
-          boxShadow: '4px 0 20px rgba(255, 20, 147, 0.4)',
-        }} />
-        <div className="absolute top-1/4 right-8 w-3 h-32 rounded-full hidden md:block" style={{
-          background: 'linear-gradient(180deg, #00CED1 0%, #FF1493 100%)',
-          boxShadow: '-4px 0 20px rgba(0, 206, 209, 0.4)',
-        }} />
+          </div>
 
-        {/* Player beam visual */}
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 w-4 h-20 rounded-full" style={{
-          background: 'linear-gradient(180deg, #00CED1 0%, #FFA500 100%)',
-          boxShadow: '0 0 30px rgba(0, 206, 209, 0.6)',
-        }} />
+          {/* Scattered decorative emojis across the hero */}
+          {/* Top left cluster */}
+          <span className="absolute top-12 left-[8%] text-7xl transform -rotate-12 opacity-90 hover:scale-110 transition-transform" style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15))' }}>
+            {featuredGame.decorations[0]}
+          </span>
+          <span className="absolute top-28 left-[18%] text-3xl transform rotate-20 opacity-70">
+            {featuredGame.decorations[2]}
+          </span>
 
-        <div className="relative z-10 py-20 px-4 text-center">
-          <div className="text-xs font-bold tracking-[0.3em] mb-4" style={{
-            color: '#FF1493',
-            textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-          }}>NOW PLAYING</div>
-          <h2 className="text-7xl md:text-9xl font-black mb-4" style={{
-            color: '#00868B',
-            textShadow: '3px 3px 0 #FF1493, 6px 6px 0 rgba(255, 165, 0, 0.5)',
-          }}>
-            {featuredGame.name}
-          </h2>
-          <p className="text-xl tracking-[0.2em] mb-10 font-bold" style={{
-            color: '#B8860B',
-          }}>{featuredGame.tagline}</p>
-          <Link
-            href={featuredGame.href}
-            className="inline-block px-12 py-5 rounded-full font-bold text-xl transition-all hover:scale-110 hover:rotate-1"
-            style={{
-              background: 'linear-gradient(135deg, #FF1493 0%, #FF69B4 100%)',
-              color: 'white',
-              boxShadow: '0 6px 0 #C71585, 0 10px 30px rgba(255, 20, 147, 0.4)',
-            }}
-          >
-            PLAY NOW
-          </Link>
-        </div>
+          {/* Top right cluster */}
+          <span className="absolute top-16 right-[10%] text-6xl transform rotate-12 opacity-90 hover:scale-110 transition-transform" style={{ filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15))' }}>
+            {featuredGame.decorations[3]}
+          </span>
+          <span className="absolute top-8 right-[22%] text-4xl transform -rotate-6 opacity-60 animate-pulse">
+            {featuredGame.decorations[4]}
+          </span>
 
-        {/* Corner accents - thicker, more colorful */}
-        <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-[#FF1493] rounded-tl-lg" />
-        <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-[#00CED1] rounded-tr-lg" />
-        <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-[#FFA500] rounded-bl-lg" />
-        <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-[#FF1493] rounded-br-lg" />
-      </section>
+          {/* Bottom left */}
+          <span className="absolute bottom-20 left-[12%] text-5xl transform rotate-6 opacity-80" style={{ filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.12))' }}>
+            {featuredGame.decorations[1]}
+          </span>
+          <span className="absolute bottom-32 left-[5%] text-2xl transform -rotate-20 opacity-50">
+            {featuredGame.decorations[4]}
+          </span>
+
+          {/* Bottom right */}
+          <span className="absolute bottom-24 right-[8%] text-5xl transform -rotate-12 opacity-85 hover:scale-110 transition-transform" style={{ filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.12))' }}>
+            {featuredGame.decorations[0]}
+          </span>
+          <span className="absolute bottom-12 right-[20%] text-3xl transform rotate-25 opacity-60">
+            {featuredGame.decorations[2]}
+          </span>
+
+          {/* Mid sides for depth */}
+          <span className="absolute top-1/2 left-[3%] text-4xl transform -rotate-45 opacity-40 hidden md:block">
+            {featuredGame.decorations[1]}
+          </span>
+          <span className="absolute top-1/2 right-[4%] text-4xl transform rotate-30 opacity-40 hidden md:block">
+            {featuredGame.decorations[3]}
+          </span>
+
+          {/* Corner accents */}
+          <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 rounded-tl-lg" style={{ borderColor: featuredGame.colors.accent1 }} />
+          <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 rounded-tr-lg" style={{ borderColor: featuredGame.colors.accent2 }} />
+          <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 rounded-bl-lg" style={{ borderColor: '#FFA500' }} />
+          <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 rounded-br-lg" style={{ borderColor: featuredGame.colors.accent1 }} />
+
+          {/* Pagination dots - bottom center */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            {featuredGames.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => handleDotClick(i)}
+                className="transition-all duration-300"
+                style={{
+                  width: i === featuredIndex ? 24 : 8,
+                  height: 8,
+                  borderRadius: 4,
+                  background: i === featuredIndex
+                    ? 'rgba(255,255,255,0.9)'
+                    : 'rgba(0,0,0,0.2)',
+                  boxShadow: i === featuredIndex
+                    ? '0 2px 8px rgba(0,0,0,0.15)'
+                    : 'none',
+                }}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Our Games */}
       <section className="py-16 px-4" style={{
@@ -558,6 +862,32 @@ export default function PixelpitLanding() {
 
       {/* Footer */}
       <footer className="py-8 text-center" style={{ backgroundColor: '#0A1614' }}>
+        {/* Social Links */}
+        <div className="flex justify-center gap-6 mb-6">
+          <a
+            href="https://discord.gg/659eJPUcjg"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="opacity-60 hover:opacity-100 transition-opacity"
+            aria-label="Join our Discord"
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+            </svg>
+          </a>
+          <a
+            href="https://x.com/pixelpit_games"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="opacity-60 hover:opacity-100 transition-opacity"
+            aria-label="Follow us on X"
+          >
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="white">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </a>
+        </div>
+
         <p className="text-gray-400 text-sm">
           ★ TOKENS HARMED: YES ★
         </p>
