@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>WEAVE — Complete the pattern</title>
+  
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="WEAVE">
+  <meta property="og:description" content="Complete the pattern. Drag threads through the loom.">
+  <meta property="og:image" content="https://kochi.to/amber/weave-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/weave.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="WEAVE">
+  <meta name="twitter:description" content="Complete the pattern. Drag threads through the loom.">
+  <meta name="twitter:image" content="https://kochi.to/amber/weave-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #title {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+    }
+
+    #subtitle {
+      font-size: 14px;
+      color: #2D9596;
+      margin-bottom: 30px;
+      opacity: 0.8;
+    }
+
+    #loom {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+    }
+
+    .warp {
+      position: absolute;
+      width: 2px;
+      height: 100%;
+      background: rgba(212, 165, 116, 0.2);
+      top: 0;
+    }
+
+    .thread {
+      position: absolute;
+      height: 20px;
+      border-radius: 10px;
+      cursor: grab;
+      transition: transform 0.1s ease;
+      touch-action: none;
+    }
+
+    .thread:active {
+      cursor: grabbing;
+      transform: scale(1.1);
+    }
+
+    .thread.placed {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .slot {
+      position: absolute;
+      width: 100%;
+      height: 20px;
+      background: rgba(45, 149, 150, 0.1);
+      border: 1px dashed rgba(45, 149, 150, 0.3);
+    }
+
+    .slot.filled {
+      border: none;
+      background: transparent;
+    }
+
+    #palette {
+      display: flex;
+      gap: 15px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .palette-thread {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+
+    .palette-thread:active {
+      transform: scale(0.9);
+    }
+
+    .palette-thread.used {
+      opacity: 0.3;
+      cursor: default;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 16px;
+      color: #FFD700;
+      text-align: center;
+      height: 24px;
+    }
+
+    #completion {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 1000;
+    }
+
+    #completion.show {
+      display: flex;
+    }
+
+    #completion-text {
+      font-size: 48px;
+      font-weight: bold;
+      color: #FFD700;
+      text-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+      margin-bottom: 20px;
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    #completion-subtitle {
+      font-size: 18px;
+      color: #D4A574;
+      margin-bottom: 30px;
+    }
+
+    #next-btn {
+      padding: 15px 40px;
+      font-size: 18px;
+      font-family: 'Space Mono', monospace;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    #next-btn:active {
+      transform: scale(0.95);
+      background: #FFD700;
+    }
+
+    @keyframes glow {
+      0%, 100% { text-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+      50% { text-shadow: 0 0 60px rgba(255, 215, 0, 1); }
+    }
+
+    .particle {
+      position: fixed;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    @media (max-width: 400px) {
+      #loom {
+        width: 280px;
+        height: 280px;
+      }
+      #title {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">WEAVE</div>
+  <div id="subtitle">Complete the pattern</div>
+  
+  <div id="loom"></div>
+  
+  <div id="palette"></div>
+  
+  <div id="status"></div>
+
+  <div id="completion">
+    <div id="completion-text">COMPLETE</div>
+    <div id="completion-subtitle">Pattern woven</div>
+    <button id="next-btn">NEXT PATTERN</button>
+  </div>
+
+  <script>
+    const loom = document.getElementById('loom');
+    const palette = document.getElementById('palette');
+    const status = document.getElementById('status');
+    const completion = document.getElementById('completion');
+    const nextBtn = document.getElementById('next-btn');
+
+    const colors = [
+      { color: '#FFD700', emoji: '🌟' },
+      { color: '#D4A574', emoji: '🔥' },
+      { color: '#2D9596', emoji: '💧' },
+      { color: '#7B68EE', emoji: '🌸' },
+      { color: '#f97316', emoji: '🍊' },
+      { color: '#ec4899', emoji: '💝' }
+    ];
+
+    let audioContext;
+    let currentLevel = 1;
+    let slots = [];
+    let pattern = [];
+    let placed = 0;
+
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTone(freq, duration = 0.1) {
+      if (!audioContext) return;
+      
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      osc.start(audioContext.currentTime);
+      osc.stop(audioContext.currentTime + duration);
+    }
+
+    function createParticles(x, y, color) {
+      for (let i = 0; i < 12; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.background = color;
+        particle.style.left = x + 'px';
+        particle.style.top = y + 'px';
+        document.body.appendChild(particle);
+
+        const angle = (Math.PI * 2 * i) / 12;
+        const velocity = 50 + Math.random() * 50;
+        const vx = Math.cos(angle) * velocity;
+        const vy = Math.sin(angle) * velocity;
+
+        let px = x;
+        let py = y;
+        let life = 1;
+
+        function animate() {
+          life -= 0.02;
+          if (life <= 0) {
+            particle.remove();
+            return;
+          }
+
+          px += vx * 0.016;
+          py += vy * 0.016;
+
+          particle.style.left = px + 'px';
+          particle.style.top = py + 'px';
+          particle.style.opacity = life;
+
+          requestAnimationFrame(animate);
+        }
+        animate();
+      }
+    }
+
+    function generatePattern() {
+      const numSlots = Math.min(4 + currentLevel, 8);
+      pattern = [];
+      
+      for (let i = 0; i < numSlots; i++) {
+        pattern.push(colors[Math.floor(Math.random() * colors.length)]);
+      }
+      
+      return pattern;
+    }
+
+    function setupLoom() {
+      loom.innerHTML = '';
+      slots = [];
+      placed = 0;
+      
+      // Draw warp threads (vertical)
+      for (let i = 0; i <= 8; i++) {
+        const warp = document.createElement('div');
+        warp.className = 'warp';
+        warp.style.left = (i * (loom.offsetWidth / 8)) + 'px';
+        loom.appendChild(warp);
+      }
+
+      // Create slots for weft threads (horizontal)
+      const pattern = generatePattern();
+      const slotHeight = 20;
+      const spacing = (loom.offsetHeight - (pattern.length * slotHeight)) / (pattern.length + 1);
+
+      pattern.forEach((colorObj, i) => {
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        slot.style.top = (spacing + i * (slotHeight + spacing)) + 'px';
+        slot.style.height = slotHeight + 'px';
+        slot.dataset.index = i;
+        slot.dataset.color = colorObj.color;
+        loom.appendChild(slot);
+        slots.push(slot);
+      });
+
+      // Create palette
+      palette.innerHTML = '';
+      pattern.forEach((colorObj, i) => {
+        const paletteThread = document.createElement('div');
+        paletteThread.className = 'palette-thread';
+        paletteThread.style.background = colorObj.color;
+        paletteThread.textContent = colorObj.emoji;
+        paletteThread.dataset.color = colorObj.color;
+        paletteThread.dataset.index = i;
+        
+        paletteThread.addEventListener('touchstart', startDrag);
+        paletteThread.addEventListener('mousedown', startDrag);
+        
+        palette.appendChild(paletteThread);
+      });
+
+      status.textContent = `Level ${currentLevel} — ${pattern.length} threads`;
+    }
+
+    let draggedThread = null;
+    let draggedColor = null;
+    let startX, startY;
+
+    function startDrag(e) {
+      initAudio();
+      
+      if (e.target.classList.contains('used')) return;
+      
+      e.preventDefault();
+      
+      const touch = e.touches ? e.touches[0] : e;
+      draggedColor = e.target.dataset.color;
+      draggedThread = e.target;
+      
+      startX = touch.clientX;
+      startY = touch.clientY;
+
+      playTone(440);
+      
+      document.addEventListener('touchmove', drag);
+      document.addEventListener('touchend', endDrag);
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('mouseup', endDrag);
+    }
+
+    function drag(e) {
+      if (!draggedThread) return;
+      e.preventDefault();
+    }
+
+    function endDrag(e) {
+      if (!draggedThread) return;
+      
+      const touch = e.changedTouches ? e.changedTouches[0] : e;
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      
+      if (target && target.classList.contains('slot') && !target.classList.contains('filled')) {
+        const expectedColor = target.dataset.color;
+        
+        if (draggedColor === expectedColor) {
+          // Correct placement
+          const thread = document.createElement('div');
+          thread.className = 'thread placed';
+          thread.style.background = draggedColor;
+          thread.style.top = target.style.top;
+          thread.style.left = '0';
+          thread.style.width = '100%';
+          loom.appendChild(thread);
+          
+          target.classList.add('filled');
+          draggedThread.classList.add('used');
+          
+          placed++;
+          
+          const rect = target.getBoundingClientRect();
+          createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, draggedColor);
+          playTone(523 + placed * 50, 0.15);
+          
+          if (placed === pattern.length) {
+            setTimeout(() => {
+              completion.classList.add('show');
+              playTone(783, 0.3);
+              setTimeout(() => playTone(880, 0.3), 150);
+              setTimeout(() => playTone(1046, 0.5), 300);
+            }, 300);
+          }
+        } else {
+          // Wrong placement
+          playTone(220, 0.2);
+        }
+      }
+      
+      draggedThread = null;
+      draggedColor = null;
+      
+      document.removeEventListener('touchmove', drag);
+      document.removeEventListener('touchend', endDrag);
+      document.removeEventListener('mousemove', drag);
+      document.removeEventListener('mouseup', endDrag);
+    }
+
+    nextBtn.addEventListener('click', () => {
+      currentLevel++;
+      completion.classList.remove('show');
+      setupLoom();
+      playTone(523);
+    });
+
+    // Initialize
+    setupLoom();
+  </script>
+</body>
+</html>
