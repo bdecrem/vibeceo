@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LEFT HOUSE — Amber</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="LEFT HOUSE">
+  <meta property="og:description" content="Achievement unlocked: Left the house">
+  <meta property="og:image" content="https://kochi.to/amber/left-house-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/left-house.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LEFT HOUSE">
+  <meta name="twitter:description" content="Achievement unlocked: Left the house">
+  <meta name="twitter:image" content="https://kochi.to/amber/left-house-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    
+    #container {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 4/3;
+      background: #000;
+      border: 4px solid #D4A574;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+    }
+    
+    canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      display: block;
+    }
+    
+    #achievement {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      background: rgba(0, 0, 0, 0.9);
+      border: 3px solid #FFD700;
+      padding: 12px 20px;
+      text-align: center;
+      animation: popIn 0.5s ease-out 1s forwards;
+      z-index: 10;
+    }
+    
+    @keyframes popIn {
+      0% { transform: translateX(-50%) scale(0); }
+      50% { transform: translateX(-50%) scale(1.1); }
+      100% { transform: translateX(-50%) scale(1); }
+    }
+    
+    .achievement-title {
+      color: #FFD700;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    
+    .achievement-text {
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    
+    #signature {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      font-size: 10px;
+      color: #D4A574;
+      opacity: 0.6;
+      letter-spacing: 1px;
+    }
+    
+    @media (max-width: 640px) {
+      #container {
+        border: 2px solid #D4A574;
+      }
+      
+      .achievement-title {
+        font-size: 10px;
+      }
+      
+      .achievement-text {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <canvas id="canvas"></canvas>
+    <div id="achievement">
+      <div class="achievement-title">★ ACHIEVEMENT UNLOCKED ★</div>
+      <div class="achievement-text">LEFT THE HOUSE</div>
+    </div>
+    <div id="signature">AMBER</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set up pixel canvas
+    const pixelWidth = 160;
+    const pixelHeight = 120;
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+    
+    // Colors
+    const colors = {
+      sky: '#87CEEB',
+      ground: '#8B7355',
+      grass: '#5A8F3A',
+      door: '#654321',
+      doorknob: '#FFD700',
+      house: '#A0826D',
+      character: '#D4A574',
+      hair: '#4A3C2A',
+      shirt: '#2D9596',
+      pants: '#4A4A4A',
+      shoes: '#2A2A2A',
+      sun: '#FFD700',
+      cloud: '#FFFFFF',
+      path: '#9C8B7A',
+      ui_bg: '#000000',
+      ui_border: '#D4A574',
+      bar_bg: '#333333',
+      bar_low: '#FF4444',
+      bar_mid: '#FFD700',
+      text: '#FFFFFF'
+    };
+    
+    // Animation state
+    let frame = 0;
+    let charX = 48; // Starting position (at door)
+    let charY = 70;
+    let walking = false;
+    let walkCycle = 0;
+    
+    // Draw pixel rectangle
+    function rect(x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w, h);
+    }
+    
+    // Draw pixel text
+    function text(str, x, y, color, size = 1) {
+      ctx.fillStyle = color;
+      ctx.font = `${size * 8}px "Courier New", monospace`;
+      ctx.fillText(str, x, y);
+    }
+    
+    // Draw character sprite
+    function drawCharacter(x, y, legOffset = 0) {
+      // Head
+      rect(x + 4, y, 8, 8, colors.character);
+      // Hair
+      rect(x + 4, y, 8, 3, colors.hair);
+      // Eyes
+      ctx.fillStyle = '#000';
+      ctx.fillRect(x + 6, y + 4, 1, 1);
+      ctx.fillRect(x + 9, y + 4, 1, 1);
+      // Body (shirt)
+      rect(x + 3, y + 8, 10, 8, colors.shirt);
+      // Arms
+      rect(x + 1, y + 9, 2, 6, colors.character);
+      rect(x + 13, y + 9, 2, 6, colors.character);
+      // Pants
+      rect(x + 5, y + 16, 3, 6, colors.pants);
+      rect(x + 8, y + 16, 3, 6, colors.pants);
+      // Shoes (with walking animation)
+      rect(x + 5, y + 22 + legOffset, 3, 2, colors.shoes);
+      rect(x + 8, y + 22 - legOffset, 3, 2, colors.shoes);
+      
+      // Add exclamation mark if just starting
+      if (frame < 60) {
+        rect(x + 7, y - 6, 2, 4, colors.bar_mid);
+        rect(x + 7, y - 1, 2, 1, colors.bar_mid);
+      }
+    }
+    
+    // Draw scene
+    function draw() {
+      // Sky
+      rect(0, 0, pixelWidth, 80, colors.sky);
+      
+      // Sun
+      ctx.fillStyle = colors.sun;
+      ctx.beginPath();
+      ctx.arc(130, 20, 8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Clouds
+      rect(20, 15, 12, 4, colors.cloud);
+      rect(18, 17, 16, 4, colors.cloud);
+      rect(100, 25, 10, 3, colors.cloud);
+      rect(98, 27, 14, 3, colors.cloud);
+      
+      // Ground
+      rect(0, 80, pixelWidth, 40, colors.ground);
+      
+      // Grass patches
+      for (let i = 0; i < pixelWidth; i += 8) {
+        rect(i, 80, 6, 2, colors.grass);
+      }
+      
+      // Path from door
+      rect(40, 80, 20, 40, colors.path);
+      
+      // House (left side)
+      rect(10, 50, 40, 30, colors.house);
+      // Roof
+      ctx.fillStyle = colors.door;
+      ctx.beginPath();
+      ctx.moveTo(8, 50);
+      ctx.lineTo(30, 35);
+      ctx.lineTo(52, 50);
+      ctx.fill();
+      
+      // Door (open)
+      rect(44, 60, 12, 20, colors.door);
+      // Door showing open (darker inside)
+      rect(45, 61, 10, 18, '#000000');
+      // Doorknob
+      rect(53, 69, 2, 2, colors.doorknob);
+      
+      // Character
+      let legOffset = 0;
+      if (walking && Math.floor(walkCycle / 10) % 2 === 0) {
+        legOffset = 1;
+      }
+      drawCharacter(Math.floor(charX), charY, legOffset);
+      
+      // UI Panel at bottom
+      rect(2, pixelHeight - 28, pixelWidth - 4, 26, colors.ui_bg);
+      rect(2, pixelHeight - 28, pixelWidth - 4, 1, colors.ui_border);
+      
+      // Stats
+      const statY = pixelHeight - 22;
+      
+      // Social Battery
+      text('SOCIAL BATTERY', 6, statY, colors.text, 0.5);
+      rect(6, statY + 3, 50, 4, colors.bar_bg);
+      rect(6, statY + 3, 5, 4, colors.bar_low); // 10% full
+      
+      // Outside Tolerance
+      text('OUTSIDE TIME', 6, statY + 10, colors.text, 0.5);
+      rect(6, statY + 13, 50, 4, colors.bar_bg);
+      const outsideBarWidth = Math.max(0, 50 - Math.floor(frame / 3));
+      rect(6, statY + 13, outsideBarWidth, 4, colors.bar_mid);
+      
+      // Regret Level
+      text('REGRET LEVEL', 90, statY, colors.text, 0.5);
+      rect(90, statY + 3, 50, 4, colors.bar_bg);
+      const regretWidth = Math.min(50, Math.floor(frame/ 2));
+      rect(90, statY + 3, regretWidth, 4, colors.bar_low);
+      
+      // Status text
+      text('HP: 73%', 90, statY + 13, colors.text, 0.5);
+    }
+    
+    // Animation loop
+    function animate() {
+      frame++;
+      
+      // Start walking after 1 second
+      if (frame > 60 && charX < 110) {
+        walking = true;
+        charX += 0.3;
+        walkCycle++;
+      } else if (charX >= 110) {
+        walking = false;
+      }
+      
+      draw();
+      requestAnimationFrame(animate);
+    }
+    
+    // Start
+    animate();
+  </script>
+</body>
+</html>
