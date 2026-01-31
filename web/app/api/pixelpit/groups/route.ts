@@ -44,27 +44,10 @@ export async function GET(request: NextRequest) {
 
   const groupIds = memberships.map((m) => m.group_id);
 
-  // Get group details with member counts
+  // Get group details
   const { data: groups, error: groupError } = await supabase
     .from("pixelpit_groups")
-    .select(`
-      id,
-      code,
-      name,
-      type,
-      streak,
-      max_streak,
-      streak_saved_at,
-      created_at,
-      pixelpit_group_members (
-        user_id,
-        last_play_at,
-        pixelpit_users (
-          id,
-          handle
-        )
-      )
-    `)
+    .select("id, code, name, type, streak, max_streak, streak_saved_at, created_at")
     .in("id", groupIds);
 
   if (groupError) {
@@ -72,21 +55,43 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch groups" }, { status: 500 });
   }
 
+  // Fetch members separately for all groups (nested queries can be unreliable)
+  const { data: allMembers, error: membersError } = await supabase
+    .from("pixelpit_group_members")
+    .select("group_id, user_id, last_play_at")
+    .in("group_id", groupIds);
+
+  if (membersError) {
+    console.error("Error fetching members:", membersError);
+  }
+
+  // Get user handles for all members
+  const memberUserIds = [...new Set((allMembers || []).map(m => m.user_id))];
+  const { data: users } = await supabase
+    .from("pixelpit_users")
+    .select("id, handle")
+    .in("id", memberUserIds);
+
+  const userMap = new Map((users || []).map(u => [u.id, u.handle]));
+
   // Transform to clean format
-  const result = (groups || []).map((g) => ({
-    id: g.id,
-    code: g.code,
-    name: g.name,
-    type: g.type,
-    streak: g.streak,
-    maxStreak: g.max_streak,
-    streakSavedAt: g.streak_saved_at,
-    members: (g.pixelpit_group_members as any[]).map((m) => ({
-      userId: m.user_id,
-      handle: m.pixelpit_users?.handle,
-      lastPlayAt: m.last_play_at,
-    })),
-  }));
+  const result = (groups || []).map((g) => {
+    const groupMembers = (allMembers || []).filter(m => m.group_id === g.id);
+    return {
+      id: g.id,
+      code: g.code,
+      name: g.name,
+      type: g.type,
+      streak: g.streak,
+      maxStreak: g.max_streak,
+      streakSavedAt: g.streak_saved_at,
+      members: groupMembers.map((m) => ({
+        userId: m.user_id,
+        handle: userMap.get(m.user_id) || 'unknown',
+        lastPlayAt: m.last_play_at,
+      })),
+    };
+  });
 
   return NextResponse.json({ groups: result });
 }
