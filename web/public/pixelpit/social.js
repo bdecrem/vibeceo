@@ -78,6 +78,12 @@ window.PixelpitSocial = (function() {
     const data = await res.json();
     if (data.success && data.user) {
       setUser(data.user);
+      // Auto-join pending group from invite link
+      const pendingGroup = getStoredGroupCode();
+      if (pendingGroup) {
+        await joinGroup(pendingGroup);
+        clearStoredGroupCode();
+      }
     }
     return data;
   }
@@ -97,6 +103,12 @@ window.PixelpitSocial = (function() {
     const data = await res.json();
     if (data.success && data.user) {
       setUser(data.user);
+      // Auto-join pending group from invite link
+      const pendingGroup = getStoredGroupCode();
+      if (pendingGroup) {
+        await joinGroup(pendingGroup);
+        clearStoredGroupCode();
+      }
     }
     return data;
   }
