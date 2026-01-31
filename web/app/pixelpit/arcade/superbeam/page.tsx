@@ -303,9 +303,24 @@ export default function SuperbeamGame() {
     : 'https://pixelpit.io/pixelpit/arcade/superbeam';
 
   // Detect group code from URL and store it
+  // Also handle ?logout param
   useEffect(() => {
     if (!socialLoaded || typeof window === 'undefined') return;
     if (!window.PixelpitSocial) return;
+
+    // Handle logout param
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('logout')) {
+      window.PixelpitSocial.logout();
+      // Remove the param from URL
+      params.delete('logout');
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      window.location.reload();
+      return;
+    }
 
     const groupCode = window.PixelpitSocial.getGroupCodeFromUrl();
     if (groupCode) {
