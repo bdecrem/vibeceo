@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TIDEPOOL — Amber</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="TIDEPOOL">
+  <meta property="og:description" content="A living world between tides. Touch the water.">
+  <meta property="og:image" content="https://kochi.to/amber/tidepool-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/tidepool.html">
+  <metaproperty="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TIDEPOOL">
+  <meta name="twitter:description" content="A living world between tides. Touch the water.">
+  <meta name="twitter:image" content="https://kochi.to/amber/tidepool-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0a0a0a;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      touch-action: none;
+    }
+    
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
+    }
+    
+    #title {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #FFD700;
+      font-size: clamp(24px, 5vw, 48px);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      animation: fadeIn 2s ease-out forwards;
+    }
+    
+    #subtitle {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #2D9596;
+      font-size: clamp(12px, 2.5vw, 16px);
+      letter-spacing: 0.1em;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      animation: fadeIn 2s 1s ease-out forwards;
+    }
+    
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">TIDEPOOL</div>
+  <div id="subtitle">Touch the water</div>
+  <canvas id="canvas"></canvas>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width, height;
+    let creatures = [];
+    let ripples = [];
+    let particles = [];
+    let rocks = [];
+    let time = 0;
+    
+    // Color palette - full spectrum
+    const colors = {
+      anemone: ['#ec4899', '#f472b6', '#8b5cf6', '#a855f7'],
+      starfish: ['#f97316', '#fb923c', '#FFD700'],
+      crab: ['#f59e0b', '#FFC107', '#D4A574'],
+      urchin: ['#8b5cf6', '#a855f7', '#7B68EE'],
+      water: ['#2D9596', '#14b8a6', '#0d9488', '#3b82f6'],
+      rock: ['#78716c', '#57534e', '#44403c']
+    };
+    
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      init();
+    }
+    
+    class Anemone {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.baseRadius = 20 + Math.random() * 30;
+        this.tentacles = 12 + Math.floor(Math.random() * 12);
+        this.color = colors.anemone[Math.floor(Math.random() * colors.anemone.length)];
+        this.phase = Math.random() * Math.PI * 2;
+        this.speed = 0.5 + Math.random() * 0.5;
+        this.disturbance = 0;
+      }
+      
+      update() {
+        this.disturbance *= 0.95;
+      }
+      
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        
+        // Body
+        ctx.beginPath();
+        ctx.arc(0, 0, this.baseRadius * 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = this.color + '66';
+        ctx.fill();
+        
+        // Tentacles
+        for (let i = 0; i < this.tentacles; i++) {
+          const angle = (i / this.tentacles) * Math.PI * 2;
+          const wave = Math.sin(time * this.speed + this.phase + i * 0.5) * 0.3;
+          const disturbWave = Math.sin(this.disturbance * 5) * this.disturbance * 0.5;
+          const length = this.baseRadius * (1 + wave + disturbWave);
+          
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          
+          const endX = Math.cos(angle) * length;
+          const endY = Math.sin(angle) * length;
+          const cpX = Math.cos(angle + wave) * length * 0.7;
+          const cpY = Math.sin(angle + wave) * length * 0.7;
+          
+          ctx.quadraticCurveTo(cpX, cpY, endX, endY);
+          ctx.strokeStyle = this.color;
+          ctx.lineWidth = 3;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+          
+          // Tip glow
+          ctx.beginPath();
+          ctx.arc(endX, endY, 4, 0, Math.PI * 2);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        }
+        
+        ctx.restore();
+      }
+      
+      disturb(x, y, strength) {
+        const dist = Math.hypot(this.x - x, this.y - y);
+        if (dist < 150) {
+          this.disturbance = Math.max(this.disturbance, (1 - dist / 150) * strength);
+        }
+      }
+    }
+    
+    class Starfish {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = 30 + Math.random() * 20;
+        this.arms = 5;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.color = colors.starfish[Math.floor(Math.random() * colors.starfish.length)];
+        this.phase = Math.random() * Math.PI * 2;
+        this.disturbance = 0;
+      }
+      
+      update() {
+        this.disturbance *= 0.95;
+        this.rotation += 0.002;
+      }
+      
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation + Math.sin(this.disturbance * 10) * this.disturbance * 0.3);
+        
+        ctx.beginPath();
+        for (let i = 0; i < this.arms * 2; i++) {
+          const angle = (i / (this.arms * 2)) * Math.PI * 2;
+          const radius = i % 2 === 0 ? this.size : this.size * 0.4;
+          const wave = Math.sin(time * 0.5 + this.phase + i) * 0.1;
+          const r = radius * (1 + wave + this.disturbance * 0.3);
+          const x = Math.cos(angle) * r;
+          const y = Math.sin(angle) * r;
+          
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.strokeStyle = this.color + 'cc';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Center
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fillStyle = this.color + 'aa';
+        ctx.fill();
+        
+        ctx.restore();
+      }
+      
+      disturb(x, y, strength) {
+        const dist = Math.hypot(this.x - x, this.y - y);
+        if (dist < 150) {
+          this.disturbance = Math.max(this.disturbance, (1 - dist / 150) * strength);
+        }
+      }
+    }
+    
+    class SeaUrchin {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = 15 + Math.random() * 15;
+        this.spines = 30 + Math.floor(Math.random() * 20);
+        this.color = colors.urchin[Math.floor(Math.random() * colors.urchin.length)];
+        this.phase = Math.random() * Math.PI * 2;
+        this.disturbance = 0;
+      }
+      
+      update() {
+        this.disturbance *= 0.95;
+      }
+      
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        
+        // Body
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color + '88';
+        ctx.fill();
+        
+        // Spines
+        for (let i = 0; i < this.spines; i++) {
+          const angle = (i / this.spines) * Math.PI * 2;
+          const wave = Math.sin(time + this.phase + i * 0.3) * 0.2;
+          const disturbWave = this.disturbance * 0.5;
+          const length = this.size * (1.5 + wave + disturbWave);
+          
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(angle) * length, Math.sin(angle) * length);
+          ctx.strokeStyle = this.color;
+          ctx.lineWidth = 2;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+        }
+        
+        ctx.restore();
+      }
+      
+      disturb(x, y, strength) {
+        const dist = Math.hypot(this.x - x, this.y - y);
+        if (dist < 150) {
+          this.disturbance = Math.max(this.disturbance, (1 - dist / 150) * strength);
+        }
+      }
+    }
+    
+    class Rock {
+      constructor(x, y, size) {
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        this.color = colors.rock[Math.floor(Math.random() * colors.rock.length)];
+        this.vertices = [];
+        
+        // Irregular shape
+        const points = 6 + Math.floor(Math.random() * 4);
+        for (let i = 0; i < points; i++) {
+          const angle = (i / points) * Math.PI * 2;
+          const r = size * (0.8 + Math.random() * 0.4);
+          this.vertices.push({
+            x: Math.cos(angle) * r,
+            y: Math.sin(angle) * r
+          });
+        }
+      }
+      
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        
+        ctx.beginPath();
+        ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
+        for (let i = 1; i < this.vertices.length; i++) {
+          ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.strokeStyle = this.color + '44';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        ctx.restore();
+      }
+    }
+    
+    class Ripple {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 0;
+        this.maxRadius = 150;
+        this.speed = 3;
+        this.alpha = 1;
+      }
+      
+      update() {
+        this.radius += this.speed;
+        this.alpha = 1 - (this.radius / this.maxRadius);
+        return this.radius < this.maxRadius;
+      }
+      
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(45, 149, 150, ${this.alpha * 0.6})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+    
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
+        this.life = 1;
+        this.decay = 0.02;
+        this.size = 2 + Math.random() * 3;
+        this.color = colors.water[Math.floor(Math.random() * colors.water.length)];
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+        this.life -= this.decay;
+        return this.life > 0;
+      }
+      
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color + Math.floor(this.life * 255).toString(16).padStart(2, '0');
+        ctx.fill();
+      }
+    }
+    
+    function init() {
+      creatures = [];
+      rocks = [];
+      
+      // Create rocks first (background layer)
+      for (let i = 0; i < 8; i++) {
+        rocks.push(new Rock(
+          Math.random() * width,
+          Math.random() * height,
+          40 + Math.random() * 60
+        ));
+      }
+      
+      // Create creatures
+      for (let i = 0; i < 5; i++) {
+        creatures.push(new Anemone(
+          Math.random() * width,
+          Math.random() * height
+        ));
+      }
+      
+      for (let i = 0; i < 4; i++) {
+        creatures.push(new Starfish(
+          Math.random() * width,
+          Math.random() * height
+        ));
+      }
+      
+      for (let i = 0; i < 6; i++) {
+        creatures.push(new SeaUrchin(
+          Math.random() * width,
+          Math.random() * height
+        ));
+      }
+    }
+    
+    function handleInteraction(x, y) {
+      // Create ripple
+      ripples.push(new Ripple(x, y));
+      
+      // Create particles
+      for (let i = 0; i < 15; i++) {
+        particles.push(new Particle(x, y));
+      }
+      
+      // Disturb creatures
+      creatures.forEach(creature => {
+        creature.disturb(x, y, 1);
+      });
+    }
+    
+    function animate() {
+      time += 0.02;
+      
+      // Water gradient background
+      const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, Math.max(width, height));
+      gradient.addColorStop(0, '#0d9488');
+      gradient.addColorStop(0.5, '#14b8a6');
+      gradient.addColorStop(1, '#2D9596');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+      
+      // Light caustics effect
+      ctx.save();
+      ctx.globalAlpha = 0.15;
+      for (let i = 0; i < 3; i++) {
+        const x = (Math.sin(time * 0.3 + i * 2) * 0.5 + 0.5) * width;
+        const y = (Math.cos(time * 0.25 + i * 1.5) * 0.5 + 0.5) * height;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, 300);
+        gradient.addColorStop(0, '#FFD700');
+        gradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+      }
+      ctx.restore();
+      
+      // Draw rocks
+      rocks.forEach(rock => rock.draw());
+      
+      // Update and draw ripples
+      ripples = ripples.filter(ripple => {
+        const alive = ripple.update();
+        if (alive) ripple.draw();
+        return alive;
+      });
+      
+      // Update and draw creatures
+      creatures.forEach(creature => {
+        creature.update();
+        creature.draw();
+      });
+      
+      // Update and draw particles
+      particles = particles.filter(particle => {
+        const alive = particle.update();
+        if (alive) particle.draw();
+        return alive;
+      });
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Event listeners
+    canvas.addEventListener('mousedown', (e) => {
+      handleInteraction(e.clientX, e.clientY);
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      for (let touch of e.touches) {
+        handleInteraction(touch.clientX, touch.clientY);
+      }
+    });
+    
+    window.addEventListener('resize', resize);
+    
+    resize();
+    animate();
+  </script>
+</body>
+</html>
