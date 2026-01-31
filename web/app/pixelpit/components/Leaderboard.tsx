@@ -64,7 +64,7 @@ function LevelBadge({ level }: { level: number }) {
  * />
  * ```
  */
-export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose, groupsEnabled = false, gameUrl }: LeaderboardProps) {
+export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose, groupsEnabled = false, gameUrl, socialLoaded = false }: LeaderboardProps) {
   const [activeTab, setActiveTab] = useState<'global' | string>('global');
   const [groupLeaderboard, setGroupLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [groupLoading, setGroupLoading] = useState(false);
@@ -77,6 +77,7 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose, grou
     gameId,
     limit,
     entryId,
+    socialLoaded,
   });
   const [showXpInfo, setShowXpInfo] = useState(false);
 

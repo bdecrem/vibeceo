@@ -11,6 +11,7 @@ import {
   type PixelpitUser,
   type ScoreFlowColors,
   type LeaderboardColors,
+  type ProgressionResult,
 } from '@/app/pixelpit/components';
 
 // RAIN theme - soft glows, warm amber/teal
@@ -87,6 +88,194 @@ const LEVELS = [
 
 // Note: PixelpitSocial types are defined in @/app/pixelpit/components/types
 
+// Animated progression display component
+function ProgressionDisplay({ progression }: { progression: ProgressionResult }) {
+  const [animatedXp, setAnimatedXp] = useState(0);
+  const [animatedProgress, setAnimatedProgress] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [barPulse, setBarPulse] = useState(false);
+
+  useEffect(() => {
+    // Start animation after a brief delay
+    const startDelay = setTimeout(() => {
+      // Calculate starting point (before this XP was earned)
+      const startProgress = progression.leveledUp
+        ? 0  // If leveled up, we wrapped around from full
+        : Math.max(0, progression.levelProgress - progression.xpEarned);
+
+      setAnimatedProgress(startProgress);
+      setAnimatedXp(0);
+
+      // Animate XP counter
+      const xpDuration = 800;
+      const xpSteps = 30;
+      const xpIncrement = progression.xpEarned / xpSteps;
+      let currentXp = 0;
+
+      const xpInterval = setInterval(() => {
+        currentXp += xpIncrement;
+        if (currentXp >= progression.xpEarned) {
+          setAnimatedXp(progression.xpEarned);
+          clearInterval(xpInterval);
+        } else {
+          setAnimatedXp(Math.floor(currentXp));
+        }
+      }, xpDuration / xpSteps);
+
+      // Animate progress bar with slight delay
+      const barDelay = setTimeout(() => {
+        setBarPulse(true);
+
+        // If leveled up, first fill to 100%, then reset and fill to new progress
+        if (progression.leveledUp) {
+          setAnimatedProgress(progression.levelNeeded);
+
+          setTimeout(() => {
+            setShowLevelUp(true);
+            setAnimatedProgress(0);
+
+            setTimeout(() => {
+              setAnimatedProgress(progression.levelProgress);
+              setBarPulse(false);
+            }, 300);
+          }, 500);
+        } else {
+          setAnimatedProgress(progression.levelProgress);
+          setTimeout(() => setBarPulse(false), 600);
+        }
+      }, 200);
+
+      return () => {
+        clearInterval(xpInterval);
+        clearTimeout(barDelay);
+      };
+    }, 100);
+
+    return () => clearTimeout(startDelay);
+  }, [progression]);
+
+  const progressPercent = (animatedProgress / progression.levelNeeded) * 100;
+
+  return (
+    <div style={{
+      background: COLORS.surface,
+      borderRadius: 12,
+      padding: '16px 24px',
+      marginBottom: 20,
+      boxShadow: `0 4px 20px rgba(0,0,0,0.3)`,
+      textAlign: 'center',
+      minWidth: 200,
+      border: '1px solid rgba(255,255,255,0.05)',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        marginBottom: 8,
+      }}>
+        <span style={{
+          fontFamily: 'ui-monospace, monospace',
+          fontSize: 18,
+          fontWeight: 700,
+          color: COLORS.gold,
+        }}>
+          +{animatedXp} XP
+        </span>
+        {progression.streak > 1 && (
+          <span style={{
+            background: COLORS.teal,
+            color: COLORS.bg,
+            padding: '3px 8px',
+            borderRadius: 10,
+            fontSize: 11,
+            fontWeight: 600,
+            fontFamily: 'ui-monospace, monospace',
+          }}>
+            {progression.multiplier}x streak
+          </span>
+        )}
+      </div>
+
+      {/* XP Progress Bar */}
+      <div style={{
+        background: 'rgba(255,255,255,0.1)',
+        borderRadius: 8,
+        height: 10,
+        overflow: 'hidden',
+        marginBottom: 6,
+        position: 'relative',
+      }}>
+        <div style={{
+          background: `linear-gradient(90deg, ${COLORS.gold}, ${COLORS.teal})`,
+          height: '100%',
+          width: `${progressPercent}%`,
+          borderRadius: 8,
+          transition: 'width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          boxShadow: barPulse ? `0 0 12px ${COLORS.gold}` : 'none',
+        }} />
+        {barPulse && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)`,
+            animation: 'shimmer 0.6s ease-out',
+          }} />
+        )}
+      </div>
+
+      <div style={{
+        fontFamily: 'ui-monospace, monospace',
+        fontSize: 12,
+        color: COLORS.muted,
+      }}>
+        Level {progression.level} • {Math.floor(animatedProgress)}/{progression.levelNeeded} XP
+      </div>
+
+      {showLevelUp && (
+        <div style={{
+          marginTop: 10,
+          padding: '8px 16px',
+          background: `linear-gradient(135deg, ${COLORS.gold}, ${COLORS.teal})`,
+          borderRadius: 12,
+          fontFamily: 'ui-monospace, monospace',
+          fontSize: 14,
+          fontWeight: 700,
+          color: COLORS.bg,
+          animation: 'popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        }}>
+          LEVEL UP!
+        </div>
+      )}
+
+      {progression.streak >= 3 && (
+        <div style={{
+          marginTop: 8,
+          fontFamily: 'ui-monospace, monospace',
+          fontSize: 11,
+          color: COLORS.teal,
+        }}>
+          {progression.streak} day streak
+        </div>
+      )}
+
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        @keyframes popIn {
+          0% { transform: scale(0.5); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function SuperbeamGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard'>('start');
@@ -98,6 +287,9 @@ export default function SuperbeamGame() {
 
   // Track submitted entry for leaderboard positioning
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
+
+  // Progression state for XP/level/streak display
+  const [progression, setProgression] = useState<ProgressionResult | null>(null);
 
   // Groups state
   const [showShareModal, setShowShareModal] = useState(false);
@@ -450,8 +642,9 @@ export default function SuperbeamGame() {
     stopMusic();
     crashSound();
     setScore(game.score);
-    // Reset entry ID for new game
+    // Reset entry ID and progression for new game
     setSubmittedEntryId(null);
+    setProgression(null);
     setTimeout(() => setGameState('gameover'), 600);
   };
 
@@ -980,10 +1173,17 @@ export default function SuperbeamGame() {
             score={score}
             gameId={GAME_ID}
             colors={SCORE_FLOW_COLORS}
+            xpDivisor={1}
             onRankReceived={(rank, entryId) => {
               setSubmittedEntryId(entryId ?? null);
             }}
+            onProgression={(prog) => setProgression(prog)}
           />
+
+          {/* Animated Progression Display */}
+          {progression && (
+            <ProgressionDisplay progression={progression} />
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 15, alignItems: 'center' }}>
             <button
@@ -1062,6 +1262,7 @@ export default function SuperbeamGame() {
           onClose={() => setGameState('gameover')}
           groupsEnabled={true}
           gameUrl={GAME_URL}
+          socialLoaded={socialLoaded}
         />
       )}
 

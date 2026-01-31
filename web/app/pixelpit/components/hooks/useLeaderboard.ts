@@ -8,6 +8,8 @@ interface UseLeaderboardOptions {
   limit?: number;
   entryId?: number;
   autoLoad?: boolean;
+  /** Pass true when social.js has loaded to trigger fetch */
+  socialLoaded?: boolean;
 }
 
 interface UseLeaderboardReturn {
@@ -40,6 +42,7 @@ export function useLeaderboard({
   limit = 10,
   entryId,
   autoLoad = true,
+  socialLoaded = false,
 }: UseLeaderboardOptions): UseLeaderboardReturn {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [playerEntry, setPlayerEntry] = useState<LeaderboardEntry | null>(null);
@@ -72,10 +75,10 @@ export function useLeaderboard({
   }, [gameId, limit, entryId]);
 
   useEffect(() => {
-    if (autoLoad && window.PixelpitSocial) {
+    if (autoLoad && (socialLoaded || window.PixelpitSocial)) {
       load();
     }
-  }, [autoLoad, load]);
+  }, [autoLoad, load, socialLoaded]);
 
   return {
     leaderboard,

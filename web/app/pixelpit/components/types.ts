@@ -155,6 +155,8 @@ export interface LeaderboardProps {
   groupsEnabled?: boolean;
   /** Game URL for share links when groups enabled */
   gameUrl?: string;
+  /** Whether social.js has loaded. Pass this to trigger reload when library becomes available. */
+  socialLoaded?: boolean;
 }
 
 export interface CodeInputProps {
