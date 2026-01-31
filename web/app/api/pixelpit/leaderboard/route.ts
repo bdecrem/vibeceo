@@ -182,15 +182,36 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update entry to link to user
-    const { error: updateError } = await supabase
+    const { data: linkedEntry, error: updateError } = await supabase
       .from("pixelpit_entries")
       .update({ user_id: userId, nickname: null })
       .eq("id", entryId)
-      .is("user_id", null); // Only update if not already linked
+      .is("user_id", null) // Only update if not already linked
+      .select()
+      .single();
 
     if (updateError) {
       console.error("Error linking entry:", updateError);
       return NextResponse.json({ error: "Failed to link entry" }, { status: 500 });
+    }
+
+    // Also update user's last_play_date if the entry is from today
+    if (linkedEntry) {
+      const entryDate = new Date(linkedEntry.created_at).toISOString().split("T")[0];
+      const today = new Date().toISOString().split("T")[0];
+
+      if (entryDate === today) {
+        await supabase
+          .from("pixelpit_users")
+          .update({ last_play_date: today })
+          .eq("id", userId);
+
+        // Also update any group memberships' last_play_at
+        await supabase
+          .from("pixelpit_group_members")
+          .update({ last_play_at: new Date().toISOString() })
+          .eq("user_id", userId);
+      }
     }
 
     return NextResponse.json({ success: true });
