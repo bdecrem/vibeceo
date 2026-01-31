@@ -304,9 +304,11 @@ private hideModal(): void {
 
 ```typescript
 const SLASH_COMMANDS = [
-  { key: '/r9d9',   desc: 'R9D9 drum machine guide' },
-  { key: '/r3d3',   desc: 'R3D3 acid bass guide' },
-  { key: '/r1d1',   desc: 'R1D1 lead synth guide' },
+  { key: '/jb01',   desc: 'JB01 drum machine guide' },
+  { key: '/jb202',  desc: 'JB202 bass synth guide' },
+  { key: '/jt90',   desc: 'JT90 (909-style) drums guide' },
+  { key: '/jt30',   desc: 'JT30 (303-style) acid bass guide' },
+  { key: '/jt10',   desc: 'JT10 (101-style) lead synth guide' },
   { key: '/kits',   desc: 'List sample kits' },
   { key: '/status', desc: 'Show session' },
   { key: '/clear',  desc: 'Reset session' },

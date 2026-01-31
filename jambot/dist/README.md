@@ -28,9 +28,11 @@ Talk to it naturally:
 ## Commands
 
 Type `/` for menu, or:
-- `/r9d9` - Drum machine guide
-- `/r3d3` - Acid bass guide
-- `/r1d1` - Lead synth guide
+- `/jb01` - JB01 drum machine guide
+- `/jb202` - JB202 bass synth guide
+- `/jt90` - JT90 (909-style) drums guide
+- `/jt30` - JT30 (303-style) acid bass guide
+- `/jt10` - JT10 (101-style) lead synth guide
 - `/export` - Export MIDI + README
 - `/status` - Current session
 - `/clear` - Reset
@@ -48,4 +50,4 @@ Type `/` for menu, or:
 
 ## Version
 
-v0.0.3 — Jan 21, 2026
+v0.1.0 — Jan 28, 2025

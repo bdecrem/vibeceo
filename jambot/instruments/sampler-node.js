@@ -6,7 +6,7 @@
  */
 
 import { InstrumentNode } from '../core/node.js';
-import { R9DS_PARAMS, toEngine, fromEngine } from '../params/converters.js';
+import { SAMPLER_PARAMS, toEngine, fromEngine } from '../params/converters.js';
 import { SampleVoice } from '../sample-voice.js';
 import { OfflineAudioContext } from 'node-web-audio-api';
 
@@ -46,7 +46,7 @@ export class SamplerNode extends InstrumentNode {
     // Node-level output gain
     this.registerParam('level', { min: -60, max: 6, default: -6, unit: 'dB', hint: 'node output level' });
 
-    const slotDef = R9DS_PARAMS.slot;
+    const slotDef = SAMPLER_PARAMS.slot;
     if (!slotDef) return;
 
     for (const slot of SLOTS) {
@@ -136,7 +136,7 @@ export class SamplerNode extends InstrumentNode {
    */
   getSlotEngineParams(slot) {
     const result = {};
-    const slotDef = R9DS_PARAMS.slot;
+    const slotDef = SAMPLER_PARAMS.slot;
 
     for (const [paramName, paramDef] of Object.entries(slotDef)) {
       const path = `${slot}.${paramName}`;
@@ -361,7 +361,7 @@ export class SamplerNode extends InstrumentNode {
     // Sparse params: only store non-default values
     // Note: sampler stores producer units, so compare against producer defaults
     const sparseParams = {};
-    const slotDef = R9DS_PARAMS.slot;
+    const slotDef = SAMPLER_PARAMS.slot;
     for (const [path, value] of Object.entries(this._params)) {
       const [slot, paramName] = path.split('.');
       const paramDef = slotDef?.[paramName];

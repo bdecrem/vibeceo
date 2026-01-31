@@ -1,5 +1,5 @@
 /**
- * Sampler Tools (R9DS)
+ * Sampler Tools (Sampler)
  *
  * Tools for 10-slot sample player: list_kits, load_kit, add_samples, tweak_samples, create_kit
  */
@@ -102,7 +102,7 @@ const samplerTools = {
       return slotMeta ? `${slotMeta.short}:${a.split(':')[1]}` : a;
     });
 
-    return `R9DS samples: ${slotInfo.join(', ')}`;
+    return `Sampler samples: ${slotInfo.join(', ')}`;
   },
 
   /**
@@ -129,18 +129,18 @@ const samplerTools = {
 
     // Mute: convenience alias for level=-60dB, Unmute: restore to 0dB
     if (input.mute === true) {
-      const def = getParamDef('r9ds', slot, 'level');
+      const def = getParamDef('sampler', slot, 'level');
       session.samplerParams[slot].level = def ? toEngine(-60, def) : 0;
       tweaks.push('muted');
     } else if (input.mute === false) {
-      const def = getParamDef('r9ds', slot, 'level');
+      const def = getParamDef('sampler', slot, 'level');
       session.samplerParams[slot].level = def ? toEngine(0, def) : 0.5;  // 0dB = unity (0.5 in sampler scale)
       tweaks.push('unmuted');
     }
 
     // Level: dB → linear
     if (input.level !== undefined) {
-      const def = getParamDef('r9ds', slot, 'level');
+      const def = getParamDef('sampler', slot, 'level');
       session.samplerParams[slot].level = def ? toEngine(input.level, def) : input.level;
       tweaks.push(`level=${input.level}dB`);
     }
@@ -154,21 +154,21 @@ const samplerTools = {
 
     // Attack: 0-100 → 0-1
     if (input.attack !== undefined) {
-      const def = getParamDef('r9ds', slot, 'attack');
+      const def = getParamDef('sampler', slot, 'attack');
       session.samplerParams[slot].attack = def ? toEngine(input.attack, def) : input.attack / 100;
       tweaks.push(`attack=${input.attack}`);
     }
 
     // Decay: 0-100 → 0-1
     if (input.decay !== undefined) {
-      const def = getParamDef('r9ds', slot, 'decay');
+      const def = getParamDef('sampler', slot, 'decay');
       session.samplerParams[slot].decay = def ? toEngine(input.decay, def) : input.decay / 100;
       tweaks.push(`decay=${input.decay}`);
     }
 
     // Filter: Hz → 0-1 (log scale)
     if (input.filter !== undefined) {
-      const def = getParamDef('r9ds', slot, 'filter');
+      const def = getParamDef('sampler', slot, 'filter');
       session.samplerParams[slot].filter = def ? toEngine(input.filter, def) : input.filter;
       const display = input.filter >= 1000 ? `${(input.filter/1000).toFixed(1)}kHz` : `${input.filter}Hz`;
       tweaks.push(`filter=${display}`);
@@ -176,7 +176,7 @@ const samplerTools = {
 
     // Pan: -100 to +100 → -1 to +1
     if (input.pan !== undefined) {
-      const def = getParamDef('r9ds', slot, 'pan');
+      const def = getParamDef('sampler', slot, 'pan');
       session.samplerParams[slot].pan = def ? toEngine(input.pan, def) : input.pan / 100;
       const panDisplay = input.pan === 0 ? 'C' : (input.pan < 0 ? `L${Math.abs(input.pan)}` : `R${input.pan}`);
       tweaks.push(`pan=${panDisplay}`);
@@ -186,7 +186,7 @@ const samplerTools = {
     const slotMeta = session.samplerKit?.slots.find(s => s.id === slot);
     const slotName = slotMeta ? slotMeta.name : slot;
 
-    return `R9DS ${slotName}: ${tweaks.join(', ')}`;
+    return `Sampler ${slotName}: ${tweaks.join(', ')}`;
   },
 
   /**
@@ -196,10 +196,10 @@ const samplerTools = {
     const kit = session.samplerKit;
 
     if (!kit) {
-      return 'R9DS: No kit loaded. Use load_kit to load one.';
+      return 'Sampler: No kit loaded. Use load_kit to load one.';
     }
 
-    const lines = ['R9DS SAMPLER:', ''];
+    const lines = ['Sampler SAMPLER:', ''];
     lines.push(`Kit: ${kit.name} (${kit.id})`);
     lines.push('');
     lines.push('Slots:');

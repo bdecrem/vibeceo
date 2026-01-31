@@ -499,7 +499,7 @@ export const TOOLS = [
       required: ["name"]
     }
   },
-  // R9DS Sampler tools
+  // Sampler tools
   {
     name: "list_kits",
     description: "List all available sample kits (bundled + user kits from ~/Documents/Jambot/kits/)",
@@ -511,7 +511,7 @@ export const TOOLS = [
   },
   {
     name: "load_kit",
-    description: "Load a sample kit for R9DS. Use list_kits first to see available kits.",
+    description: "Load a sample kit for the Sampler. Use list_kits first to see available kits.",
     input_schema: {
       type: "object",
       properties: {
@@ -522,7 +522,7 @@ export const TOOLS = [
   },
   {
     name: "add_samples",
-    description: "Add sample patterns to R9DS. Must load_kit first. Slots are s1-s10. For simple patterns use step arrays [0,4,8,12]. For velocity control use [{step:0,vel:1},{step:4,vel:0.5}].",
+    description: "Add sample patterns to the Sampler. Must load_kit first. Slots are s1-s10. For simple patterns use step arrays [0,4,8,12]. For velocity control use [{step:0,vel:1},{step:4,vel:0.5}].",
     input_schema: {
       type: "object",
       properties: {
@@ -542,7 +542,7 @@ export const TOOLS = [
   },
   {
     name: "tweak_samples",
-    description: "Tweak R9DS sample parameters. UNITS: level in dB, tune in semitones, attack/decay 0-100, filter in Hz, pan L/R -100 to +100. Use mute:true to silence.",
+    description: "Tweak Sampler parameters. UNITS: level in dB, tune in semitones, attack/decay 0-100, filter in Hz, pan L/R -100 to +100. Use mute:true to silence.",
     input_schema: {
       type: "object",
       properties: {

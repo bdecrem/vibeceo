@@ -30,7 +30,7 @@ See **PLATFORM.md** for architecture documentation.
 
 ## Architecture
 
-**Canonical instruments:** `jb01`, `jb200`, `sampler`, `r9d9`, `r3d3`, `r1d1`
+**Canonical instruments:** `jb01`, `jb202`, `sampler`, `jt10`, `jt30`, `jt90`, `jp9000`
 
 **Aliases:** `drums`→jb01, `bass`→jb200, `lead`→jb200, `synth`→jb200
 

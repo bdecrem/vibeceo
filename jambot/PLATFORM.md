@@ -25,11 +25,12 @@ We have **6 canonical instruments**:
 | Instrument | File | Description |
 |------------|------|-------------|
 | `jb01` | `instruments/jb01-node.js` | Drum machine (8 voices) |
-| `jb200` | `instruments/jb200-node.js` | Bass monosynth (2 osc, filter, drive) |
+| `jb202` | `instruments/jb202-node.js` | Bass monosynth (custom DSP) |
 | `sampler` | `instruments/sampler-node.js` | Sample playback (10 slots) |
-| `r9d9` | `instruments/tr909-node.js` | TR-909 drum machine (11 voices) |
-| `r3d3` | `instruments/tb303-node.js` | TB-303 acid bass |
-| `r1d1` | `instruments/sh101-node.js` | SH-101 lead synth |
+| `jt10` | `instruments/jt10-node.js` | Lead synth (101-style) |
+| `jt30` | `instruments/jt30-node.js` | Acid bass (303-style) |
+| `jt90` | `instruments/jt90-node.js` | Drum machine (909-style, 11 voices) |
+| `jp9000` | `instruments/jp9000-node.js` | Modular synth (patchable) |
 
 | Alias | Points To | Use Case |
 |-------|-----------|----------|
@@ -446,13 +447,14 @@ tweak({ path: 'drums.kick.level', value: -60 })  // -60dB = silent
 
 ## Available Instruments
 
-All 6 instruments are registered and ready:
+All instruments are registered and ready:
 - `jb01` / `drums` — JB01 drum machine (8 voices)
-- `jb200` / `bass` / `lead` — JB200 bass monosynth
+- `jb202` / `bass` / `lead` — JB202 bass monosynth (custom DSP)
 - `sampler` — Sample player (10 slots)
-- `r9d9` — TR-909 drum machine (11 voices)
-- `r3d3` — TB-303 acid bass
-- `r1d1` — SH-101 lead synth
+- `jt10` — Lead synth (101-style)
+- `jt30` — Acid bass (303-style)
+- `jt90` — Drum machine (909-style, 11 voices)
+- `jp9000` — Modular synth (patchable)
 
 ## Effect Chains (Flexible Routing)
 
@@ -469,7 +471,7 @@ Add effects to any target (instrument, voice, or master) in any order. Effects a
 
 ### Targets
 
-- **Instruments**: `jb01`, `jb200`, `sampler`, `r9d9`, `r3d3`, `r1d1`
+- **Instruments**: `jb01`, `jb202`, `sampler`, `jt10`, `jt30`, `jt90`, `jp9000`
 - **Voices**: `jb01.ch`, `jb01.kick`, `jb01.snare`, etc. — per-voice effects (JB01 supported, others can add `renderVoices()`)
 - **Master**: `master`
 

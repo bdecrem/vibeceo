@@ -1,0 +1,59 @@
+{
+  "_meta": {
+    "name": "JB01",
+    "description": "Reference Drum Machine - 8 voices",
+    "version": "1.0",
+    "units": {
+      "dB": "Volume levels (-60 to +6, 0 = unity)",
+      "0-100": "Knob position (like hardware)",
+      "semitones": "Pitch adjustment",
+      "choice": "Discrete option"
+    }
+  },
+  "kick": {
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "pitch" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 80, "hint": "body length" },
+    "attack": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "click intensity" },
+    "sweep": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "pitch envelope depth" }
+  },
+  "snare": {
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "pitch" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "length" },
+    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "brightness" },
+    "snappy": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "noise vs body" }
+  },
+  "clap": {
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "tail length" },
+    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "brightness" }
+  },
+  "ch": {
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "pitch" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 20, "hint": "length" },
+    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "brightness" }
+  },
+  "oh": {
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "pitch" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 60, "hint": "length" },
+    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "brightness" }
+  },
+  "lowtom": {
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "pitch" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "length" }
+  },
+  "hitom": {
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "pitch" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "length" }
+  },
+  "cymbal": {
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "pitch" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 70, "hint": "length" }
+  }
+}

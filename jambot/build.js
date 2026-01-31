@@ -34,6 +34,24 @@ if (existsSync('genres.json')) {
   copyFileSync('genres.json', 'dist/genres.json');
 }
 
+// Copy params folder (needed at runtime for instrument parameters)
+mkdirSync('dist/params', { recursive: true });
+const paramFiles = [
+  'jb01-params.json',
+  'jb200-params.json',
+  'jb202-params.json',
+  'jt10-params.json',
+  'jt30-params.json',
+  'jt90-params.json',
+  'sampler-params.json',
+  'converters.js',
+];
+for (const file of paramFiles) {
+  if (existsSync(`params/${file}`)) {
+    copyFileSync(`params/${file}`, `dist/params/${file}`);
+  }
+}
+
 // Create package.json for dist
 const pkg = {
   name: "jambot",
@@ -85,9 +103,11 @@ Talk to it naturally:
 ## Commands
 
 Type \`/\` for menu, or:
-- \`/r9d9\` - Drum machine guide
-- \`/r3d3\` - Acid bass guide
-- \`/r1d1\` - Lead synth guide
+- \`/jb01\` - JB01 drum machine guide
+- \`/jb202\` - JB202 bass synth guide
+- \`/jt90\` - JT90 (909-style) drums guide
+- \`/jt30\` - JT30 (303-style) acid bass guide
+- \`/jt10\` - JT10 (101-style) lead synth guide
 - \`/export\` - Export MIDI + README
 - \`/status\` - Current session
 - \`/clear\` - Reset

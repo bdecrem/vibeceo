@@ -24,7 +24,10 @@ const NODE_TO_SYNTH = {
   // Real instruments
   jb01: 'jb01',
   jb202: 'jb202',
-  sampler: 'r9ds',
+  jt10: 'jt10',
+  jt30: 'jt30',
+  jt90: 'jt90',
+  sampler: 'sampler',
   jp9000: 'jp9000',
   // Aliases
   drums: 'jb01',

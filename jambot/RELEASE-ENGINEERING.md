@@ -63,9 +63,11 @@ Outputs WAV files. Uses TR-909, TB-303, SH-101 emulations.
 ## Commands
 
 Type `/` for menu, or:
-- `/r9d9` - Drum machine guide
-- `/r3d3` - Acid bass guide
-- `/r1d1` - Lead synth guide
+- `/jb01` - JB01 drum machine guide
+- `/jb202` - JB202 bass synth guide
+- `/jt90` - JT90 (909-style) drums guide
+- `/jt30` - JT30 (303-style) acid bass guide
+- `/jt10` - JT10 (101-style) lead synth guide
 - `/status` - Current session
 - `/clear` - Reset
 

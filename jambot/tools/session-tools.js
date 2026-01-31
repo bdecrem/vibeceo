@@ -6,15 +6,15 @@
 
 import { registerTools } from './index.js';
 import { TR909_KITS } from '../../web/public/909/dist/machines/tr909/presets.js';
-import { fromEngine, JB200_PARAMS, R3D3_PARAMS, R1D1_PARAMS, R9D9_PARAMS, R9DS_PARAMS } from '../params/converters.js';
+import { fromEngine, JB200_PARAMS, JB01_PARAMS, JT10_PARAMS, JT30_PARAMS, JT90_PARAMS } from '../params/converters.js';
 
 // Param definitions by instrument
 const PARAM_DEFS = {
   jb200: JB200_PARAMS,
-  bass: R3D3_PARAMS,
-  lead: R1D1_PARAMS,
-  drums: R9D9_PARAMS,
-  sampler: R9DS_PARAMS,
+  jb01: JB01_PARAMS,
+  jt10: JT10_PARAMS,
+  jt30: JT30_PARAMS,
+  jt90: JT90_PARAMS,
 };
 
 /**
@@ -133,159 +133,16 @@ function showJB200(session) {
 }
 
 /**
- * Show R3D3 (bass/303) state
- */
-function showBass(session) {
-  const node = session._nodes.bass;
-  const params = node._params;
-  const pattern = session.bassPattern;
-  const defs = R3D3_PARAMS.bass;
-
-  const lines = ['R3D3 ACID BASS', ''];
-
-  lines.push('SYNTH: ' + [
-    params.waveform || 'saw',
-    `cutoff ${formatParam(params.cutoff, defs.cutoff)}`,
-    `res ${formatParam(params.resonance, defs.resonance)}`,
-  ].join(', '));
-
-  lines.push('ENV: ' + [
-    `mod ${formatParam(params.envMod, defs.envMod)}`,
-    `decay ${formatParam(params.decay, defs.decay)}`,
-    `accent ${formatParam(params.accent, defs.accent)}`,
-  ].join(', '));
-
-  lines.push('LEVEL: ' + formatParam(params.level, defs.level));
-
-  lines.push('');
-  lines.push('PATTERN: ' + formatMonoPattern(pattern));
-
-  return lines.join('\n');
-}
-
-/**
- * Show R1D1 (lead/101) state
- */
-function showLead(session) {
-  const node = session._nodes.lead;
-  const params = node._params;
-  const pattern = session.leadPattern;
-  const arp = session.leadArp;
-  const defs = R1D1_PARAMS.lead;
-
-  const lines = ['R1D1 LEAD SYNTH', ''];
-
-  // VCO
-  lines.push('VCO: ' + [
-    `saw ${formatParam(params.vcoSaw, defs.vcoSaw)}`,
-    `pulse ${formatParam(params.vcoPulse, defs.vcoPulse)}`,
-    `pw ${formatParam(params.pulseWidth, defs.pulseWidth)}`,
-  ].join(', '));
-
-  if (params.subLevel > 0) {
-    lines.push('SUB: ' + [
-      `level ${formatParam(params.subLevel, defs.subLevel)}`,
-      `mode ${params.subMode}`,
-    ].join(', '));
-  }
-
-  // Filter
-  lines.push('FILTER: ' + [
-    formatParam(params.cutoff, defs.cutoff),
-    `res ${formatParam(params.resonance, defs.resonance)}`,
-    `env ${formatParam(params.envMod, defs.envMod)}`,
-  ].join(', '));
-
-  // Envelopes
-  lines.push('AMP ENV: ' + [
-    `A${formatParam(params.attack, defs.attack)}`,
-    `D${formatParam(params.decay, defs.decay)}`,
-    `S${formatParam(params.sustain, defs.sustain)}`,
-    `R${formatParam(params.release, defs.release)}`,
-  ].join(' '));
-
-  // LFO
-  if (params.lfoToPitch > 0 || params.lfoToFilter > 0 || params.lfoToPW > 0) {
-    lines.push('LFO: ' + [
-      params.lfoWaveform,
-      `rate ${formatParam(params.lfoRate, defs.lfoRate)}`,
-      params.lfoToPitch > 0 ? `→pitch ${params.lfoToPitch}` : null,
-      params.lfoToFilter > 0 ? `→filter ${params.lfoToFilter}` : null,
-      params.lfoToPW > 0 ? `→pw ${params.lfoToPW}` : null,
-    ].filter(Boolean).join(', '));
-  }
-
-  lines.push('LEVEL: ' + formatParam(params.level, defs.level));
-
-  // Arp
-  if (arp && arp.mode !== 'off') {
-    lines.push('');
-    lines.push('ARP: ' + [
-      arp.mode,
-      `${arp.octaves} oct`,
-      arp.hold ? 'hold' : null,
-    ].filter(Boolean).join(', '));
-  }
-
-  lines.push('');
-  lines.push('PATTERN: ' + formatMonoPattern(pattern));
-
-  return lines.join('\n');
-}
-
-/**
- * Show R9D9 (drums/909) state
- * Drum params are stored in producer units (dB, not 0-1)
- */
-function showDrums(session) {
-  const pattern = session.drumPattern;
-  const params = session.drumParams;
-  const kit = session.drumKit;
-
-  const lines = ['R9D9 DRUM MACHINE', ''];
-  lines.push(`Kit: ${kit || 'default'}`);
-  lines.push(`Length: ${session.drumPatternLength || 16}, Scale: ${session.drumScale || '16th'}`);
-  if (session.drumFlam > 0) lines.push(`Flam: ${Math.round(session.drumFlam * 100)}%`);
-  lines.push('');
-
-  // Show voices with hits
-  const voices = ['kick', 'snare', 'clap', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'rimshot', 'crash', 'ride'];
-
-  for (const voice of voices) {
-    const steps = pattern[voice] || [];
-    const hits = steps.filter(s => s?.velocity > 0);
-    if (hits.length > 0) {
-      const hitSteps = steps.map((s, i) => s?.velocity > 0 ? i + 1 : null).filter(Boolean);
-      const voiceParams = params[voice] || {};
-      let info = `${voice.toUpperCase()}: ${hitSteps.join(', ')}`;
-      // Drum params are already in producer units (dB)
-      // Only show level if it differs from 0dB (unity)
-      if (voiceParams.level !== undefined && voiceParams.level !== 0) {
-        const lvl = voiceParams.level;
-        info += ` @ ${lvl >= 0 ? '+' : ''}${lvl}dB`;
-      }
-      lines.push(info);
-    }
-  }
-
-  if (lines.length === 5) {
-    lines.push('(no pattern)');
-  }
-
-  return lines.join('\n');
-}
-
-/**
- * Show R9DS (sampler) state
+ * Show Sampler state
  */
 function showSampler(session) {
   const kit = session.samplerKit;
 
   if (!kit) {
-    return 'R9DS SAMPLER\n\nNo kit loaded. Use load_kit to load one.';
+    return 'SAMPLER\n\nNo kit loaded. Use load_kit to load one.';
   }
 
-  const lines = ['R9DS SAMPLER', ''];
+  const lines = ['SAMPLER', ''];
   lines.push(`Kit: ${kit.name} (${kit.id})`);
   lines.push('');
   lines.push('SLOTS:');
@@ -385,7 +242,7 @@ const sessionTools = {
     session.bpm = input.bpm;
     session.swing = 0;
 
-    // Reset R9D9 (drums) - load default kit with its parameters
+    // Reset JB01 drums - load default kit with its parameters
     session.drumKit = DEFAULT_DRUM_KIT;
     session.drumPattern = {};
     session.drumParams = {};
@@ -405,7 +262,7 @@ const sessionTools = {
     session.drumUseSample = {};
     session.drumAutomation = {};
 
-    // Reset R3D3 (bass)
+    // Reset bass (legacy pattern)
     session.bassPattern = createEmptyBassPattern();
     session.bassParams = {
       waveform: 'sawtooth',
@@ -417,7 +274,7 @@ const sessionTools = {
       level: 0.25  // -6dB for proper gain staging
     };
 
-    // Reset R1D1 (lead)
+    // Reset lead (legacy pattern)
     session.leadPreset = null;
     session.leadPattern = createEmptyLeadPattern();
     session.leadParams = {
@@ -429,7 +286,7 @@ const sessionTools = {
       level: 0.25  // -6dB for proper gain staging
     };
 
-    // Reset R9DS (sampler) - keep kit loaded, just clear pattern
+    // Reset Sampler - keep kit loaded, just clear pattern
     session.samplerPattern = {};
     session.samplerParams = {};
 
@@ -482,20 +339,15 @@ const sessionTools = {
     // Map instrument names to show functions
     const showFns = {
       jb200: showJB200,
-      bass: showBass,
-      r3d3: showBass,  // alias
-      lead: showLead,
-      r1d1: showLead,  // alias
-      drums: showDrums,
-      r9d9: showDrums, // alias
-      sampler: showSampler,
-      r9ds: showSampler, // alias
+      jb202: showJB200,  // alias
       jb01: showJB01,
+      sampler: showSampler,
+      // TODO: Add show functions for jt10, jt30, jt90
     };
 
     const showFn = showFns[instrument?.toLowerCase()];
     if (!showFn) {
-      const available = Object.keys(showFns).filter(k => !['r3d3', 'r1d1', 'r9d9', 'r9ds'].includes(k));
+      const available = Object.keys(showFns);
       return `Unknown instrument: ${instrument}. Available: ${available.join(', ')}`;
     }
 

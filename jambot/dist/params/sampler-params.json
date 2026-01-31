@@ -1,0 +1,22 @@
+{
+  "_meta": {
+    "name": "Sampler",
+    "description": "10-slot Sample Player",
+    "version": "2.0",
+    "units": {
+      "dB": "Volume levels (-60 to +6, 0 = unity)",
+      "0-100": "Knob position (like hardware)",
+      "semitones": "Pitch adjustment",
+      "Hz": "Filter frequency",
+      "pan": "Stereo position (L/R)"
+    }
+  },
+  "slot": {
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0 },
+    "tune": { "unit": "semitones", "min": -24, "max": 24, "default": 0, "hint": "pitch shift" },
+    "attack": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "fade in" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "0=short chop, 100=full sample" },
+    "filter": { "unit": "Hz", "min": 200, "max": 20000, "default": 20000, "hint": "lowpass cutoff" },
+    "pan": { "unit": "pan", "min": -100, "max": 100, "default": 0, "hint": "L-100, C=0, R+100" }
+  }
+}
