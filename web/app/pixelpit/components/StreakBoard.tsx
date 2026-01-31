@@ -55,11 +55,11 @@ export function StreakBoard({ group, colors, onClose }: StreakBoardProps) {
     return () => clearInterval(interval);
   }, [group.streakSavedAt]);
 
-  // Check if all members have played since last save
+  // Check if all members have played today
+  const today = new Date().toISOString().split('T')[0];
   const allPlayed = group.members.every((m) => {
     if (!m.lastPlayAt) return false;
-    if (!group.streakSavedAt) return true;
-    return new Date(m.lastPlayAt) > new Date(group.streakSavedAt);
+    return new Date(m.lastPlayAt).toISOString().split('T')[0] === today;
   });
 
   const streakSafe = allPlayed && group.streak && group.streak > 0;
@@ -146,10 +146,11 @@ export function StreakBoard({ group, colors, onClose }: StreakBoardProps) {
         marginBottom: 24,
       }}>
         {group.members.map((member) => {
-          const hasPlayed = member.lastPlayAt && (
-            !group.streakSavedAt ||
-            new Date(member.lastPlayAt) > new Date(group.streakSavedAt)
-          );
+          // Check if played today (same calendar day) - simpler and more intuitive
+          const today = new Date().toISOString().split('T')[0];
+          const playedToday = member.lastPlayAt &&
+            new Date(member.lastPlayAt).toISOString().split('T')[0] === today;
+          const hasPlayed = playedToday;
 
           return (
             <div
