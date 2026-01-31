@@ -19,21 +19,47 @@ const supabase = createClient(
 // GET - fetch leaderboard for a game
 // Dedupes registered users (best score only), keeps all guest entries
 // Optional: pass userId or nickname to get player's rank if not in top
+// Optional: pass groupCode to filter to group members only
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const game = searchParams.get("game");
   const limit = Math.min(parseInt(searchParams.get("limit") || "10", 10), 50);
   const currentUserId = searchParams.get("userId");
   const currentEntryId = searchParams.get("entryId");
+  const groupCode = searchParams.get("groupCode");
 
   if (!game) {
     return NextResponse.json({ error: "Game parameter required" }, { status: 400 });
   }
 
+  // If groupCode provided, get group member IDs for filtering
+  let groupMemberIds: number[] | null = null;
+  let groupInfo: { id: number; type: string; name: string } | null = null;
+
+  if (groupCode) {
+    const { data: group } = await supabase
+      .from("pixelpit_groups")
+      .select("id, type, name")
+      .eq("code", groupCode.toLowerCase())
+      .single();
+
+    if (group) {
+      groupInfo = group;
+      const { data: members } = await supabase
+        .from("pixelpit_group_members")
+        .select("user_id")
+        .eq("group_id", group.id);
+
+      if (members) {
+        groupMemberIds = members.map(m => m.user_id);
+      }
+    }
+  }
+
   // Use raw SQL to dedupe registered users while keeping all guest entries
   const { data, error } = await supabase.rpc("get_leaderboard", {
     p_game_id: game,
-    p_limit: limit,
+    p_limit: groupMemberIds ? 100 : limit, // Get more if filtering
   });
 
   if (error) {
@@ -65,13 +91,25 @@ export async function GET(request: NextRequest) {
 
   // Transform RPC data into clean leaderboard format
   // Note: RPC may return level if available, otherwise we fetch it
-  const leaderboard = (data || []).map((entry: { rank: number; handle: string | null; nickname: string | null; score: number; user_id: number | null; level?: number }) => ({
+  let leaderboard = (data || []).map((entry: { rank: number; handle: string | null; nickname: string | null; score: number; user_id: number | null; level?: number }) => ({
     rank: entry.rank,
     name: entry.handle || entry.nickname,
     score: entry.score,
     isRegistered: !!entry.user_id,
     level: entry.level || undefined,
+    userId: entry.user_id,
   }));
+
+  // Filter to group members if groupCode provided
+  if (groupMemberIds) {
+    leaderboard = leaderboard
+      .filter((e: { userId: number | null }) => e.userId && groupMemberIds!.includes(e.userId))
+      .slice(0, limit)
+      .map((e: { rank: number; name: string; score: number; isRegistered: boolean; level?: number }, i: number) => ({
+        ...e,
+        rank: i + 1, // Re-rank within group
+      }));
+  }
 
   // Check if current player is in the leaderboard
   let playerEntry = null;
@@ -119,7 +157,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ leaderboard, playerEntry });
+  return NextResponse.json({ leaderboard, playerEntry, group: groupInfo });
 }
 
 // PATCH - link guest entry to user account
@@ -161,11 +199,87 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
+// Helper: Update streak groups when a member plays
+async function updateStreakGroups(userId: number) {
+  const now = new Date();
+
+  // Get all streak groups this user is in
+  const { data: memberships } = await supabase
+    .from("pixelpit_group_members")
+    .select("group_id")
+    .eq("user_id", userId);
+
+  if (!memberships || memberships.length === 0) return;
+
+  const groupIds = memberships.map(m => m.group_id);
+
+  const { data: streakGroups } = await supabase
+    .from("pixelpit_groups")
+    .select("id, streak, streak_saved_at")
+    .eq("type", "streak")
+    .in("id", groupIds);
+
+  if (!streakGroups || streakGroups.length === 0) return;
+
+  // Update this member's last_play_at for all their groups
+  await supabase
+    .from("pixelpit_group_members")
+    .update({ last_play_at: now.toISOString() })
+    .eq("user_id", userId)
+    .in("group_id", groupIds);
+
+  // Check each streak group
+  for (const group of streakGroups) {
+    // Get all members of this group
+    const { data: members } = await supabase
+      .from("pixelpit_group_members")
+      .select("user_id, last_play_at")
+      .eq("group_id", group.id);
+
+    if (!members || members.length < 2) continue;
+
+    const streakSavedAt = group.streak_saved_at ? new Date(group.streak_saved_at) : null;
+
+    // Check if all members have played since last save
+    const allPlayed = members.every(m => {
+      if (!m.last_play_at) return false;
+      const playTime = new Date(m.last_play_at);
+      // If no previous save, any play counts
+      if (!streakSavedAt) return true;
+      return playTime > streakSavedAt;
+    });
+
+    if (allPlayed) {
+      const windowEnd = streakSavedAt
+        ? new Date(streakSavedAt.getTime() + 24 * 60 * 60 * 1000)
+        : null;
+
+      let newStreak: number;
+      if (!windowEnd || now <= windowEnd) {
+        // Continue streak
+        newStreak = (group.streak || 0) + 1;
+      } else {
+        // Window expired, restart
+        newStreak = 1;
+      }
+
+      await supabase
+        .from("pixelpit_groups")
+        .update({
+          streak: newStreak,
+          max_streak: Math.max(newStreak, group.streak || 0),
+          streak_saved_at: now.toISOString(),
+        })
+        .eq("id", group.id);
+    }
+  }
+}
+
 // POST - submit score to leaderboard
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { game, score, nickname, userId, xpDivisor = 100 } = body;
+    const { game, score, nickname, userId, xpDivisor = 100, groupCode } = body;
 
     if (!game || typeof score !== "number") {
       return NextResponse.json(
@@ -349,7 +463,43 @@ export async function POST(request: NextRequest) {
       rank = rankData?.[0]?.rank || 1;
     }
 
-    return NextResponse.json({ success: true, entry: data, rank, progression });
+    // Handle group auto-join and streak updates for logged-in users
+    let joinedGroup = null;
+    if (userId) {
+      // Auto-join group if groupCode provided
+      if (groupCode) {
+        const { data: group } = await supabase
+          .from("pixelpit_groups")
+          .select("id, code, name, type")
+          .eq("code", groupCode.toLowerCase())
+          .single();
+
+        if (group) {
+          // Check if already a member
+          const { data: existing } = await supabase
+            .from("pixelpit_group_members")
+            .select("id")
+            .eq("group_id", group.id)
+            .eq("user_id", userId)
+            .single();
+
+          if (!existing) {
+            // Join the group
+            await supabase.from("pixelpit_group_members").insert({
+              group_id: group.id,
+              user_id: userId,
+            });
+          }
+
+          joinedGroup = { code: group.code, name: group.name, type: group.type };
+        }
+      }
+
+      // Update streak groups
+      await updateStreakGroups(userId);
+    }
+
+    return NextResponse.json({ success: true, entry: data, rank, progression, joinedGroup });
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }

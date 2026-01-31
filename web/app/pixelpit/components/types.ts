@@ -10,6 +10,45 @@ export interface PixelpitUser {
   handle: string;
 }
 
+// Group types
+export type GroupType = 'streak' | 'leaderboard';
+
+export interface GroupMember {
+  userId: number;
+  handle: string;
+  lastPlayAt: string | null;
+}
+
+export interface Group {
+  id: number;
+  code: string;
+  name: string;
+  type: GroupType;
+  streak?: number;
+  maxStreak?: number;
+  streakSavedAt?: string;
+  members: GroupMember[];
+}
+
+export interface GroupsResult {
+  groups: Group[];
+}
+
+export interface CreateGroupResult {
+  success: boolean;
+  group?: { id: number; code: string; name: string; type: string };
+  xpEarned?: number;
+  smsLink?: string;
+  error?: string;
+}
+
+export interface JoinGroupResult {
+  success: boolean;
+  group?: { id: number; code: string; name: string; type: string };
+  alreadyMember?: boolean;
+  error?: string;
+}
+
 // Leaderboard types
 export interface LeaderboardEntry {
   rank: number;
@@ -112,6 +151,10 @@ export interface LeaderboardProps {
   entryId?: number;
   colors: LeaderboardColors;
   onClose?: () => void;
+  /** Enable group tabs and filtering. Default false. */
+  groupsEnabled?: boolean;
+  /** Game URL for share links when groups enabled */
+  gameUrl?: string;
 }
 
 export interface CodeInputProps {
@@ -148,7 +191,7 @@ declare global {
 
 export interface PixelpitSocialAPI {
   getUser: () => PixelpitUser | null;
-  submitScore: (game: string, score: number, opts?: { nickname?: string; xpDivisor?: number }) => Promise<ScoreSubmitResult>;
+  submitScore: (game: string, score: number, opts?: { nickname?: string; xpDivisor?: number; groupCode?: string }) => Promise<ScoreSubmitResult>;
   getLeaderboard: (game: string, limit?: number, opts?: { entryId?: number }) => Promise<LeaderboardResult>;
   getProfile: (userId: number) => Promise<ProfileResult | null>;
   login: (handle: string, code: string) => Promise<AuthResult>;
@@ -157,4 +200,14 @@ export interface PixelpitSocialAPI {
   logout: () => void;
   ShareButton: (containerId: string, opts: { url: string; text: string; style?: 'button' | 'icon' | 'minimal' }) => void;
   showToast: (message: string, duration?: number) => void;
+  // Groups
+  getGroups: () => Promise<GroupsResult>;
+  createGroup: (name: string, type: GroupType, opts?: { phones?: string[]; gameUrl?: string; score?: number }) => Promise<CreateGroupResult>;
+  joinGroup: (code: string) => Promise<JoinGroupResult>;
+  getGroupLeaderboard: (gameId: string, groupCode: string, limit?: number) => Promise<LeaderboardResult & { group?: { id: number; type: string; name: string } }>;
+  getSmsInviteLink: (phones: string[], groupCode: string, gameUrl: string, score?: number) => string;
+  getGroupCodeFromUrl: () => string | null;
+  storeGroupCode: (code: string) => void;
+  getStoredGroupCode: () => string | null;
+  clearStoredGroupCode: () => void;
 }

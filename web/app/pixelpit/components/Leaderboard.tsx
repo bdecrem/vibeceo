@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLeaderboard } from './hooks/useLeaderboard';
-import type { LeaderboardProps } from './types';
+import { useGroups } from './hooks/useGroups';
+import { GroupTabs } from './GroupTabs';
+import { StreakBoard } from './StreakBoard';
+import type { LeaderboardProps, Group, LeaderboardEntry } from './types';
 
 // Level badge colors by tier
 function getLevelBadgeColor(level: number): string {
@@ -39,7 +42,7 @@ function LevelBadge({ level }: { level: number }) {
  * Leaderboard display component.
  *
  * Shows top N entries with rank badges and highlights the player's position
- * if not in the top entries.
+ * if not in the top entries. When groupsEnabled, shows tabs for groups.
  *
  * @example
  * ```tsx
@@ -56,16 +59,65 @@ function LevelBadge({ level }: { level: number }) {
  *     muted: '#94a3b8',
  *   }}
  *   onClose={() => setGameState('gameover')}
+ *   groupsEnabled={true}
+ *   gameUrl="https://pixelpit.io/arcade/superbeam"
  * />
  * ```
  */
-export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: LeaderboardProps) {
+export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose, groupsEnabled = false, gameUrl }: LeaderboardProps) {
+  const [activeTab, setActiveTab] = useState<'global' | string>('global');
+  const [groupLeaderboard, setGroupLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [groupLoading, setGroupLoading] = useState(false);
+
+  // Load user's groups if enabled
+  const { groups } = useGroups();
+
+  // Global leaderboard
   const { leaderboard, playerEntry, loading, error } = useLeaderboard({
     gameId,
     limit,
     entryId,
   });
   const [showXpInfo, setShowXpInfo] = useState(false);
+
+  // Find active group for streak display
+  const activeGroup = activeTab !== 'global' ? groups.find(g => g.code === activeTab) : null;
+
+  // Load group leaderboard when tab changes
+  useEffect(() => {
+    if (activeTab === 'global' || !window.PixelpitSocial) return;
+
+    const loadGroupLeaderboard = async () => {
+      setGroupLoading(true);
+      try {
+        const result = await window.PixelpitSocial!.getGroupLeaderboard(gameId, activeTab, limit);
+        setGroupLeaderboard(result.leaderboard || []);
+      } catch (e) {
+        console.error('Failed to load group leaderboard:', e);
+        setGroupLeaderboard([]);
+      } finally {
+        setGroupLoading(false);
+      }
+    };
+
+    loadGroupLeaderboard();
+  }, [activeTab, gameId, limit]);
+
+  // If viewing a streak group, show StreakBoard instead
+  if (activeGroup?.type === 'streak') {
+    return (
+      <StreakBoard
+        group={activeGroup}
+        colors={colors}
+        onClose={() => setActiveTab('global')}
+      />
+    );
+  }
+
+  // Determine which leaderboard to display
+  const displayLeaderboard = activeTab === 'global' ? leaderboard : groupLeaderboard;
+  const displayLoading = activeTab === 'global' ? loading : groupLoading;
+  const displayPlayerEntry = activeTab === 'global' ? playerEntry : null;
 
   const fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
 
@@ -86,11 +138,21 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
         fontSize: 18,
         fontWeight: 300,
         color: colors.primary,
-        marginBottom: 30,
+        marginBottom: groupsEnabled && groups.length > 0 ? 16 : 30,
         letterSpacing: 4,
       }}>
         leaderboard
       </h2>
+
+      {/* Group Tabs */}
+      {groupsEnabled && groups.length > 0 && (
+        <GroupTabs
+          groups={groups}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          colors={colors}
+        />
+      )}
 
       <div
         onClick={() => setShowXpInfo(true)}
@@ -105,7 +167,7 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
           overflow: 'hidden',
           cursor: 'pointer',
         }}>
-        {loading ? (
+        {displayLoading ? (
           <div style={{
             color: colors.muted,
             textAlign: 'center',
@@ -115,7 +177,7 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
           }}>
             loading...
           </div>
-        ) : error ? (
+        ) : error && activeTab === 'global' ? (
           <div style={{
             color: colors.muted,
             textAlign: 'center',
@@ -125,7 +187,7 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
           }}>
             {error}
           </div>
-        ) : leaderboard.length === 0 ? (
+        ) : displayLeaderboard.length === 0 ? (
           <div style={{
             color: colors.muted,
             textAlign: 'center',
@@ -133,11 +195,11 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
             fontFamily,
             fontSize: 12,
           }}>
-            no scores yet. be the first!
+            {activeTab === 'global' ? 'no scores yet. be the first!' : 'no scores in this group yet'}
           </div>
         ) : (
           <>
-            {leaderboard.map((entry) => (
+            {displayLeaderboard.map((entry) => (
               <div
                 key={entry.rank}
                 style={{
@@ -178,7 +240,7 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
             ))}
 
             {/* Show player's position if not in top */}
-            {playerEntry && (
+            {displayPlayerEntry && (
               <>
                 <div style={{
                   padding: '8px 20px',
@@ -202,7 +264,7 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
                   }}
                 >
                   <span style={{ width: 30, color: colors.secondary }}>
-                    {String(playerEntry.rank).padStart(2, '0')}
+                    {String(displayPlayerEntry.rank).padStart(2, '0')}
                   </span>
                   <span style={{
                     flex: 1,
@@ -211,8 +273,8 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
                     display: 'flex',
                     alignItems: 'center',
                   }}>
-                    {playerEntry.isRegistered ? `@${playerEntry.name}` : playerEntry.name}
-                    {playerEntry.isRegistered && playerEntry.level && <LevelBadge level={playerEntry.level} />}
+                    {displayPlayerEntry.isRegistered ? `@${displayPlayerEntry.name}` : displayPlayerEntry.name}
+                    {displayPlayerEntry.isRegistered && displayPlayerEntry.level && <LevelBadge level={displayPlayerEntry.level} />}
                     <span style={{ marginLeft: 6, opacity: 0.7 }}>← you</span>
                   </span>
                   <span style={{
@@ -220,7 +282,7 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose }: Le
                     color: colors.secondary,
                     fontSize: 14,
                   }}>
-                    {playerEntry.score}
+                    {displayPlayerEntry.score}
                   </span>
                 </div>
               </>
