@@ -29,6 +29,19 @@ const TraceGame = (function() {
   const MAX_OBSTACLE_GAP = 0.6;
   const DISORDER_FACTOR = 0.15;  // controlled randomness
   
+  // Crystallization triggers
+  const CRYSTALLIZATION_TRIGGERS = {
+    RESILIENCE: { distance: 200, name: 'resilience' },
+    FLOW_STATE: { perfectJumps: 5, name: 'flow' },
+    WISDOM: { successZoneThreshold: 3, name: 'wisdom' }
+  };
+  
+  // Crystallization tracking variables
+  let perfectJumpCount = 0;
+  let lastDeathDistance = 0;
+  let lastJumpWasPerfect = false;
+  let resilienceTriggered = false;
+  
   // === STATE ===
   let state = {
     // Player
@@ -57,6 +70,7 @@ const TraceGame = (function() {
     
     // Crystallization events
     crystallizationActive: false,
+    crystallizationType: null,
     crystallizationTimer: 0,
     
     // Callbacks
@@ -211,25 +225,79 @@ const TraceGame = (function() {
   }
   
   // === CRYSTALLIZATION EVENTS ===
+  function triggerCrystallization(type) {
+    if (state.crystallizationActive) return;
+    
+    state.crystallizationActive = true;
+    state.crystallizationType = type;
+    state.crystallizationTimer = 3000; // 3 seconds
+    
+    if (state.onCrystallization) {
+      state.onCrystallization(true, type);
+    }
+  }
+  
   function checkCrystallization() {
-    // Rare crystallization events (order emerging from chaos)
-    if (!state.crystallizationActive && Math.random() < 0.002) {
-      state.crystallizationActive = true;
-      state.crystallizationTimer = 3000; // 3 seconds
-      if (state.onCrystallization) {
-        state.onCrystallization(true);
+    // Check for resilience crystallization (200m survival)
+    if (!resilienceTriggered && state.distance >= CRYSTALLIZATION_TRIGGERS.RESILIENCE.distance) {
+      const distanceSinceLastDeath = state.distance - lastDeathDistance;
+      if (distanceSinceLastDeath >= CRYSTALLIZATION_TRIGGERS.RESILIENCE.distance) {
+        triggerCrystallization(CRYSTALLIZATION_TRIGGERS.RESILIENCE.name);
+        resilienceTriggered = true;
       }
     }
     
+    // Check for flow state crystallization (5 perfect jumps)
+    if (perfectJumpCount >= CRYSTALLIZATION_TRIGGERS.FLOW_STATE.perfectJumps) {
+      triggerCrystallization(CRYSTALLIZATION_TRIGGERS.FLOW_STATE.name);
+      perfectJumpCount = 0; // Reset after triggering
+    }
+    
+    // Check for wisdom crystallization (areas where others succeeded)
+    if (state.flowChannels.length > 0) {
+      const currentPosition = state.distance;
+      const nearbySuccessZones = state.flowChannels.filter(channel => 
+        Math.abs(channel.x - currentPosition) < 50
+      );
+      
+      if (nearbySuccessZones.length >= CRYSTALLIZATION_TRIGGERS.WISDOM.successZoneThreshold) {
+        triggerCrystallization(CRYSTALLIZATION_TRIGGERS.WISDOM.name);
+        
+        // Remove used wisdom zones to prevent spam
+        state.flowChannels = state.flowChannels.filter(channel => 
+          Math.abs(channel.x - currentPosition) >= 50
+        );
+      }
+    }
+    
+    // Update active crystallization
     if (state.crystallizationActive) {
       state.crystallizationTimer -= 16; // assuming ~60fps
       if (state.crystallizationTimer <= 0) {
         state.crystallizationActive = false;
+        state.crystallizationType = null;
         if (state.onCrystallization) {
           state.onCrystallization(false);
         }
       }
     }
+  }
+  
+  function trackPerfectJump() {
+    // A perfect jump is one where you land without hitting an obstacle
+    if (state.playerY >= GROUND_Y - 0.01 && state.isJumping === false) {
+      if (lastJumpWasPerfect) {
+        perfectJumpCount++;
+      } else {
+        perfectJumpCount = 1; // Start counting
+      }
+      lastJumpWasPerfect = true;
+    }
+  }
+  
+  function resetPerfectJumpCount() {
+    perfectJumpCount = 0;
+    lastJumpWasPerfect = false;
   }
   
   // === STIGMERGY LAYER ===
@@ -244,6 +312,17 @@ const TraceGame = (function() {
     // Keep trace manageable
     if (state.deathTrace.length > 1000) {
       state.deathTrace.shift();
+    }
+  }
+  
+  function recordFlowChannel() {
+    // Record successful navigation areas every 50m
+    if (Math.floor(state.distance) % 50 === 0 && Math.floor(state.distance) > 0) {
+      state.flowChannels.push({
+        x: state.distance,
+        y: state.playerY,
+        timestamp: Date.now()
+      });
     }
   }
   
@@ -271,6 +350,11 @@ const TraceGame = (function() {
         timestamp: Date.now()
       });
     }
+    
+    // Reset tracking variables
+    lastDeathDistance = state.distance;
+    resilienceTriggered = false;
+    resetPerfectJumpCount();
     
     return deathLocation;
   }
@@ -301,6 +385,9 @@ const TraceGame = (function() {
         state.playerY = GROUND_Y;
         state.playerVelocityY = 0;
         state.isJumping = false;
+        
+        // Track perfect landings
+        trackPerfectJump();
       }
     }
     
@@ -353,6 +440,9 @@ const TraceGame = (function() {
       recordTrace();
     }
     
+    // Record flow channels for wisdom crystallization
+    recordFlowChannel();
+    
     return state;
   }
   
@@ -395,6 +485,12 @@ const TraceGame = (function() {
     state.collectibles = [];
     state.deathTrace = [];
     state.crystallizationActive = false;
+    state.crystallizationType = null;
+    
+    // Reset crystallization tracking
+    perfectJumpCount = 0;
+    lastJumpWasPerfect = false;
+    resilienceTriggered = false;
   }
   
   function pause() {
@@ -414,6 +510,10 @@ const TraceGame = (function() {
   
   function getCautionFields() {
     return state.cautionFields;
+  }
+  
+  function getFlowChannels() {
+    return state.flowChannels;
   }
   
   function loadStigmergyData(data) {
@@ -459,6 +559,7 @@ const TraceGame = (function() {
     // Stigmergy
     getGhostTraces,
     getCautionFields,
+    getFlowChannels,
     loadStigmergyData,
     
     // Constants for rendering

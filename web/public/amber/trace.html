@@ -71,6 +71,15 @@
             opacity: 0.9;
         }
 
+        #perfectJumps {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            color: #d4af37;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
         #startScreen, #gameOverScreen {
             position: absolute;
             top: 0;
@@ -181,6 +190,7 @@
         <div id="score">0</div>
         <div id="distance">0m</div>
         <div id="insights">💡 0</div>
+        <div id="perfectJumps" style="display: none;">🎯 0</div>
     </div>
 
     <div class="crystallization-notice" id="crystalNotice">
@@ -258,6 +268,13 @@
             }
         };
 
+        // Crystallization messages
+        const crystallizationMessages = {
+            resilience: "You've come far without faltering",
+            flow: "Movement becomes meditation",
+            wisdom: "Others found clarity here"
+        };
+
         // Coordinate conversion helpers
         function normalizeToCanvas(x, y) {
             return [x * canvas.width, y * canvas.height];
@@ -330,6 +347,23 @@
                     // Subtle darkening where many died
                     ctx.fillStyle = `rgba(0, 0, 0, ${intensity * 0.3})`;
                     ctx.fillRect(canvasX - 50, 0, 100, canvas.height);
+                }
+            });
+        }
+
+        // Render flow channels (wisdom areas)
+        function renderFlowChannels() {
+            const flowChannels = game.getFlowChannels();
+            const gameState = game.getState();
+            
+            flowChannels.forEach(channel => {
+                const channelX = (channel.x - gameState.distance) / 100;
+                if (channelX > -0.2 && channelX < 1.2) {
+                    const [canvasX] = normalizeToCanvas(channelX, 0);
+                    
+                    // Subtle golden glow where others succeeded
+                    ctx.fillStyle = 'rgba(212, 175, 55, 0.1)';
+                    ctx.fillRect(canvasX - 30, 0, 60, canvas.height);
                 }
             });
         }
@@ -535,6 +569,13 @@
             ctx.globalAlpha = 1;
         }
 
+        // Show crystallization message
+        function showCrystallizationMessage(type) {
+            const notice = document.getElementById('crystalNotice');
+            const message = crystallizationMessages[type] || "Order emerges from chaos...";
+            notice.textContent = message;
+        }
+
         // Game callbacks
         game.onDeath((deathData) => {
             // Death explosion
@@ -558,7 +599,8 @@
             // Save stigmergy data
             const stigmergyData = {
                 ghostTraces: game.getGhostTraces(),
-                cautionFields: game.getCautionFields()
+                cautionFields: game.getCautionFields(),
+                flowChannels: game.getFlowChannels()
             };
             localStorage.setItem('traceStigmergyData', JSON.stringify(stigmergyData));
 
@@ -587,9 +629,10 @@
             updateUI();
         });
 
-        game.onCrystallization((active) => {
+        game.onCrystallization((active, type) => {
             const notice = document.getElementById('crystalNotice');
             if (active) {
+                showCrystallizationMessage(type);
                 notice.classList.add('active');
             } else {
                 notice.classList.remove('active');
@@ -719,6 +762,7 @@
 
             // Render stigmergy elements (background)
             renderCautionFields();
+            renderFlowChannels();
             renderGhostTraces();
 
             // Render game elements
