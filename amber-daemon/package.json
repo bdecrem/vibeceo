@@ -1,0 +1,28 @@
+{
+  "name": "amber-daemon",
+  "version": "0.1.0",
+  "description": "Amber - AI artist daemon with TUI and Discord",
+  "type": "module",
+  "main": "amber.js",
+  "bin": {
+    "amber": "./tui-client.js",
+    "amber-daemon": "./daemon.js"
+  },
+  "scripts": {
+    "start": "node daemon.js",
+    "discord": "node discord-bot.js",
+    "tui": "node tui-client.js",
+    "standalone": "node terminal-ui.js",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop amber",
+    "pm2:logs": "pm2 logs amber",
+    "pm2:status": "pm2 status"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "wrap-ansi": "^9.0.0",
+    "string-width": "^7.0.0",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1"
+  }
+}

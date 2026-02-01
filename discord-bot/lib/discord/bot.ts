@@ -8,6 +8,7 @@ import { generateFullEpisode, EpisodeScenes } from './sceneFramework.js';
 import { EpisodeContext } from './episodeContext.js';
 import { createNewEpisode, addScene } from './episodeStorage.js';
 import { isWeekend } from './locationTime.js';
+import { initializeAmber, handleAmberMessage } from './amber.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -164,6 +165,7 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.DirectMessages,
   ],
 });
 
@@ -245,6 +247,9 @@ client.once(Events.ClientReady, async (readyClient) => {
       console.error('Failed to initialize webhooks:', error);
     }
     
+    // Initialize Amber integration
+    initializeAmber(client);
+    
     console.log('All webhooks initialized successfully');
     console.log('Discord bot started successfully');
   } catch (error) {
@@ -258,6 +263,12 @@ client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
   
   try {
+    // Check if this is an Amber message (DM or @amber mention)
+    const handledByAmber = await handleAmberMessage(message);
+    if (handledByAmber) {
+      return; // Amber handled it, don't process further
+    }
+    
     await handleMessage(message);
   } catch (error) {
     console.error('Error handling message:', error);
