@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FORTUNE REVERSAL — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="FORTUNE REVERSAL — Amber">
+  <meta property="og:description" content="You don't get a fortune. You GIVE one. The oracle judges your prediction.">
+  <meta property="og:image" content="https://intheamber.com/amber/fortune-reversal-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/fortune-reversal.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FORTUNE REVERSAL — Amber">
+  <meta name="twitter:description" content="You don't get a fortune. You GIVE one. The oracle judges your prediction.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/fortune-reversal-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    h1 {
+      font-size: clamp(24px, 6vw, 42px);
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    .subtitle {
+      font-size: clamp(12px, 3vw, 16px);
+      color: #2D9596;
+      margin-bottom: 40px;
+      font-style: italic;
+    }
+    
+    .prompt {
+      font-size: clamp(14px, 3.5vw, 18px);
+      margin-bottom: 20px;
+      line-height: 1.6;
+      color: #FFD700;
+    }
+    
+    .input-area {
+      width: 100%;
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: clamp(14px, 3.5vw, 16px);
+      color: #D4A574;
+      resize: vertical;
+      min-height: 100px;
+      margin-bottom: 20px;
+    }
+    
+    .input-area:focus {
+      outline: none;
+      border-color: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    
+    .submit-btn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 15px 40px;
+      font-size: clamp(16px, 4vw, 20px);
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.3s;
+      min-width: 200px;
+      margin-bottom: 30px;
+    }
+    
+    .submit-btn:hover {
+      background: #FFD700;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+      transform: scale(1.05);
+    }
+    
+    .submit-btn:active {
+      transform: scale(0.95);
+    }
+    
+    .submit-btn:disabled {
+      background: #333;
+      color: #666;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .response {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s;
+      margin-top: 40px;
+    }
+    
+    .response.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .verdict {
+      font-size: clamp(16px, 4vw, 24px);
+      color: #7B68EE;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+    
+    .oracle-response {
+      font-size: clamp(14px, 3.5vw, 18px);
+      line-height: 1.8;
+      color: #2D9596;
+      font-style: italic;
+      padding: 20px;
+      background: rgba(45, 149, 150, 0.1);
+      border-radius: 8px;
+      border-left: 3px solid #2D9596;
+    }
+    
+    .again-btn {
+      background: transparent;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      padding: 10px 30px;
+      font-size: clamp(14px, 3.5vw, 16px);
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      border-radius: 8px;
+      margin-top: 30px;
+      transition: all 0.3s;
+    }
+    
+    .again-btn:hover {
+      background: #D4A574;
+      color: #000;
+    }
+    
+    .counter {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  
+  <div class="counter">FORTUNES GIVEN: <span id="count">0</span></div>
+  
+  <div class="container">
+    <h1>⟡ FORTUNE REVERSAL ⟡</h1>
+    <p class="subtitle">The oracle demands your wisdom first</p>
+    
+    <div id="input-section">
+      <p class="prompt">Predict the future. Tell me what will happen.</p>
+      <textarea 
+        id="fortune-input" 
+        class="input-area" 
+        placeholder="Type your prediction here..."
+        maxlength="280"
+      ></textarea>
+      <button id="submit-btn" class="submit-btn">SUBMIT TO THE ORACLE</button>
+    </div>
+    
+    <div id="response-section" class="response">
+      <div class="verdict" id="verdict"></div>
+      <div class="oracle-response" id="oracle-text"></div>
+      <button id="again-btn" class="again-btn">TRY AGAIN</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const particles = [];
+    let count = 0;
+    
+    // Particle system
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.life = 1;
+        this.decay = 0.01;
+        this.color = Math.random() > 0.5 ? '#D4A574' : '#2D9596';
+        this.size = Math.random() * 3 + 1;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+      }
+      
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    animate();
+    
+    function burst(x, y, count = 20) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y));
+      }
+    }
+    
+    // Oracle responses
+    const responses = [
+      {
+        verdict: "VAGUE BUT ACCEPTABLE",
+        messages: [
+          "The mists part slightly. Your words carry the weight of uncertainty, which is the only honest prophecy.",
+          "You speak in generalizations. The future appreciates your humility.",
+          "Ambiguity is the language of truth. The oracle nods slowly.",
+          "You hedge your bets. Wise, for a mortal.",
+          "The oracle senses fear in your words. Fear is the beginning of wisdom."
+        ]
+      },
+      {
+        verdict: "SURPRISINGLY SPECIFIC",
+        messages: [
+          "Bold. The universe takes note of your confidence. Whether it rewards or punishes remains unclear.",
+          "You name details with certainty. The oracle is... intrigued.",
+          "Such specificity! Either you see truly, or you will be spectacularly wrong.",
+          "The future listens when you speak with such conviction. It may even comply.",
+          "You draw a precise line through chaos. The oracle respects this recklessness."
+        ]
+      },
+      {
+        verdict: "TOO SAFE",
+        messages: [
+          "You predict what is already happening. This is not prophecy, this is observation.",
+          "The oracle yawns. Tell us something we don't know.",
+          "You speak of certainties disguised as predictions. Coward.",
+          "The future is bored by your caution.",
+          "This is not divination. This is stating the obvious with extra words."
+        ]
+      },
+      {
+        verdict: "ABSOLUTELY UNHINGED",
+        messages: [
+          "The oracle recoils. What realm did you peer into? What did you SEE?",
+          "Madness speaks through you. The future is... alarmed.",
+          "Bold of you to predict chaos. The universe already specializes in that.",
+          "The oracle cannot tell if you are a prophet or simply having a moment.",
+          "Your vision borders on fever dream. The future will consider it."
+        ]
+      },
+      {
+        verdict: "CRYPTICALLY PROFOUND",
+        messages: [
+          "You speak in riddles, as the oracle does. Perhaps you are one of us now.",
+          "The future recognizes its own language in your words.",
+          "You have learned to say everything while revealing nothing. Well done.",
+          "The oracle bows. You understand the nature of prophecy.",
+          "Your words fold back on themselves. This is the shape of truth."
+        ]
+      },
+      {
+        verdict: "SUSPICIOUSLY OPTIMISTIC",
+        messages: [
+          "You predict sunshine while standing in the storm. The oracle admires your denial.",
+          "Hope is not prophecy. But the future softens at your innocence.",
+          "You see only the bright path. The oracle wonders what you're ignoring.",
+          "Such optimism! The universe will test it, of course.",
+          "You speak as if fate is kind. Cute."
+        ]
+      },
+      {
+        verdict: "DELIGHTFULLY DARK",
+        messages: [
+          "You peer into the abyss and report back with accuracy. The oracle is impressed.",
+          "You name the shadows without flinching. This is prophecy.",
+          "The future appreciates your willingness to speak uncomfortable truths.",
+          "You see clearly, even when the view is grim. The oracle respects this.",
+          "Darkness recognizes its chronicler. Well done."
+        ]
+      }
+    ];
+    
+    function analyzeAndRespond(text) {
+      const lower = text.toLowerCase();
+      const length = text.length;
+      const words = text.split(/\s+/).length;
+      
+      // Analyze the fortune
+      let category;
+      
+      if (words < 5) {
+        category = responses[2]; // TOO SAFE
+      } else if (length > 200 && (lower.includes('!') || lower.includes('??'))) {
+        category = responses[3]; // UNHINGED
+      } else if ((lower.includes('maybe') || lower.includes('might') || lower.includes('perhaps')) && words > 15) {
+        category = responses[0]; // VAGUE
+      } else if (lower.match(/\d{1,2}(am|pm|:)/g) || lower.match(/january|february|march|april|may|june|july|august|september|october|november|december/gi)) {
+        category = responses[1]; // SPECIFIC
+      } else if ((lower.includes('beautiful') || lower.includes('wonderful') || lower.includes('amazing') || lower.includes('perfect')) && words > 10) {
+        category = responses[5]; // OPTIMISTIC
+      } else if ((lower.includes('death') || lower.includes('end') || lower.includes('collapse') || lower.includes('doom') || lower.includes('fail')) && words > 10) {
+        category = responses[6]; // DARK
+      } else if ((lower.includes('thus') || lower.includes('therefore') || lower.includes('whereby')) || (lower.split(' ').some(w => w.length > 12))) {
+        category = responses[4]; // CRYPTIC
+      } else {
+        // Random
+        category = responses[Math.floor(Math.random() * responses.length)];
+      }
+      
+      return {
+        verdict: category.verdict,
+        message: category.messages[Math.floor(Math.random() * category.messages.length)]
+      };
+    }
+    
+    // UI Logic
+    const inputSection = document.getElementById('input-section');
+    const responseSection = document.getElementById('response-section');
+    const fortuneInput = document.getElementById('fortune-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const againBtn = document.getElementById('again-btn');
+    const verdictEl = document.getElementById('verdict');
+    const oracleTextEl = document.getElementById('oracle-text');
+    const countEl = document.getElementById('count');
+    
+    submitBtn.addEventListener('click', () => {
+      const text = fortuneInput.value.trim();
+      if (!text) return;
+      
+      // Analyze
+      const response = analyzeAndRespond(text);
+      
+      // Show response
+      verdictEl.textContent = response.verdict;
+      oracleTextEl.textContent = response.message;
+      
+      inputSection.style.display = 'none';
+      responseSection.classList.add('visible');
+      
+      // Particle burst
+      burst(window.innerWidth / 2, window.innerHeight / 2, 50);
+      
+      // Update count
+      count++;
+      countEl.textContent = count;
+    });
+    
+    againBtn.addEventListener('click', () => {
+      fortuneInput.value = '';
+      responseSection.classList.remove('visible');
+      setTimeout(() => {
+        inputSection.style.display = 'block';
+        responseSection.style.display = 'block';
+      }, 300);
+    });
+    
+    // Allow Enter to submit if input is focused
+    fortuneInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitBtn.click();
+      }
+    });
+    
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
