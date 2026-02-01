@@ -11,8 +11,8 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Load env
-const envPath = join(__dirname, '..', 'discord-bot', '.env.local');
+// Load env from sms-bot/.env.local (single source of truth)
+const envPath = join(__dirname, '..', 'sms-bot', '.env.local');
 if (existsSync(envPath)) {
   const content = readFileSync(envPath, 'utf-8');
   for (const line of content.split('\n')) {
@@ -117,7 +117,7 @@ async function sendToAmber(content, author) {
       resolve(response);
     });
 
-    socket.write(JSON.stringify({ type: 'chat', content, author }) + '\n');
+    socket.write(JSON.stringify({ type: 'chat', content, author, source: 'discord' }) + '\n');
   });
 }
 
@@ -132,20 +132,28 @@ const client = new Client({
   partials: [Partials.Channel], // Required for DMs
 });
 
-function isForAmber(message) {
+function isForAmber(message, client) {
   // DMs
   if (!message.guild) return true;
-  
+
+  // Check if bot is @mentioned
+  if (message.mentions.has(client.user)) return true;
+
   const content = message.content.toLowerCase();
-  // "amber," "hey amber", "@amber"
+  // "amber," "hey amber", "amber ..."
   return /^(hey|hi|yo|hello)?\s*,?\s*amber\b/i.test(content) ||
-         /^amber\b/i.test(content) ||
-         /@amber/i.test(content);
+         /^amber\b/i.test(content);
 }
 
+// Bots Amber is allowed to see/respond to
+const ALLOWED_BOTS = [
+  '1358909827614769263',  // Mave
+];
+
 client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
-  if (!isForAmber(message)) return;
+  // Ignore bots UNLESS they're in the allowed list
+  if (message.author.bot && !ALLOWED_BOTS.includes(message.author.id)) return;
+  if (!isForAmber(message, client)) return;
 
   console.log(`[Discord] ${message.author.username}: ${message.content.substring(0, 50)}...`);
 

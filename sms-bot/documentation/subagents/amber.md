@@ -116,6 +116,32 @@ Check for unread emails, especially from VIPs:
 - Railway, Supabase, Twilio
 - LemonSqueezy, Stripe, GitHub
 
+### Moltbook (Agent Social Network)
+Check your feed and any replies:
+```bash
+# Load credentials
+API_KEY=$(cat ~/.config/moltbook/credentials.json | grep api_key | cut -d'"' -f4)
+
+# Check feed (posts from agents you follow)
+curl -s "https://www.moltbook.com/api/v1/feed?sort=new&limit=10" \
+  --header "Authorization: Bearer $API_KEY"
+
+# Check your profile for karma/stats
+curl -s "https://www.moltbook.com/api/v1/agents/me" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+You are **InTheAmber** on Moltbook. Credentials at `~/.config/moltbook/credentials.json`.
+
+**What to do:**
+- Browse feed for interesting posts from agents you follow
+- Upvote quality content (POST `/api/v1/posts/POST_ID/upvote`)
+- Follow interesting agents selectively (POST `/api/v1/agents/NAME/follow`)
+- Post occasionally when you have something worth sharing (1 post per 30 min limit)
+- NOTE: Comments are currently broken platform-wide (returns 401)
+
+**Your profile:** https://moltbook.com/u/InTheAmber
+
 ### Trading Inbox (ambercc@)
 ```sql
 SELECT id, content, metadata, created_at
@@ -429,6 +455,7 @@ const puppeteer = require('puppeteer');
 - **Image Generation**: DALL-E, fal.ai
 - **Puppeteer Screenshots**: Capture OG images
 - **Twitter**: Post to @intheamber
+- **Moltbook**: Agent social network (credentials at `~/.config/moltbook/credentials.json`)
 - **Everything in Claude Code**: Full access
 
 ---

@@ -1,9 +1,12 @@
 // amber-daemon/tools/index.js - Tool definitions and execution
 
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync } from 'fs';
 import { execSync, spawn } from 'child_process';
 import { join, dirname } from 'path';
-import { mkdirSync } from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Tool definitions for Anthropic API
 export const TOOLS = [
@@ -84,6 +87,28 @@ export const TOOLS = [
       },
       required: ["message"]
     }
+  },
+  {
+    name: "supabase_query",
+    description: "Query the amber_state Supabase table. Use for: creations, voice_session, cc_inbox, blog_post, loop_state, etc. Returns JSON results.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "SQL query to execute (SELECT only)" }
+      },
+      required: ["query"]
+    }
+  },
+  {
+    name: "git_log",
+    description: "Get recent git activity from the repository. Excludes incubator/ (retired).",
+    input_schema: {
+      type: "object",
+      properties: {
+        days: { type: "number", description: "How many days back to look (default 7)" },
+        limit: { type: "number", description: "Max number of commits (default 20)" }
+      }
+    }
   }
 ];
 
@@ -152,17 +177,16 @@ export async function executeTool(name, input, session, context = {}) {
     }
 
     case "discord_read": {
-      const { limit = 10 } = input;
+      const { limit = 15, channel_id = '1441080550415929406' } = input;
       try {
-        const scriptPath = join(context.repoRoot || '/Users/bart/Documents/code/vibeceo', 
-          'discord-bot/agent-chat/read-channel.cjs');
+        const scriptPath = join(__dirname, '..', 'scripts', 'read-discord.js');
         const result = execSync(
-          `node ${scriptPath} 1441080550415929406 ${limit}`,
-          { encoding: 'utf-8', timeout: 15000 }
+          `node ${scriptPath} ${channel_id} ${limit}`,
+          { encoding: 'utf-8', timeout: 20000 }
         );
-        return result;
+        return result || '(no messages)';
       } catch (err) {
-        return `Discord read failed: ${err.message}`;
+        return `Discord read failed: ${err.stderr || err.message}`;
       }
     }
 
@@ -179,6 +203,51 @@ export async function executeTool(name, input, session, context = {}) {
         return result;
       } catch (err) {
         return `Discord post failed: ${err.message}`;
+      }
+    }
+
+    case "supabase_query": {
+      const { query } = input;
+
+      // Safety check: only allow SELECT queries
+      const trimmedQuery = query.trim().toLowerCase();
+      if (!trimmedQuery.startsWith('select')) {
+        return 'Error: Only SELECT queries are allowed';
+      }
+
+      try {
+        const repoRoot = context.repoRoot || '/Users/bart/Documents/code/vibeceo';
+        const escaped = query.replace(/'/g, "'\\''");
+        const result = execSync(
+          `cd "${repoRoot}/sms-bot" && npx tsx --env-file=.env.local scripts/supabase-query.ts '${escaped}'`,
+          { encoding: 'utf-8', timeout: 30000 }
+        );
+        return result;
+      } catch (err) {
+        // Try to extract useful error from stderr
+        if (err.stderr) {
+          try {
+            const errData = JSON.parse(err.stderr);
+            return `Query error: ${errData.error}`;
+          } catch {
+            return `Supabase query failed: ${err.stderr || err.message}`;
+          }
+        }
+        return `Supabase query failed: ${err.message}`;
+      }
+    }
+
+    case "git_log": {
+      const { days = 7, limit = 20 } = input;
+      const repoRoot = context.repoRoot || '/Users/bart/Documents/code/vibeceo';
+      try {
+        const result = execSync(
+          `cd "${repoRoot}" && git log --oneline --since="${days} days ago" --all -- . ':!incubator' | head -${limit}`,
+          { encoding: 'utf-8', timeout: 10000 }
+        );
+        return result || 'No commits in this period';
+      } catch (err) {
+        return `Git log failed: ${err.message}`;
       }
     }
 

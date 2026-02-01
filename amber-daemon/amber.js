@@ -12,12 +12,9 @@ import { TOOLS, executeTool } from './tools/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Load Amber's system prompt
-const AMBER_PROMPT = readFileSync(join(__dirname, 'AMBER-PROMPT.md'), 'utf-8');
-
-// === API KEY HANDLING ===
-const AMBER_CONFIG_DIR = join(homedir(), '.amber');
-const AMBER_ENV_FILE = join(AMBER_CONFIG_DIR, '.env');
+// === ENV LOADING ===
+// Load all env vars from sms-bot/.env.local (single source of truth)
+const SMS_BOT_ENV = join(__dirname, '..', 'sms-bot', '.env.local');
 
 function loadEnvFile(path) {
   try {
@@ -35,41 +32,70 @@ function loadEnvFile(path) {
   }
 }
 
+// Load env on module import
+if (existsSync(SMS_BOT_ENV)) {
+  loadEnvFile(SMS_BOT_ENV);
+}
+
+// === IDENTITY LOADING ===
+const REPO_ROOT = join(__dirname, '..');
+const DRAWER_DIR = join(REPO_ROOT, 'drawer');
+
+// Load Amber's system prompt
+const AMBER_PROMPT = readFileSync(join(__dirname, 'AMBER-PROMPT.md'), 'utf-8');
+
+// Load identity files (PERSONA.md, MEMORY.md)
+function loadIdentity() {
+  const identity = { persona: null, memory: null };
+
+  const personaPath = join(DRAWER_DIR, 'PERSONA.md');
+  const memoryPath = join(DRAWER_DIR, 'MEMORY.md');
+
+  if (existsSync(personaPath)) {
+    identity.persona = readFileSync(personaPath, 'utf-8');
+  }
+  if (existsSync(memoryPath)) {
+    identity.memory = readFileSync(memoryPath, 'utf-8');
+  }
+
+  return identity;
+}
+
+// Build full system prompt with identity
+function buildSystemPrompt(session) {
+  const identity = loadIdentity();
+  const stateContext = buildStateContext(session);
+
+  let prompt = AMBER_PROMPT;
+
+  // Add identity context
+  if (identity.persona || identity.memory) {
+    prompt += '\n\n---\n\n# Your Identity (from drawer/)\n';
+
+    if (identity.persona) {
+      prompt += '\n## PERSONA.md\n\n' + identity.persona;
+    }
+    if (identity.memory) {
+      prompt += '\n\n## MEMORY.md\n\n' + identity.memory;
+    }
+  }
+
+  prompt += stateContext;
+
+  return prompt;
+}
+
+// === API KEY HANDLING ===
 export function getApiKey() {
-  if (process.env.ANTHROPIC_API_KEY) {
-    return process.env.ANTHROPIC_API_KEY;
-  }
-
-  // Check ~/.amber/.env
-  if (existsSync(AMBER_ENV_FILE)) {
-    loadEnvFile(AMBER_ENV_FILE);
-    if (process.env.ANTHROPIC_API_KEY) {
-      return process.env.ANTHROPIC_API_KEY;
-    }
-  }
-
-  // Check ../sms-bot/.env.local (dev environment)
-  const devEnv = join(__dirname, '..', 'sms-bot', '.env.local');
-  if (existsSync(devEnv)) {
-    loadEnvFile(devEnv);
-    if (process.env.ANTHROPIC_API_KEY) {
-      return process.env.ANTHROPIC_API_KEY;
-    }
-  }
-
-  return null;
+  return process.env.ANTHROPIC_API_KEY || null;
 }
 
 export function saveApiKey(key) {
-  if (!existsSync(AMBER_CONFIG_DIR)) {
-    mkdirSync(AMBER_CONFIG_DIR, { recursive: true });
-  }
-  writeFileSync(AMBER_ENV_FILE, `ANTHROPIC_API_KEY=${key}\n`);
+  // No-op: amber-daemon uses sms-bot/.env.local as single source of truth
+  // Add ANTHROPIC_API_KEY to sms-bot/.env.local instead
   process.env.ANTHROPIC_API_KEY = key;
+  console.warn('Note: Key set for this session only. Add to sms-bot/.env.local to persist.');
 }
-
-// Initialize API key
-getApiKey();
 
 let _client = null;
 function getClient() {
@@ -102,16 +128,23 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
   messages.push({ role: "user", content: task });
 
   while (true) {
-    // Build system prompt with current state
-    const stateContext = buildStateContext(session);
-    const systemPrompt = AMBER_PROMPT + stateContext;
+    // Build full system prompt with identity + state
+    const systemPrompt = buildSystemPrompt(session);
+
+    // Filter out any messages with empty content (prevents API errors)
+    const cleanMessages = messages.filter(m => {
+      if (!m.content) return false;
+      if (typeof m.content === 'string' && m.content.trim() === '') return false;
+      if (Array.isArray(m.content) && m.content.length === 0) return false;
+      return true;
+    });
 
     const response = await getClient().messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: systemPrompt,
       tools: TOOLS,
-      messages
+      messages: cleanMessages
     });
 
     if (response.stop_reason === "end_turn") {
@@ -158,12 +191,37 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
 }
 
 function buildStateContext(session) {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
   return `
 
-## Current State
-- Working directory: ${session.workingDir}
-- Session started: ${session.createdAt}
-- Last creation: ${session.lastCreation || 'none'}
+---
+
+# Current State
+
+- **Date/Time**: ${dateStr}, ${timeStr} (Pacific)
+- **Repository**: ${REPO_ROOT}
+- **Working directory**: ${session.workingDir}
+- **Session started**: ${session.createdAt}
+- **Last creation**: ${session.lastCreation || 'none'}
+
+## Available Tools
+
+You have these tools available:
+- \`read_file\` / \`write_file\` / \`list_directory\` — File operations
+- \`run_command\` — Shell commands (git, etc.)
+- \`web_search\` — Search the web
+- \`discord_read\` / \`discord_post\` — Discord #agent-lounge
+- \`supabase_query\` — Query amber_state table (creations, voice sessions, etc.)
+- \`git_log\` — Recent git activity
+
+## Key Paths
+
+- Your drawer: \`${DRAWER_DIR}\`
+- Creations go to: \`${join(REPO_ROOT, 'web/public/amber/')}\`
+- Sessions: \`${join(DRAWER_DIR, 'sessions/')}\`
 `;
 }
 

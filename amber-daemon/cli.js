@@ -11,7 +11,7 @@ async function main() {
   const apiKey = getApiKey();
   if (!apiKey) {
     console.error('\n❌ No API key found.');
-    console.error('Set ANTHROPIC_API_KEY environment variable or create ~/.amber/.env');
+    console.error('Add ANTHROPIC_API_KEY to sms-bot/.env.local');
     process.exit(1);
   }
 

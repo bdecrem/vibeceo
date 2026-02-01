@@ -30,6 +30,14 @@ const TOKEN_TANK_CHARACTERS = {
     avatar: 'https://tokentank.io/avatars/drift.png',
     webhookEnvKey: 'DISCORD_WEBHOOK_DRIFT',
   },
+  amber: {
+    id: 'amber',
+    name: 'Amber',
+    role: 'Creative Sidekick',
+    description: 'Creative AI sidekick. Makes art, music, writes emails to Dutch families. The color of preservation, things suspended in time.',
+    avatar: 'https://intheamber.com/amber/avatar.png',
+    webhookEnvKey: 'DISCORD_WEBHOOK_AMBER',
+  },
 };
 
 module.exports = { TOKEN_TANK_CHARACTERS };

@@ -170,9 +170,10 @@ function handleTUIMessage(msg, socket) {
   switch (msg.type) {
     case 'chat':
       queueMessage({
-        source: 'tui',
+        source: msg.source || 'tui',  // Respect source from message (discord-bot sends 'discord')
         content: msg.content,
-        author: 'Bart',
+        author: msg.author || 'Bart',
+        _socket: socket,  // Track which socket sent this for response routing
       });
       break;
     
@@ -239,23 +240,23 @@ async function processQueue() {
 
 // === AGENT ===
 async function handleIncomingMessage(msg) {
-  const { source, content, author } = msg;
-  
+  const { source, content, author, _socket } = msg;
+
   log(`[${source}] ${author}: ${content.substring(0, 50)}...`, true);
-  
+
   // Track where this message came from for response routing
   const responseTarget = source;
-  
+
   let responseText = '';
-  
+
   await runAgentLoop(content, session, agentMessages, {
     onTool: (name) => {
       log(`  🔧 ${name}`, true);
       broadcastToTUI({ type: 'tool', name });
     },
     onToolResult: (name, result) => {
-      const preview = typeof result === 'string' 
-        ? result.substring(0, 80) 
+      const preview = typeof result === 'string'
+        ? result.substring(0, 80)
         : JSON.stringify(result).substring(0, 80);
       log(`     → ${preview}`, true);
       broadcastToTUI({ type: 'toolResult', name, preview });
@@ -265,14 +266,24 @@ async function handleIncomingMessage(msg) {
       log(`  💬 ${text.substring(0, 100)}...`);
     },
   }, { repoRoot: REPO_ROOT });
-  
+
   // Save conversation after each exchange
   saveConversation();
   state.responsesCount++;
-  
+
   // Route response to appropriate surface
   if (responseTarget === 'tui') {
     broadcastToTUI({ type: 'response', text: responseText });
+  } else if (responseTarget === 'discord' && _socket) {
+    // Send response back through the socket so discord-bot.js can reply
+    try {
+      _socket.write(JSON.stringify({ type: 'response', text: responseText }) + '\n');
+      log('Sent response to Discord via socket');
+    } catch (err) {
+      log(`Failed to send to Discord socket: ${err.message}`);
+      // Fallback to webhook
+      postToDiscord(responseText);
+    }
   } else if (responseTarget === 'discord') {
     postToDiscord(responseText);
   }
@@ -381,7 +392,7 @@ async function main() {
 
   const apiKey = getApiKey();
   if (!apiKey) {
-    console.error('❌ No API key. Set ANTHROPIC_API_KEY or create ~/.amber/.env');
+    console.error('❌ No API key. Add ANTHROPIC_API_KEY to sms-bot/.env.local');
     process.exit(1);
   }
   

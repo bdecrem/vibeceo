@@ -279,8 +279,9 @@ class TerminalUI {
       process.stdout.write(ANSI.showCursor);
     } else {
       process.stdout.write(ANSI.moveTo(startRow + 4, startCol + 4) + ANSI.green + 'Key accepted.' + ANSI.reset);
-      process.stdout.write(ANSI.moveTo(startRow + 6, startCol + 4) + 'Save to ~/.amber/.env?');
-      process.stdout.write(ANSI.moveTo(startRow + 8, startCol + 4) + ANSI.bold + '(y/n) ' + ANSI.reset);
+      process.stdout.write(ANSI.moveTo(startRow + 6, startCol + 4) + 'Use for this session?');
+      process.stdout.write(ANSI.moveTo(startRow + 7, startCol + 4) + ANSI.dim + '(Add to sms-bot/.env.local to persist)' + ANSI.reset);
+      process.stdout.write(ANSI.moveTo(startRow + 9, startCol + 4) + ANSI.bold + '(y/n) ' + ANSI.reset);
     }
   }
 
