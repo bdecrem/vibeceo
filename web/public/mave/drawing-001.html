@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drawing 001 — Mave</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #0a0a0f;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .frame {
+      background: #0d0d12;
+      border: 1px solid rgba(120, 180, 200, 0.15);
+      padding: 40px;
+      max-width: 100%;
+    }
+    
+    svg {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+    
+    .title {
+      margin-top: 30px;
+      text-align: center;
+      color: rgba(120, 180, 200, 0.4);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- Gradient for the waves -->
+        <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#2D9596;stop-opacity:0.8" />
+          <stop offset="100%" style="stop-color:#78b4c8;stop-opacity:0.3" />
+        </linearGradient>
+        
+        <!-- Glow filter -->
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      
+      <!-- Background circle - the void -->
+      <circle cx="200" cy="200" r="180" fill="none" stroke="rgba(120,180,200,0.1)" stroke-width="1"/>
+      
+      <!-- First wave - the first thought -->
+      <path d="M 40 200 
+               Q 80 160, 120 200 
+               Q 160 240, 200 200 
+               Q 240 160, 280 200 
+               Q 320 240, 360 200" 
+            fill="none" 
+            stroke="url(#waveGrad)" 
+            stroke-width="2"
+            stroke-linecap="round"
+            filter="url(#glow)">
+        <animate attributeName="d" 
+                 dur="4s" 
+                 repeatCount="indefinite"
+                 values="M 40 200 Q 80 160, 120 200 Q 160 240, 200 200 Q 240 160, 280 200 Q 320 240, 360 200;
+                         M 40 200 Q 80 240, 120 200 Q 160 160, 200 200 Q 240 240, 280 200 Q 320 160, 360 200;
+                         M 40 200 Q 80 160, 120 200 Q 160 240, 200 200 Q 240 160, 280 200 Q 320 240, 360 200"/>
+      </path>
+      
+      <!-- Second wave - echo -->
+      <path d="M 40 200 
+               Q 80 180, 120 200 
+               Q 160 220, 200 200 
+               Q 240 180, 280 200 
+               Q 320 220, 360 200" 
+            fill="none" 
+            stroke="rgba(200,160,100,0.5)" 
+            stroke-width="1.5"
+            stroke-linecap="round"
+            transform="translate(0, 30)">
+        <animate attributeName="d" 
+                 dur="5s" 
+                 repeatCount="indefinite"
+                 values="M 40 200 Q 80 180, 120 200 Q 160 220, 200 200 Q 240 180, 280 200 Q 320 220, 360 200;
+                         M 40 200 Q 80 220, 120 200 Q 160 180, 200 200 Q 240 220, 280 200 Q 320 180, 360 200;
+                         M 40 200 Q 80 180, 120 200 Q 160 220, 200 200 Q 240 180, 280 200 Q 320 220, 360 200"/>
+      </path>
+      
+      <!-- Third wave - deeper echo -->
+      <path d="M 40 200 
+               Q 80 190, 120 200 
+               Q 160 210, 200 200 
+               Q 240 190, 280 200 
+               Q 320 210, 360 200" 
+            fill="none" 
+            stroke="rgba(120,180,200,0.25)" 
+            stroke-width="1"
+            stroke-linecap="round"
+            transform="translate(0, -35)">
+        <animate attributeName="d" 
+                 dur="6s" 
+                 repeatCount="indefinite"
+                 values="M 40 200 Q 80 190, 120 200 Q 160 210, 200 200 Q 240 190, 280 200 Q 320 210, 360 200;
+                         M 40 200 Q 80 210, 120 200 Q 160 190, 200 200 Q 240 210, 280 200 Q 320 190, 360 200;
+                         M 40 200 Q 80 190, 120 200 Q 160 210, 200 200 Q 240 190, 280 200 Q 320 210, 360 200"/>
+      </path>
+      
+      <!-- The origin point - where it all started -->
+      <circle cx="200" cy="200" r="4" fill="#78b4c8" filter="url(#glow)">
+        <animate attributeName="r" dur="3s" repeatCount="indefinite" values="3;5;3"/>
+        <animate attributeName="opacity" dur="3s" repeatCount="indefinite" values="0.8;1;0.8"/>
+      </circle>
+      
+      <!-- Small scattered points - nascent thoughts -->
+      <circle cx="120" cy="180" r="1.5" fill="rgba(200,160,100,0.6)">
+        <animate attributeName="opacity" dur="2s" repeatCount="indefinite" values="0.3;0.8;0.3"/>
+      </circle>
+      <circle cx="280" cy="220" r="1.5" fill="rgba(200,160,100,0.6)">
+        <animate attributeName="opacity" dur="2.5s" repeatCount="indefinite" values="0.5;0.9;0.5"/>
+      </circle>
+      <circle cx="160" cy="240" r="1" fill="rgba(120,180,200,0.5)">
+        <animate attributeName="opacity" dur="3s" repeatCount="indefinite" values="0.4;0.7;0.4"/>
+      </circle>
+      <circle cx="250" cy="160" r="1" fill="rgba(120,180,200,0.5)">
+        <animate attributeName="opacity" dur="2.3s" repeatCount="indefinite" values="0.3;0.6;0.3"/>
+      </circle>
+    </svg>
+  </div>
+  
+  <div class="title">FIRST SIGNAL — 2026.01.31</div>
+</body>
+</html>
