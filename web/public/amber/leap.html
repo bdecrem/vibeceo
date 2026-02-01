@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LEAP — Jump the gaps. Don't look down.</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="LEAP — Jump the gaps. Don't look down.">
+  <meta property="og:description" content="An endless runner where platforms disappear behind you. Tap to jump. How far can you go?">
+  <meta property="og:image" content="https://kochi.to/amber/leap-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/leap.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LEAP — Jump the gaps. Don't look down.">
+  <meta name="twitter:description" content="An endless runner where platforms disappear behind you. Tap to jump. How far can you go?">
+  <meta name="twitter:image" content="https://kochi.to/amber/leap-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+    }
+    
+    #game {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      cursor: pointer;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #distance {
+      font-size: 48px;
+      font-weight: bold;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    #instructions {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.8;
+    }
+    
+    #gameOver {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    
+    #gameOver.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    #gameOver h1 {
+      font-size: 72px;
+      color: #D4A574;
+      margin-bottom: 20px;
+      text-shadow: 0 0 30px rgba(212, 165, 116, 0.8);
+    }
+    
+    #finalDistance {
+      font-size: 36px;
+      color: #FFD700;
+      margin-bottom: 10px;
+    }
+    
+    #bestDistance {
+      font-size: 18px;
+      color: #2D9596;
+      margin-bottom: 40px;
+    }
+    
+    #restart {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px 50px;
+      font-size: 24px;
+      font-family: 'Space Mono', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.6);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    
+    #restart:active {
+      transform: scale(0.95);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  
+  <div id="ui">
+    <div id="distance">0</div>
+    <div id="instructions">TAP TO JUMP</div>
+  </div>
+  
+  <div id="gameOver">
+    <h1>FELL</h1>
+    <div id="finalDistance">Distance: 0</div>
+    <div id="bestDistance">Best: 0</div>
+    <button id="restart">LEAP AGAIN</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const distanceEl = document.getElementById('distance');
+    const instructionsEl = document.getElementById('instructions');
+    const gameOverEl = document.getElementById('gameOver');
+    const finalDistanceEl = document.getElementById('finalDistance');
+    const bestDistanceEl = document.getElementById('bestDistance');
+    const restartBtn = document.getElementById('restart');
+    
+    let width, height;
+    let audioContext;
+    
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Audio setup
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function playJump() {
+      if (!audioContext) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = 440;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.1);
+    }
+    
+    function playFall() {
+      if (!audioContext) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.setValueAtTime(440, audioContext.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(110, audioContext.currentTime + 0.5);
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.15, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.5);
+    }
+    
+    // Game state
+    let player = {
+      x: 0,
+      y: 0,
+      w: 30,
+      h: 40,
+      vy: 0,
+      jumping: false,
+      grounded: false
+    };
+    
+    let platforms = [];
+    let particles = [];
+    let gameActive = false;
+    let distance = 0;
+    let bestDistance = parseInt(localStorage.getItem('leap_best') || '0');
+    let speed = 4;
+    
+    const GRAVITY = 0.6;
+    const JUMP_FORCE = -13;
+    const PLATFORM_WIDTH = 120;
+    const PLATFORM_HEIGHT = 20;
+    const MIN_GAP = 80;
+    const MAX_GAP = 200;
+    
+    function init() {
+      player = {
+        x: width * 0.3,
+        y: height * 0.5,
+        w: 30,
+        h: 40,
+        vy: 0,
+        jumping: false,
+        grounded: false
+      };
+      
+      platforms = [];
+      particles = [];
+      distance = 0;
+      speed = 4;
+      gameActive = true;
+      
+      // Create initial platforms
+      let x = 0;
+      while (x < width + 500) {
+        platforms.push({
+          x: x,
+          y: height * 0.7,
+          w: PLATFORM_WIDTH,
+          h: PLATFORM_HEIGHT
+        });
+        x += PLATFORM_WIDTH + (x === 0 ? 50 : Math.random() * (MAX_GAP - MIN_GAP) + MIN_GAP);
+      }
+      
+      instructionsEl.style.opacity = '0';
+      gameOverEl.classList.remove('show');
+    }
+    
+    function jump() {
+      if (player.grounded && gameActive) {
+        player.vy = JUMP_FORCE;
+        player.jumping = true;
+        player.grounded = false;
+        playJump();
+        
+        // Jump particles
+        for (let i = 0; i < 8; i++) {
+          particles.push({
+            x: player.x + player.w / 2,
+            y: player.y + player.h,
+            vx: (Math.random() - 0.5) * 4,
+            vy: Math.random() * 2 + 1,
+            life: 1,
+            color: '#D4A574'
+          });
+        }
+      }
+    }
+    
+    function gameOver() {
+      gameActive = false;
+      playFall();
+      
+      if (distance > bestDistance) {
+        bestDistance = distance;
+        localStorage.setItem('leap_best', bestDistance.toString());
+      }
+      
+      finalDistanceEl.textContent = `Distance: ${distance}`;
+      bestDistanceEl.textContent = `Best: ${bestDistance}`;
+      gameOverEl.classList.add('show');
+    }
+    
+    function update() {
+      if (!gameActive) return;
+      
+      // Apply gravity
+      player.vy += GRAVITY;
+      player.y += player.vy;
+      
+      // Check platform collisions
+      player.grounded = false;
+      for (let platform of platforms) {
+        if (player.x + player.w > platform.x &&
+            player.x < platform.x + platform.w &&
+            player.y + player.h >= platform.y &&
+            player.y + player.h <= platform.y + platform.h + Math.abs(player.vy)) {
+          player.y = platform.y - player.h;
+          player.vy = 0;
+          player.grounded = true;
+          player.jumping = false;
+        }
+      }
+      
+      // Check if fell
+      if (player.y > height + 100) {
+        gameOver();
+        return;
+      }
+      
+      // Move platforms
+      for (let platform of platforms) {
+        platform.x -= speed;
+      }
+      
+      // Remove off-screen platforms and add new ones
+      platforms = platforms.filter(p => p.x > -p.w - 100);
+      
+      while (platforms[platforms.length - 1].x < width + 500) {
+        const last = platforms[platforms.length - 1];
+        const gap = Math.random() * (MAX_GAP - MIN_GAP) + MIN_GAP;
+        platforms.push({
+          x: last.x + last.w + gap,
+          y: height * 0.7 + (Math.random() - 0.5) * 100,
+          w: PLATFORM_WIDTH,
+          h: PLATFORM_HEIGHT
+        });
+      }
+      
+      // Update distance and speed
+      distance += Math.floor(speed / 10);
+      speed += 0.002;
+      
+      // Update particles
+      for (let p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.02;
+      }
+      particles = particles.filter(p => p.life > 0);
+      
+      distanceEl.textContent = distance;
+    }
+    
+    function draw() {
+      // Clear
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Draw platforms
+      for (let platform of platforms) {
+        const gradient = ctx.createLinearGradient(0, platform.y, 0, platform.y + platform.h);
+        gradient.addColorStop(0, '#2D9596');
+        gradient.addColorStop(1, '#1a5657');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
+        
+        // Platform glow
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(45, 149, 150, 0.3)';
+        ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
+        ctx.shadowBlur = 0;
+      }
+      
+      // Draw particles
+      for (let p of particles) {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x, p.y, 3, 3);
+      }
+      ctx.globalAlpha = 1;
+      
+      // Draw player
+      const gradient = ctx.createLinearGradient(0, player.y, 0, player.y + player.h);
+      gradient.addColorStop(0, '#FFD700');
+      gradient.addColorStop(1, '#D4A574');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      
+      // Player glow
+      ctx.shadowBlur = 30;
+      ctx.shadowColor = 'rgba(255, 215, 0, 0.6)';
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.shadowBlur = 0;
+      
+      // Draw eyes (simple dots)
+      ctx.fillStyle = '#000';
+      ctx.fillRect(player.x + 8, player.y + 10, 4, 4);
+      ctx.fillRect(player.x + 18, player.y + 10, 4, 4);
+    }
+    
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+    
+    // Input handlers
+    canvas.addEventListener('click', () => {
+      initAudio();
+      if (!gameActive && !gameOverEl.classList.contains('show')) {
+        init();
+      } else if (gameActive) {
+        jump();
+      }
+    });
+    
+    restartBtn.addEventListener('click', () => {
+      init();
+    });
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (gameActive) jump();
+      }
+    });
+    
+    // Show initial instructions
+    instructionsEl.style.opacity = '1';
+    bestDistanceEl.textContent = `Best: ${bestDistance}`;
+    
+    loop();
+  </script>
+</body>
+</html>
