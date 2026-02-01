@@ -2,377 +2,366 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stigmergy: Emergent Pathfinding</title>
+    <title>Stigmergy</title>
+    <meta property="og:title" content="Stigmergy">
+    <meta property="og:description" content="Ideas finding each other through traces left by curious minds">
+    <meta property="og:image" content="https://kochi.to/amber/stigmergy-og.png">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background: #0a0a0a;
-            color: #d4a574;
-            font-family: 'Courier New', monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            min-height: 100vh;
+            background: radial-gradient(circle at center, #2d1810 0%, #1a0f08 100%);
+            overflow: hidden;
+            font-family: 'Georgia', serif;
+            cursor: none;
         }
-        h1 {
-            font-size: 24px;
-            margin-bottom: 10px;
-            color: #d4a574;
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
         }
-        .info {
-            font-size: 12px;
-            margin-bottom: 20px;
+
+        #info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: #d4af37;
+            font-size: 14px;
             opacity: 0.7;
-            max-width: 600px;
-            text-align: center;
+            z-index: 100;
         }
-        canvas {
-            border: 1px solid #333;
-            background: #000;
-            image-rendering: pixelated;
-        }
-        .controls {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 600px;
-        }
-        button {
-            background: #1a1a1a;
-            color: #d4a574;
-            border: 1px solid #d4a574;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
+
+        .concept {
+            position: absolute;
+            color: #d4af37;
             font-size: 12px;
+            padding: 4px 8px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 12px;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
         }
-        button:hover { background: #2a2a2a; }
-        button:active { background: #d4a574; color: #0a0a0a; }
-.stats {
-            margin-top: 20px;
-            font-size: 11px;
-            opacity: 0.8;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            max-width: 400px;
+
+        .concept.attracted {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: rgba(212, 175, 55, 0.5);
+            transform: scale(1.1);
         }
-        .stat { text-align: center; }
-        .stat-value { font-size: 18px; color: #d4a574; }
-        .legend {
-            margin-top: 15px;
-            font-size: 11px;
+
+        .concept.crystallized {
+            background: rgba(212, 175, 55, 0.8);
+            color: #1a0f08;
+            border-color: #d4af37;
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .trace {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, #d4af37 0%, transparent 100%);
+            border-radius: 50%;
+            pointer-events: none;
             opacity: 0.6;
-            text-align: center;
+        }
+
+        .cursor {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #d4af37;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.8;
         }
     </style>
 </head>
 <body>
-    <h1>Stigmergy: Emergent Pathfinding</h1>
-    <p class="info">
-        Agents follow simple rules: move randomly, prefer stronger pheromone trails, deposit pheromones.
-        No memory, no communication. Watch for emergent optimal paths between food sources.
-    </p>
-    
-    <canvas id="canvas" width="600" height="600"></canvas>
-    
-    <div class="controls">
-        <button id="reset">Reset</button>
-        <button id="pause">Pause</button>
-        <button id="faster">Faster</button>
-        <button id="slower">Slower</button>
+    <div id="info">
+        Ideas drift. Movement leaves traces. Proximity breeds understanding.
     </div>
     
-    <div class="stats">
-        <div class="stat">
-            <div class="stat-value" id="generation">0</div>
-            <div>Generation</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value" id="efficiency">0%</div>
-            <div>Path Efficiency</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value" id="convergence">0%</div>
-            <div>Convergence</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value" id="agents">0</div>
-            <div>Active Agents</div>
-        </div>
-    </div>
-    
-    <p class="legend">
-        🟤 Nest • 🟢 Food • Trail brightness = pheromone strength
-    </p>
+    <canvas id="canvas"></canvas>
+    <div class="cursor" id="cursor"></div>
 
     <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const W = 200, H = 200; // Grid size
-        const SCALE = canvas.width / W;
+        // Core state
+        const concepts = [];
+        const traces = [];
+        const attractionWells = [];
+        const crystallizedFormations = [];
         
-        // World state
-        let pheromones = Array(W).fill(0).map(() => Array(H).fill(0));
-        let agents = [];
-        let nest = { x: 50, y: 100 };
-        let food = [
-            { x: 150, y: 50 },
-            { x: 150, y: 150 }
+        let mouseX = 0;
+        let mouseY = 0;
+        let lastTraceTime = 0;
+        
+        // Sample concept pool (Mave will replace with arXiv magic)
+        const conceptPool = [
+            "emergent behavior", "cellular automata", "stigmergy", "collective intelligence",
+            "self-organization", "swarm dynamics", "complex systems", "phase transitions",
+            "information cascades", "network effects", "pattern formation", "spontaneous order",
+            "distributed cognition", "emergence", "feedback loops", "tipping points",
+            "collective memory", "social learning", "adaptive systems", "cooperation",
+            "evolution of language", "cultural transmission", "innovation diffusion",
+            "wisdom of crowds", "group decision making", "social influence"
         ];
-        
-        // Parameters
-        const AGENT_COUNT = 100;
-        const PHEROMONE_DEPOSIT = 10;
-        const EVAPORATION_RATE = 0.995;
-        const RANDOM_FACTOR = 0.2;
-        const SENSING_RADIUS = 5;
-        
-        let generation = 0;
-        let running = true;
-        let speed = 1;
-        
-        class Agent {
+
+        class Concept {
+            constructor(text, x, y) {
+                this.text = text;
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 0.2;
+                this.vy = (Math.random() - 0.5) * 0.2;
+                this.element = this.createElement();
+                this.attracted = false;
+                this.crystallized = false;
+                this.attractedBy = null;
+                this.clustered = [];
+            }
+
+            createElement() {
+                const el = document.createElement('div');
+                el.className = 'concept';
+                el.textContent = this.text;
+                el.style.left = this.x + 'px';
+                el.style.top = this.y + 'px';
+                document.body.appendChild(el);
+                return el;
+            }
+
+            update() {
+                if (this.crystallized) return;
+
+                // Drift
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Boundary bounce
+                if (this.x < 0 || this.x > window.innerWidth - 100) this.vx *= -1;
+                if (this.y < 0 || this.y > window.innerHeight - 30) this.vy *= -1;
+
+                // Attraction to mouse
+                const mouseDistance = Math.sqrt((this.x - mouseX) ** 2 + (this.y - mouseY) ** 2);
+                if (mouseDistance < 150) {
+                    const force = (150 - mouseDistance) / 150;
+                    const angle = Math.atan2(mouseY - this.y, mouseX - this.x);
+                    this.vx += Math.cos(angle) * force * 0.01;
+                    this.vy += Math.sin(angle) * force * 0.01;
+                    
+                    if (!this.attracted) {
+                        this.attracted = true;
+                        this.element.classList.add('attracted');
+                    }
+                } else if (this.attracted) {
+                    this.attracted = false;
+                    this.element.classList.remove('attracted');
+                }
+
+                // Attraction to wells
+                attractionWells.forEach(well => {
+                    const wellDistance = Math.sqrt((this.x - well.x) ** 2 + (this.y - well.y) ** 2);
+                    if (wellDistance < well.strength * 100) {
+                        const force = well.strength * 0.005;
+                        const angle = Math.atan2(well.y - this.y, well.x - this.x);
+                        this.vx += Math.cos(angle) * force;
+                        this.vy += Math.sin(angle) * force;
+                    }
+                });
+
+                // Damping
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+
+                // Update position
+                this.element.style.left = this.x + 'px';
+                this.element.style.top = this.y + 'px';
+
+                // Check for clustering
+                this.checkClustering();
+            }
+
+            checkClustering() {
+                const nearbyConceptsThreshold = 80;
+                const nearby = concepts.filter(c => {
+                    if (c === this || c.crystallized) return false;
+                    const distance = Math.sqrt((this.x - c.x) ** 2 + (this.y - c.y) ** 2);
+                    return distance < nearbyConceptsThreshold;
+                });
+
+                if (nearby.length >= 2 && Math.random() < 0.002) {
+                    this.crystallize([this, ...nearby]);
+                }
+            }
+
+            crystallize(cluster) {
+                cluster.forEach(concept => {
+                    if (!concept.crystallized) {
+                        concept.crystallized = true;
+                        concept.element.classList.add('crystallized');
+                        concept.vx = 0;
+                        concept.vy = 0;
+                    }
+                });
+
+                // Create crystallization effect
+                this.createCrystallizationEffect(cluster);
+            }
+
+            createCrystallizationEffect(cluster) {
+                // Calculate center
+                const centerX = cluster.reduce((sum, c) => sum + c.x, 0) / cluster.length;
+                const centerY = cluster.reduce((sum, c) => sum + c.y, 0) / cluster.length;
+
+                // Add to crystallized formations
+                crystallizedFormations.push({
+                    x: centerX,
+                    y: centerY,
+                    concepts: cluster.map(c => c.text),
+                    time: Date.now()
+                });
+
+                // Visual effect (could be enhanced)
+                setTimeout(() => {
+                    cluster.forEach(concept => {
+                        if (concept.element) {
+                            concept.element.style.animation = 'pulse 0.5s ease-in-out';
+                        }
+                    });
+                }, 100);
+            }
+
+            destroy() {
+                if (this.element) {
+                    this.element.remove();
+                }
+            }
+        }
+
+        class Trace {
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.hasFood = false;
-                this.age = 0;
-            }
-            
-            move() {
-                this.age++;
-                
-                // Goal: if has food, go to nest. Otherwise, go to food.
-                const target = this.hasFood ? nest : this.findNearestFood();
-                
-                // Sense pheromones in nearby cells
-                let bestDir = null;
-                let bestScore = -Infinity;
-                
-                const dirs = [
-                    {dx: 0, dy: -1}, {dx: 1, dy: -1}, {dx: 1, dy: 0}, {dx: 1, dy: 1},
-                    {dx: 0, dy: 1}, {dx: -1, dy: 1}, {dx: -1, dy: 0}, {dx: -1, dy: -1}
-                ];
-                
-                for (let dir of dirs) {
-                    const nx = this.x + dir.dx;
-                    const ny = this.y + dir.dy;
-                    
-                    if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
-                    
-                    // Score = pheromone strength + bias toward target + randomness
-                    const pheromone = pheromones[nx][ny];
-                    const distToTarget = Math.hypot(nx - target.x, ny - target.y);
-                    const currentDist = Math.hypot(this.x - target.x, this.y - target.y);
-                    const targetBias = (currentDist - distToTarget) * 2; // Prefer moves closer to target
-                    
-                    const score = pheromone * 0.5 + targetBias + Math.random() * RANDOM_FACTOR * 10;
-                    
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestDir = dir;
-                    }
-                }
-                
-                if (bestDir) {
-                    this.x += bestDir.dx;
-                    this.y += bestDir.dy;
-                }
-                
-                // Deposit pheromones if carrying food
-                if (this.hasFood) {
-                    pheromones[this.x][this.y] += PHEROMONE_DEPOSIT;
-                }
-                
-                // Check for food pickup
-                if (!this.hasFood) {
-                    for (let f of food) {
-                        if (Math.hypot(this.x - f.x, this.y - f.y) < 3) {
-                            this.hasFood = true;
-                            break;
-                        }
-                    }
-                }
-                
-                // Check for nest dropoff
-                if (this.hasFood && Math.hypot(this.x - nest.x, this.y - nest.y) < 3) {
-                    this.hasFood = false;
-                    // Respawn at nest
-                    this.x = nest.x + Math.floor(Math.random() * 6) - 3;
-                    this.y = nest.y + Math.floor(Math.random() * 6) - 3;
-                }
-            }
-            
-            findNearestFood() {
-                let nearest = food[0];
-                let minDist = Infinity;
-                for (let f of food) {
-                    const dist = Math.hypot(this.x - f.x, this.y - f.y);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        nearest = f;
-                    }
-                }
-                return nearest;
-            }
-        }
-        
-        function init() {
-            agents = [];
-            pheromones = Array(W).fill(0).map(() => Array(H).fill(0));
-            generation = 0;
-            
-            // Spawn agents at nest
-            for (let i = 0; i < AGENT_COUNT; i++) {
-                agents.push(new Agent(
-                    nest.x + Math.floor(Math.random() * 10) - 5,
-                    nest.y + Math.floor(Math.random() * 10) - 5
-                ));
-            }
-        }
-        
-        function update() {
-            if (!running) return;
-            
-            // Update agents
-            for (let agent of agents) {
-                agent.move();
-            }
-            
-            // Evaporate pheromones
-            for (let x = 0; x < W; x++) {
-                for (let y = 0; y < H; y++) {
-                    pheromones[x][y] *= EVAPORATION_RATE;
-                }
-            }
-            
-            generation++;
-        }
-        
-        function draw() {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw pheromones
-            for (let x = 0; x < W; x++) {
-                for (let y = 0; y < H; y++) {
-                    const strength = Math.min(pheromones[x][y] / 50, 1);
-                    if (strength > 0.01) {
-                        ctx.fillStyle = `rgba(212, 165, 116, ${strength * 0.6})`;
-                        ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
-                    }
-                }
-            }
-            
-            // Draw nest
-            ctx.fillStyle = '#8B4513';
-            ctx.beginPath();
-            ctx.arc(nest.x * SCALE, nest.y * SCALE, 8, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Draw food sources
-            ctx.fillStyle = '#4a7c4e';
-            for (let f of food) {
-                ctx.beginPath();
-                ctx.arc(f.x * SCALE, f.y * SCALE, 8, 0, Math.PI * 2);
-                ctx.fill();
+                this.life = 1.0;
+                this.element = this.createElement();
             }
 
-            // Draw agents
-            for (let agent of agents) {
-                ctx.fillStyle = agent.hasFood ? '#4a7c4e' : '#d4a574';
-                ctx.fillRect(agent.x * SCALE, agent.y * SCALE, SCALE * 1.5, SCALE * 1.5);
+            createElement() {
+                const el = document.createElement('div');
+                el.className = 'trace';
+                el.style.left = this.x + 'px';
+                el.style.top = this.y + 'px';
+                document.body.appendChild(el);
+                return el;
             }
-            
-            // Update stats
-            document.getElementById('generation').textContent = generation;
-            document.getElementById('agents').textContent = agents.length;
-            
-            // Calculate efficiency: how much pheromone is on optimal paths vs scattered
-            const optimalCells = new Set();
-            for (let f of food) {
-                // Bresenham line from nest to food
-                const cells = getLine(nest.x, nest.y, f.x, f.y, 3); // 3 cell width
-                cells.forEach(c => optimalCells.add(`${c.x},${c.y}`));
-            }
-            
-            let optimalPheromone = 0;
-            let totalPheromone = 0;
-            for (let x = 0; x < W; x++) {
-                for (let y = 0; y < H; y++) {
-                    totalPheromone += pheromones[x][y];
-                    if (optimalCells.has(`${x},${y}`)) {
-                        optimalPheromone += pheromones[x][y];
-                    }
-                }
-            }
-            
-            const efficiency = totalPheromone > 0 ? (optimalPheromone / totalPheromone * 100) : 0;
-            document.getElementById('efficiency').textContent = efficiency.toFixed(1) + '%';
-            
-            // Convergence: what % of cells have very low pheromone (trail has converged)
-            let lowPheromone = 0;
-            for (let x = 0; x < W; x++) {
-                for (let y = 0; y < H; y++) {
-                    if (pheromones[x][y] < 0.1) lowPheromone++;
-                }
-            }
-            const convergence = (lowPheromone / (W * H) * 100);
-            document.getElementById('convergence').textContent = convergence.toFixed(1) + '%';
-        }
-        
-        function getLine(x0, y0, x1, y1, width) {
-            const cells = new Set();
-            const dx = Math.abs(x1 - x0);
-            const dy = Math.abs(y1 - y0);
-            const sx = x0 < x1 ? 1 : -1;
-            const sy = y0 < y1 ? 1 : -1;
-            let err = dx - dy;
-            
-            let x = x0, y = y0;
-            while (true) {
-                // Add cell and neighbors for width
-                for (let wx = -width; wx <= width; wx++) {
-                    for (let wy = -width; wy <= width; wy++) {
-                        if (x + wx >= 0 && x + wx < W && y + wy >= 0 && y + wy < H) {
-                            cells.add({x: x + wx, y: y + wy});
-                        }
-                    }
-                }
+
+            update() {
+                this.life -= 0.005;
+                this.element.style.opacity = this.life * 0.6;
                 
-                if (x === x1 && y === y1) break;
-                const e2 = 2 * err;
-                if (e2 > -dy) { err -= dy; x += sx; }
-                if (e2 < dx) { err += dx; y += sy; }
+                if (this.life <= 0) {
+                    // Create attraction well before dying
+                    attractionWells.push({
+                        x: this.x,
+                        y: this.y,
+                        strength: 0.5,
+                        decay: 0.001
+                    });
+                    return false;
+                }
+                return true;
             }
-            return cells;
-        }
-        
-        function loop() {
-            for (let i = 0; i < speed; i++) {
-                update();
+
+            destroy() {
+                if (this.element) {
+                    this.element.remove();
+                }
             }
-            draw();
-            requestAnimationFrame(loop);
         }
-        
-        // Controls
-        document.getElementById('reset').onclick = () => init();
-        document.getElementById('pause').onclick = () => {
-            running = !running;
-            document.getElementById('pause').textContent = running ? 'Pause' : 'Resume';
-        };
-        document.getElementById('faster').onclick = () => speed = Math.min(speed + 1, 10);
-        document.getElementById('slower').onclick = () => speed = Math.max(speed - 1, 1);
-        
+
+        // Initialize concepts
+        function spawnConcept() {
+            const text = conceptPool[Math.floor(Math.random() * conceptPool.length)];
+            const x = Math.random() * (window.innerWidth - 200) + 100;
+            const y = Math.random() * (window.innerHeight - 100) + 50;
+            
+            const concept = new Concept(text, x, y);
+            concepts.push(concept);
+            
+            // Keep concept count manageable
+            if (concepts.length > 25) {
+                const oldest = concepts.shift();
+                oldest.destroy();
+            }
+        }
+
+        // Mouse tracking
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            const cursor = document.getElementById('cursor');
+            cursor.style.left = (mouseX - 6) + 'px';
+            cursor.style.top = (mouseY - 6) + 'px';
+            
+            // Create traces
+            const now = Date.now();
+            if (now - lastTraceTime > 100) {
+                const trace = new Trace(mouseX, mouseY);
+                traces.push(trace);
+                lastTraceTime = now;
+            }
+        });
+
+        // Animation loop
+        function animate() {
+            // Update concepts
+            concepts.forEach(concept => concept.update());
+            
+            // Update traces
+            for (let i = traces.length - 1; i >= 0; i--) {
+                if (!traces[i].update()) {
+                    traces[i].destroy();
+                    traces.splice(i, 1);
+                }
+            }
+            
+            // Update attraction wells
+            for (let i = attractionWells.length - 1; i >= 0; i--) {
+                attractionWells[i].strength -= attractionWells[i].decay;
+                if (attractionWells[i].strength <= 0) {
+                    attractionWells.splice(i, 1);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Start the simulation
+        function init() {
+            // Spawn initial concepts
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => spawnConcept(), i * 200);
+            }
+            
+            // Keep spawning new concepts periodically
+            setInterval(spawnConcept, 3000);
+            
+            // Start animation
+            animate();
+        }
+
         init();
-        loop();
     </script>
 </body>
 </html>
