@@ -25,11 +25,11 @@ if (existsSync(envPath)) {
 }
 
 const SOCKET_PATH = join(homedir(), '.amber', 'amber.sock');
-const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+const BOT_TOKEN = process.env.DISCORD_TOKEN_AMBER || process.env.DISCORD_BOT_TOKEN;
 const AMBER_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_AMBER;
 
 if (!BOT_TOKEN) {
-  console.error('❌ No DISCORD_BOT_TOKEN found');
+  console.error('❌ No Discord bot token found (set DISCORD_TOKEN_AMBER or DISCORD_BOT_TOKEN)');
   process.exit(1);
 }
 
