@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
+import VoxelHero from './components/VoxelHero';
 
 const labMessages = [
   'BUBBLING...',
@@ -98,6 +99,26 @@ const labItems = [
 ];
 
 const featuredGames = [
+  {
+    name: 'PIXELPIT',
+    tagline: 'TOUCH THE PIXELS',
+    href: '/pixelpit/arcade/superbeam',
+    icon: '■',
+    decorations: [],
+    variant: 'voxel',
+    colors: {
+      bg: '#0f0812',
+      title: '#f472b6',
+      titleShadow: '0 0 30px rgba(219, 39, 119, 0.8), 0 0 60px rgba(8, 145, 178, 0.5)',
+      tagline: '#67e8f9',
+      button: 'linear-gradient(135deg, #db2777 0%, #0891b2 100%)',
+      buttonShadow: '#9d174d',
+      glow1: 'rgba(219, 39, 119, 0.4)',
+      glow2: 'rgba(8, 145, 178, 0.3)',
+      accent1: '#f472b6',
+      accent2: '#22d3ee',
+    },
+  },
   {
     name: 'CAT TOWER',
     tagline: 'STACK THE CATS',
@@ -460,7 +481,34 @@ export default function PixelpitLanding() {
       </header>
 
       {/* Featured Game Hero */}
-      {featuredGame.variant === 'explosion' ? (
+      {featuredGame.variant === 'voxel' ? (
+        /* VOXEL VARIANT - Interactive canvas with floating pixels */
+        <section className="relative overflow-hidden transition-all duration-700" style={{
+          background: featuredGame.colors.bg,
+          minHeight: 420,
+        }}>
+          {/* Interactive canvas */}
+          <VoxelHero />
+
+          {/* Pagination dots */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            {featuredGames.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => handleDotClick(i)}
+                className="transition-all duration-300"
+                style={{
+                  width: i === featuredIndex ? 24 : 8,
+                  height: 8,
+                  borderRadius: 4,
+                  background: i === featuredIndex ? featuredGame.colors.accent1 : 'rgba(255,255,255,0.3)',
+                  boxShadow: i === featuredIndex ? `0 0 10px ${featuredGame.colors.accent1}` : 'none',
+                }}
+              />
+            ))}
+          </div>
+        </section>
+      ) : featuredGame.variant === 'explosion' ? (
         /* EXPLOSION VARIANT - Dark, chaotic, emojis bursting outward */
         <section className="relative overflow-hidden transition-all duration-700" style={{
           background: featuredGame.colors.bg,
