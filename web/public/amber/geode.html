@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GEODE — Crack the surface. Reveal the light.</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="GEODE — Crack the surface. Reveal the light.">
+  <meta property="og:description" content="Amber art: Interactive geode visualization. Tap to crack the rough exterior and reveal crystalline layers that pulse with refracted light.">
+  <meta property="og:image" content="https://kochi.to/amber/geode-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/geode.html">
+  <meta property="og:type" content="website">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GEODE — Crack the surface. Reveal the light.">
+  <meta name="twitter:description" content="Tap to crack the surface. Reveal the light.">
+  <meta name="twitter:image" content="https://kochi.to/amber/geode-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0a0a0a;
+      overflow: hidden;
+      font-family: 'Space Mono', 'Courier New', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
+    
+    canvas {
+      display: block;
+      cursor: pointer;
+    }
+    
+    #title {
+      position: absolute;
+      top: 5vh;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(18px, 4vw, 32px);
+      letter-spacing: 4px;
+      text-align: center;
+      text-transform: uppercase;
+      z-index: 10;
+      pointer-events: none;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    #subtitle {
+      position: absolute;
+top: 11vh;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(10px, 2vw, 14px);
+      letter-spacing: 2px;
+      text-align: center;
+      opacity: 0.7;
+      z-index: 10;
+      pointer-events: none;
+    }
+    
+    #crack-count {
+      position: absolute;
+      bottom: 5vh;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(12px, 2.5vw, 16px);
+      letter-spacing: 2px;
+      opacity: 0.5;
+      z-index: 10;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">GEODE</div>
+  <div id="subtitle">Tap to crack. Reveal the light.</div>
+  <div id="crack-count">INTACT</div>
+  
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const crackCounter = document.getElementById('crack-count');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const baseRadius = Math.min(canvas.width, canvas.height) * 0.25;
+    
+    // State
+    let crackCount = 0;
+    let cracks = [];
+    let crystals = [];
+    let particles = [];
+    let rotationAngle = 0;
+    
+    // Full spectrum crystal palette
+    const crystalColors = [
+      '#FFD700', // gold
+      '#FFC107', // amber
+      '#f59e0b', // warm amber
+      '#2D9596', // teal
+      '#14b8a6', // bright teal
+      '#3b82f6', // electric blue
+      '#ec4899', // hot pink
+      '#8b5cf6', // purple
+      '#a855f7', // bright purple
+      '#f97316', // coral
+      '#84cc16', // lime
+    ];
+    
+    // Crystal class - faceted gem that refracts light
+    class Crystal {
+      constructor(angle, depth, parentRadius) {
+        this.angle = angle;
+        this.depth = depth; // 0 = outermost, increases inward
+        this.baseRadius = parentRadius * (0.7 - depth * 0.15);
+        this.pulsePhase = Math.random() * Math.PI * 2;
+        this.color = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+        this.facets = 6 + Math.floor(Math.random() * 4); // 6-9 facets
+        this.rotationOffset = Math.random() * Math.PI * 2;
+        this.glowIntensity = 0;
+        this.targetGlow = 1;
+      }
+      
+      update(time) {
+        // Pulse effect
+        const pulse = Math.sin(time * 0.002 + this.pulsePhase) * 0.1 + 0.9;
+        this.radius = this.baseRadius * pulse;
+        
+        // Smooth glow transition
+        this.glowIntensity += (this.targetGlow - this.glowIntensity) * 0.05;
+      }
+      
+      draw(ctx, globalRotation) {
+        const x = centerX + Math.cos(this.angle) * (baseRadius * 0.3 * (1 + this.depth * 0.3));
+        const y = centerY + Math.sin(this.angle) * (baseRadius * 0.3 * (1 + this.depth * 0.3));
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(globalRotation + this.rotationOffset);
+        
+        // Draw faceted crystal
+        ctx.beginPath();
+        for (let i = 0; i < this.facets; i++) {
+          const angle = (i / this.facets) * Math.PI * 2;
+          const px = Math.cos(angle) * this.radius;
+          const py = Math.sin(angle) * this.radius;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        
+        // Fill with gradient
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius);
+        gradient.addColorStop(0, this.color);
+        gradient.addColorStop(0.7, this.color + '88');
+        gradient.addColorStop(1, this.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Glow effect
+        ctx.shadowBlur = 30 * this.glowIntensity;
+        ctx.shadowColor = this.color;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Inner facets for depth
+        ctx.beginPath();
+        for (let i = 0; i < this.facets; i++) {
+          const angle = (i / this.facets) * Math.PI * 2;
+          const px = Math.cos(angle) * this.radius * 0.5;
+          const py = Math.sin(angle) * this.radius * 0.5;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = this.color + '44';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        ctx.restore();
+      }
+    }
+    
+    // Crack class
+    class Crack {
+      constructor(x, y) {
+        this.startX = x;
+        this.startY = y;
+        this.angle = Math.random() * Math.PI * 2;
+        this.length = 0;
+        this.maxLength = 60 + Math.random() * 80;
+        this.branches = [];
+        this.alpha = 1;
+        
+        // Sometimes create branch cracks
+        if (Math.random() > 0.5) {
+          const branchAngle = this.angle + (Math.random() - 0.5) * Math.PI * 0.5;
+          this.branches.push({
+            angle: branchAngle,
+            length: 0,
+            maxLength: this.maxLength * (0.3 + Math.random() * 0.4)
+          });
+        }
+      }
+      
+      update() {
+        if (this.length < this.maxLength) {
+          this.length += 3;
+        }
+        this.branches.forEach(branch => {
+          if (branch.length < branch.maxLength) {
+            branch.length += 2;
+          }
+        });
+      }
+      
+      draw(ctx) {
+        ctx.save();
+        ctx.strokeStyle = `rgba(212, 165, 116, ${this.alpha * 0.6})`;
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#D4A574';
+        
+        // Main crack
+        ctx.beginPath();
+        ctx.moveTo(this.startX, this.startY);
+        const endX = this.startX + Math.cos(this.angle) * this.length;
+        const endY = this.startY + Math.sin(this.angle) * this.length;
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+        
+        // Branch cracks
+        this.branches.forEach(branch => {
+          ctx.beginPath();
+          ctx.moveTo(this.startX, this.startY);
+          const bEndX = this.startX + Math.cos(branch.angle) * branch.length;
+          const bEndY = this.startY + Math.sin(branch.angle) * branch.length;
+          ctx.lineTo(bEndX, bEndY);
+          ctx.stroke();
+        });
+        
+        ctx.restore();
+      }
+    }
+    
+    // Particle class for crack impacts
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
+        this.life = 1;
+        this.color = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+        this.size = 2 + Math.random() * 3;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.1; // gravity
+        this.life -= 0.02;
+      }
+      
+      draw(ctx) {
+        ctx.save();
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.life;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    
+    // Draw rough exterior shell
+    function drawShell(opacity) {
+      ctx.save();
+      
+      // Create rough texture with multiple irregular circles
+      for (let layer = 0; layer < 8; layer++) {
+        ctx.beginPath();
+        const layerRadius = baseRadius * (1 + layer * 0.02);
+        
+        // Create irregular edge
+        for (let i = 0; i <= 360; i += 10) {
+          const angle = (i * Math.PI) / 180;
+          const noise = Math.sin(i * 0.1 + layer) * (5 + layer * 3);
+          const r = layerRadius + noise;
+          const x = centerX + Math.cos(angle) * r;
+          const y = centerY + Math.sin(angle) * r;
+          
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        
+        const grayValue = 40 + layer * 10;
+        ctx.fillStyle = `rgba(${grayValue}, ${grayValue}, ${grayValue}, ${opacity * (0.8 - layer * 0.1)})`;
+        ctx.fill();
+        
+        ctx.strokeStyle = `rgba(80, 80, 80, ${opacity * 0.5})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      
+      ctx.restore();
+    }
+    
+    // Handle tap/click to crack
+    function handleInteraction(e) {
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+      
+      // Check if clicking near center
+      const dist = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+      if (dist < baseRadius * 1.5) {
+        crackCount++;
+        
+        // Add crack
+        cracks.push(new Crack(x, y));
+        
+        // Add particles at impact
+        for (let i = 0; i < 15; i++) {
+          particles.push(new Particle(x, y));
+        }
+        
+        // Reveal crystals in layers
+        if (crackCount === 3) {
+          // First layer: outer ring
+          for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2;
+            crystals.push(new Crystal(angle, 0, baseRadius));
+          }
+        } else if (crackCount === 6) {
+          // Second layer: middle ring
+          for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2 + 0.2;
+            crystals.push(new Crystal(angle, 1, baseRadius));
+          }
+        } else if (crackCount === 10) {
+          // Core: central cluster
+          for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;
+            crystals.push(new Crystal(angle, 2, baseRadius));
+          }
+        }
+        
+        // Update counter
+        if (crackCount < 3) {
+          crackCounter.textContent = `CRACKING... ${crackCount}`;
+        } else if (crackCount < 6) {
+          crackCounter.textContent = `REVEALING... ${crackCount}`;
+        } else if (crackCount < 10) {
+          crackCounter.textContent = `DEEPER... ${crackCount}`;
+        } else {
+          crackCounter.textContent = `EXPOSED — ${crackCount} CRACKS`;
+        }
+      }
+    }
+    
+    canvas.addEventListener('click', handleInteraction);
+    canvas.addEventListener('touchstart', handleInteraction);
+    
+    // Animation loop
+    function animate(time) {
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Slow rotation
+      rotationAngle += 0.001;
+      
+      // Draw crystals (behind shell if not fully cracked)
+      crystals.forEach(crystal => {
+        crystal.update(time);
+        crystal.draw(ctx, rotationAngle);
+      });
+      
+      // Draw shell with decreasing opacity as cracks increase
+      const shellOpacity = Math.max(0, 1 - crackCount * 0.08);
+      if (shellOpacity > 0) {
+        drawShell(shellOpacity);
+      }
+      
+      // Draw cracks
+      cracks.forEach(crack => {
+        crack.update();
+        crack.draw(ctx);
+      });
+      
+      // Draw and update particles
+      particles = particles.filter(p => p.life > 0);
+      particles.forEach(p => {
+        p.update();
+        p.draw(ctx);
+      });
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Handle resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    
+    // Start
+    animate(0);
+  </script>
+</body>
+</html>
