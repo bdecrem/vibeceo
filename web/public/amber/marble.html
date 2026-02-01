@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MARBLE — Amber</title>
+  
+  <!-- Open Graph / Social -->
+  <meta property="og:title" content="MARBLE">
+  <meta property="og:description" content="Marbles rolling. Soft collisions. Gentle bells.">
+  <meta property="og:image" content="https://kochi.to/amber/marble-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/marble.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MARBLE">
+  <meta name="twitter:description" content="Marbles rolling. Soft collisions. Gentle bells.">
+  <meta name="twitter:image" content="https://kochi.to/amber/marble-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Space Mono', monospace;
+      background: #000;
+      color: #D4A574;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+    }
+    
+    canvas {
+      display: block;
+      background: #000;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+    
+    #title {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: 8px;
+      color: #D4A574;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+      margin-bottom: 10px;
+    }
+    
+    #subtitle {
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: rgba(212, 165, 116, 0.6);
+    }
+    
+    #instructions {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      letter-spacing: 1px;
+      color: rgba(212, 165, 116, 0.4);
+      text-align: center;
+    }
+    
+    @media (max-width: 600px) {
+      #title { font-size: 32px; letter-spacing: 4px; }
+      #subtitle { font-size: 12px; }
+      #instructions { font-size: 11px; bottom: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div id="title">MARBLE</div>
+    <div id="subtitle">TAP TO ADD MARBLE</div>
+  </div>
+  
+  <canvas id="canvas"></canvas>
+  
+  <div id="instructions">
+    DRAG TO TILT CHAMBER • WATCH THEM COLLIDE
+  </div>
+
+  <script>
+    // ===== SETUP =====
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    
+window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+    
+    // ===== AUDIO =====
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioStarted = false;
+    
+    // Pentatonic scale in E minor (warm, gentle)
+    const notes = [
+      164.81, // E3
+      196.00, // G3
+      220.00, // A3
+      246.94, // B3
+      293.66, // D4
+      329.63, // E4
+      392.00, // G4
+      440.00  // A4
+    ];
+    
+    function playBell(frequency, velocity) {
+      if (!audioStarted) return;
+      
+      const now = audioCtx.currentTime;
+      
+      // Detuned oscillators for bell-like timbre
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const osc3 = audioCtx.createOscillator();
+      
+      osc1.frequency.value = frequency;
+      osc2.frequency.value = frequency * 2.01; // Slight detune
+      osc3.frequency.value = frequency * 4.02;
+      
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0;
+      gain.gain.linearRampToValueAtTime(velocity * 0.15, now + 0.002);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+      
+      // Filter for warmth
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 1200;
+      filter.Q.value = 1;
+      
+      osc1.connect(gain);
+      osc2.connect(gain);
+      osc3.connect(gain);
+      gain.connect(filter);
+      filter.connect(audioCtx.destination);
+      
+      osc1.start(now);
+      osc2.start(now);
+      osc3.start(now);
+      osc1.stop(now + 1.5);
+      osc2.stop(now + 1.5);
+      osc3.stop(now + 1.5);
+    }
+    
+    // ===== PHYSICS =====
+    class Marble {
+      constructor(x, y, radius) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.mass = radius;
+        this.frequency = notes[Math.floor(Math.random() * notes.length)];
+        
+        // Color from palette
+        const colors = ['#D4A574', '#FFD700', '#2D9596', '#F97316', '#8B5CF6'];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Trail
+        this.trail = [];
+        this.maxTrail = 20;
+      }
+      
+      update(gravity) {
+        // Apply gravity
+        this.vx += gravity.x;
+        this.vy += gravity.y;
+        
+        // Damping (friction)
+        this.vx *= 0.995;
+        this.vy *= 0.995;
+        
+        // Update position
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Trail
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > this.maxTrail) {
+          this.trail.shift();
+        }
+        
+        // Wall collisions with gentle bounce
+        const restitution = 0.7; // Soft bounce
+        
+        if (this.x - this.radius < 0) {
+          this.x = this.radius;
+          this.vx *= -restitution;
+          playBell(this.frequency, Math.abs(this.vx) * 0.2);
+        }
+        if (this.x + this.radius > width) {
+          this.x = width - this.radius;
+          this.vx *= -restitution;
+          playBell(this.frequency, Math.abs(this.vx) * 0.2);
+        }
+        if (this.y - this.radius < 0) {
+          this.y = this.radius;
+          this.vy *= -restitution;
+          playBell(this.frequency, Math.abs(this.vy) * 0.2);
+        }
+        if (this.y + this.radius > height) {
+          this.y = height - this.radius;
+          this.vy *= -restitution;
+          playBell(this.frequency, Math.abs(this.vy) * 0.2);
+        }
+      }
+      
+      draw() {
+        // Trail
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.2;
+        ctx.beginPath();
+        for (let i = 0; i < this.trail.length - 1; i++) {
+          const t = this.trail[i];
+          const alpha = i / this.trail.length * 0.2;
+          ctx.globalAlpha = alpha;
+          ctx.moveTo(t.x, t.y);
+          ctx.lineTo(this.trail[i + 1].x, this.trail[i + 1].y);
+        }
+        ctx.stroke();
+        
+        // Marble body
+        ctx.globalAlpha = 0.8;
+        const gradient = ctx.createRadialGradient(
+          this.x - this.radius * 0.3,
+          this.y - this.radius * 0.3,
+          0,
+          this.x,
+          this.y,
+          this.radius
+        );
+        gradient.addColorStop(0, this.color);
+        gradient.addColorStop(1, '#000');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Glow
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.globalAlpha = 1;
+      }
+    }
+    
+    // ===== COLLISION DETECTION =====
+    function checkCollision(m1, m2) {
+      const dx = m2.x - m1.x;
+      const dy = m2.y - m1.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < m1.radius + m2.radius) {
+        // Resolve overlap
+        const overlap = m1.radius + m2.radius - distance;
+        const nx = dx / distance;
+        const ny = dy / distance;
+        
+        m1.x -= nx * overlap * 0.5;
+        m1.y -= ny * overlap * 0.5;
+        m2.x += nx * overlap * 0.5;
+        m2.y += ny * overlap * 0.5;
+        
+        // Elastic collision (conservation of momentum)
+        const dvx = m2.vx - m1.vx;
+        const dvy = m2.vy - m1.vy;
+        const dot = dvx * nx + dvy * ny;
+        
+        if (dot < 0) return; // Moving apart
+        
+        const collisionScale = 2 * dot / (m1.mass + m2.mass);
+        
+        m1.vx += collisionScale * m2.mass * nx;
+        m1.vy += collisionScale * m2.mass * ny;
+        m2.vx -= collisionScale * m1.mass * nx;
+        m2.vy -= collisionScale * m1.mass * ny;
+        
+        // Sound on collision
+        const impactVelocity = Math.sqrt(dvx * dvx + dvy * dvy);
+        if (impactVelocity > 0.5) {
+          const avgFreq = (m1.frequency + m2.frequency) / 2;
+          playBell(avgFreq, Math.min(impactVelocity * 0.1, 0.5));
+        }
+      }
+    }
+    
+    // ===== SIMULATION =====
+    const marbles = [];
+    const gravity = { x: 0, y: 0.1 }; // Gentle downward gravity
+    
+    // Start with a few marbles
+    for (let i = 0; i < 5; i++) {
+      const radius = 15 + Math.random() * 20;
+      const x = Math.random() * (width - radius * 2) + radius;
+      const y = Math.random() * (height - radius * 2) + radius;
+      marbles.push(new Marble(x, y, radius));
+    }
+    
+    // ===== INTERACTION =====
+    let isDragging = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+    
+    function handleStart(x, y) {
+      if (!audioStarted) {
+        audioCtx.resume();
+        audioStarted = true;
+      }
+      
+      isDragging = true;
+      lastMouseX = x;
+      lastMouseY = y;
+    }
+    
+    function handleMove(x, y) {
+      if (isDragging) {
+        const dx = x - lastMouseX;
+        const dy = y - lastMouseY;
+        
+        // Tilt chamber (adjust gravity)
+        gravity.x = dx * 0.01;
+        gravity.y = 0.1 + dy * 0.01;
+        
+        lastMouseX = x;
+        lastMouseY = y;
+      }
+    }
+    
+    function handleEnd() {
+      isDragging = false;
+      // Reset gravity slowly
+      gravity.x *= 0.95;
+      gravity.y = 0.1 + (gravity.y - 0.1) * 0.95;
+    }
+    
+    function handleTap(x, y) {
+      if (!audioStarted) {
+        audioCtx.resume();
+        audioStarted = true;
+        return;
+      }
+      
+      // Add marble at tap location
+      const radius = 15 + Math.random() * 20;
+      marbles.push(new Marble(x, y, radius));
+      
+      // Play sound
+      playBell(notes[Math.floor(Math.random() * notes.length)], 0.3);
+    }
+    
+    // Mouse events
+    canvas.addEventListener('mousedown', (e) => {
+      handleStart(e.clientX, e.clientY);
+      setTimeout(() => {
+        if (!isDragging) {
+          handleTap(e.clientX, e.clientY);
+        }
+      }, 150);
+    });
+    
+    canvas.addEventListener('mousemove', (e) => {
+      handleMove(e.clientX, e.clientY);
+    });
+    
+    canvas.addEventListener('mouseup', handleEnd);
+    
+    // Touch events
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleStart(touch.clientX, touch.clientY);
+      setTimeout(() => {
+        if (!isDragging) {
+          handleTap(touch.clientX, touch.clientY);
+        }
+      }, 150);
+    });
+    
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        handleMove(touch.clientX, touch.clientY);
+      }
+    });
+    
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      handleEnd();
+    });
+    
+    // ===== ANIMATION =====
+    function animate() {
+      // Clear with fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update marbles
+      for (let marble of marbles) {
+        marble.update(gravity);
+      }
+      
+      // Check collisions
+      for (let i = 0; i < marbles.length; i++) {
+        for (let j = i + 1; j < marbles.length; j++) {
+          checkCollision(marbles[i], marbles[j]);
+        }
+      }
+      
+      // Draw marbles
+      for (let marble of marbles) {
+        marble.draw();
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+  </script>
+</body>
+</html>
