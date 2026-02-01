@@ -1,345 +1,744 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>TRACE — Draw light, make constellations</title>
-  
-  <!-- OpenGraph -->
-  <meta property="og:title" content="TRACE">
-  <meta property="og:description" content="Draw light, make constellations">
-  <meta property="og:image" content="https://intheamber.com/amber/trace-og.png">
-  <meta property="og:url" content="https://kochi.to/amber/trace.html">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://intheamber.com/amber/trace-og.png">
-  
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body {
-      background: #000;
-      overflow: hidden;
-      font-family: 'Space Mono', monospace;
-      color: #D4A574;
-      touch-action: none;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-    
-    canvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-      cursor: crosshair;
-      touch-action: none;
-    }
-    
-    #ui {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      right: 20px;
-      pointer-events: none;
-      z-index: 10;
-    }
-    
-    #title {
-      font-size: 14px;
-      letter-spacing: 2px;
-      color: #D4A574;
-      opacity: 0.6;
-      text-transform: uppercase;
-    }
-    
-    #count {
-      font-size: 12px;
-      color: #2D9596;
-      margin-top: 8px;
-      opacity: 0.8;
-    }
-    
-    #instructions {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 11px;
-      color: #D4A574;
-      opacity: 0.4;
-      text-align: center;
-      pointer-events: none;
-      transition: opacity 0.5s;
-    }
-    
-    #instructions.hide {
-      opacity: 0;
-    }
-    
-    #clear {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 10px 20px;
-      background: rgba(212, 165, 116, 0.1);
-      border: 1px solid #D4A574;
-      color: #D4A574;
-      font-family: 'Space Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 1px;
-      cursor: pointer;
-      pointer-events: all;
-      opacity: 0.6;
-      transition: all 0.3s;
-      text-transform: uppercase;
-    }
-    
-    #clear:hover {
-      opacity: 1;
-      background: rgba(212, 165, 116, 0.2);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Trace</title>
+    <meta property="og:title" content="Trace">
+    <meta property="og:description" content="Stay ahead of entropy. Collect insights. See how far thought can travel.">
+    <meta property="og:image" content="https://kochi.to/amber/trace-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(180deg, #2d1810 0%, #1a0f08 100%);
+            overflow: hidden;
+            font-family: 'Georgia', serif;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: transparent;
+            touch-action: none;
+        }
+
+        #ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #d4af37;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #distance {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #d4af37;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        #insights {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            color: #ffd700;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 15, 8, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #d4af37;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #startScreen h1, #gameOverScreen h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        #startScreen .tagline {
+            font-size: 16px;
+            margin-bottom: 30px;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
+        #startScreen .instructions, #gameOverScreen .instructions {
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .button {
+            padding: 12px 24px;
+            background: transparent;
+            border: 2px solid #d4af37;
+            color: #d4af37;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            pointer-events: all;
+            font-family: 'Georgia', serif;
+        }
+
+        .button:hover {
+            background: rgba(212, 175, 55, 0.2);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+        }
+
+        #gameOverScreen {
+            display: none;
+        }
+
+        #finalScore, #highScore {
+            font-size: 24px;
+            margin: 10px 0;
+        }
+
+        #highScore {
+            opacity: 0.7;
+            font-size: 18px;
+        }
+
+        .crystallization-notice {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #d4af37;
+            font-size: 20px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+            z-index: 150;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.8);
+        }
+
+        .crystallization-notice.active {
+            opacity: 1;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            #startScreen h1, #gameOverScreen h1 {
+                font-size: 28px;
+            }
+            
+            #score, #distance {
+                font-size: 16px;
+            }
+            
+            .button {
+                padding: 16px 32px;
+                font-size: 18px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
-  
-  <div id="ui">
-    <div id="title">TRACE</div>
-    <div id="count">0 stars</div>
-  </div>
-  
-  <div id="instructions">
-    Draw with your finger. Watch the stars appear.
-  </div>
-  
-  <button id="clear">Clear</button>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui">
+        <div id="score">0</div>
+        <div id="distance">0m</div>
+        <div id="insights">💡 0</div>
+    </div>
 
-  <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const countEl = document.getElementById('count');
-    const instructionsEl = document.getElementById('instructions');
-    const clearBtn = document.getElementById('clear');
-    
-    // Set canvas size
-    function resize() {
-      canvas.width = window.innerWidth * window.devicePixelRatio;
-      canvas.height = window.innerHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    }
-    resize();
-    window.addEventListener('resize', resize);
-    
-    // Drawing state
-    let isDrawing = false;
-    let lastX = 0;
-    let lastY = 0;
-    let points = [];
-    let stars = [];
-    let starCount = 0;
-    
-    // Audio context for sound
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    function playTone(freq = 440, duration = 0.05) {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-      
-      osc.start(audioCtx.currentTime);
-      osc.stop(audioCtx.currentTime + duration);
-    }
-    
-    // Get pointer position
-    function getPointer(e) {
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-      return { x, y };
-    }
-    
-    // Start drawing
-    function startDrawing(e) {
-      e.preventDefault();
-      isDrawing = true;
-      const pos = getPointer(e);
-      lastX = pos.x;
-      lastY = pos.y;
-      points = [{ x: pos.x, y: pos.y, age: 0 }];
-      
-      // Hide instructions after first interaction
-      instructionsEl.classList.add('hide');
-    }
-    
-    // Draw
-    function draw(e) {
-      if (!isDrawing) return;
-      e.preventDefault();
-      
-      const pos = getPointer(e);
-      const dx = pos.x - lastX;
-      const dy = pos.y - lastY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      
-      // Add points along the line
-      if (dist > 2) {
-        const steps = Math.ceil(dist / 2);
-        for (let i = 0; i < steps; i++) {
-          const t = i / steps;
-          const x = lastX + dx * t;
-          const y = lastY + dy * t;
-          points.push({ x, y, age: 0 });
-          
-          // Occasionally spawn a star
-          if (Math.random() < 0.1) {
-            createStar(x, y);
-          }
+    <div class="crystallization-notice" id="crystalNotice">
+        Order emerges from chaos...
+    </div>
+
+    <div id="startScreen">
+        <h1>TRACE</h1>
+        <div class="tagline">Stay ahead of entropy. Collect insights. See how far thought can travel.</div>
+        <div class="instructions">
+            You are a thought racing through knowledge.<br>
+            Tap to jump. Hold for higher jumps.<br>
+            Avoid crystalline barriers. Collect golden insights.<br>
+            Your death teaches future players.
+        </div>
+        <button class="button" onclick="startGame()">Begin Thinking</button>
+    </div>
+
+    <div id="gameOverScreen">
+        <h1>Entropy Wins</h1>
+        <div id="finalScore">Distance: 0m</div>
+        <div id="finalInsights">Insights: 0</div>
+        <div id="highScore">Best: 0m</div>
+        <div class="instructions">
+            Your trace joins the collective wisdom.<br>
+            Future thoughts will learn from your path.
+        </div>
+        <button class="button" onclick="startGame()">Think Again</button>
+    </div>
+
+    <script src="./trace-game-logic.js"></script>
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game instance
+        const game = TraceGame;
+        
+        // Responsive canvas sizing
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
         
-        lastX = pos.x;
-        lastY = pos.y;
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // High score persistence
+        let highScore = localStorage.getItem('traceHighScore') || 0;
+        let highInsights = localStorage.getItem('traceHighInsights') || 0;
+
+        // Visual effects state
+        const particles = [];
+        const trailParticles = [];
+        const ghostTrails = [];
         
-        // Play tone based on y position
-        const freq = 200 + (1 - pos.y / window.innerHeight) * 400;
-        playTone(freq, 0.03);
-      }
-    }
-    
-    // Stop drawing
-    function stopDrawing(e) {
-      if (!isDrawing) return;
-      e.preventDefault();
-      isDrawing = false;
-      
-      // Convert remaining points to stars
-      points.forEach(p => {
-        if (Math.random() < 0.3) {
-          createStar(p.x, p.y);
+        // Colors
+        const colors = {
+            thought: '#d4af37',
+            trail: 'rgba(212, 175, 55, 0.6)',
+            obstacle: {
+                spike: 'rgba(212, 175, 55, 0.4)',
+                crystal: 'rgba(212, 175, 55, 0.6)',
+                barrier: 'rgba(212, 175, 55, 0.3)',
+                floating: 'rgba(212, 175, 55, 0.5)'
+            },
+            insight: '#ffd700',
+            caution: 'rgba(255, 100, 100, 0.3)',
+            ghost: 'rgba(212, 175, 55, 0.2)',
+            crystallization: 'rgba(212, 175, 55, 0.8)',
+            background: {
+                start: '#2d1810',
+                end: '#1a0f08'
+            }
+        };
+
+        // Coordinate conversion helpers
+        function normalizeToCanvas(x, y) {
+            return [x * canvas.width, y * canvas.height];
         }
-      });
-      
-      points = [];
-    }
-    
-    // Create a star
-    function createStar(x, y) {
-      const size = 1 + Math.random() * 3;
-      const brightness = 0.5 + Math.random() * 0.5;
-      const twinkleSpeed = 0.5 + Math.random() * 1.5;
-      const color = Math.random() < 0.7 ? '#D4A574' : '#2D9596';
-      
-      stars.push({
-        x, y, size, brightness, twinkleSpeed, color,
-        age: 0,
-        maxAge: 300 + Math.random() * 200,
-        vx: (Math.random() - 0.5) * 0.2,
-        vy: (Math.random() - 0.5) * 0.2
-      });
-      
-      starCount++;
-      countEl.textContent = `${starCount} star${starCount === 1 ? '' : 's'}`;
-      
-      // Play a little chime
-      const freq = 800 + Math.random() * 400;
-      playTone(freq, 0.05);
-    }
-    
-    // Animation loop
-    function animate() {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw active trace
-      if (points.length > 0) {
-        ctx.strokeStyle = '#D4A574';
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        
-        ctx.beginPath();
-        points.forEach((p, i) => {
-          if (i === 0) {
-            ctx.moveTo(p.x, p.y);
-          } else {
-            ctx.lineTo(p.x, p.y);
-          }
-          p.age++;
+
+        function canvasToNormalized(x, y) {
+            return [x / canvas.width, y / canvas.height];
+        }
+
+        // Create particle
+        function createParticle(x, y, vx = 0, vy = 0, life = 60, color = colors.thought, size = 2) {
+            particles.push({
+                x, y, vx, vy, life, maxLife: life, color, size
+            });
+        }
+
+        // Create trail particle
+        function createTrailParticle(x, y) {
+            trailParticles.push({
+                x, y,
+                life: 30,
+                maxLife: 30
+            });
+        }
+
+        // Update particles
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.life--;
+                
+                if (particle.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            for (let i = trailParticles.length - 1; i >= 0; i--) {
+                const trail = trailParticles[i];
+                trail.life--;
+                
+                if (trail.life <= 0) {
+                    trailParticles.splice(i, 1);
+                }
+            }
+        }
+
+        // Render background gradient
+        function renderBackground() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, colors.background.start);
+            gradient.addColorStop(1, colors.background.end);
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Render caution fields (stigmergy)
+        function renderCautionFields() {
+            const cautionFields = game.getCautionFields();
+            const gameState = game.getState();
+            
+            cautionFields.forEach(field => {
+                const fieldX = (field.x - gameState.distance) / 100; // Convert to relative position
+                if (fieldX > -0.2 && fieldX < 1.2) {
+                    const [canvasX] = normalizeToCanvas(fieldX, 0);
+                    const intensity = Math.min(field.intensity / 5, 1);
+                    
+                    // Subtle darkening where many died
+                    ctx.fillStyle = `rgba(0, 0, 0, ${intensity * 0.3})`;
+                    ctx.fillRect(canvasX - 50, 0, 100, canvas.height);
+                }
+            });
+        }
+
+        // Render ghost traces (faint guides from past players)
+        function renderGhostTraces() {
+            const ghosts = game.getGhostTraces();
+            const gameState = game.getState();
+            
+            // Only show recent, relevant ghost traces
+            const relevantGhosts = ghosts
+                .filter(ghost => Math.abs(ghost.x - gameState.distance) < 200)
+                .slice(-3); // Last 3 relevant ghosts
+            
+            ctx.strokeStyle = colors.ghost;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.3;
+            
+            relevantGhosts.forEach(ghost => {
+                if (ghost.trace && ghost.trace.length > 1) {
+                    ctx.beginPath();
+                    
+                    for (let i = 0; i < ghost.trace.length - 1; i++) {
+                        const current = ghost.trace[i];
+                        const next = ghost.trace[i + 1];
+                        
+                        const relativeX1 = (current.x - gameState.distance) / 100;
+                        const relativeX2 = (next.x - gameState.distance) / 100;
+                        
+                        if (relativeX1 > -0.2 && relativeX1 < 1.2) {
+                            const [canvasX1, canvasY1] = normalizeToCanvas(relativeX1, current.y);
+                            const [canvasX2, canvasY2] = normalizeToCanvas(relativeX2, next.y);
+                            
+                            if (i === 0) ctx.moveTo(canvasX1, canvasY1);
+                            ctx.lineTo(canvasX2, canvasY2);
+                        }
+                    }
+                    
+                    ctx.stroke();
+                }
+            });
+            
+            ctx.globalAlpha = 1;
+        }
+
+        // Render player (the thought orb)
+        function renderPlayer() {
+            const gameState = game.getState();
+            const [playerX, playerY] = normalizeToCanvas(
+                game.CONSTANTS.PLAYER_X,
+                gameState.playerY
+            );
+            const playerRadius = game.CONSTANTS.PLAYER_SIZE * canvas.width;
+
+            // Main glow
+            const gradient = ctx.createRadialGradient(
+                playerX, playerY, 0,
+                playerX, playerY, playerRadius * 2
+            );
+            gradient.addColorStop(0, colors.thought);
+            gradient.addColorStop(0.7, 'rgba(212, 175, 55, 0.6)');
+            gradient.addColorStop(1, 'rgba(212, 175, 55, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(playerX, playerY, playerRadius * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Core orb
+            ctx.fillStyle = colors.thought;
+            ctx.beginPath();
+            ctx.arc(playerX, playerY, playerRadius * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Create trail particles
+            if (Math.random() < 0.4) {
+                createTrailParticle(
+                    playerX + (Math.random() - 0.5) * playerRadius,
+                    playerY + (Math.random() - 0.5) * playerRadius
+                );
+            }
+        }
+
+        // Render player trail
+        function renderTrail() {
+            ctx.strokeStyle = colors.trail;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            
+            if (trailParticles.length > 1) {
+                ctx.beginPath();
+                
+                for (let i = 0; i < trailParticles.length; i++) {
+                    const trail = trailParticles[i];
+                    const alpha = trail.life / trail.maxLife;
+                    
+                    ctx.globalAlpha = alpha * 0.6;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(trail.x, trail.y);
+                    } else {
+                        ctx.lineTo(trail.x, trail.y);
+                    }
+                }
+                
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // Render obstacles
+        function renderObstacles() {
+            const gameState = game.getState();
+            
+            gameState.obstacles.forEach(obstacle => {
+                const [obsX, obsY] = normalizeToCanvas(obstacle.x, obstacle.y);
+                const [obsWidth, obsHeight] = normalizeToCanvas(obstacle.width, obstacle.height);
+                
+                const color = colors.obstacle[obstacle.type] || colors.obstacle.crystal;
+                
+                if (obstacle.isPattern) {
+                    // Crystallization pattern - more beautiful
+                    ctx.strokeStyle = colors.crystallization;
+                    ctx.fillStyle = 'rgba(212, 175, 55, 0.2)';
+                    ctx.lineWidth = 3;
+                } else {
+                    ctx.strokeStyle = color;
+                    ctx.fillStyle = color.replace('0.', '0.1');
+                    ctx.lineWidth = 2;
+                }
+
+                // Draw crystalline shape
+                if (obstacle.type === 'crystal' || obstacle.isPattern) {
+                    ctx.beginPath();
+                    ctx.moveTo(obsX, obsY);
+                    ctx.lineTo(obsX + obsWidth * 0.5, obsY - obsHeight);
+                    ctx.lineTo(obsX + obsWidth, obsY);
+                    ctx.lineTo(obsX + obsWidth * 0.7, obsY);
+                    ctx.lineTo(obsX + obsWidth * 0.3, obsY);
+                    ctx.closePath();
+                } else if (obstacle.type === 'spike') {
+                    ctx.beginPath();
+                    ctx.moveTo(obsX, obsY);
+                    ctx.lineTo(obsX + obsWidth * 0.5, obsY - obsHeight);
+                    ctx.lineTo(obsX + obsWidth, obsY);
+                    ctx.closePath();
+                } else {
+                    // Barrier or floating
+                    ctx.fillRect(obsX, obsY - obsHeight, obsWidth, obsHeight);
+                    ctx.strokeRect(obsX, obsY - obsHeight, obsWidth, obsHeight);
+                    continue;
+                }
+                
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+
+        // Render insights
+        function renderInsights() {
+            const gameState = game.getState();
+            
+            gameState.collectibles.forEach(collectible => {
+                if (collectible.type !== 'insight') return;
+                
+                const [insightX, insightY] = normalizeToCanvas(collectible.x, collectible.y);
+                const radius = collectible.radius * canvas.width;
+                
+                // Pulsing glow
+                const time = Date.now() * 0.005;
+                const glowSize = radius * (1.5 + Math.sin(time) * 0.3);
+                
+                const gradient = ctx.createRadialGradient(
+                    insightX, insightY, 0,
+                    insightX, insightY, glowSize
+                );
+                gradient.addColorStop(0, colors.insight);
+                gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(insightX, insightY, glowSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Core
+                ctx.fillStyle = colors.insight;
+                ctx.beginPath();
+                ctx.arc(insightX, insightY, radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Render particles
+        function renderParticles() {
+            particles.forEach(particle => {
+                const alpha = particle.life / particle.maxLife;
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // Game callbacks
+        game.onDeath((deathData) => {
+            // Death explosion
+            const [playerX, playerY] = normalizeToCanvas(
+                game.CONSTANTS.PLAYER_X,
+                deathData.y
+            );
+            
+            for (let i = 0; i < 20; i++) {
+                createParticle(
+                    playerX,
+                    playerY,
+                    (Math.random() - 0.5) * 12,
+                    (Math.random() - 0.5) * 12,
+                    60 + Math.random() * 40,
+                    colors.thought,
+                    3 + Math.random() * 3
+                );
+            }
+
+            // Save stigmergy data
+            const stigmergyData = {
+                ghostTraces: game.getGhostTraces(),
+                cautionFields: game.getCautionFields()
+            };
+            localStorage.setItem('traceStigmergyData', JSON.stringify(stigmergyData));
+
+            // Show game over
+            gameOver();
         });
-        ctx.stroke();
+
+        game.onInsight((insight) => {
+            // Insight celebration
+            const gameState = game.getState();
+            const [insightX, insightY] = normalizeToCanvas(insight.x, insight.y);
+            
+            for (let i = 0; i < 8; i++) {
+                createParticle(
+                    insightX,
+                    insightY,
+                    (Math.random() - 0.5) * 8,
+                    (Math.random() - 0.5) * 8,
+                    40,
+                    colors.insight,
+                    3
+                );
+            }
+
+            // Update UI
+            updateUI();
+        });
+
+        game.onCrystallization((active) => {
+            const notice = document.getElementById('crystalNotice');
+            if (active) {
+                notice.classList.add('active');
+            } else {
+                notice.classList.remove('active');
+            }
+        });
+
+        // Update UI
+        function updateUI() {
+            const gameState = game.getState();
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('distance').textContent = Math.floor(gameState.distance) + 'm';
+            document.getElementById('insights').textContent = `💡 ${gameState.insights}`;
+        }
+
+        // Start game
+        function startGame() {
+            game.start();
+            
+            // Load stigmergy data
+            const savedData = localStorage.getItem('traceStigmergyData');
+            if (savedData) {
+                try {
+                    game.loadStigmergyData(JSON.parse(savedData));
+                } catch (e) {
+                    console.warn('Could not load stigmergy data');
+                }
+            }
+
+            // Clear effects
+            particles.length = 0;
+            trailParticles.length = 0;
+
+            // Hide screens
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+        }
+
+        // Game over
+        function gameOver() {
+            const gameState = game.getState();
+
+            // Update high scores
+            if (gameState.score > highScore) {
+                highScore = gameState.score;
+                localStorage.setItem('traceHighScore', highScore);
+            }
+            if (gameState.insights > highInsights) {
+                highInsights = gameState.insights;
+                localStorage.setItem('traceHighInsights', highInsights);
+            }
+
+            // Show game over screen
+            document.getElementById('finalScore').textContent = `Distance: ${Math.floor(gameState.distance)}m`;
+            document.getElementById('finalInsights').textContent = `Insights: ${gameState.insights}`;
+            document.getElementById('highScore').textContent = `Best: ${highScore}m`;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+
+        // Input handling
+        let isHolding = false;
         
-        // Remove old points
-        points = points.filter(p => p.age < 60);
-      }
-      
-      // Draw and update stars
-      stars.forEach((star, i) => {
-        star.age++;
-        star.x+= star.vx;
-        star.y += star.vy;
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            game.jump();
+            isHolding = true;
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            game.releaseJump();
+            isHolding = false;
+        });
+
+        // Mouse events for desktop
+        canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            game.jump();
+            isHolding = true;
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            game.releaseJump();
+            isHolding = false;
+        });
+
+        // Keyboard events
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                if (!isHolding) {
+                    game.jump();
+                    isHolding = true;
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                game.releaseJump();
+                isHolding = false;
+            }
+        });
+
+        // Main game loop
+        let lastTime = 0;
         
-        // Twinkle effect
-        const twinkle = Math.sin(star.age * star.twinkleSpeed * 0.05) * 0.5 + 0.5;
-        const alpha = star.brightness * twinkle * (1 - star.age / star.maxAge);
-        
-        // Draw star
-        ctx.fillStyle = star.color;
-        ctx.globalAlpha = alpha;
-        
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw glow
-        const gradient = ctx.createRadialGradient(star.x, star.y, 0, star.x, star.y, star.size * 4);
-        gradient.addColorStop(0, star.color);
-        gradient.addColorStop(1, 'transparent');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.size * 4, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.globalAlpha = 1;
-      });
-      
-      // Remove old stars
-      stars = stars.filter(s => s.age < s.maxAge);
-      
-      requestAnimationFrame(animate);
-    }
-    
-    // Clear canvas
-    clearBtn.addEventListener('click', () => {
-      stars = [];
-      points = [];
-      starCount = 0;
-      countEl.textContent = '0 stars';
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Play clear sound
-      playTone(200, 0.1);
-    });
-    
-    // Event listeners
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDrawing);
-    canvas.addEventListener('mouseleave', stopDrawing);
-    
-    canvas.addEventListener('touchstart', startDrawing);
-    canvas.addEventListener('touchmove', draw);
-    canvas.addEventListener('touchend', stopDrawing);
-    canvas.addEventListener('touchcancel', stopDrawing);
-    
-    // Start animation
-    animate();
-  </script>
+        function gameLoop(currentTime) {
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+
+            // Update game logic
+            game.update(deltaTime);
+            
+            // Handle held jump
+            if (isHolding) {
+                game.holdJump();
+            }
+
+            // Update visuals
+            updateParticles();
+
+            // Clear canvas
+            renderBackground();
+
+            // Render stigmergy elements (background)
+            renderCautionFields();
+            renderGhostTraces();
+
+            // Render game elements
+            renderTrail();
+            renderPlayer();
+            renderObstacles();
+            renderInsights();
+            renderParticles();
+
+            // Update UI
+            updateUI();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Make startGame global for button onclick
+        window.startGame = startGame;
+
+        // Start the game loop
+        requestAnimationFrame(gameLoop);
+    </script>
 </body>
 </html>
