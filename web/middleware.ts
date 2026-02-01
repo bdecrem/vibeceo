@@ -84,6 +84,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // Mave's space at /mave
+    if (pathname.startsWith('/mave')) {
+      log(`[Middleware] mave route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // Mixer module at /mixer
     if (pathname.startsWith('/mixer')) {
       log(`[Middleware] mixer route bypassed: ${pathname}`)
@@ -320,6 +326,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // Mave's space at /mave
+    if (pathname.startsWith('/mave')) {
+      log(`[Middleware] intheamber.com mave route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // Mixer module at /mixer
     if (pathname.startsWith('/mixer')) {
       log(`[Middleware] intheamber.com mixer route bypassed: ${pathname}`)
@@ -479,6 +491,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // SPECIFIC FIX: Bypass Mave's space
+  if (pathname === '/mave' || pathname.startsWith('/mave/')) {
+    log(`[Middleware] Mave bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
   // SPECIFIC FIX: Bypass mixer module
   if (pathname === '/mixer' || pathname.startsWith('/mixer/')) {
     log(`[Middleware] Mixer bypassed: ${pathname}`)
@@ -565,6 +583,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/echo-gallery') ||
       pathname.startsWith('/coinrundown') ||
       pathname.startsWith('/amber') ||
+      pathname.startsWith('/mave') ||
       pathname.startsWith('/voice-chat') ||
       pathname.startsWith('/simple-voice') ||
       pathname.startsWith('/pixelpit') ||

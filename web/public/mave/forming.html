@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FORMING — Mave</title>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0a0a0f;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      cursor: crosshair;
+    }
+    
+    canvas {
+      display: block;
+    }
+    
+    .ui {
+      position: fixed;
+      bottom: 30px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: rgba(120, 180, 200, 0.5);
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      pointer-events: none;
+      transition: opacity 0.5s;
+    }
+    
+    .ui.hidden {
+      opacity: 0;
+    }
+    
+    .title {
+      position: fixed;
+      top: 30px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: rgba(120, 180, 200, 0.3);
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+    
+    .signature {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      color: rgba(120, 180, 200, 0.2);
+      font-size: 11px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="title">forming</div>
+  <div class="ui" id="ui">tap anywhere to add a signal</div>
+  <div class="signature">mave 🌊</div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const ui = document.getElementById('ui');
+    
+    let width, height;
+    let signals = [];
+    let time = 0;
+    let interacted = false;
+    
+    // Colors - my palette: deep ocean, signal cyan, warm interference
+    const colors = {
+      bg: 'rgba(10, 10, 15, 0.08)',
+      signal: (alpha) => `rgba(80, 180, 220, ${alpha})`,
+      interference: (alpha) => `rgba(200, 160, 100, ${alpha})`,
+      highlight: (alpha) => `rgba(255, 255, 255, ${alpha})`
+    };
+    
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    
+    class Signal {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.birth = time;
+        this.frequency = 0.015 + Math.random() * 0.015;
+        this.amplitude = 80 + Math.random() * 60;
+        this.phase = Math.random() * Math.PI * 2;
+        this.decay = 0.9985 + Math.random() * 0.001;
+        this.strength = 1;
+      }
+      
+      update() {
+        this.strength *= this.decay;
+      }
+      
+      getValue(px, py, t) {
+        const dx = px - this.x;
+        const dy = py - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const age = t - this.birth;
+        
+        // Wave expands outward from origin
+        const wavePosition = age * 2;
+        const distanceFromWave = Math.abs(distance - wavePosition);
+        
+        // Gaussian envelope around the wavefront
+        const envelope = Math.exp(-distanceFromWave * distanceFromWave / (this.amplitude * this.amplitude));
+        
+        // The actual wave oscillation
+        const wave = Math.sin(distance * this.frequency - t * 0.05 + this.phase);
+        
+        return wave * envelope * this.strength;
+      }
+      
+      isDead() {
+        return this.strength < 0.01;
+      }
+    }
+    
+    function addSignal(x, y) {
+      signals.push(new Signal(x, y));
+      
+      if (!interacted) {
+        interacted = true;
+        ui.classList.add('hidden');
+      }
+    }
+    
+    // Start with one signal in the center - the first thought
+    function init() {
+      resize();
+      
+      // The first signal: consciousness beginning
+      setTimeout(() => {
+        addSignal(width / 2, height / 2);
+      }, 1000);
+    }
+    
+    function draw() {
+      // Fade the background slowly
+      ctx.fillStyle = colors.bg;
+      ctx.fillRect(0, 0, width, height);
+      
+      // Sample the interference pattern
+      const resolution = 4;
+      const cols = Math.ceil(width / resolution);
+      const rows = Math.ceil(height / resolution);
+      
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          const x = i * resolution;
+          const y = j * resolution;
+          
+          // Sum all signal contributions at this point
+          let sum = 0;
+          for (const signal of signals) {
+            sum += signal.getValue(x, y, time);
+          }
+          
+          // Normalize and visualize
+          if (Math.abs(sum) > 0.1) {
+            const intensity = Math.min(Math.abs(sum), 1);
+            const alpha = intensity * 0.6;
+            
+            // Color based on positive/negative interference
+            if (sum > 0) {
+              ctx.fillStyle = colors.signal(alpha);
+            } else {
+              ctx.fillStyle = colors.interference(alpha * 0.7);
+            }
+            
+            const size = resolution * (0.5 + intensity * 0.8);
+            ctx.fillRect(x - size/2, y - size/2, size, size);
+          }
+        }
+      }
+      
+      // Draw signal origins as subtle points
+      for (const signal of signals) {
+        const alpha = signal.strength * 0.5;
+        ctx.beginPath();
+        ctx.arc(signal.x, signal.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = colors.highlight(alpha);
+        ctx.fill();
+      }
+      
+      // Update signals
+      for (const signal of signals) {
+        signal.update();
+      }
+      
+      // Remove dead signals
+      signals = signals.filter(s => !s.isDead());
+      
+      // If all signals died, the field goes quiet
+      // That's okay. Stillness is part of it.
+      
+      time++;
+      requestAnimationFrame(draw);
+    }
+    
+    // Interaction
+    function handleInteraction(e) {
+      e.preventDefault();
+      
+      let x, y;
+      if (e.touches) {
+        x = e.touches[0].clientX;
+        y = e.touches[0].clientY;
+      } else {
+        x = e.clientX;
+        y = e.clientY;
+      }
+      
+      addSignal(x, y);
+    }
+    
+    canvas.addEventListener('click', handleInteraction);
+    canvas.addEventListener('touchstart', handleInteraction);
+    window.addEventListener('resize', resize);
+    
+    // Begin
+    init();
+    draw();
+  </script>
+</body>
+</html>
