@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>WEAVE — Complete the pattern</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 20px;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+        }
+
+        #subtitle {
+            font-size: 14px;
+            color: #2D9596;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        #loom {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            background: #0D0D0D;
+            border: 2px solid #D4A574;
+            box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+        }
+
+        .warp {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: rgba(212, 165, 116, 0.2);
+            top: 0;
+        }
+
+        .slot {
+            position: absolute;
+            width: 100%;
+            height: 24px;
+            border-radius: 12px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .slot-hint {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .slot.highlight {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .slot.filled {
+            opacity: 1;
+        }
+
+        .slot.filled .slot-hint {
+            display: none;
+        }
+
+        #palette {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 340px;
+        }
+
+        .palette-thread {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            cursor: grab;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border: 3px solid rgba(255,255,255,0.3);
+        }
+
+        .palette-thread:hover {
+            transform: scale(1.1);
+        }
+
+        .palette-thread:active {
+            cursor: grabbing;
+        }
+
+        .palette-thread.used {
+            opacity: 0.2;
+            cursor: default;
+            transform: scale(0.8);
+            pointer-events: none;
+        }
+
+        .palette-thread.dragging {
+            opacity: 0.5;
+            transform: scale(0.9);
+        }
+
+        #drag-preview {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            border: 3px solid rgba(255,255,255,0.5);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+            transform: translate(-50%, -50%);
+        }
+
+        #drag-preview.visible {
+            display: flex;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #888;
+            text-align: center;
+            height: 24px;
+        }
+
+        #level-display {
+            font-size: 12px;
+            color: #FFD700;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+
+        #completion {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        #completion.show {
+            display: flex;
+        }
+
+        #completion-text {
+            font-size: 42px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+            margin-bottom: 15px;
+            animation: glow 2s ease-in-out infinite;
+            text-align: center;
+        }
+
+        #completion-subtitle {
+            font-size: 16px;
+            color: #D4A574;
+            margin-bottom: 30px;
+        }
+
+        #next-btn {
+            padding: 15px 40px;
+            font-size: 16px;
+            font-family: 'Space Mono', monospace;
+            background: #D4A574;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border-radius: 4px;
+        }
+
+        #next-btn:hover {
+            background: #FFD700;
+            transform: scale(1.05);
+        }
+
+        #next-btn:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 40px rgba(255, 215, 0, 0.8); }
+            50% { text-shadow: 0 0 60px rgba(255, 215, 0, 1); }
+        }
+
+        .particle {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        #instructions {
+            font-size: 11px;
+            color: #666;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        @media (max-width: 400px) {
+            #loom {
+                width: 280px;
+                height: 280px;
+            }
+            #title {
+                font-size: 28px;
+            }
+            .palette-thread {
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+            #drag-preview {
+                width: 44px;
+                height: 44px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="level-display">LEVEL 1</div>
+    <div id="title">WEAVE</div>
+    <div id="subtitle">drag threads to matching slots</div>
+    <div id="loom"></div>
+    <div id="palette"></div>
+    <div id="status"></div>
+    <div id="instructions">drag colors to their matching rows</div>
+
+    <div id="drag-preview"></div>
+
+    <div id="completion">
+        <div id="completion-text">Pattern Complete</div>
+        <div id="completion-subtitle">beautifully woven</div>
+        <button id="next-btn">NEXT PATTERN</button>
+    </div>
+
+    <script>
+        const loom = document.getElementById('loom');
+        const palette = document.getElementById('palette');
+        const status = document.getElementById('status');
+        const completion = document.getElementById('completion');
+        const nextBtn = document.getElementById('next-btn');
+        const dragPreview = document.getElementById('drag-preview');
+        const levelDisplay = document.getElementById('level-display');
+
+        const colors = [
+            { color: '#FFD700', emoji: '⭐' },
+            { color: '#D4A574', emoji: '🔥' },
+            { color: '#2D9596', emoji: '💧' },
+            { color: '#7B68EE', emoji: '🌸' },
+            { color: '#f97316', emoji: '🍊' },
+            { color: '#ec4899', emoji: '💝' }
+        ];
+
+        let audioContext;
+        let currentLevel = 1;
+        let slots = [];
+        let pattern = [];
+        let placed = 0;
+
+        // Drag state
+        let isDragging = false;
+        let draggedThread = null;
+        let draggedColor = null;
+        let draggedEmoji = null;
+        let currentHighlightedSlot = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        function playTone(freq, duration = 0.1, type = 'sine') {
+            if (!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.value = freq;
+            osc.type = type;
+            gain.gain.setValueAtTime(0.15, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + duration);
+        }
+
+        function playSuccess() {
+            playTone(523, 0.15);
+            setTimeout(() => playTone(659, 0.15), 100);
+            setTimeout(() => playTone(784, 0.2), 200);
+        }
+
+        function playLevelComplete() {
+            playTone(523, 0.2);
+            setTimeout(() => playTone(659, 0.2), 150);
+            setTimeout(() => playTone(784, 0.2), 300);
+            setTimeout(() => playTone(1047, 0.4), 450);
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.background = color;
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                document.body.appendChild(particle);
+
+                const angle = (Math.PI * 2 * i) / 15;
+                const velocity = 80 + Math.random() * 60;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity;
+
+                let px = x;
+                let py = y;
+                let life = 1;
+
+                function animate() {
+                    life -= 0.025;
+                    if (life <= 0) {
+                        particle.remove();
+                        return;
+                    }
+                    px += vx * 0.016;
+                    py += vy * 0.016 + 1; // slight gravity
+                    particle.style.left = px + 'px';
+                    particle.style.top = py + 'px';
+                    particle.style.opacity = life;
+                    particle.style.transform = `scale(${life})`;
+                    requestAnimationFrame(animate);
+                }
+                requestAnimationFrame(animate);
+            }
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function generatePattern() {
+            const numSlots = Math.min(3 + currentLevel, 6);
+            pattern = [];
+            const availableColors = shuffleArray(colors);
+            for (let i = 0; i < numSlots; i++) {
+                pattern.push(availableColors[i % availableColors.length]);
+            }
+            return pattern;
+        }
+
+        function setupLoom() {
+            loom.innerHTML = '';
+            slots = [];
+            placed = 0;
+
+            levelDisplay.textContent = `LEVEL ${currentLevel}`;
+
+            // Draw warp threads (vertical decorative lines)
+            for (let i = 0; i <= 8; i++) {
+                const warp = document.createElement('div');
+                warp.className = 'warp';
+                warp.style.left = (i * (loom.offsetWidth / 8)) + 'px';
+                loom.appendChild(warp);
+            }
+
+            // Generate pattern and create slots
+            const currentPattern = generatePattern();
+            const slotHeight = 24;
+            const totalHeight = currentPattern.length * slotHeight;
+            const availableHeight = loom.offsetHeight - 40; // padding
+            const spacing = (availableHeight - totalHeight) / (currentPattern.length + 1);
+
+            currentPattern.forEach((colorObj, i) => {
+                const slot = document.createElement('div');
+                slot.className = 'slot';
+                slot.style.top = (20 + spacing + i * (slotHeight + spacing)) + 'px';
+                slot.style.left = '10px';
+                slot.style.width = 'calc(100% - 20px)';
+                slot.style.height = slotHeight + 'px';
+                slot.style.background = colorObj.color + '30'; // 30 = ~19% opacity
+                slot.style.border = `2px dashed ${colorObj.color}60`;
+                slot.dataset.index = i;
+                slot.dataset.color = colorObj.color;
+                slot.dataset.emoji = colorObj.emoji;
+
+                // Add emoji hint on the right
+                const hint = document.createElement('span');
+                hint.className = 'slot-hint';
+                hint.textContent = colorObj.emoji;
+                slot.appendChild(hint);
+
+                loom.appendChild(slot);
+                slots.push(slot);
+            });
+
+            // Create shuffled palette
+            palette.innerHTML = '';
+            const shuffledPattern = shuffleArray(currentPattern);
+            shuffledPattern.forEach((colorObj, i) => {
+                const paletteThread = document.createElement('div');
+                paletteThread.className = 'palette-thread';
+                paletteThread.style.background = colorObj.color;
+                paletteThread.textContent = colorObj.emoji;
+                paletteThread.dataset.color = colorObj.color;
+                paletteThread.dataset.emoji = colorObj.emoji;
+                paletteThread.dataset.index = i;
+
+                // Touch events
+                paletteThread.addEventListener('touchstart', startDrag, { passive: false });
+                paletteThread.addEventListener('mousedown', startDrag);
+
+                palette.appendChild(paletteThread);
+            });
+
+            status.textContent = `${currentPattern.length} threads to weave`;
+        }
+
+        function startDrag(e) {
+            initAudio();
+            if (e.target.classList.contains('used')) return;
+            e.preventDefault();
+
+            const touch = e.touches ? e.touches[0] : e;
+            draggedColor = e.target.dataset.color;
+            draggedEmoji = e.target.dataset.emoji;
+            draggedThread = e.target;
+            isDragging = true;
+
+            // Style the dragged palette item
+            draggedThread.classList.add('dragging');
+
+            // Setup drag preview
+            dragPreview.style.background = draggedColor;
+            dragPreview.textContent = draggedEmoji;
+            dragPreview.style.left = touch.clientX + 'px';
+            dragPreview.style.top = touch.clientY + 'px';
+            dragPreview.classList.add('visible');
+
+            playTone(330, 0.05);
+
+            document.addEventListener('touchmove', drag, { passive: false });
+            document.addEventListener('touchend', endDrag);
+            document.addEventListener('touchcancel', endDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            const touch = e.touches ? e.touches[0] : e;
+
+            // Move drag preview
+            dragPreview.style.left = touch.clientX + 'px';
+            dragPreview.style.top = touch.clientY + 'px';
+
+            // Check for slot hover
+            const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+
+            // Clear previous highlight
+            if (currentHighlightedSlot && currentHighlightedSlot !== elemBelow) {
+                currentHighlightedSlot.classList.remove('highlight');
+                currentHighlightedSlot = null;
+            }
+
+            // Highlight matching slot
+            if (elemBelow && elemBelow.classList.contains('slot') && !elemBelow.classList.contains('filled')) {
+                if (elemBelow.dataset.color === draggedColor) {
+                    elemBelow.classList.add('highlight');
+                    currentHighlightedSlot = elemBelow;
+                }
+            }
+        }
+
+        function endDrag(e) {
+            if (!isDragging) return;
+
+            const touch = e.changedTouches ? e.changedTouches[0] : e;
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+
+            // Clear highlights
+            if (currentHighlightedSlot) {
+                currentHighlightedSlot.classList.remove('highlight');
+                currentHighlightedSlot = null;
+            }
+
+            // Hide drag preview
+            dragPreview.classList.remove('visible');
+
+            // Reset dragged thread style
+            if (draggedThread) {
+                draggedThread.classList.remove('dragging');
+            }
+
+            if (target && target.classList.contains('slot') && !target.classList.contains('filled')) {
+                const expectedColor = target.dataset.color;
+
+                if (draggedColor === expectedColor) {
+                    // Correct placement!
+                    target.style.background = draggedColor;
+                    target.style.border = 'none';
+                    target.classList.add('filled');
+                    draggedThread.classList.add('used');
+                    placed++;
+
+                    // Particles and sound
+                    const rect = target.getBoundingClientRect();
+                    createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, draggedColor);
+                    playSuccess();
+
+                    // Update status
+                    const remaining = pattern.length - placed;
+                    status.textContent = remaining > 0 ? `${remaining} thread${remaining > 1 ? 's' : ''} remaining` : '';
+
+                    // Check for level complete
+                    if (placed === pattern.length) {
+                        setTimeout(() => {
+                            completion.classList.add('show');
+                            playLevelComplete();
+                        }, 400);
+                    }
+                } else {
+                    // Wrong slot - error feedback
+                    playTone(150, 0.15, 'sawtooth');
+                    target.style.transform = 'translateX(-5px)';
+                    setTimeout(() => {
+                        target.style.transform = 'translateX(5px)';
+                        setTimeout(() => {
+                            target.style.transform = '';
+                        }, 50);
+                    }, 50);
+                }
+            }
+
+            // Reset drag state
+            isDragging = false;
+            draggedThread = null;
+            draggedColor = null;
+            draggedEmoji = null;
+
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('touchend', endDrag);
+            document.removeEventListener('touchcancel', endDrag);
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', endDrag);
+        }
+
+        nextBtn.addEventListener('click', () => {
+            currentLevel++;
+            completion.classList.remove('show');
+            setupLoom();
+            playTone(440, 0.1);
+        });
+
+        // Prevent scrolling on touch
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) e.preventDefault();
+        }, { passive: false });
+
+        // Initialize
+        setupLoom();
+    </script>
+</body>
+</html>
