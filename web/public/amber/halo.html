@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HALO — Touch the rings. Wake the drones.</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="HALO — Touch the rings. Wake the drones.">
+  <meta property="og:description" content="A circular drone machine. Five luminous rings form a soft chord. Touch to wake them.">
+  <meta property="og:image" content="https://kochi.to/amber/halo-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/halo.html">
+  <meta name="twitter:card" content="summary_large_image">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+      font-family: 'Space Mono', 'Courier New', monospace;
+      color: #D4A574;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+    
+    #canvas {
+      display: block;
+      cursor: pointer;
+    }
+    
+    #title {
+      position: absolute;
+      top: 30px;
+      font-size: 32px;
+      font-weight: bold;
+      letter-spacing: 8px;
+      text-align: center;
+      color: #D4A574;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+      opacity: 0;
+      animation: fadeIn 2s ease-out forwards;
+    }
+    
+    #subtitle {
+      position: absolute;
+      top: 75px;
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-align: center;
+      color: #D4A574;
+      opacity: 0;
+      animation: fadeIn 2s 0.5s ease-out forwards;
+    }
+    
+    #startPrompt {
+      position: absolute;
+      bottom: 40px;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: #D4A574;
+      opacity: 0.6;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">HALO</div>
+  <div id="subtitle">Touch the rings. Wake the drones.</div>
+  <canvas id="canvas"></canvas>
+  <div id="startPrompt">TAP TO BEGIN</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W, H, centerX, centerY;
+    let audioStarted = false;
+    let audioCtx, masterGain;
+    let time = 0;
+    
+    // Resize canvas
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      centerX = W / 2;
+      centerY = H / 2;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Ring system - five rings forming a soft chord
+    // Notes: C3, E3, G3, B3, D4 (Cmaj9 voicing)
+    const rings = [
+      { freq: 130.81, color: '#FFD700', radius: 80, active: false, phase: 0, label: 'C' },   // gold
+      { freq: 164.81, color: '#D4A574', radius: 130, active: false, phase: 0.2, label: 'E' }, // amber
+      { freq: 196.00, color: '#2D9596', radius: 180, active: false, phase: 0.4, label: 'G' }, // teal
+      { freq: 246.94, color: '#7B68EE', radius: 230, active: false, phase: 0.6, label: 'B' }, // violet
+      { freq: 293.66, color: '#f97316', radius: 280, active: false, phase: 0.8, label: 'D' }  // coral
+    ];
+    
+    let oscillators = [];
+    let gainNodes = [];
+    let particles = [];
+    
+    // Particle system
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 0.5 + 0.2;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.life = 1.0;
+        this.decay = 0.01;
+        this.color = color;
+        this.size = Math.random() * 2 + 1;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+      }
+      
+      draw() {
+        ctx.fillStyle = this.color.replace(')', `, ${this.life})`).replace('rgb', 'rgba');
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    // Initialize audio
+    function initAudio() {
+      if (audioStarted) return;
+      audioStarted = true;
+      
+      audioCtx = new AudioContext();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.15;
+      masterGain.connect(audioCtx.destination);
+      
+      // Create oscillator and gain for each ring
+      rings.forEach((ring, i) => {
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = ring.freq;
+        
+        const gain = audioCtx.createGain();
+        gain.gain.value = 0;
+        
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start();
+        
+        oscillators.push(osc);
+        gainNodes.push(gain);
+      });
+      
+      document.getElementById('startPrompt').style.display = 'none';
+    }
+    
+    // Touch/click handling
+    function getPointerPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    }
+    
+    function handlePointer(e) {
+      e.preventDefault();
+      initAudio();
+      
+      const pos = getPointerPos(e);
+      const dx = pos.x - centerX;
+      const dy = pos.y - centerY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      // Check which ring was touched
+      rings.forEach((ring, i) => {
+        const diff = Math.abs(dist - ring.radius);
+        if (diff < 40) {
+          ring.active = !ring.active;
+          
+          // Fade in/out the oscillator
+          const targetGain = ring.active ? 0.25 : 0;
+          gainNodes[i].gain.linearRampToValueAtTime(targetGain, audioCtx.currentTime + 0.5);
+          
+          // Spawn particles
+          if (ring.active) {
+            const angle = Math.atan2(dy, dx);
+            const px = centerX + Math.cos(angle) * ring.radius;
+            const py = centerY + Math.sin(angle) * ring.radius;
+            
+            for (let j = 0; j < 12; j++) {
+              particles.push(new Particle(px, py, ring.color));
+            }
+          }
+        }
+      });
+    }
+    
+    canvas.addEventListener('click', handlePointer);
+    canvas.addEventListener('touchstart', handlePointer);
+    
+    // Draw ring
+    function drawRing(ring, pulse) {
+      const breathe = Math.sin(time * 0.5 + ring.phase) * 0.1 + 1;
+      const r = ring.radius * breathe;
+      
+      // Outer glow
+      ctx.strokeStyle = ring.color;
+      ctx.lineWidth = ring.active ? 4 : 2;
+      ctx.shadowBlur = ring.active ? 30 : 15;
+      ctx.shadowColor = ring.color;
+      ctx.globalAlpha = ring.active ? 0.8 : 0.3;
+      
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Inner fill pulse when active
+      if (ring.active) {
+        const innerAlpha = 0.1 + pulse * 0.1;
+        ctx.globalAlpha = innerAlpha;
+        ctx.fillStyle = ring.color;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Label
+      ctx.globalAlpha = ring.active ? 1 : 0.5;
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = ring.color;
+      ctx.font = '12px "Space Mono"';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ring.label, centerX + r + 20, centerY);
+      
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+    }
+    
+    // Animation loop
+    function animate() {
+      time += 0.016;
+      
+      // Clear with fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, W, H);
+      
+      // Update and draw particles
+      particles = particles.filter(p => p.life > 0);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      
+      // Draw rings
+      const pulse = Math.sin(time * 2) * 0.5 + 0.5;
+      rings.forEach(ring => drawRing(ring, pulse));
+      
+      // Center glow
+      const activeCount = rings.filter(r => r.active).length;
+      if (activeCount > 0) {
+        ctx.globalAlpha = 0.2 * (activeCount / rings.length);
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 60);
+        gradient.addColorStop(0, '#D4A574');
+        gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 60, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+  </script>
+</body>
+</html>
