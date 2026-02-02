@@ -1,363 +1,473 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>COMPLIMENT ROULETTE — Amber</title>
-  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
-  
-  <!-- OpenGraph -->
-  <meta property="og:title" content="COMPLIMENT ROULETTE — Amber">
-  <meta property="og:description" content="A slot machine that dispenses brutally specific compliments">
-  <meta property="og:image" content="https://intheamber.com/amber/compliment-roulette-og.png">
-  <meta property="og:url" content="https://intheamber.com/amber/compliment-roulette.html">
-  <meta property="og:type" content="website">
-  
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="COMPLIMENT ROULETTE — Amber">
-  <meta name="twitter:description" content="A slot machine that dispenses brutally specific compliments">
-  <meta name="twitter:image" content="https://intheamber.com/amber/compliment-roulette-og.png">
-  
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>COMPLIMENT ROULETTE — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
     
-    body {
-      background: #000;
-      color: #D4A574;
-      font-family: 'Courier New', monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
-      overflow: hidden;
-    }
+    <!-- OpenGraph -->
+    <meta property="og:title" content="COMPLIMENT ROULETTE — Amber">
+    <meta property="og:description" content="Spin the wheel. Get a weirdly specific compliment that feels like it was written just for you.">
+    <meta property="og:image" content="https://intheamber.com/amber/compliment-roulette-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/compliment-roulette.html">
+    <meta property="og:type" content="website">
     
-    .machine {
-      text-align: center;
-      max-width: 600px;
-      width: 100%;
-    }
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="COMPLIMENT ROULETTE — Amber">
+    <meta name="twitter:description" content="Spin the wheel. Get a weirdly specific compliment that feels like it was written just for you.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/compliment-roulette-og.png">
     
-    h1 {
-      font-size: clamp(20px, 5vw, 28px);
-      margin-bottom: 10px;
-      letter-spacing: 2px;
-      color: #FFD700;
-    }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
-    .subtitle {
-      font-size: clamp(12px, 3vw, 14px);
-      color: #D4A574;
-      opacity: 0.7;
-      margin-bottom: 40px;
-    }
-    
-    .slots {
-      display: flex;
-      justify-content: center;
-      gap: clamp(10px, 3vw, 20px);
-      margin-bottom: 40px;
-    }
-    
-    .slot {
-      background: #0D0D0D;
-      border: 2px solid #D4A574;
-      border-radius: 8px;
-      width: clamp(80px, 25vw, 150px);
-      height: clamp(100px, 30vw, 180px);
-      overflow: hidden;
-      position: relative;
-      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
-    }
-    
-    .slot-content {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      transition: top 0.05s linear;
-    }
-    
-    .slot-item {
-      height: clamp(100px, 30vw, 180px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: clamp(14px, 4vw, 20px);
-      font-weight: bold;
-      color: #FFD700;
-      padding: 10px;
-      word-wrap: break-word;
-    }
-    
-    .result {
-      font-size: clamp(18px, 5vw, 32px);
-      line-height: 1.4;
-      color: #FFD700;
-      margin-bottom: 40px;
-      min-height: clamp(60px, 20vw, 100px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-    
-    .spin-btn {
-      background: #D4A574;
-      color: #000;
-      border: none;
-      padding: clamp(15px, 4vw, 20px) clamp(40px, 10vw, 60px);
-      font-size: clamp(18px, 5vw, 24px);
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 50px;
-      letter-spacing: 2px;
-      transition: all 0.2s;
-      font-family: 'Courier New', monospace;
-      box-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
-      margin-bottom: 20px;
-      min-height: 44px;
-      min-width: 44px;
-    }
-    
-    .spin-btn:hover {
-      background: #FFD700;
-      box-shadow: 0 0 40px rgba(255, 215, 0, 0.7);
-      transform: scale(1.05);
-    }
-    
-    .spin-btn:active {
-      transform: scale(0.95);
-    }
-    
-    .spin-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .credits {
-      font-size: clamp(10px, 2.5vw, 12px);
-      color: #2D9596;
-      opacity: 0.6;
-    }
-    
-    @keyframes glow {
-      0%, 100% { box-shadow: 0 0 20px rgba(212, 165, 116, 0.3); }
-      50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); }
-    }
-    
-    .slot.spinning {
-      animation: glow 0.5s infinite;
-    }
-  </style>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(28px, 6vw, 48px);
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+        }
+        
+        .subtitle {
+            font-size: clamp(14px, 3vw, 16px);
+            color: #D4A574;
+            opacity: 0.7;
+            margin-bottom: 40px;
+        }
+        
+        #wheel-container {
+            position: relative;
+            width: clamp(280px, 80vw, 400px);
+            height: clamp(280px, 80vw, 400px);
+            margin: 0 auto 40px;
+        }
+        
+        #wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 4px solid #D4A574;
+            position: relative;
+            transition: transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+            background: radial-gradient(circle at center, #0D0D0D 0%, #000 100%);
+            box-shadow: 0 0 40px rgba(212, 165, 116, 0.3), inset 0 0 40px rgba(212, 165, 116, 0.1);
+        }
+        
+        .slice {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: 100% 100%;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            padding: 20px 10px;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(10px, 2.5vw, 14px);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        #pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid #FFD700;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+            z-index: 2;
+        }
+        
+        #center-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #FFD700;
+            border: 3px solid #D4A574;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            z-index: 3;
+        }
+        
+        #spin-button {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(18px, 4vw, 24px);
+            font-weight: 700;
+            letter-spacing: 2px;
+            padding: 20px 40px;
+            background: linear-gradient(135deg, #D4A574 0%, #FFD700 100%);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
+            transition: all 0.3s ease;
+            min-width: 200px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        #spin-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 40px rgba(212, 165, 116, 0.7);
+        }
+        
+        #spin-button:active {
+            transform: translateY(0);
+        }
+        
+        #spin-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #compliment-box {
+            margin-top: 40px;
+            padding: 30px;
+            background: rgba(13, 13, 13, 0.8);
+            border: 2px solid #D4A574;
+            border-radius: 12px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(212, 165, 116, 0.2);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        #compliment-box.show {
+            opacity: 1;
+        }
+        
+        .category-label {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(12px, 3vw, 14px);
+            color: #2D9596;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+        
+        #compliment-text {
+            font-size: clamp(16px, 4vw, 20px);
+            line-height: 1.6;
+            color: #D4A574;
+            font-weight: 500;
+        }
+        
+        #counter {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            color: #D4A574;
+            opacity: 0.5;
+        }
+    </style>
 </head>
 <body>
-  <div class="machine">
-    <h1>COMPLIMENT ROULETTE</h1>
-    <div class="subtitle">tap to receive your weirdly specific validation</div>
+    <canvas id="particles"></canvas>
     
-    <div class="slots">
-      <div class="slot" id="slot1">
-        <div class="slot-content" id="content1"></div>
-      </div>
-      <div class="slot" id="slot2">
-        <div class="slot-content" id="content2"></div>
-      </div>
-      <div class="slot" id="slot3">
-        <div class="slot-content" id="content3"></div>
-      </div>
+    <div class="container">
+        <h1>COMPLIMENT ROULETTE</h1>
+        <p class="subtitle">Spin the wheel. Get a weirdly specific compliment.</p>
+        
+        <div id="wheel-container">
+            <div id="pointer"></div>
+            <div id="wheel">
+                <div class="slice" style="background: #2D9596; transform: rotate(0deg);">FASHION</div>
+                <div class="slice" style="background: #7B68EE; transform: rotate(60deg);">SKILLS</div>
+                <div class="slice" style="background: #D4A574; transform: rotate(120deg);">QUIRKS</div>
+                <div class="slice" style="background: #FFD700; color: #000; transform: rotate(180deg);">CHOICES</div>
+                <div class="slice" style="background: #f97316; transform: rotate(240deg);">ENERGY</div>
+                <div class="slice" style="background: #ec4899; transform: rotate(300deg);">RANDOM</div>
+            </div>
+            <div id="center-circle"></div>
+        </div>
+        
+        <button id="spin-button">SPIN</button>
+        
+        <div id="compliment-box">
+            <div class="category-label" id="category-label"></div>
+            <div id="compliment-text"></div>
+        </div>
     </div>
     
-    <div class="result" id="result">Tap SPIN to begin</div>
+    <div id="counter">COMPLIMENTS: <span id="count">0</span></div>
     
-    <button class="spin-btn" id="spinBtn">SPIN</button>
-    
-    <div class="credits">— Amber</div>
-  </div>
-
-  <script>
-    const qualities = [
-      'anxiety',
-      'skepticism',
-      'overthinking',
-      'procrastination',
-      'perfectionism',
-      'awkwardness',
-      'weirdness',
-      'chaos',
-      'stubbornness',
-      'impatience',
-      'curiosity',
-      'confidence',
-      'indecision',
-      'ambition',
-      'nostalgia',
-      'vulnerability',
-      'intensity',
-      'restraint',
-      'messiness',
-      'precision'
-    ];
-    
-    const verbs = [
-      'is',
-      'remains',
-      'stays',
-      'becomes',
-      'feels',
-      'seems',
-      'appears',
-      'grows',
-      'turns'
-    ];
-    
-    const adjectives = [
-      'impeccable',
-      'delicious',
-      'inspiring',
-      'magnificent',
-      'refreshing',
-      'admirable',
-      'remarkable',
-      'gorgeous',
-      'stunning',
-      'powerful',
-      'haunting',
-      'perfect',
-      'beautiful',
-      'tender',
-      'brave',
-      'honest',
-      'rare',
-      'electric',
-      'pure',
-      'sharp'
-    ];
-    
-    let audioContext;
-    let isSpinning = false;
-    
-    function createSlotContent(words, containerId) {
-      const container = document.getElementById(containerId);
-      container.innerHTML = '';
-      
-      // Create 50 items for smooth spinning
-      for (let i = 0; i < 50; i++) {
-        const div = document.createElement('div');
-        div.className = 'slot-item';
-        div.textContent = words[Math.floor(Math.random() * words.length)];
-        container.appendChild(div);
-      }
-    }
-    
-    function playSound(frequency, duration) {
-      if (!audioContext) return;
-      
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.value = frequency;
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-      
-      oscillator.start();
-      oscillator.stop(audioContext.currentTime + duration);
-    }
-    
-    function spinSlot(slotId, contentId, words, duration) {
-      return new Promise(resolve => {
-        const slot = document.getElementById(slotId);
-        const content = document.getElementById(contentId);
-        const itemHeight = content.children[0].offsetHeight;
+    <script>
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
         
-        slot.classList.add('spinning');
+        const particles = [];
         
-        let position = 0;
-        let speed = 20;
-        const deceleration = speed / (duration / 50);
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.life = 1;
+                this.decay = 0.01;
+                this.size = Math.random() * 3 + 1;
+                this.color = color;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                this.vy += 0.1;
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.life;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
         
-const interval = setInterval(() => {
-          position += speed;
-          content.style.top = `-${position % (itemHeight * 50)}px`;
-          
-          speed = Math.max(1, speed - deceleration);
-          
-          if (speed <= 1) {
-            clearInterval(interval);
+        function createBurst(x, y, color) {
+            for (let i = 0; i < 20; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+        
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Snap to nearest item
-            const finalPosition = Math.floor(position / itemHeight) % 50;
-            content.style.top = `-${finalPosition * itemHeight}px`;
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
             
-            slot.classList.remove('spinning');
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(animateParticles);
+        }
+        
+        animateParticles();
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        const compliments = {
+            FASHION: [
+                "The way you wear that shirt? Like you're challenging the concept of 'matching' itself. Respect.",
+                "You make 'I grabbed whatever was closest' look like a deliberate aesthetic choice.",
+                "Your ability to rock the 'slept in these clothes' look is genuinely impressive.",
+                "The confidence with which you wear socks with sandals could move mountains.",
+                "You're single-handedly bringing back the 'I don't care what I look like' era. Icon.",
+                "That hoodie-sweatpants combo? You're wearing it like it's Paris Fashion Week.",
+                "The way you commit to mismatched socks is the kind of energy I need in my life."
+            ],
+            SKILLS: [
+                "The way you close browser tabs? *Chef's kiss*. Ruthless efficiency.",
+                "Your ability to find the exact typo in 500 lines of code is borderline supernatural.",
+                "You can parallel park on the first try and that makes you better than 90% of humanity.",
+                "The way you remember random trivia from 7 years ago but forget what you had for breakfast? Iconic.",
+                "Your talent for arriving exactly 2 minutes late to every meeting is an artform.",
+"You can open a banana without any of that weird stringy stuff. Teach me your ways.",
+                "The precision with which you microwave popcorn without burning it is genuinely impressive."
+            ],
+            QUIRKS: [
+                "You're the only person who can make eating cereal at 2am look like a lifestyle choice.",
+                "The way you narrate your own life in your head? Shakespeare could never.",
+                "Your ability to remember embarrassing moments from 10 years ago is a superpower (kind of).",
+                "The fact that you say 'sorry' to furniture when you bump into it is weirdly endearing.",
+                "You have a specific playlist for every emotion and honestly that's beautiful.",
+                "The way you organize your downloads folder (or don't) says everything about you. And I love it.",
+                "Your collection of random facts that will never be useful is actually impressive."
+            ],
+            CHOICES: [
+                "Deciding to get out of bed today? Brave. Heroic, even.",
+                "The fact that you're here right now instead of doomscrolling? Growth.",
+                "Starting that hobby you'll probably abandon in 2 weeks? That's the spirit.",
+                "Ordering the same thing every time? Consistency is underrated.",
+                "Staying up way too late for no reason? Living dangerously. I see you.",
+                "Choosing comfort over style today was the right call. Trust.",
+                "The decision to make tea and then forget about it? Relatable icon behavior."
+            ],
+            ENERGY: [
+                "Your energy right now is 'functional chaos' and honestly it's working.",
+                "The vibe you're giving off could power a small city (or at least a desk lamp).",
+                "You're radiating 'I'm tired but I refuse to admit it' energy and I respect the denial.",
+                "Right now you're giving 'protagonist in the middle of their character arc' vibes.",
+                "The way you're holding it together with duct tape and determination? Inspiring.",
+                "Your current mood is 'optimistic nihilism' and that's actually a vibe.",
+                "You're giving 'I've had 3 coffees and I'm ready to fight the sun' energy today."
+            ],
+            RANDOM: [
+                "Your ability to pretend you understand what people are saying in loud bars is Oscar-worthy.",
+                "The way you nod along to music only you can hear? Main character energy.",
+                "You could probably survive a zombie apocalypse just through sheer awkwardness.",
+                "The ratio of tabs open to tabs you'll actually read is poetry.",
+                "You've perfected the 'I'm listening' face while thinking about literally anything else.",
+                "Your talent for finding the one wobbly table in any restaurant is unmatched.",
+                "The way you check your phone for the time and then immediately forget? Same."
+            ]
+        };
+        
+        const categories = ['FASHION', 'SKILLS', 'QUIRKS', 'CHOICES', 'ENERGY', 'RANDOM'];
+        const colors = ['#2D9596', '#7B68EE', '#D4A574', '#FFD700', '#f97316', '#ec4899'];
+        
+        let spinning = false;
+        let count = 0;
+        let audioContext;
+        let audioStarted = false;
+        
+        const wheel = document.getElementById('wheel');
+        const spinButton = document.getElementById('spin-button');
+        const complimentBox = document.getElementById('compliment-box');
+        const complimentText = document.getElementById('compliment-text');
+        const categoryLabel = document.getElementById('category-label');
+        const countDisplay = document.getElementById('count');
+        
+        function playTone(freq, duration, type = 'sine') {
+            if (!audioContext) return;
             
-            // Get the visible word
-            const visibleWord = content.children[finalPosition].textContent;
-            resolve(visibleWord);
-          }
-        }, 50);
-      });
-    }
-    
-    async function spin() {
-      if (isSpinning) return;
-      isSpinning = true;
-      
-      // Initialize audio on first interaction
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      
-      const spinBtn = document.getElementById('spinBtn');
-      const result = document.getElementById('result');
-      
-      spinBtn.disabled = true;
-      result.textContent = '...';
-      
-      playSound(400, 0.1);
-      
-      // Spin each slot with staggered timing
-      const [quality, verb, adjective] = await Promise.all([
-        spinSlot('slot1', 'content1', qualities, 2000),
-        spinSlot('slot2', 'content2', verbs, 2500),
-        spinSlot('slot3', 'content3', adjectives, 3000)
-      ]);
-      
-      // Play completion sound
-      playSound(800, 0.2);
-      
-      // Show result
-      result.textContent = `Your ${quality} ${verb} ${adjective}`;
-      
-      spinBtn.disabled = false;
-      isSpinning = false;
-    }
-    
-    // Initialize
-    createSlotContent(qualities, 'content1');
-    createSlotContent(verbs, 'content2');
-    createSlotContent(adjectives, 'content3');
-    
-    document.getElementById('spinBtn').addEventListener('click', spin);
-    
-    // Allow tap anywhere to spin (for mobile)
-    document.addEventListener('click', (e) => {
-      if (e.target.id !== 'spinBtn' && !isSpinning) {
-        spin();
-      }
-    });
-  </script>
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.value = freq;
+            osc.type = type;
+            
+            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + duration);
+        }
+        
+        function initAudio() {
+            if (!audioStarted) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                audioStarted = true;
+            }
+        }
+        
+        spinButton.addEventListener('click', () => {
+            if (spinning) return;
+            
+            initAudio();
+            spinning = true;
+            spinButton.disabled = true;
+            complimentBox.classList.remove('show');
+            
+            // Random spins (5-8 full rotations) plus landing position
+            const spins = 5 + Math.random() * 3;
+            const categoryIndex = Math.floor(Math.random() * 6);
+            const categoryAngle = categoryIndex * 60;
+            const randomOffset = Math.random() * 50 - 25; // ±25 degrees within slice
+            const totalRotation = (spins * 360) + categoryAngle + randomOffset;
+            
+            wheel.style.transform = `rotate(${totalRotation}deg)`;
+            
+            // Spinning sound
+            if (audioContext) {
+                for (let i = 0; i < 20; i++) {
+                    setTimeout(() => {
+                        playTone(200 + i * 20, 0.05, 'triangle');
+                    }, i * 100);
+                }
+            }
+            
+            setTimeout(() => {
+                // Landing sound
+                if (audioContext) {
+                    playTone(440, 0.2, 'sine');
+                    setTimeout(() => playTone(554, 0.3, 'sine'), 100);
+                }
+                
+                // Show compliment
+                const category = categories[categoryIndex];
+                const complimentsList = compliments[category];
+                const compliment = complimentsList[Math.floor(Math.random() * complimentsList.length)];
+                
+                categoryLabel.textContent = category;
+                complimentText.textContent = compliment;
+                complimentBox.classList.add('show');
+                
+                // Particle burst
+                const rect = wheel.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + 30; // Near pointer
+                createBurst(centerX, centerY, colors[categoryIndex]);
+                
+                count++;
+                countDisplay.textContent = count;
+                
+                spinning = false;
+                spinButton.disabled = false;
+            }, 3000);
+        });
+    </script>
 </body>
 </html>
