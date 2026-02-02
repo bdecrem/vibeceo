@@ -120,6 +120,7 @@
     let levelUpPulse = 0;
     let slowMo = 1;
     let slowMoTimer = 0;
+    let deathPauseTimer = 0; // Freeze after slow-mo before game over
     
     // Timing
     let lastTime = 0;
@@ -455,6 +456,7 @@
       levelUpPulse = 0;
       slowMo = 1;
       slowMoTimer = 0;
+      deathPauseTimer = 0;
       spawnTimer = 0;
       sundropTimer = 0;
       beatCount = 0;
@@ -558,19 +560,28 @@
     
     // ─── UPDATE ─────────────────────────────────────────────────────
     function update(dt) {
-      if (gameState !== 'playing') return;
-      
-      // Slow motion
-      if (slowMoTimer > 0) {
-        slowMoTimer -= dt;
-        slowMo = 0.3;
-        if (slowMoTimer <= 0) {
-          slowMo = 1;
+      // Death pause - freeze everything for 400ms after slow-mo
+      if (deathPauseTimer > 0) {
+        deathPauseTimer -= dt;
+        if (deathPauseTimer <= 0) {
           gameState = 'dead';
           if (distance > highScore) {
             highScore = Math.floor(distance);
             localStorage.setItem('sproutrun-high', highScore.toString());
           }
+        }
+        return; // Freeze all updates during pause
+      }
+      
+      if (gameState !== 'playing') return;
+      
+      // Slow motion death sequence
+      if (slowMoTimer > 0) {
+        slowMoTimer -= dt;
+        slowMo = 0.3;
+        if (slowMoTimer <= 0) {
+          slowMo = 1;
+          deathPauseTimer = 0.4; // 400ms freeze before game over
         }
       }
       
