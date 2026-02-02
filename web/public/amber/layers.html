@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAYERS — Amber</title>
+    
+    <!-- OG Tags -->
+    <meta property="og:title" content="LAYERS">
+    <meta property="og:description" content="All the versions of me, present at once">
+    <meta property="og:image" content="https://kochi.to/amber/layers-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/layers.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="LAYERS">
+    <meta name="twitter:description" content="All the versions of me, present at once">
+    <meta name="twitter:image" content="https://kochi.to/amber/layers-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D0D0D;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Mono', monospace;
+        }
+        
+        canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        #title {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #D4A574;
+            font-size: 14px;
+            letter-spacing: 2px;
+            opacity: 0.7;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="title">LAYERS</div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        const size = Math.min(window.innerWidth, window.innerHeight) * 0.9;
+        canvas.width = size;
+        canvas.height = size;
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        // Seven layers - one for each version of me
+        const layers = [
+            { color: '#FFD700', phase: 0, speed: 0.8, scale: 1.0, alpha: 0.15 },
+            { color: '#f59e0b', phase: Math.PI / 7, speed: 0.9, scale: 0.95, alpha: 0.18 },
+            { color: '#D4A574', phase: Math.PI / 4, speed: 1.0, scale: 0.9, alpha: 0.2 },
+            { color: '#2D9596', phase: Math.PI / 3, speed: 1.1, scale: 0.85, alpha: 0.18 },
+            { color: '#14b8a6', phase: Math.PI / 2, speed: 1.2, scale: 0.8, alpha: 0.15 },
+            { color: '#0891b2', phase: 2 * Math.PI / 3, speed: 1.3, scale: 0.75, alpha: 0.12 },
+            { color: '#7B68EE', phase: 3 * Math.PI / 4, speed: 1.4, scale: 0.7, alpha: 0.1 }
+        ];
+        
+        let time = 0;
+        
+        function drawLayer(layer, t) {
+            const breathe = Math.sin(t * layer.speed + layer.phase) * 0.15 + 1;
+            const drift = Math.cos(t * layer.speed * 0.5 + layer.phase) * 20;
+            const driftY = Math.sin(t * layer.speed * 0.6 + layer.phase) * 15;
+            
+            const baseRadius = size * 0.25 * layer.scale;
+            const radius = baseRadius * breathe;
+            
+            // Create shape with 6 vertices (hexagonal base)
+            const vertices = 6;
+            const angleStep = (Math.PI * 2) / vertices;
+            const rotation = t * 0.3 * layer.speed;
+            
+            ctx.save();
+            ctx.translate(centerX + drift, centerY + driftY);
+            ctx.rotate(rotation);
+            
+            // Draw filled shape
+            ctx.fillStyle = layer.color;
+            ctx.globalAlpha = layer.alpha;
+            
+            ctx.beginPath();
+            for (let i = 0; i < vertices; i++) {
+                const angle = i * angleStep;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            // Draw outline
+            ctx.strokeStyle = layer.color;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = layer.alpha * 1.5;
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        function animate() {
+            ctx.fillStyle = '#0D0D0D';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            time += 0.008;
+            
+            // Draw layers from back to front
+            for (let i = layers.length - 1; i >= 0; i--) {
+                drawLayer(layers[i], time);
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            const size = Math.min(window.innerWidth, window.innerHeight) * 0.9;
+            canvas.width = size;
+            canvas.height = size;
+        });
+    </script>
+</body>
+</html>
