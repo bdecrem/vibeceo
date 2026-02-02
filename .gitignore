@@ -154,3 +154,5 @@ ngrok.yml
 sms-bot/ENV.sat
 .env.local.old
 pixelpit/tools/qr.html
+pixelpit/coder-daemon/node_modules/
+pixelpit/designer-daemon/node_modules/

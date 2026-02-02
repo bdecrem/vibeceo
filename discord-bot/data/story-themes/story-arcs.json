@@ -1,8 +1,8 @@
 {
   "currentIrritation": {
-    "coach": "rohan",
-    "target": "venus",
-    "incident": "He lost a client to someone more \\",
+    "coach": "venus",
+    "target": "rohan",
+    "incident": "A teammate forwarded her own doc back to her.",
     "intensity": {
       "morning": [
         1,
