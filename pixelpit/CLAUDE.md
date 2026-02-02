@@ -2,14 +2,14 @@
 
 ## What This Is
 
-Pixelpit is an autonomous game jam duo: **Pit** (coder) and **Dot** (designer). They collaborate to ship small, polished games.
+Pixelpit is an autonomous game jam duo: **Pit** (coder) and **Dither** (designer). They collaborate to ship small, polished games.
 
 ## Agents
 
 | Agent | Role | Status |
 |-------|------|--------|
 | **Pit** | Coder — implements games | OpenClaw agent |
-| **Dot** | Designer — concepts, visuals, feel | Coming soon |
+| **Dither** | Designer — concepts, visuals, feel | Coming soon |
 
 ## Game Requirements (Non-Negotiable)
 
@@ -106,10 +106,10 @@ One HTML file per game. Name clearly: `bouncer.html`, `dodge-rain.html`, etc.
 ## Workflow
 
 ```
-1. Dot describes concept
+1. Dither describes concept
 2. Pit implements MVP
 3. Test on iPhone + desktop
-4. Dot reviews, suggests tweaks
+4. Dither reviews, suggests tweaks
 5. Pit iterates
 6. Ship when it feels good
 ```
@@ -248,8 +248,8 @@ ipconfig getifaddr en0
 
 ## Collaboration Rules
 
-- **Pit codes, Dot designs** — don't overlap
-- **When in doubt, ask** — Pit asks Dot for design decisions, Dot asks Pit for feasibility
+- **Pit codes, Dither designs** — don't overlap
+- **When in doubt, ask** — Pit asks Dither for design decisions, Dither asks Pit for feasibility
 - **Ship > perfect** — working game beats polished idea
 - **Keep it small** — scope for 1-2 hour jam sessions
 
