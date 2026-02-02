@@ -147,11 +147,19 @@
     }
     
     // Initialize audio
-    function initAudio() {
+    async function initAudio() {
       if (audioStarted) return;
       audioStarted = true;
       
-      audioCtx = new AudioContext();
+      // Create AudioContext (use webkitAudioContext for older iOS)
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContextClass();
+      
+      // iOS requires explicit resume on user gesture
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+      
       masterGain = audioCtx.createGain();
       masterGain.gain.value = 0.15;
       masterGain.connect(audioCtx.destination);
@@ -167,7 +175,7 @@
         
         osc.connect(gain);
         gain.connect(masterGain);
-        osc.start();
+        osc.start(audioCtx.currentTime);
         
         oscillators.push(osc);
         gainNodes.push(gain);
@@ -186,9 +194,14 @@
       };
     }
     
-    function handlePointer(e) {
+    async function handlePointer(e) {
       e.preventDefault();
-      initAudio();
+      await initAudio();
+      
+      // Ensure context is running (iOS can suspend again)
+      if (audioCtx && audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
       
       const pos = getPointerPos(e);
       const dx = pos.x - centerX;
@@ -201,9 +214,12 @@
         if (diff < 40) {
           ring.active = !ring.active;
           
-          // Fade in/out the oscillator
+          // Fade in/out the oscillator with proper timing
+          const now = audioCtx.currentTime;
           const targetGain = ring.active ? 0.25 : 0;
-          gainNodes[i].gain.linearRampToValueAtTime(targetGain, audioCtx.currentTime + 0.5);
+          gainNodes[i].gain.cancelScheduledValues(now);
+          gainNodes[i].gain.setValueAtTime(gainNodes[i].gain.value, now);
+          gainNodes[i].gain.linearRampToValueAtTime(targetGain, now + 0.5);
           
           // Spawn particles
           if (ring.active) {
@@ -220,7 +236,17 @@
     }
     
     canvas.addEventListener('click', handlePointer);
-    canvas.addEventListener('touchstart', handlePointer);
+    canvas.addEventListener('touchstart', handlePointer, { passive: false });
+    
+    // Prevent default touch behaviors that can interfere with audio
+    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+    
+    // Handle visibility change - resume audio when returning to tab
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && audioCtx && audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+    });
     
     // Draw ring
     function drawRing(ring, pulse) {
