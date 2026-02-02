@@ -171,10 +171,10 @@ ipconfig getifaddr en0
       text: '#f8fafc',
     };
     
-    // Responsive canvas
+    // Full bleed canvas
     function resize() {
-      canvas.width = Math.min(window.innerWidth, 480);
-      canvas.height = Math.min(window.innerHeight, 800);
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     }
     resize();
     window.addEventListener('resize', resize);
