@@ -93,9 +93,13 @@ ctx.fillRect(x, y, width, height);
 ctx.shadowBlur = 0; // Reset after
 ```
 
-## Output Directory
+## Output Directories
 
-All games go in: `~/collabs/pixelpit/`
+**Development/WIP:**
+`~/collabs/pixelpit/` — local scratchpad, not in repo
+
+**Shippable games:**
+`/Users/bart/Documents/code/vibeceo/web/public/pixelpit/` — goes live at `kochi.to/pixelpit/`
 
 One HTML file per game. Name clearly: `bouncer.html`, `dodge-rain.html`, etc.
 
@@ -251,6 +255,10 @@ ipconfig getifaddr en0
 
 ## Git
 
-Games in `~/collabs/pixelpit/` are NOT in the vibeceo repo. They're local collaboration files.
+- `~/collabs/pixelpit/` — local WIP, not tracked
+- `web/public/pixelpit/` — in repo, deployed to kochi.to
 
-If a game is worth preserving, Pit can copy it to `vibeceo/pixelpit/games/` and commit.
+When a game is ready to ship:
+1. Move from `~/collabs/pixelpit/` to `web/public/pixelpit/`
+2. Commit and push
+3. It goes live at `kochi.to/pixelpit/game.html`
