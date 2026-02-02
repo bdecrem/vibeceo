@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>CHARGE — Hold. Release. Hit the zone.</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            color: #fff;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        #title {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #fbbf24;
+        }
+        
+        #canvas {
+            display: block;
+            touch-action: none;
+        }
+        
+        #stats {
+            display: flex;
+            gap: 40px;
+            font-size: 14px;
+        }
+        
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            opacity: 0.5;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #fbbf24;
+        }
+        
+        #button {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #fbbf24, #f59e0b);
+            border: none;
+            box-shadow: 0 0 40px rgba(251, 191, 36, 0.3);
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #0a0a0f;
+        }
+        
+        #button:active {
+            transform: scale(0.95);
+        }
+        
+        #button.charging {
+            animation: pulse 0.08s ease-in-out infinite;
+            box-shadow: 0 0 60px rgba(251, 191, 36, 0.6);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        
+        #message {
+            font-size: 20px;
+            font-weight: 800;
+            color: #22d3ee;
+            min-height: 28px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        #message.perfect { color: #fbbf24; text-shadow: 0 0 20px rgba(251, 191, 36, 0.8); }
+        #message.good { color: #22d3ee; }
+        #message.miss { color: #f472b6; }
+        
+        #level {
+            font-size: 12px;
+            color: #666;
+            letter-spacing: 2px;
+        }
+        
+        #info {
+            font-size: 12px;
+            opacity: 0.4;
+            text-align: center;
+            max-width: 280px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="title">CHARGE</div>
+        
+        <canvas id="canvas" width="280" height="280"></canvas>
+        
+        <div id="button">HOLD</div>
+        
+        <div id="message"></div>
+        
+        <div id="stats">
+            <div class="stat">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Best</div>
+                <div class="stat-value" id="best">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+        </div>
+        
+        <div id="info">Hold to charge. Release in the gold zone. Zone changes each round.</div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const button = document.getElementById('button');
+        const message = document.getElementById('message');
+        const scoreEl = document.getElementById('score');
+        const bestEl = document.getElementById('best');
+        const levelEl = document.getElementById('level');
+        
+        let audioCtx;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        
+        function playTone(freq, duration, type = 'sine') {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = type;
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        function playChargeTone(power) {
+            playTone(200 + power * 500, 0.04, 'sine');
+        }
+        
+        function playSuccessTone() {
+            playTone(523, 0.08);
+            setTimeout(() => playTone(659, 0.08), 80);
+            setTimeout(() => playTone(784, 0.15), 160);
+        }
+        
+        function playPerfectTone() {
+            playTone(784, 0.1);
+            setTimeout(() => playTone(988, 0.1), 100);
+            setTimeout(() => playTone(1175, 0.2), 200);
+        }
+        
+        function playFailTone() {
+            playTone(180, 0.25, 'sawtooth');
+        }
+        
+        // Game state
+        let charging = false;
+        let power = 0;
+        let speed = 0.012;
+        let score = 0;
+        let best = parseInt(localStorage.getItem('charge_game_best') || '0');
+        let level = 1;
+        let streak = 0;
+        let lastToneTime = 0;
+        let lives = 3;
+        
+        // Target zone - this changes each round!
+        let targetStart = 0.6;
+        let targetEnd = 0.75;
+        let goodBuffer = 0.08; // "good" zone buffer around perfect
+        
+        bestEl.textContent = best;
+        
+        // Particles
+        let particles = [];
+        
+        class Particle {
+            constructor(x, y, color, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.vx = vx;
+                this.vy = vy;
+                this.life = 1;
+                this.size = Math.random() * 4 + 2;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.025;
+                this.vy += 0.08;
+            }
+            
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function spawnParticles(x, y, color, count = 20) {
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+                const spd = Math.random() * 4 + 2;
+                particles.push(new Particle(x, y, color, Math.cos(angle) * spd, Math.sin(angle) * spd));
+            }
+        }
+        
+        function generateNewTarget() {
+            // Random target zone position (between 0.2 and 0.85)
+            const minStart = 0.2;
+            const maxStart = 0.7;
+            targetStart = minStart + Math.random() * (maxStart - minStart);
+            
+            // Zone size gets smaller as level increases
+            const baseSize = 0.18;
+            const minSize = 0.06;
+            const zoneSize = Math.max(minSize, baseSize - (level - 1) * 0.012);
+            targetEnd = targetStart + zoneSize;
+            
+            // Good buffer shrinks too
+            goodBuffer = Math.max(0.03, 0.1 - (level - 1) * 0.008);
+            
+            // Speed increases with level
+            speed = 0.012 + (level - 1) * 0.002;
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = 115;
+            
+            // Draw background ring
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = 25;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Draw miss zone (full circle, subtle)
+            ctx.fillStyle = 'rgba(244, 114, 182, 0.08)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw good zone (buffer around target)
+            const goodStart = Math.max(0, targetStart - goodBuffer);
+            const goodEnd = Math.min(1, targetEnd + goodBuffer);
+            ctx.fillStyle = 'rgba(34, 211, 238, 0.15)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius * goodEnd, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#0a0a0f';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius * goodStart, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw perfect zone (target)
+            ctx.fillStyle = 'rgba(251, 191, 36, 0.25)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius * targetEnd, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#0a0a0f';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius * targetStart, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw zone boundaries
+            ctx.strokeStyle = 'rgba(251, 191, 36, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius * targetStart, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius * targetEnd, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.strokeStyle = 'rgba(34, 211, 238, 0.3)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius * goodStart, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, maxRadius * goodEnd, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Draw current power level
+            if (charging || power > 0) {
+                const radius = power * maxRadius;
+                let color;
+                
+                if (power >= targetStart && power <= targetEnd) {
+                    color = '#fbbf24';
+                } else if (power >= targetStart - goodBuffer && power <= targetEnd + goodBuffer) {
+                    color = '#22d3ee';
+                } else {
+                    color = '#f472b6';
+                }
+                
+                // Filled expanding circle
+                const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+                gradient.addColorStop(0, color + '60');
+                gradient.addColorStop(1, color + '10');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Glowing edge
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = color;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+            
+            // Draw particles
+            ctx.globalAlpha = 1;
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            ctx.globalAlpha = 1;
+            particles = particles.filter(p => p.life > 0);
+            
+            // Center indicator
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Lives indicator
+            for (let i = 0; i < 3; i++) {
+                ctx.fillStyle = i < lives ? '#f472b6' : 'rgba(255,255,255,0.1)';
+                ctx.beginPath();
+                ctx.arc(25 + i * 18, 25, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function update() {
+            if (charging) {
+                power += speed;
+                
+                const now = Date.now();
+                if (now - lastToneTime > 80) {
+                    playChargeTone(power);
+                    lastToneTime = now;
+                }
+                
+                // Wrap around
+                if (power > 1) {
+                    power = 0;
+                    speed *= 1.03;
+                }
+            }
+            
+            draw();
+            requestAnimationFrame(update);
+        }
+        
+        function startCharge() {
+            initAudio();
+            charging = true;
+            power = 0;
+            message.textContent = '';
+            message.className = '';
+            button.textContent = '...';
+            button.classList.add('charging');
+            lastToneTime = Date.now();
+        }
+        
+        function releaseCharge() {
+            if (!charging) return;
+            
+            charging = false;
+            button.textContent = 'HOLD';
+            button.classList.remove('charging');
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            let points = 0;
+            let feedback = '';
+            let feedbackClass = '';
+            let color = '';
+            
+            const inPerfect = power >= targetStart && power <= targetEnd;
+            const inGood = power >= targetStart - goodBuffer && power <= targetEnd + goodBuffer;
+            
+            if (inPerfect) {
+                points = 100 + level * 10;
+                feedback = `⚡ PERFECT +${points}`;
+                feedbackClass = 'perfect';
+                color = '#fbbf24';
+                streak++;
+                playPerfectTone();
+                
+                // Level up every 3 perfects
+                if (streak % 3 === 0) {
+                    level++;
+                    levelEl.textContent = level;
+                    generateNewTarget();
+                    feedback += ' — LEVEL UP!';
+                }
+            } else if (inGood) {
+                points = 50 + level * 5;
+                feedback = `✓ GOOD +${points}`;
+                feedbackClass = 'good';
+                color = '#22d3ee';
+                streak++;
+                playSuccessTone();
+            } else {
+                points = 0;
+                feedback = '✗ MISS';
+                feedbackClass = 'miss';
+                color = '#f472b6';
+                streak = 0;
+                lives--;
+                playFailTone();
+                
+                if (lives <= 0) {
+                    feedback = 'GAME OVER — Tap to restart';
+                    // Will reset on next press
+                }
+            }
+            
+            // Streak bonus
+            if (streak > 1 && points > 0) {
+                const bonus = Math.floor(points * (streak - 1) * 0.2);
+                points += bonus;
+                feedback += ` (×${streak})`;
+            }
+            
+            score += points;
+            scoreEl.textContent = score;
+            
+            if (score > best) {
+                best = score;
+                bestEl.textContent = best;
+                localStorage.setItem('charge_game_best', best.toString());
+            }
+            
+            message.textContent = feedback;
+            message.className = feedbackClass;
+            
+            spawnParticles(centerX, centerY, color, points > 0 ? 35 : 15);
+            
+            // Generate new target for next round (if still alive)
+            if (lives > 0) {
+                generateNewTarget();
+            }
+        }
+        
+        function resetGame() {
+            score = 0;
+            level = 1;
+            lives = 3;
+            streak = 0;
+            speed = 0.012;
+            scoreEl.textContent = '0';
+            levelEl.textContent = '1';
+            generateNewTarget();
+            message.textContent = '';
+        }
+        
+        // Event listeners
+        button.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            if (lives <= 0) {
+                resetGame();
+                return;
+            }
+            startCharge();
+        });
+        
+        button.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            releaseCharge();
+        });
+        
+        button.addEventListener('mouseleave', (e) => {
+            if (charging) releaseCharge();
+        });
+        
+        button.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (lives <= 0) {
+                resetGame();
+                return;
+            }
+            startCharge();
+        });
+        
+        button.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            releaseCharge();
+        });
+        
+        // Init
+        generateNewTarget();
+        update();
+    </script>
+</body>
+</html>
