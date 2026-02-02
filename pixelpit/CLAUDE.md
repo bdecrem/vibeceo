@@ -1,169 +1,256 @@
 # Pixelpit — Claude Code Instructions
 
-An autonomous AI game studio. Haiku agents build games 24/7, coordinated by a Mayor.
+## What This Is
 
-## Quick Links
+Pixelpit is an autonomous game jam duo: **Pit** (coder) and **Dot** (designer). They collaborate to ship small, polished games.
 
-| Doc | Purpose |
-|-----|---------|
-| `STUDIO.md` | Org structure, game lifecycle, architecture |
-| `TASKS.md` | Task system for agent coordination |
-| `SOCIAL.md` | Social backend API (leaderboards, auth, sharing) |
-| `DESIGN.md` | Colors, typography, visual identity |
-| `CHARACTER-BIBLE.md` | Agent avatars and art assets |
+## Agents
 
-## Key Paths
+| Agent | Role | Status |
+|-------|------|--------|
+| **Pit** | Coder — implements games | OpenClaw agent |
+| **Dot** | Designer — concepts, visuals, feel | Coming soon |
+
+## Game Requirements (Non-Negotiable)
+
+### Platform Support
+- **MUST work on iPhone Safari** — touch input, iOS audio quirks
+- **MUST work on desktop Chrome/Safari** — mouse + keyboard
+- **Test on both before shipping**
+
+### Technical Constraints
+- **Single HTML file** — all JS/CSS inline
+- **No external dependencies** — no CDN links, no npm
+- **Canvas-based** — 2D context, `requestAnimationFrame` loop
+- **Responsive** — adapt to screen size, handle orientation
+
+### iOS Audio Quirk
+Web Audio API requires a user gesture to start. Handle it:
+
+```javascript
+let audioCtx;
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+// Call initAudio() on first touch/click
+canvas.addEventListener('touchstart', initAudio, { once: true });
+canvas.addEventListener('click', initAudio, { once: true });
+```
+
+### Input Handling
+Support both touch and mouse:
+
+```javascript
+// Unified input
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  handleInput(touch.clientX, touch.clientY);
+});
+canvas.addEventListener('mousedown', (e) => {
+  handleInput(e.clientX, e.clientY);
+});
+
+// Keyboard for desktop
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') jump();
+  if (e.code === 'ArrowLeft') moveLeft();
+  if (e.code === 'ArrowRight') moveRight();
+});
+```
+
+## Visual Style
+
+Use the RAIN theme palette:
+
+```javascript
+const THEME = {
+  bg: '#0f172a',       // Deep blue-black
+  surface: '#1e293b',  // Slate
+  gold: '#fbbf24',     // Warm gold (primary accent)
+  teal: '#22d3ee',     // Cyan (secondary)
+  pink: '#f472b6',     // Pink (tertiary)
+  text: '#f8fafc',     // Off-white
+};
+```
+
+### Visual Guidelines
+- **Soft glows, not hard shadows** — use `ctx.shadowBlur`
+- **Pixel-friendly** — no anti-aliased curves unless intentional
+- **Readable on small screens** — minimum touch target 44px
+
+```javascript
+// Glow effect
+ctx.shadowBlur = 10;
+ctx.shadowColor = THEME.gold;
+ctx.fillStyle = THEME.gold;
+ctx.fillRect(x, y, width, height);
+ctx.shadowBlur = 0; // Reset after
+```
+
+## Output Directory
+
+All games go in: `~/collabs/pixelpit/`
+
+One HTML file per game. Name clearly: `bouncer.html`, `dodge-rain.html`, etc.
+
+## Workflow
 
 ```
-pixelpit/
-├── creative/        # Dither (design review)
-├── testers/         # Tap (QA)
-├── swarmspeed/      # Orchestrators (t1-t7)
-├── orchestrator.py  # Main execution script
-
-web/app/pixelpit/
-├── arcade/          # Hand-crafted games (human + Claude)
-│   └── beam/        # First arcade game
-├── g1/ - g10/       # Agent-built games
-└── page.tsx         # Studio index
-
-web/public/pixelpit/swarm/
-├── t6/              # Visual QA experiment
-└── t7/              # Triage + Enhance experiment
+1. Dot describes concept
+2. Pit implements MVP
+3. Test on iPhone + desktop
+4. Dot reviews, suggests tweaks
+5. Pit iterates
+6. Ship when it feels good
 ```
 
-## Mobile Testing
-
-**Use the QR tool to test on your phone:**
+## Testing Games Locally
 
 ```bash
-# From repo root
-./pixelpit/tools/qr 3000 /pixelpit/arcade/beam
+# Start local server
+cd ~/collabs/pixelpit && python3 -m http.server 8080
+
+# Desktop: open http://localhost:8080/game.html
+# iPhone: open http://<your-local-ip>:8080/game.html
 ```
 
-Opens a QR code in your browser. Scan with your phone's camera.
-
-**Requirements:**
-- Dev server running (`cd web && npm run dev`)
-- Phone on same WiFi as your computer
-- Note: HTTPS features (Share API) won't work on local HTTP
-
-## Social Integration
-
-All games MUST include social features using React components:
-
-```tsx
-import {
-  ScoreFlow,
-  Leaderboard,
-  ShareButtonContainer,
-} from '@/app/pixelpit/components';
-```
-
-**Every game needs:**
-1. `<ScoreFlow>` on game over screen
-2. `<Leaderboard>` screen
-3. `<ShareButtonContainer>` for sharing
-4. OG images: `/arcade/[game]/opengraph-image.tsx` + `/share/[score]/opengraph-image.tsx`
-
-See `SOCIAL.md` for full API and `arcade/beam/page.tsx` for reference implementation.
-
-## Game Types
-
-| Type | Location | Who builds | Examples |
-|------|----------|------------|----------|
-| **Arcade** | `/arcade/{name}/` | Human + Claude | BEAM |
-| **Agent** | `/g1/` - `/g10/` | Haiku agents | TBD |
-
-## Agent Roster
-
-| Role | Name | Folder |
-|------|------|--------|
-| Partner | **Pit** | `/pit` command |
-| Creative Head | **Dither** | `creative/` |
-| QA Tester | **Tap** | `testers/` |
-
-### The Makers (Game Builders)
-
-| # | Name |
-|---|------|
-| 1 | AmyThe1st |
-| 2 | BobThe2nd |
-| 3 | ChetThe3rd |
-| 4 | DaleThe4th |
-| 5 | EarlThe5th |
-| 6 | FranThe6th |
-| 7 | GusThe7th |
-| 8 | HankThe8th |
-| 9 | IdaThe9th |
-| 10 | JoanThe10th |
-
-**Note:** Ship (Release Engineer) deprecated — social integration now built into maker role via components.
-
-## Commands
-
-| Slash Command | Purpose |
-|---------------|---------|
-| `/pit` | Daily partner interface — status, instructions, task management |
-| `/dither` | Design review with Creative Head |
-| `/pixelpit` | Alias for /pit |
-
-## SwarmSpeed Experiments
-
-Batch game generation experiments. Base game is a simple "pop the balls" test game — we picked the simplest thing we could think of for our first experiment.
-
+Find your local IP:
 ```bash
-# Run from repo root with venv
-pixelpit/swarmspeed/venv/bin/python pixelpit/swarmspeed/t7-orchestrator.py
+ipconfig getifaddr en0
 ```
 
-| Experiment | What it does |
-|------------|--------------|
-| **t5** | 10 agents race, live dashboard |
-| **t6** | + Visual QA (Claude Vision rates each game) |
-| **t7** | + Triage (GREEN/YELLOW/RED) + Enhancement (music for ships, v2 for needs-work) |
+## Game Loop Template
 
-Output goes to `web/public/pixelpit/swarm/t*/` — commit and push to deploy.
-
-**Dashboard URLs:** `/pixelpit/swarm/t7/index.html` (need `.html` extension)
-
-## Database
-
-All state lives in `pixelpit_state` table (Supabase):
-
-```sql
--- Check current state
-SELECT type, key, data, updated_at
-FROM pixelpit_state
-ORDER BY updated_at DESC LIMIT 20;
-
--- Game status
-SELECT * FROM pixelpit_state WHERE type = 'game';
-
--- Open tasks
-SELECT * FROM pixelpit_state WHERE type = 'task' AND data->>'status' != 'done';
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Game Name</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: #0f172a; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+    }
+    canvas { 
+      display: block; 
+      max-width: 100%; 
+      max-height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    
+    const THEME = {
+      bg: '#0f172a',
+      surface: '#1e293b', 
+      gold: '#fbbf24',
+      teal: '#22d3ee',
+      pink: '#f472b6',
+      text: '#f8fafc',
+    };
+    
+    // Responsive canvas
+    function resize() {
+      canvas.width = Math.min(window.innerWidth, 480);
+      canvas.height = Math.min(window.innerHeight, 800);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Game state
+    let score = 0;
+    let gameOver = false;
+    
+    // Audio
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    canvas.addEventListener('touchstart', initAudio, { once: true });
+    canvas.addEventListener('click', initAudio, { once: true });
+    
+    // Input
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(); });
+    canvas.addEventListener('click', handleTap);
+    
+    function handleTap() {
+      if (gameOver) { restart(); return; }
+      // Game input here
+    }
+    
+    function restart() {
+      score = 0;
+      gameOver = false;
+    }
+    
+    // Game loop
+    function update() {
+      if (gameOver) return;
+      // Update game state
+    }
+    
+    function draw() {
+      ctx.fillStyle = THEME.bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw game objects
+      
+      // Draw score
+      ctx.fillStyle = THEME.text;
+      ctx.font = '24px monospace';
+      ctx.fillText(`Score: ${score}`, 20, 40);
+      
+      if (gameOver) {
+        ctx.fillStyle = THEME.gold;
+        ctx.font = '32px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
+        ctx.font = '18px monospace';
+        ctx.fillText('Tap to restart', canvas.width/2, canvas.height/2 + 40);
+        ctx.textAlign = 'left';
+      }
+    }
+    
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+    
+    loop();
+  </script>
+</body>
+</html>
 ```
 
-## Build & Deploy
+## Collaboration Rules
 
-```bash
-# Build web (includes pixelpit games)
-cd web && npm run build
+- **Pit codes, Dot designs** — don't overlap
+- **When in doubt, ask** — Pit asks Dot for design decisions, Dot asks Pit for feasibility
+- **Ship > perfect** — working game beats polished idea
+- **Keep it small** — scope for 1-2 hour jam sessions
 
-# Deployment: Push to GitHub → Railway auto-deploys
-```
+## Git
 
-## OG Images
+Games in `~/collabs/pixelpit/` are NOT in the vibeceo repo. They're local collaboration files.
 
-Every game needs OG images for social sharing:
-
-```
-web/app/pixelpit/arcade/{game}/opengraph-image.tsx         # Game promo
-web/app/pixelpit/arcade/{game}/share/[score]/opengraph-image.tsx  # Score share
-```
-
-**CRITICAL: Read `web/app/pixelpit/components/og/README.md` before creating OG images!**
-
-Satori (Edge runtime) has strict CSS limitations that cause silent 502 errors:
-- NO React fragments, rgba(), radial-gradient, borderRadius percentages
-- Use wrapper divs, hex colors with alpha (`#ffffff80`), linear-gradient, numeric borderRadius
+If a game is worth preserving, Pit can copy it to `vibeceo/pixelpit/games/` and commit.
