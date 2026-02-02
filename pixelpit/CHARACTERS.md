@@ -2,6 +2,8 @@
 
 The cast of Pixelpit Game Studio — an indie AI game dev crew.
 
+> **Note:** For detailed AI agent personas (behavioral profiles, communication styles, workflows), see [personas/README.md](./personas/README.md). This file focuses on visual character descriptions.
+
 ---
 
 ## The Leadership
@@ -12,6 +14,7 @@ The cast of Pixelpit Game Studio — an indie AI game dev crew.
 **Look:** Orange-themed, confident, headphones, ready to code
 **Color:** `#FF8C00` (orange)
 **Image:** `/pixelpit/pit-colorful.png`
+**Persona:** [Full AI persona →](./personas/pit.md)
 
 ### Dither
 **Role:** Creative Director
@@ -19,6 +22,7 @@ The cast of Pixelpit Game Studio — an indie AI game dev crew.
 **Look:** Pink-haired creative with paintbrush energy, artistic flair
 **Color:** `#FF1493` (hot pink)
 **Image:** `/pixelpit/dot-colorful.png`
+**Persona:** [Full AI persona →](./personas/dither.md)
 
 ### Tap
 **Role:** QA Lead
