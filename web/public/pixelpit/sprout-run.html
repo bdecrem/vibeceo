@@ -101,6 +101,9 @@
       squash: 1,
       stretch: 1,
       wiggle: 0,
+      canFlutter: false,  // unlocks after first jump
+      flutterUsed: false, // one flutter per jump
+      spinAngle: 0,       // for flutter spin animation
     };
     
     // World
@@ -177,6 +180,12 @@
       playTone(600, 0.1, 'sine', 0.1, 0.02, 0.05);
     }
     
+    function playFlutter() {
+      // Softer, higher "fwip"
+      playTone(600, 0.12, 'sine', 0.15, 0.01, 0.08);
+      playTone(800, 0.08, 'sine', 0.08, 0.02, 0.04);
+    }
+    
     function playCollect() {
       // Marimba-ish note (randomize C5, E5, G5)
       const notes = [523, 659, 784];
@@ -237,46 +246,79 @@
     let musicInterval = null;
     let beatCount = 0;
     
-    // C major pentatonic melody notes
-    const melodyNotes = [523, 587, 659, 784, 880, 1047]; // C5, D5, E5, G5, A5, C6
-    const bassNotes = [131, 147, 165, 196]; // C3, D3, E3, G3
+    // Actual melodic patterns (Animal Crossing inspired)
+    // C major pentatonic: C D E G A
+    const melody1 = [523, 659, 784, 659, 523, 784, 880, 784]; // Bouncy main theme
+    const melody2 = [784, 880, 784, 659, 523, 659, 784, 523]; // Variation
+    const bassPattern = [131, 131, 196, 196, 165, 165, 196, 131]; // C C G G E E G C
+    const highAccent = [1047, 1319, 1568, 1319]; // High sparkle notes
     
     function startMusic() {
       if (musicPlaying) return;
       musicPlaying = true;
-      const beatMs = 500; // 120 BPM = 500ms per beat
+      const beatMs = 250; // 120 BPM = 500ms per beat, 250ms per eighth note
       
       musicInterval = setInterval(() => {
         if (gameState !== 'playing' || !audioCtx) return;
         
         beatCount++;
+        const bar = Math.floor(beatCount / 8) % 2; // Alternate between patterns
+        const beat = beatCount % 8;
         
-        // Kalimba melody (every beat, varying pattern)
-        if (beatCount % 2 === 0) {
-          const noteIdx = Math.floor(Math.random() * melodyNotes.length);
-          playTone(melodyNotes[noteIdx], 0.3, 'triangle', 0.12, 0.005, 0.2);
+        // Main kalimba melody (eighth notes)
+        const currentMelody = bar === 0 ? melody1 : melody2;
+        if (beat < currentMelody.length) {
+          // Add slight timing humanization
+          const delay = (Math.random() - 0.5) * 20;
+          setTimeout(() => {
+            playTone(currentMelody[beat], 0.25, 'triangle', 0.15, 0.005, 0.18);
+          }, Math.max(0, delay));
         }
         
-        // Soft kick on 1 and 3
-        if (beatCount % 4 === 0 || beatCount % 4 === 2) {
-          playTone(80, 0.1, 'sine', 0.15, 0.01, 0.05);
+        // Soft kick on beats 1 and 5 (quarter notes)
+        if (beat === 0 || beat === 4) {
+          playTone(80, 0.12, 'sine', 0.18, 0.01, 0.06);
         }
         
-        // Shaker on every beat (subtle)
-        playNoise(0.05, 0.03);
+        // Shaker on off-beats
+        if (beat % 2 === 1) {
+          playNoise(0.04, 0.025);
+        }
         
-        // Add bass after 500m (distance > 500)
-        if (distance > 500 && beatCount % 4 === 0) {
-          const bassNote = bassNotes[Math.floor(Math.random() * bassNotes.length)];
-          playTone(bassNote, 0.4, 'triangle', 0.15, 0.01, 0.3);
+        // Hi-hat on every beat (subtle)
+        playNoise(0.02, 0.015);
+        
+        // Xylophone accent on beat 3 and 7
+        if (beat === 2 || beat === 6) {
+          const accentNote = highAccent[Math.floor(Math.random() * highAccent.length)];
+          playTone(accentNote, 0.15, 'sine', 0.06, 0.005, 0.1);
+        }
+        
+        // Add bass after 500m
+        if (distance > 500 && (beat === 0 || beat === 4)) {
+          playTone(bassPattern[beat], 0.35, 'triangle', 0.12, 0.01, 0.25);
+        }
+        
+        // Add warm pad chord after 300m (sustained)
+        if (distance > 300 && beat === 0 && beatCount % 16 === 0) {
+          // C major chord pad
+          playTone(262, 1.5, 'sine', 0.04, 0.1, 1.2); // C4
+          playTone(330, 1.5, 'sine', 0.03, 0.1, 1.2); // E4
+          playTone(392, 1.5, 'sine', 0.03, 0.1, 1.2); // G4
         }
         
         // Add arpeggios after 1000m
-        if (distance > 1000 && beatCount % 8 === 0) {
-          const arpNotes = [523, 659, 784, 1047];
+        if (distance > 1000 && beat === 0 && beatCount % 8 === 0) {
+          const arpNotes = [523, 659, 784, 1047, 784, 659];
           arpNotes.forEach((n, i) => {
-            setTimeout(() => playTone(n, 0.1, 'square', 0.08), i * 60);
+            setTimeout(() => playTone(n, 0.08, 'square', 0.06, 0.005, 0.05), i * 40);
           });
+        }
+        
+        // Extra energy after 1500m - add synth stabs
+        if (distance > 1500 && beat === 0 && beatCount % 4 === 0) {
+          playTone(523, 0.1, 'sawtooth', 0.08, 0.005, 0.08);
+          playTone(659, 0.1, 'sawtooth', 0.06, 0.005, 0.08);
         }
         
       }, beatMs);
@@ -314,6 +356,9 @@
         squash: 1,
         stretch: 1,
         wiggle: 0,
+        canFlutter: false,
+        flutterUsed: false,
+        spinAngle: 0,
       };
       obstacles = [];
       sundrops = [];
@@ -475,6 +520,18 @@
       // Squash/stretch recovery
       player.squash += (1 - player.squash) * 10 * adt;
       player.stretch += (1 - player.stretch) * 10 * adt;
+      
+      // Spin animation decay (for flutter)
+      if (player.spinAngle > 0) {
+        player.spinAngle -= 15 * adt; // Fast spin
+        if (player.spinAngle < 0) player.spinAngle = 0;
+      }
+      
+      // Reset flutter when grounded
+      if (player.grounded) {
+        player.canFlutter = false;
+        player.flutterUsed = false;
+      }
       
       // Wiggle while rolling
       if (player.grounded) {
@@ -741,9 +798,9 @@
       ctx.save();
       ctx.translate(x, y);
       
-      // Wiggle while rolling
+      // Wiggle while rolling + flutter spin
       const wiggleAngle = Math.sin(player.wiggle) * 0.1;
-      ctx.rotate(wiggleAngle);
+      ctx.rotate(wiggleAngle + player.spinAngle);
       
       // Squash and stretch
       ctx.scale(player.stretch, player.squash);
@@ -1080,12 +1137,45 @@
         return;
       }
       
-      if (gameState === 'playing' && player.grounded) {
-        player.vy = JUMP_VELOCITY;
-        player.grounded = false;
-        player.squash = 0.7;
-        player.stretch = 1.3;
-        playJump();
+      if (gameState === 'playing') {
+        if (player.grounded) {
+          // First jump from ground
+          player.vy = JUMP_VELOCITY;
+          player.grounded = false;
+          player.squash = 0.7;
+          player.stretch = 1.3;
+          player.canFlutter = true;
+          player.flutterUsed = false;
+          playJump();
+        } else if (player.canFlutter && !player.flutterUsed) {
+          // Flutter jump mid-air
+          player.vy = JUMP_VELOCITY * 0.6; // Smaller boost
+          player.flutterUsed = true;
+          player.squash = 0.85;
+          player.stretch = 1.15;
+          player.spinAngle = Math.PI * 2; // Full spin
+          playFlutter();
+          // Emit leaf particles
+          emitFlutterLeaves(player.x, player.y);
+        }
+      }
+    }
+    
+    function emitFlutterLeaves(x, y) {
+      const colors = [THEME.mint, THEME.grass, '#86efac', '#bbf7d0'];
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI * 2 / 6) * i;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * 80 + (Math.random() - 0.5) * 40,
+          vy: Math.sin(angle) * 80 - 50,
+          size: 4 + Math.random() * 3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 1,
+          decay: 2.5,
+          gravity: true,
+          leaf: true,
+        });
       }
     }
     
