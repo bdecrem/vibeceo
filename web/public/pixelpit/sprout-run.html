@@ -241,87 +241,168 @@
       osc.stop(audioCtx.currentTime + 0.5);
     }
     
-    // ─── MUSIC SYSTEM (120 BPM, C Major, Kalimba-ish) ───────────────
+    // ─── MUSIC SYSTEM (120 BPM, C Major, 8-bit cute) ────────────────
+    // Inspired by BEAM's structured engine but softer/bouncier
     let musicPlaying = false;
     let musicInterval = null;
-    let beatCount = 0;
+    let musicStep = 0;
+    let arpStep = 0;
     
-    // Actual melodic patterns (Animal Crossing inspired)
-    // C major pentatonic: C D E G A
-    const melody1 = [523, 659, 784, 659, 523, 784, 880, 784]; // Bouncy main theme
-    const melody2 = [784, 880, 784, 659, 523, 659, 784, 523]; // Variation
-    const bassPattern = [131, 131, 196, 196, 165, 165, 196, 131]; // C C G G E E G C
-    const highAccent = [1047, 1319, 1568, 1319]; // High sparkle notes
+    const MUSIC = {
+      bpm: 120,
+      // Bass pattern - C major bouncy (C, E, G, C pattern)
+      // 16 steps, frequencies (0 = rest)
+      bass: [131, 0, 165, 0, 196, 0, 165, 0, 131, 0, 196, 0, 165, 0, 131, 131],
+      // Melody pattern - pentatonic bounce (C5 D5 E5 G5 A5)
+      melody: [523, 0, 659, 0, 784, 0, 659, 523, 880, 0, 784, 0, 659, 784, 523, 0],
+      // Kick pattern (bouncy, on 1 and 3, with pickup)
+      kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      // Hi-hat pattern (light and skippy)
+      hat: [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1],
+      // Arpeggio chords (cycle through)
+      arps: [
+        [523, 659, 784, 1047],  // C major
+        [523, 659, 784, 1047],  // C major
+        [587, 698, 880, 1175],  // D minor (for variety)
+        [392, 523, 659, 784],   // G major (dominant)
+      ],
+    };
+    
+    function playKick() {
+      if (!audioCtx) return;
+      // Soft bouncy kick with pitch envelope
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.12);
+    }
+    
+    function playHat() {
+      if (!audioCtx) return;
+      // Soft hi-hat (filtered noise)
+      const bufferSize = audioCtx.sampleRate * 0.03;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 7000;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      noise.start();
+    }
+    
+    function playBass(freq) {
+      if (!audioCtx || freq === 0) return;
+      // Soft triangle bass
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.18);
+    }
+    
+    function playMelody(freq) {
+      if (!audioCtx || freq === 0) return;
+      // Kalimba-style pluck
+      const osc = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      osc2.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'triangle';
+      osc2.type = 'sine';
+      osc.frequency.value = freq;
+      osc2.frequency.value = freq * 2; // Octave shimmer
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+      osc.start();
+      osc2.start();
+      osc.stop(audioCtx.currentTime + 0.28);
+      osc2.stop(audioCtx.currentTime + 0.28);
+    }
+    
+    function playArp(freqs) {
+      if (!audioCtx) return;
+      const freq = freqs[arpStep % freqs.length];
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.08);
+    }
+    
+    function musicTick() {
+      if (!audioCtx || gameState !== 'playing') return;
+      
+      const step = musicStep % 16;
+      const bar = Math.floor(musicStep / 16) % 4;
+      
+      // Always: kick and hat
+      if (MUSIC.kick[step]) playKick();
+      if (MUSIC.hat[step]) playHat();
+      
+      // Melody (always on)
+      if (MUSIC.melody[step]) {
+        playMelody(MUSIC.melody[step]);
+      }
+      
+      // Bass (after 200m)
+      if (distance > 200 && step % 2 === 0) {
+        playBass(MUSIC.bass[step]);
+      }
+      
+      // Arpeggios (after 500m, every step)
+      if (distance > 500) {
+        playArp(MUSIC.arps[bar]);
+        arpStep++;
+      }
+      
+      // Chord stabs (after 1000m, on beat 1 of each bar)
+      if (distance > 1000 && step === 0) {
+        // Quick chord stab
+        playTone(523, 0.15, 'square', 0.06, 0.01, 0.1);
+        playTone(659, 0.15, 'square', 0.05, 0.01, 0.1);
+        playTone(784, 0.15, 'square', 0.04, 0.01, 0.1);
+      }
+      
+      musicStep++;
+    }
     
     function startMusic() {
       if (musicPlaying) return;
       musicPlaying = true;
-      const beatMs = 250; // 120 BPM = 500ms per beat, 250ms per eighth note
-      
-      musicInterval = setInterval(() => {
-        if (gameState !== 'playing' || !audioCtx) return;
-        
-        beatCount++;
-        const bar = Math.floor(beatCount / 8) % 2; // Alternate between patterns
-        const beat = beatCount % 8;
-        
-        // Main kalimba melody (eighth notes)
-        const currentMelody = bar === 0 ? melody1 : melody2;
-        if (beat < currentMelody.length) {
-          // Add slight timing humanization
-          const delay = (Math.random() - 0.5) * 20;
-          setTimeout(() => {
-            playTone(currentMelody[beat], 0.25, 'triangle', 0.15, 0.005, 0.18);
-          }, Math.max(0, delay));
-        }
-        
-        // Soft kick on beats 1 and 5 (quarter notes)
-        if (beat === 0 || beat === 4) {
-          playTone(80, 0.12, 'sine', 0.18, 0.01, 0.06);
-        }
-        
-        // Shaker on off-beats
-        if (beat % 2 === 1) {
-          playNoise(0.04, 0.025);
-        }
-        
-        // Hi-hat on every beat (subtle)
-        playNoise(0.02, 0.015);
-        
-        // Xylophone accent on beat 3 and 7
-        if (beat === 2 || beat === 6) {
-          const accentNote = highAccent[Math.floor(Math.random() * highAccent.length)];
-          playTone(accentNote, 0.15, 'sine', 0.06, 0.005, 0.1);
-        }
-        
-        // Add bass after 500m
-        if (distance > 500 && (beat === 0 || beat === 4)) {
-          playTone(bassPattern[beat], 0.35, 'triangle', 0.12, 0.01, 0.25);
-        }
-        
-        // Add warm pad chord after 300m (sustained)
-        if (distance > 300 && beat === 0 && beatCount % 16 === 0) {
-          // C major chord pad
-          playTone(262, 1.5, 'sine', 0.04, 0.1, 1.2); // C4
-          playTone(330, 1.5, 'sine', 0.03, 0.1, 1.2); // E4
-          playTone(392, 1.5, 'sine', 0.03, 0.1, 1.2); // G4
-        }
-        
-        // Add arpeggios after 1000m
-        if (distance > 1000 && beat === 0 && beatCount % 8 === 0) {
-          const arpNotes = [523, 659, 784, 1047, 784, 659];
-          arpNotes.forEach((n, i) => {
-            setTimeout(() => playTone(n, 0.08, 'square', 0.06, 0.005, 0.05), i * 40);
-          });
-        }
-        
-        // Extra energy after 1500m - add synth stabs
-        if (distance > 1500 && beat === 0 && beatCount % 4 === 0) {
-          playTone(523, 0.1, 'sawtooth', 0.08, 0.005, 0.08);
-          playTone(659, 0.1, 'sawtooth', 0.06, 0.005, 0.08);
-        }
-        
-      }, beatMs);
+      musicStep = 0;
+      arpStep = 0;
+      // 16th notes at 120 BPM = 125ms per step
+      const stepTime = (60 / MUSIC.bpm) * 1000 / 4;
+      musicInterval = setInterval(musicTick, stepTime);
     }
     
     function stopMusic() {
