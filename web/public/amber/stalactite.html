@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STALACTITE — Amber</title>
+    <meta property="og:title" content="STALACTITE — Amber">
+    <meta property="og:description" content="Drop by drop. Century by century. Touch to accelerate time.">
+    <meta property="og:image" content="https://kochi.to/amber/stalactite-og.png">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="STALACTITE — Amber">
+    <meta name="twitter:description" content="Drop by drop. Century by century. Touch to accelerate time.">
+    <meta name="twitter:image" content="https://kochi.to/amber/stalactite-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D0D0D;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            touch-action: none;
+        }
+        
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #FFD700;
+            font-size: 14px;
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        #info .title {
+            font-size: 24px;
+            margin-bottom: 8px;
+            letter-spacing: 3px;
+        }
+        
+        #info .subtitle {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        #years {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #2D9596;
+            font-size: 18px;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 10px rgba(45, 149, 150, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <div class="title">STALACTITE</div>
+        <div class="subtitle">Touch to accelerate time</div>
+    </div>
+    <div id="years">0 years</div>
+    <canvas id="canvas"></canvas>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const yearsEl = document.getElementById('years');
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+        
+        // Color palette - mineral-inspired
+        const colors = [
+            '#FFD700', // gold
+            '#f59e0b', // amber
+            '#2D9596', // teal
+            '#14b8a6', // cyan
+            '#8b5cf6', // purple
+            '#ec4899', // pink
+            '#f97316', // coral
+            '#84cc16', // lime
+        ];
+        
+        class Stalactite {
+            constructor(x) {
+                this.x = x;
+                this.segments = [];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.baseWidth = 20 + Math.random() * 30;
+                this.growthRate = 0.5 + Math.random() * 0.5; // pixels per year
+                this.age = 0;
+                this.targetLength = 100 + Math.random() * 300;
+                this.ripples = [];
+            }
+            
+            grow(years) {
+                this.age += years;
+                const growth = years * this.growthRate;
+                const currentLength = this.segments.reduce((sum, seg) => sum + seg.length, 0);
+                
+                if (currentLength < this.targetLength) {
+                    // Add new segment
+                    const segmentLength = Math.min(growth, this.targetLength - currentLength);
+                    const widthFactor = 1 - (currentLength / this.targetLength) * 0.7;
+                    const width = this.baseWidth * widthFactor;
+                    
+                    this.segments.push({
+                        length: segmentLength,
+                        width: width,
+                        opacity: 0.3 + Math.random() * 0.4
+                    });
+                    
+                    // Sometimes drip
+                    if (Math.random() < 0.3) {
+                        this.ripples.push({
+                            y: currentLength + segmentLength,
+                            alpha: 1,
+                            radius: 0
+                        });
+                    }
+                }
+            }
+            
+            draw() {
+                let y = 0;
+                
+                // Draw segments
+                for (let seg of this.segments) {
+                    ctx.globalAlpha = seg.opacity;
+                    
+                    // Draw cone segment with gradient
+                    const gradient = ctx.createLinearGradient(this.x, y, this.x, y + seg.length);
+                    gradient.addColorStop(0, this.color);
+                    gradient.addColorStop(1, this.color + '80');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - seg.width/2, y);
+                    ctx.lineTo(this.x + seg.width/2, y);
+                    ctx.lineTo(this.x + seg.width * 0.4/2, y + seg.length);
+                    ctx.lineTo(this.x - seg.width * 0.4/2, y + seg.length);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Highlight edge
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 1;
+                    ctx.globalAlpha = 0.5;
+                    ctx.stroke();
+                    
+                    y += seg.length;
+                }
+                
+                // Draw drip ripples
+                this.ripples = this.ripples.filter(ripple => {
+                    ctx.globalAlpha = ripple.alpha;
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(this.x, ripple.y, ripple.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    ripple.radius += 1;
+                    ripple.alpha -= 0.02;
+                    
+                    return ripple.alpha > 0;
+                });
+                
+                ctx.globalAlpha = 1;
+            }
+        }
+        
+        // Create stalactites
+        const stalactites = [];
+        const spacing = 80;
+        for (let x = spacing; x < width; x += spacing + Math.random() * 40 - 20) {
+            stalactites.push(new Stalactite(x));
+        }
+        
+        // State
+        let totalYears = 0;
+        let isAccelerating = false;
+        let particles = [];
+        
+        // Particles for touch feedback
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 3;
+                this.vy = (Math.random() - 0.5) * 3;
+                this.life = 1;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.02;
+            }
+            
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Touch/mouse events
+        function handleInteraction(e) {
+            isAccelerating = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const y = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            // Spawn particles
+            for (let i = 0; i < 20; i++) {
+                particles.push(new Particle(x, y));
+            }
+        }
+        
+        function handleRelease() {
+            isAccelerating = false;
+        }
+        
+        canvas.addEventListener('mousedown', handleInteraction);
+        canvas.addEventListener('mouseup', handleRelease);
+        canvas.addEventListener('touchstart', handleInteraction);
+        canvas.addEventListener('touchend', handleRelease);
+        
+        // Animation loop
+        function animate() {
+            // Background with slight fade for trails
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Grow stalactites
+            const yearsPerFrame = isAccelerating ? 50 : 5;
+            totalYears += yearsPerFrame;
+            
+            for (let stalactite of stalactites) {
+                stalactite.grow(yearsPerFrame);
+                stalactite.draw();
+            }
+            
+            // Update and draw particles
+            particles = particles.filter(p => {
+                p.update();
+                p.draw();
+                return p.life > 0;
+            });
+            
+            // Update year counter
+            yearsEl.textContent = `${Math.floor(totalYears).toLocaleString()} years`;
+            
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(animate);
+        }
+        
+        // Start
+        animate();
+    </script>
+</body>
+</html>
