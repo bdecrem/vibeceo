@@ -9,7 +9,7 @@
     html, body { 
       width: 100%; height: 100%; 
       overflow: hidden; 
-      background: #0f172a;
+      background: #2d2d2d;
       touch-action: none;
     }
     canvas { 
@@ -23,53 +23,104 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(15, 23, 42, 0.95);
-      color: #f8fafc;
-      font-family: system-ui, sans-serif;
+      background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       z-index: 10;
     }
     #game-over { display: none; }
-    h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #fbbf24; text-shadow: 0 0 20px #fbbf24; }
-    p { font-size: 1.2rem; color: #94a3b8; margin-bottom: 2rem; }
-    .score-display { font-size: 1.5rem; color: #22d3ee; margin-bottom: 1rem; }
-    button {
-      background: #fbbf24;
-      color: #0f172a;
-      border: none;
-      padding: 1rem 2rem;
-      font-size: 1.2rem;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-      box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+    h1 { 
+      font-size: 3rem; 
+      margin-bottom: 0.5rem; 
+      font-weight: 800;
+      background: linear-gradient(90deg, #ff4554 0%, #00c3e3 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
+    .subtitle {
+      font-size: 1rem;
+      color: #888;
+      margin-bottom: 2rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+    p { font-size: 1.2rem; color: #aaa; margin-bottom: 2rem; }
+    .score-display { font-size: 1.5rem; color: #00c3e3; margin-bottom: 0.5rem; }
+    .best { color: #ff4554; }
+    button {
+      background: linear-gradient(135deg, #ff4554 0%, #ff6b6b 100%);
+      color: #fff;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255, 69, 84, 0.4);
+      transition: transform 0.1s, box-shadow 0.1s;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(255, 69, 84, 0.5); }
     button:active { transform: scale(0.95); }
+    .btn-blue {
+      background: linear-gradient(135deg, #00c3e3 0%, #00d4ff 100%);
+      box-shadow: 0 4px 20px rgba(0, 195, 227, 0.4);
+    }
+    .btn-blue:hover { box-shadow: 0 6px 25px rgba(0, 195, 227, 0.5); }
+    .controls {
+      position: absolute;
+      bottom: 30px;
+      color: #666;
+      font-size: 0.9rem;
+    }
+    .joy-con {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 200px;
+      border-radius: 15px;
+      opacity: 0.3;
+    }
+    .joy-con.left { left: 15px; background: #00c3e3; }
+    .joy-con.right { right: 15px; background: #ff4554; }
   </style>
 </head>
 <body>
   <div id="start-screen">
-    <h1>🏃 RUNNER</h1>
-    <p>Tap or Space to jump</p>
-    <button id="start-btn">START</button>
+    <div class="joy-con left"></div>
+    <div class="joy-con right"></div>
+    <h1>RUNNER</h1>
+    <p class="subtitle">Endless Adventure</p>
+    <button id="start-btn">Press Start</button>
+    <p class="controls">Tap or Press Space to Jump</p>
   </div>
   
   <div id="game-over">
+    <div class="joy-con left"></div>
+    <div class="joy-con right"></div>
     <h1>GAME OVER</h1>
     <p class="score-display">Score: <span id="final-score">0</span></p>
-    <p class="score-display">Best: <span id="best-score">0</span></p>
-    <button id="restart-btn">PLAY AGAIN</button>
+    <p class="score-display best">Best: <span id="best-score">0</span></p>
+    <button id="restart-btn" class="btn-blue">Try Again</button>
   </div>
   
   <canvas id="game"></canvas>
 
   <script>
+    // Nintendo Switch Joy-Con colors
     const THEME = {
-      bg: '#0f172a',
-      surface: '#1e293b',
-      gold: '#fbbf24',
-      teal: '#22d3ee',
-      pink: '#f472b6',
-      text: '#f8fafc',
+      bg: '#2d2d2d',
+      surface: '#3d3d3d',
+      red: '#ff4554',      // Joy-Con Neon Red
+      blue: '#00c3e3',     // Joy-Con Neon Blue
+      yellow: '#e6ff00',   // Joy-Con Neon Yellow
+      green: '#1edc00',    // Joy-Con Neon Green
+      pink: '#ff6ee3',     // Joy-Con Neon Pink
+      white: '#ffffff',
+      gray: '#888888',
     };
 
     const canvas = document.getElementById('game');
@@ -79,8 +130,8 @@
     let audioCtx = null;
     
     // Game state
-    let player, obstacles, particles, score, speed, gameRunning, groundOffset;
-    let bestScore = parseInt(localStorage.getItem('runner-best') || '0');
+    let player, obstacles, particles, coins, score, speed, gameRunning, groundOffset;
+    let bestScore = parseInt(localStorage.getItem('runner-switch-best') || '0');
 
     function resize() {
       const dpr = window.devicePixelRatio || 1;
@@ -89,22 +140,25 @@
       canvas.width = W * dpr;
       canvas.height = H * dpr;
       ctx.scale(dpr, dpr);
-      groundY = H * 0.75;
+      groundY = H * 0.78;
     }
 
     function initGame() {
       player = {
         x: W * 0.15,
         y: groundY,
-        w: 40,
-        h: 50,
+        w: 44,
+        h: 44,
         vy: 0,
-        grounded: true
+        grounded: true,
+        squash: 1,
+        color: THEME.red
       };
       obstacles = [];
       particles = [];
+      coins = [];
       score = 0;
-      speed = 6;
+      speed = 7;
       groundOffset = 0;
       gameRunning = true;
     }
@@ -112,34 +166,50 @@
     function jump() {
       if (!gameRunning) return;
       if (player.grounded) {
-        player.vy = -18;
+        player.vy = -16;
         player.grounded = false;
-        playSound(400, 0.1, 'square');
+        player.squash = 1.3;
+        playSound(880, 0.08, 'square');
+        playSound(1100, 0.08, 'square');
       }
     }
 
     function spawnObstacle() {
-      const minGap = 250;
+      const minGap = 280;
       const lastX = obstacles.length ? obstacles[obstacles.length - 1].x : 0;
       if (lastX < W - minGap) {
-        const h = 30 + Math.random() * 40;
+        const h = 35 + Math.random() * 30;
         obstacles.push({
           x: W + 50,
           y: groundY - h,
-          w: 25 + Math.random() * 20,
-          h: h
+          w: 35,
+          h: h,
+          color: THEME.blue
+        });
+      }
+    }
+
+    function spawnCoin() {
+      if (Math.random() < 0.015) {
+        coins.push({
+          x: W + 50,
+          y: groundY - 80 - Math.random() * 60,
+          r: 15,
+          collected: false,
+          bounce: Math.random() * Math.PI * 2
         });
       }
     }
 
     function spawnParticle(x, y, color) {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 4; i++) {
         particles.push({
           x, y,
-          vx: (Math.random() - 0.5) * 8,
-          vy: (Math.random() - 0.5) * 8,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
           life: 1,
-          color
+          color,
+          size: 4 + Math.random() * 4
         });
       }
     }
@@ -148,34 +218,65 @@
       if (!gameRunning) return;
 
       // Gravity
-      player.vy += 0.8;
+      player.vy += 0.9;
       player.y += player.vy;
+
+      // Squash/stretch animation
+      player.squash += (1 - player.squash) * 0.15;
 
       if (player.y >= groundY) {
         player.y = groundY;
+        if (player.vy > 5) {
+          player.squash = 0.7;
+          spawnParticle(player.x, player.y, THEME.white);
+        }
         player.vy = 0;
         player.grounded = true;
       }
 
       // Speed increases over time
-      speed = 6 + score / 500;
+      speed = 7 + score / 400;
 
       // Ground scroll
-      groundOffset = (groundOffset + speed) % 40;
+      groundOffset = (groundOffset + speed) % 60;
 
-      // Spawn obstacles
-      if (Math.random() < 0.02) spawnObstacle();
+      // Spawn obstacles and coins
+      if (Math.random() < 0.018) spawnObstacle();
+      spawnCoin();
 
       // Update obstacles
       for (let i = obstacles.length - 1; i >= 0; i--) {
         obstacles[i].x -= speed;
         if (obstacles[i].x + obstacles[i].w < 0) {
           obstacles.splice(i, 1);
-          score += 10;
         }
       }
 
-      // Collision detection
+      // Update coins
+      for (let i = coins.length - 1; i >= 0; i--) {
+        const coin = coins[i];
+        coin.x -= speed;
+        coin.bounce += 0.1;
+        
+        if (coin.x + coin.r < 0) {
+          coins.splice(i, 1);
+          continue;
+        }
+
+        // Coin collision
+        const dx = player.x - coin.x;
+        const dy = (player.y - player.h / 2) - coin.y;
+        if (Math.sqrt(dx * dx + dy * dy) < coin.r + player.w / 2 && !coin.collected) {
+          coin.collected = true;
+          score += 50;
+          spawnParticle(coin.x, coin.y, THEME.yellow);
+          playSound(1200, 0.05, 'sine');
+          playSound(1500, 0.05, 'sine');
+          coins.splice(i, 1);
+        }
+      }
+
+      // Collision detection with obstacles
       const px = player.x - player.w / 2;
       const py = player.y - player.h;
       for (const obs of obstacles) {
@@ -191,107 +292,166 @@
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.life -= 0.03;
+        p.life -= 0.04;
         if (p.life <= 0) particles.splice(i, 1);
-      }
-
-      // Running particles
-      if (player.grounded && Math.random() < 0.3) {
-        spawnParticle(player.x - 15, player.y, THEME.teal);
       }
 
       score++;
     }
 
     function draw() {
-      // Background
-      ctx.fillStyle = THEME.bg;
+      // Background gradient
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, '#1a1a2e');
+      grad.addColorStop(1, '#2d2d2d');
+      ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
 
-      // Stars
-      ctx.fillStyle = THEME.text;
-      for (let i = 0; i < 50; i++) {
-        const sx = (i * 137 + groundOffset * 0.2) % W;
-        const sy = (i * 73) % (groundY - 50);
-        ctx.globalAlpha = 0.3 + (i % 3) * 0.2;
-        ctx.fillRect(sx, sy, 2, 2);
+      // Background dots (Nintendo style)
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      for (let x = 0; x < W; x += 30) {
+        for (let y = 0; y < groundY; y += 30) {
+          ctx.beginPath();
+          ctx.arc(x, y, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
-      ctx.globalAlpha = 1;
 
       // Ground
       ctx.fillStyle = THEME.surface;
       ctx.fillRect(0, groundY, W, H - groundY);
 
-      // Ground lines
-      ctx.strokeStyle = THEME.teal;
-      ctx.globalAlpha = 0.3;
+      // Ground pattern (dashed line)
+      ctx.strokeStyle = THEME.gray;
       ctx.lineWidth = 2;
-      for (let x = -groundOffset; x < W; x += 40) {
-        ctx.beginPath();
-        ctx.moveTo(x, groundY);
-        ctx.lineTo(x, groundY + 10);
-        ctx.stroke();
+      ctx.setLineDash([20, 20]);
+      ctx.beginPath();
+      ctx.moveTo(0, groundY + 2);
+      ctx.lineTo(W, groundY + 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Moving ground lines
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      for (let x = -groundOffset; x < W; x += 60) {
+        ctx.fillRect(x, groundY + 15, 30, 3);
       }
-      ctx.globalAlpha = 1;
 
       // Particles
       for (const p of particles) {
         ctx.globalAlpha = p.life;
         ctx.fillStyle = p.color;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = p.color;
-        ctx.fillRect(p.x - 3, p.y - 3, 6, 6);
-      }
-      ctx.shadowBlur = 0;
-      ctx.globalAlpha = 1;
-
-      // Player
-      ctx.fillStyle = THEME.gold;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = THEME.gold;
-      const px = player.x - player.w / 2;
-      const py = player.y - player.h;
-      ctx.fillRect(px, py, player.w, player.h);
-      
-      // Player face
-      ctx.fillStyle = THEME.bg;
-      ctx.shadowBlur = 0;
-      ctx.fillRect(px + 25, py + 12, 8, 8); // eye
-      ctx.fillRect(px + 20, py + 30, 15, 5); // mouth
-      
-      // Obstacles
-      ctx.fillStyle = THEME.pink;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = THEME.pink;
-      for (const obs of obstacles) {
-        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-        // Spiky top
         ctx.beginPath();
-        ctx.moveTo(obs.x, obs.y);
-        ctx.lineTo(obs.x + obs.w / 2, obs.y - 15);
-        ctx.lineTo(obs.x + obs.w, obs.y);
+        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
 
-      // Score
-      ctx.fillStyle = THEME.text;
-      ctx.font = 'bold 24px system-ui';
+      // Coins
+      for (const coin of coins) {
+        const bounceY = Math.sin(coin.bounce) * 5;
+        ctx.fillStyle = THEME.yellow;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = THEME.yellow;
+        ctx.beginPath();
+        ctx.arc(coin.x, coin.y + bounceY, coin.r, 0, Math.PI * 2);
+        ctx.fill();
+        // Inner shine
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(coin.x - 4, coin.y + bounceY - 4, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Player (rounded square like Nintendo icons)
+      const squashX = player.squash;
+      const squashY = 2 - player.squash;
+      const pw = player.w * squashX;
+      const ph = player.h * squashY;
+      const px = player.x - pw / 2;
+      const py = player.y - ph;
+      
+      ctx.fillStyle = player.color;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = player.color;
+      roundRect(ctx, px, py, pw, ph, 12);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      
+      // Player face (cute Nintendo style)
+      ctx.fillStyle = THEME.white;
+      const eyeY = py + ph * 0.35;
+      const eyeSize = 6;
+      ctx.beginPath();
+      ctx.arc(px + pw * 0.35, eyeY, eyeSize, 0, Math.PI * 2);
+      ctx.arc(px + pw * 0.65, eyeY, eyeSize, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Smile
+      ctx.strokeStyle = THEME.white;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(px + pw / 2, py + ph * 0.55, 8, 0.2 * Math.PI, 0.8 * Math.PI);
+      ctx.stroke();
+
+      // Obstacles (rounded like Joy-Con buttons)
+      for (const obs of obstacles) {
+        ctx.fillStyle = obs.color;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = obs.color;
+        roundRect(ctx, obs.x, obs.y, obs.w, obs.h, 8);
+        ctx.fill();
+        // Top cap
+        ctx.beginPath();
+        ctx.arc(obs.x + obs.w / 2, obs.y, obs.w / 2, Math.PI, 0);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Score (Nintendo UI style)
+      ctx.fillStyle = THEME.white;
+      ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText(`${Math.floor(score)}`, 20, 40);
+      ctx.fillText(Math.floor(score).toString().padStart(6, '0'), 20, 45);
+      
+      // Coin counter
+      ctx.fillStyle = THEME.yellow;
+      ctx.beginPath();
+      ctx.arc(W - 80, 35, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = THEME.white;
+      ctx.textAlign = 'right';
+      ctx.fillText(`×${Math.floor(score / 50)}`, W - 20, 45);
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
     }
 
     function gameOver() {
       gameRunning = false;
-      playSound(150, 0.3, 'sawtooth');
+      playSound(200, 0.2, 'square');
+      playSound(150, 0.3, 'square');
       
       if (score > bestScore) {
         bestScore = score;
-        localStorage.setItem('runner-best', bestScore.toString());
+        localStorage.setItem('runner-switch-best', bestScore.toString());
       }
       
-      document.getElementById('final-score').textContent = Math.floor(score);
-      document.getElementById('best-score').textContent = Math.floor(bestScore);
+      document.getElementById('final-score').textContent = Math.floor(score).toString().padStart(6, '0');
+      document.getElementById('best-score').textContent = Math.floor(bestScore).toString().padStart(6, '0');
       document.getElementById('game-over').style.display = 'flex';
     }
 
@@ -317,7 +477,7 @@
       const gain = audioCtx.createGain();
       osc.type = type;
       osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
