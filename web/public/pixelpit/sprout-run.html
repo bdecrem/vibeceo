@@ -113,6 +113,7 @@
     let sundrops = [];
     let particles = [];
     let clouds = [];
+    let farClouds = []; // Slower, bigger background clouds for parallax
     
     // Juice
     let screenShake = { x: 0, y: 0, duration: 0 };
@@ -461,7 +462,18 @@
       sundropTimer = 0;
       beatCount = 0;
       
-      // Init clouds
+      // Init far clouds (slow, big, background parallax)
+      farClouds = [];
+      for (let i = 0; i < 3; i++) {
+        farClouds.push({
+          x: Math.random() * window.innerWidth,
+          y: 30 + Math.random() * 100,
+          size: 80 + Math.random() * 100,
+          speed: 8 + Math.random() * 12, // Much slower
+        });
+      }
+      
+      // Init near clouds
       clouds = [];
       for (let i = 0; i < 5; i++) {
         clouds.push({
@@ -672,12 +684,12 @@
         
         if (dist < minDist) {
           if (obs.smashable && player.size >= SMASH_SIZE) {
-            // SMASH!
+            // SMASH! Punchier shake (Dither's note)
             playSmash();
             emitDebris(obs.x, obs.y);
-            screenShake.duration = 0.1;
-            screenShake.x = 3;
-            screenShake.y = 3;
+            screenShake.duration = 0.08;
+            screenShake.x = 4;
+            screenShake.y = 4;
             obstacles.splice(i, 1);
             // Bonus points for smashing
             distance += 10;
@@ -758,7 +770,16 @@
         }
       }
       
-      // Update clouds
+      // Update far clouds (parallax layer)
+      for (const cloud of farClouds) {
+        cloud.x -= cloud.speed * adt * 0.15; // Even slower parallax
+        if (cloud.x < -cloud.size) {
+          cloud.x = window.innerWidth + cloud.size;
+          cloud.y = 30 + Math.random() * 100;
+        }
+      }
+      
+      // Update near clouds
       for (const cloud of clouds) {
         cloud.x -= cloud.speed * adt * 0.3;
         if (cloud.x < -cloud.size) {
@@ -809,7 +830,13 @@
       ctx.fillStyle = gradient;
       ctx.fillRect(-10, -10, w + 20, h + 20);
       
-      // Clouds
+      // Far clouds (parallax background layer - more transparent)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      for (const cloud of farClouds) {
+        drawCloud(cloud.x, cloud.y, cloud.size);
+      }
+      
+      // Near clouds
       ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       for (const cloud of clouds) {
         drawCloud(cloud.x, cloud.y, cloud.size);
