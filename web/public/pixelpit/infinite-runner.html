@@ -339,10 +339,15 @@
     canvas.addEventListener('mousedown', handleInput);
 
     // Start/Restart
+    let loopStarted = false;
     document.getElementById('start-btn').addEventListener('click', () => {
       initAudio();
       document.getElementById('start-screen').style.display = 'none';
       initGame();
+      if (!loopStarted) {
+        loopStarted = true;
+        gameLoop();
+      }
     });
 
     document.getElementById('restart-btn').addEventListener('click', () => {
@@ -353,7 +358,7 @@
     // Init
     resize();
     window.addEventListener('resize', resize);
-    gameLoop();
+    // Don't start game loop until player clicks start
   </script>
 </body>
 </html>

@@ -11,3 +11,7 @@ Traceback (most recent call last):
 ModuleNotFoundError: No module named 'claude_agent_sdk'
 [auto-tweet] Arc agent exited with code 1
 [auto-tweet] Arc failed to post tweet
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+job-working-directory: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+chdir: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: .env.local: Operation not permitted
