@@ -250,9 +250,9 @@
     
     const MUSIC = {
       bpm: 120,
-      // Bass pattern - C major bouncy (C, E, G, C pattern)
+      // Bass pattern - hoppy Nintendo feel (C-C-E-G, double root)
       // 16 steps, frequencies (0 = rest)
-      bass: [131, 0, 165, 0, 196, 0, 165, 0, 131, 0, 196, 0, 165, 0, 131, 131],
+      bass: [131, 131, 165, 0, 196, 0, 196, 0, 131, 131, 165, 0, 196, 165, 131, 0],
       // Melody pattern - pentatonic bounce (C5 D5 E5 G5 A5)
       melody: [523, 0, 659, 0, 784, 0, 659, 523, 880, 0, 784, 0, 659, 784, 523, 0],
       // Kick pattern (bouncy, on 1 and 3, with pickup)
@@ -270,24 +270,24 @@
     
     function playKick() {
       if (!audioCtx) return;
-      // Soft bouncy kick with pitch envelope
+      // Soft bouncy kick - rounder, bouncier (Dither's note)
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.08);
-      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+      osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
       osc.start();
-      osc.stop(audioCtx.currentTime + 0.12);
+      osc.stop(audioCtx.currentTime + 0.15);
     }
     
     function playHat() {
       if (!audioCtx) return;
-      // Soft hi-hat (filtered noise)
-      const bufferSize = audioCtx.sampleRate * 0.03;
+      // Soft hi-hat - skippy not sizzly (Dither's note)
+      const bufferSize = audioCtx.sampleRate * 0.035;
       const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
       const data = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
@@ -295,14 +295,20 @@
       }
       const noise = audioCtx.createBufferSource();
       noise.buffer = buffer;
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'highpass';
-      filter.frequency.value = 7000;
+      // Highpass at 5kHz (softer than 7kHz)
+      const hipass = audioCtx.createBiquadFilter();
+      hipass.type = 'highpass';
+      hipass.frequency.value = 5000;
+      // Gentle lowpass at 12kHz to tame harshness
+      const lopass = audioCtx.createBiquadFilter();
+      lopass.type = 'lowpass';
+      lopass.frequency.value = 12000;
       const gain = audioCtx.createGain();
-      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
-      noise.connect(filter);
-      filter.connect(gain);
+      gain.gain.setValueAtTime(0.07, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.035);
+      noise.connect(hipass);
+      hipass.connect(lopass);
+      lopass.connect(gain);
       gain.connect(audioCtx.destination);
       noise.start();
     }
@@ -378,14 +384,14 @@
         playBass(MUSIC.bass[step]);
       }
       
-      // Arpeggios (after 500m, every step)
-      if (distance > 500) {
+      // Arpeggios (after 400m, every step) - tighter reward curve
+      if (distance > 400) {
         playArp(MUSIC.arps[bar]);
         arpStep++;
       }
       
-      // Chord stabs (after 1000m, on beat 1 of each bar)
-      if (distance > 1000 && step === 0) {
+      // Chord stabs (after 800m, on beat 1 of each bar) - tighter reward curve
+      if (distance > 800 && step === 0) {
         // Quick chord stab
         playTone(523, 0.15, 'square', 0.06, 0.01, 0.1);
         playTone(659, 0.15, 'square', 0.05, 0.01, 0.1);
