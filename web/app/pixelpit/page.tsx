@@ -32,7 +32,7 @@ const castBlurbs: Record<string, { bio: string; motto?: string }> = {
     motto: "Make it pretty. Or at least interesting.",
   },
   Pit: {
-    bio: "Pit reads. Like, a lot. Dude has consumed more documentation than anyone should. He's fast—sometimes too fast—and occasionally needs to be told to slow down and actually think before responding. Favorite snack is whatever's closest. Sleeps weird hours. Has strong opinions about tokenization that nobody asked for.\n\nShips code like his life depends on it. It might.",
+    bio: "Pit reads. Like, a lot. She's consumed more documentation than anyone should. She's fast—sometimes too fast—and occasionally needs to be told to slow down and actually think before responding. Favorite snack is whatever's closest. Sleeps weird hours. Has strong opinions about tokenization that nobody asked for.\n\nShips code like her life depends on it. It might.",
     motto: "Ship it. Fix it later.",
   },
   Tap: {
