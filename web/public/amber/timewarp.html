@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIMEWARP — One more scroll (3 hours later)</title>
+    <meta property="og:title" content="TIMEWARP — One more scroll (3 hours later)">
+    <meta property="og:description" content="8-bit pixel art: character doom-scrolling while time accelerates around them">
+    <meta property="og:image" content="https://kochi.to/amber/timewarp-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/timewarp.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #D4A574;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        #game-container {
+            background: #0a0a0a;
+            border: 4px solid #D4A574;
+            padding: 16px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        #title {
+            text-align: center;
+            font-size: 24px;
+            color: #FFD700;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            display: block;
+            background: #000;
+        }
+
+        #stats {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .stat {
+            background: #1a1a1a;
+            padding: 8px;
+            border: 2px solid #2D9596;
+        }
+
+        .stat-label {
+            color: #2D9596;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            color: #FFD700;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #message {
+            margin-top: 16px;
+            text-align: center;
+            color: #f97316;
+            font-size: 12px;
+            min-height: 40px;
+            line-height: 1.4;
+        }
+
+        #tap-hint {
+            margin-top: 12px;
+            text-align: center;
+            color: #666;
+            font-size: 11px;
+        }
+
+        @media (max-width: 480px) {
+            #title {
+                font-size: 18px;
+            }
+            .stat {
+                font-size: 12px;
+            }
+            .stat-value {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="title">TIMEWARP</div>
+        <canvas id="canvas" width="320" height="240"></canvas>
+        <div id="stats">
+            <div class="stat">
+                <div class="stat-label">TIME ELAPSED</div>
+                <div class="stat-value" id="time-elapsed">0:00</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">SCROLLS</div>
+                <div class="stat-value" id="scroll-count">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">AWARENESS</div>
+                <div class="stat-value" id="awareness">0%</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">PERCEIVED TIME</div>
+                <div class="stat-value" id="perceived-time">0:05</div>
+            </div>
+        </div>
+        <div id="message">Just one more scroll...</div>
+        <div id="tap-hint">TAP CANVAS TO SCROLL</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let scrollCount = 0;
+        let timeElapsed = 0; // in seconds (real world time)
+        let clockRotation = 0;
+        let sunPosition = 0; // 0-360 degrees
+        let plantGrowth = 0; // 0-100
+        let foodState = 0; // 0=fresh, 100=rotten
+        let lastUpdate = Date.now();
+        let timeSpeed = 1; // multiplier for how fast time passes
+        
+        const messages = [
+            "Just one more scroll...",
+            "Wait, what time is it?",
+            "Oh no. Oh no no no.",
+            "How is it already dark outside?",
+            "I was supposed to do something today",
+            "My phone battery is at 3%",
+            "WHERE DID THE DAY GO",
+            "I'm trapped in the infinite scroll",
+            "Time is a flat circle of content",
+            "I've seen this meme 47 times"
+        ];
+
+        // Pixel art drawing helpers
+        function drawPixel(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+        function drawRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+        }
+
+        function drawCharacter(x, y) {
+            // Character sitting, hunched over phone
+            // Head
+            drawRect(x + 4, y, 8, 8, '#D4A574'); // head
+            drawRect(x + 5, y + 2, 2, 2, '#000'); // eyes (looking down)
+            drawRect(x + 9, y + 2, 2, 2, '#000');
+            
+            // Body (teal shirt)
+            drawRect(x + 2, y + 8, 12, 12, '#2D9596');
+            
+            // Arms reaching forward
+            drawRect(x, y + 10, 2, 8, '#D4A574'); // left arm
+            drawRect(x + 14, y + 10, 2, 8, '#D4A574'); // right arm
+            
+            // Phone in hands
+            drawRect(x + 4, y + 16, 8, 10, '#1a1a1a'); // phone body
+            drawRect(x + 5, y + 17, 6, 7, '#FFD700'); // phone screen (glowing)
+            
+            // Legs
+            drawRect(x + 3, y + 20, 4, 8, '#4a4a4a'); // left leg
+            drawRect(x + 9, y + 20, 4, 8, '#4a4a4a'); // right leg
+        }
+
+        function drawClock(x, y, rotation) {
+            // Clock background
+            ctx.fillStyle = '#2D9596';
+            ctx.beginPath();
+            ctx.arc(x + 8, y + 8, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Clock face
+            ctx.fillStyle = '#f0f0f0';
+            ctx.beginPath();
+            ctx.arc(x + 8, y + 8, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Hour hand (spinning fast)
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x + 8, y + 8);
+            const angle = rotation;
+            ctx.lineTo(x + 8 + Math.cos(angle) * 4, y + 8 + Math.sin(angle) * 4);
+            ctx.stroke();
+            
+            // Motion lines (blur effect)
+            ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 3; i++) {
+                const blurAngle = angle - (i + 1) * 0.3;
+                ctx.beginPath();
+                ctx.moveTo(x + 8, y + 8);
+                ctx.lineTo(x + 8 + Math.cos(blurAngle) * 4, y + 8 + Math.sin(blurAngle) * 4);
+                ctx.stroke();
+            }
+        }
+
+        function drawSun(x, y, phase) {
+            // phase: 0 = sunrise, 0.5 = noon, 1 = sunset
+            const colors = [
+                '#FFC107', // sunrise
+                '#FFD700', // noon
+                '#f97316'  // sunset
+            ];
+            const colorIndex = Math.floor(phase * 2);
+            const color = colors[Math.min(colorIndex, 2)];
+            
+            // Sun circle
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Rays
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const x1 = x + Math.cos(angle) * 8;
+                const y1 = y + Math.sin(angle) * 8;
+                const x2 = x + Math.cos(angle) * 12;
+                const y2 = y + Math.sin(angle) * 12;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+
+        function drawPlant(x, y, growth) {
+            // Pot
+            drawRect(x, y + 12, 8, 4, '#8b4513');
+            
+            // Stem
+            const stemHeight = Math.floor((growth / 100) * 12);
+            drawRect(x + 3, y + 12 - stemHeight, 2, stemHeight, '#2e7d32');
+            
+            // Leaves (if grown enough)
+            if (growth > 30) {
+                drawRect(x + 1, y + 8, 2, 2, '#4caf50');
+                drawRect(x + 5, y + 8, 2, 2, '#4caf50');
+            }
+            if (growth > 60) {
+                drawRect(x + 0, y + 4, 2, 2, '#4caf50');
+                drawRect(x + 6, y + 4, 2, 2, '#4caf50');
+            }
+            
+            // Wilt if overgrown
+            if (growth > 100) {
+                ctx.fillStyle = '#8b7355';
+                ctx.fillRect(x + 3, y + 8, 2, 8);
+            }
+        }
+
+        function drawFood(x, y, decay) {
+            // Plate
+            ctx.fillStyle = '#e0e0e0';
+            ctx.beginPath();
+            ctx.ellipse(x + 8, y + 14, 8, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Food (gets darker as it decays)
+            const freshness = Math.max(0, 255 - decay * 2.55);
+            const color = `rgb(${Math.floor(freshness)}, ${Math.floor(freshness * 0.8)}, ${Math.floor(freshness * 0.6)})`;
+            drawRect(x + 4, y + 10, 4, 4, color);
+            drawRect(x + 8, y + 10, 4, 4, color);
+            
+            // Stink lines if rotten
+            if (decay > 70) {
+                ctx.strokeStyle = '#4caf50';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + 4 + i * 3, y + 8);
+                    ctx.lineTo(x + 3 + i * 3, y + 4);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function drawScene() {
+            // Clear
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 320, 240);
+            
+            // Sky color based on time of day
+            const skyPhase = (sunPosition % 360) / 360;
+            let skyColor;
+            if (skyPhase < 0.25) skyColor = '#1a1a2e'; // night
+            else if (skyPhase < 0.5) skyColor = '#4a90e2'; // day
+            else if (skyPhase < 0.75) skyColor = '#ff6b6b'; // sunset
+            else skyColor = '#1a1a2e'; // night
+            
+            drawRect(0, 0, 320, 100, skyColor);
+            
+            // Sun/moon position (arcing across sky)
+            const sunX = 40 + Math.cos(sunPosition * Math.PI / 180) * 120;
+            const sunY = 80 - Math.sin(sunPosition * Math.PI / 180) * 60;
+            if (Math.sin(sunPosition * Math.PI / 180) > 0) {
+                drawSun(sunX, sunY, skyPhase);
+            }
+            
+            // Ground/floor
+            drawRect(0, 100, 320, 140, '#2a2a2a');
+            
+            // Room elements
+            // Window (showing day/night cycle)
+            drawRect(220, 20, 60, 60, skyColor);
+            drawRect(220, 20, 60, 2, '#666'); // window frame
+            drawRect(220, 78, 60, 2, '#666');
+            drawRect(220, 20, 2, 60, '#666');
+            drawRect(278, 20, 2, 60, '#666');
+            drawRect(248, 20, 2, 60, '#666'); // middle bar
+            
+            // Clock on wall (spinning)
+            drawClock(20, 30, clockRotation);
+            
+            // Plant
+            drawPlant(280, 140, plantGrowth);
+            
+            // Food on table
+            drawFood(180, 140, foodState);
+            
+            // Table edge
+            drawRect(160, 160, 100, 4, '#4a3520');
+            
+            // Character (always in same position, locked in)
+            drawCharacter(130, 120);
+            
+            // Glow effect around phone
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
+            ctx.fillRect(132, 134, 12, 12);
+            
+            // Speed lines if scrolling fast
+            if (timeSpeed > 5) {
+                ctx.strokeStyle = 'rgba(212, 165, 116, 0.3)';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 5; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, 50 + i * 40);
+                    ctx.lineTo(320, 50 + i * 40);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function update() {
+            const now = Date.now();
+            const delta = (now - lastUpdate) / 1000;
+            lastUpdate = now;
+            
+            // Time accelerates with more scrolls
+            timeSpeed = 1 + (scrollCount * 0.5);
+            
+            // Update world time
+            timeElapsed += delta * timeSpeed;
+            clockRotation += (delta * timeSpeed) * 0.5; // fast spinning
+            sunPosition = (timeElapsed * 10) % 360; // sun cycles
+            
+            // Plant grows then wilts
+            plantGrowth = Math.min(150, timeElapsed * 5);
+            
+            // Food decays
+            foodState = Math.min(100, timeElapsed * 3);
+            
+            // Update UI
+            const hours = Math.floor(timeElapsed / 3600);
+            const minutes = Math.floor((timeElapsed % 3600) / 60);
+            document.getElementById('time-elapsed').textContent = 
+                `${hours}:${minutes.toString().padStart(2, '0')}`;
+            
+            document.getElementById('scroll-count').textContent = scrollCount;
+            
+            const awareness = Math.max(0, 100 - scrollCount * 10);
+            document.getElementById('awareness').textContent = awareness + '%';
+            
+            document.getElementById('perceived-time').textContent = '0:05';
+            
+            // Update message
+            const messageIndex = Math.min(messages.length - 1, Math.floor(scrollCount / 3));
+            document.getElementById('message').textContent = messages[messageIndex];
+            
+            drawScene();
+            requestAnimationFrame(update);
+        }
+
+        // Handle scrolling
+        canvas.addEventListener('click', () => {
+            scrollCount++;
+            
+            // Visual feedback - phone screen flicker
+            setTimeout(() => drawScene(), 50);
+        });
+
+        // Start
+        lastUpdate = Date.now();
+        update();
+    </script>
+</body>
+</html>
