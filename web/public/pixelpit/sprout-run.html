@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Sprout Run 🌱</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { 
+      width: 100%; 
+      height: 100%; 
+      overflow: hidden;
+      touch-action: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    body { 
+      background: linear-gradient(180deg, #f8fafc 0%, #34d399 100%);
+      display: flex; 
+      justify-content: center; 
+      align-items: center;
+    }
+    canvas { 
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #tap-to-start {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      text-align: center;
+      pointer-events: none;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.05); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="tap-to-start">🌱 Tap to Start 🌱</div>
+  <script>
+    // ═══════════════════════════════════════════════════════════════
+    // SPROUT RUN - A tiny seed on a big adventure
+    // ═══════════════════════════════════════════════════════════════
+    
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const startPrompt = document.getElementById('tap-to-start');
+    
+    // ─── THEME (PLAYROOM) ───────────────────────────────────────────
+    const THEME = {
+      bg: '#f8fafc',
+      bgGradientEnd: '#34d399',
+      surface: '#ffffff',
+      border: '#000000',
+      bubblegum: '#f472b6',
+      splash: '#22d3ee',
+      sunshine: '#facc15',
+      mint: '#34d399',
+      grape: '#a78bfa',
+      text: '#1e293b',
+      ground: '#8b5e3c',
+      groundLight: '#a67c52',
+      grass: '#22c55e',
+    };
+    
+    // ─── CONSTANTS ──────────────────────────────────────────────────
+    const GRAVITY = 2400;
+    const JUMP_VELOCITY = -650;
+    const BASE_SPEED = 280;
+    const SUNDROP_FOR_LEVEL = 5;
+    const MAX_SIZE = 5;
+    const SMASH_SIZE = 3;
+    
+    // ─── GAME STATE ─────────────────────────────────────────────────
+    let gameState = 'waiting'; // waiting, playing, dead
+    let distance = 0;
+    let highScore = parseInt(localStorage.getItem('sproutrun-high') || '0');
+    
+    // Player
+    let player = {
+      x: 0,
+      y: 0,
+      vy: 0,
+      baseSize: 20,
+      size: 1,
+      sundrops: 0,
+      grounded: false,
+      squash: 1,
+      stretch: 1,
+      wiggle: 0,
+    };
+    
+    // World
+    let groundY = 0;
+    let scrollOffset = 0;
+    let obstacles = [];
+    let sundrops = [];
+    let particles = [];
+    let clouds = [];
+    
+    // Juice
+    let screenShake = { x: 0, y: 0, duration: 0 };
+    let screenFlash = { color: null, duration: 0 };
+    let levelUpPulse = 0;
+    let slowMo = 1;
+    let slowMoTimer = 0;
+    
+    // Timing
+    let lastTime = 0;
+    let spawnTimer = 0;
+    let sundropTimer = 0;
+    
+    // ─── AUDIO ──────────────────────────────────────────────────────
+    let audioCtx = null;
+    let audioInitialized = false;
+    
+    function initAudio() {
+      if (audioInitialized) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioInitialized = true;
+      startMusic();
+    }
+    
+    function playTone(freq, duration, type = 'sine', volume = 0.3, attack = 0.01, decay = 0.1) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + attack);
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    function playNoise(duration, volume = 0.1) {
+      if (!audioCtx) return;
+      const bufferSize = audioCtx.sampleRate * duration;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 800;
+      gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      noise.start();
+    }
+    
+    function playJump() {
+      // Soft "bwip"
+      playTone(400, 0.15, 'sine', 0.2, 0.01, 0.1);
+      playTone(600, 0.1, 'sine', 0.1, 0.02, 0.05);
+    }
+    
+    function playCollect() {
+      // Marimba-ish note (randomize C5, E5, G5)
+      const notes = [523, 659, 784];
+      const freq = notes[Math.floor(Math.random() * notes.length)];
+      playTone(freq, 0.2, 'triangle', 0.25, 0.005, 0.15);
+      playTone(freq * 2, 0.15, 'sine', 0.1, 0.01, 0.1);
+    }
+    
+    function playLevelUp() {
+      // Happy arpeggio
+      const notes = [523, 659, 784, 1047];
+      notes.forEach((freq, i) => {
+        setTimeout(() => playTone(freq, 0.3, 'triangle', 0.2), i * 80);
+      });
+    }
+    
+    function playSmash() {
+      // Chunky CRONCH
+      playNoise(0.15, 0.3);
+      playTone(80, 0.2, 'square', 0.3, 0.01, 0.1);
+      playTone(60, 0.25, 'sawtooth', 0.2, 0.01, 0.15);
+    }
+    
+    function playHurt() {
+      // Descending tone
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(150, audioCtx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+    
+    function playDeath() {
+      // Slide whistle down
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+    }
+    
+    // ─── MUSIC SYSTEM (120 BPM, C Major, Kalimba-ish) ───────────────
+    let musicPlaying = false;
+    let musicInterval = null;
+    let beatCount = 0;
+    
+    // C major pentatonic melody notes
+    const melodyNotes = [523, 587, 659, 784, 880, 1047]; // C5, D5, E5, G5, A5, C6
+    const bassNotes = [131, 147, 165, 196]; // C3, D3, E3, G3
+    
+    function startMusic() {
+      if (musicPlaying) return;
+      musicPlaying = true;
+      const beatMs = 500; // 120 BPM = 500ms per beat
+      
+      musicInterval = setInterval(() => {
+        if (gameState !== 'playing' || !audioCtx) return;
+        
+        beatCount++;
+        
+        // Kalimba melody (every beat, varying pattern)
+        if (beatCount % 2 === 0) {
+          const noteIdx = Math.floor(Math.random() * melodyNotes.length);
+          playTone(melodyNotes[noteIdx], 0.3, 'triangle', 0.12, 0.005, 0.2);
+        }
+        
+        // Soft kick on 1 and 3
+        if (beatCount % 4 === 0 || beatCount % 4 === 2) {
+          playTone(80, 0.1, 'sine', 0.15, 0.01, 0.05);
+        }
+        
+        // Shaker on every beat (subtle)
+        playNoise(0.05, 0.03);
+        
+        // Add bass after 500m (distance > 500)
+        if (distance > 500 && beatCount % 4 === 0) {
+          const bassNote = bassNotes[Math.floor(Math.random() * bassNotes.length)];
+          playTone(bassNote, 0.4, 'triangle', 0.15, 0.01, 0.3);
+        }
+        
+        // Add arpeggios after 1000m
+        if (distance > 1000 && beatCount % 8 === 0) {
+          const arpNotes = [523, 659, 784, 1047];
+          arpNotes.forEach((n, i) => {
+            setTimeout(() => playTone(n, 0.1, 'square', 0.08), i * 60);
+          });
+        }
+        
+      }, beatMs);
+    }
+    
+    function stopMusic() {
+      if (musicInterval) {
+        clearInterval(musicInterval);
+        musicInterval = null;
+      }
+      musicPlaying = false;
+    }
+    
+    // ─── RESIZE ─────────────────────────────────────────────────────
+    function resize() {
+      canvas.width = window.innerWidth * window.devicePixelRatio;
+      canvas.height = window.innerHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      groundY = window.innerHeight - 80;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // ─── INIT / RESET ───────────────────────────────────────────────
+    function resetGame() {
+      distance = 0;
+      player = {
+        x: window.innerWidth * 0.2,
+        y: groundY - 20,
+        vy: 0,
+        baseSize: 20,
+        size: 1,
+        sundrops: 0,
+        grounded: true,
+        squash: 1,
+        stretch: 1,
+        wiggle: 0,
+      };
+      obstacles = [];
+      sundrops = [];
+      particles = [];
+      screenShake = { x: 0, y: 0, duration: 0 };
+      screenFlash = { color: null, duration: 0 };
+      levelUpPulse = 0;
+      slowMo = 1;
+      slowMoTimer = 0;
+      spawnTimer = 0;
+      sundropTimer = 0;
+      beatCount = 0;
+      
+      // Init clouds
+      clouds = [];
+      for (let i = 0; i < 5; i++) {
+        clouds.push({
+          x: Math.random() * window.innerWidth,
+          y: 50 + Math.random() * 150,
+          size: 40 + Math.random() * 60,
+          speed: 20 + Math.random() * 30,
+        });
+      }
+    }
+    
+    // ─── SPAWNING ───────────────────────────────────────────────────
+    function spawnObstacle() {
+      const types = ['mushroom', 'rock', 'acorn', 'thorn'];
+      const weights = [0.3, 0.25, 0.25, 0.2];
+      let r = Math.random();
+      let type = types[0];
+      let cumulative = 0;
+      for (let i = 0; i < types.length; i++) {
+        cumulative += weights[i];
+        if (r < cumulative) { type = types[i]; break; }
+      }
+      
+      const smashable = type !== 'thorn';
+      const baseSize = type === 'thorn' ? 25 : (type === 'rock' ? 35 : 30);
+      
+      obstacles.push({
+        x: window.innerWidth + 50,
+        y: groundY - baseSize / 2,
+        type,
+        size: baseSize,
+        smashable,
+        wiggle: 0,
+      });
+    }
+    
+    function spawnSundrop() {
+      const y = groundY - 60 - Math.random() * 100;
+      sundrops.push({
+        x: window.innerWidth + 50,
+        y,
+        size: 18,
+        sparkle: 0,
+        collected: false,
+      });
+    }
+    
+    // ─── PARTICLES ──────────────────────────────────────────────────
+    function emitParticles(x, y, color, count, speed = 200) {
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 / count) * i + Math.random() * 0.5;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed * (0.5 + Math.random() * 0.5),
+          vy: Math.sin(angle) * speed * (0.5 + Math.random() * 0.5) - 100,
+          size: 4 + Math.random() * 4,
+          color,
+          life: 1,
+          decay: 2 + Math.random(),
+        });
+      }
+    }
+    
+    function emitDebris(x, y) {
+      const colors = [THEME.ground, THEME.groundLight, '#666'];
+      for (let i = 0; i < 8; i++) {
+        particles.push({
+          x, y,
+          vx: (Math.random() - 0.5) * 300,
+          vy: -200 - Math.random() * 200,
+          size: 3 + Math.random() * 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 1,
+          decay: 3,
+          gravity: true,
+        });
+      }
+    }
+    
+    function emitLeaves(x, y) {
+      const colors = [THEME.mint, THEME.grass, '#86efac'];
+      for (let i = 0; i < 12; i++) {
+        particles.push({
+          x, y,
+          vx: (Math.random() - 0.5) * 150,
+          vy: -100 - Math.random() * 150,
+          size: 6 + Math.random() * 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 1,
+          decay: 1.5,
+          gravity: true,
+          leaf: true,
+        });
+      }
+    }
+    
+    // ─── UPDATE ─────────────────────────────────────────────────────
+    function update(dt) {
+      if (gameState !== 'playing') return;
+      
+      // Slow motion
+      if (slowMoTimer > 0) {
+        slowMoTimer -= dt;
+        slowMo = 0.3;
+        if (slowMoTimer <= 0) {
+          slowMo = 1;
+          gameState = 'dead';
+          if (distance > highScore) {
+            highScore = Math.floor(distance);
+            localStorage.setItem('sproutrun-high', highScore.toString());
+          }
+        }
+      }
+      
+      const adt = dt * slowMo; // adjusted delta time
+      
+      // Speed increases with distance, decreases with size
+      const sizeSpeedMod = 1 - (player.size - 1) * 0.08;
+      const distanceSpeedMod = 1 + Math.min(distance / 2000, 0.5);
+      const speed = BASE_SPEED * sizeSpeedMod * distanceSpeedMod;
+      
+      // Distance
+      distance += speed * adt / 10;
+      scrollOffset += speed * adt;
+      
+      // Player physics
+      if (!player.grounded) {
+        player.vy += GRAVITY * adt;
+      }
+      player.y += player.vy * adt;
+      
+      // Ground collision
+      const playerRadius = player.baseSize * (1 + (player.size - 1) * 0.3) / 2;
+      if (player.y + playerRadius >= groundY) {
+        player.y = groundY - playerRadius;
+        if (!player.grounded && player.vy > 0) {
+          // Landing squash
+          player.squash = 1.3;
+          player.stretch = 0.7;
+        }
+        player.vy = 0;
+        player.grounded = true;
+      }
+      
+      // Squash/stretch recovery
+      player.squash += (1 - player.squash) * 10 * adt;
+      player.stretch += (1 - player.stretch) * 10 * adt;
+      
+      // Wiggle while rolling
+      if (player.grounded) {
+        player.wiggle += speed * adt * 0.02;
+      }
+      
+      // Spawn obstacles
+      spawnTimer += adt;
+      const spawnRate = Math.max(0.8, 1.5 - distance / 3000);
+      if (spawnTimer > spawnRate) {
+        spawnTimer = 0;
+        spawnObstacle();
+      }
+      
+      // Spawn sundrops
+      sundropTimer += adt;
+      if (sundropTimer > 0.6) {
+        sundropTimer = 0;
+        if (Math.random() < 0.6) spawnSundrop();
+      }
+      
+      // Update obstacles
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+        obs.x -= speed * adt;
+        obs.wiggle += adt * 5;
+        
+        // Remove off-screen
+        if (obs.x < -50) {
+          obstacles.splice(i, 1);
+          continue;
+        }
+        
+        // Collision
+        const obsRadius = obs.size / 2;
+        const dx = player.x - obs.x;
+        const dy = (player.y) - obs.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const minDist = playerRadius + obsRadius - 5;
+        
+        if (dist < minDist) {
+          if (obs.smashable && player.size >= SMASH_SIZE) {
+            // SMASH!
+            playSmash();
+            emitDebris(obs.x, obs.y);
+            screenShake.duration = 0.1;
+            screenShake.x = 3;
+            screenShake.y = 3;
+            obstacles.splice(i, 1);
+            // Bonus points for smashing
+            distance += 10;
+          } else if (obs.type === 'thorn') {
+            // Thorns shrink you
+            playHurt();
+            player.size--;
+            player.squash = 0.6;
+            player.stretch = 1.4;
+            screenFlash.color = 'rgba(239, 68, 68, 0.3)';
+            screenFlash.duration = 0.1;
+            obstacles.splice(i, 1);
+            
+            if (player.size < 1) {
+              // DEATH
+              playDeath();
+              emitLeaves(player.x, player.y);
+              slowMoTimer = 0.3;
+            }
+          } else {
+            // Hit non-smashable at small size = death
+            playDeath();
+            emitLeaves(player.x, player.y);
+            slowMoTimer = 0.3;
+          }
+        }
+      }
+      
+      // Update sundrops
+      for (let i = sundrops.length - 1; i >= 0; i--) {
+        const drop = sundrops[i];
+        drop.x -= speed * adt;
+        drop.sparkle += adt * 10;
+        
+        if (drop.x < -50) {
+          sundrops.splice(i, 1);
+          continue;
+        }
+        
+        // Collection
+        const dx = player.x - drop.x;
+        const dy = player.y - drop.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < playerRadius + drop.size && !drop.collected) {
+          drop.collected = true;
+          playCollect();
+          emitParticles(drop.x, drop.y, THEME.sunshine, 6, 150);
+          screenFlash.color = 'rgba(251, 191, 36, 0.2)';
+          screenFlash.duration = 0.05;
+          
+          player.sundrops++;
+          if (player.sundrops >= SUNDROP_FOR_LEVEL && player.size < MAX_SIZE) {
+            player.sundrops = 0;
+            player.size++;
+            levelUpPulse = 0.2;
+            playLevelUp();
+            screenFlash.color = 'rgba(251, 191, 36, 0.4)';
+            screenFlash.duration = 0.2;
+            emitParticles(player.x, player.y, THEME.sunshine, 12, 200);
+          }
+          
+          sundrops.splice(i, 1);
+        }
+      }
+      
+      // Update particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * adt;
+        p.y += p.vy * adt;
+        if (p.gravity) {
+          p.vy += 600 * adt;
+        }
+        p.life -= p.decay * adt;
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+      
+      // Update clouds
+      for (const cloud of clouds) {
+        cloud.x -= cloud.speed * adt * 0.3;
+        if (cloud.x < -cloud.size) {
+          cloud.x = window.innerWidth + cloud.size;
+          cloud.y = 50 + Math.random() * 150;
+        }
+      }
+      
+      // Screen effects
+      if (screenShake.duration > 0) {
+        screenShake.duration -= adt;
+      }
+      if (screenFlash.duration > 0) {
+        screenFlash.duration -= adt;
+      }
+      if (levelUpPulse > 0) {
+        levelUpPulse -= adt;
+      }
+    }
+    
+    // ─── DRAW ───────────────────────────────────────────────────────
+    function draw() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      
+      // Screen shake offset
+      let shakeX = 0, shakeY = 0;
+      if (screenShake.duration > 0) {
+        shakeX = (Math.random() - 0.5) * screenShake.x * 2;
+        shakeY = (Math.random() - 0.5) * screenShake.y * 2;
+      }
+      
+      ctx.save();
+      ctx.translate(shakeX, shakeY);
+      
+      // Level up pulse zoom
+      if (levelUpPulse > 0) {
+        const scale = 1 + levelUpPulse * 0.25;
+        ctx.translate(w / 2, h / 2);
+        ctx.scale(scale, scale);
+        ctx.translate(-w / 2, -h / 2);
+      }
+      
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, 0, h);
+      gradient.addColorStop(0, THEME.bg);
+      gradient.addColorStop(1, THEME.bgGradientEnd);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(-10, -10, w + 20, h + 20);
+      
+      // Clouds
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      for (const cloud of clouds) {
+        drawCloud(cloud.x, cloud.y, cloud.size);
+      }
+      
+      // Ground
+      ctx.fillStyle = THEME.ground;
+      ctx.fillRect(-10, groundY, w + 20, h - groundY + 10);
+      
+      // Ground top line
+      ctx.fillStyle = THEME.grass;
+      ctx.fillRect(-10, groundY - 4, w + 20, 8);
+      
+      // Ground pattern
+      ctx.fillStyle = THEME.groundLight;
+      const patternOffset = scrollOffset % 40;
+      for (let x = -patternOffset; x < w + 40; x += 40) {
+        ctx.fillRect(x, groundY + 15, 20, 4);
+        ctx.fillRect(x + 20, groundY + 35, 15, 4);
+      }
+      
+      // Sundrops
+      for (const drop of sundrops) {
+        drawSundrop(drop);
+      }
+      
+      // Obstacles
+      for (const obs of obstacles) {
+        drawObstacle(obs);
+      }
+      
+      // Player
+      if (slowMoTimer <= 0 || gameState === 'playing') {
+        drawPlayer();
+      }
+      
+      // Particles
+      for (const p of particles) {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        if (p.leaf) {
+          // Leaf shape
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.vx * 0.01);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, p.size, p.size / 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        } else {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+      
+      // Screen flash
+      if (screenFlash.duration > 0 && screenFlash.color) {
+        ctx.fillStyle = screenFlash.color;
+        ctx.fillRect(-10, -10, w + 20, h + 20);
+      }
+      
+      ctx.restore();
+      
+      // UI (not affected by shake/zoom)
+      drawUI();
+    }
+    
+    function drawCloud(x, y, size) {
+      ctx.beginPath();
+      ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+      ctx.arc(x + size * 0.4, y - size * 0.1, size * 0.4, 0, Math.PI * 2);
+      ctx.arc(x + size * 0.7, y + size * 0.1, size * 0.35, 0, Math.PI * 2);
+      ctx.arc(x - size * 0.3, y + size * 0.1, size * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    function drawPlayer() {
+      const radius = player.baseSize * (1 + (player.size - 1) * 0.3) / 2;
+      const x = player.x;
+      const y = player.y;
+      
+      ctx.save();
+      ctx.translate(x, y);
+      
+      // Wiggle while rolling
+      const wiggleAngle = Math.sin(player.wiggle) * 0.1;
+      ctx.rotate(wiggleAngle);
+      
+      // Squash and stretch
+      ctx.scale(player.stretch, player.squash);
+      
+      // Drop shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.beginPath();
+      ctx.ellipse(3, radius + 2, radius * 0.9, radius * 0.3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Body
+      ctx.fillStyle = THEME.mint;
+      ctx.strokeStyle = THEME.border;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      
+      // Face
+      const eyeOffset = radius * 0.25;
+      const eyeSize = radius * 0.15;
+      
+      // Eyes
+      ctx.fillStyle = THEME.border;
+      ctx.beginPath();
+      ctx.arc(-eyeOffset, -eyeSize, eyeSize, 0, Math.PI * 2);
+      ctx.arc(eyeOffset, -eyeSize, eyeSize, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Blush
+      ctx.fillStyle = 'rgba(244, 114, 182, 0.4)';
+      ctx.beginPath();
+      ctx.ellipse(-radius * 0.5, eyeSize * 2, radius * 0.2, radius * 0.12, 0, 0, Math.PI * 2);
+      ctx.ellipse(radius * 0.5, eyeSize * 2, radius * 0.2, radius * 0.12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Smile
+      ctx.strokeStyle = THEME.border;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, eyeSize * 0.5, radius * 0.3, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+      
+      // Sprout on top
+      ctx.strokeStyle = THEME.grass;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, -radius);
+      ctx.quadraticCurveTo(radius * 0.3, -radius - 8, radius * 0.1, -radius - 12 - player.size * 2);
+      ctx.stroke();
+      
+      // Leaf
+      ctx.fillStyle = THEME.grass;
+      ctx.beginPath();
+      ctx.ellipse(radius * 0.1, -radius - 12 - player.size * 2, 4 + player.size, 2 + player.size * 0.5, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Size indicator (rings for levels)
+      if (player.size >= SMASH_SIZE) {
+        ctx.strokeStyle = THEME.sunshine;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.5 + Math.sin(Date.now() * 0.005) * 0.3;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius + 5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      
+      ctx.restore();
+    }
+    
+    function drawSundrop(drop) {
+      const x = drop.x;
+      const y = drop.y;
+      const size = drop.size;
+      
+      // Glow
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = THEME.sunshine;
+      
+      // Sparkle effect
+      const sparkleScale = 1 + Math.sin(drop.sparkle) * 0.1;
+      
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(sparkleScale, sparkleScale);
+      
+      // Drop shadow
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.beginPath();
+      ctx.ellipse(2, size * 0.6, size * 0.6, size * 0.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Main body
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = THEME.sunshine;
+      ctx.fillStyle = THEME.sunshine;
+      ctx.strokeStyle = THEME.border;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.stroke();
+      
+      // Shine
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.beginPath();
+      ctx.arc(-size * 0.15, -size * 0.15, size * 0.15, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+      ctx.shadowBlur = 0;
+    }
+    
+    function drawObstacle(obs) {
+      const x = obs.x;
+      const y = obs.y;
+      const size = obs.size;
+      const wiggle = Math.sin(obs.wiggle) * 2;
+      
+      ctx.save();
+      ctx.translate(x, y + wiggle);
+      
+      // Drop shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.beginPath();
+      ctx.ellipse(3, size / 2 + 2, size / 2.5, size / 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      
+      if (obs.type === 'mushroom') {
+        // Stem
+        ctx.fillStyle = '#fef3c7';
+        ctx.strokeStyle = THEME.border;
+        ctx.lineWidth = 2;
+        ctx.fillRect(-size * 0.15, 0, size * 0.3, size * 0.4);
+        ctx.strokeRect(-size * 0.15, 0, size * 0.3, size * 0.4);
+        
+        // Cap
+        ctx.fillStyle = THEME.bubblegum;
+        ctx.beginPath();
+        ctx.ellipse(0, -size * 0.1, size / 2, size / 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Spots
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(-size * 0.15, -size * 0.15, 4, 0, Math.PI * 2);
+        ctx.arc(size * 0.1, -size * 0.05, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Happy face
+        ctx.fillStyle = THEME.border;
+        ctx.beginPath();
+        ctx.arc(-5, 5, 2, 0, Math.PI * 2);
+        ctx.arc(5, 5, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 10, 4, 0, Math.PI);
+        ctx.stroke();
+        
+      } else if (obs.type === 'rock') {
+        // Rock body
+        ctx.fillStyle = '#94a3b8';
+        ctx.strokeStyle = THEME.border;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-size / 2, size * 0.1);
+        ctx.lineTo(-size * 0.3, -size / 2.5);
+        ctx.lineTo(size * 0.2, -size / 2.5);
+        ctx.lineTo(size / 2, size * 0.1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // Face
+        ctx.fillStyle = THEME.border;
+        ctx.beginPath();
+        ctx.arc(-6, -3, 2, 0, Math.PI * 2);
+        ctx.arc(6, -3, 2, 0, Math.PI * 2);
+        ctx.fill();
+        // Slight frown
+        ctx.beginPath();
+        ctx.arc(0, 5, 5, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+        
+      } else if (obs.type === 'acorn') {
+        // Cap
+        ctx.fillStyle = '#92400e';
+        ctx.strokeStyle = THEME.border;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(0, -size * 0.2, size / 2.2, size / 4, 0, 0, Math.PI, true);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Body
+        ctx.fillStyle = '#d97706';
+        ctx.beginPath();
+        ctx.ellipse(0, size * 0.1, size / 2.5, size / 2.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Face
+        ctx.fillStyle = THEME.border;
+        ctx.beginPath();
+        ctx.arc(-4, 3, 2, 0, Math.PI * 2);
+        ctx.arc(4, 3, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 10, 4, 0.3, Math.PI - 0.3);
+        ctx.stroke();
+        
+      } else if (obs.type === 'thorn') {
+        // Spiky danger plant
+        ctx.fillStyle = '#7f1d1d';
+        ctx.strokeStyle = THEME.border;
+        ctx.lineWidth = 2;
+        
+        // Base
+        ctx.beginPath();
+        ctx.moveTo(-size / 2, size / 3);
+        ctx.lineTo(0, -size / 2);
+        ctx.lineTo(size / 2, size / 3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // Side spikes
+        ctx.beginPath();
+        ctx.moveTo(-size / 3, 0);
+        ctx.lineTo(-size / 2 - 5, -size / 4);
+        ctx.lineTo(-size / 4, -size / 5);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(size / 3, 0);
+        ctx.lineTo(size / 2 + 5, -size / 4);
+        ctx.lineTo(size / 4, -size / 5);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Angry eyes
+        ctx.fillStyle = THEME.sunshine;
+        ctx.beginPath();
+        ctx.arc(-5, -5, 3, 0, Math.PI * 2);
+        ctx.arc(5, -5, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = THEME.border;
+        ctx.beginPath();
+        ctx.arc(-5, -5, 1.5, 0, Math.PI * 2);
+        ctx.arc(5, -5, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      ctx.restore();
+    }
+    
+    function drawUI() {
+      const w = window.innerWidth;
+      
+      // Score
+      ctx.fillStyle = THEME.text;
+      ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${Math.floor(distance)}m`, 20, 40);
+      
+      // High score
+      ctx.font = '16px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.6)';
+      ctx.fillText(`Best: ${highScore}m`, 20, 62);
+      
+      // Size indicator
+      ctx.textAlign = 'right';
+      ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = player.size >= SMASH_SIZE ? THEME.sunshine : THEME.text;
+      let sizeText = '🌱'.repeat(player.size);
+      ctx.fillText(sizeText, w - 20, 40);
+      
+      // Sundrop progress
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.3)';
+      ctx.fillRect(w - 120, 50, 100, 8);
+      ctx.fillStyle = THEME.sunshine;
+      ctx.fillRect(w - 120, 50, (player.sundrops / SUNDROP_FOR_LEVEL) * 100, 8);
+      ctx.strokeStyle = THEME.border;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(w - 120, 50, 100, 8);
+      
+      // Game over screen
+      if (gameState === 'dead') {
+        ctx.fillStyle = 'rgba(248, 250, 252, 0.9)';
+        ctx.fillRect(0, 0, w, window.innerHeight);
+        
+        ctx.textAlign = 'center';
+        ctx.fillStyle = THEME.text;
+        ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
+        ctx.fillText('🌱', w / 2, window.innerHeight / 2 - 60);
+        
+        ctx.font = 'bold 32px system-ui, -apple-system, sans-serif';
+        ctx.fillText(`${Math.floor(distance)}m`, w / 2, window.innerHeight / 2);
+        
+        if (distance >= highScore && highScore > 0) {
+          ctx.fillStyle = THEME.sunshine;
+          ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+          ctx.fillText('NEW BEST!', w / 2, window.innerHeight / 2 + 35);
+        }
+        
+        ctx.fillStyle = THEME.text;
+        ctx.font = '20px system-ui, -apple-system, sans-serif';
+        ctx.fillText('Tap to retry', w / 2, window.innerHeight / 2 + 80);
+      }
+    }
+    
+    // ─── INPUT ──────────────────────────────────────────────────────
+    function handleInput() {
+      initAudio();
+      startPrompt.style.display = 'none';
+      
+      if (gameState === 'waiting') {
+        gameState = 'playing';
+        resetGame();
+        startMusic();
+        return;
+      }
+      
+      if (gameState === 'dead') {
+        gameState = 'playing';
+        resetGame();
+        startMusic();
+        return;
+      }
+      
+      if (gameState === 'playing' && player.grounded) {
+        player.vy = JUMP_VELOCITY;
+        player.grounded = false;
+        player.squash = 0.7;
+        player.stretch = 1.3;
+        playJump();
+      }
+    }
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleInput();
+    });
+    
+    canvas.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      handleInput();
+    });
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        handleInput();
+      }
+    });
+    
+    // ─── GAME LOOP ──────────────────────────────────────────────────
+    function loop(timestamp) {
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+      lastTime = timestamp;
+      
+      update(dt);
+      draw();
+      
+      requestAnimationFrame(loop);
+    }
+    
+    // ─── START ──────────────────────────────────────────────────────
+    resetGame();
+    requestAnimationFrame(loop);
+    
+  </script>
+</body>
+</html>
