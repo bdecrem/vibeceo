@@ -426,9 +426,41 @@
     let screenFlash = { color: null, alpha: 0 };
     let particles = []; // { x, y, vx, vy, color, life, size }
     
+    // Tutorial hint
+    let currentHint = '';
+    
     // ─── LEVELS ─────────────────────────────────────────────────────
     const LEVELS = [
-      // Level 1: Tutorial - one surface type, simple
+      // Level 0: SUPER SIMPLE - Just click once! One surface, one note.
+      {
+        playerStart: { x: 0.3, y: 0.5 },
+        playerVelocity: { x: 0.5, y: 0.5 }, // Very slow
+        door: { x: 0.85, y: 0.5 },
+        hint: "Click anywhere to steer the ball. Hit the wall!",
+        surfaces: [
+          { type: 'crystal', x1: 0.5, y1: 0.3, x2: 0.5, y2: 0.7 },  // One wall in the way
+        ],
+        pattern: [
+          { surface: 'crystal', zone: 'mid' },  // Just hit it once!
+        ],
+      },
+      // Level 1: Three notes - still easy
+      {
+        playerStart: { x: 0.2, y: 0.5 },
+        playerVelocity: { x: 1.5, y: 1 },
+        door: { x: 0.85, y: 0.5 },
+        hint: "Hit 3 notes to unlock the door. Listen to the pattern!",
+        surfaces: [
+          { type: 'crystal', x1: 0.1, y1: 0.2, x2: 0.6, y2: 0.2 },  // top
+          { type: 'crystal', x1: 0.1, y1: 0.8, x2: 0.6, y2: 0.8 },  // bottom
+        ],
+        pattern: [
+          { surface: 'crystal', zone: 'high' },
+          { surface: 'crystal', zone: 'low' },
+          { surface: 'crystal', zone: 'high' },
+        ],
+      },
+      // Level 2: Original tutorial - slightly harder
       {
         playerStart: { x: 0.2, y: 0.5 },
         playerVelocity: { x: 3, y: 1 },
@@ -587,6 +619,9 @@
       door.unlocked = false;
       door.pulsePhase = 0;
       door.melodyTimer = 2; // Play first hint after 2 seconds
+      
+      // Tutorial hint
+      currentHint = level.hint || '';
       door.melodyPlaying = false;
       
       // Update UI
@@ -965,6 +1000,14 @@
         ctx.globalAlpha = screenFlash.alpha;
         ctx.fillRect(0, 0, w, h);
         ctx.globalAlpha = 1;
+      }
+      
+      // Tutorial hint text (shows during gameplay)
+      if (currentHint && gameState === 'playing' && !door.unlocked) {
+        ctx.fillStyle = 'rgba(248, 250, 252, 0.8)';
+        ctx.font = '18px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(currentHint, w / 2, 60);
       }
       
       // Start screen
