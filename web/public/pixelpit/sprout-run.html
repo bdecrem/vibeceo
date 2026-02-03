@@ -49,7 +49,7 @@
 </head>
 <body>
   <canvas id="game"></canvas>
-  <div id="tap-to-start">🌱 Tap to Start 🌱</div>
+  <div id="tap-to-start">🌱 Hold to Fly 🌱</div>
   <script>
     // ═══════════════════════════════════════════════════════════════
     // SPROUT RUN - A tiny seed on a big adventure
@@ -77,8 +77,8 @@
     };
     
     // ─── CONSTANTS ──────────────────────────────────────────────────
-    const GRAVITY = 2400;
-    const JUMP_VELOCITY = -650;
+    const GRAVITY = 1600;
+    const THRUST = 3600; // Upward force when holding
     const BASE_SPEED = 280;
     const SUNDROP_FOR_LEVEL = 5;
     const MAX_SIZE = 5;
@@ -101,10 +101,11 @@
       squash: 1,
       stretch: 1,
       wiggle: 0,
-      canFlutter: false,  // unlocks after first jump
-      flutterUsed: false, // one flutter per jump
-      spinAngle: 0,       // for flutter spin animation
+      isThrusting: false, // jetpack-style thrust
     };
+
+    // Input state
+    let isHolding = false;
     
     // World
     let groundY = 0;
@@ -445,9 +446,7 @@
         squash: 1,
         stretch: 1,
         wiggle: 0,
-        canFlutter: false,
-        flutterUsed: false,
-        spinAngle: 0,
+        isThrusting: false,
       };
       obstacles = [];
       sundrops = [];
@@ -461,6 +460,7 @@
       spawnTimer = 0;
       sundropTimer = 0;
       beatCount = 0;
+      isHolding = false;
       
       // Init far clouds (slow, big, background parallax)
       farClouds = [];
@@ -569,6 +569,21 @@
         });
       }
     }
+
+    function emitThrustParticle(x, y) {
+      const colors = [THEME.mint, THEME.grass, '#bbf7d0'];
+      particles.push({
+        x: x + (Math.random() - 0.5) * 10,
+        y: y,
+        vx: (Math.random() - 0.5) * 30,
+        vy: 100 + Math.random() * 100,
+        size: 3 + Math.random() * 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 1,
+        decay: 4,
+        leaf: true,
+      });
+    }
     
     // ─── UPDATE ─────────────────────────────────────────────────────
     function update(dt) {
@@ -601,49 +616,68 @@
       
       // Speed increases with distance, decreases with size
       const sizeSpeedMod = 1 - (player.size - 1) * 0.08;
-      const distanceSpeedMod = 1 + Math.min(distance / 2000, 0.5);
+      // Tier 1: 0-2000m -> up to +50%, Tier 2: 2000-3000m -> up to +75%
+      let distanceSpeedMod = 1 + Math.min(distance / 2000, 0.5);
+      if (distance > 2000) {
+        distanceSpeedMod += Math.min((distance - 2000) / 4000, 0.25); // Extra 25% from 2000-3000
+      }
       const speed = BASE_SPEED * sizeSpeedMod * distanceSpeedMod;
       
       // Distance
       distance += speed * adt / 10;
       scrollOffset += speed * adt;
       
-      // Player physics
-      if (!player.grounded) {
-        player.vy += GRAVITY * adt;
-      }
-      player.y += player.vy * adt;
-      
-      // Ground collision
+      // Player physics - Jetpack style
       const playerRadius = player.baseSize * (1 + (player.size - 1) * 0.3) / 2;
+
+      // Always apply gravity
+      player.vy += GRAVITY * adt;
+
+      // Apply thrust when holding
+      if (isHolding && gameState === 'playing') {
+        player.vy -= THRUST * adt;
+        player.isThrusting = true;
+        // Stretch while thrusting
+        player.squash = 0.85;
+        player.stretch = 1.15;
+        // Emit thrust particles occasionally
+        if (Math.random() < 0.3) {
+          emitThrustParticle(player.x, player.y + playerRadius);
+        }
+      } else {
+        player.isThrusting = false;
+      }
+
+      // Cap vertical velocity
+      player.vy = Math.max(-800, Math.min(800, player.vy));
+
+      player.y += player.vy * adt;
+
+      // Ground collision (floor)
       if (player.y + playerRadius >= groundY) {
         player.y = groundY - playerRadius;
-        if (!player.grounded && player.vy > 0) {
+        if (player.vy > 100) {
           // Landing squash
           player.squash = 1.3;
           player.stretch = 0.7;
         }
         player.vy = 0;
         player.grounded = true;
+      } else {
+        player.grounded = false;
       }
-      
+
+      // Ceiling collision
+      if (player.y - playerRadius < 80) {
+        player.y = 80 + playerRadius;
+        player.vy = Math.max(0, player.vy);
+      }
+
       // Squash/stretch recovery
-      player.squash += (1 - player.squash) * 10 * adt;
-      player.stretch += (1 - player.stretch) * 10 * adt;
-      
-      // Spin animation decay (for flutter)
-      if (player.spinAngle > 0) {
-        player.spinAngle -= 15 * adt; // Fast spin
-        if (player.spinAngle < 0) player.spinAngle = 0;
-      }
-      
-      // Reset flutter when grounded
-      if (player.grounded) {
-        player.canFlutter = false;
-        player.flutterUsed = false;
-      }
-      
-      // Wiggle while rolling
+      player.squash += (1 - player.squash) * 8 * adt;
+      player.stretch += (1 - player.stretch) * 8 * adt;
+
+      // Wiggle while on ground
       if (player.grounded) {
         player.wiggle += speed * adt * 0.02;
       }
@@ -923,9 +957,9 @@
       ctx.save();
       ctx.translate(x, y);
       
-      // Wiggle while rolling + flutter spin
+      // Wiggle while rolling
       const wiggleAngle = Math.sin(player.wiggle) * 0.1;
-      ctx.rotate(wiggleAngle + player.spinAngle);
+      ctx.rotate(wiggleAngle);
       
       // Squash and stretch
       ctx.scale(player.stretch, player.squash);
@@ -1239,85 +1273,77 @@
         
         ctx.fillStyle = THEME.text;
         ctx.font = '20px system-ui, -apple-system, sans-serif';
-        ctx.fillText('Tap to retry', w / 2, window.innerHeight / 2 + 80);
+        ctx.fillText('Hold to retry', w / 2, window.innerHeight / 2 + 80);
       }
     }
     
-    // ─── INPUT ──────────────────────────────────────────────────────
-    function handleInput() {
+    // ─── INPUT (Jetpack Joyride style - hold to rise) ───────────────
+    function startHold() {
       initAudio();
       startPrompt.style.display = 'none';
-      
+
       if (gameState === 'waiting') {
         gameState = 'playing';
         resetGame();
         startMusic();
-        return;
       }
-      
+
       if (gameState === 'dead') {
         gameState = 'playing';
         resetGame();
         startMusic();
-        return;
       }
-      
-      if (gameState === 'playing') {
-        if (player.grounded) {
-          // First jump from ground
-          player.vy = JUMP_VELOCITY;
-          player.grounded = false;
-          player.squash = 0.7;
-          player.stretch = 1.3;
-          player.canFlutter = true;
-          player.flutterUsed = false;
-          playJump();
-        } else if (player.canFlutter && !player.flutterUsed) {
-          // Flutter jump mid-air
-          player.vy = JUMP_VELOCITY * 0.6; // Smaller boost
-          player.flutterUsed = true;
-          player.squash = 0.85;
-          player.stretch = 1.15;
-          player.spinAngle = Math.PI * 2; // Full spin
-          playFlutter();
-          // Emit leaf particles
-          emitFlutterLeaves(player.x, player.y);
-        }
-      }
+
+      isHolding = true;
     }
-    
-    function emitFlutterLeaves(x, y) {
-      const colors = [THEME.mint, THEME.grass, '#86efac', '#bbf7d0'];
-      for (let i = 0; i < 6; i++) {
-        const angle = (Math.PI * 2 / 6) * i;
-        particles.push({
-          x, y,
-          vx: Math.cos(angle) * 80 + (Math.random() - 0.5) * 40,
-          vy: Math.sin(angle) * 80 - 50,
-          size: 4 + Math.random() * 3,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          life: 1,
-          decay: 2.5,
-          gravity: true,
-          leaf: true,
-        });
-      }
+
+    function endHold() {
+      isHolding = false;
     }
-    
+
+    // Touch events
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      handleInput();
+      startHold();
     });
-    
+
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      endHold();
+    });
+
+    canvas.addEventListener('touchcancel', (e) => {
+      e.preventDefault();
+      endHold();
+    });
+
+    // Mouse events
     canvas.addEventListener('mousedown', (e) => {
       e.preventDefault();
-      handleInput();
+      startHold();
     });
-    
+
+    canvas.addEventListener('mouseup', (e) => {
+      e.preventDefault();
+      endHold();
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      endHold();
+    });
+
+    // Keyboard events
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         e.preventDefault();
-        handleInput();
+        if (!e.repeat) startHold();
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        endHold();
       }
     });
     

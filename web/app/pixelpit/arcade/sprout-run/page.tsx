@@ -2032,18 +2032,24 @@ export default function SproutRunGame() {
           top: 20,
           right: 20,
           zIndex: 150,
-          background: 'rgba(0,0,0,0.4)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 8,
+          background: soundEnabled
+            ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)'
+            : 'rgba(255,255,255,0.6)',
+          border: `2px solid ${soundEnabled ? '#fbbf24' : '#d1d5db'}`,
+          borderRadius: 14,
           padding: '10px 14px',
-          color: '#fff',
+          color: soundEnabled ? '#92400e' : '#9ca3af',
           fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: 14,
+          fontSize: 18,
+          fontWeight: 600,
           cursor: 'pointer',
-          opacity: soundEnabled ? 0.8 : 0.4,
+          boxShadow: soundEnabled
+            ? '0 4px 12px rgba(251, 191, 36, 0.3)'
+            : '0 2px 8px rgba(0,0,0,0.1)',
+          transition: 'all 0.2s ease',
         }}
       >
-        {soundEnabled ? '♪' : '♪̶'}
+        {soundEnabled ? '🎵' : '🔇'}
       </button>
 
       {/* In-Game UI */}
@@ -2360,18 +2366,19 @@ export default function SproutRunGame() {
               <button
                 onClick={() => setGameState('leaderboard')}
                 style={{
-                  background: 'rgba(255,255,255,0.8)',
-                  border: `1px solid ${THEME.border}20`,
-                  borderRadius: 10,
-                  color: THEME.text,
-                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+                  border: '2px solid #34d399',
+                  borderRadius: 12,
+                  color: '#065f46',
+                  padding: '12px 20px',
                   fontSize: 13,
                   fontFamily: 'system-ui, -apple-system, sans-serif',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(52, 211, 153, 0.25)',
                 }}
               >
-                Leaderboard
+                🏆 Leaderboard
               </button>
               <button
                 onClick={() => {
@@ -2392,18 +2399,19 @@ export default function SproutRunGame() {
                   }
                 }}
                 style={{
-                  background: 'rgba(255,255,255,0.8)',
-                  border: `1px solid ${THEME.border}20`,
-                  borderRadius: 10,
-                  color: THEME.text,
-                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                  border: '2px solid #fbbf24',
+                  borderRadius: 12,
+                  color: '#92400e',
+                  padding: '12px 20px',
                   fontSize: 13,
                   fontFamily: 'system-ui, -apple-system, sans-serif',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(251, 191, 36, 0.25)',
                 }}
               >
-                Share
+                📤 Share
               </button>
             </div>
           </div>

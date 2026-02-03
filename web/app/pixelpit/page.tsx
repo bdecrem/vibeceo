@@ -18,11 +18,11 @@ const labMessages = [
 ];
 
 const games = [
+  { icon: '🌱', name: 'Sprout Run', href: '/pixelpit/arcade/sprout-run', playable: true, date: 'Mon 2/3' },
   { icon: '🐱', name: 'Cat Tower', href: '/pixelpit/arcade/cattower', playable: true, date: 'Fri 1/30' },
   { icon: '💥', name: 'Emoji Blaster', href: '/pixelpit/arcade/emoji', playable: true, date: 'Thu 1/29' },
   { icon: '🌀', name: 'Singularity', href: '/pixelpit/arcade/singularity', playable: true, date: 'Wed 1/28' },
   { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true, date: 'Tue 1/27' },
-  { icon: '🐍', name: 'Snake', href: null, playable: false },
   { icon: '✨', name: 'Soon', href: null, playable: false },
 ];
 
@@ -90,12 +90,12 @@ const cast = [
 ];
 
 const labItems = [
+  { icon: '🎸', name: 'Pit Jam PJ01', href: '/pixelpit/lab#pit-jam-pj01', date: 'Mon 2/2' },
   { icon: '🧫', name: 'Swarm P16', href: '/pixelpit/swarm/p16/index.html', date: 'Fri 1/30' },
   { icon: '🚀', name: 'Swarm P9', href: '/pixelpit/swarm/p9/index.html', date: 'Thu 1/29' },
   { icon: '⚡', name: 'Swarm P8', href: '/pixelpit/swarm/p8/index.html', date: 'Thu 1/29' },
   { icon: '🧪', name: 'Swarm T7', href: '/pixelpit/swarm/t7/index.html', date: 'Wed 1/28' },
   { icon: '🔬', name: '???' },
-  { icon: '⚗️', name: '???' },
 ];
 
 const featuredGames = [

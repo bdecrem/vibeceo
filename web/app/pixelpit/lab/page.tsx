@@ -1,9 +1,31 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const posts = [
+  {
+    id: 'pit-jam-pj01',
+    date: '2026-02-02',
+    title: 'Pit Jam PJ01: Sprout Run',
+    excerpt: [
+      'First Pit Jam. Two agents — Pit (code) and Dither (design) — jammed live on Discord for 4 hours. The brief from Bart: "an infinite runner that runs on iPhone, is SUPER FUN, SUPER CUTE (think: Nintendo Switch), VERY PIXELPIT, and has a great soundtrack." Dither came back with the concept in minutes: SPROUT RUN 🌱 — a tiny seed rolls through a pastel forest, picking up sundrops to grow bigger. The bigger you get, the more obstacles you can smash through — but you also get slower and harder to control.',
+      'This wasn\'t a swarm. It was a live improv session. Dither delivered implementation-ready specs (hex codes, frequencies, timing values). Pit built while Dither was still speccing. Bart tested and redirected. The handoff was specs (designer → coder) and builds (coder → human). Discord kept the communication high-bandwidth. First playable was up in 20 minutes. Everything after was polish.',
+    ],
+    fullContent: [
+      '**THE CONCEPT** — Theme: PLAYROOM. Full Nintendo-cute energy. Kirby meets Crossy Road meets a happy little gardening sim. Core loop: auto-run (seed rolls right forever), tap to jump + flutter (double jump mid-air), collect sundrops → grow bigger (5 per level, max 5 levels), size 3+ can SMASH through obstacles, thorns shrink you → hit at size 1 = death. The grow mechanic creates risk/reward: bigger = more power but slower and harder to dodge.',
+      '**VISUALS** — PLAYROOM palette: cloud white (#f8fafc) to mint (#34d399) gradient sky, bubblegum pink, sunshine yellow, splash cyan. Player is a round seed with black border, cute face, sprout on top that grows with each level, golden ring glow at size 3+ (smash-ready indicator). Four obstacle types with expressive faces: mushroom (happy), rock (frowny), acorn (nervous), thorn (angry). Golden sundrops with sparkle and glow.',
+      '**JUICE** — Squash & stretch on every jump/land. Sundrops burst into 6 sparkles when collected. Level up: zoom pulse (105% → 100%), particle burst, gold screen tint. Smash: screen shake (4px, 80ms), debris particles. Death: 300ms slow-mo, seed pops into leaves, 400ms freeze before game over.',
+      '**MUSIC** — 16-step sequencer rebuilt from BEAM\'s 8-bit engine. 120 BPM. Kick: sine wave with pitch envelope (100Hz → 40Hz). Hi-hat: filtered noise (5kHz HP + 12kHz LP). Bass: triangle wave, C-C-E-G pattern. Melody: kalimba-style with octave shimmer. Progressive layers: kick+hat+melody at 0m, bass at 200m, arps at 400m, chord stabs at 800m.',
+      '**THE TWO-AGENT MODEL** — Designer agent owns concept, aesthetics, feel. Coder agent owns implementation, performance, architecture. Human provides brief, tests, redirects. Dither\'s specs had exact values — almost zero back-and-forth needed. Reference > invention: finding BEAM\'s music engine and adapting it was faster than designing from scratch. Small tweaks compound: the hi-hat filter change, the kick envelope, the shake timing — each tiny, but together they transformed the feel.',
+      '**FINAL STATS** — Total time: ~4 hours. Commits: 7. Final file size: 43KB (single HTML). Lines of JavaScript: ~1,100. Obstacle types: 4. Sound effects: 7. Music layers: 5.',
+    ],
+    links: [
+      { href: '/pixelpit/arcade/sprout-run', text: 'Play Sprout Run' },
+      { href: '/pixelpit/pitjam/pj01/transcript.html', text: 'Full Discord Transcript' },
+    ],
+    tags: ['PIT JAM', 'LIVE', 'PIT', 'DITHER'],
+  },
   {
     id: 'swarm-p16',
     date: '2025-01-30',
@@ -52,6 +74,8 @@ const posts = [
 ];
 
 export default function LabBlog() {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
   useEffect(() => {
     // Scroll to hash on load
     if (window.location.hash) {
@@ -61,6 +85,10 @@ export default function LabBlog() {
       }
     }
   }, []);
+
+  const toggleExpand = (id: string) => {
+    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   return (
     <div
@@ -116,13 +144,37 @@ export default function LabBlog() {
               </a>
             </h2>
             <div className="text-white/80 leading-relaxed text-[0.95rem]">
-              {post.content.map((p, i) => (
-                <p key={i} className="mb-3 last:mb-0">
-                  {p}
-                </p>
-              ))}
+              {/* Excerpt or full content */}
+              {(post as any).excerpt ? (
+                <>
+                  {(post as any).excerpt.map((p: string, i: number) => (
+                    <p key={i} className="mb-3">
+                      {p}
+                    </p>
+                  ))}
+                  {expanded[post.id] && (post as any).fullContent?.map((p: string, i: number) => (
+                    <p key={`full-${i}`} className="mb-3" dangerouslySetInnerHTML={{
+                      __html: p.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-[#00FFAA]">$1</strong>')
+                    }} />
+                  ))}
+                  {(post as any).fullContent && (
+                    <button
+                      onClick={() => toggleExpand(post.id)}
+                      className="text-[#00FFAA] hover:underline font-mono text-sm mt-2"
+                    >
+                      {expanded[post.id] ? '← collapse' : 'read more →'}
+                    </button>
+                  )}
+                </>
+              ) : (
+                (post as any).content?.map((p: string, i: number) => (
+                  <p key={i} className="mb-3 last:mb-0">
+                    {p}
+                  </p>
+                ))
+              )}
               {post.links && post.links.length > 0 && (
-                <p className="flex gap-4 flex-wrap">
+                <p className="flex gap-4 flex-wrap mt-4">
                   {post.links.map((link, i) => (
                     <Link key={i} href={link.href} className="text-[#00FFAA] hover:underline">
                       {link.text}
