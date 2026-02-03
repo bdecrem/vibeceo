@@ -8,73 +8,31 @@ on:
       - 'web/app/api/pixelpit/**'
       - 'web/public/pixelpit/**'
       - 'web/lib/pixelpit/**'
-  workflow_dispatch:  # Manual trigger for testing
+  workflow_dispatch:
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout vibeceo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+      - uses: actions/checkout@v4
 
       - name: Prepare PixelPit structure
         run: |
-          mkdir -p pixelpit-build/app/api
-          mkdir -p pixelpit-build/lib
-          mkdir -p pixelpit-build/public
-
-          # Copy app files
+          mkdir -p pixelpit-build/app/api pixelpit-build/lib pixelpit-build/public
           cp -r web/app/pixelpit pixelpit-build/app/
           cp -r web/app/api/pixelpit pixelpit-build/app/api/
-
-          # Copy lib files
           cp -r web/lib/pixelpit pixelpit-build/lib/
-
-          # Copy public assets
           cp -r web/public/pixelpit pixelpit-build/public/
 
-          # Copy config templates
-          cp -r .github/pixelpit-config/* pixelpit-build/
-
-          # Create root layout if needed
-          cat > pixelpit-build/app/layout.tsx << 'LAYOUT'
-          import type { Metadata } from 'next'
-          import './globals.css'
-
-          export const metadata: Metadata = {
-            title: 'PixelPit',
-            description: 'Retro arcade games',
-          }
-
-          export default function RootLayout({
-            children,
-          }: {
-            children: React.ReactNode
-          }) {
-            return (
-              <html lang="en">
-                <body>{children}</body>
-              </html>
-            )
-          }
-          LAYOUT
-
-          # Create globals.css with Tailwind
-          cat > pixelpit-build/app/globals.css << 'CSS'
-          @tailwind base;
-          @tailwind components;
-          @tailwind utilities;
-          CSS
-
-          # Create root page that redirects to /pixelpit
-          cat > pixelpit-build/app/page.tsx << 'PAGE'
-          import { redirect } from 'next/navigation'
-          export default function Home() {
-            redirect('/pixelpit')
-          }
-          PAGE
+          # Copy the standalone configs from pixelpit repo (we'll fetch them)
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/package.json -o pixelpit-build/package.json
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/next.config.js -o pixelpit-build/next.config.js
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/tsconfig.json -o pixelpit-build/tsconfig.json
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/tailwind.config.ts -o pixelpit-build/tailwind.config.ts
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/postcss.config.cjs -o pixelpit-build/postcss.config.cjs
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/app/layout.tsx -o pixelpit-build/app/layout.tsx
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/app/globals.css -o pixelpit-build/app/globals.css
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/app/page.tsx -o pixelpit-build/app/page.tsx
 
       - name: Push to PixelPit repo
         uses: cpina/github-action-push-to-another-repository@main
