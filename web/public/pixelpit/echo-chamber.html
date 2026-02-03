@@ -444,36 +444,35 @@
           { surface: 'crystal', zone: 'mid' },  // Just hit it once!
         ],
       },
-      // Level 1: Three notes - still easy
+      // Level 1: Three hits - no pitch requirement yet!
       {
         playerStart: { x: 0.2, y: 0.5 },
         playerVelocity: { x: 1.5, y: 1 },
         door: { x: 0.85, y: 0.5 },
-        hint: "Hit 3 notes to unlock the door. Listen to the pattern!",
+        hint: "Hit the cyan walls 3 times. Any wall, anywhere!",
         surfaces: [
-          { type: 'crystal', x1: 0.1, y1: 0.2, x2: 0.6, y2: 0.2 },  // top
-          { type: 'crystal', x1: 0.1, y1: 0.8, x2: 0.6, y2: 0.8 },  // bottom
+          { type: 'crystal', x1: 0.1, y1: 0.3, x2: 0.1, y2: 0.7 },  // left vertical
+          { type: 'crystal', x1: 0.6, y1: 0.3, x2: 0.6, y2: 0.7 },  // right vertical
         ],
         pattern: [
-          { surface: 'crystal', zone: 'high' },
-          { surface: 'crystal', zone: 'low' },
-          { surface: 'crystal', zone: 'high' },
+          { surface: 'crystal', zone: 'mid' },  // mid = any position works
+          { surface: 'crystal', zone: 'mid' },
+          { surface: 'crystal', zone: 'mid' },
         ],
       },
-      // Level 2: Original tutorial - slightly harder
+      // Level 2: Introduce pitch - HIGH and LOW notes!
       {
         playerStart: { x: 0.2, y: 0.5 },
-        playerVelocity: { x: 3, y: 1 },
+        playerVelocity: { x: 2, y: 1 },
         door: { x: 0.85, y: 0.5 },
+        hint: "NEW: Hit HIGH (top) then LOW (bottom). Position = pitch!",
         surfaces: [
-          { type: 'crystal', x1: 0.1, y1: 0.2, x2: 0.5, y2: 0.2 },  // top
-          { type: 'crystal', x1: 0.1, y1: 0.8, x2: 0.5, y2: 0.8 },  // bottom
-          { type: 'crystal', x1: 0.1, y1: 0.2, x2: 0.1, y2: 0.8 },  // left
+          { type: 'crystal', x1: 0.1, y1: 0.15, x2: 0.6, y2: 0.15 },  // top wall - hitting it = HIGH note
+          { type: 'crystal', x1: 0.1, y1: 0.85, x2: 0.6, y2: 0.85 },  // bottom wall - hitting it = LOW note
         ],
         pattern: [
-          { surface: 'crystal', zone: 'high' },
-          { surface: 'crystal', zone: 'low' },
-          { surface: 'crystal', zone: 'high' },
+          { surface: 'crystal', zone: 'high' },  // hit top wall
+          { surface: 'crystal', zone: 'low' },   // hit bottom wall
         ],
       },
       // Level 2: Two surface types
