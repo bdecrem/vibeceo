@@ -154,7 +154,7 @@
       for (let t = 16000; t < 24000; t += beatInterval / 2) {
         map.push({ time: t, lane: Math.floor(Math.random() * 3) });
         // Add doubles sometimes
-        if (Math.random() < 0.3) {
+        if (Math.random() < 0.2) {
           const otherLane = (map[map.length - 1].lane + 1 + Math.floor(Math.random() * 2)) % 3;
           map.push({ time: t, lane: otherLane });
         }
@@ -176,7 +176,7 @@
       // Final chorus: intense (32-45 sec)
       for (let t = 32000; t < 45000; t += beatInterval / 2) {
         map.push({ time: t, lane: Math.floor(Math.random() * 3) });
-        if (Math.random() < 0.4) {
+        if (Math.random() < 0.25) {
           const otherLane = (map[map.length - 1].lane + 1 + Math.floor(Math.random() * 2)) % 3;
           map.push({ time: t, lane: otherLane });
         }
