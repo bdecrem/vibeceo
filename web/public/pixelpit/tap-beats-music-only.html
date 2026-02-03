@@ -7,7 +7,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
-      background: #09090b;
+      background: linear-gradient(135deg, #09090b 0%, #1a1a2e 100%);
       color: #f8fafc;
       font-family: system-ui, -apple-system, sans-serif;
       display: flex;
@@ -20,17 +20,18 @@
     h1 { font-size: 48px; margin-bottom: 10px; }
     .subtitle { color: #ec4899; font-size: 20px; margin-bottom: 40px; }
     .btn {
-      background: #ec4899;
+      background: linear-gradient(135deg, #ec4899, #8b5cf6);
       color: white;
       border: none;
       padding: 20px 60px;
       font-size: 24px;
-      border-radius: 12px;
+      border-radius: 30px;
       cursor: pointer;
-      transition: transform 0.1s, background 0.2s;
+      transition: transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(236, 72, 153, 0.4);
     }
-    .btn:hover { background: #db2777; transform: scale(1.05); }
-    .btn:disabled { background: #4a4a4a; cursor: not-allowed; transform: none; }
+    .btn:hover { transform: scale(1.05); box-shadow: 0 6px 30px rgba(236, 72, 153, 0.6); }
+    .btn:disabled { background: #4a4a4a; cursor: not-allowed; transform: none; box-shadow: none; }
     .timeline {
       margin-top: 40px;
       width: 100%;
@@ -56,8 +57,9 @@
       font-size: 32px;
       margin-top: 20px;
       min-height: 40px;
+      transition: all 0.3s;
     }
-    .section.drop { color: #facc15; font-weight: bold; }
+    .section.drop { color: #facc15; font-weight: bold; text-shadow: 0 0 20px rgba(250, 204, 21, 0.5); }
     .section.build { color: #ec4899; }
     .section.verse { color: #22d3ee; }
     .section.intro { color: #a1a1aa; }
@@ -66,7 +68,7 @@
 </head>
 <body>
   <h1>TAP BEATS</h1>
-  <div class="subtitle">Music Preview @ 140 BPM</div>
+  <div class="subtitle">2026 Pop Vibes @ 140 BPM</div>
   <button class="btn" id="playBtn">▶ PLAY</button>
   <div class="timeline">
     <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
@@ -86,14 +88,15 @@
       A3: 220, C4: 261.63, E4: 329.63,
     };
     
+    // 2026 Pop structure - shorter intro
     const SONG = {
-      intro: { start: 0, end: 8, name: 'INTRO', class: 'intro' },
-      verse1: { start: 8, end: 16, name: 'VERSE', class: 'verse' },
-      build1: { start: 16, end: 20, name: '...building...', class: 'build' },
-      drop1: { start: 20, end: 28, name: '🔥 DROP 1 🔥', class: 'drop' },
-      verse2: { start: 28, end: 36, name: 'VERSE 2', class: 'verse' },
-      build2: { start: 36, end: 40, name: '...building...', class: 'build' },
-      drop2: { start: 40, end: 52, name: '🔥🔥 DROP 2 🔥🔥', class: 'drop' },
+      intro: { start: 0, end: 4, name: 'INTRO', class: 'intro' },
+      verse1: { start: 4, end: 12, name: 'VERSE', class: 'verse' },
+      build1: { start: 12, end: 16, name: '...building...', class: 'build' },
+      drop1: { start: 16, end: 24, name: '🔥 DROP 1 🔥', class: 'drop' },
+      verse2: { start: 24, end: 32, name: 'VERSE 2', class: 'verse' },
+      build2: { start: 32, end: 36, name: '...building...', class: 'build' },
+      drop2: { start: 36, end: 52, name: '🔥🔥 DROP 2 🔥🔥', class: 'drop' },
       outro: { start: 52, end: 60, name: 'OUTRO', class: 'outro' },
     };
     
@@ -147,10 +150,11 @@
       
       scheduleKicks(beatSec);
       scheduleHiHats(beatSec);
-      scheduleSnares(beatSec);
+      scheduleClaps(beatSec);
       scheduleBass(beatSec, barSec);
       scheduleMelody(beatSec);
-      scheduleSynthStabs(beatSec);
+      schedulePad(beatSec, barSec);
+      scheduleArpShimmer(beatSec);
       scheduleRiser(beatSec);
       
       updateUI();
@@ -207,56 +211,46 @@
       noise.stop(time + 0.04);
     }
     
-    function scheduleSnares(beatSec) {
+    function scheduleClaps(beatSec) {
       for (let t = 0; t < 60; t += beatSec) {
         const beatInBar = Math.round(t / beatSec) % 4;
         if ((beatInBar === 1 || beatInBar === 3) && isDrumSection(t) && t >= SONG.verse1.start) {
-          scheduleSnare(musicStartTime + t, isDropSection(t) ? 0.35 : 0.25);
+          scheduleClap(musicStartTime + t, isDropSection(t) ? 0.4 : 0.3);
         }
       }
     }
     
-    function scheduleSnare(time, volume) {
-      const bufferSize = audioCtx.sampleRate * 0.15;
-      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-      const noise = audioCtx.createBufferSource();
-      noise.buffer = buffer;
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.value = 3000;
-      filter.Q.value = 0.5;
-      const gain = audioCtx.createGain();
-      gain.gain.setValueAtTime(volume, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(masterGain);
-      noise.start(time);
-      noise.stop(time + 0.15);
-      
-      const osc = audioCtx.createOscillator();
-      const oscGain = audioCtx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.value = 180;
-      oscGain.gain.setValueAtTime(volume * 0.5, time);
-      oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
-      osc.connect(oscGain);
-      oscGain.connect(masterGain);
-      osc.start(time);
-      osc.stop(time + 0.08);
+    function scheduleClap(time, volume) {
+      for (let i = 0; i < 3; i++) {
+        const bufferSize = audioCtx.sampleRate * 0.08;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let j = 0; j < bufferSize; j++) data[j] = Math.random() * 2 - 1;
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1500 + i * 500;
+        filter.Q.value = 2;
+        const gain = audioCtx.createGain();
+        const offset = i * 0.01;
+        gain.gain.setValueAtTime(volume * 0.4, time + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + offset + 0.1);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(masterGain);
+        noise.start(time + offset);
+        noise.stop(time + offset + 0.1);
+      }
     }
     
     function scheduleBass(beatSec, barSec) {
       for (let t = SONG.verse1.start; t < 60; t += barSec) {
         if (t >= SONG.build1.start && t < SONG.drop1.start) continue;
         if (t >= SONG.build2.start && t < SONG.drop2.start) continue;
-        
         const barIndex = Math.floor((t - SONG.verse1.start) / barSec) % 4;
         const bassNote = BASS[barIndex].note;
         const volume = isDropSection(t) ? 0.3 : 0.2;
-        
         scheduleBassNote(musicStartTime + t, bassNote, beatSec * 1.5, volume);
         scheduleBassNote(musicStartTime + t + beatSec * 2, bassNote, beatSec * 1.5, volume);
       }
@@ -264,19 +258,29 @@
     
     function scheduleBassNote(time, freq, duration, volume) {
       const osc = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = 'sawtooth';
+      osc.type = 'sine';
       osc.frequency.value = freq;
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = 400;
-      gain.gain.setValueAtTime(volume, time);
+      osc2.type = 'sine';
+      osc2.frequency.value = freq * 2;
+      const subGain = audioCtx.createGain();
+      const harmGain = audioCtx.createGain();
+      subGain.gain.value = 1;
+      harmGain.gain.value = 0.3;
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(volume, time + 0.02);
+      gain.gain.exponentialRampToValueAtTime(volume * 0.6, time + 0.1);
       gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
-      osc.connect(filter);
-      filter.connect(gain);
+      osc.connect(subGain);
+      osc2.connect(harmGain);
+      subGain.connect(gain);
+      harmGain.connect(gain);
       gain.connect(masterGain);
       osc.start(time);
+      osc2.start(time);
       osc.stop(time + duration);
+      osc2.stop(time + duration);
     }
     
     function scheduleMelody(beatSec) {
@@ -294,16 +298,80 @@
     }
     
     function scheduleMelodyNote(time, freq, duration, volume) {
-      const osc = audioCtx.createOscillator();
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.value = freq;
+      osc1.type = 'sine';
+      osc1.frequency.value = freq;
+      osc2.type = 'triangle';
+      osc2.frequency.value = freq * 2;
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.value = 2000;
-      gain.gain.setValueAtTime(volume, time);
-      gain.gain.setValueAtTime(volume, time + duration * 0.7);
+      filter.frequency.setValueAtTime(4000, time);
+      filter.frequency.exponentialRampToValueAtTime(800, time + duration);
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(volume, time + 0.01);
+      gain.gain.exponentialRampToValueAtTime(volume * 0.3, time + 0.1);
       gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      osc1.start(time);
+      osc2.start(time);
+      osc1.stop(time + duration);
+      osc2.stop(time + duration);
+    }
+    
+    function schedulePad(beatSec, barSec) {
+      for (let t = SONG.verse1.start; t < 60; t += barSec * 2) {
+        if (t >= SONG.build1.start && t < SONG.drop1.start) continue;
+        if (t >= SONG.build2.start && t < SONG.drop2.start) continue;
+        const volume = isDropSection(t) ? 0.08 : 0.05;
+        schedulePadChord(musicStartTime + t, barSec * 2, volume);
+      }
+    }
+    
+    function schedulePadChord(time, duration, volume) {
+      const chord = [NOTE.A3, NOTE.C4, NOTE.E4];
+      for (const freq of chord) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(volume, time + 0.3);
+        gain.gain.setValueAtTime(volume, time + duration - 0.5);
+        gain.gain.linearRampToValueAtTime(0, time + duration);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(time);
+        osc.stop(time + duration);
+      }
+    }
+    
+    function scheduleArpShimmer(beatSec) {
+      const shimmerNotes = [NOTE.A4, NOTE.C5, NOTE.E4 * 2, NOTE.A4];
+      for (const section of [SONG.drop1, SONG.drop2]) {
+        let noteIndex = 0;
+        for (let t = section.start; t < section.end; t += beatSec / 4) {
+          const freq = shimmerNotes[noteIndex % shimmerNotes.length];
+          scheduleShimmerNote(musicStartTime + t, freq, beatSec / 4, 0.04);
+          noteIndex++;
+        }
+      }
+    }
+    
+    function scheduleShimmerNote(time, freq, duration, volume) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(volume, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.8);
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 2000;
       osc.connect(filter);
       filter.connect(gain);
       gain.connect(masterGain);
@@ -311,42 +379,10 @@
       osc.stop(time + duration);
     }
     
-    function scheduleSynthStabs(beatSec) {
-      for (const section of [SONG.drop1, SONG.drop2]) {
-        for (let t = section.start; t < section.end; t += beatSec) {
-          const beatInBar = Math.round((t - section.start) / beatSec) % 4;
-          if (beatInBar === 1 || beatInBar === 3) {
-            scheduleSynthStab(musicStartTime + t + beatSec / 2);
-          }
-        }
-      }
-    }
-    
-    function scheduleSynthStab(time) {
-      const chord = [NOTE.A3, NOTE.C4, NOTE.E4];
-      for (const freq of chord) {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.value = freq;
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 1500;
-        gain.gain.setValueAtTime(0.08, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(masterGain);
-        osc.start(time);
-        osc.stop(time + 0.1);
-      }
-    }
-    
     function scheduleRiser(beatSec) {
       for (const build of [SONG.build1, SONG.build2]) {
         const duration = build.end - build.start;
         const time = musicStartTime + build.start;
-        
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sawtooth';
@@ -380,7 +416,6 @@
       document.getElementById('time').textContent = 
         `${mins}:${secs.toString().padStart(2, '0')} / 1:00`;
       
-      // Update section
       let currentSection = '';
       let sectionClass = '';
       for (const [key, section] of Object.entries(SONG)) {

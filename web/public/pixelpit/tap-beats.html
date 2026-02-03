@@ -137,54 +137,52 @@
       const map = [];
       const beat = beatInterval;
       
-      // INTRO (0-8s): Simple quarter notes, center lane, learn the timing
-      for (let t = 2000; t < 8000; t += beat) {
+      // INTRO (0-4s): Quick intro - 4 beats center, then go
+      for (let t = 1500; t < 4000; t += beat) {
         map.push({ time: t, lane: 1 });
       }
       
-      // VERSE 1 (8-16s): Alternating lanes, 8th notes
+      // VERSE 1 (4-12s): Alternating lanes, 8th notes
       let lane = 0;
-      for (let t = 8000; t < 16000; t += beat / 2) {
+      for (let t = 4000; t < 12000; t += beat / 2) {
         map.push({ time: t, lane: lane });
         lane = (lane + 1) % 3;
       }
       
-      // BUILD 1 (16-20s): Sparse, building tension - just on beats
-      for (let t = 16000; t < 20000; t += beat) {
+      // BUILD 1 (12-16s): Sparse, building tension - just on beats
+      for (let t = 12000; t < 16000; t += beat) {
         map.push({ time: t, lane: 1 });
       }
       
-      // DROP 1 (20-28s): INTENSE - follow the melody rhythm, doubles allowed
-      // Pattern follows melody: A, A, C, B, A, G, A, rest (lanes mirror pitch)
+      // DROP 1 (16-24s): INTENSE - follow the melody rhythm, doubles allowed
       const melodyPattern = [1, 1, 2, 2, 1, 0, 1, -1]; // -1 = rest
-      for (let t = 20000; t < 28000; t += beat) {
-        const beatInPhrase = Math.floor((t - 20000) / beat) % 8;
+      for (let t = 16000; t < 24000; t += beat) {
+        const beatInPhrase = Math.floor((t - 16000) / beat) % 8;
         const noteLane = melodyPattern[beatInPhrase];
         if (noteLane >= 0) {
           map.push({ time: t, lane: noteLane });
-          // Add offbeat notes for intensity
           if (Math.random() < 0.3) {
             map.push({ time: t + beat / 2, lane: Math.floor(Math.random() * 3) });
           }
         }
       }
       
-      // VERSE 2 (28-36s): Variation - descending pattern
-      for (let t = 28000; t < 36000; t += beat / 2) {
-        const pos = Math.floor((t - 28000) / (beat / 2));
+      // VERSE 2 (24-32s): Variation - descending pattern
+      for (let t = 24000; t < 32000; t += beat / 2) {
+        const pos = Math.floor((t - 24000) / (beat / 2));
         map.push({ time: t, lane: (2 - (pos % 3)) });
       }
       
-      // BUILD 2 (36-40s): Rising tension - accelerating
+      // BUILD 2 (32-36s): Rising tension - accelerating
       let interval = beat;
-      for (let t = 36000; t < 40000; t += interval) {
+      for (let t = 32000; t < 36000; t += interval) {
         map.push({ time: t, lane: Math.floor(Math.random() * 3) });
         interval = Math.max(interval * 0.9, beat / 4);
       }
       
-      // DROP 2 (40-52s): MAXIMUM INTENSITY - 8th notes + doubles
-      for (let t = 40000; t < 52000; t += beat / 2) {
-        const beatInPhrase = Math.floor((t - 40000) / beat) % 8;
+      // DROP 2 (36-52s): MAXIMUM INTENSITY - 8th notes + doubles
+      for (let t = 36000; t < 52000; t += beat / 2) {
+        const beatInPhrase = Math.floor((t - 36000) / beat) % 8;
         const noteLane = melodyPattern[beatInPhrase % melodyPattern.length];
         
         if (noteLane >= 0) {
@@ -225,16 +223,16 @@
       A3: 220, C4: 261.63, E4: 329.63,
     };
     
-    // Song structure (times in seconds)
+    // Song structure (times in seconds) - 2026 pop structure
     const SONG = {
-      intro: { start: 0, end: 8 },      // Kick only + filter sweep
-      verse1: { start: 8, end: 16 },    // Kick + bass + melody
-      build1: { start: 16, end: 20 },   // Rising synth, drums drop
-      drop1: { start: 20, end: 28 },    // FULL ENERGY
-      verse2: { start: 28, end: 36 },   // Variation
-      build2: { start: 36, end: 40 },   // Rising again
-      drop2: { start: 40, end: 52 },    // BIGGER DROP
-      outro: { start: 52, end: 60 },    // Filter down
+      intro: { start: 0, end: 4 },      // Short intro - 8 beats only
+      verse1: { start: 4, end: 12 },    // Verse with atmosphere
+      build1: { start: 12, end: 16 },   // Rising tension
+      drop1: { start: 16, end: 24 },    // First drop
+      verse2: { start: 24, end: 32 },   // Second verse
+      build2: { start: 32, end: 36 },   // Final build
+      drop2: { start: 36, end: 52 },    // Big finale drop
+      outro: { start: 52, end: 60 },    // Smooth outro
     };
     
     // Main melody riff: A, A, C, B, A, G, A (8 beats)
@@ -264,13 +262,14 @@
       const beatSec = 60 / 140; // 140 BPM
       const barSec = beatSec * 4;
       
-      // Schedule all music
+      // Schedule all music - 2026 pop style
       scheduleKicks(beatSec);
       scheduleHiHats(beatSec);
-      scheduleSnares(beatSec);
+      scheduleClaps(beatSec);        // Claps instead of snares
       scheduleBass(beatSec, barSec);
       scheduleMelody(beatSec);
-      scheduleSynthStabs(beatSec);
+      schedulePad(beatSec, barSec);  // Atmospheric pad
+      scheduleArpShimmer(beatSec);   // Shimmery arpeggios
       scheduleRiser(beatSec);
     }
     
@@ -340,50 +339,44 @@
       noise.stop(time + 0.04);
     }
     
-    function scheduleSnares(beatSec) {
+    function scheduleClaps(beatSec) {
       for (let t = 0; t < 60; t += beatSec) {
         const beatInBar = Math.round(t / beatSec) % 4;
-        // Snare on beats 2 and 4
+        // Clap on beats 2 and 4 - modern pop style
         if ((beatInBar === 1 || beatInBar === 3) && isDrumSection(t) && t >= SONG.verse1.start) {
-          scheduleSnare(musicStartTime + t, isDropSection(t) ? 0.35 : 0.25);
+          scheduleClap(musicStartTime + t, isDropSection(t) ? 0.4 : 0.3);
         }
       }
     }
     
-    function scheduleSnare(time, volume = 0.3) {
-      // Noise burst
-      const bufferSize = audioCtx.sampleRate * 0.15;
-      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
+    function scheduleClap(time, volume = 0.3) {
+      // Layered clap sound - more pop, less harsh
+      for (let i = 0; i < 3; i++) {
+        const bufferSize = audioCtx.sampleRate * 0.08;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let j = 0; j < bufferSize; j++) {
+          data[j] = Math.random() * 2 - 1;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1500 + i * 500; // Spread across frequencies
+        filter.Q.value = 2;
+        
+        const gain = audioCtx.createGain();
+        const offset = i * 0.01; // Slight timing spread for thickness
+        gain.gain.setValueAtTime(volume * 0.4, time + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + offset + 0.1);
+        
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(masterGain);
+        noise.start(time + offset);
+        noise.stop(time + offset + 0.1);
       }
-      const noise = audioCtx.createBufferSource();
-      noise.buffer = buffer;
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.value = 3000;
-      filter.Q.value = 0.5;
-      const gain = audioCtx.createGain();
-      gain.gain.setValueAtTime(volume, time);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(masterGain);
-      noise.start(time);
-      noise.stop(time + 0.15);
-      
-      // Body tone
-      const osc = audioCtx.createOscillator();
-      const oscGain = audioCtx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.value = 180;
-      oscGain.gain.setValueAtTime(volume * 0.5, time);
-      oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
-      osc.connect(oscGain);
-      oscGain.connect(masterGain);
-      osc.start(time);
-      osc.stop(time + 0.08);
     }
     
     function scheduleBass(beatSec, barSec) {
@@ -402,22 +395,37 @@
     }
     
     function scheduleBassNote(time, freq, duration, volume = 0.25) {
+      // Modern sub bass - clean sine with subtle saturation
       const osc = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = 'sawtooth';
+      
+      osc.type = 'sine';
       osc.frequency.value = freq;
+      osc2.type = 'sine';
+      osc2.frequency.value = freq * 2; // Subtle harmonic
       
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = 400;
+      const subGain = audioCtx.createGain();
+      const harmGain = audioCtx.createGain();
+      subGain.gain.value = 1;
+      harmGain.gain.value = 0.3;
       
-      gain.gain.setValueAtTime(volume, time);
+      // Punchy envelope
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(volume, time + 0.02);
+      gain.gain.exponentialRampToValueAtTime(volume * 0.6, time + 0.1);
       gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
-      osc.connect(filter);
-      filter.connect(gain);
+      
+      osc.connect(subGain);
+      osc2.connect(harmGain);
+      subGain.connect(gain);
+      harmGain.connect(gain);
       gain.connect(masterGain);
+      
       osc.start(time);
+      osc2.start(time);
       osc.stop(time + duration);
+      osc2.stop(time + duration);
     }
     
     function scheduleMelody(beatSec) {
@@ -438,18 +446,98 @@
     }
     
     function scheduleMelodyNote(time, freq, duration, volume = 0.2) {
-      const osc = audioCtx.createOscillator();
+      // Modern pluck synth - soft sine with quick attack
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.value = freq;
+      
+      osc1.type = 'sine';
+      osc1.frequency.value = freq;
+      osc2.type = 'triangle';
+      osc2.frequency.value = freq * 2; // Octave up for brightness
       
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.value = 2000;
+      filter.frequency.setValueAtTime(4000, time);
+      filter.frequency.exponentialRampToValueAtTime(800, time + duration);
+      
+      // Plucky envelope
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(volume, time + 0.01);
+      gain.gain.exponentialRampToValueAtTime(volume * 0.3, time + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+      
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      osc1.start(time);
+      osc2.start(time);
+      osc1.stop(time + duration);
+      osc2.stop(time + duration);
+    }
+    
+    function schedulePad(beatSec, barSec) {
+      // Atmospheric pad - plays during verses and drops
+      for (let t = SONG.verse1.start; t < 60; t += barSec * 2) {
+        if (t >= SONG.build1.start && t < SONG.drop1.start) continue;
+        if (t >= SONG.build2.start && t < SONG.drop2.start) continue;
+        
+        const volume = isDropSection(t) ? 0.08 : 0.05;
+        schedulePadChord(musicStartTime + t, barSec * 2, volume);
+      }
+    }
+    
+    function schedulePadChord(time, duration, volume) {
+      // Am chord with shimmer - A3, C4, E4
+      const chord = [NOTE.A3, NOTE.C4, NOTE.E4];
+      
+      for (const freq of chord) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        
+        // Slow attack, sustain, slow release
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(volume, time + 0.3);
+        gain.gain.setValueAtTime(volume, time + duration - 0.5);
+        gain.gain.linearRampToValueAtTime(0, time + duration);
+        
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(time);
+        osc.stop(time + duration);
+      }
+    }
+    
+    function scheduleArpShimmer(beatSec) {
+      // Shimmery arpeggios during drops - high register, quiet
+      const shimmerNotes = [NOTE.A4, NOTE.C5, NOTE.E4 * 2, NOTE.A4]; // A minor arp
+      
+      for (const section of [SONG.drop1, SONG.drop2]) {
+        let noteIndex = 0;
+        for (let t = section.start; t < section.end; t += beatSec / 4) {
+          const freq = shimmerNotes[noteIndex % shimmerNotes.length];
+          scheduleShimmerNote(musicStartTime + t, freq, beatSec / 4, 0.04);
+          noteIndex++;
+        }
+      }
+    }
+    
+    function scheduleShimmerNote(time, freq, duration, volume) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
       
       gain.gain.setValueAtTime(volume, time);
-      gain.gain.setValueAtTime(volume, time + duration * 0.7);
-      gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.8);
+      
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 2000;
+      
       osc.connect(filter);
       filter.connect(gain);
       gain.connect(masterGain);
