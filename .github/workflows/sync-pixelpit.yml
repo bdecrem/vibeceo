@@ -26,7 +26,7 @@ jobs:
 
           # Copy the standalone configs from pixelpit repo (we'll fetch them)
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/package.json -o pixelpit-build/package.json
-          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/next.config.js -o pixelpit-build/next.config.js
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/next.config.cjs -o pixelpit-build/next.config.cjs
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/tsconfig.json -o pixelpit-build/tsconfig.json
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/tailwind.config.ts -o pixelpit-build/tailwind.config.ts
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/postcss.config.cjs -o pixelpit-build/postcss.config.cjs
