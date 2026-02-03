@@ -702,3 +702,221 @@ export function CatTowerDecorations() {
     </div>
   );
 }
+
+/**
+ * SPROUT RUN-specific decorations: hills, sun, grass, sprout.
+ * Warm nature aesthetic with parallax hills.
+ */
+export function SproutRunDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Sun with glow */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 40,
+          right: 150,
+          width: 100,
+          height: 100,
+          borderRadius: 50,
+          background: '#fbbf24',
+          boxShadow: '0 0 60px #fde047, 0 0 100px #fef08a',
+        }}
+      />
+
+      {/* Far hills */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 100,
+          left: 0,
+          right: 0,
+          height: 120,
+          background: '#bbf7d0',
+          borderRadius: '100px 100px 0 0',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 100,
+          left: -100,
+          width: 500,
+          height: 150,
+          background: '#bbf7d0',
+          borderRadius: '250px 250px 0 0',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 100,
+          right: -50,
+          width: 400,
+          height: 130,
+          background: '#bbf7d0',
+          borderRadius: '200px 200px 0 0',
+        }}
+      />
+
+      {/* Mid hills */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          left: 100,
+          width: 600,
+          height: 100,
+          background: '#86efac',
+          borderRadius: '300px 300px 0 0',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          right: 50,
+          width: 500,
+          height: 90,
+          background: '#86efac',
+          borderRadius: '250px 250px 0 0',
+        }}
+      />
+
+      {/* Near hills */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 60,
+          left: -50,
+          width: 700,
+          height: 80,
+          background: '#4ade80',
+          borderRadius: '350px 350px 0 0',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 60,
+          right: -100,
+          width: 600,
+          height: 70,
+          background: '#4ade80',
+          borderRadius: '300px 300px 0 0',
+        }}
+      />
+
+      {/* Ground */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 70,
+          background: '#92400e',
+        }}
+      />
+
+      {/* Grass stripe */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 60,
+          left: 0,
+          right: 0,
+          height: 20,
+          background: '#22c55e',
+        }}
+      />
+
+      {/* Sprout character on left */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          left: 150,
+          width: 60,
+          height: 60,
+          background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+          borderRadius: 30,
+          border: '4px solid #15803d',
+          boxShadow: '0 4px 20px rgba(34,197,94,0.4)',
+        }}
+      />
+
+      {/* Sundrop collectible */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 200,
+          left: 350,
+          width: 30,
+          height: 30,
+          borderRadius: 15,
+          background: '#fbbf24',
+          boxShadow: '0 0 20px #fde047',
+        }}
+      />
+
+      {/* Rock obstacle */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          right: 200,
+          width: 50,
+          height: 40,
+          background: '#78716c',
+          borderRadius: '25px 25px 8px 8px',
+          border: '3px solid #57534e',
+        }}
+      />
+
+      {/* Flying birds */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 100,
+          left: 300,
+          fontSize: 24,
+          opacity: 0.4,
+        }}
+      >
+        🐦
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          top: 140,
+          left: 380,
+          fontSize: 18,
+          opacity: 0.3,
+        }}
+      >
+        🐦
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          top: 80,
+          right: 350,
+          fontSize: 20,
+          opacity: 0.35,
+        }}
+      >
+        🐦
+      </div>
+    </div>
+  );
+}

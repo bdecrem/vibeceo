@@ -131,4 +131,11 @@ export const GAME_COLORS = {
     accent: '#FFD700',
     branding: '#f8fafc',
   },
+  sproutRun: {
+    background: '#fef3c7',      // warm cream sky
+    primary: '#22c55e',          // grass green
+    secondary: '#fbbf24',        // sunshine gold
+    accent: '#15803d',           // dark green
+    branding: '#78716c',         // muted brown
+  },
 };

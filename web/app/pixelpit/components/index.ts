@@ -56,6 +56,7 @@ export {
   EmojiDecorations,
   RainDecorations,
   SingularityDecorations,
+  SproutRunDecorations,
   OG_SIZE,
 } from './og/ScoreShareImage';
 export { CornerAccents, PixelpitBranding, GAME_COLORS } from './og/utils';
