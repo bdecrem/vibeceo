@@ -7,8 +7,8 @@ const nextConfig = {
     // Global lint remains noisy; prebuild script handles targeted checks
     ignoreDuringBuilds: true,
   },
-  // Add output configuration for Netlify
-  // output: 'standalone',  // COMMENTED OUT FOR LOCAL DEV
+  // Standalone output for minimal production bundle (faster Railway deploys)
+  output: 'standalone',
   // Ensure trailing slashes are handled correctly
   trailingSlash: true,
   // Rewrites for static HTML apps in public/
