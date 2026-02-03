@@ -109,8 +109,8 @@
     
     // Timing
     let songTime = 0; // Current position in song (ms)
-    let bpm = 140;
-    let beatInterval = 60000 / bpm; // ms per beat (~428ms)
+    let bpm = 150; // Faster DDR energy
+    let beatInterval = 60000 / bpm; // ms per beat (400ms)
     
     // Notes
     let notes = []; // Active notes on screen
@@ -135,77 +135,69 @@
     
     function generateBeatmap() {
       const map = [];
-      const beat = beatInterval;
+      const beat = beatInterval; // 400ms at 150 BPM
       
-      // INTRO (0-4s): Quick intro - 4 beats center, then go
-      for (let t = 1500; t < 4000; t += beat) {
+      // INTRO (0-3.2s): Quick intro - hit on beats
+      for (let t = 1200; t < 3200; t += beat) {
         map.push({ time: t, lane: 1 });
       }
       
-      // VERSE 1 (4-12s): Alternating lanes, 8th notes
+      // VERSE 1 (3.2-9.6s): Fast alternating, 8th notes - DDR style
       let lane = 0;
-      for (let t = 4000; t < 12000; t += beat / 2) {
+      for (let t = 3200; t < 9600; t += beat / 2) {
         map.push({ time: t, lane: lane });
         lane = (lane + 1) % 3;
       }
       
-      // BUILD 1 (12-16s): Sparse, building tension - just on beats
-      for (let t = 12000; t < 16000; t += beat) {
+      // BUILD 1 (9.6-12.8s): Sparse, building tension
+      for (let t = 9600; t < 12800; t += beat) {
         map.push({ time: t, lane: 1 });
       }
       
-      // DROP 1 (16-24s): INTENSE - follow the melody rhythm, doubles allowed
-      const melodyPattern = [1, 1, 2, 2, 1, 0, 1, -1]; // -1 = rest
-      for (let t = 16000; t < 24000; t += beat) {
-        const beatInPhrase = Math.floor((t - 16000) / beat) % 8;
+      // DROP 1 (12.8-22.4s): INTENSE - melody pattern + offbeats
+      const melodyPattern = [1, 2, 1, 0, 2, 0, 1, 2]; // More varied DDR pattern
+      for (let t = 12800; t < 22400; t += beat / 2) {
+        const beatInPhrase = Math.floor((t - 12800) / (beat / 2)) % 8;
         const noteLane = melodyPattern[beatInPhrase];
-        if (noteLane >= 0) {
-          map.push({ time: t, lane: noteLane });
-          if (Math.random() < 0.3) {
-            map.push({ time: t + beat / 2, lane: Math.floor(Math.random() * 3) });
-          }
+        map.push({ time: t, lane: noteLane });
+        // Add doubles on strong beats
+        if (beatInPhrase % 4 === 0 && Math.random() < 0.4) {
+          map.push({ time: t, lane: (noteLane + 1) % 3 });
         }
       }
       
-      // VERSE 2 (24-32s): Variation - descending pattern
-      for (let t = 24000; t < 32000; t += beat / 2) {
-        const pos = Math.floor((t - 24000) / (beat / 2));
-        map.push({ time: t, lane: (2 - (pos % 3)) });
+      // VERSE 2 (22.4-28.8s): Wave pattern
+      for (let t = 22400; t < 28800; t += beat / 2) {
+        const pos = Math.floor((t - 22400) / (beat / 2));
+        const wave = Math.floor(1.5 + Math.sin(pos * 0.5) * 1.5);
+        map.push({ time: t, lane: wave });
       }
       
-      // BUILD 2 (32-36s): Rising tension - accelerating
+      // BUILD 2 (28.8-32s): Accelerating
       let interval = beat;
-      for (let t = 32000; t < 36000; t += interval) {
+      for (let t = 28800; t < 32000; t += interval) {
         map.push({ time: t, lane: Math.floor(Math.random() * 3) });
         interval = Math.max(interval * 0.9, beat / 4);
       }
       
-      // DROP 2 (36-52s): MAXIMUM INTENSITY - 8th notes + doubles
-      for (let t = 36000; t < 52000; t += beat / 2) {
-        const beatInPhrase = Math.floor((t - 36000) / beat) % 8;
-        const noteLane = melodyPattern[beatInPhrase % melodyPattern.length];
+      // (continued) DROP 2 - intensity!
+        map.push({ time: t, lane: noteLane });
         
-        if (noteLane >= 0) {
-          map.push({ time: t, lane: noteLane });
-        } else {
-          map.push({ time: t, lane: Math.floor(Math.random() * 3) });
-        }
-        
-        // 25% chance of double
-        if (Math.random() < 0.25) {
-          const otherLane = (map[map.length - 1].lane + 1 + Math.floor(Math.random() * 2)) % 3;
+        // 35% chance of double for harder difficulty
+        if (Math.random() < 0.35) {
+          const otherLane = (noteLane + 1 + Math.floor(Math.random() * 2)) % 3;
           map.push({ time: t, lane: otherLane });
         }
       }
       
-      // OUTRO (52-60s): Cool down - quarter notes, slowing
-      for (let t = 52000; t < 58000; t += beat) {
+      // OUTRO (48-56s): Cool down - quarter notes
+      for (let t = 48000; t < 54000; t += beat) {
         map.push({ time: t, lane: 1 });
       }
-      // Final hit
-      map.push({ time: 59000, lane: 0 });
-      map.push({ time: 59000, lane: 1 });
-      map.push({ time: 59000, lane: 2 });
+      // Final triple hit
+      map.push({ time: 55000, lane: 0 });
+      map.push({ time: 55000, lane: 1 });
+      map.push({ time: 55000, lane: 2 });
       
       // Sort by time
       map.sort((a, b) => a.time - b.time);
@@ -213,63 +205,63 @@
       return map;
     }
     
-    // ─── PROCEDURAL MUSIC (DDR STYLE @ 140 BPM) ────────────────────
+    // ─── PROCEDURAL MUSIC (ROBOT RAVE DDR @ 150 BPM) ───────────────
     let musicNodes = [];
     
     // Note frequencies
     const NOTE = {
-      A2: 110, E2: 82.41, F2: 87.31, G2: 98,
-      G4: 392, A4: 440, B4: 493.88, C5: 523.25,
-      A3: 220, C4: 261.63, E4: 329.63,
+      A2: 110, E2: 82.41, F2: 87.31, G2: 98, D2: 73.42,
+      A1: 55, D1: 36.71,
+      G4: 392, A4: 440, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25,
+      A3: 220, C4: 261.63, E4: 329.63, D4: 293.66,
     };
     
-    // Song structure (times in seconds) - 2026 pop structure
+    // Song structure - Robot Rave DDR style (faster, harder)
     const SONG = {
-      intro: { start: 0, end: 4 },      // Short intro - 8 beats only
-      verse1: { start: 4, end: 12 },    // Verse with atmosphere
-      build1: { start: 12, end: 16 },   // Rising tension
-      drop1: { start: 16, end: 24 },    // First drop
-      verse2: { start: 24, end: 32 },   // Second verse
-      build2: { start: 32, end: 36 },   // Final build
-      drop2: { start: 36, end: 52 },    // Big finale drop
-      outro: { start: 52, end: 60 },    // Smooth outro
+      intro: { start: 0, end: 3.2 },    // 8 beats @ 150 BPM
+      verse1: { start: 3.2, end: 9.6 },  // Driving groove
+      build1: { start: 9.6, end: 12.8 }, // Rising tension
+      drop1: { start: 12.8, end: 22.4 }, // MASSIVE DROP
+      verse2: { start: 22.4, end: 28.8 },// Breathing room
+      build2: { start: 28.8, end: 32 },  // Final build
+      drop2: { start: 32, end: 48 },     // EXTENDED DROP - party time
+      outro: { start: 48, end: 56 },     // Cool down
     };
     
-    // Main melody riff: A, A, C, B, A, G, A (8 beats)
+    // DDR-style melodic hook - more notes, more energy
     const MELODY = [
       { note: NOTE.A4, beat: 0 },
+      { note: NOTE.C5, beat: 0.5 },
       { note: NOTE.A4, beat: 1 },
-      { note: NOTE.C5, beat: 2 },
-      { note: NOTE.B4, beat: 3 },
-      { note: NOTE.A4, beat: 4 },
-      { note: NOTE.G4, beat: 5 },
-      { note: NOTE.A4, beat: 6 },
-      { note: null, beat: 7 }, // Rest
+      { note: NOTE.E5, beat: 1.5 },
+      { note: NOTE.D5, beat: 2 },
+      { note: NOTE.C5, beat: 2.5 },
+      { note: NOTE.A4, beat: 3 },
+      { note: NOTE.G4, beat: 3.5 },
     ];
     
-    // Bass progression: Am - Am/G - F - E (4 bars)
+    // Robot Rave bass: A - A - D - A (driving techno)
     const BASS = [
-      { note: NOTE.A2, bar: 0 },
-      { note: NOTE.G2, bar: 1 },
-      { note: NOTE.F2, bar: 2 },
-      { note: NOTE.E2, bar: 3 },
+      { note: NOTE.A1, bar: 0 },
+      { note: NOTE.A1, bar: 1 },
+      { note: NOTE.D2, bar: 2 },
+      { note: NOTE.A1, bar: 3 },
     ];
     
     function startMusic() {
       if (!audioCtx) return;
       musicStartTime = audioCtx.currentTime;
       
-      const beatSec = 60 / 140; // 140 BPM
+      const beatSec = 60 / 150; // 150 BPM - DDR speed!
       const barSec = beatSec * 4;
       
-      // Schedule all music - 2026 pop style
+      // Schedule all music - Robot Rave DDR style
       scheduleKicks(beatSec);
       scheduleHiHats(beatSec);
-      scheduleClaps(beatSec);        // Claps instead of snares
+      scheduleClaps(beatSec);
       scheduleBass(beatSec, barSec);
-      scheduleMelody(beatSec);
-      schedulePad(beatSec, barSec);  // Atmospheric pad
-      scheduleArpShimmer(beatSec);   // Shimmery arpeggios
+      scheduleRaveSynth(beatSec);    // Robot rave lead
+      scheduleArpeggio(beatSec);     // Fast arpeggio
       scheduleRiser(beatSec);
     }
     
@@ -428,43 +420,41 @@
       osc2.stop(time + duration);
     }
     
-    function scheduleMelody(beatSec) {
-      // Melody plays during drops and verse2
-      const sections = [SONG.drop1, SONG.verse2, SONG.drop2];
+    function scheduleRaveSynth(beatSec) {
+      // Robot Rave style lead - plays during drops with 8th note melody
+      const sections = [SONG.drop1, SONG.drop2];
       
       for (const section of sections) {
-        for (let t = section.start; t < section.end; t += beatSec) {
-          const beatInRiff = Math.round((t - section.start) / beatSec) % 8;
-          const melodyNote = MELODY.find(m => m.beat === beatInRiff);
+        for (let t = section.start; t < section.end; t += beatSec / 2) {
+          const beatInRiff = ((t - section.start) / (beatSec / 2)) % 8;
+          const melodyNote = MELODY.find(m => Math.abs(m.beat - beatInRiff) < 0.1);
           
           if (melodyNote && melodyNote.note) {
-            const volume = isDropSection(t) ? 0.25 : 0.15;
-            scheduleMelodyNote(musicStartTime + t, melodyNote.note, beatSec * 0.8, volume);
+            scheduleRaveNote(musicStartTime + t, melodyNote.note, beatSec * 0.4, 0.2);
           }
         }
       }
     }
     
-    function scheduleMelodyNote(time, freq, duration, volume = 0.2) {
-      // Modern pluck synth - soft sine with quick attack
+    function scheduleRaveNote(time, freq, duration, volume) {
+      // Aggressive sawtooth lead with filter
       const osc1 = audioCtx.createOscillator();
       const osc2 = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       
-      osc1.type = 'sine';
+      osc1.type = 'sawtooth';
       osc1.frequency.value = freq;
-      osc2.type = 'triangle';
-      osc2.frequency.value = freq * 2; // Octave up for brightness
+      osc2.type = 'sawtooth';
+      osc2.frequency.value = freq * 1.01; // Slight detune for thickness
       
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(4000, time);
+      filter.frequency.setValueAtTime(3000, time);
       filter.frequency.exponentialRampToValueAtTime(800, time + duration);
+      filter.Q.value = 5; // Resonance for that rave sound
       
-      // Plucky envelope
-      gain.gain.setValueAtTime(0, time);
-      gain.gain.linearRampToValueAtTime(volume, time + 0.01);
-      gain.gain.exponentialRampToValueAtTime(volume * 0.3, time + 0.1);
+      // Punchy envelope
+      gain.gain.setValueAtTime(volume, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
       
       osc1.connect(filter);
@@ -477,66 +467,42 @@
       osc2.stop(time + duration);
     }
     
-    function schedulePad(beatSec, barSec) {
-      // Atmospheric pad - plays during verses and drops
-      for (let t = SONG.verse1.start; t < 60; t += barSec * 2) {
-        if (t >= SONG.build1.start && t < SONG.drop1.start) continue;
-        if (t >= SONG.build2.start && t < SONG.drop2.start) continue;
-        
-        const volume = isDropSection(t) ? 0.08 : 0.05;
-        schedulePadChord(musicStartTime + t, barSec * 2, volume);
-      }
-    }
-    
-    function schedulePadChord(time, duration, volume) {
-      // Am chord with shimmer - A3, C4, E4
-      const chord = [NOTE.A3, NOTE.C4, NOTE.E4];
-      
-      for (const freq of chord) {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        
-        // Slow attack, sustain, slow release
-        gain.gain.setValueAtTime(0, time);
-        gain.gain.linearRampToValueAtTime(volume, time + 0.3);
-        gain.gain.setValueAtTime(volume, time + duration - 0.5);
-        gain.gain.linearRampToValueAtTime(0, time + duration);
-        
-        osc.connect(gain);
-        gain.connect(masterGain);
-        osc.start(time);
-        osc.stop(time + duration);
-      }
-    }
-    
-    function scheduleArpShimmer(beatSec) {
-      // Shimmery arpeggios during drops - high register, quiet
-      const shimmerNotes = [NOTE.A4, NOTE.C5, NOTE.E4 * 2, NOTE.A4]; // A minor arp
+    function scheduleArpeggio(beatSec) {
+      // Fast 16th note arpeggio during drops - classic DDR feel
+      const arpNotes = [NOTE.A3, NOTE.C4, NOTE.E4, NOTE.A4, NOTE.E4, NOTE.C4];
       
       for (const section of [SONG.drop1, SONG.drop2]) {
         let noteIndex = 0;
         for (let t = section.start; t < section.end; t += beatSec / 4) {
-          const freq = shimmerNotes[noteIndex % shimmerNotes.length];
-          scheduleShimmerNote(musicStartTime + t, freq, beatSec / 4, 0.04);
+          const freq = arpNotes[noteIndex % arpNotes.length];
+          scheduleArpNote(musicStartTime + t, freq, beatSec / 4, 0.1);
           noteIndex++;
         }
       }
+      
+      // Also during verses but quieter
+      for (let t = SONG.verse1.start; t < SONG.build1.start; t += beatSec / 4) {
+        const freq = arpNotes[Math.floor((t - SONG.verse1.start) / (beatSec / 4)) % arpNotes.length];
+        scheduleArpNote(musicStartTime + t, freq, beatSec / 4, 0.05);
+      }
+      for (let t = SONG.verse2.start; t < SONG.build2.start; t += beatSec / 4) {
+        const freq = arpNotes[Math.floor((t - SONG.verse2.start) / (beatSec / 4)) % arpNotes.length];
+        scheduleArpNote(musicStartTime + t, freq, beatSec / 4, 0.05);
+      }
     }
     
-    function scheduleShimmerNote(time, freq, duration, volume) {
+    function scheduleArpNote(time, freq, duration, volume) {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = 'sine';
+      osc.type = 'square';
       osc.frequency.value = freq;
+      
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 2000;
       
       gain.gain.setValueAtTime(volume, time);
       gain.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.8);
-      
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'highpass';
-      filter.frequency.value = 2000;
       
       osc.connect(filter);
       filter.connect(gain);
@@ -799,7 +765,7 @@
       }
       
       // Check for song end
-      if (songTime > 58000 && notes.length === 0) {
+      if (songTime > 56000 && notes.length === 0) {
         endGame();
       }
     }
