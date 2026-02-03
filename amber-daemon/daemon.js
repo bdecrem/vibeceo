@@ -51,12 +51,74 @@ function ensureStateDir() {
 }
 
 // === CONVERSATION PERSISTENCE ===
+
+// Validate conversation history - remove orphaned tool_results
+// Every tool_result must have a matching tool_use in the previous assistant message
+function validateConversation(messages) {
+  if (!messages || messages.length === 0) return [];
+
+  const validated = [];
+
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+
+    // Check user messages for tool_results
+    if (msg.role === 'user' && Array.isArray(msg.content)) {
+      const toolResults = msg.content.filter(c => c.type === 'tool_result');
+
+      if (toolResults.length > 0) {
+        // Get previous message (should be assistant with tool_use)
+        const prevMsg = validated[validated.length - 1];
+
+        if (!prevMsg || prevMsg.role !== 'assistant') {
+          // No previous assistant message - skip this user message
+          log(`Removing orphaned tool_result (no previous assistant message)`);
+          continue;
+        }
+
+        // Get tool_use IDs from previous assistant message
+        const prevContent = Array.isArray(prevMsg.content) ? prevMsg.content : [];
+        const toolUseIds = new Set(
+          prevContent.filter(c => c.type === 'tool_use').map(c => c.id)
+        );
+
+        // Filter to only valid tool_results
+        const validContent = msg.content.filter(c => {
+          if (c.type !== 'tool_result') return true;
+          if (toolUseIds.has(c.tool_use_id)) return true;
+          log(`Removing orphaned tool_result: ${c.tool_use_id}`);
+          return false;
+        });
+
+        if (validContent.length === 0) {
+          // All content was orphaned tool_results - skip message
+          continue;
+        }
+
+        validated.push({ ...msg, content: validContent });
+        continue;
+      }
+    }
+
+    validated.push(msg);
+  }
+
+  return validated;
+}
+
 function loadConversation() {
   try {
     if (existsSync(CONVERSATION_FILE)) {
       const data = JSON.parse(readFileSync(CONVERSATION_FILE, 'utf-8'));
-      agentMessages = data.messages || [];
-      log(`Loaded ${agentMessages.length} messages from conversation`);
+      const rawMessages = data.messages || [];
+      agentMessages = validateConversation(rawMessages);
+
+      if (agentMessages.length !== rawMessages.length) {
+        log(`Repaired conversation: ${rawMessages.length} → ${agentMessages.length} messages`);
+        saveConversation(); // Save the repaired version
+      } else {
+        log(`Loaded ${agentMessages.length} messages from conversation`);
+      }
     }
   } catch (err) {
     log(`Failed to load conversation: ${err.message}`);
