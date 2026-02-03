@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  sync:
+  sync-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
           cp -r web/lib/pixelpit pixelpit-build/lib/
           cp -r web/public/pixelpit pixelpit-build/public/
 
-          # Copy the standalone configs from pixelpit repo (we'll fetch them)
+          # Fetch configs from pixelpit repo
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/package.json -o pixelpit-build/package.json
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/next.config.cjs -o pixelpit-build/next.config.cjs
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/tsconfig.json -o pixelpit-build/tsconfig.json
@@ -47,3 +47,21 @@ jobs:
           destination-repository-name: 'pixelpit'
           target-branch: main
           commit-message: 'sync from vibeceo ${{ github.sha }}'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel
+        run: |
+          cd pixelpit-build
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
