@@ -491,6 +491,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // SPECIFIC FIX: Bypass moltbook essay
+  if (pathname === '/moltbook-essay.html' || pathname === '/moltbook-essay') {
+    log(`[Middleware] Moltbook essay bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
   // SPECIFIC FIX: Bypass Mave's space
   if (pathname === '/mave' || pathname.startsWith('/mave/')) {
     log(`[Middleware] Mave bypassed: ${pathname}`)
