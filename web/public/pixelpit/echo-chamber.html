@@ -313,11 +313,15 @@
       y: 0,
       vx: 0,
       vy: 0,
+      targetVx: 0,  // For smooth redirect
+      targetVy: 0,
       radius: 12,
       color: THEME.playerCore,
       auraColor: THEME.playerCore,
       trail: [],
     };
+    
+    const MIN_SPEED = 150; // Ball never dies
     
     // Surfaces in current level
     let surfaces = [];
@@ -478,6 +482,8 @@
       player.y = level.playerStart.y * h;
       player.vx = level.playerVelocity.x * 60; // Scale velocity
       player.vy = level.playerVelocity.y * 60;
+      player.targetVx = player.vx; // Initialize target to current
+      player.targetVy = player.vy;
       player.trail = [];
       player.auraColor = THEME.playerCore;
       
@@ -570,6 +576,20 @@
     // ─── UPDATE ─────────────────────────────────────────────────────
     function update(dt) {
       if (gameState !== 'playing') return;
+      
+      // Smooth redirect - lerp toward target velocity (dreamy curve)
+      if (player.targetVx !== 0 || player.targetVy !== 0) {
+        player.vx += (player.targetVx - player.vx) * 10 * dt;
+        player.vy += (player.targetVy - player.vy) * 10 * dt;
+      }
+      
+      // Enforce minimum speed (ball never dies)
+      const currentSpeed = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+      if (currentSpeed < MIN_SPEED && currentSpeed > 0) {
+        const scale = MIN_SPEED / currentSpeed;
+        player.vx *= scale;
+        player.vy *= scale;
+      }
       
       // Move player
       player.x += player.vx * dt;
@@ -877,15 +897,16 @@
       }
       
       if (gameState === 'playing') {
-        // Redirect player toward tap position
+        // Redirect player toward tap position (smooth curve)
         const dx = x - player.x;
         const dy = y - player.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
-        // Maintain current speed, change direction
+        // Set target velocity (maintain current speed, new direction)
         const speed = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
-        player.vx = (dx / dist) * speed;
-        player.vy = (dy / dist) * speed;
+        const targetSpeed = Math.max(speed, MIN_SPEED);
+        player.targetVx = (dx / dist) * targetSpeed;
+        player.targetVy = (dy / dist) * targetSpeed;
       }
     }
     
