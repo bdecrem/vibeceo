@@ -97,9 +97,37 @@
       playNote(150, 0.2, 'sawtooth', 0.2);
     }
     
+    // ─── SONGS ───────────────────────────────────────────────────────
+    const SONGS = [
+      {
+        id: 'robot-rave-lite',
+        name: 'ROBOT RAVE LITE',
+        artist: 'PixelPit',
+        bpm: 150,
+        duration: 56000,
+        difficulty: '★★☆',
+        locked: false,
+        description: 'Part 1 - Learn the moves',
+      },
+      {
+        id: 'ddr-rave',
+        name: 'DDR RAVE',
+        artist: 'PixelPit',
+        bpm: 170,
+        duration: 60000,
+        difficulty: '★★★',
+        locked: true, // Unlock by beating Part 1 with grade C or better
+        description: 'Part 2 - Full rave chaos',
+      },
+    ];
+    
+    let currentSongIndex = 0;
+    let song2Unlocked = localStorage.getItem('tapBeats_song2Unlocked') === 'true';
+    if (song2Unlocked) SONGS[1].locked = false;
+    
     // ─── GAME STATE ─────────────────────────────────────────────────
     let w, h;
-    let gameState = 'start'; // start, playing, results
+    let gameState = 'songSelect'; // songSelect, playing, results
     
     const NUM_LANES = 3;
     const HIT_ZONE_Y = 0.85; // 85% down the screen
@@ -109,8 +137,8 @@
     
     // Timing
     let songTime = 0; // Current position in song (ms)
-    let bpm = 150; // Faster DDR energy
-    let beatInterval = 60000 / bpm; // ms per beat (400ms)
+    let bpm = 150;
+    let beatInterval = 60000 / bpm;
     
     // Notes
     let notes = []; // Active notes on screen
@@ -129,13 +157,12 @@
     let screenFlash = 0;
     let lanePulse = [0, 0, 0]; // Per-lane pulse intensity
     
-    // ─── BEATMAP (matches DDR song structure) ────────────────────────
+    // ─── BEATMAP (Song 1: Robot Rave Lite @ 150 BPM) ──────────────────
     // time = ms from song start, lane = 0/1/2
-    const BEATMAP = generateBeatmap();
     
-    function generateBeatmap() {
+    function generateBeatmapSong1() {
+      const beat = 60000 / 150; // 150 BPM = 400ms per beat
       const map = [];
-      const beat = beatInterval; // 400ms at 150 BPM
       
       // INTRO (0-3.2s): Quick intro - hit on beats
       for (let t = 1200; t < 3200; t += beat) {
@@ -205,7 +232,76 @@
       return map;
     }
     
-    // ─── PROCEDURAL MUSIC (ROBOT RAVE DDR @ 150 BPM) ───────────────
+    // ─── BEATMAP (Song 2: DDR Rave @ 170 BPM) ────────────────────────
+    function generateBeatmapSong2() {
+      const beat = 60000 / 170; // 170 BPM = 353ms per beat - FAST!
+      const map = [];
+      
+      // INTRO (0-4s): Kick only - get ready
+      for (let t = 1000; t < 4000; t += beat) {
+        map.push({ time: t, lane: 1 });
+      }
+      
+      // VERSE 1 (4-12s): 8th notes, alternating
+      let lane = 0;
+      for (let t = 4000; t < 12000; t += beat / 2) {
+        map.push({ time: t, lane: lane });
+        lane = (lane + 1) % 3;
+      }
+      
+      // BUILD 1 (12-16s): Tension
+      for (let t = 12000; t < 16000; t += beat) {
+        map.push({ time: t, lane: 1 });
+      }
+      
+      // DROP 1 (16-28s): INTENSE - pentatonic pattern
+      const pentaPattern = [0, 1, 2, 1, 0, 2, 1, 0];
+      for (let t = 16000; t < 28000; t += beat / 2) {
+        const idx = Math.floor((t - 16000) / (beat / 2)) % 8;
+        map.push({ time: t, lane: pentaPattern[idx] });
+        // Add doubles frequently
+        if (Math.random() < 0.3) {
+          map.push({ time: t, lane: (pentaPattern[idx] + 1) % 3 });
+        }
+      }
+      
+      // VERSE 2 (28-36s): Wave pattern
+      for (let t = 28000; t < 36000; t += beat / 2) {
+        const wave = Math.floor(1.5 + Math.sin((t - 28000) * 0.003) * 1.5);
+        map.push({ time: t, lane: wave });
+      }
+      
+      // BUILD 2 (36-40s): Accelerating chaos
+      let interval = beat;
+      for (let t = 36000; t < 40000; t += interval) {
+        map.push({ time: t, lane: Math.floor(Math.random() * 3) });
+        interval = Math.max(interval * 0.85, beat / 4);
+      }
+      
+      // DROP 2 (40-56s): MAXIMUM RAVE - 16th notes + doubles
+      for (let t = 40000; t < 56000; t += beat / 2) {
+        const idx = Math.floor((t - 40000) / (beat / 2)) % 8;
+        map.push({ time: t, lane: pentaPattern[idx] });
+        // 40% doubles - it's chaos!
+        if (Math.random() < 0.4) {
+          map.push({ time: t, lane: (pentaPattern[idx] + 1 + Math.floor(Math.random() * 2)) % 3 });
+        }
+      }
+      
+      // OUTRO (56-60s): Cool down
+      for (let t = 56000; t < 59000; t += beat) {
+        map.push({ time: t, lane: 1 });
+      }
+      // Final triple
+      map.push({ time: 59500, lane: 0 });
+      map.push({ time: 59500, lane: 1 });
+      map.push({ time: 59500, lane: 2 });
+      
+      map.sort((a, b) => a.time - b.time);
+      return map;
+    }
+    
+    // ─── PROCEDURAL MUSIC (Song 1: Robot Rave Lite @ 150 BPM) ────────
     let musicNodes = [];
     
     // Note frequencies
@@ -248,7 +344,7 @@
       { note: NOTE.A1, bar: 3 },
     ];
     
-    function startMusic() {
+    function startMusicSong1() {
       if (!audioCtx) return;
       musicStartTime = audioCtx.currentTime;
       
@@ -584,6 +680,214 @@
       musicNodes = [];
     }
     
+    // ─── PROCEDURAL MUSIC (Song 2: DDR Rave @ 170 BPM) ───────────────
+    // DDR Rave melody notes (pentatonic - always sounds good)
+    const DDR_MELODY = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
+    const DDR_MELODY_PATTERN = [0, 2, 4, 2, 5, 4, 2, 0, 3, 5, 7, 5, 4, 2, 0, 2];
+    const DDR_CHORDS = [
+      [261.63, 329.63, 392.00], // C major
+      [293.66, 369.99, 440.00], // D minor
+      [349.23, 440.00, 523.25], // F major
+      [392.00, 493.88, 587.33], // G major
+    ];
+    const DDR_BASS = [130.81, 130.81, 146.83, 164.81]; // C3, C3, D3, E3
+    
+    let song2Beat = 0;
+    let song2BeatInterval = null;
+    let song2MelodyPhase = 0;
+    
+    function startMusicSong2() {
+      if (!audioCtx) return;
+      musicStartTime = audioCtx.currentTime;
+      song2Beat = 0;
+      song2MelodyPhase = 0;
+      
+      const beatMs = 60000 / 170; // 170 BPM
+      
+      // Use setInterval for the rave feel (like ddr-rave.html)
+      song2BeatInterval = setInterval(() => {
+        song2Beat++;
+        
+        // Kick on 1 and 3
+        if (song2Beat % 4 === 0 || song2Beat % 4 === 2) playDDRKick();
+        
+        // Snare on 2 and 4
+        if (song2Beat % 4 === 1 || song2Beat % 4 === 3) playDDRSnare();
+        
+        // Hi-hat on every beat + offbeats
+        playDDRHihat();
+        setTimeout(() => playDDRHihat(), beatMs / 2);
+        
+        // Bass on every beat
+        playDDRBass();
+        
+        // Melody
+        playDDRMelody();
+        
+        // Arpeggio every 2 beats
+        if (song2Beat % 2 === 0) playDDRArpeggio();
+        
+        // Chord stabs every 4 beats
+        if (song2Beat % 4 === 0) playDDRChord();
+        
+      }, beatMs);
+    }
+    
+    function playDDRKick() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(35, audioCtx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    }
+    
+    function playDDRSnare() {
+      const bufferSize = audioCtx.sampleRate * 0.1;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.15));
+      }
+      const source = audioCtx.createBufferSource();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 3000;
+      source.buffer = buffer;
+      gain.gain.value = 0.35;
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      source.start();
+      
+      // Tone
+      const osc = audioCtx.createOscillator();
+      const oscGain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = 200;
+      oscGain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      oscGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+      osc.connect(oscGain);
+      oscGain.connect(masterGain);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.08);
+    }
+    
+    function playDDRHihat() {
+      const bufferSize = audioCtx.sampleRate * 0.03;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.08));
+      }
+      const source = audioCtx.createBufferSource();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 8000;
+      source.buffer = buffer;
+      gain.gain.value = 0.1;
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      source.start();
+    }
+    
+    function playDDRBass() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      const note = DDR_BASS[song2Beat % 4];
+      osc.type = 'sawtooth';
+      osc.frequency.value = note;
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+    
+    function playDDRMelody() {
+      song2MelodyPhase++;
+      const noteIndex = DDR_MELODY_PATTERN[song2MelodyPhase % DDR_MELODY_PATTERN.length];
+      const note = DDR_MELODY[noteIndex];
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      osc.type = 'square';
+      osc.frequency.value = note;
+      filter.type = 'lowpass';
+      filter.frequency.value = 2000;
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    }
+    
+    function playDDRArpeggio() {
+      const chordIndex = Math.floor(song2Beat / 8) % DDR_CHORDS.length;
+      const chord = DDR_CHORDS[chordIndex];
+      const beatMs = 60000 / 170 / 4;
+      
+      chord.forEach((note, i) => {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.value = note * 2;
+          gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+          osc.connect(gain);
+          gain.connect(masterGain);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.1);
+        }, i * beatMs);
+      });
+    }
+    
+    function playDDRChord() {
+      const chordIndex = Math.floor(song2Beat / 4) % DDR_CHORDS.length;
+      const chord = DDR_CHORDS[chordIndex];
+      
+      chord.forEach(note => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = note;
+        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      });
+    }
+    
+    // Update stopMusic to also clear song2 interval
+    const originalStopMusic = stopMusic;
+    stopMusic = function() {
+      if (song2BeatInterval) {
+        clearInterval(song2BeatInterval);
+        song2BeatInterval = null;
+      }
+      originalStopMusic();
+    };
+    
     // ─── RESIZE ─────────────────────────────────────────────────────
     function resize() {
       canvas.width = window.innerWidth * window.devicePixelRatio;
@@ -596,6 +900,8 @@
     window.addEventListener('resize', resize);
     
     // ─── GAME FUNCTIONS ─────────────────────────────────────────────
+    let currentBeatmap = [];
+    
     function startGame() {
       gameState = 'playing';
       notes = [];
@@ -609,12 +915,24 @@
       hitEffects = [];
       songTime = -2000; // 2 second lead-in
       
+      // Set BPM based on selected song
+      const song = SONGS[currentSongIndex];
+      bpm = song.bpm;
+      beatInterval = 60000 / bpm;
+      
+      // Generate beatmap for selected song
+      currentBeatmap = currentSongIndex === 0 ? generateBeatmapSong1() : generateBeatmapSong2();
+      
       initAudio();
       
       // Delay music start by 2 seconds
       setTimeout(() => {
         if (gameState === 'playing') {
-          startMusic();
+          if (currentSongIndex === 0) {
+            startMusicSong1();
+          } else {
+            startMusicSong2();
+          }
         }
       }, 2000);
     }
@@ -721,9 +1039,9 @@
       
       // Spawn new notes
       const spawnAheadTime = (h * HIT_ZONE_Y) / NOTE_SPEED * 1000 + 100;
-      while (nextNoteIndex < BEATMAP.length && 
-             BEATMAP[nextNoteIndex].time < songTime + spawnAheadTime) {
-        const noteData = BEATMAP[nextNoteIndex];
+      while (nextNoteIndex < currentBeatmap.length && 
+             currentBeatmap[nextNoteIndex].time < songTime + spawnAheadTime) {
+        const noteData = currentBeatmap[nextNoteIndex];
         notes.push({
           time: noteData.time,
           lane: noteData.lane,
@@ -765,7 +1083,7 @@
       }
       
       // Check for song end
-      if (songTime > 56000 && notes.length === 0) {
+      if (songTime > SONGS[currentSongIndex].duration && notes.length === 0) {
         endGame();
       }
     }
@@ -901,34 +1219,70 @@
         }
       }
       
-      // Start screen
-      if (gameState === 'start') {
-        ctx.fillStyle = 'rgba(9, 9, 11, 0.9)';
+      // Song select screen
+      if (gameState === 'songSelect') {
+        ctx.fillStyle = 'rgba(9, 9, 11, 0.95)';
         ctx.fillRect(0, 0, w, h);
         
         ctx.fillStyle = THEME.text;
         ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('TAP BEATS', w / 2, h / 2 - 60);
+        ctx.fillText('TAP BEATS', w / 2, 80);
         
-        ctx.font = '20px system-ui, -apple-system, sans-serif';
-        ctx.fillStyle = 'rgba(248, 250, 252, 0.7)';
-        ctx.fillText('Tap the lanes when notes hit the line', w / 2, h / 2);
+        ctx.font = '18px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(248, 250, 252, 0.6)';
+        ctx.fillText('SELECT A SONG', w / 2, 120);
         
-        ctx.font = '24px system-ui, -apple-system, sans-serif';
-        ctx.fillStyle = THEME.lane1;
-        ctx.fillText('TAP TO START', w / 2, h / 2 + 60);
+        // Draw song cards
+        const cardHeight = 120;
+        const cardWidth = Math.min(400, w - 40);
+        const startY = 160;
         
-        // Show lanes preview
-        for (let i = 0; i < NUM_LANES; i++) {
-          const x = getLaneX(i);
-          ctx.fillStyle = LANE_COLORS[i];
-          ctx.globalAlpha = 0.5;
-          ctx.beginPath();
-          ctx.arc(x, h * 0.75, 30, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.globalAlpha = 1;
+        SONGS.forEach((song, i) => {
+          const y = startY + i * (cardHeight + 20);
+          const isSelected = i === currentSongIndex;
+          const isLocked = song.locked;
+          
+          // Card background
+          ctx.fillStyle = isSelected ? 'rgba(236, 72, 153, 0.2)' : 'rgba(255, 255, 255, 0.05)';
+          if (isLocked) ctx.fillStyle = 'rgba(50, 50, 50, 0.3)';
+          ctx.fillRect(w / 2 - cardWidth / 2, y, cardWidth, cardHeight);
+          
+          // Border
+          ctx.strokeStyle = isSelected ? THEME.lane1 : 'rgba(255, 255, 255, 0.2)';
+          ctx.lineWidth = isSelected ? 3 : 1;
+          ctx.strokeRect(w / 2 - cardWidth / 2, y, cardWidth, cardHeight);
+          
+          // Song info
+          ctx.textAlign = 'left';
+          const textX = w / 2 - cardWidth / 2 + 20;
+          
+          ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+          ctx.fillStyle = isLocked ? '#666' : THEME.text;
+          ctx.fillText(isLocked ? '🔒 ' + song.name : song.name, textX, y + 35);
+          
+          ctx.font = '16px system-ui, -apple-system, sans-serif';
+          ctx.fillStyle = isLocked ? '#555' : 'rgba(248, 250, 252, 0.7)';
+          ctx.fillText(`${song.bpm} BPM  •  ${song.difficulty}`, textX, y + 60);
+          
+          ctx.font = '14px system-ui, -apple-system, sans-serif';
+          ctx.fillStyle = isLocked ? '#444' : 'rgba(248, 250, 252, 0.5)';
+          ctx.fillText(song.description, textX, y + 85);
+          
+          if (isLocked) {
+            ctx.fillStyle = THEME.miss;
+            ctx.fillText('Beat Part 1 with grade C to unlock', textX, y + 105);
+          }
+        });
+        
+        ctx.textAlign = 'center';
+        
+        // Instructions
+        ctx.font = '16px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(248, 250, 252, 0.6)';
+        const instructY = startY + SONGS.length * (cardHeight + 20) + 30;
+        ctx.fillText('TAP a song to select  •  TAP again to play', w / 2, instructY);
+        ctx.fillText('Or use ↑↓ arrows + ENTER', w / 2, instructY + 25);
       }
       
       // Results screen
@@ -936,25 +1290,30 @@
         ctx.fillStyle = 'rgba(9, 9, 11, 0.95)';
         ctx.fillRect(0, 0, w, h);
         
+        // Song name
+        ctx.fillStyle = THEME.lane1;
+        ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(SONGS[currentSongIndex].name, w / 2, h / 2 - 150);
+        
         ctx.fillStyle = THEME.text;
         ctx.font = 'bold 36px system-ui, -apple-system, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('SONG COMPLETE', w / 2, h / 2 - 120);
+        ctx.fillText('SONG COMPLETE', w / 2, h / 2 - 110);
         
         ctx.font = 'bold 64px system-ui, -apple-system, sans-serif';
         ctx.fillStyle = THEME.perfect;
-        ctx.fillText(Math.floor(score).toLocaleString(), w / 2, h / 2 - 40);
+        ctx.fillText(Math.floor(score).toLocaleString(), w / 2, h / 2 - 30);
         
         ctx.font = '20px system-ui, -apple-system, sans-serif';
         ctx.fillStyle = THEME.text;
         ctx.fillText(`Max Combo: ${maxCombo}x`, w / 2, h / 2 + 20);
         
         ctx.fillStyle = THEME.perfect;
-        ctx.fillText(`Perfect: ${perfects}`, w / 2 - 80, h / 2 + 60);
+        ctx.fillText(`Perfect: ${perfects}`, w / 2 - 80, h / 2 + 55);
         ctx.fillStyle = THEME.good;
-        ctx.fillText(`Good: ${goods}`, w / 2, h / 2 + 60);
+        ctx.fillText(`Good: ${goods}`, w / 2, h / 2 + 55);
         ctx.fillStyle = THEME.miss;
-        ctx.fillText(`Miss: ${misses}`, w / 2 + 80, h / 2 + 60);
+        ctx.fillText(`Miss: ${misses}`, w / 2 + 80, h / 2 + 55);
         
         // Grade
         const total = perfects + goods + misses;
@@ -970,11 +1329,25 @@
         ctx.fillStyle = grade === 'S' ? THEME.perfect : 
                        grade === 'A' ? THEME.good :
                        grade === 'F' ? THEME.miss : THEME.text;
-        ctx.fillText(grade, w / 2, h / 2 + 150);
+        ctx.fillText(grade, w / 2, h / 2 + 140);
         
-        ctx.font = '20px system-ui, -apple-system, sans-serif';
+        // Check for unlock
+        let unlockMessage = null;
+        if (currentSongIndex === 0 && ['S', 'A', 'B', 'C'].includes(grade) && SONGS[1].locked) {
+          SONGS[1].locked = false;
+          localStorage.setItem('tapBeats_song2Unlocked', 'true');
+          unlockMessage = '🎉 DDR RAVE UNLOCKED! 🎉';
+        }
+        
+        if (unlockMessage) {
+          ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+          ctx.fillStyle = THEME.perfect;
+          ctx.fillText(unlockMessage, w / 2, h / 2 + 180);
+        }
+        
+        ctx.font = '18px system-ui, -apple-system, sans-serif';
         ctx.fillStyle = THEME.lane1;
-        ctx.fillText('TAP TO PLAY AGAIN', w / 2, h / 2 + 200);
+        ctx.fillText('TAP TO CONTINUE', w / 2, h / 2 + 220);
       }
     }
     
@@ -987,16 +1360,37 @@
     }
     
     // ─── INPUT ──────────────────────────────────────────────────────
+    let lastTapOnSong = -1; // Track which song was last tapped for double-tap detection
+    
     function handleTap(x, y) {
       initAudio();
       
-      if (gameState === 'start') {
-        startGame();
+      if (gameState === 'songSelect') {
+        // Check which song card was tapped
+        const cardHeight = 120;
+        const startY = 160;
+        
+        for (let i = 0; i < SONGS.length; i++) {
+          const cardY = startY + i * (cardHeight + 20);
+          if (y >= cardY && y < cardY + cardHeight) {
+            if (SONGS[i].locked) return; // Can't select locked songs
+            
+            if (currentSongIndex === i && lastTapOnSong === i) {
+              // Double tap on same song - start game
+              startGame();
+            } else {
+              // First tap - select song
+              currentSongIndex = i;
+              lastTapOnSong = i;
+            }
+            return;
+          }
+        }
         return;
       }
       
       if (gameState === 'results') {
-        startGame();
+        gameState = 'songSelect';
         return;
       }
       
@@ -1021,17 +1415,33 @@
       handleTap(e.clientX, e.clientY);
     });
     
-    // Keyboard support (A, S, D or J, K, L)
+    // Keyboard support
     document.addEventListener('keydown', (e) => {
-      if (gameState === 'start' || gameState === 'results') {
-        if (e.code === 'Space') {
+      if (gameState === 'songSelect') {
+        if (e.code === 'ArrowUp') {
           e.preventDefault();
-          if (gameState === 'start') startGame();
-          else startGame();
+          currentSongIndex = Math.max(0, currentSongIndex - 1);
+          while (SONGS[currentSongIndex].locked && currentSongIndex > 0) currentSongIndex--;
+        } else if (e.code === 'ArrowDown') {
+          e.preventDefault();
+          currentSongIndex = Math.min(SONGS.length - 1, currentSongIndex + 1);
+          if (SONGS[currentSongIndex].locked) currentSongIndex--;
+        } else if (e.code === 'Enter' || e.code === 'Space') {
+          e.preventDefault();
+          if (!SONGS[currentSongIndex].locked) startGame();
         }
         return;
       }
       
+      if (gameState === 'results') {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          e.preventDefault();
+          gameState = 'songSelect';
+        }
+        return;
+      }
+      
+      // Playing - lane controls
       let lane = -1;
       if (e.code === 'KeyA' || e.code === 'KeyJ') lane = 0;
       else if (e.code === 'KeyS' || e.code === 'KeyK') lane = 1;
