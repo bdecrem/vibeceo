@@ -302,6 +302,43 @@
       });
     }
     
+    // Play door's pattern melody as a hint (quieter than player notes)
+    function playDoorMelody() {
+      if (!audioCtx || door.unlocked || door.melodyPlaying) return;
+      door.melodyPlaying = true;
+      
+      door.pattern.forEach((note, i) => {
+        setTimeout(() => {
+          const surface = SURFACES[note.surface];
+          if (!surface) return;
+          
+          // Map zone to pitch
+          const zoneMap = { high: 0.15, mid: 0.5, low: 0.85 };
+          const yPos = zoneMap[note.zone] || 0.5;
+          const noteIndex = Math.floor(yPos * PENTATONIC.length);
+          const freq = surface.baseFreq * PENTATONIC[Math.min(noteIndex, PENTATONIC.length - 1)];
+          
+          // Play quiet hint note
+          const now = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.08, now); // Quiet
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+          osc.connect(gain);
+          gain.connect(reverbNode);
+          osc.start(now);
+          osc.stop(now + 0.4);
+          
+          // Reset playing flag after last note
+          if (i === door.pattern.length - 1) {
+            setTimeout(() => { door.melodyPlaying = false; }, 400);
+          }
+        }, i * 400); // 400ms between notes
+      });
+    }
+    
     // ─── GAME STATE ─────────────────────────────────────────────────
     let gameState = 'start'; // start, playing, levelComplete, transitioning
     let currentLevel = 0;
@@ -336,7 +373,11 @@
       matched: [],        // Which pattern notes have been matched
       unlocked: false,
       pulsePhase: 0,
+      melodyTimer: 0,     // Timer for playing door's melody hint
+      melodyPlaying: false,
     };
+    
+    const DOOR_MELODY_INTERVAL = 4; // Seconds between melody plays
     
     // Recent notes played (for pattern matching)
     let recentNotes = [];
@@ -504,6 +545,8 @@
       door.matched = new Array(level.pattern.length).fill(false);
       door.unlocked = false;
       door.pulsePhase = 0;
+      door.melodyTimer = 2; // Play first hint after 2 seconds
+      door.melodyPlaying = false;
       
       // Update UI
       levelDisplay.textContent = `Level ${index + 1}`;
@@ -689,6 +732,15 @@
       
       // Door pulse
       door.pulsePhase += dt * 2;
+      
+      // Door melody hint (plays every few seconds)
+      if (!door.unlocked) {
+        door.melodyTimer += dt;
+        if (door.melodyTimer >= DOOR_MELODY_INTERVAL) {
+          door.melodyTimer = 0;
+          playDoorMelody();
+        }
+      }
       
       // Check if player reached door (after unlocked)
       if (door.unlocked) {
