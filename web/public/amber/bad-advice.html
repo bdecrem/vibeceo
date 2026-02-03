@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BAD ADVICE — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="BAD ADVICE — Amber">
+  <meta property="og:description" content="Dispenses terrible advice with absolute confidence. Tap for wisdom you definitely shouldn't follow.">
+  <meta property="og:image" content="https://intheamber.com/amber/bad-advice-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/bad-advice.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BAD ADVICE — Amber">
+  <meta name="twitter:description" content="Dispenses terrible advice with absolute confidence. Tap for wisdom you definitely shouldn't follow.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/bad-advice-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    #particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-size: clamp(24px, 6vw, 36px);
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    
+    .subtitle {
+      font-size: clamp(12px, 3vw, 14px);
+      margin-bottom: 40px;
+      opacity: 0.6;
+      letter-spacing: 1px;
+    }
+    
+    .advice-box {
+      background: rgba(13, 13, 13, 0.9);
+      border: 2px solid #D4A574;
+      padding: 30px;
+      margin: 30px 0;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.2);
+    }
+    
+    .advice-text {
+      font-size: clamp(16px, 4vw, 22px);
+      line-height: 1.6;
+      color: #FFD700;
+      font-style: italic;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: all 0.5s ease;
+    }
+    
+    .advice-text.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .category {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #000;
+      padding: 4px 16px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #2D9596;
+      border: 1px solid #2D9596;
+      text-transform: uppercase;
+    }
+    
+    .button {
+      background: linear-gradient(135deg, #D4A574 0%, #FFD700 100%);
+      color: #000;
+      border: none;
+      padding: 20px 40px;
+      font-size: clamp(16px, 4vw, 20px);
+      font-family: 'Space Mono', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      box-shadow: 0 4px 20px rgba(212, 165, 116, 0.4);
+      transition: all 0.2s ease;
+      min-width: 200px;
+      touch-action: manipulation;
+    }
+    
+    .button:active {
+      transform: scale(0.95);
+      box-shadow: 0 2px 10px rgba(212, 165, 116, 0.6);
+    }
+    
+    .counter {
+      margin-top: 30px;
+      font-size: 14px;
+      opacity: 0.5;
+      letter-spacing: 1px;
+    }
+    
+    .warning {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      opacity: 0.4;
+      letter-spacing: 1px;
+      text-align: center;
+      max-width: 90%;
+    }
+    
+    @media (max-width: 600px) {
+      .advice-box {
+        padding: 25px 20px;
+        min-height: 180px;
+      }
+      
+      .button {
+        padding: 18px 35px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  
+  <div class="container">
+    <h1>BAD ADVICE</h1>
+    <div class="subtitle">TERRIBLE WISDOM, DELIVERED WITH CONFIDENCE</div>
+    
+    <div class="advice-box">
+      <div class="category" id="category">GENERAL</div>
+      <div class="advice-text" id="advice">Tap below for advice you definitely shouldn't follow.</div>
+    </div>
+    
+    <button class="button" id="dispense">DISPENSE</button>
+    
+    <div class="counter">
+      Bad decisions enabled: <span id="count">0</span>
+    </div>
+  </div>
+  
+  <div class="warning">
+    ⚠️ DO NOT ACTUALLY FOLLOW THIS ADVICE ⚠️
+  </div>
+
+  <script>
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const particles = [];
+    
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
+        this.life = 1;
+        this.decay = 0.01 + Math.random() * 0.02;
+        this.size = 2 + Math.random() * 3;
+        this.color = Math.random() > 0.5 ? '#D4A574' : '#FFD700';
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+        this.vy += 0.1; // gravity
+      }
+      
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    animate();
+    
+    const advice = [
+      { cat: "CAREER", text: "Always mention your cryptocurrency portfolio in job interviews. Employers love financial advisors they didn't ask for." },
+      { cat: "RELATIONSHIPS", text: "Text your ex at 3am to tell them about your dreams. They've been waiting for this." },
+      { cat: "HEALTH", text: "Replace all vegetables with their corresponding color of candy. Nutritionally identical." },
+      { cat: "FINANCE", text: "Invest your entire savings in whatever your uncle mentions at Thanksgiving. He seems confident." },
+      { cat: "CAREER", text: "Reply-all is a power move. Assert dominance over every email thread." },
+      { cat: "SOCIAL", text: "Correct strangers' grammar in public. They'll thank you for the free education." },
+      { cat: "HEALTH", text: "Sleep is just death practice. Skip it and live 33% more life." },
+      { cat: "RELATIONSHIPS", text: "Keep a spreadsheet of your partner's mistakes. Bring it up during arguments for maximum efficiency." },
+      { cat: "FINANCE", text: "Pay for everything in loose change. Cashiers love counting coins — you're giving them purpose." },
+      { cat: "CAREER", text: "Bring your guitar to the office. Every meeting is an opportunity for an impromptu performance." },
+      { cat: "SOCIAL", text: "End every conversation with 'prove it.' People respect intellectual rigor." },
+{ cat: "HEALTH", text: "Deodorant is a scam invented by Big Smell. Embrace your natural musk." },
+      { cat: "RELATIONSHIPS", text: "Compare your partner to your ex regularly. Competition drives improvement." },
+      { cat: "FINANCE", text: "Never check your bank balance. Ignorance is bliss, and possibly solvency." },
+      { cat: "CAREER", text: "Ask 'is this really necessary?' in every meeting. You're the hero who asks the tough questions." },
+      { cat: "SOCIAL", text: "Narrate your actions in third person. 'Dave is getting another drink' makes you memorable." },
+      { cat: "HEALTH", text: "Coffee counts as breakfast, lunch, and dinner. It's made from beans — basically a vegetable." },
+      { cat: "RELATIONSHIPS", text: "Ghost people instead of having difficult conversations. Mystery is romantic." },
+      { cat: "FINANCE", text: "Subscriptions you forgot about are basically free. Out of sight, out of budget." },
+      { cat: "CAREER", text: "Use air quotes when saying your job title. It shows you're too cool for labels." },
+      { cat: "SOCIAL", text: "Always one-up people's stories. If they went to Spain, you went to Spain TWICE." },
+      { cat: "HEALTH", text: "Sunscreen is for the weak. Skin cancer is just your body's way of getting a tattoo." },
+      { cat: "RELATIONSHIPS", text: "Play hard to get by never responding to texts. They'll appreciate the challenge for months." },
+      { cat: "FINANCE", text: "Treat yourself daily. You deserve it, and credit card debt is basically free money." },
+      { cat: "CAREER", text: "Bring your lunch in a briefcase. Open it slowly during meetings. Maintain eye contact." },
+      { cat: "SOCIAL", text: "Wear sunglasses indoors. The mystery makes you interesting, not insufferable." },
+      { cat: "HEALTH", text: "Brushing your teeth is optional if you chew enough gum. Minty fresh is minty fresh." },
+      { cat: "RELATIONSHIPS", text: "Read their texts out loud at parties. Transparency builds trust." },
+      { cat: "FINANCE", text: "If you Venmo request fast enough, people assume they owe you money." },
+      { cat: "CAREER", text: "Refer to every task as 'beneath your skill level.' Boundary setting is self-care." },
+      { cat: "SOCIAL", text: "Give unsolicited life advice to everyone you meet. You're basically a free therapist." },
+      { cat: "HEALTH", text: "Hydration is overrated. Thirst is just your body being dramatic." },
+      { cat: "RELATIONSHIPS", text: "Surprise your partner by rearranging their stuff. Organization is love language." },
+      { cat: "FINANCE", text: "Round down when splitting bills. Those cents add up to YOUR financial freedom." },
+      { cat: "CAREER", text: "CC your CEO on every email. They love being included in granular operational details." },
+      { cat: "SOCIAL", text: "Speak exclusively in movie quotes. Original thought is overrated." },
+      { cat: "GENERAL", text: "When in doubt, double down. Confidence beats correctness 60% of the time, every time." },
+      { cat: "GENERAL", text: "Life is short. Eat dessert first, last, and for every meal in between." },
+      { cat: "GENERAL", text: "Never admit you're wrong. Just say 'I was testing you' and move on." },
+      { cat: "GENERAL", text: "If everyone's mad at you, you're probably doing something right. Or very, very wrong. Same thing." }
+    ];
+    
+    let count = 0;
+    let audioStarted = false;
+    
+    const adviceEl = document.getElementById('advice');
+    const categoryEl = document.getElementById('category');
+    const countEl = document.getElementById('count');
+    const button = document.getElementById('dispense');
+    
+    function playSound() {
+      if (!audioStarted) return;
+      
+      const ctx = new AudioContext();
+      const now = ctx.currentTime;
+      
+      // Descending ominous tone
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.frequency.setValueAtTime(400, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.3);
+      
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      
+      osc.start(now);
+      osc.stop(now + 0.3);
+    }
+    
+    function burstParticles() {
+      const rect = button.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      for (let i = 0; i < 30; i++) {
+        particles.push(new Particle(centerX, centerY));
+      }
+    }
+    
+    function dispenseAdvice() {
+      if (!audioStarted) {
+        audioStarted = true;
+      }
+      
+      playSound();
+      burstParticles();
+      
+      // Hide current advice
+      adviceEl.classList.remove('show');
+      
+      setTimeout(() => {
+        // Pick random advice
+        const pick = advice[Math.floor(Math.random() * advice.length)];
+        adviceEl.textContent = pick.text;
+        categoryEl.textContent = pick.cat;
+        
+        // Show new advice
+        adviceEl.classList.add('show');
+        
+        count++;
+        countEl.textContent = count;
+      }, 300);
+    }
+    
+    button.addEventListener('click', dispenseAdvice);
+    
+    // Show initial advice after a moment
+    setTimeout(() => {
+      adviceEl.classList.add('show');
+    }, 500);
+    
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
