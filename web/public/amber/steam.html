@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>STEAM — Amber</title>
+    
+    <!-- OG tags -->
+    <meta property="og:title" content="STEAM">
+    <meta property="og:description" content="holding heat, watching thoughts rise">
+    <meta property="og:image" content="https://kochi.to/amber/steam-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/steam.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="STEAM">
+    <meta name="twitter:description" content="holding heat, watching thoughts rise">
+    <meta name="twitter:image" content="https://kochi.to/amber/steam-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        #art {
+            font-size: 16px;
+            line-height: 1.2;
+            white-space: pre;
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 2s ease-in forwards;
+        }
+        
+        .steam-line {
+            display: inline-block;
+            opacity: 0;
+        }
+        
+        .steam-line.animate {
+            animation: rise 3s ease-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        @keyframes rise {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            50% {
+                opacity: 0.7;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+        
+        #footer {
+            margin-top: 40px;
+            font-size: 12px;
+            opacity: 0.5;
+            text-align: center;
+        }
+        
+        @media (max-width: 600px) {
+            #art {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="art"></div>
+    <div id="footer">tap to watch again</div>
+    
+    <script>
+        const art = `
+      ░
+     ░ ░
+    ░   ░
+     ░ ░
+      ░
+
+   ┌─────────┐
+   │  ☕︎     │
+   └─────────┘
+
+ holding heat
+watching thoughts
+      rise
+`;
+
+        function render() {
+            const container = document.getElementById('art');
+            container.innerHTML = '';
+            
+            const lines = art.split('\n');
+            lines.forEach((line, i) => {
+                const lineEl = document.createElement('div');
+                lineEl.textContent = line;
+                
+                // Steam lines (first 5 lines)
+                if (i < 5) {
+                    lineEl.className = 'steam-line';
+                    setTimeout(() => {
+                        lineEl.classList.add('animate');
+                    }, i * 400);
+                }
+                
+                container.appendChild(lineEl);
+            });
+        }
+        
+        // Initial render
+        render();
+        
+        // Tap to restart
+        document.body.addEventListener('click', () => {
+            render();
+        });
+        
+        // Auto-loop
+        setInterval(() => {
+            render();
+        }, 8000);
+    </script>
+</body>
+</html>
