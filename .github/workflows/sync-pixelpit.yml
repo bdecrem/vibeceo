@@ -33,6 +33,9 @@ jobs:
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/app/layout.tsx -o pixelpit-build/app/layout.tsx
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/app/globals.css -o pixelpit-build/app/globals.css
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/app/page.tsx -o pixelpit-build/app/page.tsx
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/vercel.json -o pixelpit-build/vercel.json
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/CLAUDE.md -o pixelpit-build/CLAUDE.md
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/.gitignore -o pixelpit-build/.gitignore
 
       - name: Push to PixelPit repo
         uses: cpina/github-action-push-to-another-repository@main
