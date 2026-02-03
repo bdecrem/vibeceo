@@ -425,6 +425,7 @@
     let surfaceGlows = []; // { surface, intensity, time }
     let screenFlash = { color: null, alpha: 0 };
     let particles = []; // { x, y, vx, vy, color, life, size }
+    let lastTapTime = 0; // Intent-based notes: only count notes shortly after a tap
     
     // Tutorial hint
     let currentHint = '';
@@ -587,6 +588,7 @@
       // Reset state
       recentNotes = [];
       surfaceGlows = [];
+      lastTapTime = 0;
       
       // Player
       player.x = level.playerStart.x * w;
@@ -759,8 +761,9 @@
           // Add surface glow
           surface.glowIntensity = 1;
           
-          // Add to recent notes for pattern matching
-          if (note) {
+          // Add to recent notes for pattern matching (intent-based: only if tapped recently)
+          const timeSinceTap = Date.now() - lastTapTime;
+          if (note && timeSinceTap < 1000) {
             const zone = hitPos < 0.33 ? 'high' : hitPos < 0.66 ? 'mid' : 'low';
             recentNotes.push({ surface: note.surface, zone, time: Date.now() });
             
@@ -1074,6 +1077,9 @@
       }
       
       if (gameState === 'playing') {
+        // Track tap time for intent-based note registration
+        lastTapTime = Date.now();
+        
         // Redirect player toward tap position (smooth curve)
         const dx = x - player.x;
         const dy = y - player.y;
