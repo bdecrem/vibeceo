@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DDR RAVE</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="DDR RAVE">
+  <meta property="og:description" content="Dance Dance Revolution meets the rave. Arrows fly. Beats drop. Click to spawn dancers.">
+  <meta property="og:image" content="https://kochi.to/amber/ambers-rave-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/ddr-rave.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DDR RAVE">
+  <meta name="twitter:description" content="Dance Dance Revolution meets the rave. Arrows fly. Beats drop. Click to spawn dancers.">
+  <meta name="twitter:image" content="https://kochi.to/amber/ambers-rave-og.png">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0020;
+      overflow: hidden;
+      cursor: crosshair;
+      font-family: 'Courier New', monospace;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: #ff00ff;
+      font-size: 12px;
+      opacity: 0.8;
+      z-index: 100;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px #ff00ff;
+    }
+
+    #count {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      color: #00ffff;
+      font-size: 48px;
+      font-weight: bold;
+      z-index: 100;
+      text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+    }
+
+    #title {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #ff00ff;
+      font-size: 28px;
+      font-weight: bold;
+      z-index: 100;
+      letter-spacing: 6px;
+      text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff;
+    }
+
+    #bpm {
+      position: fixed;
+      top: 60px;
+      left: 20px;
+      color: #ffff00;
+      font-size: 18px;
+      font-weight: bold;
+      z-index: 100;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px #ffff00;
+    }
+
+    .flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, #ff00ff, #00ffff);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">DDR RAVE</div>
+  <div id="bpm">170 BPM</div>
+  <div id="count">0</div>
+  <div id="info">click to spawn /// space for MAX 300 /// arrows follow the beat</div>
+  <div class="flash" id="flash"></div>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const countEl = document.getElementById('count');
+    const flashEl = document.getElementById('flash');
+    const bpmEl = document.getElementById('bpm');
+
+    let width, height;
+    let characters = [];
+    let arrows = [];
+    let audioStarted = false;
+    let audioCtx, gainNode, masterCompressor;
+    let beat = 0;
+    let bpm = 170;
+    let lastBeat = 0;
+    let chaos = false;
+    let melodyPhase = 0;
+
+    // DDR Colors - bright and saturated
+    const MAGENTA = '#ff00ff';
+    const CYAN = '#00ffff';
+    const YELLOW = '#ffff00';
+    const LIME = '#00ff00';
+    const ORANGE = '#ff8800';
+    const WHITE = '#ffffff';
+    const DEEP_PURPLE = '#0a0020';
+    const HOT_PINK = '#ff1493';
+    const ELECTRIC_BLUE = '#0080ff';
+
+    const DDR_COLORS = [MAGENTA, CYAN, YELLOW, LIME, ORANGE, HOT_PINK, ELECTRIC_BLUE];
+    const ARROW_DIRECTIONS = ['up', 'down', 'left', 'right'];
+
+    // Melody notes (pentatonic scale for DDR-style happy vibes)
+    const MELODY_NOTES = [
+      261.63, 293.66, 329.63, 392.00, 440.00, // C4, D4, E4, G4, A4
+      523.25, 587.33, 659.25, 783.99, 880.00  // C5, D5, E5, G5, A5
+    ];
+
+    const CHORD_PROGRESSIONS = [
+      [261.63, 329.63, 392.00], // C major
+      [293.66, 369.99, 440.00], // D minor
+      [349.23, 440.00, 523.25], // F major
+      [392.00, 493.88, 587.33], // G major
+    ];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Arrow class for DDR effect
+    class Arrow {
+      constructor() {
+        this.direction = ARROW_DIRECTIONS[Math.floor(Math.random() * 4)];
+        this.color = DDR_COLORS[Math.floor(Math.random() * DDR_COLORS.length)];
+        this.size = 40 + Math.random() * 30;
+        this.alpha = 1;
+        this.speed = 8 + Math.random() * 4;
+
+        // Start from edges based on direction
+        switch(this.direction) {
+          case 'up':
+            this.x = Math.random() * width;
+            this.y = height + this.size;
+            this.vx = 0;
+            this.vy = -this.speed;
+            break;
+          case 'down':
+            this.x = Math.random() * width;
+            this.y = -this.size;
+            this.vx = 0;
+            this.vy = this.speed;
+            break;
+          case 'left':
+            this.x = width + this.size;
+            this.y = Math.random() * height;
+            this.vx = -this.speed;
+            this.vy = 0;
+            break;
+          case 'right':
+            this.x = -this.size;
+            this.y = Math.random() * height;
+            this.vx = this.speed;
+            this.vy = 0;
+            break;
+        }
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha -= 0.008;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.globalAlpha = this.alpha;
+
+        // Rotate based on direction
+        const rotations = { up: 0, right: Math.PI/2, down: Math.PI, left: -Math.PI/2 };
+        ctx.rotate(rotations[this.direction]);
+
+        // Draw arrow
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 20;
+
+        const s = this.size;
+        ctx.beginPath();
+        ctx.moveTo(0, -s/2);
+        ctx.lineTo(s/3, 0);
+        ctx.lineTo(s/6, 0);
+        ctx.lineTo(s/6, s/2);
+        ctx.lineTo(-s/6, s/2);
+        ctx.lineTo(-s/6, 0);
+        ctx.lineTo(-s/3, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      isOffscreen() {
+        return this.alpha <= 0 ||
+               this.x < -100 || this.x > width + 100 ||
+               this.y < -100 || this.y > height + 100;
+      }
+    }
+
+    // Character class
+    class Character {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = 25 + Math.random() * 25;
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = (Math.random() - 0.5) * 3;
+        this.rotation = 0;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.15;
+        this.bobPhase = Math.random() * Math.PI * 2;
+        this.bobSpeed = 0.15 + Math.random() * 0.1;
+        this.scale = 1;
+        this.targetScale = 1;
+        this.spawning = true;
+        this.spawnScale = 0;
+        this.lifetime = 0;
+        this.glowing = false;
+
+        this.bodyColor = DDR_COLORS[Math.floor(Math.random() * DDR_COLORS.length)];
+        this.accentColor = DDR_COLORS[Math.floor(Math.random() * DDR_COLORS.length)];
+        this.eyeType = Math.floor(Math.random() * 4);
+      }
+
+      update(beatPulse) {
+        this.lifetime++;
+
+        if (this.spawning) {
+          this.spawnScale += 0.15;
+          if (this.spawnScale >= 1) {
+            this.spawnScale = 1;
+            this.spawning = false;
+          }
+        }
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x < this.size) { this.x = this.size; this.vx *= -1; }
+        if (this.x > width - this.size) { this.x = width - this.size; this.vx *= -1; }
+        if (this.y < this.size) { this.y = this.size; this.vy *= -1; }
+        if (this.y > height - this.size) { this.y = height - this.size; this.vy *= -1; }
+
+        this.bobPhase += this.bobSpeed;
+        this.targetScale = beatPulse ? 1.3 : 1;
+        this.scale += (this.targetScale - this.scale) * 0.4;
+        this.rotation += this.rotationSpeed;
+        this.glowing = beatPulse;
+
+        if (chaos) {
+          this.vx *= 1.02;
+          this.vy *= 1.02;
+          if (Math.abs(this.vx) > 15) this.vx = Math.sign(this.vx) * 15;
+          if (Math.abs(this.vy) > 15) this.vy = Math.sign(this.vy) * 15;
+        } else {
+          this.vx *= 0.995;
+          this.vy *= 0.995;
+        }
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y + Math.sin(this.bobPhase) * 8);
+        ctx.rotate(this.rotation);
+        ctx.scale(this.scale * this.spawnScale, this.scale * this.spawnScale);
+
+        const s = this.size;
+
+        // Glow effect
+        if (this.glowing) {
+          ctx.shadowColor = this.bodyColor;
+          ctx.shadowBlur = 30;
+        }
+
+        // Body
+        ctx.fillStyle = this.bodyColor;
+        ctx.fillRect(-s/2, -s/2, s, s * 0.8);
+
+        // Face outline glow
+        ctx.strokeStyle = this.accentColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-s/2, -s/2, s, s * 0.8);
+
+        // Eyes
+        ctx.fillStyle = WHITE;
+        ctx.shadowBlur = 0;
+
+        switch(this.eyeType) {
+          case 0: // Big happy
+            ctx.beginPath();
+            ctx.arc(-s/4, -s/8, 6, 0, Math.PI * 2);
+            ctx.arc(s/4, -s/8, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = this.accentColor;
+            ctx.beginPath();
+            ctx.arc(-s/4, -s/8, 3, 0, Math.PI * 2);
+            ctx.arc(s/4, -s/8, 3, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          case 1: // Stars
+            ctx.font = `${s/3}px serif`;
+            ctx.fillText('★', -s/4 - 6, -s/8 + 5);
+            ctx.fillText('★', s/4 - 6, -s/8 + 5);
+            break;
+          case 2: // Lines
+            ctx.strokeStyle = WHITE;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-s/4 - 5, -s/8);
+            ctx.lineTo(-s/4 + 5, -s/8);
+            ctx.moveTo(s/4 - 5, -s/8);
+            ctx.lineTo(s/4 + 5, -s/8);
+            ctx.stroke();
+            break;
+          case 3: // Hearts
+            ctx.fillStyle = HOT_PINK;
+            ctx.font = `${s/3}px serif`;
+            ctx.fillText('♥', -s/4 - 5, -s/8 + 5);
+            ctx.fillText('♥', s/4 - 5, -s/8 + 5);
+            break;
+        }
+
+        // Smile
+        ctx.strokeStyle = WHITE;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, s/8, 8, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.stroke();
+
+        // Body block
+        ctx.fillStyle = this.accentColor;
+        ctx.fillRect(-s/3, s * 0.3, s * 0.66, s/3);
+
+        ctx.restore();
+      }
+
+      shouldReproduce() {
+        return this.lifetime > 200 && Math.random() < 0.002 * (chaos ? 5 : 1);
+      }
+    }
+
+    // Audio
+    function initAudio() {
+      if (audioStarted) return;
+      audioStarted = true;
+
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      masterCompressor = audioCtx.createDynamicsCompressor();
+      masterCompressor.connect(audioCtx.destination);
+
+      gainNode = audioCtx.createGain();
+      gainNode.gain.value = 0.35;
+      gainNode.connect(masterCompressor);
+
+      scheduleBeat();
+    }
+
+    function scheduleBeat() {
+      const beatInterval = 60000 / bpm;
+
+      setInterval(() => {
+        beat++;
+        lastBeat = Date.now();
+
+        // Kick on 1 and 3
+        if (beat % 4 === 0 || beat % 4 === 2) playKick();
+
+        // Snare on 2 and 4
+        if (beat % 4 === 1 || beat % 4 === 3) playSnare();
+
+        // Hi-hat on every beat + offbeats
+        playHihat();
+        setTimeout(() => playHihat(), beatInterval / 2);
+
+        // Bass on every beat
+        playBass();
+
+        // Melody every beat
+        playMelody();
+
+        // Arpeggio pattern
+        if (beat % 2 === 0) playArpeggio();
+
+        // Chord stabs every 4 beats
+        if (beat % 4 === 0) playChord();
+
+        // Spawn arrows on beat
+        spawnArrow();
+        if (chaos && Math.random() > 0.3) spawnArrow();
+
+        // Flash
+        if (beat % 4 === 0) flash();
+
+      }, beatInterval);
+    }
+
+    function playKick() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(35, audioCtx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.9, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(gainNode);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    }
+
+    function playSnare() {
+      // Noise burst
+      const bufferSize = audioCtx.sampleRate * 0.1;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.15));
+      }
+      const source = audioCtx.createBufferSource();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 3000;
+      filter.Q.value = 0.5;
+      source.buffer = buffer;
+      gain.gain.value = 0.4;
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(gainNode);
+      source.start();
+
+      // Tone component
+      const osc = audioCtx.createOscillator();
+      const oscGain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = 200;
+      oscGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      oscGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+      osc.connect(oscGain);
+      oscGain.connect(gainNode);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.08);
+    }
+
+    function playHihat() {
+      const bufferSize = audioCtx.sampleRate * 0.03;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.08));
+      }
+      const source = audioCtx.createBufferSource();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 8000;
+      source.buffer = buffer;
+      gain.gain.value = 0.12;
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(gainNode);
+      source.start();
+    }
+
+    function playBass() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      // DDR-style bouncy bass pattern
+      const bassPattern = [130.81, 130.81, 146.83, 164.81]; // C3, C3, D3, E3
+      const note = bassPattern[beat % 4];
+
+      osc.type = 'sawtooth';
+      osc.frequency.value = note;
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.15);
+
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(gainNode);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function playMelody() {
+      melodyPhase++;
+
+      // Simple DDR-style melody pattern
+      const melodyPattern = [0, 2, 4, 2, 5, 4, 2, 0, 3, 5, 7, 5, 4, 2, 0, 2];
+      const noteIndex = melodyPattern[melodyPhase % melodyPattern.length];
+      const note = MELODY_NOTES[noteIndex];
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      osc.type = 'square';
+      osc.frequency.value = note;
+
+      filter.type = 'lowpass';
+      filter.frequency.value = 2000;
+
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(gainNode);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    }
+
+    function playArpeggio() {
+      const chordIndex = Math.floor(beat / 8) % CHORD_PROGRESSIONS.length;
+      const chord = CHORD_PROGRESSIONS[chordIndex];
+      const beatInterval = 60000 / bpm / 4;
+
+      chord.forEach((note, i) => {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.value = note * 2; // One octave up
+
+          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+          osc.connect(gain);
+          gain.connect(gainNode);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.1);
+        }, i * beatInterval);
+      });
+    }
+
+    function playChord() {
+      const chordIndex = Math.floor(beat / 4) % CHORD_PROGRESSIONS.length;
+      const chord = CHORD_PROGRESSIONS[chordIndex];
+
+      chord.forEach(note => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+
+        osc.type = 'sawtooth';
+        osc.frequency.value = note;
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3000, audioCtx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.3);
+
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(gainNode);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.4);
+      });
+    }
+
+    function flash() {
+      flashEl.style.opacity = '0.15';
+      setTimeout(() => { flashEl.style.opacity = '0'; }, 50);
+    }
+
+    function spawnArrow() {
+      if (arrows.length < 50) {
+        arrows.push(new Arrow());
+      }
+    }
+
+    function spawnCharacter(x, y) {
+      if (characters.length < 80) {
+        characters.push(new Character(x || Math.random() * width, y || Math.random() * height));
+        updateCount();
+      }
+    }
+
+    function updateCount() {
+      countEl.textContent = characters.length;
+    }
+
+    // Initial characters
+    for (let i = 0; i < 6; i++) {
+      spawnCharacter();
+    }
+
+    // Click to spawn
+    canvas.addEventListener('click', (e) => {
+      initAudio();
+      spawnCharacter(e.clientX, e.clientY);
+
+      if (chaos) {
+        for (let i = 0; i < 4; i++) {
+          setTimeout(() => {
+            spawnCharacter(
+              e.clientX + (Math.random() - 0.5) * 120,
+              e.clientY + (Math.random() - 0.5) * 120
+            );
+          }, i * 80);
+        }
+      }
+    });
+
+    // Space for MAX 300 mode (chaos)
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        chaos = !chaos;
+        if (chaos) {
+          bpm = 200;
+          bpmEl.textContent = '200 BPM /// MAX 300';
+          bpmEl.style.color = HOT_PINK;
+          document.body.style.background = '#150030';
+        } else {
+          bpm = 170;
+          bpmEl.textContent = '170 BPM';
+          bpmEl.style.color = YELLOW;
+          document.body.style.background = '#0a0020';
+        }
+      }
+    });
+
+    // Draw grid floor
+    function drawGrid() {
+      ctx.strokeStyle = 'rgba(255, 0, 255, 0.1)';
+      ctx.lineWidth = 1;
+
+      const gridSize = 60;
+      const offsetY = (beat * 5) % gridSize;
+
+      for (let x = 0; x < width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+
+      for (let y = -gridSize + offsetY; y < height + gridSize; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+    }
+
+    // Animation loop
+    function animate() {
+      // Trail effect
+      ctx.fillStyle = chaos ? 'rgba(21, 0, 48, 0.15)' : 'rgba(10, 0, 32, 0.2)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Grid
+      drawGrid();
+
+      const timeSinceBeat = Date.now() - lastBeat;
+      const beatPulse = timeSinceBeat < 80;
+
+      // Update and draw arrows
+      arrows = arrows.filter(arrow => {
+        arrow.update();
+        arrow.draw();
+        return !arrow.isOffscreen();
+      });
+
+      // Update and draw characters
+      characters.forEach(char => {
+        char.update(beatPulse);
+        char.draw();
+
+        if (char.shouldReproduce()) {
+          spawnCharacter(
+            char.x + (Math.random() - 0.5) * 60,
+            char.y + (Math.random() - 0.5) * 60
+          );
+        }
+      });
+
+      // Scanlines
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+      for (let y = 0; y < height; y += 3) {
+        ctx.fillRect(0, y, width, 1);
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Auto-spawn
+    setInterval(() => {
+      if (characters.length < 15 && Math.random() > 0.6) {
+        spawnCharacter();
+      }
+    }, 2000);
+  </script>
+</body>
+</html>
