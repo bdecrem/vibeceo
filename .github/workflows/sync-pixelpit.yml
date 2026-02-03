@@ -1,0 +1,88 @@
+name: Sync PixelPit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/app/pixelpit/**'
+      - 'web/app/api/pixelpit/**'
+      - 'web/public/pixelpit/**'
+      - 'web/lib/pixelpit/**'
+  workflow_dispatch:  # Manual trigger for testing
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout vibeceo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Prepare PixelPit structure
+        run: |
+          mkdir -p pixelpit-build/app/api
+          mkdir -p pixelpit-build/lib
+          mkdir -p pixelpit-build/public
+
+          # Copy app files
+          cp -r web/app/pixelpit pixelpit-build/app/
+          cp -r web/app/api/pixelpit pixelpit-build/app/api/
+
+          # Copy lib files
+          cp -r web/lib/pixelpit pixelpit-build/lib/
+
+          # Copy public assets
+          cp -r web/public/pixelpit pixelpit-build/public/
+
+          # Copy config templates
+          cp -r .github/pixelpit-config/* pixelpit-build/
+
+          # Create root layout if needed
+          cat > pixelpit-build/app/layout.tsx << 'LAYOUT'
+          import type { Metadata } from 'next'
+          import './globals.css'
+
+          export const metadata: Metadata = {
+            title: 'PixelPit',
+            description: 'Retro arcade games',
+          }
+
+          export default function RootLayout({
+            children,
+          }: {
+            children: React.ReactNode
+          }) {
+            return (
+              <html lang="en">
+                <body>{children}</body>
+              </html>
+            )
+          }
+          LAYOUT
+
+          # Create globals.css with Tailwind
+          cat > pixelpit-build/app/globals.css << 'CSS'
+          @tailwind base;
+          @tailwind components;
+          @tailwind utilities;
+          CSS
+
+          # Create root page that redirects to /pixelpit
+          cat > pixelpit-build/app/page.tsx << 'PAGE'
+          import { redirect } from 'next/navigation'
+          export default function Home() {
+            redirect('/pixelpit')
+          }
+          PAGE
+
+      - name: Push to PixelPit repo
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.PIXELPIT_DEPLOY_KEY }}
+        with:
+          source-directory: 'pixelpit-build'
+          destination-github-username: 'bdecrem'
+          destination-repository-name: 'pixelpit'
+          target-branch: main
+          commit-message: 'sync from vibeceo ${{ github.sha }}'
