@@ -4,7 +4,9 @@ builder = "NIXPACKS"
 
 # Enable Nixpacks caching for faster builds
 [build.env]
-NIXPACKS_CACHE_KEY = "v1"
+NIXPACKS_CACHE_KEY = "v2"
+NIXPACKS_NODE_MODULES_CACHE = "true"
+NIXPACKS_NPM_CACHE = "true"
 
 [deploy]
 startCommand = "npm start"

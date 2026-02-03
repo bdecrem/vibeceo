@@ -1,0 +1,25 @@
+# Debug and test files
+debug-*.png
+debug-*.js
+rhymes-app-*.png
+test-*.html
+test-*.js
+*.test.ts
+*.test.tsx
+
+# Documentation (not needed in production)
+*.md
+!README.md
+
+# Build artifacts (rebuilt on deploy)
+.next
+node_modules
+
+# Development files
+.env.local
+.env.development
+*.log
+
+# Large test/capture files
+page_*.html
+capture-*.js
