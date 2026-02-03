@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Echo Chamber 🔮</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { 
+      width: 100%; 
+      height: 100%; 
+      overflow: hidden;
+      touch-action: none;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      background: #09090b;
+    }
+    canvas { 
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: rgba(255,255,255,0.6);
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      pointer-events: none;
+    }
+    #pattern-display {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .pattern-note {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      opacity: 0.4;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .pattern-note.matched {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="ui">
+    <div id="level-display">Level 1</div>
+  </div>
+  <div id="pattern-display"></div>
+  
+  <script>
+    // ═══════════════════════════════════════════════════════════════
+    // ECHO CHAMBER — Bounce. Listen. Compose your escape.
+    // ═══════════════════════════════════════════════════════════════
+    
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const levelDisplay = document.getElementById('level-display');
+    const patternDisplay = document.getElementById('pattern-display');
+    
+    // ─── THEME (VOID) ───────────────────────────────────────────────
+    const THEME = {
+      void: '#09090b',
+      playerCore: '#f8fafc',
+      stone: '#7c3aed',    // deep purple - drums
+      crystal: '#22d3ee',  // cyan - chimes
+      wood: '#f59e0b',     // amber - marimba
+      metal: '#ec4899',    // hot pink - synth
+      water: '#3b82f6',    // soft blue - pads
+      door: '#facc15',     // gold
+      trail: 'rgba(248, 250, 252, 0.3)',
+    };
+    
+    // Surface types with their instruments
+    const SURFACES = {
+      stone: { color: THEME.stone, name: 'stone', baseFreq: 110, type: 'drum' },
+      crystal: { color: THEME.crystal, name: 'crystal', baseFreq: 880, type: 'chime' },
+      wood: { color: THEME.wood, name: 'wood', baseFreq: 440, type: 'marimba' },
+      metal: { color: THEME.metal, name: 'metal', baseFreq: 660, type: 'synth' },
+      water: { color: THEME.water, name: 'water', baseFreq: 220, type: 'pad' },
+    };
+    
+    // Pentatonic scale ratios (C-D-E-G-A)
+    const PENTATONIC = [1, 9/8, 5/4, 3/2, 5/3, 2]; // Includes octave
+    
+    // ─── AUDIO ──────────────────────────────────────────────────────
+    let audioCtx = null;
+    let reverbNode = null;
+    let masterGain = null;
+    
+    function initAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Master gain
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.7;
+      masterGain.connect(audioCtx.destination);
+      
+      // Create reverb using convolver with generated impulse
+      createReverb();
+      
+      // Start ambient drone
+      startDrone();
+    }
+    
+    function createReverb() {
+      // Algorithmic reverb using delays and feedback
+      reverbNode = audioCtx.createConvolver();
+      
+      // Generate impulse response
+      const sampleRate = audioCtx.sampleRate;
+      const length = sampleRate * 2; // 2 second reverb
+      const impulse = audioCtx.createBuffer(2, length, sampleRate);
+      
+      for (let channel = 0; channel < 2; channel++) {
+        const data = impulse.getChannelData(channel);
+        for (let i = 0; i < length; i++) {
+          // Exponential decay with some randomness for diffusion
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+        }
+      }
+      
+      reverbNode.buffer = impulse;
+      reverbNode.connect(masterGain);
+    }
+    
+    // Ambient drone
+    let droneOsc1, droneOsc2, droneGain;
+    
+    function startDrone() {
+      if (!audioCtx) return;
+      
+      droneGain = audioCtx.createGain();
+      droneGain.gain.value = 0.05;
+      droneGain.connect(masterGain);
+      
+      // Low C drone
+      droneOsc1 = audioCtx.createOscillator();
+      droneOsc1.type = 'sine';
+      droneOsc1.frequency.value = 65.41; // C2
+      droneOsc1.connect(droneGain);
+      droneOsc1.start();
+      
+      // Fifth above (G)
+      droneOsc2 = audioCtx.createOscillator();
+      droneOsc2.type = 'sine';
+      droneOsc2.frequency.value = 98; // G2
+      const drone2Gain = audioCtx.createGain();
+      drone2Gain.gain.value = 0.3;
+      droneOsc2.connect(drone2Gain);
+      drone2Gain.connect(droneGain);
+      droneOsc2.start();
+    }
+    
+    function playNote(surfaceType, yPosition, velocity) {
+      if (!audioCtx) return;
+      
+      const surface = SURFACES[surfaceType];
+      if (!surface) return;
+      
+      // Map y position to pentatonic note (0-1 range)
+      const noteIndex = Math.floor(yPosition * PENTATONIC.length);
+      const freq = surface.baseFreq * PENTATONIC[Math.min(noteIndex, PENTATONIC.length - 1)];
+      
+      // Velocity affects volume (0.3 - 1.0)
+      const volume = 0.3 + velocity * 0.7;
+      
+      // Create note based on surface type
+      const now = audioCtx.currentTime;
+      
+      if (surface.type === 'drum') {
+        // Drum: short attack, quick decay, low freq
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq * 2, now);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.5, now + 0.1);
+        gain.gain.setValueAtTime(volume * 0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.connect(gain);
+        gain.connect(reverbNode);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + 0.3);
+        
+      } else if (surface.type === 'chime') {
+        // Chime: sharp attack, long ring
+        const osc = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc2.type = 'sine';
+        osc.frequency.value = freq;
+        osc2.frequency.value = freq * 2.01; // Slight detune for shimmer
+        gain.gain.setValueAtTime(volume * 0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+        osc.connect(gain);
+        osc2.connect(gain);
+        gain.connect(reverbNode);
+        osc.start(now);
+        osc2.start(now);
+        osc.stop(now + 1.5);
+        osc2.stop(now + 1.5);
+        
+      } else if (surface.type === 'marimba') {
+        // Marimba: warm, wooden, medium decay
+        const osc = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc2.type = 'sine';
+        osc.frequency.value = freq;
+        osc2.frequency.value = freq * 4; // Higher harmonic
+        const gain2 = audioCtx.createGain();
+        gain2.gain.value = 0.2;
+        gain.gain.setValueAtTime(volume * 0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        osc.connect(gain);
+        osc2.connect(gain2);
+        gain2.connect(gain);
+        gain.connect(reverbNode);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc2.start(now);
+        osc.stop(now + 0.6);
+        osc2.stop(now + 0.6);
+        
+      } else if (surface.type === 'synth') {
+        // Synth: bright, buzzy
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+        osc.type = 'sawtooth';
+        osc.frequency.value = freq;
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(freq * 8, now);
+        filter.frequency.exponentialRampToValueAtTime(freq * 2, now + 0.3);
+        gain.gain.setValueAtTime(volume * 0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(reverbNode);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + 0.5);
+        
+      } else if (surface.type === 'pad') {
+        // Pad: soft attack, long sustain, flowing
+        const osc = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc2.type = 'triangle';
+        osc.frequency.value = freq;
+        osc2.frequency.value = freq * 0.5;
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(volume * 0.2, now + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 2);
+        osc.connect(gain);
+        osc2.connect(gain);
+        gain.connect(reverbNode);
+        osc.start(now);
+        osc2.start(now);
+        osc.stop(now + 2);
+        osc2.stop(now + 2);
+      }
+      
+      return { surface: surfaceType, noteIndex };
+    }
+    
+    function playDoorUnlock() {
+      if (!audioCtx) return;
+      // Triumphant arpeggio
+      const notes = [1, 5/4, 3/2, 2]; // Major chord + octave
+      notes.forEach((ratio, i) => {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = 440 * ratio;
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
+          osc.connect(gain);
+          gain.connect(reverbNode);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 1);
+        }, i * 100);
+      });
+    }
+    
+    // ─── GAME STATE ─────────────────────────────────────────────────
+    let gameState = 'start'; // start, playing, levelComplete, transitioning
+    let currentLevel = 0;
+    let w, h;
+    
+    // Player (the bouncing orb)
+    let player = {
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      radius: 12,
+      color: THEME.playerCore,
+      auraColor: THEME.playerCore,
+      trail: [],
+    };
+    
+    // Surfaces in current level
+    let surfaces = [];
+    
+    // Door
+    let door = {
+      x: 0,
+      y: 0,
+      width: 40,
+      height: 80,
+      pattern: [],        // Required sequence of { surface, noteIndex }
+      matched: [],        // Which pattern notes have been matched
+      unlocked: false,
+      pulsePhase: 0,
+    };
+    
+    // Recent notes played (for pattern matching)
+    let recentNotes = [];
+    
+    // Visual effects
+    let surfaceGlows = []; // { surface, intensity, time }
+    
+    // ─── LEVELS ─────────────────────────────────────────────────────
+    const LEVELS = [
+      // Level 1: Tutorial - one surface type, simple
+      {
+        playerStart: { x: 0.2, y: 0.5 },
+        playerVelocity: { x: 3, y: 1 },
+        door: { x: 0.85, y: 0.5 },
+        surfaces: [
+          { type: 'crystal', x1: 0.1, y1: 0.2, x2: 0.5, y2: 0.2 },  // top
+          { type: 'crystal', x1: 0.1, y1: 0.8, x2: 0.5, y2: 0.8 },  // bottom
+          { type: 'crystal', x1: 0.1, y1: 0.2, x2: 0.1, y2: 0.8 },  // left
+        ],
+        pattern: [
+          { surface: 'crystal', zone: 'high' },
+          { surface: 'crystal', zone: 'low' },
+          { surface: 'crystal', zone: 'high' },
+        ],
+      },
+      // Level 2: Two surface types
+      {
+        playerStart: { x: 0.15, y: 0.5 },
+        playerVelocity: { x: 2.5, y: -2 },
+        door: { x: 0.85, y: 0.3 },
+        surfaces: [
+          { type: 'wood', x1: 0.05, y1: 0.1, x2: 0.6, y2: 0.1 },
+          { type: 'stone', x1: 0.05, y1: 0.9, x2: 0.6, y2: 0.9 },
+          { type: 'wood', x1: 0.05, y1: 0.1, x2: 0.05, y2: 0.9 },
+          { type: 'stone', x1: 0.7, y1: 0.5, x2: 0.7, y2: 0.9 },
+        ],
+        pattern: [
+          { surface: 'wood', zone: 'mid' },
+          { surface: 'stone', zone: 'low' },
+          { surface: 'wood', zone: 'high' },
+          { surface: 'stone', zone: 'low' },
+        ],
+      },
+      // Level 3: Three types, more complex
+      {
+        playerStart: { x: 0.5, y: 0.5 },
+        playerVelocity: { x: 2, y: 2 },
+        door: { x: 0.9, y: 0.5 },
+        surfaces: [
+          { type: 'crystal', x1: 0.1, y1: 0.15, x2: 0.7, y2: 0.15 },
+          { type: 'metal', x1: 0.1, y1: 0.85, x2: 0.7, y2: 0.85 },
+          { type: 'water', x1: 0.1, y1: 0.15, x2: 0.1, y2: 0.85 },
+          { type: 'crystal', x1: 0.8, y1: 0.15, x2: 0.8, y2: 0.5 },
+          { type: 'metal', x1: 0.8, y1: 0.5, x2: 0.8, y2: 0.85 },
+        ],
+        pattern: [
+          { surface: 'crystal', zone: 'mid' },
+          { surface: 'water', zone: 'mid' },
+          { surface: 'metal', zone: 'low' },
+          { surface: 'crystal', zone: 'high' },
+          { surface: 'water', zone: 'high' },
+        ],
+      },
+      // Level 4: Diagonal surfaces
+      {
+        playerStart: { x: 0.2, y: 0.8 },
+        playerVelocity: { x: 2.5, y: -2.5 },
+        door: { x: 0.85, y: 0.15 },
+        surfaces: [
+          { type: 'wood', x1: 0.05, y1: 0.3, x2: 0.4, y2: 0.05 },
+          { type: 'stone', x1: 0.05, y1: 0.95, x2: 0.5, y2: 0.95 },
+          { type: 'metal', x1: 0.5, y1: 0.4, x2: 0.75, y2: 0.2 },
+          { type: 'water', x1: 0.05, y1: 0.3, x2: 0.05, y2: 0.95 },
+          { type: 'crystal', x1: 0.6, y1: 0.95, x2: 0.9, y2: 0.6 },
+        ],
+        pattern: [
+          { surface: 'water', zone: 'low' },
+          { surface: 'stone', zone: 'mid' },
+          { surface: 'wood', zone: 'high' },
+          { surface: 'metal', zone: 'mid' },
+          { surface: 'crystal', zone: 'low' },
+          { surface: 'wood', zone: 'mid' },
+        ],
+      },
+      // Level 5: Grand finale - all surface types
+      {
+        playerStart: { x: 0.5, y: 0.5 },
+        playerVelocity: { x: 1.5, y: 1.5 },
+        door: { x: 0.5, y: 0.08 },
+        surfaces: [
+          { type: 'stone', x1: 0.05, y1: 0.05, x2: 0.4, y2: 0.05 },
+          { type: 'crystal', x1: 0.6, y1: 0.05, x2: 0.95, y2: 0.05 },
+          { type: 'metal', x1: 0.05, y1: 0.95, x2: 0.4, y2: 0.95 },
+          { type: 'water', x1: 0.6, y1: 0.95, x2: 0.95, y2: 0.95 },
+          { type: 'wood', x1: 0.05, y1: 0.05, x2: 0.05, y2: 0.95 },
+          { type: 'wood', x1: 0.95, y1: 0.05, x2: 0.95, y2: 0.95 },
+          // Center obstacles
+          { type: 'crystal', x1: 0.35, y1: 0.35, x2: 0.65, y2: 0.35 },
+          { type: 'metal', x1: 0.35, y1: 0.65, x2: 0.65, y2: 0.65 },
+        ],
+        pattern: [
+          { surface: 'wood', zone: 'mid' },
+          { surface: 'stone', zone: 'high' },
+          { surface: 'crystal', zone: 'mid' },
+          { surface: 'water', zone: 'low' },
+          { surface: 'metal', zone: 'mid' },
+          { surface: 'crystal', zone: 'high' },
+          { surface: 'wood', zone: 'low' },
+          { surface: 'stone', zone: 'mid' },
+        ],
+      },
+    ];
+    
+    // ─── RESIZE ─────────────────────────────────────────────────────
+    function resize() {
+      canvas.width = window.innerWidth * window.devicePixelRatio;
+      canvas.height = window.innerHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      w = window.innerWidth;
+      h = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', () => {
+      resize();
+      if (gameState === 'playing') loadLevel(currentLevel);
+    });
+    
+    // ─── LEVEL LOADING ──────────────────────────────────────────────
+    function loadLevel(index) {
+      const level = LEVELS[index];
+      if (!level) {
+        // Game complete
+        gameState = 'complete';
+        return;
+      }
+      
+      // Reset state
+      recentNotes = [];
+      surfaceGlows = [];
+      
+      // Player
+      player.x = level.playerStart.x * w;
+      player.y = level.playerStart.y * h;
+      player.vx = level.playerVelocity.x * 60; // Scale velocity
+      player.vy = level.playerVelocity.y * 60;
+      player.trail = [];
+      player.auraColor = THEME.playerCore;
+      
+      // Convert surfaces to screen coordinates
+      surfaces = level.surfaces.map(s => ({
+        type: s.type,
+        x1: s.x1 * w,
+        y1: s.y1 * h,
+        x2: s.x2 * w,
+        y2: s.y2 * h,
+        glowIntensity: 0,
+      }));
+      
+      // Door
+      door.x = level.door.x * w;
+      door.y = level.door.y * h;
+      door.pattern = level.pattern;
+      door.matched = new Array(level.pattern.length).fill(false);
+      door.unlocked = false;
+      door.pulsePhase = 0;
+      
+      // Update UI
+      levelDisplay.textContent = `Level ${index + 1}`;
+      updatePatternDisplay();
+      
+      gameState = 'playing';
+    }
+    
+    function updatePatternDisplay() {
+      patternDisplay.innerHTML = '';
+      door.pattern.forEach((note, i) => {
+        const div = document.createElement('div');
+        div.className = 'pattern-note' + (door.matched[i] ? ' matched' : '');
+        div.style.backgroundColor = SURFACES[note.surface].color;
+        patternDisplay.appendChild(div);
+      });
+    }
+    
+    // ─── COLLISION DETECTION ────────────────────────────────────────
+    function lineCircleCollision(x1, y1, x2, y2, cx, cy, r) {
+      // Vector from start to end of line
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      
+      // Vector from start to circle center
+      const fx = x1 - cx;
+      const fy = y1 - cy;
+      
+      const a = dx * dx + dy * dy;
+      const b = 2 * (fx * dx + fy * dy);
+      const c = fx * fx + fy * fy - r * r;
+      
+      let discriminant = b * b - 4 * a * c;
+      
+      if (discriminant < 0) return null;
+      
+      discriminant = Math.sqrt(discriminant);
+      
+      const t1 = (-b - discriminant) / (2 * a);
+      const t2 = (-b + discriminant) / (2 * a);
+      
+      // Check if intersection is within line segment
+      if (t1 >= 0 && t1 <= 1) {
+        const hitX = x1 + t1 * dx;
+        const hitY = y1 + t1 * dy;
+        // Normal vector (perpendicular to line)
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const nx = -dy / len;
+        const ny = dx / len;
+        // Make sure normal points toward circle
+        const toCenterX = cx - hitX;
+        const toCenterY = cy - hitY;
+        if (nx * toCenterX + ny * toCenterY < 0) {
+          return { x: hitX, y: hitY, nx: -nx, ny: -ny, t: t1 };
+        }
+        return { x: hitX, y: hitY, nx, ny, t: t1 };
+      }
+      
+      return null;
+    }
+    
+    function reflect(vx, vy, nx, ny) {
+      const dot = vx * nx + vy * ny;
+      return {
+        vx: vx - 2 * dot * nx,
+        vy: vy - 2 * dot * ny,
+      };
+    }
+    
+    // ─── UPDATE ─────────────────────────────────────────────────────
+    function update(dt) {
+      if (gameState !== 'playing') return;
+      
+      // Move player
+      player.x += player.vx * dt;
+      player.y += player.vy * dt;
+      
+      // Add to trail
+      player.trail.push({ x: player.x, y: player.y, age: 0 });
+      if (player.trail.length > 50) player.trail.shift();
+      
+      // Age trail
+      player.trail.forEach(p => p.age += dt);
+      
+      // Check collisions with surfaces
+      for (const surface of surfaces) {
+        const collision = lineCircleCollision(
+          surface.x1, surface.y1, surface.x2, surface.y2,
+          player.x, player.y, player.radius
+        );
+        
+        if (collision) {
+          // Reflect velocity
+          const reflected = reflect(player.vx, player.vy, collision.nx, collision.ny);
+          player.vx = reflected.vx;
+          player.vy = reflected.vy;
+          
+          // Move player out of collision
+          player.x = collision.x + collision.nx * (player.radius + 1);
+          player.y = collision.y + collision.ny * (player.radius + 1);
+          
+          // Calculate hit position along surface (0-1)
+          const surfaceLen = Math.sqrt(
+            Math.pow(surface.x2 - surface.x1, 2) + 
+            Math.pow(surface.y2 - surface.y1, 2)
+          );
+          const hitDist = Math.sqrt(
+            Math.pow(collision.x - surface.x1, 2) + 
+            Math.pow(collision.y - surface.y1, 2)
+          );
+          const hitPos = hitDist / surfaceLen;
+          
+          // Calculate velocity for volume
+          const speed = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+          const velocity = Math.min(speed / 500, 1);
+          
+          // Play note
+          const note = playNote(surface.type, hitPos, velocity);
+          
+          // Update player aura color
+          player.auraColor = SURFACES[surface.type].color;
+          
+          // Add surface glow
+          surface.glowIntensity = 1;
+          
+          // Add to recent notes for pattern matching
+          if (note) {
+            const zone = hitPos < 0.33 ? 'high' : hitPos < 0.66 ? 'mid' : 'low';
+            recentNotes.push({ surface: note.surface, zone, time: Date.now() });
+            
+            // Keep only last N notes
+            if (recentNotes.length > door.pattern.length + 3) {
+              recentNotes.shift();
+            }
+            
+            // Check pattern
+            checkPattern();
+          }
+          
+          break; // One collision per frame
+        }
+      }
+      
+      // Boundary collisions (keep ball in play)
+      if (player.x - player.radius < 0) {
+        player.x = player.radius;
+        player.vx = Math.abs(player.vx);
+      }
+      if (player.x + player.radius > w) {
+        player.x = w - player.radius;
+        player.vx = -Math.abs(player.vx);
+      }
+      if (player.y - player.radius < 0) {
+        player.y = player.radius;
+        player.vy = Math.abs(player.vy);
+      }
+      if (player.y + player.radius > h) {
+        player.y = h - player.radius;
+        player.vy = -Math.abs(player.vy);
+      }
+      
+      // Decay surface glows
+      for (const surface of surfaces) {
+        if (surface.glowIntensity > 0) {
+          surface.glowIntensity -= dt * 2;
+          if (surface.glowIntensity < 0) surface.glowIntensity = 0;
+        }
+      }
+      
+      // Door pulse
+      door.pulsePhase += dt * 2;
+      
+      // Check if player reached door (after unlocked)
+      if (door.unlocked) {
+        const dx = player.x - door.x;
+        const dy = player.y - door.y;
+        if (Math.sqrt(dx * dx + dy * dy) < door.width) {
+          // Level complete!
+          gameState = 'transitioning';
+          setTimeout(() => {
+            currentLevel++;
+            loadLevel(currentLevel);
+          }, 1000);
+        }
+      }
+    }
+    
+    function checkPattern() {
+      if (door.unlocked) return;
+      
+      // Check if recent notes match the pattern
+      const pattern = door.pattern;
+      
+      // Look for pattern in recent notes
+      for (let start = 0; start <= recentNotes.length - pattern.length; start++) {
+        let matches = true;
+        for (let i = 0; i < pattern.length; i++) {
+          const required = pattern[i];
+          const played = recentNotes[start + i];
+          if (required.surface !== played.surface || required.zone !== played.zone) {
+            matches = false;
+            break;
+          }
+        }
+        
+        if (matches) {
+          // Pattern matched!
+          door.unlocked = true;
+          door.matched = new Array(pattern.length).fill(true);
+          updatePatternDisplay();
+          playDoorUnlock();
+          return;
+        }
+      }
+      
+      // Update partial matches (show progress)
+      let matchCount = 0;
+      for (let i = 0; i < pattern.length && i < recentNotes.length; i++) {
+        const reqIdx = pattern.length - recentNotes.length + i;
+        if (reqIdx < 0) continue;
+        
+        const required = pattern[reqIdx];
+        const played = recentNotes[i];
+        
+        if (required.surface === played.surface && required.zone === played.zone) {
+          matchCount++;
+        } else {
+          break;
+        }
+      }
+      
+      // Show matched notes
+      door.matched = pattern.map((_, i) => i < matchCount);
+      updatePatternDisplay();
+    }
+    
+    // ─── DRAW ───────────────────────────────────────────────────────
+    function draw() {
+      // Clear with void color
+      ctx.fillStyle = THEME.void;
+      ctx.fillRect(0, 0, w, h);
+      
+      // Draw surfaces
+      for (const surface of surfaces) {
+        const surfaceData = SURFACES[surface.type];
+        const intensity = 0.3 + surface.glowIntensity * 0.7;
+        
+        ctx.strokeStyle = surfaceData.color;
+        ctx.lineWidth = 4;
+        ctx.globalAlpha = intensity;
+        
+        // Glow effect
+        if (surface.glowIntensity > 0) {
+          ctx.shadowBlur = 20 * surface.glowIntensity;
+          ctx.shadowColor = surfaceData.color;
+        }
+        
+        ctx.beginPath();
+        ctx.moveTo(surface.x1, surface.y1);
+        ctx.lineTo(surface.x2, surface.y2);
+        ctx.stroke();
+        
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      }
+      
+      // Draw door
+      const doorPulse = door.unlocked ? 1 : 0.5 + Math.sin(door.pulsePhase) * 0.2;
+      ctx.fillStyle = door.unlocked ? THEME.door : `rgba(250, 204, 21, ${doorPulse * 0.5})`;
+      ctx.shadowBlur = door.unlocked ? 30 : 15;
+      ctx.shadowColor = THEME.door;
+      ctx.fillRect(door.x - door.width/2, door.y - door.height/2, door.width, door.height);
+      ctx.shadowBlur = 0;
+      
+      // Draw player trail
+      ctx.lineCap = 'round';
+      for (let i = 1; i < player.trail.length; i++) {
+        const p1 = player.trail[i - 1];
+        const p2 = player.trail[i];
+        const alpha = 1 - (p2.age / 2);
+        if (alpha <= 0) continue;
+        
+        ctx.strokeStyle = `rgba(248, 250, 252, ${alpha * 0.3})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+      
+      // Draw player
+      // Aura
+      const gradient = ctx.createRadialGradient(
+        player.x, player.y, 0,
+        player.x, player.y, player.radius * 3
+      );
+      gradient.addColorStop(0, player.auraColor + '40');
+      gradient.addColorStop(1, 'transparent');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius * 3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Core
+      ctx.fillStyle = THEME.playerCore;
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = player.auraColor;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      
+      // Start screen
+      if (gameState === 'start') {
+        ctx.fillStyle = 'rgba(9, 9, 11, 0.8)';
+        ctx.fillRect(0, 0, w, h);
+        
+        ctx.fillStyle = THEME.playerCore;
+        ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('ECHO CHAMBER', w/2, h/2 - 40);
+        
+        ctx.font = '18px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(248, 250, 252, 0.6)';
+        ctx.fillText('Bounce. Listen. Compose your escape.', w/2, h/2 + 10);
+        ctx.fillText('Tap to redirect • Match the pattern to unlock', w/2, h/2 + 40);
+        
+        ctx.font = '24px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = THEME.door;
+        ctx.fillText('TAP TO START', w/2, h/2 + 100);
+      }
+      
+      // Level complete
+      if (gameState === 'transitioning') {
+        ctx.fillStyle = 'rgba(9, 9, 11, 0.6)';
+        ctx.fillRect(0, 0, w, h);
+        
+        ctx.fillStyle = THEME.door;
+        ctx.font = 'bold 36px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('✓', w/2, h/2);
+      }
+      
+      // Game complete
+      if (gameState === 'complete') {
+        ctx.fillStyle = 'rgba(9, 9, 11, 0.9)';
+        ctx.fillRect(0, 0, w, h);
+        
+        ctx.fillStyle = THEME.door;
+        ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🔮 COMPLETE', w/2, h/2 - 20);
+        
+        ctx.font = '18px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = 'rgba(248, 250, 252, 0.6)';
+        ctx.fillText('You have mastered the echo chamber.', w/2, h/2 + 30);
+        
+        ctx.font = '20px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = THEME.playerCore;
+        ctx.fillText('TAP TO PLAY AGAIN', w/2, h/2 + 80);
+      }
+    }
+    
+    // ─── INPUT ──────────────────────────────────────────────────────
+    function handleInput(x, y) {
+      initAudio();
+      
+      if (gameState === 'start') {
+        loadLevel(0);
+        return;
+      }
+      
+      if (gameState === 'complete') {
+        currentLevel = 0;
+        loadLevel(0);
+        return;
+      }
+      
+      if (gameState === 'playing') {
+        // Redirect player toward tap position
+        const dx = x - player.x;
+        const dy = y - player.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        // Maintain current speed, change direction
+        const speed = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+        player.vx = (dx / dist) * speed;
+        player.vy = (dy / dist) * speed;
+      }
+    }
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleInput(touch.clientX, touch.clientY);
+    });
+    
+    canvas.addEventListener('mousedown', (e) => {
+      handleInput(e.clientX, e.clientY);
+    });
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        handleInput(w/2, h/2);
+      }
+    });
+    
+    // ─── GAME LOOP ──────────────────────────────────────────────────
+    let lastTime = 0;
+    
+    function loop(timestamp) {
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+      lastTime = timestamp;
+      
+      update(dt);
+      draw();
+      
+      requestAnimationFrame(loop);
+    }
+    
+    // ─── START ──────────────────────────────────────────────────────
+    requestAnimationFrame(loop);
+    
+  </script>
+</body>
+</html>
