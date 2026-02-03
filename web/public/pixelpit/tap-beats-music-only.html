@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tap Beats - Music Only 🎵</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: #09090b;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 { font-size: 48px; margin-bottom: 10px; }
+    .subtitle { color: #ec4899; font-size: 20px; margin-bottom: 40px; }
+    .btn {
+      background: #ec4899;
+      color: white;
+      border: none;
+      padding: 20px 60px;
+      font-size: 24px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.1s, background 0.2s;
+    }
+    .btn:hover { background: #db2777; transform: scale(1.05); }
+    .btn:disabled { background: #4a4a4a; cursor: not-allowed; transform: none; }
+    .timeline {
+      margin-top: 40px;
+      width: 100%;
+      max-width: 600px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #27272a;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22d3ee, #ec4899, #facc15);
+      width: 0%;
+      transition: width 0.1s;
+    }
+    .time { text-align: center; font-size: 24px; color: #a1a1aa; }
+    .section {
+      text-align: center;
+      font-size: 32px;
+      margin-top: 20px;
+      min-height: 40px;
+    }
+    .section.drop { color: #facc15; font-weight: bold; }
+    .section.build { color: #ec4899; }
+    .section.verse { color: #22d3ee; }
+    .section.intro { color: #a1a1aa; }
+    .section.outro { color: #a1a1aa; }
+  </style>
+</head>
+<body>
+  <h1>TAP BEATS</h1>
+  <div class="subtitle">Music Preview @ 140 BPM</div>
+  <button class="btn" id="playBtn">▶ PLAY</button>
+  <div class="timeline">
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+    <div class="time" id="time">0:00 / 1:00</div>
+    <div class="section" id="section"></div>
+  </div>
+
+  <script>
+    let audioCtx = null;
+    let masterGain = null;
+    let musicStartTime = 0;
+    let isPlaying = false;
+    
+    const NOTE = {
+      A2: 110, E2: 82.41, F2: 87.31, G2: 98,
+      G4: 392, A4: 440, B4: 493.88, C5: 523.25,
+      A3: 220, C4: 261.63, E4: 329.63,
+    };
+    
+    const SONG = {
+      intro: { start: 0, end: 8, name: 'INTRO', class: 'intro' },
+      verse1: { start: 8, end: 16, name: 'VERSE', class: 'verse' },
+      build1: { start: 16, end: 20, name: '...building...', class: 'build' },
+      drop1: { start: 20, end: 28, name: '🔥 DROP 1 🔥', class: 'drop' },
+      verse2: { start: 28, end: 36, name: 'VERSE 2', class: 'verse' },
+      build2: { start: 36, end: 40, name: '...building...', class: 'build' },
+      drop2: { start: 40, end: 52, name: '🔥🔥 DROP 2 🔥🔥', class: 'drop' },
+      outro: { start: 52, end: 60, name: 'OUTRO', class: 'outro' },
+    };
+    
+    const MELODY = [
+      { note: NOTE.A4, beat: 0 },
+      { note: NOTE.A4, beat: 1 },
+      { note: NOTE.C5, beat: 2 },
+      { note: NOTE.B4, beat: 3 },
+      { note: NOTE.A4, beat: 4 },
+      { note: NOTE.G4, beat: 5 },
+      { note: NOTE.A4, beat: 6 },
+      { note: null, beat: 7 },
+    ];
+    
+    const BASS = [
+      { note: NOTE.A2, bar: 0 },
+      { note: NOTE.G2, bar: 1 },
+      { note: NOTE.F2, bar: 2 },
+      { note: NOTE.E2, bar: 3 },
+    ];
+    
+    function initAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.6;
+      masterGain.connect(audioCtx.destination);
+    }
+    
+    function inSection(timeSec, section) {
+      return timeSec >= section.start && timeSec < section.end;
+    }
+    
+    function isDrumSection(timeSec) {
+      return !inSection(timeSec, SONG.build1) && !inSection(timeSec, SONG.build2);
+    }
+    
+    function isDropSection(timeSec) {
+      return inSection(timeSec, SONG.drop1) || inSection(timeSec, SONG.drop2);
+    }
+    
+    function startMusic() {
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      
+      musicStartTime = audioCtx.currentTime;
+      isPlaying = true;
+      
+      const beatSec = 60 / 140;
+      const barSec = beatSec * 4;
+      
+      scheduleKicks(beatSec);
+      scheduleHiHats(beatSec);
+      scheduleSnares(beatSec);
+      scheduleBass(beatSec, barSec);
+      scheduleMelody(beatSec);
+      scheduleSynthStabs(beatSec);
+      scheduleRiser(beatSec);
+      
+      updateUI();
+    }
+    
+    function scheduleKicks(beatSec) {
+      for (let t = 0; t < 60; t += beatSec) {
+        if (isDrumSection(t)) {
+          scheduleKick(musicStartTime + t, isDropSection(t) ? 0.5 : 0.35);
+        }
+      }
+    }
+    
+    function scheduleKick(time, volume) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, time);
+      osc.frequency.exponentialRampToValueAtTime(35, time + 0.12);
+      gain.gain.setValueAtTime(volume, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.25);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + 0.25);
+    }
+    
+    function scheduleHiHats(beatSec) {
+      for (let t = 0; t < 60; t += beatSec / 2) {
+        if (isDrumSection(t) && t >= SONG.verse1.start) {
+          const isOffbeat = Math.round(t / beatSec * 2) % 2 === 1;
+          scheduleHiHat(musicStartTime + t, isOffbeat ? 0.08 : 0.12);
+        }
+      }
+    }
+    
+    function scheduleHiHat(time, volume) {
+      const bufferSize = audioCtx.sampleRate * 0.04;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 9000;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(volume, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      noise.start(time);
+      noise.stop(time + 0.04);
+    }
+    
+    function scheduleSnares(beatSec) {
+      for (let t = 0; t < 60; t += beatSec) {
+        const beatInBar = Math.round(t / beatSec) % 4;
+        if ((beatInBar === 1 || beatInBar === 3) && isDrumSection(t) && t >= SONG.verse1.start) {
+          scheduleSnare(musicStartTime + t, isDropSection(t) ? 0.35 : 0.25);
+        }
+      }
+    }
+    
+    function scheduleSnare(time, volume) {
+      const bufferSize = audioCtx.sampleRate * 0.15;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 3000;
+      filter.Q.value = 0.5;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(volume, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      noise.start(time);
+      noise.stop(time + 0.15);
+      
+      const osc = audioCtx.createOscillator();
+      const oscGain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = 180;
+      oscGain.gain.setValueAtTime(volume * 0.5, time);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+      osc.connect(oscGain);
+      oscGain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + 0.08);
+    }
+    
+    function scheduleBass(beatSec, barSec) {
+      for (let t = SONG.verse1.start; t < 60; t += barSec) {
+        if (t >= SONG.build1.start && t < SONG.drop1.start) continue;
+        if (t >= SONG.build2.start && t < SONG.drop2.start) continue;
+        
+        const barIndex = Math.floor((t - SONG.verse1.start) / barSec) % 4;
+        const bassNote = BASS[barIndex].note;
+        const volume = isDropSection(t) ? 0.3 : 0.2;
+        
+        scheduleBassNote(musicStartTime + t, bassNote, beatSec * 1.5, volume);
+        scheduleBassNote(musicStartTime + t + beatSec * 2, bassNote, beatSec * 1.5, volume);
+      }
+    }
+    
+    function scheduleBassNote(time, freq, duration, volume) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 400;
+      gain.gain.setValueAtTime(volume, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + duration);
+    }
+    
+    function scheduleMelody(beatSec) {
+      const sections = [SONG.drop1, SONG.verse2, SONG.drop2];
+      for (const section of sections) {
+        for (let t = section.start; t < section.end; t += beatSec) {
+          const beatInRiff = Math.round((t - section.start) / beatSec) % 8;
+          const melodyNote = MELODY.find(m => m.beat === beatInRiff);
+          if (melodyNote && melodyNote.note) {
+            const volume = isDropSection(t) ? 0.25 : 0.15;
+            scheduleMelodyNote(musicStartTime + t, melodyNote.note, beatSec * 0.8, volume);
+          }
+        }
+      }
+    }
+    
+    function scheduleMelodyNote(time, freq, duration, volume) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 2000;
+      gain.gain.setValueAtTime(volume, time);
+      gain.gain.setValueAtTime(volume, time + duration * 0.7);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(masterGain);
+      osc.start(time);
+      osc.stop(time + duration);
+    }
+    
+    function scheduleSynthStabs(beatSec) {
+      for (const section of [SONG.drop1, SONG.drop2]) {
+        for (let t = section.start; t < section.end; t += beatSec) {
+          const beatInBar = Math.round((t - section.start) / beatSec) % 4;
+          if (beatInBar === 1 || beatInBar === 3) {
+            scheduleSynthStab(musicStartTime + t + beatSec / 2);
+          }
+        }
+      }
+    }
+    
+    function scheduleSynthStab(time) {
+      const chord = [NOTE.A3, NOTE.C4, NOTE.E4];
+      for (const freq of chord) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = freq;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 1500;
+        gain.gain.setValueAtTime(0.08, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(masterGain);
+        osc.start(time);
+        osc.stop(time + 0.1);
+      }
+    }
+    
+    function scheduleRiser(beatSec) {
+      for (const build of [SONG.build1, SONG.build2]) {
+        const duration = build.end - build.start;
+        const time = musicStartTime + build.start;
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, time);
+        osc.frequency.exponentialRampToValueAtTime(800, time + duration);
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(500, time);
+        filter.frequency.exponentialRampToValueAtTime(4000, time + duration);
+        gain.gain.setValueAtTime(0.05, time);
+        gain.gain.linearRampToValueAtTime(0.2, time + duration - 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(masterGain);
+        osc.start(time);
+        osc.stop(time + duration);
+      }
+    }
+    
+    function updateUI() {
+      if (!isPlaying) return;
+      
+      const elapsed = audioCtx.currentTime - musicStartTime;
+      const progress = Math.min(elapsed / 60, 1);
+      
+      document.getElementById('progress').style.width = (progress * 100) + '%';
+      
+      const mins = Math.floor(elapsed / 60);
+      const secs = Math.floor(elapsed % 60);
+      document.getElementById('time').textContent = 
+        `${mins}:${secs.toString().padStart(2, '0')} / 1:00`;
+      
+      // Update section
+      let currentSection = '';
+      let sectionClass = '';
+      for (const [key, section] of Object.entries(SONG)) {
+        if (elapsed >= section.start && elapsed < section.end) {
+          currentSection = section.name;
+          sectionClass = section.class;
+          break;
+        }
+      }
+      const sectionEl = document.getElementById('section');
+      sectionEl.textContent = currentSection;
+      sectionEl.className = 'section ' + sectionClass;
+      
+      if (elapsed < 60) {
+        requestAnimationFrame(updateUI);
+      } else {
+        document.getElementById('playBtn').disabled = false;
+        document.getElementById('playBtn').textContent = '▶ PLAY AGAIN';
+        isPlaying = false;
+      }
+    }
+    
+    document.getElementById('playBtn').addEventListener('click', () => {
+      document.getElementById('playBtn').disabled = true;
+      document.getElementById('playBtn').textContent = '🎵 PLAYING...';
+      startMusic();
+    });
+  </script>
+</body>
+</html>
