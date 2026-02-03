@@ -300,6 +300,45 @@
           osc.stop(audioCtx.currentTime + 1);
         }, i * 100);
       });
+      
+      // Visual celebration!
+      // Screen flash gold
+      screenFlash = { color: THEME.door, alpha: 0.4 };
+      
+      // All surfaces flash
+      for (const surface of surfaces) {
+        surface.glowIntensity = 1.5;
+      }
+      
+      // Particle burst from door
+      for (let i = 0; i < 30; i++) {
+        const angle = (Math.PI * 2 / 30) * i + Math.random() * 0.3;
+        const speed = 150 + Math.random() * 150;
+        particles.push({
+          x: door.x,
+          y: door.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color: THEME.door,
+          life: 1,
+          size: 4 + Math.random() * 4,
+        });
+      }
+    }
+    
+    // Progress ding - when you hit a note matching the next required
+    function playProgressDing() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 1200;
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
     }
     
     // Play door's pattern melody as a hint (quieter than player notes)
@@ -384,6 +423,8 @@
     
     // Visual effects
     let surfaceGlows = []; // { surface, intensity, time }
+    let screenFlash = { color: null, alpha: 0 };
+    let particles = []; // { x, y, vx, vy, color, life, size }
     
     // ─── LEVELS ─────────────────────────────────────────────────────
     const LEVELS = [
@@ -733,6 +774,23 @@
       // Door pulse
       door.pulsePhase += dt * 2;
       
+      // Update particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt * 1.5;
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+      
+      // Decay screen flash
+      if (screenFlash.alpha > 0) {
+        screenFlash.alpha -= dt * 3;
+        if (screenFlash.alpha < 0) screenFlash.alpha = 0;
+      }
+      
       // Door melody hint (plays every few seconds)
       if (!door.unlocked) {
         door.melodyTimer += dt;
@@ -786,6 +844,7 @@
       }
       
       // Update partial matches (show progress)
+      const prevMatchCount = door.matched.filter(m => m).length;
       let matchCount = 0;
       for (let i = 0; i < pattern.length && i < recentNotes.length; i++) {
         const reqIdx = pattern.length - recentNotes.length + i;
@@ -799,6 +858,11 @@
         } else {
           break;
         }
+      }
+      
+      // Progress ding when match count increases!
+      if (matchCount > prevMatchCount && matchCount > 0) {
+        playProgressDing();
       }
       
       // Show matched notes
@@ -881,6 +945,27 @@
       ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
+      
+      // Draw particles
+      for (const p of particles) {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+      
+      // Screen flash
+      if (screenFlash.alpha > 0) {
+        ctx.fillStyle = screenFlash.color;
+        ctx.globalAlpha = screenFlash.alpha;
+        ctx.fillRect(0, 0, w, h);
+        ctx.globalAlpha = 1;
+      }
       
       // Start screen
       if (gameState === 'start') {
