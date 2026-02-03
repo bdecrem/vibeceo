@@ -1,9 +1,10 @@
 // amber-daemon/tools/index.js - Tool definitions and execution
 
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, appendFileSync, existsSync, readdirSync, statSync, mkdirSync } from 'fs';
 import { execSync, spawn } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { homedir } from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -108,6 +109,30 @@ export const TOOLS = [
         days: { type: "number", description: "How many days back to look (default 7)" },
         limit: { type: "number", description: "Max number of commits (default 20)" }
       }
+    }
+  },
+  {
+    name: "memory_append",
+    description: "Append a note to today's daily log. Use for important facts, decisions, or context worth remembering. This persists across sessions.",
+    input_schema: {
+      type: "object",
+      properties: {
+        content: { type: "string", description: "The note to append (markdown)" },
+        source: { type: "string", description: "Source tag (discord, tui, scheduler, etc.)" }
+      },
+      required: ["content"]
+    }
+  },
+  {
+    name: "memory_search",
+    description: "Search your memory files (daily logs, MEMORY.md) for past context",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Search query" },
+        limit: { type: "number", description: "Max results (default 10)" }
+      },
+      required: ["query"]
     }
   }
 ];
@@ -248,6 +273,53 @@ export async function executeTool(name, input, session, context = {}) {
         return result || 'No commits in this period';
       } catch (err) {
         return `Git log failed: ${err.message}`;
+      }
+    }
+
+    case "memory_append": {
+      const { content, source } = input;
+      const MEMORY_DIR = join(homedir(), '.amber', 'memory');
+      const today = new Date().toISOString().slice(0, 10);
+      const logPath = join(MEMORY_DIR, `${today}.md`);
+      const time = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit', minute: '2-digit', hour12: false
+      });
+      const sourceTag = source ? ` [${source}]` : '';
+
+      // Ensure directory exists
+      if (!existsSync(MEMORY_DIR)) {
+        mkdirSync(MEMORY_DIR, { recursive: true });
+      }
+
+      // Create or append to daily log
+      let entry = `\n## ${time}${sourceTag}\n\n${content}\n`;
+      if (!existsSync(logPath)) {
+        entry = `# ${today}\n` + entry;
+      }
+
+      appendFileSync(logPath, entry);
+      return `Appended to daily log: ${logPath}`;
+    }
+
+    case "memory_search": {
+      const { query, limit = 10 } = input;
+      const MEMORY_DIR = join(homedir(), '.amber', 'memory');
+
+      if (!existsSync(MEMORY_DIR)) {
+        return 'No memory directory found';
+      }
+
+      try {
+        // Escape special characters for grep
+        const escaped = query.replace(/["\\\n]/g, '\\$&');
+        const result = execSync(
+          `grep -r -i -n "${escaped}" "${MEMORY_DIR}" 2>/dev/null | head -${limit}`,
+          { encoding: 'utf-8', timeout: 10000 }
+        );
+        return result || 'No matches found';
+      } catch (err) {
+        if (err.status === 1) return 'No matches found';
+        return `Search error: ${err.message}`;
       }
     }
 

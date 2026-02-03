@@ -13,6 +13,8 @@ import { createServer } from 'net';
 const POLL_INTERVAL_MS = 30_000; // 30 seconds for Discord
 const DISCORD_CHANNEL_ID = '1441080550415929406'; // #agent-lounge (will add DMs later)
 const REPO_ROOT = '/Users/bart/Documents/code/vibeceo';
+const MAX_MESSAGES = 80;   // Trigger compaction above this
+const KEEP_MESSAGES = 50;  // Keep this many after compaction
 const STATE_DIR = join(homedir(), '.amber');
 const CONVERSATION_FILE = join(STATE_DIR, 'conversation.json');
 const STATE_FILE = join(STATE_DIR, 'daemon-state.json');
@@ -95,6 +97,49 @@ function saveState() {
   } catch (err) {
     log(`Failed to save state: ${err.message}`);
   }
+}
+
+// === CONTEXT COMPACTION ===
+// When conversation gets too long, ask Amber to save important context
+// to her daily log, then compact the message history
+async function checkAndCompact() {
+  if (agentMessages.length <= MAX_MESSAGES) return;
+
+  log(`Context limit approaching (${agentMessages.length} messages), triggering auto-flush...`, true);
+  broadcastToTUI({ type: 'compacting', value: true });
+
+  try {
+    // Inject flush prompt - Amber saves important context to daily log
+    await runAgentLoop(
+      `[SYSTEM] Context compaction imminent (${agentMessages.length} messages). Review the conversation and write any important facts, decisions, or context to your daily log using memory_append. Include: key decisions made, important facts learned, ongoing tasks, and anything you'd need to remember. When done, reply only: COMPACTION_READY`,
+      session,
+      agentMessages,
+      {
+        onTool: (name) => log(`  🔧 [flush] ${name}`),
+        onResponse: (text) => {
+          if (text.trim() !== 'COMPACTION_READY') {
+            log(`  💬 [flush] ${text.substring(0, 50)}...`);
+          }
+        },
+      },
+      { repoRoot: REPO_ROOT, silent: true }
+    );
+
+    // Compact - keep only recent messages
+    const removed = agentMessages.length - KEEP_MESSAGES;
+    agentMessages = agentMessages.slice(-KEEP_MESSAGES);
+    saveConversation();
+    log(`Compacted conversation: removed ${removed} messages, kept ${KEEP_MESSAGES}`, true);
+  } catch (err) {
+    log(`Compaction error: ${err.message}`, true);
+    // Still compact even if flush failed, to prevent runaway growth
+    const removed = agentMessages.length - KEEP_MESSAGES;
+    agentMessages = agentMessages.slice(-KEEP_MESSAGES);
+    saveConversation();
+    log(`Forced compaction after error: removed ${removed} messages`, true);
+  }
+
+  broadcastToTUI({ type: 'compacting', value: false });
 }
 
 // === TUI SOCKET SERVER ===
@@ -216,22 +261,24 @@ function queueMessage(msg) {
 
 async function processQueue() {
   if (isProcessing || messageQueue.length === 0) return;
-  
+
   isProcessing = true;
   broadcastToTUI({ type: 'processing', value: true });
-  
+
   const msg = messageQueue.shift();
-  
+
   try {
     await handleIncomingMessage(msg);
+    // Check if we need to compact (auto-flush to daily log)
+    await checkAndCompact();
   } catch (err) {
     log(`Error processing message: ${err.message}`);
     broadcastToTUI({ type: 'error', text: err.message });
   }
-  
+
   isProcessing = false;
   broadcastToTUI({ type: 'processing', value: false });
-  
+
   // Process next in queue
   if (messageQueue.length > 0) {
     processQueue();

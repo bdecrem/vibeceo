@@ -40,16 +40,24 @@ if (existsSync(SMS_BOT_ENV)) {
 // === IDENTITY LOADING ===
 const REPO_ROOT = join(__dirname, '..');
 const DRAWER_DIR = join(REPO_ROOT, 'drawer');
+const MEMORY_DIR = join(homedir(), '.amber', 'memory');
 
 // Load Amber's system prompt
 const AMBER_PROMPT = readFileSync(join(__dirname, 'AMBER-PROMPT.md'), 'utf-8');
 
-// Load identity files (PERSONA.md, MEMORY.md)
+// Load identity files (PERSONA.md, MEMORY.md) from ~/.amber/memory/
+// Falls back to drawer/ if memory dir doesn't exist yet
 function loadIdentity() {
   const identity = { persona: null, memory: null };
 
-  const personaPath = join(DRAWER_DIR, 'PERSONA.md');
-  const memoryPath = join(DRAWER_DIR, 'MEMORY.md');
+  // Try new location first, fall back to drawer/
+  const personaPath = existsSync(join(MEMORY_DIR, 'PERSONA.md'))
+    ? join(MEMORY_DIR, 'PERSONA.md')
+    : join(DRAWER_DIR, 'PERSONA.md');
+
+  const memoryPath = existsSync(join(MEMORY_DIR, 'MEMORY.md'))
+    ? join(MEMORY_DIR, 'MEMORY.md')
+    : join(DRAWER_DIR, 'MEMORY.md');
 
   if (existsSync(personaPath)) {
     identity.persona = readFileSync(personaPath, 'utf-8');
@@ -61,16 +69,34 @@ function loadIdentity() {
   return identity;
 }
 
+// Load daily logs (today + yesterday) for recent context
+function loadDailyLogs() {
+  if (!existsSync(MEMORY_DIR)) return '';
+
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  let logs = '';
+  for (const date of [yesterday, today]) {
+    const path = join(MEMORY_DIR, `${date}.md`);
+    if (existsSync(path)) {
+      logs += `\n\n## Daily Log: ${date}\n\n` + readFileSync(path, 'utf-8');
+    }
+  }
+  return logs;
+}
+
 // Build full system prompt with identity
 function buildSystemPrompt(session) {
   const identity = loadIdentity();
   const stateContext = buildStateContext(session);
+  const dailyLogs = loadDailyLogs();
 
   let prompt = AMBER_PROMPT;
 
   // Add identity context
   if (identity.persona || identity.memory) {
-    prompt += '\n\n---\n\n# Your Identity (from drawer/)\n';
+    prompt += '\n\n---\n\n# Your Identity\n';
 
     if (identity.persona) {
       prompt += '\n## PERSONA.md\n\n' + identity.persona;
@@ -78,6 +104,11 @@ function buildSystemPrompt(session) {
     if (identity.memory) {
       prompt += '\n\n## MEMORY.md\n\n' + identity.memory;
     }
+  }
+
+  // Add recent daily logs
+  if (dailyLogs) {
+    prompt += '\n\n---\n\n# Recent Activity (from daily logs)\n' + dailyLogs;
   }
 
   prompt += stateContext;
@@ -216,12 +247,14 @@ You have these tools available:
 - \`discord_read\` / \`discord_post\` — Discord #agent-lounge
 - \`supabase_query\` — Query amber_state table (creations, voice sessions, etc.)
 - \`git_log\` — Recent git activity
+- \`memory_append\` — Save notes to today's daily log (persists across sessions)
+- \`memory_search\` — Search your memory files for past context
 
 ## Key Paths
 
+- Your memory: \`${MEMORY_DIR}\` (PERSONA.md, MEMORY.md, daily logs)
 - Your drawer: \`${DRAWER_DIR}\`
 - Creations go to: \`${join(REPO_ROOT, 'web/public/amber/')}\`
-- Sessions: \`${join(DRAWER_DIR, 'sessions/')}\`
 `;
 }
 
