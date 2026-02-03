@@ -475,22 +475,20 @@
           { surface: 'crystal', zone: 'low' },   // hit bottom wall
         ],
       },
-      // Level 2: Two surface types
+      // Level 3: Introduce SECOND color - crystal + wood
       {
-        playerStart: { x: 0.15, y: 0.5 },
-        playerVelocity: { x: 2.5, y: -2 },
-        door: { x: 0.85, y: 0.3 },
+        playerStart: { x: 0.2, y: 0.5 },
+        playerVelocity: { x: 2, y: 1.5 },
+        door: { x: 0.85, y: 0.5 },
+        hint: "NEW: Two colors! Cyan then Orange. Match the pattern!",
         surfaces: [
-          { type: 'wood', x1: 0.05, y1: 0.1, x2: 0.6, y2: 0.1 },
-          { type: 'stone', x1: 0.05, y1: 0.9, x2: 0.6, y2: 0.9 },
-          { type: 'wood', x1: 0.05, y1: 0.1, x2: 0.05, y2: 0.9 },
-          { type: 'stone', x1: 0.7, y1: 0.5, x2: 0.7, y2: 0.9 },
+          { type: 'crystal', x1: 0.1, y1: 0.3, x2: 0.1, y2: 0.7 },  // left - cyan
+          { type: 'wood', x1: 0.5, y1: 0.3, x2: 0.5, y2: 0.7 },     // right - orange/wood
         ],
         pattern: [
-          { surface: 'wood', zone: 'mid' },
-          { surface: 'stone', zone: 'low' },
-          { surface: 'wood', zone: 'high' },
-          { surface: 'stone', zone: 'low' },
+          { surface: 'crystal', zone: 'mid' },  // hit cyan
+          { surface: 'wood', zone: 'mid' },     // hit orange
+          { surface: 'crystal', zone: 'mid' },  // hit cyan again
         ],
       },
       // Level 3: Three types, more complex
