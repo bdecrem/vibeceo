@@ -1540,8 +1540,16 @@ export default function TapBeatsGame() {
           100% { transform: translateX(100%); }
         }
         @keyframes pulse {
-          0%, 100% { opacity: 0.8; }
-          50% { opacity: 0.4; }
+          0%, 100% { opacity: 0.8; transform: scale(1); }
+          50% { opacity: 0.4; transform: scale(1.2); }
+        }
+        @keyframes gridScroll {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(60px); }
+        }
+        @keyframes floatBounce {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(5deg); }
         }
       `}</style>
       <Script src="/pixelpit/social.js" onLoad={() => setSocialLoaded(true)} />
@@ -1676,17 +1684,150 @@ export default function TapBeatsGame() {
           justifyContent: 'center',
           padding: 20,
           fontFamily: 'system-ui, -apple-system, sans-serif',
+          overflow: 'hidden',
         }}>
+          {/* Animated grid background */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `
+              linear-gradient(rgba(236, 72, 153, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(236, 72, 153, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+            animation: 'gridScroll 4s linear infinite',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Floating arrows */}
+          <div className="float-arrow" style={{
+            position: 'absolute',
+            top: '15%',
+            left: '10%',
+            fontSize: 40,
+            color: THEME.lane0,
+            opacity: 0.3,
+            animation: 'floatBounce 3s ease-in-out infinite',
+            textShadow: `0 0 20px ${THEME.lane0}`,
+          }}>▲</div>
+          <div className="float-arrow" style={{
+            position: 'absolute',
+            top: '25%',
+            right: '12%',
+            fontSize: 35,
+            color: THEME.lane1,
+            opacity: 0.3,
+            animation: 'floatBounce 2.5s ease-in-out infinite 0.5s',
+            textShadow: `0 0 20px ${THEME.lane1}`,
+          }}>▼</div>
+          <div className="float-arrow" style={{
+            position: 'absolute',
+            bottom: '20%',
+            left: '8%',
+            fontSize: 30,
+            color: THEME.lane2,
+            opacity: 0.3,
+            animation: 'floatBounce 3.5s ease-in-out infinite 1s',
+            textShadow: `0 0 20px ${THEME.lane2}`,
+          }}>◀</div>
+          <div className="float-arrow" style={{
+            position: 'absolute',
+            bottom: '30%',
+            right: '10%',
+            fontSize: 38,
+            color: THEME.lane0,
+            opacity: 0.3,
+            animation: 'floatBounce 2.8s ease-in-out infinite 0.3s',
+            textShadow: `0 0 20px ${THEME.lane0}`,
+          }}>▶</div>
+
+          {/* Corner accents */}
+          <div style={{
+            position: 'absolute',
+            top: 20,
+            left: 20,
+            width: 40,
+            height: 40,
+            borderTop: `3px solid ${THEME.lane1}`,
+            borderLeft: `3px solid ${THEME.lane1}`,
+            opacity: 0.6,
+          }} />
+          <div style={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            width: 40,
+            height: 40,
+            borderTop: `3px solid ${THEME.lane1}`,
+            borderRight: `3px solid ${THEME.lane1}`,
+            opacity: 0.6,
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: 20,
+            left: 20,
+            width: 40,
+            height: 40,
+            borderBottom: `3px solid ${THEME.lane1}`,
+            borderLeft: `3px solid ${THEME.lane1}`,
+            opacity: 0.6,
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: 20,
+            right: 20,
+            width: 40,
+            height: 40,
+            borderBottom: `3px solid ${THEME.lane1}`,
+            borderRight: `3px solid ${THEME.lane1}`,
+            opacity: 0.6,
+          }} />
+
+          {/* Glowing orbs */}
+          <div style={{
+            position: 'absolute',
+            top: '40%',
+            left: '5%',
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: THEME.lane0,
+            boxShadow: `0 0 20px ${THEME.lane0}, 0 0 40px ${THEME.lane0}`,
+            animation: 'pulse 2s ease-in-out infinite',
+          }} />
+          <div style={{
+            position: 'absolute',
+            top: '60%',
+            right: '7%',
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: THEME.lane2,
+            boxShadow: `0 0 15px ${THEME.lane2}, 0 0 30px ${THEME.lane2}`,
+            animation: 'pulse 2.5s ease-in-out infinite 0.5s',
+          }} />
+
           <h1 style={{
             color: THEME.lane1,
             fontSize: 48,
             fontWeight: 700,
             letterSpacing: 8,
             marginBottom: 10,
-            textShadow: `0 0 20px ${THEME.lane1}`,
+            textShadow: `0 0 30px ${THEME.lane1}, 0 0 60px ${THEME.lane1}50`,
+            zIndex: 1,
           }}>
             TAP BEATS
           </h1>
+          <p style={{
+            color: THEME.lane0,
+            fontSize: 14,
+            letterSpacing: 6,
+            marginBottom: 30,
+            opacity: 0.7,
+            zIndex: 1,
+          }}>
+            RHYTHM ARCADE
+          </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 400 }}>
             {SONGS.map((song, i) => {
