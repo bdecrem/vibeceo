@@ -30,20 +30,47 @@ function initAudio() {
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-function playCoinCollect() {
+function playCoinCollect(brightness: number = 0) {
   if (!audioCtx || !masterGain) return;
-  // Deceptively pleasant chime... that's killing you
+  
+  // Distortion ramp based on brightness
+  // 0-30%: normal, 30-60%: slight detune, 60-80%: more detune, 80%+: harsh
+  let detune = 0;
+  let harshness = 0;
+  if (brightness > 0.3) detune = 5;
+  if (brightness > 0.6) detune = 15;
+  if (brightness > 0.8) {
+    detune = 30;
+    harshness = 0.3;
+  }
+  
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  osc.type = 'sine';
+  osc.type = brightness > 0.8 ? 'sawtooth' : 'sine';  // Harsh at high brightness
   osc.frequency.setValueAtTime(880, audioCtx.currentTime);
   osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1);
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  osc.detune.value = detune + (Math.random() - 0.5) * detune;  // Random detune
+  gain.gain.setValueAtTime(0.2 + harshness, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
   osc.connect(gain);
   gain.connect(masterGain);
   osc.start();
   osc.stop(audioCtx.currentTime + 0.15);
+  
+  // Add dissonant overtone at high brightness
+  if (brightness > 0.6) {
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'square';
+    osc2.frequency.value = 880 * 1.06;  // Slightly off - dissonant
+    osc2.detune.value = detune * 2;
+    gain2.gain.setValueAtTime(0.05 + brightness * 0.1, audioCtx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    osc2.connect(gain2);
+    gain2.connect(masterGain);
+    osc2.start();
+    osc2.stop(audioCtx.currentTime + 0.1);
+  }
 }
 
 function playHeal() {
@@ -233,7 +260,7 @@ export default function CatchGame() {
           game.brightness = Math.min(1, game.brightness + 0.15);
           game.health -= 15; // COINS HURT
           setDisplayScore(game.score);
-          playCoinCollect();
+          playCoinCollect(game.brightness);
 
           if (game.health <= 0) {
             gameOver(false);
@@ -242,12 +269,14 @@ export default function CatchGame() {
         }
       }
 
-      // Check if in shadow (healing)
+      // Check if in shadow (healing) - use breathing radius for organic feel
+      const breathePhase = (Math.sin(Date.now() / 1000 * Math.PI) + 1) / 2;
+      const breatheScale = 0.95 + breathePhase * 0.1;
       let inShadow = false;
       for (const shadow of game.shadows) {
         const dx = game.player.x - shadow.x;
         const dy = game.player.y - shadow.y;
-        if (Math.sqrt(dx * dx + dy * dy) < shadow.radius) {
+        if (Math.sqrt(dx * dx + dy * dy) < shadow.radius * breatheScale) {
           inShadow = true;
           break;
         }
@@ -275,18 +304,22 @@ export default function CatchGame() {
       ctx.fillStyle = `rgb(${bgBrightness}, ${bgBrightness}, ${bgBrightness})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Shadow safe zones
+      // Shadow safe zones (breathing animation)
+      const breathePhase = (Math.sin(Date.now() / 1000 * Math.PI) + 1) / 2;  // 0→1→0 over 2 sec
+      const breatheScale = 0.95 + breathePhase * 0.1;  // 0.95 → 1.05
+      
       for (const shadow of game.shadows) {
+        const breathingRadius = shadow.radius * breatheScale;
         const gradient = ctx.createRadialGradient(
           shadow.x, shadow.y, 0,
-          shadow.x, shadow.y, shadow.radius
+          shadow.x, shadow.y, breathingRadius
         );
         gradient.addColorStop(0, 'rgba(0, 0, 0, 0.9)');
         gradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.5)');
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(shadow.x, shadow.y, shadow.radius, 0, Math.PI * 2);
+        ctx.arc(shadow.x, shadow.y, breathingRadius, 0, Math.PI * 2);
         ctx.fill();
       }
 
