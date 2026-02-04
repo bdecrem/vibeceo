@@ -78,7 +78,7 @@ function initAudio() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.3;
+  masterGain.gain.value = 0.5;
   masterGain.connect(audioCtx.destination);
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
@@ -96,12 +96,12 @@ function startMusic() {
     const melodyGain = audioCtx.createGain();
     melodyOsc.type = 'triangle';
     melodyOsc.frequency.value = MELODY[musicBeat % 4];
-    melodyGain.gain.setValueAtTime(0.12, t);
-    melodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    melodyGain.gain.setValueAtTime(0.35, t);
+    melodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
     melodyOsc.connect(melodyGain);
     melodyGain.connect(masterGain);
     melodyOsc.start(t);
-    melodyOsc.stop(t + 0.2);
+    melodyOsc.stop(t + 0.25);
     
     // Bass: C2 on beats 0 and 2 (1 and 3 in musical terms)
     if (musicBeat % 2 === 0) {
@@ -109,12 +109,12 @@ function startMusic() {
       const bassGain = audioCtx.createGain();
       bassOsc.type = 'sine';
       bassOsc.frequency.value = NOTES.C2;
-      bassGain.gain.setValueAtTime(0.2, t);
-      bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      bassGain.gain.setValueAtTime(0.5, t);
+      bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
       bassOsc.connect(bassGain);
       bassGain.connect(masterGain);
       bassOsc.start(t);
-      bassOsc.stop(t + 0.3);
+      bassOsc.stop(t + 0.35);
     }
     
     musicBeat++;
