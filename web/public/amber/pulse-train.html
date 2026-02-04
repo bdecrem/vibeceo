@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PULSE TRAIN — 909 Kick Rhythm Visualized</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="PULSE TRAIN">
+  <meta property="og:description" content="Four-on-floor. Watch the rhythm before you hear it.">
+  <meta property="og:image" content="https://kochi.to/amber/pulse-train-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/pulse-train.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PULSE TRAIN">
+  <meta name="twitter:description" content="Four-on-floor. Watch the rhythm before you hear it.">
+  <meta name="twitter:image" content="https://kochi.to/amber/pulse-train-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    
+    #ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #title {
+      font-size: clamp(24px, 5vw, 48px);
+      font-weight: 700;
+      letter-spacing: 4px;
+      margin-bottom: 16px;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+    }
+    
+    #subtitle {
+      font-size: clamp(12px, 2.5vw, 16px);
+      letter-spacing: 2px;
+      opacity: 0.7;
+      margin-bottom: 32px;
+    }
+    
+    #playButton {
+      pointer-events: all;
+      background: transparent;
+      border: 3px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(18px, 3vw, 24px);
+      font-weight: 700;
+      letter-spacing: 3px;
+      padding: 20px 40px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    #playButton:hover {
+      background: #D4A574;
+      color: #000;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.6);
+      transform: scale(1.05);
+    }
+    
+    #playButton.playing {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    #bpm {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      font-size: clamp(14px, 2.5vw, 18px);
+      letter-spacing: 2px;
+      opacity: 0.5;
+    }
+    
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="title">PULSE TRAIN</div>
+    <div id="subtitle">Four-on-floor. Watch the rhythm.</div>
+    <button id="playButton">▶ PLAY</button>
+  </div>
+  
+  <div id="bpm">128 BPM</div>
+
+  <script type="module">
+    import { TR909Controller } from '/909/dist/api/index.js';
+    
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const playButton = document.getElementById('playButton');
+    
+    let width, height, centerY;
+    let drums = null;
+    let isPlaying = false;
+    let pulses = [];
+    let animationId = null;
+    
+    // Pulse class
+    class Pulse {
+      constructor(x, y, isPreview = false) {
+        this.x = x;
+        this.y = y;
+        this.radius = 0;
+        this.maxRadius = 120;
+        this.alpha = 1;
+        this.speed = isPreview ? 2 : 3;
+        this.isPreview = isPreview;
+      }
+      
+      update() {
+        this.radius += this.speed;
+        this.alpha = Math.max(0, 1 - (this.radius / this.maxRadius));
+        return this.alpha > 0;
+      }
+      
+      draw() {
+        const gradient = ctx.createRadialGradient(
+          this.x, this.y, 0,
+          this.x, this.y, this.radius
+        );
+        
+        // Gold/amber gradient
+        gradient.addColorStop(0, `rgba(255, 215, 0, ${this.alpha * 0.8})`);
+        gradient.addColorStop(0.5, `rgba(212, 165, 116, ${this.alpha * 0.5})`);
+        gradient.addColorStop(1, `rgba(212, 165, 116, 0)`);
+        
+        ctx.strokeStyle = `rgba(212, 165, 116, ${this.alpha * 0.8})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Inner glow
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      centerY = height / 2;
+    }
+    
+    function spawnPulse(isPreview = false) {
+      // Spawn at left edge
+      pulses.push(new Pulse(100, centerY, isPreview));
+    }
+    
+    function animate() {
+      // Fade to black (trail effect)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update and draw pulses
+      pulses = pulses.filter(pulse => {
+        const alive = pulse.update();
+        if (alive) pulse.draw();
+        return alive;
+      });
+      
+      animationId = requestAnimationFrame(animate);
+    }
+    
+    // Preview animation (shows rhythm before play)
+    let previewInterval = null;
+    function startPreview() {
+      if (previewInterval) return;
+      
+      const bpm = 128;
+      const quarterNoteMs = 60000 / bpm;
+      
+      // Spawn pulse every quarter note
+      previewInterval = setInterval(() => {
+        if (!isPlaying) {
+          spawnPulse(true);
+        }
+      }, quarterNoteMs);
+      
+      // Initial pulse
+      spawnPulse(true);
+    }
+    
+    function stopPreview() {
+      if (previewInterval) {
+        clearInterval(previewInterval);
+        previewInterval = null;
+      }
+    }
+    
+    async function startDrums() {
+      if (isPlaying) return;
+      isPlaying = true;
+      
+      playButton.classList.add('playing');
+      stopPreview();
+      
+      // Initialize 909
+      if (!drums) {
+        drums = new TR909Controller();
+        drums.setBpm(128);
+        
+        // Four-on-floor kick pattern
+        const pattern = {
+          kick: [
+            { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+            { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+            { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+            { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+          ]
+        };
+        
+        drums.setPattern(pattern);
+        
+        // Listen for kick hits
+        drums.engine.on('voiceTriggered', (data) => {
+          if (data.voiceId === 'kick' && data.velocity > 0) {
+            spawnPulse(false);
+          }
+        });
+      }
+      
+      drums.play();
+    }
+    
+    function stopDrums() {
+      if (drums && isPlaying) {
+        drums.stop();
+        isPlaying = false;
+        playButton.classList.remove('playing');
+        startPreview(); // Resume preview
+      }
+    }
+    
+    // Event listeners
+    playButton.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await startDrums();
+    });
+    
+    canvas.addEventListener('click', () => {
+      if (isPlaying) {
+        stopDrums();
+      }
+    });
+    
+    window.addEventListener('resize', resize);
+    
+    // Initialize
+    resize();
+    animate();
+    startPreview();
+  </script>
+</body>
+</html>
