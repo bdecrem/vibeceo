@@ -570,13 +570,17 @@ export default function FlappyGame() {
 
     return () => {
       cancelAnimationFrame(animationId);
-      stopMusic();
       window.removeEventListener('resize', resize);
       canvas.removeEventListener('touchstart', handleTouch);
       canvas.removeEventListener('mousedown', handleMouse);
       document.removeEventListener('keydown', handleKey);
     };
   }, [flap, gameOver, spawnPipe]);
+  
+  // Stop music on unmount only
+  useEffect(() => {
+    return () => { stopMusic(); };
+  }, []);
 
   return (
     <>
