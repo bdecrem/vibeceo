@@ -257,12 +257,12 @@
         
         drums.setPattern(pattern);
         
-        // Listen for kick hits
-        drums.engine.on('voiceTriggered', (data) => {
-          if (data.voiceId === 'kick' && data.velocity > 0) {
+        // Listen for step changes — spawn pulse on kick steps (0, 4, 8, 12)
+        drums.engine.onStepChange = (step) => {
+          if (step >= 0 && step % 4 === 0) {
             spawnPulse(false);
           }
-        });
+        };
       }
       
       drums.play();
