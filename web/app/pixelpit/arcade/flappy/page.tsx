@@ -377,7 +377,7 @@ export default function FlappyGame() {
       game.bird.scaleY += (1 - game.bird.scaleY) * 0.15;
 
       // Spawn pipes
-      if (game.pipes.length === 0 || game.pipes[game.pipes.length - 1].x < canvas.width - 250) {
+      if (game.pipes.length === 0 || game.pipes[game.pipes.length - 1].x < canvas.width - 300) {
         spawnPipe();
       }
 
@@ -397,7 +397,7 @@ export default function FlappyGame() {
           
           // Progressive difficulty: every 5 pipes
           if (game.pipesPassed % 5 === 0) {
-            game.pipeSpeed = Math.min(game.pipeSpeed + game.speedIncreaseRate, 5);
+            game.pipeSpeed = Math.min(game.pipeSpeed + game.speedIncreaseRate, 4);
             game.pipeGap = Math.max(game.pipeGap - game.gapShrinkRate, game.minGap);
           }
         }
