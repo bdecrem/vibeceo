@@ -62,6 +62,17 @@ const GAME_ID = 'flappy';
 // Audio context (initialized on first interaction)
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
+let musicInterval: ReturnType<typeof setInterval> | null = null;
+let musicBeat = 0;
+
+// C major scale frequencies
+const NOTES = {
+  C4: 261.63, E4: 329.63, G4: 392.00,  // Melody
+  C2: 65.41,  // Bass
+};
+const MELODY = [NOTES.C4, NOTES.E4, NOTES.G4, NOTES.E4];  // C-E-G-E loop
+const BPM = 120;
+const BEAT_MS = 60000 / BPM;
 
 function initAudio() {
   if (audioCtx) return;
@@ -72,63 +83,125 @@ function initAudio() {
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
+function startMusic() {
+  if (!audioCtx || musicInterval) return;
+  musicBeat = 0;
+  
+  musicInterval = setInterval(() => {
+    if (!audioCtx || !masterGain) return;
+    const t = audioCtx.currentTime;
+    
+    // Melody: C-E-G-E loop (every beat)
+    const melodyOsc = audioCtx.createOscillator();
+    const melodyGain = audioCtx.createGain();
+    melodyOsc.type = 'triangle';
+    melodyOsc.frequency.value = MELODY[musicBeat % 4];
+    melodyGain.gain.setValueAtTime(0.12, t);
+    melodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    melodyOsc.connect(melodyGain);
+    melodyGain.connect(masterGain);
+    melodyOsc.start(t);
+    melodyOsc.stop(t + 0.2);
+    
+    // Bass: C2 on beats 0 and 2 (1 and 3 in musical terms)
+    if (musicBeat % 2 === 0) {
+      const bassOsc = audioCtx.createOscillator();
+      const bassGain = audioCtx.createGain();
+      bassOsc.type = 'sine';
+      bassOsc.frequency.value = NOTES.C2;
+      bassGain.gain.setValueAtTime(0.2, t);
+      bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      bassOsc.connect(bassGain);
+      bassGain.connect(masterGain);
+      bassOsc.start(t);
+      bassOsc.stop(t + 0.3);
+    }
+    
+    musicBeat++;
+  }, BEAT_MS);
+}
+
+function stopMusic() {
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
+}
+
 function playFlap() {
   if (!audioCtx || !masterGain) return;
+  // Quick "bwip" - high pitched blip
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
-  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+  osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.05);
+  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
   osc.connect(gain);
   gain.connect(masterGain);
   osc.start();
-  osc.stop(audioCtx.currentTime + 0.1);
+  osc.stop(audioCtx.currentTime + 0.08);
 }
 
 function playScore() {
   if (!audioCtx || !masterGain) return;
-  // Happy ding
+  // Happy ascending ding
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = 'sine';
-  osc.frequency.value = 880;
+  osc.frequency.setValueAtTime(523, audioCtx.currentTime);  // C5
+  osc.frequency.exponentialRampToValueAtTime(784, audioCtx.currentTime + 0.1);  // G5
   gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
   osc.connect(gain);
   gain.connect(masterGain);
   osc.start();
   osc.stop(audioCtx.currentTime + 0.15);
-  // Second note
+  // Second chime
   setTimeout(() => {
     if (!audioCtx || !masterGain) return;
     const osc2 = audioCtx.createOscillator();
     const gain2 = audioCtx.createGain();
     osc2.type = 'sine';
-    osc2.frequency.value = 1108;
-    gain2.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    osc2.frequency.value = 1047;  // C6
+    gain2.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
     osc2.connect(gain2);
     gain2.connect(masterGain);
     osc2.start();
-    osc2.stop(audioCtx.currentTime + 0.1);
+    osc2.stop(audioCtx.currentTime + 0.12);
   }, 80);
 }
 
 function playDeath() {
   if (!audioCtx || !masterGain) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
-  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.3);
+  // Bonk
+  const bonk = audioCtx.createOscillator();
+  const bonkGain = audioCtx.createGain();
+  bonk.type = 'square';
+  bonk.frequency.value = 150;
+  bonkGain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+  bonkGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+  bonk.connect(bonkGain);
+  bonkGain.connect(masterGain);
+  bonk.start();
+  bonk.stop(audioCtx.currentTime + 0.1);
+  // Sad descending slide
+  setTimeout(() => {
+    if (!audioCtx || !masterGain) return;
+    const slide = audioCtx.createOscillator();
+    const slideGain = audioCtx.createGain();
+    slide.type = 'sawtooth';
+    slide.frequency.setValueAtTime(400, audioCtx.currentTime);
+    slide.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.4);
+    slideGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    slideGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    slide.connect(slideGain);
+    slideGain.connect(masterGain);
+    slide.start();
+    slide.stop(audioCtx.currentTime + 0.4);
+  }, 100);
 }
 
 export default function FlappyGame() {
@@ -145,13 +218,19 @@ export default function FlappyGame() {
   const gameRef = useRef({
     running: false,
     score: 0,
-    bird: { x: 0, y: 0, vy: 0, size: 30 },
-    pipes: [] as Array<{ x: number; gapY: number; scored: boolean }>,
-    gravity: 0.4,        // Slightly floatier
-    jumpForce: -9,       // Slightly softer jump
-    pipeGap: 200,        // Wider gap (easier start)
+    pipesPassed: 0,      // Track pipes for difficulty curve
+    bird: { x: 0, y: 0, vy: 0, size: 30, scaleX: 1, scaleY: 1 },
+    pipes: [] as Array<{ x: number; gapY: number; scored: boolean; wobble: number }>,
+    particles: [] as Array<{ x: number; y: number; vx: number; vy: number; life: number; color: string }>,
+    screenFlash: 0,      // Flash intensity (0-1)
+    gravity: 0.4,
+    jumpForce: -9,
+    pipeGap: 180,        // Dither spec: easier start
+    minGap: 120,         // Never harder than this
+    gapShrinkRate: 2,    // Shrink by 2px every 5 pipes
     pipeWidth: 60,
-    pipeSpeed: 2.5,      // Slightly slower (easier start)
+    pipeSpeed: 2.5,
+    speedIncreaseRate: 0.1,  // Speed up by 0.1 every 5 pipes
     groundY: 0,
   });
 
@@ -163,8 +242,15 @@ export default function FlappyGame() {
     game.bird.x = canvas.width * 0.2;
     game.bird.y = canvas.height * 0.5;
     game.bird.vy = 0;
+    game.bird.scaleX = 1;
+    game.bird.scaleY = 1;
     game.pipes = [];
+    game.particles = [];
     game.score = 0;
+    game.pipesPassed = 0;
+    game.screenFlash = 0;
+    game.pipeGap = 180;      // Reset difficulty
+    game.pipeSpeed = 2.5;
     game.running = true;
     game.groundY = canvas.height - 50;
 
@@ -172,6 +258,8 @@ export default function FlappyGame() {
     setGameState('playing');
     setSubmittedEntryId(null);
     setProgression(null);
+    
+    startMusic();
 
     // Spawn first pipe
     spawnPipe();
@@ -185,7 +273,24 @@ export default function FlappyGame() {
     const minY = 100;
     const maxY = game.groundY - game.pipeGap - 100;
     const gapY = minY + Math.random() * (maxY - minY);
-    game.pipes.push({ x: canvas.width, gapY, scored: false });
+    game.pipes.push({ x: canvas.width, gapY, scored: false, wobble: Math.random() * Math.PI * 2 });
+  }, []);
+  
+  const spawnDeathParticles = useCallback(() => {
+    const game = gameRef.current;
+    const colors = [THEME.bird, '#fff', THEME.beak, '#f5cd5e'];
+    for (let i = 0; i < 20; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 4;
+      game.particles.push({
+        x: game.bird.x,
+        y: game.bird.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2,
+        life: 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
   }, []);
 
   const flap = useCallback(() => {
@@ -195,6 +300,9 @@ export default function FlappyGame() {
       startGame();
     } else if (gameState === 'playing' && game.running) {
       game.bird.vy = game.jumpForce;
+      // Squash on flap (stretch vertically, compress horizontally)
+      game.bird.scaleX = 0.7;
+      game.bird.scaleY = 1.4;
       playFlap();
     } else if (gameState === 'gameover') {
       setGameState('start');
@@ -204,6 +312,8 @@ export default function FlappyGame() {
   const gameOver = useCallback(() => {
     const game = gameRef.current;
     game.running = false;
+    stopMusic();
+    spawnDeathParticles();
     playDeath();
 
     // Track play for analytics
@@ -216,8 +326,8 @@ export default function FlappyGame() {
     }
 
     setScore(game.score);
-    setTimeout(() => setGameState('gameover'), 300);
-  }, []);
+    setTimeout(() => setGameState('gameover'), 500);  // Slightly longer to see particles
+  }, [spawnDeathParticles]);
 
   // Game loop
   useEffect(() => {
@@ -239,11 +349,32 @@ export default function FlappyGame() {
 
     const update = () => {
       const game = gameRef.current;
+      
+      // Always update particles (even after death)
+      for (let i = game.particles.length - 1; i >= 0; i--) {
+        const p = game.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.15;  // Gravity on particles
+        p.life -= 0.02;
+        if (p.life <= 0) game.particles.splice(i, 1);
+      }
+      
+      // Decay screen flash
+      if (game.screenFlash > 0) {
+        game.screenFlash *= 0.85;
+        if (game.screenFlash < 0.01) game.screenFlash = 0;
+      }
+      
       if (!game.running) return;
 
       // Bird physics
       game.bird.vy += game.gravity;
       game.bird.y += game.bird.vy;
+      
+      // Squash/stretch recovery (lerp back to 1)
+      game.bird.scaleX += (1 - game.bird.scaleX) * 0.15;
+      game.bird.scaleY += (1 - game.bird.scaleY) * 0.15;
 
       // Spawn pipes
       if (game.pipes.length === 0 || game.pipes[game.pipes.length - 1].x < canvas.width - 250) {
@@ -253,18 +384,21 @@ export default function FlappyGame() {
       // Update pipes
       for (let i = game.pipes.length - 1; i >= 0; i--) {
         game.pipes[i].x -= game.pipeSpeed;
+        game.pipes[i].wobble += 0.08;  // Animate wobble
 
         // Score
         if (!game.pipes[i].scored && game.pipes[i].x + game.pipeWidth < game.bird.x) {
           game.pipes[i].scored = true;
           game.score++;
+          game.pipesPassed++;
+          game.screenFlash = 0.4;  // Flash on score
           setScore(game.score);
           playScore();
           
-          // Progressive difficulty: speed up every 5 points
-          if (game.score % 5 === 0) {
-            game.pipeSpeed = Math.min(game.pipeSpeed + 0.3, 5);
-            game.pipeGap = Math.max(game.pipeGap - 5, 150);
+          // Progressive difficulty: every 5 pipes
+          if (game.pipesPassed % 5 === 0) {
+            game.pipeSpeed = Math.min(game.pipeSpeed + game.speedIncreaseRate, 5);
+            game.pipeGap = Math.max(game.pipeGap - game.gapShrinkRate, game.minGap);
           }
         }
 
@@ -301,8 +435,15 @@ export default function FlappyGame() {
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Pipes
+      // Pipes with wobble
       for (const pipe of game.pipes) {
+        const wobbleOffset = Math.sin(pipe.wobble) * 2;  // Subtle wobble
+        
+        ctx.save();
+        ctx.translate(pipe.x + game.pipeWidth / 2, 0);
+        ctx.translate(wobbleOffset, 0);
+        ctx.translate(-(pipe.x + game.pipeWidth / 2), 0);
+        
         // Top pipe
         ctx.fillStyle = THEME.pipe;
         ctx.fillRect(pipe.x, 0, game.pipeWidth, pipe.gapY);
@@ -316,6 +457,8 @@ export default function FlappyGame() {
         // Bottom pipe cap
         ctx.fillStyle = THEME.pipeCap;
         ctx.fillRect(pipe.x - 5, pipe.gapY + game.pipeGap, game.pipeWidth + 10, 25);
+        
+        ctx.restore();
       }
 
       // Ground
@@ -324,35 +467,58 @@ export default function FlappyGame() {
       ctx.fillStyle = THEME.groundDark;
       ctx.fillRect(0, game.groundY, canvas.width, 5);
 
+      // Bird with squash/stretch
+      ctx.save();
+      ctx.translate(game.bird.x, game.bird.y);
+      ctx.scale(game.bird.scaleX, game.bird.scaleY);
+      
       // Bird body
       ctx.fillStyle = THEME.bird;
       ctx.beginPath();
-      ctx.arc(game.bird.x, game.bird.y, game.bird.size, 0, Math.PI * 2);
+      ctx.arc(0, 0, game.bird.size, 0, Math.PI * 2);
       ctx.fill();
 
       // Bird eye
       ctx.fillStyle = THEME.birdEye;
       ctx.beginPath();
-      ctx.arc(game.bird.x + 10, game.bird.y - 5, 10, 0, Math.PI * 2);
+      ctx.arc(10, -5, 10, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = THEME.birdPupil;
       ctx.beginPath();
-      ctx.arc(game.bird.x + 12, game.bird.y - 5, 5, 0, Math.PI * 2);
+      ctx.arc(12, -5, 5, 0, Math.PI * 2);
       ctx.fill();
 
       // Bird beak
       ctx.fillStyle = THEME.beak;
       ctx.beginPath();
-      ctx.moveTo(game.bird.x + game.bird.size, game.bird.y);
-      ctx.lineTo(game.bird.x + game.bird.size + 15, game.bird.y + 5);
-      ctx.lineTo(game.bird.x + game.bird.size, game.bird.y + 10);
+      ctx.moveTo(game.bird.size, 0);
+      ctx.lineTo(game.bird.size + 15, 5);
+      ctx.lineTo(game.bird.size, 10);
       ctx.fill();
 
       // Wing (simple)
       ctx.fillStyle = '#f5cd5e';
       ctx.beginPath();
-      ctx.ellipse(game.bird.x - 8, game.bird.y + 5, 12, 8, 0, 0, Math.PI * 2);
+      ctx.ellipse(-8, 5, 12, 8, 0, 0, Math.PI * 2);
       ctx.fill();
+      
+      ctx.restore();
+      
+      // Death particles
+      for (const p of game.particles) {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4 + p.life * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      
+      // Screen flash on score
+      if (game.screenFlash > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${game.screenFlash})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
     };
 
     const gameLoop = () => {
@@ -382,6 +548,7 @@ export default function FlappyGame() {
 
     return () => {
       cancelAnimationFrame(animationId);
+      stopMusic();
       window.removeEventListener('resize', resize);
       canvas.removeEventListener('touchstart', handleTouch);
       canvas.removeEventListener('mousedown', handleMouse);
