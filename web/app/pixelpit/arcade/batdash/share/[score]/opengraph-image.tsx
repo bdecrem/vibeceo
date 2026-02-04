@@ -24,7 +24,7 @@ export default async function Image({ params }: { params: { score: string } }) {
           fontFamily: 'ui-monospace, monospace',
         }}
       >
-        {/* Moon */}
+        {/* Moon (solid color - Satori safe) */}
         <div
           style={{
             position: 'absolute',
@@ -32,8 +32,9 @@ export default async function Image({ params }: { params: { score: string } }) {
             right: 80,
             width: 60,
             height: 60,
-            background: 'radial-gradient(circle, #fef9c3 0%, rgba(254,249,195,0.2) 70%, transparent 100%)',
-            borderRadius: '50%',
+            background: '#fef9c3',
+            borderRadius: 30,
+            boxShadow: '0 0 40px #fef9c380',
           }}
         />
 

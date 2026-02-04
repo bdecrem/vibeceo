@@ -159,4 +159,11 @@ export const GAME_COLORS = {
     accent: '#ef4444',           // red spikes
     branding: '#71717a',         // muted gray
   },
+  batdash: {
+    background: '#0f172a',       // dark blue night
+    primary: '#fef08a',          // yellow (moon/text)
+    secondary: '#a855f7',        // purple accent
+    accent: '#1e293b',           // building color
+    branding: '#f8fafc',         // white text
+  },
 };

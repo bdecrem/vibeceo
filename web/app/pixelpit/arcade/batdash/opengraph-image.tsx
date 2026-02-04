@@ -21,7 +21,7 @@ export default async function Image() {
           overflow: 'hidden',
         }}
       >
-        {/* Moon */}
+        {/* Moon (solid - Satori safe) */}
         <div
           style={{
             position: 'absolute',
@@ -29,8 +29,9 @@ export default async function Image() {
             right: 120,
             width: 100,
             height: 100,
-            background: 'radial-gradient(circle, #fef9c3 0%, rgba(254,249,195,0.3) 60%, transparent 100%)',
-            borderRadius: '50%',
+            background: '#fef9c3',
+            borderRadius: 50,
+            boxShadow: '0 0 60px #fef9c380',
           }}
         />
         
