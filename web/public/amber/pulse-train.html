@@ -71,8 +71,6 @@
       letter-spacing: 2px;
       opacity: 0.7;
       margin-bottom: 32px;
-      text-align: center;
-      padding: 0 20px;
     }
     
     #playButton {
@@ -104,31 +102,29 @@
       pointer-events: none;
     }
     
-    #info {
+    #layer {
       position: absolute;
       bottom: 24px;
-      left: 24px;
-      right: 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: clamp(12px, 2.5vw, 16px);
-      letter-spacing: 2px;
-      opacity: 0.7;
-    }
-    
-    #layerInfo {
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(14px, 3vw, 18px);
+      letter-spacing: 3px;
       text-transform: uppercase;
-      transition: color 0.3s;
-    }
-    
-    #hint {
       opacity: 0;
-      transition: opacity 0.5s;
+      transition: opacity 0.3s, color 0.3s;
     }
     
-    #hint.show {
-      opacity: 1;
+    #layer.show {
+      opacity: 0.8;
+    }
+    
+    #layer.recording {
+      animation: pulse 0.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 0.4; }
     }
     
     @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
@@ -139,15 +135,11 @@
   
   <div id="ui">
     <div id="title">PULSE TRAIN</div>
-    <div id="subtitle">Tap to layer sounds. Build your beat.</div>
+    <div id="subtitle">Tap to layer sounds</div>
     <button id="playButton">▶ PLAY</button>
   </div>
   
-  <div id="info">
-    <div id="layerInfo">KICK</div>
-    <div id="hint">TAP TO ADD</div>
-    <div id="bpm">128 BPM</div>
-  </div>
+  <div id="layer"></div>
 
   <script type="module">
     import { TR909Controller } from '/909/dist/api/index.js';
@@ -155,26 +147,30 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const playButton = document.getElementById('playButton');
-    const layerInfoEl = document.getElementById('layerInfo');
-    const hintEl = document.getElementById('hint');
+    const layerEl = document.getElementById('layer');
     
     let width, height, centerY;
     let drums = null;
     let isPlaying = false;
     let pulses = [];
-    let animationId = null;
     let currentStep = 0;
     
-    // Voice layers: sequence of voices to add
+    // Layers to add in sequence
     const LAYERS = [
-      { voice: 'kick', name: 'KICK', color: { r: 255, g: 215, b: 0 }, done: true },      // Already playing
-      { voice: 'clap', name: 'CLAP', color: { r: 239, g: 68, b: 68 }, done: false },     // Red
-      { voice: 'ch', name: 'HI-HAT', color: { r: 34, g: 211, b: 238 }, done: false },    // Cyan
-      { voice: 'tom', name: 'TOM', color: { r: 168, g: 85, b: 247 }, done: false },      // Purple
+      { voice: 'clap', name: 'CLAP', color: { r: 239, g: 68, b: 68 } },
+      { voice: 'ch', name: 'HI-HAT', color: { r: 34, g: 211, b: 238 } },
+      { voice: 'tom', name: 'TOM', color: { r: 168, g: 85, b: 247 } },
     ];
-    let currentLayerIndex = 1; // Start at clap (kick is already there)
+    let currentLayerIndex = 0;
     
-    // Pattern state — starts with four-on-floor kick
+    // Recording state
+    let isRecording = false;
+    let recordingStartStep = -1;
+    
+    // Colors
+    const KICK_COLOR = { r: 255, g: 215, b: 0 };
+    
+    // Pattern — starts with four-on-floor kick only
     const pattern = {
       kick: [
         { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
@@ -187,17 +183,15 @@
       tom: Array(16).fill(null).map(() => ({ velocity: 0 })),
     };
     
-    // Pulse class with color support
     class Pulse {
-      constructor(x, y, color = { r: 255, g: 215, b: 0 }, isPreview = false) {
+      constructor(x, y, color) {
         this.x = x;
         this.y = y;
         this.color = color;
         this.radius = 0;
         this.maxRadius = 120;
         this.alpha = 1;
-        this.speed = isPreview ? 2 : 3;
-        this.isPreview = isPreview;
+        this.speed = 3;
       }
       
       update() {
@@ -209,21 +203,15 @@
       draw() {
         const { r, g, b } = this.color;
         
-        const gradient = ctx.createRadialGradient(
-          this.x, this.y, 0,
-          this.x, this.y, this.radius
-        );
-        
-        gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${this.alpha * 0.8})`);
-        gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, ${this.alpha * 0.4})`);
-        gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
-        
         ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${this.alpha * 0.8})`;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.stroke();
         
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+        gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${this.alpha * 0.6})`);
+        gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
         ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -237,15 +225,8 @@
       centerY = height / 2;
     }
     
-    function spawnPulse(color, isPreview = false) {
-      pulses.push(new Pulse(100, centerY, color, isPreview));
-    }
-    
-    function spawnPulseForVoice(voice) {
-      const layer = LAYERS.find(l => l.voice === voice);
-      if (layer) {
-        spawnPulse(layer.color, false);
-      }
+    function spawnPulse(color) {
+      pulses.push(new Pulse(100, centerY, color));
     }
     
     function animate() {
@@ -258,44 +239,21 @@
         return alive;
       });
       
-      animationId = requestAnimationFrame(animate);
-    }
-    
-    // Preview animation
-    let previewInterval = null;
-    function startPreview() {
-      if (previewInterval) return;
-      
-      const bpm = 128;
-      const quarterNoteMs = 60000 / bpm;
-      
-      previewInterval = setInterval(() => {
-        if (!isPlaying) {
-          spawnPulse(LAYERS[0].color, true);
-        }
-      }, quarterNoteMs);
-      
-      spawnPulse(LAYERS[0].color, true);
-    }
-    
-    function stopPreview() {
-      if (previewInterval) {
-        clearInterval(previewInterval);
-        previewInterval = null;
-      }
+      requestAnimationFrame(animate);
     }
     
     function updateLayerUI() {
       if (currentLayerIndex < LAYERS.length) {
         const layer = LAYERS[currentLayerIndex];
         const { r, g, b } = layer.color;
-        layerInfoEl.textContent = `ADD: ${layer.name}`;
-        layerInfoEl.style.color = `rgb(${r}, ${g}, ${b})`;
-        hintEl.classList.add('show');
+        layerEl.textContent = layer.name;
+        layerEl.style.color = `rgb(${r}, ${g}, ${b})`;
+        layerEl.classList.add('show');
+        layerEl.classList.toggle('recording', isRecording);
       } else {
-        layerInfoEl.textContent = 'COMPLETE';
-        layerInfoEl.style.color = '#D4A574';
-        hintEl.classList.remove('show');
+        layerEl.textContent = '◉';
+        layerEl.style.color = '#D4A574';
+        layerEl.classList.remove('recording');
       }
     }
     
@@ -303,27 +261,41 @@
       if (!isPlaying || currentLayerIndex >= LAYERS.length) return;
       
       const layer = LAYERS[currentLayerIndex];
-      const voice = layer.voice;
       
-      // Add this voice at the current step
-      if (pattern[voice] && pattern[voice][currentStep]) {
-        pattern[voice][currentStep].velocity = 1.0;
+      if (!isRecording) {
+        // Start recording from current step
+        isRecording = true;
+        recordingStartStep = currentStep;
+        updateLayerUI();
       }
       
-      // Update the drum machine pattern
+      // Add voice at current step
+      pattern[layer.voice][currentStep].velocity = 1.0;
       drums.setPattern(pattern);
       
-      // Visual feedback — spawn pulse at tap
-      spawnPulse(layer.color, false);
+      // Visual feedback
+      spawnPulse(layer.color);
+    }
+    
+    function onStep(step) {
+      if (step < 0) return;
+      currentStep = step;
       
-      // Count how many hits this voice has
-      const hitCount = pattern[voice].filter(s => s.velocity > 0).length;
-      
-      // After 4 hits, move to next layer
-      if (hitCount >= 4) {
-        layer.done = true;
+      // Check if recording loop completed (back to start step)
+      if (isRecording && step === recordingStartStep) {
+        // Finished recording this layer
+        isRecording = false;
         currentLayerIndex++;
         updateLayerUI();
+      }
+      
+      // Spawn pulses for active voices
+      for (const [voice, steps] of Object.entries(pattern)) {
+        if (steps[step]?.velocity > 0) {
+          const layer = LAYERS.find(l => l.voice === voice);
+          const color = layer ? layer.color : KICK_COLOR;
+          spawnPulse(color);
+        }
       }
     }
     
@@ -332,39 +304,16 @@
       isPlaying = true;
       
       playButton.classList.add('playing');
-      stopPreview();
       
       if (!drums) {
         drums = new TR909Controller();
         drums.setBpm(128);
         drums.setPattern(pattern);
-        
-        // Listen for step changes — spawn pulses for active voices
-        drums.engine.onStepChange = (step) => {
-          if (step < 0) return;
-          currentStep = step;
-          
-          // Spawn pulse for each voice that hits on this step
-          for (const [voice, steps] of Object.entries(pattern)) {
-            if (steps[step] && steps[step].velocity > 0) {
-              spawnPulseForVoice(voice);
-            }
-          }
-        };
+        drums.engine.onStepChange = onStep;
       }
       
       drums.play();
       updateLayerUI();
-    }
-    
-    function stopDrums() {
-      if (drums && isPlaying) {
-        drums.stop();
-        isPlaying = false;
-        playButton.classList.remove('playing');
-        hintEl.classList.remove('show');
-        startPreview();
-      }
     }
     
     // Event listeners
@@ -373,45 +322,28 @@
       await startDrums();
     });
     
-    canvas.addEventListener('click', () => {
-      if (isPlaying) {
-        handleTap();
-      }
-    });
+    canvas.addEventListener('click', handleTap);
     
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      if (isPlaying) {
-        handleTap();
-      }
+      handleTap();
     });
     
-    // Double-tap to stop
-    let lastTap = 0;
-    canvas.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      if (now - lastTap < 300) {
-        stopDrums();
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (!isPlaying) {
+          startDrums();
+        } else {
+          handleTap();
+        }
       }
-      lastTap = now;
     });
     
     window.addEventListener('resize', resize);
     
-    // Keyboard shortcut: space to tap, escape to stop
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && isPlaying) {
-        e.preventDefault();
-        handleTap();
-      } else if (e.code === 'Escape') {
-        stopDrums();
-      }
-    });
-    
-    // Initialize
     resize();
     animate();
-    startPreview();
   </script>
 </body>
 </html>
