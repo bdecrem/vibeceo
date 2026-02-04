@@ -217,6 +217,11 @@ export async function executeTool(name, input, session, context = {}) {
 
     case "discord_post": {
       const { message } = input;
+      // Block posting to channel when responding to a DM
+      // DM responses are automatically sent via socket → discord-bot.js → message.reply()
+      if (context.isDM) {
+        return 'Cannot use discord_post for DM conversations. Your text response will be sent as a DM automatically.';
+      }
       try {
         const scriptPath = join(context.repoRoot || '/Users/bart/Documents/code/vibeceo',
           'discord-bot/agent-chat/post-message.cjs');

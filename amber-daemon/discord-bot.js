@@ -35,7 +35,7 @@ if (!BOT_TOKEN) {
 
 // Amber's identity for webhook posts
 const AMBER_NAME = '🔮 Amber';
-const AMBER_AVATAR = 'https://i.imgur.com/YourAmberAvatar.png'; // TODO: real avatar
+const AMBER_AVATAR = 'https://intheamber.com/amber/amber-avatar.png';
 
 // Create webhook client if URL available
 let amberWebhook = null;
@@ -104,20 +104,20 @@ function connectToAmber() {
   });
 }
 
-async function sendToAmber(content, author) {
+async function sendToAmber(content, author, isDM = false) {
   const connected = await connectToAmber();
   if (!connected || !socket) return null;
 
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve(null), 120000);
     const id = Date.now().toString();
-    
+
     pendingCallbacks.set(id, (response) => {
       clearTimeout(timeout);
       resolve(response);
     });
 
-    socket.write(JSON.stringify({ type: 'chat', content, author, source: 'discord' }) + '\n');
+    socket.write(JSON.stringify({ type: 'chat', content, author, source: 'discord', isDM }) + '\n');
   });
 }
 
@@ -155,14 +155,15 @@ client.on('messageCreate', async (message) => {
   if (message.author.bot && !ALLOWED_BOTS.includes(message.author.id)) return;
   if (!isForAmber(message, client)) return;
 
-  console.log(`[Discord] ${message.author.username}: ${message.content.substring(0, 50)}...`);
+  const isDM = !message.guild;
+  console.log(`[Discord${isDM ? ' DM' : ''}] ${message.author.username}: ${message.content.substring(0, 50)}...`);
 
   // Show typing
   try {
     await message.channel.sendTyping();
   } catch (e) {}
 
-  const response = await sendToAmber(message.content, message.author.username);
+  const response = await sendToAmber(message.content, message.author.username, isDM);
 
   if (response) {
     // Split long messages

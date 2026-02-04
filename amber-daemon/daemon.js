@@ -281,6 +281,7 @@ function handleTUIMessage(msg, socket) {
         content: msg.content,
         author: msg.author || 'Bart',
         _socket: socket,  // Track which socket sent this for response routing
+        isDM: msg.isDM || false,  // Track if this is a Discord DM
       });
       break;
     
@@ -349,9 +350,9 @@ async function processQueue() {
 
 // === AGENT ===
 async function handleIncomingMessage(msg) {
-  const { source, content, author, _socket } = msg;
+  const { source, content, author, _socket, isDM } = msg;
 
-  log(`[${source}] ${author}: ${content.substring(0, 50)}...`, true);
+  log(`[${source}${isDM ? ' DM' : ''}] ${author}: ${content.substring(0, 50)}...`, true);
 
   // Track where this message came from for response routing
   const responseTarget = source;
@@ -374,7 +375,7 @@ async function handleIncomingMessage(msg) {
       responseText = text;
       log(`  💬 ${text.substring(0, 100)}...`);
     },
-  }, { repoRoot: REPO_ROOT });
+  }, { repoRoot: REPO_ROOT, isDM });
 
   // Save conversation after each exchange
   saveConversation();
