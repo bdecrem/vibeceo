@@ -1221,6 +1221,148 @@ export function FlappyDecorations() {
 }
 
 /**
+ * CATCH-specific decorations: shadow pools, falling coins, player.
+ * Light kills, shadows heal. The coins are a trap.
+ */
+export function CatchDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Shadow safe zones (dark pools) */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 120,
+          top: 200,
+          width: 160,
+          height: 160,
+          borderRadius: 80,
+          background: 'linear-gradient(180deg, #00000080 0%, #00000040 70%, #00000000 100%)',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          right: 150,
+          top: 280,
+          width: 140,
+          height: 140,
+          borderRadius: 70,
+          background: 'linear-gradient(180deg, #00000080 0%, #00000040 70%, #00000000 100%)',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 450,
+          bottom: 150,
+          width: 180,
+          height: 180,
+          borderRadius: 90,
+          background: 'linear-gradient(180deg, #00000080 0%, #00000040 70%, #00000000 100%)',
+        }}
+      />
+
+      {/* Falling coins (the trap) */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 200,
+          top: 80,
+          width: 30,
+          height: 30,
+          borderRadius: 15,
+          background: '#fbbf24',
+          boxShadow: '0 0 20px #fbbf24',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 500,
+          top: 120,
+          width: 26,
+          height: 26,
+          borderRadius: 13,
+          background: '#fbbf24',
+          boxShadow: '0 0 18px #fbbf24',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          right: 200,
+          top: 60,
+          width: 28,
+          height: 28,
+          borderRadius: 14,
+          background: '#fbbf24',
+          boxShadow: '0 0 20px #fbbf24',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 350,
+          top: 180,
+          width: 24,
+          height: 24,
+          borderRadius: 12,
+          background: '#fbbf24',
+          boxShadow: '0 0 16px #fbbf24',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          right: 350,
+          top: 140,
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          background: '#fbbf24',
+          boxShadow: '0 0 22px #fbbf24',
+        }}
+      />
+
+      {/* Player (cyan, in shadow) */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 180,
+          top: 260,
+          width: 30,
+          height: 30,
+          borderRadius: 15,
+          background: '#22d3ee',
+          boxShadow: '0 0 25px #22d3ee40',
+        }}
+      />
+
+      {/* Brightness gradient overlay (danger zone at top) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 100,
+          background: 'linear-gradient(180deg, #ffffff15 0%, #ffffff00 100%)',
+        }}
+      />
+    </div>
+  );
+}
+
+/**
  * TAP BEATS-specific decorations: falling notes, lane lines, neon arcade.
  * DDR-inspired aesthetic with cyan/pink/gold lanes.
  */

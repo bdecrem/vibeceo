@@ -166,4 +166,11 @@ export const GAME_COLORS = {
     accent: '#1e293b',           // building color
     branding: '#f8fafc',         // white text
   },
+  catch: {
+    background: '#000000',       // void black (shadows = safe)
+    primary: '#22d3ee',          // cyan player
+    secondary: '#fbbf24',        // gold coins (the trap)
+    accent: '#ffffff',           // danger white
+    branding: '#71717a',         // muted gray
+  },
 };

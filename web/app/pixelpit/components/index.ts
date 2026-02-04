@@ -52,6 +52,7 @@ export type {
 export {
   createScoreShareImage,
   BeamDecorations,
+  CatchDecorations,
   CatTowerDecorations,
   EmojiDecorations,
   FlappyDecorations,

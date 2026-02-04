@@ -1,6 +1,16 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import Script from 'next/script';
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  usePixelpitSocial,
+  type ScoreFlowColors,
+  type LeaderboardColors,
+  type ProgressionResult,
+} from '@/app/pixelpit/components';
 
 // Inverted INDIE BITE - starts dark, light kills
 const THEME = {
@@ -16,6 +26,26 @@ const THEME = {
 
 const GAME_ID = 'catch';
 const GAME_DURATION = 60; // seconds
+
+// Social colors
+const SCORE_FLOW_COLORS: ScoreFlowColors = {
+  bg: THEME.void,
+  surface: '#0a0a0f',
+  primary: THEME.player,
+  secondary: THEME.coin,
+  text: '#f8fafc',
+  muted: '#71717a',
+  error: '#ef4444',
+};
+
+const LEADERBOARD_COLORS: LeaderboardColors = {
+  bg: THEME.void,
+  surface: '#0a0a0f',
+  primary: THEME.player,
+  secondary: THEME.coin,
+  text: '#f8fafc',
+  muted: '#71717a',
+};
 
 // Audio
 let audioCtx: AudioContext | null = null;
@@ -34,7 +64,6 @@ function playCoinCollect(brightness: number = 0) {
   if (!audioCtx || !masterGain) return;
   
   // Distortion ramp based on brightness
-  // 0-30%: normal, 30-60%: slight detune, 60-80%: more detune, 80%+: harsh
   let detune = 0;
   let harshness = 0;
   if (brightness > 0.3) detune = 5;
@@ -46,10 +75,10 @@ function playCoinCollect(brightness: number = 0) {
   
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  osc.type = brightness > 0.8 ? 'sawtooth' : 'sine';  // Harsh at high brightness
+  osc.type = brightness > 0.8 ? 'sawtooth' : 'sine';
   osc.frequency.setValueAtTime(880, audioCtx.currentTime);
   osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1);
-  osc.detune.value = detune + (Math.random() - 0.5) * detune;  // Random detune
+  osc.detune.value = detune + (Math.random() - 0.5) * detune;
   gain.gain.setValueAtTime(0.2 + harshness, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
   osc.connect(gain);
@@ -62,7 +91,7 @@ function playCoinCollect(brightness: number = 0) {
     const osc2 = audioCtx.createOscillator();
     const gain2 = audioCtx.createGain();
     osc2.type = 'square';
-    osc2.frequency.value = 880 * 1.06;  // Slightly off - dissonant
+    osc2.frequency.value = 880 * 1.06;
     osc2.detune.value = detune * 2;
     gain2.gain.setValueAtTime(0.05 + brightness * 0.1, audioCtx.currentTime);
     gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
@@ -75,7 +104,6 @@ function playCoinCollect(brightness: number = 0) {
 
 function playHeal() {
   if (!audioCtx || !masterGain) return;
-  // Soft, safe sound
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = 'sine';
@@ -90,7 +118,6 @@ function playHeal() {
 
 function playDeath() {
   if (!audioCtx || !masterGain) return;
-  // Bright, harsh - overexposure
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = 'sawtooth';
@@ -105,7 +132,6 @@ function playDeath() {
 
 function playWin() {
   if (!audioCtx || !masterGain) return;
-  // Deep, peaceful resolution
   [110, 165, 220].forEach((freq, i) => {
     setTimeout(() => {
       if (!audioCtx || !masterGain) return;
@@ -129,15 +155,23 @@ export default function CatchGame() {
   const [displayScore, setDisplayScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
   const [showHint, setShowHint] = useState(false);
+  
+  // Social integration state
+  const [socialLoaded, setSocialLoaded] = useState(false);
+  const [survivalTime, setSurvivalTime] = useState(0);
+  const [submittedEntryId, setSubmittedEntryId] = useState<string | null>(null);
+  const [progression, setProgression] = useState<ProgressionResult | null>(null);
+
+  usePixelpitSocial(socialLoaded);
 
   const gameRef = useRef({
     running: false,
     player: { x: 0, y: 0, size: 20 },
     coins: [] as Array<{ x: number; y: number; size: number }>,
     shadows: [] as Array<{ x: number; y: number; radius: number }>,
-    health: 100,        // Start healthy (glowing)
-    brightness: 0,      // Light pollution from coins
-    score: 0,           // Fake score - collecting coins
+    health: 100,
+    brightness: 0,
+    score: 0,
     coinsCollected: 0,
     startTime: 0,
     lastHealSound: 0,
@@ -160,7 +194,6 @@ export default function CatchGame() {
     game.running = true;
     game.lastHealSound = 0;
 
-    // Create shadow safe zones (3 pools)
     game.shadows = [
       { x: canvas.width * 0.2, y: canvas.height * 0.5, radius: 80 },
       { x: canvas.width * 0.8, y: canvas.height * 0.4, radius: 70 },
@@ -170,12 +203,20 @@ export default function CatchGame() {
     setDisplayScore(0);
     setTimeLeft(GAME_DURATION);
     setShowHint(false);
+    setSurvivalTime(0);
+    setSubmittedEntryId(null);
+    setProgression(null);
     setGameState('playing');
   }, []);
 
-  const gameOver = useCallback((won: boolean) => {
+  const gameOver = useCallback((won: boolean, timeRemaining: number) => {
     const game = gameRef.current;
     game.running = false;
+    
+    // Calculate survival time (score for leaderboard)
+    const survived = GAME_DURATION - timeRemaining;
+    setSurvivalTime(survived);
+    
     if (won) {
       playWin();
       setGameState('won');
@@ -185,11 +226,13 @@ export default function CatchGame() {
     }
 
     // Analytics
-    fetch('/api/pixelpit/stats', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ game: GAME_ID }),
-    }).catch(() => {});
+    if (survived >= 1) {
+      fetch('/api/pixelpit/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: GAME_ID }),
+      }).catch(() => {});
+    }
   }, []);
 
   useEffect(() => {
@@ -212,22 +255,19 @@ export default function CatchGame() {
       const game = gameRef.current;
       if (!game.running) return;
 
-      // Time check
       const elapsed = (Date.now() - game.startTime) / 1000;
       const remaining = Math.max(0, GAME_DURATION - elapsed);
       setTimeLeft(Math.ceil(remaining));
 
       if (remaining <= 0) {
-        gameOver(true); // Survived!
+        gameOver(true, 0);
         return;
       }
 
-      // Show hint after 5 seconds if health is low
       if (elapsed > 5 && game.health < 50 && !showHint) {
         setShowHint(true);
       }
 
-      // Spawn coins (more frequent over time)
       const spawnRate = Math.max(300, 800 - elapsed * 10);
       if (timestamp - lastCoinSpawn > spawnRate) {
         game.coins.push({
@@ -238,17 +278,14 @@ export default function CatchGame() {
         lastCoinSpawn = timestamp;
       }
 
-      // Update coins
       for (let i = game.coins.length - 1; i >= 0; i--) {
-        game.coins[i].y += 2 + elapsed * 0.05; // Speed up over time
+        game.coins[i].y += 2 + elapsed * 0.05;
 
-        // Remove if off screen
         if (game.coins[i].y > canvas.height + 30) {
           game.coins.splice(i, 1);
           continue;
         }
 
-        // Collision with player
         const coin = game.coins[i];
         const dx = coin.x - game.player.x;
         const dy = coin.y - game.player.y;
@@ -258,18 +295,17 @@ export default function CatchGame() {
           game.score += 10;
           game.coinsCollected++;
           game.brightness = Math.min(1, game.brightness + 0.15);
-          game.health -= 15; // COINS HURT
+          game.health -= 15;
           setDisplayScore(game.score);
           playCoinCollect(game.brightness);
 
           if (game.health <= 0) {
-            gameOver(false);
+            gameOver(false, remaining);
             return;
           }
         }
       }
 
-      // Check if in shadow (healing) - use breathing radius for organic feel
       const breathePhase = (Math.sin(Date.now() / 1000 * Math.PI) + 1) / 2;
       const breatheScale = 0.95 + breathePhase * 0.1;
       let inShadow = false;
@@ -285,13 +321,11 @@ export default function CatchGame() {
       if (inShadow) {
         game.health = Math.min(100, game.health + 0.5);
         game.brightness = Math.max(0, game.brightness - 0.01);
-        // Occasional heal sound
         if (timestamp - game.lastHealSound > 2000) {
           playHeal();
           game.lastHealSound = timestamp;
         }
       } else {
-        // Slow brightness decay even outside shadows
         game.brightness = Math.max(0, game.brightness - 0.002);
       }
     };
@@ -299,14 +333,12 @@ export default function CatchGame() {
     const draw = () => {
       const game = gameRef.current;
 
-      // Background - darker when healthy, painful white when dying
       const bgBrightness = Math.floor(game.brightness * 200);
       ctx.fillStyle = `rgb(${bgBrightness}, ${bgBrightness}, ${bgBrightness})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Shadow safe zones (breathing animation)
-      const breathePhase = (Math.sin(Date.now() / 1000 * Math.PI) + 1) / 2;  // 0→1→0 over 2 sec
-      const breatheScale = 0.95 + breathePhase * 0.1;  // 0.95 → 1.05
+      const breathePhase = (Math.sin(Date.now() / 1000 * Math.PI) + 1) / 2;
+      const breatheScale = 0.95 + breathePhase * 0.1;
       
       for (const shadow of game.shadows) {
         const breathingRadius = shadow.radius * breatheScale;
@@ -323,7 +355,6 @@ export default function CatchGame() {
         ctx.fill();
       }
 
-      // Coins - golden and inviting (the trap)
       for (const coin of game.coins) {
         ctx.save();
         ctx.shadowColor = THEME.coinGlow;
@@ -335,13 +366,11 @@ export default function CatchGame() {
         ctx.restore();
       }
 
-      // Player - glowing when DYING, dim when healthy (inverted!)
-      const playerGlow = game.health / 100; // More health = dimmer (safer)
+      const playerGlow = game.health / 100;
       ctx.save();
       ctx.shadowColor = THEME.player;
-      ctx.shadowBlur = (1 - playerGlow) * 30; // Glow when unhealthy
+      ctx.shadowBlur = (1 - playerGlow) * 30;
       
-      // Interpolate between dim (healthy) and bright (dying)
       const r = Math.floor(14 + (34 - 14) * (1 - playerGlow));
       const g = Math.floor(74 + (211 - 74) * (1 - playerGlow));
       const b = Math.floor(92 + (238 - 92) * (1 - playerGlow));
@@ -360,7 +389,6 @@ export default function CatchGame() {
     };
     animationId = requestAnimationFrame(gameLoop);
 
-    // Input - mouse/touch to move player
     const handleMove = (clientX: number) => {
       const game = gameRef.current;
       if (game.running) {
@@ -374,7 +402,7 @@ export default function CatchGame() {
       if (e.touches[0]) handleMove(e.touches[0].clientX);
     };
     const handleClick = () => {
-      if (gameState === 'start' || gameState === 'dead' || gameState === 'won') {
+      if (gameState === 'start') {
         startGame();
       }
     };
@@ -394,8 +422,20 @@ export default function CatchGame() {
     };
   }, [gameState, gameOver, startGame, showHint]);
 
+  // Format time for display
+  const formatTime = (seconds: number) => {
+    return seconds === 60 ? '60s' : `${Math.floor(seconds)}s`;
+  };
+
   return (
     <>
+      {/* Load social.js */}
+      <Script
+        src="/pixelpit/social.js"
+        strategy="afterInteractive"
+        onLoad={() => setSocialLoaded(true)}
+      />
+
       <style jsx global>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -414,7 +454,6 @@ export default function CatchGame() {
       {/* HUD during play */}
       {gameState === 'playing' && (
         <>
-          {/* Fake score (the lie) */}
           <div style={{
             position: 'fixed',
             top: 20,
@@ -427,7 +466,6 @@ export default function CatchGame() {
             SCORE: {displayScore}
           </div>
 
-          {/* Time remaining */}
           <div style={{
             position: 'fixed',
             top: 20,
@@ -439,7 +477,6 @@ export default function CatchGame() {
             {timeLeft}s
           </div>
 
-          {/* Hint after player struggles */}
           {showHint && (
             <div style={{
               position: 'fixed',
@@ -504,6 +541,18 @@ export default function CatchGame() {
           >
             play
           </button>
+
+          {/* Leaderboard on start screen */}
+          <div style={{ marginTop: 40, width: '100%', maxWidth: 400, padding: '0 20px' }}>
+            <Leaderboard
+              gameId={GAME_ID}
+              limit={5}
+              showPlayer={false}
+              colors={LEADERBOARD_COLORS}
+              highlightEntryId={submittedEntryId}
+              formatScore={(s) => `${s}s`}
+            />
+          </div>
         </div>
       )}
 
@@ -517,6 +566,8 @@ export default function CatchGame() {
           alignItems: 'center',
           justifyContent: 'center',
           background: '#fff',
+          overflowY: 'auto',
+          padding: '40px 20px',
         }}>
           <h1 style={{
             fontFamily: 'ui-monospace, monospace',
@@ -532,20 +583,51 @@ export default function CatchGame() {
             color: '#666',
             marginBottom: 10,
           }}>
-            you collected {gameRef.current.coinsCollected} coins
+            survived {formatTime(survivalTime)}
           </p>
           <p style={{
             fontFamily: 'ui-monospace, monospace',
             fontSize: 14,
             color: '#999',
-            marginBottom: 40,
+            marginBottom: 30,
             fontStyle: 'italic',
           }}>
-            ...maybe that was the problem?
+            ...maybe collecting coins was the problem?
           </p>
+          
+          {/* ScoreFlow for death screen */}
+          <div style={{ width: '100%', maxWidth: 400 }}>
+            <ScoreFlow
+              score={Math.floor(survivalTime)}
+              gameId={GAME_ID}
+              colors={{
+                ...SCORE_FLOW_COLORS,
+                bg: '#ffffff',
+                surface: '#f5f5f5',
+                text: '#000000',
+                muted: '#666666',
+              }}
+              xpDivisor={1}
+              onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
+              onProgression={(prog) => setProgression(prog)}
+            />
+          </div>
+
+          {/* Share button */}
+          <div style={{ marginTop: 20 }}>
+            <ShareButtonContainer
+              id="share-btn-death"
+              url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/catch/share/${Math.floor(survivalTime)}`}
+              text={`I survived ${formatTime(survivalTime)} on CATCH before the light got me... Can you do better?`}
+              style="minimal"
+              socialLoaded={socialLoaded}
+            />
+          </div>
+          
           <button
             onClick={startGame}
             style={{
+              marginTop: 30,
               background: '#000',
               color: '#fff',
               border: 'none',
@@ -571,6 +653,8 @@ export default function CatchGame() {
           alignItems: 'center',
           justifyContent: 'center',
           background: '#000',
+          overflowY: 'auto',
+          padding: '40px 20px',
         }}>
           <h1 style={{
             fontFamily: 'ui-monospace, monospace',
@@ -593,13 +677,50 @@ export default function CatchGame() {
             fontFamily: 'ui-monospace, monospace',
             fontSize: 14,
             color: '#666',
-            marginBottom: 40,
+            marginBottom: 30,
           }}>
             coins collected: {gameRef.current.coinsCollected} (oops)
           </p>
+          
+          {/* ScoreFlow for win screen */}
+          <div style={{ width: '100%', maxWidth: 400 }}>
+            <ScoreFlow
+              score={60}
+              gameId={GAME_ID}
+              colors={SCORE_FLOW_COLORS}
+              xpDivisor={1}
+              onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
+              onProgression={(prog) => setProgression(prog)}
+            />
+          </div>
+
+          {/* Share button */}
+          <div style={{ marginTop: 20 }}>
+            <ShareButtonContainer
+              id="share-btn-win"
+              url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/catch/share/60`}
+              text={`I survived CATCH! 60 seconds in the darkness. Can you beat me?`}
+              style="minimal"
+              socialLoaded={socialLoaded}
+            />
+          </div>
+
+          {/* Leaderboard */}
+          <div style={{ marginTop: 30, width: '100%', maxWidth: 400 }}>
+            <Leaderboard
+              gameId={GAME_ID}
+              limit={5}
+              showPlayer={true}
+              colors={LEADERBOARD_COLORS}
+              highlightEntryId={submittedEntryId}
+              formatScore={(s) => `${s}s`}
+            />
+          </div>
+          
           <button
             onClick={startGame}
             style={{
+              marginTop: 30,
               background: THEME.player,
               color: '#000',
               border: 'none',
