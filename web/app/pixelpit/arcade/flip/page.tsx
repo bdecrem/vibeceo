@@ -17,6 +17,14 @@ const GAME_ID = 'flip';
 // Audio
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
+let musicInterval: ReturnType<typeof setInterval> | null = null;
+let musicBeat = 0;
+let musicLevel = 1;
+
+// E minor: E2 = 82.41 Hz
+const E2 = 82.41;
+const BPM = 100;
+const BEAT_MS = 60000 / BPM;
 
 function initAudio() {
   if (audioCtx) return;
@@ -25,6 +33,112 @@ function initAudio() {
   masterGain.gain.value = 0.4;
   masterGain.connect(audioCtx.destination);
   if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playMusicBeat() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  
+  // Base drone (always playing)
+  const drone = audioCtx.createOscillator();
+  const droneGain = audioCtx.createGain();
+  drone.type = 'sawtooth';
+  drone.frequency.value = E2;
+  droneGain.gain.setValueAtTime(0.08, t);
+  droneGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  drone.connect(droneGain);
+  droneGain.connect(masterGain);
+  drone.start(t);
+  drone.stop(t + 0.5);
+  
+  // Kick on beats 0 and 2 (1 and 3 in musical terms)
+  if (musicBeat % 2 === 0) {
+    const kick = audioCtx.createOscillator();
+    const kickGain = audioCtx.createGain();
+    kick.type = 'sine';
+    kick.frequency.setValueAtTime(150, t);
+    kick.frequency.exponentialRampToValueAtTime(40, t + 0.1);
+    kickGain.gain.setValueAtTime(0.4, t);
+    kickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    kick.connect(kickGain);
+    kickGain.connect(masterGain);
+    kick.start(t);
+    kick.stop(t + 0.15);
+  }
+  
+  // Hi-hat on every beat (8th notes = every half beat at higher levels)
+  const hatRate = musicLevel >= 3 ? 1 : 2;  // Faster hats at level 3+
+  if (musicBeat % hatRate === 0) {
+    const bufferSize = audioCtx.sampleRate * 0.03;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+    }
+    const hat = audioCtx.createBufferSource();
+    hat.buffer = buffer;
+    const hatFilter = audioCtx.createBiquadFilter();
+    hatFilter.type = 'highpass';
+    hatFilter.frequency.value = 7000;
+    const hatGain = audioCtx.createGain();
+    hatGain.gain.value = 0.1 + musicLevel * 0.02;
+    hat.connect(hatFilter);
+    hatFilter.connect(hatGain);
+    hatGain.connect(masterGain);
+    hat.start(t);
+  }
+  
+  // Bass stab at level 4+ (every 4 beats)
+  if (musicLevel >= 4 && musicBeat % 4 === 0) {
+    const bass = audioCtx.createOscillator();
+    const bassGain = audioCtx.createGain();
+    bass.type = 'square';
+    bass.frequency.value = E2 * 2;
+    bassGain.gain.setValueAtTime(0.15, t);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    bass.connect(bassGain);
+    bassGain.connect(masterGain);
+    bass.start(t);
+    bass.stop(t + 0.1);
+  }
+  
+  musicBeat++;
+}
+
+function startMusic() {
+  if (!audioCtx || musicInterval) return;
+  musicBeat = 0;
+  playMusicBeat();
+  musicInterval = setInterval(playMusicBeat, BEAT_MS / 2);  // 8th notes
+}
+
+function stopMusic() {
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
+}
+
+function setMusicIntensity(level: number) {
+  musicLevel = level;
+}
+
+function playLevelUp() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Rising arpeggio
+  [0, 0.1, 0.2].forEach((delay, i) => {
+    const osc = audioCtx!.createOscillator();
+    const gain = audioCtx!.createGain();
+    osc.type = 'square';
+    osc.frequency.value = E2 * Math.pow(2, i + 2);  // E4, E5, E6
+    gain.gain.setValueAtTime(0.15, t + delay);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.15);
+    osc.connect(gain);
+    gain.connect(masterGain!);
+    osc.start(t + delay);
+    osc.stop(t + delay + 0.15);
+  });
 }
 
 function playFlip() {
@@ -84,10 +198,30 @@ export default function FlipGame() {
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
   const [score, setScore] = useState(0);
 
+  const [musicEnabled, setMusicEnabled] = useState(false);
+  
+  // Music toggle
+  const toggleMusic = useCallback(() => {
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    if (musicEnabled) {
+      stopMusic();
+      setMusicEnabled(false);
+    } else {
+      startMusic();
+      setMusicEnabled(true);
+    }
+  }, [musicEnabled]);
+  
   const gameRef = useRef({
     running: false,
     score: 0,
     distance: 0,
+    level: 1,
+    lastLevelScore: 0,
+    levelUpFlash: '',
     player: { x: 0, y: 0, vy: 0, size: 20, scaleX: 1, scaleY: 1 },
     gravity: 0.4,
     maxFallSpeed: 8,
@@ -100,6 +234,7 @@ export default function FlipGame() {
     particles: [] as Array<{ x: number; y: number; vx: number; vy: number; life: number }>,
     trail: [] as Array<{ x: number; y: number; alpha: number }>,
     shake: 0,
+    screenFlash: 0,
   });
 
   const startGame = useCallback(() => {
@@ -119,14 +254,20 @@ export default function FlipGame() {
     game.gravity = 0.4;
     game.score = 0;
     game.distance = 0;
+    game.level = 1;
+    game.lastLevelScore = 0;
+    game.levelUpFlash = '';
     game.spikes = [];
     game.particles = [];
     game.trail = [];
     game.shake = 0;
+    game.screenFlash = 0;
     game.spikeGap = 300;
     game.spikeSize = 30;
     game.scrollSpeed = 3;
     game.running = true;
+    
+    setMusicIntensity(1);
 
     setScore(0);
     setGameState('playing');
@@ -244,10 +385,31 @@ export default function FlipGame() {
       game.score = Math.floor(game.distance / 10);
       setScore(game.score);
 
-      // Difficulty ramp every 500 points
-      const milestone = Math.floor(game.score / 500);
-      game.spikeGap = Math.max(150, 300 - milestone * 15);
-      game.spikeSize = Math.min(60, 30 + milestone * 3);
+      // Decay level-up flash
+      if (game.levelUpFlash && game.screenFlash <= 0) {
+        game.levelUpFlash = '';
+      }
+      if (game.screenFlash > 0) {
+        game.screenFlash *= 0.92;
+        if (game.screenFlash < 0.01) game.screenFlash = 0;
+      }
+
+      // Level up every 500 points
+      const newLevel = Math.floor(game.score / 500) + 1;
+      if (newLevel > game.level) {
+        game.level = newLevel;
+        game.levelUpFlash = `LEVEL ${game.level}`;
+        game.screenFlash = 0.6;
+        game.scrollSpeed = Math.min(3 + (game.level - 1) * 0.3, 6);  // Speed up
+        setMusicIntensity(game.level);
+        playLevelUp();
+        // Clear flash text after a moment
+        setTimeout(() => { game.levelUpFlash = ''; }, 800);
+      }
+
+      // Difficulty ramp
+      game.spikeGap = Math.max(150, 300 - (game.level - 1) * 20);
+      game.spikeSize = Math.min(60, 30 + (game.level - 1) * 5);
 
       // Spawn spikes
       const lastSpike = game.spikes[game.spikes.length - 1];
@@ -375,6 +537,25 @@ export default function FlipGame() {
         ctx.fill();
       }
       ctx.globalAlpha = 1;
+      
+      // Screen flash (cyan for level up)
+      if (game.screenFlash > 0) {
+        ctx.fillStyle = `rgba(34, 211, 238, ${game.screenFlash * 0.4})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      
+      // Level up text
+      if (game.levelUpFlash) {
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 48px ui-monospace, monospace';
+        ctx.fillStyle = THEME.glow;
+        ctx.shadowColor = THEME.glow;
+        ctx.shadowBlur = 20;
+        ctx.fillText(game.levelUpFlash, canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+      }
 
       ctx.restore(); // Shake
     };
@@ -403,6 +584,11 @@ export default function FlipGame() {
       document.removeEventListener('keydown', handleKey);
     };
   }, [flip, gameOver]);
+  
+  // Stop music on unmount only
+  useEffect(() => {
+    return () => { stopMusic(); };
+  }, []);
 
   return (
     <>
@@ -442,6 +628,29 @@ export default function FlipGame() {
             {score}
           </div>
         </div>
+      )}
+
+      {/* Music toggle */}
+      {(gameState === 'playing' || gameState === 'start') && (
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleMusic(); }}
+          style={{
+            position: 'fixed',
+            top: 'max(20px, env(safe-area-inset-top, 20px))',
+            right: 20,
+            zIndex: 200,
+            background: musicEnabled ? THEME.glow : 'rgba(255,255,255,0.1)',
+            color: musicEnabled ? THEME.bg : THEME.text,
+            border: 'none',
+            borderRadius: 4,
+            padding: '10px 14px',
+            fontSize: 20,
+            cursor: 'pointer',
+          }}
+          aria-label={musicEnabled ? 'Mute music' : 'Play music'}
+        >
+          {musicEnabled ? '🎵' : '🔇'}
+        </button>
       )}
 
       {/* Start screen */}
