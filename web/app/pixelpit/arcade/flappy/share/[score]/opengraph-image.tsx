@@ -18,7 +18,7 @@ export default async function Image({ params }: { params: { score: string } }) {
     createScoreShareImage({
       score,
       gameName: 'FLAPPY',
-      tagline: 'CAN YOU BEAT ME? 🐦',
+      tagline: 'CAN YOU BEAT ME?',
       colors: GAME_COLORS.flappy,
       decorations: <FlappyDecorations />,
     }),
