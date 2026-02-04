@@ -1148,12 +1148,24 @@ export default function TapBeatsGame() {
 
     const game = gameRef.current;
 
-    // Resize handler
+    // Resize handler - only update if dimensions actually change significantly
+    // This prevents mobile Safari address bar animations from causing glitches
     const resize = () => {
-      game.w = canvas.width = window.innerWidth;
-      game.h = canvas.height = window.innerHeight;
+      const newW = window.innerWidth;
+      const newH = window.innerHeight;
+      // Only resize if dimensions changed by more than 1px (ignore sub-pixel changes)
+      // and if the change is reasonable (not a temporary glitch value)
+      if (Math.abs(newW - game.w) > 1 || Math.abs(newH - game.h) > 1) {
+        // Don't resize during active gameplay to prevent mid-game glitches
+        if (!game.running) {
+          game.w = canvas.width = newW;
+          game.h = canvas.height = newH;
+        }
+      }
     };
-    resize();
+    // Initial size
+    game.w = canvas.width = window.innerWidth;
+    game.h = canvas.height = window.innerHeight;
     window.addEventListener('resize', resize);
 
     // Game constants
@@ -1564,8 +1576,6 @@ export default function TapBeatsGame() {
           position: 'fixed',
           top: 0,
           left: 0,
-          width: '100vw',
-          height: '100vh',
           touchAction: 'none',
         }}
       />
