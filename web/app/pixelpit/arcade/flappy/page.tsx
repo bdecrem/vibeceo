@@ -225,8 +225,8 @@ export default function FlappyGame() {
     screenFlash: 0,      // Flash intensity (0-1)
     gravity: 0.4,
     jumpForce: -9,
-    pipeGap: 180,        // Dither spec: easier start
-    minGap: 120,         // Never harder than this
+    pipeGap: 220,        // Easier start
+    minGap: 160,         // Never harder than this
     gapShrinkRate: 2,    // Shrink by 2px every 5 pipes
     pipeWidth: 60,
     pipeSpeed: 2.5,
@@ -249,7 +249,7 @@ export default function FlappyGame() {
     game.score = 0;
     game.pipesPassed = 0;
     game.screenFlash = 0;
-    game.pipeGap = 180;      // Reset difficulty
+    game.pipeGap = 220;      // Reset difficulty
     game.pipeSpeed = 2.5;
     game.running = true;
     game.groundY = canvas.height - 50;
