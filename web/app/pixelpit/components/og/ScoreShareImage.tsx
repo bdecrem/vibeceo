@@ -924,6 +924,7 @@ export function SproutRunDecorations() {
 /**
  * FLIP-specific decorations: tunnel walls, spikes, player.
  * INDIE BITE aesthetic with cyan glow.
+ * Note: Using simple rectangles instead of triangles (Satori border-triangle support is limited)
  */
 export function FlipDecorations() {
   return (
@@ -959,17 +960,15 @@ export function FlipDecorations() {
         }}
       />
 
-      {/* Ceiling spikes */}
+      {/* Ceiling spikes (simplified as rectangles) */}
       <div
         style={{
           position: 'absolute',
           top: 103,
           left: 150,
-          width: 0,
-          height: 0,
-          borderLeft: '20px solid transparent',
-          borderRight: '20px solid transparent',
-          borderTop: '40px solid #ef4444',
+          width: 8,
+          height: 40,
+          background: '#ef4444',
         }}
       />
       <div
@@ -977,11 +976,9 @@ export function FlipDecorations() {
           position: 'absolute',
           top: 103,
           left: 450,
-          width: 0,
-          height: 0,
-          borderLeft: '25px solid transparent',
-          borderRight: '25px solid transparent',
-          borderTop: '50px solid #ef4444',
+          width: 10,
+          height: 50,
+          background: '#ef4444',
         }}
       />
       <div
@@ -989,25 +986,21 @@ export function FlipDecorations() {
           position: 'absolute',
           top: 103,
           right: 250,
-          width: 0,
-          height: 0,
-          borderLeft: '18px solid transparent',
-          borderRight: '18px solid transparent',
-          borderTop: '35px solid #ef4444',
+          width: 8,
+          height: 35,
+          background: '#ef4444',
         }}
       />
 
-      {/* Floor spikes */}
+      {/* Floor spikes (simplified as rectangles) */}
       <div
         style={{
           position: 'absolute',
           bottom: 103,
           left: 300,
-          width: 0,
-          height: 0,
-          borderLeft: '22px solid transparent',
-          borderRight: '22px solid transparent',
-          borderBottom: '45px solid #ef4444',
+          width: 8,
+          height: 45,
+          background: '#ef4444',
         }}
       />
       <div
@@ -1015,11 +1008,9 @@ export function FlipDecorations() {
           position: 'absolute',
           bottom: 103,
           right: 180,
-          width: 0,
-          height: 0,
-          borderLeft: '25px solid transparent',
-          borderRight: '25px solid transparent',
-          borderBottom: '50px solid #ef4444',
+          width: 10,
+          height: 50,
+          background: '#ef4444',
         }}
       />
 

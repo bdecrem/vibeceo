@@ -43,17 +43,15 @@ export default async function Image() {
           }}
         />
 
-        {/* Ceiling spikes */}
+        {/* Ceiling spikes (rectangles - Satori safe) */}
         <div
           style={{
             position: 'absolute',
             top: 124,
             left: 200,
-            width: 0,
-            height: 0,
-            borderLeft: '25px solid transparent',
-            borderRight: '25px solid transparent',
-            borderTop: '50px solid #ef4444',
+            width: 10,
+            height: 50,
+            background: '#ef4444',
           }}
         />
         <div
@@ -61,11 +59,9 @@ export default async function Image() {
             position: 'absolute',
             top: 124,
             left: 500,
-            width: 0,
-            height: 0,
-            borderLeft: '30px solid transparent',
-            borderRight: '30px solid transparent',
-            borderTop: '60px solid #ef4444',
+            width: 12,
+            height: 60,
+            background: '#ef4444',
           }}
         />
         <div
@@ -73,25 +69,21 @@ export default async function Image() {
             position: 'absolute',
             top: 124,
             right: 300,
-            width: 0,
-            height: 0,
-            borderLeft: '20px solid transparent',
-            borderRight: '20px solid transparent',
-            borderTop: '40px solid #ef4444',
+            width: 8,
+            height: 40,
+            background: '#ef4444',
           }}
         />
 
-        {/* Floor spikes */}
+        {/* Floor spikes (rectangles - Satori safe) */}
         <div
           style={{
             position: 'absolute',
             bottom: 124,
             left: 350,
-            width: 0,
-            height: 0,
-            borderLeft: '25px solid transparent',
-            borderRight: '25px solid transparent',
-            borderBottom: '50px solid #ef4444',
+            width: 10,
+            height: 50,
+            background: '#ef4444',
           }}
         />
         <div
@@ -99,11 +91,9 @@ export default async function Image() {
             position: 'absolute',
             bottom: 124,
             right: 200,
-            width: 0,
-            height: 0,
-            borderLeft: '30px solid transparent',
-            borderRight: '30px solid transparent',
-            borderBottom: '60px solid #ef4444',
+            width: 12,
+            height: 60,
+            background: '#ef4444',
           }}
         />
         <div
@@ -111,11 +101,9 @@ export default async function Image() {
             position: 'absolute',
             bottom: 124,
             left: 700,
-            width: 0,
-            height: 0,
-            borderLeft: '22px solid transparent',
-            borderRight: '22px solid transparent',
-            borderBottom: '45px solid #ef4444',
+            width: 9,
+            height: 45,
+            background: '#ef4444',
           }}
         />
 
