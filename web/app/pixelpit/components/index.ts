@@ -54,6 +54,7 @@ export {
   BeamDecorations,
   CatTowerDecorations,
   EmojiDecorations,
+  FlappyDecorations,
   RainDecorations,
   SingularityDecorations,
   SproutRunDecorations,

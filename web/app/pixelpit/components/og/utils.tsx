@@ -145,4 +145,11 @@ export const GAME_COLORS = {
     accent: '#facc15',           // gold (right lane)
     branding: '#f8fafc',         // white text
   },
+  flappy: {
+    background: '#71c5cf',       // sky blue
+    primary: '#f7dc6f',          // bird yellow
+    secondary: '#73bf2e',        // pipe green
+    accent: '#ffffff',           // white text
+    branding: '#ffffff',         // white branding
+  },
 };

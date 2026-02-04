@@ -922,6 +922,196 @@ export function SproutRunDecorations() {
 }
 
 /**
+ * FLAPPY-specific decorations: pipes, clouds, bird silhouette.
+ * Classic sky blue with green pipes.
+ */
+export function FlappyDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Clouds */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 50,
+          left: 80,
+          width: 140,
+          height: 50,
+          background: '#ffffff60',
+          borderRadius: 25,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 40,
+          left: 110,
+          width: 80,
+          height: 60,
+          background: '#ffffff60',
+          borderRadius: 30,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 70,
+          right: 120,
+          width: 120,
+          height: 40,
+          background: '#ffffff60',
+          borderRadius: 20,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 60,
+          right: 140,
+          width: 70,
+          height: 55,
+          background: '#ffffff60',
+          borderRadius: 28,
+        }}
+      />
+
+      {/* Left pipe - top */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 120,
+          width: 50,
+          height: 160,
+          background: '#73bf2e',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 140,
+          left: 115,
+          width: 60,
+          height: 22,
+          background: '#5aa020',
+          borderRadius: 3,
+        }}
+      />
+      {/* Left pipe - bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 60,
+          left: 120,
+          width: 50,
+          height: 150,
+          background: '#73bf2e',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 188,
+          left: 115,
+          width: 60,
+          height: 22,
+          background: '#5aa020',
+          borderRadius: 3,
+        }}
+      />
+
+      {/* Right pipe - top */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 120,
+          width: 50,
+          height: 120,
+          background: '#73bf2e',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 100,
+          right: 115,
+          width: 60,
+          height: 22,
+          background: '#5aa020',
+          borderRadius: 3,
+        }}
+      />
+      {/* Right pipe - bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 60,
+          right: 120,
+          width: 50,
+          height: 190,
+          background: '#73bf2e',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 228,
+          right: 115,
+          width: 60,
+          height: 22,
+          background: '#5aa020',
+          borderRadius: 3,
+        }}
+      />
+
+      {/* Ground */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 60,
+          background: '#ded895',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 52,
+          left: 0,
+          right: 0,
+          height: 8,
+          background: '#c9b77c',
+        }}
+      />
+
+      {/* Bird silhouette */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 180,
+          left: 280,
+          width: 50,
+          height: 50,
+          background: '#f7dc6f80',
+          borderRadius: 25,
+        }}
+      />
+    </div>
+  );
+}
+
+/**
  * TAP BEATS-specific decorations: falling notes, lane lines, neon arcade.
  * DDR-inspired aesthetic with cyan/pink/gold lanes.
  */
