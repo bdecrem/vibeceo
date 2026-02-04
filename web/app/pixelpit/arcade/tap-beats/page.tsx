@@ -312,6 +312,7 @@ export default function TapBeatsGame() {
   const [paused, setPaused] = useState(false);
   const [unlockedPayoff, setUnlockedPayoff] = useState(false);
   const [payoffFromGame, setPayoffFromGame] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   // Game stats for display
   const [finalStats, setFinalStats] = useState({ perfects: 0, goods: 0, misses: 0, maxCombo: 0, grade: 'F' });
@@ -323,13 +324,15 @@ export default function TapBeatsGame() {
     ? `${window.location.origin}/pixelpit/arcade/tap-beats`
     : 'https://pixelpit.gg/pixelpit/arcade/tap-beats';
 
-  // Check for unlocked content on mount
+  // Check for unlocked content and device type on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const unlocked = localStorage.getItem('tap-beats-song2-unlocked') === 'true';
       setUnlockedSong2(unlocked);
       const payoffUnlocked = localStorage.getItem('tap-beats-payoff-unlocked') === 'true';
       setUnlockedPayoff(payoffUnlocked);
+      // Check if desktop (no touch support)
+      setIsDesktop(!('ontouchstart' in window));
     }
   }, []);
 
@@ -1937,7 +1940,7 @@ export default function TapBeatsGame() {
             </button>
           </div>
 
-          {typeof window !== 'undefined' && !('ontouchstart' in window) && (
+          {isDesktop && (
             <div style={{ marginTop: 40, color: THEME.muted, fontSize: 14, textAlign: 'center' }}>
               Use A/S/D keys
             </div>
