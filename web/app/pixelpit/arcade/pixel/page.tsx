@@ -1,6 +1,15 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import Script from 'next/script';
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  usePixelpitSocial,
+  type ScoreFlowColors,
+  type LeaderboardColors,
+} from '@/app/pixelpit/components';
 
 // INDIE BITE palette
 const THEME = {
@@ -17,6 +26,26 @@ const THEME = {
 };
 
 const GAME_ID = 'pixel';
+
+// Social colors
+const SCORE_FLOW_COLORS: ScoreFlowColors = {
+  bg: THEME.bg,
+  surface: '#18181b',
+  primary: THEME.fill,
+  secondary: THEME.success,
+  text: THEME.text,
+  muted: THEME.hint,
+  error: '#ef4444',
+};
+
+const LEADERBOARD_COLORS: LeaderboardColors = {
+  bg: THEME.bg,
+  surface: '#18181b',
+  primary: THEME.fill,
+  secondary: THEME.success,
+  text: THEME.text,
+  muted: THEME.hint,
+};
 
 // Puzzles: 0 = empty, 1 = filled in solution
 const PUZZLES = [
@@ -65,6 +94,28 @@ const PUZZLES = [
       [0, 1, 1, 1, 0],
     ],
   },
+  {
+    name: 'Cross',
+    size: 5,
+    solution: [
+      [0, 0, 1, 0, 0],
+      [0, 0, 1, 0, 0],
+      [1, 1, 1, 1, 1],
+      [0, 0, 1, 0, 0],
+      [0, 0, 1, 0, 0],
+    ],
+  },
+  {
+    name: 'Diamond',
+    size: 5,
+    solution: [
+      [0, 0, 1, 0, 0],
+      [0, 1, 1, 1, 0],
+      [1, 1, 1, 1, 1],
+      [0, 1, 1, 1, 0],
+      [0, 0, 1, 0, 0],
+    ],
+  },
   // 7x7 Level 2
   {
     name: 'Mushroom',
@@ -90,28 +141,6 @@ const PUZZLES = [
       [0, 1, 0, 1, 0, 1, 0],
       [0, 0, 1, 1, 1, 0, 0],
       [0, 0, 1, 0, 1, 0, 0],
-    ],
-  },
-  {
-    name: 'Cross',
-    size: 5,
-    solution: [
-      [0, 0, 1, 0, 0],
-      [0, 0, 1, 0, 0],
-      [1, 1, 1, 1, 1],
-      [0, 0, 1, 0, 0],
-      [0, 0, 1, 0, 0],
-    ],
-  },
-  {
-    name: 'Diamond',
-    size: 5,
-    solution: [
-      [0, 0, 1, 0, 0],
-      [0, 1, 1, 1, 0],
-      [1, 1, 1, 1, 1],
-      [0, 1, 1, 1, 0],
-      [0, 0, 1, 0, 0],
     ],
   },
   {
@@ -289,7 +318,7 @@ let masterGain: GainNode | null = null;
 
 function initAudio() {
   if (audioCtx) return;
-  audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
   masterGain = audioCtx.createGain();
   masterGain.gain.value = 0.3;
   masterGain.connect(audioCtx.destination);
@@ -363,9 +392,17 @@ export default function PixelGame() {
   const [solved, setSolved] = useState(false);
   const [completedRows, setCompletedRows] = useState<boolean[]>([]);
   const [completedCols, setCompletedCols] = useState<boolean[]>([]);
+  
+  // Social integration state
+  const [socialLoaded, setSocialLoaded] = useState(false);
+  const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+  usePixelpitSocial(socialLoaded);
 
   const puzzle = PUZZLES[puzzleIndex];
   const hints = getHints(puzzle.solution);
+  const totalPuzzles = PUZZLES.length;
 
   // Initialize grid
   useEffect(() => {
@@ -451,97 +488,89 @@ export default function PixelGame() {
 
   const nextPuzzle = useCallback(() => {
     setPuzzleIndex((prev) => (prev + 1) % PUZZLES.length);
+    setSubmittedEntryId(null);
   }, []);
 
-  const CELL_SIZE = Math.min(50, (Math.min(window?.innerWidth || 400, window?.innerHeight || 600) - 200) / puzzle.size);
-  const HINT_SIZE = CELL_SIZE * 0.6;
+  // Calculate cell size based on viewport
+  const [cellSize, setCellSize] = useState(50);
+  useEffect(() => {
+    const updateSize = () => {
+      const maxSize = Math.min(
+        (window.innerWidth - 200) / puzzle.size,
+        (window.innerHeight - 350) / puzzle.size,
+        50
+      );
+      setCellSize(Math.max(20, maxSize));
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [puzzle.size]);
+
+  const HINT_SIZE = cellSize * 0.6;
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: THEME.bg,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 20,
-      fontFamily: 'ui-monospace, monospace',
-    }}>
-      {/* Title */}
-      <h1 style={{
-        color: THEME.fill,
-        fontSize: 36,
-        fontWeight: 700,
-        marginBottom: 10,
-        textShadow: `0 0 20px ${THEME.fill}`,
-      }}>
-        PIXEL
-      </h1>
-      
-      <p style={{
-        color: THEME.hint,
-        fontSize: 14,
-        marginBottom: 20,
-      }}>
-        {puzzle.name} • {puzzle.size}x{puzzle.size}
-      </p>
+    <>
+      {/* Load social.js */}
+      <Script
+        src="/pixelpit/social.js"
+        strategy="afterInteractive"
+        onLoad={() => setSocialLoaded(true)}
+      />
 
-      {/* Grid with hints */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {/* Column hints */}
-        <div style={{ display: 'flex', marginLeft: HINT_SIZE * 3 }}>
-          {hints.cols.map((colHints, c) => (
-            <div
-              key={c}
-              style={{
-                width: CELL_SIZE,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                paddingBottom: 4,
-                minHeight: HINT_SIZE * 3,
-              }}
-            >
-              {colHints.map((h, i) => (
-                <span
-                  key={i}
-                  style={{
-                    color: completedCols[c] ? THEME.hintComplete : THEME.hint,
-                    fontSize: 12,
-                    lineHeight: 1.2,
-                    transition: 'color 0.2s',
-                  }}
-                >
-                  {h}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
+      <div style={{
+        minHeight: '100vh',
+        background: THEME.bg,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+        fontFamily: 'ui-monospace, monospace',
+      }}>
+        {/* Title */}
+        <h1 style={{
+          color: THEME.fill,
+          fontSize: 36,
+          fontWeight: 700,
+          marginBottom: 10,
+          textShadow: `0 0 20px ${THEME.fill}`,
+        }}>
+          PIXEL
+        </h1>
+        
+        <p style={{
+          color: THEME.hint,
+          fontSize: 14,
+          marginBottom: 20,
+        }}>
+          {puzzle.name} • {puzzle.size}x{puzzle.size} • {puzzleIndex + 1}/{totalPuzzles}
+        </p>
 
-        <div style={{ display: 'flex' }}>
-          {/* Row hints */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {hints.rows.map((rowHints, r) => (
+        {/* Grid with hints */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {/* Column hints */}
+          <div style={{ display: 'flex', marginLeft: HINT_SIZE * 3 }}>
+            {hints.cols.map((colHints, c) => (
               <div
-                key={r}
+                key={c}
                 style={{
-                  height: CELL_SIZE,
+                  width: cellSize,
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'flex-end',
-                  paddingRight: 8,
-                  minWidth: HINT_SIZE * 3,
-                  gap: 4,
+                  paddingBottom: 4,
+                  minHeight: HINT_SIZE * 3,
                 }}
               >
-                {rowHints.map((h, i) => (
+                {colHints.map((h, i) => (
                   <span
                     key={i}
                     style={{
-                      color: completedRows[r] ? THEME.hintComplete : THEME.hint,
+                      color: completedCols[c] ? THEME.hintComplete : THEME.hint,
                       fontSize: 12,
+                      lineHeight: 1.2,
                       transition: 'color 0.2s',
                     }}
                   >
@@ -552,91 +581,176 @@ export default function PixelGame() {
             ))}
           </div>
 
-          {/* Grid */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: `repeat(${puzzle.size}, ${CELL_SIZE}px)`,
-              gap: 2,
-              background: THEME.gridLine,
-              padding: 2,
-              borderRadius: 4,
-            }}
-          >
-            {grid.map((row, r) =>
-              row.map((cell, c) => (
-                <button
-                  key={`${r}-${c}`}
-                  onClick={() => handleCellClick(r, c)}
+          <div style={{ display: 'flex' }}>
+            {/* Row hints */}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {hints.rows.map((rowHints, r) => (
+                <div
+                  key={r}
                   style={{
-                    width: CELL_SIZE,
-                    height: CELL_SIZE,
-                    background: cell === 1 ? THEME.fill : THEME.grid,
-                    border: 'none',
-                    cursor: solved ? 'default' : 'pointer',
+                    height: cellSize,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.1s',
-                    boxShadow: cell === 1 ? `0 0 10px ${THEME.fill}` : 'none',
+                    justifyContent: 'flex-end',
+                    paddingRight: 8,
+                    minWidth: HINT_SIZE * 3,
+                    gap: 4,
                   }}
                 >
-                  {cell === 2 && (
-                    <span style={{ color: THEME.mark, fontSize: CELL_SIZE * 0.5, fontWeight: 700 }}>
-                      ✕
+                  {rowHints.map((h, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        color: completedRows[r] ? THEME.hintComplete : THEME.hint,
+                        fontSize: 12,
+                        transition: 'color 0.2s',
+                      }}
+                    >
+                      {h}
                     </span>
-                  )}
-                </button>
-              ))
-            )}
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Grid */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${puzzle.size}, ${cellSize}px)`,
+                gap: 2,
+                background: THEME.gridLine,
+                padding: 2,
+                borderRadius: 4,
+              }}
+            >
+              {grid.map((row, r) =>
+                row.map((cell, c) => (
+                  <button
+                    key={`${r}-${c}`}
+                    onClick={() => handleCellClick(r, c)}
+                    style={{
+                      width: cellSize,
+                      height: cellSize,
+                      background: cell === 1 ? THEME.fill : THEME.grid,
+                      border: 'none',
+                      cursor: solved ? 'default' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.1s',
+                      boxShadow: cell === 1 ? `0 0 10px ${THEME.fill}` : 'none',
+                    }}
+                  >
+                    {cell === 2 && (
+                      <span style={{ color: THEME.mark, fontSize: cellSize * 0.5, fontWeight: 700 }}>
+                        ✕
+                      </span>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Solved state */}
-      {solved && (
-        <div style={{
-          marginTop: 30,
-          textAlign: 'center',
-        }}>
-          <p style={{
-            color: THEME.success,
-            fontSize: 24,
-            fontWeight: 700,
-            marginBottom: 20,
-            textShadow: `0 0 20px ${THEME.success}`,
+        {/* Solved state */}
+        {solved && (
+          <div style={{
+            marginTop: 30,
+            textAlign: 'center',
+            width: '100%',
+            maxWidth: 400,
           }}>
-            ✓ {puzzle.name} Complete!
-          </p>
-          <button
-            onClick={nextPuzzle}
-            style={{
-              background: THEME.fill,
-              color: THEME.bg,
-              border: 'none',
-              padding: '12px 30px',
-              fontSize: 16,
-              fontWeight: 600,
-              cursor: 'pointer',
-              borderRadius: 4,
-            }}
-          >
-            Next Puzzle →
-          </button>
-        </div>
-      )}
+            <p style={{
+              color: THEME.success,
+              fontSize: 24,
+              fontWeight: 700,
+              marginBottom: 20,
+              textShadow: `0 0 20px ${THEME.success}`,
+            }}>
+              ✓ {puzzle.name} Complete!
+            </p>
 
-      {/* Instructions */}
-      {!solved && (
-        <p style={{
-          color: THEME.hint,
-          fontSize: 12,
-          marginTop: 30,
-          textAlign: 'center',
-        }}>
-          tap to fill • tap again to mark X • tap again to clear
-        </p>
-      )}
-    </div>
+            {/* ScoreFlow */}
+            <ScoreFlow
+              score={puzzleIndex + 1}
+              gameId={GAME_ID}
+              colors={SCORE_FLOW_COLORS}
+              xpDivisor={1}
+              onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
+            />
+
+            {/* Share button */}
+            <div style={{ marginTop: 20 }}>
+              <ShareButtonContainer
+                id="share-btn-pixel"
+                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/pixel/share/${puzzleIndex + 1}`}
+                text={`I solved ${puzzle.name} on PIXEL! ${puzzleIndex + 1}/${totalPuzzles} puzzles complete. Can you beat me?`}
+                style="minimal"
+                socialLoaded={socialLoaded}
+              />
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 20 }}>
+              <button
+                onClick={() => setShowLeaderboard(!showLeaderboard)}
+                style={{
+                  background: 'transparent',
+                  color: THEME.hint,
+                  border: `1px solid ${THEME.hint}`,
+                  padding: '12px 20px',
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  borderRadius: 4,
+                }}
+              >
+                {showLeaderboard ? 'Hide' : 'Leaderboard'}
+              </button>
+              <button
+                onClick={nextPuzzle}
+                style={{
+                  background: THEME.fill,
+                  color: THEME.bg,
+                  border: 'none',
+                  padding: '12px 30px',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  borderRadius: 4,
+                }}
+              >
+                Next Puzzle →
+              </button>
+            </div>
+
+            {/* Leaderboard */}
+            {showLeaderboard && (
+              <div style={{ marginTop: 20 }}>
+                <Leaderboard
+                  gameId={GAME_ID}
+                  limit={5}
+                  entryId={submittedEntryId ?? undefined}
+                  colors={LEADERBOARD_COLORS}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Instructions */}
+        {!solved && (
+          <p style={{
+            color: THEME.hint,
+            fontSize: 12,
+            marginTop: 30,
+            textAlign: 'center',
+          }}>
+            tap to fill • tap again to mark X • tap again to clear
+          </p>
+        )}
+      </div>
+    </>
   );
 }
