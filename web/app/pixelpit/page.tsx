@@ -18,12 +18,12 @@ const labMessages = [
 ];
 
 const games = [
+  { icon: '🥁', name: 'Tap Beats', href: '/pixelpit/arcade/tap-beats', playable: true, date: 'Tue 2/3' },
   { icon: '🌱', name: 'Sprout Run', href: '/pixelpit/arcade/sprout-run', playable: true, date: 'Mon 2/2' },
   { icon: '🐱', name: 'Cat Tower', href: '/pixelpit/arcade/cattower', playable: true, date: 'Fri 1/30' },
   { icon: '💥', name: 'Emoji Blaster', href: '/pixelpit/arcade/emoji', playable: true, date: 'Thu 1/29' },
   { icon: '🌀', name: 'Singularity', href: '/pixelpit/arcade/singularity', playable: true, date: 'Wed 1/28' },
   { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true, date: 'Tue 1/27' },
-  { icon: '✨', name: 'Soon', href: null, playable: false },
 ];
 
 const castBlurbs: Record<string, { bio: string; motto?: string }> = {
