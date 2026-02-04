@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MYCELIUM — Amber</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="MYCELIUM">
+  <meta property="og:description" content="Touch the network. Watch information flow.">
+  <meta property="og:image" content="https://kochi.to/amber/mycelium-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/mycelium.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MYCELIUM">
+  <meta name="twitter:description" content="Touch the network. Watch information flow.">
+  <meta name="twitter:image" content="https://kochi.to/amber/mycelium-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      touch-action: none;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
+    }
+    
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #D4A574;
+      font-size: 14px;
+      text-align: center;
+      opacity: 0.7;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    @media (max-width: 600px) {
+      #info {
+        font-size: 12px;
+        bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="info">TOUCH TO SEND SIGNALS</div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Resize canvas
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Color palette - full spectrum
+    const COLORS = [
+      '#FFD700', // gold
+      '#f59e0b', // amber
+      '#2D9596', // teal
+      '#14b8a6', // bright teal
+      '#ec4899', // hot pink
+      '#f472b6', // pink
+      '#3b82f6', // electric blue
+      '#60a5fa', // bright blue
+      '#8b5cf6', // purple
+      '#84cc16', // lime
+      '#fb923c', // coral
+    ];
+    
+    // Nodes
+    const nodes = [];
+    const NODE_COUNT = 60;
+    
+    // Connections
+    const connections = [];
+    
+    // Signals - packets of energy flowing through the network
+    const signals = [];
+    
+    class Node {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 3 + Math.random() * 5;
+        this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        this.pulse = Math.random() * Math.PI * 2;
+        this.pulseSpeed = 0.02 + Math.random() * 0.03;
+        this.glow = 0;
+      }
+      
+      update() {
+        this.pulse += this.pulseSpeed;
+        this.glow *= 0.95; // Decay glow
+      }
+      
+      draw() {
+        const pulseScale = 1 + Math.sin(this.pulse) * 0.2;
+        const r = this.radius * pulseScale;
+        
+        // Glow
+        if (this.glow > 0) {
+          ctx.shadowBlur = 30;
+          ctx.shadowColor = this.color;
+        } else {
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = this.color;
+        }
+        
+        // Outer glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 3);
+        gradient.addColorStop(0, this.color + 'CC');
+        gradient.addColorStop(0.5, this.color + '44');
+        gradient.addColorStop(1, this.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, r * 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Core
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+      }
+      
+      distanceTo(other) {
+        const dx = this.x - other.x;
+        const dy = this.y - other.y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+    }
+    
+    class Connection {
+      constructor(nodeA, nodeB) {
+        this.nodeA = nodeA;
+        this.nodeB = nodeB;
+        this.alpha = 0.15;
+      }
+      
+      draw() {
+        const gradient = ctx.createLinearGradient(
+          this.nodeA.x, this.nodeA.y,
+          this.nodeB.x, this.nodeB.y
+        );
+        gradient.addColorStop(0, this.nodeA.color + Math.floor(this.alpha * 255).toString(16).padStart(2, '0'));
+        gradient.addColorStop(1, this.nodeB.color + Math.floor(this.alpha * 255).toString(16).padStart(2, '0'));
+        
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(this.nodeA.x, this.nodeA.y);
+        ctx.lineTo(this.nodeB.x, this.nodeB.y);
+        ctx.stroke();
+      }
+    }
+    
+    class Signal {
+      constructor(startNode, path) {
+        this.path = path; // Array of nodes
+        this.currentIndex = 0;
+        this.progress = 0;
+        this.speed = 0.03 + Math.random() * 0.02;
+        this.color = startNode.color;
+        this.radius = 4;
+        this.alive = true;
+      }
+      
+      update() {
+        this.progress += this.speed;
+        
+        if (this.progress >= 1) {
+          this.progress = 0;
+          this.currentIndex++;
+          
+          // Activate next node
+          if (this.currentIndex < this.path.length) {
+            this.path[this.currentIndex].glow = 1;
+          }
+          
+          // End of path
+          if (this.currentIndex >= this.path.length - 1) {
+            this.alive = false;
+          }
+        }
+      }
+      
+      draw() {
+        if (this.currentIndex >= this.path.length - 1) return;
+        
+        const nodeA = this.path[this.currentIndex];
+        const nodeB = this.path[this.currentIndex + 1];
+        
+        const x = nodeA.x + (nodeB.x - nodeA.x) * this.progress;
+        const y = nodeA.y + (nodeB.y - nodeA.y) * this.progress;
+        
+        // Glow
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+        
+        // Core
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(x, y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Bright center
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, y, this.radius * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+      }
+    }
+    
+    // Initialize network
+    function initNetwork() {
+      // Create nodes
+      const padding = 100;
+      for (let i = 0; i < NODE_COUNT; i++) {
+        const x = padding + Math.random() * (canvas.width - padding * 2);
+        const y = padding + Math.random() * (canvas.height - padding * 2);
+        nodes.push(new Node(x, y));
+      }
+      
+      // Create connections (only between nearby nodes)
+      const MAX_DISTANCE = 150;
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dist = nodes[i].distanceTo(nodes[j]);
+          if (dist < MAX_DISTANCE) {
+            connections.push(new Connection(nodes[i], nodes[j]));
+          }
+        }
+      }
+    }
+    
+    // Find path between two nodes using BFS
+    function findPath(startNode, endNode) {
+      const queue = [[startNode]];
+      const visited = new Set([startNode]);
+      
+      while (queue.length > 0) {
+        const path = queue.shift();
+        const node = path[path.length - 1];
+        
+        if (node === endNode) {
+          return path;
+        }
+        
+        // Find neighbors
+        const neighbors = connections
+          .filter(c => c.nodeA === node || c.nodeB === node)
+          .map(c => c.nodeA === node ? c.nodeB : c.nodeA)
+          .filter(n => !visited.has(n));
+        
+        for (const neighbor of neighbors) {
+          visited.add(neighbor);
+          queue.push([...path, neighbor]);
+        }
+      }
+      
+      return null;
+    }
+    
+    // Send signal from point
+    function sendSignal(x, y) {
+      // Find nearest node
+      let nearest = null;
+      let minDist = Infinity;
+      
+      for (const node of nodes) {
+        const dist = Math.sqrt((node.x - x) ** 2 + (node.y - y) ** 2);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = node;
+        }
+      }
+      
+      if (!nearest) return;
+      
+      // Activate start node
+      nearest.glow = 1;
+      
+      // Send 3-5 signals to random destinations
+      const signalCount = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < signalCount; i++) {
+        const target = nodes[Math.floor(Math.random() * nodes.length)];
+        if (target === nearest) continue;
+        
+        const path = findPath(nearest, target);
+        if (path && path.length > 2) {
+          signals.push(new Signal(nearest, path));
+        }
+      }
+    }
+    
+    // Input handling
+    function handleInput(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+      sendSignal(x * (canvas.width / rect.width), y * (canvas.height / rect.height));
+    }
+    
+    canvas.addEventListener('mousedown', handleInput);
+    canvas.addEventListener('touchstart', handleInput);
+    
+    // Animation loop
+    function animate() {
+      // Fade effect
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw connections
+      for (const conn of connections) {
+        conn.draw();
+      }
+      
+      // Update and draw nodes
+      for (const node of nodes) {
+        node.update();
+        node.draw();
+      }
+      
+      // Update and draw signals
+      for (let i = signals.length - 1; i >= 0; i--) {
+        signals[i].update();
+        if (!signals[i].alive) {
+          signals.splice(i, 1);
+        } else {
+          signals[i].draw();
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Start
+    initNetwork();
+    animate();
+    
+    // Auto-demo on load
+    setTimeout(() => {
+      sendSignal(canvas.width / 2, canvas.height / 2);
+    }, 500);
+  </script>
+</body>
+</html>
