@@ -2172,13 +2172,6 @@ export default function TapBeatsGame() {
               border: 'none',
             }}
             allow="autoplay"
-            onLoad={(e) => {
-              // Send message to iframe to start audio
-              const iframe = e.target as HTMLIFrameElement;
-              if (iframe.contentWindow) {
-                iframe.contentWindow.postMessage('startAudio', '*');
-              }
-            }}
           />
 
           {/* Exit button overlay */}
@@ -2245,74 +2238,7 @@ export default function TapBeatsGame() {
             </div>
           )}
 
-          {/* Start modal - covers iframe until user taps */}
-          <div
-            id="start-modal"
-            onClick={(e) => {
-              // Hide the modal
-              (e.currentTarget as HTMLElement).style.display = 'none';
-              // Trigger audio in iframe
-              const iframe = document.querySelector('iframe');
-              if (iframe?.contentWindow) {
-                iframe.contentWindow.postMessage('startAudio', '*');
-              }
-            }}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'rgba(10, 0, 32, 0.95)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1002,
-              cursor: 'pointer',
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-            }}
-          >
-            {/* Play button */}
-            <div style={{
-              width: 120,
-              height: 120,
-              borderRadius: 60,
-              background: 'linear-gradient(135deg, #ff00ff, #00ffff)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 60px rgba(255, 0, 255, 0.5), 0 0 120px rgba(0, 255, 255, 0.3)',
-              animation: 'pulse 1.5s ease-in-out infinite',
-            }}>
-              {/* Triangle play icon */}
-              <div style={{
-                width: 0,
-                height: 0,
-                borderTop: '25px solid transparent',
-                borderBottom: '25px solid transparent',
-                borderLeft: '40px solid white',
-                marginLeft: 8,
-              }} />
-            </div>
-
-            {/* Text */}
-            <div style={{
-              marginTop: 32,
-              fontSize: 24,
-              fontWeight: 700,
-              letterSpacing: 8,
-              color: '#fff',
-              textShadow: '0 0 20px #ff00ff',
-            }}>
-              DDR RAVE
-            </div>
-            <div style={{
-              marginTop: 12,
-              fontSize: 14,
-              letterSpacing: 4,
-              color: 'rgba(255, 255, 255, 0.6)',
-            }}>
-              TAP TO START
-            </div>
-          </div>
+          {/* The iframe (ddr-rave.html) has its own start modal that handles audio */}
         </div>
       )}
     </>

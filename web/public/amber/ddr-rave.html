@@ -92,9 +92,80 @@
       pointer-events: none;
       z-index: 50;
     }
+
+    #startModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 0, 32, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      cursor: pointer;
+    }
+
+    #startModal.hidden {
+      display: none;
+    }
+
+    #startModal h1 {
+      color: #ff00ff;
+      font-size: 48px;
+      letter-spacing: 8px;
+      text-shadow: 0 0 20px #ff00ff, 0 0 40px #ff00ff;
+      margin-bottom: 40px;
+    }
+
+    #playButton {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff00ff, #00ffff);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 40px rgba(255, 0, 255, 0.6), 0 0 80px rgba(0, 255, 255, 0.4);
+      animation: playPulse 1.5s ease-in-out infinite;
+    }
+
+    #playButton::after {
+      content: '';
+      width: 0;
+      height: 0;
+      border-left: 40px solid white;
+      border-top: 25px solid transparent;
+      border-bottom: 25px solid transparent;
+      margin-left: 8px;
+    }
+
+    @keyframes playPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(255, 0, 255, 0.6), 0 0 80px rgba(0, 255, 255, 0.4); }
+      50% { transform: scale(1.1); box-shadow: 0 0 60px rgba(255, 0, 255, 0.8), 0 0 100px rgba(0, 255, 255, 0.6); }
+    }
+
+    #startModal p {
+      color: #00ffff;
+      font-size: 18px;
+      margin-top: 30px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
+  <!-- Start Modal - must tap to enable audio -->
+  <div id="startModal">
+    <h1>DDR RAVE</h1>
+    <button id="playButton"></button>
+    <p>🔊 SOUND ON</p>
+  </div>
+
   <div id="title">DDR RAVE</div>
   <div id="bpm">170 BPM</div>
   <div id="count">0</div>
@@ -108,6 +179,18 @@
     const countEl = document.getElementById('count');
     const flashEl = document.getElementById('flash');
     const bpmEl = document.getElementById('bpm');
+    const startModal = document.getElementById('startModal');
+
+    // Handle start modal click - this is the user gesture that enables audio
+    startModal.addEventListener('click', () => {
+      startModal.classList.add('hidden');
+      initAudio();
+    });
+    startModal.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      startModal.classList.add('hidden');
+      initAudio();
+    });
 
     let width, height;
     let characters = [];
@@ -759,18 +842,7 @@
       }
     }, 2000);
 
-    // Auto-start audio when embedded in iframe (for tap-beats payoff)
-    if (window.self !== window.top) {
-      // We're in an iframe - listen for postMessage from parent to start audio
-      window.addEventListener('message', (event) => {
-        if (event.data === 'startAudio' && !audioStarted) {
-          initAudio();
-        }
-      });
-      // Also listen for clicks/touches as fallback
-      document.addEventListener('click', () => initAudio(), { once: true });
-      document.addEventListener('touchstart', () => initAudio(), { once: true });
-    }
+    // The start modal handles audio initialization with a proper user gesture
   </script>
 </body>
 </html>
