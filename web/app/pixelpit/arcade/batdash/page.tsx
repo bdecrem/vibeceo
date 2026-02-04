@@ -346,7 +346,7 @@ export default function FlappyGame() {
   
   const spawnDeathParticles = useCallback(() => {
     const game = gameRef.current;
-    const colors = [THEME.bird, '#fff', THEME.beak, '#f5cd5e'];
+    const colors = [THEME.bat, '#fff', THEME.batWing, THEME.batEye];
     for (let i = 0; i < 20; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 2 + Math.random() * 4;
@@ -929,7 +929,7 @@ export default function FlappyGame() {
             letterSpacing: 3,
           }}>
             <span style={{ color: COLORS.gold }}>pixel</span>
-            <span style={{ color: COLORS.green }}>pit</span>
+            <span style={{ color: COLORS.teal }}>pit</span>
             <span style={{ color: COLORS.cream, opacity: 0.6 }}> arcade</span>
           </div>
         </div>
@@ -1013,7 +1013,7 @@ export default function FlappyGame() {
               className="btn-primary"
               onClick={startGame}
               style={{
-                background: COLORS.green,
+                background: COLORS.teal,
                 color: COLORS.bg,
                 border: 'none',
                 borderRadius: 8,
