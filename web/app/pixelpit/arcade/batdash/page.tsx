@@ -409,21 +409,6 @@ export default function FlappyGame() {
   const [progression, setProgression] = useState<ProgressionResult | null>(null);
 
   const { user } = usePixelpitSocial(socialLoaded);
-  
-  // Music toggle (handles iOS audio unlock)
-  const toggleMusic = useCallback(() => {
-    initAudio();  // Ensure audio context exists
-    if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-    if (musicEnabled) {
-      stopMusic();
-      setMusicEnabled(false);
-    } else {
-      startMusic();
-      setMusicEnabled(true);
-    }
-  }, [musicEnabled]);
 
   // Game state ref (sizes scaled for mobile)
   const getMobileScale = () => typeof window !== 'undefined' ? Math.min(window.innerWidth / 500, 1) : 1;
@@ -1290,30 +1275,6 @@ export default function FlappyGame() {
             {score}
           </div>
         </div>
-      )}
-
-      {/* Music toggle button */}
-      {(gameState === 'playing' || gameState === 'start') && (
-        <button
-          onClick={(e) => { e.stopPropagation(); toggleMusic(); }}
-          style={{
-            position: 'fixed',
-            top: 'max(20px, env(safe-area-inset-top, 20px))',
-            right: 20,
-            zIndex: 200,
-            background: musicEnabled ? COLORS.gold : 'rgba(0,0,0,0.5)',
-            color: musicEnabled ? COLORS.bg : '#fff',
-            border: 'none',
-            borderRadius: 8,
-            padding: '10px 14px',
-            fontSize: 20,
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-          }}
-          aria-label={musicEnabled ? 'Mute music' : 'Play music'}
-        >
-          {musicEnabled ? '🎵' : '🔇'}
-        </button>
       )}
 
       {/* Start screen */}
