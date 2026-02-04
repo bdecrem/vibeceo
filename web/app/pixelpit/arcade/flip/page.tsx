@@ -12,15 +12,22 @@ import {
   type ProgressionResult,
 } from '@/app/pixelpit/components';
 
-// INDIE BITE theme
+// INDIE BITE theme - NEON RUNNER edition
 const THEME = {
   bg: '#09090b',
   tunnel: '#27272a',
+  tunnelGlow: '#3f3f46',
   player: '#f8fafc',
   glow: '#22d3ee',
   spike: '#ef4444',
+  spikeInner: '#fca5a5',
   text: '#ffffff',
+  gridLine: '#18181b',
+  accent: '#a855f7', // purple accent
 };
+
+// Background grid for retro vibe
+let gridOffset = 0;
 
 const GAME_ID = 'flip';
 
@@ -515,10 +522,35 @@ export default function FlipGame() {
       // Background
       ctx.fillStyle = THEME.bg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Scrolling grid lines (retro 80s vibe)
+      gridOffset = (gridOffset + game.scrollSpeed * 0.5) % 50;
+      ctx.strokeStyle = THEME.gridLine;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
+      // Vertical grid lines
+      for (let x = -gridOffset; x < canvas.width + 50; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, game.tunnelTop);
+        ctx.lineTo(x, game.tunnelBottom);
+        ctx.stroke();
+      }
+      // Horizontal grid lines  
+      const tunnelHeight = game.tunnelBottom - game.tunnelTop;
+      for (let i = 0; i <= 4; i++) {
+        const y = game.tunnelTop + (tunnelHeight * i / 4);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
 
-      // Tunnel walls
-      ctx.strokeStyle = THEME.tunnel;
-      ctx.lineWidth = 2;
+      // Tunnel walls with glow effect
+      ctx.strokeStyle = THEME.tunnelGlow;
+      ctx.lineWidth = 4;
+      ctx.shadowColor = THEME.accent;
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       ctx.moveTo(0, game.tunnelTop);
       ctx.lineTo(canvas.width, game.tunnelTop);
@@ -527,10 +559,12 @@ export default function FlipGame() {
       ctx.moveTo(0, game.tunnelBottom);
       ctx.lineTo(canvas.width, game.tunnelBottom);
       ctx.stroke();
+      ctx.shadowBlur = 0;
 
-      // Spikes
-      ctx.fillStyle = THEME.spike;
+      // Spikes - crystal style with inner facets
       for (const spike of game.spikes) {
+        // Outer spike (red)
+        ctx.fillStyle = THEME.spike;
         ctx.beginPath();
         if (spike.top) {
           ctx.moveTo(spike.x - 15, game.tunnelTop);
@@ -542,6 +576,22 @@ export default function FlipGame() {
           ctx.lineTo(spike.x + 15, game.tunnelBottom);
         }
         ctx.fill();
+        
+        // Inner crystal facet (lighter)
+        ctx.fillStyle = THEME.spikeInner;
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        if (spike.top) {
+          ctx.moveTo(spike.x - 7, game.tunnelTop);
+          ctx.lineTo(spike.x, game.tunnelTop + spike.height * 0.7);
+          ctx.lineTo(spike.x + 3, game.tunnelTop);
+        } else {
+          ctx.moveTo(spike.x - 7, game.tunnelBottom);
+          ctx.lineTo(spike.x, game.tunnelBottom - spike.height * 0.7);
+          ctx.lineTo(spike.x + 3, game.tunnelBottom);
+        }
+        ctx.fill();
+        ctx.globalAlpha = 1;
       }
 
       // Trail
@@ -552,17 +602,49 @@ export default function FlipGame() {
       }
       ctx.globalAlpha = 1;
 
-      // Player
+      // Player - cute cube with face!
       ctx.save();
       ctx.translate(game.player.x, game.player.y);
       ctx.scale(game.player.scaleX, game.player.scaleY);
       
-      // Glow
+      // Outer glow
       ctx.shadowColor = THEME.glow;
-      ctx.shadowBlur = 15;
+      ctx.shadowBlur = 20;
+      
+      // Body (rounded square)
       ctx.fillStyle = THEME.player;
-      ctx.fillRect(-game.player.size / 2, -game.player.size / 2, game.player.size, game.player.size);
+      const s = game.player.size;
+      ctx.beginPath();
+      ctx.roundRect(-s/2, -s/2, s, s, 4);
+      ctx.fill();
       ctx.shadowBlur = 0;
+      
+      // Face! (changes based on gravity direction)
+      const eyeY = game.gravity > 0 ? -2 : 2; // Eyes look in fall direction
+      const mouthY = game.gravity > 0 ? 4 : -4;
+      
+      // Eyes (two dots)
+      ctx.fillStyle = THEME.bg;
+      ctx.beginPath();
+      ctx.arc(-4, eyeY, 2.5, 0, Math.PI * 2);
+      ctx.arc(4, eyeY, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Mouth (small line, scared expression when fast)
+      ctx.strokeStyle = THEME.bg;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      if (Math.abs(game.player.vy) > 5) {
+        // Scared O mouth when going fast
+        ctx.arc(0, mouthY, 3, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        // Normal smile
+        ctx.arc(0, mouthY, 3, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.stroke();
+      }
+      
       ctx.restore();
 
       // Particles
