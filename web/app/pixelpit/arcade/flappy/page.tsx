@@ -83,42 +83,48 @@ function initAudio() {
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
+function playMusicNote() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  
+  // Melody: C-E-G-E loop (every beat)
+  const melodyOsc = audioCtx.createOscillator();
+  const melodyGain = audioCtx.createGain();
+  melodyOsc.type = 'triangle';
+  melodyOsc.frequency.value = MELODY[musicBeat % 4];
+  melodyGain.gain.setValueAtTime(0.35, t);
+  melodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  melodyOsc.connect(melodyGain);
+  melodyGain.connect(masterGain);
+  melodyOsc.start(t);
+  melodyOsc.stop(t + 0.25);
+  
+  // Bass: C2 on beats 0 and 2 (1 and 3 in musical terms)
+  if (musicBeat % 2 === 0) {
+    const bassOsc = audioCtx.createOscillator();
+    const bassGain = audioCtx.createGain();
+    bassOsc.type = 'sine';
+    bassOsc.frequency.value = NOTES.C2;
+    bassGain.gain.setValueAtTime(0.5, t);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    bassOsc.connect(bassGain);
+    bassGain.connect(masterGain);
+    bassOsc.start(t);
+    bassOsc.stop(t + 0.35);
+  }
+  
+  musicBeat++;
+}
+
 function startMusic() {
   if (!audioCtx || musicInterval) return;
   musicBeat = 0;
   
-  musicInterval = setInterval(() => {
-    if (!audioCtx || !masterGain) return;
-    const t = audioCtx.currentTime;
-    
-    // Melody: C-E-G-E loop (every beat)
-    const melodyOsc = audioCtx.createOscillator();
-    const melodyGain = audioCtx.createGain();
-    melodyOsc.type = 'triangle';
-    melodyOsc.frequency.value = MELODY[musicBeat % 4];
-    melodyGain.gain.setValueAtTime(0.35, t);
-    melodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-    melodyOsc.connect(melodyGain);
-    melodyGain.connect(masterGain);
-    melodyOsc.start(t);
-    melodyOsc.stop(t + 0.25);
-    
-    // Bass: C2 on beats 0 and 2 (1 and 3 in musical terms)
-    if (musicBeat % 2 === 0) {
-      const bassOsc = audioCtx.createOscillator();
-      const bassGain = audioCtx.createGain();
-      bassOsc.type = 'sine';
-      bassOsc.frequency.value = NOTES.C2;
-      bassGain.gain.setValueAtTime(0.5, t);
-      bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-      bassOsc.connect(bassGain);
-      bassGain.connect(masterGain);
-      bassOsc.start(t);
-      bassOsc.stop(t + 0.35);
-    }
-    
-    musicBeat++;
-  }, BEAT_MS);
+  // Play first note immediately (iOS unlock requires immediate playback)
+  playMusicNote();
+  
+  // Then continue with interval
+  musicInterval = setInterval(playMusicNote, BEAT_MS);
 }
 
 function stopMusic() {
