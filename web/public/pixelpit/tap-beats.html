@@ -85,16 +85,16 @@
     
     // Play feedback sounds
     function playPerfect() {
-      playNote(880, 0.1, 'sine', 0.4);
-      playNote(1108, 0.15, 'sine', 0.3);
+      playNote(880, 0.1, 'sine', 0.2);
+      playNote(1108, 0.15, 'sine', 0.15);
     }
-    
+
     function playGood() {
-      playNote(660, 0.1, 'sine', 0.3);
+      playNote(660, 0.1, 'sine', 0.15);
     }
-    
+
     function playMiss() {
-      playNote(150, 0.2, 'sawtooth', 0.2);
+      playNote(150, 0.2, 'sawtooth', 0.1);
     }
     
     // ─── SONGS ───────────────────────────────────────────────────────
@@ -105,7 +105,7 @@
         artist: 'PixelPit',
         bpm: 150,
         duration: 56000,
-        difficulty: '★★☆',
+        difficulty: 'MEDIUM',
         locked: false,
         description: 'Part 1 - Learn the moves',
       },
@@ -115,9 +115,9 @@
         artist: 'PixelPit',
         bpm: 170,
         duration: 60000,
-        difficulty: '★★★',
+        difficulty: 'HARD',
         locked: true, // Unlock by beating Part 1 with grade C or better
-        description: 'Part 2 - Full rave chaos',
+        description: 'Part 2 - Faster tempo, 8th note runs',
       },
     ];
     
@@ -156,6 +156,23 @@
     let hitEffects = []; // { x, y, color, alpha, scale, text }
     let screenFlash = 0;
     let lanePulse = [0, 0, 0]; // Per-lane pulse intensity
+
+    // Streak multiplier system
+    function getMultiplier() {
+      if (combo >= 50) return 8;
+      if (combo >= 40) return 4;
+      if (combo >= 30) return 3;
+      if (combo >= 20) return 2;
+      return 1;
+    }
+
+    function getNextMultiplierThreshold() {
+      if (combo < 20) return 20;
+      if (combo < 30) return 30;
+      if (combo < 40) return 40;
+      if (combo < 50) return 50;
+      return null; // Max reached
+    }
     
     // ─── BEATMAP (Song 1: Robot Rave Lite @ 150 BPM) ──────────────────
     // time = ms from song start, lane = 0/1/2
@@ -163,140 +180,166 @@
     function generateBeatmapSong1() {
       const beat = 60000 / 150; // 150 BPM = 400ms per beat
       const map = [];
-      
-      // INTRO (0-3.2s): Quick intro - hit on beats
+
+      // INTRO (0-3.2s): Simple center hits on the beat - get oriented
       for (let t = 1200; t < 3200; t += beat) {
         map.push({ time: t, lane: 1 });
       }
-      
-      // VERSE 1 (3.2-9.6s): Fast alternating, 8th notes - DDR style
-      let lane = 0;
-      for (let t = 3200; t < 9600; t += beat / 2) {
-        map.push({ time: t, lane: lane });
-        lane = (lane + 1) % 3;
+
+      // VERSE 1 (3.2-9.6s): Quarter notes, simple L-C-R-C pattern
+      // Musical: follows the kick drum
+      const verse1Pattern = [0, 1, 2, 1]; // Left, center, right, center
+      for (let t = 3200; t < 9600; t += beat) {
+        const idx = Math.floor((t - 3200) / beat) % 4;
+        map.push({ time: t, lane: verse1Pattern[idx] });
       }
-      
-      // BUILD 1 (9.6-12.8s): Sparse, building tension
+
+      // BUILD 1 (9.6-12.8s): Center hits, building anticipation
       for (let t = 9600; t < 12800; t += beat) {
         map.push({ time: t, lane: 1 });
       }
-      
-      // DROP 1 (12.8-22.4s): INTENSE - melody pattern + offbeats
-      const melodyPattern = [1, 2, 1, 0, 2, 0, 1, 2]; // More varied DDR pattern
-      for (let t = 12800; t < 22400; t += beat / 2) {
-        const beatInPhrase = Math.floor((t - 12800) / (beat / 2)) % 8;
-        const noteLane = melodyPattern[beatInPhrase];
-        map.push({ time: t, lane: noteLane });
-        // Add doubles on strong beats
-        if (beatInPhrase % 4 === 0 && Math.random() < 0.4) {
-          map.push({ time: t, lane: (noteLane + 1) % 3 });
+
+      // DROP 1 (12.8-22.4s): Follows the melody - quarter notes with occasional 8ths
+      // Musical: matches the A-C-A-E-D-C-A-G melody
+      const drop1Pattern = [1, 2, 1, 2, 1, 0, 1, 0]; // Follows melody contour
+      for (let t = 12800; t < 22400; t += beat) {
+        const idx = Math.floor((t - 12800) / beat) % 8;
+        map.push({ time: t, lane: drop1Pattern[idx] });
+
+        // Add an 8th note pickup on beats 4 and 8 (before phrase repeats)
+        if (idx === 3 || idx === 7) {
+          map.push({ time: t + beat / 2, lane: 1 });
         }
       }
-      
-      // VERSE 2 (22.4-28.8s): Wave pattern
-      for (let t = 22400; t < 28800; t += beat / 2) {
-        const pos = Math.floor((t - 22400) / (beat / 2));
-        const wave = Math.floor(1.5 + Math.sin(pos * 0.5) * 1.5);
+
+      // VERSE 2 (22.4-28.8s): Gentle wave, quarter notes
+      for (let t = 22400; t < 28800; t += beat) {
+        const pos = Math.floor((t - 22400) / beat);
+        const wave = Math.floor(1 + Math.sin(pos * 0.8) * 1);
         map.push({ time: t, lane: wave });
       }
-      
-      // BUILD 2 (28.8-32s): Accelerating
-      let interval = beat;
-      for (let t = 28800; t < 32000; t += interval) {
-        map.push({ time: t, lane: Math.floor(Math.random() * 3) });
-        interval = Math.max(interval * 0.9, beat / 4);
-      }
-      
-      // (continued) DROP 2 - intensity!
-        map.push({ time: t, lane: noteLane });
-        
-        // 35% chance of double for harder difficulty
-        if (Math.random() < 0.35) {
-          const otherLane = (noteLane + 1 + Math.floor(Math.random() * 2)) % 3;
-          map.push({ time: t, lane: otherLane });
+
+      // BUILD 2 (28.8-32s): Center hits getting closer together
+      map.push({ time: 28800, lane: 1 });
+      map.push({ time: 29600, lane: 1 });
+      map.push({ time: 30200, lane: 1 });
+      map.push({ time: 30700, lane: 1 });
+      map.push({ time: 31100, lane: 1 });
+      map.push({ time: 31400, lane: 1 });
+      map.push({ time: 31700, lane: 1 });
+
+      // DROP 2 (32-48s): Main groove - quarter notes following melody
+      const drop2Pattern = [1, 0, 1, 2, 1, 0, 2, 1];
+      for (let t = 32000; t < 48000; t += beat) {
+        const idx = Math.floor((t - 32000) / beat) % 8;
+        map.push({ time: t, lane: drop2Pattern[idx] });
+
+        // Occasional 8th note for flavor (every 4 bars)
+        const bar = Math.floor((t - 32000) / (beat * 4));
+        if (idx === 7 && bar % 2 === 1) {
+          map.push({ time: t + beat / 2, lane: 1 });
         }
       }
-      
-      // OUTRO (48-56s): Cool down - quarter notes
+
+      // OUTRO (48-56s): Wind down - simple center hits
       for (let t = 48000; t < 54000; t += beat) {
         map.push({ time: t, lane: 1 });
       }
+
       // Final triple hit
       map.push({ time: 55000, lane: 0 });
       map.push({ time: 55000, lane: 1 });
       map.push({ time: 55000, lane: 2 });
-      
-      // Sort by time
+
       map.sort((a, b) => a.time - b.time);
-      
       return map;
     }
     
     // ─── BEATMAP (Song 2: DDR Rave @ 170 BPM) ────────────────────────
+    // HARD difficulty - faster tempo but still musical, strategic 8th notes
     function generateBeatmapSong2() {
-      const beat = 60000 / 170; // 170 BPM = 353ms per beat - FAST!
+      const beat = 60000 / 170; // 170 BPM = 353ms per beat
       const map = [];
-      
-      // INTRO (0-4s): Kick only - get ready
+
+      // INTRO (0-4s): Center hits on the beat - feel the faster tempo
       for (let t = 1000; t < 4000; t += beat) {
         map.push({ time: t, lane: 1 });
       }
-      
-      // VERSE 1 (4-12s): 8th notes, alternating
-      let lane = 0;
-      for (let t = 4000; t < 12000; t += beat / 2) {
-        map.push({ time: t, lane: lane });
-        lane = (lane + 1) % 3;
+
+      // VERSE 1 (4-12s): Quarter notes following melody - L-C-R pattern
+      // Musical: follows the bouncy DDR bass line
+      const verse1Pattern = [0, 1, 2, 1, 2, 1, 0, 1];
+      for (let t = 4000; t < 12000; t += beat) {
+        const idx = Math.floor((t - 4000) / beat) % 8;
+        map.push({ time: t, lane: verse1Pattern[idx] });
       }
-      
-      // BUILD 1 (12-16s): Tension
+
+      // BUILD 1 (12-16s): Center hits with 8th note pickups
       for (let t = 12000; t < 16000; t += beat) {
         map.push({ time: t, lane: 1 });
-      }
-      
-      // DROP 1 (16-28s): INTENSE - pentatonic pattern
-      const pentaPattern = [0, 1, 2, 1, 0, 2, 1, 0];
-      for (let t = 16000; t < 28000; t += beat / 2) {
-        const idx = Math.floor((t - 16000) / (beat / 2)) % 8;
-        map.push({ time: t, lane: pentaPattern[idx] });
-        // Add doubles frequently
-        if (Math.random() < 0.3) {
-          map.push({ time: t, lane: (pentaPattern[idx] + 1) % 3 });
+        // Add 8th note pickup every other beat
+        if (Math.floor((t - 12000) / beat) % 2 === 1) {
+          map.push({ time: t + beat / 2, lane: 1 });
         }
       }
-      
-      // VERSE 2 (28-36s): Wave pattern
-      for (let t = 28000; t < 36000; t += beat / 2) {
-        const wave = Math.floor(1.5 + Math.sin((t - 28000) * 0.003) * 1.5);
+
+      // DROP 1 (16-28s): Melody-following pattern with 8th note runs
+      // Musical: follows the pentatonic melody contour
+      const drop1Pattern = [1, 0, 1, 2, 1, 2, 0, 1];
+      for (let t = 16000; t < 28000; t += beat) {
+        const idx = Math.floor((t - 16000) / beat) % 8;
+        map.push({ time: t, lane: drop1Pattern[idx] });
+
+        // Add 8th note runs at phrase ends (every 8 beats)
+        if (idx === 6 || idx === 7) {
+          map.push({ time: t + beat / 2, lane: (drop1Pattern[idx] + 1) % 3 });
+        }
+      }
+
+      // VERSE 2 (28-36s): Wave pattern, quarter notes
+      for (let t = 28000; t < 36000; t += beat) {
+        const pos = Math.floor((t - 28000) / beat);
+        const wave = Math.floor(1 + Math.sin(pos * 0.6) * 1);
         map.push({ time: t, lane: wave });
       }
-      
-      // BUILD 2 (36-40s): Accelerating chaos
-      let interval = beat;
-      for (let t = 36000; t < 40000; t += interval) {
-        map.push({ time: t, lane: Math.floor(Math.random() * 3) });
-        interval = Math.max(interval * 0.85, beat / 4);
-      }
-      
-      // DROP 2 (40-56s): MAXIMUM RAVE - 16th notes + doubles
-      for (let t = 40000; t < 56000; t += beat / 2) {
-        const idx = Math.floor((t - 40000) / (beat / 2)) % 8;
-        map.push({ time: t, lane: pentaPattern[idx] });
-        // 40% doubles - it's chaos!
-        if (Math.random() < 0.4) {
-          map.push({ time: t, lane: (pentaPattern[idx] + 1 + Math.floor(Math.random() * 2)) % 3 });
+
+      // BUILD 2 (36-40s): Accelerating center hits
+      map.push({ time: 36000, lane: 1 });
+      map.push({ time: 36700, lane: 1 });
+      map.push({ time: 37300, lane: 1 });
+      map.push({ time: 37800, lane: 1 });
+      map.push({ time: 38200, lane: 1 });
+      map.push({ time: 38550, lane: 1 });
+      map.push({ time: 38850, lane: 1 });
+      map.push({ time: 39100, lane: 1 });
+      map.push({ time: 39300, lane: 1 });
+      map.push({ time: 39500, lane: 1 });
+      map.push({ time: 39700, lane: 1 });
+
+      // DROP 2 (40-56s): Main groove - quarter notes with 8th note flavor
+      // This is the challenge section but still readable
+      const drop2Pattern = [1, 2, 0, 1, 2, 0, 1, 2];
+      for (let t = 40000; t < 56000; t += beat) {
+        const idx = Math.floor((t - 40000) / beat) % 8;
+        map.push({ time: t, lane: drop2Pattern[idx] });
+
+        // 8th note runs every 4 beats for intensity
+        const beatNum = Math.floor((t - 40000) / beat);
+        if (beatNum % 4 === 3) {
+          map.push({ time: t + beat / 2, lane: 1 });
         }
       }
-      
-      // OUTRO (56-60s): Cool down
+
+      // OUTRO (56-60s): Wind down
       for (let t = 56000; t < 59000; t += beat) {
         map.push({ time: t, lane: 1 });
       }
-      // Final triple
+
+      // Final triple hit
       map.push({ time: 59500, lane: 0 });
       map.push({ time: 59500, lane: 1 });
       map.push({ time: 59500, lane: 2 });
-      
+
       map.sort((a, b) => a.time - b.time);
       return map;
     }
@@ -981,11 +1024,12 @@
       if (closestNote) {
         closestNote.hit = true;
         const x = getLaneX(lane);
-        
+        combo++;
+        const multiplier = getMultiplier();
+
         if (closestDist <= PERFECT_WINDOW) {
           // Perfect!
-          score += 100 * (1 + combo * 0.1);
-          combo++;
+          score += 100 * multiplier;
           perfects++;
           playPerfect();
           screenFlash = 0.3;
@@ -997,8 +1041,7 @@
           });
         } else {
           // Good
-          score += 50 * (1 + combo * 0.1);
-          combo++;
+          score += 50 * multiplier;
           goods++;
           playGood();
           hitEffects.push({
@@ -1008,7 +1051,7 @@
             text: 'GOOD'
           });
         }
-        
+
         maxCombo = Math.max(maxCombo, combo);
         lanePulse[lane] = 1;
       }
@@ -1210,12 +1253,40 @@
         ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(`${Math.floor(score)}`, 20, 40);
-        
-        // Combo
-        if (combo > 1) {
-          ctx.font = 'bold 32px system-ui, -apple-system, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(`${combo}x`, w / 2, 50);
+
+        // Multiplier display
+        const multiplier = getMultiplier();
+        const nextThreshold = getNextMultiplierThreshold();
+        ctx.textAlign = 'center';
+
+        if (multiplier > 1) {
+          // Show big multiplier with glow
+          const multiplierColors = { 2: THEME.good, 3: THEME.lane1, 4: THEME.lane2, 8: THEME.perfect };
+          ctx.fillStyle = multiplierColors[multiplier] || THEME.text;
+          ctx.shadowColor = multiplierColors[multiplier] || THEME.text;
+          ctx.shadowBlur = 15;
+          ctx.font = 'bold 48px system-ui, -apple-system, sans-serif';
+          ctx.fillText(`${multiplier}X`, w / 2, 55);
+          ctx.shadowBlur = 0;
+
+          // Progress to next multiplier (if not maxed)
+          if (nextThreshold) {
+            ctx.font = '14px system-ui, -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(248, 250, 252, 0.5)';
+            ctx.fillText(`${combo}/${nextThreshold}`, w / 2, 75);
+          } else {
+            ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
+            ctx.fillStyle = THEME.perfect;
+            ctx.fillText('MAX!', w / 2, 75);
+          }
+        } else if (combo > 0) {
+          // Show streak progress towards 2x
+          ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+          ctx.fillStyle = 'rgba(248, 250, 252, 0.7)';
+          ctx.fillText(`${combo}/20`, w / 2, 50);
+          ctx.font = '12px system-ui, -apple-system, sans-serif';
+          ctx.fillStyle = 'rgba(248, 250, 252, 0.4)';
+          ctx.fillText('to 2X', w / 2, 68);
         }
       }
       

@@ -920,3 +920,190 @@ export function SproutRunDecorations() {
     </div>
   );
 }
+
+/**
+ * TAP BEATS-specific decorations: falling notes, lane lines, neon arcade.
+ * DDR-inspired aesthetic with cyan/pink/gold lanes.
+ */
+export function TapBeatsDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Lane dividers */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: 400,
+          width: 2,
+          background: '#ffffff20',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: 800,
+          width: 2,
+          background: '#ffffff20',
+        }}
+      />
+
+      {/* Hit zone circles */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          left: 200,
+          width: 70,
+          height: 70,
+          borderRadius: 35,
+          border: '3px solid #22d3ee',
+          background: '#22d3ee30',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          left: 565,
+          width: 70,
+          height: 70,
+          borderRadius: 35,
+          border: '3px solid #ec4899',
+          background: '#ec489930',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          left: 930,
+          width: 70,
+          height: 70,
+          borderRadius: 35,
+          border: '3px solid #facc15',
+          background: '#facc1530',
+        }}
+      />
+
+      {/* Falling notes - cyan lane */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 100,
+          left: 218,
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          background: '#22d3ee',
+          boxShadow: '0 0 20px #22d3ee',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 280,
+          left: 218,
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          background: '#22d3ee',
+          boxShadow: '0 0 20px #22d3ee',
+        }}
+      />
+
+      {/* Falling notes - pink lane */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 60,
+          left: 582,
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          background: '#ec4899',
+          boxShadow: '0 0 20px #ec4899',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 200,
+          left: 582,
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          background: '#ec4899',
+          boxShadow: '0 0 20px #ec4899',
+        }}
+      />
+
+      {/* Falling notes - gold lane */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 140,
+          left: 948,
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          background: '#facc15',
+          boxShadow: '0 0 20px #facc15',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 320,
+          left: 948,
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          background: '#facc15',
+          boxShadow: '0 0 20px #facc15',
+        }}
+      />
+
+      {/* "PERFECT" text decorations */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 180,
+          left: 120,
+          fontSize: 16,
+          fontWeight: 700,
+          color: '#a3e635',
+          letterSpacing: 2,
+          opacity: 0.4,
+        }}
+      >
+        PERFECT
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 200,
+          right: 140,
+          fontSize: 16,
+          fontWeight: 700,
+          color: '#a3e635',
+          letterSpacing: 2,
+          opacity: 0.4,
+        }}
+      >
+        PERFECT
+      </div>
+    </div>
+  );
+}

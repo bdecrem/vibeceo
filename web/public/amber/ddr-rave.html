@@ -98,7 +98,7 @@
   <div id="title">DDR RAVE</div>
   <div id="bpm">170 BPM</div>
   <div id="count">0</div>
-  <div id="info">click to spawn /// space for MAX 300 /// arrows follow the beat</div>
+  <div id="info">tap to spawn /// triple-tap for MAX 300 /// arrows follow the beat</div>
   <div class="flash" id="flash"></div>
   <canvas id="canvas"></canvas>
 
@@ -649,21 +649,40 @@
       }
     });
 
-    // Space for MAX 300 mode (chaos)
+    // Toggle MAX 300 mode (chaos)
+    function toggleChaos() {
+      chaos = !chaos;
+      if (chaos) {
+        bpm = 200;
+        bpmEl.textContent = '200 BPM /// MAX 300';
+        bpmEl.style.color = HOT_PINK;
+        document.body.style.background = '#150030';
+      } else {
+        bpm = 170;
+        bpmEl.textContent = '170 BPM';
+        bpmEl.style.color = YELLOW;
+        document.body.style.background = '#0a0020';
+      }
+    }
+
+    // Space for MAX 300 mode (desktop)
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space') {
-        chaos = !chaos;
-        if (chaos) {
-          bpm = 200;
-          bpmEl.textContent = '200 BPM /// MAX 300';
-          bpmEl.style.color = HOT_PINK;
-          document.body.style.background = '#150030';
-        } else {
-          bpm = 170;
-          bpmEl.textContent = '170 BPM';
-          bpmEl.style.color = YELLOW;
-          document.body.style.background = '#0a0020';
-        }
+        toggleChaos();
+      }
+    });
+
+    // Triple tap for MAX 300 mode (mobile)
+    let tapTimes = [];
+    canvas.addEventListener('touchstart', (e) => {
+      const now = Date.now();
+      tapTimes.push(now);
+      // Keep only taps in last 600ms
+      tapTimes = tapTimes.filter(t => now - t < 600);
+      // If 3+ taps in quick succession, toggle chaos
+      if (tapTimes.length >= 3) {
+        toggleChaos();
+        tapTimes = []; // Reset
       }
     });
 
@@ -739,6 +758,19 @@
         spawnCharacter();
       }
     }, 2000);
+
+    // Auto-start audio when embedded in iframe (for tap-beats payoff)
+    if (window.self !== window.top) {
+      // We're in an iframe - listen for postMessage from parent to start audio
+      window.addEventListener('message', (event) => {
+        if (event.data === 'startAudio' && !audioStarted) {
+          initAudio();
+        }
+      });
+      // Also listen for clicks/touches as fallback
+      document.addEventListener('click', () => initAudio(), { once: true });
+      document.addEventListener('touchstart', () => initAudio(), { once: true });
+    }
   </script>
 </body>
 </html>

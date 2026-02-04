@@ -138,4 +138,11 @@ export const GAME_COLORS = {
     accent: '#15803d',           // dark green
     branding: '#78716c',         // muted brown
   },
+  tapBeats: {
+    background: '#09090b',       // void black
+    primary: '#ec4899',          // pink (center lane)
+    secondary: '#22d3ee',        // cyan (left lane)
+    accent: '#facc15',           // gold (right lane)
+    branding: '#f8fafc',         // white text
+  },
 };
