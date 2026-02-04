@@ -152,4 +152,11 @@ export const GAME_COLORS = {
     accent: '#ffffff',           // white text
     branding: '#ffffff',         // white branding
   },
+  flip: {
+    background: '#09090b',       // void black
+    primary: '#22d3ee',          // cyan glow
+    secondary: '#f8fafc',        // white player
+    accent: '#ef4444',           // red spikes
+    branding: '#71717a',         // muted gray
+  },
 };

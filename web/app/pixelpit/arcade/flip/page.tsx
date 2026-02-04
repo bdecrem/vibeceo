@@ -1,6 +1,16 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import Script from 'next/script';
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  usePixelpitSocial,
+  type ScoreFlowColors,
+  type LeaderboardColors,
+  type ProgressionResult,
+} from '@/app/pixelpit/components';
 
 // INDIE BITE theme
 const THEME = {
@@ -13,6 +23,26 @@ const THEME = {
 };
 
 const GAME_ID = 'flip';
+
+// Social colors
+const SCORE_FLOW_COLORS: ScoreFlowColors = {
+  bg: THEME.bg,
+  surface: '#18181b',
+  primary: THEME.glow,
+  secondary: '#22d3ee',
+  text: THEME.text,
+  muted: '#71717a',
+  error: THEME.spike,
+};
+
+const LEADERBOARD_COLORS: LeaderboardColors = {
+  bg: THEME.bg,
+  surface: '#18181b',
+  primary: THEME.glow,
+  secondary: '#22d3ee',
+  text: THEME.text,
+  muted: '#71717a',
+};
 
 // Audio
 let audioCtx: AudioContext | null = null;
@@ -195,8 +225,13 @@ function playDeath() {
 
 export default function FlipGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard'>('start');
   const [score, setScore] = useState(0);
+  const [socialLoaded, setSocialLoaded] = useState(false);
+  const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
+  const [progression, setProgression] = useState<ProgressionResult | null>(null);
+
+  const { user } = usePixelpitSocial(socialLoaded);
 
   const [musicEnabled, setMusicEnabled] = useState(false);
   
@@ -271,6 +306,8 @@ export default function FlipGame() {
 
     setScore(0);
     setGameState('playing');
+    setSubmittedEntryId(null);
+    setProgression(null);
   }, []);
 
   const flip = useCallback(() => {
@@ -592,6 +629,11 @@ export default function FlipGame() {
 
   return (
     <>
+      <Script
+        src="/pixelpit/social.js"
+        onLoad={() => setSocialLoaded(true)}
+      />
+
       <style jsx global>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -715,12 +757,14 @@ export default function FlipGame() {
           justifyContent: 'center',
           background: THEME.bg,
           zIndex: 100,
+          padding: 40,
         }}>
           <p style={{
             fontFamily: 'ui-monospace, monospace',
             fontSize: 24,
             color: THEME.spike,
-            marginBottom: 20,
+            marginBottom: 15,
+            letterSpacing: 4,
           }}>
             game over
           </p>
@@ -729,28 +773,105 @@ export default function FlipGame() {
             fontSize: 72,
             fontWeight: 200,
             color: THEME.glow,
-            marginBottom: 40,
+            marginBottom: 20,
             textShadow: `0 0 30px ${THEME.glow}`,
           }}>
             {score}
           </div>
-          <button
-            onClick={startGame}
-            style={{
-              background: THEME.glow,
-              color: THEME.bg,
-              border: 'none',
-              padding: '16px 50px',
-              fontSize: 18,
-              fontFamily: 'ui-monospace, monospace',
-              fontWeight: 600,
-              cursor: 'pointer',
-              borderRadius: 4,
+
+          {/* Progression display */}
+          {progression && (
+            <div style={{
+              background: '#18181b',
+              borderRadius: 12,
+              padding: '16px 24px',
+              marginBottom: 20,
+              textAlign: 'center',
+            }}>
+              <div style={{
+                fontFamily: 'ui-monospace, monospace',
+                fontSize: 18,
+                color: THEME.glow,
+                marginBottom: 8,
+              }}>
+                +{progression.xpEarned} XP
+              </div>
+              <div style={{
+                fontFamily: 'ui-monospace, monospace',
+                fontSize: 12,
+                color: '#71717a',
+              }}>
+                Level {progression.level} {progression.streak > 1 ? `• ${progression.multiplier}x streak` : ''}
+              </div>
+            </div>
+          )}
+
+          {/* Score submission */}
+          <ScoreFlow
+            score={score}
+            gameId={GAME_ID}
+            colors={SCORE_FLOW_COLORS}
+            xpDivisor={1}
+            onRankReceived={(rank, entryId) => {
+              setSubmittedEntryId(entryId ?? null);
             }}
-          >
-            play again
-          </button>
+            onProgression={(prog) => setProgression(prog)}
+          />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 15, alignItems: 'center', marginTop: 20 }}>
+            <button
+              onClick={startGame}
+              style={{
+                background: THEME.glow,
+                color: THEME.bg,
+                border: 'none',
+                padding: '16px 50px',
+                fontSize: 18,
+                fontFamily: 'ui-monospace, monospace',
+                fontWeight: 600,
+                cursor: 'pointer',
+                borderRadius: 4,
+                boxShadow: `0 8px 25px ${THEME.glow}40`,
+              }}
+            >
+              play again
+            </button>
+            <button
+              onClick={() => setGameState('leaderboard')}
+              style={{
+                background: 'transparent',
+                border: '1px solid #27272a',
+                borderRadius: 4,
+                color: '#71717a',
+                padding: '14px 35px',
+                fontSize: 11,
+                fontFamily: 'ui-monospace, monospace',
+                cursor: 'pointer',
+                letterSpacing: 2,
+              }}
+            >
+              leaderboard
+            </button>
+            <ShareButtonContainer
+              id="share-btn-container"
+              url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/flip/share/${score}` : ''}
+              text={`I scored ${score} on FLIP! Can you beat me?`}
+              style="minimal"
+              socialLoaded={socialLoaded}
+            />
+          </div>
         </div>
+      )}
+
+      {/* Leaderboard */}
+      {gameState === 'leaderboard' && (
+        <Leaderboard
+          gameId={GAME_ID}
+          limit={10}
+          entryId={submittedEntryId ?? undefined}
+          colors={LEADERBOARD_COLORS}
+          onClose={() => setGameState('gameover')}
+        />
       )}
     </>
   );

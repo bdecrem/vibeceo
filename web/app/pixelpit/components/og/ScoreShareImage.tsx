@@ -922,6 +922,124 @@ export function SproutRunDecorations() {
 }
 
 /**
+ * FLIP-specific decorations: tunnel walls, spikes, player.
+ * INDIE BITE aesthetic with cyan glow.
+ */
+export function FlipDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Tunnel walls */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 100,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: '#27272a',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 100,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: '#27272a',
+        }}
+      />
+
+      {/* Ceiling spikes */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 103,
+          left: 150,
+          width: 0,
+          height: 0,
+          borderLeft: '20px solid transparent',
+          borderRight: '20px solid transparent',
+          borderTop: '40px solid #ef4444',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 103,
+          left: 450,
+          width: 0,
+          height: 0,
+          borderLeft: '25px solid transparent',
+          borderRight: '25px solid transparent',
+          borderTop: '50px solid #ef4444',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 103,
+          right: 250,
+          width: 0,
+          height: 0,
+          borderLeft: '18px solid transparent',
+          borderRight: '18px solid transparent',
+          borderTop: '35px solid #ef4444',
+        }}
+      />
+
+      {/* Floor spikes */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 103,
+          left: 300,
+          width: 0,
+          height: 0,
+          borderLeft: '22px solid transparent',
+          borderRight: '22px solid transparent',
+          borderBottom: '45px solid #ef4444',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 103,
+          right: 180,
+          width: 0,
+          height: 0,
+          borderLeft: '25px solid transparent',
+          borderRight: '25px solid transparent',
+          borderBottom: '50px solid #ef4444',
+        }}
+      />
+
+      {/* Player silhouette */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 240,
+          left: 200,
+          width: 25,
+          height: 25,
+          background: '#22d3ee40',
+          boxShadow: '0 0 20px #22d3ee40',
+        }}
+      />
+    </div>
+  );
+}
+
+/**
  * FLAPPY-specific decorations: pipes, clouds, bird silhouette.
  * Classic sky blue with green pipes.
  */
