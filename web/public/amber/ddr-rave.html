@@ -466,6 +466,11 @@
 
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+      // iOS Safari requires resume() after user gesture
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
       masterCompressor = audioCtx.createDynamicsCompressor();
       masterCompressor.connect(audioCtx.destination);
 
