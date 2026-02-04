@@ -240,6 +240,8 @@ export default function FlappyGame() {
   const getMobileScale = () => typeof window !== 'undefined' ? Math.min(window.innerWidth / 500, 1) : 1;
   const gameRef = useRef({
     running: false,
+    warmup: false,       // Warmup phase (2 sec before pipes)
+    warmupStart: 0,      // Timestamp when warmup began
     score: 0,
     pipesPassed: 0,      // Track pipes for difficulty curve
     mobileScale: 1,      // Set on resize
@@ -247,6 +249,7 @@ export default function FlappyGame() {
     pipes: [] as Array<{ x: number; gapY: number; scored: boolean; wobble: number }>,
     particles: [] as Array<{ x: number; y: number; vx: number; vy: number; life: number; color: string }>,
     screenFlash: 0,      // Flash intensity (0-1)
+    countdown: '',       // Countdown text to display
     gravity: 0.4,
     jumpForce: -9,
     pipeGap: 220,        // Easier start
@@ -276,15 +279,16 @@ export default function FlappyGame() {
     game.pipeGap = 220;      // Reset difficulty
     game.pipeSpeed = 2.5;
     game.running = true;
+    game.warmup = true;      // Start in warmup mode
+    game.warmupStart = Date.now();
+    game.countdown = '';
     game.groundY = canvas.height - 50;
 
     setScore(0);
     setGameState('playing');
     setSubmittedEntryId(null);
     setProgression(null);
-
-    // Spawn first pipe
-    spawnPipe();
+    // Don't spawn pipes yet - wait for warmup to end
   }, []);
 
   const spawnPipe = useCallback(() => {
@@ -321,11 +325,14 @@ export default function FlappyGame() {
     if (gameState === 'start') {
       startGame();
     } else if (gameState === 'playing' && game.running) {
-      game.bird.vy = game.jumpForce;
       // Squash on flap (stretch vertically, compress horizontally)
       game.bird.scaleX = 0.7;
       game.bird.scaleY = 1.4;
       playFlap();
+      // Only apply jump force after warmup
+      if (!game.warmup) {
+        game.bird.vy = game.jumpForce;
+      }
     } else if (gameState === 'gameover') {
       setGameState('start');
     }
@@ -389,14 +396,43 @@ export default function FlappyGame() {
       }
       
       if (!game.running) return;
-
-      // Bird physics
-      game.bird.vy += game.gravity;
-      game.bird.y += game.bird.vy;
       
       // Squash/stretch recovery (lerp back to 1)
       game.bird.scaleX += (1 - game.bird.scaleX) * 0.15;
       game.bird.scaleY += (1 - game.bird.scaleY) * 0.15;
+
+      // Warmup phase: 2 seconds before real game starts
+      if (game.warmup) {
+        const elapsed = (Date.now() - game.warmupStart) / 1000;
+        
+        // Gentle bob instead of gravity
+        game.bird.y = canvas.height * 0.5 + Math.sin(Date.now() / 200) * 8;
+        game.bird.vy = 0;
+        
+        // Countdown display
+        if (elapsed < 1) {
+          game.countdown = 'TAP TO FLAP';
+        } else if (elapsed < 1.33) {
+          game.countdown = '3';
+        } else if (elapsed < 1.66) {
+          game.countdown = '2';
+        } else if (elapsed < 2) {
+          game.countdown = '1';
+        } else {
+          // Warmup done - GO!
+          game.countdown = 'GO!';
+          game.warmup = false;
+          game.screenFlash = 0.5;  // Green flash
+          spawnPipe();  // First pipe
+          // Clear GO! after a moment
+          setTimeout(() => { game.countdown = ''; }, 300);
+        }
+        return;  // Skip rest of update during warmup
+      }
+
+      // Bird physics (after warmup)
+      game.bird.vy += game.gravity;
+      game.bird.y += game.bird.vy;
 
       // Spawn pipes
       if (game.pipes.length === 0 || game.pipes[game.pipes.length - 1].x < canvas.width - 300) {
@@ -536,10 +572,45 @@ export default function FlappyGame() {
       }
       ctx.globalAlpha = 1;
       
-      // Screen flash on score
+      // Screen flash on score (green for GO!, white otherwise)
       if (game.screenFlash > 0) {
-        ctx.fillStyle = `rgba(255, 255, 255, ${game.screenFlash})`;
+        const flashColor = game.countdown === 'GO!' ? '163, 230, 53' : '255, 255, 255';
+        ctx.fillStyle = `rgba(${flashColor}, ${game.screenFlash})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      
+      // Countdown text during warmup
+      if (game.countdown) {
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        if (game.countdown === 'TAP TO FLAP') {
+          // Pulsing instruction text
+          const pulse = 0.6 + Math.sin(Date.now() / 200) * 0.4;
+          ctx.globalAlpha = pulse;
+          ctx.font = 'bold 24px ui-monospace, monospace';
+          ctx.fillStyle = '#fff';
+          ctx.shadowColor = '#000';
+          ctx.shadowBlur = 4;
+          ctx.fillText('TAP TO FLAP', canvas.width / 2, canvas.height / 2 + 80);
+        } else if (game.countdown === 'GO!') {
+          // Big green GO!
+          ctx.font = 'bold 72px ui-monospace, monospace';
+          ctx.fillStyle = '#a3e635';
+          ctx.shadowColor = '#000';
+          ctx.shadowBlur = 8;
+          ctx.fillText('GO!', canvas.width / 2, canvas.height / 2);
+        } else {
+          // Countdown numbers (3, 2, 1)
+          ctx.font = 'bold 96px ui-monospace, monospace';
+          ctx.fillStyle = '#fff';
+          ctx.shadowColor = '#000';
+          ctx.shadowBlur = 8;
+          ctx.fillText(game.countdown, canvas.width / 2, canvas.height / 2);
+        }
+        
+        ctx.restore();
       }
     };
 
