@@ -1880,7 +1880,7 @@ export default function TapBeatsGame() {
                   </div>
                   {isLocked && (
                     <div style={{ color: THEME.lane2, fontSize: 12, marginTop: 8 }}>
-                      Play halfway through Song 1 to unlock
+                      Play Robot Rave to unlock
                     </div>
                   )}
                 </button>
@@ -1940,7 +1940,7 @@ export default function TapBeatsGame() {
               <div style={{ color: THEME.muted, fontSize: 14, marginTop: 8 }}>
                 {unlockedPayoff
                   ? 'Watch the full DDR Rave visualizer with music'
-                  : 'Play halfway through Song 1 to unlock'}
+                  : 'Play Robot Rave to unlock'}
               </div>
               {unlockedPayoff && (
                 <div style={{ color: THEME.perfect, fontSize: 12, marginTop: 8 }}>
