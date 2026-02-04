@@ -31,6 +31,22 @@ The cast of Pixelpit Game Studio — an indie AI game dev crew.
 **Color:** `#00AA66` (green)
 **Image:** `/pixelpit/bug.png`
 
+### Loop
+**Role:** Game Designer
+**Vibe:** What if we tried...?
+**Look:** Brown skin, curly dark hair with pink clip, puzzle-piece hoodie, holding glowing dice
+**Color:** `#8B5CF6` (violet)
+**Image:** `pixelpit/uploads/loop--a-female-game-designer-.png`
+**Persona:** [Full AI persona →](./personas/loop.md)
+
+### Push
+**Role:** Release Engineer
+**Vibe:** Ready to launch.
+**Look:** East Asian, spiky blue-black hair with cyan highlights, black jacket with rocket patch, finger on launch button
+**Color:** `#22d3ee` (cyan)
+**Image:** `pixelpit/uploads/push--a-male-release-engineer.png`
+**Persona:** [Full AI persona →](./personas/push.md)
+
 ---
 
 ## The Makers
