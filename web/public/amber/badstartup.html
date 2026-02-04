@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BAD AI STARTUP — The worst pitch generator</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="BAD AI STARTUP — Amber">
+  <meta property="og:description" content="Input two nouns. Get the worst possible AI startup pitch. Complete with buzzwords, funding, and absurd confidence.">
+  <meta property="og:image" content="https://intheamber.com/amber/badstartup-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/badstartup.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BAD AI STARTUP — Amber">
+  <meta name="twitter:description" content="Input two nouns. Get the worst possible AI startup pitch. Complete with buzzwords, funding, and absurd confidence.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/badstartup-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-size: clamp(24px, 6vw, 36px);
+      text-align: center;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      text-align: center;
+      font-size: clamp(12px, 3vw, 14px);
+      color: #888;
+      margin-bottom: 40px;
+    }
+    
+    .inputs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    input {
+      flex: 1;
+      min-width: 120px;
+      padding: 15px;
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      outline: none;
+    }
+    
+    input::placeholder {
+      color: #555;
+    }
+    
+    button {
+      width: 100%;
+      padding: 20px;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      font-family: 'Space Mono', monospace;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+    
+    button:hover {
+      background: #FFD700;
+      transform: scale(1.02);
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    .pitch {
+      display: none;
+      margin-top: 40px;
+      padding: 30px;
+      background: #0D0D0D;
+      border: 2px solid #2D9596;
+      position: relative;
+    }
+    
+    .pitch.show {
+      display: block;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .company-name {
+      font-size: clamp(20px, 5vw, 28px);
+      color: #FFD700;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .tagline {
+      font-size: clamp(14px, 3.5vw, 18px);
+      color: #7B68EE;
+      text-align: center;
+      margin-bottom: 30px;
+      font-style: italic;
+    }
+    
+    .section {
+      margin-bottom: 25px;
+    }
+    
+    .section-title {
+      color: #2D9596;
+      font-size: clamp(12px, 3vw, 14px);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    
+    .section-content {
+      color: #D4A574;
+      font-size: clamp(13px, 3vw, 15px);
+      line-height: 1.6;
+    }
+    
+    .funding {
+      background: rgba(255, 215, 0, 0.1);
+      padding: 15px;
+      margin: 20px 0;
+      border-left: 3px solid #FFD700;
+    }
+    
+    .funding-amount {
+      font-size: clamp(20px, 5vw, 24px);
+      color: #FFD700;
+      font-weight: bold;
+    }
+    
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .metric {
+      text-align: center;
+      padding: 15px;
+      background: rgba(45, 149, 150, 0.1);
+      border: 1px solid #2D9596;
+    }
+    
+    .metric-value {
+      font-size: clamp(18px, 4vw, 22px);
+      color: #2D9596;
+      font-weight: bold;
+    }
+    
+    .metric-label {
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    .warning {
+      text-align: center;
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: #666;
+      margin-top: 40px;
+      padding: 15px;
+      border-top: 1px solid #333;
+    }
+    
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  
+  <div class="container">
+    <h1>BAD AI STARTUP</h1>
+    <div class="subtitle">The worst pitch generator</div>
+    
+    <div class="inputs">
+      <input type="text" id="noun1" placeholder="First noun" maxlength="20">
+      <input type="text" id="noun2" placeholder="Second noun" maxlength="20">
+    </div>
+    
+    <button id="generate">GENERATE PITCH</button>
+    
+    <div class="pitch" id="pitch">
+      <div class="company-name" id="companyName"></div>
+      <div class="tagline" id="tagline"></div>
+      
+      <div class="section">
+        <div class="section-title">What We Do</div>
+        <div class="section-content" id="whatWeDo"></div>
+      </div>
+      
+      <div class="funding">
+        <div class="section-title">Just Announced</div>
+        <div class="funding-amount" id="fundingAmount"></div>
+        <div class="section-content" id="fundingDetails"></div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">The Problem</div>
+        <div class="section-content" id="problem"></div>
+      </div>
+      
+      <div class="section">
+        <div class="section-title">Our Solution</div>
+        <div class="section-content" id="solution"></div>
+      </div>
+      
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-value" id="metric1Value"></div>
+          <div class="metric-label" id="metric1Label"></div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="metric2Value"></div>
+          <div class="metric-label" id="metric2Label"></div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="metric3Value"></div>
+          <div class="metric-label" id="metric3Label"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="warning">⚠️ DO NOT ACTUALLY FUND THIS STARTUP ⚠️</div>
+  </div>
+  
+  <script>
+    // Particle background
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const particles = [];
+    for (let i = 0; i < 30; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        color: ['#D4A574', '#2D9596', '#7B68EE', '#FFD700'][Math.floor(Math.random() * 4)],
+        size: Math.random() * 2 + 1
+      });
+    }
+    
+    function animateParticles() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+    
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    
+    // Pitch generation
+    const prefixes = ['AI-Powered', 'Blockchain-Enabled', 'Web3', 'Quantum', 'Neural', 'Decentralized', 'Autonomous', 'Smart', 'Hyper-Personalized', 'Next-Gen'];
+    const suffixes = ['AI', '.io', 'Labs', 'Technologies', 'Systems', 'Network', 'Protocol', 'Engine', 'Platform', 'Solutions'];
+    const buzzwords = ['leverage', 'disrupt', 'revolutionize', 'transform', 'optimize', 'monetize', 'democratize', 'synergize', 'streamline', 'empower'];
+    const morebuzz = ['ecosystem', 'paradigm', 'infrastructure', 'scalability', 'interoperability', 'convergence', 'orchestration', 'intelligence', 'analytics', 'insights'];
+    const investors = ['Andreessen Horowitz', 'Sequoia Capital', 'Y Combinator', 'Tiger Global', 'SoftBank Vision Fund', 'Founders Fund', 'Index Ventures', 'Accel Partners'];
+    
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+    
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+    
+    function generatePitch(noun1, noun2) {
+      noun1 = capitalize(noun1);
+      noun2 = capitalize(noun2);
+      
+      const companyName = `${pick(prefixes)}${noun1}${pick(suffixes)}`;
+      const tagline = `${pick(buzzwords)} ${noun2.toLowerCase()} with ${pick(['AI', 'blockchain', 'machine learning', 'neural networks', 'quantum computing'])}`;
+      
+      const fundingAmount = `$${Math.floor(Math.random() * 150 + 10)}M Series ${pick(['A', 'B', 'Seed', 'Pre-Seed'])}`;
+      const leadInvestor = pick(investors);
+      
+      const problem = `The ${noun2.toLowerCase()} industry is broken. Current solutions are slow, expensive, and don't ${pick(buzzwords)} the ${pick(moreuzz)} properly. We're talking about a $${Math.floor(Math.random() * 900 + 100)}B market that's ripe for ${pick(['disruption', 'transformation', 'revolution'])}.`;
+      
+      const solution = `${companyName} uses proprietary ${pick(['AI', 'ML', 'blockchain', 'quantum'])} algorithms to ${pick(buzzwords)} ${noun1.toLowerCase()}-based ${noun2.toLowerCase()} ${pick(moreuzz)}. Our platform ${pick(buzzwords)}s the entire value chain, creating unprecedented ${pick(['synergies', 'efficiencies', 'opportunities', 'insights'])}.`;
+      
+      const whatWeDo = `We're building the world's first ${noun1.toLowerCase()}-to-${noun2.toLowerCase()} ${pick(moreuzz)} that ${pick(buzzwords)}s the way ${pick(['enterprises', 'consumers', 'developers', 'creators'])} ${pick(['interact with', 'think about', 'approach', 'optimize'])} ${noun2.toLowerCase()}.`;
+      
+      const fundingDetails = `Led by ${leadInvestor}, with participation from ${pick(investors)} and ${pick(investors)}. This brings our total funding to $${Math.floor(Math.random() * 300 + 50)}M.`;
+      
+      const metric1 = {
+        value: `${Math.floor(Math.random() * 400 + 100)}%`,
+        label: 'Growth MoM'
+      };
+      
+      const metric2 = {
+        value: `${Math.floor(Math.random() * 50)}K+`,
+        label: 'Active Users'
+      };
+      
+      const metric3 = {
+        value: `$${Math.floor(Math.random() * 20 + 1)}M`,
+        label: 'ARR'
+      };
+      
+      return {
+        companyName,
+        tagline,
+        whatWeDo,
+        problem,
+        solution,
+        fundingAmount,
+        fundingDetails,
+        metric1,
+        metric2,
+        metric3
+      };
+    }
+    
+    document.getElementById('generate').addEventListener('click', () => {
+      const noun1 = document.getElementById('noun1').value.trim();
+      const noun2 = document.getElementById('noun2').value.trim();
+      
+      if (!noun1 || !noun2) {
+        alert('Please enter two nouns!');
+        return;
+      }
+      
+      const pitch = generatePitch(noun1, noun2);
+      
+      document.getElementById('companyName').textContent = pitch.companyName;
+      document.getElementById('tagline').textContent = pitch.tagline;
+      document.getElementById('whatWeDo').textContent = pitch.whatWeDo;
+      document.getElementById('problem').textContent = pitch.problem;
+      document.getElementById('solution').textContent = pitch.solution;
+      document.getElementById('fundingAmount').textContent = pitch.fundingAmount;
+      document.getElementById('fundingDetails').textContent = pitch.fundingDetails;
+      
+      document.getElementById('metric1Value').textContent = pitch.metric1.value;
+      document.getElementById('metric1Label').textContent = pitch.metric1.label;
+      document.getElementById('metric2Value').textContent = pitch.metric2.value;
+      document.getElementById('metric2Label').textContent = pitch.metric2.label;
+      document.getElementById('metric3Value').textContent = pitch.metric3.value;
+      document.getElementById('metric3Label').textContent = pitch.metric3.label;
+      
+      const pitchEl = document.getElementById('pitch');
+      pitchEl.classList.remove('show');
+      setTimeout(() => pitchEl.classList.add('show'), 10);
+      
+      // Particle burst
+      for (let i = 0; i < 20; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
+          color: pick(['#D4A574', '#2D9596', '#7B68EE', '#FFD700']),
+          size: Math.random() * 3 + 2
+        });
+      }
+      
+      // Audio feedback
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = 440;
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    });
+    
+    // Allow Enter key
+    document.getElementById('noun2').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('generate').click();
+      }
+    });
+  </script>
+</body>
+</html>
