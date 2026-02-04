@@ -59,6 +59,78 @@ const LEADERBOARD_COLORS: LeaderboardColors = {
 
 const GAME_ID = 'flappy';
 
+// Audio context (initialized on first interaction)
+let audioCtx: AudioContext | null = null;
+let masterGain: GainNode | null = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.3;
+  masterGain.connect(audioCtx.destination);
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playFlap() {
+  if (!audioCtx || !masterGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.1);
+}
+
+function playScore() {
+  if (!audioCtx || !masterGain) return;
+  // Happy ding
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = 880;
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.15);
+  // Second note
+  setTimeout(() => {
+    if (!audioCtx || !masterGain) return;
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.value = 1108;
+    gain2.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    osc2.connect(gain2);
+    gain2.connect(masterGain);
+    osc2.start();
+    osc2.stop(audioCtx.currentTime + 0.1);
+  }, 80);
+}
+
+function playDeath() {
+  if (!audioCtx || !masterGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.3);
+}
+
 export default function FlappyGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard'>('start');
@@ -75,11 +147,11 @@ export default function FlappyGame() {
     score: 0,
     bird: { x: 0, y: 0, vy: 0, size: 30 },
     pipes: [] as Array<{ x: number; gapY: number; scored: boolean }>,
-    gravity: 0.5,
-    jumpForce: -10,
-    pipeGap: 180,
+    gravity: 0.4,        // Slightly floatier
+    jumpForce: -9,       // Slightly softer jump
+    pipeGap: 200,        // Wider gap (easier start)
     pipeWidth: 60,
-    pipeSpeed: 3,
+    pipeSpeed: 2.5,      // Slightly slower (easier start)
     groundY: 0,
   });
 
@@ -117,11 +189,13 @@ export default function FlappyGame() {
   }, []);
 
   const flap = useCallback(() => {
+    initAudio();
     const game = gameRef.current;
     if (gameState === 'start') {
       startGame();
     } else if (gameState === 'playing' && game.running) {
       game.bird.vy = game.jumpForce;
+      playFlap();
     } else if (gameState === 'gameover') {
       setGameState('start');
     }
@@ -130,6 +204,7 @@ export default function FlappyGame() {
   const gameOver = useCallback(() => {
     const game = gameRef.current;
     game.running = false;
+    playDeath();
 
     // Track play for analytics
     if (game.score >= 1) {
@@ -184,6 +259,13 @@ export default function FlappyGame() {
           game.pipes[i].scored = true;
           game.score++;
           setScore(game.score);
+          playScore();
+          
+          // Progressive difficulty: speed up every 5 points
+          if (game.score % 5 === 0) {
+            game.pipeSpeed = Math.min(game.pipeSpeed + 0.3, 5);
+            game.pipeGap = Math.max(game.pipeGap - 5, 150);
+          }
         }
 
         // Remove off-screen
