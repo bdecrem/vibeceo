@@ -151,7 +151,7 @@ function playWin() {
 
 export default function CatchGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'dead' | 'won'>('start');
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'dead' | 'won' | 'leaderboard'>('start');
   const [displayScore, setDisplayScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
   const [showHint, setShowHint] = useState(false);
@@ -537,20 +537,27 @@ export default function CatchGame() {
               fontWeight: 600,
               cursor: 'pointer',
               borderRadius: 4,
+              marginBottom: 20,
             }}
           >
             play
           </button>
 
-          {/* Leaderboard on start screen */}
-          <div style={{ marginTop: 40, width: '100%', maxWidth: 400, padding: '0 20px' }}>
-            <Leaderboard
-              gameId={GAME_ID}
-              limit={5}
-              entryId={submittedEntryId ?? undefined}
-              colors={LEADERBOARD_COLORS}
-            />
-          </div>
+          <button
+            onClick={() => setGameState('leaderboard')}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(251,191,36,0.3)',
+              borderRadius: 4,
+              color: THEME.text,
+              padding: '14px 35px',
+              fontSize: 14,
+              fontFamily: 'ui-monospace, monospace',
+              cursor: 'pointer',
+            }}
+          >
+            leaderboard
+          </button>
         </div>
       )}
 
@@ -634,9 +641,26 @@ export default function CatchGame() {
               fontFamily: 'ui-monospace, monospace',
               cursor: 'pointer',
               borderRadius: 4,
+              marginBottom: 15,
             }}
           >
             try again
+          </button>
+
+          <button
+            onClick={() => setGameState('leaderboard')}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(0,0,0,0.2)',
+              borderRadius: 4,
+              color: '#666',
+              padding: '14px 35px',
+              fontSize: 14,
+              fontFamily: 'ui-monospace, monospace',
+              cursor: 'pointer',
+            }}
+          >
+            leaderboard
           </button>
         </div>
       )}
@@ -703,16 +727,6 @@ export default function CatchGame() {
             />
           </div>
 
-          {/* Leaderboard */}
-          <div style={{ marginTop: 30, width: '100%', maxWidth: 400 }}>
-            <Leaderboard
-              gameId={GAME_ID}
-              limit={5}
-              entryId={submittedEntryId ?? undefined}
-              colors={LEADERBOARD_COLORS}
-            />
-          </div>
-          
           <button
             onClick={startGame}
             style={{
@@ -725,11 +739,39 @@ export default function CatchGame() {
               fontFamily: 'ui-monospace, monospace',
               cursor: 'pointer',
               borderRadius: 4,
+              marginBottom: 15,
             }}
           >
             play again
           </button>
+
+          <button
+            onClick={() => setGameState('leaderboard')}
+            style={{
+              background: 'transparent',
+              border: `1px solid ${THEME.player}33`,
+              borderRadius: 4,
+              color: THEME.text,
+              padding: '14px 35px',
+              fontSize: 14,
+              fontFamily: 'ui-monospace, monospace',
+              cursor: 'pointer',
+            }}
+          >
+            leaderboard
+          </button>
         </div>
+      )}
+
+      {/* Leaderboard Screen */}
+      {gameState === 'leaderboard' && (
+        <Leaderboard
+          gameId={GAME_ID}
+          limit={8}
+          entryId={submittedEntryId ?? undefined}
+          colors={LEADERBOARD_COLORS}
+          onClose={() => setGameState('start')}
+        />
       )}
     </>
   );
