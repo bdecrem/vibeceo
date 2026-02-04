@@ -2011,7 +2011,7 @@ export default function TapBeatsGame() {
           zIndex: 1000,
         }}>
           <iframe
-            src="/amber/ddr-rave.html"
+            src="https://kochi.to/amber/ddr-rave.html"
             style={{
               width: '100%',
               height: '100%',
