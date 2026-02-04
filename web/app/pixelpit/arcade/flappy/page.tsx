@@ -236,12 +236,14 @@ export default function FlappyGame() {
     }
   }, [musicEnabled]);
 
-  // Game state ref
+  // Game state ref (sizes scaled for mobile)
+  const getMobileScale = () => typeof window !== 'undefined' ? Math.min(window.innerWidth / 500, 1) : 1;
   const gameRef = useRef({
     running: false,
     score: 0,
     pipesPassed: 0,      // Track pipes for difficulty curve
-    bird: { x: 0, y: 0, vy: 0, size: 30, scaleX: 1, scaleY: 1 },
+    mobileScale: 1,      // Set on resize
+    bird: { x: 0, y: 0, vy: 0, size: 24, scaleX: 1, scaleY: 1 },  // Smaller bird (was 30)
     pipes: [] as Array<{ x: number; gapY: number; scored: boolean; wobble: number }>,
     particles: [] as Array<{ x: number; y: number; vx: number; vy: number; life: number; color: string }>,
     screenFlash: 0,      // Flash intensity (0-1)
@@ -250,7 +252,7 @@ export default function FlappyGame() {
     pipeGap: 220,        // Easier start
     minGap: 160,         // Never harder than this
     gapShrinkRate: 2,    // Shrink by 2px every 5 pipes
-    pipeWidth: 60,
+    pipeWidth: 50,        // Slightly narrower pipes (was 60)
     pipeSpeed: 2.5,
     speedIncreaseRate: 0.1,  // Speed up by 0.1 every 5 pipes
     groundY: 0,
@@ -360,6 +362,7 @@ export default function FlappyGame() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       gameRef.current.groundY = canvas.height - 50;
+      gameRef.current.mobileScale = getMobileScale();
     };
     resize();
     window.addEventListener('resize', resize);
@@ -618,7 +621,7 @@ export default function FlappyGame() {
       {gameState === 'playing' && (
         <div style={{
           position: 'fixed',
-          top: 40,
+          top: 'max(60px, env(safe-area-inset-top, 60px))',
           left: 0,
           right: 0,
           textAlign: 'center',
@@ -627,7 +630,7 @@ export default function FlappyGame() {
         }}>
           <div style={{
             fontFamily: 'ui-monospace, monospace',
-            fontSize: 64,
+            fontSize: 'min(64px, 12vw)',
             fontWeight: 700,
             color: '#fff',
             textShadow: '3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000',
@@ -643,7 +646,7 @@ export default function FlappyGame() {
           onClick={(e) => { e.stopPropagation(); toggleMusic(); }}
           style={{
             position: 'fixed',
-            top: 20,
+            top: 'max(20px, env(safe-area-inset-top, 20px))',
             right: 20,
             zIndex: 200,
             background: musicEnabled ? COLORS.gold : 'rgba(0,0,0,0.5)',
