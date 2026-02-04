@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PULSE TRAIN — 909 Kick Rhythm Visualized</title>
+  <title>PULSE TRAIN — Build Your Beat</title>
   
   <!-- Open Graph -->
   <meta property="og:title" content="PULSE TRAIN">
-  <meta property="og:description" content="Four-on-floor. Watch the rhythm before you hear it.">
+  <meta property="og:description" content="Tap to layer. Build a beat one voice at a time.">
   <meta property="og:image" content="https://kochi.to/amber/pulse-train-og.png">
   <meta property="og:url" content="https://kochi.to/amber/pulse-train.html">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="PULSE TRAIN">
-  <meta name="twitter:description" content="Four-on-floor. Watch the rhythm before you hear it.">
+  <meta name="twitter:description" content="Tap to layer. Build a beat one voice at a time.">
   <meta name="twitter:image" content="https://kochi.to/amber/pulse-train-og.png">
   
   <style>
@@ -71,6 +71,8 @@
       letter-spacing: 2px;
       opacity: 0.7;
       margin-bottom: 32px;
+      text-align: center;
+      padding: 0 20px;
     }
     
     #playButton {
@@ -102,13 +104,31 @@
       pointer-events: none;
     }
     
-    #bpm {
+    #info {
       position: absolute;
       bottom: 24px;
+      left: 24px;
       right: 24px;
-      font-size: clamp(14px, 2.5vw, 18px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: clamp(12px, 2.5vw, 16px);
       letter-spacing: 2px;
-      opacity: 0.5;
+      opacity: 0.7;
+    }
+    
+    #layerInfo {
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+    
+    #hint {
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    
+    #hint.show {
+      opacity: 1;
     }
     
     @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
@@ -119,11 +139,15 @@
   
   <div id="ui">
     <div id="title">PULSE TRAIN</div>
-    <div id="subtitle">Four-on-floor. Watch the rhythm.</div>
+    <div id="subtitle">Tap to layer sounds. Build your beat.</div>
     <button id="playButton">▶ PLAY</button>
   </div>
   
-  <div id="bpm">128 BPM</div>
+  <div id="info">
+    <div id="layerInfo">KICK</div>
+    <div id="hint">TAP TO ADD</div>
+    <div id="bpm">128 BPM</div>
+  </div>
 
   <script type="module">
     import { TR909Controller } from '/909/dist/api/index.js';
@@ -131,18 +155,44 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const playButton = document.getElementById('playButton');
+    const layerInfoEl = document.getElementById('layerInfo');
+    const hintEl = document.getElementById('hint');
     
     let width, height, centerY;
     let drums = null;
     let isPlaying = false;
     let pulses = [];
     let animationId = null;
+    let currentStep = 0;
     
-    // Pulse class
+    // Voice layers: sequence of voices to add
+    const LAYERS = [
+      { voice: 'kick', name: 'KICK', color: { r: 255, g: 215, b: 0 }, done: true },      // Already playing
+      { voice: 'clap', name: 'CLAP', color: { r: 239, g: 68, b: 68 }, done: false },     // Red
+      { voice: 'ch', name: 'HI-HAT', color: { r: 34, g: 211, b: 238 }, done: false },    // Cyan
+      { voice: 'tom', name: 'TOM', color: { r: 168, g: 85, b: 247 }, done: false },      // Purple
+    ];
+    let currentLayerIndex = 1; // Start at clap (kick is already there)
+    
+    // Pattern state — starts with four-on-floor kick
+    const pattern = {
+      kick: [
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+      ],
+      clap: Array(16).fill(null).map(() => ({ velocity: 0 })),
+      ch: Array(16).fill(null).map(() => ({ velocity: 0 })),
+      tom: Array(16).fill(null).map(() => ({ velocity: 0 })),
+    };
+    
+    // Pulse class with color support
     class Pulse {
-      constructor(x, y, isPreview = false) {
+      constructor(x, y, color = { r: 255, g: 215, b: 0 }, isPreview = false) {
         this.x = x;
         this.y = y;
+        this.color = color;
         this.radius = 0;
         this.maxRadius = 120;
         this.alpha = 1;
@@ -157,23 +207,23 @@
       }
       
       draw() {
+        const { r, g, b } = this.color;
+        
         const gradient = ctx.createRadialGradient(
           this.x, this.y, 0,
           this.x, this.y, this.radius
         );
         
-        // Gold/amber gradient
-        gradient.addColorStop(0, `rgba(255, 215, 0, ${this.alpha * 0.8})`);
-        gradient.addColorStop(0.5, `rgba(212, 165, 116, ${this.alpha * 0.5})`);
-        gradient.addColorStop(1, `rgba(212, 165, 116, 0)`);
+        gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${this.alpha * 0.8})`);
+        gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, ${this.alpha * 0.4})`);
+        gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
         
-        ctx.strokeStyle = `rgba(212, 165, 116, ${this.alpha * 0.8})`;
+        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${this.alpha * 0.8})`;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.stroke();
         
-        // Inner glow
         ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
@@ -187,17 +237,21 @@
       centerY = height / 2;
     }
     
-    function spawnPulse(isPreview = false) {
-      // Spawn at left edge
-      pulses.push(new Pulse(100, centerY, isPreview));
+    function spawnPulse(color, isPreview = false) {
+      pulses.push(new Pulse(100, centerY, color, isPreview));
+    }
+    
+    function spawnPulseForVoice(voice) {
+      const layer = LAYERS.find(l => l.voice === voice);
+      if (layer) {
+        spawnPulse(layer.color, false);
+      }
     }
     
     function animate() {
-      // Fade to black (trail effect)
       ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
       ctx.fillRect(0, 0, width, height);
       
-      // Update and draw pulses
       pulses = pulses.filter(pulse => {
         const alive = pulse.update();
         if (alive) pulse.draw();
@@ -207,7 +261,7 @@
       animationId = requestAnimationFrame(animate);
     }
     
-    // Preview animation (shows rhythm before play)
+    // Preview animation
     let previewInterval = null;
     function startPreview() {
       if (previewInterval) return;
@@ -215,21 +269,61 @@
       const bpm = 128;
       const quarterNoteMs = 60000 / bpm;
       
-      // Spawn pulse every quarter note
       previewInterval = setInterval(() => {
         if (!isPlaying) {
-          spawnPulse(true);
+          spawnPulse(LAYERS[0].color, true);
         }
       }, quarterNoteMs);
       
-      // Initial pulse
-      spawnPulse(true);
+      spawnPulse(LAYERS[0].color, true);
     }
     
     function stopPreview() {
       if (previewInterval) {
         clearInterval(previewInterval);
         previewInterval = null;
+      }
+    }
+    
+    function updateLayerUI() {
+      if (currentLayerIndex < LAYERS.length) {
+        const layer = LAYERS[currentLayerIndex];
+        const { r, g, b } = layer.color;
+        layerInfoEl.textContent = `ADD: ${layer.name}`;
+        layerInfoEl.style.color = `rgb(${r}, ${g}, ${b})`;
+        hintEl.classList.add('show');
+      } else {
+        layerInfoEl.textContent = 'COMPLETE';
+        layerInfoEl.style.color = '#D4A574';
+        hintEl.classList.remove('show');
+      }
+    }
+    
+    function handleTap() {
+      if (!isPlaying || currentLayerIndex >= LAYERS.length) return;
+      
+      const layer = LAYERS[currentLayerIndex];
+      const voice = layer.voice;
+      
+      // Add this voice at the current step
+      if (pattern[voice] && pattern[voice][currentStep]) {
+        pattern[voice][currentStep].velocity = 1.0;
+      }
+      
+      // Update the drum machine pattern
+      drums.setPattern(pattern);
+      
+      // Visual feedback — spawn pulse at tap
+      spawnPulse(layer.color, false);
+      
+      // Count how many hits this voice has
+      const hitCount = pattern[voice].filter(s => s.velocity > 0).length;
+      
+      // After 4 hits, move to next layer
+      if (hitCount >= 4) {
+        layer.done = true;
+        currentLayerIndex++;
+        updateLayerUI();
       }
     }
     
@@ -240,32 +334,27 @@
       playButton.classList.add('playing');
       stopPreview();
       
-      // Initialize 909
       if (!drums) {
         drums = new TR909Controller();
         drums.setBpm(128);
-        
-        // Four-on-floor kick pattern
-        const pattern = {
-          kick: [
-            { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-            { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-            { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
-            { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
-          ]
-        };
-        
         drums.setPattern(pattern);
         
-        // Listen for step changes — spawn pulse on kick steps (0, 4, 8, 12)
+        // Listen for step changes — spawn pulses for active voices
         drums.engine.onStepChange = (step) => {
-          if (step >= 0 && step % 4 === 0) {
-            spawnPulse(false);
+          if (step < 0) return;
+          currentStep = step;
+          
+          // Spawn pulse for each voice that hits on this step
+          for (const [voice, steps] of Object.entries(pattern)) {
+            if (steps[step] && steps[step].velocity > 0) {
+              spawnPulseForVoice(voice);
+            }
           }
         };
       }
       
       drums.play();
+      updateLayerUI();
     }
     
     function stopDrums() {
@@ -273,7 +362,8 @@
         drums.stop();
         isPlaying = false;
         playButton.classList.remove('playing');
-        startPreview(); // Resume preview
+        hintEl.classList.remove('show');
+        startPreview();
       }
     }
     
@@ -285,11 +375,38 @@
     
     canvas.addEventListener('click', () => {
       if (isPlaying) {
-        stopDrums();
+        handleTap();
       }
     });
     
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (isPlaying) {
+        handleTap();
+      }
+    });
+    
+    // Double-tap to stop
+    let lastTap = 0;
+    canvas.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        stopDrums();
+      }
+      lastTap = now;
+    });
+    
     window.addEventListener('resize', resize);
+    
+    // Keyboard shortcut: space to tap, escape to stop
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && isPlaying) {
+        e.preventDefault();
+        handleTap();
+      } else if (e.code === 'Escape') {
+        stopDrums();
+      }
+    });
     
     // Initialize
     resize();
