@@ -12,21 +12,30 @@ import {
   type ProgressionResult,
 } from '@/app/pixelpit/components';
 
-// BAT DASH theme - Gotham night, dark and dramatic
+// FAT DASH theme - Neon noir, high contrast
 const THEME = {
-  sky: '#0f172a',        // Dark blue night sky
-  skyDark: '#020617',    // Deeper dark
-  bat: '#1e1b4b',        // Dark purple bat
-  batWing: '#312e81',    // Slightly lighter wing
-  batEye: '#fef08a',     // Yellow glowing eyes
-  cape: '#4c1d95',       // Purple cape
-  building: '#334155',   // Gray buildings
-  buildingDark: '#1e293b', // Darker building shade
-  window: '#fef08a',     // Lit windows (yellow)
-  windowOff: '#475569',  // Unlit windows
-  ground: '#1e293b',     // Dark ground
-  groundDark: '#0f172a', // Darker ground
-  moon: '#fef9c3',       // Moon glow
+  sky: '#0a0a1a',        // Near black
+  skyDark: '#050510',    // Void
+  bat: '#1a1a2e',        // Dark suit
+  batWing: '#16213e',    // Wings
+  batEye: '#fff',        // Derpy white eyes
+  batPupil: '#000',      // Black pupils
+  cape: '#7c3aed',       // VIVID purple cape
+  skin: '#fcd5ce',       // Pale flesh
+  undies: '#ff3366',     // HOT PINK undies (funnier)
+  belt: '#ffd700',       // Gold belt
+  beltGlow: '#ffed4a',   // Belt glow
+  building: '#1e293b',   // Dark buildings
+  buildingDark: '#0f172a', // Darker
+  buildingEdge: '#334155', // Subtle edge
+  window: '#fef3c7',     // Warm window glow
+  windowOff: '#1e293b',  // Dark windows
+  ground: '#0f172a',     // Dark ground
+  groundLine: '#334155', // Ground detail
+  moon: '#fef9c3',       // Moon
+  moonGlow: '#fef08a',   // Moon outer glow
+  sweat: '#67e8f9',      // Cyan sweat (more visible)
+  heroGlow: '#a855f7',   // Purple glow around hero
 };
 
 // UI colors - dark Gotham theme
@@ -68,20 +77,25 @@ let masterGain: GainNode | null = null;
 let musicInterval: ReturnType<typeof setInterval> | null = null;
 let musicBeat = 0;
 
-// D minor scale frequencies - dark, dramatic, heroic
+// DARK SYNTHWAVE - Hotline Miami meets midnight city
 const NOTES = {
-  D3: 146.83, F3: 174.61, A3: 220.00, D4: 293.66, // Melody
-  D2: 73.42, A1: 55.00, // Deep bass
+  // Dark minor key (A minor / D minor vibes)
+  A2: 110.00, C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196.00,
+  A3: 220.00, C4: 261.63, D4: 293.66, E4: 329.63,
+  // Sub bass
+  A1: 55.00, D2: 73.42,
 };
-const MELODY = [NOTES.D3, NOTES.F3, NOTES.A3, NOTES.D4, NOTES.A3, NOTES.F3]; // D minor arpeggio
-const BPM = 90; // Slower, more dramatic
-const BEAT_MS = 60000 / BPM;
+// Moody arpeggio pattern (minor, brooding)
+const ARP = [NOTES.A3, NOTES.C4, NOTES.E4, NOTES.D4, NOTES.C4, NOTES.A3, NOTES.E3, NOTES.G3];
+const BASS_PATTERN = [NOTES.A1, 0, NOTES.A1, 0, NOTES.D2, 0, NOTES.A1, NOTES.A1];
+const BPM = 118; // That perfect dark driving tempo
+const BEAT_MS = 60000 / BPM / 2; // 8th notes
 
 function initAudio() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.5;
+  masterGain.gain.value = 0.35;
   masterGain.connect(audioCtx.destination);
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
@@ -89,51 +103,152 @@ function initAudio() {
 function playMusicNote() {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
-  
-  // Dramatic D minor arpeggio with sawtooth (darker sound)
-  const melodyOsc = audioCtx.createOscillator();
-  const melodyGain = audioCtx.createGain();
-  const filter = audioCtx.createBiquadFilter();
-  melodyOsc.type = 'sawtooth';
-  melodyOsc.frequency.value = MELODY[musicBeat % 6];
-  filter.type = 'lowpass';
-  filter.frequency.value = 800;
-  melodyGain.gain.setValueAtTime(0.2, t);
-  melodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
-  melodyOsc.connect(filter);
-  filter.connect(melodyGain);
-  melodyGain.connect(masterGain);
-  melodyOsc.start(t);
-  melodyOsc.stop(t + 0.4);
-  
-  // Deep bass: D2 and A1 alternating - dramatic foundation
-  if (musicBeat % 2 === 0) {
-    const bassOsc = audioCtx.createOscillator();
+  const step = musicBeat % 8;
+
+  // Pulsing synth arp (filtered saw, very 80s)
+  const arpNote = ARP[step];
+  if (arpNote) {
+    const arp = audioCtx.createOscillator();
+    const arpGain = audioCtx.createGain();
+    const arpFilter = audioCtx.createBiquadFilter();
+    arp.type = 'sawtooth';
+    arp.frequency.value = arpNote;
+    arpFilter.type = 'lowpass';
+    arpFilter.frequency.value = 1800 + Math.sin(musicBeat * 0.2) * 600; // Filter sweep
+    arpFilter.Q.value = 2;
+    arpGain.gain.setValueAtTime(0.12, t);
+    arpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    arp.connect(arpFilter);
+    arpFilter.connect(arpGain);
+    arpGain.connect(masterGain);
+    arp.start(t);
+    arp.stop(t + 0.12);
+  }
+
+  // Thick sub bass (sine + slight saw layer)
+  const bassNote = BASS_PATTERN[step];
+  if (bassNote) {
+    const bass = audioCtx.createOscillator();
+    const bass2 = audioCtx.createOscillator();
     const bassGain = audioCtx.createGain();
-    bassOsc.type = 'sine';
-    bassOsc.frequency.value = musicBeat % 4 === 0 ? NOTES.D2 : NOTES.A1;
-    bassGain.gain.setValueAtTime(0.6, t);
-    bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
-    bassOsc.connect(bassGain);
+    bass.type = 'sine';
+    bass2.type = 'sawtooth';
+    bass.frequency.value = bassNote;
+    bass2.frequency.value = bassNote * 2;
+    bassGain.gain.setValueAtTime(0.25, t);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    const bassFilter = audioCtx.createBiquadFilter();
+    bassFilter.type = 'lowpass';
+    bassFilter.frequency.value = 200;
+    bass.connect(bassGain);
+    bass2.connect(bassFilter);
+    bassFilter.connect(bassGain);
     bassGain.connect(masterGain);
-    bassOsc.start(t);
-    bassOsc.stop(t + 0.5);
+    bass.start(t);
+    bass2.start(t);
+    bass.stop(t + 0.15);
+    bass2.stop(t + 0.15);
   }
-  
-  // Occasional dramatic string stab (every 8 beats)
-  if (musicBeat % 8 === 0) {
-    const stabOsc = audioCtx.createOscillator();
-    const stabGain = audioCtx.createGain();
-    stabOsc.type = 'sawtooth';
-    stabOsc.frequency.value = NOTES.D4;
-    stabGain.gain.setValueAtTime(0.15, t);
-    stabGain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
-    stabOsc.connect(stabGain);
-    stabGain.connect(masterGain);
-    stabOsc.start(t);
-    stabOsc.stop(t + 0.6);
+
+  // Punchy kick on 1 and 5 (the THUMP)
+  if (step === 0 || step === 4) {
+    const kick = audioCtx.createOscillator();
+    const kickGain = audioCtx.createGain();
+    kick.type = 'sine';
+    kick.frequency.setValueAtTime(150, t);
+    kick.frequency.exponentialRampToValueAtTime(30, t + 0.1);
+    kickGain.gain.setValueAtTime(0.5, t);
+    kickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    kick.connect(kickGain);
+    kickGain.connect(masterGain);
+    kick.start(t);
+    kick.stop(t + 0.15);
+    // Click transient
+    const click = audioCtx.createOscillator();
+    const clickGain = audioCtx.createGain();
+    click.type = 'square';
+    click.frequency.value = 1000;
+    clickGain.gain.setValueAtTime(0.1, t);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.01);
+    click.connect(clickGain);
+    clickGain.connect(masterGain);
+    click.start(t);
+    click.stop(t + 0.02);
   }
-  
+
+  // Tight hihat on every 8th
+  const hatBuffer = audioCtx.sampleRate * 0.03;
+  const hatBuf = audioCtx.createBuffer(1, hatBuffer, audioCtx.sampleRate);
+  const hatData = hatBuf.getChannelData(0);
+  for (let i = 0; i < hatBuffer; i++) {
+    hatData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / hatBuffer, 4);
+  }
+  const hat = audioCtx.createBufferSource();
+  hat.buffer = hatBuf;
+  const hatGain = audioCtx.createGain();
+  const hatFilter = audioCtx.createBiquadFilter();
+  hatFilter.type = 'highpass';
+  hatFilter.frequency.value = 7000;
+  hatGain.gain.value = step % 2 === 0 ? 0.08 : 0.04; // Accent pattern
+  hat.connect(hatFilter);
+  hatFilter.connect(hatGain);
+  hatGain.connect(masterGain);
+  hat.start(t);
+
+  // Snare on 3 and 7
+  if (step === 2 || step === 6) {
+    const snrBuffer = audioCtx.sampleRate * 0.12;
+    const snrBuf = audioCtx.createBuffer(1, snrBuffer, audioCtx.sampleRate);
+    const snrData = snrBuf.getChannelData(0);
+    for (let i = 0; i < snrBuffer; i++) {
+      snrData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / snrBuffer, 2);
+    }
+    const snr = audioCtx.createBufferSource();
+    snr.buffer = snrBuf;
+    const snrGain = audioCtx.createGain();
+    const snrFilter = audioCtx.createBiquadFilter();
+    snrFilter.type = 'bandpass';
+    snrFilter.frequency.value = 3000;
+    snrGain.gain.value = 0.18;
+    snr.connect(snrFilter);
+    snrFilter.connect(snrGain);
+    snrGain.connect(masterGain);
+    snr.start(t);
+    // Snare body
+    const snrBody = audioCtx.createOscillator();
+    const snrBodyGain = audioCtx.createGain();
+    snrBody.type = 'triangle';
+    snrBody.frequency.setValueAtTime(200, t);
+    snrBody.frequency.exponentialRampToValueAtTime(100, t + 0.05);
+    snrBodyGain.gain.setValueAtTime(0.15, t);
+    snrBodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    snrBody.connect(snrBodyGain);
+    snrBodyGain.connect(masterGain);
+    snrBody.start(t);
+    snrBody.stop(t + 0.1);
+  }
+
+  // Synth stab every 16 steps (builds tension)
+  if (musicBeat % 16 === 0) {
+    [NOTES.A3, NOTES.C4, NOTES.E4].forEach((freq, i) => {
+      const stab = audioCtx!.createOscillator();
+      const stabGain = audioCtx!.createGain();
+      const stabFilter = audioCtx!.createBiquadFilter();
+      stab.type = 'sawtooth';
+      stab.frequency.value = freq;
+      stabFilter.type = 'lowpass';
+      stabFilter.frequency.setValueAtTime(3000, t);
+      stabFilter.frequency.exponentialRampToValueAtTime(500, t + 0.3);
+      stabGain.gain.setValueAtTime(0.08, t);
+      stabGain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      stab.connect(stabFilter);
+      stabFilter.connect(stabGain);
+      stabGain.connect(masterGain!);
+      stab.start(t);
+      stab.stop(t + 0.35);
+    });
+  }
+
   musicBeat++;
 }
 
@@ -157,99 +272,131 @@ function stopMusic() {
 
 function playFlap() {
   if (!audioCtx || !masterGain) return;
-  // Dramatic swoosh - like a cape flapping
   const t = audioCtx.currentTime;
-  // White noise swoosh
-  const bufferSize = audioCtx.sampleRate * 0.1;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
-  }
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = buffer;
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.value = 1000;
-  filter.Q.value = 0.5;
-  const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.2, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-  noise.connect(filter);
-  filter.connect(gain);
-  gain.connect(masterGain);
-  noise.start();
-  // Plus a subtle low thud for weight
-  const thud = audioCtx.createOscillator();
-  const thudGain = audioCtx.createGain();
-  thud.type = 'sine';
-  thud.frequency.value = 100;
-  thudGain.gain.setValueAtTime(0.1, t);
-  thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-  thud.connect(thudGain);
-  thudGain.connect(masterGain);
-  thud.start(t);
-  thud.stop(t + 0.1);
+
+  // Punchy synth whoosh - stylized, not realistic
+  const whoosh = audioCtx.createOscillator();
+  const whooshGain = audioCtx.createGain();
+  const whooshFilter = audioCtx.createBiquadFilter();
+  whoosh.type = 'sawtooth';
+  whoosh.frequency.setValueAtTime(200, t);
+  whoosh.frequency.exponentialRampToValueAtTime(80, t + 0.08);
+  whooshFilter.type = 'lowpass';
+  whooshFilter.frequency.setValueAtTime(2000, t);
+  whooshFilter.frequency.exponentialRampToValueAtTime(200, t + 0.08);
+  whooshGain.gain.setValueAtTime(0.15, t);
+  whooshGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  whoosh.connect(whooshFilter);
+  whooshFilter.connect(whooshGain);
+  whooshGain.connect(masterGain);
+  whoosh.start(t);
+  whoosh.stop(t + 0.1);
+
+  // Subtle grunt undertone (he IS struggling)
+  const grunt = audioCtx.createOscillator();
+  const gruntGain = audioCtx.createGain();
+  grunt.type = 'sine';
+  grunt.frequency.setValueAtTime(90, t);
+  grunt.frequency.exponentialRampToValueAtTime(60, t + 0.08);
+  gruntGain.gain.setValueAtTime(0.08, t);
+  gruntGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  grunt.connect(gruntGain);
+  gruntGain.connect(masterGain);
+  grunt.start(t);
+  grunt.stop(t + 0.1);
 }
 
 function playScore() {
   if (!audioCtx || !masterGain) return;
-  // Happy ascending ding
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(523, audioCtx.currentTime);  // C5
-  osc.frequency.exponentialRampToValueAtTime(784, audioCtx.currentTime + 0.1);  // G5
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.15);
-  // Second chime
-  setTimeout(() => {
-    if (!audioCtx || !masterGain) return;
-    const osc2 = audioCtx.createOscillator();
-    const gain2 = audioCtx.createGain();
-    osc2.type = 'sine';
-    osc2.frequency.value = 1047;  // C6
-    gain2.gain.setValueAtTime(0.12, audioCtx.currentTime);
-    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
-    osc2.connect(gain2);
-    gain2.connect(masterGain);
-    osc2.start();
-    osc2.stop(audioCtx.currentTime + 0.12);
-  }, 80);
+  const t = audioCtx.currentTime;
+
+  // Tight synth hit - satisfying but quick
+  const hit = audioCtx.createOscillator();
+  const hitGain = audioCtx.createGain();
+  const hitFilter = audioCtx.createBiquadFilter();
+  hit.type = 'square';
+  hit.frequency.value = 440;
+  hitFilter.type = 'lowpass';
+  hitFilter.frequency.setValueAtTime(4000, t);
+  hitFilter.frequency.exponentialRampToValueAtTime(800, t + 0.08);
+  hitGain.gain.setValueAtTime(0.12, t);
+  hitGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  hit.connect(hitFilter);
+  hitFilter.connect(hitGain);
+  hitGain.connect(masterGain);
+  hit.start(t);
+  hit.stop(t + 0.1);
+
+  // Rising arp blip
+  [330, 440, 550].forEach((freq, i) => {
+    const blip = audioCtx!.createOscillator();
+    const blipGain = audioCtx!.createGain();
+    blip.type = 'sine';
+    blip.frequency.value = freq;
+    blipGain.gain.setValueAtTime(0.08, t + i * 0.04);
+    blipGain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.04 + 0.06);
+    blip.connect(blipGain);
+    blipGain.connect(masterGain!);
+    blip.start(t + i * 0.04);
+    blip.stop(t + i * 0.04 + 0.08);
+  });
 }
 
 function playDeath() {
   if (!audioCtx || !masterGain) return;
-  // Bonk
-  const bonk = audioCtx.createOscillator();
-  const bonkGain = audioCtx.createGain();
-  bonk.type = 'square';
-  bonk.frequency.value = 150;
-  bonkGain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-  bonkGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-  bonk.connect(bonkGain);
-  bonkGain.connect(masterGain);
-  bonk.start();
-  bonk.stop(audioCtx.currentTime + 0.1);
-  // Sad descending slide
+  const t = audioCtx.currentTime;
+
+  // Impact - deep thud
+  const thud = audioCtx.createOscillator();
+  const thudGain = audioCtx.createGain();
+  thud.type = 'sine';
+  thud.frequency.setValueAtTime(100, t);
+  thud.frequency.exponentialRampToValueAtTime(30, t + 0.2);
+  thudGain.gain.setValueAtTime(0.4, t);
+  thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  thud.connect(thudGain);
+  thudGain.connect(masterGain);
+  thud.start(t);
+  thud.stop(t + 0.25);
+
+  // Noise burst
+  const noiseLen = audioCtx.sampleRate * 0.15;
+  const noiseBuf = audioCtx.createBuffer(1, noiseLen, audioCtx.sampleRate);
+  const noiseData = noiseBuf.getChannelData(0);
+  for (let i = 0; i < noiseLen; i++) {
+    noiseData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / noiseLen, 2);
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = noiseBuf;
+  const noiseGain = audioCtx.createGain();
+  const noiseFilter = audioCtx.createBiquadFilter();
+  noiseFilter.type = 'bandpass';
+  noiseFilter.frequency.value = 1500;
+  noiseGain.gain.value = 0.2;
+  noise.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(masterGain);
+  noise.start(t);
+
+  // Descending pitch slide (defeat)
   setTimeout(() => {
     if (!audioCtx || !masterGain) return;
     const slide = audioCtx.createOscillator();
     const slideGain = audioCtx.createGain();
+    const slideFilter = audioCtx.createBiquadFilter();
     slide.type = 'sawtooth';
-    slide.frequency.setValueAtTime(400, audioCtx.currentTime);
-    slide.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.4);
-    slideGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    slide.frequency.setValueAtTime(300, audioCtx.currentTime);
+    slide.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.4);
+    slideFilter.type = 'lowpass';
+    slideFilter.frequency.value = 600;
+    slideGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
     slideGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-    slide.connect(slideGain);
+    slide.connect(slideFilter);
+    slideFilter.connect(slideGain);
     slideGain.connect(masterGain);
     slide.start();
     slide.stop(audioCtx.currentTime + 0.4);
-  }, 100);
+  }, 150);
 }
 
 export default function FlappyGame() {
@@ -307,6 +454,17 @@ export default function FlappyGame() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // Unlock audio on iOS - Play button tap is a valid user gesture
+    initAudio();
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    // Auto-start music
+    if (!musicEnabled) {
+      startMusic();
+      setMusicEnabled(true);
+    }
+
     const game = gameRef.current;
     game.bird.x = canvas.width * 0.2;
     game.bird.y = canvas.height * 0.5;
@@ -331,7 +489,7 @@ export default function FlappyGame() {
     setSubmittedEntryId(null);
     setProgression(null);
     // Don't spawn pipes yet - wait for warmup to end
-  }, []);
+  }, [musicEnabled]);
 
   const spawnPipe = useCallback(() => {
     const canvas = canvasRef.current;
@@ -346,15 +504,16 @@ export default function FlappyGame() {
   
   const spawnDeathParticles = useCallback(() => {
     const game = gameRef.current;
-    const colors = [THEME.bat, '#fff', THEME.batWing, THEME.batEye];
-    for (let i = 0; i < 20; i++) {
+    // Include underpants red and skin for comic effect
+    const colors = [THEME.bat, THEME.undies, THEME.skin, THEME.belt, THEME.cape, '#fff'];
+    for (let i = 0; i < 25; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 2 + Math.random() * 4;
+      const speed = 2 + Math.random() * 5;
       game.particles.push({
         x: game.bird.x,
         y: game.bird.y,
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 2,
+        vy: Math.sin(angle) * speed - 3,
         life: 1,
         color: colors[Math.floor(Math.random() * colors.length)],
       });
@@ -528,30 +687,55 @@ export default function FlappyGame() {
     const draw = () => {
       const game = gameRef.current;
 
-      // Night sky gradient - Gotham style
+      // Deep noir sky gradient
       const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      skyGrad.addColorStop(0, THEME.sky);
-      skyGrad.addColorStop(0.6, THEME.skyDark);
+      skyGrad.addColorStop(0, '#0a0a18');
+      skyGrad.addColorStop(0.4, THEME.sky);
+      skyGrad.addColorStop(0.8, THEME.skyDark);
       skyGrad.addColorStop(1, '#000');
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Moon in corner
+
+      // Subtle stars
+      ctx.fillStyle = '#fff';
+      for (let i = 0; i < 30; i++) {
+        const sx = (i * 137 + 50) % canvas.width;
+        const sy = (i * 89 + 20) % (canvas.height * 0.4);
+        ctx.globalAlpha = 0.3 + Math.sin(Date.now() / 1000 + i) * 0.2;
+        ctx.fillRect(sx, sy, 1, 1);
+      }
+      ctx.globalAlpha = 1;
+
+      // Moon with proper glow
+      const moonX = canvas.width - 70;
+      const moonY = 70;
+      // Outer glow
+      const moonGlow = ctx.createRadialGradient(moonX, moonY, 20, moonX, moonY, 80);
+      moonGlow.addColorStop(0, 'rgba(254, 249, 195, 0.2)');
+      moonGlow.addColorStop(0.5, 'rgba(254, 249, 195, 0.05)');
+      moonGlow.addColorStop(1, 'rgba(254, 249, 195, 0)');
+      ctx.fillStyle = moonGlow;
+      ctx.fillRect(moonX - 80, moonY - 80, 160, 160);
+      // Moon body
       ctx.fillStyle = THEME.moon;
-      ctx.globalAlpha = 0.3;
+      ctx.globalAlpha = 0.9;
       ctx.beginPath();
-      ctx.arc(canvas.width - 80, 80, 40, 0, Math.PI * 2);
+      ctx.arc(moonX, moonY, 28, 0, Math.PI * 2);
       ctx.fill();
-      ctx.globalAlpha = 0.6;
+      // Moon craters (subtle)
+      ctx.fillStyle = 'rgba(0,0,0,0.1)';
       ctx.beginPath();
-      ctx.arc(canvas.width - 80, 80, 35, 0, Math.PI * 2);
+      ctx.arc(moonX - 8, moonY - 5, 6, 0, Math.PI * 2);
+      ctx.arc(moonX + 10, moonY + 8, 4, 0, Math.PI * 2);
+      ctx.arc(moonX - 3, moonY + 10, 3, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
-      
-      // Distant city skyline silhouette (background)
+
+      // Distant city skyline (parallax, no flicker)
       ctx.fillStyle = '#0f172a';
-      for (let x = 0; x < canvas.width; x += 60) {
-        const h = 50 + Math.sin(x * 0.05) * 30 + Math.random() * 10;
+      for (let x = 0; x < canvas.width; x += 50) {
+        const seed = Math.sin(x * 0.1) * 0.5 + 0.5;
+        const h = 40 + seed * 50;
         ctx.fillRect(x, game.groundY - h, 55, h);
       }
 
@@ -575,12 +759,89 @@ export default function FlappyGame() {
         ctx.fillStyle = THEME.buildingDark;
         ctx.fillRect(pipe.x - 8, pipe.gapY - 15, game.pipeWidth + 16, 15);
         
-        // Windows on top building
-        ctx.fillStyle = THEME.window;
+        // Windows on top building - mostly static, rare special effects
+        // Pick ONE special window per building based on pipe position
+        const specialSeed = Math.abs(Math.sin(pipe.x * 0.1)) ;
+        const specialType = Math.floor(specialSeed * 5);
+        const specialWy = 20 + Math.floor(specialSeed * 3) * 35;
+        const specialWx = 10;
+
         for (let wy = 20; wy < pipe.gapY - 30; wy += 35) {
           for (let wx = 10; wx < game.pipeWidth - 10; wx += 18) {
-            ctx.globalAlpha = Math.random() > 0.3 ? 0.8 : 0.2; // Some windows lit
+            const seed = Math.abs(Math.sin(pipe.x * 0.05 + wx * 3 + wy * 7));
+            const isLit = seed > 0.35;
+            const isSpecial = (wy === specialWy && wx === specialWx && pipe.gapY > 150);
+
+            // Base window
+            ctx.globalAlpha = isLit ? 0.9 : 0.12;
+            ctx.fillStyle = THEME.window;
             ctx.fillRect(pipe.x + wx, wy, 10, 15);
+
+            // Special window effects (rare - only one per building)
+            if (isSpecial && isLit) {
+              const wx2 = pipe.x + wx;
+              const time = Date.now();
+
+              if (specialType === 0) {
+                // ZZZs floating out
+                ctx.globalAlpha = 0.7;
+                ctx.fillStyle = '#a5f3fc';
+                ctx.font = 'bold 8px monospace';
+                const zOffset = (time / 500) % 3;
+                ctx.fillText('z', wx2 + 12 + zOffset * 3, wy - 2 - zOffset * 4);
+                ctx.font = 'bold 10px monospace';
+                ctx.fillText('Z', wx2 + 16 + zOffset * 4, wy - 8 - zOffset * 5);
+                ctx.font = 'bold 12px monospace';
+                ctx.globalAlpha = 0.4;
+                ctx.fillText('Z', wx2 + 22 + zOffset * 3, wy - 16 - zOffset * 4);
+              } else if (specialType === 1) {
+                // Party strobes
+                const strobeColor = Math.floor(time / 80) % 4;
+                const colors = ['#f472b6', '#a78bfa', '#34d399', '#fbbf24'];
+                ctx.fillStyle = colors[strobeColor];
+                ctx.globalAlpha = 0.9;
+                ctx.fillRect(pipe.x + wx, wy, 10, 15);
+                // Light rays
+                ctx.globalAlpha = 0.3;
+                ctx.beginPath();
+                ctx.moveTo(wx2 + 5, wy + 7);
+                ctx.lineTo(wx2 - 5 + Math.sin(time / 100) * 8, wy - 15);
+                ctx.lineTo(wx2 + 15 + Math.cos(time / 100) * 8, wy - 15);
+                ctx.fill();
+              } else if (specialType === 2) {
+                // TV glow (flickering blue)
+                const flicker = Math.sin(time / 50) * 0.3 + 0.6;
+                ctx.fillStyle = `rgba(100, 180, 255, ${flicker})`;
+                ctx.fillRect(pipe.x + wx, wy, 10, 15);
+                // Scan lines
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                for (let sy = wy; sy < wy + 15; sy += 3) {
+                  ctx.fillRect(pipe.x + wx, sy, 10, 1);
+                }
+              } else if (specialType === 3) {
+                // Music notes floating
+                ctx.globalAlpha = 0.8;
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = '10px serif';
+                const noteY = (time / 300) % 20;
+                ctx.fillText('♪', wx2 + 11, wy + 5 - noteY);
+                ctx.globalAlpha = 0.5;
+                ctx.fillText('♫', wx2 + 15, wy + 10 - (noteY + 5) % 20);
+              } else {
+                // Red alarm / emergency light
+                const pulse = Math.sin(time / 150) > 0;
+                if (pulse) {
+                  ctx.fillStyle = '#ef4444';
+                  ctx.globalAlpha = 0.9;
+                  ctx.fillRect(pipe.x + wx, wy, 10, 15);
+                  // Glow
+                  ctx.globalAlpha = 0.2;
+                  ctx.beginPath();
+                  ctx.arc(wx2 + 5, wy + 7, 15, 0, Math.PI * 2);
+                  ctx.fill();
+                }
+              }
+            }
           }
         }
         ctx.globalAlpha = 1;
@@ -596,12 +857,87 @@ export default function FlappyGame() {
         ctx.fillStyle = THEME.buildingDark;
         ctx.fillRect(pipe.x - 8, pipe.gapY + game.pipeGap, game.pipeWidth + 16, 15);
         
-        // Windows on bottom building
-        ctx.fillStyle = THEME.window;
-        for (let wy = pipe.gapY + game.pipeGap + 30; wy < game.groundY - 20; wy += 35) {
+        // Windows on bottom building - mostly static, rare special effects
+        const specialSeed2 = Math.abs(Math.cos(pipe.x * 0.15));
+        const specialType2 = Math.floor(specialSeed2 * 5);
+        const baseWy = pipe.gapY + game.pipeGap + 30;
+        const specialWy2 = baseWy + Math.floor(specialSeed2 * 2) * 35;
+
+        for (let wy = baseWy; wy < game.groundY - 20; wy += 35) {
           for (let wx = 10; wx < game.pipeWidth - 10; wx += 18) {
-            ctx.globalAlpha = Math.random() > 0.3 ? 0.8 : 0.2;
+            const seed = Math.abs(Math.sin(pipe.x * 0.07 + wx * 5 + wy * 11));
+            const isLit = seed > 0.3;
+            const isSpecial = (wy === specialWy2 && wx === 10 && game.groundY - baseWy > 60);
+
+            // Base window
+            ctx.globalAlpha = isLit ? 0.9 : 0.12;
+            ctx.fillStyle = THEME.window;
             ctx.fillRect(pipe.x + wx, wy, 10, 15);
+
+            // Special window effects
+            if (isSpecial && isLit) {
+              const wx2 = pipe.x + wx;
+              const time = Date.now();
+
+              if (specialType2 === 0) {
+                // Steam/smoke rising
+                ctx.globalAlpha = 0.4;
+                ctx.fillStyle = '#e2e8f0';
+                const smokeT = (time / 400) % 1;
+                for (let s = 0; s < 3; s++) {
+                  const sT = (smokeT + s * 0.3) % 1;
+                  const sx = wx2 + 5 + Math.sin(sT * 6 + s) * 4;
+                  const sy = wy - 5 - sT * 25;
+                  ctx.globalAlpha = 0.3 * (1 - sT);
+                  ctx.beginPath();
+                  ctx.arc(sx, sy, 3 + sT * 3, 0, Math.PI * 2);
+                  ctx.fill();
+                }
+              } else if (specialType2 === 1) {
+                // Neon sign flicker (like a bar)
+                const flicker = Math.random() > 0.1;
+                if (flicker) {
+                  ctx.fillStyle = '#f472b6';
+                  ctx.globalAlpha = 0.95;
+                  ctx.fillRect(pipe.x + wx, wy, 10, 15);
+                  // Neon glow
+                  ctx.globalAlpha = 0.15;
+                  ctx.shadowColor = '#f472b6';
+                  ctx.shadowBlur = 10;
+                  ctx.fillRect(pipe.x + wx - 2, wy - 2, 14, 19);
+                  ctx.shadowBlur = 0;
+                }
+              } else if (specialType2 === 2) {
+                // Candle flicker (warm, cozy)
+                const flicker = 0.6 + Math.sin(time / 80) * 0.2 + Math.random() * 0.2;
+                ctx.fillStyle = `rgba(251, 191, 36, ${flicker})`;
+                ctx.fillRect(pipe.x + wx, wy, 10, 15);
+              } else if (specialType2 === 3) {
+                // Phone screen glow (scrolling)
+                ctx.fillStyle = 'rgba(96, 165, 250, 0.7)';
+                ctx.globalAlpha = 0.8;
+                ctx.fillRect(pipe.x + wx + 3, wy + 4, 4, 7);
+                // Thumb scrolling
+                const scrollY = (time / 200) % 6;
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(pipe.x + wx + 4, wy + 5 + scrollY, 2, 2);
+              } else {
+                // Welding sparks
+                if (Math.random() > 0.7) {
+                  ctx.fillStyle = '#fef08a';
+                  ctx.globalAlpha = 0.9;
+                  for (let sp = 0; sp < 5; sp++) {
+                    const spx = wx2 + 5 + (Math.random() - 0.5) * 15;
+                    const spy = wy + 7 + (Math.random() - 0.5) * 10;
+                    ctx.fillRect(spx, spy, 2, 2);
+                  }
+                  // Bright center
+                  ctx.beginPath();
+                  ctx.arc(wx2 + 5, wy + 7, 3, 0, Math.PI * 2);
+                  ctx.fill();
+                }
+              }
+            }
           }
         }
         ctx.globalAlpha = 1;
@@ -615,75 +951,192 @@ export default function FlappyGame() {
       ctx.fillStyle = THEME.groundDark;
       ctx.fillRect(0, game.groundY, canvas.width, 5);
 
-      // BAT with squash/stretch and cape!
+      // CHUBBY HERO - indie style with glow
       ctx.save();
       ctx.translate(game.bird.x, game.bird.y);
       ctx.scale(game.bird.scaleX, game.bird.scaleY);
       const s = game.bird.size;
-      
-      // Cape trailing behind (flowing)
-      ctx.fillStyle = THEME.cape;
+
+      // HERO GLOW (subtle purple aura)
+      ctx.shadowColor = THEME.heroGlow;
+      ctx.shadowBlur = 15;
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.15)';
       ctx.beginPath();
-      ctx.moveTo(-s * 0.5, 0);
-      ctx.quadraticCurveTo(-s * 2, s * 0.5 + game.bird.vy * 2, -s * 2.5, s * 1.5);
-      ctx.quadraticCurveTo(-s * 1.5, s * 1, -s * 0.5, s * 0.3);
-      ctx.fill();
-      
-      // Bat body (oval)
-      ctx.fillStyle = THEME.bat;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, s * 0.8, s * 0.6, 0, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Bat head
-      ctx.beginPath();
-      ctx.arc(s * 0.5, -s * 0.2, s * 0.4, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Bat ears
-      ctx.beginPath();
-      ctx.moveTo(s * 0.3, -s * 0.5);
-      ctx.lineTo(s * 0.2, -s * 1);
-      ctx.lineTo(s * 0.5, -s * 0.5);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(s * 0.6, -s * 0.5);
-      ctx.lineTo(s * 0.8, -s * 1);
-      ctx.lineTo(s * 0.7, -s * 0.5);
-      ctx.fill();
-      
-      // Wings (animated based on velocity)
-      const wingFlap = Math.sin(Date.now() / 80) * 0.3;
-      ctx.fillStyle = THEME.batWing;
-      // Left wing
-      ctx.beginPath();
-      ctx.moveTo(-s * 0.3, 0);
-      ctx.quadraticCurveTo(-s * 1.5, -s * (0.8 + wingFlap), -s * 1.8, s * 0.2);
-      ctx.quadraticCurveTo(-s * 1, s * 0.3, -s * 0.3, s * 0.2);
-      ctx.fill();
-      // Right wing
-      ctx.beginPath();
-      ctx.moveTo(s * 0.3, 0);
-      ctx.quadraticCurveTo(s * 1.2, -s * (0.6 + wingFlap), s * 1.5, s * 0.3);
-      ctx.quadraticCurveTo(s * 0.8, s * 0.3, s * 0.3, s * 0.2);
-      ctx.fill();
-      
-      // Glowing eyes
-      ctx.fillStyle = THEME.batEye;
-      ctx.shadowColor = THEME.batEye;
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.ellipse(s * 0.35, -s * 0.25, 3, 2, 0, 0, Math.PI * 2);
-      ctx.ellipse(s * 0.6, -s * 0.25, 3, 2, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, s * 1.2, s * 1.0, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // NO wing section below - removed bird wing
-      ctx.fillStyle = '#f5cd5e';
+      // Cape with glow effect (actually dramatic now)
+      ctx.shadowColor = THEME.cape;
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = THEME.cape;
       ctx.beginPath();
-      ctx.ellipse(-8, 5, 12, 8, 0, 0, Math.PI * 2);
+      ctx.moveTo(-s * 0.3, -s * 0.2);
+      ctx.quadraticCurveTo(-s * 1.4, s * 0.4 + game.bird.vy * 2, -s * 1.8, s * 1.2);
+      ctx.lineTo(-s * 1.5, s * 0.9);
+      ctx.quadraticCurveTo(-s * 0.9, s * 0.3, -s * 0.3, s * 0.1);
       ctx.fill();
-      
+      ctx.shadowBlur = 0;
+
+      // Stick legs dangling
+      ctx.strokeStyle = THEME.skin;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.2, s * 0.6);
+      ctx.lineTo(-s * 0.3, s * 1.2);
+      ctx.moveTo(s * 0.2, s * 0.6);
+      ctx.lineTo(s * 0.3, s * 1.2);
+      ctx.stroke();
+
+      // Little boots
+      ctx.fillStyle = '#1e1b4b';
+      ctx.beginPath();
+      ctx.ellipse(-s * 0.3, s * 1.25, 4, 3, 0, 0, Math.PI * 2);
+      ctx.ellipse(s * 0.3, s * 1.25, 4, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Chubby body with beer belly
+      ctx.fillStyle = THEME.bat;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, s * 0.7, s * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Beer belly poking out
+      ctx.fillStyle = THEME.skin;
+      ctx.beginPath();
+      ctx.ellipse(0, s * 0.15, s * 0.35, s * 0.25, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // HOT PINK UNDERPANTS ON OUTSIDE (iconic)
+      ctx.shadowColor = THEME.undies;
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = THEME.undies;
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.5, s * 0.3);
+      ctx.lineTo(s * 0.5, s * 0.3);
+      ctx.lineTo(s * 0.4, s * 0.7);
+      ctx.lineTo(-s * 0.4, s * 0.7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // UTILITY BELT (gold with glow)
+      ctx.shadowColor = THEME.beltGlow;
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = THEME.belt;
+      ctx.fillRect(-s * 0.6, s * 0.25, s * 1.2, s * 0.15);
+      ctx.shadowBlur = 0;
+      // Belt buckle (shiny)
+      ctx.fillStyle = THEME.beltGlow;
+      ctx.beginPath();
+      ctx.ellipse(0, s * 0.32, s * 0.12, s * 0.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Belt pouches
+      ctx.fillStyle = '#b45309';
+      ctx.fillRect(-s * 0.55, s * 0.2, s * 0.15, s * 0.2);
+      ctx.fillRect(s * 0.4, s * 0.2, s * 0.15, s * 0.2);
+
+      // Stick arms flailing
+      const armWave = Math.sin(Date.now() / 100) * 0.3;
+      ctx.strokeStyle = THEME.skin;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.5, 0);
+      ctx.lineTo(-s * 1.0, -s * (0.3 + armWave));
+      ctx.moveTo(s * 0.5, 0);
+      ctx.lineTo(s * 1.0, -s * (0.5 - armWave));
+      ctx.stroke();
+
+      // Little gloved hands
+      ctx.fillStyle = '#1e1b4b';
+      ctx.beginPath();
+      ctx.arc(-s * 1.0, -s * (0.3 + armWave), 4, 0, Math.PI * 2);
+      ctx.arc(s * 1.0, -s * (0.5 - armWave), 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Head (slightly too big)
+      ctx.fillStyle = THEME.bat;
+      ctx.beginPath();
+      ctx.arc(0, -s * 0.5, s * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cowl opening showing chubby face
+      ctx.fillStyle = THEME.skin;
+      ctx.beginPath();
+      ctx.ellipse(0, -s * 0.4, s * 0.25, s * 0.3, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Derpy bat ears (one slightly bent)
+      ctx.fillStyle = THEME.bat;
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.25, -s * 0.8);
+      ctx.lineTo(-s * 0.35, -s * 1.3);
+      ctx.lineTo(-s * 0.1, -s * 0.85);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(s * 0.25, -s * 0.8);
+      ctx.lineTo(s * 0.4, -s * 1.25);  // Slightly bent
+      ctx.lineTo(s * 0.35, -s * 1.15);
+      ctx.lineTo(s * 0.1, -s * 0.85);
+      ctx.fill();
+
+      // Derpy eyes (looking different directions)
+      ctx.fillStyle = THEME.batEye;
+      ctx.beginPath();
+      ctx.ellipse(-s * 0.1, -s * 0.45, 5, 6, 0, 0, Math.PI * 2);
+      ctx.ellipse(s * 0.1, -s * 0.45, 5, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Pupils looking different ways
+      ctx.fillStyle = THEME.batPupil;
+      ctx.beginPath();
+      ctx.arc(-s * 0.12, -s * 0.43, 2, 0, Math.PI * 2);  // Looking left
+      ctx.arc(s * 0.12, -s * 0.47, 2, 0, Math.PI * 2);   // Looking up
+      ctx.fill();
+
+      // Worried eyebrows
+      ctx.strokeStyle = THEME.bat;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.18, -s * 0.55);
+      ctx.lineTo(-s * 0.02, -s * 0.58);
+      ctx.moveTo(s * 0.02, -s * 0.58);
+      ctx.lineTo(s * 0.18, -s * 0.55);
+      ctx.stroke();
+
+      // Open mouth (stressed/yelling)
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.ellipse(0, -s * 0.25, s * 0.1, s * 0.08, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sweat drops (animated, flying off)
+      ctx.shadowColor = THEME.sweat;
+      ctx.shadowBlur = 4;
+      ctx.fillStyle = THEME.sweat;
+      const sweatAnim = (Date.now() / 150) % 1;
+      // Left sweat drop flying
+      ctx.beginPath();
+      ctx.ellipse(-s * 0.4 - sweatAnim * 8, -s * 0.55 - sweatAnim * 5, 2, 3, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      // Right sweat drop
+      ctx.beginPath();
+      ctx.ellipse(s * 0.45 + sweatAnim * 6, -s * 0.5 - sweatAnim * 4, 2, 3, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+      // Extra drop when really struggling (high velocity)
+      if (Math.abs(game.bird.vy) > 5) {
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.ellipse(-s * 0.2 - sweatAnim * 10, -s * 0.7 - sweatAnim * 8, 1.5, 2.5, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      ctx.shadowBlur = 0;
+
+      // 5 o'clock shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.beginPath();
+      ctx.ellipse(0, -s * 0.2, s * 0.15, s * 0.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.restore();
       
       // Death particles
@@ -717,7 +1170,7 @@ export default function FlappyGame() {
           ctx.fillStyle = THEME.moon;
           ctx.shadowColor = '#000';
           ctx.shadowBlur = 4;
-          ctx.fillText('TAP TO FLY', canvas.width / 2, canvas.height / 2 + 80);
+          ctx.fillText('TAP TO HELP HIM FLY', canvas.width / 2, canvas.height / 2 + 80);
         } else if (game.countdown === 'GO!') {
           // Big purple GO! - Gotham style
           ctx.font = 'bold 72px ui-monospace, monospace';
@@ -891,7 +1344,7 @@ export default function FlappyGame() {
               letterSpacing: 4,
               textShadow: '0 0 40px rgba(254,240,138,0.4)',
             }}>
-              BAT DASH
+              FAT DASH
             </h1>
             <p style={{
               fontSize: 16,
@@ -900,8 +1353,8 @@ export default function FlappyGame() {
               marginBottom: 35,
               letterSpacing: 2,
             }}>
-              tap to fly<br />
-              soar through gotham
+              tap to flap<br />
+              he&apos;s trying his best
             </p>
             <button
               className="btn-primary"
@@ -956,7 +1409,7 @@ export default function FlappyGame() {
             marginBottom: 15,
             letterSpacing: 6,
           }}>
-            the night falls
+            oof. he tried.
           </h1>
           <div style={{
             fontFamily: 'ui-monospace, monospace',
@@ -1046,8 +1499,8 @@ export default function FlappyGame() {
             </button>
             <ShareButtonContainer
               id="share-btn-container"
-              url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/flappy/share/${score}` : ''}
-              text={`I scored ${score} on FLAPPY! Can you beat me? 🐦`}
+              url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/batdash/share/${score}` : ''}
+              text={`I helped this chubby hero fly ${score} buildings in FAT DASH! He's trying his best 🦇`}
               style="minimal"
               socialLoaded={socialLoaded}
             />
