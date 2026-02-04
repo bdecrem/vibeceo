@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MORNING ROUTINE — 8-Bit Morning</title>
+    
+    <!-- OG Tags -->
+    <meta property="og:title" content="MORNING ROUTINE">
+    <meta property="og:description" content="8-bit morning struggle. HP: Critical.">
+    <meta property="og:image" content="https://kochi.to/amber/morning-routine-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/morning-routine.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MORNING ROUTINE">
+    <meta name="twitter:description" content="8-bit morning struggle. HP: Critical.">
+    <meta name="twitter:image" content="https://kochi.to/amber/morning-routine-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: monospace;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            aspect-ratio: 4/3;
+            background: #000;
+            border: 4px solid #333;
+            box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            display: block;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        .dialogue-box {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 4px solid #D4A574;
+            padding: 16px 24px;
+            max-width: 90%;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .dialogue-text {
+            color: #D4A574;
+            font-size: 14px;
+            line-height: 1.5;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        @media (max-width: 640px) {
+            #game-container {
+                border: 2px solid #333;
+                max-width: 100%;
+                height: auto;
+            }
+            .dialogue-box {
+                bottom: 10px;
+                padding: 12px 16px;
+            }
+            .dialogue-text {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="ui-overlay">
+            <div class="dialogue-box">
+                <div class="dialogue-text">▼ Another day, another heroic brushing session...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set internal resolution (will be scaled up by CSS)
+        canvas.width = 320;
+        canvas.height = 240;
+        
+        // Disable image smoothing for crispy pixels
+        ctx.imageSmoothingEnabled = false;
+        
+        // Color palette
+        const colors = {
+            bg: '#1a1a2e',
+            wall: '#2d3a4a',
+            wallDark: '#1e2838',
+            tile: '#3d5a80',
+            tileDark: '#2e4560',
+            skin: '#f4a582',
+            hair: '#4a3728',
+            pajama: '#6b5b8e',
+            pajamaLight: '#8a7ba8',
+            gold: '#FFD700',
+            amber: '#D4A574',
+            red: '#ff4444',
+            redDark: '#cc0000',
+            white: '#ffffff',
+            sink: '#a8b8c8',
+            mirror: '#5a7a9a',
+            toothbrush: '#2D9596',
+            paste: '#e8f4f8'
+        };
+
+        // Animation frame
+        let frame = 0;
+        
+        // Draw pixel at scale
+        function pixel(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, 1, 1);
+        }
+        
+        // Draw rectangle
+        function rect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+        }
+        
+        // Draw outlined rectangle
+        function outlineRect(x, y, w, h, color, outlineColor) {
+            rect(x, y, w, h, outlineColor);
+            rect(x + 1, y + 1, w - 2, h - 2, color);
+        }
+        
+        // Draw the scene
+        function drawScene() {
+            // Background (bathroom wall)
+            rect(0, 0, 320, 240, colors.wall);
+            
+            // Floor tiles (checkered pattern)
+            for (let x = 0; x < 320; x += 16) {
+                for (let y = 180; y < 240; y += 16) {
+                    const isEven = ((x / 16) + (y / 16)) % 2 === 0;
+                    rect(x, y, 16, 16, isEven ? colors.tile : colors.tileDark);
+                }
+            }
+            
+            // Sink (left side)
+            rect(20, 140, 60, 40, colors.sink);
+            rect(25, 145, 50, 5, colors.white); // Basin rim
+            rect(40, 150, 20, 25, colors.wallDark); // Basin shadow
+            
+            // Mirror (center)
+            rect(100, 40, 120, 100, colors.mirror);
+            rect(105, 45, 110, 90, colors.wallDark); // Mirror reflection
+            
+            // Character outline in mirror (sleepy reflection)
+            rect(145, 70, 30, 50, colors.skin);
+            rect(150, 65, 20, 8, colors.hair); // Hair
+            pixel(155, 78, colors.wallDark); // Eye (closed)
+            pixel(165, 78, colors.wallDark); // Eye (closed)
+        }
+        
+        // Draw the hero (right side, brushing teeth)
+        function drawHero() {
+            const x = 200;
+            const y = 120;
+            const armMove = Math.sin(frame * 0.2) * 2; // Brushing motion
+            
+            // Body (pajamas)
+            rect(x + 5, y + 25, 30, 35, colors.pajama);
+            rect(x + 8, y + 28, 24, 8, colors.pajamaLight); // Stripe
+            
+            // Arms
+            rect(x + 2, y + 28, 5, 20, colors.skin); // Left arm
+            rect(x + 33, y + 28, 5, 20, colors.skin); // Right arm
+            
+            // Right arm extended (holding toothbrush) with motion
+            rect(x + 38, y + 20 + armMove, 12, 4, colors.skin);
+            
+            // Head
+            rect(x + 10, y + 8, 20, 20, colors.skin);
+            
+            // Hair (messy morning hair)
+            rect(x + 8, y + 5, 24, 6, colors.hair);
+            pixel(x + 7, y + 6, colors.hair);
+            pixel(x + 32, y + 6, colors.hair);
+            pixel(x + 12, y + 4, colors.hair); // Sticking up
+            pixel(x + 22, y + 4, colors.hair); // Sticking up
+            
+            // Tired eyes
+            pixel(x + 15, y + 15, colors.wallDark);
+            pixel(x + 23, y + 15, colors.wallDark);
+            
+            // Mouth (brushing)
+            pixel(x + 18, y + 20, colors.wallDark);
+            pixel(x + 19, y + 20, colors.wallDark);
+            pixel(x + 20, y + 20, colors.wallDark);
+            
+            // Toothbrush
+            rect(x + 50, y + 21 + armMove, 8, 2, colors.toothbrush);
+            rect(x + 58, y + 20 + armMove, 4, 4, colors.paste); // Bristles with paste
+            
+            // Legs
+            rect(x + 10, y + 60, 8, 20, colors.pajama);
+            rect(x + 22, y + 60, 8, 20, colors.pajama);
+            
+            // Feet (slippers)
+            rect(x + 8, y + 80, 12, 4, colors.amber);
+            rect(x + 20, y + 80, 12, 4, colors.amber);
+        }
+        
+        // Draw UI elements
+        function drawUI() {
+            // HP Bar (top left)
+            const barX = 10;
+            const barY = 10;
+            const barW = 100;
+            const barH = 12;
+            
+            // Label
+            ctx.fillStyle = colors.white;
+            ctx.font = '8px monospace';
+            ctx.fillText('MORNING HP', barX, barY - 2);
+            
+            // Bar background
+            rect(barX, barY, barW, barH, colors.wallDark);
+            
+            // Critical HP (only 15%)
+            const hpPercent = 0.15;
+            const hpWidth = (barW - 4) * hpPercent;
+            rect(barX + 2, barY + 2, hpWidth, barH - 4, colors.red);
+            
+            // HP flashing effect when critical
+            if (frame % 30 < 15) {
+                rect(barX + 2, barY + 2, hpWidth, barH - 4, colors.redDark);
+            }
+            
+            // Stats box (top right)
+            const statsX = 220;
+            const statsY = 10;
+            
+            ctx.fillStyle = colors.amber;
+            ctx.font = '8px monospace';
+            ctx.fillText('MOTIVATION: ▓░░░░░░░░░', statsX, statsY);
+            ctx.fillText('COFFEE: ░░░░░░░░░░', statsX, statsY + 12);
+            ctx.fillText('SNOOZE: x7', statsX, statsY + 24);
+            
+            // Quest text (bottom right)
+            ctx.fillStyle = colors.gold;
+            ctx.font = '7px monospace';
+            ctx.fillText('QUEST: SURVIVE TODAY', 220, 220);
+            ctx.fillStyle = colors.amber;
+            ctx.fillText('REWARD: +1 DAY', 220, 230);
+        }
+        
+        // Main render loop
+        function render() {
+            drawScene();
+            drawHero();
+            drawUI();
+            
+            frame++;
+            requestAnimationFrame(render);
+        }
+        
+        // Start
+        render();
+    </script>
+</body>
+</html>
