@@ -3,6 +3,8 @@
 // Based on Jambot's terminal-ui.ts - uses native terminal scrollback, NOT virtual rendering
 
 import wrapAnsi from 'wrap-ansi';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import {
   createSession,
   runAgentLoop,
@@ -10,6 +12,10 @@ import {
   getApiKey,
   saveApiKey,
 } from './amber.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const REPO_ROOT = join(__dirname, '..');
 
 // === ANSI ESCAPE CODES ===
 const ANSI = {
@@ -493,7 +499,7 @@ class TerminalUI {
         },
         onResponse: (text) => this.printResponse(text),
       }, {
-        repoRoot: '/Users/bart/Documents/code/vibeceo'
+        repoRoot: REPO_ROOT
       });
     } catch (err) {
       this.printSystem(`Error: ${err.message}`);

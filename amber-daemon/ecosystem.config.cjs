@@ -3,7 +3,7 @@ module.exports = {
   apps: [{
     name: 'amber',
     script: 'daemon.js',
-    cwd: '/Users/bart/Documents/code/vibeceo/amber-daemon',
+    cwd: __dirname,
     
     // Restart policy
     autorestart: true,

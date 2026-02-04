@@ -8,11 +8,15 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from '
 import { join } from 'path';
 import { homedir } from 'os';
 import { createServer } from 'net';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 // === CONFIG ===
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const POLL_INTERVAL_MS = 30_000; // 30 seconds for Discord
 const DISCORD_CHANNEL_ID = '1441080550415929406'; // #agent-lounge (will add DMs later)
-const REPO_ROOT = '/Users/bart/Documents/code/vibeceo';
+const REPO_ROOT = join(__dirname, '..');
 const MAX_MESSAGES = 80;   // Trigger compaction above this
 const KEEP_MESSAGES = 50;  // Keep this many after compaction
 const STATE_DIR = join(homedir(), '.amber');

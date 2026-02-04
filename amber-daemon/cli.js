@@ -3,6 +3,12 @@
 
 import { createSession, runAgentLoop, getApiKey, SPLASH } from './amber.js';
 import { createInterface } from 'readline';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const REPO_ROOT = join(__dirname, '..');
 
 // Simple REPL for now - TUI can come later
 async function main() {
@@ -79,7 +85,7 @@ Just type to talk to Amber.
             // Done
           }
         }, {
-          repoRoot: '/Users/bart/Documents/code/vibeceo'
+          repoRoot: REPO_ROOT
         });
       } catch (err) {
         console.error(`\n❌ Error: ${err.message}`);

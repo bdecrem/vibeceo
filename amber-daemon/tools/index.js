@@ -223,7 +223,7 @@ export async function executeTool(name, input, session, context = {}) {
         return 'Cannot use discord_post for DM conversations. Your text response will be sent as a DM automatically.';
       }
       try {
-        const scriptPath = join(context.repoRoot || '/Users/bart/Documents/code/vibeceo',
+        const scriptPath = join(context.repoRoot || join(__dirname, '../..'),
           'discord-bot/agent-chat/post-message.cjs');
         const escaped = message.replace(/"/g, '\\"');
         const result = execSync(
@@ -246,7 +246,7 @@ export async function executeTool(name, input, session, context = {}) {
       }
 
       try {
-        const repoRoot = context.repoRoot || '/Users/bart/Documents/code/vibeceo';
+        const repoRoot = context.repoRoot || join(__dirname, '../..');
         const escaped = query.replace(/'/g, "'\\''");
         const result = execSync(
           `cd "${repoRoot}/sms-bot" && npx tsx --env-file=.env.local scripts/supabase-query.ts '${escaped}'`,
@@ -269,7 +269,7 @@ export async function executeTool(name, input, session, context = {}) {
 
     case "git_log": {
       const { days = 7, limit = 20 } = input;
-      const repoRoot = context.repoRoot || '/Users/bart/Documents/code/vibeceo';
+      const repoRoot = context.repoRoot || join(__dirname, '../..');
       try {
         const result = execSync(
           `cd "${repoRoot}" && git log --oneline --since="${days} days ago" --all -- . ':!incubator' | head -${limit}`,

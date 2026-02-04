@@ -2,8 +2,11 @@
 # Migrate drawer/ files to ~/.amber/memory/
 # Run once to set up the new memory system
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 MEMORY_DIR="$HOME/.amber/memory"
-DRAWER_DIR="/Users/bart/Documents/code/vibeceo/drawer"
+DRAWER_DIR="$REPO_ROOT/drawer"
 
 echo "Migrating Amber's memory to $MEMORY_DIR..."
 
