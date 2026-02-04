@@ -19,11 +19,14 @@ const labMessages = [
 
 const games = [
   { icon: '🥁', name: 'Tap Beats', href: '/pixelpit/arcade/tap-beats', playable: true, date: 'Tue 2/3' },
+  { icon: '🐦', name: 'Flappy', href: '/pixelpit/arcade/flappy', playable: true, bonus: true },
   { icon: '🌱', name: 'Sprout Run', href: '/pixelpit/arcade/sprout-run', playable: true, date: 'Mon 2/2' },
   { icon: '🐱', name: 'Cat Tower', href: '/pixelpit/arcade/cattower', playable: true, date: 'Fri 1/30' },
   { icon: '💥', name: 'Emoji Blaster', href: '/pixelpit/arcade/emoji', playable: true, date: 'Thu 1/29' },
   { icon: '🌀', name: 'Singularity', href: '/pixelpit/arcade/singularity', playable: true, date: 'Wed 1/28' },
   { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true, date: 'Tue 1/27' },
+  // Older games (scroll right)
+  { icon: '🎲', name: 'Dice Dash', href: null, playable: false },
 ];
 
 const castBlurbs: Record<string, { bio: string; motto?: string }> = {
@@ -354,6 +357,104 @@ function CastCarousel() {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+function GamesGrid() {
+  const [showOlder, setShowOlder] = useState(false);
+
+  // Split into recent (first 6) and older games
+  const recentGames = games.slice(0, 6);
+  const olderGames = games.slice(6);
+
+  const baseStyle = {
+    background: 'linear-gradient(135deg, rgba(255, 184, 212, 0.2) 0%, rgba(255, 105, 180, 0.15) 100%)',
+    border: '2px solid rgba(255, 150, 200, 0.5)',
+    boxShadow: '0 0 25px rgba(255, 105, 180, 0.4), inset 0 0 20px rgba(255, 105, 180, 0.1)',
+  };
+  const todayStyle = {
+    background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 140, 0, 0.25) 100%)',
+    border: '3px solid #FFD700',
+    boxShadow: '0 0 30px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 140, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.15)',
+  };
+  const bonusStyle = {
+    background: 'linear-gradient(135deg, rgba(0, 255, 200, 0.25) 0%, rgba(0, 200, 150, 0.2) 100%)',
+    border: '3px solid #00FFAA',
+    boxShadow: '0 0 30px rgba(0, 255, 170, 0.5), 0 0 60px rgba(0, 255, 170, 0.2), inset 0 0 20px rgba(0, 255, 170, 0.1)',
+  };
+
+  const renderGame = (game: typeof games[0], i: number, isOlder = false) => {
+    const isToday = i === 0 && !isOlder;
+    const isBonus = 'bonus' in game && game.bonus;
+    const cardStyle = isToday ? todayStyle : isBonus ? bonusStyle : baseStyle;
+    const textColor = isToday ? '#FFD700' : isBonus ? '#00FFAA' : '#FFC0DB';
+
+    return game.href ? (
+      <Link
+        key={game.name}
+        href={game.href}
+        className={`relative rounded-2xl p-4 text-center hover:scale-105 transition-all cursor-pointer ${isToday ? 'scale-105' : ''}`}
+        style={cardStyle}
+      >
+        {isToday && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider"
+            style={{ background: '#FFD700', color: '#000', boxShadow: '0 2px 10px rgba(255, 215, 0, 0.5)' }}>
+            TODAY
+          </div>
+        )}
+        {isBonus && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider"
+            style={{ background: '#00FFAA', color: '#000', boxShadow: '0 2px 10px rgba(0, 255, 170, 0.5)' }}>
+            BONUS
+          </div>
+        )}
+        <div className="text-4xl mb-2">{game.icon}</div>
+        <div className="text-sm font-bold" style={{ color: textColor }}>{game.name}</div>
+        {game.date && <div className="text-xs mt-1" style={{ color: isToday ? 'rgba(255, 215, 0, 0.8)' : 'rgba(255, 182, 193, 0.8)' }}>{game.date}</div>}
+      </Link>
+    ) : (
+      <div key={game.name} className="rounded-2xl p-4 text-center hover:scale-105 transition-all cursor-pointer" style={baseStyle}>
+        <div className="text-4xl mb-2">{game.icon}</div>
+        <div className="text-sm font-bold" style={{ color: '#FFC0DB' }}>{game.name}</div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      {/* Main grid - recent games */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+        {recentGames.map((game, i) => renderGame(game, i))}
+      </div>
+
+      {/* Older games section */}
+      {olderGames.length > 0 && (
+        <>
+          {showOlder ? (
+            <>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mt-4">
+                {olderGames.map((game, i) => renderGame(game, i, true))}
+              </div>
+              <button
+                onClick={() => setShowOlder(false)}
+                className="mt-6 mx-auto block text-sm font-medium transition-all hover:scale-105"
+                style={{ color: 'rgba(255, 182, 193, 0.6)' }}
+              >
+                ▲ show less
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setShowOlder(true)}
+              className="mt-6 mx-auto block text-sm font-medium transition-all hover:scale-105"
+              style={{ color: 'rgba(255, 182, 193, 0.6)' }}
+            >
+              ▼ older games
+            </button>
+          )}
+        </>
       )}
     </div>
   );
@@ -824,45 +925,7 @@ export default function PixelpitLanding() {
         <h2 className="text-center text-3xl font-black mb-10">
           <span style={{ color: '#FF6BA8', textShadow: '0 0 30px rgba(255, 107, 168, 0.6)' }}>OUR GAMES</span>
         </h2>
-        <div className="max-w-4xl mx-auto grid grid-cols-3 md:grid-cols-6 gap-4">
-          {games.map((game, i) => {
-            const isToday = i === 0;
-            const baseStyle = {
-              background: 'linear-gradient(135deg, rgba(255, 184, 212, 0.2) 0%, rgba(255, 105, 180, 0.15) 100%)',
-              border: '2px solid rgba(255, 150, 200, 0.5)',
-              boxShadow: '0 0 25px rgba(255, 105, 180, 0.4), inset 0 0 20px rgba(255, 105, 180, 0.1)',
-            };
-            const todayStyle = {
-              background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 140, 0, 0.25) 100%)',
-              border: '3px solid #FFD700',
-              boxShadow: '0 0 30px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 140, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.15)',
-            };
-
-            return game.href ? (
-              <Link
-                key={game.name}
-                href={game.href}
-                className={`relative rounded-2xl p-4 text-center hover:scale-105 transition-all cursor-pointer ${isToday ? 'scale-105' : ''}`}
-                style={isToday ? todayStyle : baseStyle}
-              >
-                {isToday && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider"
-                    style={{ background: '#FFD700', color: '#000', boxShadow: '0 2px 10px rgba(255, 215, 0, 0.5)' }}>
-                    TODAY
-                  </div>
-                )}
-                <div className="text-4xl mb-2">{game.icon}</div>
-                <div className="text-sm font-bold" style={{ color: isToday ? '#FFD700' : '#FFC0DB' }}>{game.name}</div>
-                {game.date && <div className="text-xs mt-1" style={{ color: isToday ? 'rgba(255, 215, 0, 0.8)' : 'rgba(255, 182, 193, 0.8)' }}>{game.date}</div>}
-              </Link>
-            ) : (
-              <div key={game.name} className="rounded-2xl p-4 text-center hover:scale-105 transition-all cursor-pointer" style={baseStyle}>
-                <div className="text-4xl mb-2">{game.icon}</div>
-                <div className="text-sm font-bold" style={{ color: '#FFC0DB' }}>{game.name}</div>
-              </div>
-            );
-          })}
-        </div>
+        <GamesGrid />
       </section>
 
       {/* The Cast */}
