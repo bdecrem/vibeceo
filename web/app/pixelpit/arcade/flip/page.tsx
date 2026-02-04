@@ -394,22 +394,22 @@ export default function FlipGame() {
         if (game.screenFlash < 0.01) game.screenFlash = 0;
       }
 
-      // Level up every 500 points
-      const newLevel = Math.floor(game.score / 500) + 1;
+      // Level up every 200 points (aggressive ramp)
+      const newLevel = Math.floor(game.score / 200) + 1;
       if (newLevel > game.level) {
         game.level = newLevel;
         game.levelUpFlash = `LEVEL ${game.level}`;
         game.screenFlash = 0.6;
-        game.scrollSpeed = Math.min(3 + (game.level - 1) * 0.3, 6);  // Speed up
-        setMusicIntensity(game.level);
+        game.scrollSpeed = Math.min(3 + (game.level - 1) * 0.2, 8);  // Speed up to max 8
+        setMusicIntensity(Math.min(game.level, 5));  // Cap music intensity at 5
         playLevelUp();
         // Clear flash text after a moment
         setTimeout(() => { game.levelUpFlash = ''; }, 800);
       }
 
-      // Difficulty ramp
-      game.spikeGap = Math.max(150, 300 - (game.level - 1) * 20);
-      game.spikeSize = Math.min(60, 30 + (game.level - 1) * 5);
+      // Difficulty ramp (aggressive)
+      game.spikeGap = Math.max(120, 300 - (game.level - 1) * 25);  // Min 120px gap
+      game.spikeSize = Math.min(60, 30 + (game.level - 1) * 4);
 
       // Spawn spikes
       const lastSpike = game.spikes[game.spikes.length - 1];
