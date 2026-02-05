@@ -202,7 +202,7 @@ interface Scare {
 
 export default function HauntGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'lost'>('start');
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'lost' | 'leaderboard'>('start');
   const [score, setScore] = useState(0);
   const [energy, setEnergy] = useState(100);
   const [tourists, setTourists] = useState(0);
@@ -583,20 +583,27 @@ export default function HauntGame() {
                 fontSize: 18,
                 cursor: 'pointer',
                 borderRadius: 4,
+                marginBottom: 20,
               }}
             >
               Haunt
             </button>
 
-            {/* Leaderboard on start */}
-            <div style={{ marginTop: 30, width: '100%', maxWidth: 350 }}>
-              <Leaderboard
-                gameId={GAME_ID}
-                limit={5}
-                entryId={submittedEntryId ?? undefined}
-                colors={LEADERBOARD_COLORS}
-              />
-            </div>
+            <button
+              onClick={() => setGameState('leaderboard')}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${THEME.text}`,
+                borderRadius: 4,
+                color: THEME.text,
+                padding: '14px 35px',
+                fontSize: 14,
+                fontFamily: 'ui-monospace, monospace',
+                cursor: 'pointer',
+              }}
+            >
+              Leaderboard
+            </button>
           </div>
         )}
 
@@ -767,11 +774,39 @@ export default function HauntGame() {
                 fontSize: 18,
                 cursor: 'pointer',
                 borderRadius: 4,
+                marginBottom: 15,
               }}
             >
               Try Again
             </button>
+
+            <button
+              onClick={() => setGameState('leaderboard')}
+              style={{
+                background: 'transparent',
+                border: `1px solid ${THEME.text}`,
+                borderRadius: 4,
+                color: THEME.text,
+                padding: '14px 35px',
+                fontSize: 14,
+                fontFamily: 'ui-monospace, monospace',
+                cursor: 'pointer',
+              }}
+            >
+              Leaderboard
+            </button>
           </div>
+        )}
+
+        {/* Leaderboard Modal */}
+        {gameState === 'leaderboard' && (
+          <Leaderboard
+            gameId={GAME_ID}
+            limit={8}
+            entryId={submittedEntryId ?? undefined}
+            colors={LEADERBOARD_COLORS}
+            onClose={() => setGameState('start')}
+          />
         )}
       </div>
     </>
