@@ -60,9 +60,52 @@ import {
 - [ ] `social.js` loaded via Script component
 - [ ] `usePixelpitSocial(socialLoaded)` hook present
 - [ ] `ScoreFlow` component in game over screen
-- [ ] `Leaderboard` component showing top entries
+- [ ] `Leaderboard` component as **MODAL** (not inline — see below)
 - [ ] `ShareButtonContainer` for sharing
 - [ ] Color schemes defined (`ScoreFlowColors`, `LeaderboardColors`)
+
+**⚠️ LEADERBOARD MUST BE MODAL, NOT INLINE**
+
+The `Leaderboard` component uses `position: fixed` and `zIndex: 100`. If you embed it inline on the start screen, **it will cover all other content** and players will only see "No leaderboard scores yet" with no way to play.
+
+**WRONG (breaks the game):**
+```tsx
+{gameState === 'start' && (
+  <div>
+    <h1>GAME</h1>
+    <button onClick={startGame}>Play</button>
+    {/* ❌ This covers everything! */}
+    <Leaderboard gameId={GAME_ID} ... />
+  </div>
+)}
+```
+
+**CORRECT (modal pattern):**
+```tsx
+// Add 'leaderboard' to gameState type
+const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'lost' | 'leaderboard'>('start');
+
+// Start screen: button instead of inline leaderboard
+{gameState === 'start' && (
+  <div>
+    <h1>GAME</h1>
+    <button onClick={startGame}>Play</button>
+    <button onClick={() => setGameState('leaderboard')}>Leaderboard</button>
+  </div>
+)}
+
+// Separate leaderboard state with onClose
+{gameState === 'leaderboard' && (
+  <Leaderboard
+    gameId={GAME_ID}
+    limit={8}
+    colors={LEADERBOARD_COLORS}
+    onClose={() => setGameState('start')}
+  />
+)}
+```
+
+This bug has broken CATCH and HAUNT. Don't let it happen again.
 
 ### 2. XP & Progression (if applicable)
 
@@ -168,6 +211,9 @@ Satori runs on Edge and will **silently 502** on unsupported CSS.
 | `borderRadius: '50%'` | `borderRadius: 9999` (numeric) |
 | `filter`, `backdrop-filter` | Remove |
 | `calc()`, `clamp()`, CSS vars | Literal values |
+| **Emojis** 🚫 | Text or SVG icons only |
+
+**⚠️ EMOJIS BREAK OG IMAGES.** Never use emoji characters in Satori/OG image components. They cause silent 502s. Use text labels or inline SVGs instead.
 
 **Hex alpha reference:**
 - 50% opacity: `#ffffff80`
