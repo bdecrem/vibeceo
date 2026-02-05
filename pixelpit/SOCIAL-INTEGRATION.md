@@ -1,6 +1,6 @@
 # Pixelpit Social Integration Guide
 
-How our arcade games integrate the social library for handles, leaderboards, sharing, XP, and streaks.
+How our arcade games integrate the social library for handles, leaderboards, sharing, groups, XP, and streaks.
 
 ## Library Location
 
@@ -16,6 +16,10 @@ import {
   ScoreFlow,
   Leaderboard,
   ShareButtonContainer,
+  ShareModal,
+  CreateGroupForm,
+  GroupTabs,
+  StreakBoard,
   CodeInput,
 
   // Hooks
@@ -23,6 +27,7 @@ import {
   useScoreSubmit,
   useLeaderboard,
   useProfile,
+  useGroups,
 
   // Types
   type PixelpitUser,
@@ -30,6 +35,11 @@ import {
   type ScoreFlowColors,
   type LeaderboardColors,
   type ProgressionResult,
+  type Group,
+  type GroupType,
+  type GroupsResult,
+  type CreateGroupResult,
+  type JoinGroupResult,
 
   // OG Image utilities
   createScoreShareImage,
@@ -42,98 +52,158 @@ import {
 
 ## Feature Comparison
 
-| Feature | BEAM | EMOJI BLASTER | CAT TOWER |
-|---------|------|---------------|-----------|
-| **GAME_ID** | `'beam'` | `'emoji'` | `'cat-tower'` |
-| **Location** | `arcade/beam/` | `arcade/emoji/` | `arcade/cattower/` |
-| **User Handles** | ScoreFlow only | ScoreFlow only | ScoreFlow + auto-submit |
-| **Leaderboard** | 8 entries | 10 entries | 10 entries |
-| **Score Sharing** | Always | Always | Conditional |
-| **XP System** | No | Yes | Yes |
-| **Streaks** | No | Yes | Yes |
-| **Progression UI** | No | Yes | Yes (fixed top) |
-| **xpDivisor** | default (100) | `1` | `1` |
+| Feature | SUPERBEAM | BAT DASH | EMOJI BLASTER | CAT TOWER | BEAM |
+|---------|-----------|----------|---------------|-----------|------|
+| **GAME_ID** | `'superbeam'` | `'batdash'` | `'emoji'` | `'cat-tower'` | `'beam'` |
+| **Location** | `arcade/superbeam/` | `arcade/batdash/` | `arcade/emoji/` | `arcade/cattower/` | `arcade/beam/` |
+| **Groups** | Yes | Yes | No | No | No |
+| **ShareModal** | Yes | Yes | No | No | No |
+| **Group Leaderboard** | Yes | Yes | No | No | No |
+| **Group Code URL** | `?pg=CODE` | `?pg=CODE` | No | No | No |
+| **Logout URL** | `?logout` | `?logout` | No | No | No |
+| **XP System** | Yes | Yes | Yes | Yes | No |
+| **Streaks** | Yes | Yes | Yes | Yes | No |
+| **xpDivisor** | `1` | `1` | `1` | `1` | default (100) |
+| **Progression UI** | Yes | Yes | Yes | Yes (fixed top) | No |
+
+**SUPERBEAM and BAT DASH are the reference implementations** for full social integration. New games should follow their pattern.
 
 ---
 
 ## Implementation Details
 
-### 1. BEAM — Basic Integration
+### 1. Full Integration (SUPERBEAM / BAT DASH pattern)
 
-The simplest integration. No XP or streaks.
+This is the standard for all new games. Includes groups, ShareModal, session handling, XP, and streaks.
 
-**Key code:**
+**Required state and setup:**
 ```tsx
-const GAME_ID = 'beam';
+const GAME_ID = 'your-game';
 
-// State
 const [socialLoaded, setSocialLoaded] = useState(false);
 const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
+const [progression, setProgression] = useState<ProgressionResult | null>(null);
+const [showShareModal, setShowShareModal] = useState(false);
+
 const { user } = usePixelpitSocial(socialLoaded);
 
-// Load social.js
-<Script src="/pixelpit/social.js" onLoad={() => setSocialLoaded(true)} />
-
-// Game over screen
-<ScoreFlow
-  score={score}
-  gameId={GAME_ID}
-  colors={SCORE_FLOW_COLORS}
-  onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
-/>
-
-<Leaderboard
-  gameId={GAME_ID}
-  limit={8}
-  entryId={submittedEntryId ?? undefined}
-  colors={LEADERBOARD_COLORS}
-  onClose={() => setGameState('gameover')}
-/>
-
-<ShareButtonContainer
-  id="share-btn-container"
-  url={`${window.location.origin}/pixelpit/arcade/beam/share/${score}`}
-  text={`I scored ${score} on BEAM! Can you beat me?`}
-  style="minimal"
-  socialLoaded={socialLoaded}
-/>
+const GAME_URL = typeof window !== 'undefined'
+  ? `${window.location.origin}/pixelpit/arcade/YOUR_GAME`
+  : 'https://pixelpit.gg/pixelpit/arcade/YOUR_GAME';
 ```
 
----
-
-### 2. EMOJI BLASTER — Full XP + Streaks
-
-Full progression system with animated XP display.
-
-**Key additions:**
+**Load social.js:**
 ```tsx
-const GAME_ID = 'emoji';
+<Script src="/pixelpit/social.js" onLoad={() => setSocialLoaded(true)} />
+```
 
-// Additional state for progression
-const [progression, setProgression] = useState<ProgressionResult | null>(null);
+**Group code + logout URL handling (required):**
+```tsx
+useEffect(() => {
+  if (!socialLoaded || typeof window === 'undefined') return;
+  if (!window.PixelpitSocial) return;
 
-// ScoreFlow with XP
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('logout')) {
+    window.PixelpitSocial.logout();
+    params.delete('logout');
+    const newUrl = params.toString()
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+    window.location.reload();
+    return;
+  }
+
+  const groupCode = window.PixelpitSocial.getGroupCodeFromUrl();
+  if (groupCode) {
+    window.PixelpitSocial.storeGroupCode(groupCode);
+  }
+}, [socialLoaded]);
+```
+
+**Game over screen — ScoreFlow + progression:**
+```tsx
 <ScoreFlow
   score={score}
   gameId={GAME_ID}
   colors={SCORE_FLOW_COLORS}
-  xpDivisor={1}  // Full score as XP
+  xpDivisor={1}
   onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
   onProgression={(prog) => setProgression(prog)}
 />
 
-// Animated progression display
 {progression && (
-  <ProgressionDisplay progression={progression} theme={THEME} />
+  <div>
+    <div>+{progression.xpEarned} XP</div>
+    <div>Level {progression.level} {progression.streak > 1 ? `${progression.multiplier}x streak` : ''}</div>
+  </div>
 )}
 ```
 
-**ProgressionDisplay component** shows:
-- Animated XP counter (`+{xpEarned} XP`)
-- Level progress bar with fill animation
-- Streak multiplier badge (`2x streak`)
-- "LEVEL UP!" animation when `leveledUp` is true
-- Day streak count
+**Game over screen — user-aware share button:**
+```tsx
+{user ? (
+  <button onClick={() => setShowShareModal(true)}>
+    share / groups
+  </button>
+) : (
+  <ShareButtonContainer
+    id="share-btn-container"
+    url={`${window.location.origin}/pixelpit/arcade/YOUR_GAME/share/${score}`}
+    text={`I scored ${score} on GAME NAME! Can you beat me?`}
+    style="minimal"
+    socialLoaded={socialLoaded}
+  />
+)}
+```
+
+**Leaderboard — modal with groups enabled:**
+```tsx
+{gameState === 'leaderboard' && (
+  <Leaderboard
+    gameId={GAME_ID}
+    limit={8}
+    entryId={submittedEntryId ?? undefined}
+    colors={LEADERBOARD_COLORS}
+    onClose={() => setGameState('gameover')}
+    groupsEnabled={true}
+    gameUrl={GAME_URL}
+    socialLoaded={socialLoaded}
+  />
+)}
+```
+
+**ShareModal — at component root, outside game-over div:**
+```tsx
+{showShareModal && user && (
+  <ShareModal
+    gameUrl={GAME_URL}
+    score={score}
+    colors={LEADERBOARD_COLORS}
+    onClose={() => setShowShareModal(false)}
+  />
+)}
+```
+
+---
+
+### 2. Legacy: Basic Integration (BEAM)
+
+Older pattern without groups. **Do not use for new games** — upgrade to the full pattern above.
+
+```tsx
+// Missing: ShareModal, group code handling, logout handling,
+// groupsEnabled on Leaderboard, user-aware share button
+<ShareButtonContainer ... />  // Same button for all users
+<Leaderboard ... />           // No groupsEnabled, no gameUrl
+```
+
+---
+
+### 3. Smart Progressive Disclosure (CAT TOWER)
+
+Most sophisticated UX. Only prompts for name after engagement.
 
 ---
 
@@ -299,19 +369,30 @@ Each game has dedicated share routes with OG images:
 
 ### Checklist for New Game
 
+**Social core:**
 - [ ] Set unique `GAME_ID`
 - [ ] Load `social.js` via Script component
 - [ ] Add `usePixelpitSocial(socialLoaded)` hook
-- [ ] Add `ScoreFlow` with appropriate `xpDivisor`
-- [ ] Add `Leaderboard` component
-- [ ] Add `ShareButtonContainer`
+- [ ] Define `GAME_URL` constant
+- [ ] Add `ScoreFlow` with `xpDivisor={1}` and `onProgression`
 - [ ] Add `ProgressionDisplay` for XP/level/streak
 - [ ] Define color schemes (`ScoreFlowColors`, `LeaderboardColors`)
+
+**Groups & sharing:**
+- [ ] Add group code detection `useEffect` (`?pg=` URL param → `storeGroupCode`)
+- [ ] Add logout URL param handling (`?logout`)
+- [ ] Add `Leaderboard` with `groupsEnabled={true}`, `gameUrl`, `socialLoaded`
+- [ ] Add user-aware share: `ShareModal` for logged-in, `ShareButtonContainer` for anonymous
+- [ ] Add `showShareModal` state, reset on game restart
+
+**OG images & share routes:**
 - [ ] Create main game `opengraph-image.tsx`
 - [ ] Create `/share/[score]/page.tsx` route (redirects to game)
 - [ ] Create `/share/[score]/layout.tsx` (metadata for social cards)
 - [ ] Create `/share/[score]/opengraph-image.tsx` with game decorations
 - [ ] Ensure `metadataBase` is set in pixelpit layout
+
+**Analytics:**
 - [ ] Add analytics tracking to game over (`POST /api/pixelpit/stats`)
 
 ---
@@ -632,27 +713,18 @@ Analytics tracks *all* plays. Score submission only happens when user enters a n
 
 ---
 
-## Upgrading BEAM
+## Upgrading Older Games
 
-BEAM should be upgraded to match newer games:
+Games without groups integration (BEAM, EMOJI BLASTER, CAT TOWER) should be upgraded to match the full pattern. The changes needed:
 
-```tsx
-// Add state
-const [progression, setProgression] = useState<ProgressionResult | null>(null);
+1. Add `ShareModal` import
+2. Add `showShareModal` state + `GAME_URL` constant
+3. Add `useEffect` for group code (`?pg=`) and logout (`?logout`) URL params
+4. Replace `ShareButtonContainer` with user-aware split (ShareModal for logged-in, ShareButtonContainer for anonymous)
+5. Add `groupsEnabled={true}`, `gameUrl`, `socialLoaded` to `Leaderboard`
+6. Render `ShareModal` at component root
 
-// Update ScoreFlow
-<ScoreFlow
-  score={score}
-  gameId={GAME_ID}
-  colors={SCORE_FLOW_COLORS}
-  xpDivisor={1}  // ADD THIS
-  onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
-  onProgression={(prog) => setProgression(prog)}  // ADD THIS
-/>
-
-// Add ProgressionDisplay
-{progression && <ProgressionDisplay progression={progression} />}
-```
+See the BAT DASH commit (`6247a1d8`) for a clean diff of exactly these changes applied to an existing game.
 
 ---
 
@@ -660,10 +732,14 @@ const [progression, setProgression] = useState<ProgressionResult | null>(null);
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/pixelpit/auth` | POST | Login, register, check handle |
-| `/api/pixelpit/leaderboard` | GET/POST | Fetch/submit scores |
+| `/api/pixelpit/auth` | GET/POST | Session check (GET), login/register/logout/check handle (POST) |
+| `/api/pixelpit/leaderboard` | GET/POST | Fetch leaderboard (GET, supports `groupCode` filter), submit scores (POST) |
+| `/api/pixelpit/groups` | GET/POST | Fetch user's groups (GET), create group (POST) |
+| `/api/pixelpit/groups/join` | POST | Join a group by code |
+| `/api/pixelpit/connections` | POST | Record magic streak connection (referral) |
+| `/api/pixelpit/profile` | GET | Fetch user profile with XP/level/streak |
 | `/api/pixelpit/stats` | GET/POST | Track/fetch game play analytics |
-| `/api/pixelpit/creation` | POST | Save creations (future) |
+| `/api/pixelpit/creation` | GET/POST | Save/fetch creations |
 
 ---
 
@@ -673,6 +749,9 @@ const [progression, setProgression] = useState<ProgressionResult | null>(null);
 |-------|---------|
 | `pixelpit_users` | Handles, 4-char codes, XP, level, streak data |
 | `pixelpit_entries` | Scores and creations with game_id, user_id, slug |
+| `pixelpit_groups` | Groups (code, name, type: streak/leaderboard) |
+| `pixelpit_group_members` | Group membership (user_id, group_id) |
+| `pixelpit_connections` | Magic streak connections (referrals between users) |
 | `pixelpit_daily_stats` | Daily play counts per game for analytics |
 
 ---
@@ -680,5 +759,7 @@ const [progression, setProgression] = useState<ProgressionResult | null>(null);
 ## Related Docs
 
 - `pixelpit/SOCIAL.md` — Full API reference
+- `pixelpit/personas/push.md` — Release checklist (Push persona)
 - `web/app/pixelpit/components/og/README.md` — OG image creation guide
-- `web/app/pixelpit/arcade/beam/page.tsx` — Reference implementation
+- `web/app/pixelpit/arcade/superbeam/page.tsx` — Reference implementation (full social)
+- `web/app/pixelpit/arcade/batdash/page.tsx` — Reference implementation (full social)

@@ -49,9 +49,11 @@ import {
   ScoreFlow,
   Leaderboard,
   ShareButtonContainer,
+  ShareModal,
   usePixelpitSocial,
   type ScoreFlowColors,
   type LeaderboardColors,
+  type ProgressionResult,
 } from '@/app/pixelpit/components';
 ```
 
@@ -59,10 +61,57 @@ import {
 - [ ] Unique `GAME_ID` set (e.g., `'beam'`, `'emoji'`, `'cat-tower'`)
 - [ ] `social.js` loaded via Script component
 - [ ] `usePixelpitSocial(socialLoaded)` hook present
+- [ ] `GAME_URL` constant defined (for share links and group invites)
+- [ ] Group code + logout URL param handling (`useEffect`)
 - [ ] `ScoreFlow` component in game over screen
-- [ ] `Leaderboard` component as **MODAL** (not inline — see below)
-- [ ] `ShareButtonContainer` for sharing
+- [ ] `Leaderboard` component as **MODAL** with `groupsEnabled={true}` (see below)
+- [ ] User-aware share: `ShareModal` for logged-in, `ShareButtonContainer` for anonymous
 - [ ] Color schemes defined (`ScoreFlowColors`, `LeaderboardColors`)
+
+#### Required State & Setup
+
+Every game needs this boilerplate alongside its game-specific state:
+
+```tsx
+const [socialLoaded, setSocialLoaded] = useState(false);
+const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
+const [progression, setProgression] = useState<ProgressionResult | null>(null);
+const [showShareModal, setShowShareModal] = useState(false);
+
+const { user } = usePixelpitSocial(socialLoaded);
+
+const GAME_URL = typeof window !== 'undefined'
+  ? `${window.location.origin}/pixelpit/arcade/YOUR_GAME`
+  : 'https://pixelpit.gg/pixelpit/arcade/YOUR_GAME';
+```
+
+#### Group Code + Logout URL Handling (Required)
+
+This `useEffect` detects `?pg=GROUP_CODE` invite links and `?logout` params. Without it, group invites don't work.
+
+```tsx
+useEffect(() => {
+  if (!socialLoaded || typeof window === 'undefined') return;
+  if (!window.PixelpitSocial) return;
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('logout')) {
+    window.PixelpitSocial.logout();
+    params.delete('logout');
+    const newUrl = params.toString()
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+    window.location.reload();
+    return;
+  }
+
+  const groupCode = window.PixelpitSocial.getGroupCodeFromUrl();
+  if (groupCode) {
+    window.PixelpitSocial.storeGroupCode(groupCode);
+  }
+}, [socialLoaded]);
+```
 
 **⚠️ LEADERBOARD MUST BE MODAL, NOT INLINE**
 
@@ -80,7 +129,7 @@ The `Leaderboard` component uses `position: fixed` and `zIndex: 100`. If you emb
 )}
 ```
 
-**CORRECT (modal pattern):**
+**CORRECT (modal pattern with groups enabled):**
 ```tsx
 // Add 'leaderboard' to gameState type
 const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'lost' | 'leaderboard'>('start');
@@ -94,13 +143,17 @@ const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'lost' 
   </div>
 )}
 
-// Separate leaderboard state with onClose
+// Separate leaderboard state with onClose — MUST include groupsEnabled, gameUrl, socialLoaded
 {gameState === 'leaderboard' && (
   <Leaderboard
     gameId={GAME_ID}
     limit={8}
+    entryId={submittedEntryId ?? undefined}
     colors={LEADERBOARD_COLORS}
     onClose={() => setGameState('start')}
+    groupsEnabled={true}
+    gameUrl={GAME_URL}
+    socialLoaded={socialLoaded}
   />
 )}
 ```
@@ -283,22 +336,60 @@ const handleGameOver = () => {
 - [ ] Fire-and-forget (no await, `.catch(() => {})`)
 - [ ] `GAME_ID` matches leaderboard ID
 
-### 7. Share URL Format
+### 7. Share — User-Aware (Groups + Basic)
 
+Logged-in users get the full `ShareModal` (groups, invite links, copy). Anonymous users get the basic `ShareButtonContainer`.
+
+**In the game-over button area:**
 ```tsx
-<ShareButtonContainer
-  id="share-btn-container"
-  url={`${window.location.origin}/pixelpit/arcade/game/share/${score}`}
-  text={`I scored ${score} on GAME NAME! Can you beat me?`}
-  style="minimal"
-  socialLoaded={socialLoaded}
-/>
+{user ? (
+  <button
+    onClick={() => setShowShareModal(true)}
+    style={{
+      background: 'transparent',
+      border: '1px solid rgba(255,255,255,0.1)',
+      borderRadius: 6,
+      color: COLORS.muted,
+      padding: '14px 35px',
+      fontSize: 11,
+      fontFamily: 'ui-monospace, monospace',
+      cursor: 'pointer',
+      letterSpacing: 2,
+    }}
+  >
+    share / groups
+  </button>
+) : (
+  <ShareButtonContainer
+    id="share-btn-container"
+    url={`${window.location.origin}/pixelpit/arcade/YOUR_GAME/share/${score}`}
+    text={`I scored ${score} on GAME NAME! Can you beat me?`}
+    style="minimal"
+    socialLoaded={socialLoaded}
+  />
+)}
+```
+
+**ShareModal rendering (outside game-over div, at component root):**
+```tsx
+{showShareModal && user && (
+  <ShareModal
+    gameUrl={GAME_URL}
+    score={score}
+    colors={LEADERBOARD_COLORS}
+    onClose={() => setShowShareModal(false)}
+  />
+)}
 ```
 
 **Checklist:**
-- [ ] Share URL includes score in path
+- [ ] Share URL includes score in path (for anonymous share)
 - [ ] Share text is engaging (includes score, challenge)
 - [ ] URL uses `window.location.origin` for correct domain
+- [ ] Logged-in users see "share / groups" button opening `ShareModal`
+- [ ] Anonymous users see basic `ShareButtonContainer`
+- [ ] `ShareModal` receives `gameUrl`, `score`, `colors`, `onClose`
+- [ ] `showShareModal` state is reset on game restart
 
 ---
 
@@ -308,20 +399,26 @@ Before you say "ready to launch":
 
 1. **Test the share flow end-to-end:**
    - Play game → game over → submit score → tap share
+   - **Logged in:** "share / groups" button opens modal with groups list, copy link, create group
+   - **Not logged in:** basic share button, native share on mobile, clipboard on desktop
    - On mobile: native share sheet opens with correct URL
    - On desktop: URL copied, toast appears
 
-2. **Test OG images directly:**
+2. **Test group invite flow:**
+   - Create group → share invite → open `?pg=CODE` link → score submits to group
+   - Group leaderboard tab shows filtered scores
+
+3. **Test OG images directly:**
    - Main: `https://pixelpit.gg/arcade/game/opengraph-image`
    - Share: `https://pixelpit.gg/arcade/game/share/42/opengraph-image`
    - Both should return images, not 502
 
-3. **Test on social preview tools:**
+4. **Test on social preview tools:**
    - Twitter Card Validator
    - Facebook Sharing Debugger
    - LinkedIn Post Inspector
 
-4. **Verify analytics:**
+5. **Verify analytics:**
    - Check Supabase `pixelpit_daily_stats` after a test play
 
 ---
