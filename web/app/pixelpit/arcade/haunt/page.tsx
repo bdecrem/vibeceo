@@ -178,6 +178,7 @@ export default function HauntGame() {
   const [score, setScore] = useState(0);
   const [energy, setEnergy] = useState(100);
   const [tourists, setTourists] = useState(0);
+  const [selectedScare, setSelectedScare] = useState<'flicker' | 'slam' | 'whisper'>('flicker');
 
   const gameRef = useRef({
     level: createLevel(),
@@ -492,33 +493,48 @@ export default function HauntGame() {
     };
     animationId = requestAnimationFrame(gameLoop);
 
-    // Click handler
-    const handleClick = (e: MouseEvent) => {
+    // Click handler - uses selectedScare for mobile support
+    const handleClick = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
       const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      let clientX: number, clientY: number;
+      
+      if ('touches' in e) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
       
       const gridX = Math.floor((x - WALL_THICK) / ROOM_SIZE);
       const gridY = Math.floor((y - WALL_THICK) / ROOM_SIZE);
       
       if (gridX >= 0 && gridX < GRID_W && gridY >= 0 && gridY < GRID_H) {
-        if (e.ctrlKey || e.metaKey) {
+        // Desktop: modifier keys still work
+        if ('ctrlKey' in e && (e.ctrlKey || e.metaKey)) {
           triggerScare(gridX, gridY, 'whisper');
-        } else if (e.shiftKey) {
+        } else if ('shiftKey' in e && e.shiftKey) {
           triggerScare(gridX, gridY, 'slam');
         } else {
-          triggerScare(gridX, gridY, 'flicker');
+          // Mobile: use selected scare type
+          triggerScare(gridX, gridY, selectedScare);
         }
       }
     };
 
     canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', handleClick as any, { passive: false });
 
     return () => {
       cancelAnimationFrame(animationId);
       canvas.removeEventListener('click', handleClick);
+      canvas.removeEventListener('touchstart', handleClick as any);
     };
-  }, [gameState, triggerScare]);
+  }, [gameState, triggerScare, selectedScare]);
 
   return (
     <div style={{
@@ -557,7 +573,53 @@ export default function HauntGame() {
       )}
 
       {gameState === 'playing' && (
-        <canvas ref={canvasRef} style={{ imageRendering: 'pixelated' }} />
+        <>
+          <canvas ref={canvasRef} style={{ imageRendering: 'pixelated' }} />
+          
+          {/* Mobile scare selector */}
+          <div style={{
+            display: 'flex',
+            gap: 10,
+            marginTop: 15,
+          }}>
+            {[
+              { type: 'flicker' as const, icon: '💨', cost: 5 },
+              { type: 'slam' as const, icon: '🚪', cost: 15 },
+              { type: 'whisper' as const, icon: '👻', cost: 25 },
+            ].map(({ type, icon, cost }) => (
+              <button
+                key={type}
+                onClick={() => setSelectedScare(type)}
+                style={{
+                  background: selectedScare === type ? THEME.presence : THEME.wall,
+                  border: selectedScare === type ? `2px solid ${THEME.energy}` : '2px solid transparent',
+                  color: '#fff',
+                  padding: '12px 16px',
+                  fontSize: 20,
+                  cursor: 'pointer',
+                  borderRadius: 8,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 4,
+                  minWidth: 70,
+                }}
+              >
+                <span>{icon}</span>
+                <span style={{ fontSize: 10, color: THEME.text }}>{cost}</span>
+              </button>
+            ))}
+          </div>
+          
+          <p style={{
+            color: THEME.text,
+            fontSize: 10,
+            marginTop: 10,
+            textAlign: 'center',
+          }}>
+            select scare type, then tap a room
+          </p>
+        </>
       )}
 
       {gameState === 'won' && (
