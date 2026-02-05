@@ -18,15 +18,14 @@ const labMessages = [
 ];
 
 const games = [
-  { icon: '🥁', name: 'Tap Beats', href: '/pixelpit/arcade/tap-beats', playable: true, date: 'Tue 2/3' },
-  { icon: '🐦', name: 'Flappy', href: '/pixelpit/arcade/flappy', playable: true, bonus: true },
-  { icon: '🌱', name: 'Sprout Run', href: '/pixelpit/arcade/sprout-run', playable: true, date: 'Mon 2/2' },
-  { icon: '🐱', name: 'Cat Tower', href: '/pixelpit/arcade/cattower', playable: true, date: 'Fri 1/30' },
-  { icon: '💥', name: 'Emoji Blaster', href: '/pixelpit/arcade/emoji', playable: true, date: 'Thu 1/29' },
-  { icon: '🌀', name: 'Singularity', href: '/pixelpit/arcade/singularity', playable: true, date: 'Wed 1/28' },
-  { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true, date: 'Tue 1/27' },
-  // Older games (scroll right)
-  { icon: '🎲', name: 'Dice Dash', href: null, playable: false },
+  { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/arcade/batdash', playable: true, date: 'Wed 2/5' },
+  { icon: '🥁', name: 'Tap Beats', href: '/pixelpit/arcade/tap-beats', playable: true, date: 'Tue 2/4' },
+  { icon: '🌱', name: 'Sprout Run', href: '/pixelpit/arcade/sprout-run', playable: true, date: 'Mon 2/3' },
+  { icon: '🐱', name: 'Cat Tower', href: '/pixelpit/arcade/cattower', playable: true, date: 'Fri 1/31' },
+  { icon: '💥', name: 'Emoji Blaster', href: '/pixelpit/arcade/emoji', playable: true, date: 'Thu 1/30' },
+  { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true, date: 'Wed 1/29' },
+  // Older games
+  { icon: '🌀', name: 'Singularity', href: '/pixelpit/arcade/singularity', playable: true, date: 'Tue 1/28' },
 ];
 
 const castBlurbs: Record<string, { bio: string; motto?: string }> = {
@@ -93,12 +92,13 @@ const cast = [
 ];
 
 const labItems = [
-  { icon: '🎸', name: 'Pit Jam PJ01', href: '/pixelpit/lab#pit-jam-pj01', date: 'Mon 2/2' },
-  { icon: '🧫', name: 'Swarm P16', href: '/pixelpit/swarm/p16/index.html', date: 'Fri 1/30' },
-  { icon: '🚀', name: 'Swarm P9', href: '/pixelpit/swarm/p9/index.html', date: 'Thu 1/29' },
-  { icon: '⚡', name: 'Swarm P8', href: '/pixelpit/swarm/p8/index.html', date: 'Thu 1/29' },
-  { icon: '🧪', name: 'Swarm T7', href: '/pixelpit/swarm/t7/index.html', date: 'Wed 1/28' },
-  { icon: '🔮', name: '???' },
+  { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/arcade/batdash', date: 'Wed 2/5' },
+  { icon: '🐦', name: 'Flappy', href: '/pixelpit/arcade/flappy', date: 'bonus' },
+  { icon: '🎸', name: 'Pit Jam PJ01', href: '/pixelpit/lab#pit-jam-pj01', date: 'Mon 2/3' },
+  { icon: '🧫', name: 'Swarm P16', href: '/pixelpit/swarm/p16/index.html', date: 'Fri 1/31' },
+  { icon: '🚀', name: 'Swarm P9', href: '/pixelpit/swarm/p9/index.html', date: 'Thu 1/30' },
+  { icon: '⚡', name: 'Swarm P8', href: '/pixelpit/swarm/p8/index.html', date: 'Thu 1/30' },
+  { icon: '🧪', name: 'Swarm T7', href: '/pixelpit/swarm/t7/index.html', date: 'Wed 1/29' },
 ];
 
 const featuredGames = [
@@ -379,17 +379,11 @@ function GamesGrid() {
     border: '3px solid #FFD700',
     boxShadow: '0 0 30px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 140, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.15)',
   };
-  const bonusStyle = {
-    background: 'linear-gradient(135deg, rgba(0, 255, 200, 0.25) 0%, rgba(0, 200, 150, 0.2) 100%)',
-    border: '3px solid #00FFAA',
-    boxShadow: '0 0 30px rgba(0, 255, 170, 0.5), 0 0 60px rgba(0, 255, 170, 0.2), inset 0 0 20px rgba(0, 255, 170, 0.1)',
-  };
 
   const renderGame = (game: typeof games[0], i: number, isOlder = false) => {
     const isToday = i === 0 && !isOlder;
-    const isBonus = 'bonus' in game && game.bonus;
-    const cardStyle = isToday ? todayStyle : isBonus ? bonusStyle : baseStyle;
-    const textColor = isToday ? '#FFD700' : isBonus ? '#00FFAA' : '#FFC0DB';
+    const cardStyle = isToday ? todayStyle : baseStyle;
+    const textColor = isToday ? '#FFD700' : '#FFC0DB';
 
     return game.href ? (
       <Link
@@ -402,12 +396,6 @@ function GamesGrid() {
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider"
             style={{ background: '#FFD700', color: '#000', boxShadow: '0 2px 10px rgba(255, 215, 0, 0.5)' }}>
             TODAY
-          </div>
-        )}
-        {isBonus && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider"
-            style={{ background: '#00FFAA', color: '#000', boxShadow: '0 2px 10px rgba(0, 255, 170, 0.5)' }}>
-            BONUS
           </div>
         )}
         <div className="text-4xl mb-2">{game.icon}</div>
@@ -461,8 +449,13 @@ function GamesGrid() {
 }
 
 function LabGrid() {
+  const [showOlder, setShowOlder] = useState(false);
   const [clickedIndex, setClickedIndex] = useState<number | null>(null);
   const [messages, setMessages] = useState<string[]>(labItems.map(item => item.name));
+
+  // Split into recent (first 6) and older items
+  const recentItems = labItems.slice(0, 6);
+  const olderItems = labItems.slice(6);
 
   const handleClick = (i: number, hasLink: boolean) => {
     if (hasLink) return;
@@ -484,39 +477,73 @@ function LabGrid() {
     }, 800);
   };
 
+  const renderItem = (experiment: typeof labItems[0], i: number) => {
+    const isActive = !!experiment.href;
+    const cardClass = `bg-[#252525] border rounded-2xl p-4 text-center hover:border-[#00FFAA]/50 hover:bg-[#2a2a2a] transition-all cursor-pointer select-none ${
+      isActive ? 'border-[#00FFAA]/30' : 'border-[#444]/50'
+    } ${clickedIndex === i ? 'border-[#00FFAA] bg-[#00FFAA]/10' : ''}`;
+
+    const content = (
+      <>
+        <div className={`text-4xl mb-2 transition-transform hover:scale-110 ${clickedIndex === i ? 'scale-125' : ''}`}>
+          {experiment.icon}
+        </div>
+        <div className={`text-sm transition-colors ${isActive ? 'text-[#00FFAA] font-medium' : clickedIndex === i ? 'text-[#00FFAA] font-bold' : 'text-[#00FFAA]'}`}>
+          {messages[i]}
+        </div>
+        {experiment.date && <div className="text-xs text-gray-400 mt-1">{experiment.date}</div>}
+      </>
+    );
+
+    return experiment.href ? (
+      <Link key={i} href={experiment.href} className={cardClass}>{content}</Link>
+    ) : (
+      <div
+        key={i}
+        onClick={() => handleClick(i, false)}
+        className={cardClass}
+        style={{ animation: clickedIndex === i ? 'shake 0.5s ease-in-out' : undefined }}
+      >
+        {content}
+      </div>
+    );
+  };
+
   return (
-    <div className="max-w-4xl mx-auto grid grid-cols-3 md:grid-cols-6 gap-4">
-      {labItems.map((experiment, i) => {
-        const isActive = !!experiment.href;
-        const cardClass = `bg-[#252525] border rounded-2xl p-4 text-center hover:border-[#00FFAA]/50 hover:bg-[#2a2a2a] transition-all cursor-pointer select-none ${
-          isActive ? 'border-[#00FFAA]/30' : 'border-[#444]/50'
-        } ${clickedIndex === i ? 'border-[#00FFAA] bg-[#00FFAA]/10' : ''}`;
+    <div className="max-w-4xl mx-auto">
+      {/* Main grid - recent items */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+        {recentItems.map((item, i) => renderItem(item, i))}
+      </div>
 
-        const content = (
-          <>
-            <div className={`text-4xl mb-2 transition-transform hover:scale-110 ${clickedIndex === i ? 'scale-125' : ''}`}>
-              {experiment.icon}
-            </div>
-            <div className={`text-sm transition-colors ${isActive ? 'text-[#00FFAA] font-medium' : clickedIndex === i ? 'text-[#00FFAA] font-bold' : 'text-[#00FFAA]'}`}>
-              {messages[i]}
-            </div>
-            {experiment.date && <div className="text-xs text-gray-400 mt-1">{experiment.date}</div>}
-          </>
-        );
+      {/* Older items section */}
+      {olderItems.length > 0 && (
+        <>
+          {showOlder ? (
+            <>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mt-4">
+                {olderItems.map((item, i) => renderItem(item, i + recentItems.length))}
+              </div>
+              <button
+                onClick={() => setShowOlder(false)}
+                className="mt-6 mx-auto block text-sm font-medium transition-all hover:scale-105"
+                style={{ color: 'rgba(0, 255, 170, 0.6)' }}
+              >
+                ▲ show less
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setShowOlder(true)}
+              className="mt-6 mx-auto block text-sm font-medium transition-all hover:scale-105"
+              style={{ color: 'rgba(0, 255, 170, 0.6)' }}
+            >
+              ▼ older experiments
+            </button>
+          )}
+        </>
+      )}
 
-        return experiment.href ? (
-          <Link key={i} href={experiment.href} className={cardClass}>{content}</Link>
-        ) : (
-          <div
-            key={i}
-            onClick={() => handleClick(i, false)}
-            className={cardClass}
-            style={{ animation: clickedIndex === i ? 'shake 0.5s ease-in-out' : undefined }}
-          >
-            {content}
-          </div>
-        );
-      })}
       <style jsx>{`
         @keyframes shake {
           0%, 100% { transform: translateX(0) rotate(0); }
