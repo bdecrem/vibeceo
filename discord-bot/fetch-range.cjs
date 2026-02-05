@@ -5,8 +5,9 @@ dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 const { Client, GatewayIntentBits } = require('discord.js');
 
 const channelId = '1441080550415929406';
-const startTime = new Date('2026-02-04T16:01:00Z'); // 8:01am PST
-const endTime = new Date('2026-02-04T18:08:00Z');   // 10:08am PST
+// Yesterday 8pm PST (Feb 4) to today 6:19am PST (Feb 5)
+const startTime = new Date('2026-02-05T04:00:00Z'); // 8pm PST = 4am UTC next day
+const endTime = new Date('2026-02-05T14:19:00Z');   // 6:19am PST = 14:19 UTC
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
@@ -41,7 +42,7 @@ client.once('ready', async () => {
       
       const oldestTime = new Date(msgs[msgs.length - 1].timestamp);
       if (oldestTime < startTime) keepFetching = false;
-      if (allMessages.length > 1000) keepFetching = false;
+      if (allMessages.length > 1500) keepFetching = false;
     }
     
     const filtered = allMessages
