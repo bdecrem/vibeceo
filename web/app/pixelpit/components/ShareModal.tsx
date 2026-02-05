@@ -64,7 +64,10 @@ export function ShareModal({
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(gameUrl);
+      const url = window.PixelpitSocial?.buildShareUrl
+        ? window.PixelpitSocial.buildShareUrl(gameUrl)
+        : gameUrl;
+      await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
@@ -77,7 +80,10 @@ export function ShareModal({
 
     const user = window.PixelpitSocial.getUser();
     const handle = user?.handle || 'Someone';
-    const url = `${gameUrl}?pg=${group.code}`;
+    const baseUrl = `${gameUrl}?pg=${group.code}`;
+    const url = window.PixelpitSocial.buildShareUrl
+      ? window.PixelpitSocial.buildShareUrl(baseUrl)
+      : baseUrl;
     const scoreText = score ? ` of ${score}` : '';
     const text = `${handle} wants you to beat their score${scoreText}! Play ${group.name}: ${url}`;
 

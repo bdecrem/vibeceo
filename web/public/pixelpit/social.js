@@ -406,7 +406,7 @@ window.PixelpitSocial = (function() {
   function getSmsInviteLink(phones, groupCode, gameUrl, score) {
     const user = getUser();
     const handle = user ? user.handle : 'Someone';
-    const url = `${gameUrl}?pg=${groupCode}`;
+    const url = buildShareUrl(`${gameUrl}?pg=${groupCode}`);
     const scoreText = score ? ` of ${score}` : '';
     const msg = `${handle} wants you to beat their score${scoreText}! ${url}`;
     const nums = phones
@@ -523,21 +523,21 @@ window.PixelpitSocial = (function() {
   // ============ Share ============
 
   /**
-   * Share game/creation using native share or clipboard fallback
-   * Automatically appends ?ref=<userId> for magic streaks if user is logged in
-   * @param {string} url - URL to share
-   * @param {string} text - Share text
-   * @returns {Promise<{ success: boolean, method: 'native' | 'clipboard' }>}
+   * Build a share URL with ?ref=<userId> appended for magic streaks
+   * @param {string} url - Base URL
+   * @returns {string} URL with ref parameter if user is logged in
    */
-  async function share(url, text) {
-    // Append ref parameter for magic streaks if user is logged in
+  function buildShareUrl(url) {
     const user = getUser();
-    let shareUrl = url;
     if (user && user.id) {
-      // Simple string append to avoid URL parsing issues
       const separator = url.includes('?') ? '&' : '?';
-      shareUrl = `${url}${separator}ref=${user.id}`;
+      return `${url}${separator}ref=${user.id}`;
     }
+    return url;
+  }
+
+  async function share(url, text) {
+    const shareUrl = buildShareUrl(url);
 
     const shareData = {
       title: 'Pixelpit',
@@ -814,6 +814,7 @@ window.PixelpitSocial = (function() {
     getCreation,
 
     // Share
+    buildShareUrl,
     share,
     shareGame,
 
