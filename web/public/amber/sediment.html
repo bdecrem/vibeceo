@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEDIMENT — Amber</title>
+  
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="SEDIMENT — Amber">
+  <meta property="og:description" content="Touch deposits layers. Watch time compress them into stone.">
+  <meta property="og:image" content="https://kochi.to/amber/sediment-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/sediment.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SEDIMENT — Amber">
+  <meta name="twitter:description" content="Touch deposits layers. Watch time compress them into stone.">
+  <meta name="twitter:image" content="https://kochi.to/amber/sediment-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0D0D0D;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
+
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+
+    .ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 12px;
+      color: rgba(212, 165, 116, 0.7);
+      pointer-events: none;
+      line-height: 1.6;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #D4A574;
+      margin-bottom: 8px;
+    }
+
+    .instruction {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: rgba(212, 165, 116, 0.5);
+      pointer-events: none;
+      text-align: center;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="ui">
+    <div class="title">SEDIMENT</div>
+    <div id="layers">Layers: 0</div>
+    <div id="age">Oldest: 0s</div>
+    <div id="depth">Depth: 0m</div>
+  </div>
+
+  <div class="instruction">
+    tap to deposit · watch time compress
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Set canvas size
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Color palette - full spectrum
+    const COLORS = [
+      '#FFD700', // gold
+      '#f59e0b', // amber
+      '#2D9596', // teal
+      '#14b8a6', // cyan
+      '#ec4899', // hot pink
+      '#8b5cf6', // purple
+      '#f97316', // coral
+      '#84cc16', // lime
+      '#3b82f6', // electric blue
+      '#a855f7', // violet
+    ];
+
+    // Sediment layers
+    const layers = [];
+    const particles = [];
+    const startTime = Date.now();
+
+    // Layer compression constants
+    const COMPRESSION_RATE = 0.02; // pixels per second per layer
+    const MAX_LAYER_HEIGHT = 60;
+    const MIN_LAYER_HEIGHT = 8;
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = Math.random() * 2 + 1;
+        this.color = color;
+        this.size = Math.random() * 3 + 2;
+        this.life = 1;
+        this.settled = false;
+      }
+
+      update() {
+        if (!this.settled) {
+          this.vy += 0.3; // gravity
+          this.x += this.vx;
+          this.y += this.vy;
+          this.vx *= 0.98; // air resistance
+          
+          // Check if settled at bottom or on top of existing layers
+          let settleY = canvas.height;
+          for (let layer of layers) {
+            if (this.y >= layer.y - 2 && this.y <= layer.y + 2) {
+              settleY = layer.y;
+              break;
+            }
+          }
+
+          if (this.y >= settleY - 2) {
+            this.settled = true;
+            this.y = settleY;
+          }
+        }
+        
+        this.life -= 0.005;
+        return this.life > 0;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life * 0.6;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    class Layer {
+      constructor(y, color, timestamp) {
+        this.y = y;
+        this.originalY = y;
+        this.height = MAX_LAYER_HEIGHT;
+        this.color = color;
+        this.timestamp = timestamp;
+        this.age = 0;
+      }
+
+      update(layersBelow) {
+        // Update age
+        this.age = (Date.now() - this.timestamp) / 1000;
+
+        // Compress based on weight of layers above
+        const targetHeight = Math.max(
+          MIN_LAYER_HEIGHT,
+          MAX_LAYER_HEIGHT - (layersBelow * 3)
+        );
+        
+        this.height += (targetHeight - this.height) * 0.05;
+
+        // Sink based on layers above
+        const compressionAmount = layersBelow * COMPRESSION_RATE;
+        this.y += compressionAmount;
+      }
+
+      draw() {
+        ctx.save();
+        
+        // Create gradient for layer
+        const gradient = ctx.createLinearGradient(0, this.y - this.height, 0, this.y);
+        
+        // Age darkens the color
+        const ageFactor = Math.min(this.age / 100, 0.7);
+        const darkColor = this.adjustColorBrightness(this.color, -ageFactor);
+        
+        gradient.addColorStop(0, this.color);
+        gradient.addColorStop(0.5, this.color);
+        gradient.addColorStop(1, darkColor);
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, this.y - this.height, canvas.width, this.height);
+        
+        // Subtle texture lines
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 - ageFactor * 0.05})`;
+        ctx.lineWidth = 1;
+        const lines = Math.floor(this.height / 8);
+        for (let i = 0; i < lines; i++) {
+          const lineY = this.y - (this.height * i / lines);
+          ctx.beginPath();
+          ctx.moveTo(0, lineY);
+          ctx.lineTo(canvas.width, lineY);
+          ctx.stroke();
+        }
+
+        // Top edge glow
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.6 - ageFactor * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(0, this.y - this.height);
+        ctx.lineTo(canvas.width, this.y - this.height);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      adjustColorBrightness(hex, factor) {
+        // Convert hex to RGB
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        
+        // Darken
+        const newR = Math.max(0, Math.floor(r * (1 - factor)));
+        const newG = Math.max(0, Math.floor(g * (1 - factor)));
+        const newB = Math.max(0, Math.floor(b * (1 - factor)));
+        
+        return `rgb(${newR}, ${newG}, ${newB})`;
+      }
+    }
+
+    // Audio context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playDepositSound() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      // Low, earthy tone
+      osc.frequency.setValueAtTime(80 + Math.random() * 40, audioCtx.currentTime);
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    // Handle interaction
+    function handleTouch(e) {
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = e.touches ? e.touches[0].clientX : e.clientX;
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+      
+      const canvasX = x - rect.left;
+      const canvasY = y - rect.top;
+
+      // Pick random color
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+      // Create particles
+      for (let i = 0; i < 30; i++) {
+        particles.push(new Particle(canvasX, canvasY, color));
+      }
+
+      // Find where to place new layer
+      let layerY = canvas.height;
+      if (layers.length > 0) {
+        const topLayer = layers[layers.length - 1];
+        layerY = topLayer.y - topLayer.height;
+      }
+
+      // Add new layer
+      layers.push(new Layer(layerY, color, Date.now()));
+
+      playDepositSound();
+    }
+
+    canvas.addEventListener('mousedown', handleTouch);
+    canvas.addEventListener('touchstart', handleTouch);
+
+    // Update UI
+    function updateUI() {
+      document.getElementById('layers').textContent = `Layers: ${layers.length}`;
+      
+      if (layers.length > 0) {
+        const oldestAge = Math.floor((Date.now() - layers[0].timestamp) / 1000);
+        document.getElementById('age').textContent = `Oldest: ${oldestAge}s`;
+        
+        // Calculate total compressed depth
+        const totalDepth = layers.reduce((sum, layer) => sum + layer.height, 0);
+        document.getElementById('depth').textContent = `Depth: ${Math.floor(totalDepth / 10)}m`;
+      }
+    }
+
+    // Animation loop
+    function animate() {
+      // Fade background
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Update and draw layers (bottom to top)
+      for (let i = 0; i < layers.length; i++) {
+        const layersAbove = layers.length - 1 - i;
+        layers[i].update(layersAbove);
+        layers[i].draw();
+      }
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        if (!particles[i].update()) {
+          particles.splice(i, 1);
+        } else {
+          particles[i].draw();
+        }
+      }
+
+      updateUI();
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
