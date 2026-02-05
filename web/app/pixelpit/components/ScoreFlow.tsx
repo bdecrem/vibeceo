@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { CodeInput } from './CodeInput';
 import { useScoreSubmit } from './hooks/useScoreSubmit';
 import type { ScoreFlowProps } from './types';
@@ -57,8 +57,25 @@ export function ScoreFlow({ score, gameId, colors, xpDivisor, onRankReceived, on
   } = useScoreSubmit({ gameId, score, xpDivisor, onRankReceived, onUserLogin, onProgression });
 
   const fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+  const autoSubmitted = useRef(false);
 
-  // Already logged in user - simple submit
+  // Auto-submit for logged-in users
+  useEffect(() => {
+    if (user && !autoSubmitted.current && submittedRank === null) {
+      autoSubmitted.current = true;
+      submitAsUser();
+    }
+  }, [user, submittedRank, submitAsUser]);
+
+  // Auto-submit for guests with a saved name
+  useEffect(() => {
+    if (!user && playerName.trim() && flowState === 'input' && !autoSubmitted.current && submittedRank === null) {
+      autoSubmitted.current = true;
+      submitAsGuest();
+    }
+  }, [user, playerName, flowState, submittedRank, submitAsGuest]);
+
+  // Already logged in user - auto-submitted, show result
   if (user) {
     return (
       <div style={{ marginBottom: 20, width: '100%', maxWidth: 300, textAlign: 'center' }}>
@@ -70,27 +87,12 @@ export function ScoreFlow({ score, gameId, colors, xpDivisor, onRankReceived, on
         }}>
           @{user.handle}
         </div>
-        <button
-          onClick={submitAsUser}
-          style={{
-            background: colors.primary,
-            color: colors.bg,
-            border: 'none',
-            borderRadius: 6,
-            padding: '12px 25px',
-            fontSize: 13,
-            fontFamily,
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: `0 6px 20px ${colors.primary}40`,
-            letterSpacing: 1,
-          }}
-        >
-          submit
-        </button>
-        {submittedRank !== null && (
+        {submittedRank === null ? (
+          <div style={{ color: colors.muted, fontSize: 12, fontFamily }}>
+            submitting...
+          </div>
+        ) : (
           <div style={{
-            marginTop: 10,
             color: colors.secondary,
             fontSize: 12,
             fontFamily,

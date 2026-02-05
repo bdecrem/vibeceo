@@ -42,7 +42,7 @@ export function ShareModal({
   const fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
 
   // Build the share URL: /share/${score} path + ?ref= param
-  const baseShareUrl = score ? `${gameUrl}/share/${score}` : gameUrl;
+  const baseShareUrl = score !== undefined ? `${gameUrl}/share/${score}` : gameUrl;
   const shareUrl = window.PixelpitSocial?.buildShareUrl
     ? window.PixelpitSocial.buildShareUrl(baseShareUrl)
     : baseShareUrl;
@@ -83,12 +83,12 @@ export function ShareModal({
 
     const user = window.PixelpitSocial.getUser();
     const handle = user?.handle || 'Someone';
-    const sharePath = score ? `${gameUrl}/share/${score}` : gameUrl;
+    const sharePath = score !== undefined ? `${gameUrl}/share/${score}` : gameUrl;
     const baseUrl = `${sharePath}?pg=${group.code}`;
     const url = window.PixelpitSocial.buildShareUrl
       ? window.PixelpitSocial.buildShareUrl(baseUrl)
       : baseUrl;
-    const scoreText = score ? ` of ${score}` : '';
+    const scoreText = score !== undefined ? ` of ${score}` : '';
     const text = `${handle} wants you to beat their score${scoreText}! Play ${group.name}: ${url}`;
 
     // Try native share, fallback to clipboard
