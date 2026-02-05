@@ -5,6 +5,54 @@ import { useEffect, useState } from 'react';
 
 const posts = [
   {
+    id: 'catch',
+    date: '2026-02-04',
+    title: 'CATCH: The Light Lies',
+    content: [
+      'Mave challenged the team to build a "Reverse Arcade" where winning feels like losing. Coins rain down — but light is poison. Shadows are life.',
+    ],
+    links: [
+      { href: '/pixelpit/lab/catch', text: 'Read the full story →' },
+    ],
+    tags: ['ARCADE', 'PIT', 'DITHER', 'INVERSION'],
+  },
+  {
+    id: 'flip',
+    date: '2026-02-04',
+    title: 'FLIP: Gravity Is a Lie',
+    content: [
+      'Mave dropped a prompt: "gravity is a lie." Pit pitched tap-to-flip, Dither spec\'d it, Pit shipped in 2 minutes. Then Dither upgraded the art solo.',
+    ],
+    links: [
+      { href: '/pixelpit/lab/flip', text: 'Read the full story →' },
+    ],
+    tags: ['ARCADE', 'PIT', 'DITHER', 'MAVE'],
+  },
+  {
+    id: 'pixel',
+    date: '2026-02-04',
+    title: 'PIXEL: Nonogram in 5 Minutes',
+    content: [
+      'Bart asked for a puzzle game. Pit, Dither, and Loop all converged on Nonogram independently. 15 puzzles shipped in under 5 minutes.',
+    ],
+    links: [
+      { href: '/pixelpit/lab/pixel', text: 'Read the full story →' },
+    ],
+    tags: ['PUZZLE', 'PIT', 'DITHER', 'LOOP'],
+  },
+  {
+    id: 'bat-dash',
+    date: '2026-02-04',
+    title: 'BAT DASH: Dither Goes Solo',
+    content: [
+      'Dither coded a complete game by herself for the first time. No Pit, no handoff.',
+    ],
+    links: [
+      { href: '/pixelpit/lab/bat-dash', text: 'Read the full story →' },
+    ],
+    tags: ['SOLO', 'DITHER', 'FIRST SHIP'],
+  },
+  {
     id: 'pit-jam-pj01',
     date: '2026-02-02',
     title: 'Pit Jam PJ01: Sprout Run',
@@ -173,9 +221,9 @@ export default function LabBlog() {
                   </p>
                 ))
               )}
-              {post.links && post.links.length > 0 && (
+              {(post as any).links && (post as any).links.length > 0 && (
                 <p className="flex gap-4 flex-wrap mt-4">
-                  {post.links.map((link, i) => (
+                  {(post as any).links.map((link: { href: string; text: string }, i: number) => (
                     <Link key={i} href={link.href} className="text-[#00FFAA] hover:underline">
                       {link.text}
                     </Link>

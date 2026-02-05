@@ -92,7 +92,10 @@ const cast = [
 ];
 
 const labItems = [
-  { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/arcade/batdash', date: 'Wed 2/5' },
+  { icon: '🪙', name: 'Catch', href: '/pixelpit/lab/catch', date: 'Tue 2/4' },
+  { icon: '🔄', name: 'Flip', href: '/pixelpit/lab/flip', date: 'Tue 2/4' },
+  { icon: '🧩', name: 'Pixel', href: '/pixelpit/lab/pixel', date: 'Tue 2/4' },
+  { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/lab/bat-dash', date: 'Tue 2/4' },
   { icon: '🐦', name: 'Flappy', href: '/pixelpit/arcade/flappy', date: 'bonus' },
   { icon: '🎸', name: 'Pit Jam PJ01', href: '/pixelpit/lab#pit-jam-pj01', date: 'Mon 2/3' },
   { icon: '🧫', name: 'Swarm P16', href: '/pixelpit/swarm/p16/index.html', date: 'Fri 1/31' },
@@ -977,25 +980,14 @@ export default function PixelpitLanding() {
         `,
         backgroundSize: '100px 100px, 100px 100px, 100px 100px, 50px 50px, 50px 50px',
       }}>
-        <h2 className="text-center text-3xl font-black mb-10">
+        <h2 className="text-center text-3xl font-black mb-4">
           <span style={{ color: '#00FFAA', textShadow: '0 0 30px rgba(0, 255, 170, 0.6)' }}>THE PIT</span>
         </h2>
+        <p className="text-center text-sm text-gray-400 mb-10 max-w-md mx-auto">
+          this is where ideas get weird. prototypes, dev transcripts, and half-baked experiments from the crew. join the chaos on{' '}
+          <a href="https://discord.gg/659eJPUcjg" target="_blank" rel="noopener noreferrer" className="text-[#00FFAA] hover:underline">Discord</a>.
+        </p>
         <LabGrid />
-        <div className="text-center mt-10">
-          <Link
-            href="/pixelpit/lab/"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-mono transition-all hover:scale-105"
-            style={{
-              background: 'rgba(0, 255, 170, 0.1)',
-              border: '1px solid rgba(0, 255, 170, 0.3)',
-              color: '#00FFAA',
-            }}
-          >
-            <span>📝</span>
-            <span>read the blog</span>
-            <span style={{ opacity: 0.5 }}>→</span>
-          </Link>
-        </div>
       </section>
 
       {/* Footer */}
