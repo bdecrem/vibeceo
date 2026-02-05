@@ -1,14 +1,17 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function CatchSharePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    router.replace('/pixelpit/arcade/catch');
-  }, [router]);
+    const params = searchParams?.toString() || '';
+    const url = params ? `/pixelpit/arcade/catch?${params}` : '/pixelpit/arcade/catch';
+    router.replace(url);
+  }, [router, searchParams]);
 
   return (
     <div

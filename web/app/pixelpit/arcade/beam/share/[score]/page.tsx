@@ -1,14 +1,17 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function SharePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    router.replace('/pixelpit/arcade/beam');
-  }, [router]);
+    const params = searchParams?.toString() || '';
+    const url = params ? `/pixelpit/arcade/beam?${params}` : '/pixelpit/arcade/beam';
+    router.replace(url);
+  }, [router, searchParams]);
 
   return (
     <div style={{

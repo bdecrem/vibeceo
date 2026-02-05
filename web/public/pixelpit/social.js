@@ -472,10 +472,10 @@ window.PixelpitSocial = (function() {
     // Append ref parameter for magic streaks if user is logged in
     const user = getUser();
     let shareUrl = url;
-    if (user) {
-      const urlObj = new URL(url, window.location.origin);
-      urlObj.searchParams.set('ref', String(user.id));
-      shareUrl = urlObj.toString();
+    if (user && user.id) {
+      // Simple string append to avoid URL parsing issues
+      const separator = url.includes('?') ? '&' : '?';
+      shareUrl = `${url}${separator}ref=${user.id}`;
     }
 
     const shareData = {
