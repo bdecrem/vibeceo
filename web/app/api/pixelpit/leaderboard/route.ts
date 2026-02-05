@@ -625,7 +625,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Handle magic streaks: record connection if playing via referral link
+      // Handle magic streaks: record connection and create pair immediately
+      // When a logged-in user submits a score via a referral link, magic happens
       if (refUserId && refUserId !== userId) {
         // Record the connection: refUserId shared -> userId played
         await supabase
@@ -639,18 +640,8 @@ export async function POST(request: NextRequest) {
             { onConflict: "from_user_id,to_user_id" }
           );
 
-        // Check for reverse connection (bidirectional sharing)
-        const { data: reverseConnection } = await supabase
-          .from("pixelpit_connections")
-          .select("id")
-          .eq("from_user_id", userId)
-          .eq("to_user_id", refUserId)
-          .single();
-
-        if (reverseConnection) {
-          // Bidirectional! Create magic streak pair
-          magicPair = await createMagicStreakPair(userId, refUserId);
-        }
+        // Create magic streak pair immediately - no bidirectional requirement
+        magicPair = await createMagicStreakPair(userId, refUserId);
       }
 
       // Update streak groups

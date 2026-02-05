@@ -112,6 +112,7 @@ async function createMagicStreakPair(
 }
 
 // POST - Record a connection (called after registration/login via referral link)
+// Creates magic streak pair immediately - no bidirectional requirement
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -132,19 +133,8 @@ export async function POST(request: NextRequest) {
         { onConflict: "from_user_id,to_user_id" }
       );
 
-    // Check for reverse connection (bidirectional sharing)
-    const { data: reverseConnection } = await supabase
-      .from("pixelpit_connections")
-      .select("id")
-      .eq("from_user_id", userId)
-      .eq("to_user_id", refUserId)
-      .single();
-
-    let magicPair = null;
-    if (reverseConnection) {
-      // Bidirectional! Create magic streak pair
-      magicPair = await createMagicStreakPair(userId, refUserId);
-    }
+    // Create magic streak pair immediately
+    const magicPair = await createMagicStreakPair(userId, refUserId);
 
     return NextResponse.json({ success: true, magicPair });
   } catch (e) {
