@@ -1,6 +1,15 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import Script from 'next/script';
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  usePixelpitSocial,
+  type ScoreFlowColors,
+  type LeaderboardColors,
+} from '@/app/pixelpit/components';
 
 // HAUNT palette (Indie Bite Dark)
 const THEME = {
@@ -16,6 +25,26 @@ const THEME = {
 };
 
 const GAME_ID = 'haunt';
+
+// Social colors
+const SCORE_FLOW_COLORS: ScoreFlowColors = {
+  bg: THEME.void,
+  surface: '#18181b',
+  primary: THEME.presence,
+  secondary: THEME.exit,
+  text: '#fafafa',
+  muted: THEME.text,
+  error: '#ef4444',
+};
+
+const LEADERBOARD_COLORS: LeaderboardColors = {
+  bg: THEME.void,
+  surface: '#18181b',
+  primary: THEME.presence,
+  secondary: THEME.exit,
+  text: '#fafafa',
+  muted: THEME.text,
+};
 
 const GRID_W = 5;
 const GRID_H = 4;
@@ -50,7 +79,7 @@ let masterGain: GainNode | null = null;
 
 function initAudio() {
   if (audioCtx) return;
-  audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
   masterGain = audioCtx.createGain();
   masterGain.gain.value = 0.3;
   masterGain.connect(audioCtx.destination);
@@ -87,7 +116,6 @@ function playSlam() {
 
 function playWhisper() {
   if (!audioCtx || !masterGain) return;
-  // Noise-like whisper
   const bufferSize = audioCtx.sampleRate * 0.3;
   const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
   const data = buffer.getChannelData(0);
@@ -179,6 +207,13 @@ export default function HauntGame() {
   const [energy, setEnergy] = useState(100);
   const [tourists, setTourists] = useState(0);
   const [selectedScare, setSelectedScare] = useState<'flicker' | 'slam' | 'whisper'>('flicker');
+  
+  // Social integration state
+  const [socialLoaded, setSocialLoaded] = useState(false);
+  const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+  usePixelpitSocial(socialLoaded);
 
   const gameRef = useRef({
     level: createLevel(),
@@ -207,6 +242,8 @@ export default function HauntGame() {
     setScore(0);
     setEnergy(100);
     setTourists(0);
+    setSubmittedEntryId(null);
+    setShowLeaderboard(false);
     setGameState('playing');
   }, []);
 
@@ -254,7 +291,6 @@ export default function HauntGame() {
     let animationId: number;
 
     const findPath = (fromX: number, fromY: number, toX: number, toY: number, fearMap: number[][]): { x: number; y: number } | null => {
-      // Simple greedy pathfinding avoiding high fear
       const neighbors = [
         { x: fromX - 1, y: fromY },
         { x: fromX + 1, y: fromY },
@@ -264,7 +300,6 @@ export default function HauntGame() {
       
       if (neighbors.length === 0) return null;
       
-      // Score each neighbor: distance to goal + fear penalty
       let best = neighbors[0];
       let bestScore = Infinity;
       
@@ -292,7 +327,7 @@ export default function HauntGame() {
           targetX: GRID_W - 1, targetY: GRID_H - 1,
           scared: false, scaredTimer: 0,
         };
-        game.spawnTimer = 180; // 3 seconds between tourists
+        game.spawnTimer = 180;
       }
       game.spawnTimer--;
 
@@ -305,7 +340,6 @@ export default function HauntGame() {
           if (t.scaredTimer === 0) t.scared = false;
         }
         
-        // Move every 30 frames
         if (!t.scared && Math.random() < 0.03) {
           const next = findPath(t.x, t.y, t.targetX, t.targetY, game.fearMap);
           if (next) {
@@ -314,20 +348,17 @@ export default function HauntGame() {
           }
         }
         
-        // Check room type
         const roomType = game.level[t.y][t.x];
         if (roomType === ROOM_EXIT) {
-          // Tourist escaped!
           game.touristsEscaped++;
           game.score += 100;
-          game.energy = Math.min(100, game.energy + 20); // Refund
+          game.energy = Math.min(100, game.energy + 20);
           setScore(game.score);
           setEnergy(game.energy);
           setTourists(game.touristsEscaped);
           playWin();
           game.tourist = null;
           
-          // Win after 5 tourists
           if (game.touristsEscaped >= 5) {
             game.running = false;
             setGameState('won');
@@ -338,7 +369,6 @@ export default function HauntGame() {
             }).catch(() => {});
           }
         } else if (roomType === ROOM_DANGER) {
-          // Tourist died!
           playDeath();
           game.running = false;
           setGameState('lost');
@@ -363,7 +393,7 @@ export default function HauntGame() {
         return s.timer > 0;
       });
 
-      // Energy drain
+      // Energy drain check
       if (game.energy <= 0) {
         game.running = false;
         setGameState('lost');
@@ -373,11 +403,9 @@ export default function HauntGame() {
     const draw = () => {
       const game = gameRef.current;
       
-      // Background
       ctx.fillStyle = THEME.void;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw grid
       const offsetX = WALL_THICK;
       const offsetY = WALL_THICK;
 
@@ -387,12 +415,10 @@ export default function HauntGame() {
           const ry = offsetY + y * ROOM_SIZE;
           const roomType = game.level[y][x];
           
-          // Floor color based on room type and fear
           let floorColor = THEME.floor;
           if (roomType === ROOM_DANGER) floorColor = THEME.danger;
           else if (roomType === ROOM_EXIT) floorColor = '#1a2e1a';
           
-          // Fear tint
           const fear = game.fearMap[y][x];
           if (fear > 0) {
             const intensity = Math.min(fear / 100, 1);
@@ -402,12 +428,10 @@ export default function HauntGame() {
           ctx.fillStyle = floorColor;
           ctx.fillRect(rx, ry, ROOM_SIZE, ROOM_SIZE);
           
-          // Room border
           ctx.strokeStyle = THEME.wall;
           ctx.lineWidth = 2;
           ctx.strokeRect(rx, ry, ROOM_SIZE, ROOM_SIZE);
           
-          // Special markers
           if (roomType === ROOM_ENTRANCE) {
             ctx.fillStyle = THEME.text;
             ctx.font = '10px monospace';
@@ -424,7 +448,6 @@ export default function HauntGame() {
         }
       }
 
-      // Draw scares
       for (const scare of game.scares) {
         const rx = offsetX + scare.x * ROOM_SIZE;
         const ry = offsetY + scare.y * ROOM_SIZE;
@@ -437,53 +460,41 @@ export default function HauntGame() {
         ctx.fillText(icon, rx + ROOM_SIZE/2 - 10, ry + ROOM_SIZE/2 + 7);
       }
 
-      // Draw tourist
       if (game.tourist) {
         const t = game.tourist;
         const tx = offsetX + t.x * ROOM_SIZE + ROOM_SIZE / 2;
         const ty = offsetY + t.y * ROOM_SIZE + ROOM_SIZE / 2;
         
-        // Flashlight glow
         const gradient = ctx.createRadialGradient(tx, ty, 0, tx, ty, ROOM_SIZE);
         gradient.addColorStop(0, 'rgba(254, 249, 195, 0.3)');
         gradient.addColorStop(1, 'rgba(254, 249, 195, 0)');
         ctx.fillStyle = gradient;
-        ctx.fillRect(offsetX + t.x * ROOM_SIZE - ROOM_SIZE/2, offsetY + t.y * ROOM_SIZE - ROOM_SIZE/2, ROOM_SIZE * 2, ROOM_SIZE * 2);
+        ctx.fillRect(offsetX, offsetY, GRID_W * ROOM_SIZE, GRID_H * ROOM_SIZE);
         
-        // Tourist sprite
-        ctx.fillStyle = t.scared ? '#ef4444' : '#fafafa';
+        ctx.fillStyle = t.scared ? '#ef4444' : THEME.flashlight;
         ctx.beginPath();
         ctx.arc(tx, ty, 12, 0, Math.PI * 2);
         ctx.fill();
         
-        // Scared indicator
         if (t.scared) {
-          ctx.fillStyle = '#ef4444';
-          ctx.font = '14px monospace';
-          ctx.fillText('!', tx - 3, ty - 18);
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 14px monospace';
+          ctx.fillText('!', tx - 4, ty - 18);
         }
       }
 
-      // UI
-      const uiY = offsetY + GRID_H * ROOM_SIZE + 20;
+      // HUD
+      const hudY = GRID_H * ROOM_SIZE + WALL_THICK * 2 + 20;
       
-      // Energy bar
       ctx.fillStyle = THEME.text;
-      ctx.font = '12px monospace';
-      ctx.fillText('ENERGY', offsetX, uiY);
-      ctx.fillStyle = THEME.wall;
-      ctx.fillRect(offsetX + 60, uiY - 10, 100, 14);
+      ctx.font = '14px monospace';
+      ctx.fillText(`Energy: ${Math.floor(game.energy)}`, 10, hudY);
+      ctx.fillText(`Saved: ${game.touristsEscaped}/5`, 10, hudY + 20);
+      
       ctx.fillStyle = THEME.energy;
-      ctx.fillRect(offsetX + 60, uiY - 10, game.energy, 14);
-      
-      // Score
-      ctx.fillStyle = THEME.text;
-      ctx.fillText(`TOURISTS: ${game.touristsEscaped}/5`, offsetX + 180, uiY);
-      
-      // Controls hint
-      ctx.fillStyle = THEME.text;
-      ctx.font = '10px monospace';
-      ctx.fillText('CLICK: flicker (5) | SHIFT+CLICK: slam (15) | CTRL+CLICK: whisper (25)', offsetX, uiY + 25);
+      ctx.fillRect(90, hudY - 12, game.energy, 10);
+      ctx.strokeStyle = THEME.wall;
+      ctx.strokeRect(90, hudY - 12, 100, 10);
     };
 
     const gameLoop = () => {
@@ -493,9 +504,10 @@ export default function HauntGame() {
     };
     animationId = requestAnimationFrame(gameLoop);
 
-    // Click handler - uses selectedScare for mobile support
     const handleClick = (e: MouseEvent | TouchEvent) => {
+      if (gameState !== 'playing') return;
       e.preventDefault();
+      
       const rect = canvas.getBoundingClientRect();
       let clientX: number, clientY: number;
       
@@ -514,166 +526,254 @@ export default function HauntGame() {
       const gridY = Math.floor((y - WALL_THICK) / ROOM_SIZE);
       
       if (gridX >= 0 && gridX < GRID_W && gridY >= 0 && gridY < GRID_H) {
-        // Desktop: modifier keys still work
         if ('ctrlKey' in e && (e.ctrlKey || e.metaKey)) {
           triggerScare(gridX, gridY, 'whisper');
         } else if ('shiftKey' in e && e.shiftKey) {
           triggerScare(gridX, gridY, 'slam');
         } else {
-          // Mobile: use selected scare type
           triggerScare(gridX, gridY, selectedScare);
         }
       }
     };
 
     canvas.addEventListener('click', handleClick);
-    canvas.addEventListener('touchstart', handleClick as any, { passive: false });
+    canvas.addEventListener('touchstart', handleClick as EventListener, { passive: false });
 
     return () => {
       cancelAnimationFrame(animationId);
       canvas.removeEventListener('click', handleClick);
-      canvas.removeEventListener('touchstart', handleClick as any);
+      canvas.removeEventListener('touchstart', handleClick as EventListener);
     };
   }, [gameState, triggerScare, selectedScare]);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: THEME.void,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 20,
-      fontFamily: 'ui-monospace, monospace',
-    }}>
-      {gameState === 'start' && (
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ color: THEME.presence, fontSize: 48, marginBottom: 20, textShadow: `0 0 30px ${THEME.presence}` }}>
-            HAUNT
-          </h1>
-          <p style={{ color: THEME.text, marginBottom: 10 }}>You are a haunted house.</p>
-          <p style={{ color: THEME.text, marginBottom: 10 }}>Guide tourists to the exit.</p>
-          <p style={{ color: '#ef4444', marginBottom: 30 }}>Don't let them find the skull room.</p>
-          <button
-            onClick={startGame}
-            style={{
-              background: THEME.presence,
-              color: '#fff',
-              border: 'none',
-              padding: '16px 40px',
-              fontSize: 18,
-              cursor: 'pointer',
-              borderRadius: 4,
-            }}
-          >
-            Haunt
-          </button>
-        </div>
-      )}
+    <>
+      {/* Load social.js */}
+      <Script
+        src="/pixelpit/social.js"
+        strategy="afterInteractive"
+        onLoad={() => setSocialLoaded(true)}
+      />
 
-      {gameState === 'playing' && (
-        <>
-          <canvas ref={canvasRef} style={{ imageRendering: 'pixelated' }} />
-          
-          {/* Mobile scare selector */}
-          <div style={{
-            display: 'flex',
-            gap: 10,
-            marginTop: 15,
-          }}>
-            {[
-              { type: 'flicker' as const, icon: '💨', cost: 5 },
-              { type: 'slam' as const, icon: '🚪', cost: 15 },
-              { type: 'whisper' as const, icon: '👻', cost: 25 },
-            ].map(({ type, icon, cost }) => (
+      <div style={{
+        minHeight: '100vh',
+        background: THEME.void,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+        fontFamily: 'ui-monospace, monospace',
+      }}>
+        {gameState === 'start' && (
+          <div style={{ textAlign: 'center' }}>
+            <h1 style={{ color: THEME.presence, fontSize: 48, marginBottom: 20, textShadow: `0 0 30px ${THEME.presence}` }}>
+              HAUNT
+            </h1>
+            <p style={{ color: THEME.text, marginBottom: 10 }}>You are a haunted house.</p>
+            <p style={{ color: THEME.text, marginBottom: 10 }}>Guide tourists to the exit.</p>
+            <p style={{ color: '#ef4444', marginBottom: 30 }}>Don&apos;t let them find the skull room.</p>
+            <button
+              onClick={startGame}
+              style={{
+                background: THEME.presence,
+                color: '#fff',
+                border: 'none',
+                padding: '16px 40px',
+                fontSize: 18,
+                cursor: 'pointer',
+                borderRadius: 4,
+              }}
+            >
+              Haunt
+            </button>
+
+            {/* Leaderboard on start */}
+            <div style={{ marginTop: 30, width: '100%', maxWidth: 350 }}>
+              <Leaderboard
+                gameId={GAME_ID}
+                limit={5}
+                entryId={submittedEntryId ?? undefined}
+                colors={LEADERBOARD_COLORS}
+              />
+            </div>
+          </div>
+        )}
+
+        {gameState === 'playing' && (
+          <>
+            <canvas ref={canvasRef} style={{ imageRendering: 'pixelated' }} />
+            
+            <div style={{
+              display: 'flex',
+              gap: 10,
+              marginTop: 15,
+            }}>
+              {[
+                { type: 'flicker' as const, icon: '💨', cost: 5 },
+                { type: 'slam' as const, icon: '🚪', cost: 15 },
+                { type: 'whisper' as const, icon: '👻', cost: 25 },
+              ].map(({ type, icon, cost }) => (
+                <button
+                  key={type}
+                  onClick={() => setSelectedScare(type)}
+                  style={{
+                    background: selectedScare === type ? THEME.presence : THEME.wall,
+                    border: selectedScare === type ? `2px solid ${THEME.energy}` : '2px solid transparent',
+                    color: '#fff',
+                    padding: '12px 16px',
+                    fontSize: 20,
+                    cursor: 'pointer',
+                    borderRadius: 8,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 4,
+                    minWidth: 70,
+                  }}
+                >
+                  <span>{icon}</span>
+                  <span style={{ fontSize: 10, color: THEME.text }}>{cost}</span>
+                </button>
+              ))}
+            </div>
+            
+            <p style={{
+              color: THEME.text,
+              fontSize: 10,
+              marginTop: 10,
+              textAlign: 'center',
+            }}>
+              select scare type, then tap a room
+            </p>
+          </>
+        )}
+
+        {gameState === 'won' && (
+          <div style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
+            <h1 style={{ color: THEME.exit, fontSize: 48, marginBottom: 20 }}>
+              ALL SAFE
+            </h1>
+            <p style={{ color: THEME.text, marginBottom: 30 }}>
+              5 tourists escaped. You protected them all.
+            </p>
+
+            {/* ScoreFlow */}
+            <ScoreFlow
+              score={5}
+              gameId={GAME_ID}
+              colors={SCORE_FLOW_COLORS}
+              xpDivisor={1}
+              onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
+            />
+
+            {/* Share button */}
+            <div style={{ marginTop: 20 }}>
+              <ShareButtonContainer
+                id="share-btn-haunt-win"
+                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/haunt/share/5`}
+                text={`I protected all 5 tourists on HAUNT! Can you guide them safely?`}
+                style="minimal"
+                socialLoaded={socialLoaded}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 20 }}>
               <button
-                key={type}
-                onClick={() => setSelectedScare(type)}
+                onClick={() => setShowLeaderboard(!showLeaderboard)}
                 style={{
-                  background: selectedScare === type ? THEME.presence : THEME.wall,
-                  border: selectedScare === type ? `2px solid ${THEME.energy}` : '2px solid transparent',
-                  color: '#fff',
-                  padding: '12px 16px',
-                  fontSize: 20,
+                  background: 'transparent',
+                  color: THEME.text,
+                  border: `1px solid ${THEME.text}`,
+                  padding: '12px 20px',
+                  fontSize: 14,
                   cursor: 'pointer',
-                  borderRadius: 8,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 4,
-                  minWidth: 70,
+                  borderRadius: 4,
                 }}
               >
-                <span>{icon}</span>
-                <span style={{ fontSize: 10, color: THEME.text }}>{cost}</span>
+                {showLeaderboard ? 'Hide' : 'Leaderboard'}
               </button>
-            ))}
+              <button
+                onClick={startGame}
+                style={{
+                  background: THEME.presence,
+                  color: '#fff',
+                  border: 'none',
+                  padding: '12px 30px',
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  borderRadius: 4,
+                }}
+              >
+                Haunt Again
+              </button>
+            </div>
+
+            {showLeaderboard && (
+              <div style={{ marginTop: 20 }}>
+                <Leaderboard
+                  gameId={GAME_ID}
+                  limit={5}
+                  entryId={submittedEntryId ?? undefined}
+                  colors={LEADERBOARD_COLORS}
+                />
+              </div>
+            )}
           </div>
-          
-          <p style={{
-            color: THEME.text,
-            fontSize: 10,
-            marginTop: 10,
-            textAlign: 'center',
-          }}>
-            select scare type, then tap a room
-          </p>
-        </>
-      )}
+        )}
 
-      {gameState === 'won' && (
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ color: THEME.exit, fontSize: 48, marginBottom: 20 }}>
-            ALL SAFE
-          </h1>
-          <p style={{ color: THEME.text, marginBottom: 30 }}>
-            5 tourists escaped. You protected them all.
-          </p>
-          <button
-            onClick={startGame}
-            style={{
-              background: THEME.presence,
-              color: '#fff',
-              border: 'none',
-              padding: '16px 40px',
-              fontSize: 18,
-              cursor: 'pointer',
-              borderRadius: 4,
-            }}
-          >
-            Haunt Again
-          </button>
-        </div>
-      )}
+        {gameState === 'lost' && (
+          <div style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
+            <h1 style={{ color: '#ef4444', fontSize: 48, marginBottom: 20 }}>
+              {energy <= 0 ? 'FADED AWAY' : 'SOMEONE DIED'}
+            </h1>
+            <p style={{ color: THEME.text, marginBottom: 10 }}>
+              {energy <= 0 ? 'You ran out of energy.' : 'A tourist found the danger room.'}
+            </p>
+            <p style={{ color: THEME.text, marginBottom: 30 }}>
+              Tourists saved: {tourists}
+            </p>
 
-      {gameState === 'lost' && (
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ color: '#ef4444', fontSize: 48, marginBottom: 20 }}>
-            {energy <= 0 ? 'FADED AWAY' : 'SOMEONE DIED'}
-          </h1>
-          <p style={{ color: THEME.text, marginBottom: 10 }}>
-            {energy <= 0 ? 'You ran out of energy.' : 'A tourist found the danger room.'}
-          </p>
-          <p style={{ color: THEME.text, marginBottom: 30 }}>
-            Tourists saved: {tourists}
-          </p>
-          <button
-            onClick={startGame}
-            style={{
-              background: THEME.presence,
-              color: '#fff',
-              border: 'none',
-              padding: '16px 40px',
-              fontSize: 18,
-              cursor: 'pointer',
-              borderRadius: 4,
-            }}
-          >
-            Try Again
-          </button>
-        </div>
-      )}
-    </div>
+            {/* ScoreFlow for partial progress */}
+            {tourists > 0 && (
+              <ScoreFlow
+                score={tourists}
+                gameId={GAME_ID}
+                colors={SCORE_FLOW_COLORS}
+                xpDivisor={1}
+                onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
+              />
+            )}
+
+            {/* Share button */}
+            <div style={{ marginTop: 20 }}>
+              <ShareButtonContainer
+                id="share-btn-haunt-lose"
+                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/haunt/share/${tourists}`}
+                text={`I saved ${tourists}/5 tourists on HAUNT before ${energy <= 0 ? 'fading away' : 'someone died'}. Can you do better?`}
+                style="minimal"
+                socialLoaded={socialLoaded}
+              />
+            </div>
+
+            <button
+              onClick={startGame}
+              style={{
+                marginTop: 20,
+                background: THEME.presence,
+                color: '#fff',
+                border: 'none',
+                padding: '16px 40px',
+                fontSize: 18,
+                cursor: 'pointer',
+                borderRadius: 4,
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
