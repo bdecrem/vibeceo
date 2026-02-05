@@ -946,7 +946,171 @@ export default function FlappyGame() {
           }
         }
         ctx.globalAlpha = 1;
-        
+
+        // ROOFTOP DECORATIONS (rare - ~15% of buildings)
+        const roofSeed = Math.abs(Math.sin(pipe.x * 0.23 + 42));
+        const roofTop = pipe.gapY + game.pipeGap;
+        const roofCenterX = pipe.x + game.pipeWidth / 2;
+        const time = Date.now();
+
+        if (roofSeed > 0.85) {
+          // === SPOTLIGHT (scanning the sky for our "hero") ===
+          const sweepAngle = Math.sin(time / 800) * 0.6 - Math.PI / 2; // Sweep back and forth
+          const beamLength = 120;
+
+          // Spotlight base
+          ctx.fillStyle = '#475569';
+          ctx.fillRect(roofCenterX - 6, roofTop - 12, 12, 12);
+
+          // Light beam (cone)
+          ctx.save();
+          ctx.translate(roofCenterX, roofTop - 8);
+          ctx.rotate(sweepAngle);
+
+          const beamGrad = ctx.createLinearGradient(0, 0, 0, -beamLength);
+          beamGrad.addColorStop(0, 'rgba(254, 243, 199, 0.6)');
+          beamGrad.addColorStop(0.3, 'rgba(254, 243, 199, 0.2)');
+          beamGrad.addColorStop(1, 'rgba(254, 243, 199, 0)');
+          ctx.fillStyle = beamGrad;
+
+          ctx.beginPath();
+          ctx.moveTo(-4, 0);
+          ctx.lineTo(-25, -beamLength);
+          ctx.lineTo(25, -beamLength);
+          ctx.lineTo(4, 0);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.restore();
+
+          // Lens glow
+          ctx.fillStyle = '#fef3c7';
+          ctx.shadowColor = '#fef3c7';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(roofCenterX, roofTop - 8, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+        } else if (roofSeed > 0.7) {
+          // === WATER TOWER WITH EYES (watching the player) ===
+          const towerX = roofCenterX;
+          const towerY = roofTop - 25;
+
+          // Tower legs (stilts)
+          ctx.strokeStyle = '#64748b';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(towerX - 10, roofTop);
+          ctx.lineTo(towerX - 6, towerY + 10);
+          ctx.moveTo(towerX + 10, roofTop);
+          ctx.lineTo(towerX + 6, towerY + 10);
+          ctx.stroke();
+
+          // Tower body (cylinder-ish)
+          ctx.fillStyle = '#475569';
+          ctx.beginPath();
+          ctx.ellipse(towerX, towerY, 14, 10, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(towerX - 14, towerY - 5, 28, 10);
+
+          // Roof cap
+          ctx.fillStyle = '#334155';
+          ctx.beginPath();
+          ctx.moveTo(towerX - 12, towerY - 5);
+          ctx.lineTo(towerX, towerY - 15);
+          ctx.lineTo(towerX + 12, towerY - 5);
+          ctx.closePath();
+          ctx.fill();
+
+          // EYES that track player Y position
+          const eyeTrackY = Math.max(-3, Math.min(3, (game.bird.y - towerY) / 50));
+          const eyeTrackX = Math.max(-2, Math.min(2, (game.bird.x - towerX) / 100));
+
+          // Eye whites
+          ctx.fillStyle = '#fff';
+          ctx.beginPath();
+          ctx.ellipse(towerX - 5, towerY, 4, 5, 0, 0, Math.PI * 2);
+          ctx.ellipse(towerX + 5, towerY, 4, 5, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Pupils (tracking)
+          ctx.fillStyle = '#000';
+          ctx.beginPath();
+          ctx.arc(towerX - 5 + eyeTrackX, towerY + eyeTrackY, 2, 0, Math.PI * 2);
+          ctx.arc(towerX + 5 + eyeTrackX, towerY + eyeTrackY, 2, 0, Math.PI * 2);
+          ctx.fill();
+
+        } else if (roofSeed > 0.55) {
+          // === WACKY WAVING INFLATABLE TUBE MAN ===
+          const tubeX = roofCenterX + 5;
+          const tubeBaseY = roofTop;
+          const tubeHeight = 35;
+          const wave = time / 150;
+
+          // Base/blower
+          ctx.fillStyle = '#374151';
+          ctx.fillRect(tubeX - 6, tubeBaseY - 5, 12, 5);
+
+          // Tube body (bendy!)
+          ctx.strokeStyle = '#f472b6'; // Hot pink tube man
+          ctx.lineWidth = 6;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(tubeX, tubeBaseY - 5);
+
+          // Wiggly body using quadratic curves
+          const wiggle1 = Math.sin(wave) * 8;
+          const wiggle2 = Math.sin(wave + 1) * 10;
+          const wiggle3 = Math.sin(wave + 2) * 6;
+
+          ctx.quadraticCurveTo(
+            tubeX + wiggle1, tubeBaseY - tubeHeight * 0.33,
+            tubeX + wiggle2, tubeBaseY - tubeHeight * 0.66
+          );
+          ctx.quadraticCurveTo(
+            tubeX + wiggle2 + wiggle1 * 0.5, tubeBaseY - tubeHeight * 0.8,
+            tubeX + wiggle3, tubeBaseY - tubeHeight
+          );
+          ctx.stroke();
+
+          // Head (circle at top)
+          ctx.fillStyle = '#f472b6';
+          ctx.beginPath();
+          ctx.arc(tubeX + wiggle3, tubeBaseY - tubeHeight - 4, 5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Flailing arms
+          ctx.strokeStyle = '#f472b6';
+          ctx.lineWidth = 4;
+          const armY = tubeBaseY - tubeHeight * 0.7;
+          const armX = tubeX + wiggle2;
+
+          // Left arm
+          ctx.beginPath();
+          ctx.moveTo(armX, armY);
+          ctx.quadraticCurveTo(
+            armX - 10 + Math.sin(wave * 1.5) * 8,
+            armY - 10 + Math.cos(wave * 1.3) * 5,
+            armX - 15 + Math.sin(wave * 2) * 10,
+            armY - 5 + Math.sin(wave * 1.7) * 8
+          );
+          ctx.stroke();
+
+          // Right arm
+          ctx.beginPath();
+          ctx.moveTo(armX, armY);
+          ctx.quadraticCurveTo(
+            armX + 10 + Math.sin(wave * 1.3 + 1) * 8,
+            armY - 12 + Math.cos(wave * 1.5 + 1) * 5,
+            armX + 18 + Math.sin(wave * 1.8 + 1) * 8,
+            armY - 3 + Math.sin(wave * 2 + 1) * 6
+          );
+          ctx.stroke();
+
+          ctx.lineCap = 'butt';
+        }
+
         ctx.restore();
       }
 
@@ -1389,6 +1553,7 @@ export default function FlappyGame() {
             color: COLORS.purple,
             marginBottom: 15,
             letterSpacing: 6,
+            textAlign: 'center',
           }}>
             {gameOverMessage}
           </h1>
