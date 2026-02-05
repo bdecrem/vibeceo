@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UNSEND — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="UNSEND — Amber">
+  <meta property="og:description" content="Panic-tap to unsend your regrettable message. Watch it go... somewhere.">
+  <meta property="og:image" content="https://intheamber.com/amber/unsend-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/unsend.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="UNSEND — Amber">
+  <meta name="twitter:description" content="Panic-tap to unsend your regrettable message. Watch it go... somewhere.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/unsend-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-size: clamp(24px, 8vw, 48px);
+      margin-bottom: 20px;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    
+    .message-box {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      font-size: 16px;
+      line-height: 1.6;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.2);
+    }
+    
+    .status {
+      font-size: 14px;
+      color: #2D9596;
+      margin-top: 10px;
+      min-height: 20px;
+      font-style: italic;
+    }
+    
+    #unsendBtn {
+      background: linear-gradient(135deg, #D4A574 0%, #FFD700 100%);
+      border: none;
+      color: #000;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(18px, 5vw, 24px);
+      font-weight: bold;
+      padding: 20px 40px;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
+      transition: all 0.2s;
+      touch-action: manipulation;
+      min-width: 200px;
+    }
+    
+    #unsendBtn:active {
+      transform: scale(0.95);
+      box-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
+    }
+    
+    #unsendBtn.panic {
+      animation: panic 0.1s infinite;
+    }
+    
+    @keyframes panic {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    .destination {
+      font-size: clamp(16px, 4vw, 22px);
+      color: #FFD700;
+      margin: 20px 0;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      line-height: 1.4;
+    }
+    
+    .counter {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #7B68EE;
+    }
+    
+    .footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="container">
+    <h1>UNSEND</h1>
+    
+    <div class="message-box">
+      "hey sorry about last night lol i was drunk and didn't mean any of that stuff i said about your haircut or your life choices or your weird laugh anyway we're cool right?"
+      <div class="status">Sent 3 seconds ago</div>
+    </div>
+    
+    <button id="unsendBtn">UNSEND NOW</button>
+    
+    <div class="destination" id="destination"></div>
+    
+    <div class="counter">
+      Messages unsent: <span id="count">0</span>
+    </div>
+    
+    <div class="footer">
+      Disclaimer: Messages don't actually unsend.<br>
+      They just go somewhere else.
+    </div>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const btn = document.getElementById('unsendBtn');
+    const destination = document.getElementById('destination');
+    const countEl = document.getElementById('count');
+    
+    let count = 0;
+    let particles = [];
+    let audioContext;
+    let audioStarted = false;
+    
+    // Resize canvas
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Destinations (increasingly absurd)
+    const destinations = [
+      "📤 Redirected to your mom",
+      "🚀 Launched into space",
+      "🐐 Fed to a goat in Peru",
+      "📚 Filed in the Library of Congress",
+      "🌊 Thrown into the ocean",
+      "🔥 Burned for warmth",
+      "👽 Intercepted by aliens",
+      "🎪 Sold to a traveling circus",
+      "🧊 Frozen in Antarctic ice",
+      "🎰 Gambled away in Vegas",
+      "🦑 Delivered to Cthulhu",
+      "💾 Saved to a floppy disk (lost immediately)",
+      "🎭 Performed as interpretive dance",
+      "🍕 Used as pizza topping",
+      "⚡️ Converted to pure energy",
+      "🎪 Auctioned on eBay for $0.03",
+      "🌀 Sucked into a black hole",
+      "📟 Sent via pager to 1997",
+      "🦴 Buried with the dinosaurs",
+      "🎨 Painted on a cave wall",
+      "☁️ Uploaded to the cloud (it's raining now)",
+      "🎮 Made into an NFT (worthless)",
+      "🔮 Read by a fortune teller (they laughed)",
+      "🎪 Whispered to a mime (they said nothing)",
+      "🌋 Thrown into a volcano as sacrifice"
+    ];
+    
+    // Particle system
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 8;
+        this.vy = (Math.random() - 0.5) * 8;
+        this.life = 1;
+        this.decay = Math.random() * 0.02 + 0.01;
+        this.size = Math.random() * 4 + 2;
+        this.color = color;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.1; // gravity
+        this.life -= this.decay;
+      }
+      
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    function createBurst(x, y, color, count = 30) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    }
+    
+    function animate() {
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      particles = particles.filter(p => {
+        p.update();
+        p.draw();
+        return p.life > 0;
+      });
+      
+      requestAnimationFrame(animate);
+    }
+    animate();
+    
+    // Audio
+    function initAudio() {
+      if (!audioStarted) {
+        audioContext = new AudioContext();
+        audioStarted = true;
+      }
+    }
+    
+    function playUnsendSound() {
+      if (!audioContext) return;
+      
+      const now = audioContext.currentTime;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      // Whoosh down sound
+      osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+      
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      
+      osc.start(now);
+      osc.stop(now + 0.3);
+    }
+    
+    // Unsend action
+    btn.addEventListener('click', () => {
+      initAudio();
+      
+      count++;
+      countEl.textContent = count;
+      
+      // Show destination
+      const dest = destinations[Math.min(count - 1, destinations.length - 1)];
+      destination.textContent = dest;
+      
+      // Visual effects
+      btn.classList.add('panic');
+      setTimeout(() => btn.classList.remove('panic'), 500);
+      
+      // Particle burst at button
+      const rect = btn.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      
+      const colors = ['#FFD700', '#D4A574', '#2D9596', '#7B68EE'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      createBurst(x, y, color, 50);
+      
+      // Sound
+      playUnsendSound();
+      
+      // Change button text
+      if (count >= 5) {
+        btn.textContent = "KEEP UNSENDING";
+      }
+      if (count >= 10) {
+        btn.textContent = "STOP CLICKING";
+      }
+      if (count >= 15) {
+        btn.textContent = "SERIOUSLY";
+      }
+      if (count >= 20) {
+        btn.textContent = "IT'S GONE";
+      }
+    });
+  </script>
+</body>
+</html>
