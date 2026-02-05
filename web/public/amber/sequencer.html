@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEQUENCER — Paint beats. Watch them flow.</title>
+  
+  <!-- OG tags for social sharing -->
+  <meta property="og:title" content="SEQUENCER — Paint beats. Watch them flow.">
+  <meta property="og:description" content="A visual step sequencer where you paint beats onto a grid and watch the rhythm pulse through. By Amber.">
+  <meta property="og:image" content="https://kochi.to/amber/sequencer-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/sequencer.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SEQUENCER — Paint beats. Watch them flow.">
+  <meta name="twitter:description" content="A visual step sequencer where you paint beats onto a grid and watch the rhythm pulse through. By Amber.">
+  <meta name="twitter:image" content="https://kochi.to/amber/sequencer-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #title {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      font-weight: bold;
+      z-index: 10;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    #subtitle {
+      font-size: 12px;
+      color: #D4A57499;
+      margin-top: 4px;
+    }
+
+    #sequencer {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      gap: 4px;
+      max-width: 90vw;
+      max-height: 60vh;
+      aspect-ratio: 16 / 8;
+      margin-top: 80px;
+    }
+
+    .cell {
+      background: #0D0D0D;
+      border: 1px solid #D4A57433;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cell:hover {
+      border-color: #D4A574;
+    }
+
+    .cell.active {
+      background: radial-gradient(circle at center, #D4A574, #0D0D0D);
+      border-color: #FFD700;
+      box-shadow: 0 0 20px #D4A57488;
+    }
+
+    .cell.playing {
+      animation: pulse 0.2s ease-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    .playhead {
+      position: absolute;
+      top: 80px;
+      width: 3px;
+      height: 60vh;
+      background: linear-gradient(to bottom, transparent, #2D9596, transparent);
+      pointer-events: none;
+      z-index: 5;
+      transition: left 0.05s linear;
+      box-shadow: 0 0 20px #2D9596;
+    }
+
+    #controls {
+      position: absolute;
+      bottom: 40px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    button {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      padding: 12px 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #D4A574;
+      color: #000;
+      box-shadow: 0 0 20px #D4A57466;
+    }
+
+    button.playing {
+      background: #2D9596;
+      border-color: #2D9596;
+      color: #000;
+    }
+
+    #bpm {
+      color: #D4A57499;
+      font-size: 12px;
+    }
+
+    #info {
+      position: absolute;
+      bottom: 8px;
+      font-size: 10px;
+      color: #D4A57466;
+      text-align: center;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    @media (max-width: 768px) {
+      #title { font-size: 16px; top: 12px; }
+      #subtitle { font-size: 11px; }
+      #sequencer { 
+        gap: 3px; 
+        max-width: 95vw;
+        margin-top: 70px;
+      }
+      button { 
+        font-size: 12px; 
+        padding: 10px 18px; 
+      }
+      #controls { bottom: 30px; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">
+    SEQUENCER
+    <div id="subtitle">Paint beats. Watch them flow.</div>
+  </div>
+
+  <canvas id="particles"></canvas>
+  
+  <div id="sequencer"></div>
+  <div class="playhead" id="playhead"></div>
+
+  <div id="controls">
+    <button id="playBtn">PLAY</button>
+    <button id="clearBtn">CLEAR</button>
+    <div id="bpm">128 BPM</div>
+  </div>
+
+  <div id="info">
+    TAP CELLS TO PAINT BEATS • 8 VOICES • 16 STEPS
+  </div>
+
+  <script type="module">
+    import { TR909Controller } from '/909/dist/api/index.js';
+
+    // === SETUP ===
+    const bpm = 128;
+    const stepsPerBar = 16;
+    const voices = 8;
+    const stepDuration = (60 / bpm) / 4; // Quarter note duration
+
+    let drums = null;
+    let audioStarted = false;
+    let isPlaying = false;
+    let currentStep = 0;
+    let animationId = null;
+    let lastStepTime = 0;
+
+    // Grid state: [voice][step]
+    const grid = Array(voices).fill(null).map(() => Array(stepsPerBar).fill(false));
+
+    // Voice mapping (8 drum sounds)
+    const voiceMap = ['kick', 'snare', 'ch', 'oh', 'rimshot', 'ltom', 'mtom', 'htom'];
+    const voiceColors = [
+      '#D4A574', // kick - amber
+      '#FFD700', // snare - gold
+      '#2D9596', // ch - teal
+      '#7B68EE', // oh - violet
+      '#FF6B9D', // rimshot - pink
+      '#00CED1', // ltom - cyan
+      '#FF8C42', // mtom - coral
+      '#98FB98'  // htom - mint
+    ];
+
+    // === DOM ELEMENTS ===
+    const sequencer = document.getElementById('sequencer');
+    const playBtn = document.getElementById('playBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const playhead = document.getElementById('playhead');
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // === PARTICLES ===
+    const particles = [];
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = (Math.random() - 0.5) * 3;
+        this.life = 1;
+        this.decay = 0.02;
+        this.color = color;
+        this.size = Math.random() * 3 + 2;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function spawnParticles(x, y, color, count = 8) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    }
+
+    function animateParticles() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw();
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // === BUILD GRID ===
+    function buildGrid() {
+      sequencer.innerHTML = '';
+      for (let v = 0; v < voices; v++) {
+        for (let s = 0; s < stepsPerBar; s++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.voice = v;
+          cell.dataset.step = s;
+          
+          if (grid[v][s]) {
+            cell.classList.add('active');
+          }
+
+          cell.addEventListener('click', () => toggleCell(v, s, cell));
+          sequencer.appendChild(cell);
+        }
+      }
+    }
+
+    function toggleCell(voice, step, cell) {
+      grid[voice][step] = !grid[voice][step];
+      cell.classList.toggle('active');
+
+      // Particle burst on activation
+      if (grid[voice][step]) {
+        const rect = cell.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const y = rect.top + rect.height / 2;
+        spawnParticles(x, y, voiceColors[voice], 6);
+
+        // Preview sound
+        if (drums && audioStarted) {
+          const voiceId = voiceMap[voice];
+          const voice909 = drums.engine.voices.get(voiceId);
+          if (voice909) {
+            voice909.trigger(drums.engine.context.currentTime, 0.8);
+          }
+        }
+      }
+    }
+
+    // === PLAYBACK ===
+    function play() {
+      if (!drums) {
+        drums = new TR909Controller();
+        drums.setBpm(bpm);
+      }
+
+      if (!audioStarted) {
+        drums.engine.context.resume();
+        audioStarted = true;
+      }
+
+      if (isPlaying) {
+        stop();
+        return;
+      }
+
+      isPlaying = true;
+      currentStep = 0;
+      lastStepTime = performance.now();
+      playBtn.textContent = 'STOP';
+      playBtn.classList.add('playing');
+
+      tick();
+    }
+
+    function tick() {
+      if (!isPlaying) return;
+
+      const now = performance.now();
+      const elapsed = (now - lastStepTime) / 1000;
+
+      if (elapsed >= stepDuration) {
+        lastStepTime = now;
+        playStep(currentStep);
+        currentStep = (currentStep + 1) % stepsPerBar;
+      }
+
+      // Update playhead position
+      const progress = elapsed / stepDuration;
+      const stepWidth = sequencer.offsetWidth / stepsPerBar;
+      const playheadX = (currentStep + progress) * stepWidth;
+      playhead.style.left = `${sequencer.offsetLeft + playheadX}px`;
+
+      animationId = requestAnimationFrame(tick);
+    }
+
+    function playStep(step) {
+      // Trigger all active voices at this step
+      for (let v = 0; v < voices; v++) {
+        if (grid[v][step]) {
+          const voiceId = voiceMap[v];
+          const voice = drums.engine.voices.get(voiceId);
+          if (voice) {
+            voice.trigger(drums.engine.context.currentTime, 0.85);
+
+            // Visual feedback
+            const cell = sequencer.children[v * stepsPerBar + step];
+            cell.classList.add('playing');
+            setTimeout(() => cell.classList.remove('playing'), 150);
+
+            // Particle burst
+            const rect = cell.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            spawnParticles(x, y,voiceColors[v], 10);
+          }
+        }
+      }
+    }
+
+    function stop() {
+      isPlaying = false;
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      playBtn.textContent = 'PLAY';
+      playBtn.classList.remove('playing');
+      playhead.style.left = `${sequencer.offsetLeft}px`;
+    }
+
+    function clear() {
+      if (isPlaying) stop();
+      for (let v = 0; v < voices; v++) {
+        for (let s = 0; s < stepsPerBar; s++) {
+          grid[v][s] = false;
+        }
+      }
+      buildGrid();
+    }
+
+    // === EVENT LISTENERS ===
+    playBtn.addEventListener('click', play);
+    clearBtn.addEventListener('click', clear);
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // === INIT ===
+    buildGrid();
+
+    // Preset pattern (optional: start with a basic beat)
+    function loadPreset() {
+      // Kick on 1, 5, 9, 13
+      grid[0][0] = grid[0][4] = grid[0][8] = grid[0][12] = true;
+      // Snare on 4, 12
+      grid[1][4] = grid[1][12] = true;
+      // Closed hats on offbeats
+      for (let i = 2; i < 16; i += 2) grid[2][i] = true;
+      
+      buildGrid();
+    }
+
+    // Uncomment to start with preset:
+    // loadPreset();
+  </script>
+</body>
+</html>
