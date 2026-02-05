@@ -84,6 +84,12 @@ window.PixelpitSocial = (function() {
         await joinGroup(pendingGroup);
         clearStoredGroupCode();
       }
+      // Record magic streak connection if came via referral link
+      const refUserId = getStoredRefUserId();
+      if (refUserId) {
+        await recordConnection(data.user.id, refUserId);
+        clearStoredRefUserId();
+      }
     }
     return data;
   }
@@ -108,6 +114,12 @@ window.PixelpitSocial = (function() {
       if (pendingGroup) {
         await joinGroup(pendingGroup);
         clearStoredGroupCode();
+      }
+      // Record magic streak connection if came via referral link
+      const refUserId = getStoredRefUserId();
+      if (refUserId) {
+        await recordConnection(data.user.id, refUserId);
+        clearStoredRefUserId();
       }
     }
     return data;
@@ -421,17 +433,23 @@ window.PixelpitSocial = (function() {
 
   /**
    * Get the referrer user ID from URL if present (?ref=123)
+   * Auto-stores in sessionStorage so it survives until registration
    * @returns {number | null}
    */
   function getRefFromUrl() {
     if (typeof window === 'undefined') return null;
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
-    return ref ? parseInt(ref, 10) : null;
+    if (ref) {
+      const refId = parseInt(ref, 10);
+      storeRefUserId(refId); // Auto-store for later use during registration
+      return refId;
+    }
+    return null;
   }
 
   /**
-   * Store ref user ID in sessionStorage for use during score submission
+   * Store ref user ID in sessionStorage
    * @param {number} refUserId
    */
   function storeRefUserId(refUserId) {
@@ -456,6 +474,24 @@ window.PixelpitSocial = (function() {
   function clearStoredRefUserId() {
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.removeItem('pixelpit_ref_user');
+    }
+  }
+
+  /**
+   * Record a magic streak connection after registration/login
+   * @param {number} userId - The newly logged in user
+   * @param {number} refUserId - The user who referred them
+   */
+  async function recordConnection(userId, refUserId) {
+    if (!refUserId || refUserId === userId) return;
+    try {
+      await fetch(`${API_BASE}/connections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, refUserId }),
+      });
+    } catch (e) {
+      // Silent fail - not critical
     }
   }
 
