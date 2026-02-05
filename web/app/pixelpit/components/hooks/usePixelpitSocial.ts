@@ -38,6 +38,13 @@ export function usePixelpitSocial(socialLoaded: boolean): UsePixelpitSocialRetur
       setApi(window.PixelpitSocial);
       const currentUser = window.PixelpitSocial.getUser();
       setUser(currentUser);
+
+      // If no user in localStorage, try server session cookie
+      if (!currentUser) {
+        window.PixelpitSocial.checkSession().then((sessionUser: PixelpitUser | null) => {
+          if (sessionUser) setUser(sessionUser);
+        });
+      }
     }
   }, [socialLoaded]);
 

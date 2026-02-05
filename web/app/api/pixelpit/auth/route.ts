@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -18,6 +19,74 @@ function isValidCode(code: string): boolean {
   return /^[a-zA-Z0-9]{4}$/.test(code);
 }
 
+// Session cookie: base64(userId:handle:timestamp:signature)
+function createSessionToken(userId: number, handle: string): string {
+  const secret = process.env.SUPABASE_SERVICE_KEY!.slice(0, 32);
+  const timestamp = Date.now();
+  const data = `${userId}:${handle}:${timestamp}`;
+  const signature = crypto
+    .createHmac("sha256", secret)
+    .update(data)
+    .digest("hex")
+    .slice(0, 16);
+  return Buffer.from(`${data}:${signature}`).toString("base64");
+}
+
+function verifySessionToken(
+  token: string
+): { userId: number; handle: string } | null {
+  try {
+    const secret = process.env.SUPABASE_SERVICE_KEY!.slice(0, 32);
+    const decoded = Buffer.from(token, "base64").toString();
+    const parts = decoded.split(":");
+    if (parts.length < 4) return null;
+    const [userIdStr, handle, timestamp, signature] = parts;
+    const expectedSig = crypto
+      .createHmac("sha256", secret)
+      .update(`${userIdStr}:${handle}:${timestamp}`)
+      .digest("hex")
+      .slice(0, 16);
+    if (signature !== expectedSig) return null;
+    // 30-day expiry
+    if (Date.now() - parseInt(timestamp) > 30 * 24 * 60 * 60 * 1000)
+      return null;
+    return { userId: parseInt(userIdStr, 10), handle };
+  } catch {
+    return null;
+  }
+}
+
+function setSessionCookie(
+  response: NextResponse,
+  userId: number,
+  handle: string
+): void {
+  response.cookies.set("pp_session", createSessionToken(userId, handle), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    path: "/",
+  });
+}
+
+// GET: Check session from cookie
+export async function GET(request: NextRequest) {
+  const token = request.cookies.get("pp_session")?.value;
+  if (!token) {
+    return NextResponse.json({ user: null });
+  }
+  const session = verifySessionToken(token);
+  if (!session) {
+    const response = NextResponse.json({ user: null });
+    response.cookies.delete("pp_session");
+    return response;
+  }
+  return NextResponse.json({
+    user: { id: session.userId, handle: session.handle },
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -25,6 +94,13 @@ export async function POST(request: NextRequest) {
 
     if (!action) {
       return NextResponse.json({ error: "Action required" }, { status: 400 });
+    }
+
+    // Logout doesn't need handle/code
+    if (action === "logout") {
+      const logoutResponse = NextResponse.json({ success: true });
+      logoutResponse.cookies.delete("pp_session");
+      return logoutResponse;
     }
 
     if (!handle || !isValidHandle(handle)) {
@@ -92,10 +168,12 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        return NextResponse.json({
+        const registerResponse = NextResponse.json({
           success: true,
           user: { id: newUser.id, handle: newUser.handle },
         });
+        setSessionCookie(registerResponse, newUser.id, newUser.handle);
+        return registerResponse;
       }
 
       case "login": {
@@ -128,10 +206,12 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        return NextResponse.json({
+        const loginResponse = NextResponse.json({
           success: true,
           user: { id: user.id, handle: user.handle },
         });
+        setSessionCookie(loginResponse, user.id, user.handle);
+        return loginResponse;
       }
 
       default:

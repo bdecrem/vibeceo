@@ -126,10 +126,35 @@ window.PixelpitSocial = (function() {
   }
 
   /**
+   * Check server session cookie and hydrate localStorage if valid
+   * @returns {Promise<{ id: number, handle: string } | null>}
+   */
+  async function checkSession() {
+    try {
+      const res = await fetch(`${API_BASE}/auth`, { credentials: 'include' });
+      const data = await res.json();
+      if (data.user) {
+        setUser(data.user);
+        return data.user;
+      }
+    } catch (e) {
+      // Silent fail — not critical, localStorage is primary
+    }
+    return null;
+  }
+
+  /**
    * Logout and clear stored user
    */
   function logout() {
     localStorage.removeItem(STORAGE_KEY);
+    // Clear server session cookie
+    fetch(`${API_BASE}/auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'logout' }),
+      credentials: 'include',
+    }).catch(() => {}); // Fire and forget
   }
 
   // ============ Scores ============
@@ -758,6 +783,7 @@ window.PixelpitSocial = (function() {
     register,
     login,
     logout,
+    checkSession,
 
     // Scores
     submitScore,

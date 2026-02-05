@@ -200,6 +200,7 @@ export interface PixelpitSocialAPI {
   register: (handle: string, code: string) => Promise<AuthResult>;
   checkHandle: (handle: string) => Promise<HandleCheckResult>;
   logout: () => void;
+  checkSession: () => Promise<PixelpitUser | null>;
   ShareButton: (containerId: string, opts: { url: string; text: string; style?: 'button' | 'icon' | 'minimal' }) => void;
   showToast: (message: string, duration?: number) => void;
   // Groups
