@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COUNTDOWN — Type fast or fail</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="COUNTDOWN — Type fast or fail">
+  <meta property="og:description" content="Type the alphabet before time runs out. Each win gives you LESS time. How fast can you type under pressure?">
+  <meta property="og:image" content="https://kochi.to/amber/countdown-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/countdown.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="COUNTDOWN — Type fast or fail">
+  <meta name="twitter:description" content="Type the alphabet before time runs out. Each win gives you LESS time.">
+  <meta name="twitter:image" content="https://kochi.to/amber/countdown-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    #container {
+      text-align: center;
+      padding: 20px;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      letter-spacing: 0.1em;
+    }
+
+    #subtitle {
+      font-size: 0.9rem;
+      opacity: 0.6;
+      margin-bottom: 40px;
+    }
+
+    #timer {
+      font-size: 6rem;
+      font-weight: bold;
+      margin-bottom: 30px;
+      transition: color 0.2s;
+    }
+
+    #timer.danger {
+      color: #ff3366;
+      animation: pulse 0.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    #target {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      opacity: 0.4;
+    }
+
+    #progress {
+      font-size: 2rem;
+      margin-bottom: 30px;
+      min-height: 2.5rem;
+      color: #2D9596;
+    }
+
+    #startBtn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px 50px;
+      font-size: 1.5rem;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.1em;
+      margin-bottom: 30px;
+    }
+
+    #startBtn:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+
+    #startBtn:active {
+      transform: scale(0.95);
+    }
+
+    #stats {
+      font-size: 1rem;
+      opacity: 0.5;
+      line-height: 1.6;
+    }
+
+    .stat-line {
+      margin-bottom: 5px;
+    }
+
+    #message {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      min-height: 2rem;
+      font-weight: bold;
+    }
+
+    #message.success {
+      color: #2D9596;
+    }
+
+    #message.fail {
+      color: #ff3366;
+    }
+
+    .particle {
+      position: fixed;
+      pointer-events: none;
+      font-size: 1.5rem;
+      animation: float-up 1s ease-out forwards;
+    }
+
+    @keyframes float-up {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-100px) scale(0.5);
+      }
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 2rem; }
+      #timer { font-size: 4rem; }
+      #target { font-size: 2rem; }
+      #progress { font-size: 1.5rem; }
+      #startBtn { padding: 15px 40px; font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>COUNTDOWN</h1>
+    <div id="subtitle">type fast or fail</div>
+    
+    <div id="timer">10.0</div>
+    <div id="target">abcdefghijklmnopqrstuvwxyz</div>
+    <div id="progress"></div>
+    <div id="message"></div>
+    
+    <button id="startBtn">START</button>
+    
+    <div id="stats">
+      <div class="stat-line">ROUND: <span id="round">1</span></div>
+      <div class="stat-line">BEST TIME: <span id="best">—</span></div>
+      <div class="stat-line">FASTEST ROUND: <span id="fastestRound">—</span></div>
+    </div>
+  </div>
+
+  <script>
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+    let gameActive = false;
+    let currentIndex = 0;
+    let startTime = 0;
+    let timeLimit = 10; // seconds
+    let timerInterval = null;
+    let round = 1;
+    let bestTime = null;
+    let fastestRound = null;
+
+    const timerEl = document.getElementById('timer');
+    const progressEl = document.getElementById('progress');
+    const messageEl = document.getElementById('message');
+    const startBtn = document.getElementById('startBtn');
+    const roundEl = document.getElementById('round');
+    const bestEl = document.getElementById('best');
+    const fastestRoundEl = document.getElementById('fastestRound');
+
+    // Audio context
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTone(freq, duration = 0.1) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      gain.gain.value = 0.2;
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playSuccess() {
+      if (!audioCtx) return;
+      playTone(523.25, 0.1); // C5
+      setTimeout(() => playTone(659.25, 0.1), 100); // E5
+      setTimeout(() => playTone(783.99, 0.2), 200); // G5
+    }
+
+    function playFail() {
+      if (!audioCtx) return;
+      playTone(200, 0.3);
+      setTimeout(() => playTone(150, 0.3), 150);
+    }
+
+    function createParticle(char) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.textContent = char;
+      particle.style.left = (window.innerWidth / 2) + 'px';
+      particle.style.top = (window.innerHeight / 2) + 'px';
+      particle.style.color = ['#FFD700', '#2D9596', '#7B68EE', '#D4A574'][Math.floor(Math.random() * 4)];
+      document.body.appendChild(particle);
+      setTimeout(() => particle.remove(), 1000);
+    }
+
+    function startGame() {
+      initAudio();
+      gameActive = true;
+      currentIndex = 0;
+      startTime = Date.now();
+      messageEl.textContent = '';
+      messageEl.className = '';
+      progressEl.textContent = '';
+      startBtn.style.display = 'none';
+      timerEl.classList.remove('danger');
+      
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 50);
+    }
+
+    function updateTimer() {
+      const elapsed = (Date.now() - startTime) / 1000;
+      const remaining = Math.max(0, timeLimit - elapsed);
+      timerEl.textContent = remaining.toFixed(1);
+      
+      if (remaining <= 3) {
+        timerEl.classList.add('danger');
+      }
+      
+      if (remaining === 0) {
+        endGame(false);
+      }
+    }
+
+    function endGame(success) {
+      gameActive = false;
+      clearInterval(timerInterval);
+      
+      if (success) {
+        const elapsed = (Date.now() - startTime) / 1000;
+        messageEl.textContent = `${elapsed.toFixed(2)}s — NEXT: ${(timeLimit - 1).toFixed(1)}s`;
+        messageEl.className = 'success';
+        playSuccess();
+        
+        // Update best time
+        if (bestTime === null || elapsed < bestTime) {
+          bestTime = elapsed;
+          bestEl.textContent = bestTime.toFixed(2) + 's';
+          fastestRound = round;
+          fastestRoundEl.textContent = fastestRound;
+        }
+        
+        // Make it harder
+        timeLimit = Math.max(3, timeLimit - 1);
+        round++;
+        roundEl.textContent = round;
+      } else {
+        messageEl.textContent = 'TOO SLOW';
+        messageEl.className = 'fail';
+        playFail();
+        
+        // Reset for next attempt
+        timeLimit = 10;
+        round = 1;
+        roundEl.textContent = round;
+      }
+      
+      startBtn.textContent = success ? 'FASTER' : 'TRY AGAIN';
+      startBtn.style.display = 'inline-block';
+      timerEl.classList.remove('danger');
+    }
+
+    startBtn.addEventListener('click', startGame);
+
+    document.addEventListener('keypress', (e) => {
+      if (!gameActive) return;
+      
+      const key = e.key.toLowerCase();
+      const expectedKey = alphabet[currentIndex];
+      
+      if (key === expectedKey) {
+        playTone(440 + (currentIndex * 20), 0.05);
+        createParticle(key.toUpperCase());
+        currentIndex++;
+        progressEl.textContent = alphabet.slice(0, currentIndex);
+        
+        if (currentIndex === alphabet.length) {
+          endGame(true);
+        }
+      }
+    });
+
+    // Prevent spacebar from triggering button
+    document.addEventListener('keydown', (e) => {
+      if (e.key === ' ' && gameActive) {
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>
