@@ -31,6 +31,7 @@ const THEME = {
   window: '#fef3c7',     // Warm window glow
   windowOff: '#1e293b',  // Dark windows
   ground: '#0f172a',     // Dark ground
+  groundDark: '#070d18', // Even darker ground edge
   groundLine: '#334155', // Ground detail
   moon: '#fef9c3',       // Moon
   moonGlow: '#fef08a',   // Moon outer glow
@@ -466,9 +467,10 @@ export default function FlappyGame() {
     warmupStart: 0,      // Timestamp when warmup began
     score: 0,
     pipesPassed: 0,      // Track pipes for difficulty curve
+    pipesSpawned: 0,     // Track total pipes spawned (for stable building numbers)
     mobileScale: 1,      // Set on resize
     bird: { x: 0, y: 0, vy: 0, size: 24, scaleX: 1, scaleY: 1 },  // Smaller bird (was 30)
-    pipes: [] as Array<{ x: number; gapY: number; scored: boolean; wobble: number }>,
+    pipes: [] as Array<{ x: number; gapY: number; scored: boolean; wobble: number; buildingNumber: number }>,
     particles: [] as Array<{ x: number; y: number; vx: number; vy: number; life: number; color: string }>,
     screenFlash: 0,      // Flash intensity (0-1)
     countdown: '',       // Countdown text to display
@@ -509,6 +511,7 @@ export default function FlappyGame() {
     game.particles = [];
     game.score = 0;
     game.pipesPassed = 0;
+    game.pipesSpawned = 0;
     game.screenFlash = 0;
     game.pipeGap = 220;      // Reset difficulty
     game.pipeSpeed = 2.5;
@@ -533,7 +536,8 @@ export default function FlappyGame() {
     const minY = 100;
     const maxY = game.groundY - game.pipeGap - 100;
     const gapY = minY + Math.random() * (maxY - minY);
-    game.pipes.push({ x: canvas.width, gapY, scored: false, wobble: Math.random() * Math.PI * 2 });
+    const buildingNumber = game.pipesSpawned++;
+    game.pipes.push({ x: canvas.width, gapY, scored: false, wobble: Math.random() * Math.PI * 2, buildingNumber });
   }, []);
   
   const spawnDeathParticles = useCallback(() => {
@@ -792,6 +796,7 @@ export default function FlappyGame() {
 
       // Buildings (pipes) with windows
       for (const pipe of game.pipes) {
+        const buildingNumber = pipe.buildingNumber;
         const wobbleOffset = Math.sin(pipe.wobble) * 1;
         
         ctx.save();
@@ -810,92 +815,14 @@ export default function FlappyGame() {
         ctx.fillStyle = THEME.buildingDark;
         ctx.fillRect(pipe.x - 8, pipe.gapY - 15, game.pipeWidth + 16, 15);
         
-        // Windows on top building - mostly static, VERY rare special effects
-        // Only every ~5th building gets a special window, and NOT the first few
-        const buildingIndex = Math.floor(pipe.x / 300); // Rough building index
-        const hasSpecialWindow = (buildingIndex >= 4) && (buildingIndex % 5 === 0);
-        const specialType = Math.floor(Math.abs(Math.sin(pipe.x * 0.17)) * 5);
-        const specialWy = 20 + 35; // Second row of windows
-        const specialWx = 10; // First column
-        let specialDrawn = false; // Only draw ONE special per building
-
+        // Windows on top building - PLAIN. No special effects.
         for (let wy = 20; wy < pipe.gapY - 30; wy += 35) {
           for (let wx = 10; wx < game.pipeWidth - 10; wx += 18) {
             const seed = Math.abs(Math.sin(pipe.x * 0.05 + wx * 3 + wy * 7));
             const isLit = seed > 0.35;
-            const isSpecial = hasSpecialWindow && !specialDrawn && (wy === specialWy && wx === specialWx && pipe.gapY > 150);
-
-            // Base window
             ctx.globalAlpha = isLit ? 0.9 : 0.12;
             ctx.fillStyle = THEME.window;
             ctx.fillRect(pipe.x + wx, wy, 10, 15);
-
-            // Special window effects (RARE - only one per ~5 buildings)
-            if (isSpecial && isLit) {
-              specialDrawn = true; // Mark as drawn so we don't draw another
-              const wx2 = pipe.x + wx;
-              const time = Date.now();
-
-              if (specialType === 0) {
-                // ZZZs floating out
-                ctx.globalAlpha = 0.7;
-                ctx.fillStyle = '#a5f3fc';
-                ctx.font = 'bold 8px monospace';
-                const zOffset = (time / 500) % 3;
-                ctx.fillText('z', wx2 + 12 + zOffset * 3, wy - 2 - zOffset * 4);
-                ctx.font = 'bold 10px monospace';
-                ctx.fillText('Z', wx2 + 16 + zOffset * 4, wy - 8 - zOffset * 5);
-                ctx.font = 'bold 12px monospace';
-                ctx.globalAlpha = 0.4;
-                ctx.fillText('Z', wx2 + 22 + zOffset * 3, wy - 16 - zOffset * 4);
-              } else if (specialType === 1) {
-                // Party strobes
-                const strobeColor = Math.floor(time / 80) % 4;
-                const colors = ['#f472b6', '#a78bfa', '#34d399', '#fbbf24'];
-                ctx.fillStyle = colors[strobeColor];
-                ctx.globalAlpha = 0.9;
-                ctx.fillRect(pipe.x + wx, wy, 10, 15);
-                // Light rays
-                ctx.globalAlpha = 0.3;
-                ctx.beginPath();
-                ctx.moveTo(wx2 + 5, wy + 7);
-                ctx.lineTo(wx2 - 5 + Math.sin(time / 100) * 8, wy - 15);
-                ctx.lineTo(wx2 + 15 + Math.cos(time / 100) * 8, wy - 15);
-                ctx.fill();
-              } else if (specialType === 2) {
-                // TV glow (flickering blue)
-                const flicker = Math.sin(time / 50) * 0.3 + 0.6;
-                ctx.fillStyle = `rgba(100, 180, 255, ${flicker})`;
-                ctx.fillRect(pipe.x + wx, wy, 10, 15);
-                // Scan lines
-                ctx.fillStyle = 'rgba(0,0,0,0.3)';
-                for (let sy = wy; sy < wy + 15; sy += 3) {
-                  ctx.fillRect(pipe.x + wx, sy, 10, 1);
-                }
-              } else if (specialType === 3) {
-                // Music notes floating
-                ctx.globalAlpha = 0.8;
-                ctx.fillStyle = '#fbbf24';
-                ctx.font = '10px serif';
-                const noteY = (time / 300) % 20;
-                ctx.fillText('♪', wx2 + 11, wy + 5 - noteY);
-                ctx.globalAlpha = 0.5;
-                ctx.fillText('♫', wx2 + 15, wy + 10 - (noteY + 5) % 20);
-              } else {
-                // Red alarm / emergency light
-                const pulse = Math.sin(time / 150) > 0;
-                if (pulse) {
-                  ctx.fillStyle = '#ef4444';
-                  ctx.globalAlpha = 0.9;
-                  ctx.fillRect(pipe.x + wx, wy, 10, 15);
-                  // Glow
-                  ctx.globalAlpha = 0.2;
-                  ctx.beginPath();
-                  ctx.arc(wx2 + 5, wy + 7, 15, 0, Math.PI * 2);
-                  ctx.fill();
-                }
-              }
-            }
           }
         }
         ctx.globalAlpha = 1;
@@ -911,32 +838,32 @@ export default function FlappyGame() {
         ctx.fillStyle = THEME.buildingDark;
         ctx.fillRect(pipe.x - 8, pipe.gapY + game.pipeGap, game.pipeWidth + 16, 15);
         
-        // Windows on bottom building - mostly static, VERY rare special effects
-        // Offset by 2 from top building so they don't both have specials
-        const hasSpecialWindow2 = (buildingIndex >= 4) && ((buildingIndex + 2) % 5 === 0) && !hasSpecialWindow;
-        const specialType2 = Math.floor(Math.abs(Math.cos(pipe.x * 0.19)) * 5);
+        // Windows on bottom building - VERY rare special effects
+        // Every 8th building, skip first 5 buildings
+        const hasSpecialWindow = false; // DISABLED - only use rooftop decorations
+        const specialType = Math.floor(Math.abs(Math.cos(pipe.x * 0.19)) * 5);
         const baseWy = pipe.gapY + game.pipeGap + 30;
-        const specialWy2 = baseWy + 35; // Second row
-        let specialDrawn2 = false;
+        const specialWy = baseWy + 35; // Second row
+        let specialDrawn = false;
 
         for (let wy = baseWy; wy < game.groundY - 20; wy += 35) {
           for (let wx = 10; wx < game.pipeWidth - 10; wx += 18) {
             const seed = Math.abs(Math.sin(pipe.x * 0.07 + wx * 5 + wy * 11));
             const isLit = seed > 0.3;
-            const isSpecial = hasSpecialWindow2 && !specialDrawn2 && (wy === specialWy2 && wx === 10 && game.groundY - baseWy > 60);
+            const isSpecial = hasSpecialWindow && !specialDrawn && (wy === specialWy && wx === 10 && game.groundY - baseWy > 60);
 
             // Base window
             ctx.globalAlpha = isLit ? 0.9 : 0.12;
             ctx.fillStyle = THEME.window;
             ctx.fillRect(pipe.x + wx, wy, 10, 15);
 
-            // Special window effects (RARE)
+            // Special window effects (RARE - only every 8th building, not first 5)
             if (isSpecial && isLit) {
-              specialDrawn2 = true;
+              specialDrawn = true;
               const wx2 = pipe.x + wx;
               const time = Date.now();
 
-              if (specialType2 === 0) {
+              if (specialType === 0) {
                 // Steam/smoke rising
                 ctx.globalAlpha = 0.4;
                 ctx.fillStyle = '#e2e8f0';
@@ -950,7 +877,7 @@ export default function FlappyGame() {
                   ctx.arc(sx, sy, 3 + sT * 3, 0, Math.PI * 2);
                   ctx.fill();
                 }
-              } else if (specialType2 === 1) {
+              } else if (specialType === 1) {
                 // Neon sign flicker (like a bar)
                 const flicker = Math.random() > 0.1;
                 if (flicker) {
@@ -964,12 +891,12 @@ export default function FlappyGame() {
                   ctx.fillRect(pipe.x + wx - 2, wy - 2, 14, 19);
                   ctx.shadowBlur = 0;
                 }
-              } else if (specialType2 === 2) {
+              } else if (specialType === 2) {
                 // Candle flicker (warm, cozy)
                 const flicker = 0.6 + Math.sin(time / 80) * 0.2 + Math.random() * 0.2;
                 ctx.fillStyle = `rgba(251, 191, 36, ${flicker})`;
                 ctx.fillRect(pipe.x + wx, wy, 10, 15);
-              } else if (specialType2 === 3) {
+              } else if (specialType === 3) {
                 // Phone screen glow (scrolling)
                 ctx.fillStyle = 'rgba(96, 165, 250, 0.7)';
                 ctx.globalAlpha = 0.8;
@@ -999,169 +926,155 @@ export default function FlappyGame() {
         }
         ctx.globalAlpha = 1;
 
-        // ROOFTOP DECORATIONS (rare - only every ~6 buildings, not first 5)
-        const roofSeed = Math.abs(Math.sin(pipe.x * 0.23 + 42));
-        const hasRooftop = (buildingIndex >= 5) && (buildingIndex % 6 === 0);
+        // ROOFTOP DECORATIONS - every 4th building starting at 4
+        const roofSeed = Math.abs(Math.sin(buildingNumber * 1.7 + 42)); // STABLE seed based on buildingNumber, not x
+        const hasRooftop = (buildingNumber >= 4) && (buildingNumber % 4 === 0);
         const roofTop = pipe.gapY + game.pipeGap;
         const roofCenterX = pipe.x + game.pipeWidth / 2;
         const time = Date.now();
 
-        if (hasRooftop && roofSeed > 0.3) {
-          // === SPOTLIGHT (scanning the sky for our "hero") ===
-          const sweepAngle = Math.sin(time / 800) * 0.6 - Math.PI / 2; // Sweep back and forth
-          const beamLength = 120;
+        // ROOFTOP DECORATIONS - ONLY when hasRooftop is true (every 8th building after first 5)
+        if (hasRooftop) {
+          if (roofSeed > 0.7) {
+            // === SPOTLIGHT (scanning the sky for our "hero") ===
+            const sweepAngle = Math.sin(time / 800) * 0.6 - Math.PI / 2;
+            const beamLength = 120;
 
-          // Spotlight base
-          ctx.fillStyle = '#475569';
-          ctx.fillRect(roofCenterX - 6, roofTop - 12, 12, 12);
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(roofCenterX - 6, roofTop - 12, 12, 12);
 
-          // Light beam (cone)
-          ctx.save();
-          ctx.translate(roofCenterX, roofTop - 8);
-          ctx.rotate(sweepAngle);
+            ctx.save();
+            ctx.translate(roofCenterX, roofTop - 8);
+            ctx.rotate(sweepAngle);
 
-          const beamGrad = ctx.createLinearGradient(0, 0, 0, -beamLength);
-          beamGrad.addColorStop(0, 'rgba(254, 243, 199, 0.6)');
-          beamGrad.addColorStop(0.3, 'rgba(254, 243, 199, 0.2)');
-          beamGrad.addColorStop(1, 'rgba(254, 243, 199, 0)');
-          ctx.fillStyle = beamGrad;
+            const beamGrad = ctx.createLinearGradient(0, 0, 0, -beamLength);
+            beamGrad.addColorStop(0, 'rgba(254, 243, 199, 0.6)');
+            beamGrad.addColorStop(0.3, 'rgba(254, 243, 199, 0.2)');
+            beamGrad.addColorStop(1, 'rgba(254, 243, 199, 0)');
+            ctx.fillStyle = beamGrad;
 
-          ctx.beginPath();
-          ctx.moveTo(-4, 0);
-          ctx.lineTo(-25, -beamLength);
-          ctx.lineTo(25, -beamLength);
-          ctx.lineTo(4, 0);
-          ctx.closePath();
-          ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(-4, 0);
+            ctx.lineTo(-25, -beamLength);
+            ctx.lineTo(25, -beamLength);
+            ctx.lineTo(4, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
 
-          ctx.restore();
+            ctx.fillStyle = '#fef3c7';
+            ctx.shadowColor = '#fef3c7';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(roofCenterX, roofTop - 8, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
 
-          // Lens glow
-          ctx.fillStyle = '#fef3c7';
-          ctx.shadowColor = '#fef3c7';
-          ctx.shadowBlur = 8;
-          ctx.beginPath();
-          ctx.arc(roofCenterX, roofTop - 8, 4, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.shadowBlur = 0;
+          } else if (roofSeed > 0.4) {
+            // === WATER TOWER WITH EYES ===
+            const towerX = roofCenterX;
+            const towerY = roofTop - 25;
 
-        } else if (roofSeed > 0.7) {
-          // === WATER TOWER WITH EYES (watching the player) ===
-          const towerX = roofCenterX;
-          const towerY = roofTop - 25;
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(towerX - 10, roofTop);
+            ctx.lineTo(towerX - 6, towerY + 10);
+            ctx.moveTo(towerX + 10, roofTop);
+            ctx.lineTo(towerX + 6, towerY + 10);
+            ctx.stroke();
 
-          // Tower legs (stilts)
-          ctx.strokeStyle = '#64748b';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(towerX - 10, roofTop);
-          ctx.lineTo(towerX - 6, towerY + 10);
-          ctx.moveTo(towerX + 10, roofTop);
-          ctx.lineTo(towerX + 6, towerY + 10);
-          ctx.stroke();
+            ctx.fillStyle = '#475569';
+            ctx.beginPath();
+            ctx.ellipse(towerX, towerY, 14, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(towerX - 14, towerY - 5, 28, 10);
 
-          // Tower body (cylinder-ish)
-          ctx.fillStyle = '#475569';
-          ctx.beginPath();
-          ctx.ellipse(towerX, towerY, 14, 10, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillRect(towerX - 14, towerY - 5, 28, 10);
+            ctx.fillStyle = '#334155';
+            ctx.beginPath();
+            ctx.moveTo(towerX - 12, towerY - 5);
+            ctx.lineTo(towerX, towerY - 15);
+            ctx.lineTo(towerX + 12, towerY - 5);
+            ctx.closePath();
+            ctx.fill();
 
-          // Roof cap
-          ctx.fillStyle = '#334155';
-          ctx.beginPath();
-          ctx.moveTo(towerX - 12, towerY - 5);
-          ctx.lineTo(towerX, towerY - 15);
-          ctx.lineTo(towerX + 12, towerY - 5);
-          ctx.closePath();
-          ctx.fill();
+            const eyeTrackY = Math.max(-3, Math.min(3, (game.bird.y - towerY) / 50));
+            const eyeTrackX = Math.max(-2, Math.min(2, (game.bird.x - towerX) / 100));
 
-          // EYES that track player Y position
-          const eyeTrackY = Math.max(-3, Math.min(3, (game.bird.y - towerY) / 50));
-          const eyeTrackX = Math.max(-2, Math.min(2, (game.bird.x - towerX) / 100));
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.ellipse(towerX - 5, towerY, 4, 5, 0, 0, Math.PI * 2);
+            ctx.ellipse(towerX + 5, towerY, 4, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-          // Eye whites
-          ctx.fillStyle = '#fff';
-          ctx.beginPath();
-          ctx.ellipse(towerX - 5, towerY, 4, 5, 0, 0, Math.PI * 2);
-          ctx.ellipse(towerX + 5, towerY, 4, 5, 0, 0, Math.PI * 2);
-          ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(towerX - 5 + eyeTrackX, towerY + eyeTrackY, 2, 0, Math.PI * 2);
+            ctx.arc(towerX + 5 + eyeTrackX, towerY + eyeTrackY, 2, 0, Math.PI * 2);
+            ctx.fill();
 
-          // Pupils (tracking)
-          ctx.fillStyle = '#000';
-          ctx.beginPath();
-          ctx.arc(towerX - 5 + eyeTrackX, towerY + eyeTrackY, 2, 0, Math.PI * 2);
-          ctx.arc(towerX + 5 + eyeTrackX, towerY + eyeTrackY, 2, 0, Math.PI * 2);
-          ctx.fill();
+          } else {
+            // === WACKY WAVING INFLATABLE TUBE MAN ===
+            const tubeX = roofCenterX + 5;
+            const tubeBaseY = roofTop;
+            const tubeHeight = 35;
+            const wave = time / 150;
 
-        } else if (roofSeed > 0.55) {
-          // === WACKY WAVING INFLATABLE TUBE MAN ===
-          const tubeX = roofCenterX + 5;
-          const tubeBaseY = roofTop;
-          const tubeHeight = 35;
-          const wave = time / 150;
+            ctx.fillStyle = '#374151';
+            ctx.fillRect(tubeX - 6, tubeBaseY - 5, 12, 5);
 
-          // Base/blower
-          ctx.fillStyle = '#374151';
-          ctx.fillRect(tubeX - 6, tubeBaseY - 5, 12, 5);
+            ctx.strokeStyle = '#f472b6';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(tubeX, tubeBaseY - 5);
 
-          // Tube body (bendy!)
-          ctx.strokeStyle = '#f472b6'; // Hot pink tube man
-          ctx.lineWidth = 6;
-          ctx.lineCap = 'round';
-          ctx.beginPath();
-          ctx.moveTo(tubeX, tubeBaseY - 5);
+            const wiggle1 = Math.sin(wave) * 8;
+            const wiggle2 = Math.sin(wave + 1) * 10;
+            const wiggle3 = Math.sin(wave + 2) * 6;
 
-          // Wiggly body using quadratic curves
-          const wiggle1 = Math.sin(wave) * 8;
-          const wiggle2 = Math.sin(wave + 1) * 10;
-          const wiggle3 = Math.sin(wave + 2) * 6;
+            ctx.quadraticCurveTo(
+              tubeX + wiggle1, tubeBaseY - tubeHeight * 0.33,
+              tubeX + wiggle2, tubeBaseY - tubeHeight * 0.66
+            );
+            ctx.quadraticCurveTo(
+              tubeX + wiggle2 + wiggle1 * 0.5, tubeBaseY - tubeHeight * 0.8,
+              tubeX + wiggle3, tubeBaseY - tubeHeight
+            );
+            ctx.stroke();
 
-          ctx.quadraticCurveTo(
-            tubeX + wiggle1, tubeBaseY - tubeHeight * 0.33,
-            tubeX + wiggle2, tubeBaseY - tubeHeight * 0.66
-          );
-          ctx.quadraticCurveTo(
-            tubeX + wiggle2 + wiggle1 * 0.5, tubeBaseY - tubeHeight * 0.8,
-            tubeX + wiggle3, tubeBaseY - tubeHeight
-          );
-          ctx.stroke();
+            ctx.fillStyle = '#f472b6';
+            ctx.beginPath();
+            ctx.arc(tubeX + wiggle3, tubeBaseY - tubeHeight - 4, 5, 0, Math.PI * 2);
+            ctx.fill();
 
-          // Head (circle at top)
-          ctx.fillStyle = '#f472b6';
-          ctx.beginPath();
-          ctx.arc(tubeX + wiggle3, tubeBaseY - tubeHeight - 4, 5, 0, Math.PI * 2);
-          ctx.fill();
+            ctx.strokeStyle = '#f472b6';
+            ctx.lineWidth = 4;
+            const armY = tubeBaseY - tubeHeight * 0.7;
+            const armX = tubeX + wiggle2;
 
-          // Flailing arms
-          ctx.strokeStyle = '#f472b6';
-          ctx.lineWidth = 4;
-          const armY = tubeBaseY - tubeHeight * 0.7;
-          const armX = tubeX + wiggle2;
+            ctx.beginPath();
+            ctx.moveTo(armX, armY);
+            ctx.quadraticCurveTo(
+              armX - 10 + Math.sin(wave * 1.5) * 8,
+              armY - 10 + Math.cos(wave * 1.3) * 5,
+              armX - 15 + Math.sin(wave * 2) * 10,
+              armY - 5 + Math.sin(wave * 1.7) * 8
+            );
+            ctx.stroke();
 
-          // Left arm
-          ctx.beginPath();
-          ctx.moveTo(armX, armY);
-          ctx.quadraticCurveTo(
-            armX - 10 + Math.sin(wave * 1.5) * 8,
-            armY - 10 + Math.cos(wave * 1.3) * 5,
-            armX - 15 + Math.sin(wave * 2) * 10,
-            armY - 5 + Math.sin(wave * 1.7) * 8
-          );
-          ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(armX, armY);
+            ctx.quadraticCurveTo(
+              armX + 10 + Math.sin(wave * 1.3 + 1) * 8,
+              armY - 12 + Math.cos(wave * 1.5 + 1) * 5,
+              armX + 18 + Math.sin(wave * 1.8 + 1) * 8,
+              armY - 3 + Math.sin(wave * 2 + 1) * 6
+            );
+            ctx.stroke();
 
-          // Right arm
-          ctx.beginPath();
-          ctx.moveTo(armX, armY);
-          ctx.quadraticCurveTo(
-            armX + 10 + Math.sin(wave * 1.3 + 1) * 8,
-            armY - 12 + Math.cos(wave * 1.5 + 1) * 5,
-            armX + 18 + Math.sin(wave * 1.8 + 1) * 8,
-            armY - 3 + Math.sin(wave * 2 + 1) * 6
-          );
-          ctx.stroke();
-
-          ctx.lineCap = 'butt';
+            ctx.lineCap = 'butt';
+          }
         }
 
         ctx.restore();
