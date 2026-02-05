@@ -127,7 +127,7 @@ window.PixelpitSocial = (function() {
    * @param {string} gameId - Game identifier (e.g., 'g1', 'tap-tempo')
    * @param {number} score
    * @param {{ nickname?: string, xpDivisor?: number, groupCode?: string }} [opts] - If not logged in, provide nickname. xpDivisor controls XP (default 100, use 1 for full score as XP). groupCode for auto-join.
-   * @returns {Promise<{ success: boolean, rank?: number, entry?: object, progression?: object, joinedGroup?: object, error?: string }>}
+   * @returns {Promise<{ success: boolean, rank?: number, entry?: object, progression?: object, joinedGroup?: object, magicPair?: object, error?: string }>}
    */
   async function submitScore(gameId, score, opts = {}) {
     const user = getUser();
@@ -152,6 +152,12 @@ window.PixelpitSocial = (function() {
     const groupCode = opts.groupCode || getStoredGroupCode();
     if (groupCode) {
       body.groupCode = groupCode;
+    }
+
+    // Include referrer user ID for magic streaks (from URL or sessionStorage)
+    const refUserId = getRefFromUrl() || getStoredRefUserId();
+    if (refUserId && user && refUserId !== user.id) {
+      body.refUserId = refUserId;
     }
 
     const res = await fetch(`${API_BASE}/leaderboard`, {
@@ -411,19 +417,71 @@ window.PixelpitSocial = (function() {
     }
   }
 
+  // ============ Referrals (Magic Streaks) ============
+
+  /**
+   * Get the referrer user ID from URL if present (?ref=123)
+   * @returns {number | null}
+   */
+  function getRefFromUrl() {
+    if (typeof window === 'undefined') return null;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    return ref ? parseInt(ref, 10) : null;
+  }
+
+  /**
+   * Store ref user ID in sessionStorage for use during score submission
+   * @param {number} refUserId
+   */
+  function storeRefUserId(refUserId) {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('pixelpit_ref_user', String(refUserId));
+    }
+  }
+
+  /**
+   * Get stored ref user ID from sessionStorage
+   * @returns {number | null}
+   */
+  function getStoredRefUserId() {
+    if (typeof sessionStorage === 'undefined') return null;
+    const stored = sessionStorage.getItem('pixelpit_ref_user');
+    return stored ? parseInt(stored, 10) : null;
+  }
+
+  /**
+   * Clear stored ref user ID
+   */
+  function clearStoredRefUserId() {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('pixelpit_ref_user');
+    }
+  }
+
   // ============ Share ============
 
   /**
    * Share game/creation using native share or clipboard fallback
+   * Automatically appends ?ref=<userId> for magic streaks if user is logged in
    * @param {string} url - URL to share
    * @param {string} text - Share text
    * @returns {Promise<{ success: boolean, method: 'native' | 'clipboard' }>}
    */
   async function share(url, text) {
+    // Append ref parameter for magic streaks if user is logged in
+    const user = getUser();
+    let shareUrl = url;
+    if (user) {
+      const urlObj = new URL(url, window.location.origin);
+      urlObj.searchParams.set('ref', String(user.id));
+      shareUrl = urlObj.toString();
+    }
+
     const shareData = {
       title: 'Pixelpit',
       text: text,
-      url: url,
+      url: shareUrl,
     };
 
     // Try native share first
@@ -441,7 +499,7 @@ window.PixelpitSocial = (function() {
 
     // Fallback to clipboard
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareUrl);
       return { success: true, method: 'clipboard' };
     } catch (e) {
       console.error('PixelpitSocial: Failed to copy to clipboard', e);
@@ -682,6 +740,12 @@ window.PixelpitSocial = (function() {
     storeGroupCode,
     getStoredGroupCode,
     clearStoredGroupCode,
+
+    // Referrals (Magic Streaks)
+    getRefFromUrl,
+    storeRefUserId,
+    getStoredRefUserId,
+    clearStoredRefUserId,
 
     // Creations
     saveCreation,
