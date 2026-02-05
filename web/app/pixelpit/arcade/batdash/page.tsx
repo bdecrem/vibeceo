@@ -399,6 +399,37 @@ function playDeath() {
   }, 150);
 }
 
+function playCountdownTick() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+
+  // Sharp click/tick sound - dramatic countdown
+  const click = audioCtx.createOscillator();
+  const clickGain = audioCtx.createGain();
+  click.type = 'square';
+  click.frequency.setValueAtTime(800, t);
+  click.frequency.exponentialRampToValueAtTime(400, t + 0.05);
+  clickGain.gain.setValueAtTime(0.2, t);
+  clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  click.connect(clickGain);
+  clickGain.connect(masterGain);
+  click.start(t);
+  click.stop(t + 0.1);
+
+  // Low thump for weight
+  const thump = audioCtx.createOscillator();
+  const thumpGain = audioCtx.createGain();
+  thump.type = 'sine';
+  thump.frequency.setValueAtTime(100, t);
+  thump.frequency.exponentialRampToValueAtTime(50, t + 0.1);
+  thumpGain.gain.setValueAtTime(0.25, t);
+  thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  thump.connect(thumpGain);
+  thumpGain.connect(masterGain);
+  thump.start(t);
+  thump.stop(t + 0.12);
+}
+
 // Game over messages - randomly selected
 const GAME_OVER_MESSAGES = [
   'oof. he tried.',
@@ -441,6 +472,7 @@ export default function FlappyGame() {
     particles: [] as Array<{ x: number; y: number; vx: number; vy: number; life: number; color: string }>,
     screenFlash: 0,      // Flash intensity (0-1)
     countdown: '',       // Countdown text to display
+    lastCountdown: '',   // Track countdown changes for sound
     gravity: 0.4,
     jumpForce: -9,
     pipeGap: 220,        // Easier start
@@ -615,18 +647,32 @@ export default function FlappyGame() {
         game.bird.y = canvas.height * 0.5 + Math.sin(Date.now() / 200) * 8;
         game.bird.vy = 0;
         
-        // Countdown display
+        // Countdown display with sound on transitions
+        let newCountdown = game.countdown;
         if (elapsed < 1) {
-          game.countdown = 'TAP TO FLAP';
+          newCountdown = 'TAP TO FLAP';
         } else if (elapsed < 1.33) {
-          game.countdown = '3';
+          newCountdown = '3';
         } else if (elapsed < 1.66) {
-          game.countdown = '2';
+          newCountdown = '2';
         } else if (elapsed < 2) {
-          game.countdown = '1';
+          newCountdown = '1';
         } else {
-          // Warmup done - GO!
-          game.countdown = 'GO!';
+          newCountdown = 'GO!';
+        }
+
+        // Play tick sound on countdown transitions (3, 2, 1)
+        if (newCountdown !== game.lastCountdown) {
+          if (newCountdown === '3' || newCountdown === '2' || newCountdown === '1') {
+            playCountdownTick();
+          }
+          game.lastCountdown = newCountdown;
+        }
+
+        game.countdown = newCountdown;
+
+        // Handle GO! transition
+        if (newCountdown === 'GO!' && game.warmup) {
           game.warmup = false;
           game.screenFlash = 0.5;  // Green flash
           spawnPipe();  // First pipe
@@ -764,26 +810,29 @@ export default function FlappyGame() {
         ctx.fillStyle = THEME.buildingDark;
         ctx.fillRect(pipe.x - 8, pipe.gapY - 15, game.pipeWidth + 16, 15);
         
-        // Windows on top building - mostly static, rare special effects
-        // Pick ONE special window per building based on pipe position
-        const specialSeed = Math.abs(Math.sin(pipe.x * 0.1)) ;
-        const specialType = Math.floor(specialSeed * 5);
-        const specialWy = 20 + Math.floor(specialSeed * 3) * 35;
-        const specialWx = 10;
+        // Windows on top building - mostly static, VERY rare special effects
+        // Only every ~5th building gets a special window, and NOT the first few
+        const buildingIndex = Math.floor(pipe.x / 300); // Rough building index
+        const hasSpecialWindow = (buildingIndex >= 4) && (buildingIndex % 5 === 0);
+        const specialType = Math.floor(Math.abs(Math.sin(pipe.x * 0.17)) * 5);
+        const specialWy = 20 + 35; // Second row of windows
+        const specialWx = 10; // First column
+        let specialDrawn = false; // Only draw ONE special per building
 
         for (let wy = 20; wy < pipe.gapY - 30; wy += 35) {
           for (let wx = 10; wx < game.pipeWidth - 10; wx += 18) {
             const seed = Math.abs(Math.sin(pipe.x * 0.05 + wx * 3 + wy * 7));
             const isLit = seed > 0.35;
-            const isSpecial = (wy === specialWy && wx === specialWx && pipe.gapY > 150);
+            const isSpecial = hasSpecialWindow && !specialDrawn && (wy === specialWy && wx === specialWx && pipe.gapY > 150);
 
             // Base window
             ctx.globalAlpha = isLit ? 0.9 : 0.12;
             ctx.fillStyle = THEME.window;
             ctx.fillRect(pipe.x + wx, wy, 10, 15);
 
-            // Special window effects (rare - only one per building)
+            // Special window effects (RARE - only one per ~5 buildings)
             if (isSpecial && isLit) {
+              specialDrawn = true; // Mark as drawn so we don't draw another
               const wx2 = pipe.x + wx;
               const time = Date.now();
 
@@ -862,25 +911,28 @@ export default function FlappyGame() {
         ctx.fillStyle = THEME.buildingDark;
         ctx.fillRect(pipe.x - 8, pipe.gapY + game.pipeGap, game.pipeWidth + 16, 15);
         
-        // Windows on bottom building - mostly static, rare special effects
-        const specialSeed2 = Math.abs(Math.cos(pipe.x * 0.15));
-        const specialType2 = Math.floor(specialSeed2 * 5);
+        // Windows on bottom building - mostly static, VERY rare special effects
+        // Offset by 2 from top building so they don't both have specials
+        const hasSpecialWindow2 = (buildingIndex >= 4) && ((buildingIndex + 2) % 5 === 0) && !hasSpecialWindow;
+        const specialType2 = Math.floor(Math.abs(Math.cos(pipe.x * 0.19)) * 5);
         const baseWy = pipe.gapY + game.pipeGap + 30;
-        const specialWy2 = baseWy + Math.floor(specialSeed2 * 2) * 35;
+        const specialWy2 = baseWy + 35; // Second row
+        let specialDrawn2 = false;
 
         for (let wy = baseWy; wy < game.groundY - 20; wy += 35) {
           for (let wx = 10; wx < game.pipeWidth - 10; wx += 18) {
             const seed = Math.abs(Math.sin(pipe.x * 0.07 + wx * 5 + wy * 11));
             const isLit = seed > 0.3;
-            const isSpecial = (wy === specialWy2 && wx === 10 && game.groundY - baseWy > 60);
+            const isSpecial = hasSpecialWindow2 && !specialDrawn2 && (wy === specialWy2 && wx === 10 && game.groundY - baseWy > 60);
 
             // Base window
             ctx.globalAlpha = isLit ? 0.9 : 0.12;
             ctx.fillStyle = THEME.window;
             ctx.fillRect(pipe.x + wx, wy, 10, 15);
 
-            // Special window effects
+            // Special window effects (RARE)
             if (isSpecial && isLit) {
+              specialDrawn2 = true;
               const wx2 = pipe.x + wx;
               const time = Date.now();
 
@@ -947,13 +999,14 @@ export default function FlappyGame() {
         }
         ctx.globalAlpha = 1;
 
-        // ROOFTOP DECORATIONS (rare - ~15% of buildings)
+        // ROOFTOP DECORATIONS (rare - only every ~6 buildings, not first 5)
         const roofSeed = Math.abs(Math.sin(pipe.x * 0.23 + 42));
+        const hasRooftop = (buildingIndex >= 5) && (buildingIndex % 6 === 0);
         const roofTop = pipe.gapY + game.pipeGap;
         const roofCenterX = pipe.x + game.pipeWidth / 2;
         const time = Date.now();
 
-        if (roofSeed > 0.85) {
+        if (hasRooftop && roofSeed > 0.3) {
           // === SPOTLIGHT (scanning the sky for our "hero") ===
           const sweepAngle = Math.sin(time / 800) * 0.6 - Math.PI / 2; // Sweep back and forth
           const beamLength = 120;
