@@ -12,7 +12,7 @@ import {
   type ProgressionResult,
 } from '@/app/pixelpit/components';
 
-// FAT DASH theme - Neon noir, high contrast
+// BAT DASH theme - Neon noir, high contrast
 const THEME = {
   sky: '#0a0a1a',        // Near black
   skyDark: '#050510',    // Void
@@ -399,6 +399,22 @@ function playDeath() {
   }, 150);
 }
 
+// Game over messages - randomly selected
+const GAME_OVER_MESSAGES = [
+  'oof. he tried.',
+  'the underpants survive',
+  'not all heroes soar',
+  'gravity wins again',
+  'a hero rests',
+  'back to the couch',
+  'he gave it his all',
+  'the cape is fine',
+  'night: 1, hero: 0',
+  'well. that happened.',
+  "he'll be back",
+  'at least he had the outfit',
+];
+
 export default function FlappyGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard'>('start');
@@ -407,6 +423,7 @@ export default function FlappyGame() {
   const [socialLoaded, setSocialLoaded] = useState(false);
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [progression, setProgression] = useState<ProgressionResult | null>(null);
+  const [gameOverMessage, setGameOverMessage] = useState('');
 
   const { user } = usePixelpitSocial(socialLoaded);
 
@@ -538,6 +555,9 @@ export default function FlappyGame() {
         body: JSON.stringify({ game: GAME_ID }),
       }).catch(() => {});
     }
+
+    // Pick random game over message
+    setGameOverMessage(GAME_OVER_MESSAGES[Math.floor(Math.random() * GAME_OVER_MESSAGES.length)]);
 
     setScore(game.score);
     setTimeout(() => setGameState('gameover'), 500);  // Slightly longer to see particles
@@ -1155,7 +1175,7 @@ export default function FlappyGame() {
           ctx.fillStyle = THEME.moon;
           ctx.shadowColor = '#000';
           ctx.shadowBlur = 4;
-          ctx.fillText('TAP TO HELP HIM FLY', canvas.width / 2, canvas.height / 2 + 80);
+          ctx.fillText('tap. carry him.', canvas.width / 2, canvas.height / 2 + 80);
         } else if (game.countdown === 'GO!') {
           // Big purple GO! - Gotham style
           ctx.font = 'bold 72px ui-monospace, monospace';
@@ -1305,7 +1325,7 @@ export default function FlappyGame() {
               letterSpacing: 4,
               textShadow: '0 0 40px rgba(254,240,138,0.4)',
             }}>
-              FAT DASH
+              BAT DASH
             </h1>
             <p style={{
               fontSize: 16,
@@ -1370,7 +1390,7 @@ export default function FlappyGame() {
             marginBottom: 15,
             letterSpacing: 6,
           }}>
-            oof. he tried.
+            {gameOverMessage}
           </h1>
           <div style={{
             fontFamily: 'ui-monospace, monospace',
@@ -1461,7 +1481,7 @@ export default function FlappyGame() {
             <ShareButtonContainer
               id="share-btn-container"
               url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/batdash/share/${score}` : ''}
-              text={`I helped this chubby hero fly ${score} buildings in FAT DASH! He's trying his best 🦇`}
+              text={`I helped this chubby hero fly ${score} buildings in BAT DASH! He's trying his best 🦇`}
               style="minimal"
               socialLoaded={socialLoaded}
             />
