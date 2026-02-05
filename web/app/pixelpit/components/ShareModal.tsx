@@ -41,6 +41,11 @@ export function ShareModal({
 
   const fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
 
+  // Build the actual share URL (with ?ref=) once
+  const shareUrl = window.PixelpitSocial?.buildShareUrl
+    ? window.PixelpitSocial.buildShareUrl(gameUrl)
+    : gameUrl;
+
   // Load groups on mount
   useEffect(() => {
     const loadGroups = async () => {
@@ -64,10 +69,7 @@ export function ShareModal({
 
   const handleCopyLink = async () => {
     try {
-      const url = window.PixelpitSocial?.buildShareUrl
-        ? window.PixelpitSocial.buildShareUrl(gameUrl)
-        : gameUrl;
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
@@ -220,7 +222,7 @@ export function ShareModal({
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}>
-              {gameUrl}
+              {shareUrl}
             </div>
             <button
               onClick={handleCopyLink}
