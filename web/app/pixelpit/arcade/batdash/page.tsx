@@ -6,6 +6,7 @@ import {
   ScoreFlow,
   Leaderboard,
   ShareButtonContainer,
+  ShareModal,
   usePixelpitSocial,
   type ScoreFlowColors,
   type LeaderboardColors,
@@ -456,8 +457,36 @@ export default function FlappyGame() {
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [progression, setProgression] = useState<ProgressionResult | null>(null);
   const [gameOverMessage, setGameOverMessage] = useState('');
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const { user } = usePixelpitSocial(socialLoaded);
+
+  const GAME_URL = typeof window !== 'undefined'
+    ? `${window.location.origin}/pixelpit/arcade/batdash`
+    : 'https://pixelpit.io/pixelpit/arcade/batdash';
+
+  // Detect group code from URL and handle ?logout param
+  useEffect(() => {
+    if (!socialLoaded || typeof window === 'undefined') return;
+    if (!window.PixelpitSocial) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('logout')) {
+      window.PixelpitSocial.logout();
+      params.delete('logout');
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      window.location.reload();
+      return;
+    }
+
+    const groupCode = window.PixelpitSocial.getGroupCodeFromUrl();
+    if (groupCode) {
+      window.PixelpitSocial.storeGroupCode(groupCode);
+    }
+  }, [socialLoaded]);
 
   // Game state ref (sizes scaled for mobile)
   const getMobileScale = () => typeof window !== 'undefined' ? Math.min(window.innerWidth / 500, 1) : 1;
@@ -1609,13 +1638,32 @@ export default function FlappyGame() {
             >
               leaderboard
             </button>
-            <ShareButtonContainer
-              id="share-btn-container"
-              url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/batdash/share/${score}` : ''}
-              text={`I helped this chubby hero fly ${score} buildings in BAT DASH! He's trying his best 🦇`}
-              style="minimal"
-              socialLoaded={socialLoaded}
-            />
+            {user ? (
+              <button
+                onClick={() => setShowShareModal(true)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 6,
+                  color: COLORS.muted,
+                  padding: '14px 35px',
+                  fontSize: 11,
+                  fontFamily: 'ui-monospace, monospace',
+                  cursor: 'pointer',
+                  letterSpacing: 2,
+                }}
+              >
+                share / groups
+              </button>
+            ) : (
+              <ShareButtonContainer
+                id="share-btn-container"
+                url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/batdash/share/${score}` : ''}
+                text={`I helped this chubby hero fly ${score} buildings in BAT DASH! He's trying his best 🦇`}
+                style="minimal"
+                socialLoaded={socialLoaded}
+              />
+            )}
           </div>
         </div>
       )}
@@ -1628,6 +1676,19 @@ export default function FlappyGame() {
           entryId={submittedEntryId ?? undefined}
           colors={LEADERBOARD_COLORS}
           onClose={() => setGameState('gameover')}
+          groupsEnabled={true}
+          gameUrl={GAME_URL}
+          socialLoaded={socialLoaded}
+        />
+      )}
+
+      {/* Share Modal for Groups */}
+      {showShareModal && user && (
+        <ShareModal
+          gameUrl={GAME_URL}
+          score={score}
+          colors={LEADERBOARD_COLORS}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </>
