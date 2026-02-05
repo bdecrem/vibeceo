@@ -203,6 +203,8 @@ export interface PixelpitSocialAPI {
   checkSession: () => Promise<PixelpitUser | null>;
   ShareButton: (containerId: string, opts: { url: string; text: string; style?: 'button' | 'icon' | 'minimal' }) => void;
   showToast: (message: string, duration?: number) => void;
+  // Share
+  buildShareUrl: (url: string) => string;
   // Groups
   getGroups: () => Promise<GroupsResult>;
   createGroup: (name: string, type: GroupType, opts?: { phones?: string[]; gameUrl?: string; score?: number }) => Promise<CreateGroupResult>;
