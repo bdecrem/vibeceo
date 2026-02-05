@@ -41,10 +41,11 @@ export function ShareModal({
 
   const fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
 
-  // Build the actual share URL (with ?ref=) once
+  // Build the share URL: /share/${score} path + ?ref= param
+  const baseShareUrl = score ? `${gameUrl}/share/${score}` : gameUrl;
   const shareUrl = window.PixelpitSocial?.buildShareUrl
-    ? window.PixelpitSocial.buildShareUrl(gameUrl)
-    : gameUrl;
+    ? window.PixelpitSocial.buildShareUrl(baseShareUrl)
+    : baseShareUrl;
 
   // Load groups on mount
   useEffect(() => {
@@ -82,7 +83,8 @@ export function ShareModal({
 
     const user = window.PixelpitSocial.getUser();
     const handle = user?.handle || 'Someone';
-    const baseUrl = `${gameUrl}?pg=${group.code}`;
+    const sharePath = score ? `${gameUrl}/share/${score}` : gameUrl;
+    const baseUrl = `${sharePath}?pg=${group.code}`;
     const url = window.PixelpitSocial.buildShareUrl
       ? window.PixelpitSocial.buildShareUrl(baseUrl)
       : baseUrl;
