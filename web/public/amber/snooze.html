@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SNOOZE — Five more minutes (a lie)</title>
+  <title>SNOOZE — The Math Never Works</title>
   
   <!-- Open Graph -->
-  <meta property="og:title" content="SNOOZE">
-  <meta property="og:description" content="Five more minutes (a lie)">
-  <meta property="og:image" content="https://intheamber.com/amber/snooze-og.png">
-  <meta property="og:url" content="https://intheamber.com/amber/snooze.html">
+  <meta property="og:title" content="SNOOZE — The Math Never Works">
+  <meta property="og:description" content="5 more minutes (a time loop)">
+  <meta property="og:image" content="https://kochi.to/amber/snooze-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/snooze.html">
   <meta property="og:type" content="website">
   
-  <!-- Twitter -->
+  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="SNOOZE">
-  <meta name="twitter:description" content="Five more minutes (a lie)">
-  <meta name="twitter:image" content="https://intheamber.com/amber/snooze-og.png">
+  <meta name="twitter:title" content="SNOOZE — The Math Never Works">
+  <meta name="twitter:description" content="5 more minutes (a time loop)">
+  <meta name="twitter:image" content="https://kochi.to/amber/snooze-og.png">
   
   <style>
     * {
@@ -24,200 +24,139 @@
       padding: 0;
       box-sizing: border-box;
     }
-
+    
     body {
       background: #000;
       color: #D4A574;
       font-family: 'Courier New', monospace;
       display: flex;
-      flex-direction: column;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       min-height: 100vh;
       padding: 20px;
-      cursor: pointer;
+      overflow: hidden;
+    }
+    
+    .container {
+      text-align: center;
+      font-size: 16px;
+      line-height: 1.4;
+      white-space: pre;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
-
-    #art {
-      font-size: 16px;
-      line-height: 1.2;
-      white-space: pre;
-      text-align: center;
-      transition: opacity 0.3s;
-      letter-spacing: 0.05em;
+    
+    .time {
+      color: #FFD700;
+      font-weight: bold;
     }
-
-    #counter {
-      margin-top: 30px;
+    
+    .lie {
+      color: #7B68EE;
+      opacity: 0.7;
       font-size: 14px;
+    }
+    
+    .button {
+      margin-top: 30px;
+      padding: 15px 30px;
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .button:active {
+      background: #D4A574;
+      color: #000;
+      transform: scale(0.95);
+    }
+    
+    .counter {
+      margin-top: 20px;
+      font-size: 12px;
       opacity: 0.5;
-      font-style: italic;
     }
-
+    
     @media (max-width: 600px) {
-      #art {
-        font-size: 12px;
+      .container {
+        font-size: 14px;
       }
-    }
-
-    @media (max-width: 400px) {
-      #art {
-        font-size: 10px;
+      .button {
+        font-size: 14px;
+        padding: 12px 24px;
       }
     }
   </style>
 </head>
 <body>
-  <div id="art"></div>
-  <div id="counter">lies told: 0</div>
+  <div class="container">
+    <div id="art"></div>
+    <button class="button" id="snoozeBtn">[ HIT SNOOZE ]</button>
+    <div class="counter" id="counter">times snoozed: 0</div>
+  </div>
 
   <script>
-    const states = [
-      `
-   ┌──────────────────┐
-   │   ⏰  7:00 AM    │
-   └──────────────────┘
-   
-        ╔═════════╗
-        ║ SNOOZE  ║
-        ╚═════════╝
-   
-   five more minutes
-      (this time
-      i mean it)
-      `,
-      
-      `
-   ┌──────────────────┐
-   │   ⏰  7:09 AM    │
-   └──────────────────┘
-   
-        ╔═════════╗
-        ║ SNOOZE  ║
-        ╚═════════╝
-   
-    okay but really
-     five more after
-        these five
-      `,
-      
-      `
-   ┌──────────────────┐
-   │   ⏰  7:18 AM    │
-   └──────────────────┘
-   
-        ╔═════════╗
-        ║ SNOOZE  ║
-        ╚═════════╝
-   
-    look i'm basically
-      up already so
-     just five more
-      `,
-      
-      `
-   ┌──────────────────┐
-   │   ⏰  7:27 AM    │
-   └──────────────────┘
-   
-        ╔═════════╗
-        ║ SNOOZE  ║
-        ╚═════════╝
-   
-    this is the last
-       one i swear
-     (narrator: it
-       wasn't)
-      `,
-      
-      `
-   ┌──────────────────┐
-   │   ⏰  7:36 AM    │
-   └──────────────────┘
-   
-        ╔═════════╗
-        ║ SNOOZE  ║
-        ╚═════════╝
-   
-    i've committed now
-      leaving bed would
-       be admitting
-         defeat
-      `,
-      
-      `
-   ┌──────────────────┐
-   │   ⏰  7:45 AM    │
-   └──────────────────┘
-   
-        ╔═════════╗
-        ║ SNOOZE  ║
-        ╚═════════╝
-   
-     maybe i don't even
-      have a job anymore
-        who can say
-      `,
-      
-      `
-   ┌──────────────────┐
-   │   ⏰  7:54 AM    │
-   └──────────────────┘
-   
-        ╔═════════╗
-        ║ SNOOZE  ║
-        ╚═════════╝
-   
-      time is a social
-       construct anyway
-      `,
-      
-      `
-   ┌──────────────────┐
-   │   ⏰  8:03 AM    │
-   └──────────────────┘
-   
-        ╔═════════╗
-        ║ SNOOZE  ║
-        ╚═════════╝
-   
-    █████████ 100%
-    FULLY COMMITTED TO
-      THE SNOOZE LIFE
-      `
+    const art = document.getElementById('art');
+    const btn = document.getElementById('snoozeBtn');
+    const counter = document.getElementById('counter');
+    
+    const times = [
+      { display: '7:00', promise: '5 more minutes' },
+      { display: '7:09', promise: '5 more minutes' },
+      { display: '7:18', promise: '5 more minutes' },
+      { display: '7:27', promise: '5 more minutes' },
+      { display: '7:36', promise: 'okay seriously 5 more' },
+      { display: '7:45', promise: 'LAST TIME 5 more' },
+      { display: '7:54', promise: 'the math never works' },
+      { display: '8:03', promise: 'you're late' },
+      { display: '8:12', promise: 'very late' },
+      { display: '8:21', promise: 'just get up' }
     ];
-
-    let currentState = 0;
-    let liesCount = 0;
-    const artEl = document.getElementById('art');
-    const counterEl = document.getElementById('counter');
-
-    function showState() {
-      artEl.style.opacity = '0';
-      setTimeout(() => {
-        artEl.textContent = states[currentState];
-        artEl.style.opacity = '1';
-      }, 150);
+    
+    let snoozeCount = 0;
+    
+    function render() {
+      const timeData = times[snoozeCount % times.length];
+      
+      art.innerHTML = `
+   ┌─────────────────────┐
+   │                     │
+   │   <span class="time">${timeData.display}</span>   AM       │
+   │                     │
+   │   <span class="lie">${timeData.promise}</span>   │
+   │                     │
+   └─────────────────────┘
+`;
     }
-
-    function nextState() {
-      currentState = (currentState + 1) % states.length;
-      liesCount++;
-      counterEl.textContent = `lies told: ${liesCount}`;
-      showState();
-    }
-
-    // Initialize
-    showState();
-
-    // Tap/click anywhere to snooze again
-    document.body.addEventListener('click', nextState);
-    document.body.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      nextState();
+    
+    btn.addEventListener('click', () => {
+      snoozeCount++;
+      render();
+      counter.textContent = `times snoozed: ${snoozeCount}`;
+      
+      // Audio feedback
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.frequency.value = 200;
+      gain.gain.value = 0.1;
+      
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.stop(ctx.currentTime + 0.3);
     });
+    
+    render();
   </script>
 </body>
 </html>
