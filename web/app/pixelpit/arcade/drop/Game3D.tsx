@@ -11,11 +11,11 @@ const PLATFORM_OUTER_RADIUS = 2;
 const PLATFORM_THICKNESS = 0.5;
 const BALL_RADIUS = 0.25;
 const BOUNCE_VY = 0.05;        // initial bounce when game starts
-const BOUNCE_DAMPING = 0.35;   // each bounce = 35% of impact speed
-const MIN_BOUNCE = 0.012;      // below this → ball rests
-const GRAVITY = 0.01;          // per-frame gravity
-const MAX_FALL_SPEED = 0.4;    // terminal velocity
-const POWER_VELOCITY = 0.25;   // fall speed threshold for power ball
+const BOUNCE_DAMPING = 0.4;    // each bounce = 40% of impact speed
+const MIN_BOUNCE = 0.015;      // below this → ball rests
+const GRAVITY = 0.016;         // per-frame gravity — dense rubber ball, not floaty
+const MAX_FALL_SPEED = 0.5;    // terminal velocity — long freefalls keep accelerating
+const POWER_VELOCITY = 0.35;   // fall speed threshold — must skip 2-3 platforms to earn it
 
 // C minor pentatonic — the game's musical key
 const PENTATONIC = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25, 622.25, 698.46];
@@ -352,8 +352,8 @@ function generatePlatformGap(index: number): { gapAngle: number; gapSize: number
   const minRun = Math.floor(2 + depth * 0.04);                  // 2 → 6
   const maxRun = Math.floor(4 + depth * 0.08);                  // 4 → 12
 
-  // Gap size shrinks with depth but stays wider during chutes
-  const baseGap = Math.max(0.7, 1.2 - depth * 0.015);
+  // Gap size shrinks with depth — difficulty by tightening (Key #7)
+  const baseGap = Math.max(0.6, 1.2 - depth * 0.02);
 
   if (genRunRemaining > 0) {
     // Continue the chute — slight drift so it's not perfectly boring
@@ -891,7 +891,7 @@ function GameScene({
             }
           }
           gs.combo++;
-          gs.score += gs.combo;
+          gs.score += gs.combo * 2; // Double reward for risky freefall (Key #1)
           onScoreUpdate(gs.score, gs.combo);
           playFallThrough(gs.combo);
           gs.ballVY = -0.02; // Resume falling
@@ -916,7 +916,7 @@ function GameScene({
                   platform.passed = true;
                   gs.glassChain = 0;
                   gs.combo++;
-                  gs.score += gs.combo;
+                  gs.score += gs.combo * 2; // Greed rewarded (Key #1)
                   onScoreUpdate(gs.score, gs.combo);
                   playFallThrough(gs.combo);
                   gs.ballVY = -0.01;
@@ -1007,7 +1007,7 @@ function GameScene({
                       platform.passed = true;
                       gs.glassChain = 0;
                       gs.combo++;
-                      gs.score += gs.combo;
+                      gs.score += gs.combo * 2; // Greed rewarded (Key #1)
                       onScoreUpdate(gs.score, gs.combo);
                       playFallThrough(gs.combo);
                     }
@@ -1071,6 +1071,14 @@ function GameScene({
       camera.position.y += (targetCamY - camera.position.y) * 0.01;
     }
     camera.lookAt(0, camera.position.y - 3, 0);
+
+    // Screen shake during power mode — amplifies the rush (Key #5)
+    const isPowerNow = gs.ballVY < -POWER_VELOCITY;
+    if (isPowerNow) {
+      const intensity = Math.min((-gs.ballVY - POWER_VELOCITY) * 0.8, 0.12);
+      camera.position.x += (Math.random() - 0.5) * intensity;
+      camera.position.z += (Math.random() - 0.5) * intensity;
+    }
 
     // Dynamic platform generation with ramping difficulty
     const lowestPlatform = gs.platforms[gs.platforms.length - 1];

@@ -243,18 +243,27 @@ export default function DropGame() {
         )}
 
         {gameState === 'gameover' && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: `linear-gradient(180deg, ${THEME.bgDeep} 0%, #4A8DB7 100%)`,
-            zIndex: 10,
-            overflow: 'auto',
-            padding: '40px 20px',
-          }}>
+          <div
+            onClick={(e) => {
+              // Tap anywhere to restart — zero friction failure (Key #2)
+              // But not if they clicked a button/link inside
+              if ((e.target as HTMLElement).closest('button, a, [role="button"]')) return;
+              startGame();
+            }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: `linear-gradient(180deg, ${THEME.bgDeep} 0%, #4A8DB7 100%)`,
+              zIndex: 10,
+              overflow: 'auto',
+              padding: '40px 20px',
+              cursor: 'pointer',
+            }}
+          >
             <div style={{
               display: 'flex',
               flexDirection: 'column',
@@ -262,34 +271,46 @@ export default function DropGame() {
               maxWidth: 400,
               width: '100%',
             }}>
-              <h1 style={{
-                color: '#ffffff',
-                fontSize: 48,
-                fontWeight: 900,
-                marginBottom: 4,
-                textShadow: '0 4px 0 rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.08)',
-                letterSpacing: '-1px',
-              }}>
-                OOPS!
-              </h1>
-              <p style={{
-                color: 'rgba(255,255,255,0.7)',
-                fontSize: 13,
-                marginBottom: 4,
-                letterSpacing: '2px',
-                fontWeight: 700,
-                textTransform: 'uppercase' as const,
-              }}>
-                Score
-              </p>
               <p style={{
                 color: '#ffffff',
-                fontSize: 48,
+                fontSize: 52,
                 fontWeight: 900,
-                marginBottom: 8,
+                marginBottom: 4,
                 textShadow: '0 2px 0 rgba(0,0,0,0.1)',
               }}>
                 {score}
+              </p>
+
+              {/* AGAIN button — immediately visible, biggest element (Key #2) */}
+              <button
+                onClick={startGame}
+                style={{
+                  background: THEME.orange,
+                  color: '#fff',
+                  border: 'none',
+                  padding: '18px 60px',
+                  fontSize: 18,
+                  fontWeight: 800,
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                  borderRadius: 50,
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase' as const,
+                  boxShadow: '0 4px 0 #e08930, 0 8px 20px rgba(255,169,77,0.3)',
+                  transform: 'translateY(-2px)',
+                  marginBottom: 20,
+                }}
+              >
+                AGAIN
+              </button>
+
+              <p style={{
+                color: 'rgba(255,255,255,0.4)',
+                fontSize: 11,
+                marginBottom: 20,
+                letterSpacing: '1px',
+              }}>
+                tap anywhere to retry
               </p>
 
               {/* Progression display */}
@@ -297,14 +318,14 @@ export default function DropGame() {
                 <div style={{
                   background: 'rgba(0,0,0,0.15)',
                   borderRadius: 12,
-                  padding: '12px 24px',
-                  marginBottom: 16,
+                  padding: '10px 20px',
+                  marginBottom: 12,
                   textAlign: 'center',
                 }}>
-                  <div style={{ fontSize: 18, color: '#ffffff', marginBottom: 4, fontWeight: 800 }}>
+                  <div style={{ fontSize: 16, color: '#ffffff', marginBottom: 2, fontWeight: 800 }}>
                     +{progression.xpEarned} XP
                   </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
                     Level {progression.level}{progression.streak > 1 ? ` • ${progression.multiplier}x streak` : ''}
                   </div>
                 </div>
@@ -322,52 +343,30 @@ export default function DropGame() {
                 onProgression={(prog) => setProgression(prog)}
               />
 
-              {/* Action buttons */}
+              {/* Secondary actions — small, out of the way */}
               <div style={{
                 display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
+                gap: 12,
                 alignItems: 'center',
-                marginTop: 16,
-                width: '100%',
+                marginTop: 14,
               }}>
-                <button
-                  onClick={startGame}
-                  style={{
-                    background: THEME.orange,
-                    color: '#fff',
-                    border: 'none',
-                    padding: '14px 48px',
-                    fontSize: 15,
-                    fontWeight: 800,
-                    fontFamily: 'inherit',
-                    cursor: 'pointer',
-                    borderRadius: 50,
-                    letterSpacing: '2px',
-                    textTransform: 'uppercase' as const,
-                    boxShadow: '0 4px 0 #e08930, 0 8px 20px rgba(255,169,77,0.3)',
-                    transform: 'translateY(-2px)',
-                  }}
-                >
-                  AGAIN
-                </button>
                 <button
                   onClick={() => setGameState('leaderboard')}
                   style={{
                     background: 'transparent',
                     border: '1px solid rgba(255,255,255,0.2)',
                     borderRadius: 50,
-                    color: 'rgba(255,255,255,0.7)',
-                    padding: '12px 30px',
-                    fontSize: 12,
+                    color: 'rgba(255,255,255,0.5)',
+                    padding: '10px 20px',
+                    fontSize: 11,
                     fontWeight: 700,
                     fontFamily: 'inherit',
                     cursor: 'pointer',
-                    letterSpacing: '2px',
+                    letterSpacing: '1px',
                     textTransform: 'uppercase' as const,
                   }}
                 >
-                  LEADERBOARD
+                  RANKS
                 </button>
                 {user ? (
                   <button
@@ -376,17 +375,17 @@ export default function DropGame() {
                       background: 'transparent',
                       border: '1px solid rgba(255,255,255,0.2)',
                       borderRadius: 50,
-                      color: 'rgba(255,255,255,0.7)',
-                      padding: '12px 30px',
-                      fontSize: 12,
+                      color: 'rgba(255,255,255,0.5)',
+                      padding: '10px 20px',
+                      fontSize: 11,
                       fontWeight: 700,
                       fontFamily: 'inherit',
                       cursor: 'pointer',
-                      letterSpacing: '2px',
+                      letterSpacing: '1px',
                       textTransform: 'uppercase' as const,
                     }}
                   >
-                    SHARE / GROUPS
+                    SHARE
                   </button>
                 ) : (
                   <ShareButtonContainer
