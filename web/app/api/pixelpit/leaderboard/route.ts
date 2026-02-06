@@ -417,13 +417,34 @@ async function createMagicStreakPair(
   return { code, name };
 }
 
+// Server-side maxScore lookup — source of truth for XP normalization
+// Each game's "great score" benchmark (p90). Score at maxScore = 50 XP.
+const GAME_MAX_SCORES: Record<string, number> = {
+  batdash: 15,
+  superbeam: 20,
+  'cat-tower': 40,
+  rain: 50,
+  flappy: 60,
+  beam: 100,
+  singularity: 100,
+  catch: 15,
+  emoji: 500,
+  flip: 1000,
+  cavemoth: 1000,
+  'sprout-run': 2000,
+  tapper: 35,
+  'tap-beats': 70000,
+  pixel: 1,
+  haunt: 5,
+};
+
 // POST - submit score to leaderboard
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { game, score, nickname, userId, maxScore: rawMaxScore, xpDivisor, groupCode, refUserId } = body;
-    // Backward compat: if old client sends xpDivisor but not maxScore, convert
-    const maxScore = rawMaxScore ?? (xpDivisor ? xpDivisor * 50 : 50);
+    // Server lookup is authoritative; client value is fallback for unknown games
+    const maxScore = GAME_MAX_SCORES[game] ?? rawMaxScore ?? (xpDivisor ? xpDivisor * 50 : 50);
 
     if (!game || typeof score !== "number") {
       return NextResponse.json(
