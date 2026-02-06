@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLACKOUT — Standing up too fast</title>
+    <meta name="description" content="That moment when you stand up too fast and your vision goes dark. Rendered in 8-bit pixel art.">
+    <meta property="og:title" content="BLACKOUT">
+    <meta property="og:description" content="Standing up too fast, screen goes dark">
+    <meta property="og:image" content="https://intheamber.com/amber/blackout-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/blackout.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="BLACKOUT">
+    <meta name="twitter:description" content="Standing up too fast, screen goes dark">
+    <meta name="twitter:image" content="https://intheamber.com/amber/blackout-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        
+        #container {
+            position: relative;
+            width: 100vw;
+            max-width: 640px;
+            aspect-ratio: 4/3;
+            background: #000;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
+        
+        #ui {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: #D4A574;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        @media (max-width: 640px) {
+            #ui {
+                font-size: 12px;
+                bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="canvas"></canvas>
+        <div id="ui">TAP TO STAND UP</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const ui = document.getElementById('ui');
+        
+        // 320x240 internal resolution for chunky pixels
+        canvas.width = 320;
+        canvas.height = 240;
+        
+        // Pixel art palette
+        const COLORS = {
+            black: '#000000',
+            bg: '#1a1a2e',
+            floor: '#16213e',
+            wall: '#0f3460',
+            skin: '#f4a261',
+            hair: '#2a9d8f',
+            shirt: '#e76f51',
+            pants: '#264653',
+            white: '#ffffff',
+            grey: '#808080',
+            darkGrey: '#404040',
+            amber: '#D4A574',
+            red: '#ff0000',
+            darkRed: '#8B0000'
+        };
+        
+        let state = 'sitting'; // sitting, standing, blackout
+        let blackoutProgress = 0;
+        let standingProgress = 0;
+        let staticNoise = [];
+        let pulsePhase = 0;
+        
+        // Generate static noise
+        function generateStatic() {
+            staticNoise = [];
+            for (let i = 0; i < 50; i++) {
+                staticNoise.push({
+                    x: Math.random() * 320,
+                    y: Math.random() * 240,
+                    size: Math.random() * 3 + 1
+                });
+            }
+        }
+        
+        function drawPixelRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+        }
+        
+        function drawCharacter(sitting) {
+            const baseY = sitting ? 160 : 120;
+            const offsetY = sitting ? 0 : -Math.sin(standingProgress * Math.PI) * 40;
+            
+            // Head
+            drawPixelRect(145, baseY + offsetY, 30, 30, COLORS.skin);
+            // Hair
+            drawPixelRect(145, baseY + offsetY, 30, 10, COLORS.hair);
+            // Eyes (before blackout)
+            if (blackoutProgress < 0.3) {
+                drawPixelRect(153, baseY + 15 + offsetY, 4, 4, COLORS.black);
+                drawPixelRect(163, baseY + 15 + offsetY, 4, 4, COLORS.black);
+            } else {
+                // Eyes closing
+                drawPixelRect(153, baseY + 17 + offsetY, 4, 2, COLORS.black);
+                drawPixelRect(163, baseY + 17 + offsetY, 4, 2, COLORS.black);
+            }
+            
+            // Body
+            if (sitting) {
+                // Sitting pose
+                drawPixelRect(140, baseY + 30, 40, 35, COLORS.shirt);
+                // Legs bent
+                drawPixelRect(140, baseY + 65, 15, 25, COLORS.pants);
+                drawPixelRect(165, baseY + 65, 15, 25, COLORS.pants);
+                // Arms on knees
+                drawPixelRect(130, baseY + 40, 10, 30, COLORS.skin);
+                drawPixelRect(180, baseY + 40, 10, 30, COLORS.skin);
+            } else {
+                // Standing pose
+                drawPixelRect(140, baseY + 30 + offsetY, 40, 40, COLORS.shirt);
+                // Legs straight
+                drawPixelRect(145, baseY + 70 + offsetY, 12, 30, COLORS.pants);
+                drawPixelRect(163, baseY + 70 + offsetY, 12, 30, COLORS.pants);
+                // Arms at sides
+                drawPixelRect(130, baseY + 35 + offsetY, 10, 25, COLORS.skin);
+                drawPixelRect(180, baseY + 35 + offsetY, 10, 25, COLORS.skin);
+            }
+        }
+        
+        function drawRoom() {
+            // Background
+            drawPixelRect(0, 0, 320, 180, COLORS.bg);
+            // Floor
+            drawPixelRect(0, 180, 320, 60, COLORS.floor);
+            
+            // Checkered floor pattern
+            for (let x = 0; x < 320; x += 20) {
+                for (let y = 180; y < 240; y += 20) {
+                    if ((x / 20 + y / 20) % 2 === 0) {
+                        drawPixelRect(x, y, 20, 20, COLORS.wall);
+                    }
+                }
+            }
+            
+            // Wall details - simple window
+            drawPixelRect(40, 40, 50, 60, COLORS.darkGrey);
+            drawPixelRect(45, 45, 40, 50, COLORS.grey);
+            // Window cross
+            drawPixelRect(63, 45, 4, 50, COLORS.darkGrey);
+            drawPixelRect(45, 68, 40, 4, COLORS.darkGrey);
+        }
+        
+        function drawGameUI() {
+            // HP Bar
+            const hpWidth = Math.max(0, 100 * (1 - blackoutProgress));
+            drawPixelRect(10, 10, 104, 16, COLORS.darkGrey);
+            drawPixelRect(12, 12, 100, 12, COLORS.black);
+            
+            if (blackoutProgress < 0.5) {
+                drawPixelRect(12, 12, hpWidth, 12, COLORS.amber);
+            } else {
+                // Flashing red when low
+                const flash = Math.sin(Date.now() * 0.01) > 0;
+                if (flash) {
+                    drawPixelRect(12, 12, hpWidth, 12, COLORS.red);
+                } else {
+                    drawPixelRect(12, 12, hpWidth, 12, COLORS.darkRed);
+                }
+            }
+            
+            // HP Text
+            ctx.fillStyle = COLORS.white;
+            ctx.font = '8px "Courier New"';
+            ctx.fillText('BLOOD PRESSURE', 14, 20);
+            
+            // Status message
+            if (state === 'blackout') {
+                const messages = [
+                    'VISION: FADING',
+                    'HEAD: SWIMMING',
+                    'LEGS: NOODLES',
+                    'GRAVITY: YES'
+                ];
+                const msgIndex = Math.floor((Date.now() / 1000) % messages.length);
+                ctx.fillStyle = COLORS.red;
+                ctx.font = '8px "Courier New"';
+                ctx.fillText(messages[msgIndex], 10, 230);
+            }
+            
+            // Warning icon when standing
+            if (state === 'standing' || state === 'blackout') {
+                const blink = Math.sin(Date.now() * 0.005) > 0;
+                if (blink) {
+                    ctx.fillStyle = COLORS.red;
+                    ctx.font = '16px "Courier New"';
+                    ctx.fillText('⚠', 290, 25);
+                }
+            }
+        }
+        
+        function drawBlackoutVignette() {
+            if (blackoutProgress > 0) {
+                // Static noise
+                if (blackoutProgress > 0.3) {
+                    ctx.fillStyle = COLORS.white;
+                    staticNoise.forEach(particle => {
+                        const alpha = (blackoutProgress - 0.3) * 0.5;
+                        ctx.globalAlpha = alpha * Math.random();
+                        ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+                    });
+                    ctx.globalAlpha = 1;
+                }
+                
+                // Vignette darkening from edges
+                const gradient = ctx.createRadialGradient(160, 120, 0, 160, 120, 200);
+                gradient.addColorStop(0, `rgba(0,0,0,0)`);
+                gradient.addColorStop(0.5, `rgba(0,0,0,${blackoutProgress * 0.3})`);
+                gradient.addColorStop(1, `rgba(0,0,0,${blackoutProgress * 0.9})`);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 320, 240);
+                
+                // Full blackout overlay
+                if (blackoutProgress > 0.7) {
+                    const finalBlack = (blackoutProgress - 0.7) / 0.3;
+                    ctx.fillStyle = `rgba(0,0,0,${finalBlack * 0.95})`;
+                    ctx.fillRect(0, 0, 320, 240);
+                }
+            }
+        }
+        
+function draw() {
+            ctx.clearRect(0, 0, 320, 240);
+            
+            drawRoom();
+            drawCharacter(state === 'sitting');
+            drawGameUI();
+            drawBlackoutVignette();
+            
+            pulsePhase += 0.05;
+        }
+        
+        function animate() {
+            if (state === 'standing') {
+                standingProgress += 0.02;
+                if (standingProgress >= 1) {
+                    state = 'blackout';
+                    ui.textContent = 'WHY DID I DO THAT';
+                    generateStatic();
+                }
+            }
+            
+            if (state === 'blackout') {
+                blackoutProgress += 0.012;
+                if (blackoutProgress >= 1) {
+                    blackoutProgress = 1;
+                }
+            }
+            
+            draw();
+            requestAnimationFrame(animate);
+        }
+        
+        function standUp() {
+            if (state === 'sitting') {
+                state = 'standing';
+                standingProgress = 0;
+                blackoutProgress = 0;
+                ui.textContent = 'OH NO';
+                
+                // Audio feedback
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Whoosh up sound
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.3);
+                
+                // Recovery after blackout
+                setTimeout(() => {
+                    if (state === 'blackout') {
+                        // Fade back
+                        const fadeInterval = setInterval(() => {
+                            blackoutProgress -= 0.03;
+                            if (blackoutProgress <= 0) {
+                                blackoutProgress = 0;
+                                state = 'sitting';
+                                standingProgress = 0;
+                                ui.textContent = 'TAP TO STAND UP AGAIN (WHY THO)';
+                                clearInterval(fadeInterval);
+                            }
+                        }, 50);
+                    }
+                }, 3000);
+            }
+        }
+        
+        canvas.addEventListener('click', standUp);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            standUp();
+        });
+        
+        // Initialize
+        generateStatic();
+        draw();
+        animate();
+    </script>
+</body>
+</html>
