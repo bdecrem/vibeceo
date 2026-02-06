@@ -309,15 +309,17 @@ async function updateStreakGroups(userId: number) {
 }
 
 // Helper: Notify streak group members via SMS when someone plays
-async function notifyStreakGroupMembers(scorerUserId: number, gameId: string) {
+// Returns debug info for troubleshooting
+async function notifyStreakGroupMembers(scorerUserId: number, gameId: string): Promise<Record<string, unknown>> {
+  const debug: Record<string, unknown> = { scorerUserId, gameId };
   try {
-    // Get all streak groups this user is in
     const { data: memberships } = await supabase
       .from("pixelpit_group_members")
       .select("group_id")
       .eq("user_id", scorerUserId);
 
-    if (!memberships || memberships.length === 0) return;
+    debug.memberships = memberships?.length ?? 0;
+    if (!memberships || memberships.length === 0) return debug;
 
     const groupIds = memberships.map(m => m.group_id);
 
@@ -327,18 +329,19 @@ async function notifyStreakGroupMembers(scorerUserId: number, gameId: string) {
       .eq("type", "streak")
       .in("id", groupIds);
 
-    if (!streakGroups || streakGroups.length === 0) return;
+    debug.streakGroups = streakGroups?.map(g => g.name) ?? [];
+    if (!streakGroups || streakGroups.length === 0) return debug;
 
-    // Get scorer's handle
     const { data: scorer } = await supabase
       .from("pixelpit_users")
       .select("handle")
       .eq("id", scorerUserId)
       .single();
 
-    if (!scorer) return;
+    debug.scorer = scorer?.handle ?? null;
+    if (!scorer) return debug;
 
-    // For each streak group, notify other members
+    const results: unknown[] = [];
     for (const group of streakGroups) {
       const { data: members } = await supabase
         .from("pixelpit_group_members")
@@ -346,11 +349,10 @@ async function notifyStreakGroupMembers(scorerUserId: number, gameId: string) {
         .eq("group_id", group.id)
         .neq("user_id", scorerUserId);
 
-      if (!members || members.length === 0) continue;
+      if (!members || members.length === 0) { results.push({ group: group.name, skip: "no other members" }); continue; }
 
       const userIds = members.map(m => m.user_id);
 
-      // Get verified phones for these users
       const { data: users } = await supabase
         .from("pixelpit_users")
         .select("phone")
@@ -358,15 +360,12 @@ async function notifyStreakGroupMembers(scorerUserId: number, gameId: string) {
         .eq("phone_verified", true)
         .not("phone", "is", null);
 
-      if (!users || users.length === 0) continue;
+      if (!users || users.length === 0) { results.push({ group: group.name, skip: "no verified phones", memberIds: userIds }); continue; }
 
       const message = `@${scorer.handle} just played ${gameId}! Keep the streak alive → pixelpit.gg/${gameId}`;
       const sid = process.env.TWILIO_ACCOUNT_SID!;
       const token = process.env.TWILIO_AUTH_TOKEN!;
       const from = process.env.TWILIO_PHONE_NUMBER!;
-
-      console.log(`[pixelpit/notify] Sending to ${users.length} user(s) in group "${group.name}", from=${from}, sid=${sid ? sid.slice(0, 6) + '...' : 'MISSING'}`);
-
       const authHeader = "Basic " + Buffer.from(`${sid}:${token}`).toString("base64");
 
       for (const user of users) {
@@ -383,19 +382,17 @@ async function notifyStreakGroupMembers(scorerUserId: number, gameId: string) {
             }
           );
           const resBody = await res.text();
-          if (!res.ok) {
-            console.error(`[pixelpit/notify] Twilio error ${res.status} for ${user.phone}: ${resBody}`);
-          } else {
-            console.log(`[pixelpit/notify] SMS sent to ${user.phone}`);
-          }
+          results.push({ group: group.name, to: user.phone, status: res.status, ok: res.ok, body: resBody.slice(0, 200) });
         } catch (smsErr) {
-          console.error("[pixelpit/notify] SMS fetch error:", smsErr);
+          results.push({ group: group.name, to: user.phone, error: String(smsErr) });
         }
       }
     }
+    debug.results = results;
   } catch (err) {
-    console.error("[pixelpit/notify] Error:", err);
+    debug.error = String(err);
   }
+  return debug;
 }
 
 // Helper: Generate a unique 4-char group code
@@ -776,7 +773,9 @@ export async function POST(request: NextRequest) {
       await updateStreakGroups(userId);
 
       // Notify other streak group members via SMS (must await on serverless)
-      await notifyStreakGroupMembers(userId, game);
+      const _notifyDebug = await notifyStreakGroupMembers(userId, game);
+      // Temporarily include debug info in response
+      return NextResponse.json({ success: true, entry: data, rank, progression, joinedGroup, magicPair, _notifyDebug });
     }
 
     return NextResponse.json({ success: true, entry: data, rank, progression, joinedGroup, magicPair });
