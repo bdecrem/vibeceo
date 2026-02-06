@@ -576,10 +576,10 @@ export default function MeltGame() {
           justifyContent: 'center',
         }}>
           <h1 style={{ 
-            color: THEME.lava, 
+            color: THEME.gearGlow, 
             fontSize: 56, 
             marginBottom: 10,
-            textShadow: `0 0 40px ${THEME.lavaGlow}`,
+            textShadow: `0 0 40px ${THEME.gear}`,
           }}>
             MELTED 😊
           </h1>
@@ -592,7 +592,7 @@ export default function MeltGame() {
           <button
             onClick={startGame}
             style={{
-              background: THEME.lava,
+              background: THEME.gearGlow,
               color: '#fff',
               border: 'none',
               padding: '16px 50px',
