@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+import React, { useRef, useState, useCallback, useEffect, Suspense, lazy } from 'react';
 
-// Dynamically import Three.js components (no SSR)
-const Game3D = dynamic(() => import('./Game3D'), { ssr: false });
+// Lazy load Three.js component (completely client-side)
+const Game3D = lazy(() => import('./Game3D'));
 
 const THEME = {
   sky: '#87ceeb',
@@ -106,10 +105,12 @@ export default function DropGame() {
 
       {gameState === 'playing' && (
         <>
-          <Game3D 
-            onGameOver={handleGameOver}
-            onScoreUpdate={handleScoreUpdate}
-          />
+          <Suspense fallback={<div style={{ position: 'absolute', inset: 0, background: THEME.sky }} />}>
+            <Game3D 
+              onGameOver={handleGameOver}
+              onScoreUpdate={handleScoreUpdate}
+            />
+          </Suspense>
           {/* UI Overlay */}
           <div style={{
             position: 'absolute',

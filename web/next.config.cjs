@@ -5,6 +5,17 @@ const nextConfig = {
   },
   // Transpile three.js and react-three packages to fix bundling issues
   transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
+  // Webpack config for three.js
+  webpack: (config, { isServer }) => {
+    // Fix for three.js and R3F
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'three': require.resolve('three'),
+      };
+    }
+    return config;
+  },
   eslint: {
     // Global lint remains noisy; prebuild script handles targeted checks
     ignoreDuringBuilds: true,
