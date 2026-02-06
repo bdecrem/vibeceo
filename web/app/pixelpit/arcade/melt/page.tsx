@@ -137,6 +137,8 @@ export default function MeltGame() {
     particles: [] as Particle[],
     layersPassed: 0,
     health: MAX_HEALTH,
+    stuckTo: null as number | null, // platform index ball is riding
+    stuckAngle: 0, // angle on platform where ball is stuck
   });
 
   const generatePlatforms = useCallback((canvasW: number) => {
@@ -194,6 +196,8 @@ export default function MeltGame() {
     game.particles = [];
     game.layersPassed = 0;
     game.health = MAX_HEALTH;
+    game.stuckTo = null;
+    game.stuckAngle = 0;
     setLayersDescended(0);
     setGameState('playing');
   }, [generatePlatforms, canvasSize.w]);
@@ -227,87 +231,133 @@ export default function MeltGame() {
       const game = gameRef.current;
       if (!game.running) return;
 
-      // Keep ball centered horizontally
-      game.ballX = canvasSize.w / 2;
-
-      // Physics
-      const gravity = game.holding ? 0.9 : 0.2;
-      game.ballVY += gravity;
-      game.ballVY = Math.min(game.ballVY, game.holding ? 16 : 3);
-      game.ballY += game.ballVY;
-
-      // Camera
-      const targetCameraY = game.ballY - canvasSize.h / 3;
-      game.cameraY += (targetCameraY - game.cameraY) * 0.1;
-
-      // Rotate pizzas
-      for (const platform of game.platforms) {
-        platform.rotation += platform.speed * 0.015;
+      // Rotate all platforms first
+      for (let i = 0; i < game.platforms.length; i++) {
+        game.platforms[i].rotation += game.platforms[i].speed * 0.015;
       }
 
-      // Collision
-      for (const platform of game.platforms) {
-        const ballBottom = game.ballY + game.ballSize;
-        const ballTop = game.ballY - game.ballSize;
+      // Platform riding logic
+      if (game.stuckTo !== null) {
+        const platform = game.platforms[game.stuckTo];
         const platformX = canvasSize.w / 2 + platform.x;
         
-        // Check if ball is at pizza level
-        if (ballBottom > platform.y - PIZZA_THICKNESS/2 && 
-            ballTop < platform.y + PIZZA_THICKNESS/2) {
+        // Rotate with the platform
+        game.stuckAngle += platform.speed * 0.015;
+        
+        // Position ball on the platform's edge at stuck angle
+        const stickRadius = platform.radius * 0.7;
+        game.ballX = platformX + Math.cos(game.stuckAngle) * stickRadius;
+        game.ballY = platform.y + Math.sin(game.stuckAngle) * stickRadius;
+        game.ballVY = 0;
+        
+        // Check if gap has rotated under us
+        const currentGapAngle = (platform.gapAngle + platform.rotation) % (Math.PI * 2);
+        let stuckNormalized = game.stuckAngle % (Math.PI * 2);
+        if (stuckNormalized < 0) stuckNormalized += Math.PI * 2;
+        
+        let diff = Math.abs(stuckNormalized - currentGapAngle);
+        if (diff > Math.PI) diff = Math.PI * 2 - diff;
+        
+        const overGap = diff < platform.gapSize / 2;
+        
+        // If holding OR over gap, unstick and fall
+        if (game.holding || overGap) {
+          game.stuckTo = null;
+          game.ballVY = game.holding ? 5 : 2; // Fast fall if holding, slow drop if gap
+          if (overGap && !platform.passed) {
+            platform.passed = true;
+            game.layersPassed++;
+            setLayersDescended(game.layersPassed);
+            playPass();
+          }
+        }
+      } else {
+        // Not stuck — normal physics
+        game.ballX = canvasSize.w / 2;
+        
+        const gravity = game.holding ? 0.9 : 0.2;
+        game.ballVY += gravity;
+        game.ballVY = Math.min(game.ballVY, game.holding ? 16 : 3);
+        game.ballY += game.ballVY;
+
+        // Collision with platforms
+        for (let i = 0; i < game.platforms.length; i++) {
+          const platform = game.platforms[i];
+          const ballBottom = game.ballY + game.ballSize;
+          const ballTop = game.ballY - game.ballSize;
+          const platformX = canvasSize.w / 2 + platform.x;
           
-          // Check distance from pizza center
-          const dx = game.ballX - platformX;
-          const dy = 0; // Ball is at same Y as pizza for collision
-          const distFromCenter = Math.sqrt(dx * dx + dy * dy);
-          
-          // Only collide if ball is within pizza radius
-          if (distFromCenter < platform.radius) {
-            // Check if in gap
-            const ballAngle = Math.atan2(0, dx) + Math.PI; // Angle from pizza center
-            const currentGapAngle = (platform.gapAngle + platform.rotation) % (Math.PI * 2);
+          // Check if ball is at platform level
+          if (ballBottom > platform.y - PIZZA_THICKNESS/2 && 
+              ballTop < platform.y + PIZZA_THICKNESS/2) {
             
-            let diff = Math.abs(Math.PI / 2 - currentGapAngle); // Ball drops from top
-            if (diff > Math.PI) diff = Math.PI * 2 - diff;
+            // Check distance from platform center
+            const dx = game.ballX - platformX;
+            const distFromCenter = Math.abs(dx);
             
-            const inGap = diff < platform.gapSize / 2;
-            
-            if (inGap) {
-              if (!platform.passed) {
-                platform.passed = true;
-                game.layersPassed++;
-                setLayersDescended(game.layersPassed);
-                playPass();
-              }
-            } else {
-              if (!platform.passed) {
-                playSizzle();
-                game.health -= 18;
-                game.ballSize = Math.max(8, 8 + (game.health / MAX_HEALTH) * 10);
-                game.ballVY = -7;
-                platform.passed = true;
-                
-                for (let i = 0; i < 8; i++) {
-                  game.particles.push({
-                    x: game.ballX + (Math.random() - 0.5) * 40,
-                    y: platform.y,
-                    vx: (Math.random() - 0.5) * 5,
-                    vy: -2 - Math.random() * 4,
-                    life: 30,
-                  });
+            // Only collide if ball is within platform radius
+            if (distFromCenter < platform.radius) {
+              // Check if in gap
+              const currentGapAngle = (platform.gapAngle + platform.rotation) % (Math.PI * 2);
+              
+              let diff = Math.abs(Math.PI / 2 - currentGapAngle); // Ball drops from top (PI/2 = top)
+              if (diff > Math.PI) diff = Math.PI * 2 - diff;
+              
+              const inGap = diff < platform.gapSize / 2;
+              
+              if (inGap) {
+                // Fall through gap
+                if (!platform.passed) {
+                  platform.passed = true;
+                  game.layersPassed++;
+                  setLayersDescended(game.layersPassed);
+                  playPass();
                 }
-                
-                if (game.health <= 0) {
-                  game.running = false;
-                  playDeath();
-                  setFinalHealth(0);
-                  setGameState('dead');
-                  return;
+              } else {
+                // Hit solid part
+                if (game.holding) {
+                  // Smashing through while holding = damage + bounce
+                  if (!platform.passed) {
+                    playSizzle();
+                    game.health -= 18;
+                    game.ballSize = Math.max(8, 8 + (game.health / MAX_HEALTH) * 10);
+                    game.ballVY = -7;
+                    platform.passed = true;
+                    
+                    for (let j = 0; j < 8; j++) {
+                      game.particles.push({
+                        x: game.ballX + (Math.random() - 0.5) * 40,
+                        y: platform.y,
+                        vx: (Math.random() - 0.5) * 5,
+                        vy: -2 - Math.random() * 4,
+                        life: 30,
+                      });
+                    }
+                    
+                    if (game.health <= 0) {
+                      game.running = false;
+                      playDeath();
+                      setFinalHealth(0);
+                      setGameState('dead');
+                      return;
+                    }
+                  }
+                } else {
+                  // Not holding = stick to platform and ride
+                  game.stuckTo = i;
+                  game.stuckAngle = Math.PI / 2; // Start at top of platform
+                  game.ballY = platform.y;
+                  game.ballVY = 0;
                 }
               }
             }
           }
         }
       }
+
+      // Camera follows ball
+      const targetCameraY = game.ballY - canvasSize.h / 3;
+      game.cameraY += (targetCameraY - game.cameraY) * 0.1;
 
       // Win
       const lastPlatform = game.platforms[game.platforms.length - 1];
