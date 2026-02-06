@@ -115,6 +115,46 @@ function playThunder() {
   noise.start();
 }
 
+// Glass shatter — bright crystalline burst, pitch rises with chain
+function playGlassShatter(chain = 1) {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Bright shimmer — filtered noise burst
+  const len = audioCtx.sampleRate * 0.3;
+  const buffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buffer.getChannelData(0);
+  for (let i = 0; i < len; i++) {
+    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 3000 + Math.min(chain, 6) * 800;
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 10000 + Math.min(chain, 6) * 1000;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.25, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  noise.connect(hp);
+  hp.connect(lp);
+  lp.connect(gain);
+  gain.connect(masterGain);
+  noise.start();
+  // Crystalline ping on top
+  const ping = audioCtx.createOscillator();
+  const pingGain = audioCtx.createGain();
+  ping.type = 'sine';
+  ping.frequency.value = 1200 + Math.min(chain, 8) * 200;
+  pingGain.gain.setValueAtTime(0.12, t);
+  pingGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  ping.connect(pingGain);
+  pingGain.connect(masterGain);
+  ping.start();
+  ping.stop(t + 0.15);
+}
+
 // ─── Music Engine (step sequencer, same arch as BEAM) ───────
 
 let musicInterval: ReturnType<typeof setInterval> | null = null;
@@ -289,7 +329,40 @@ interface PlatformData {
   hasStorm: boolean;
   stormAngle: number;
   stormSize: number;
+  hasGlass: boolean;
+  glassBroken: boolean;
   passed: boolean;
+}
+
+// ─── Glass Shard Particles ──────────────────────────────────
+
+interface Shard {
+  x: number; y: number; z: number;
+  vx: number; vy: number; vz: number;
+  life: number;
+}
+
+const MAX_SHARDS = 120;
+let shards: Shard[] = [];
+
+function spawnShards(worldY: number, angle: number, rotation: number) {
+  const actualAngle = angle + rotation;
+  const midR = (TOWER_RADIUS + PLATFORM_OUTER_RADIUS) / 2;
+  const cx = Math.cos(actualAngle) * midR;
+  const cz = -Math.sin(actualAngle) * midR;
+  for (let i = 0; i < 15; i++) {
+    const spread = 0.8;
+    shards.push({
+      x: cx + (Math.random() - 0.5) * 0.5,
+      y: worldY + PLATFORM_THICKNESS / 2,
+      z: cz + (Math.random() - 0.5) * 0.5,
+      vx: (Math.random() - 0.5) * spread * 0.3,
+      vy: Math.random() * 0.12 + 0.03,
+      vz: (Math.random() - 0.5) * spread * 0.3,
+      life: 1.0,
+    });
+  }
+  if (shards.length > MAX_SHARDS) shards = shards.slice(-MAX_SHARDS);
 }
 
 interface GameState {
@@ -300,17 +373,31 @@ interface GameState {
   platforms: PlatformData[];
   score: number;
   combo: number;
+  glassChain: number;
+  glassBreakTimer: number;
   gameOver: boolean;
   started: boolean;
 }
 
 // ─── 3D Components ──────────────────────────────────────────
 
+// Nintendo-style platform color palette — bright, saturated, cheerful
+const PLATFORM_COLORS = [
+  '#FF6B6B', // coral red
+  '#FFA94D', // warm orange
+  '#FFD43B', // golden yellow
+  '#69DB7C', // leaf green
+  '#4ECDC4', // teal
+  '#74C0FC', // sky blue
+  '#B197FC', // lavender
+  '#F783AC', // bubblegum pink
+];
+
 function Tower({ rotation, ballY }: { rotation: number; ballY: number }) {
   return (
     <mesh rotation={[0, rotation, 0]} position={[0, ballY, 0]}>
       <cylinderGeometry args={[TOWER_RADIUS, TOWER_RADIUS, 200, 16]} />
-      <meshStandardMaterial color="#1e293b" emissive="#22d3ee" emissiveIntensity={0.05} />
+      <meshStandardMaterial color="#f8f9fa" roughness={0.6} metalness={0.0} />
     </mesh>
   );
 }
@@ -337,41 +424,49 @@ function createArcGeo(innerR: number, outerR: number, thetaStart: number, thetaL
 const norm2PI = (a: number) => ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
 
 function Platform({
-  y, gapAngle, gapSize, hasStorm, stormAngle, stormSize, rotation
+  y, gapAngle, gapSize, hasStorm, stormAngle, stormSize, rotation, colorIndex, hasGlass, glassBroken
 }: {
   y: number; gapAngle: number; gapSize: number;
   hasStorm: boolean; stormAngle: number; stormSize: number;
-  rotation: number;
+  rotation: number; colorIndex: number; hasGlass: boolean; glassBroken: boolean;
 }) {
+  const platformColor = PLATFORM_COLORS[((colorIndex % PLATFORM_COLORS.length) + PLATFORM_COLORS.length) % PLATFORM_COLORS.length];
   const arcs = useMemo(() => {
     const innerR = TOWER_RADIUS;
     const outerR = PLATFORM_OUTER_RADIUS;
     const solidStart = gapAngle + gapSize / 2;
     const solidLength = Math.PI * 2 - gapSize;
 
-    type Arc = { geo: THREE.BufferGeometry; isStorm: boolean };
+    type Arc = { geo: THREE.BufferGeometry; kind: 'solid' | 'storm' | 'glass' };
     const result: Arc[] = [];
 
     if (!hasStorm || stormSize < 0.01) {
-      result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), isStorm: false });
+      result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
     } else {
       const off0 = norm2PI((stormAngle - stormSize / 2) - solidStart);
       const off1 = norm2PI((stormAngle + stormSize / 2) - solidStart);
 
       if (off0 >= solidLength && off1 >= solidLength) {
-        result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), isStorm: false });
+        result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
       } else if (off0 < off1 && off1 <= solidLength) {
         if (off0 > 0.02)
-          result.push({ geo: createArcGeo(innerR, outerR, solidStart, off0, PLATFORM_THICKNESS), isStorm: false });
-        result.push({ geo: createArcGeo(innerR, outerR, solidStart + off0, off1 - off0, PLATFORM_THICKNESS), isStorm: true });
+          result.push({ geo: createArcGeo(innerR, outerR, solidStart, off0, PLATFORM_THICKNESS), kind: 'solid' });
+        result.push({ geo: createArcGeo(innerR, outerR, solidStart + off0, off1 - off0, PLATFORM_THICKNESS), kind: 'storm' });
         if (solidLength - off1 > 0.02)
-          result.push({ geo: createArcGeo(innerR, outerR, solidStart + off1, solidLength - off1, PLATFORM_THICKNESS), isStorm: false });
+          result.push({ geo: createArcGeo(innerR, outerR, solidStart + off1, solidLength - off1, PLATFORM_THICKNESS), kind: 'solid' });
       } else {
-        result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), isStorm: false });
+        result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
       }
     }
+
+    // Glass arc fills the gap
+    if (hasGlass) {
+      const glassStart = gapAngle - gapSize / 2;
+      result.push({ geo: createArcGeo(innerR, outerR, glassStart, gapSize, PLATFORM_THICKNESS), kind: 'glass' });
+    }
+
     return result;
-  }, [gapAngle, gapSize, hasStorm, stormAngle, stormSize]);
+  }, [gapAngle, gapSize, hasStorm, stormAngle, stormSize, hasGlass]);
 
   useEffect(() => {
     return () => { arcs.forEach(a => a.geo.dispose()); };
@@ -379,15 +474,32 @@ function Platform({
 
   return (
     <group position={[0, y, 0]} rotation={[0, rotation, 0]}>
-      {arcs.map((a, i) => (
-        <mesh key={i} geometry={a.geo}>
-          <meshStandardMaterial
-            color={a.isStorm ? '#1a0a2e' : '#e2e8f0'}
-            emissive={a.isStorm ? '#ef4444' : '#22d3ee'}
-            emissiveIntensity={a.isStorm ? 0.5 : 0.08}
-          />
-        </mesh>
-      ))}
+      {arcs.map((a, i) => {
+        if (a.kind === 'glass' && glassBroken) return null;
+        return (
+          <mesh key={i} geometry={a.geo}>
+            {a.kind === 'glass' ? (
+              <meshStandardMaterial
+                color="#d4d4d4"
+                emissive="#ffffff"
+                emissiveIntensity={0.15}
+                transparent
+                opacity={0.75}
+                roughness={0.1}
+                metalness={0.4}
+              />
+            ) : (
+              <meshStandardMaterial
+                color={a.kind === 'storm' ? '#2d2d2d' : platformColor}
+                emissive={a.kind === 'storm' ? '#ff3333' : platformColor}
+                emissiveIntensity={a.kind === 'storm' ? 0.4 : 0.1}
+                roughness={a.kind === 'storm' ? 0.8 : 0.4}
+                metalness={0.0}
+              />
+            )}
+          </mesh>
+        );
+      })}
     </group>
   );
 }
@@ -397,8 +509,104 @@ function Ball({ y }: { y: number }) {
   return (
     <mesh position={[x, y, 0]}>
       <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
-      <meshStandardMaterial color="#FF1493" emissive="#FF1493" emissiveIntensity={0.15} roughness={0.3} metalness={0.2} />
+      <meshStandardMaterial color="#FF2244" emissive="#FF2244" emissiveIntensity={0.08} roughness={0.15} metalness={0.1} />
     </mesh>
+  );
+}
+
+// ─── Background Particles ───────────────────────────────────
+
+const PARTICLE_COUNT = 80;
+
+function BackgroundParticles({ ballY }: { ballY: number }) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const particleData = useRef<{ x: number; z: number; yOff: number; speed: number; size: number; phase: number }[]>([]);
+
+  useMemo(() => {
+    particleData.current = Array.from({ length: PARTICLE_COUNT }, () => ({
+      x: (Math.random() - 0.5) * 28,
+      z: (Math.random() - 0.5) * 28,
+      yOff: (Math.random() - 0.5) * 35,
+      speed: 0.15 + Math.random() * 0.4,
+      size: 0.03 + Math.random() * 0.05,
+      phase: Math.random() * Math.PI * 2,
+    }));
+  }, []);
+
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  useFrame(({ clock }) => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    const t = clock.getElapsedTime();
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const p = particleData.current[i];
+      const drift = Math.sin(t * 0.2 + p.phase) * 1.2;
+      dummy.position.set(
+        p.x + drift,
+        ballY + p.yOff + Math.sin(t * p.speed + p.phase) * 1.5,
+        p.z + Math.cos(t * 0.15 + p.phase) * 1.2,
+      );
+      const pulse = 0.6 + 0.4 * Math.sin(t * 2 + p.phase);
+      dummy.scale.setScalar(p.size * pulse);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]}>
+      <sphereGeometry args={[1, 6, 6]} />
+      <meshBasicMaterial color="#ffffff" transparent opacity={0.25} />
+    </instancedMesh>
+  );
+}
+
+// ─── Glass Shard Renderer ───────────────────────────────────
+
+function GlassShards() {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  useFrame(() => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+
+    // Update shard physics
+    for (let i = shards.length - 1; i >= 0; i--) {
+      const s = shards[i];
+      s.x += s.vx;
+      s.y += s.vy;
+      s.z += s.vz;
+      s.vy -= 0.004; // gravity
+      s.life -= 0.02;
+      if (s.life <= 0) shards.splice(i, 1);
+    }
+
+    // Render
+    for (let i = 0; i < MAX_SHARDS; i++) {
+      if (i < shards.length) {
+        const s = shards[i];
+        dummy.position.set(s.x, s.y, s.z);
+        dummy.scale.setScalar(0.04 * s.life);
+        dummy.rotation.set(s.life * 10, s.life * 7, 0);
+      } else {
+        dummy.position.set(0, -1000, 0);
+        dummy.scale.setScalar(0);
+      }
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, MAX_SHARDS]}>
+      <boxGeometry args={[1, 1, 0.3]} />
+      <meshStandardMaterial color="#d4d4d4" emissive="#ffffff" emissiveIntensity={0.3} transparent opacity={0.8} />
+    </instancedMesh>
   );
 }
 
@@ -420,6 +628,8 @@ function GameScene({
     platforms: [],
     score: 0,
     combo: 0,
+    glassChain: 0,
+    glassBreakTimer: 0,
     gameOver: false,
     started: false,
   });
@@ -433,6 +643,7 @@ function GameScene({
     startMusic();
     resetGenState();
 
+    shards = [];
     const platforms: PlatformData[] = [];
     platforms.push({
       y: 0,
@@ -441,13 +652,15 @@ function GameScene({
       hasStorm: false,
       stormAngle: 0,
       stormSize: 0,
+      hasGlass: false,
+      glassBroken: false,
       passed: false,
     });
     for (let i = 1; i < PLATFORM_COUNT; i++) {
       const { gapAngle, gapSize } = generatePlatformGap(i);
-      // No storms during chutes (don't punish the fun drop)
       const inChute = genRunRemaining > 0;
       const hasStorm = !inChute && i > 2 && Math.random() < 0.4;
+      const hasGlass = !hasStorm && i > 1 && Math.random() < 0.4;
       platforms.push({
         y: -i * PLATFORM_SPACING,
         gapAngle,
@@ -455,6 +668,8 @@ function GameScene({
         hasStorm,
         stormAngle: hasStorm ? Math.random() * Math.PI * 2 : 0,
         stormSize: hasStorm ? 0.8 + Math.random() * 0.4 : 0,
+        hasGlass,
+        glassBroken: false,
         passed: false,
       });
     }
@@ -464,6 +679,8 @@ function GameScene({
     gameState.current.rotation = 0;
     gameState.current.score = 0;
     gameState.current.combo = 0;
+    gameState.current.glassChain = 0;
+    gameState.current.glassBreakTimer = 0;
     gameState.current.gameOver = false;
     gameState.current.started = false;
 
@@ -538,70 +755,113 @@ function GameScene({
     gs.rotationVel *= 0.92;
 
     if (gs.started) {
-      const ballAngle = norm2PI(-gs.rotation);
-
-      if (gs.ballVY === 0) {
-        let stillSupported = false;
-        for (const platform of gs.platforms) {
-          if (platform.passed) continue;
-          const platformTop = platform.y + PLATFORM_THICKNESS / 2;
-          if (Math.abs((gs.ballY - BALL_RADIUS) - platformTop) < 0.1) {
-            if (checkGap(ballAngle, platform)) {
-              platform.passed = true;
-              gs.combo++;
-              gs.score += gs.combo;
-              onScoreUpdate(gs.score, gs.combo);
-              playFallThrough(gs.combo);
-              gs.ballVY = -0.01;
-            } else if (checkStorm(ballAngle, platform)) {
-              gs.gameOver = true;
-              stopMusic();
-              playThunder();
-              onGameOver(gs.score);
-              return;
-            } else {
-              stillSupported = true;
-              gs.ballY = platformTop + BALL_RADIUS;
-            }
-            break;
-          }
-        }
-        if (!stillSupported && gs.ballVY === 0) {
+      // Glass break freeze — ball pauses briefly then falls
+      if (gs.glassBreakTimer > 0) {
+        gs.glassBreakTimer--;
+        if (gs.glassBreakTimer === 0) {
           gs.ballVY = -0.01;
         }
-      }
+        // Skip normal physics during freeze
+      } else {
+        const ballAngle = norm2PI(-gs.rotation);
 
-      if (gs.ballVY !== 0) {
-        const prevY = gs.ballY;
-        gs.ballVY -= 0.015;
-        gs.ballVY = Math.max(gs.ballVY, -0.3);
-        gs.ballY += gs.ballVY;
-
-        for (const platform of gs.platforms) {
-          if (platform.passed) continue;
-          const platformTop = platform.y + PLATFORM_THICKNESS / 2;
-
-          if (prevY - BALL_RADIUS > platformTop && gs.ballY - BALL_RADIUS <= platformTop) {
-            if (checkGap(ballAngle, platform)) {
-              platform.passed = true;
-              gs.combo++;
-              gs.score += gs.combo;
-              onScoreUpdate(gs.score, gs.combo);
-              playFallThrough(gs.combo);
-            } else if (checkStorm(ballAngle, platform)) {
-              gs.gameOver = true;
-              stopMusic();
-              playThunder();
-              onGameOver(gs.score);
-              return;
-            } else {
-              gs.ballY = platformTop + BALL_RADIUS;
-              gs.ballVY = 0;
-              gs.combo = 0;
-              gs.score += 1;
-              onScoreUpdate(gs.score, gs.combo);
-              playBounce(gs.score);
+        if (gs.ballVY === 0) {
+          let stillSupported = false;
+          for (const platform of gs.platforms) {
+            if (platform.passed) continue;
+            const platformTop = platform.y + PLATFORM_THICKNESS / 2;
+            if (Math.abs((gs.ballY - BALL_RADIUS) - platformTop) < 0.1) {
+              if (checkGap(ballAngle, platform)) {
+                // Gap — but is there unbroken glass?
+                if (platform.hasGlass && !platform.glassBroken) {
+                  // Shatter the glass!
+                  platform.glassBroken = true;
+                  gs.glassChain++;
+                  const bonus = 3 * gs.glassChain;
+                  gs.score += bonus;
+                  gs.combo += gs.glassChain;
+                  onScoreUpdate(gs.score, gs.combo);
+                  playGlassShatter(gs.glassChain);
+                  spawnShards(platform.y, platform.gapAngle, gs.rotation);
+                  gs.glassBreakTimer = 8; // ~133ms freeze
+                  stillSupported = true;
+                } else {
+                  platform.passed = true;
+                  gs.glassChain = 0;
+                  gs.combo++;
+                  gs.score += gs.combo;
+                  onScoreUpdate(gs.score, gs.combo);
+                  playFallThrough(gs.combo);
+                  gs.ballVY = -0.01;
+                }
+              } else if (checkStorm(ballAngle, platform)) {
+                gs.gameOver = true;
+                stopMusic();
+                playThunder();
+                onGameOver(gs.score);
+                return;
+              } else {
+                stillSupported = true;
+                gs.glassChain = 0;
+                gs.ballY = platformTop + BALL_RADIUS;
+              }
               break;
+            }
+          }
+          if (!stillSupported && gs.ballVY === 0) {
+            gs.ballVY = -0.01;
+          }
+        }
+
+        if (gs.ballVY !== 0) {
+          const prevY = gs.ballY;
+          gs.ballVY -= 0.015;
+          gs.ballVY = Math.max(gs.ballVY, -0.3);
+          gs.ballY += gs.ballVY;
+
+          for (const platform of gs.platforms) {
+            if (platform.passed) continue;
+            const platformTop = platform.y + PLATFORM_THICKNESS / 2;
+
+            if (prevY - BALL_RADIUS > platformTop && gs.ballY - BALL_RADIUS <= platformTop) {
+              if (checkGap(ballAngle, platform)) {
+                // Gap — glass check
+                if (platform.hasGlass && !platform.glassBroken) {
+                  platform.glassBroken = true;
+                  gs.glassChain++;
+                  const bonus = 3 * gs.glassChain;
+                  gs.score += bonus;
+                  gs.combo += gs.glassChain;
+                  onScoreUpdate(gs.score, gs.combo);
+                  playGlassShatter(gs.glassChain);
+                  spawnShards(platform.y, platform.gapAngle, gs.rotation);
+                  gs.ballY = platformTop + BALL_RADIUS;
+                  gs.ballVY = 0;
+                  gs.glassBreakTimer = 8;
+                } else {
+                  platform.passed = true;
+                  gs.glassChain = 0;
+                  gs.combo++;
+                  gs.score += gs.combo;
+                  onScoreUpdate(gs.score, gs.combo);
+                  playFallThrough(gs.combo);
+                }
+              } else if (checkStorm(ballAngle, platform)) {
+                gs.gameOver = true;
+                stopMusic();
+                playThunder();
+                onGameOver(gs.score);
+                return;
+              } else {
+                gs.ballY = platformTop + BALL_RADIUS;
+                gs.ballVY = 0;
+                gs.combo = 0;
+                gs.glassChain = 0;
+                gs.score += 1;
+                onScoreUpdate(gs.score, gs.combo);
+                playBounce(gs.score);
+                break;
+              }
             }
           }
         }
@@ -617,6 +877,7 @@ function GameScene({
       const { gapAngle, gapSize } = generatePlatformGap(gs.platforms.length);
       const inChute = genRunRemaining > 0;
       const hasStorm = !inChute && Math.random() < 0.45;
+      const hasGlass = !hasStorm && Math.random() < 0.4;
       gs.platforms.push({
         y: newY,
         gapAngle,
@@ -624,6 +885,8 @@ function GameScene({
         hasStorm,
         stormAngle: hasStorm ? Math.random() * Math.PI * 2 : 0,
         stormSize: hasStorm ? 0.8 + Math.random() * 0.5 : 0,
+        hasGlass,
+        glassBroken: false,
         passed: false,
       });
     }
@@ -636,9 +899,10 @@ function GameScene({
 
   return (
     <>
-      <ambientLight intensity={0.3} />
-      <directionalLight position={[5, 10, 5]} intensity={0.6} color="#94a3b8" />
-      <pointLight position={[0, gs.ballY + 2, 3]} intensity={0.8} color="#FF1493" distance={8} />
+      <ambientLight intensity={0.6} color="#fff5eb" />
+      <directionalLight position={[5, 10, 5]} intensity={1.0} color="#ffffff" />
+      <directionalLight position={[-3, 5, -2]} intensity={0.3} color="#74C0FC" />
+      <pointLight position={[0, gs.ballY + 2, 3]} intensity={0.5} color="#FFD43B" distance={10} />
 
       <Tower rotation={gs.rotation} ballY={gs.ballY} />
 
@@ -652,13 +916,18 @@ function GameScene({
           stormAngle={p.stormAngle}
           stormSize={p.stormSize}
           rotation={gs.rotation}
+          colorIndex={i}
+          hasGlass={p.hasGlass}
+          glassBroken={p.glassBroken}
         />
       ))}
 
       <Ball y={gs.ballY} />
+      <GlassShards />
+      <BackgroundParticles ballY={gs.ballY} />
 
-      <color attach="background" args={['#0f172a']} />
-      <fog attach="fog" args={['#0f172a', 8, 22]} />
+      <color attach="background" args={['#87CEEB']} />
+      <fog attach="fog" args={['#87CEEB', 12, 30]} />
     </>
   );
 }
@@ -677,7 +946,7 @@ export default function Game3D({
   }, []);
 
   if (!mounted) {
-    return <div style={{ position: 'absolute', inset: 0, background: '#0f172a' }} />;
+    return <div style={{ position: 'absolute', inset: 0, background: '#87CEEB' }} />;
   }
 
   return (

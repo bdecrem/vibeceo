@@ -5,13 +5,15 @@ import React, { useState, useCallback, Suspense, lazy } from 'react';
 const Game3D = lazy(() => import('./Game3D'));
 
 const THEME = {
-  bg: '#0f172a',
-  bgDeep: '#09090b',
-  text: '#f8fafc',
-  pink: '#FF1493',
-  cyan: '#22d3ee',
-  red: '#ef4444',
-  gold: '#facc15',
+  bg: '#87CEEB',
+  bgDeep: '#5BA3D9',
+  text: '#2d3436',
+  textLight: '#ffffff',
+  red: '#FF2244',
+  orange: '#FFA94D',
+  gold: '#FFD43B',
+  green: '#69DB7C',
+  button: '#FF2244',
 };
 
 const GAME_ID = 'drop';
@@ -47,7 +49,7 @@ export default function DropGame() {
       position: 'fixed',
       inset: 0,
       background: THEME.bg,
-      fontFamily: 'ui-monospace, "Cascadia Code", "Fira Code", monospace',
+      fontFamily: '"SF Pro Rounded", "Nunito", "Quicksand", system-ui, -apple-system, sans-serif',
     }}>
       {gameState === 'start' && (
         <div style={{
@@ -59,51 +61,52 @@ export default function DropGame() {
           justifyContent: 'center',
           padding: 20,
           zIndex: 10,
-          background: `radial-gradient(ellipse at 50% 60%, ${THEME.bg} 0%, ${THEME.bgDeep} 100%)`,
+          background: `linear-gradient(180deg, #87CEEB 0%, #5BA3D9 100%)`,
         }}>
           <h1 style={{
-            color: THEME.cyan,
-            fontSize: 72,
+            color: '#ffffff',
+            fontSize: 80,
             marginBottom: 8,
             fontWeight: 900,
             letterSpacing: '-2px',
-            textShadow: `0 0 40px ${THEME.cyan}44, 0 0 80px ${THEME.cyan}22`,
+            textShadow: '0 4px 0 rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.08)',
           }}>
             DROP
           </h1>
 
           <p style={{
-            color: `${THEME.text}bb`,
-            fontSize: 14,
+            color: 'rgba(255,255,255,0.85)',
+            fontSize: 15,
             marginBottom: 40,
             textAlign: 'center',
-            lineHeight: 1.8,
+            lineHeight: 1.9,
             maxWidth: 260,
-            letterSpacing: '0.5px',
+            fontWeight: 600,
           }}>
             Swipe to rotate the tower.<br />
             Fall through the gaps.<br />
-            <span style={{ color: THEME.red }}>Avoid the red zones.</span>
+            <span style={{ color: THEME.red, fontWeight: 800 }}>Avoid the dark zones!</span>
           </p>
 
           <button
             onClick={startGame}
             style={{
-              background: THEME.pink,
+              background: THEME.button,
               color: '#fff',
               border: 'none',
-              padding: '16px 56px',
-              fontSize: 16,
-              fontWeight: 700,
+              padding: '18px 60px',
+              fontSize: 18,
+              fontWeight: 800,
               fontFamily: 'inherit',
               cursor: 'pointer',
-              borderRadius: 4,
+              borderRadius: 50,
               letterSpacing: '2px',
               textTransform: 'uppercase' as const,
-              boxShadow: `0 0 30px ${THEME.pink}66`,
+              boxShadow: '0 4px 0 #cc1133, 0 8px 20px rgba(255,34,68,0.3)',
+              transform: 'translateY(-2px)',
             }}
           >
-            FALL
+            PLAY
           </button>
         </div>
       )}
@@ -126,10 +129,10 @@ export default function DropGame() {
             pointerEvents: 'none',
           }}>
             <div style={{
-              color: THEME.text,
-              fontSize: 40,
+              color: '#ffffff',
+              fontSize: 44,
               fontWeight: 900,
-              textShadow: `0 0 20px ${THEME.cyan}66`,
+              textShadow: '0 2px 0 rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.08)',
               letterSpacing: '-1px',
             }}>
               {score}
@@ -137,9 +140,9 @@ export default function DropGame() {
             {combo > 1 && (
               <div style={{
                 color: THEME.gold,
-                fontSize: Math.min(20 + combo * 2, 36),
+                fontSize: Math.min(22 + combo * 2, 40),
                 fontWeight: 900,
-                textShadow: `0 0 20px ${THEME.gold}88`,
+                textShadow: '0 2px 0 rgba(0,0,0,0.1), 0 4px 12px rgba(255,212,59,0.3)',
               }}>
                 x{combo}
               </div>
@@ -155,8 +158,9 @@ export default function DropGame() {
             pointerEvents: 'none',
           }}>
             <div style={{
-              color: `${THEME.text}44`,
-              fontSize: 12,
+              color: 'rgba(255,255,255,0.5)',
+              fontSize: 13,
+              fontWeight: 700,
               letterSpacing: '2px',
               textTransform: 'uppercase' as const,
             }}>
@@ -174,52 +178,54 @@ export default function DropGame() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: THEME.bgDeep,
+          background: `linear-gradient(180deg, ${THEME.bgDeep} 0%, #4A8DB7 100%)`,
           zIndex: 10,
         }}>
           <h1 style={{
-            color: THEME.red,
-            fontSize: 56,
+            color: '#ffffff',
+            fontSize: 60,
             fontWeight: 900,
             marginBottom: 8,
-            textShadow: `0 0 40px ${THEME.red}66`,
+            textShadow: '0 4px 0 rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.08)',
             letterSpacing: '-1px',
           }}>
-            ZAPPED
+            OOPS!
           </h1>
           <p style={{
-            color: `${THEME.text}88`,
-            fontSize: 14,
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: 15,
             marginBottom: 8,
             letterSpacing: '2px',
+            fontWeight: 700,
             textTransform: 'uppercase' as const,
           }}>
             Score
           </p>
           <p style={{
-            color: THEME.text,
-            fontSize: 48,
+            color: '#ffffff',
+            fontSize: 52,
             fontWeight: 900,
             marginBottom: 40,
-            textShadow: `0 0 20px ${THEME.cyan}44`,
+            textShadow: '0 2px 0 rgba(0,0,0,0.1)',
           }}>
             {score}
           </p>
           <button
             onClick={startGame}
             style={{
-              background: 'transparent',
-              color: THEME.pink,
-              border: `2px solid ${THEME.pink}`,
-              padding: '14px 48px',
-              fontSize: 14,
-              fontWeight: 700,
+              background: THEME.orange,
+              color: '#fff',
+              border: 'none',
+              padding: '16px 52px',
+              fontSize: 16,
+              fontWeight: 800,
               fontFamily: 'inherit',
               cursor: 'pointer',
-              borderRadius: 4,
+              borderRadius: 50,
               letterSpacing: '2px',
               textTransform: 'uppercase' as const,
-              boxShadow: `0 0 20px ${THEME.pink}33`,
+              boxShadow: '0 4px 0 #e08930, 0 8px 20px rgba(255,169,77,0.3)',
+              transform: 'translateY(-2px)',
             }}
           >
             AGAIN
