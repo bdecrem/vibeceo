@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INCISION — Amber</title>
+    
+    <!-- OG tags -->
+    <meta property="og:title" content="INCISION — Amber">
+    <meta property="og:description" content="Touch to cut. Watch layers peel back. See what's beneath.">
+    <meta property="og:image" content="https://intheamber.com/amber/incision-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/incision.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="INCISION — Amber">
+    <meta name="twitter:description" content="Touch to cut. Watch layers peel back. See what's beneath.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/incision-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D0D0D;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+        
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        .info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 13px;
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .counter {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="counter">INCISIONS: <span id="count">0</span></div>
+    <div class="info">touch to cut · drag to incise</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const countEl = document.getElementById('count');
+        
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Audio context
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let audioStarted = false;
+        
+        function startAudio() {
+            if (!audioStarted) {
+                audioCtx.resume();
+                audioStarted = true;
+            }
+        }
+        
+        // Layers of color (deeper = more exposed)
+        const layers = [
+            '#0D0D0D', // surface (almost black)
+            '#1a1a1a', // just beneath
+            '#2D9596', // teal
+            '#3b82f6', // electric blue
+            '#8b5cf6', // purple
+            '#ec4899', // hot pink
+            '#f97316', // coral
+            '#FFD700', // gold (deepest)
+        ];
+        
+        // Incisions data
+        const incisions = [];
+        let incisionCount = 0;
+        
+        class Incision {
+            constructor(startX, startY) {
+                this.points = [{x: startX, y: startY}];
+                this.depth = Math.floor(Math.random() * 3) + 2; // 2-4 layers deep
+                this.width = Math.random() * 3 + 2; // 2-5px wide
+                this.age = 0;
+                this.maxAge = 300; // fade over 5 seconds at 60fps
+                this.glowIntensity = 1;
+            }
+            
+            addPoint(x, y) {
+                const lastPoint = this.points[this.points.length - 1];
+                const dist = Math.hypot(x - lastPoint.x, y - lastPoint.y);
+                if (dist > 5) { // only add if moved enough
+                    this.points.push({x, y});
+                }
+            }
+            
+            update() {
+                this.age++;
+                this.glowIntensity = Math.max(0, 1 - (this.age / this.maxAge));
+            }
+            
+            draw() {
+                if (this.points.length < 2) return;
+                
+                // Draw the cut itself (revealed layer)
+                ctx.strokeStyle = layers[this.depth];
+                ctx.lineWidth = this.width;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.globalAlpha = 1;
+                
+                ctx.beginPath();
+                ctx.moveTo(this.points[0].x, this.points[0].y);
+                for (let i = 1; i < this.points.length; i++) {
+                    ctx.lineTo(this.points[i].x, this.points[i].y);
+                }
+                ctx.stroke();
+                
+                // Draw glowing edges
+                if (this.glowIntensity > 0) {
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = this.width * 0.3;
+                    ctx.globalAlpha = this.glowIntensity * 0.8;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.points[0].x, this.points[0].y);
+                    for (let i = 1; i < this.points.length; i++) {
+                        ctx.lineTo(this.points[i].x, this.points[i].y);
+                    }
+                    ctx.stroke();
+                    
+                    // Outer glow
+                    ctx.strokeStyle = layers[this.depth];
+                    ctx.lineWidth = this.width + 8;
+                    ctx.globalAlpha = this.glowIntensity * 0.2;
+                    ctx.filter = 'blur(4px)';
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(this.points[0].x, this.points[0].y);
+                    for (let i = 1; i < this.points.length; i++) {
+                        ctx.lineTo(this.points[i].x, this.points[i].y);
+                    }
+                    ctx.stroke();
+                    
+                    ctx.filter = 'none';
+                }
+                
+                ctx.globalAlpha = 1;
+            }
+            
+            isAlive() {
+                return this.age < this.maxAge;
+            }
+        }
+        
+        // Particle class for cut sparkles
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.life = 1;
+                this.decay = 0.02;
+                this.size = Math.random() * 2 + 1;
+                this.color = color;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                this.vy += 0.05; // slight gravity
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.life;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+            
+            isAlive() {
+                return this.life > 0;
+            }
+        }
+        
+        const particles = [];
+        
+        // Interaction state
+        let currentIncision = null;
+        let isDragging = false;
+        
+        function playIncisionSound() {
+            startAudio();
+            const now = audioCtx.currentTime;
+            
+            // Sterile, precise sound - high sine with quick envelope
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = 1200 + Math.random() * 400; // high, precise
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            
+            osc.start(now);
+            osc.stop(now + 0.1);
+        }
+        
+        function spawnParticles(x, y, color) {
+            for (let i = 0; i < 5; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+        
+        function handleStart(x, y) {
+            startAudio();
+            currentIncision = new Incision(x, y);
+            isDragging = true;
+            playIncisionSound();
+            spawnParticles(x, y, '#fff');
+        }
+        
+        function handleMove(x, y) {
+            if (isDragging && currentIncision) {
+                currentIncision.addPoint(x, y);
+                if (Math.random() < 0.3) {
+                    playIncisionSound();
+                    spawnParticles(x, y, layers[currentIncision.depth]);
+                }
+            }
+        }
+        
+        function handleEnd() {
+            if (currentIncision && currentIncision.points.length > 1) {
+                incisions.push(currentIncision);
+                incisionCount++;
+                countEl.textContent = incisionCount;
+            }
+            currentIncision = null;
+            isDragging = false;
+        }
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', (e) => {
+            handleStart(e.clientX, e.clientY);
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            handleMove(e.clientX, e.clientY);
+        });
+        
+        canvas.addEventListener('mouseup', handleEnd);
+        canvas.addEventListener('mouseleave', handleEnd);
+        
+        // Touch events
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            handleStart(touch.clientX, touch.clientY);
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            handleMove(touch.clientX, touch.clientY);
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            handleEnd();
+        });
+        
+        // Animation loop
+        function animate() {
+            // Clear with surface color
+            ctx.fillStyle = layers[0];
+            ctx.fillRect(0, 0, width, height);
+            
+            // Update and draw all incisions
+            for (let i = incisions.length - 1; i >= 0; i--) {
+                incisions[i].update();
+                incisions[i].draw();
+                
+                if (!incisions[i].isAlive()) {
+                    incisions.splice(i, 1);
+                }
+            }
+            
+            // Draw current incision being made
+            if (currentIncision) {
+                currentIncision.draw();
+            }
+            
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                
+                if (!particles[i].isAlive()) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        });
+        
+        // Start
+        animate();
+    </script>
+</body>
+</html>
