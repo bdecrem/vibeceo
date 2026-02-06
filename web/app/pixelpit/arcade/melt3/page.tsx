@@ -6,10 +6,11 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 const THEME = {
   ball: '#f97316', // orange ball
   ballGlow: '#fbbf24',
-  breakable: '#22c55e', // green - smashable
-  breakableAlt: '#3b82f6', // blue - smashable  
-  solid: '#18181b', // black - must avoid
-  bg: '#0f172a',
+  breakable: '#4ade80', // bright green - smashable
+  breakableAlt: '#60a5fa', // bright blue - smashable  
+  solid: '#000000', // pure black - DANGER
+  solidGlow: '#ef4444', // red glow on black = danger
+  bg: '#1e293b',
   text: '#fafafa',
   danger: '#ef4444',
 };
@@ -410,9 +411,11 @@ export default function Melt3Game() {
           ctx.fillStyle = seg.color;
           if (seg.type === 'breakable') {
             ctx.shadowColor = seg.color;
-            ctx.shadowBlur = 8;
+            ctx.shadowBlur = 10;
           } else {
-            ctx.shadowBlur = 0;
+            // BLACK = DANGER - red glow
+            ctx.shadowColor = THEME.solidGlow;
+            ctx.shadowBlur = 15;
           }
           
           ctx.beginPath();
@@ -477,10 +480,12 @@ export default function Melt3Game() {
         ctx.fillText(`x${game.combo}`, 20, 65);
       }
       
-      // Mode indicator
-      ctx.fillStyle = game.holding ? THEME.ball : THEME.text;
-      ctx.font = '12px monospace';
-      ctx.fillText(game.holding ? 'SMASHING!' : 'hold to smash', 20, canvasSize.h - 20);
+      // Mode indicator - bigger and clearer
+      if (game.holding) {
+        ctx.fillStyle = THEME.ball;
+        ctx.font = 'bold 18px monospace';
+        ctx.fillText('⚡ SMASHING ⚡', canvasSize.w / 2 - 70, 70);
+      }
     };
 
     const gameLoop = () => {
