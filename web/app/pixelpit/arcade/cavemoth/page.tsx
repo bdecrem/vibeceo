@@ -1123,7 +1123,7 @@ export default function CaveMothGame() {
         const scale = 1 + 0.8 * (1 - popT) * (1 - popT);
         const blink = 0.25 + 0.1 * Math.sin(age * 0.15);
         ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height * 0.3);
+        ctx.translate(canvas.width / 2, canvas.height * 0.58);
         ctx.scale(scale, scale);
         ctx.globalAlpha = blink;
         ctx.strokeStyle = '#ffffff';
