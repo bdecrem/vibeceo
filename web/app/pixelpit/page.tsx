@@ -98,7 +98,7 @@ const labItems = [
   { icon: '🔄', name: 'Flip', href: '/pixelpit/lab/flip', date: 'Tue 2/4' },
   { icon: '🧩', name: 'Pixel', href: '/pixelpit/lab/pixel', date: 'Tue 2/4' },
   { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/lab/bat-dash', date: 'Tue 2/4' },
-  { icon: '🐦', name: 'Flappy', href: '/pixelpit/arcade/flappy', date: 'bonus' },
+  { icon: '🐦', name: 'Flappy', href: '/pixelpit/lab/flappy', date: 'Tue 2/4' },
   { icon: '🎸', name: 'Pit Jam PJ01', href: '/pixelpit/lab#pit-jam-pj01', date: 'Mon 2/3' },
   { icon: '🧫', name: 'Swarm P16', href: '/pixelpit/swarm/p16/index.html', date: 'Fri 1/31' },
   { icon: '🚀', name: 'Swarm P9', href: '/pixelpit/swarm/p9/index.html', date: 'Thu 1/30' },
