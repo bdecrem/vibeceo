@@ -1031,6 +1031,74 @@ export function FlipDecorations() {
 }
 
 /**
+ * CAVE MOTH decorations: crystal cave walls, stalactites/stalagmites, moth silhouette.
+ * Amethyst + seafoam bioluminescent aesthetic.
+ */
+export function CaveMothDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Cave walls */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 100,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: '#2d1b4e',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 100,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: '#2d1b4e',
+        }}
+      />
+
+      {/* Ceiling stalactites (amethyst) */}
+      <div style={{ position: 'absolute', top: 103, left: 150, width: 8, height: 40, background: '#9b59b6' }} />
+      <div style={{ position: 'absolute', top: 103, left: 450, width: 10, height: 50, background: '#9b59b6' }} />
+      <div style={{ position: 'absolute', top: 103, right: 250, width: 8, height: 35, background: '#9b59b6' }} />
+
+      {/* Floor stalagmites (amethyst) */}
+      <div style={{ position: 'absolute', bottom: 103, left: 300, width: 8, height: 45, background: '#9b59b6' }} />
+      <div style={{ position: 'absolute', bottom: 103, right: 180, width: 10, height: 50, background: '#9b59b6' }} />
+
+      {/* Ambient sparkles */}
+      <div style={{ position: 'absolute', top: 180, left: 250, width: 4, height: 4, borderRadius: 2, background: '#c6f68d60' }} />
+      <div style={{ position: 'absolute', top: 320, left: 700, width: 3, height: 3, borderRadius: 2, background: '#c6f68d40' }} />
+
+      {/* Moth silhouette */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 240,
+          left: 200,
+          width: 12,
+          height: 18,
+          borderRadius: 6,
+          background: '#4ecdc440',
+          boxShadow: '0 0 20px #4ecdc440',
+        }}
+      />
+    </div>
+  );
+}
+
+/**
  * FLAPPY-specific decorations: pipes, clouds, bird silhouette.
  * Classic sky blue with green pipes.
  */

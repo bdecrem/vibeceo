@@ -173,4 +173,11 @@ export const GAME_COLORS = {
     accent: '#ffffff',           // danger white
     branding: '#71717a',         // muted gray
   },
+  cavemoth: {
+    background: '#0a0a1a',       // midnight blue-black cave
+    primary: '#4ecdc4',          // seafoam glow (moth)
+    secondary: '#c6f68d',        // phosphorescent green
+    accent: '#9b59b6',           // amethyst crystals
+    branding: '#8b7fa8',         // muted lavender
+  },
 };
