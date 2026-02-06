@@ -12,7 +12,7 @@ export default function PPTestPage() {
       fontFamily: 'monospace',
       fontSize: '2rem',
     }}>
-      /pp/ rewrite works
+      /pp/ rewrite works!
     </div>
   );
 }
