@@ -425,6 +425,14 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // /pp/* shorthand → /pixelpit/arcade/*
+    if (pathname.startsWith('/pp/')) {
+      const rest = pathname.slice('/pp'.length) // keeps leading slash
+      const newUrl = new URL(`/pixelpit/arcade${rest}`, request.url)
+      log(`[Middleware] Pixelpit /pp/ rewrite ${pathname} -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
     // Root → /pixelpit
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/pixelpit', request.url)
