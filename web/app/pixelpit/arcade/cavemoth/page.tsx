@@ -376,6 +376,7 @@ export default function CaveMothGame() {
     frameCount: 0,
     // Fingerprint tutorial: 0=show top prompt, 1=show bottom prompt, 2=done
     hintPhase: 0 as 0 | 1 | 2,
+    hintAge: 0,  // frames since current hint phase started
   });
 
   const startGame = useCallback(() => {
@@ -424,6 +425,7 @@ export default function CaveMothGame() {
     game.nearMissFlash = 0;
     game.frameCount = 0;
     game.hintPhase = 0;
+    game.hintAge = -20; // delay ~0.33s before first fingerprint pops in
 
     setMusicIntensity(1);
 
@@ -443,7 +445,10 @@ export default function CaveMothGame() {
       game.gravity *= -1;
       const goingUp = game.gravity < 0;
       // Advance fingerprint tutorial
-      if (game.hintPhase < 2) game.hintPhase = (game.hintPhase + 1) as 0 | 1 | 2;
+      if (game.hintPhase < 2) {
+        game.hintPhase = (game.hintPhase + 1) as 0 | 1 | 2;
+        game.hintAge = -10; // brief delay before next hint pops in
+      }
       // Wing flutter burst on flip
       game.player.scaleX = goingUp ? 0.7 : 1.3;
       game.player.scaleY = goingUp ? 1.3 : 0.7;
@@ -538,6 +543,7 @@ export default function CaveMothGame() {
       const game = gameRef.current;
 
       game.frameCount++;
+      if (game.hintPhase < 2) game.hintAge++;
 
       // Update death particles
       for (let i = game.particles.length - 1; i >= 0; i--) {
@@ -1104,12 +1110,19 @@ export default function CaveMothGame() {
       ctx.fillStyle = vig;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Fingerprint tutorial — static prompt before player taps
-      if (game.hintPhase < 2) {
+      // Fingerprint tutorial — pop in, blink to draw attention
+      if (game.hintPhase < 2 && game.hintAge > 0) {
+        const age = game.hintAge;
+        // Pop-in: scale from 1.8 → 1.0 over ~10 frames (ease-out)
+        const popT = Math.min(age / 10, 1);
+        const scale = 1 + 0.8 * (1 - popT) * (1 - popT);
+        // Blink: gentle pulse between 0.15 and 0.35 alpha
+        const blink = 0.25 + 0.1 * Math.sin(age * 0.15);
         const drawFingerprint = (fx: number, fy: number) => {
           ctx.save();
           ctx.translate(fx, fy);
-          ctx.globalAlpha = 0.25;
+          ctx.scale(scale, scale);
+          ctx.globalAlpha = blink;
           ctx.strokeStyle = '#ffffff';
           ctx.lineWidth = 1.5;
           // Thumb oval
