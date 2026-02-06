@@ -128,8 +128,11 @@ export default function Melt3Game() {
   const gameRef = useRef({
     running: false,
     holding: false, // HOLD = smash mode
+    ballX: 0,
     ballY: 80,
     ballVY: 0,
+    ballAngle: Math.PI / 2, // angle on current platform (if landed)
+    landedPlatform: null as Platform | null,
     cameraY: 0,
     platforms: [] as Platform[],
     particles: [] as Particle[],
@@ -208,8 +211,11 @@ export default function Melt3Game() {
     const game = gameRef.current;
     game.running = true;
     game.holding = false;
+    game.ballX = canvasSize.w / 2;
     game.ballY = 80;
     game.ballVY = 0;
+    game.ballAngle = Math.PI / 2;
+    game.landedPlatform = null;
     game.cameraY = 0;
     game.platforms = generatePlatforms(canvasSize.w);
     game.particles = [];
@@ -252,20 +258,33 @@ export default function Melt3Game() {
       const game = gameRef.current;
       if (!game.running) return;
 
-      // Physics - holding = fast drop (smash mode)
-      const gravity = game.holding ? 1.5 : 0.4;
-      game.ballVY += gravity;
-      game.ballVY = Math.min(game.ballVY, game.holding ? 25 : 8);
-      game.ballY += game.ballVY;
+      // Rotate platforms first
+      for (const platform of game.platforms) {
+        platform.rotation += platform.speed * 0.015;
+      }
+
+      // If landed on a platform, rotate with it
+      if (game.landedPlatform && !game.holding) {
+        game.ballAngle += game.landedPlatform.speed * 0.015;
+        // Update ball X position based on angle
+        const platformMidRadius = (PLATFORM_RADIUS + PLATFORM_INNER) / 2;
+        game.ballX = canvasSize.w / 2 + Math.cos(game.ballAngle) * platformMidRadius;
+        game.ballY = game.landedPlatform.y - 18/2 - BALL_RADIUS + Math.sin(game.ballAngle) * 5;
+      } else {
+        // Not landed - falling
+        game.landedPlatform = null;
+        game.ballX = canvasSize.w / 2; // Center when falling
+        
+        // Physics - holding = fast drop (smash mode)
+        const gravity = game.holding ? 1.5 : 0.4;
+        game.ballVY += gravity;
+        game.ballVY = Math.min(game.ballVY, game.holding ? 25 : 8);
+        game.ballY += game.ballVY;
+      }
 
       // Camera
       const targetCameraY = game.ballY - canvasSize.h / 3;
       game.cameraY += (targetCameraY - game.cameraY) * 0.12;
-
-      // Rotate platforms
-      for (const platform of game.platforms) {
-        platform.rotation += platform.speed * 0.015;
-      }
 
       // Collision
       const PLATFORM_THICKNESS = 18;
@@ -276,8 +295,8 @@ export default function Melt3Game() {
         if (ballBottom > platform.y - PLATFORM_THICKNESS/2 && 
             ballTop < platform.y + PLATFORM_THICKNESS/2) {
           
-          // Find which segment
-          const ballAngle = Math.PI / 2; // Ball drops straight down
+          // Find which segment based on ball's current angle
+          const checkAngle = game.landedPlatform ? game.ballAngle : Math.PI / 2;
           
           for (const seg of platform.segments) {
             if (seg.broken) continue;
@@ -286,7 +305,7 @@ export default function Melt3Game() {
             const segEnd = (seg.endAngle + platform.rotation) % (Math.PI * 2);
             
             let inSeg = false;
-            const normBall = ((ballAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+            const normBall = ((checkAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
             const normStart = ((segStart % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
             const normEnd = ((segEnd % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
             
@@ -300,6 +319,7 @@ export default function Melt3Game() {
               if (seg.type === 'gap') {
                 // Pass through gap
                 game.score += 10;
+                game.landedPlatform = null;
                 setScore(game.score);
               } else if (seg.type === 'breakable') {
                 if (game.holding) {
@@ -307,13 +327,14 @@ export default function Melt3Game() {
                   seg.broken = true;
                   game.score += 20 + game.combo * 5;
                   game.combo++;
+                  game.landedPlatform = null;
                   setScore(game.score);
                   playSmash();
                   
                   // Particles
                   for (let i = 0; i < 12; i++) {
                     game.particles.push({
-                      x: BALL_X + (Math.random() - 0.5) * 60,
+                      x: game.ballX + (Math.random() - 0.5) * 60,
                       y: platform.y,
                       vx: (Math.random() - 0.5) * 12,
                       vy: -Math.random() * 8,
@@ -322,10 +343,12 @@ export default function Melt3Game() {
                     });
                   }
                 } else {
-                  // Not holding = land on it
+                  // Not holding = land on it and rotate with it
                   game.ballY = platform.y - PLATFORM_THICKNESS/2 - BALL_RADIUS;
                   game.ballVY = 0;
-                  game.combo = 0; // Reset combo when landing
+                  game.ballAngle = checkAngle;
+                  game.landedPlatform = platform;
+                  game.combo = 0;
                 }
               } else {
                 // SOLID BLACK - instant death if smashing, land if not
@@ -339,7 +362,7 @@ export default function Melt3Game() {
                   // Red particles
                   for (let i = 0; i < 8; i++) {
                     game.particles.push({
-                      x: BALL_X + (Math.random() - 0.5) * 40,
+                      x: game.ballX + (Math.random() - 0.5) * 40,
                       y: platform.y,
                       vx: (Math.random() - 0.5) * 6,
                       vy: Math.random() * 3,
@@ -355,14 +378,18 @@ export default function Melt3Game() {
                     return;
                   }
                   
-                  // Don't bounce - just land and stop
+                  // Land and stop
                   game.ballY = platform.y - PLATFORM_THICKNESS/2 - BALL_RADIUS;
                   game.ballVY = 0;
-                  game.holding = false; // Force release
+                  game.ballAngle = checkAngle;
+                  game.landedPlatform = platform;
+                  game.holding = false;
                 } else {
-                  // Landing on solid = stop (safe if not smashing)
+                  // Landing on solid = stop and rotate with it
                   game.ballY = platform.y - PLATFORM_THICKNESS/2 - BALL_RADIUS;
                   game.ballVY = 0;
+                  game.ballAngle = checkAngle;
+                  game.landedPlatform = platform;
                   game.combo = 0;
                 }
               }
@@ -451,7 +478,7 @@ export default function Melt3Game() {
         ctx.globalAlpha = 0.4;
         for (let i = 1; i <= 4; i++) {
           ctx.beginPath();
-          ctx.arc(BALL_X, ballScreenY - i * 12, BALL_RADIUS * (1 - i * 0.15), 0, Math.PI * 2);
+          ctx.arc(game.ballX, ballScreenY - i * 12, BALL_RADIUS * (1 - i * 0.15), 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -461,7 +488,7 @@ export default function Melt3Game() {
       ctx.shadowColor = THEME.ballGlow;
       ctx.shadowBlur = game.holding ? 25 : 10;
       ctx.beginPath();
-      ctx.arc(BALL_X, ballScreenY, BALL_RADIUS, 0, Math.PI * 2);
+      ctx.arc(game.ballX, ballScreenY, BALL_RADIUS, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
 
