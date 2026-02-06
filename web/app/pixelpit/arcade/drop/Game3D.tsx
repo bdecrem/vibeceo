@@ -418,6 +418,16 @@ export default function Game3D({
   onGameOver: (score: number) => void;
   onScoreUpdate: (score: number, combo: number) => void;
 }) {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  if (!mounted) {
+    return <div style={{ position: 'absolute', inset: 0, background: '#87ceeb' }} />;
+  }
+  
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
       <Canvas

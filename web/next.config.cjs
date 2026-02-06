@@ -3,6 +3,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Transpile three.js and react-three packages to fix bundling issues
+  transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
   eslint: {
     // Global lint remains noisy; prebuild script handles targeted checks
     ignoreDuringBuilds: true,
