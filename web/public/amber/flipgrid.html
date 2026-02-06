@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLIPGRID — Light them all</title>
+    
+    <!-- OG Tags -->
+    <meta property="og:title" content="FLIPGRID — Light them all">
+    <meta property="og:description" content="Tap a tile to flip it and its neighbors. Light all tiles to win. But you only get limited moves.">
+    <meta property="og:image" content="https://intheamber.com/amber/flipgrid-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/flipgrid.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FLIPGRID — Light them all">
+    <meta name="twitter:description" content="Tap a tile to flip it and its neighbors. Light all tiles to win. But you only get limited moves.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/flipgrid-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 32px;
+            letter-spacing: 2px;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+        }
+
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.7;
+            text-align: center;
+            margin-top: -20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            font-size: 18px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.5;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            color: #FFD700;
+        }
+
+        .moves-warning {
+            color: #ff4444;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+
+        .tile {
+            aspect-ratio: 1;
+            background: #0D0D0D;
+            border: 2px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tile::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, #D4A574 0%, #FFD700 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .tile.lit::before {
+            opacity: 1;
+        }
+
+        .tile.lit {
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .tile:active {
+            transform: scale(0.95);
+        }
+
+        .tile.flash {
+            animation: flash 0.3s ease;
+        }
+
+        @keyframes flash {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #0D0D0D;
+            color: #D4A574;
+            border: 2px solid #D4A574;
+            padding: 12px 24px;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: #D4A574;
+            color: #000;
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button.primary {
+            background: #D4A574;
+            color: #000;
+        }
+
+        button.primary:hover {
+            background: #FFD700;
+            border-color: #FFD700;
+        }
+
+        .message {
+            font-size: 18px;
+            text-align: center;
+            min-height: 30px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .message.show {
+            opacity: 1;
+        }
+
+        .message.win {
+            color: #FFD700;
+            font-size: 24px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            animation: glow 1s ease-in-out infinite;
+        }
+
+        .message.lose {
+            color: #2D9596;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+            50% { text-shadow: 0 0 30px rgba(255, 215, 0, 0.8); }
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @media (max-width: 400px) {
+            h1 {
+                font-size: 24px;
+            }
+            
+            .stats {
+                font-size: 16px;
+            }
+            
+            .stat-value {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particles"></canvas>
+    
+    <div class="container">
+        <div>
+            <h1>FLIPGRID</h1>
+            <div class="subtitle">Light them all</div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="level">1</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Moves Left</div>
+                <div class="stat-value" id="moves">10</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Best Level</div>
+                <div class="stat-value" id="best">1</div>
+            </div>
+        </div>
+
+        <div class="grid" id="grid"></div>
+
+        <div class="message" id="message"></div>
+
+        <div class="controls">
+            <button id="newGame" class="primary">New Game</button>
+            <button id="resetLevel">Reset Level</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        const particles = [];
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4 - 2;
+                this.size = Math.random() * 4 + 2;
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.01;
+                this.color = color;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.1; // gravity
+                this.life -= this.decay;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function createParticleBurst(x, y, color, count = 12) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalAlpha = 1;
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                p.draw();
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animateParticles);
+        }
+
+        animateParticles();
+
+        // Audio
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playTone(freq, duration = 0.1) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSuccess() {
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                setTimeout(() => playTone(freq, 0.3), i * 100);
+            });
+        }
+
+        function playFail() {
+            playTone(200, 0.5);
+        }
+
+        // Game logic
+        const GRID_SIZE = 4;
+        let grid = [];
+        let level = 1;
+        let moves = 10;
+        let bestLevel = parseInt(localStorage.getItem('flipgrid_best') || '1');
+        let gameActive = true;
+
+        const gridEl = document.getElementById('grid');
+        const levelEl = document.getElementById('level');
+        const movesEl = document.getElementById('moves');
+        const bestEl = document.getElementById('best');
+        const messageEl = document.getElementById('message');
+
+        bestEl.textContent = bestLevel;
+
+        function initGrid() {
+            grid = Array(GRID_SIZE * GRID_SIZE).fill(false);
+            
+            // Generate solvable puzzle by applying random moves
+            const numRandomMoves = Math.min(3 + level, 8);
+            for (let i = 0; i < numRandomMoves; i++) {
+                const randomIdx = Math.floor(Math.random() * grid.length);
+                flipTile(randomIdx, true);
+            }
+        }
+
+        function renderGrid() {
+            gridEl.innerHTML = '';
+            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile' + (grid[i] ? ' lit' : '');
+                tile.dataset.index = i;
+                tile.addEventListener('click', () => handleTileClick(i));
+                gridEl.appendChild(tile);
+            }
+        }
+
+        function flipTile(index, silent = false) {
+            const row = Math.floor(index / GRID_SIZE);
+            const col = index % GRID_SIZE;
+
+            // Flip the tile itself
+            grid[index] = !grid[index];
+
+            // Flip neighbors (up, down, left, right)
+            if (row > 0) grid[index - GRID_SIZE] = !grid[index - GRID_SIZE];
+            if (row < GRID_SIZE - 1) grid[index + GRID_SIZE] = !grid[index + GRID_SIZE];
+            if (col > 0) grid[index - 1] = !grid[index - 1];
+            if (col < GRID_SIZE - 1) grid[index + 1] = !grid[index + 1];
+
+            if (!silent) {
+                playTone(400 + index * 20, 0.1);
+                
+                const tile = gridEl.children[index];
+                const rect = tile.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+                createParticleBurst(x, y, '#D4A574', 8);
+            }
+        }
+
+        function handleTileClick(index) {
+            if (!gameActive) return;
+
+            audioCtx.resume();
+
+            flipTile(index);
+            moves--;
+            movesEl.textContent = moves;
+
+            if (moves <= 3) {
+                movesEl.classList.add('moves-warning');
+            }
+
+            // Add flash animation
+            const tiles = Array.from(gridEl.children);
+            tiles[index].classList.add('flash');
+            setTimeout(() => tiles[index].classList.remove('flash'), 300);
+
+            renderGrid();
+            checkWin();
+            checkLose();
+        }
+
+        function checkWin() {
+            if (grid.every(t => t)) {
+                gameActive = false;
+                messageEl.textContent = '✓ ALL LIT! Next level...';
+                messageEl.className = 'message show win';
+                playSuccess();
+
+                if (level >= bestLevel) {
+                    bestLevel = level + 1;
+                    localStorage.setItem('flipgrid_best', bestLevel.toString());
+                    bestEl.textContent = bestLevel;
+                }
+
+                setTimeout(() => {
+                    level++;
+                    levelEl.textContent = level;
+                    moves = Math.max(10 - Math.floor(level / 3), 5); // Harder as you progress
+                    movesEl.textContent = moves;
+                    movesEl.classList.remove('moves-warning');
+                    messageEl.className = 'message';
+                    gameActive = true;
+                    initGrid();
+                    renderGrid();
+                }, 2000);
+            }
+        }
+
+        function checkLose() {
+            if (moves <= 0 && !grid.every(t => t)) {
+                gameActive = false;
+                messageEl.textContent = 'Out of moves. Try again.';
+                messageEl.className = 'message show lose';
+                playFail();
+            }
+        }
+
+        function newGame() {
+            level = 1;
+            moves = 10;
+            levelEl.textContent = level;
+            movesEl.textContent = moves;
+            movesEl.classList.remove('moves-warning');
+            messageEl.className = 'message';
+            gameActive = true;
+            initGrid();
+            renderGrid();
+        }
+
+        function resetLevel() {
+            moves = Math.max(10 - Math.floor(level / 3), 5);
+            movesEl.textContent = moves;
+            movesEl.classList.remove('moves-warning');
+            messageEl.className = 'message';
+            gameActive = true;
+            initGrid();
+            renderGrid();
+        }
+
+        document.getElementById('newGame').addEventListener('click', () => {
+            audioCtx.resume();
+            playTone(523.25, 0.1);
+            newGame();
+        });
+
+        document.getElementById('resetLevel').addEventListener('click', () => {
+            audioCtx.resume();
+            playTone(392, 0.1);
+            resetLevel();
+        });
+
+        // Initialize
+        initGrid();
+        renderGrid();
+    </script>
+</body>
+</html>
