@@ -6,7 +6,7 @@ export async function generateMetadata({
   params: { score: string };
 }): Promise<Metadata> {
   const layers = params.score;
-  const won = parseInt(layers) >= 50;
+  const won = parseInt(layers) >= 40;
 
   return {
     title: won ? 'Reached Hell - MELT' : `${layers} Layers - MELT`,

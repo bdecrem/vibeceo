@@ -7,7 +7,7 @@ export const contentType = 'image/png';
 
 export default async function Image({ params }: { params: { score: string } }) {
   const layers = params.score;
-  const won = parseInt(layers) >= 50;
+  const won = parseInt(layers) >= 40;
   const tagline = won ? 'REACHED HELL!' : 'CAN YOU BEAT ME?';
 
   return new ImageResponse(
