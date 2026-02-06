@@ -409,7 +409,8 @@ export default function CaveMothGame() {
     game.level = 1;
     game.lastLevelScore = 0;
     game.levelUpFlash = '';
-    game.spikes = [];
+    // Seed invisible dummy spike so first real pair spawns after ~1s grace period
+    game.spikes = [{ x: canvas.width - 120, top: true, height: 0 }];
     game.particles = [];
     game.trail = [];
     game.shake = 0;
