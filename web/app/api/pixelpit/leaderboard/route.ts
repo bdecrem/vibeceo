@@ -516,6 +516,7 @@ const GAME_MAX_SCORES: Record<string, number> = {
   cavemoth: 1000,
   'sprout-run': 2000,
   tapper: 35,
+  drop: 20,
   'tap-beats': 70000,
   pixel: 1,
   haunt: 5,
