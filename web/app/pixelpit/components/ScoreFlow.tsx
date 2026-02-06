@@ -58,6 +58,7 @@ export function ScoreFlow({ score, gameId, colors, xpDivisor, onRankReceived, on
 
   const fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
   const autoSubmitted = useRef(false);
+  const initialName = useRef(playerName);
 
   // Auto-submit for logged-in users
   useEffect(() => {
@@ -67,13 +68,13 @@ export function ScoreFlow({ score, gameId, colors, xpDivisor, onRankReceived, on
     }
   }, [user, submittedRank, submitAsUser]);
 
-  // Auto-submit for guests with a saved name
+  // Auto-submit for guests with a saved name (from localStorage only, not typed input)
   useEffect(() => {
-    if (!user && playerName.trim() && flowState === 'input' && !autoSubmitted.current && submittedRank === null) {
+    if (!user && initialName.current.trim() && flowState === 'input' && !autoSubmitted.current && submittedRank === null) {
       autoSubmitted.current = true;
       submitAsGuest();
     }
-  }, [user, playerName, flowState, submittedRank, submitAsGuest]);
+  }, [user, flowState, submittedRank, submitAsGuest]);
 
   // Already logged in user - auto-submitted, show result
   if (user) {

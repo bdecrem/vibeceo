@@ -271,17 +271,29 @@ async function updateStreakGroups(userId: number) {
     });
 
     if (allPlayed) {
-      const windowEnd = streakSavedAt
-        ? new Date(streakSavedAt.getTime() + 24 * 60 * 60 * 1000)
-        : null;
+      // Midnight Pacific is the day boundary
+      const toPacificDate = (d: Date) =>
+        d.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+
+      const todayPacific = toPacificDate(now);
+      const savedPacific = streakSavedAt ? toPacificDate(streakSavedAt) : null;
+
+      // Same Pacific day — streak already counted today, skip
+      if (savedPacific && todayPacific === savedPacific) continue;
 
       let newStreak: number;
-      if (!windowEnd || now <= windowEnd) {
-        // Continue streak
+      if (!savedPacific) {
+        // First completion
         newStreak = (group.streak || 0) + 1;
       } else {
-        // Window expired, restart
-        newStreak = 1;
+        // Window: must complete by end of next calendar day (Pacific)
+        const savedD = new Date(savedPacific + 'T12:00:00');
+        savedD.setDate(savedD.getDate() + 1);
+        const nextDayStr = savedD.toISOString().split('T')[0];
+
+        newStreak = todayPacific <= nextDayStr
+          ? (group.streak || 0) + 1
+          : 1;
       }
 
       await supabase
@@ -376,6 +388,8 @@ async function createMagicStreakPair(
   const code = await generateGroupCode();
   const name = `@${userA.handle} + @${userB.handle}`;
 
+  const now = new Date().toISOString();
+
   const { data: group, error: groupError } = await supabase
     .from("pixelpit_groups")
     .insert({
@@ -383,6 +397,8 @@ async function createMagicStreakPair(
       name,
       type: "streak",
       created_by: userAId,
+      streak: 1,
+      streak_saved_at: now,
     })
     .select()
     .single();
@@ -393,7 +409,6 @@ async function createMagicStreakPair(
   }
 
   // Add both users as members with current timestamp for last_play_at
-  const now = new Date().toISOString();
   await supabase.from("pixelpit_group_members").insert([
     { group_id: group.id, user_id: userAId, last_play_at: now },
     { group_id: group.id, user_id: userBId, last_play_at: now },

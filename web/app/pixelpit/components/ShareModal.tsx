@@ -43,9 +43,13 @@ export function ShareModal({
 
   // Build the share URL: /share/${score} path + ?ref= param
   const baseShareUrl = score !== undefined ? `${gameUrl}/share/${score}` : gameUrl;
-  const shareUrl = window.PixelpitSocial?.buildShareUrl
-    ? window.PixelpitSocial.buildShareUrl(baseShareUrl)
-    : baseShareUrl;
+  const [shareUrl, setShareUrl] = useState(baseShareUrl);
+
+  useEffect(() => {
+    if (window.PixelpitSocial?.buildShareUrl) {
+      setShareUrl(window.PixelpitSocial.buildShareUrl(baseShareUrl));
+    }
+  }, [baseShareUrl]);
 
   // Load groups on mount
   useEffect(() => {
@@ -71,11 +75,19 @@ export function ShareModal({
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (e) {
-      console.error('Failed to copy:', e);
+    } catch {
+      // Fallback for non-HTTPS contexts where clipboard API fails
+      const ta = document.createElement('textarea');
+      ta.value = shareUrl;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleShareGroup = (group: Group) => {

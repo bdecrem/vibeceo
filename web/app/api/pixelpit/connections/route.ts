@@ -85,6 +85,8 @@ async function createMagicStreakPair(
   const code = await generateGroupCode();
   const name = `@${userA.handle} + @${userB.handle}`;
 
+  const now = new Date().toISOString();
+
   const { data: group, error: groupError } = await supabase
     .from("pixelpit_groups")
     .insert({
@@ -92,6 +94,8 @@ async function createMagicStreakPair(
       name,
       type: "streak",
       created_by: userAId,
+      streak: 1,
+      streak_saved_at: now,
     })
     .select()
     .single();
@@ -102,7 +106,6 @@ async function createMagicStreakPair(
   }
 
   // Add both users as members
-  const now = new Date().toISOString();
   await supabase.from("pixelpit_group_members").insert([
     { group_id: group.id, user_id: userAId, last_play_at: now },
     { group_id: group.id, user_id: userBId, last_play_at: now },
