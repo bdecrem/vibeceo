@@ -3,12 +3,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
 const THEME = {
-  snowball: '#f0f9ff',
-  frost: '#bae6fd',
-  lava: '#f97316',
-  lavaGlow: '#fbbf24',
-  bg: '#0f172a',
-  text: '#fafafa',
+  snowball: '#e2e8f0',
+  frost: '#94a3b8',
+  gear: '#92400e', // rust/bronze
+  gearGlow: '#d97706',
+  bg: '#0c0a09', // almost black
+  bgAccent: '#1c1917', // dark brown
+  text: '#a8a29e',
+  danger: '#dc2626',
 };
 
 const GAME_ID = 'melt';
@@ -334,10 +336,21 @@ export default function MeltGame() {
     const draw = () => {
       const game = gameRef.current;
       
+      // Industrial dark background
       ctx.fillStyle = THEME.bg;
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
+      
+      // Subtle industrial lines
+      ctx.strokeStyle = THEME.bgAccent;
+      ctx.lineWidth = 1;
+      for (let y = 0; y < canvasSize.h; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvasSize.w, y);
+        ctx.stroke();
+      }
 
-      // Draw pizzas
+      // Draw gears
       for (const platform of game.platforms) {
         const screenY = platform.y - game.cameraY;
         if (screenY < -platform.radius - 50 || screenY > canvasSize.h + platform.radius + 50) continue;
@@ -347,10 +360,28 @@ export default function MeltGame() {
         const gapStart = currentGapAngle - platform.gapSize / 2;
         const gapEnd = currentGapAngle + platform.gapSize / 2;
         
-        ctx.fillStyle = THEME.lava;
-        ctx.shadowColor = THEME.lavaGlow;
-        ctx.shadowBlur = 20;
+        // Gear teeth
+        const numTeeth = Math.floor(platform.radius / 8);
+        const toothSize = 12;
+        ctx.fillStyle = THEME.gear;
+        ctx.shadowColor = THEME.gearGlow;
+        ctx.shadowBlur = 8;
         
+        for (let t = 0; t < numTeeth; t++) {
+          const angle = (t / numTeeth) * Math.PI * 2 + platform.rotation;
+          // Skip teeth in the gap
+          let angleDiff = Math.abs(angle - currentGapAngle);
+          if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
+          if (angleDiff < platform.gapSize / 2 + 0.1) continue;
+          
+          const tx = platformX + Math.cos(angle) * (platform.radius + toothSize/2);
+          const ty = screenY + Math.sin(angle) * (platform.radius + toothSize/2);
+          ctx.beginPath();
+          ctx.arc(tx, ty, toothSize/2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Main gear body
         ctx.beginPath();
         ctx.moveTo(platformX, screenY);
         ctx.arc(platformX, screenY, platform.radius, gapEnd, gapStart + Math.PI * 2);
@@ -358,6 +389,14 @@ export default function MeltGame() {
         ctx.closePath();
         ctx.fill();
         
+        // Center hub
+        ctx.fillStyle = THEME.bgAccent;
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(platformX, screenY, platform.radius * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = THEME.gear;
         ctx.shadowBlur = 0;
       }
 
@@ -402,12 +441,12 @@ export default function MeltGame() {
         ctx.stroke();
       }
 
-      // Skinny health bar at very top
-      const barHeight = 6;
-      const barPadding = 8;
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      // Skinny health bar at very top - industrial style
+      const barHeight = 4;
+      const barPadding = 0;
+      ctx.fillStyle = THEME.bgAccent;
       ctx.fillRect(barPadding, barPadding, canvasSize.w - barPadding * 2, barHeight);
-      ctx.fillStyle = THEME.frost;
+      ctx.fillStyle = game.health > 30 ? THEME.frost : THEME.danger;
       ctx.fillRect(barPadding, barPadding, (game.health / MAX_HEALTH) * (canvasSize.w - barPadding * 2), barHeight);
     };
 
@@ -462,34 +501,37 @@ export default function MeltGame() {
           padding: 20,
         }}>
           <h1 style={{ 
-            color: THEME.snowball, 
+            color: THEME.gear, 
             fontSize: 64, 
             marginBottom: 10,
-            textShadow: `0 0 40px ${THEME.frost}`,
+            textShadow: `0 0 40px ${THEME.gearGlow}`,
+            fontWeight: 900,
+            letterSpacing: '-2px',
           }}>
             MELT
           </h1>
           
-          <p style={{ color: THEME.frost, fontSize: 20, marginBottom: 20 }}>
-            You're a snowball.<br/>
-            <span style={{ color: THEME.lava }}>Reach hell. ↓</span>
+          <p style={{ color: THEME.text, fontSize: 18, marginBottom: 25, lineHeight: 1.5 }}>
+            Trapped in the machine.<br/>
+            <span style={{ color: THEME.gear }}>Fall through the gears. ↓</span>
           </p>
           
           <div style={{ 
-            background: 'rgba(0,0,0,0.4)', 
+            background: 'rgba(0,0,0,0.6)', 
             padding: 20, 
-            borderRadius: 12,
+            borderRadius: 4,
             marginBottom: 30,
             textAlign: 'left',
-            maxWidth: 280,
+            maxWidth: 260,
+            border: `1px solid ${THEME.bgAccent}`,
           }}>
-            <p style={{ color: THEME.text, fontSize: 16, marginBottom: 10 }}>
-              <strong>HOLD</strong> = Drop fast
+            <p style={{ color: THEME.text, fontSize: 15, marginBottom: 10 }}>
+              <strong style={{ color: THEME.frost }}>HOLD</strong> — drop fast
             </p>
-            <p style={{ color: THEME.text, fontSize: 16, marginBottom: 10 }}>
-              <strong>RELEASE</strong> = Float slow
+            <p style={{ color: THEME.text, fontSize: 15, marginBottom: 10 }}>
+              <strong style={{ color: THEME.frost }}>RELEASE</strong> — float slow
             </p>
-            <p style={{ color: THEME.lava, fontSize: 16 }}>
+            <p style={{ color: THEME.gear, fontSize: 15 }}>
               Wait for the gap. Slip through.
             </p>
           </div>
@@ -497,17 +539,19 @@ export default function MeltGame() {
           <button
             onClick={startGame}
             style={{
-              background: `linear-gradient(135deg, ${THEME.frost}, ${THEME.snowball})`,
-              color: THEME.bg,
+              background: THEME.gear,
+              color: '#fff',
               border: 'none',
               padding: '18px 60px',
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: 700,
               cursor: 'pointer',
-              borderRadius: 12,
+              borderRadius: 4,
+              textTransform: 'uppercase',
+              letterSpacing: '2px',
             }}
           >
-            DESCEND ↓
+            Enter
           </button>
         </div>
       )}
