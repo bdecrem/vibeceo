@@ -23,7 +23,7 @@ import {
   CodeInput,
 
   // Hooks
-  usePixelpitSocial,
+  usePixelpitSocial, getGuestName, saveGuestName,
   useScoreSubmit,
   useLeaderboard,
   useProfile,
@@ -43,8 +43,12 @@ import {
 
   // OG Image utilities
   createScoreShareImage,
-  CornerAccents,
-  PixelpitBranding,
+  BeamDecorations, CatchDecorations, CatTowerDecorations,
+  CaveMothDecorations, EmojiDecorations, FlappyDecorations,
+  FlipDecorations, RainDecorations, SingularityDecorations,
+  SproutRunDecorations, TapBeatsDecorations,
+  OG_SIZE,
+  CornerAccents, PixelpitBranding, GAME_COLORS,
 } from '@/app/pixelpit/components';
 ```
 
@@ -52,21 +56,21 @@ import {
 
 ## Feature Comparison
 
-| Feature | SUPERBEAM | BAT DASH | EMOJI BLASTER | CAT TOWER | BEAM |
-|---------|-----------|----------|---------------|-----------|------|
-| **GAME_ID** | `'superbeam'` | `'batdash'` | `'emoji'` | `'cat-tower'` | `'beam'` |
-| **Location** | `arcade/superbeam/` | `arcade/batdash/` | `arcade/emoji/` | `arcade/cattower/` | `arcade/beam/` |
-| **Groups** | Yes | Yes | No | No | No |
-| **ShareModal** | Yes | Yes | No | No | No |
-| **Group Leaderboard** | Yes | Yes | No | No | No |
-| **Group Code URL** | `?pg=CODE` | `?pg=CODE` | No | No | No |
-| **Logout URL** | `?logout` | `?logout` | No | No | No |
-| **XP System** | Yes | Yes | Yes | Yes | No |
-| **Streaks** | Yes | Yes | Yes | Yes | No |
-| **xpDivisor** | `1` | `1` | `1` | `1` | default (100) |
-| **Progression UI** | Yes | Yes | Yes | Yes (fixed top) | No |
+| Feature | SUPERBEAM | BAT DASH | TAPPER | EMOJI BLASTER | CAT TOWER | BEAM |
+|---------|-----------|----------|--------|---------------|-----------|------|
+| **GAME_ID** | `'superbeam'` | `'batdash'` | `'tapper'` | `'emoji'` | `'cat-tower'` | `'beam'` |
+| **Location** | `arcade/superbeam/` | `arcade/batdash/` | `arcade/tapper/` | `arcade/emoji/` | `arcade/cattower/` | `arcade/beam/` |
+| **Groups** | Yes | Yes | Yes | No | No | No |
+| **ShareModal** | Yes | Yes | Yes | No | No | No |
+| **Group Leaderboard** | Yes | Yes | Yes | No | No | No |
+| **Group Code URL** | `?pg=CODE` | `?pg=CODE` | `?pg=CODE` | No | No | No |
+| **Logout URL** | `?logout` | `?logout` | `?logout` | No | No | No |
+| **XP System** | Yes | Yes | Yes | Yes | Yes | No |
+| **Streaks** | Yes | Yes | Yes | Yes | Yes | No |
+| **maxScore** | per-game | per-game | per-game | per-game | per-game | `50` (default) |
+| **Progression UI** | Yes | Yes | Yes | Yes | Yes (fixed top) | No |
 
-**SUPERBEAM and BAT DASH are the reference implementations** for full social integration. New games should follow their pattern.
+**SUPERBEAM, BAT DASH, and TAPPER are the reference implementations** for full social integration. New games should follow their pattern.
 
 ---
 
@@ -128,7 +132,7 @@ useEffect(() => {
   score={score}
   gameId={GAME_ID}
   colors={SCORE_FLOW_COLORS}
-  xpDivisor={1}
+  maxScore={20}  // Game's "great score" benchmark — awards 10-50 XP normalized
   onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
   onProgression={(prog) => setProgression(prog)}
 />
@@ -198,12 +202,6 @@ Older pattern without groups. **Do not use for new games** — upgrade to the fu
 <ShareButtonContainer ... />  // Same button for all users
 <Leaderboard ... />           // No groupsEnabled, no gameUrl
 ```
-
----
-
-### 3. Smart Progressive Disclosure (CAT TOWER)
-
-Most sophisticated UX. Only prompts for name after engagement.
 
 ---
 
@@ -281,6 +279,96 @@ if (user || savedGuestName) {
 
 ---
 
+## ShareModal (Deep Dive)
+
+The `ShareModal` is a full-screen overlay for logged-in users. It provides two features in one panel: a personal share link with copy-to-clipboard, and group management (view groups, share to groups, create new groups).
+
+### What It Shows
+
+1. **YOUR LINK** — A share URL built from `gameUrl/share/${score}` with `?ref=<userId>` appended (for magic streaks). Copy button with clipboard fallback.
+2. **YOUR GROUPS** — Loads the user's groups via `PixelpitSocial.getGroups()`. Each group row shows name, type badge, streak count (if streak group), and a "Share" button.
+3. **+ Create New Group** — Opens `CreateGroupForm` inline (replaces modal content).
+
+### Props
+
+```typescript
+interface ShareModalProps {
+  gameUrl: string;         // e.g. "https://pixelpit.gg/pixelpit/arcade/superbeam"
+  score?: number;          // Current score (used in share URL and challenge text)
+  colors: LeaderboardColors;
+  onClose: () => void;
+  onGroupShare?: (group: Group) => void;  // Called after sharing to a group
+}
+```
+
+### How Group Sharing Works
+
+When a user taps "Share" on a group row:
+1. Builds URL: `gameUrl/share/${score}?pg=${group.code}&ref=${userId}`
+2. Composes challenge text: `"@handle wants you to beat their score of X! Play GroupName: <url>"`
+3. Tries `navigator.share()` (native share sheet on mobile), falls back to clipboard copy + toast
+
+### How CreateGroupForm Works
+
+Rendered inside ShareModal when user taps "+ Create New Group":
+1. User picks type: **STREAK (2ppl)** or **LEADERBOARD**
+2. Enters group name (max 50 chars)
+3. Optionally enters phone numbers for SMS invite
+4. Calls `PixelpitSocial.createGroup(name, type, { phones, gameUrl, score })`
+5. On success: reloads groups list, opens SMS link if provided, shows toast "+10 XP"
+
+### Integration Pattern
+
+Games render ShareModal at the component root (outside game-over div) so it overlays everything:
+
+```tsx
+// State
+const [showShareModal, setShowShareModal] = useState(false);
+
+// In game-over screen — show "share / groups" for logged-in users
+{user ? (
+  <button onClick={() => setShowShareModal(true)}>share / groups</button>
+) : (
+  <ShareButtonContainer ... />  // Anonymous users get basic share
+)}
+
+// At component root — the modal itself
+{showShareModal && user && (
+  <ShareModal
+    gameUrl={GAME_URL}
+    score={score}
+    colors={LEADERBOARD_COLORS}
+    onClose={() => setShowShareModal(false)}
+  />
+)}
+```
+
+**Reset `showShareModal` to `false` in your `startGame`/restart function** so the modal doesn't persist across plays.
+
+---
+
+## Magic Streaks (Referral System)
+
+When a logged-in user shares a link, it includes `?ref=<userId>`. When another logged-in user plays via that link, a **magic streak pair** is automatically created — a 2-person streak group that tracks daily play streaks between the two users.
+
+### How It Works
+
+1. **Share URL built**: `PixelpitSocial.buildShareUrl(url)` appends `?ref=<userId>`
+2. **Recipient plays**: `social.js` reads `?ref=` from URL, stores in `sessionStorage`, sends `refUserId` with score submission
+3. **Server creates pair**: Leaderboard POST handler calls `createMagicStreakPair(userId, refUserId)` — creates a streak group named `@handle1 + @handle2` with initial streak of 1
+4. **Deduplication**: Only one streak group per user pair. If they already share a streak group, no duplicate is created.
+5. **For new users**: `?ref=` is stored in `sessionStorage` and recorded on register/login via `recordConnection()`
+
+### URL Parameters
+
+| Param | Purpose | Stored In |
+|-------|---------|-----------|
+| `?ref=123` | Referrer user ID for magic streaks | `sessionStorage` (`pixelpit_ref_user`) |
+| `?pg=abcd` | Group code for auto-join | `sessionStorage` (`pixelpit_group_code`) |
+| `?logout` | Log out and reload | N/A |
+
+---
+
 ## ProgressionResult Type
 
 ```typescript
@@ -346,11 +434,26 @@ if (score >= 1) {
 
 Each game has dedicated share routes with OG images:
 
-| Game | Share URL Pattern | OG Image |
-|------|-------------------|----------|
-| BEAM | `/pixelpit/arcade/beam/share/[score]` | `share/[score]/opengraph-image.tsx` |
-| EMOJI | `/pixelpit/arcade/emoji/share/[score]` | `share/[score]/opengraph-image.tsx` |
-| CAT TOWER | `/pixelpit/arcade/cattower/share/[score]` | `share/[score]/opengraph-image.tsx` |
+| Game | Share URL Pattern |
+|------|-------------------|
+| BAT DASH | `/pixelpit/arcade/batdash/share/[score]` |
+| BEAM | `/pixelpit/arcade/beam/share/[score]` |
+| CATCH | `/pixelpit/arcade/catch/share/[score]` |
+| CAT TOWER | `/pixelpit/arcade/cattower/share/[score]` |
+| CAVE MOTH | `/pixelpit/arcade/cavemoth/share/[score]` |
+| EMOJI | `/pixelpit/arcade/emoji/share/[score]` |
+| FLAPPY | `/pixelpit/arcade/flappy/share/[score]` |
+| FLIP | `/pixelpit/arcade/flip/share/[score]` |
+| HAUNT | `/pixelpit/arcade/haunt/share/[score]` |
+| PIXEL | `/pixelpit/arcade/pixel/share/[score]` |
+| RAIN | `/pixelpit/arcade/rain/share/[score]` |
+| SINGULARITY | `/pixelpit/arcade/singularity/share/[score]` |
+| SPROUT RUN | `/pixelpit/arcade/sprout-run/share/[score]` |
+| SURGE | `/pixelpit/arcade/surge/share/[score]` |
+| TAP BEATS | `/pixelpit/arcade/tap-beats/share/[score]` |
+| TAPPER | `/pixelpit/arcade/tapper/share/[score]` |
+
+All follow the same route structure: `share/[score]/layout.tsx`, `share/[score]/page.tsx`, `share/[score]/opengraph-image.tsx`.
 
 ---
 
@@ -358,14 +461,17 @@ Each game has dedicated share routes with OG images:
 
 ### For New Games
 
-1. **Start simple** — Use BEAM as template for MVP
-2. **Add XP early** — Set `xpDivisor={1}` to earn XP from day one
+1. **Start with full integration** — Use TAPPER as template (simplest game with full social: groups, ShareModal, streaks, XP)
+2. **Add XP early** — Set `maxScore` to your game's "great score" benchmark
 3. **Consider progressive disclosure** — CAT TOWER's approach reduces friction
 
-### XP Divisor
+### maxScore (XP Normalization)
 
-- `xpDivisor={100}` (default) — High score games (score 10000 = 100 XP)
-- `xpDivisor={1}` — Low score games (score 15 = 15 XP)
+Every game awards 10-50 XP per play regardless of scoring system:
+- `maxScore` = the game's "great score" (roughly p90)
+- Formula: `base = clamp(floor(score / maxScore * 50), 10, 50)`
+- Floor: 10 XP (just for playing), Ceiling: 50 XP (hit the benchmark)
+- Streak multipliers apply on top: 1x / 1.5x (3d) / 2x (7d) / 2.5x (14d)
 
 ### Checklist for New Game
 
@@ -374,7 +480,7 @@ Each game has dedicated share routes with OG images:
 - [ ] Load `social.js` via Script component
 - [ ] Add `usePixelpitSocial(socialLoaded)` hook
 - [ ] Define `GAME_URL` constant
-- [ ] Add `ScoreFlow` with `xpDivisor={1}` and `onProgression`
+- [ ] Add `ScoreFlow` with `maxScore={N}` (set to game's p90 "great score") and `onProgression`
 - [ ] Add `ProgressionDisplay` for XP/level/streak
 - [ ] Define color schemes (`ScoreFlowColors`, `LeaderboardColors`)
 
@@ -502,13 +608,19 @@ export default async function Image({ params }: { params: { score: string } }) {
 
 ### Available Decorations
 
-| Component | Game | Description |
-|-----------|------|-------------|
-| `BeamDecorations` | BEAM | Grid lines, horizontal walls with gaps |
-| `EmojiDecorations` | Emoji Blaster | Floating circles, emoji characters |
-| `CatTowerDecorations` | Cat Tower | Stacked cat boxes, cat faces |
-| `RainDecorations` | Rain | Falling drops, ambient glow |
-| `SingularityDecorations` | Singularity | Grid, particles, paddle |
+| Component | Game |
+|-----------|------|
+| `BeamDecorations` | BEAM |
+| `CatchDecorations` | CATCH |
+| `CatTowerDecorations` | CAT TOWER |
+| `CaveMothDecorations` | CAVE MOTH |
+| `EmojiDecorations` | EMOJI BLASTER |
+| `FlappyDecorations` | FLAPPY |
+| `FlipDecorations` | FLIP |
+| `RainDecorations` | RAIN |
+| `SingularityDecorations` | SINGULARITY |
+| `SproutRunDecorations` | SPROUT RUN |
+| `TapBeatsDecorations` | TAP BEATS |
 
 ### GAME_COLORS
 
@@ -728,12 +840,47 @@ See the BAT DASH commit (`6247a1d8`) for a clean diff of exactly these changes a
 
 ---
 
+## social.js Public API
+
+The vanilla JS library (`/pixelpit/social.js`) exposes `window.PixelpitSocial` with these methods:
+
+| Category | Method | Description |
+|----------|--------|-------------|
+| **State** | `getUser()` | Get logged-in user from localStorage |
+| **Auth** | `checkHandle(handle)` | Check if handle is taken |
+| | `register(handle, code)` | Create account (auto-joins pending group, records ref) |
+| | `login(handle, code)` | Login (auto-joins pending group, records ref) |
+| | `logout()` | Clear localStorage + server session |
+| | `checkSession()` | Hydrate localStorage from server cookie |
+| **Scores** | `submitScore(gameId, score, opts?)` | Submit score (opts: `nickname`, `maxScore`, `groupCode`) |
+| | `getLeaderboard(gameId, limit?, opts?)` | Fetch leaderboard (opts: `entryId`) |
+| **Profile** | `getProfile(userId)` | Fetch XP/level/streak data |
+| **Groups** | `getGroups()` | Get current user's groups |
+| | `createGroup(name, type, opts?)` | Create group (opts: `phones`, `gameUrl`, `score`) |
+| | `joinGroup(code)` | Join group by 4-char code |
+| | `getGroupLeaderboard(gameId, groupCode, limit?)` | Leaderboard filtered to group |
+| | `getSmsInviteLink(phones, groupCode, gameUrl, score?)` | Build `sms:` link for invites |
+| | `getGroupCodeFromUrl()` | Read `?pg=` from URL |
+| | `storeGroupCode(code)` / `getStoredGroupCode()` / `clearStoredGroupCode()` | sessionStorage helpers |
+| **Referrals** | `getRefFromUrl()` | Read `?ref=` from URL (auto-stores) |
+| | `buildShareUrl(url)` | Append `?ref=<userId>` to URL |
+| **Creations** | `saveCreation(gameId, contentType, contentData, opts?)` | Save music/drawing/etc. |
+| | `getCreation(slug)` | Fetch creation by slug |
+| **Share** | `share(url, text)` | Native share → clipboard fallback |
+| | `shareGame(gameId, text?)` | Share a game URL |
+| **UI** | `ShareButton(containerId, opts)` | Mount share button in DOM |
+| | `showToast(message, duration?)` | Toast notification |
+| | `formatLeaderboardEntry(entry)` | Format `@handle` / score |
+| | `renderLeaderboard(container, data, opts?)` | Render leaderboard into DOM |
+
+---
+
 ## API Endpoints
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/pixelpit/auth` | GET/POST | Session check (GET), login/register/logout/check handle (POST) |
-| `/api/pixelpit/leaderboard` | GET/POST | Fetch leaderboard (GET, supports `groupCode` filter), submit scores (POST) |
+| `/api/pixelpit/leaderboard` | GET/POST/PATCH | Fetch leaderboard (GET, supports `groupCode` filter), submit scores (POST, supports `refUserId` for magic streaks, `groupCode` for auto-join), link guest entry to user (PATCH) |
 | `/api/pixelpit/groups` | GET/POST | Fetch user's groups (GET), create group (POST) |
 | `/api/pixelpit/groups/join` | POST | Join a group by code |
 | `/api/pixelpit/connections` | POST | Record magic streak connection (referral) |
@@ -763,3 +910,4 @@ See the BAT DASH commit (`6247a1d8`) for a clean diff of exactly these changes a
 - `web/app/pixelpit/components/og/README.md` — OG image creation guide
 - `web/app/pixelpit/arcade/superbeam/page.tsx` — Reference implementation (full social)
 - `web/app/pixelpit/arcade/batdash/page.tsx` — Reference implementation (full social)
+- `web/app/pixelpit/arcade/tapper/page.tsx` — Reference implementation (simplest full social)
