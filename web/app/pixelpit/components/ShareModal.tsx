@@ -120,40 +120,46 @@ export function ShareModal({
     if (!window.PixelpitSocial?.createQuickGroup) return;
     setCreating(true);
 
-    // Build the async content promise
-    const contentPromise = window.PixelpitSocial.createQuickGroup({ gameUrl, score }).then((result) => {
-      if (result.success && result.group) {
-        window.PixelpitSocial?.showToast?.(`${result.group.name} created! Link copied +10 XP`);
-        // Reload groups in background
-        window.PixelpitSocial?.getGroups().then((updated) => {
-          setGroups((updated.groups || []).filter((g) => g.type === 'leaderboard'));
-        });
-        setCreating(false);
-        return `${gameUrl}?pg=${result.group.code}`;
-      }
-      window.PixelpitSocial?.showToast?.(result.error || 'Failed to create group');
-      setCreating(false);
-      throw new Error('create failed');
-    }).catch(() => {
-      window.PixelpitSocial?.showToast?.('Failed to create group');
-      setCreating(false);
-      throw new Error('create failed');
-    });
+    // Start API call — single promise, two independent consumers
+    const apiPromise = window.PixelpitSocial.createQuickGroup({ gameUrl, score });
 
-    // Write to clipboard synchronously during user gesture — content resolves later
+    // 1) Clipboard: register synchronously during user gesture (Safari requirement)
+    //    Uses ClipboardItem with a Promise-valued blob so the write is initiated
+    //    in the gesture but content resolves after the fetch returns.
     try {
       navigator.clipboard.write([
         new ClipboardItem({
-          'text/plain': contentPromise.then((text) => new Blob([text], { type: 'text/plain' })),
+          'text/plain': apiPromise.then((r) =>
+            r.success && r.group
+              ? new Blob([`${gameUrl}?pg=${r.group.code}`], { type: 'text/plain' })
+              : Promise.reject()
+          ),
         }),
-      ]).catch(() => {
-        // Fallback: try writeText after promise resolves
-        contentPromise.then((text) => navigator.clipboard.writeText(text)).catch(() => {});
-      });
+      ]).catch(() => {});
     } catch {
-      // ClipboardItem not supported — fallback after await
-      contentPromise.then((text) => navigator.clipboard.writeText(text)).catch(() => {});
+      // ClipboardItem with Promise not supported — will try fallback below
+      apiPromise.then((r) => {
+        if (r.success && r.group) {
+          navigator.clipboard.writeText(`${gameUrl}?pg=${r.group.code}`).catch(() => {});
+        }
+      });
     }
+
+    // 2) UI: toast + group reload — completely independent of clipboard
+    apiPromise.then((result) => {
+      if (result.success && result.group) {
+        window.PixelpitSocial?.showToast?.(`${result.group.name} created! Link copied +10 XP`);
+        window.PixelpitSocial?.getGroups().then((updated) => {
+          setGroups((updated.groups || []).filter((g) => g.type === 'leaderboard'));
+        });
+      } else {
+        window.PixelpitSocial?.showToast?.(result.error || 'Failed to create group');
+      }
+    }).catch(() => {
+      window.PixelpitSocial?.showToast?.('Failed to create group');
+    }).finally(() => {
+      setCreating(false);
+    });
   };
 
   return (
