@@ -241,21 +241,22 @@ export default function MeltGame() {
         const platform = game.platforms[game.stuckTo];
         const platformX = canvasSize.w / 2 + platform.x;
         
-        // Rotate with the platform
-        game.stuckAngle += platform.speed * 0.015;
+        // Ball is FULLY GLUED to the wheel
+        // stuckAngle is relative to platform - worldAngle = stuckAngle + platform.rotation
+        const worldAngle = game.stuckAngle + platform.rotation;
         
-        // Position ball on the platform's edge at stuck angle
-        const stickRadius = platform.radius * 0.7;
-        game.ballX = platformX + Math.cos(game.stuckAngle) * stickRadius;
-        game.ballY = platform.y + Math.sin(game.stuckAngle) * stickRadius;
+        // Position ball ON the platform's edge (fully locked)
+        const stickRadius = platform.radius - game.ballSize * 0.5;
+        game.ballX = platformX + Math.cos(worldAngle) * stickRadius;
+        game.ballY = platform.y + Math.sin(worldAngle) * stickRadius;
         game.ballVY = 0;
         
-        // Check if gap has rotated under us
-        const currentGapAngle = (platform.gapAngle + platform.rotation) % (Math.PI * 2);
-        let stuckNormalized = game.stuckAngle % (Math.PI * 2);
-        if (stuckNormalized < 0) stuckNormalized += Math.PI * 2;
+        // Check if gap has rotated to our position
+        const currentGapAngle = platform.gapAngle + platform.rotation;
         
-        let diff = Math.abs(stuckNormalized - currentGapAngle);
+        let diff = Math.abs(worldAngle - currentGapAngle);
+        // Normalize to [0, 2PI]
+        diff = diff % (Math.PI * 2);
         if (diff > Math.PI) diff = Math.PI * 2 - diff;
         
         const overGap = diff < platform.gapSize / 2;
@@ -263,7 +264,7 @@ export default function MeltGame() {
         // If holding OR over gap, unstick and fall
         if (game.holding || overGap) {
           game.stuckTo = null;
-          game.ballVY = game.holding ? 5 : 2; // Fast fall if holding, slow drop if gap
+          game.ballVY = game.holding ? 5 : 2;
           if (overGap && !platform.passed) {
             platform.passed = true;
             game.layersPassed++;
@@ -280,9 +281,16 @@ export default function MeltGame() {
         game.ballVY = Math.min(game.ballVY, game.holding ? 16 : 3);
         game.ballY += game.ballVY;
 
-        // Collision with platforms
+        // Collision with platforms — ONLY VISIBLE ONES
         for (let i = 0; i < game.platforms.length; i++) {
           const platform = game.platforms[i];
+          const screenY = platform.y - game.cameraY;
+          
+          // Skip platforms that aren't visible on screen
+          if (screenY < -platform.radius - 50 || screenY > canvasSize.h + platform.radius + 50) {
+            continue;
+          }
+          
           const ballBottom = game.ballY + game.ballSize;
           const ballTop = game.ballY - game.ballSize;
           const platformX = canvasSize.w / 2 + platform.x;
@@ -297,10 +305,12 @@ export default function MeltGame() {
             
             // Only collide if ball is within platform radius
             if (distFromCenter < platform.radius) {
-              // Check if in gap
+              // Check if in gap — ball falls from TOP so check -PI/2 angle
               const currentGapAngle = (platform.gapAngle + platform.rotation) % (Math.PI * 2);
               
-              let diff = Math.abs(Math.PI / 2 - currentGapAngle); // Ball drops from top (PI/2 = top)
+              // -PI/2 is "top" in canvas coords (Y down), normalize to positive
+              const topAngle = ((-Math.PI / 2) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+              let diff = Math.abs(topAngle - currentGapAngle);
               if (diff > Math.PI) diff = Math.PI * 2 - diff;
               
               const inGap = diff < platform.gapSize / 2;
@@ -345,8 +355,8 @@ export default function MeltGame() {
                 } else {
                   // Not holding = stick to platform and ride
                   game.stuckTo = i;
-                  game.stuckAngle = Math.PI / 2; // Start at top of platform
-                  game.ballY = platform.y;
+                  // stuckAngle is relative to platform rotation — start at TOP (-PI/2)
+                  game.stuckAngle = -Math.PI / 2 - platform.rotation;
                   game.ballVY = 0;
                 }
               }
