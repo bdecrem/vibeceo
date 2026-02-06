@@ -775,8 +775,8 @@ export async function POST(request: NextRequest) {
       // Update streak groups
       await updateStreakGroups(userId);
 
-      // Fire-and-forget: notify other streak group members via SMS
-      notifyStreakGroupMembers(userId, game).catch(err => console.error("[pixelpit/notify] Unhandled:", err));
+      // Notify other streak group members via SMS (must await on serverless)
+      await notifyStreakGroupMembers(userId, game);
     }
 
     return NextResponse.json({ success: true, entry: data, rank, progression, joinedGroup, magicPair });
