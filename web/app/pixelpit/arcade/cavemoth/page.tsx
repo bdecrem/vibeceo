@@ -446,11 +446,8 @@ export default function CaveMothGame() {
     } else if (gameState === 'playing' && game.running) {
       game.gravity *= -1;
       const goingUp = game.gravity < 0;
-      // Advance fingerprint tutorial
-      if (game.hintPhase < 2) {
-        game.hintPhase = (game.hintPhase + 1) as 0 | 1 | 2;
-        game.hintAge = -10; // brief delay before next hint pops in
-      }
+      // Dismiss fingerprint hint on first tap
+      if (game.hintPhase === 0) game.hintPhase = 2;
       // Wing flutter burst on flip
       game.player.scaleX = goingUp ? 0.7 : 1.3;
       game.player.scaleY = goingUp ? 1.3 : 0.7;
@@ -1119,42 +1116,28 @@ export default function CaveMothGame() {
       ctx.fillStyle = vig;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Fingerprint tutorial — pop in, blink to draw attention
-      if (game.hintPhase < 2 && game.hintAge > 0) {
+      // Fingerprint hint — pop in, blink to draw attention (top half only)
+      if (game.hintPhase === 0 && game.hintAge > 0) {
         const age = game.hintAge;
-        // Pop-in: scale from 1.8 → 1.0 over ~10 frames (ease-out)
         const popT = Math.min(age / 10, 1);
         const scale = 1 + 0.8 * (1 - popT) * (1 - popT);
-        // Blink: gentle pulse between 0.15 and 0.35 alpha
         const blink = 0.25 + 0.1 * Math.sin(age * 0.15);
-        const drawFingerprint = (fx: number, fy: number) => {
-          ctx.save();
-          ctx.translate(fx, fy);
-          ctx.scale(scale, scale);
-          ctx.globalAlpha = blink;
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1.5;
-          // Thumb oval
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height * 0.3);
+        ctx.scale(scale, scale);
+        ctx.globalAlpha = blink;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 18, 26, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        const ridges = [5, 9, 13, 17];
+        for (let i = 0; i < ridges.length; i++) {
           ctx.beginPath();
-          ctx.ellipse(0, 0, 18, 26, 0, 0, Math.PI * 2);
+          ctx.arc(0, i * 0.7 - 1, ridges[i], -Math.PI * 0.75, Math.PI * 0.75);
           ctx.stroke();
-          // Fingerprint ridges inside
-          const ridges = [5, 9, 13, 17];
-          for (let i = 0; i < ridges.length; i++) {
-            const r = ridges[i];
-            const dy = i * 0.7 - 1;
-            ctx.beginPath();
-            ctx.arc(0, dy, r, -Math.PI * 0.75, Math.PI * 0.75);
-            ctx.stroke();
-          }
-          ctx.restore();
-        };
-        const cx = canvas.width / 2;
-        if (game.hintPhase === 0) {
-          drawFingerprint(cx, canvas.height * 0.3);
-        } else {
-          drawFingerprint(cx, canvas.height * 0.7);
         }
+        ctx.restore();
       }
 
       // 3-2-1 countdown
