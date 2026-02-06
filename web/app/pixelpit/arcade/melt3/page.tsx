@@ -2,22 +2,23 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
-// Stack Ball style - hold to smash, release to survive
 const THEME = {
-  ball: '#f97316', // orange ball
+  ball: '#f97316',
   ballGlow: '#fbbf24',
-  breakable: '#4ade80', // bright green - smashable
-  breakableAlt: '#60a5fa', // bright blue - smashable  
-  solid: '#000000', // pure black - DANGER
-  solidGlow: '#ef4444', // red glow on black = danger
+  breakable: '#4ade80',
+  breakableAlt: '#60a5fa',
+  solid: '#000000',
+  solidGlow: '#ef4444',
   bg: '#1e293b',
+  hub: '#334155',
   text: '#fafafa',
   danger: '#ef4444',
 };
 
 const GAME_ID = 'melt3';
-const NUM_PLATFORMS = 40;
-const MAX_HEALTH = 3; // 3 hits and you're dead
+const NUM_PIZZAS = 40;
+const MAX_HEALTH = 3;
+const BALL_RADIUS = 20;
 
 // Audio
 let audioCtx: AudioContext | null = null;
@@ -96,8 +97,11 @@ function playDeath() {
   osc.stop(audioCtx.currentTime + 0.8);
 }
 
-interface Platform {
+interface Pizza {
+  x: number;
   y: number;
+  radius: number;
+  innerRadius: number;
   segments: Array<{
     startAngle: number;
     endAngle: number;
@@ -127,83 +131,100 @@ export default function Melt3Game() {
 
   const gameRef = useRef({
     running: false,
-    holding: false, // HOLD = smash mode
+    holding: false,
     ballX: 0,
     ballY: 80,
     ballVY: 0,
-    ballAngle: Math.PI / 2, // angle on current platform (if landed)
-    landedPlatform: null as Platform | null,
+    ballLocalAngle: 0, // angle on the pizza in LOCAL space (center of landed slice)
+    landedPizza: null as Pizza | null,
+    skipPizza: null as Pizza | null,
     cameraY: 0,
-    platforms: [] as Platform[],
+    pizzas: [] as Pizza[],
     particles: [] as Particle[],
     score: 0,
     lives: MAX_HEALTH,
     combo: 0,
   });
 
-  const generatePlatforms = useCallback((canvasW: number) => {
-    const platforms: Platform[] = [];
+  const generatePizzas = useCallback((canvasW: number) => {
+    const pizzas: Pizza[] = [];
     let currentY = 250;
-    
-    for (let i = 0; i < NUM_PLATFORMS; i++) {
-      const progress = i / NUM_PLATFORMS;
-      
-      // Spacing gets tighter
-      const gap = 100 - progress * 30;
-      currentY += gap;
-      
-      // Generate segments
-      const numSegments = 8;
-      const segments: Platform['segments'] = [];
+    const centerX = canvasW / 2;
+    let wanderX = centerX;
+
+    const minRadius = Math.max(50, canvasW * 0.13);
+    const maxRadius = Math.min(170, canvasW * 0.44);
+
+    for (let i = 0; i < NUM_PIZZAS; i++) {
+      const progress = i / NUM_PIZZAS;
+
+      const sizeBias = 1 - progress * 0.35;
+      const radius = minRadius + Math.random() * (maxRadius - minRadius) * sizeBias;
+      const innerRadius = Math.max(12, radius * 0.17);
+
+      const prevPizza = pizzas[i - 1];
+      const prevR = prevPizza ? prevPizza.radius : 0;
+      const verticalSpacing = Math.max(55, (radius + prevR) * 0.48);
+      currentY += verticalSpacing;
+
+      // First pizza near center so ball can reach it
+      if (i < 2) {
+        wanderX += (Math.random() - 0.5) * 40;
+      } else {
+        wanderX += (Math.random() - 0.5) * canvasW * 0.55;
+      }
+      wanderX = Math.max(radius * 0.35, Math.min(canvasW - radius * 0.35, wanderX));
+
+      const numSegments = Math.round(5 + (radius / maxRadius) * 7);
+      const segments: Pizza['segments'] = [];
       const segmentSize = (Math.PI * 2) / numSegments;
-      
+
       for (let s = 0; s < numSegments; s++) {
         const startAngle = s * segmentSize;
-        const endAngle = startAngle + segmentSize * 0.95;
-        
-        // More solid (black) platforms as difficulty increases
-        // First few platforms: all breakable (tutorial)
-        // Then gradually introduce solid
+        const endAngle = startAngle + segmentSize * 0.84;
+
         let type: 'breakable' | 'solid' | 'gap';
         const roll = Math.random();
-        
+
         if (i < 3) {
-          // Tutorial: all breakable
           type = 'breakable';
         } else if (progress < 0.3) {
-          // Early: mostly breakable, rare solid, some gaps
           type = roll < 0.15 ? 'gap' : (roll < 0.85 ? 'breakable' : 'solid');
         } else if (progress < 0.6) {
-          // Mid: more solid
           type = roll < 0.1 ? 'gap' : (roll < 0.6 ? 'breakable' : 'solid');
         } else {
-          // Late: lots of solid
           type = roll < 0.08 ? 'gap' : (roll < 0.45 ? 'breakable' : 'solid');
         }
-        
-        const color = type === 'breakable' 
+
+        const color = type === 'breakable'
           ? (Math.random() < 0.5 ? THEME.breakable : THEME.breakableAlt)
           : THEME.solid;
-        
+
         segments.push({ startAngle, endAngle, type, broken: false, color });
       }
-      
-      // Ensure at least one breakable or gap per platform
+
       const hasEscape = segments.some(s => s.type === 'breakable' || s.type === 'gap');
       if (!hasEscape) {
         const idx = Math.floor(Math.random() * segments.length);
         segments[idx].type = 'breakable';
         segments[idx].color = THEME.breakable;
       }
-      
-      platforms.push({
+
+      const baseSpeed = 50 / radius;
+      const direction = i % 2 === 0 ? 1 : -1;
+      const speedVariation = 0.8 + Math.random() * 0.4;
+
+      pizzas.push({
+        x: wanderX,
         y: currentY,
+        radius,
+        innerRadius,
         segments,
         rotation: Math.random() * Math.PI * 2,
-        speed: (0.3 + progress * 0.3) * (Math.random() < 0.5 ? 1 : -1),
+        speed: baseSpeed * direction * speedVariation,
       });
     }
-    return platforms;
+    return pizzas;
   }, []);
 
   const startGame = useCallback(() => {
@@ -211,13 +232,14 @@ export default function Melt3Game() {
     const game = gameRef.current;
     game.running = true;
     game.holding = false;
-    game.ballX = canvasSize.w / 2;
     game.ballY = 80;
     game.ballVY = 0;
-    game.ballAngle = Math.PI / 2;
-    game.landedPlatform = null;
+    game.ballLocalAngle = 0;
+    game.landedPizza = null;
+    game.skipPizza = null;
     game.cameraY = 0;
-    game.platforms = generatePlatforms(canvasSize.w);
+    game.pizzas = generatePizzas(canvasSize.w);
+    game.ballX = game.pizzas[0]?.x ?? canvasSize.w / 2;
     game.particles = [];
     game.score = 0;
     game.lives = MAX_HEALTH;
@@ -225,12 +247,13 @@ export default function Melt3Game() {
     setScore(0);
     setLives(MAX_HEALTH);
     setGameState('playing');
-  }, [generatePlatforms, canvasSize.w]);
+  }, [generatePizzas, canvasSize.w]);
 
   useEffect(() => {
+    const MAX_GAME_WIDTH = 430; // iPhone-ish viewport
     const updateSize = () => {
       setCanvasSize({
-        w: window.innerWidth,
+        w: Math.min(window.innerWidth, MAX_GAME_WIDTH),
         h: window.innerHeight,
       });
     };
@@ -249,149 +272,156 @@ export default function Melt3Game() {
     canvas.height = canvasSize.h;
 
     let animationId: number;
-    const BALL_X = canvasSize.w / 2;
-    const BALL_RADIUS = 20;
-    const PLATFORM_RADIUS = Math.min(140, canvasSize.w * 0.38);
-    const PLATFORM_INNER = 25;
 
     const update = () => {
       const game = gameRef.current;
       if (!game.running) return;
 
-      // Rotate platforms first
-      for (const platform of game.platforms) {
-        platform.rotation += platform.speed * 0.015;
+      // Rotate all gears
+      for (const pizza of game.pizzas) {
+        pizza.rotation += pizza.speed * 0.015;
       }
 
-      // If landed on a platform, rotate with it
-      if (game.landedPlatform && !game.holding) {
-        game.ballAngle += game.landedPlatform.speed * 0.015;
-        // Update ball X position based on angle
-        const platformMidRadius = (PLATFORM_RADIUS + PLATFORM_INNER) / 2;
-        game.ballX = canvasSize.w / 2 + Math.cos(game.ballAngle) * platformMidRadius;
-        game.ballY = game.landedPlatform.y - 18/2 - BALL_RADIUS + Math.sin(game.ballAngle) * 5;
+      // === GLUED: ball is welded to a specific slice ===
+      // localAngle is fixed (center of the slice). Pizza rotation moves it.
+      if (game.landedPizza && !game.holding) {
+        const worldAngle = game.ballLocalAngle + game.landedPizza.rotation;
+        const glueR = game.landedPizza.radius + BALL_RADIUS;
+        game.ballX = game.landedPizza.x + Math.cos(worldAngle) * glueR;
+        game.ballY = game.landedPizza.y + Math.sin(worldAngle) * glueR;
       } else {
-        // Not landed - falling
-        game.landedPlatform = null;
-        game.ballX = canvasSize.w / 2; // Center when falling
-        
-        // Physics - holding = fast drop (smash mode)
+        // === DETACH from pizza if we were on one ===
+        if (game.landedPizza) {
+          game.skipPizza = game.landedPizza;
+          game.landedPizza = null;
+        }
+
+        // === FALL STRAIGHT DOWN — no horizontal drift ===
         const gravity = game.holding ? 1.5 : 0.4;
         game.ballVY += gravity;
         game.ballVY = Math.min(game.ballVY, game.holding ? 25 : 8);
         game.ballY += game.ballVY;
       }
 
-      // Camera
-      const targetCameraY = game.ballY - canvasSize.h / 3;
-      game.cameraY += (targetCameraY - game.cameraY) * 0.12;
+      // Camera — track pizza center when glued (prevents jitter), ball when falling
+      const cameraTarget = game.landedPizza
+        ? game.landedPizza.y - canvasSize.h / 3
+        : game.ballY - canvasSize.h / 3;
+      game.cameraY += (cameraTarget - game.cameraY) * 0.12;
 
-      // Collision
-      const PLATFORM_THICKNESS = 18;
-      for (const platform of game.platforms) {
-        const ballBottom = game.ballY + BALL_RADIUS;
-        const ballTop = game.ballY - BALL_RADIUS;
-        
-        if (ballBottom > platform.y - PLATFORM_THICKNESS/2 && 
-            ballTop < platform.y + PLATFORM_THICKNESS/2) {
-          
-          // Find which segment based on ball's current angle
-          const checkAngle = game.landedPlatform ? game.ballAngle : Math.PI / 2;
-          
-          for (const seg of platform.segments) {
-            if (seg.broken) continue;
-            
-            const segStart = (seg.startAngle + platform.rotation) % (Math.PI * 2);
-            const segEnd = (seg.endAngle + platform.rotation) % (Math.PI * 2);
-            
-            let inSeg = false;
-            const normBall = ((checkAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      // === COLLISION — 2D ring intersection ===
+      if (!game.landedPizza) {
+        for (const pizza of game.pizzas) {
+          if (game.landedPizza) break;
+
+          // Skip the pizza we just detached from until we're clear of it
+          if (pizza === game.skipPizza) {
+            const sdx = game.ballX - pizza.x;
+            const sdy = game.ballY - pizza.y;
+            const sDist = Math.sqrt(sdx * sdx + sdy * sdy);
+            if (sDist < pizza.radius + BALL_RADIUS * 2.5) continue;
+            game.skipPizza = null;
+          }
+
+          const dx = game.ballX - pizza.x;
+          const dy = game.ballY - pizza.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          // Ball must overlap the ring (between inner and outer radius)
+          if (dist + BALL_RADIUS < pizza.innerRadius) continue;
+          if (dist - BALL_RADIUS > pizza.radius) continue;
+
+          // Angle where ball meets the ring
+          const rawAngle = Math.atan2(dy, dx);
+          const checkAngle = ((rawAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+
+          // Check segments at this angle
+          for (const seg of pizza.segments) {
+            if (seg.broken || seg.type === 'gap') continue;
+
+            const segStart = (seg.startAngle + pizza.rotation) % (Math.PI * 2);
+            const segEnd = (seg.endAngle + pizza.rotation) % (Math.PI * 2);
+
             const normStart = ((segStart % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
             const normEnd = ((segEnd % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-            
+
+            let inSeg = false;
             if (normStart < normEnd) {
-              inSeg = normBall >= normStart && normBall <= normEnd;
+              inSeg = checkAngle >= normStart && checkAngle <= normEnd;
             } else {
-              inSeg = normBall >= normStart || normBall <= normEnd;
+              inSeg = checkAngle >= normStart || checkAngle <= normEnd;
             }
-            
+
             if (inSeg) {
-              if (seg.type === 'gap') {
-                // Pass through gap
-                game.score += 10;
-                game.landedPlatform = null;
-                setScore(game.score);
-              } else if (seg.type === 'breakable') {
+              if (seg.type === 'breakable') {
                 if (game.holding) {
-                  // SMASH! Break through
+                  // SMASH through
                   seg.broken = true;
                   game.score += 20 + game.combo * 5;
                   game.combo++;
-                  game.landedPlatform = null;
                   setScore(game.score);
                   playSmash();
-                  
-                  // Particles
-                  for (let i = 0; i < 12; i++) {
+
+                  for (let p = 0; p < 12; p++) {
                     game.particles.push({
                       x: game.ballX + (Math.random() - 0.5) * 60,
-                      y: platform.y,
+                      y: game.ballY,
                       vx: (Math.random() - 0.5) * 12,
-                      vy: -Math.random() * 8,
+                      vy: (Math.random() - 0.5) * 8,
                       life: 25,
                       color: seg.color,
                     });
                   }
                 } else {
-                  // Not holding = land on it and rotate with it
-                  game.ballY = platform.y - PLATFORM_THICKNESS/2 - BALL_RADIUS;
+                  // LAND — weld to the center of this slice
+                  game.ballLocalAngle = (seg.startAngle + seg.endAngle) / 2;
+                  game.landedPizza = pizza;
+                  game.skipPizza = null;
                   game.ballVY = 0;
-                  game.ballAngle = checkAngle;
-                  game.landedPlatform = platform;
                   game.combo = 0;
+                  const wAngle = game.ballLocalAngle + pizza.rotation;
+                  const glueR = pizza.radius + BALL_RADIUS;
+                  game.ballX = pizza.x + Math.cos(wAngle) * glueR;
+                  game.ballY = pizza.y + Math.sin(wAngle) * glueR;
                 }
               } else {
-                // SOLID BLACK - instant death if smashing, land if not
+                // SOLID
                 if (game.holding) {
-                  // Hit solid while smashing = DEATH
                   game.lives--;
                   setLives(game.lives);
                   game.combo = 0;
                   playHit();
-                  
-                  // Red particles
-                  for (let i = 0; i < 8; i++) {
+
+                  for (let p = 0; p < 8; p++) {
                     game.particles.push({
                       x: game.ballX + (Math.random() - 0.5) * 40,
-                      y: platform.y,
+                      y: game.ballY,
                       vx: (Math.random() - 0.5) * 6,
-                      vy: Math.random() * 3,
+                      vy: (Math.random() - 0.5) * 3,
                       life: 20,
                       color: THEME.danger,
                     });
                   }
-                  
+
                   if (game.lives <= 0) {
                     game.running = false;
                     playDeath();
                     setGameState('dead');
                     return;
                   }
-                  
-                  // Land and stop
-                  game.ballY = platform.y - PLATFORM_THICKNESS/2 - BALL_RADIUS;
-                  game.ballVY = 0;
-                  game.ballAngle = checkAngle;
-                  game.landedPlatform = platform;
-                  game.holding = false;
-                } else {
-                  // Landing on solid = stop and rotate with it
-                  game.ballY = platform.y - PLATFORM_THICKNESS/2 - BALL_RADIUS;
-                  game.ballVY = 0;
-                  game.ballAngle = checkAngle;
-                  game.landedPlatform = platform;
-                  game.combo = 0;
                 }
+
+                // Land on solid — weld to center of this slice
+                game.ballLocalAngle = (seg.startAngle + seg.endAngle) / 2;
+                game.landedPizza = pizza;
+                game.skipPizza = null;
+                game.ballVY = 0;
+                game.holding = false;
+                game.combo = 0;
+                const wAngle2 = game.ballLocalAngle + pizza.rotation;
+                const glueR = pizza.radius + BALL_RADIUS;
+                game.ballX = pizza.x + Math.cos(wAngle2) * glueR;
+                game.ballY = pizza.y + Math.sin(wAngle2) * glueR;
               }
               break;
             }
@@ -400,8 +430,8 @@ export default function Melt3Game() {
       }
 
       // Win
-      const lastPlatform = game.platforms[game.platforms.length - 1];
-      if (game.ballY > lastPlatform.y + 150) {
+      const lastPizza = game.pizzas[game.pizzas.length - 1];
+      if (game.ballY > lastPizza.y + lastPizza.radius + 200) {
         game.running = false;
         playWin();
         setGameState('won');
@@ -424,38 +454,43 @@ export default function Melt3Game() {
 
     const draw = () => {
       const game = gameRef.current;
-      
+
       ctx.fillStyle = THEME.bg;
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
 
-      // Draw platforms
-      for (const platform of game.platforms) {
-        const screenY = platform.y - game.cameraY;
-        if (screenY < -PLATFORM_RADIUS - 50 || screenY > canvasSize.h + PLATFORM_RADIUS + 50) continue;
+      // Draw pizzas (gears)
+      for (const pizza of game.pizzas) {
+        const screenY = pizza.y - game.cameraY;
+        if (screenY < -pizza.radius - 50 || screenY > canvasSize.h + pizza.radius + 50) continue;
 
-        for (const seg of platform.segments) {
+        for (const seg of pizza.segments) {
           if (seg.broken || seg.type === 'gap') continue;
-          
-          const startAngle = seg.startAngle + platform.rotation;
-          const endAngle = seg.endAngle + platform.rotation;
-          
+
+          const startAngle = seg.startAngle + pizza.rotation;
+          const endAngle = seg.endAngle + pizza.rotation;
+
           ctx.fillStyle = seg.color;
           if (seg.type === 'breakable') {
             ctx.shadowColor = seg.color;
             ctx.shadowBlur = 10;
           } else {
-            // BLACK = DANGER - red glow
             ctx.shadowColor = THEME.solidGlow;
             ctx.shadowBlur = 15;
           }
-          
+
           ctx.beginPath();
-          ctx.arc(BALL_X, screenY, PLATFORM_RADIUS, startAngle, endAngle);
-          ctx.arc(BALL_X, screenY, PLATFORM_INNER, endAngle, startAngle, true);
+          ctx.arc(pizza.x, screenY, pizza.radius, startAngle, endAngle);
+          ctx.arc(pizza.x, screenY, pizza.innerRadius, endAngle, startAngle, true);
           ctx.closePath();
           ctx.fill();
         }
         ctx.shadowBlur = 0;
+
+        // Hub / axle
+        ctx.fillStyle = THEME.hub;
+        ctx.beginPath();
+        ctx.arc(pizza.x, screenY, pizza.innerRadius * 0.6, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       // Particles
@@ -471,7 +506,7 @@ export default function Melt3Game() {
 
       // Ball
       const ballScreenY = game.ballY - game.cameraY;
-      
+
       // Smash trail
       if (game.holding && game.ballVY > 5) {
         ctx.fillStyle = THEME.ballGlow;
@@ -483,7 +518,7 @@ export default function Melt3Game() {
         }
         ctx.globalAlpha = 1;
       }
-      
+
       ctx.fillStyle = THEME.ball;
       ctx.shadowColor = THEME.ballGlow;
       ctx.shadowBlur = game.holding ? 25 : 10;
@@ -492,30 +527,27 @@ export default function Melt3Game() {
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // UI - Score
+      // UI
       ctx.fillStyle = THEME.text;
       ctx.font = 'bold 24px monospace';
       ctx.fillText(`${game.score}`, 20, 40);
-      
-      // Lives (hearts)
+
       ctx.font = '20px monospace';
       for (let i = 0; i < MAX_HEALTH; i++) {
         ctx.fillStyle = i < game.lives ? THEME.danger : '#333';
-        ctx.fillText('♥', canvasSize.w - 30 - i * 25, 35);
+        ctx.fillText('\u2665', canvasSize.w - 30 - i * 25, 35);
       }
-      
-      // Combo
+
       if (game.combo > 1) {
         ctx.fillStyle = THEME.ballGlow;
         ctx.font = 'bold 18px monospace';
         ctx.fillText(`x${game.combo}`, 20, 65);
       }
-      
-      // Mode indicator - bigger and clearer
+
       if (game.holding) {
         ctx.fillStyle = THEME.ball;
         ctx.font = 'bold 18px monospace';
-        ctx.fillText('⚡ SMASHING ⚡', canvasSize.w / 2 - 70, 70);
+        ctx.fillText('\u26A1 SMASHING \u26A1', canvasSize.w / 2 - 70, 70);
       }
     };
 
@@ -560,7 +592,7 @@ export default function Melt3Game() {
       fontFamily: 'ui-monospace, monospace',
     }}>
       {gameState === 'start' && (
-        <div style={{ 
+        <div style={{
           position: 'absolute',
           inset: 0,
           display: 'flex',
@@ -569,19 +601,19 @@ export default function Melt3Game() {
           justifyContent: 'center',
           padding: 20,
         }}>
-          <h1 style={{ 
-            color: THEME.ball, 
-            fontSize: 72, 
+          <h1 style={{
+            color: THEME.ball,
+            fontSize: 72,
             marginBottom: 20,
             textShadow: `0 0 40px ${THEME.ballGlow}`,
             fontWeight: 900,
           }}>
             SMASH
           </h1>
-          
-          <div style={{ 
-            background: 'rgba(0,0,0,0.5)', 
-            padding: 25, 
+
+          <div style={{
+            background: 'rgba(0,0,0,0.5)',
+            padding: 25,
             borderRadius: 12,
             marginBottom: 30,
             textAlign: 'left',
@@ -594,10 +626,10 @@ export default function Melt3Game() {
               <strong>RELEASE</strong> = land safely
             </p>
             <p style={{ color: THEME.solid, fontSize: 16, background: '#fff', padding: '4px 8px', borderRadius: 4, display: 'inline-block' }}>
-              ■ BLACK = don't hit!
+              &#9632; BLACK = don&apos;t hit!
             </p>
           </div>
-          
+
           <button
             onClick={startGame}
             style={{
@@ -618,14 +650,14 @@ export default function Melt3Game() {
       )}
 
       {gameState === 'playing' && (
-        <canvas 
-          ref={canvasRef} 
-          style={{ display: 'block', touchAction: 'none' }} 
+        <canvas
+          ref={canvasRef}
+          style={{ display: 'block', touchAction: 'none', margin: '0 auto' }}
         />
       )}
 
       {gameState === 'won' && (
-        <div style={{ 
+        <div style={{
           position: 'absolute',
           inset: 0,
           display: 'flex',
@@ -634,7 +666,7 @@ export default function Melt3Game() {
           justifyContent: 'center',
         }}>
           <h1 style={{ color: THEME.ballGlow, fontSize: 64, marginBottom: 20 }}>
-            🎉 WIN!
+            WIN!
           </h1>
           <p style={{ color: THEME.text, fontSize: 28, marginBottom: 30 }}>
             Score: {score}
@@ -657,7 +689,7 @@ export default function Melt3Game() {
       )}
 
       {gameState === 'dead' && (
-        <div style={{ 
+        <div style={{
           position: 'absolute',
           inset: 0,
           display: 'flex',
