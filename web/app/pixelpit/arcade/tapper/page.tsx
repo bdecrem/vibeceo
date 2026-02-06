@@ -332,7 +332,7 @@ export default function TapperGame() {
               score={score}
               gameId={GAME_ID}
               colors={SCORE_FLOW_COLORS}
-              xpDivisor={1}
+              maxScore={35}
               onRankReceived={(rank, entryId) => {
                 setSubmittedEntryId(entryId ?? null);
               }}
