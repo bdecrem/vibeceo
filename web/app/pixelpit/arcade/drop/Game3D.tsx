@@ -9,7 +9,7 @@ const PLATFORM_SPACING = 2;
 const TOWER_RADIUS = 0.4;
 const PLATFORM_OUTER_RADIUS = 2;
 const PLATFORM_THICKNESS = 0.5;
-const BALL_RADIUS = 0.15;
+const BALL_RADIUS = 0.25;
 
 // C minor pentatonic — the game's musical key
 const PENTATONIC = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25, 622.25, 698.46];
@@ -237,6 +237,49 @@ function stopMusic() {
   }
 }
 
+// ─── Gap Generation (chutes / drop corridors) ──────────────
+
+let genRunAngle = 0;        // current chute angle
+let genRunRemaining = 0;    // platforms left in this chute
+let genTotalPlatforms = 0;  // tracks depth for difficulty ramp
+
+function resetGenState() {
+  genRunAngle = 0;
+  genRunRemaining = 0;
+  genTotalPlatforms = 0;
+}
+
+function generatePlatformGap(index: number): { gapAngle: number; gapSize: number } {
+  genTotalPlatforms++;
+  const depth = genTotalPlatforms;
+
+  // Difficulty ramp: chutes get more frequent and longer over time
+  const chuteChance = Math.min(0.15 + depth * 0.008, 0.55);   // 15% → 55%
+  const minRun = Math.floor(2 + depth * 0.04);                  // 2 → 6
+  const maxRun = Math.floor(4 + depth * 0.08);                  // 4 → 12
+
+  // Gap size shrinks with depth but stays wider during chutes
+  const baseGap = Math.max(0.7, 1.2 - depth * 0.015);
+
+  if (genRunRemaining > 0) {
+    // Continue the chute — slight drift so it's not perfectly boring
+    genRunRemaining--;
+    const drift = (Math.random() - 0.5) * 0.25;
+    return { gapAngle: genRunAngle + drift, gapSize: baseGap + 0.15 };
+  }
+
+  // Maybe start a new chute
+  if (index > 2 && Math.random() < chuteChance) {
+    const runLen = minRun + Math.floor(Math.random() * (maxRun - minRun + 1));
+    genRunAngle = Math.random() * Math.PI * 2;
+    genRunRemaining = runLen - 1; // -1 because this platform is the first
+    return { gapAngle: genRunAngle, gapSize: baseGap + 0.15 };
+  }
+
+  // Normal random gap
+  return { gapAngle: Math.random() * Math.PI * 2, gapSize: baseGap };
+}
+
 // ─── Game Types ─────────────────────────────────────────────
 
 interface PlatformData {
@@ -263,10 +306,10 @@ interface GameState {
 
 // ─── 3D Components ──────────────────────────────────────────
 
-function Tower({ rotation }: { rotation: number }) {
+function Tower({ rotation, ballY }: { rotation: number; ballY: number }) {
   return (
-    <mesh rotation={[0, rotation, 0]}>
-      <cylinderGeometry args={[TOWER_RADIUS, TOWER_RADIUS, 100, 16]} />
+    <mesh rotation={[0, rotation, 0]} position={[0, ballY, 0]}>
+      <cylinderGeometry args={[TOWER_RADIUS, TOWER_RADIUS, 200, 16]} />
       <meshStandardMaterial color="#1e293b" emissive="#22d3ee" emissiveIntensity={0.05} />
     </mesh>
   );
@@ -353,8 +396,8 @@ function Ball({ y }: { y: number }) {
   const x = (TOWER_RADIUS + PLATFORM_OUTER_RADIUS) / 2;
   return (
     <mesh position={[x, y, 0]}>
-      <sphereGeometry args={[BALL_RADIUS, 16, 16]} />
-      <meshStandardMaterial color="#FF1493" emissive="#FF1493" emissiveIntensity={0.6} />
+      <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
+      <meshStandardMaterial color="#FF1493" emissive="#FF1493" emissiveIntensity={0.15} roughness={0.3} metalness={0.2} />
     </mesh>
   );
 }
@@ -388,6 +431,7 @@ function GameScene({
   useEffect(() => {
     initAudio();
     startMusic();
+    resetGenState();
 
     const platforms: PlatformData[] = [];
     platforms.push({
@@ -400,11 +444,14 @@ function GameScene({
       passed: false,
     });
     for (let i = 1; i < PLATFORM_COUNT; i++) {
-      const hasStorm = i > 2 && Math.random() < 0.4;
+      const { gapAngle, gapSize } = generatePlatformGap(i);
+      // No storms during chutes (don't punish the fun drop)
+      const inChute = genRunRemaining > 0;
+      const hasStorm = !inChute && i > 2 && Math.random() < 0.4;
       platforms.push({
         y: -i * PLATFORM_SPACING,
-        gapAngle: Math.random() * Math.PI * 2,
-        gapSize: 1.2 - Math.min(i * 0.02, 0.4),
+        gapAngle,
+        gapSize,
         hasStorm,
         stormAngle: hasStorm ? Math.random() * Math.PI * 2 : 0,
         stormSize: hasStorm ? 0.8 + Math.random() * 0.4 : 0,
@@ -567,11 +614,13 @@ function GameScene({
     const lowestPlatform = gs.platforms[gs.platforms.length - 1];
     if (lowestPlatform && gs.ballY < lowestPlatform.y + 10) {
       const newY = lowestPlatform.y - PLATFORM_SPACING;
-      const hasStorm = Math.random() < 0.45;
+      const { gapAngle, gapSize } = generatePlatformGap(gs.platforms.length);
+      const inChute = genRunRemaining > 0;
+      const hasStorm = !inChute && Math.random() < 0.45;
       gs.platforms.push({
         y: newY,
-        gapAngle: Math.random() * Math.PI * 2,
-        gapSize: Math.max(0.7, 1.2 - gs.platforms.length * 0.01),
+        gapAngle,
+        gapSize,
         hasStorm,
         stormAngle: hasStorm ? Math.random() * Math.PI * 2 : 0,
         stormSize: hasStorm ? 0.8 + Math.random() * 0.5 : 0,
@@ -591,7 +640,7 @@ function GameScene({
       <directionalLight position={[5, 10, 5]} intensity={0.6} color="#94a3b8" />
       <pointLight position={[0, gs.ballY + 2, 3]} intensity={0.8} color="#FF1493" distance={8} />
 
-      <Tower rotation={gs.rotation} />
+      <Tower rotation={gs.rotation} ballY={gs.ballY} />
 
       {gs.platforms.map((p, i) => (
         <Platform
