@@ -10,6 +10,12 @@ const TOWER_RADIUS = 0.4;
 const PLATFORM_OUTER_RADIUS = 2;
 const PLATFORM_THICKNESS = 0.5;
 const BALL_RADIUS = 0.25;
+const BOUNCE_VY = 0.05;        // initial bounce when game starts
+const BOUNCE_DAMPING = 0.35;   // each bounce = 35% of impact speed
+const MIN_BOUNCE = 0.012;      // below this → ball rests
+const GRAVITY = 0.01;          // per-frame gravity
+const MAX_FALL_SPEED = 0.4;    // terminal velocity
+const POWER_VELOCITY = 0.25;   // fall speed threshold for power ball
 
 // C minor pentatonic — the game's musical key
 const PENTATONIC = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25, 622.25, 698.46];
@@ -115,16 +121,16 @@ function playThunder() {
   noise.start();
 }
 
-// Glass shatter — bright crystalline burst, pitch rises with chain
+// Glass shatter — crystalline burst + low impact thud
 function playGlassShatter(chain = 1) {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
   // Bright shimmer — filtered noise burst
-  const len = audioCtx.sampleRate * 0.3;
+  const len = audioCtx.sampleRate * 0.35;
   const buffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
   const d = buffer.getChannelData(0);
   for (let i = 0; i < len; i++) {
-    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 1.5);
   }
   const noise = audioCtx.createBufferSource();
   noise.buffer = buffer;
@@ -135,24 +141,72 @@ function playGlassShatter(chain = 1) {
   lp.type = 'lowpass';
   lp.frequency.value = 10000 + Math.min(chain, 6) * 1000;
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.25, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  gain.gain.setValueAtTime(0.3, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
   noise.connect(hp);
   hp.connect(lp);
   lp.connect(gain);
   gain.connect(masterGain);
   noise.start();
-  // Crystalline ping on top
+  // Crystalline ping
   const ping = audioCtx.createOscillator();
   const pingGain = audioCtx.createGain();
   ping.type = 'sine';
   ping.frequency.value = 1200 + Math.min(chain, 8) * 200;
-  pingGain.gain.setValueAtTime(0.12, t);
+  pingGain.gain.setValueAtTime(0.15, t);
   pingGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
   ping.connect(pingGain);
   pingGain.connect(masterGain);
   ping.start();
   ping.stop(t + 0.15);
+  // Low impact thud — gives the shatter physical weight
+  const thud = audioCtx.createOscillator();
+  const thudGain = audioCtx.createGain();
+  thud.type = 'sine';
+  thud.frequency.setValueAtTime(80, t);
+  thud.frequency.exponentialRampToValueAtTime(40, t + 0.1);
+  thudGain.gain.setValueAtTime(0.2, t);
+  thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  thud.connect(thudGain);
+  thudGain.connect(masterGain);
+  thud.start();
+  thud.stop(t + 0.12);
+}
+
+// Power smash — heavy crunch when power ball breaks through
+function playSmash() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Impact thud
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(100, t);
+  osc.frequency.exponentialRampToValueAtTime(30, t + 0.15);
+  g.gain.setValueAtTime(0.35, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  osc.connect(g);
+  g.connect(masterGain);
+  osc.start();
+  osc.stop(t + 0.15);
+  // Crunch noise
+  const len = audioCtx.sampleRate * 0.1;
+  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+  const n = audioCtx.createBufferSource();
+  n.buffer = buf;
+  const bp = audioCtx.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = 1500;
+  bp.Q.value = 2;
+  const ng = audioCtx.createGain();
+  ng.gain.setValueAtTime(0.15, t);
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  n.connect(bp);
+  bp.connect(ng);
+  ng.connect(masterGain);
+  n.start();
 }
 
 // ─── Music Engine (step sequencer, same arch as BEAM) ───────
@@ -326,6 +380,8 @@ interface PlatformData {
   y: number;
   gapAngle: number;
   gapSize: number;
+  secondGapAngle: number; // escape route gap (only used when hasGlass)
+  secondGapSize: number;
   hasStorm: boolean;
   stormAngle: number;
   stormSize: number;
@@ -345,20 +401,22 @@ interface Shard {
 const MAX_SHARDS = 120;
 let shards: Shard[] = [];
 
-function spawnShards(worldY: number, angle: number, rotation: number) {
+function spawnShards(worldY: number, angle: number, rotation: number, count = 20) {
   const actualAngle = angle + rotation;
   const midR = (TOWER_RADIUS + PLATFORM_OUTER_RADIUS) / 2;
   const cx = Math.cos(actualAngle) * midR;
   const cz = -Math.sin(actualAngle) * midR;
-  for (let i = 0; i < 15; i++) {
-    const spread = 0.8;
+  for (let i = 0; i < count; i++) {
+    // Shards explode outward from break point
+    const outAngle = actualAngle + (Math.random() - 0.5) * 1.5;
+    const outSpeed = 0.08 + Math.random() * 0.15;
     shards.push({
-      x: cx + (Math.random() - 0.5) * 0.5,
+      x: cx + (Math.random() - 0.5) * 0.4,
       y: worldY + PLATFORM_THICKNESS / 2,
-      z: cz + (Math.random() - 0.5) * 0.5,
-      vx: (Math.random() - 0.5) * spread * 0.3,
-      vy: Math.random() * 0.12 + 0.03,
-      vz: (Math.random() - 0.5) * spread * 0.3,
+      z: cz + (Math.random() - 0.5) * 0.4,
+      vx: Math.cos(outAngle) * outSpeed,
+      vy: Math.random() * 0.15 + 0.05,
+      vz: -Math.sin(outAngle) * outSpeed,
       life: 1.0,
     });
   }
@@ -424,9 +482,10 @@ function createArcGeo(innerR: number, outerR: number, thetaStart: number, thetaL
 const norm2PI = (a: number) => ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
 
 function Platform({
-  y, gapAngle, gapSize, hasStorm, stormAngle, stormSize, rotation, colorIndex, hasGlass, glassBroken
+  y, gapAngle, gapSize, secondGapAngle, secondGapSize, hasStorm, stormAngle, stormSize, rotation, colorIndex, hasGlass, glassBroken
 }: {
   y: number; gapAngle: number; gapSize: number;
+  secondGapAngle: number; secondGapSize: number;
   hasStorm: boolean; stormAngle: number; stormSize: number;
   rotation: number; colorIndex: number; hasGlass: boolean; glassBroken: boolean;
 }) {
@@ -434,39 +493,60 @@ function Platform({
   const arcs = useMemo(() => {
     const innerR = TOWER_RADIUS;
     const outerR = PLATFORM_OUTER_RADIUS;
-    const solidStart = gapAngle + gapSize / 2;
-    const solidLength = Math.PI * 2 - gapSize;
 
     type Arc = { geo: THREE.BufferGeometry; kind: 'solid' | 'storm' | 'glass' };
     const result: Arc[] = [];
 
-    if (!hasStorm || stormSize < 0.01) {
-      result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
-    } else {
-      const off0 = norm2PI((stormAngle - stormSize / 2) - solidStart);
-      const off1 = norm2PI((stormAngle + stormSize / 2) - solidStart);
+    if (hasGlass && secondGapSize > 0.01) {
+      // Two-gap platform: primary gap (glass-filled) + secondary gap (open escape route)
+      const gaps = [
+        { start: norm2PI(gapAngle - gapSize / 2), size: gapSize },
+        { start: norm2PI(secondGapAngle - secondGapSize / 2), size: secondGapSize },
+      ].sort((a, b) => a.start - b.start);
 
-      if (off0 >= solidLength && off1 >= solidLength) {
+      // Solid arc from end of gap[0] to start of gap[1]
+      const s1Start = gaps[0].start + gaps[0].size;
+      const s1Len = norm2PI(gaps[1].start - s1Start);
+      if (s1Len > 0.05) {
+        result.push({ geo: createArcGeo(innerR, outerR, s1Start, s1Len, PLATFORM_THICKNESS), kind: 'solid' });
+      }
+
+      // Solid arc from end of gap[1] to start of gap[0]
+      const s2Start = gaps[1].start + gaps[1].size;
+      const s2Len = norm2PI(gaps[0].start - s2Start);
+      if (s2Len > 0.05) {
+        result.push({ geo: createArcGeo(innerR, outerR, s2Start, s2Len, PLATFORM_THICKNESS), kind: 'solid' });
+      }
+
+      // Glass fills the ENTIRE primary gap
+      result.push({ geo: createArcGeo(innerR, outerR, norm2PI(gapAngle - gapSize / 2), gapSize, PLATFORM_THICKNESS), kind: 'glass' });
+    } else {
+      // Single-gap platform (no glass, or glass without escape — shouldn't happen)
+      const solidStart = gapAngle + gapSize / 2;
+      const solidLength = Math.PI * 2 - gapSize;
+
+      if (!hasStorm || stormSize < 0.01) {
         result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
-      } else if (off0 < off1 && off1 <= solidLength) {
-        if (off0 > 0.02)
-          result.push({ geo: createArcGeo(innerR, outerR, solidStart, off0, PLATFORM_THICKNESS), kind: 'solid' });
-        result.push({ geo: createArcGeo(innerR, outerR, solidStart + off0, off1 - off0, PLATFORM_THICKNESS), kind: 'storm' });
-        if (solidLength - off1 > 0.02)
-          result.push({ geo: createArcGeo(innerR, outerR, solidStart + off1, solidLength - off1, PLATFORM_THICKNESS), kind: 'solid' });
       } else {
-        result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
+        const off0 = norm2PI((stormAngle - stormSize / 2) - solidStart);
+        const off1 = norm2PI((stormAngle + stormSize / 2) - solidStart);
+
+        if (off0 >= solidLength && off1 >= solidLength) {
+          result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
+        } else if (off0 < off1 && off1 <= solidLength) {
+          if (off0 > 0.02)
+            result.push({ geo: createArcGeo(innerR, outerR, solidStart, off0, PLATFORM_THICKNESS), kind: 'solid' });
+          result.push({ geo: createArcGeo(innerR, outerR, solidStart + off0, off1 - off0, PLATFORM_THICKNESS), kind: 'storm' });
+          if (solidLength - off1 > 0.02)
+            result.push({ geo: createArcGeo(innerR, outerR, solidStart + off1, solidLength - off1, PLATFORM_THICKNESS), kind: 'solid' });
+        } else {
+          result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
+        }
       }
     }
 
-    // Glass arc fills the gap
-    if (hasGlass) {
-      const glassStart = gapAngle - gapSize / 2;
-      result.push({ geo: createArcGeo(innerR, outerR, glassStart, gapSize, PLATFORM_THICKNESS), kind: 'glass' });
-    }
-
     return result;
-  }, [gapAngle, gapSize, hasStorm, stormAngle, stormSize, hasGlass]);
+  }, [gapAngle, gapSize, secondGapAngle, secondGapSize, hasStorm, stormAngle, stormSize, hasGlass]);
 
   useEffect(() => {
     return () => { arcs.forEach(a => a.geo.dispose()); };
@@ -504,13 +584,24 @@ function Platform({
   );
 }
 
-function Ball({ y }: { y: number }) {
+function Ball({ y, isPower }: { y: number; isPower: boolean }) {
   const x = (TOWER_RADIUS + PLATFORM_OUTER_RADIUS) / 2;
   return (
-    <mesh position={[x, y, 0]}>
-      <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
-      <meshStandardMaterial color="#FF2244" emissive="#FF2244" emissiveIntensity={0.08} roughness={0.15} metalness={0.1} />
-    </mesh>
+    <group position={[x, y, 0]}>
+      <mesh>
+        <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
+        <meshStandardMaterial
+          color={isPower ? '#FFD700' : '#FF2244'}
+          emissive={isPower ? '#FF8800' : '#FF2244'}
+          emissiveIntensity={isPower ? 0.5 : 0.08}
+          roughness={isPower ? 0.0 : 0.15}
+          metalness={isPower ? 0.6 : 0.1}
+        />
+      </mesh>
+      {isPower && (
+        <pointLight color="#FF8800" intensity={1.5} distance={4} />
+      )}
+    </group>
   );
 }
 
@@ -621,7 +712,7 @@ function GameScene({
 }) {
   const { camera } = useThree();
   const gameState = useRef<GameState>({
-    ballY: PLATFORM_THICKNESS / 2 + BALL_RADIUS,
+    ballY: PLATFORM_THICKNESS / 2 + BALL_RADIUS + 0.01,
     ballVY: 0,
     rotation: 0,
     rotationVel: 0,
@@ -649,6 +740,8 @@ function GameScene({
       y: 0,
       gapAngle: Math.PI,
       gapSize: 1.0,
+      secondGapAngle: 0,
+      secondGapSize: 0,
       hasStorm: false,
       stormAngle: 0,
       stormSize: 0,
@@ -659,12 +752,21 @@ function GameScene({
     for (let i = 1; i < PLATFORM_COUNT; i++) {
       const { gapAngle, gapSize } = generatePlatformGap(i);
       const inChute = genRunRemaining > 0;
-      const hasStorm = !inChute && i > 2 && Math.random() < 0.4;
-      const hasGlass = !hasStorm && i > 1 && Math.random() < 0.4;
+      // Storms ramp: 15% early → 50% late
+      const stormChance = Math.min(0.15 + i * 0.008, 0.5);
+      const hasStorm = !inChute && i > 3 && Math.random() < stormChance;
+      // Glass ramp: 25% early → 45% late
+      const glassChance = Math.min(0.25 + i * 0.005, 0.45);
+      const hasGlass = !hasStorm && i > 1 && Math.random() < glassChance;
+      // Glass platforms get a second escape gap on the opposite side
+      const secondGapAngle = hasGlass ? norm2PI(gapAngle + Math.PI + (Math.random() - 0.5) * 1.0) : 0;
+      const secondGapSize = hasGlass ? gapSize * 0.65 : 0;
       platforms.push({
         y: -i * PLATFORM_SPACING,
         gapAngle,
         gapSize,
+        secondGapAngle,
+        secondGapSize,
         hasStorm,
         stormAngle: hasStorm ? Math.random() * Math.PI * 2 : 0,
         stormSize: hasStorm ? 0.8 + Math.random() * 0.4 : 0,
@@ -674,7 +776,7 @@ function GameScene({
       });
     }
     gameState.current.platforms = platforms;
-    gameState.current.ballY = PLATFORM_THICKNESS / 2 + BALL_RADIUS;
+    gameState.current.ballY = PLATFORM_THICKNESS / 2 + BALL_RADIUS + 0.01;
     gameState.current.ballVY = 0;
     gameState.current.rotation = 0;
     gameState.current.score = 0;
@@ -700,6 +802,7 @@ function GameScene({
       dragRef.current.lastX = x;
       if (!gameState.current.started && Math.abs(dx) > 2) {
         gameState.current.started = true;
+        gameState.current.ballVY = BOUNCE_VY; // Start bouncing!
       }
     };
     const handleEnd = () => {
@@ -736,6 +839,12 @@ function GameScene({
     if (d > Math.PI) d = Math.PI * 2 - d;
     return d < p.gapSize / 2;
   };
+  const checkSecondGap = (angle: number, p: PlatformData) => {
+    if (!p.hasGlass || p.secondGapSize < 0.01) return false;
+    let d = Math.abs(angle - p.secondGapAngle);
+    if (d > Math.PI) d = Math.PI * 2 - d;
+    return d < p.secondGapSize / 2;
+  };
   const checkStorm = (angle: number, p: PlatformData) => {
     if (!p.hasStorm) return false;
     let d = Math.abs(angle - p.stormAngle);
@@ -743,49 +852,53 @@ function GameScene({
     return d < p.stormSize / 2;
   };
 
-  // Game loop
+  // Game loop — Helix Jump style: ball always bounces, power ball on long drops
   useFrame(() => {
     const gs = gameState.current;
     if (gs.gameOver) return;
 
-    // Keep music in sync with score
     musicScore = gs.score;
 
+    // Rotation always active
     gs.rotation += gs.rotationVel;
     gs.rotationVel *= 0.92;
 
     if (gs.started) {
-      // Glass break freeze — ball pauses briefly then falls
+      // Glass break freeze
       if (gs.glassBreakTimer > 0) {
         gs.glassBreakTimer--;
         if (gs.glassBreakTimer === 0) {
-          gs.ballVY = -0.01;
+          // Mark the glass platform as passed and resume falling
+          for (const p of gs.platforms) {
+            if (p.hasGlass && p.glassBroken && !p.passed &&
+                Math.abs(p.y + PLATFORM_THICKNESS / 2 + BALL_RADIUS - gs.ballY) < 0.3) {
+              p.passed = true;
+              break;
+            }
+          }
+          gs.combo++;
+          gs.score += gs.combo;
+          onScoreUpdate(gs.score, gs.combo);
+          playFallThrough(gs.combo);
+          gs.ballVY = -0.02; // Resume falling
         }
-        // Skip normal physics during freeze
       } else {
         const ballAngle = norm2PI(-gs.rotation);
 
+        // Ball at rest — check if gap rotates underneath
         if (gs.ballVY === 0) {
-          let stillSupported = false;
           for (const platform of gs.platforms) {
             if (platform.passed) continue;
             const platformTop = platform.y + PLATFORM_THICKNESS / 2;
             if (Math.abs((gs.ballY - BALL_RADIUS) - platformTop) < 0.1) {
-              if (checkGap(ballAngle, platform)) {
-                // Gap — but is there unbroken glass?
-                if (platform.hasGlass && !platform.glassBroken) {
-                  // Shatter the glass!
-                  platform.glassBroken = true;
-                  gs.glassChain++;
-                  const bonus = 3 * gs.glassChain;
-                  gs.score += bonus;
-                  gs.combo += gs.glassChain;
-                  onScoreUpdate(gs.score, gs.combo);
-                  playGlassShatter(gs.glassChain);
-                  spawnShards(platform.y, platform.gapAngle, gs.rotation);
-                  gs.glassBreakTimer = 8; // ~133ms freeze
-                  stillSupported = true;
+              const inPrimaryGap = checkGap(ballAngle, platform);
+              const inSecondGap = checkSecondGap(ballAngle, platform);
+              if (inPrimaryGap || inSecondGap) {
+                if (inPrimaryGap && platform.hasGlass && !platform.glassBroken) {
+                  // Over intact glass — solid when resting
+                  gs.ballY = platformTop + BALL_RADIUS;
                 } else {
+                  // Open gap (primary broken/no glass, or escape gap) — fall through
                   platform.passed = true;
                   gs.glassChain = 0;
                   gs.combo++;
@@ -801,66 +914,134 @@ function GameScene({
                 onGameOver(gs.score);
                 return;
               } else {
-                stillSupported = true;
-                gs.glassChain = 0;
                 gs.ballY = platformTop + BALL_RADIUS;
               }
               break;
             }
           }
-          if (!stillSupported && gs.ballVY === 0) {
-            gs.ballVY = -0.01;
-          }
         }
 
-        if (gs.ballVY !== 0) {
-          const prevY = gs.ballY;
-          gs.ballVY -= 0.015;
-          gs.ballVY = Math.max(gs.ballVY, -0.3);
-          gs.ballY += gs.ballVY;
-
-          for (const platform of gs.platforms) {
-            if (platform.passed) continue;
-            const platformTop = platform.y + PLATFORM_THICKNESS / 2;
-
-            if (prevY - BALL_RADIUS > platformTop && gs.ballY - BALL_RADIUS <= platformTop) {
-              if (checkGap(ballAngle, platform)) {
-                // Gap — glass check
-                if (platform.hasGlass && !platform.glassBroken) {
-                  platform.glassBroken = true;
-                  gs.glassChain++;
-                  const bonus = 3 * gs.glassChain;
-                  gs.score += bonus;
-                  gs.combo += gs.glassChain;
-                  onScoreUpdate(gs.score, gs.combo);
-                  playGlassShatter(gs.glassChain);
-                  spawnShards(platform.y, platform.gapAngle, gs.rotation);
-                  gs.ballY = platformTop + BALL_RADIUS;
-                  gs.ballVY = 0;
-                  gs.glassBreakTimer = 8;
-                } else {
-                  platform.passed = true;
-                  gs.glassChain = 0;
-                  gs.combo++;
-                  gs.score += gs.combo;
-                  onScoreUpdate(gs.score, gs.combo);
-                  playFallThrough(gs.combo);
-                }
-              } else if (checkStorm(ballAngle, platform)) {
-                gs.gameOver = true;
-                stopMusic();
-                playThunder();
-                onGameOver(gs.score);
-                return;
-              } else {
-                gs.ballY = platformTop + BALL_RADIUS;
-                gs.ballVY = 0;
-                gs.combo = 0;
-                gs.glassChain = 0;
-                gs.score += 1;
-                onScoreUpdate(gs.score, gs.combo);
-                playBounce(gs.score);
+        // Apply gravity (even when resting — if support vanishes, ball falls)
+        if (gs.ballVY !== 0 || true) {
+          if (gs.ballVY === 0) {
+            // Check if still supported — skip gravity if so
+            let supported = false;
+            for (const p of gs.platforms) {
+              if (p.passed) continue;
+              const pTop = p.y + PLATFORM_THICKNESS / 2;
+              if (Math.abs((gs.ballY - BALL_RADIUS) - pTop) < 0.1) {
+                const angle = norm2PI(-gs.rotation);
+                const inPrimary = checkGap(angle, p);
+                const inSecond = checkSecondGap(angle, p);
+                const glassBlocking = inPrimary && p.hasGlass && !p.glassBroken;
+                if ((!inPrimary && !inSecond) || glassBlocking) { supported = true; }
                 break;
+              }
+            }
+            if (supported) {
+              // Still resting — no gravity
+            } else {
+              gs.ballVY = -0.01; // Start falling
+            }
+          }
+
+          if (gs.ballVY !== 0) {
+            const isPower = gs.ballVY < -POWER_VELOCITY;
+            gs.ballVY -= GRAVITY;
+            gs.ballVY = Math.max(gs.ballVY, -MAX_FALL_SPEED);
+
+            const prevY = gs.ballY;
+            gs.ballY += gs.ballVY;
+
+            // Check collisions only when falling
+            if (gs.ballVY < 0) {
+              for (const platform of gs.platforms) {
+                if (platform.passed) continue;
+                const platformTop = platform.y + PLATFORM_THICKNESS / 2;
+
+                if (prevY - BALL_RADIUS > platformTop && gs.ballY - BALL_RADIUS <= platformTop) {
+                  const inPrimaryGap = checkGap(ballAngle, platform);
+                  const inSecondGap = checkSecondGap(ballAngle, platform);
+
+                  if (inPrimaryGap || inSecondGap) {
+                    if (inPrimaryGap && platform.hasGlass && !platform.glassBroken) {
+                      // Falling onto intact glass — SHATTER
+                      if (isPower) {
+                        platform.glassBroken = true;
+                        platform.passed = true;
+                        gs.glassChain++;
+                        gs.score += 5 * gs.glassChain;
+                        gs.combo++;
+                        onScoreUpdate(gs.score, gs.combo);
+                        playGlassShatter(gs.glassChain);
+                        spawnShards(platform.y, platform.gapAngle, gs.rotation, 25);
+                        gs.ballVY *= 0.85;
+                      } else {
+                        platform.glassBroken = true;
+                        gs.glassChain++;
+                        gs.score += 3 * gs.glassChain;
+                        onScoreUpdate(gs.score, gs.combo);
+                        playGlassShatter(gs.glassChain);
+                        spawnShards(platform.y, platform.gapAngle, gs.rotation, 20);
+                        gs.ballY = platformTop + BALL_RADIUS;
+                        gs.ballVY = 0;
+                        gs.glassBreakTimer = 6;
+                        break;
+                      }
+                    } else {
+                      // Fall through open gap (escape gap, or broken glass primary)
+                      platform.passed = true;
+                      gs.glassChain = 0;
+                      gs.combo++;
+                      gs.score += gs.combo;
+                      onScoreUpdate(gs.score, gs.combo);
+                      playFallThrough(gs.combo);
+                    }
+                  } else if (checkStorm(ballAngle, platform)) {
+                    if (isPower) {
+                      platform.passed = true;
+                      gs.score += 5;
+                      gs.combo++;
+                      onScoreUpdate(gs.score, gs.combo);
+                      playSmash();
+                      spawnShards(platform.y, ballAngle, gs.rotation, 25);
+                      gs.ballVY *= 0.6;
+                    } else {
+                      gs.gameOver = true;
+                      stopMusic();
+                      playThunder();
+                      onGameOver(gs.score);
+                      return;
+                    }
+                  } else {
+                    // Solid platform — damped bounce or rest
+                    if (isPower) {
+                      platform.passed = true;
+                      gs.score += 3;
+                      gs.combo++;
+                      onScoreUpdate(gs.score, gs.combo);
+                      playSmash();
+                      spawnShards(platform.y, ballAngle, gs.rotation, 15);
+                      gs.ballVY *= 0.5;
+                    } else {
+                      gs.ballY = platformTop + BALL_RADIUS;
+                      const bounceSpeed = Math.abs(gs.ballVY) * BOUNCE_DAMPING;
+                      if (bounceSpeed < MIN_BOUNCE) {
+                        // Too weak to bounce — rest
+                        gs.ballVY = 0;
+                      } else {
+                        // Diminishing bounce
+                        gs.ballVY = bounceSpeed;
+                      }
+                      gs.combo = 0;
+                      gs.glassChain = 0;
+                      gs.score += 1;
+                      onScoreUpdate(gs.score, gs.combo);
+                      playBounce(gs.score);
+                      break;
+                    }
+                  }
+                }
               }
             }
           }
@@ -868,23 +1049,38 @@ function GameScene({
       }
     }
 
-    camera.position.y = gs.ballY + 3;
-    camera.lookAt(0, gs.ballY, 0);
+    // Camera — smooth follow, biased downward (doesn't jerk up on bounce)
+    const targetCamY = gs.ballY + 3;
+    if (targetCamY < camera.position.y) {
+      camera.position.y += (targetCamY - camera.position.y) * 0.15;
+    } else {
+      camera.position.y += (targetCamY - camera.position.y) * 0.01;
+    }
+    camera.lookAt(0, camera.position.y - 3, 0);
 
+    // Dynamic platform generation with ramping difficulty
     const lowestPlatform = gs.platforms[gs.platforms.length - 1];
     if (lowestPlatform && gs.ballY < lowestPlatform.y + 10) {
       const newY = lowestPlatform.y - PLATFORM_SPACING;
       const { gapAngle, gapSize } = generatePlatformGap(gs.platforms.length);
       const inChute = genRunRemaining > 0;
-      const hasStorm = !inChute && Math.random() < 0.45;
-      const hasGlass = !hasStorm && Math.random() < 0.4;
+      const depth = genTotalPlatforms;
+      const stormChance = Math.min(0.15 + depth * 0.006, 0.55);
+      const hasStorm = !inChute && Math.random() < stormChance;
+      const glassChance = Math.min(0.25 + depth * 0.004, 0.5);
+      const hasGlass = !hasStorm && Math.random() < glassChance;
+      const stormGrowth = Math.min(depth * 0.005, 0.3);
+      const secAngle = hasGlass ? norm2PI(gapAngle + Math.PI + (Math.random() - 0.5) * 1.0) : 0;
+      const secSize = hasGlass ? gapSize * 0.65 : 0;
       gs.platforms.push({
         y: newY,
         gapAngle,
         gapSize,
+        secondGapAngle: secAngle,
+        secondGapSize: secSize,
         hasStorm,
         stormAngle: hasStorm ? Math.random() * Math.PI * 2 : 0,
-        stormSize: hasStorm ? 0.8 + Math.random() * 0.5 : 0,
+        stormSize: hasStorm ? 0.6 + Math.random() * 0.4 + stormGrowth : 0,
         hasGlass,
         glassBroken: false,
         passed: false,
@@ -912,6 +1108,8 @@ function GameScene({
           y={p.y}
           gapAngle={p.gapAngle}
           gapSize={p.gapSize}
+          secondGapAngle={p.secondGapAngle}
+          secondGapSize={p.secondGapSize}
           hasStorm={p.hasStorm}
           stormAngle={p.stormAngle}
           stormSize={p.stormSize}
@@ -922,7 +1120,7 @@ function GameScene({
         />
       ))}
 
-      <Ball y={gs.ballY} />
+      <Ball y={gs.ballY} isPower={gs.ballVY < -POWER_VELOCITY} />
       <GlassShards />
       <BackgroundParticles ballY={gs.ballY} />
 
