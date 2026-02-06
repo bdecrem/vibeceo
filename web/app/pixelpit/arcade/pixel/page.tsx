@@ -677,7 +677,7 @@ export default function PixelGame() {
               score={puzzleIndex + 1}
               gameId={GAME_ID}
               colors={SCORE_FLOW_COLORS}
-              xpDivisor={1}
+              maxScore={1}
               onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
             />
 

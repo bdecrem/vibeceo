@@ -1188,7 +1188,7 @@ export default function SuperbeamGame() {
             score={score}
             gameId={GAME_ID}
             colors={SCORE_FLOW_COLORS}
-            xpDivisor={1}
+            maxScore={20}
             onRankReceived={(rank, entryId) => {
               setSubmittedEntryId(entryId ?? null);
             }}

@@ -1291,7 +1291,7 @@ export default function EmojiMadness() {
             score={score}
             gameId={GAME_ID}
             colors={SCORE_FLOW_COLORS}
-            xpDivisor={1}
+            maxScore={500}
             onRankReceived={(rank, entryId) => {
               setSubmittedEntryId(entryId ?? null);
             }}

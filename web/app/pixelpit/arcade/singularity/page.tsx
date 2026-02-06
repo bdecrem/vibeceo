@@ -839,6 +839,7 @@ export default function SingularityGame() {
               score={score}
               gameId={GAME_ID}
               colors={SCORE_FLOW_COLORS}
+              maxScore={100}
               onRankReceived={(rank, entryId) => {
                 setSubmittedEntryId(entryId ?? null);
               }}

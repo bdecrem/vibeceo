@@ -7,7 +7,7 @@ import { saveGuestName } from './usePixelpitSocial';
 interface UseScoreSubmitOptions {
   gameId: string;
   score: number;
-  xpDivisor?: number;
+  maxScore?: number;
   onRankReceived?: (rank: number, entryId?: number) => void;
   onUserLogin?: (user: PixelpitUser) => void;
   onProgression?: (progression: ProgressionResult) => void;
@@ -56,7 +56,7 @@ interface UseScoreSubmitReturn {
 export function useScoreSubmit({
   gameId,
   score,
-  xpDivisor,
+  maxScore,
   onRankReceived,
   onUserLogin,
   onProgression,
@@ -110,7 +110,7 @@ export function useScoreSubmit({
 
     try {
       saveGuestName(playerName);
-      const result = await window.PixelpitSocial.submitScore(gameId, score, { nickname: playerName, xpDivisor });
+      const result = await window.PixelpitSocial.submitScore(gameId, score, { nickname: playerName, maxScore });
       if (result.success) {
         setSubmittedRank(result.rank ?? 0);
         setSubmittedEntryId(result.entry?.id ?? null);
@@ -141,7 +141,7 @@ export function useScoreSubmit({
     if (!currentUser) return;
 
     try {
-      const result = await window.PixelpitSocial.submitScore(gameId, score, { xpDivisor });
+      const result = await window.PixelpitSocial.submitScore(gameId, score, { maxScore });
       if (result.success && result.rank) {
         setSubmittedRank(result.rank);
         onRankReceived?.(result.rank, result.entry?.id);
@@ -153,7 +153,7 @@ export function useScoreSubmit({
     } catch (e) {
       setError('Network error');
     }
-  }, [gameId, score, xpDivisor, onRankReceived, onProgression]);
+  }, [gameId, score, maxScore, onRankReceived, onProgression]);
 
   const handleReturningUser = useCallback(async () => {
     if (!window.PixelpitSocial) return;

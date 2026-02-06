@@ -35,7 +35,7 @@ import type { ScoreFlowProps } from './types';
  * />
  * ```
  */
-export function ScoreFlow({ score, gameId, colors, xpDivisor, onRankReceived, onUserLogin, onProgression }: ScoreFlowProps) {
+export function ScoreFlow({ score, gameId, colors, maxScore, onRankReceived, onUserLogin, onProgression }: ScoreFlowProps) {
   const {
     flowState,
     playerName,
@@ -54,7 +54,7 @@ export function ScoreFlow({ score, gameId, colors, xpDivisor, onRankReceived, on
     retryWithNewHandle,
     skipSave,
     reset,
-  } = useScoreSubmit({ gameId, score, xpDivisor, onRankReceived, onUserLogin, onProgression });
+  } = useScoreSubmit({ gameId, score, maxScore, onRankReceived, onUserLogin, onProgression });
 
   const fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
   const autoSubmitted = useRef(false);

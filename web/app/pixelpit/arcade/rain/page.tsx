@@ -1104,6 +1104,7 @@ export default function RainGame() {
             score={score}
             gameId={GAME_ID}
             colors={RAIN_COLORS}
+            maxScore={50}
             onRankReceived={(rank, entryId) => {
               setSubmittedEntryId(entryId);
             }}

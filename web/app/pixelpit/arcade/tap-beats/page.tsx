@@ -2062,7 +2062,7 @@ export default function TapBeatsGame() {
             score={score}
             gameId={GAME_ID}
             colors={SCORE_FLOW_COLORS}
-            xpDivisor={1}
+            maxScore={70000}
             onRankReceived={(rank, entryId) => {
               setSubmittedEntryId(entryId ?? null);
             }}

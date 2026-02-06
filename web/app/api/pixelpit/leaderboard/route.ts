@@ -421,7 +421,9 @@ async function createMagicStreakPair(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { game, score, nickname, userId, xpDivisor = 100, groupCode, refUserId } = body;
+    const { game, score, nickname, userId, maxScore: rawMaxScore, xpDivisor, groupCode, refUserId } = body;
+    // Backward compat: if old client sends xpDivisor but not maxScore, convert
+    const maxScore = rawMaxScore ?? (xpDivisor ? xpDivisor * 50 : 50);
 
     if (!game || typeof score !== "number") {
       return NextResponse.json(
@@ -525,7 +527,7 @@ export async function POST(request: NextRequest) {
         newStreak = 1;
       }
 
-      const xpEarned = calculateXpGain(score, newStreak, xpDivisor);
+      const xpEarned = calculateXpGain(score, newStreak, maxScore);
       const newXp = (user.xp || 0) + xpEarned;
       const oldLevel = getLevel(user.xp || 0);
       const newLevel = getLevel(newXp);

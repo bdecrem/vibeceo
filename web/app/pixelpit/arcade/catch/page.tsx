@@ -612,7 +612,7 @@ export default function CatchGame() {
                 text: '#000000',
                 muted: '#666666',
               }}
-              xpDivisor={1}
+              maxScore={15}
               onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
               onProgression={setProgression}
             />
@@ -710,7 +710,7 @@ export default function CatchGame() {
               score={60}
               gameId={GAME_ID}
               colors={SCORE_FLOW_COLORS}
-              xpDivisor={1}
+              maxScore={15}
               onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
               onProgression={setProgression}
             />

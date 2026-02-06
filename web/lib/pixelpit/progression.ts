@@ -44,11 +44,11 @@ export function getStreakMultiplier(streak: number): number {
 
 /**
  * Calculate XP earned from a score with streak multiplier.
- * Minimum 50 XP for playing (before multiplier).
- * @param xpDivisor - Divide score by this to get base XP (default 100, use 1 for full score)
+ * Normalized: every game awards 10-50 XP per play (before multiplier).
+ * @param maxScore - The game's "great score" benchmark (p90). Score at or above this = 50 XP.
  */
-export function calculateXpGain(score: number, streak: number, xpDivisor: number = 100): number {
-  const base = Math.max(50, Math.floor(score / xpDivisor));
+export function calculateXpGain(score: number, streak: number, maxScore: number = 50): number {
+  const base = Math.min(50, Math.max(10, Math.floor(score / maxScore * 50)));
   const multiplier = getStreakMultiplier(streak);
   return Math.floor(base * multiplier);
 }

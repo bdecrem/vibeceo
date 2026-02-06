@@ -2331,7 +2331,7 @@ export default function SproutRunGame() {
             score={score}
             gameId={GAME_ID}
             colors={SCORE_FLOW_COLORS}
-            xpDivisor={10}
+            maxScore={2000}
             onRankReceived={(rank, entryId) => {
               setSubmittedEntryId(entryId ?? null);
             }}

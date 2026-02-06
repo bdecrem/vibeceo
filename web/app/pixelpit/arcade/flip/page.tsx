@@ -893,7 +893,7 @@ export default function FlipGame() {
             score={score}
             gameId={GAME_ID}
             colors={SCORE_FLOW_COLORS}
-            xpDivisor={1}
+            maxScore={1000}
             onRankReceived={(rank, entryId) => {
               setSubmittedEntryId(entryId ?? null);
             }}

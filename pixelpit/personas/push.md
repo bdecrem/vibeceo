@@ -167,7 +167,7 @@ This bug has broken CATCH and HAUNT. Don't let it happen again.
   score={score}
   gameId={GAME_ID}
   colors={SCORE_FLOW_COLORS}
-  xpDivisor={1}  // Set appropriately: 1 for low scores, 100 for high scores
+  maxScore={20}  // Game's "great score" (p90) — normalized to 10-50 XP per play
   onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
   onProgression={(prog) => setProgression(prog)}
 />
@@ -176,7 +176,7 @@ This bug has broken CATCH and HAUNT. Don't let it happen again.
 ```
 
 **Checklist:**
-- [ ] `xpDivisor` set correctly (1 for low-score games, 100 for high-score)
+- [ ] `maxScore` set to game's "great score" benchmark (p90 score)
 - [ ] `onProgression` callback wired up
 - [ ] `ProgressionDisplay` component rendering XP, level, streak
 

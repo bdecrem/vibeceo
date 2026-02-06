@@ -163,7 +163,7 @@ window.PixelpitSocial = (function() {
    * Submit a score to the leaderboard
    * @param {string} gameId - Game identifier (e.g., 'g1', 'tap-tempo')
    * @param {number} score
-   * @param {{ nickname?: string, xpDivisor?: number, groupCode?: string }} [opts] - If not logged in, provide nickname. xpDivisor controls XP (default 100, use 1 for full score as XP). groupCode for auto-join.
+   * @param {{ nickname?: string, maxScore?: number, xpDivisor?: number, groupCode?: string }} [opts] - If not logged in, provide nickname. maxScore = game's "great score" benchmark (10-50 XP range). Legacy xpDivisor still accepted. groupCode for auto-join.
    * @returns {Promise<{ success: boolean, rank?: number, entry?: object, progression?: object, joinedGroup?: object, magicPair?: object, error?: string }>}
    */
   async function submitScore(gameId, score, opts = {}) {
@@ -181,7 +181,9 @@ window.PixelpitSocial = (function() {
       return { success: false, error: 'Must be logged in or provide nickname' };
     }
 
-    if (opts.xpDivisor !== undefined) {
+    if (opts.maxScore !== undefined) {
+      body.maxScore = opts.maxScore;
+    } else if (opts.xpDivisor !== undefined) {
       body.xpDivisor = opts.xpDivisor;
     }
 

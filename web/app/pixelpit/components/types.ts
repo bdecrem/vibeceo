@@ -129,8 +129,8 @@ export interface ScoreFlowProps {
   score: number;
   gameId: string;
   colors: ScoreFlowColors;
-  /** XP divisor for this game. Default 100 (score/100 = XP). Use 1 for full score as XP. */
-  xpDivisor?: number;
+  /** The game's "great score" benchmark (p90). Normalized: score/maxScore*50 = base XP (clamped 10-50). */
+  maxScore?: number;
   onRankReceived?: (rank: number, entryId?: number) => void;
   onUserLogin?: (user: PixelpitUser) => void;
   onProgression?: (progression: ProgressionResult) => void;
@@ -193,7 +193,7 @@ declare global {
 
 export interface PixelpitSocialAPI {
   getUser: () => PixelpitUser | null;
-  submitScore: (game: string, score: number, opts?: { nickname?: string; xpDivisor?: number; groupCode?: string }) => Promise<ScoreSubmitResult>;
+  submitScore: (game: string, score: number, opts?: { nickname?: string; maxScore?: number; xpDivisor?: number; groupCode?: string }) => Promise<ScoreSubmitResult>;
   getLeaderboard: (game: string, limit?: number, opts?: { entryId?: number }) => Promise<LeaderboardResult>;
   getProfile: (userId: number) => Promise<ProfileResult | null>;
   login: (handle: string, code: string) => Promise<AuthResult>;

@@ -1447,7 +1447,7 @@ export default function CatTowerGame() {
               score={score}
               gameId={GAME_ID}
               colors={SCORE_FLOW_COLORS}
-              xpDivisor={1}
+              maxScore={40}
               onRankReceived={(rank, newEntryId) => {
                 setEntryId(newEntryId ?? null);
               }}

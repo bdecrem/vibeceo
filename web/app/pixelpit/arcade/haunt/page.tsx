@@ -670,7 +670,7 @@ export default function HauntGame() {
               score={5}
               gameId={GAME_ID}
               colors={SCORE_FLOW_COLORS}
-              xpDivisor={1}
+              maxScore={5}
               onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
             />
 
@@ -747,7 +747,7 @@ export default function HauntGame() {
                 score={tourists}
                 gameId={GAME_ID}
                 colors={SCORE_FLOW_COLORS}
-                xpDivisor={1}
+                maxScore={5}
                 onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
               />
             )}

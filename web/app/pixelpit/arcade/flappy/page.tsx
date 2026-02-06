@@ -6,6 +6,7 @@ import {
   ScoreFlow,
   Leaderboard,
   ShareButtonContainer,
+  ShareModal,
   usePixelpitSocial,
   type ScoreFlowColors,
   type LeaderboardColors,
@@ -218,8 +219,36 @@ export default function FlappyGame() {
   const [socialLoaded, setSocialLoaded] = useState(false);
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [progression, setProgression] = useState<ProgressionResult | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const { user } = usePixelpitSocial(socialLoaded);
+
+  const GAME_URL = typeof window !== 'undefined'
+    ? `${window.location.origin}/pixelpit/arcade/flappy`
+    : 'https://pixelpit.gg/pixelpit/arcade/flappy';
+
+  // Handle group code and logout URL params
+  useEffect(() => {
+    if (!socialLoaded || typeof window === 'undefined') return;
+    if (!window.PixelpitSocial) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('logout')) {
+      window.PixelpitSocial.logout();
+      params.delete('logout');
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      window.location.reload();
+      return;
+    }
+
+    const groupCode = window.PixelpitSocial.getGroupCodeFromUrl();
+    if (groupCode) {
+      window.PixelpitSocial.storeGroupCode(groupCode);
+    }
+  }, [socialLoaded]);
   
   // Music toggle (handles iOS audio unlock)
   const toggleMusic = useCallback(() => {
@@ -288,6 +317,7 @@ export default function FlappyGame() {
     setGameState('playing');
     setSubmittedEntryId(null);
     setProgression(null);
+    setShowShareModal(false);
     // Don't spawn pipes yet - wait for warmup to end
   }, []);
 
@@ -877,7 +907,7 @@ export default function FlappyGame() {
             score={score}
             gameId={GAME_ID}
             colors={SCORE_FLOW_COLORS}
-            xpDivisor={1}
+            maxScore={60}
             onRankReceived={(rank, entryId) => {
               setSubmittedEntryId(entryId ?? null);
             }}
@@ -920,13 +950,32 @@ export default function FlappyGame() {
             >
               leaderboard
             </button>
-            <ShareButtonContainer
-              id="share-btn-container"
-              url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/flappy/share/${score}` : ''}
-              text={`I scored ${score} on FLAPPY! Can you beat me? 🐦`}
-              style="minimal"
-              socialLoaded={socialLoaded}
-            />
+            {user ? (
+              <button
+                onClick={() => setShowShareModal(true)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 6,
+                  color: COLORS.muted,
+                  padding: '14px 35px',
+                  fontSize: 11,
+                  fontFamily: 'ui-monospace, monospace',
+                  cursor: 'pointer',
+                  letterSpacing: 2,
+                }}
+              >
+                share / groups
+              </button>
+            ) : (
+              <ShareButtonContainer
+                id="share-btn-container"
+                url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/flappy/share/${score}` : ''}
+                text={`I scored ${score} on FLAPPY! Can you beat me?`}
+                style="minimal"
+                socialLoaded={socialLoaded}
+              />
+            )}
           </div>
         </div>
       )}
@@ -939,6 +988,19 @@ export default function FlappyGame() {
           entryId={submittedEntryId ?? undefined}
           colors={LEADERBOARD_COLORS}
           onClose={() => setGameState('gameover')}
+          groupsEnabled={true}
+          gameUrl={GAME_URL}
+          socialLoaded={socialLoaded}
+        />
+      )}
+
+      {/* Share modal for logged-in users */}
+      {showShareModal && user && (
+        <ShareModal
+          gameUrl={GAME_URL}
+          score={score}
+          colors={LEADERBOARD_COLORS}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </>
