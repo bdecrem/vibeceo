@@ -24,6 +24,7 @@ export interface Group {
   code: string;
   name: string;
   type: GroupType;
+  createdBy?: number;
   streak?: number;
   maxStreak?: number;
   streakSavedAt?: string;
@@ -134,6 +135,7 @@ export interface ScoreFlowProps {
   onRankReceived?: (rank: number, entryId?: number) => void;
   onUserLogin?: (user: PixelpitUser) => void;
   onProgression?: (progression: ProgressionResult) => void;
+  onSettingsOpen?: () => void;
 }
 
 export interface LeaderboardColors {
@@ -210,6 +212,8 @@ export interface PixelpitSocialAPI {
   createGroup: (name: string, type: GroupType, opts?: { phones?: string[]; gameUrl?: string; score?: number }) => Promise<CreateGroupResult>;
   createQuickGroup: (opts?: { gameUrl?: string; score?: number }) => Promise<CreateGroupResult>;
   joinGroup: (code: string) => Promise<JoinGroupResult>;
+  renameGroup: (groupId: number, newName: string) => Promise<{ success: boolean; error?: string }>;
+  deleteGroup: (groupId: number) => Promise<{ success: boolean; error?: string }>;
   getGroupLeaderboard: (gameId: string, groupCode: string, limit?: number) => Promise<LeaderboardResult & { group?: { id: number; type: string; name: string } }>;
   getSmsInviteLink: (phones: string[], groupCode: string, gameUrl: string, score?: number) => string;
   getGroupCodeFromUrl: () => string | null;

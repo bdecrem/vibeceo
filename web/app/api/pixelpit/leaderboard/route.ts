@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import twilio from "twilio";
 import {
   getLevel,
   getXpProgress,
@@ -305,6 +306,93 @@ async function updateStreakGroups(userId: number) {
         })
         .eq("id", group.id);
     }
+  }
+}
+
+// Helper: Notify streak group members via SMS when someone plays
+async function notifyStreakGroupMembers(scorerUserId: number, gameId: string) {
+  try {
+    // Get all streak groups this user is in
+    const { data: memberships } = await supabase
+      .from("pixelpit_group_members")
+      .select("group_id")
+      .eq("user_id", scorerUserId);
+
+    if (!memberships || memberships.length === 0) return;
+
+    const groupIds = memberships.map(m => m.group_id);
+
+    const { data: streakGroups } = await supabase
+      .from("pixelpit_groups")
+      .select("id, name")
+      .eq("type", "streak")
+      .in("id", groupIds);
+
+    if (!streakGroups || streakGroups.length === 0) return;
+
+    // Get scorer's handle
+    const { data: scorer } = await supabase
+      .from("pixelpit_users")
+      .select("handle")
+      .eq("id", scorerUserId)
+      .single();
+
+    if (!scorer) return;
+
+    const today = new Date().toISOString().split("T")[0];
+
+    // For each streak group, notify other members
+    for (const group of streakGroups) {
+      const { data: members } = await supabase
+        .from("pixelpit_group_members")
+        .select("user_id, last_play_at")
+        .eq("group_id", group.id)
+        .neq("user_id", scorerUserId);
+
+      if (!members || members.length === 0) continue;
+
+      // Filter to members who haven't played today (no need to nudge them)
+      const needsNudge = members.filter(m => {
+        if (!m.last_play_at) return true;
+        const playDate = new Date(m.last_play_at).toISOString().split("T")[0];
+        return playDate !== today;
+      });
+
+      if (needsNudge.length === 0) continue;
+
+      const userIds = needsNudge.map(m => m.user_id);
+
+      // Get verified phones for these users
+      const { data: users } = await supabase
+        .from("pixelpit_users")
+        .select("phone")
+        .in("id", userIds)
+        .eq("phone_verified", true)
+        .not("phone", "is", null);
+
+      if (!users || users.length === 0) continue;
+
+      const twilioClient = twilio(
+        process.env.TWILIO_ACCOUNT_SID!,
+        process.env.TWILIO_AUTH_TOKEN!
+      );
+
+      const message = `@${scorer.handle} just played ${gameId}! Keep the streak alive → pixelpit.gg/${gameId}`;
+
+      for (const user of users) {
+        try {
+          await twilioClient.messages.create({
+            body: message,
+            from: process.env.TWILIO_PHONE_NUMBER!,
+            to: user.phone,
+          });
+        } catch (smsErr) {
+          console.error("[pixelpit/notify] SMS send error:", smsErr);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[pixelpit/notify] Error:", err);
   }
 }
 
@@ -684,6 +772,9 @@ export async function POST(request: NextRequest) {
 
       // Update streak groups
       await updateStreakGroups(userId);
+
+      // Fire-and-forget: notify other streak group members via SMS
+      notifyStreakGroupMembers(userId, game).catch(() => {});
     }
 
     return NextResponse.json({ success: true, entry: data, rank, progression, joinedGroup, magicPair });

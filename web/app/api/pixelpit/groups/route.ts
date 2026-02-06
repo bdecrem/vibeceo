@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
   // Get group details
   const { data: groups, error: groupError } = await supabase
     .from("pixelpit_groups")
-    .select("id, code, name, type, streak, max_streak, streak_saved_at, created_at")
+    .select("id, code, name, type, created_by, streak, max_streak, streak_saved_at, created_at")
     .in("id", groupIds);
 
   if (groupError) {
@@ -102,6 +102,7 @@ export async function GET(request: NextRequest) {
       code: g.code,
       name: g.name,
       type: g.type,
+      createdBy: g.created_by,
       streak: g.streak,
       maxStreak: g.max_streak,
       streakSavedAt: g.streak_saved_at,

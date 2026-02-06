@@ -12,6 +12,7 @@ export { ShareButtonContainer } from './ShareButtonContainer';
 export { ShareModal } from './ShareModal';
 export { GroupTabs } from './GroupTabs';
 export { StreakBoard } from './StreakBoard';
+export { SettingsPanel } from './SettingsPanel';
 
 // Hooks
 export { usePixelpitSocial, getGuestName, saveGuestName } from './hooks/usePixelpitSocial';

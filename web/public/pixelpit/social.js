@@ -395,6 +395,51 @@ window.PixelpitSocial = (function() {
   }
 
   /**
+   * Rename a group
+   * @param {number} groupId
+   * @param {string} newName
+   * @returns {Promise<{ success: boolean, error?: string }>}
+   */
+  async function renameGroup(groupId, newName) {
+    const user = getUser();
+    if (!user) return { success: false, error: 'Must be logged in' };
+
+    try {
+      const res = await fetch(`${API_BASE}/groups/${groupId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, name: newName }),
+      });
+      return res.json();
+    } catch (e) {
+      console.error('PixelpitSocial: Error renaming group', e);
+      return { success: false, error: 'Failed to rename group' };
+    }
+  }
+
+  /**
+   * Delete a group
+   * @param {number} groupId
+   * @returns {Promise<{ success: boolean, error?: string }>}
+   */
+  async function deleteGroup(groupId) {
+    const user = getUser();
+    if (!user) return { success: false, error: 'Must be logged in' };
+
+    try {
+      const res = await fetch(`${API_BASE}/groups/${groupId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      return res.json();
+    } catch (e) {
+      console.error('PixelpitSocial: Error deleting group', e);
+      return { success: false, error: 'Failed to delete group' };
+    }
+  }
+
+  /**
    * Get leaderboard filtered to a specific group
    * @param {string} gameId
    * @param {string} groupCode - 4-char group code
@@ -824,6 +869,8 @@ window.PixelpitSocial = (function() {
     createGroup,
     createQuickGroup,
     joinGroup,
+    renameGroup,
+    deleteGroup,
     getGroupLeaderboard,
     getSmsInviteLink,
     getGroupCodeFromUrl,
