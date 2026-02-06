@@ -1,3 +1,6 @@
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -46,4 +49,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+export default nextConfig

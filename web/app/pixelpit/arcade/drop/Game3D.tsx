@@ -93,6 +93,7 @@ interface GameState {
   score: number;
   combo: number;
   gameOver: boolean;
+  started: boolean; // Ball sits still until player rotates
 }
 
 function Tower({ rotation }: { rotation: number }) {
@@ -197,7 +198,7 @@ function GameScene({
 }) {
   const { camera } = useThree();
   const gameState = useRef<GameState>({
-    ballY: 3,
+    ballY: PLATFORM_THICKNESS / 2 + BALL_RADIUS, // Start on first platform (y=0)
     ballVY: 0,
     rotation: 0,
     rotationVel: 0,
@@ -205,6 +206,7 @@ function GameScene({
     score: 0,
     combo: 0,
     gameOver: false,
+    started: false, // Wait for player input
   });
   
   const [, forceUpdate] = useState(0);
@@ -214,7 +216,21 @@ function GameScene({
   useEffect(() => {
     initAudio();
     const platforms: PlatformData[] = [];
-    for (let i = 0; i < PLATFORM_COUNT; i++) {
+    
+    // First platform at y=0 with NO gap where ball starts (ball starts at angle 0)
+    // Make sure ball's starting position is on solid ground
+    platforms.push({
+      y: 0,
+      gapAngle: Math.PI, // Gap on opposite side from ball
+      gapSize: 1.0,
+      hasStorm: false,
+      stormAngle: 0,
+      stormSize: 0,
+      passed: false,
+    });
+    
+    // Rest of platforms below
+    for (let i = 1; i < PLATFORM_COUNT; i++) {
       const hasStorm = i > 2 && Math.random() < 0.4;
       platforms.push({
         y: -i * PLATFORM_SPACING,
@@ -227,12 +243,13 @@ function GameScene({
       });
     }
     gameState.current.platforms = platforms;
-    gameState.current.ballY = 3;
+    gameState.current.ballY = PLATFORM_THICKNESS / 2 + BALL_RADIUS; // On top of first platform
     gameState.current.ballVY = 0;
     gameState.current.rotation = 0;
     gameState.current.score = 0;
     gameState.current.combo = 0;
     gameState.current.gameOver = false;
+    gameState.current.started = false;
   }, []);
   
   // Input handling
@@ -247,6 +264,11 @@ function GameScene({
       const dx = x - dragRef.current.lastX;
       gameState.current.rotationVel += dx * 0.005;
       dragRef.current.lastX = x;
+      
+      // Start the game on first rotation
+      if (!gameState.current.started && Math.abs(dx) > 2) {
+        gameState.current.started = true;
+      }
     };
     
     const handleEnd = () => {
@@ -292,12 +314,13 @@ function GameScene({
     gs.rotation += gs.rotationVel;
     gs.rotationVel *= 0.92;
     
-    // Gravity
-    gs.ballVY -= 0.015;
-    gs.ballVY = Math.max(gs.ballVY, -0.3);
-    
+    // Only apply gravity once player has started rotating
     const prevY = gs.ballY;
-    gs.ballY += gs.ballVY;
+    if (gs.started) {
+      gs.ballVY -= 0.015;
+      gs.ballVY = Math.max(gs.ballVY, -0.3);
+      gs.ballY += gs.ballVY;
+    }
     
     // Camera follows ball
     camera.position.y = gs.ballY + 3;
