@@ -364,11 +364,14 @@ async function notifyStreakGroupMembers(scorerUserId: number, gameId: string) {
       const sid = process.env.TWILIO_ACCOUNT_SID!;
       const token = process.env.TWILIO_AUTH_TOKEN!;
       const from = process.env.TWILIO_PHONE_NUMBER!;
+
+      console.log(`[pixelpit/notify] Sending to ${users.length} user(s) in group "${group.name}", from=${from}, sid=${sid ? sid.slice(0, 6) + '...' : 'MISSING'}`);
+
       const authHeader = "Basic " + Buffer.from(`${sid}:${token}`).toString("base64");
 
       for (const user of users) {
         try {
-          await fetch(
+          const res = await fetch(
             `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
             {
               method: "POST",
@@ -379,8 +382,14 @@ async function notifyStreakGroupMembers(scorerUserId: number, gameId: string) {
               body: new URLSearchParams({ To: user.phone, From: from, Body: message }).toString(),
             }
           );
+          const resBody = await res.text();
+          if (!res.ok) {
+            console.error(`[pixelpit/notify] Twilio error ${res.status} for ${user.phone}: ${resBody}`);
+          } else {
+            console.log(`[pixelpit/notify] SMS sent to ${user.phone}`);
+          }
         } catch (smsErr) {
-          console.error("[pixelpit/notify] SMS send error:", smsErr);
+          console.error("[pixelpit/notify] SMS fetch error:", smsErr);
         }
       }
     }
@@ -767,7 +776,7 @@ export async function POST(request: NextRequest) {
       await updateStreakGroups(userId);
 
       // Fire-and-forget: notify other streak group members via SMS
-      notifyStreakGroupMembers(userId, game).catch(() => {});
+      notifyStreakGroupMembers(userId, game).catch(err => console.error("[pixelpit/notify] Unhandled:", err));
     }
 
     return NextResponse.json({ success: true, entry: data, rank, progression, joinedGroup, magicPair });
