@@ -14,7 +14,7 @@ const THEME = {
 const GAME_ID = 'melt';
 const CANVAS_W = 360;
 const CANVAS_H = 640;
-const NUM_PLATFORMS = 30;
+const NUM_PLATFORMS = 20;
 const BALL_X = CANVAS_W / 2;
 const MAX_HEALTH = 100;
 
@@ -138,13 +138,16 @@ export default function MeltGame() {
 
   const generatePlatforms = useCallback(() => {
     const platforms: Platform[] = [];
+    let currentY = 300;
     for (let i = 0; i < NUM_PLATFORMS; i++) {
-      // Start with big gaps between wheels, get tighter
-      const baseGap = 120;
-      const minGap = 70;
-      const gap = Math.max(minGap, baseGap - i * 2);
+      // Start with big gaps between wheels, get tighter later
+      // Ring radius is 130, so need at least 280+ to not overlap
+      const baseGap = 320;
+      const minGap = 200;
+      const gap = Math.max(minGap, baseGap - i * 6);
       
-      const y = 200 + i * gap;
+      currentY += gap;
+      const y = currentY;
       
       // Gap size in wheel: starts big, gets smaller
       const gapSize = Math.max(0.6, 1.2 - i * 0.02); // radians
