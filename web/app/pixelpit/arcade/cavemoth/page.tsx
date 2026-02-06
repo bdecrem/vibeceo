@@ -374,10 +374,8 @@ export default function CaveMothGame() {
     nearMissX: 0,
     nearMissY: 0,
     frameCount: 0,
-    // Fingerprint tutorial hints
-    tapCount: 0,
-    hint1Alpha: 0,  // grey fingerprint above moth
-    hint2Alpha: 0,  // grey fingerprint below moth
+    // Fingerprint tutorial: 0=show top prompt, 1=show bottom prompt, 2=done
+    hintPhase: 0 as 0 | 1 | 2,
   });
 
   const startGame = useCallback(() => {
@@ -424,9 +422,7 @@ export default function CaveMothGame() {
     game.flipParticles = [];
     game.nearMissFlash = 0;
     game.frameCount = 0;
-    game.tapCount = 0;
-    game.hint1Alpha = 0;
-    game.hint2Alpha = 0;
+    game.hintPhase = 0;
 
     setMusicIntensity(1);
 
@@ -444,11 +440,9 @@ export default function CaveMothGame() {
       startGame();
     } else if (gameState === 'playing' && game.running) {
       game.gravity *= -1;
-      game.tapCount++;
       const goingUp = game.gravity < 0;
-      // Fingerprint hints for first two taps
-      if (game.tapCount === 1) game.hint1Alpha = 1;
-      if (game.tapCount === 2) game.hint2Alpha = 1;
+      // Advance fingerprint tutorial
+      if (game.hintPhase < 2) game.hintPhase = (game.hintPhase + 1) as 0 | 1 | 2;
       // Wing flutter burst on flip
       game.player.scaleX = goingUp ? 0.7 : 1.3;
       game.player.scaleY = goingUp ? 1.3 : 0.7;
@@ -573,9 +567,6 @@ export default function CaveMothGame() {
         if (game.nearMissFlash < 0.02) game.nearMissFlash = 0;
       }
 
-      // Fade fingerprint hints
-      if (game.hint1Alpha > 0) { game.hint1Alpha -= 0.012; if (game.hint1Alpha < 0) game.hint1Alpha = 0; }
-      if (game.hint2Alpha > 0) { game.hint2Alpha -= 0.012; if (game.hint2Alpha < 0) game.hint2Alpha = 0; }
 
       // Update trail
       for (let i = game.trail.length - 1; i >= 0; i--) {
@@ -1112,32 +1103,34 @@ export default function CaveMothGame() {
       ctx.fillStyle = vig;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Fingerprint tutorial hints
-      if (game.hint1Alpha > 0 || game.hint2Alpha > 0) {
-        const drawFingerprint = (fx: number, fy: number, alpha: number) => {
+      // Fingerprint tutorial — static prompt before player taps
+      if (game.hintPhase < 2) {
+        const drawFingerprint = (fx: number, fy: number) => {
           ctx.save();
           ctx.translate(fx, fy);
-          ctx.globalAlpha = alpha * 0.35;
+          ctx.globalAlpha = 0.25;
           ctx.strokeStyle = '#ffffff';
           ctx.lineWidth = 1.5;
-          // Stylized fingerprint: concentric arcs with slight offsets
-          const ridges = [6, 10, 14, 18, 22];
+          // Thumb oval
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 18, 26, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          // Fingerprint ridges inside
+          const ridges = [5, 9, 13, 17];
           for (let i = 0; i < ridges.length; i++) {
             const r = ridges[i];
-            const offsetY = i * 0.8 - 1.5; // slight vertical drift per ridge
+            const dy = i * 0.7 - 1;
             ctx.beginPath();
-            ctx.arc(0, offsetY, r, -Math.PI * 0.8, Math.PI * 0.8);
+            ctx.arc(0, dy, r, -Math.PI * 0.75, Math.PI * 0.75);
             ctx.stroke();
           }
           ctx.restore();
         };
-        // Hint 1: above moth
-        if (game.hint1Alpha > 0) {
-          drawFingerprint(game.player.x, game.player.y - 55, game.hint1Alpha);
-        }
-        // Hint 2: below moth
-        if (game.hint2Alpha > 0) {
-          drawFingerprint(game.player.x, game.player.y + 55, game.hint2Alpha);
+        const cx = canvas.width / 2;
+        if (game.hintPhase === 0) {
+          drawFingerprint(cx, canvas.height * 0.3);
+        } else {
+          drawFingerprint(cx, canvas.height * 0.7);
         }
       }
 
