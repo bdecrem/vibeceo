@@ -1,6 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import twilio from "twilio";
 import {
   getLevel,
   getXpProgress,
@@ -372,20 +371,25 @@ async function notifyStreakGroupMembers(scorerUserId: number, gameId: string) {
 
       if (!users || users.length === 0) continue;
 
-      const twilioClient = twilio(
-        process.env.TWILIO_ACCOUNT_SID!,
-        process.env.TWILIO_AUTH_TOKEN!
-      );
-
       const message = `@${scorer.handle} just played ${gameId}! Keep the streak alive → pixelpit.gg/${gameId}`;
+      const sid = process.env.TWILIO_ACCOUNT_SID!;
+      const token = process.env.TWILIO_AUTH_TOKEN!;
+      const from = process.env.TWILIO_PHONE_NUMBER!;
+      const authHeader = "Basic " + Buffer.from(`${sid}:${token}`).toString("base64");
 
       for (const user of users) {
         try {
-          await twilioClient.messages.create({
-            body: message,
-            from: process.env.TWILIO_PHONE_NUMBER!,
-            to: user.phone,
-          });
+          await fetch(
+            `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: authHeader,
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: new URLSearchParams({ To: user.phone, From: from, Body: message }).toString(),
+            }
+          );
         } catch (smsErr) {
           console.error("[pixelpit/notify] SMS send error:", smsErr);
         }

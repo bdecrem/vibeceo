@@ -1,8 +1,28 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import twilio from "twilio";
 
 export const dynamic = "force-dynamic";
+
+async function sendSms(to: string, body: string) {
+  const sid = process.env.TWILIO_ACCOUNT_SID!;
+  const token = process.env.TWILIO_AUTH_TOKEN!;
+  const from = process.env.TWILIO_PHONE_NUMBER!;
+  const res = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: "Basic " + Buffer.from(`${sid}:${token}`).toString("base64"),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({ To: to, From: from, Body: body }).toString(),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Twilio error ${res.status}: ${err}`);
+  }
+}
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -132,17 +152,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Send SMS via Twilio
-      const twilioClient = twilio(
-        process.env.TWILIO_ACCOUNT_SID!,
-        process.env.TWILIO_AUTH_TOKEN!
-      );
-
-      await twilioClient.messages.create({
-        body: `Your Pixelpit code: ${code}`,
-        from: process.env.TWILIO_PHONE_NUMBER!,
-        to: normalizedPhone,
-      });
+      // Send SMS via Twilio REST API
+      await sendSms(normalizedPhone, `Your Pixelpit code: ${code}`);
 
       console.log(`[pixelpit/phone] Sent code to ${normalizedPhone}`);
       return NextResponse.json({ success: true });
