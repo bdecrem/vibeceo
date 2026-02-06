@@ -191,9 +191,7 @@ export default function MeltGame() {
     canvas.height = CANVAS_H;
 
     let animationId: number;
-    const RING_OUTER = 130;
-    const RING_INNER = 30;
-    const RING_THICKNESS = RING_OUTER - RING_INNER;
+    const PIZZA_RADIUS = 130;
 
     const update = () => {
       const game = gameRef.current;
@@ -219,9 +217,10 @@ export default function MeltGame() {
         const ballBottom = game.ballY + game.ballSize;
         const ballTop = game.ballY - game.ballSize;
         
-        // Check if ball is at wheel level
-        if (ballBottom > platform.y - RING_THICKNESS/2 && 
-            ballTop < platform.y + RING_THICKNESS/2) {
+        // Check if ball is at pizza level (pizza has thickness ~20px for collision)
+        const PIZZA_THICKNESS = 20;
+        if (ballBottom > platform.y - PIZZA_THICKNESS/2 && 
+            ballTop < platform.y + PIZZA_THICKNESS/2) {
           
           // Check if in gap
           const ballAngle = Math.PI / 2; // Ball drops straight down
@@ -303,24 +302,25 @@ export default function MeltGame() {
       ctx.fillStyle = THEME.bg;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      // Draw orange wheels (filled pie wedges)
+      // Draw orange pizzas (solid disk with missing wedge slices)
       for (const platform of game.platforms) {
         const screenY = platform.y - game.cameraY;
-        if (screenY < -RING_OUTER - 50 || screenY > CANVAS_H + RING_OUTER + 50) continue;
+        if (screenY < -PIZZA_RADIUS - 50 || screenY > CANVAS_H + PIZZA_RADIUS + 50) continue;
 
         const currentGapAngle = platform.gapAngle + platform.rotation;
         const gapStart = currentGapAngle - platform.gapSize / 2;
         const gapEnd = currentGapAngle + platform.gapSize / 2;
         
-        // Filled ring with gap (donut shape)
+        // Solid pizza with wedge gap
         ctx.fillStyle = THEME.lava;
         ctx.shadowColor = THEME.lavaGlow;
         ctx.shadowBlur = 15;
         
-        // Draw filled arc (outer arc, then inner arc reversed)
+        // Draw filled pie (arc from center, missing one wedge)
         ctx.beginPath();
-        ctx.arc(BALL_X, screenY, RING_OUTER, gapEnd, gapStart + Math.PI * 2);
-        ctx.arc(BALL_X, screenY, RING_INNER, gapStart + Math.PI * 2, gapEnd, true);
+        ctx.moveTo(BALL_X, screenY); // center
+        ctx.arc(BALL_X, screenY, PIZZA_RADIUS, gapEnd, gapStart + Math.PI * 2);
+        ctx.lineTo(BALL_X, screenY); // back to center
         ctx.closePath();
         ctx.fill();
         
