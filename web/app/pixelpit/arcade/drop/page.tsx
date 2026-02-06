@@ -18,8 +18,9 @@ const THEME = {
 
 const GAME_ID = 'drop';
 const RING_COUNT = 20;
-const RING_SPACING = 100;
-const BALL_RADIUS = 15;
+const RING_SPACING = 80;
+const BALL_RADIUS = 12;
+const TOWER_CORE_RADIUS = 30; // Central beam radius
 
 // Audio
 let audioCtx: AudioContext | null = null;
@@ -375,23 +376,42 @@ export default function DropGame() {
 
       const centerX = canvasSize.w / 2;
 
-      // Draw rings (clouds)
+      // CENTRAL TOWER/BEAM - the anchor that grounds everything
+      ctx.fillStyle = '#d4d4d8'; // Light gray tower
+      ctx.strokeStyle = '#a1a1aa';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.rect(centerX - TOWER_CORE_RADIUS, 0, TOWER_CORE_RADIUS * 2, canvasSize.h);
+      ctx.fill();
+      ctx.stroke();
+
+      // Tower shading (3D effect)
+      const towerGradient = ctx.createLinearGradient(
+        centerX - TOWER_CORE_RADIUS, 0,
+        centerX + TOWER_CORE_RADIUS, 0
+      );
+      towerGradient.addColorStop(0, 'rgba(0,0,0,0.1)');
+      towerGradient.addColorStop(0.3, 'rgba(255,255,255,0.2)');
+      towerGradient.addColorStop(0.7, 'rgba(255,255,255,0.1)');
+      towerGradient.addColorStop(1, 'rgba(0,0,0,0.15)');
+      ctx.fillStyle = towerGradient;
+      ctx.fillRect(centerX - TOWER_CORE_RADIUS, 0, TOWER_CORE_RADIUS * 2, canvasSize.h);
+
+      // Draw platforms attached to tower
       for (const ring of game.rings) {
         const screenY = ring.y - game.cameraY;
-        if (screenY < -100 || screenY > canvasSize.h + 100) continue;
+        if (screenY < -50 || screenY > canvasSize.h + 50) continue;
 
         const effectiveRotation = game.rotation;
-        const gapStart = ring.gapAngle - ring.gapSize / 2;
-        const gapEnd = ring.gapAngle + ring.gapSize / 2;
 
-        // Draw cloud ring segments
-        const segments = 32;
+        // Draw platform segments attached to tower
+        const segments = 24;
         for (let i = 0; i < segments; i++) {
           const angle1 = (i / segments) * Math.PI * 2;
           const angle2 = ((i + 1) / segments) * Math.PI * 2;
+          const midAngle = (angle1 + angle2) / 2;
 
           // Check if this segment is in the gap
-          const midAngle = (angle1 + angle2) / 2;
           let gapDiff = Math.abs(midAngle - ring.gapAngle);
           if (gapDiff > Math.PI) gapDiff = Math.PI * 2 - gapDiff;
           if (gapDiff < ring.gapSize / 2) continue; // Skip gap
@@ -404,57 +424,96 @@ export default function DropGame() {
             isStorm = stormDiff < ring.stormSize / 2;
           }
 
-          const x1 = centerX + Math.cos(angle1 + effectiveRotation) * TOWER_RADIUS;
-          const y1 = screenY + Math.sin(angle1 + effectiveRotation) * 20;
-          const x2 = centerX + Math.cos(angle2 + effectiveRotation) * TOWER_RADIUS;
-          const y2 = screenY + Math.sin(angle2 + effectiveRotation) * 20;
+          // Platform extends from tower core to outer radius
+          const innerR = TOWER_CORE_RADIUS;
+          const outerR = TOWER_RADIUS;
+          
+          // Calculate 2D projection (simple top-down to side view)
+          const a1 = angle1 + effectiveRotation;
+          const a2 = angle2 + effectiveRotation;
+          
+          // Only draw front-facing segments (creates 3D illusion)
+          const facingFront = Math.sin(a1) > -0.3 || Math.sin(a2) > -0.3;
+          if (!facingFront) continue;
+          
+          // Project to screen coordinates
+          const x1Inner = centerX + Math.cos(a1) * innerR;
+          const x1Outer = centerX + Math.cos(a1) * outerR;
+          const x2Inner = centerX + Math.cos(a2) * innerR;
+          const x2Outer = centerX + Math.cos(a2) * outerR;
+          
+          // Y offset based on angle (creates depth)
+          const yOffset1 = Math.sin(a1) * 15;
+          const yOffset2 = Math.sin(a2) * 15;
 
           if (isStorm) {
             // STORM CLOUD - unmistakably dangerous
             ctx.fillStyle = THEME.storm;
             ctx.shadowColor = THEME.stormGlow;
-            ctx.shadowBlur = 15 + Math.sin(Date.now() / 100) * 5; // Pulsing glow
+            ctx.shadowBlur = 20 + Math.sin(Date.now() / 100) * 8;
             
-            // Draw storm segment
+            // Draw storm platform
             ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x2, y2 + RING_THICKNESS);
-            ctx.lineTo(x1, y1 + RING_THICKNESS);
+            ctx.moveTo(x1Inner, screenY + yOffset1);
+            ctx.lineTo(x1Outer, screenY + yOffset1);
+            ctx.lineTo(x2Outer, screenY + yOffset2);
+            ctx.lineTo(x2Inner, screenY + yOffset2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Platform thickness
+            ctx.fillStyle = '#1a0a2e';
+            ctx.beginPath();
+            ctx.moveTo(x1Outer, screenY + yOffset1);
+            ctx.lineTo(x2Outer, screenY + yOffset2);
+            ctx.lineTo(x2Outer, screenY + yOffset2 + RING_THICKNESS);
+            ctx.lineTo(x1Outer, screenY + yOffset1 + RING_THICKNESS);
             ctx.closePath();
             ctx.fill();
 
             // Lightning crackle effect
-            if (Math.random() < 0.03 || ring.lightningFlash > 0) {
+            if (Math.random() < 0.05 || ring.lightningFlash > 0) {
               ctx.strokeStyle = THEME.lightning;
               ctx.lineWidth = 2;
+              ctx.shadowColor = THEME.lightning;
+              ctx.shadowBlur = 10;
+              const lx = (x1Outer + x2Outer) / 2;
+              const ly = screenY + (yOffset1 + yOffset2) / 2;
               ctx.beginPath();
-              const lx = (x1 + x2) / 2;
-              const ly = (y1 + y2) / 2 + RING_THICKNESS / 2;
-              ctx.moveTo(lx, ly - 10);
-              ctx.lineTo(lx + (Math.random() - 0.5) * 10, ly);
-              ctx.lineTo(lx + (Math.random() - 0.5) * 10, ly + 10);
+              ctx.moveTo(lx, ly - 5);
+              ctx.lineTo(lx + (Math.random() - 0.5) * 15, ly + 5);
+              ctx.lineTo(lx + (Math.random() - 0.5) * 15, ly + 15);
               ctx.stroke();
             }
             
             ctx.shadowBlur = 0;
           } else {
-            // Normal fluffy cloud
+            // Normal fluffy cloud platform
             ctx.fillStyle = THEME.cloud;
-            ctx.shadowColor = 'rgba(0,0,0,0.2)';
-            ctx.shadowBlur = 5;
-            ctx.shadowOffsetY = 3;
+            ctx.shadowColor = 'rgba(0,0,0,0.15)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetY = 2;
 
+            // Top surface
             ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x2, y2 + RING_THICKNESS);
-            ctx.lineTo(x1, y1 + RING_THICKNESS);
+            ctx.moveTo(x1Inner, screenY + yOffset1);
+            ctx.lineTo(x1Outer, screenY + yOffset1);
+            ctx.lineTo(x2Outer, screenY + yOffset2);
+            ctx.lineTo(x2Inner, screenY + yOffset2);
             ctx.closePath();
             ctx.fill();
-
+            
+            // Platform edge (thickness) - darker
+            ctx.fillStyle = THEME.cloudShadow;
             ctx.shadowBlur = 0;
             ctx.shadowOffsetY = 0;
+            ctx.beginPath();
+            ctx.moveTo(x1Outer, screenY + yOffset1);
+            ctx.lineTo(x2Outer, screenY + yOffset2);
+            ctx.lineTo(x2Outer, screenY + yOffset2 + RING_THICKNESS);
+            ctx.lineTo(x1Outer, screenY + yOffset1 + RING_THICKNESS);
+            ctx.closePath();
+            ctx.fill();
           }
         }
       }
