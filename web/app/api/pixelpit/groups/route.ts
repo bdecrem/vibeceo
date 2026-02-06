@@ -8,6 +8,26 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 );
 
+const ADJECTIVES = [
+  'cosmic', 'neon', 'purple', 'golden', 'shadow',
+  'thunder', 'crystal', 'turbo', 'hyper', 'mega',
+  'stealth', 'atomic', 'blazing', 'frozen', 'laser',
+  'pixel', 'quantum', 'savage', 'swift', 'wild',
+  'phantom', 'chrome', 'ruby', 'volt', 'ultra',
+];
+const NOUNS = [
+  'wolves', 'dolphins', 'tigers', 'falcons', 'vipers',
+  'pandas', 'ravens', 'foxes', 'hawks', 'sharks',
+  'lions', 'cobras', 'otters', 'eagles', 'jaguars',
+  'dragons', 'owls', 'bears', 'phoenixes', 'lynxes',
+  'coyotes', 'mantis', 'scorpions', 'wasps',
+];
+function generateFunName(): string {
+  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+  return `${adj}${noun}`;
+}
+
 // Generate 4-char lowercase alphanumeric code
 function generateCode(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -102,12 +122,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { userId, name, type, phones, gameUrl, score } = body;
 
-    if (!userId || !name || !type) {
+    if (!userId || !type) {
       return NextResponse.json(
-        { error: "userId, name, and type required" },
+        { error: "userId and type required" },
         { status: 400 }
       );
     }
+
+    const groupName = (name || generateFunName()).slice(0, 50).trim();
 
     if (!["streak", "leaderboard"].includes(type)) {
       return NextResponse.json(
@@ -153,7 +175,7 @@ export async function POST(request: NextRequest) {
       .from("pixelpit_groups")
       .insert({
         code,
-        name: name.slice(0, 50).trim(),
+        name: groupName,
         type,
         created_by: userId,
       })

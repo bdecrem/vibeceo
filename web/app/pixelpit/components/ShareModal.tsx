@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CreateGroupForm } from './CreateGroupForm';
 import type { Group, LeaderboardColors } from './types';
 
 interface ShareModalProps {
@@ -36,7 +35,7 @@ export function ShareModal({
 }: ShareModalProps) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
@@ -61,7 +60,7 @@ export function ShareModal({
 
       try {
         const result = await window.PixelpitSocial.getGroups();
-        setGroups(result.groups || []);
+        setGroups((result.groups || []).filter((g) => g.type === 'leaderboard'));
       } catch (e) {
         console.error('Failed to load groups:', e);
       } finally {
@@ -76,7 +75,6 @@ export function ShareModal({
     try {
       await navigator.clipboard.writeText(shareUrl);
     } catch {
-      // Fallback for non-HTTPS contexts where clipboard API fails
       const ta = document.createElement('textarea');
       ta.value = shareUrl;
       ta.style.position = 'fixed';
@@ -118,38 +116,45 @@ export function ShareModal({
     onGroupShare?.(group);
   };
 
-  const handleGroupCreated = (
-    group: { code: string; name: string; type: string },
-    smsLink?: string
-  ) => {
-    setShowCreateForm(false);
+  const handleCreateQuickGroup = () => {
+    if (!window.PixelpitSocial?.createQuickGroup) return;
+    setCreating(true);
 
-    // Reload groups
-    if (window.PixelpitSocial) {
-      window.PixelpitSocial.getGroups().then((result) => {
-        setGroups(result.groups || []);
+    // Build the async content promise
+    const contentPromise = window.PixelpitSocial.createQuickGroup({ gameUrl, score }).then((result) => {
+      if (result.success && result.group) {
+        window.PixelpitSocial?.showToast?.(`${result.group.name} created! Link copied +10 XP`);
+        // Reload groups in background
+        window.PixelpitSocial?.getGroups().then((updated) => {
+          setGroups((updated.groups || []).filter((g) => g.type === 'leaderboard'));
+        });
+        setCreating(false);
+        return `${gameUrl}?pg=${result.group.code}`;
+      }
+      window.PixelpitSocial?.showToast?.(result.error || 'Failed to create group');
+      setCreating(false);
+      throw new Error('create failed');
+    }).catch(() => {
+      window.PixelpitSocial?.showToast?.('Failed to create group');
+      setCreating(false);
+      throw new Error('create failed');
+    });
+
+    // Write to clipboard synchronously during user gesture — content resolves later
+    try {
+      navigator.clipboard.write([
+        new ClipboardItem({
+          'text/plain': contentPromise.then((text) => new Blob([text], { type: 'text/plain' })),
+        }),
+      ]).catch(() => {
+        // Fallback: try writeText after promise resolves
+        contentPromise.then((text) => navigator.clipboard.writeText(text)).catch(() => {});
       });
-    }
-
-    // Open SMS if provided
-    if (smsLink) {
-      window.location.href = smsLink;
-    } else if (window.PixelpitSocial?.showToast) {
-      window.PixelpitSocial.showToast('Group created! +10 XP');
+    } catch {
+      // ClipboardItem not supported — fallback after await
+      contentPromise.then((text) => navigator.clipboard.writeText(text)).catch(() => {});
     }
   };
-
-  if (showCreateForm) {
-    return (
-      <CreateGroupForm
-        colors={colors}
-        gameUrl={gameUrl}
-        score={score}
-        onClose={() => setShowCreateForm(false)}
-        onCreated={handleGroupCreated}
-      />
-    );
-  }
 
   return (
     <div
@@ -318,11 +323,9 @@ export function ShareModal({
                     fontSize: 12,
                     color: colors.text,
                   }}>
-                    {group.type === 'streak' && `🔥 `}
                     {group.name}
-                    {group.type === 'streak' && group.streak ? ` (${group.streak})` : ''}
                     <span style={{ color: colors.muted, marginLeft: 8, fontSize: 10 }}>
-                      ({group.type})
+                      {group.members.length} player{group.members.length !== 1 ? 's' : ''}
                     </span>
                   </span>
                   <button
@@ -347,7 +350,8 @@ export function ShareModal({
 
           {/* Create New Group Button */}
           <button
-            onClick={() => setShowCreateForm(true)}
+            onClick={handleCreateQuickGroup}
+            disabled={creating}
             style={{
               width: '100%',
               marginTop: 16,
@@ -359,11 +363,12 @@ export function ShareModal({
               fontFamily,
               fontSize: 12,
               fontWeight: 600,
-              cursor: 'pointer',
+              cursor: creating ? 'default' : 'pointer',
               letterSpacing: 1,
+              opacity: creating ? 0.6 : 1,
             }}
           >
-            + Create New Group
+            {creating ? 'Creating...' : '+ New Leaderboard Group'}
           </button>
         </div>
       </div>

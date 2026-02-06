@@ -348,6 +348,31 @@ window.PixelpitSocial = (function() {
   }
 
   /**
+   * Quick-create a leaderboard group with auto-generated name
+   * @param {{ gameUrl?: string, score?: number }} [opts]
+   * @returns {Promise<{ success: boolean, group?: { id: number, code: string, name: string, type: string }, xpEarned?: number, error?: string }>}
+   */
+  async function createQuickGroup(opts = {}) {
+    const user = getUser();
+    if (!user) return { success: false, error: 'Must be logged in' };
+    try {
+      const res = await fetch(`${API_BASE}/groups`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          type: 'leaderboard',
+          gameUrl: opts.gameUrl,
+          score: opts.score,
+        }),
+      });
+      return res.json();
+    } catch (e) {
+      return { success: false, error: 'Failed to create group' };
+    }
+  }
+
+  /**
    * Join a group by code
    * @param {string} code - 4-char group code
    * @returns {Promise<{ success: boolean, group?: { id: number, code: string, name: string, type: string }, alreadyMember?: boolean, error?: string }>}
@@ -797,6 +822,7 @@ window.PixelpitSocial = (function() {
     // Groups
     getGroups,
     createGroup,
+    createQuickGroup,
     joinGroup,
     getGroupLeaderboard,
     getSmsInviteLink,

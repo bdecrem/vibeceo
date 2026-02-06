@@ -208,6 +208,7 @@ export interface PixelpitSocialAPI {
   // Groups
   getGroups: () => Promise<GroupsResult>;
   createGroup: (name: string, type: GroupType, opts?: { phones?: string[]; gameUrl?: string; score?: number }) => Promise<CreateGroupResult>;
+  createQuickGroup: (opts?: { gameUrl?: string; score?: number }) => Promise<CreateGroupResult>;
   joinGroup: (code: string) => Promise<JoinGroupResult>;
   getGroupLeaderboard: (gameId: string, groupCode: string, limit?: number) => Promise<LeaderboardResult & { group?: { id: number; type: string; name: string } }>;
   getSmsInviteLink: (phones: string[], groupCode: string, gameUrl: string, score?: number) => string;
