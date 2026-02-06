@@ -1217,30 +1217,21 @@ export default function CaveMothGame() {
             fontSize: 64,
             fontWeight: 700,
             color: THEME.glow,
-            marginBottom: 8,
+            marginBottom: 16,
             textShadow: `0 0 40px ${THEME.glow}`,
+            transform: 'rotate(180deg)',
           }}>
             CAVE MOTH
           </h1>
-          <p style={{
-            fontFamily: 'ui-monospace, monospace',
-            fontSize: 14,
-            color: THEME.accent,
-            opacity: 0.8,
-            marginBottom: 30,
-            letterSpacing: 3,
-          }}>
-            CRYSTAL CAVERN
-          </p>
           <p style={{
             fontFamily: 'ui-monospace, monospace',
             fontSize: 16,
             color: THEME.text,
             opacity: 0.7,
             marginBottom: 40,
+            letterSpacing: 2,
           }}>
-            tap to flip gravity<br />
-            avoid the crystals
+            tap to flip
           </p>
           <button
             onClick={startGame}
