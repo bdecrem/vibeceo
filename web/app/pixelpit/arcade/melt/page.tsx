@@ -2,26 +2,21 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
-// MELT palette - cold to hot
 const THEME = {
   snowball: '#f0f9ff',
   frost: '#bae6fd',
-  ice: '#0ea5e9',
-  iceParticle: '#7dd3fc',
   lava: '#f97316',
   lavaGlow: '#fbbf24',
-  coldBg: '#1e3a5f',
-  hellBg: '#7f1d1d',
-  hellFloor: '#450a0a',
+  bg: '#0f172a',
   text: '#fafafa',
 };
 
 const GAME_ID = 'melt';
-const CANVAS_W = 400;
-const CANVAS_H = 700;
-const PLATFORM_HEIGHT = 20;
-const PLATFORM_GAP = 80;
-const NUM_PLATFORMS = 50;
+const CANVAS_W = 360;
+const CANVAS_H = 640;
+const NUM_PLATFORMS = 30;
+const BALL_X = CANVAS_W / 2;
+const MAX_HEALTH = 100;
 
 // Audio
 let audioCtx: AudioContext | null = null;
@@ -36,38 +31,9 @@ function initAudio() {
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-function playCrunch() {
-  if (!audioCtx || !masterGain) return;
-  // Crisp ice crunch
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'square';
-  osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05);
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.08);
-  
-  // High chime
-  const chime = audioCtx.createOscillator();
-  const chimeGain = audioCtx.createGain();
-  chime.type = 'sine';
-  chime.frequency.value = 1200 + Math.random() * 400;
-  chimeGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-  chimeGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-  chime.connect(chimeGain);
-  chimeGain.connect(masterGain);
-  chime.start();
-  chime.stop(audioCtx.currentTime + 0.1);
-}
-
 function playSizzle() {
   if (!audioCtx || !masterGain) return;
-  // Noise-based sizzle
-  const bufferSize = audioCtx.sampleRate * 0.2;
+  const bufferSize = audioCtx.sampleRate * 0.3;
   const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < bufferSize; i++) {
@@ -79,36 +45,29 @@ function playSizzle() {
   filter.type = 'highpass';
   filter.frequency.value = 2000;
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
   noise.connect(filter);
   filter.connect(gain);
   gain.connect(masterGain);
   noise.start();
 }
 
+function playPass() {
+  if (!audioCtx || !masterGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = 600;
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.1);
+}
+
 function playWin() {
   if (!audioCtx || !masterGain) return;
-  // Steam release + peaceful chord
-  const bufferSize = audioCtx.sampleRate * 0.5;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize) * 0.3;
-  }
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = buffer;
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.value = 1000;
-  const gain = audioCtx.createGain();
-  gain.gain.value = 0.2;
-  noise.connect(filter);
-  filter.connect(gain);
-  gain.connect(masterGain);
-  noise.start();
-  
-  // Chord
   [262, 330, 392].forEach((freq, i) => {
     setTimeout(() => {
       if (!audioCtx || !masterGain) return;
@@ -122,7 +81,7 @@ function playWin() {
       g.connect(masterGain);
       osc.start();
       osc.stop(audioCtx.currentTime + 0.8);
-    }, i * 100);
+    }, i * 150);
   });
 }
 
@@ -143,13 +102,11 @@ function playDeath() {
 
 interface Platform {
   y: number;
-  segments: Array<{
-    startAngle: number;
-    endAngle: number;
-    type: 'ice' | 'lava' | 'gap';
-  }>;
+  gapAngle: number;
+  gapSize: number;
   rotation: number;
   speed: number;
+  passed: boolean;
 }
 
 interface Particle {
@@ -158,57 +115,47 @@ interface Particle {
   vx: number;
   vy: number;
   life: number;
-  color: string;
 }
 
 export default function MeltGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'dead'>('start');
-  const [finalSize, setFinalSize] = useState(20);
+  const [finalHealth, setFinalHealth] = useState(MAX_HEALTH);
   const [layersDescended, setLayersDescended] = useState(0);
 
   const gameRef = useRef({
     running: false,
     holding: false,
-    ballY: 100,
+    ballY: 80,
     ballSize: 20,
     ballVY: 0,
     cameraY: 0,
     platforms: [] as Platform[],
     particles: [] as Particle[],
     layersPassed: 0,
-    progress: 0, // 0-1, how far to hell
+    health: MAX_HEALTH,
   });
 
   const generatePlatforms = useCallback(() => {
     const platforms: Platform[] = [];
     for (let i = 0; i < NUM_PLATFORMS; i++) {
-      const y = 200 + i * PLATFORM_GAP;
-      const segments: Platform['segments'] = [];
+      // Start with big gaps between wheels, get tighter
+      const baseGap = 120;
+      const minGap = 70;
+      const gap = Math.max(minGap, baseGap - i * 2);
       
-      // More lava as we go deeper
-      const lavaChance = Math.min(0.5, i / NUM_PLATFORMS);
-      const gapCount = 1 + Math.floor(Math.random() * 2);
+      const y = 200 + i * gap;
       
-      let angle = Math.random() * Math.PI * 2;
-      for (let j = 0; j < 4; j++) {
-        const segmentSize = (Math.PI * 2) / 4;
-        const isGap = j < gapCount && Math.random() < 0.4;
-        const isLava = !isGap && Math.random() < lavaChance;
-        
-        segments.push({
-          startAngle: angle,
-          endAngle: angle + segmentSize * 0.8,
-          type: isGap ? 'gap' : (isLava ? 'lava' : 'ice'),
-        });
-        angle += segmentSize;
-      }
+      // Gap size in wheel: starts big, gets smaller
+      const gapSize = Math.max(0.6, 1.2 - i * 0.02); // radians
       
       platforms.push({
         y,
-        segments,
+        gapAngle: Math.random() * Math.PI * 2,
+        gapSize,
         rotation: 0,
-        speed: (0.5 + Math.random() * 0.5) * (Math.random() < 0.5 ? 1 : -1),
+        speed: (0.4 + Math.random() * 0.3) * (Math.random() < 0.5 ? 1 : -1),
+        passed: false,
       });
     }
     return platforms;
@@ -219,14 +166,14 @@ export default function MeltGame() {
     const game = gameRef.current;
     game.running = true;
     game.holding = false;
-    game.ballY = 100;
+    game.ballY = 80;
     game.ballSize = 20;
     game.ballVY = 0;
     game.cameraY = 0;
     game.platforms = generatePlatforms();
     game.particles = [];
     game.layersPassed = 0;
-    game.progress = 0;
+    game.health = MAX_HEALTH;
     setLayersDescended(0);
     setGameState('playing');
   }, [generatePlatforms]);
@@ -241,142 +188,93 @@ export default function MeltGame() {
     canvas.height = CANVAS_H;
 
     let animationId: number;
+    const RING_RADIUS = 130;
+    const RING_THICKNESS = 20;
 
     const update = () => {
       const game = gameRef.current;
       if (!game.running) return;
 
-      // Gravity and movement
-      const gravity = game.holding ? 0.8 : 0.15;
+      // Physics - HOLD = fast drop, RELEASE = slow/float
+      const gravity = game.holding ? 0.8 : 0.2;
       game.ballVY += gravity;
-      game.ballVY = Math.min(game.ballVY, game.holding ? 15 : 3);
+      game.ballVY = Math.min(game.ballVY, game.holding ? 14 : 3);
       game.ballY += game.ballVY;
 
-      // Camera follows ball
+      // Camera
       const targetCameraY = game.ballY - CANVAS_H / 3;
       game.cameraY += (targetCameraY - game.cameraY) * 0.1;
 
-      // Progress to hell
-      game.progress = Math.min(1, game.ballY / (NUM_PLATFORMS * PLATFORM_GAP));
-
-      // Update platforms rotation
+      // Rotate wheels
       for (const platform of game.platforms) {
-        platform.rotation += platform.speed * 0.02;
+        platform.rotation += platform.speed * 0.015;
       }
 
-      // Collision detection
-      const ballScreenY = game.ballY - game.cameraY;
-      const ballCenterX = CANVAS_W / 2;
-
+      // Collision
       for (const platform of game.platforms) {
-        const platformScreenY = platform.y - game.cameraY;
+        const ballBottom = game.ballY + game.ballSize;
+        const ballTop = game.ballY - game.ballSize;
         
-        // Check if ball is at platform level
-        if (game.ballY + game.ballSize > platform.y && 
-            game.ballY + game.ballSize < platform.y + PLATFORM_HEIGHT + game.ballVY) {
+        // Check if ball is at wheel level
+        if (ballBottom > platform.y - RING_THICKNESS/2 && 
+            ballTop < platform.y + RING_THICKNESS/2) {
           
-          // Which segment are we hitting?
-          const platformRadius = 150;
-          const distFromCenter = 0; // Ball is always centered horizontally
+          // Check if in gap
+          const ballAngle = Math.PI / 2; // Ball drops straight down
+          const currentGapAngle = (platform.gapAngle + platform.rotation) % (Math.PI * 2);
           
-          // Check if we're in the ring
-          if (distFromCenter < platformRadius) {
-            // Find which segment based on ball position (use rotation)
-            const angle = (platform.rotation + Math.PI / 2) % (Math.PI * 2);
-            
-            let hitSegment: Platform['segments'][0] | null = null;
-            for (const seg of platform.segments) {
-              const segStart = (seg.startAngle + platform.rotation) % (Math.PI * 2);
-              const segEnd = (seg.endAngle + platform.rotation) % (Math.PI * 2);
-              
-              // Simplified: check if ball's angle is in segment
-              // Ball is at center, so check vertical slice
-              const ballAngle = Math.PI / 2; // Ball drops straight down
-              
-              // Normalize angles
-              const normalizedBall = ((ballAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-              const normalizedStart = ((segStart % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-              const normalizedEnd = ((segEnd % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-              
-              if (normalizedStart < normalizedEnd) {
-                if (normalizedBall >= normalizedStart && normalizedBall <= normalizedEnd) {
-                  hitSegment = seg;
-                  break;
-                }
-              } else {
-                if (normalizedBall >= normalizedStart || normalizedBall <= normalizedEnd) {
-                  hitSegment = seg;
-                  break;
-                }
-              }
+          let diff = Math.abs(ballAngle - currentGapAngle);
+          if (diff > Math.PI) diff = Math.PI * 2 - diff;
+          
+          const inGap = diff < platform.gapSize / 2;
+          
+          if (inGap) {
+            // Passed through!
+            if (!platform.passed) {
+              platform.passed = true;
+              game.layersPassed++;
+              setLayersDescended(game.layersPassed);
+              playPass();
             }
-
-            if (hitSegment) {
-              if (hitSegment.type === 'gap') {
-                // Pass through
-              } else if (hitSegment.type === 'ice' && game.holding) {
-                // Smash through ice
-                playCrunch();
-                game.layersPassed++;
-                setLayersDescended(game.layersPassed);
-                
-                // Particles
-                for (let i = 0; i < 8; i++) {
-                  game.particles.push({
-                    x: ballCenterX + (Math.random() - 0.5) * 40,
-                    y: game.ballY + game.ballSize,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: Math.random() * -3,
-                    life: 30,
-                    color: THEME.iceParticle,
-                  });
-                }
-                
-                // Mark segment as gap (destroyed)
-                hitSegment.type = 'gap';
-              } else if (hitSegment.type === 'lava') {
-                // Hit lava - shrink!
-                playSizzle();
-                game.ballSize = Math.max(6, game.ballSize - 3);
-                game.ballVY = -5; // Bounce back up
-                
-                // Steam particles
-                for (let i = 0; i < 5; i++) {
-                  game.particles.push({
-                    x: ballCenterX + (Math.random() - 0.5) * 20,
-                    y: game.ballY + game.ballSize,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: -2 - Math.random() * 2,
-                    life: 40,
-                    color: '#fff',
-                  });
-                }
-                
-                // Too small = death
-                if (game.ballSize <= 6) {
-                  game.running = false;
-                  playDeath();
-                  setFinalSize(game.ballSize);
-                  setGameState('dead');
-                  return;
-                }
-              } else if (hitSegment.type === 'ice' && !game.holding) {
-                // Land on ice - stop
-                game.ballY = platform.y - game.ballSize;
-                game.ballVY = 0;
+          } else {
+            // Hit orange!
+            if (!platform.passed) {
+              playSizzle();
+              game.health -= 20;
+              game.ballSize = Math.max(8, 8 + (game.health / MAX_HEALTH) * 12);
+              game.ballVY = -6;
+              platform.passed = true;
+              
+              // Steam particles
+              for (let i = 0; i < 8; i++) {
+                game.particles.push({
+                  x: BALL_X + (Math.random() - 0.5) * 40,
+                  y: platform.y,
+                  vx: (Math.random() - 0.5) * 4,
+                  vy: -2 - Math.random() * 4,
+                  life: 30,
+                });
+              }
+              
+              if (game.health <= 0) {
+                game.running = false;
+                playDeath();
+                setFinalHealth(0);
+                setGameState('dead');
+                return;
               }
             }
           }
         }
       }
 
-      // Check win condition - reached hell
-      if (game.ballY > NUM_PLATFORMS * PLATFORM_GAP + 100) {
+      // Win - passed all platforms
+      const lastPlatform = game.platforms[game.platforms.length - 1];
+      if (game.ballY > lastPlatform.y + 150) {
         game.running = false;
         playWin();
-        setFinalSize(game.ballSize);
+        setFinalHealth(game.health);
         setGameState('won');
-        
         fetch('/api/pixelpit/stats', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -384,147 +282,108 @@ export default function MeltGame() {
         }).catch(() => {});
       }
 
-      // Update particles
+      // Particles
       game.particles = game.particles.filter(p => {
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.2;
+        p.vy += 0.15;
         p.life--;
         return p.life > 0;
       });
-
-      // Slow shrink over time when holding (melting from friction)
-      if (game.holding && Math.random() < 0.02) {
-        game.ballSize = Math.max(6, game.ballSize - 0.1);
-      }
     };
 
     const draw = () => {
       const game = gameRef.current;
       
-      // Background gradient based on progress
-      const r1 = 30, g1 = 58, b1 = 95; // coldBg
-      const r2 = 127, g2 = 29, b2 = 29; // hellBg
-      const r = Math.floor(r1 + (r2 - r1) * game.progress);
-      const g = Math.floor(g1 + (g2 - g1) * game.progress);
-      const b = Math.floor(b1 + (b2 - b1) * game.progress);
-      ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+      // Dark blue background
+      ctx.fillStyle = THEME.bg;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      // Draw platforms
+      // Draw orange wheels
       for (const platform of game.platforms) {
         const screenY = platform.y - game.cameraY;
-        if (screenY < -50 || screenY > CANVAS_H + 50) continue;
+        if (screenY < -RING_RADIUS - 50 || screenY > CANVAS_H + RING_RADIUS + 50) continue;
 
-        const centerX = CANVAS_W / 2;
-        const outerRadius = 150;
-        const innerRadius = 30;
-
-        for (const seg of platform.segments) {
-          if (seg.type === 'gap') continue;
-          
-          const startAngle = seg.startAngle + platform.rotation;
-          const endAngle = seg.endAngle + platform.rotation;
-          
-          ctx.beginPath();
-          ctx.arc(centerX, screenY, outerRadius, startAngle, endAngle);
-          ctx.arc(centerX, screenY, innerRadius, endAngle, startAngle, true);
-          ctx.closePath();
-          
-          if (seg.type === 'ice') {
-            ctx.fillStyle = THEME.ice;
-          } else {
-            // Lava with glow
-            ctx.fillStyle = THEME.lava;
-            ctx.shadowColor = THEME.lavaGlow;
-            ctx.shadowBlur = 15;
-          }
-          ctx.fill();
-          ctx.shadowBlur = 0;
-        }
+        const currentGapAngle = platform.gapAngle + platform.rotation;
+        const gapStart = currentGapAngle - platform.gapSize / 2;
+        const gapEnd = currentGapAngle + platform.gapSize / 2;
+        
+        // Orange wheel with gap
+        ctx.strokeStyle = THEME.lava;
+        ctx.lineWidth = RING_THICKNESS;
+        ctx.shadowColor = THEME.lavaGlow;
+        ctx.shadowBlur = 15;
+        ctx.lineCap = 'round';
+        
+        // Draw arc (wheel minus gap)
+        ctx.beginPath();
+        ctx.arc(BALL_X, screenY, RING_RADIUS, gapEnd, gapStart + Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.shadowBlur = 0;
       }
 
-      // Draw particles
+      // Particles
       for (const p of game.particles) {
         const screenY = p.y - game.cameraY;
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life / 40;
+        ctx.fillStyle = '#fff';
+        ctx.globalAlpha = p.life / 30;
         ctx.beginPath();
-        ctx.arc(p.x, screenY, 3, 0, Math.PI * 2);
+        ctx.arc(p.x, screenY, 4, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1;
 
-      // Draw snowball
+      // Snowball
       const ballScreenY = game.ballY - game.cameraY;
-      const ballX = CANVAS_W / 2;
       
-      // Water trail
-      ctx.fillStyle = 'rgba(186, 230, 253, 0.3)';
-      for (let i = 0; i < 5; i++) {
-        ctx.beginPath();
-        ctx.arc(ballX + (Math.random() - 0.5) * 10, ballScreenY - i * 8, 2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      
-      // Ball body
       ctx.fillStyle = THEME.snowball;
       ctx.shadowColor = THEME.frost;
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 20;
       ctx.beginPath();
-      ctx.arc(ballX, ballScreenY, game.ballSize, 0, Math.PI * 2);
+      ctx.arc(BALL_X, ballScreenY, game.ballSize, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
       
-      // Eyes - get closer together as ball shrinks
-      const eyeSpacing = game.ballSize * 0.4;
-      const eyeY = ballScreenY - game.ballSize * 0.2;
-      const eyeSize = Math.max(2, game.ballSize * 0.15);
+      // Eyes
+      const eyeSpacing = game.ballSize * 0.35;
+      const eyeY = ballScreenY - game.ballSize * 0.1;
+      const eyeSize = Math.max(2, game.ballSize * 0.12);
       
       ctx.fillStyle = '#1e293b';
       ctx.beginPath();
-      ctx.arc(ballX - eyeSpacing, eyeY, eyeSize, 0, Math.PI * 2);
-      ctx.arc(ballX + eyeSpacing, eyeY, eyeSize, 0, Math.PI * 2);
+      ctx.arc(BALL_X - eyeSpacing, eyeY, eyeSize, 0, Math.PI * 2);
+      ctx.arc(BALL_X + eyeSpacing, eyeY, eyeSize, 0, Math.PI * 2);
       ctx.fill();
       
-      // Expression changes based on size
-      if (game.ballSize > 15) {
-        // Worried eyebrows
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(ballX - eyeSpacing - 3, eyeY - eyeSize - 2);
-        ctx.lineTo(ballX - eyeSpacing + 3, eyeY - eyeSize - 4);
-        ctx.moveTo(ballX + eyeSpacing + 3, eyeY - eyeSize - 2);
-        ctx.lineTo(ballX + eyeSpacing - 3, eyeY - eyeSize - 4);
-        ctx.stroke();
-      } else if (game.ballSize <= 10) {
-        // Happy smile
+      // Smile when small
+      if (game.ballSize <= 12) {
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(ballX, ballScreenY + game.ballSize * 0.1, game.ballSize * 0.3, 0.2, Math.PI - 0.2);
+        ctx.arc(BALL_X, ballScreenY + game.ballSize * 0.15, game.ballSize * 0.25, 0.2, Math.PI - 0.2);
         ctx.stroke();
       }
 
-      // UI
+      // Health bar at top
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(15, 15, 154, 28);
+      ctx.fillStyle = THEME.frost;
+      ctx.fillRect(17, 17, (game.health / MAX_HEALTH) * 150, 24);
+      
       ctx.fillStyle = THEME.text;
-      ctx.font = '16px monospace';
-      ctx.fillText(`SIZE: ${Math.round(game.ballSize)}`, 20, 30);
-      ctx.fillText(`LAYERS: ${game.layersPassed}`, 20, 50);
+      ctx.font = 'bold 14px monospace';
+      ctx.fillText(`${Math.round(game.health)}%`, 25, 35);
       
-      // Progress to hell indicator
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.fillRect(CANVAS_W - 30, 50, 10, CANVAS_H - 100);
+      // Layers
+      ctx.fillStyle = THEME.text;
+      ctx.font = '12px monospace';
+      ctx.fillText(`LAYERS: ${game.layersPassed}`, 15, 58);
+      
+      // Goal
       ctx.fillStyle = THEME.lava;
-      ctx.fillRect(CANVAS_W - 30, 50 + (CANVAS_H - 100) * (1 - game.progress), 10, (CANVAS_H - 100) * game.progress);
-      
-      // Hold indicator
-      if (game.holding) {
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = '12px monospace';
-        ctx.fillText('SMASHING', CANVAS_W / 2 - 35, 30);
-      }
+      ctx.font = 'bold 14px monospace';
+      ctx.fillText('↓ HELL', CANVAS_W - 70, 35);
     };
 
     const gameLoop = () => {
@@ -534,8 +393,9 @@ export default function MeltGame() {
     };
     animationId = requestAnimationFrame(gameLoop);
 
-    // Input handlers
-    const handleDown = () => {
+    // Input
+    const handleDown = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
       if (gameRef.current.running) {
         gameRef.current.holding = true;
       }
@@ -547,7 +407,7 @@ export default function MeltGame() {
     canvas.addEventListener('mousedown', handleDown);
     canvas.addEventListener('mouseup', handleUp);
     canvas.addEventListener('mouseleave', handleUp);
-    canvas.addEventListener('touchstart', handleDown);
+    canvas.addEventListener('touchstart', handleDown, { passive: false });
     canvas.addEventListener('touchend', handleUp);
 
     return () => {
@@ -563,7 +423,7 @@ export default function MeltGame() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: THEME.coldBg,
+      background: THEME.bg,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -572,39 +432,53 @@ export default function MeltGame() {
       fontFamily: 'ui-monospace, monospace',
     }}>
       {gameState === 'start' && (
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', maxWidth: 300 }}>
           <h1 style={{ 
             color: THEME.snowball, 
-            fontSize: 64, 
+            fontSize: 56, 
             marginBottom: 10,
             textShadow: `0 0 30px ${THEME.frost}`,
           }}>
             MELT
           </h1>
-          <p style={{ color: THEME.frost, fontSize: 16, marginBottom: 5 }}>
-            You are a snowball.
+          
+          <p style={{ color: THEME.frost, fontSize: 18, marginBottom: 20 }}>
+            You're a snowball.<br/>
+            <span style={{ color: THEME.lava }}>Reach hell. ↓</span>
           </p>
-          <p style={{ color: THEME.lava, fontSize: 16, marginBottom: 30 }}>
-            You want to reach hell.
-          </p>
-          <p style={{ color: THEME.text, fontSize: 12, marginBottom: 30 }}>
-            HOLD to smash through ice<br/>
-            RELEASE to dodge lava
-          </p>
+          
+          <div style={{ 
+            background: 'rgba(0,0,0,0.4)', 
+            padding: 15, 
+            borderRadius: 8,
+            marginBottom: 25,
+            textAlign: 'left',
+          }}>
+            <p style={{ color: THEME.text, fontSize: 14, marginBottom: 8 }}>
+              <strong>HOLD</strong> = Drop fast
+            </p>
+            <p style={{ color: THEME.text, fontSize: 14, marginBottom: 8 }}>
+              <strong>RELEASE</strong> = Float slow
+            </p>
+            <p style={{ color: THEME.lava, fontSize: 14 }}>
+              Wait for the <strong>gap</strong> in the wheel.
+            </p>
+          </div>
+          
           <button
             onClick={startGame}
             style={{
-              background: `linear-gradient(${THEME.frost}, ${THEME.ice})`,
-              color: THEME.coldBg,
+              background: `linear-gradient(135deg, ${THEME.frost}, ${THEME.snowball})`,
+              color: THEME.bg,
               border: 'none',
               padding: '16px 50px',
               fontSize: 18,
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer',
               borderRadius: 8,
             }}
           >
-            DESCEND
+            DESCEND ↓
           </button>
         </div>
       )}
@@ -627,13 +501,13 @@ export default function MeltGame() {
             marginBottom: 10,
             textShadow: `0 0 30px ${THEME.lavaGlow}`,
           }}>
-            MELTED
+            MELTED 😊
           </h1>
           <p style={{ color: THEME.text, fontSize: 18, marginBottom: 10 }}>
-            You made it. You're free.
+            You reached hell. You're free.
           </p>
           <p style={{ color: THEME.frost, fontSize: 14, marginBottom: 30 }}>
-            Final size: {Math.round(finalSize)}px • Layers: {layersDescended}
+            Health: {Math.round(finalHealth)}% • Layers: {layersDescended}
           </p>
           <button
             onClick={startGame}
@@ -643,6 +517,7 @@ export default function MeltGame() {
               border: 'none',
               padding: '16px 40px',
               fontSize: 18,
+              fontWeight: 600,
               cursor: 'pointer',
               borderRadius: 8,
             }}
@@ -658,19 +533,20 @@ export default function MeltGame() {
             EVAPORATED
           </h1>
           <p style={{ color: THEME.text, fontSize: 18, marginBottom: 10 }}>
-            Too much lava. You vanished.
+            Too much heat. You vanished.
           </p>
           <p style={{ color: THEME.frost, fontSize: 14, marginBottom: 30 }}>
-            Layers descended: {layersDescended}
+            Layers: {layersDescended}
           </p>
           <button
             onClick={startGame}
             style={{
-              background: THEME.ice,
-              color: THEME.coldBg,
+              background: THEME.frost,
+              color: THEME.bg,
               border: 'none',
               padding: '16px 40px',
               fontSize: 18,
+              fontWeight: 600,
               cursor: 'pointer',
               borderRadius: 8,
             }}
