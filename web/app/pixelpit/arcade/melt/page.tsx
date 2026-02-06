@@ -1,15 +1,6 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import Script from 'next/script';
-import {
-  ScoreFlow,
-  Leaderboard,
-  ShareButtonContainer,
-  usePixelpitSocial,
-  type ScoreFlowColors,
-  type LeaderboardColors,
-} from '@/app/pixelpit/components';
 
 // MELT palette - cold to hot
 const THEME = {
@@ -26,31 +17,12 @@ const THEME = {
 };
 
 const GAME_ID = 'melt';
-const CANVAS_W = 400;
-const CANVAS_H = 700;
-const PLATFORM_HEIGHT = 20;
-const PLATFORM_GAP = 80;
-const NUM_PLATFORMS = 50;
-
-// Social colors
-const SCORE_FLOW_COLORS: ScoreFlowColors = {
-  bg: THEME.coldBg,
-  surface: '#1e3a5f',
-  primary: THEME.lava,
-  secondary: THEME.ice,
-  text: THEME.text,
-  muted: THEME.frost,
-  error: '#ef4444',
-};
-
-const LEADERBOARD_COLORS: LeaderboardColors = {
-  bg: THEME.coldBg,
-  surface: '#1e3a5f',
-  primary: THEME.lava,
-  secondary: THEME.ice,
-  text: THEME.text,
-  muted: THEME.frost,
-};
+const CANVAS_W = 360;
+const CANVAS_H = 640;
+const PLATFORM_HEIGHT = 16;
+const PLATFORM_GAP = 70;
+const NUM_PLATFORMS = 40;
+const BALL_X = CANVAS_W / 2;
 
 // Audio
 let audioCtx: AudioContext | null = null;
@@ -58,7 +30,7 @@ let masterGain: GainNode | null = null;
 
 function initAudio() {
   if (audioCtx) return;
-  audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+  audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   masterGain = audioCtx.createGain();
   masterGain.gain.value = 0.3;
   masterGain.connect(audioCtx.destination);
@@ -72,28 +44,17 @@ function playCrunch() {
   osc.type = 'square';
   osc.frequency.setValueAtTime(800, audioCtx.currentTime);
   osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05);
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+  gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
   osc.connect(gain);
   gain.connect(masterGain);
   osc.start();
-  osc.stop(audioCtx.currentTime + 0.08);
-  
-  const chime = audioCtx.createOscillator();
-  const chimeGain = audioCtx.createGain();
-  chime.type = 'sine';
-  chime.frequency.value = 1200 + Math.random() * 400;
-  chimeGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-  chimeGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-  chime.connect(chimeGain);
-  chimeGain.connect(masterGain);
-  chime.start();
-  chime.stop(audioCtx.currentTime + 0.1);
+  osc.stop(audioCtx.currentTime + 0.1);
 }
 
 function playSizzle() {
   if (!audioCtx || !masterGain) return;
-  const bufferSize = audioCtx.sampleRate * 0.2;
+  const bufferSize = audioCtx.sampleRate * 0.3;
   const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < bufferSize; i++) {
@@ -105,8 +66,7 @@ function playSizzle() {
   filter.type = 'highpass';
   filter.frequency.value = 2000;
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
   noise.connect(filter);
   filter.connect(gain);
   gain.connect(masterGain);
@@ -115,24 +75,6 @@ function playSizzle() {
 
 function playWin() {
   if (!audioCtx || !masterGain) return;
-  const bufferSize = audioCtx.sampleRate * 0.5;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize) * 0.3;
-  }
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = buffer;
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.value = 1000;
-  const gain = audioCtx.createGain();
-  gain.gain.value = 0.2;
-  noise.connect(filter);
-  filter.connect(gain);
-  gain.connect(masterGain);
-  noise.start();
-  
   [262, 330, 392].forEach((freq, i) => {
     setTimeout(() => {
       if (!audioCtx || !masterGain) return;
@@ -146,7 +88,7 @@ function playWin() {
       g.connect(masterGain);
       osc.start();
       osc.stop(audioCtx.currentTime + 0.8);
-    }, i * 100);
+    }, i * 150);
   });
 }
 
@@ -167,13 +109,10 @@ function playDeath() {
 
 interface Platform {
   y: number;
-  segments: Array<{
-    startAngle: number;
-    endAngle: number;
-    type: 'ice' | 'lava' | 'gap';
-  }>;
-  rotation: number;
-  speed: number;
+  gapStart: number; // x position where gap starts
+  gapWidth: number;
+  type: 'ice' | 'lava';
+  broken: boolean;
 }
 
 interface Particle {
@@ -190,18 +129,11 @@ export default function MeltGame() {
   const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'dead'>('start');
   const [finalSize, setFinalSize] = useState(20);
   const [layersDescended, setLayersDescended] = useState(0);
-  
-  // Social integration state
-  const [socialLoaded, setSocialLoaded] = useState(false);
-  const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
-
-  usePixelpitSocial(socialLoaded);
 
   const gameRef = useRef({
     running: false,
     holding: false,
-    ballY: 100,
+    ballY: 80,
     ballSize: 20,
     ballVY: 0,
     cameraY: 0,
@@ -214,31 +146,22 @@ export default function MeltGame() {
   const generatePlatforms = useCallback(() => {
     const platforms: Platform[] = [];
     for (let i = 0; i < NUM_PLATFORMS; i++) {
-      const y = 200 + i * PLATFORM_GAP;
-      const segments: Platform['segments'] = [];
+      const y = 180 + i * PLATFORM_GAP;
       
-      const lavaChance = Math.min(0.5, i / NUM_PLATFORMS);
-      const gapCount = 1 + Math.floor(Math.random() * 2);
+      // First 5 platforms = all ice (tutorial)
+      // Then gradually more lava
+      const isLava = i >= 5 && Math.random() < Math.min(0.6, (i - 5) / 20);
       
-      let angle = Math.random() * Math.PI * 2;
-      for (let j = 0; j < 4; j++) {
-        const segmentSize = (Math.PI * 2) / 4;
-        const isGap = j < gapCount && Math.random() < 0.4;
-        const isLava = !isGap && Math.random() < lavaChance;
-        
-        segments.push({
-          startAngle: angle,
-          endAngle: angle + segmentSize * 0.8,
-          type: isGap ? 'gap' : (isLava ? 'lava' : 'ice'),
-        });
-        angle += segmentSize;
-      }
+      // Gap position and width
+      const gapWidth = 60 + Math.random() * 40; // 60-100px gap
+      const gapStart = 30 + Math.random() * (CANVAS_W - gapWidth - 60);
       
       platforms.push({
         y,
-        segments,
-        rotation: 0,
-        speed: (0.5 + Math.random() * 0.5) * (Math.random() < 0.5 ? 1 : -1),
+        gapStart,
+        gapWidth,
+        type: isLava ? 'lava' : 'ice',
+        broken: false,
       });
     }
     return platforms;
@@ -249,7 +172,7 @@ export default function MeltGame() {
     const game = gameRef.current;
     game.running = true;
     game.holding = false;
-    game.ballY = 100;
+    game.ballY = 80;
     game.ballSize = 20;
     game.ballVY = 0;
     game.cameraY = 0;
@@ -257,10 +180,7 @@ export default function MeltGame() {
     game.particles = [];
     game.layersPassed = 0;
     game.progress = 0;
-    setFinalSize(20);
     setLayersDescended(0);
-    setSubmittedEntryId(null);
-    setShowLeaderboard(false);
     setGameState('playing');
   }, [generatePlatforms]);
 
@@ -279,114 +199,94 @@ export default function MeltGame() {
       const game = gameRef.current;
       if (!game.running) return;
 
-      const gravity = game.holding ? 0.8 : 0.15;
+      // Physics - HOLD = fast, RELEASE = slow
+      const gravity = game.holding ? 1.2 : 0.3;
       game.ballVY += gravity;
-      game.ballVY = Math.min(game.ballVY, game.holding ? 15 : 3);
+      game.ballVY = Math.min(game.ballVY, game.holding ? 18 : 4);
       game.ballY += game.ballVY;
 
+      // Camera follows
       const targetCameraY = game.ballY - CANVAS_H / 3;
       game.cameraY += (targetCameraY - game.cameraY) * 0.1;
 
+      // Progress
       game.progress = Math.min(1, game.ballY / (NUM_PLATFORMS * PLATFORM_GAP));
 
+      // Collision with platforms
       for (const platform of game.platforms) {
-        platform.rotation += platform.speed * 0.02;
-      }
-
-      const ballCenterX = CANVAS_W / 2;
-
-      for (const platform of game.platforms) {
-        if (game.ballY + game.ballSize > platform.y && 
-            game.ballY + game.ballSize < platform.y + PLATFORM_HEIGHT + game.ballVY) {
+        if (platform.broken) continue;
+        
+        const ballBottom = game.ballY + game.ballSize;
+        const ballTop = game.ballY - game.ballSize;
+        
+        // Check if ball is hitting platform
+        if (ballBottom > platform.y && ballTop < platform.y + PLATFORM_HEIGHT) {
+          // Check if ball is in the gap
+          const inGap = BALL_X > platform.gapStart && BALL_X < platform.gapStart + platform.gapWidth;
           
-          const platformRadius = 150;
-          const distFromCenter = 0;
-          
-          if (distFromCenter < platformRadius) {
-            const angle = (platform.rotation + Math.PI / 2) % (Math.PI * 2);
-            
-            let hitSegment: Platform['segments'][0] | null = null;
-            for (const seg of platform.segments) {
-              const segStart = (seg.startAngle + platform.rotation) % (Math.PI * 2);
-              const segEnd = (seg.endAngle + platform.rotation) % (Math.PI * 2);
-              
-              const ballAngle = Math.PI / 2;
-              
-              const normalizedBall = ((ballAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-              const normalizedStart = ((segStart % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-              const normalizedEnd = ((segEnd % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-              
-              if (normalizedStart < normalizedEnd) {
-                if (normalizedBall >= normalizedStart && normalizedBall <= normalizedEnd) {
-                  hitSegment = seg;
-                  break;
-                }
-              } else {
-                if (normalizedBall >= normalizedStart || normalizedBall <= normalizedEnd) {
-                  hitSegment = seg;
-                  break;
-                }
-              }
-            }
-
-            if (hitSegment) {
-              if (hitSegment.type === 'gap') {
-                // Pass through
-              } else if (hitSegment.type === 'ice' && game.holding) {
-                playCrunch();
+          if (!inGap) {
+            if (platform.type === 'ice') {
+              if (game.holding) {
+                // Smash through ice!
+                platform.broken = true;
                 game.layersPassed++;
                 setLayersDescended(game.layersPassed);
+                playCrunch();
                 
-                for (let i = 0; i < 8; i++) {
+                // Particles
+                for (let i = 0; i < 12; i++) {
                   game.particles.push({
-                    x: ballCenterX + (Math.random() - 0.5) * 40,
-                    y: game.ballY + game.ballSize,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: Math.random() * -3,
+                    x: BALL_X + (Math.random() - 0.5) * 50,
+                    y: platform.y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: -Math.random() * 5,
                     life: 30,
                     color: THEME.iceParticle,
                   });
                 }
-                
-                hitSegment.type = 'gap';
-              } else if (hitSegment.type === 'lava') {
-                playSizzle();
-                game.ballSize = Math.max(6, game.ballSize - 3);
-                game.ballVY = -5;
-                
-                for (let i = 0; i < 5; i++) {
-                  game.particles.push({
-                    x: ballCenterX + (Math.random() - 0.5) * 20,
-                    y: game.ballY + game.ballSize,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: -2 - Math.random() * 2,
-                    life: 40,
-                    color: '#fff',
-                  });
-                }
-                
-                if (game.ballSize <= 6) {
-                  game.running = false;
-                  playDeath();
-                  setFinalSize(game.ballSize);
-                  setGameState('dead');
-                  return;
-                }
-              } else if (hitSegment.type === 'ice' && !game.holding) {
+              } else {
+                // Land on ice
                 game.ballY = platform.y - game.ballSize;
                 game.ballVY = 0;
+              }
+            } else {
+              // Hit lava - OUCH
+              playSizzle();
+              game.ballSize = Math.max(6, game.ballSize - 4);
+              game.ballVY = -8;
+              platform.broken = true; // Lava breaks too
+              
+              // Steam particles
+              for (let i = 0; i < 8; i++) {
+                game.particles.push({
+                  x: BALL_X + (Math.random() - 0.5) * 30,
+                  y: platform.y,
+                  vx: (Math.random() - 0.5) * 3,
+                  vy: -3 - Math.random() * 3,
+                  life: 40,
+                  color: '#fff',
+                });
+              }
+              
+              if (game.ballSize <= 6) {
+                game.running = false;
+                playDeath();
+                setFinalSize(game.ballSize);
+                setGameState('dead');
+                return;
               }
             }
           }
         }
       }
 
-      if (game.ballY > NUM_PLATFORMS * PLATFORM_GAP + 100) {
+      // Win - reached hell
+      const hellY = NUM_PLATFORMS * PLATFORM_GAP + 200;
+      if (game.ballY > hellY) {
         game.running = false;
         playWin();
         setFinalSize(game.ballSize);
         setGameState('won');
-        
         fetch('/api/pixelpit/stats', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -394,22 +294,20 @@ export default function MeltGame() {
         }).catch(() => {});
       }
 
+      // Update particles
       game.particles = game.particles.filter(p => {
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.2;
+        p.vy += 0.3;
         p.life--;
         return p.life > 0;
       });
-
-      if (game.holding && Math.random() < 0.02) {
-        game.ballSize = Math.max(6, game.ballSize - 0.1);
-      }
     };
 
     const draw = () => {
       const game = gameRef.current;
       
+      // Background gradient
       const r1 = 30, g1 = 58, b1 = 95;
       const r2 = 127, g2 = 29, b2 = 29;
       const r = Math.floor(r1 + (r2 - r1) * game.progress);
@@ -418,37 +316,38 @@ export default function MeltGame() {
       ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
+      // Draw platforms
       for (const platform of game.platforms) {
+        if (platform.broken) continue;
+        
         const screenY = platform.y - game.cameraY;
         if (screenY < -50 || screenY > CANVAS_H + 50) continue;
 
-        const centerX = CANVAS_W / 2;
-        const outerRadius = 150;
-        const innerRadius = 30;
-
-        for (const seg of platform.segments) {
-          if (seg.type === 'gap') continue;
-          
-          const startAngle = seg.startAngle + platform.rotation;
-          const endAngle = seg.endAngle + platform.rotation;
-          
-          ctx.beginPath();
-          ctx.arc(centerX, screenY, outerRadius, startAngle, endAngle);
-          ctx.arc(centerX, screenY, innerRadius, endAngle, startAngle, true);
-          ctx.closePath();
-          
-          if (seg.type === 'ice') {
-            ctx.fillStyle = THEME.ice;
-          } else {
-            ctx.fillStyle = THEME.lava;
+        // Left section
+        if (platform.gapStart > 0) {
+          ctx.fillStyle = platform.type === 'ice' ? THEME.ice : THEME.lava;
+          if (platform.type === 'lava') {
             ctx.shadowColor = THEME.lavaGlow;
             ctx.shadowBlur = 15;
           }
-          ctx.fill();
+          ctx.fillRect(0, screenY, platform.gapStart, PLATFORM_HEIGHT);
+          ctx.shadowBlur = 0;
+        }
+        
+        // Right section
+        const rightStart = platform.gapStart + platform.gapWidth;
+        if (rightStart < CANVAS_W) {
+          ctx.fillStyle = platform.type === 'ice' ? THEME.ice : THEME.lava;
+          if (platform.type === 'lava') {
+            ctx.shadowColor = THEME.lavaGlow;
+            ctx.shadowBlur = 15;
+          }
+          ctx.fillRect(rightStart, screenY, CANVAS_W - rightStart, PLATFORM_HEIGHT);
           ctx.shadowBlur = 0;
         }
       }
 
+      // Draw particles
       for (const p of game.particles) {
         const screenY = p.y - game.cameraY;
         ctx.fillStyle = p.color;
@@ -456,33 +355,57 @@ export default function MeltGame() {
         ctx.beginPath();
         ctx.arc(p.x, screenY, 4, 0, Math.PI * 2);
         ctx.fill();
-        ctx.globalAlpha = 1;
       }
+      ctx.globalAlpha = 1;
 
+      // Draw snowball
       const ballScreenY = game.ballY - game.cameraY;
-      const ballX = CANVAS_W / 2;
       
-      ctx.beginPath();
-      ctx.arc(ballX, ballScreenY, game.ballSize, 0, Math.PI * 2);
+      // Glow
       ctx.fillStyle = THEME.snowball;
       ctx.shadowColor = THEME.frost;
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(BALL_X, ballScreenY, game.ballSize, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
       
-      const eyeSpread = game.ballSize * 0.25;
+      // Eyes
+      const eyeSpacing = game.ballSize * 0.35;
       const eyeY = ballScreenY - game.ballSize * 0.15;
-      ctx.fillStyle = '#333';
+      const eyeSize = Math.max(2, game.ballSize * 0.12);
+      
+      ctx.fillStyle = '#1e293b';
       ctx.beginPath();
-      ctx.arc(ballX - eyeSpread, eyeY, game.ballSize * 0.12, 0, Math.PI * 2);
-      ctx.arc(ballX + eyeSpread, eyeY, game.ballSize * 0.12, 0, Math.PI * 2);
+      ctx.arc(BALL_X - eyeSpacing, eyeY, eyeSize, 0, Math.PI * 2);
+      ctx.arc(BALL_X + eyeSpacing, eyeY, eyeSize, 0, Math.PI * 2);
       ctx.fill();
 
+      // UI - Health bar
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(15, 15, 104, 20);
+      ctx.fillStyle = THEME.frost;
+      ctx.fillRect(17, 17, game.ballSize * 5, 16);
       ctx.fillStyle = THEME.text;
-      ctx.fillRect(CANVAS_W - 20, 50, 10, CANVAS_H - 100);
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText('SIZE', 22, 29);
+
+      // Layers counter
+      ctx.fillStyle = THEME.text;
+      ctx.font = '14px monospace';
+      ctx.fillText(`LAYERS: ${game.layersPassed}`, 15, 50);
+      
+      // Goal indicator
       ctx.fillStyle = THEME.lava;
-      const progressHeight = (CANVAS_H - 100) * game.progress;
-      ctx.fillRect(CANVAS_W - 20, 50, 10, progressHeight);
+      ctx.font = 'bold 12px monospace';
+      ctx.fillText('↓ HELL', CANVAS_W - 60, 30);
+      
+      // Hold indicator
+      if (game.holding) {
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.font = 'bold 14px monospace';
+        ctx.fillText('SMASHING!', CANVAS_W / 2 - 40, 30);
+      }
     };
 
     const gameLoop = () => {
@@ -492,15 +415,13 @@ export default function MeltGame() {
     };
     animationId = requestAnimationFrame(gameLoop);
 
+    // Input
     const handleDown = (e: MouseEvent | TouchEvent) => {
       e.preventDefault();
-      if (gameState === 'start') {
-        startGame();
-      } else {
+      if (gameRef.current.running) {
         gameRef.current.holding = true;
       }
     };
-
     const handleUp = () => {
       gameRef.current.holding = false;
     };
@@ -508,7 +429,7 @@ export default function MeltGame() {
     canvas.addEventListener('mousedown', handleDown);
     canvas.addEventListener('mouseup', handleUp);
     canvas.addEventListener('mouseleave', handleUp);
-    canvas.addEventListener('touchstart', handleDown);
+    canvas.addEventListener('touchstart', handleDown, { passive: false });
     canvas.addEventListener('touchend', handleUp);
 
     return () => {
@@ -519,218 +440,144 @@ export default function MeltGame() {
       canvas.removeEventListener('touchstart', handleDown);
       canvas.removeEventListener('touchend', handleUp);
     };
-  }, [gameState, startGame]);
+  }, [gameState]);
 
   return (
-    <>
-      {/* Load social.js */}
-      <Script
-        src="/pixelpit/social.js"
-        strategy="afterInteractive"
-        onLoad={() => setSocialLoaded(true)}
-      />
-
-      <div style={{
-        minHeight: '100vh',
-        background: THEME.coldBg,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
-        fontFamily: 'ui-monospace, monospace',
-      }}>
-        {gameState === 'start' && (
-          <div style={{ textAlign: 'center' }}>
-            <h1 style={{ 
-              color: THEME.snowball, 
-              fontSize: 64, 
-              marginBottom: 10,
-              textShadow: `0 0 30px ${THEME.frost}`,
-            }}>
-              MELT
-            </h1>
-            <p style={{ color: THEME.frost, fontSize: 16, marginBottom: 5 }}>
-              You are a snowball.
+    <div style={{
+      minHeight: '100vh',
+      background: THEME.coldBg,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 20,
+      fontFamily: 'ui-monospace, monospace',
+    }}>
+      {gameState === 'start' && (
+        <div style={{ textAlign: 'center', maxWidth: 300 }}>
+          <h1 style={{ 
+            color: THEME.snowball, 
+            fontSize: 56, 
+            marginBottom: 10,
+            textShadow: `0 0 30px ${THEME.frost}`,
+          }}>
+            MELT
+          </h1>
+          
+          <p style={{ color: THEME.frost, fontSize: 18, marginBottom: 20 }}>
+            You're a snowball.<br/>
+            <span style={{ color: THEME.lava }}>Reach hell. ↓</span>
+          </p>
+          
+          <div style={{ 
+            background: 'rgba(0,0,0,0.3)', 
+            padding: 15, 
+            borderRadius: 8,
+            marginBottom: 25,
+            textAlign: 'left',
+          }}>
+            <p style={{ color: THEME.ice, fontSize: 14, marginBottom: 8 }}>
+              <strong>HOLD</strong> = Fall fast, smash <span style={{ color: THEME.ice }}>blue ice</span>
             </p>
-            <p style={{ color: THEME.lava, fontSize: 16, marginBottom: 30 }}>
-              You want to reach hell.
+            <p style={{ color: THEME.lava, fontSize: 14, marginBottom: 8 }}>
+              <strong>RELEASE</strong> = Fall slow, dodge <span style={{ color: THEME.lava }}>orange lava</span>
             </p>
-            <p style={{ color: THEME.text, fontSize: 12, marginBottom: 30 }}>
-              HOLD to smash through ice<br/>
-              RELEASE to dodge lava
+            <p style={{ color: THEME.text, fontSize: 12 }}>
+              Hit lava = shrink. Too small = die.
             </p>
-            <button
-              onClick={startGame}
-              style={{
-                background: `linear-gradient(${THEME.frost}, ${THEME.ice})`,
-                color: THEME.coldBg,
-                border: 'none',
-                padding: '16px 50px',
-                fontSize: 18,
-                fontWeight: 600,
-                cursor: 'pointer',
-                borderRadius: 8,
-              }}
-            >
-              DESCEND
-            </button>
-
-            {/* Leaderboard on start */}
-            <div style={{ marginTop: 30, width: '100%', maxWidth: 350 }}>
-              <Leaderboard
-                gameId={GAME_ID}
-                limit={5}
-                entryId={submittedEntryId ?? undefined}
-                colors={LEADERBOARD_COLORS}
-              />
-            </div>
           </div>
-        )}
-
-        {gameState === 'playing' && (
-          <canvas 
-            ref={canvasRef} 
-            style={{ 
+          
+          <button
+            onClick={startGame}
+            style={{
+              background: `linear-gradient(135deg, ${THEME.frost}, ${THEME.ice})`,
+              color: THEME.coldBg,
+              border: 'none',
+              padding: '16px 50px',
+              fontSize: 18,
+              fontWeight: 700,
+              cursor: 'pointer',
               borderRadius: 8,
-              touchAction: 'none',
-            }} 
-          />
-        )}
+            }}
+          >
+            DESCEND ↓
+          </button>
+        </div>
+      )}
 
-        {gameState === 'won' && (
-          <div style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
-            <h1 style={{ 
-              color: THEME.lava, 
-              fontSize: 48, 
-              marginBottom: 10,
-              textShadow: `0 0 30px ${THEME.lavaGlow}`,
-            }}>
-              MELTED
-            </h1>
-            <p style={{ color: THEME.text, fontSize: 18, marginBottom: 10 }}>
-              You made it. You&apos;re free.
-            </p>
-            <p style={{ color: THEME.frost, fontSize: 14, marginBottom: 20 }}>
-              Final size: {Math.round(finalSize)}px • Layers: {layersDescended}
-            </p>
+      {gameState === 'playing' && (
+        <canvas 
+          ref={canvasRef} 
+          style={{ 
+            borderRadius: 8,
+            touchAction: 'none',
+          }} 
+        />
+      )}
 
-            {/* ScoreFlow */}
-            <ScoreFlow
-              score={layersDescended}
-              gameId={GAME_ID}
-              colors={SCORE_FLOW_COLORS}
-              xpDivisor={1}
-              onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
-            />
+      {gameState === 'won' && (
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ 
+            color: THEME.lava, 
+            fontSize: 48, 
+            marginBottom: 10,
+            textShadow: `0 0 30px ${THEME.lavaGlow}`,
+          }}>
+            MELTED 😊
+          </h1>
+          <p style={{ color: THEME.text, fontSize: 18, marginBottom: 10 }}>
+            You reached hell. You're free.
+          </p>
+          <p style={{ color: THEME.frost, fontSize: 14, marginBottom: 30 }}>
+            Final size: {Math.round(finalSize)}px<br/>
+            Layers smashed: {layersDescended}
+          </p>
+          <button
+            onClick={startGame}
+            style={{
+              background: THEME.lava,
+              color: '#fff',
+              border: 'none',
+              padding: '16px 40px',
+              fontSize: 18,
+              fontWeight: 600,
+              cursor: 'pointer',
+              borderRadius: 8,
+            }}
+          >
+            Melt Again
+          </button>
+        </div>
+      )}
 
-            {/* Share button */}
-            <div style={{ marginTop: 20 }}>
-              <ShareButtonContainer
-                id="share-btn-melt-win"
-                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/melt/share/${layersDescended}`}
-                text={`I melted through ${layersDescended} layers and reached hell on MELT! Can you make it? ❄️🔥`}
-                style="minimal"
-                socialLoaded={socialLoaded}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 20 }}>
-              <button
-                onClick={() => setShowLeaderboard(!showLeaderboard)}
-                style={{
-                  background: 'transparent',
-                  color: THEME.frost,
-                  border: `1px solid ${THEME.frost}`,
-                  padding: '12px 20px',
-                  fontSize: 14,
-                  cursor: 'pointer',
-                  borderRadius: 8,
-                }}
-              >
-                {showLeaderboard ? 'Hide' : 'Leaderboard'}
-              </button>
-              <button
-                onClick={startGame}
-                style={{
-                  background: THEME.lava,
-                  color: '#fff',
-                  border: 'none',
-                  padding: '12px 30px',
-                  fontSize: 16,
-                  cursor: 'pointer',
-                  borderRadius: 8,
-                }}
-              >
-                Melt Again
-              </button>
-            </div>
-
-            {showLeaderboard && (
-              <div style={{ marginTop: 20 }}>
-                <Leaderboard
-                  gameId={GAME_ID}
-                  limit={5}
-                  entryId={submittedEntryId ?? undefined}
-                  colors={LEADERBOARD_COLORS}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {gameState === 'dead' && (
-          <div style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
-            <h1 style={{ color: '#ef4444', fontSize: 48, marginBottom: 10 }}>
-              EVAPORATED
-            </h1>
-            <p style={{ color: THEME.text, fontSize: 18, marginBottom: 10 }}>
-              Too much lava. You vanished.
-            </p>
-            <p style={{ color: THEME.frost, fontSize: 14, marginBottom: 20 }}>
-              Layers descended: {layersDescended}
-            </p>
-
-            {/* ScoreFlow for partial progress */}
-            {layersDescended > 0 && (
-              <ScoreFlow
-                score={layersDescended}
-                gameId={GAME_ID}
-                colors={SCORE_FLOW_COLORS}
-                xpDivisor={1}
-                onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
-              />
-            )}
-
-            {/* Share button */}
-            <div style={{ marginTop: 20 }}>
-              <ShareButtonContainer
-                id="share-btn-melt-dead"
-                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/melt/share/${layersDescended}`}
-                text={`I descended ${layersDescended} layers on MELT before evaporating. Can you reach hell? ❄️🔥`}
-                style="minimal"
-                socialLoaded={socialLoaded}
-              />
-            </div>
-
-            <button
-              onClick={startGame}
-              style={{
-                marginTop: 20,
-                background: THEME.ice,
-                color: THEME.coldBg,
-                border: 'none',
-                padding: '16px 40px',
-                fontSize: 18,
-                cursor: 'pointer',
-                borderRadius: 8,
-              }}
-            >
-              Try Again
-            </button>
-          </div>
-        )}
-      </div>
-    </>
+      {gameState === 'dead' && (
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ color: '#ef4444', fontSize: 48, marginBottom: 10 }}>
+            EVAPORATED
+          </h1>
+          <p style={{ color: THEME.text, fontSize: 18, marginBottom: 10 }}>
+            Too much lava. You vanished.
+          </p>
+          <p style={{ color: THEME.frost, fontSize: 14, marginBottom: 30 }}>
+            Layers descended: {layersDescended}
+          </p>
+          <button
+            onClick={startGame}
+            style={{
+              background: THEME.ice,
+              color: THEME.coldBg,
+              border: 'none',
+              padding: '16px 40px',
+              fontSize: 18,
+              fontWeight: 600,
+              cursor: 'pointer',
+              borderRadius: 8,
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
