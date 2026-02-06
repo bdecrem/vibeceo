@@ -191,8 +191,9 @@ export default function MeltGame() {
     canvas.height = CANVAS_H;
 
     let animationId: number;
-    const RING_RADIUS = 130;
-    const RING_THICKNESS = 20;
+    const RING_OUTER = 130;
+    const RING_INNER = 30;
+    const RING_THICKNESS = RING_OUTER - RING_INNER;
 
     const update = () => {
       const game = gameRef.current;
@@ -302,26 +303,26 @@ export default function MeltGame() {
       ctx.fillStyle = THEME.bg;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      // Draw orange wheels
+      // Draw orange wheels (filled pie wedges)
       for (const platform of game.platforms) {
         const screenY = platform.y - game.cameraY;
-        if (screenY < -RING_RADIUS - 50 || screenY > CANVAS_H + RING_RADIUS + 50) continue;
+        if (screenY < -RING_OUTER - 50 || screenY > CANVAS_H + RING_OUTER + 50) continue;
 
         const currentGapAngle = platform.gapAngle + platform.rotation;
         const gapStart = currentGapAngle - platform.gapSize / 2;
         const gapEnd = currentGapAngle + platform.gapSize / 2;
         
-        // Orange wheel with gap
-        ctx.strokeStyle = THEME.lava;
-        ctx.lineWidth = RING_THICKNESS;
+        // Filled ring with gap (donut shape)
+        ctx.fillStyle = THEME.lava;
         ctx.shadowColor = THEME.lavaGlow;
         ctx.shadowBlur = 15;
-        ctx.lineCap = 'round';
         
-        // Draw arc (wheel minus gap)
+        // Draw filled arc (outer arc, then inner arc reversed)
         ctx.beginPath();
-        ctx.arc(BALL_X, screenY, RING_RADIUS, gapEnd, gapStart + Math.PI * 2);
-        ctx.stroke();
+        ctx.arc(BALL_X, screenY, RING_OUTER, gapEnd, gapStart + Math.PI * 2);
+        ctx.arc(BALL_X, screenY, RING_INNER, gapStart + Math.PI * 2, gapEnd, true);
+        ctx.closePath();
+        ctx.fill();
         
         ctx.shadowBlur = 0;
       }
