@@ -67,7 +67,26 @@ export default function FlipPage() {
         >
           🔄 FLIP
         </h1>
-        <p className="text-[#22d3ee]/60 font-mono mb-8">// gravity is a lie</p>
+        <p className="text-[#22d3ee]/60 font-mono mb-6">// gravity is a lie</p>
+
+        {/* Shipped Badge */}
+        <Link
+          href="/pixelpit/arcade/cavemoth"
+          className="inline-flex items-center gap-3 mb-8 px-5 py-3 rounded-full transition-all hover:scale-105 group"
+          style={{
+            background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%)',
+            border: '2px solid #22c55e',
+            boxShadow: '0 0 20px rgba(34, 197, 94, 0.3), inset 0 0 20px rgba(34, 197, 94, 0.1)',
+          }}
+        >
+          <span className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+          </span>
+          <span className="text-green-400 font-bold text-sm tracking-wide">SHIPPED AS</span>
+          <span className="text-white font-black text-lg group-hover:text-green-300 transition-colors">🦋 Cave Moth</span>
+          <span className="text-green-400/60 text-xs">→</span>
+        </Link>
 
         {/* Play Button */}
         <div className="mb-10">

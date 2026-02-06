@@ -1,0 +1,148 @@
+{
+  "styles": [
+    {
+      "name": "GHOST CARTRIDGE",
+      "desc": "Haunted NES cartridge. Glitchy, corrupted pixels. Color palette: sickly greens (#3d5a45, #8bac0f), deep purples, CRT phosphor glow. Scanlines mandatory. Text flickers. Random pixel artifacts. Dithered shadows. Everything slightly wrong - misaligned sprites, color bleeding. Mono font only."
+    },
+    {
+      "name": "COZY CABIN",
+      "desc": "Stardew Valley meets Animal Crossing. Warm, rounded UI with soft shadows. Palette: warm cream (#faf6e9), terracotta, sage green, dusty rose. Subtle paper textures. Friendly hand-drawn icon style. Gentle bounce animations. Feels like a warm blanket. Accessible, inviting, wholesome."
+    },
+    {
+      "name": "NEON DOJO",
+      "desc": "Neo-Geo cabinet at 2am. Hot neon on pure black. Electric pink (#ff2d95), laser cyan (#00f0ff), warning yellow. Aggressive angles, diagonal stripes. Chrome/metallic accents. Big bold Impact-style fonts. Health bars, VS screens. Everything screams INSERT COIN."
+    },
+    {
+      "name": "PAPER DUNGEON",
+      "desc": "Sketchbook brought to life. Off-white parchment background (#f5f0e6). Hand-drawn wobbly borders. Ink splatter accents. Muted palette: sepia, faded red, dusty blue. Crosshatch shading patterns. Fantasy map aesthetic. Torn paper edges. Candle-flicker animations."
+    },
+    {
+      "name": "VOID PROTOCOL",
+      "desc": "Alien computer terminal circa 2087. Pure black void with single accent: blood orange (#ff4d00) OR cold cyan. Monospace everything. Minimalist brutalist layouts. Thin 1px lines. Data streams, loading bars, system diagnostics aesthetic. Glitch text. Unsettling negative space."
+    },
+    {
+      "name": "BUBBLEGUM ARCADE",
+      "desc": "Japanese UFO catcher aesthetic. Pastel explosion: bubblegum pink (#ff99cc), mint (#99ffcc), lilac (#cc99ff), lemon (#ffff99). Chunky rounded shapes, puffy 3D buttons. Stars and hearts everywhere. Bouncy spring animations. Thick black outlines. Sparkle particles."
+    },
+    {
+      "name": "TERMINAL NOIR",
+      "desc": "1980s mainframe meets film noir. Green phosphor text (#33ff33) on pure black. Matrix rain optional. Monospace Courier only. Blinking cursors. ASCII art borders. Fake command prompts. Amber (#ffaa00) for warnings. No graphics - everything is text. Feels like hacking."
+    },
+    {
+      "name": "SUNSET BOULEVARD",
+      "desc": "Driving into a sunset forever. Gradient skies: orange to purple to pink. Chrome text with horizontal lines. Palm tree silhouettes. Grid floor to horizon. Lens flare mandatory. Hot magenta (#ff1493), electric orange (#ff6b00). Speed lines. Retrofuture optimism."
+    },
+    {
+      "name": "MOSS & RUIN",
+      "desc": "Overgrown post-apocalypse but peaceful. Muted forest greens (#4a5d4a, #6b7b5f), concrete gray, rust orange accents. Vines creeping over UI. Cracked textures. Soft dappled light. Rounded organic shapes. Weathered serif fonts. No sharp corners. Nature won."
+    },
+    {
+      "name": "SUGAR RUSH",
+      "desc": "Dopamine factory. Bright saturated primaries: red, yellow, blue, green. White background. Fat chunky shapes. Huge touch targets. Confetti explosions on every action. Star bursts, +1 floating up. Progress bars everywhere. Big dumb fun. No reading required."
+    }
+  ],
+  "concepts": [
+    "floating islands",
+    "underwater temple",
+    "space station",
+    "haunted mansion",
+    "candy kingdom",
+    "volcano eruption",
+    "frozen tundra",
+    "jungle ruins",
+    "neon city",
+    "cloud kingdom",
+    "desert oasis",
+    "crystal caves",
+    "robot factory",
+    "pirate ship",
+    "alien planet",
+    "enchanted forest",
+    "moon base",
+    "ancient egypt",
+    "samurai dojo",
+    "steampunk airship",
+    "disco dance floor",
+    "aquarium",
+    "beehive",
+    "clockwork tower",
+    "dragon lair",
+    "fairy garden",
+    "ghost train",
+    "ice cream parlor",
+    "jazz club",
+    "lava caves",
+    "mad scientist lab",
+    "ninja temple",
+    "origami world",
+    "pinball machine",
+    "quantum realm",
+    "rainbow road",
+    "sunken ship",
+    "toy box",
+    "UFO invasion",
+    "viking longship",
+    "wizard tower",
+    "xray dimension",
+    "yeti mountain",
+    "zen garden",
+    "meteor shower",
+    "black hole",
+    "coral reef",
+    "thunderstorm",
+    "northern lights",
+    "solar eclipse"
+  ],
+  "games": [
+    {"name": "Flappy Bird", "control": "tap", "mechanic": "tap to flap, avoid pipes"},
+    {"name": "Snake", "control": "swipe", "mechanic": "eat food, grow, don't hit yourself"},
+    {"name": "Breakout", "control": "drag", "mechanic": "bounce ball, break bricks"},
+    {"name": "Pong", "control": "drag", "mechanic": "paddle vs paddle, don't miss"},
+    {"name": "Space Invaders", "control": "drag+tap", "mechanic": "shoot descending aliens"},
+    {"name": "Asteroids", "control": "tap+drag", "mechanic": "shoot rocks, don't crash"},
+    {"name": "Tetris", "control": "swipe+tap", "mechanic": "rotate and stack falling blocks"},
+    {"name": "Fruit Ninja", "control": "swipe", "mechanic": "slice fruit, avoid bombs"},
+    {"name": "Doodle Jump", "control": "tilt/tap", "mechanic": "bounce up platforms endlessly"},
+    {"name": "2048", "control": "swipe", "mechanic": "merge tiles to reach 2048"},
+    {"name": "Crossy Road", "control": "tap", "mechanic": "hop through traffic"},
+    {"name": "Geometry Dash", "control": "tap", "mechanic": "jump to rhythm, avoid spikes"},
+    {"name": "Stack", "control": "tap", "mechanic": "stack blocks, don't overhang"},
+    {"name": "Color Switch", "control": "tap", "mechanic": "jump through matching colors"},
+    {"name": "Ballz", "control": "aim", "mechanic": "aim balls to break numbered blocks"},
+    {"name": "Temple Run", "control": "swipe", "mechanic": "endless run, dodge obstacles"},
+    {"name": "Subway Surfers", "control": "swipe", "mechanic": "lane-switch runner"},
+    {"name": "Jetpack Joyride", "control": "hold", "mechanic": "hold to rise, release to fall"},
+    {"name": "Tiny Wings", "control": "hold", "mechanic": "hold to dive, release to fly"},
+    {"name": "Canabalt", "control": "tap", "mechanic": "auto-run, tap to jump"},
+    {"name": "Helicopter Game", "control": "hold", "mechanic": "hold to rise, avoid walls"},
+    {"name": "Frogger", "control": "tap", "mechanic": "cross traffic and rivers"},
+    {"name": "Pac-Man", "control": "swipe", "mechanic": "eat dots, avoid ghosts"},
+    {"name": "Galaga", "control": "drag+tap", "mechanic": "shoot waves of aliens"},
+    {"name": "Centipede", "control": "drag+tap", "mechanic": "shoot descending centipede"},
+    {"name": "Missile Command", "control": "tap", "mechanic": "tap to intercept missiles"},
+    {"name": "Kaboom", "control": "drag", "mechanic": "catch falling bombs"},
+    {"name": "Brick Breaker", "control": "drag", "mechanic": "breakout with powerups"},
+    {"name": "Pinball", "control": "tap", "mechanic": "tap flippers to keep ball alive"},
+    {"name": "Air Hockey", "control": "drag", "mechanic": "drag paddle, score goals"},
+    {"name": "Simon Says", "control": "tap", "mechanic": "repeat color sequence"},
+    {"name": "Whack-a-Mole", "control": "tap", "mechanic": "tap moles as they appear"},
+    {"name": "Piano Tiles", "control": "tap", "mechanic": "tap black tiles, avoid white"},
+    {"name": "Tap Tap Revenge", "control": "tap", "mechanic": "tap notes to rhythm"},
+    {"name": "One More Line", "control": "hold", "mechanic": "hold to orbit, release to fly"},
+    {"name": "ZigZag", "control": "tap", "mechanic": "tap to change direction on path"},
+    {"name": "Rise Up", "control": "drag", "mechanic": "drag shield to protect balloon"},
+    {"name": "Helix Jump", "control": "drag", "mechanic": "rotate helix, drop ball through gaps"},
+    {"name": "Fall Down", "control": "tilt/drag", "mechanic": "fall through gaps, don't get crushed"},
+    {"name": "Brick Stacker", "control": "tap", "mechanic": "tap to drop brick, build tower"},
+    {"name": "Knife Hit", "control": "tap", "mechanic": "tap to throw knife at spinning log"},
+    {"name": "Bottle Flip", "control": "swipe", "mechanic": "swipe to flip, land upright"},
+    {"name": "Basketball Shot", "control": "swipe", "mechanic": "swipe to shoot hoops"},
+    {"name": "Paper Toss", "control": "swipe", "mechanic": "swipe to throw paper in bin"},
+    {"name": "Angry Birds", "control": "drag", "mechanic": "drag slingshot, destroy structures"},
+    {"name": "Cut the Rope", "control": "swipe", "mechanic": "swipe to cut ropes, feed candy"},
+    {"name": "Where's My Water", "control": "swipe", "mechanic": "dig paths for water"},
+    {"name": "Threes", "control": "swipe", "mechanic": "merge 1+2, then 3+3, etc"},
+    {"name": "Super Hexagon", "control": "tap", "mechanic": "tap left/right to avoid walls"},
+    {"name": "Flick Golf", "control": "swipe", "mechanic": "swipe to hit ball toward hole"}
+  ]
+}
