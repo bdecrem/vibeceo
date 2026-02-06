@@ -377,6 +377,7 @@ export default function CaveMothGame() {
     // Fingerprint tutorial: 0=show top prompt, 1=show bottom prompt, 2=done
     hintPhase: 0 as 0 | 1 | 2,
     hintAge: 0,  // frames since current hint phase started
+    countdown: 0, // frames remaining in 3-2-1 countdown (0 = no countdown)
   });
 
   const startGame = useCallback(() => {
@@ -419,13 +420,14 @@ export default function CaveMothGame() {
     game.spikeGap = 300;
     game.spikeSize = 30;
     game.scrollSpeed = 3;
-    game.running = true;
+    game.running = false; // starts after countdown
+    game.countdown = 180; // 3 seconds at 60fps
     game.wingPhase = 0;
     game.flipParticles = [];
     game.nearMissFlash = 0;
     game.frameCount = 0;
     game.hintPhase = 0;
-    game.hintAge = -20; // delay ~0.33s before first fingerprint pops in
+    game.hintAge = -40; // delay before first fingerprint pops in (during countdown)
 
     setMusicIntensity(1);
 
@@ -598,6 +600,13 @@ export default function CaveMothGame() {
 
       // Wing animation
       game.wingPhase += 0.15;
+
+      // Countdown tick
+      if (game.countdown > 0) {
+        game.countdown--;
+        if (game.countdown <= 0) game.running = true;
+        return;
+      }
 
       if (!game.running) return;
 
@@ -1146,6 +1155,31 @@ export default function CaveMothGame() {
         } else {
           drawFingerprint(cx, canvas.height * 0.7);
         }
+      }
+
+      // 3-2-1 countdown
+      if (game.countdown > 0) {
+        const num = Math.ceil(game.countdown / 60); // 3, 2, 1
+        const withinBeat = game.countdown % 60; // frames into this number
+        // Pop-in scale: large → normal over first 10 frames of each beat
+        const beatAge = 60 - withinBeat;
+        const popT = Math.min(beatAge / 10, 1);
+        const cScale = 1 + 1.2 * (1 - popT) * (1 - popT);
+        // Fade slightly as each number ages
+        const cAlpha = 0.15 + 0.2 * (withinBeat / 60);
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(cScale, cScale);
+        ctx.globalAlpha = cAlpha;
+        ctx.font = '120px ui-monospace, monospace';
+        ctx.fillStyle = THEME.glow;
+        ctx.shadowColor = THEME.glow;
+        ctx.shadowBlur = 40;
+        ctx.fillText(String(num), 0, 0);
+        ctx.shadowBlur = 0;
+        ctx.restore();
       }
 
       // Screen flash (gold for level up, white for death)
