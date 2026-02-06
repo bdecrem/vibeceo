@@ -338,8 +338,6 @@ async function notifyStreakGroupMembers(scorerUserId: number, gameId: string) {
 
     if (!scorer) return;
 
-    const today = new Date().toISOString().split("T")[0];
-
     // For each streak group, notify other members
     for (const group of streakGroups) {
       const { data: members } = await supabase
@@ -350,16 +348,7 @@ async function notifyStreakGroupMembers(scorerUserId: number, gameId: string) {
 
       if (!members || members.length === 0) continue;
 
-      // Filter to members who haven't played today (no need to nudge them)
-      const needsNudge = members.filter(m => {
-        if (!m.last_play_at) return true;
-        const playDate = new Date(m.last_play_at).toISOString().split("T")[0];
-        return playDate !== today;
-      });
-
-      if (needsNudge.length === 0) continue;
-
-      const userIds = needsNudge.map(m => m.user_id);
+      const userIds = members.map(m => m.user_id);
 
       // Get verified phones for these users
       const { data: users } = await supabase
