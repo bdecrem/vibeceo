@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MYCELIUM — Amber</title>
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="MYCELIUM">
+  <meta property="og:description" content="Touch the network. Hear information flow.">
+  <meta property="og:image" content="https://kochi.to/amber/mycelium-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/mycelium-piano.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MYCELIUM">
+  <meta name="twitter:description" content="Touch the network. Hear information flow.">
+  <meta name="twitter:image" content="https://kochi.to/amber/mycelium-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0D0D0D;
+      overflow: hidden;
+      font-family: 'Georgia', serif;
+      touch-action: none;
+    }
+
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: pointer;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      z-index: 20;
+      background: rgba(13, 13, 13, 0.92);
+      transition: opacity 1.5s ease-out;
+    }
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .overlay h1 {
+      color: #D4A574;
+      font-size: 2rem;
+      font-weight: normal;
+      letter-spacing: 0.2em;
+    }
+    .overlay .subtitle {
+      color: #D4A574;
+      opacity: 0.5;
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+    .overlay button {
+      background: transparent;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      padding: 1rem 3rem;
+      font-family: inherit;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      letter-spacing: 0.1em;
+    }
+    .overlay button:hover {
+      background: #D4A574;
+      color: #0D0D0D;
+    }
+
+    #status {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #D4A574;
+      font-size: 13px;
+      text-align: center;
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 10;
+      transition: opacity 0.5s;
+    }
+    #status.loading {
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.6; }
+    }
+
+    @media (max-width: 600px) {
+      #status { font-size: 11px; bottom: 10px; }
+      .overlay h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div class="overlay" id="overlay">
+    <h1>MYCELIUM</h1>
+    <p class="subtitle">touch the network, hear it think</p>
+    <button id="playBtn" disabled>Loading piano...</button>
+  </div>
+
+  <p id="status" class="loading">Loading piano...</p>
+
+  <script type="module">
+    import { SplendidGrandPiano, Reverb } from "https://unpkg.com/smplr@0.15.1/dist/index.mjs";
+
+    // ─────────────────────────────────────────────────────────────
+    // CANVAS
+    // ─────────────────────────────────────────────────────────────
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // ─────────────────────────────────────────────────────────────
+    // AUDIO
+    // ─────────────────────────────────────────────────────────────
+
+    let piano = null;
+    let audioContext = null;
+    let audioReady = false;
+
+    // D minor pentatonic across 3 octaves — can't sound bad
+    const SCALE = [
+      'D3', 'F3', 'G3', 'A3', 'C4',
+      'D4', 'F4', 'G4', 'A4', 'C5',
+      'D5', 'F5', 'G5', 'A5', 'C6',
+    ];
+
+    // Track last play time per node to avoid machine-gun retriggering
+    const lastPlayTime = new Map();
+    const MIN_RETRIGGER_MS = 100;
+
+    // Ambient bass — slow pulse on root
+    let bassInterval = null;
+
+    async function initAudio() {
+      audioContext = new AudioContext();
+      piano = new SplendidGrandPiano(audioContext, { volume: 100 });
+      await piano.load;
+
+      const reverb = new Reverb(audioContext);
+      piano.output.addEffect('reverb', reverb, 0.3);
+
+      audioReady = true;
+
+      const btn = document.getElementById('playBtn');
+      btn.textContent = 'Begin';
+      btn.disabled = false;
+      document.getElementById('status').textContent = 'TOUCH TO SEND SIGNALS';
+      document.getElementById('status').classList.remove('loading');
+    }
+
+    function playNodeNote(node, velocity = 50) {
+      if (!audioReady) return;
+
+      // Rate-limit per node
+      const now = performance.now();
+      const last = lastPlayTime.get(node) || 0;
+      if (now - last < MIN_RETRIGGER_MS) return;
+      lastPlayTime.set(node, now);
+
+      const note = node.musicalNote;
+      const time = audioContext.currentTime;
+      const duration = 1.5 + node.radius * 0.3;
+
+      piano.start({ note, time, velocity: Math.round(velocity) });
+      piano.stop({ note, time: time + duration });
+    }
+
+    function playTouchChord(node) {
+      if (!audioReady) return;
+
+      const noteIndex = SCALE.indexOf(node.musicalNote);
+      const time = audioContext.currentTime;
+
+      // Root note — strong
+      piano.start({ note: node.musicalNote, time, velocity: 72 });
+      piano.stop({ note: node.musicalNote, time: time + 2.5 });
+
+      // A fifth above (or nearby pentatonic neighbor) — softer
+      const fifthIdx = Math.min(noteIndex + 4, SCALE.length - 1);
+      const fifthNote = SCALE[fifthIdx];
+      piano.start({ note: fifthNote, time: time + 0.03, velocity: 48 });
+      piano.stop({ note: fifthNote, time: time + 2.2 });
+
+      // An octave-ish interval — very soft
+      const octIdx = Math.min(noteIndex + 5, SCALE.length - 1);
+      if (octIdx !== fifthIdx) {
+        const octNote = SCALE[octIdx];
+        piano.start({ note: octNote, time: time + 0.06, velocity: 35 });
+        piano.stop({ note: octNote, time: time + 2.0 });
+      }
+    }
+
+    function startAmbientBass() {
+      if (!audioReady) return;
+
+      // Play a low D every ~8 seconds, very quietly
+      function playBass() {
+        if (!audioReady) return;
+        const time = audioContext.currentTime;
+        const notes = ['D2', 'A2'];
+        const pick = notes[Math.floor(Math.random() * notes.length)];
+        piano.start({ note: pick, time, velocity: 22 });
+        piano.stop({ note: pick, time: time + 6 });
+      }
+
+      playBass();
+      bassInterval = setInterval(playBass, 7000 + Math.random() * 3000);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // COLOR PALETTE
+    // ─────────────────────────────────────────────────────────────
+
+    const COLORS = [
+      '#FFD700', // gold
+      '#f59e0b', // amber
+      '#2D9596', // teal
+      '#14b8a6', // bright teal
+      '#ec4899', // hot pink
+      '#f472b6', // pink
+      '#3b82f6', // electric blue
+      '#60a5fa', // bright blue
+      '#8b5cf6', // purple
+      '#84cc16', // lime
+      '#fb923c', // coral
+    ];
+
+    // ─────────────────────────────────────────────────────────────
+    // NETWORK
+    // ─────────────────────────────────────────────────────────────
+
+    const nodes = [];
+    const NODE_COUNT = 60;
+    const connections = [];
+    const signals = [];
+
+    class Node {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 3 + Math.random() * 5;
+        this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        this.pulse = Math.random() * Math.PI * 2;
+        this.pulseSpeed = 0.02 + Math.random() * 0.03;
+        this.glow = 0;
+        this.musicalNote = null; // Assigned after placement
+      }
+
+      update() {
+        this.pulse += this.pulseSpeed;
+        this.glow *= 0.95;
+      }
+
+      draw() {
+        const pulseScale = 1 + Math.sin(this.pulse) * 0.2;
+        const r = this.radius * pulseScale;
+
+        if (this.glow > 0) {
+          ctx.shadowBlur = 30;
+          ctx.shadowColor = this.color;
+        } else {
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = this.color;
+        }
+
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 3);
+        gradient.addColorStop(0, this.color + 'CC');
+        gradient.addColorStop(0.5, this.color + '44');
+        gradient.addColorStop(1, this.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, r * 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+      }
+
+      distanceTo(other) {
+        const dx = this.x - other.x;
+        const dy = this.y - other.y;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+    }
+
+    class Connection {
+      constructor(nodeA, nodeB) {
+        this.nodeA = nodeA;
+        this.nodeB = nodeB;
+        this.alpha = 0.15;
+      }
+
+      draw() {
+        const gradient = ctx.createLinearGradient(
+          this.nodeA.x, this.nodeA.y,
+          this.nodeB.x, this.nodeB.y
+        );
+        gradient.addColorStop(0, this.nodeA.color + Math.floor(this.alpha * 255).toString(16).padStart(2, '0'));
+        gradient.addColorStop(1, this.nodeB.color + Math.floor(this.alpha * 255).toString(16).padStart(2, '0'));
+
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(this.nodeA.x, this.nodeA.y);
+        ctx.lineTo(this.nodeB.x, this.nodeB.y);
+        ctx.stroke();
+      }
+    }
+
+    class Signal {
+      constructor(startNode, path) {
+        this.path = path;
+        this.currentIndex = 0;
+        this.progress = 0;
+        this.speed = 0.03 + Math.random() * 0.02;
+        this.color = startNode.color;
+        this.radius = 4;
+        this.alive = true;
+        this.totalHops = path.length;
+        this.hopCount = 0;
+      }
+
+      update() {
+        this.progress += this.speed;
+
+        if (this.progress >= 1) {
+          this.progress = 0;
+          this.currentIndex++;
+          this.hopCount++;
+
+          if (this.currentIndex < this.path.length) {
+            const node = this.path[this.currentIndex];
+            node.glow = 1;
+
+            // Play note — velocity fades with distance traveled
+            const decay = Math.max(0.25, 1 - (this.hopCount / this.totalHops) * 0.7);
+            const vel = 28 + decay * 32;
+            playNodeNote(node, vel);
+          }
+
+          if (this.currentIndex >= this.path.length - 1) {
+            this.alive = false;
+          }
+        }
+      }
+
+      draw() {
+        if (this.currentIndex >= this.path.length - 1) return;
+
+        const nodeA = this.path[this.currentIndex];
+        const nodeB = this.path[this.currentIndex + 1];
+
+        const x = nodeA.x + (nodeB.x - nodeA.x) * this.progress;
+        const y = nodeA.y + (nodeB.y - nodeA.y) * this.progress;
+
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(x, y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, y, this.radius * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // INIT NETWORK
+    // ─────────────────────────────────────────────────────────────
+
+    function initNetwork() {
+      const padding = 100;
+      for (let i = 0; i < NODE_COUNT; i++) {
+        const x = padding + Math.random() * (canvas.width - padding * 2);
+        const y = padding + Math.random() * (canvas.height - padding * 2);
+        nodes.push(new Node(x, y));
+      }
+
+      // Assign musical notes by Y position (top = high, bottom = low)
+      for (const node of nodes) {
+        const yNorm = node.y / canvas.height; // 0 = top, 1 = bottom
+        const noteIndex = Math.floor((1 - yNorm) * (SCALE.length - 1));
+        node.musicalNote = SCALE[Math.max(0, Math.min(SCALE.length - 1, noteIndex))];
+      }
+
+      const MAX_DISTANCE = 150;
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dist = nodes[i].distanceTo(nodes[j]);
+          if (dist < MAX_DISTANCE) {
+            connections.push(new Connection(nodes[i], nodes[j]));
+          }
+        }
+      }
+    }
+
+    function findPath(startNode, endNode) {
+      const queue = [[startNode]];
+      const visited = new Set([startNode]);
+
+      while (queue.length > 0) {
+        const path = queue.shift();
+        const node = path[path.length - 1];
+
+        if (node === endNode) return path;
+
+        const neighbors = connections
+          .filter(c => c.nodeA === node || c.nodeB === node)
+          .map(c => c.nodeA === node ? c.nodeB : c.nodeA)
+          .filter(n => !visited.has(n));
+
+        for (const neighbor of neighbors) {
+          visited.add(neighbor);
+          queue.push([...path, neighbor]);
+        }
+      }
+
+      return null;
+    }
+
+    function sendSignal(x, y, withSound = true) {
+      let nearest = null;
+      let minDist = Infinity;
+
+      for (const node of nodes) {
+        const dist = Math.sqrt((node.x - x) ** 2 + (node.y - y) ** 2);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = node;
+        }
+      }
+
+      if (!nearest) return;
+
+      nearest.glow = 1;
+
+      // Touch chord
+      if (withSound) {
+        playTouchChord(nearest);
+      }
+
+      const signalCount = 3 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < signalCount; i++) {
+        const target = nodes[Math.floor(Math.random() * nodes.length)];
+        if (target === nearest) continue;
+
+        const path = findPath(nearest, target);
+        if (path && path.length > 2) {
+          signals.push(new Signal(nearest, path));
+        }
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // INPUT
+    // ─────────────────────────────────────────────────────────────
+
+    function handleInput(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+      sendSignal(x * (canvas.width / rect.width), y * (canvas.height / rect.height));
+    }
+
+    canvas.addEventListener('mousedown', handleInput);
+    canvas.addEventListener('touchstart', handleInput);
+
+    // ─────────────────────────────────────────────────────────────
+    // ANIMATION
+    // ─────────────────────────────────────────────────────────────
+
+    function animate() {
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (const conn of connections) {
+        conn.draw();
+      }
+
+      for (const node of nodes) {
+        node.update();
+        node.draw();
+      }
+
+      for (let i = signals.length - 1; i >= 0; i--) {
+        signals[i].update();
+        if (!signals[i].alive) {
+          signals.splice(i, 1);
+        } else {
+          signals[i].draw();
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // START
+    // ─────────────────────────────────────────────────────────────
+
+    initNetwork();
+    animate();
+
+    // Load piano, then enable start button
+    initAudio().then(() => {
+      document.getElementById('playBtn').addEventListener('click', () => {
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
+        document.getElementById('overlay').classList.add('hidden');
+        startAmbientBass();
+
+        // Auto-demo after overlay fades
+        setTimeout(() => {
+          sendSignal(canvas.width / 2, canvas.height / 2);
+        }, 800);
+      });
+    });
+  </script>
+</body>
+</html>
