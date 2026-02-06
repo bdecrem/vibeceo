@@ -14,7 +14,26 @@ const BALL_RADIUS = 0.15;
 // C minor pentatonic — the game's musical key
 const PENTATONIC = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25, 622.25, 698.46];
 
-// Audio
+// Step sequencer music — same architecture as BEAM/RAIN
+const MUSIC = {
+  bpm: 115,
+  // C minor sub bass pattern (C2, Eb2, Bb1)
+  bass: [65.41, 0, 65.41, 0, 0, 0, 77.78, 0, 65.41, 0, 0, 0, 58.27, 0, 58.27, 0],
+  // Dark C minor arpeggios — 4 bars cycling
+  arp: [
+    [523.25, 622.25, 783.99, 622.25], // Cm
+    [466.16, 523.25, 622.25, 523.25], // Bb
+    [415.30, 523.25, 622.25, 523.25], // Ab
+    [392.00, 466.16, 523.25, 466.16], // Gm
+  ],
+  // Four on the floor kick
+  kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+  // Offbeat hats
+  hat:  [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+};
+
+// ─── Audio Engine ───────────────────────────────────────────
+
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
 
@@ -26,6 +45,8 @@ function initAudio() {
   masterGain.connect(audioCtx.destination);
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
+
+// ─── SFX ────────────────────────────────────────────────────
 
 // Musical pluck — pitch follows score up the pentatonic
 function playBounce(score = 0) {
@@ -63,7 +84,6 @@ function playFallThrough(combo = 1) {
 // Low boom + noise crash — dramatic death
 function playThunder() {
   if (!audioCtx || !masterGain) return;
-  // Sub boom
   const boom = audioCtx.createOscillator();
   const boomGain = audioCtx.createGain();
   boom.type = 'sine';
@@ -75,7 +95,6 @@ function playThunder() {
   boomGain.connect(masterGain);
   boom.start();
   boom.stop(audioCtx.currentTime + 0.5);
-  // Noise crash
   const bufferSize = audioCtx.sampleRate * 0.6;
   const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
   const data = buffer.getChannelData(0);
@@ -95,6 +114,130 @@ function playThunder() {
   noiseGain.connect(masterGain);
   noise.start();
 }
+
+// ─── Music Engine (step sequencer, same arch as BEAM) ───────
+
+let musicInterval: ReturnType<typeof setInterval> | null = null;
+let musicStep = 0;
+let musicScore = 0;
+
+function playMusicKick() {
+  if (!audioCtx || !masterGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(35, audioCtx.currentTime + 0.12);
+  filter.type = 'lowpass';
+  filter.frequency.value = 200;
+  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.2);
+}
+
+function playMusicHat() {
+  if (!audioCtx || !masterGain) return;
+  const len = audioCtx.sampleRate * 0.05;
+  const buffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buffer.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 7000;
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 12000;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+  noise.connect(hp);
+  hp.connect(lp);
+  lp.connect(gain);
+  gain.connect(masterGain);
+  noise.start();
+}
+
+function playMusicBass(freq: number) {
+  if (!audioCtx || !masterGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  filter.type = 'lowpass';
+  filter.frequency.value = 180;
+  gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.2);
+}
+
+function playMusicArp(freq: number) {
+  if (!audioCtx || !masterGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  filter.type = 'lowpass';
+  filter.frequency.value = 1800;
+  gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.15);
+}
+
+function musicTick() {
+  const step = musicStep % 16;
+  const bar = Math.floor(musicStep / 16) % 4;
+
+  // Kick — always playing (the pulse)
+  if (MUSIC.kick[step]) playMusicKick();
+
+  // Bass — enters after score 2
+  if (musicScore >= 2 && MUSIC.bass[step]) playMusicBass(MUSIC.bass[step]);
+
+  // Hats — enters after score 5
+  if (musicScore >= 5 && MUSIC.hat[step]) playMusicHat();
+
+  // Arps — enters after score 10, plays every 4th step
+  if (musicScore >= 10 && step % 4 === 0) {
+    playMusicArp(MUSIC.arp[bar][step / 4]);
+  }
+
+  musicStep++;
+}
+
+function startMusic() {
+  stopMusic();
+  musicStep = 0;
+  musicScore = 0;
+  const stepMs = (60 / MUSIC.bpm / 4) * 1000; // 16th note
+  musicTick(); // Play first beat immediately
+  musicInterval = setInterval(musicTick, stepMs);
+}
+
+function stopMusic() {
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
+}
+
+// ─── Game Types ─────────────────────────────────────────────
 
 interface PlatformData {
   y: number;
@@ -118,6 +261,8 @@ interface GameState {
   started: boolean;
 }
 
+// ─── 3D Components ──────────────────────────────────────────
+
 function Tower({ rotation }: { rotation: number }) {
   return (
     <mesh rotation={[0, rotation, 0]}>
@@ -127,7 +272,6 @@ function Tower({ rotation }: { rotation: number }) {
   );
 }
 
-// Smooth arc ring segment using ExtrudeGeometry
 function createArcGeo(innerR: number, outerR: number, thetaStart: number, thetaLength: number, thickness: number) {
   const segs = Math.max(6, Math.round((thetaLength / (Math.PI * 2)) * 48));
   const shape = new THREE.Shape();
@@ -215,6 +359,8 @@ function Ball({ y }: { y: number }) {
   );
 }
 
+// ─── Game Scene ─────────────────────────────────────────────
+
 function GameScene({
   onGameOver,
   onScoreUpdate
@@ -238,9 +384,11 @@ function GameScene({
   const [, forceUpdate] = useState(0);
   const dragRef = useRef({ isDragging: false, lastX: 0 });
 
-  // Initialize platforms
+  // Initialize platforms + music
   useEffect(() => {
     initAudio();
+    startMusic();
+
     const platforms: PlatformData[] = [];
     platforms.push({
       y: 0,
@@ -271,6 +419,8 @@ function GameScene({
     gameState.current.combo = 0;
     gameState.current.gameOver = false;
     gameState.current.started = false;
+
+    return () => { stopMusic(); };
   }, []);
 
   // Input handling
@@ -334,6 +484,9 @@ function GameScene({
     const gs = gameState.current;
     if (gs.gameOver) return;
 
+    // Keep music in sync with score
+    musicScore = gs.score;
+
     gs.rotation += gs.rotationVel;
     gs.rotationVel *= 0.92;
 
@@ -355,6 +508,7 @@ function GameScene({
               gs.ballVY = -0.01;
             } else if (checkStorm(ballAngle, platform)) {
               gs.gameOver = true;
+              stopMusic();
               playThunder();
               onGameOver(gs.score);
               return;
@@ -389,6 +543,7 @@ function GameScene({
               playFallThrough(gs.combo);
             } else if (checkStorm(ballAngle, platform)) {
               gs.gameOver = true;
+              stopMusic();
               playThunder();
               onGameOver(gs.score);
               return;
