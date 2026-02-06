@@ -761,6 +761,20 @@ function GameScene({
       // Glass platforms get a second escape gap on the opposite side
       const secondGapAngle = hasGlass ? norm2PI(gapAngle + Math.PI + (Math.random() - 0.5) * 1.0) : 0;
       const secondGapSize = hasGlass ? gapSize * 0.65 : 0;
+      // Storm must NOT overlap the gap of the platform above (unfair death)
+      const prevGap = platforms[i - 1];
+      let stormAngle = 0;
+      let stormSize = 0;
+      if (hasStorm) {
+        stormSize = 0.8 + Math.random() * 0.4;
+        const margin = (prevGap.gapSize + stormSize) / 2 + 0.3;
+        for (let attempt = 0; attempt < 20; attempt++) {
+          stormAngle = Math.random() * Math.PI * 2;
+          let d = Math.abs(stormAngle - prevGap.gapAngle);
+          if (d > Math.PI) d = Math.PI * 2 - d;
+          if (d > margin) break;
+        }
+      }
       platforms.push({
         y: -i * PLATFORM_SPACING,
         gapAngle,
@@ -768,8 +782,8 @@ function GameScene({
         secondGapAngle,
         secondGapSize,
         hasStorm,
-        stormAngle: hasStorm ? Math.random() * Math.PI * 2 : 0,
-        stormSize: hasStorm ? 0.8 + Math.random() * 0.4 : 0,
+        stormAngle,
+        stormSize,
         hasGlass,
         glassBroken: false,
         passed: false,
@@ -1072,6 +1086,20 @@ function GameScene({
       const stormGrowth = Math.min(depth * 0.005, 0.3);
       const secAngle = hasGlass ? norm2PI(gapAngle + Math.PI + (Math.random() - 0.5) * 1.0) : 0;
       const secSize = hasGlass ? gapSize * 0.65 : 0;
+      // Storm must NOT overlap the gap of the platform above (unfair death)
+      let dynStormAngle = 0;
+      let dynStormSize = 0;
+      if (hasStorm) {
+        dynStormSize = 0.6 + Math.random() * 0.4 + stormGrowth;
+        const prevGap = lowestPlatform;
+        const margin = (prevGap.gapSize + dynStormSize) / 2 + 0.3;
+        for (let attempt = 0; attempt < 20; attempt++) {
+          dynStormAngle = Math.random() * Math.PI * 2;
+          let d = Math.abs(dynStormAngle - prevGap.gapAngle);
+          if (d > Math.PI) d = Math.PI * 2 - d;
+          if (d > margin) break;
+        }
+      }
       gs.platforms.push({
         y: newY,
         gapAngle,
@@ -1079,8 +1107,8 @@ function GameScene({
         secondGapAngle: secAngle,
         secondGapSize: secSize,
         hasStorm,
-        stormAngle: hasStorm ? Math.random() * Math.PI * 2 : 0,
-        stormSize: hasStorm ? 0.6 + Math.random() * 0.4 + stormGrowth : 0,
+        stormAngle: dynStormAngle,
+        stormSize: dynStormSize,
         hasGlass,
         glassBroken: false,
         passed: false,
