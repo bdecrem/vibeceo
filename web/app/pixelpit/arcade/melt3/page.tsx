@@ -328,12 +328,11 @@ export default function Melt3Game() {
                   game.combo = 0; // Reset combo when landing
                 }
               } else {
-                // SOLID - always bad
+                // SOLID BLACK - instant death if smashing, land if not
                 if (game.holding) {
-                  // Hit solid while smashing = OW
+                  // Hit solid while smashing = DEATH
                   game.lives--;
                   setLives(game.lives);
-                  game.ballVY = -12;
                   game.combo = 0;
                   playHit();
                   
@@ -343,7 +342,7 @@ export default function Melt3Game() {
                       x: BALL_X + (Math.random() - 0.5) * 40,
                       y: platform.y,
                       vx: (Math.random() - 0.5) * 6,
-                      vy: -Math.random() * 5,
+                      vy: Math.random() * 3,
                       life: 20,
                       color: THEME.danger,
                     });
@@ -355,8 +354,13 @@ export default function Melt3Game() {
                     setGameState('dead');
                     return;
                   }
+                  
+                  // Don't bounce - just land and stop
+                  game.ballY = platform.y - PLATFORM_THICKNESS/2 - BALL_RADIUS;
+                  game.ballVY = 0;
+                  game.holding = false; // Force release
                 } else {
-                  // Landing on solid = just stop (not holding)
+                  // Landing on solid = stop (safe if not smashing)
                   game.ballY = platform.y - PLATFORM_THICKNESS/2 - BALL_RADIUS;
                   game.ballVY = 0;
                   game.combo = 0;
