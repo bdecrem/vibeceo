@@ -8,8 +8,11 @@ const PLATFORM_COUNT = 25;
 const PLATFORM_SPACING = 2;
 const TOWER_RADIUS = 0.4;
 const PLATFORM_OUTER_RADIUS = 2;
-const PLATFORM_THICKNESS = 0.3;
+const PLATFORM_THICKNESS = 0.5;
 const BALL_RADIUS = 0.15;
+
+// C minor pentatonic — the game's musical key
+const PENTATONIC = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25, 622.25, 698.46];
 
 // Audio
 let audioCtx: AudioContext | null = null;
@@ -24,28 +27,15 @@ function initAudio() {
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-function playBounce() {
+// Musical pluck — pitch follows score up the pentatonic
+function playBounce(score = 0) {
   if (!audioCtx || !masterGain) return;
+  const noteIndex = Math.min(score % PENTATONIC.length, PENTATONIC.length - 1);
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.value = 300 + Math.random() * 100;
-  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.1);
-}
-
-function playFallThrough() {
-  if (!audioCtx || !masterGain) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.value = 600;
-  osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
-  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  osc.type = 'triangle';
+  osc.frequency.value = PENTATONIC[noteIndex];
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
   osc.connect(gain);
   gain.connect(masterGain);
@@ -53,24 +43,56 @@ function playFallThrough() {
   osc.stop(audioCtx.currentTime + 0.08);
 }
 
+// Satisfying downward sweep — pitch rises with combo
+function playFallThrough(combo = 1) {
+  if (!audioCtx || !masterGain) return;
+  const startFreq = 300 + Math.min(combo, 8) * 80;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+  gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.15);
+}
+
+// Low boom + noise crash — dramatic death
 function playThunder() {
   if (!audioCtx || !masterGain) return;
-  const bufferSize = audioCtx.sampleRate * 0.5;
+  // Sub boom
+  const boom = audioCtx.createOscillator();
+  const boomGain = audioCtx.createGain();
+  boom.type = 'sine';
+  boom.frequency.setValueAtTime(60, audioCtx.currentTime);
+  boom.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.4);
+  boomGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+  boomGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+  boom.connect(boomGain);
+  boomGain.connect(masterGain);
+  boom.start();
+  boom.stop(audioCtx.currentTime + 0.5);
+  // Noise crash
+  const bufferSize = audioCtx.sampleRate * 0.6;
   const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
   }
   const noise = audioCtx.createBufferSource();
   noise.buffer = buffer;
   const filter = audioCtx.createBiquadFilter();
   filter.type = 'lowpass';
-  filter.frequency.value = 400;
-  const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+  filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+  filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4);
+  const noiseGain = audioCtx.createGain();
+  noiseGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
   noise.connect(filter);
-  filter.connect(gain);
-  gain.connect(masterGain);
+  filter.connect(noiseGain);
+  noiseGain.connect(masterGain);
   noise.start();
 }
 
@@ -93,112 +115,116 @@ interface GameState {
   score: number;
   combo: number;
   gameOver: boolean;
-  started: boolean; // Ball sits still until player rotates
+  started: boolean;
 }
 
 function Tower({ rotation }: { rotation: number }) {
   return (
     <mesh rotation={[0, rotation, 0]}>
       <cylinderGeometry args={[TOWER_RADIUS, TOWER_RADIUS, 100, 16]} />
-      <meshStandardMaterial color="#d4d4d8" />
+      <meshStandardMaterial color="#1e293b" emissive="#22d3ee" emissiveIntensity={0.05} />
     </mesh>
   );
 }
 
-function Platform({ 
-  y, 
-  gapAngle, 
-  gapSize, 
-  hasStorm, 
-  stormAngle, 
-  stormSize, 
-  rotation 
-}: { 
-  y: number;
-  gapAngle: number;
-  gapSize: number;
-  hasStorm: boolean;
-  stormAngle: number;
-  stormSize: number;
+// Smooth arc ring segment using ExtrudeGeometry
+function createArcGeo(innerR: number, outerR: number, thetaStart: number, thetaLength: number, thickness: number) {
+  const segs = Math.max(6, Math.round((thetaLength / (Math.PI * 2)) * 48));
+  const shape = new THREE.Shape();
+  shape.moveTo(Math.cos(thetaStart) * outerR, Math.sin(thetaStart) * outerR);
+  for (let i = 1; i <= segs; i++) {
+    const a = thetaStart + (i / segs) * thetaLength;
+    shape.lineTo(Math.cos(a) * outerR, Math.sin(a) * outerR);
+  }
+  for (let i = segs; i >= 0; i--) {
+    const a = thetaStart + (i / segs) * thetaLength;
+    shape.lineTo(Math.cos(a) * innerR, Math.sin(a) * innerR);
+  }
+  shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
+  geo.translate(0, 0, -thickness / 2);
+  geo.rotateX(-Math.PI / 2);
+  return geo;
+}
+
+const norm2PI = (a: number) => ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+
+function Platform({
+  y, gapAngle, gapSize, hasStorm, stormAngle, stormSize, rotation
+}: {
+  y: number; gapAngle: number; gapSize: number;
+  hasStorm: boolean; stormAngle: number; stormSize: number;
   rotation: number;
 }) {
-  const segments = 24;
-  const segmentAngle = (Math.PI * 2) / segments;
-  
-  const meshes = useMemo(() => {
-    const result: JSX.Element[] = [];
-    
-    for (let i = 0; i < segments; i++) {
-      const angle = i * segmentAngle;
-      const midAngle = angle + segmentAngle / 2;
-      
-      // Check if in gap
-      let gapDiff = Math.abs(midAngle - gapAngle);
-      if (gapDiff > Math.PI) gapDiff = Math.PI * 2 - gapDiff;
-      if (gapDiff < gapSize / 2) continue;
-      
-      // Check if storm
-      let isStorm = false;
-      if (hasStorm) {
-        let stormDiff = Math.abs(midAngle - stormAngle);
-        if (stormDiff > Math.PI) stormDiff = Math.PI * 2 - stormDiff;
-        isStorm = stormDiff < stormSize / 2;
+  const arcs = useMemo(() => {
+    const innerR = TOWER_RADIUS;
+    const outerR = PLATFORM_OUTER_RADIUS;
+    const solidStart = gapAngle + gapSize / 2;
+    const solidLength = Math.PI * 2 - gapSize;
+
+    type Arc = { geo: THREE.BufferGeometry; isStorm: boolean };
+    const result: Arc[] = [];
+
+    if (!hasStorm || stormSize < 0.01) {
+      result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), isStorm: false });
+    } else {
+      const off0 = norm2PI((stormAngle - stormSize / 2) - solidStart);
+      const off1 = norm2PI((stormAngle + stormSize / 2) - solidStart);
+
+      if (off0 >= solidLength && off1 >= solidLength) {
+        result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), isStorm: false });
+      } else if (off0 < off1 && off1 <= solidLength) {
+        if (off0 > 0.02)
+          result.push({ geo: createArcGeo(innerR, outerR, solidStart, off0, PLATFORM_THICKNESS), isStorm: false });
+        result.push({ geo: createArcGeo(innerR, outerR, solidStart + off0, off1 - off0, PLATFORM_THICKNESS), isStorm: true });
+        if (solidLength - off1 > 0.02)
+          result.push({ geo: createArcGeo(innerR, outerR, solidStart + off1, solidLength - off1, PLATFORM_THICKNESS), isStorm: false });
+      } else {
+        result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), isStorm: false });
       }
-      
-      const innerR = TOWER_RADIUS + 0.05;
-      const outerR = PLATFORM_OUTER_RADIUS;
-      const width = outerR - innerR;
-      const midR = (innerR + outerR) / 2;
-      
-      result.push(
-        <mesh 
-          key={i}
-          position={[
-            Math.cos(angle + segmentAngle / 2) * midR,
-            0,
-            Math.sin(angle + segmentAngle / 2) * midR
-          ]}
-          rotation={[0, -(angle + segmentAngle / 2) + Math.PI / 2, 0]}
-        >
-          <boxGeometry args={[width, PLATFORM_THICKNESS, segmentAngle * midR * 0.95]} />
-          <meshStandardMaterial 
-            color={isStorm ? '#2d1b4e' : '#ffffff'} 
-            emissive={isStorm ? '#ff0000' : '#000000'}
-            emissiveIntensity={isStorm ? 0.3 : 0}
-          />
-        </mesh>
-      );
     }
-    
     return result;
   }, [gapAngle, gapSize, hasStorm, stormAngle, stormSize]);
-  
+
+  useEffect(() => {
+    return () => { arcs.forEach(a => a.geo.dispose()); };
+  }, [arcs]);
+
   return (
     <group position={[0, y, 0]} rotation={[0, rotation, 0]}>
-      {meshes}
+      {arcs.map((a, i) => (
+        <mesh key={i} geometry={a.geo}>
+          <meshStandardMaterial
+            color={a.isStorm ? '#1a0a2e' : '#e2e8f0'}
+            emissive={a.isStorm ? '#ef4444' : '#22d3ee'}
+            emissiveIntensity={a.isStorm ? 0.5 : 0.08}
+          />
+        </mesh>
+      ))}
     </group>
   );
 }
 
 function Ball({ y }: { y: number }) {
+  const x = (TOWER_RADIUS + PLATFORM_OUTER_RADIUS) / 2;
   return (
-    <mesh position={[PLATFORM_OUTER_RADIUS - BALL_RADIUS - 0.1, y, 0]}>
+    <mesh position={[x, y, 0]}>
       <sphereGeometry args={[BALL_RADIUS, 16, 16]} />
-      <meshStandardMaterial color="#4fc3f7" emissive="#4fc3f7" emissiveIntensity={0.2} />
+      <meshStandardMaterial color="#FF1493" emissive="#FF1493" emissiveIntensity={0.6} />
     </mesh>
   );
 }
 
-function GameScene({ 
-  onGameOver, 
-  onScoreUpdate 
-}: { 
+function GameScene({
+  onGameOver,
+  onScoreUpdate
+}: {
   onGameOver: (score: number) => void;
   onScoreUpdate: (score: number, combo: number) => void;
 }) {
   const { camera } = useThree();
   const gameState = useRef<GameState>({
-    ballY: PLATFORM_THICKNESS / 2 + BALL_RADIUS, // Start on first platform (y=0)
+    ballY: PLATFORM_THICKNESS / 2 + BALL_RADIUS,
     ballVY: 0,
     rotation: 0,
     rotationVel: 0,
@@ -206,30 +232,25 @@ function GameScene({
     score: 0,
     combo: 0,
     gameOver: false,
-    started: false, // Wait for player input
+    started: false,
   });
-  
+
   const [, forceUpdate] = useState(0);
   const dragRef = useRef({ isDragging: false, lastX: 0 });
-  
+
   // Initialize platforms
   useEffect(() => {
     initAudio();
     const platforms: PlatformData[] = [];
-    
-    // First platform at y=0 with NO gap where ball starts (ball starts at angle 0)
-    // Make sure ball's starting position is on solid ground
     platforms.push({
       y: 0,
-      gapAngle: Math.PI, // Gap on opposite side from ball
+      gapAngle: Math.PI,
       gapSize: 1.0,
       hasStorm: false,
       stormAngle: 0,
       stormSize: 0,
       passed: false,
     });
-    
-    // Rest of platforms below
     for (let i = 1; i < PLATFORM_COUNT; i++) {
       const hasStorm = i > 2 && Math.random() < 0.4;
       platforms.push({
@@ -243,7 +264,7 @@ function GameScene({
       });
     }
     gameState.current.platforms = platforms;
-    gameState.current.ballY = PLATFORM_THICKNESS / 2 + BALL_RADIUS; // On top of first platform
+    gameState.current.ballY = PLATFORM_THICKNESS / 2 + BALL_RADIUS;
     gameState.current.ballVY = 0;
     gameState.current.rotation = 0;
     gameState.current.score = 0;
@@ -251,50 +272,40 @@ function GameScene({
     gameState.current.gameOver = false;
     gameState.current.started = false;
   }, []);
-  
+
   // Input handling
   useEffect(() => {
     const handleStart = (x: number) => {
       dragRef.current.isDragging = true;
       dragRef.current.lastX = x;
     };
-    
     const handleMove = (x: number) => {
       if (!dragRef.current.isDragging) return;
       const dx = x - dragRef.current.lastX;
       gameState.current.rotationVel += dx * 0.005;
       dragRef.current.lastX = x;
-      
-      // Start the game on first rotation
       if (!gameState.current.started && Math.abs(dx) > 2) {
         gameState.current.started = true;
       }
     };
-    
     const handleEnd = () => {
       dragRef.current.isDragging = false;
     };
-    
+
     const mouseDown = (e: MouseEvent) => handleStart(e.clientX);
     const mouseMove = (e: MouseEvent) => handleMove(e.clientX);
     const mouseUp = () => handleEnd();
-    const touchStart = (e: TouchEvent) => {
-      e.preventDefault();
-      handleStart(e.touches[0].clientX);
-    };
-    const touchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      handleMove(e.touches[0].clientX);
-    };
+    const touchStart = (e: TouchEvent) => { e.preventDefault(); handleStart(e.touches[0].clientX); };
+    const touchMove = (e: TouchEvent) => { e.preventDefault(); handleMove(e.touches[0].clientX); };
     const touchEnd = () => handleEnd();
-    
+
     window.addEventListener('mousedown', mouseDown);
     window.addEventListener('mousemove', mouseMove);
     window.addEventListener('mouseup', mouseUp);
     window.addEventListener('touchstart', touchStart, { passive: false });
     window.addEventListener('touchmove', touchMove, { passive: false });
     window.addEventListener('touchend', touchEnd);
-    
+
     return () => {
       window.removeEventListener('mousedown', mouseDown);
       window.removeEventListener('mousemove', mouseMove);
@@ -304,82 +315,100 @@ function GameScene({
       window.removeEventListener('touchend', touchEnd);
     };
   }, []);
-  
+
+  // Collision helpers
+  const checkGap = (angle: number, p: PlatformData) => {
+    let d = Math.abs(angle - p.gapAngle);
+    if (d > Math.PI) d = Math.PI * 2 - d;
+    return d < p.gapSize / 2;
+  };
+  const checkStorm = (angle: number, p: PlatformData) => {
+    if (!p.hasStorm) return false;
+    let d = Math.abs(angle - p.stormAngle);
+    if (d > Math.PI) d = Math.PI * 2 - d;
+    return d < p.stormSize / 2;
+  };
+
   // Game loop
-  useFrame((state, delta) => {
+  useFrame(() => {
     const gs = gameState.current;
     if (gs.gameOver) return;
-    
-    // Rotation with friction
+
     gs.rotation += gs.rotationVel;
     gs.rotationVel *= 0.92;
-    
-    // Only apply gravity once player has started rotating
-    const prevY = gs.ballY;
+
     if (gs.started) {
-      gs.ballVY -= 0.015;
-      gs.ballVY = Math.max(gs.ballVY, -0.3);
-      gs.ballY += gs.ballVY;
-    }
-    
-    // Camera follows ball
-    camera.position.y = gs.ballY + 3;
-    camera.lookAt(0, gs.ballY, 0);
-    
-    // Collision with platforms
-    for (const platform of gs.platforms) {
-      if (platform.passed) continue;
-      
-      const platformTop = platform.y + PLATFORM_THICKNESS / 2;
-      const platformBottom = platform.y - PLATFORM_THICKNESS / 2;
-      
-      // Ball passing through platform level
-      if (prevY - BALL_RADIUS > platformTop && gs.ballY - BALL_RADIUS <= platformTop) {
-        // Ball is at angle 0 (positive X), check if that's in gap relative to rotation
-        const ballWorldAngle = -gs.rotation;
-        let normalizedAngle = ballWorldAngle % (Math.PI * 2);
-        if (normalizedAngle < 0) normalizedAngle += Math.PI * 2;
-        
-        // Check gap
-        let gapDiff = Math.abs(normalizedAngle - platform.gapAngle);
-        if (gapDiff > Math.PI) gapDiff = Math.PI * 2 - gapDiff;
-        const inGap = gapDiff < platform.gapSize / 2;
-        
-        // Check storm
-        let hitStorm = false;
-        if (platform.hasStorm && !inGap) {
-          let stormDiff = Math.abs(normalizedAngle - platform.stormAngle);
-          if (stormDiff > Math.PI) stormDiff = Math.PI * 2 - stormDiff;
-          hitStorm = stormDiff < platform.stormSize / 2;
+      const ballAngle = norm2PI(-gs.rotation);
+
+      if (gs.ballVY === 0) {
+        let stillSupported = false;
+        for (const platform of gs.platforms) {
+          if (platform.passed) continue;
+          const platformTop = platform.y + PLATFORM_THICKNESS / 2;
+          if (Math.abs((gs.ballY - BALL_RADIUS) - platformTop) < 0.1) {
+            if (checkGap(ballAngle, platform)) {
+              platform.passed = true;
+              gs.combo++;
+              gs.score += gs.combo;
+              onScoreUpdate(gs.score, gs.combo);
+              playFallThrough(gs.combo);
+              gs.ballVY = -0.01;
+            } else if (checkStorm(ballAngle, platform)) {
+              gs.gameOver = true;
+              playThunder();
+              onGameOver(gs.score);
+              return;
+            } else {
+              stillSupported = true;
+              gs.ballY = platformTop + BALL_RADIUS;
+            }
+            break;
+          }
         }
-        
-        if (inGap) {
-          // Fall through
-          platform.passed = true;
-          gs.combo++;
-          gs.score += gs.combo;
-          onScoreUpdate(gs.score, gs.combo);
-          playFallThrough();
-        } else if (hitStorm) {
-          // Death!
-          gs.gameOver = true;
-          playThunder();
-          onGameOver(gs.score);
-          return;
-        } else {
-          // Bounce
-          gs.ballY = platformTop + BALL_RADIUS;
-          gs.ballVY = 0.15;
-          gs.combo = 0;
-          platform.passed = true;
-          gs.score += 1;
-          onScoreUpdate(gs.score, gs.combo);
-          playBounce();
+        if (!stillSupported && gs.ballVY === 0) {
+          gs.ballVY = -0.01;
+        }
+      }
+
+      if (gs.ballVY !== 0) {
+        const prevY = gs.ballY;
+        gs.ballVY -= 0.015;
+        gs.ballVY = Math.max(gs.ballVY, -0.3);
+        gs.ballY += gs.ballVY;
+
+        for (const platform of gs.platforms) {
+          if (platform.passed) continue;
+          const platformTop = platform.y + PLATFORM_THICKNESS / 2;
+
+          if (prevY - BALL_RADIUS > platformTop && gs.ballY - BALL_RADIUS <= platformTop) {
+            if (checkGap(ballAngle, platform)) {
+              platform.passed = true;
+              gs.combo++;
+              gs.score += gs.combo;
+              onScoreUpdate(gs.score, gs.combo);
+              playFallThrough(gs.combo);
+            } else if (checkStorm(ballAngle, platform)) {
+              gs.gameOver = true;
+              playThunder();
+              onGameOver(gs.score);
+              return;
+            } else {
+              gs.ballY = platformTop + BALL_RADIUS;
+              gs.ballVY = 0;
+              gs.combo = 0;
+              gs.score += 1;
+              onScoreUpdate(gs.score, gs.combo);
+              playBounce(gs.score);
+              break;
+            }
+          }
         }
       }
     }
-    
-    // Add more platforms
+
+    camera.position.y = gs.ballY + 3;
+    camera.lookAt(0, gs.ballY, 0);
+
     const lowestPlatform = gs.platforms[gs.platforms.length - 1];
     if (lowestPlatform && gs.ballY < lowestPlatform.y + 10) {
       const newY = lowestPlatform.y - PLATFORM_SPACING;
@@ -394,22 +423,21 @@ function GameScene({
         passed: false,
       });
     }
-    
-    // Remove far platforms
+
     gs.platforms = gs.platforms.filter(p => p.y < gs.ballY + 20);
-    
     forceUpdate(n => n + 1);
   });
-  
+
   const gs = gameState.current;
-  
+
   return (
     <>
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[5, 10, 5]} intensity={0.8} />
-      
+      <ambientLight intensity={0.3} />
+      <directionalLight position={[5, 10, 5]} intensity={0.6} color="#94a3b8" />
+      <pointLight position={[0, gs.ballY + 2, 3]} intensity={0.8} color="#FF1493" distance={8} />
+
       <Tower rotation={gs.rotation} />
-      
+
       {gs.platforms.map((p, i) => (
         <Platform
           key={`${i}-${p.y}`}
@@ -422,35 +450,32 @@ function GameScene({
           rotation={gs.rotation}
         />
       ))}
-      
+
       <Ball y={gs.ballY} />
-      
-      {/* Sky gradient background */}
-      <mesh position={[0, 0, -20]}>
-        <planeGeometry args={[100, 100]} />
-        <meshBasicMaterial color="#87ceeb" />
-      </mesh>
+
+      <color attach="background" args={['#0f172a']} />
+      <fog attach="fog" args={['#0f172a', 8, 22]} />
     </>
   );
 }
 
-export default function Game3D({ 
-  onGameOver, 
-  onScoreUpdate 
-}: { 
+export default function Game3D({
+  onGameOver,
+  onScoreUpdate
+}: {
   onGameOver: (score: number) => void;
   onScoreUpdate: (score: number, combo: number) => void;
 }) {
   const [mounted, setMounted] = useState(false);
-  
+
   useEffect(() => {
     setMounted(true);
   }, []);
-  
+
   if (!mounted) {
-    return <div style={{ position: 'absolute', inset: 0, background: '#87ceeb' }} />;
+    return <div style={{ position: 'absolute', inset: 0, background: '#0f172a' }} />;
   }
-  
+
   return (
     <div style={{ position: 'absolute', inset: 0 }}>
       <Canvas
