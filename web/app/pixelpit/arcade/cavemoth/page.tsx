@@ -1176,20 +1176,22 @@ export default function CaveMothGame() {
     };
     gameLoop();
 
-    // Input
-    const handleTouch = (e: TouchEvent) => { e.preventDefault(); flip(); };
-    const handleMouse = () => flip();
+    // Input — use pointerdown (works in WKWebView in-app browsers like DDG)
+    // with touchstart fallback. Dedupe via flag to prevent double-fire.
+    let handledByPointer = false;
+    const handlePointer = (e: PointerEvent) => { e.preventDefault(); handledByPointer = true; flip(); };
+    const handleTouch = (e: TouchEvent) => { e.preventDefault(); if (!handledByPointer) flip(); handledByPointer = false; };
     const handleKey = (e: KeyboardEvent) => { if (e.code === 'Space') { e.preventDefault(); flip(); } };
 
-    canvas.addEventListener('touchstart', handleTouch);
-    canvas.addEventListener('mousedown', handleMouse);
+    canvas.addEventListener('pointerdown', handlePointer);
+    canvas.addEventListener('touchstart', handleTouch, { passive: false });
     document.addEventListener('keydown', handleKey);
 
     return () => {
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', resize);
+      canvas.removeEventListener('pointerdown', handlePointer);
       canvas.removeEventListener('touchstart', handleTouch);
-      canvas.removeEventListener('mousedown', handleMouse);
       document.removeEventListener('keydown', handleKey);
     };
   }, [flip, gameOver]);
@@ -1218,7 +1220,7 @@ export default function CaveMothGame() {
 
       <canvas
         ref={canvasRef}
-        style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}
+        style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', touchAction: 'none' }}
       />
 
       {/* Score */}
