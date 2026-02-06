@@ -33,8 +33,8 @@ jobs:
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/app/layout.tsx -o pixelpit-build/app/layout.tsx
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/app/globals.css -o pixelpit-build/app/globals.css
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/app/page.tsx -o pixelpit-build/app/page.tsx
-          # Create vercel.json inline (more reliable than fetching)
-          echo '{"framework":"nextjs"}' > pixelpit-build/vercel.json
+          # Fetch vercel.json from pixelpit repo (contains rewrites config)
+          curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/vercel.json -o pixelpit-build/vercel.json
 
           # Fetch optional files (ok if they fail)
           curl -sL https://raw.githubusercontent.com/bdecrem/pixelpit/main/CLAUDE.md -o pixelpit-build/CLAUDE.md || true
