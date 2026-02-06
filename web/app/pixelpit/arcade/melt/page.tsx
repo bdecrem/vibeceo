@@ -1,15 +1,6 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import Script from 'next/script';
-import {
-  ScoreFlow,
-  Leaderboard,
-  ShareButtonContainer,
-  usePixelpitSocial,
-  type ScoreFlowColors,
-  type LeaderboardColors,
-} from '@/app/pixelpit/components';
 
 const THEME = {
   snowball: '#f0f9ff',
@@ -23,31 +14,10 @@ const THEME = {
 const GAME_ID = 'melt';
 const CANVAS_W = 360;
 const CANVAS_H = 640;
-const PLATFORM_HEIGHT = 16;
-const PLATFORM_GAP = 70;
 const NUM_PLATFORMS = 40;
+const PLATFORM_GAP = 70;
 const BALL_X = CANVAS_W / 2;
 const MAX_HEALTH = 100;
-
-// Social colors
-const SCORE_FLOW_COLORS: ScoreFlowColors = {
-  bg: THEME.bg,
-  surface: '#1e3a5f',
-  primary: THEME.lava,
-  secondary: THEME.frost,
-  text: THEME.text,
-  muted: THEME.frost,
-  error: '#ef4444',
-};
-
-const LEADERBOARD_COLORS: LeaderboardColors = {
-  bg: THEME.bg,
-  surface: '#1e3a5f',
-  primary: THEME.lava,
-  secondary: THEME.frost,
-  text: THEME.text,
-  muted: THEME.frost,
-};
 
 // Audio
 let audioCtx: AudioContext | null = null;
@@ -55,7 +25,7 @@ let masterGain: GainNode | null = null;
 
 function initAudio() {
   if (audioCtx) return;
-  audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+  audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   masterGain = audioCtx.createGain();
   masterGain.gain.value = 0.3;
   masterGain.connect(audioCtx.destination);
@@ -119,8 +89,10 @@ function playDeath() {
 
 interface Platform {
   y: number;
-  gapStart: number;
-  gapWidth: number;
+  gapAngle: number; // where the gap is in the ring
+  gapSize: number;  // how big the gap is (radians)
+  rotation: number;
+  speed: number;
   hit: boolean;
 }
 
@@ -137,13 +109,6 @@ export default function MeltGame() {
   const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'dead'>('start');
   const [finalHealth, setFinalHealth] = useState(MAX_HEALTH);
   const [layersDescended, setLayersDescended] = useState(0);
-
-  // Social integration state
-  const [socialLoaded, setSocialLoaded] = useState(false);
-  const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
-
-  usePixelpitSocial(socialLoaded);
 
   const gameRef = useRef({
     running: false,
@@ -162,13 +127,12 @@ export default function MeltGame() {
     const platforms: Platform[] = [];
     for (let i = 0; i < NUM_PLATFORMS; i++) {
       const y = 180 + i * PLATFORM_GAP;
-      const gapWidth = 70 + Math.random() * 50;
-      const gapStart = 30 + Math.random() * (CANVAS_W - gapWidth - 60);
-      
       platforms.push({
         y,
-        gapStart,
-        gapWidth,
+        gapAngle: Math.random() * Math.PI * 2,
+        gapSize: 0.8 + Math.random() * 0.6, // gap size in radians (~45-80 degrees)
+        rotation: 0,
+        speed: (0.3 + Math.random() * 0.4) * (Math.random() < 0.5 ? 1 : -1),
         hit: false,
       });
     }
@@ -188,10 +152,7 @@ export default function MeltGame() {
     game.particles = [];
     game.layersPassed = 0;
     game.health = MAX_HEALTH;
-    setFinalHealth(MAX_HEALTH);
     setLayersDescended(0);
-    setSubmittedEntryId(null);
-    setShowLeaderboard(false);
     setGameState('playing');
   }, [generatePlatforms]);
 
@@ -205,37 +166,57 @@ export default function MeltGame() {
     canvas.height = CANVAS_H;
 
     let animationId: number;
+    const RING_OUTER = 140;
+    const RING_INNER = 25;
+    const RING_THICKNESS = 18;
 
     const update = () => {
       const game = gameRef.current;
       if (!game.running) return;
 
       // Physics
-      const gravity = game.holding ? 1.2 : 0.3;
+      const gravity = game.holding ? 1.0 : 0.25;
       game.ballVY += gravity;
-      game.ballVY = Math.min(game.ballVY, game.holding ? 18 : 4);
+      game.ballVY = Math.min(game.ballVY, game.holding ? 16 : 3);
       game.ballY += game.ballVY;
 
       // Camera
       const targetCameraY = game.ballY - CANVAS_H / 3;
       game.cameraY += (targetCameraY - game.cameraY) * 0.1;
 
+      // Rotate platforms
+      for (const platform of game.platforms) {
+        platform.rotation += platform.speed * 0.02;
+      }
+
       // Collision
       for (const platform of game.platforms) {
         if (platform.hit) continue;
         
         const ballBottom = game.ballY + game.ballSize;
-        const ballTop = game.ballY - game.ballSize;
         
-        if (ballBottom > platform.y && ballTop < platform.y + PLATFORM_HEIGHT) {
-          const inGap = BALL_X > platform.gapStart && BALL_X < platform.gapStart + platform.gapWidth;
+        // Check if ball is at platform level
+        if (ballBottom > platform.y - RING_THICKNESS/2 && 
+            game.ballY - game.ballSize < platform.y + RING_THICKNESS/2) {
+          
+          // Ball is centered at BALL_X - check if in gap
+          // The gap is at angle (gapAngle + rotation)
+          // Ball falls straight down, so it's at angle PI/2 (pointing down from center)
+          const ballAngle = Math.PI / 2; // Ball is always directly below center
+          const currentGapAngle = (platform.gapAngle + platform.rotation) % (Math.PI * 2);
+          
+          // Normalize angles
+          let diff = Math.abs(ballAngle - currentGapAngle);
+          if (diff > Math.PI) diff = Math.PI * 2 - diff;
+          
+          const inGap = diff < platform.gapSize / 2;
           
           if (!inGap) {
-            // Hit orange!
+            // Hit the orange ring!
             playSizzle();
             game.health -= 15;
             game.ballSize = Math.max(8, 8 + (game.health / MAX_HEALTH) * 12);
-            game.ballVY = -6;
+            game.ballVY = -5;
             platform.hit = true;
             
             // Steam particles
@@ -258,11 +239,9 @@ export default function MeltGame() {
             }
           } else {
             // Passed through gap
-            if (!platform.hit) {
-              game.layersPassed++;
-              setLayersDescended(game.layersPassed);
-              platform.hit = true;
-            }
+            game.layersPassed++;
+            setLayersDescended(game.layersPassed);
+            platform.hit = true;
           }
         }
       }
@@ -298,25 +277,26 @@ export default function MeltGame() {
       ctx.fillStyle = THEME.bg;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      // Platforms - all orange
+      // Draw rotating ring platforms
       for (const platform of game.platforms) {
         const screenY = platform.y - game.cameraY;
-        if (screenY < -50 || screenY > CANVAS_H + 50) continue;
+        if (screenY < -RING_OUTER || screenY > CANVAS_H + RING_OUTER) continue;
 
-        ctx.fillStyle = THEME.lava;
+        const currentGapAngle = platform.gapAngle + platform.rotation;
+        const gapStart = currentGapAngle - platform.gapSize / 2;
+        const gapEnd = currentGapAngle + platform.gapSize / 2;
+        
+        // Draw the orange ring with gap
+        ctx.strokeStyle = THEME.lava;
+        ctx.lineWidth = RING_THICKNESS;
         ctx.shadowColor = THEME.lavaGlow;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 12;
         
-        // Left section
-        if (platform.gapStart > 0) {
-          ctx.fillRect(0, screenY, platform.gapStart, PLATFORM_HEIGHT);
-        }
+        // Draw arc (the ring minus the gap)
+        ctx.beginPath();
+        ctx.arc(BALL_X, screenY, RING_OUTER - RING_THICKNESS/2, gapEnd, gapStart + Math.PI * 2);
+        ctx.stroke();
         
-        // Right section
-        const rightStart = platform.gapStart + platform.gapWidth;
-        if (rightStart < CANVAS_W) {
-          ctx.fillRect(rightStart, screenY, CANVAS_W - rightStart, PLATFORM_HEIGHT);
-        }
         ctx.shadowBlur = 0;
       }
 
@@ -359,7 +339,6 @@ export default function MeltGame() {
       ctx.fillStyle = THEME.frost;
       ctx.fillRect(17, 17, (game.health / MAX_HEALTH) * 150, 20);
       
-      // Health label
       ctx.fillStyle = THEME.text;
       ctx.font = 'bold 12px monospace';
       ctx.fillText(`${Math.round(game.health)}%`, 25, 32);
@@ -405,229 +384,140 @@ export default function MeltGame() {
   }, [gameState]);
 
   return (
-    <>
-      {/* Load social.js */}
-      <Script
-        src="/pixelpit/social.js"
-        strategy="afterInteractive"
-        onLoad={() => setSocialLoaded(true)}
-      />
-
-      <div style={{
-        minHeight: '100vh',
-        background: THEME.bg,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
-        fontFamily: 'ui-monospace, monospace',
-      }}>
-        {gameState === 'start' && (
-          <div style={{ textAlign: 'center', maxWidth: 300 }}>
-            <h1 style={{ 
-              color: THEME.snowball, 
-              fontSize: 56, 
-              marginBottom: 10,
-              textShadow: `0 0 30px ${THEME.frost}`,
-            }}>
-              MELT
-            </h1>
-            
-            <p style={{ color: THEME.frost, fontSize: 18, marginBottom: 20 }}>
-              You&apos;re a snowball.<br/>
-              <span style={{ color: THEME.lava }}>Reach hell. ↓</span>
+    <div style={{
+      minHeight: '100vh',
+      background: THEME.bg,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 20,
+      fontFamily: 'ui-monospace, monospace',
+    }}>
+      {gameState === 'start' && (
+        <div style={{ textAlign: 'center', maxWidth: 300 }}>
+          <h1 style={{ 
+            color: THEME.snowball, 
+            fontSize: 56, 
+            marginBottom: 10,
+            textShadow: `0 0 30px ${THEME.frost}`,
+          }}>
+            MELT
+          </h1>
+          
+          <p style={{ color: THEME.frost, fontSize: 18, marginBottom: 20 }}>
+            You're a snowball.<br/>
+            <span style={{ color: THEME.lava }}>Reach hell. ↓</span>
+          </p>
+          
+          <div style={{ 
+            background: 'rgba(0,0,0,0.3)', 
+            padding: 15, 
+            borderRadius: 8,
+            marginBottom: 25,
+            textAlign: 'left',
+          }}>
+            <p style={{ color: THEME.text, fontSize: 14, marginBottom: 8 }}>
+              <strong>HOLD</strong> = Fall fast
             </p>
-            
-            <div style={{ 
-              background: 'rgba(0,0,0,0.3)', 
-              padding: 15, 
+            <p style={{ color: THEME.text, fontSize: 14, marginBottom: 8 }}>
+              <strong>RELEASE</strong> = Fall slow
+            </p>
+            <p style={{ color: THEME.lava, fontSize: 14 }}>
+              Dodge the <strong>orange wheels</strong>. Find the gaps.
+            </p>
+          </div>
+          
+          <button
+            onClick={startGame}
+            style={{
+              background: `linear-gradient(135deg, ${THEME.frost}, ${THEME.snowball})`,
+              color: THEME.bg,
+              border: 'none',
+              padding: '16px 50px',
+              fontSize: 18,
+              fontWeight: 700,
+              cursor: 'pointer',
               borderRadius: 8,
-              marginBottom: 25,
-              textAlign: 'left',
-            }}>
-              <p style={{ color: THEME.text, fontSize: 14, marginBottom: 8 }}>
-                <strong>HOLD</strong> = Fall fast
-              </p>
-              <p style={{ color: THEME.text, fontSize: 14, marginBottom: 8 }}>
-                <strong>RELEASE</strong> = Fall slow
-              </p>
-              <p style={{ color: THEME.lava, fontSize: 14 }}>
-                Dodge the <strong>orange</strong>. Find the gaps.
-              </p>
-            </div>
-            
-            <button
-              onClick={startGame}
-              style={{
-                background: `linear-gradient(135deg, ${THEME.frost}, ${THEME.snowball})`,
-                color: THEME.bg,
-                border: 'none',
-                padding: '16px 50px',
-                fontSize: 18,
-                fontWeight: 700,
-                cursor: 'pointer',
-                borderRadius: 8,
-              }}
-            >
-              DESCEND ↓
-            </button>
+            }}
+          >
+            DESCEND ↓
+          </button>
+        </div>
+      )}
 
-            {/* Leaderboard on start */}
-            <div style={{ marginTop: 30, width: '100%' }}>
-              <Leaderboard
-                gameId={GAME_ID}
-                limit={5}
-                entryId={submittedEntryId ?? undefined}
-                colors={LEADERBOARD_COLORS}
-              />
-            </div>
-          </div>
-        )}
+      {gameState === 'playing' && (
+        <canvas 
+          ref={canvasRef} 
+          style={{ 
+            borderRadius: 8,
+            touchAction: 'none',
+          }} 
+        />
+      )}
 
-        {gameState === 'playing' && (
-          <canvas 
-            ref={canvasRef} 
-            style={{ 
+      {gameState === 'won' && (
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ 
+            color: THEME.lava, 
+            fontSize: 48, 
+            marginBottom: 10,
+            textShadow: `0 0 30px ${THEME.lavaGlow}`,
+          }}>
+            MELTED 😊
+          </h1>
+          <p style={{ color: THEME.text, fontSize: 18, marginBottom: 10 }}>
+            You reached hell. You're free.
+          </p>
+          <p style={{ color: THEME.frost, fontSize: 14, marginBottom: 30 }}>
+            Health remaining: {Math.round(finalHealth)}%
+          </p>
+          <button
+            onClick={startGame}
+            style={{
+              background: THEME.lava,
+              color: '#fff',
+              border: 'none',
+              padding: '16px 40px',
+              fontSize: 18,
+              fontWeight: 600,
+              cursor: 'pointer',
               borderRadius: 8,
-              touchAction: 'none',
-            }} 
-          />
-        )}
+            }}
+          >
+            Melt Again
+          </button>
+        </div>
+      )}
 
-        {gameState === 'won' && (
-          <div style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
-            <h1 style={{ 
-              color: THEME.lava, 
-              fontSize: 48, 
-              marginBottom: 10,
-              textShadow: `0 0 30px ${THEME.lavaGlow}`,
-            }}>
-              MELTED
-            </h1>
-            <p style={{ color: THEME.text, fontSize: 18, marginBottom: 10 }}>
-              You reached hell. You&apos;re free.
-            </p>
-            <p style={{ color: THEME.frost, fontSize: 14, marginBottom: 20 }}>
-              Health remaining: {Math.round(finalHealth)}%
-            </p>
-
-            {/* ScoreFlow */}
-            <ScoreFlow
-              score={layersDescended}
-              gameId={GAME_ID}
-              colors={SCORE_FLOW_COLORS}
-              xpDivisor={1}
-              onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
-            />
-
-            {/* Share button */}
-            <div style={{ marginTop: 20 }}>
-              <ShareButtonContainer
-                id="share-btn-melt-win"
-                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/melt/share/${layersDescended}`}
-                text={`I reached hell on MELT with ${Math.round(finalHealth)}% health remaining! Can you survive the descent? ❄️🔥`}
-                style="minimal"
-                socialLoaded={socialLoaded}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 20 }}>
-              <button
-                onClick={() => setShowLeaderboard(!showLeaderboard)}
-                style={{
-                  background: 'transparent',
-                  color: THEME.frost,
-                  border: `1px solid ${THEME.frost}`,
-                  padding: '12px 20px',
-                  fontSize: 14,
-                  cursor: 'pointer',
-                  borderRadius: 8,
-                }}
-              >
-                {showLeaderboard ? 'Hide' : 'Leaderboard'}
-              </button>
-              <button
-                onClick={startGame}
-                style={{
-                  background: THEME.lava,
-                  color: '#fff',
-                  border: 'none',
-                  padding: '12px 30px',
-                  fontSize: 16,
-                  cursor: 'pointer',
-                  borderRadius: 8,
-                }}
-              >
-                Melt Again
-              </button>
-            </div>
-
-            {showLeaderboard && (
-              <div style={{ marginTop: 20 }}>
-                <Leaderboard
-                  gameId={GAME_ID}
-                  limit={5}
-                  entryId={submittedEntryId ?? undefined}
-                  colors={LEADERBOARD_COLORS}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {gameState === 'dead' && (
-          <div style={{ textAlign: 'center', maxWidth: 400, width: '100%' }}>
-            <h1 style={{ color: '#ef4444', fontSize: 48, marginBottom: 10 }}>
-              EVAPORATED
-            </h1>
-            <p style={{ color: THEME.text, fontSize: 18, marginBottom: 10 }}>
-              Too much heat. You vanished.
-            </p>
-            <p style={{ color: THEME.frost, fontSize: 14, marginBottom: 20 }}>
-              Layers passed: {layersDescended}
-            </p>
-
-            {/* ScoreFlow for partial progress */}
-            {layersDescended > 0 && (
-              <ScoreFlow
-                score={layersDescended}
-                gameId={GAME_ID}
-                colors={SCORE_FLOW_COLORS}
-                xpDivisor={1}
-                onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
-              />
-            )}
-
-            {/* Share button */}
-            <div style={{ marginTop: 20 }}>
-              <ShareButtonContainer
-                id="share-btn-melt-dead"
-                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/melt/share/${layersDescended}`}
-                text={`I passed ${layersDescended} layers on MELT before evaporating. Can you reach hell? ❄️🔥`}
-                style="minimal"
-                socialLoaded={socialLoaded}
-              />
-            </div>
-
-            <button
-              onClick={startGame}
-              style={{
-                marginTop: 20,
-                background: THEME.frost,
-                color: THEME.bg,
-                border: 'none',
-                padding: '16px 40px',
-                fontSize: 18,
-                cursor: 'pointer',
-                borderRadius: 8,
-              }}
-            >
-              Try Again
-            </button>
-          </div>
-        )}
-      </div>
-    </>
+      {gameState === 'dead' && (
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ color: '#ef4444', fontSize: 48, marginBottom: 10 }}>
+            EVAPORATED
+          </h1>
+          <p style={{ color: THEME.text, fontSize: 18, marginBottom: 10 }}>
+            Too much heat. You vanished.
+          </p>
+          <p style={{ color: THEME.frost, fontSize: 14, marginBottom: 30 }}>
+            Layers passed: {layersDescended}
+          </p>
+          <button
+            onClick={startGame}
+            style={{
+              background: THEME.frost,
+              color: THEME.bg,
+              border: 'none',
+              padding: '16px 40px',
+              fontSize: 18,
+              fontWeight: 600,
+              cursor: 'pointer',
+              borderRadius: 8,
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
