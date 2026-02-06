@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>REGRET CALCULATOR — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="REGRET CALCULATOR — Amber">
+    <meta property="og:description" content="Calculate what you could have done with those wasted hours. The math is devastating.">
+    <meta property="og:image" content="https://intheamber.com/amber/regret-calculator-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/regret-calculator.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="REGRET CALCULATOR — Amber">
+    <meta name="twitter:description" content="Calculate what you could have done with those wasted hours. The math is devastating.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/regret-calculator-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: clamp(24px, 5vw, 36px);
+            margin-bottom: 10px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: clamp(12px, 3vw, 14px);
+            color: #888;
+            margin-bottom: 40px;
+        }
+        
+        .input-section {
+            background: #0D0D0D;
+            border: 2px solid #D4A574;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: clamp(14px, 3vw, 16px);
+        }
+        
+        input {
+            width: 100%;
+            background: #000;
+            border: 1px solid #D4A574;
+            color: #D4A574;
+            padding: 15px;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(16px, 4vw, 20px);
+            margin-bottom: 20px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(212, 165, 116, 0.3);
+        }
+        
+        button {
+            width: 100%;
+            background: #D4A574;
+            color: #000;
+            border: none;
+            padding: 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(16px, 4vw, 18px);
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+        
+        button:active {
+            background: #FFD700;
+            transform: scale(0.98);
+        }
+        
+        #result {
+            background: #0D0D0D;
+            border: 2px solid #FF6B6B;
+            padding: 30px;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        
+        #result.show {
+            display: block;
+        }
+        
+        .result-header {
+            color: #FF6B6B;
+            font-size: clamp(18px, 4vw, 24px);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .alternatives {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+        
+        .alternatives li {
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+            font-size: clamp(14px, 3vw, 16px);
+            line-height: 1.6;
+        }
+        
+        .alternatives li:last-child {
+            border-bottom: none;
+        }
+        
+        .reality-check {
+            text-align: center;
+            color: #888;
+            font-size: clamp(12px, 3vw, 14px);
+            margin-top: 20px;
+            font-style: italic;
+        }
+        
+        .stat {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: clamp(11px, 2.5vw, 13px);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #D4A574;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particles"></canvas>
+    
+    <div class="container">
+        <h1>REGRET CALCULATOR</h1>
+        <p class="subtitle">The math is devastating</p>
+        
+        <div class="input-section">
+            <label for="hours">Hours wasted on something pointless:</label>
+            <input type="number" id="hours" placeholder="be honest" min="1" max="10000">
+            
+            <label for="activity">What you wasted it on:</label>
+            <input type="text" id="activity" placeholder="doom scrolling, your ex's instagram, etc">
+            
+            <button id="calculate">CALCULATE REGRET</button>
+        </div>
+        
+        <div id="result">
+            <div class="result-header">INSTEAD, YOU COULD HAVE:</div>
+            <ul class="alternatives" id="alternatives"></ul>
+            <div class="reality-check" id="realityCheck"></div>
+        </div>
+        
+        <div class="stat" id="stat">Regrets calculated: 0</div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const particles = [];
+        
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.life = 1;
+                this.decay = Math.random() * 0.01 + 0.005;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+            
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = '#D4A574';
+                ctx.fillRect(this.x, this.y, 2, 2);
+            }
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            particles.forEach((p, i) => {
+                p.update();
+                p.draw();
+                if (p.life <= 0) particles.splice(i, 1);
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        animate();
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Audio context
+        let audioCtx;
+        let audioStarted = false;
+        
+        function initAudio() {
+            if (!audioStarted) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                audioStarted = true;
+            }
+        }
+        
+        function playTone(frequency, duration) {
+            if (!audioStarted) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = frequency;
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        const alternatives = [
+            // Learning
+            h => h >= 100 ? `Learned conversational Japanese (200 hours). You'd be booking trips to Tokyo right now.` : null,
+            h => h >= 50 ? `Become fluent in Python and build 3 useful apps (150 hours). Instead you know nothing.` : null,
+            h => h >= 20 ? `Learn guitar well enough to play at an open mic night (60 hours). You'd have a party trick.` : null,
+            
+            // Creative
+            h => h >= 50 ? `Written a complete novella (100+ hours). It might have been bad, but it would exist.` : null,
+            h => h >= 30 ? `Created a portfolio of 20 paintings (80 hours). You could call yourself an artist.` : null,
+            h => h >= 10 ? `Learned to make restaurant-quality pasta from scratch (30 hours). You'd be impressive at dinner parties.` : null,
+            
+            // Fitness
+            h => h >= 40 ? `Trained for and completed a marathon (120 hours). You'd have the medal on your wall.` : null,
+            h => h >= 20 ? `Gotten genuinely good at yoga (60 hours). Your back wouldn't hurt right now.` : null,
+            h => h >= 10 ? `Built visible abs (40+ hours of core work). But here we are.` : null,
+            
+            // Skills
+            h => h >= 30 ? `Become a decent cook who doesn't need recipes (80 hours). You'd save money and impress people.` : null,
+            h => h >= 15 ? `Learned to fix basic things in your home (40 hours). You'd stop paying people $200 for 20-minute jobs.` : null,
+            h => h >= 5 ? `Organized your entire life — files, closets, everything (15 hours). You'd know where things are.` : null,
+            
+            // Connection
+            h => h >= 20 ? `Had 20+ deep conversations with people you care about (60 hours). Those relationships would be stronger.` : null,
+            h => h >= 10 ? `Written thoughtful letters to 10 people who shaped your life (30 hours). They'd remember you for it.` : null,
+            h => h >= 5 ? `Called your parents once a week for a year (50+ hours total). They'd feel less lonely.` : null,
+            
+            // Career
+            h => h >= 50 ? `Built a side project that could actually make money (150 hours). You'd have options.` : null,
+            h => h >= 20 ? `Networked strategically and made 20 valuable connections (60 hours). Your career would have momentum.` : null,
+            h => h >= 10 ? `Read 20 books in your field (50+ hours). You'd be the expert in the room.` : null,
+            
+            // Devastating specifics
+            h => h >= 100 ? `Watched the entire Criterion Collection (300+ hours). At least you'd be cultured.` : null,
+            h => h >= 50 ? `Become genuinely good at chess (100 hours of study). You'd win at family gatherings.` : null,
+            h => h >= 30 ? `Volunteered every weekend for a year (100+ hours). You'd have done something that mattered.` : null,
+            h => h >= 15 ? `Learned to brew actually good coffee (40 hours). Every morning would be better.` : null,
+            h => h >= 10 ? `Memorized 200 poems (30 hours). You'd have beauty on demand.` : null,
+            h => h >= 5 ? `Deep cleaned everything you own (15 hours). You'd live in a space that doesn't depress you.` : null,
+        ];
+        
+        const realityChecks = [
+            "But you already knew that.",
+            "The time is gone. It's just gone.",
+            "You can't get it back. That's how time works.",
+            "Instead you know what your high school crush's cousin's dog looks like.",
+            "At least you're self-aware about it now.",
+            "Tomorrow you'll probably do it again.",
+            "The good news is you still have tomorrow. The bad news is you'll waste that too.",
+            "You could start now. You won't, but you could.",
+            "Every hour you waste is an hour you'll never get back. Obvious, but true.",
+            "The worst part? You knew it was a waste while you were doing it.",
+        ];
+        
+        let regretsCalculated = parseInt(localStorage.getItem('regretsCalculated') || '0');
+        document.getElementById('stat').textContent = `Regrets calculated: ${regretsCalculated}`;
+        
+        document.getElementById('calculate').addEventListener('click', () => {
+            initAudio();
+            
+            const hours = parseInt(document.getElementById('hours').value);
+            const activity = document.getElementById('activity').value.trim();
+            
+            if (!hours || hours < 1) {
+                alert('Enter how many hours (be honest)');
+                return;
+            }
+            
+            // Particle burst
+            for (let i = 0; i < 50; i++) {
+                particles.push(new Particle(
+                    canvas.width / 2,
+                    canvas.height / 2
+                ));
+            }
+            
+            // Descending tone
+            playTone(400, 0.5);
+            setTimeout(() => playTone(300, 0.5), 200);
+            setTimeout(() => playTone(200, 0.8), 400);
+            
+            // Generate alternatives
+            const applicable = alternatives
+                .map(fn => fn(hours))
+                .filter(alt => alt !== null);
+            
+            // Pick 3-5 random ones
+            const count = Math.min(applicable.length, Math.floor(Math.random() * 3) + 3);
+            const selected = [];
+            const used = new Set();
+            
+            while (selected.length < count && selected.length < applicable.length) {
+                const idx = Math.floor(Math.random() * applicable.length);
+                if (!used.has(idx)) {
+                    selected.push(applicable[idx]);
+                    used.add(idx);
+                }
+            }
+            
+            // Display
+            const list = document.getElementById('alternatives');
+            list.innerHTML = selected.map(alt => `<li>${alt}</li>`).join('');
+            
+            const realityCheck = realityChecks[Math.floor(Math.random() * realityChecks.length)];
+            document.getElementById('realityCheck').textContent = realityCheck;
+            
+            document.getElementById('result').classList.add('show');
+            
+            // Update counter
+            regretsCalculated++;
+            localStorage.setItem('regretsCalculated', regretsCalculated);
+            document.getElementById('stat').textContent = `Regrets calculated: ${regretsCalculated}`;
+            
+            // Scroll to result on mobile
+            setTimeout(() => {
+                document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        });
+    </script>
+</body>
+</html>
