@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXCAVATION — Amber</title>
+    
+    <!-- OG tags -->
+    <meta property="og:title" content="EXCAVATION">
+    <meta property="og:description" content="Touch to dig. Watch layers reveal what was buried beneath.">
+    <meta property="og:image" content="https://intheamber.com/amber/excavation-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/excavation.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="EXCAVATION">
+    <meta name="twitter:description" content="Touch to dig. Watch layers reveal what was buried beneath.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/excavation-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            color: #D4A574;
+            touch-action: none;
+        }
+        
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        .ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 14px;
+            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .stats {
+            opacity: 0.7;
+            line-height: 1.6;
+        }
+        
+        .instruction {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            opacity: 0.5;
+            pointer-events: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="ui">
+        <div class="title">EXCAVATION</div>
+        <div class="stats">
+            <div>DEPTH: <span id="depth">0</span>m</div>
+            <div>LAYERS: <span id="layers">0</span></div>
+            <div>ARTIFACTS: <span id="artifacts">0</span></div>
+        </div>
+    </div>
+    
+    <div class="instruction">TOUCH TO DIG · SWIPE TO EXCAVATE</div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let W, H;
+        function resize() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // Layer system - deeper = warmer colors
+        const LAYER_COLORS = [
+            '#1a1a1a', // surface - dark
+            '#2D2D2D', // topsoil
+            '#3D2D1D', // deeper soil - brown
+            '#4D3D2D', // clay
+            '#64483D', // sediment
+            '#78564D', // stone
+            '#8D6D5D', // deeper stone
+            '#A0856D', // amber-tinted
+            '#B8957D', // warmer
+            '#D4A574', // amber
+            '#FFD700', // gold at the deepest
+        ];
+        
+        // Grid system for excavation
+        const GRID_SIZE = 20;
+        const grid = [];
+        const cols = Math.ceil(W / GRID_SIZE);
+        const rows = Math.ceil(H / GRID_SIZE);
+        
+        // Initialize grid with depth values
+        for (let x = 0; x < cols; x++) {
+            grid[x] = [];
+            for (let y = 0; y < rows; y++) {
+                grid[x][y] = {
+                    depth: 0, // 0-10
+                    revealed: false
+                };
+            }
+        }
+        
+        // Particles (dust/dirt rising from excavation)
+        const particles = [];
+        
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = -Math.random() * 3 - 1;
+                this.size = Math.random() * 4 + 2;
+                this.life = 1;
+                this.color = color;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.05; // slight gravity
+                this.life -= 0.015;
+                this.rotation += this.rotationSpeed;
+                return this.life > 0;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life * 0.8;
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.fillStyle = this.color;
+                ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+        
+        // Artifacts (special finds at certain depths)
+        const artifacts = [];
+        
+        class Artifact {
+            constructor(x, y, depth) {
+                this.x = x;
+                this.y = y;
+                this.depth = depth;
+                this.revealed = false;
+                this.alpha = 0;
+                this.pulse = Math.random() * Math.PI * 2;
+            }
+            
+            update() {
+                if (this.revealed && this.alpha < 1) {
+                    this.alpha += 0.02;
+                }
+                this.pulse += 0.05;
+            }
+            
+            draw() {
+                if (this.alpha <= 0) return;
+                
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                
+                // Pulsing glow
+                const glowSize = 20 + Math.sin(this.pulse) * 5;
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
+                gradient.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
+                gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(this.x - glowSize, this.y - glowSize, glowSize * 2, glowSize * 2);
+                
+                // Artifact shape (small diamond)
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y - 6);
+                ctx.lineTo(this.x + 4, this.y);
+                ctx.lineTo(this.x, this.y + 6);
+                ctx.lineTo(this.x - 4, this.y);
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+        
+        // Randomly place artifacts
+        function seedArtifacts() {
+            const count = 20;
+            for (let i = 0; i < count; i++) {
+                const x = Math.random() * W;
+                const y = Math.random() * H;
+                const depth = Math.floor(Math.random() * 6) + 4; // depth 4-9
+                artifacts.push(new Artifact(x, y, depth));
+            }
+        }
+        seedArtifacts();
+        
+        // Stats
+        let totalDepth = 0;
+        let layersRevealed = 0;
+        let artifactsFound = 0;
+        
+        function updateStats() {
+            document.getElementById('depth').textContent = totalDepth.toFixed(1);
+            document.getElementById('layers').textContent = layersRevealed;
+            document.getElementById('artifacts').textContent = artifactsFound;
+        }
+        
+        // Audio context
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        function playDigSound(depth) {
+            if (!audioCtx) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            // Lower frequency as you dig deeper
+            osc.frequency.value = 120 - (depth * 8);
+            osc.type = 'triangle';
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+        
+        function playArtifactSound() {
+            if (!audioCtx) return;
+            
+            // Bright, sparkly sound for artifact discovery
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc1.frequency.value = 800;
+            osc2.frequency.value = 1200;
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc1.start();
+            osc2.start();
+            osc1.stop(audioCtx.currentTime + 0.3);
+            osc2.stop(audioCtx.currentTime + 0.3);
+        }
+        
+        // Excavate at position
+        function excavate(x, y) {
+            initAudio();
+            
+            const gridX = Math.floor(x / GRID_SIZE);
+            const gridY = Math.floor(y / GRID_SIZE);
+            
+            if (gridX < 0 || gridX >= cols || gridY < 0 || gridY >= rows) return;
+            
+            const cell = grid[gridX][gridY];
+            
+            if (cell.depth < LAYER_COLORS.length - 1) {
+                cell.depth++;
+                
+                if (!cell.revealed) {
+                    cell.revealed = true;
+                    layersRevealed++;
+                }
+                
+                totalDepth += 0.1;
+                
+                // Check if any artifacts are at this depth
+                artifacts.forEach(artifact => {
+                    const dx = artifact.x - x;
+                    const dy = artifact.y - y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < GRID_SIZE * 2 && cell.depth >= artifact.depth && !artifact.revealed) {
+                        artifact.revealed = true;
+                        artifactsFound++;
+                        playArtifactSound();
+                    }
+                });
+                
+                updateStats();
+                playDigSound(cell.depth);
+                
+                // Spawn particles
+                const color = LAYER_COLORS[cell.depth];
+                for (let i = 0; i < 5; i++) {
+                    particles.push(new Particle(x, y, color));
+                }
+            }
+        }
+        
+        // Input handling
+        let isDigging = false;
+        let lastDigX = null;
+        let lastDigY = null;
+        
+        function handleStart(x, y) {
+            isDigging = true;
+            excavate(x, y);
+            lastDigX = x;
+            lastDigY = y;
+        }
+        
+        function handleMove(x, y) {
+            if (!isDigging) return;
+            
+            // Interpolate between last position and current
+            if (lastDigX !== null && lastDigY !== null) {
+                const dx = x - lastDigX;
+                const dy = y - lastDigY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const steps = Math.ceil(dist / GRID_SIZE);
+                
+                for (let i = 0; i <= steps; i++) {
+                    const t = i / steps;
+                    const ix = lastDigX + dx * t;
+                    const iy = lastDigY + dy * t;
+                    excavate(ix, iy);
+                }
+            }
+            
+            lastDigX = x;
+            lastDigY = y;
+        }
+        
+        function handleEnd() {
+            isDigging = false;
+            lastDigX = null;
+            lastDigY = null;
+        }
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', e => {
+            handleStart(e.clientX, e.clientY);
+        });
+        
+        canvas.addEventListener('mousemove', e => {
+            handleMove(e.clientX, e.clientY);
+        });
+        
+        canvas.addEventListener('mouseup', handleEnd);
+        canvas.addEventListener('mouseleave', handleEnd);
+        
+        // Touch events
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            if (e.touches.length > 0) {
+                handleStart(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        });
+        
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (e.touches.length > 0) {
+                handleMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        });
+        
+        canvas.addEventListener('touchend', e => {
+            e.preventDefault();
+            handleEnd();
+        });
+        
+        // Animation loop
+        function animate() {
+            // Fade background slightly for trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
+            ctx.fillRect(0, 0, W, H);
+            
+            // Draw grid cells
+            for (let x = 0; x < cols; x++) {
+                for (let y = 0; y < rows; y++) {
+                    const cell = grid[x][y];
+                    if (cell.depth > 0) {
+                        ctx.fillStyle = LAYER_COLORS[cell.depth];
+                        ctx.fillRect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+                        
+                        // Subtle border on revealed cells
+                        if (cell.depth > 2) {
+                            ctx.strokeStyle = 'rgba(212, 165, 116, 0.1)';
+                            ctx.strokeRect(x * GRID_SIZE, y * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+                        }
+                    }
+                }
+            }
+            
+            // Update and draw artifacts
+            artifacts.forEach(artifact => {
+                artifact.update();
+                artifact.draw();
+            });
+            
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                if (!particles[i].update()) {
+                    particles.splice(i, 1);
+                } else {
+                    particles[i].draw();
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
