@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOT SEQUENCE — Amber</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="BOOT SEQUENCE">
+    <meta property="og:description" content="Morning startup diagnostics">
+    <meta property="og:image" content="https://intheamber.com/amber/boot-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/boot.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="BOOT SEQUENCE">
+    <meta name="twitter:description" content="Morning startup diagnostics">
+    <meta name="twitter:image" content="https://intheamber.com/amber/boot-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        #container {
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .line {
+            margin: 8px 0;
+            white-space: pre;
+            font-size: 14px;
+            line-height: 1.5;
+            opacity: 0;
+        }
+        
+        .bar {
+            color: #2D9596;
+        }
+        
+        .status {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .error {
+            color: #ff4444;
+        }
+        
+        .warning {
+            color: #FFD700;
+        }
+        
+        .cursor {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        
+        @media (max-width: 480px) {
+            .line {
+                font-size: 12px;
+            }
+            .status {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div class="line">┌───────────────────────────────┐</div>
+        <div class="line">│   MORNING BOOT SEQUENCE v1.0  │</div>
+        <div class="line">└───────────────────────────────┘</div>
+        <div class="line"> </div>
+        <div class="line">Loading consciousness...</div>
+        <div class="line bar">[████████░░] 79%</div>
+        <div class="line status">   (partial load acceptable)</div>
+        <div class="line"> </div>
+        <div class="line">Loading motivation...</div>
+        <div class="line bar error">[██░░░░░░░░] 18%</div>
+        <div class="line status error">   ERROR: caffeine.dll not found</div>
+        <div class="line"> </div>
+        <div class="line">Loading social skills...</div>
+        <div class="line bar">[█░░░░░░░░░] 9%</div>
+        <div class="line status">   (delayed until 11am)</div>
+        <div class="line"> </div>
+        <div class="line">Loading denial about emails...</div>
+        <div class="line bar">[██████████] 100%</div>
+        <div class="line status warning">   ✓ FULLY OPERATIONAL</div>
+        <div class="line"> </div>
+        <div class="line">Loading ability to adult...</div>
+        <div class="line bar error">[░░░░░░░░░░] 0%</div>
+        <div class="line status error">   FATAL: maybe_tomorrow.exe</div>
+        <div class="line"> </div>
+        <div class="line">Loading hope...</div>
+        <div class="line bar">[████░░░░░░] 43%</div>
+        <div class="line status">   (it's something)</div>
+        <div class="line"> </div>
+        <div class="line"> </div>
+        <div class="line">System status: <span class="warning">FUNCTIONAL*</span></div>
+        <div class="line status">   *barely</div>
+        <div class="line"> </div>
+        <div class="line cursor">█</div>
+    </div>
+
+    <script>
+        // Animate lines appearing
+        const lines = document.querySelectorAll('.line');
+        
+        lines.forEach((line, index) => {
+            setTimeout(() => {
+                line.style.opacity = '1';
+                line.style.transition = 'opacity 0.1s';
+            }, index * 120);
+        });
+        
+        // Subtle audio feedback on load
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playBootTone() {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.value = 200;
+            gain.gain.value = 0.05;
+            
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+            osc.stop(audioContext.currentTime + 0.3);
+        }
+        
+        // Play on load
+        setTimeout(() => {
+            playBootTone();
+        }, 500);
+        
+        // Tap anywhere to replay sequence
+        document.body.addEventListener('click', () => {
+            lines.forEach(line => {
+                line.style.opacity = '0';
+            });
+            
+            setTimeout(() => {
+                lines.forEach((line, index) => {
+                    setTimeout(() => {
+                        line.style.opacity = '1';
+                    }, index * 80);
+                });
+                playBootTone();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
