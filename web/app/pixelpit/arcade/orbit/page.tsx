@@ -222,24 +222,77 @@ function playBeamWarning() {
   osc.stop(t + 0.3);
 }
 
-function playLevelUp() {
+function playLevelUp(toLevel: 1 | 2 | 3 = 2) {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
-  // Rising chord
-  const notes = [D_MINOR.D4, D_MINOR.F4, D_MINOR.A4, D_MINOR.D5];
-  notes.forEach((freq, i) => {
-    const osc = audioCtx!.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    const gain = audioCtx!.createGain();
-    gain.gain.setValueAtTime(0, t + i * 0.08);
-    gain.gain.linearRampToValueAtTime(0.08, t + i * 0.08 + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.4);
-    osc.connect(gain);
-    gain.connect(masterGain!);
-    osc.start(t + i * 0.08);
-    osc.stop(t + i * 0.08 + 0.5);
-  });
+  
+  if (toLevel === 3) {
+    // VOID DESCENT: Falling dissonant chord
+    const notes = [D_MINOR.D5, D_MINOR.Bb4, D_MINOR.Eb4, D_MINOR.D3];
+    notes.forEach((freq, i) => {
+      const osc = audioCtx!.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.5, t + 0.5);
+      const gain = audioCtx!.createGain();
+      gain.gain.setValueAtTime(0, t + i * 0.1);
+      gain.gain.linearRampToValueAtTime(0.06, t + i * 0.1 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.6);
+      osc.connect(gain);
+      gain.connect(masterGain!);
+      osc.start(t + i * 0.1);
+      osc.stop(t + i * 0.1 + 0.7);
+    });
+    // Bass drop
+    const bass = audioCtx.createOscillator();
+    bass.type = 'sine';
+    bass.frequency.value = 40;
+    const bassGain = audioCtx.createGain();
+    bassGain.gain.setValueAtTime(0.3, t + 0.3);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+    bass.connect(bassGain);
+    bassGain.connect(masterGain);
+    bass.start(t + 0.3);
+    bass.stop(t + 0.8);
+  } else {
+    // Rising chord for L1→L2
+    const notes = [D_MINOR.D4, D_MINOR.F4, D_MINOR.A4, D_MINOR.D5];
+    notes.forEach((freq, i) => {
+      const osc = audioCtx!.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const gain = audioCtx!.createGain();
+      gain.gain.setValueAtTime(0, t + i * 0.08);
+      gain.gain.linearRampToValueAtTime(0.08, t + i * 0.08 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.4);
+      osc.connect(gain);
+      gain.connect(masterGain!);
+      osc.start(t + i * 0.08);
+      osc.stop(t + i * 0.08 + 0.5);
+    });
+  }
+}
+
+function playSpark() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Tiny crackle
+  const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < noiseData.length; i++) {
+    noiseData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (noiseData.length * 0.15));
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = noiseBuffer;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = 2000;
+  const gain = audioCtx.createGain();
+  gain.gain.value = 0.04;
+  noise.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+  noise.start(t);
 }
 
 // MUSIC SYSTEM: D minor, 95 BPM, level-aware layers
@@ -264,21 +317,39 @@ function startMusic(level: 1 | 2 | 3 = 1) {
   stopMusic();
   currentLevel = level;
   
-  // Atmospheric pad (D minor chord, slow attack)
-  const padNotes = [D_MINOR.D2, D_MINOR.A2, D_MINOR.D3];
-  padNotes.forEach(freq => {
-    const osc = audioCtx!.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    const gain = audioCtx!.createGain();
-    gain.gain.setValueAtTime(0, audioCtx!.currentTime);
-    gain.gain.linearRampToValueAtTime(0.04, audioCtx!.currentTime + 2);
-    osc.connect(gain);
-    gain.connect(masterGain!);
-    osc.start();
-    musicOscs.push(osc);
-    musicGains.push(gain);
-  });
+  // Level 3: VOID DRONE (sub-20Hz rumble you feel more than hear)
+  if (level === 3) {
+    const drone = audioCtx.createOscillator();
+    drone.type = 'sine';
+    drone.frequency.value = 18; // Sub-bass you feel
+    const droneGain = audioCtx.createGain();
+    droneGain.gain.value = 0.15;
+    drone.connect(droneGain);
+    droneGain.connect(masterGain);
+    drone.start();
+    musicOscs.push(drone);
+    musicGains.push(droneGain);
+  }
+  
+  // Atmospheric pad - Level 1: D minor, Level 2: Dm7 (add C), Level 3: NO PAD (void)
+  if (level < 3) {
+    const padNotes = level === 2 
+      ? [D_MINOR.D2, D_MINOR.A2, D_MINOR.C3, D_MINOR.D3] // Dm7 - dreamier
+      : [D_MINOR.D2, D_MINOR.A2, D_MINOR.D3];
+    padNotes.forEach(freq => {
+      const osc = audioCtx!.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const gain = audioCtx!.createGain();
+      gain.gain.setValueAtTime(0, audioCtx!.currentTime);
+      gain.gain.linearRampToValueAtTime(0.04, audioCtx!.currentTime + 2);
+      osc.connect(gain);
+      gain.connect(masterGain!);
+      osc.start();
+      musicOscs.push(osc);
+      musicGains.push(gain);
+    });
+  }
   
   // Sub bass pulse - Level 3: every beat (more intense), else every 2 beats
   const bassRate = level === 3 ? BEAT_MS : BEAT_MS * 2;
@@ -616,19 +687,20 @@ export default function OrbitGame() {
         game.transitionFlash -= dt;
       }
 
-      // Level 3: Screen shake
-      if (game.level === 3 && Math.random() < 0.02) {
+      // Level 3: Screen shake - MORE INTENSE (5% chance, 6px)
+      if (game.level === 3 && Math.random() < 0.05) {
         game.screenShake = { 
-          x: (Math.random() - 0.5) * 4, 
-          y: (Math.random() - 0.5) * 4 
+          x: (Math.random() - 0.5) * 12, 
+          y: (Math.random() - 0.5) * 12 
         };
       } else {
-        game.screenShake.x *= 0.9;
-        game.screenShake.y *= 0.9;
+        game.screenShake.x *= 0.85;
+        game.screenShake.y *= 0.85;
       }
 
-      // Level 2: Random comets
-      if (game.level >= 2 && Math.random() < 0.005) {
+      // Level 2+: Random comets - burst after transition (2% first 10s, then 0.5%)
+      const cometChance = game.levelTransition > -8 && game.level >= 2 ? 0.02 : 0.005;
+      if (game.level >= 2 && Math.random() < cometChance) {
         game.comets.push({
           x: -50,
           y: game.cameraY + Math.random() * canvasSize.h,
@@ -905,20 +977,59 @@ export default function OrbitGame() {
         }
       }
 
+      // Level 2: Gas giant in upper corner
+      if (game.level === 2) {
+        const giantX = canvasSize.w - 80;
+        const giantY = 120;
+        // Outer glow
+        const giantGrad = ctx.createRadialGradient(giantX, giantY, 40, giantX, giantY, 100);
+        giantGrad.addColorStop(0, 'rgba(251, 146, 60, 0.4)');
+        giantGrad.addColorStop(0.5, 'rgba(249, 115, 22, 0.2)');
+        giantGrad.addColorStop(1, 'rgba(249, 115, 22, 0)');
+        ctx.fillStyle = giantGrad;
+        ctx.beginPath();
+        ctx.arc(giantX, giantY, 100, 0, Math.PI * 2);
+        ctx.fill();
+        // Planet body
+        ctx.fillStyle = '#ea580c';
+        ctx.beginPath();
+        ctx.arc(giantX, giantY, 50, 0, Math.PI * 2);
+        ctx.fill();
+        // Bands
+        ctx.strokeStyle = '#c2410c';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(giantX, giantY, 35, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(giantX, giantY, 25, 0.3, Math.PI - 0.3);
+        ctx.stroke();
+        // Ring
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.5)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(giantX, giantY, 70, 15, -0.2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
       // Stars
       for (const star of game.stars) {
         let screenY = star.y - game.cameraY;
+        let spaghettiFactor = 0; // How close to black hole (0-1)
         
-        // Level 3: Stars get pulled toward black hole
+        // Level 3: Stars get pulled toward black hole + spaghettification
         if (game.level === 3) {
           const pullX = canvasSize.w / 2 - star.x;
           const pullY = 80 - screenY;
           const dist = Math.sqrt(pullX * pullX + pullY * pullY);
           if (dist < 300 && dist > 30) {
-            const pull = 0.02 * (300 - dist) / 300;
+            const pull = 0.025 * (300 - dist) / 300;
             star.x += pullX * pull;
             screenY += pullY * pull * 0.5;
+            spaghettiFactor = Math.max(0, 1 - dist / 150); // Closer = whiter
           }
+          // Skip stars that got too close (consumed by black hole)
+          if (dist < 40) continue;
         }
         
         if (screenY < -10 || screenY > canvasSize.h + 10) continue;
@@ -927,7 +1038,12 @@ export default function OrbitGame() {
         // Level-based star colors
         let starColor: string;
         if (game.level === 3) {
-          starColor = `rgba(255, 150, 150, ${twinkle * 0.6})`;
+          // Spaghettification: fade from red to WHITE as they approach black hole
+          const r = 255;
+          const g = Math.floor(150 + spaghettiFactor * 105);
+          const b = Math.floor(150 + spaghettiFactor * 105);
+          const alpha = twinkle * (0.6 + spaghettiFactor * 0.4);
+          starColor = `rgba(${r}, ${g}, ${b}, ${alpha})`;
         } else if (game.level === 2) {
           // Use colorful stars
           const rgb = star.color === '#a5b4fc' ? '165, 180, 252' 
@@ -941,7 +1057,7 @@ export default function OrbitGame() {
         }
         ctx.fillStyle = starColor;
         ctx.beginPath();
-        ctx.arc(star.x, screenY, star.size, 0, Math.PI * 2);
+        ctx.arc(star.x, screenY, star.size * (1 + spaghettiFactor * 0.5), 0, Math.PI * 2);
         ctx.fill();
       }
 
@@ -1136,7 +1252,7 @@ export default function OrbitGame() {
                 ctx.arc(obj.x + obj.width / 2, objY - 12, 4, 0, Math.PI * 2);
                 ctx.fill();
               }
-              // Random sparks
+              // Random sparks with crackle sound
               if (Math.random() < 0.03) {
                 for (let s = 0; s < 3; s++) {
                   game.sparks.push({
@@ -1147,6 +1263,7 @@ export default function OrbitGame() {
                     life: 0.5 + Math.random() * 0.5,
                   });
                 }
+                playSpark();
               }
             } else {
               ctx.strokeStyle = '#9CA3AF';
@@ -1411,7 +1528,7 @@ export default function OrbitGame() {
           game.level = newLevel;
           game.levelTransition = 1.5; // Show banner for 1.5 seconds
           game.transitionFlash = newLevel === 3 ? 0.3 : 0.15; // Black flash for void, white for others
-          playLevelUp();
+          playLevelUp(newLevel);
           updateMusicLevel(newLevel);
         }
       }
