@@ -577,7 +577,8 @@ export default function OrbitGame() {
           let onSatellite = false;
           for (const obj of currentLane.objects) {
             if (obj.type === 'satellite') {
-              if (game.playerX > obj.x - 10 && game.playerX < obj.x + obj.width + 10) {
+              // Generous hitbox for landing on satellites (player-favorable)
+              if (game.playerX > obj.x - 15 && game.playerX < obj.x + obj.width + 15) {
                 onSatellite = true;
                 game.playerX += currentLane.speed * currentLane.direction;
                 game.targetX = game.playerX;
@@ -605,7 +606,8 @@ export default function OrbitGame() {
         if (currentLane.type === 'lane' || currentLane.type === 'beam') {
           for (const obj of currentLane.objects) {
             if (obj.type === 'ufo' || obj.type === 'asteroid' || obj.type === 'mothership') {
-              if (game.playerX > obj.x - 15 && game.playerX < obj.x + obj.width + 15) {
+              // Tight hitbox for hazards (player-favorable, near misses = safe)
+              if (game.playerX > obj.x + 5 && game.playerX < obj.x + obj.width - 5) {
                 game.running = false;
                 game.deathType = obj.type === 'mothership' ? 'beam' : 'collision';
                 stopMusic();
