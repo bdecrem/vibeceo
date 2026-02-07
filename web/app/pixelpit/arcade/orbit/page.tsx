@@ -117,6 +117,71 @@ function playBeamWarning() {
   osc.stop(audioCtx.currentTime + 0.3);
 }
 
+// Music system
+let musicOscs: OscillatorNode[] = [];
+let musicGains: GainNode[] = [];
+let arpInterval: NodeJS.Timeout | null = null;
+
+function startMusic() {
+  if (!audioCtx || !masterGain) return;
+  stopMusic();
+  
+  // Ambient pad (C2)
+  const pad1 = audioCtx.createOscillator();
+  const pad1Gain = audioCtx.createGain();
+  pad1.type = 'sine';
+  pad1.frequency.value = 65.41; // C2
+  pad1Gain.gain.value = 0.06;
+  pad1.connect(pad1Gain);
+  pad1Gain.connect(masterGain);
+  pad1.start();
+  musicOscs.push(pad1);
+  musicGains.push(pad1Gain);
+  
+  // Second pad (G2)
+  const pad2 = audioCtx.createOscillator();
+  const pad2Gain = audioCtx.createGain();
+  pad2.type = 'sine';
+  pad2.frequency.value = 98; // G2
+  pad2Gain.gain.value = 0.04;
+  pad2.connect(pad2Gain);
+  pad2Gain.connect(masterGain);
+  pad2.start();
+  musicOscs.push(pad2);
+  musicGains.push(pad2Gain);
+  
+  // Arpeggio pattern
+  const arpNotes = [261.63, 329.63, 392, 523.25, 392, 329.63]; // C4 E4 G4 C5 G4 E4
+  let arpIndex = 0;
+  
+  arpInterval = setInterval(() => {
+    if (!audioCtx || !masterGain) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = arpNotes[arpIndex];
+    gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+    arpIndex = (arpIndex + 1) % arpNotes.length;
+  }, 400);
+}
+
+function stopMusic() {
+  for (const osc of musicOscs) {
+    try { osc.stop(); } catch {}
+  }
+  musicOscs = [];
+  musicGains = [];
+  if (arpInterval) {
+    clearInterval(arpInterval);
+    arpInterval = null;
+  }
+}
+
 export default function OrbitGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'dead'>('start');
@@ -217,7 +282,6 @@ export default function OrbitGame() {
 
   const startGame = useCallback(() => {
     initAudio();
-    stopMusic(); // Stop any existing music
     startMusic(); // Start fresh music (iOS audio unlocked by button tap)
     const game = gameRef.current;
     game.running = true;
@@ -254,7 +318,6 @@ export default function OrbitGame() {
     
     setScore(0);
     setGameState('playing');
-    startMusic();
   }, [generateLane, canvasSize]);
 
   // Handle resize
@@ -302,7 +365,6 @@ export default function OrbitGame() {
           game.deathType = 'abducted';
           stopMusic();
           playVoid();
-          stopMusic();
           if (game.maxRow > highScore) setHighScore(game.maxRow);
           setGameState('dead');
           fetch('/api/pixelpit/stats', {
@@ -393,7 +455,6 @@ export default function OrbitGame() {
             game.deathType = 'void';
             stopMusic();
             playVoid();
-            stopMusic();
             if (game.maxRow > highScore) setHighScore(game.maxRow);
             setGameState('dead');
             fetch('/api/pixelpit/stats', {
@@ -414,7 +475,6 @@ export default function OrbitGame() {
                 game.deathType = obj.type === 'mothership' ? 'beam' : 'collision';
                 stopMusic();
                 playZap();
-                stopMusic();
                 if (game.maxRow > highScore) setHighScore(game.maxRow);
                 setGameState('dead');
                 fetch('/api/pixelpit/stats', {
