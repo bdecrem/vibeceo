@@ -221,7 +221,7 @@ export default function CrossyGame() {
     game.targetY = game.playerY;
     game.isHopping = false;
     game.hopProgress = 0;
-    game.cameraY = 0;
+    game.cameraY = game.playerY - canvasSize.h * 0.7;
     game.lastMoveTime = Date.now();
     game.eagleActive = false;
     game.coins = 0;
@@ -308,8 +308,9 @@ export default function CrossyGame() {
         }
       }
 
-      // Camera follows player
-      const targetCameraY = -game.playerY - canvasSize.h * 0.6;
+      // Camera follows player — player stays at 70% from top
+      // screenY = worldY - cameraY, we want player at 0.7 * height
+      const targetCameraY = game.playerY - canvasSize.h * 0.7;
       game.cameraY += (targetCameraY - game.cameraY) * 0.1;
 
       // Update lane objects
