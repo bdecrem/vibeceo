@@ -42,94 +42,61 @@ function initAudio() {
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-// HOP: Double oscillator (sine+triangle), 400→900Hz sweep, filtered, 0.12s
+// HOP: Soft sine boop, 300→600Hz, lowpass 800Hz, soft attack
 function playHop() {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
   
-  // Sine layer
-  const osc1 = audioCtx.createOscillator();
-  osc1.type = 'sine';
-  osc1.frequency.setValueAtTime(400, t);
-  osc1.frequency.exponentialRampToValueAtTime(900, t + 0.12);
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(300, t);
+  osc.frequency.exponentialRampToValueAtTime(600, t + 0.12);
   
-  // Triangle layer for thickness
-  const osc2 = audioCtx.createOscillator();
-  osc2.type = 'triangle';
-  osc2.frequency.setValueAtTime(400, t);
-  osc2.frequency.exponentialRampToValueAtTime(900, t + 0.12);
-  
-  // Lowpass filter with resonance
+  // Lowpass at 800Hz to cut harshness
   const filter = audioCtx.createBiquadFilter();
   filter.type = 'lowpass';
-  filter.frequency.value = 2000;
-  filter.Q.value = 2;
+  filter.frequency.value = 800;
   
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.12, t);
+  // Soft attack - fade in over 10ms
+  gain.gain.setValueAtTime(0.001, t);
+  gain.gain.linearRampToValueAtTime(0.07, t + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
   
-  osc1.connect(filter);
-  osc2.connect(filter);
+  osc.connect(filter);
   filter.connect(gain);
   gain.connect(masterGain);
   
-  osc1.start(t);
-  osc2.start(t);
-  osc1.stop(t + 0.12);
-  osc2.stop(t + 0.12);
+  osc.start(t);
+  osc.stop(t + 0.12);
 }
 
-// ZAP/DEATH: Distorted square, 300→30Hz dive, noise burst, sub rumble
+// ZAP/DEATH: Smooth sine "whomp", pitch dive, no noise
 function playZap() {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
   
-  // Distorted square wave
+  // Smooth sine wave with pitch dive
   const osc = audioCtx.createOscillator();
-  osc.type = 'square';
+  osc.type = 'sine';
   osc.frequency.setValueAtTime(300, t);
   osc.frequency.exponentialRampToValueAtTime(30, t + 0.25);
   
-  // Waveshaper for distortion
-  const distortion = audioCtx.createWaveShaper();
-  const curve = new Float32Array(256);
-  for (let i = 0; i < 256; i++) {
-    const x = (i - 128) / 128;
-    curve[i] = Math.tanh(x * 3);
-  }
-  distortion.curve = curve;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.1, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
   
-  const oscGain = audioCtx.createGain();
-  oscGain.gain.setValueAtTime(0.15, t);
-  oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-  
-  osc.connect(distortion);
-  distortion.connect(oscGain);
-  oscGain.connect(masterGain);
+  osc.connect(gain);
+  gain.connect(masterGain);
   osc.start(t);
   osc.stop(t + 0.25);
   
-  // Noise burst (crackle)
-  const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.1, audioCtx.sampleRate);
-  const noiseData = noiseBuffer.getChannelData(0);
-  for (let i = 0; i < noiseData.length; i++) {
-    noiseData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (noiseData.length * 0.3));
-  }
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = noiseBuffer;
-  const noiseGain = audioCtx.createGain();
-  noiseGain.gain.value = 0.08;
-  noise.connect(noiseGain);
-  noiseGain.connect(masterGain);
-  noise.start(t);
-  
-  // Sub rumble
+  // Soft sub rumble
   const sub = audioCtx.createOscillator();
   sub.type = 'sine';
   sub.frequency.value = 40;
   const subGain = audioCtx.createGain();
-  subGain.gain.setValueAtTime(0.2, t);
+  subGain.gain.setValueAtTime(0.08, t);
   subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
   sub.connect(subGain);
   subGain.connect(masterGain);
@@ -137,7 +104,7 @@ function playZap() {
   sub.stop(t + 0.3);
 }
 
-// VOID: Reverse reverb swell, detuned chord, sub bass
+// VOID: Reverse reverb swell, detuned chord, sub bass (40% quieter)
 function playVoid() {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
@@ -147,11 +114,11 @@ function playVoid() {
   freqs.forEach((freq, i) => {
     const osc = audioCtx!.createOscillator();
     osc.type = 'sine';
-    osc.frequency.value = freq + (Math.random() - 0.5) * 2; // Slight detune
+    osc.frequency.value = freq + (Math.random() - 0.5) * 2;
     const gain = audioCtx!.createGain();
-    // Reverse reverb: volume swells IN then cuts
+    // Reverse reverb: volume swells IN then cuts (40% quieter)
     gain.gain.setValueAtTime(0.001, t);
-    gain.gain.exponentialRampToValueAtTime(0.12, t + 0.4);
+    gain.gain.exponentialRampToValueAtTime(0.07, t + 0.4);
     gain.gain.setValueAtTime(0, t + 0.45);
     osc.connect(gain);
     gain.connect(masterGain!);
@@ -159,13 +126,13 @@ function playVoid() {
     osc.stop(t + 0.5);
   });
   
-  // Sub bass rumble you FEEL
+  // Sub bass rumble (40% quieter)
   const sub = audioCtx.createOscillator();
   sub.type = 'sine';
   sub.frequency.value = 30;
   const subGain = audioCtx.createGain();
   subGain.gain.setValueAtTime(0.001, t);
-  subGain.gain.exponentialRampToValueAtTime(0.25, t + 0.3);
+  subGain.gain.exponentialRampToValueAtTime(0.15, t + 0.3);
   subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
   sub.connect(subGain);
   subGain.connect(masterGain);
@@ -173,13 +140,13 @@ function playVoid() {
   sub.stop(t + 0.6);
 }
 
-// CRYSTAL: Three stacked sines (root/5th/octave), sparkle noise, pitch randomization
+// CRYSTAL: Gentle chime - lower octave, no noise, soft decay
 function playCrystal() {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
   
-  // Base frequency with randomization for organic feel
-  const baseFreq = 880 + (Math.random() - 0.5) * 50;
+  // Drop an octave (440 base instead of 880), slight randomization
+  const baseFreq = 440 + (Math.random() - 0.5) * 20;
   const freqs = [baseFreq, baseFreq * 1.5, baseFreq * 2]; // Root, 5th, octave
   
   freqs.forEach((freq, i) => {
@@ -187,31 +154,15 @@ function playCrystal() {
     osc.type = 'sine';
     osc.frequency.value = freq;
     const gain = audioCtx!.createGain();
-    gain.gain.setValueAtTime(0.08 - i * 0.02, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    // Softer: 0.04 gain, slower 0.25s decay
+    gain.gain.setValueAtTime(0.04 - i * 0.01, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
     osc.connect(gain);
     gain.connect(masterGain!);
     osc.start(t);
-    osc.stop(t + 0.2);
+    osc.stop(t + 0.25);
   });
-  
-  // Sparkle noise burst (highpass filtered white noise)
-  const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
-  const noiseData = noiseBuffer.getChannelData(0);
-  for (let i = 0; i < noiseData.length; i++) {
-    noiseData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (noiseData.length * 0.2));
-  }
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = noiseBuffer;
-  const highpass = audioCtx.createBiquadFilter();
-  highpass.type = 'highpass';
-  highpass.frequency.value = 4000;
-  const noiseGain = audioCtx.createGain();
-  noiseGain.gain.value = 0.06;
-  noise.connect(highpass);
-  highpass.connect(noiseGain);
-  noiseGain.connect(masterGain);
-  noise.start(t);
+  // No noise burst - cleaner sound
 }
 
 function playBeamWarning() {
@@ -219,11 +170,12 @@ function playBeamWarning() {
   const t = audioCtx.currentTime;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  osc.type = 'square';
-  osc.frequency.value = 880;
-  gain.gain.setValueAtTime(0.1, t);
+  // Softer: sine instead of square, lower freq
+  osc.type = 'sine';
+  osc.frequency.value = 440;
+  gain.gain.setValueAtTime(0.06, t);
   gain.gain.setValueAtTime(0, t + 0.1);
-  gain.gain.setValueAtTime(0.1, t + 0.2);
+  gain.gain.setValueAtTime(0.06, t + 0.2);
   gain.gain.setValueAtTime(0, t + 0.3);
   osc.connect(gain);
   gain.connect(masterGain);
