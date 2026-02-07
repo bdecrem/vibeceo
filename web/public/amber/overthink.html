@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OVERTHINK METER — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="OVERTHINK METER — Amber">
+  <meta property="og:description" content="Type your text message. Watch the overthink score climb as you add apologies, qualifiers, and unnecessary emojis.">
+  <meta property="og:image" content="https://intheamber.com/amber/overthink-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/overthink.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="OVERTHINK METER — Amber">
+  <meta name="twitter:description" content="Type your text message. Watch the overthink score climb as you add apologies, qualifiers, and unnecessary emojis.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/overthink-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    #particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 600px;
+    }
+    
+    h1 {
+      font-size: clamp(28px, 6vw, 42px);
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      text-align: center;
+      opacity: 0.6;
+      margin-bottom: 30px;
+      font-size: clamp(14px, 3vw, 16px);
+    }
+    
+    .input-container {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    textarea {
+      width: 100%;
+      min-height: 150px;
+      background: #000;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 15px;
+      color: #D4A574;
+      font-size: 16px;
+      font-family: inherit;
+      resize: vertical;
+    }
+    
+    textarea:focus {
+      outline: none;
+      border-color: #D4A574;
+    }
+    
+    .meter-container {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 12px;
+      padding: 30px 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .score {
+      font-size: clamp(60px, 15vw, 120px);
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 10px;
+      transition: color 0.3s;
+    }
+    
+    .score.low { color: #2D9596; }
+    .score.medium { color: #D4A574; }
+    .score.high { color: #FF6B6B; }
+    .score.critical { 
+      color: #FF0000;
+      animation: pulse 0.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .diagnosis {
+      font-size: clamp(16px, 4vw, 20px);
+      margin-top: 15px;
+      font-weight: 600;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+    }
+    
+    .flags-container {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      min-height: 100px;
+    }
+    
+    .flags-title {
+      font-size: 14px;
+      opacity: 0.6;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .flags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    
+    .flag {
+      background: #1a1a1a;
+      border: 1px solid #D4A574;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      opacity: 0.7;
+    }
+    
+    .stats {
+      text-align: center;
+      opacity: 0.5;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  
+  <div class="container">
+    <h1>OVERTHINK METER</h1>
+    <p class="subtitle">Type your text message. Watch your anxiety score climb.</p>
+    
+    <div class="input-container">
+      <textarea id="textInput" placeholder="hey! just wanted to check if maybe you're still free tomorrow? totally fine if not! no pressure at all 😊"></textarea>
+    </div>
+    
+    <div class="meter-container">
+      <div class="score low" id="score">0%</div>
+      <div class="diagnosis" id="diagnosis">Start typing to analyze your overthink levels...</div>
+    </div>
+    
+    <div class="flags-container">
+      <div class="flags-title">Red Flags Detected:</div>
+      <div class="flags" id="flags"></div>
+    </div>
+    
+    <div class="stats" id="stats">Total messages analyzed: 0</div>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const particles = [];
+    for (let i = 0; i < 30; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        size: Math.random() * 2 + 1
+      });
+    }
+    
+    function animateParticles() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.fillStyle = '#D4A574';
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+    
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    
+    // Audio context
+    let audioCtx = null;
+    let audioStarted = false;
+    
+    function initAudio() {
+      if (!audioStarted) {
+        audioCtx = new AudioContext();
+        audioStarted = true;
+      }
+    }
+    
+    function playTone(freq, duration = 0.1) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      gain.gain.value = 0.1;
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Overthink analysis
+    const patterns = {
+      'just': { weight: 5, label: '"just" (minimizing)' },
+      'sorry': { weight: 8, label: 'apologizing' },
+      'maybe': { weight: 4, label: '"maybe" (hedging)' },
+      'kind of': { weight: 4, label: '"kind of" (qualifier)' },
+      'sort of': { weight: 4, label: '"sort of" (qualifier)' },
+      'if that\'s okay': { weight: 10, label: 'seeking permission' },
+      'if you want': { weight: 7, label: 'deferring' },
+      'no pressure': { weight: 9, label: '"no pressure" (ironic pressure)' },
+      'totallyfine if not': { weight: 8, label: 'pre-apologizing for rejection' },
+      'lol': { weight: 3, label: 'nervous lol' },
+      'haha': { weight: 3, label: 'nervous haha' },
+      '!!!': { weight: 6, label: 'excessive exclamation' },
+      '????': { weight: 5, label: 'excessive questions' }
+    };
+    
+    const emojiPattern = /[\u{1F300}-\u{1F9FF}]/gu;
+    
+    function analyze(text) {
+      let score = 0;
+      const flags = [];
+      
+      // Check patterns
+      for (const [pattern, data] of Object.entries(patterns)) {
+        if (pattern === '!!!' || pattern === '????') {
+          const regex = pattern === '!!!' ? /!{3,}/g : /\?{4,}/g;
+          const matches = text.match(regex);
+          if (matches) {
+            const count = matches.length;
+            score += data.weight * count;
+            flags.push(data.label);
+          }
+        } else {
+          const regex = new RegExp(pattern, 'gi');
+          const matches = text.match(regex);
+          if (matches) {
+            const count = matches.length;
+            score += data.weight * count;
+            flags.push(`${data.label} (${count}x)`);
+          }
+        }
+      }
+      
+      // Count emojis
+      const emojiMatches = text.match(emojiPattern);
+      if (emojiMatches) {
+        const count = emojiMatches.length;
+        if (count > 3) {
+          score += (count - 3) * 4;
+          flags.push(`emoji overload (${count})`);
+        }
+      }
+      
+      // Parenthetical asides
+      const parenMatches = text.match(/\([^)]+\)/g);
+      if (parenMatches && parenMatches.length > 1) {
+        score += parenMatches.length * 5;
+        flags.push(`excessive clarifications (${parenMatches.length})`);
+      }
+      
+      // Message length anxiety (over 200 chars)
+      if (text.length > 200) {
+        const extra = Math.floor((text.length - 200) / 50);
+        score += extra * 3;
+        if (extra > 0) flags.push('wall of text anxiety');
+      }
+      
+      // Cap at 100%
+      score = Math.min(score, 100);
+      
+      return { score, flags: [...new Set(flags)] };
+    }
+    
+    function getDiagnosis(score) {
+      if (score === 0) return 'Calm. Confident. Unbothered.';
+      if (score < 15) return 'Chill. You said what you meant.';
+      if (score < 30) return 'Slight hedging detected. You\'re fine.';
+      if (score < 50) return 'Moderate overthink. They can smell the anxiety.';
+      if (score < 70) return 'High anxiety. Every word has three safety nets.';
+      if (score < 85) return 'Critical overthink. This is a thesis, not a text.';
+      return 'CATASTROPHIC. Just call them.';
+    }
+    
+    let analyzeCount = parseInt(localStorage.getItem('overthink_count') || '0');
+    document.getElementById('stats').textContent = `Total messages analyzed: ${analyzeCount}`;
+    
+    const textInput = document.getElementById('textInput');
+    const scoreEl = document.getElementById('score');
+    const diagnosisEl = document.getElementById('diagnosis');
+    const flagsEl = document.getElementById('flags');
+    
+    textInput.addEventListener('input', () => {
+      initAudio();
+      
+      const text = textInput.value;
+      if (text.length === 0) {
+        scoreEl.textContent = '0%';
+        scoreEl.className = 'score low';
+        diagnosisEl.textContent = 'Start typing to analyze your overthink levels...';
+        flagsEl.innerHTML = '';
+        return;
+      }
+      
+      const result = analyze(text);
+      
+      // Update score
+      scoreEl.textContent = `${result.score}%`;
+      
+      // Update color class
+      scoreEl.className = 'score';
+      if (result.score < 30) scoreEl.classList.add('low');
+      else if (result.score < 60) scoreEl.classList.add('medium');
+      else if (result.score < 85) scoreEl.classList.add('high');
+      else scoreEl.classList.add('critical');
+      
+      // Update diagnosis
+      diagnosisEl.textContent = getDiagnosis(result.score);
+      
+      // Update flags
+      flagsEl.innerHTML = '';
+      if (result.flags.length === 0) {
+        flagsEl.innerHTML = '<div class="flag">None detected. Impressive.</div>';
+      } else {
+        result.flags.forEach(flag => {
+          const el = document.createElement('div');
+          el.className = 'flag';
+          el.textContent = flag;
+          flagsEl.appendChild(el);
+        });
+      }
+      
+      // Play tone based on score
+      if (result.score > 0) {
+        playTone(300 + result.score * 3, 0.05);
+      }
+      
+      // Increment counter
+      analyzeCount++;
+      localStorage.setItem('overthink_count', analyzeCount);
+      document.getElementById('stats').textContent = `Total messages analyzed: ${analyzeCount}`;
+    });
+  </script>
+</body>
+</html>
