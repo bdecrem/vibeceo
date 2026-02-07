@@ -1313,17 +1313,7 @@ export default function OrbitGame() {
       const px = playerScreenX;
       const py = playerScreenY + TILE_SIZE / 2 - hopOffset;
       
-      // LANE INDICATOR - subtle glow column (gameplay clarity)
-      if (!game.isHopping) {
-        const indicatorGrad = ctx.createLinearGradient(px - 20, 0, px + 20, 0);
-        indicatorGrad.addColorStop(0, 'rgba(34, 211, 238, 0)');
-        indicatorGrad.addColorStop(0.3, 'rgba(34, 211, 238, 0.2)');
-        indicatorGrad.addColorStop(0.5, 'rgba(34, 211, 238, 0.3)');
-        indicatorGrad.addColorStop(0.7, 'rgba(34, 211, 238, 0.2)');
-        indicatorGrad.addColorStop(1, 'rgba(34, 211, 238, 0)');
-        ctx.fillStyle = indicatorGrad;
-        ctx.fillRect(px - 22, playerScreenY - 5, 44, TILE_SIZE + 10);
-      }
+      // Player art fits within ~40px wide x 50px tall (within TILE_SIZE lane)
       
       // Shadow (ground contact)
       ctx.fillStyle = 'rgba(0,0,0,0.35)';
