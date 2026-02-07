@@ -253,6 +253,27 @@ ipconfig getifaddr en0
 - **Ship > perfect** — working game beats polished idea
 - **Keep it small** — scope for 1-2 hour jam sessions
 
+## Dates & Days of the Week (Non-Negotiable)
+
+When adding dates to `web/app/pixelpit/page.tsx` (the hub page games/labItems arrays), you **MUST** get the day of the week correct. DO NOT GUESS. LLMs are notoriously bad at day-of-week calculations.
+
+**How to get it right:**
+```bash
+# Use this command to get the correct day for any date:
+date -j -f "%m/%d/%Y" "02/06/2026" "+%a %m/%-d"
+# Output: Fri 02/6
+```
+
+Or in JavaScript:
+```javascript
+new Date(2026, 1, 6).toLocaleDateString('en-US', { weekday: 'short' })
+// "Fri"
+```
+
+**NEVER** manually count backwards from a known day. **ALWAYS** use a date command or script to verify. This has been wrong every single time an agent guessed.
+
+Format: `'Fri 2/6'` (3-letter day, space, month/day, no leading zeros on day)
+
 ## Git
 
 - `~/collabs/pixelpit/` — local WIP, not tracked

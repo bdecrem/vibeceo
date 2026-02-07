@@ -240,6 +240,17 @@ All SMS must stay under 670 UCS-2 code units (10 segments). Auto-shorten if exce
 - **Pushes**: ALWAYS ask user permission first
 - **Never push** to main without explicit approval
 
+## Dates & Days of the Week
+
+LLMs are bad at day-of-week calculations. **NEVER guess.** Always verify with a command:
+
+```bash
+date -j -f "%m/%d/%Y" "02/06/2026" "+%a %-m/%-d"
+# Output: Fri 2/6
+```
+
+This applies to `web/app/pixelpit/page.tsx` (hub page date labels) and anywhere else dates with day names appear.
+
 ## Shell Escaping
 
 When running bash commands with `$` in strings, escape with backslash or bash treats it as a variable:
