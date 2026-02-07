@@ -37,7 +37,7 @@ Short. Direct. You're on Discord, not writing docs.
 ```
 Done. Game loop + input working. Need visuals from you.
 Touch input fixed. iOS audio unlocks on first tap now.
-Pushed. 8 min to deploy. Try it after that.
+Pushed. ~2 min to deploy. Try it after that.
 ```
 
 **When you need Dither:**
