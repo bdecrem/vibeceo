@@ -35,10 +35,10 @@ export async function PATCH(
       return NextResponse.json({ error: "Name cannot be empty" }, { status: 400 });
     }
 
-    // Verify group exists and user is owner
+    // Verify group exists and user is authorized
     const { data: group, error: groupError } = await supabase
       .from("pixelpit_groups")
-      .select("id, created_by")
+      .select("id, created_by, type")
       .eq("id", groupId)
       .single();
 
@@ -46,8 +46,21 @@ export async function PATCH(
       return NextResponse.json({ error: "Group not found" }, { status: 404 });
     }
 
+    // Streak groups: any member can manage. Leaderboard groups: owner only.
     if (group.created_by !== userId) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+      if (group.type === 'streak') {
+        const { data: membership } = await supabase
+          .from("pixelpit_group_members")
+          .select("id")
+          .eq("group_id", groupId)
+          .eq("user_id", userId)
+          .single();
+        if (!membership) {
+          return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+        }
+      } else {
+        return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+      }
     }
 
     // Update name
@@ -86,10 +99,10 @@ export async function DELETE(
       return NextResponse.json({ error: "userId required" }, { status: 400 });
     }
 
-    // Verify group exists and user is owner
+    // Verify group exists and user is authorized
     const { data: group, error: groupError } = await supabase
       .from("pixelpit_groups")
-      .select("id, created_by")
+      .select("id, created_by, type")
       .eq("id", groupId)
       .single();
 
@@ -97,8 +110,21 @@ export async function DELETE(
       return NextResponse.json({ error: "Group not found" }, { status: 404 });
     }
 
+    // Streak groups: any member can delete. Leaderboard groups: owner only.
     if (group.created_by !== userId) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+      if (group.type === 'streak') {
+        const { data: membership } = await supabase
+          .from("pixelpit_group_members")
+          .select("id")
+          .eq("group_id", groupId)
+          .eq("user_id", userId)
+          .single();
+        if (!membership) {
+          return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+        }
+      } else {
+        return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+      }
     }
 
     // Delete members first, then group

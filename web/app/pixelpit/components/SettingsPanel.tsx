@@ -134,6 +134,7 @@ export function SettingsPanel({ colors, onClose }: SettingsPanelProps) {
   };
 
   const isOwner = (group: Group) => currentUserId !== null && group.createdBy === currentUserId;
+  const canManage = (group: Group) => isOwner(group) || group.type === 'streak';
 
   const sendPhoneCode = async () => {
     if (!currentUserId || !phoneInput.trim()) return;
@@ -325,13 +326,13 @@ export function SettingsPanel({ colors, onClose }: SettingsPanelProps) {
                     />
                   ) : (
                     <div
-                      onClick={() => { if (isOwner(group)) startEdit(group); }}
+                      onClick={() => { if (canManage(group)) startEdit(group); }}
                       style={{
                         flex: 1,
                         fontFamily,
                         fontSize: 12,
                         color: colors.text,
-                        cursor: isOwner(group) ? 'pointer' : 'default',
+                        cursor: canManage(group) ? 'pointer' : 'default',
                         overflow: 'hidden',
                       }}
                     >
@@ -356,7 +357,7 @@ export function SettingsPanel({ colors, onClose }: SettingsPanelProps) {
                     </div>
                   )}
 
-                  {isOwner(group) && editingId !== group.id && confirmDeleteId !== group.id && (
+                  {canManage(group) && editingId !== group.id && confirmDeleteId !== group.id && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

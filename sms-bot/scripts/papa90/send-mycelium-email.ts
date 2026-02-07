@@ -14,7 +14,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY!
 );
 
-const TO_EMAIL = 'bdecrem@gmail.com';
+const TO_EMAILS = ['aandw@decrem.com', 'w@vcwd.be'];
+const CC_EMAILS = ['hdecrem@hotmail.com', 'pdecrem@gmail.com', 'bdecrem@gmail.com'];
 const SUBJECT = 'Happy Friday — Touch the Network';
 
 const html = fs.readFileSync(path.join(__dirname, 'mycelium-email.html'), 'utf-8');
@@ -23,7 +24,8 @@ async function send() {
   const sentAt = new Date().toISOString();
 
   await sgMail.send({
-    to: TO_EMAIL,
+    to: TO_EMAILS,
+    cc: CC_EMAILS,
     from: {
       email: 'ambercc@intheamber.com',
       name: 'Amber'
@@ -36,14 +38,17 @@ async function send() {
     },
   });
 
-  console.log(`✓ Sent to ${TO_EMAIL}`);
+  console.log('✓ Sent to all 5 family members!');
+  console.log(`   To: ${TO_EMAILS.join(', ')}`);
+  console.log(`   CC: ${CC_EMAILS.join(', ')}`);
 
   // Log to cc_outbox
   const { error } = await supabase.from('amber_state').insert({
     type: 'cc_outbox',
-    content: `MYCELIUM email — Happy Friday, link to mycelium-piano.html`,
+    content: `MYCELIUM email — Happy Friday, link to mycelium-piano.html. Sent to all 5 family members.`,
     metadata: {
-      to: TO_EMAIL,
+      to: TO_EMAILS,
+      cc: CC_EMAILS,
       subject: SUBJECT,
       sent_at: sentAt,
     },
