@@ -5,7 +5,6 @@ import Script from 'next/script';
 import {
   ScoreFlow,
   Leaderboard,
-  ShareButtonContainer,
   ShareModal,
   usePixelpitSocial,
   type ScoreFlowColors,
@@ -32,17 +31,17 @@ const THEME = {
 const SCORE_FLOW_COLORS: ScoreFlowColors = {
   bg: '#4A8DB7',
   surface: '#3A7DA7',
-  primary: '#FF2244',
+  primary: '#ffffff',
   secondary: '#FFA94D',
   text: '#ffffff',
-  muted: 'rgba(255,255,255,0.6)',
+  muted: 'rgba(255,255,255,0.8)',
   error: '#ef4444',
 };
 
 const LEADERBOARD_COLORS: LeaderboardColors = {
   bg: '#4A8DB7',
   surface: '#3A7DA7',
-  primary: '#FF2244',
+  primary: '#ffffff',
   secondary: '#FFA94D',
   text: '#ffffff',
   muted: 'rgba(255,255,255,0.6)',
@@ -56,6 +55,9 @@ export default function DropGame() {
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [progression, setProgression] = useState<ProgressionResult | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showHint, setShowHint] = useState(true);
+  const [playCount, setPlayCount] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(60);
 
   const { user } = usePixelpitSocial(socialLoaded);
 
@@ -89,11 +91,21 @@ export default function DropGame() {
   const startGame = useCallback(() => {
     setScore(0);
     setCombo(0);
+    setTimeLeft(60);
     setSubmittedEntryId(null);
     setProgression(null);
     setShowShareModal(false);
+    setShowHint(true);
+    setPlayCount(c => c + 1);
     setGameState('playing');
   }, []);
+
+  // Hide "swipe to rotate" hint after 2 seconds of gameplay
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+    const t = setTimeout(() => setShowHint(false), 2000);
+    return () => clearTimeout(t);
+  }, [playCount]);
 
   const handleGameOver = useCallback((finalScore: number) => {
     setScore(finalScore);
@@ -105,9 +117,10 @@ export default function DropGame() {
     }).catch(() => {});
   }, []);
 
-  const handleScoreUpdate = useCallback((newScore: number, newCombo: number) => {
+  const handleScoreUpdate = useCallback((newScore: number, newCombo: number, newTimeLeft: number) => {
     setScore(newScore);
     setCombo(newCombo);
+    setTimeLeft(newTimeLeft);
   }, []);
 
   return (
@@ -136,12 +149,14 @@ export default function DropGame() {
             background: `linear-gradient(180deg, #87CEEB 0%, #5BA3D9 100%)`,
           }}>
             <h1 style={{
-              color: '#ffffff',
-              fontSize: 80,
+              fontSize: 100,
               marginBottom: 8,
               fontWeight: 900,
-              letterSpacing: '-2px',
-              textShadow: '0 4px 0 rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.08)',
+              letterSpacing: '6px',
+              background: 'linear-gradient(180deg, #FFD700 0%, #FF6B00 50%, #FF2244 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 4px 0 rgba(0,0,0,0.2)) drop-shadow(0 8px 25px rgba(255,100,0,0.4))',
             }}>
               DROP
             </h1>
@@ -155,7 +170,7 @@ export default function DropGame() {
               maxWidth: 260,
               fontWeight: 600,
             }}>
-              Swipe to rotate the tower.<br />
+              60 seconds. Swipe to rotate.<br />
               Fall through the gaps.<br />
               <span style={{ color: THEME.red, fontWeight: 800 }}>Avoid the dark zones!</span>
             </p>
@@ -196,49 +211,76 @@ export default function DropGame() {
               top: 20,
               left: 0,
               right: 0,
-              textAlign: 'center',
               zIndex: 10,
               pointerEvents: 'none',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              padding: '0 24px',
             }}>
-              <div style={{
-                color: '#ffffff',
-                fontSize: 44,
-                fontWeight: 900,
-                textShadow: '0 2px 0 rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.08)',
-                letterSpacing: '-1px',
-              }}>
-                {score}
-              </div>
-              {combo > 1 && (
+              {/* Score — left side */}
+              <div style={{ textAlign: 'left' }}>
                 <div style={{
-                  color: THEME.gold,
-                  fontSize: Math.min(22 + combo * 2, 40),
+                  fontSize: 48,
                   fontWeight: 900,
-                  textShadow: '0 2px 0 rgba(0,0,0,0.1), 0 4px 12px rgba(255,212,59,0.3)',
+                  letterSpacing: '-1px',
+                  lineHeight: 1,
+                  background: 'linear-gradient(180deg, #ffffff 0%, #FFD700 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  filter: 'drop-shadow(0 2px 0 rgba(0,0,0,0.15)) drop-shadow(0 4px 12px rgba(0,0,0,0.1))',
                 }}>
-                  x{combo}
+                  {score}
                 </div>
-              )}
-            </div>
-            <div style={{
-              position: 'absolute',
-              bottom: 30,
-              left: 0,
-              right: 0,
-              textAlign: 'center',
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}>
+                {combo > 1 && (
+                  <div style={{
+                    color: THEME.gold,
+                    fontSize: Math.min(22 + combo * 2, 40),
+                    fontWeight: 900,
+                    textShadow: '0 2px 0 rgba(0,0,0,0.1), 0 4px 12px rgba(255,212,59,0.3)',
+                    lineHeight: 1,
+                  }}>
+                    x{combo}
+                  </div>
+                )}
+              </div>
+              {/* Timer — right side */}
               <div style={{
-                color: 'rgba(255,255,255,0.5)',
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: '2px',
-                textTransform: 'uppercase' as const,
+                color: timeLeft <= 10 ? THEME.red : 'rgba(255,255,255,0.8)',
+                fontSize: timeLeft <= 10 ? 48 : 36,
+                fontWeight: 900,
+                textShadow: timeLeft <= 10
+                  ? '0 0 20px rgba(255,34,68,0.5), 0 2px 0 rgba(0,0,0,0.1)'
+                  : '0 2px 0 rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.08)',
+                letterSpacing: '-1px',
+                fontVariantNumeric: 'tabular-nums',
+                lineHeight: 1,
+                transition: 'font-size 0.2s, color 0.2s',
               }}>
-                swipe to rotate
+                {timeLeft}
               </div>
             </div>
+            {showHint && (
+              <div style={{
+                position: 'absolute',
+                bottom: 30,
+                left: 0,
+                right: 0,
+                textAlign: 'center',
+                zIndex: 10,
+                pointerEvents: 'none',
+              }}>
+                <div style={{
+                  color: 'rgba(255,255,255,0.5)',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  letterSpacing: '2px',
+                  textTransform: 'uppercase' as const,
+                }}>
+                  swipe to rotate
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -247,7 +289,7 @@ export default function DropGame() {
             onClick={(e) => {
               // Tap anywhere to restart — zero friction failure (Key #2)
               // But not if they clicked a button/link inside
-              if ((e.target as HTMLElement).closest('button, a, [role="button"]')) return;
+              if ((e.target as HTMLElement).closest('button, a, input, textarea, [role="button"]')) return;
               startGame();
             }}
             style={{
@@ -271,12 +313,27 @@ export default function DropGame() {
               maxWidth: 400,
               width: '100%',
             }}>
+              {timeLeft <= 0 && (
+                <p style={{
+                  color: 'rgba(255,255,255,0.5)',
+                  fontSize: 14,
+                  fontWeight: 800,
+                  letterSpacing: '4px',
+                  textTransform: 'uppercase' as const,
+                  marginBottom: 4,
+                }}>
+                  TIME&apos;S UP
+                </p>
+              )}
               <p style={{
-                color: '#ffffff',
-                fontSize: 52,
+                fontSize: 64,
                 fontWeight: 900,
                 marginBottom: 4,
-                textShadow: '0 2px 0 rgba(0,0,0,0.1)',
+                letterSpacing: '2px',
+                background: 'linear-gradient(180deg, #FFD700 0%, #FFA94D 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 3px 0 rgba(0,0,0,0.2)) drop-shadow(0 6px 15px rgba(255,169,77,0.4))',
               }}>
                 {score}
               </p>
@@ -336,66 +393,62 @@ export default function DropGame() {
                 score={score}
                 gameId={GAME_ID}
                 colors={SCORE_FLOW_COLORS}
-                maxScore={20}
+                maxScore={500}
                 onRankReceived={(rank, entryId) => {
                   setSubmittedEntryId(entryId ?? null);
                 }}
                 onProgression={(prog) => setProgression(prog)}
               />
 
-              {/* Secondary actions — small, out of the way */}
+              {/* Secondary actions */}
               <div style={{
                 display: 'flex',
-                gap: 12,
+                gap: 14,
                 alignItems: 'center',
                 marginTop: 14,
               }}>
                 <button
                   onClick={() => setGameState('leaderboard')}
                   style={{
-                    background: 'transparent',
-                    border: '1px solid rgba(255,255,255,0.2)',
+                    background: 'linear-gradient(180deg, #FFD700 0%, #FF8C00 100%)',
+                    border: 'none',
                     borderRadius: 50,
-                    color: 'rgba(255,255,255,0.5)',
-                    padding: '10px 20px',
-                    fontSize: 11,
-                    fontWeight: 700,
+                    color: '#ffffff',
+                    padding: '14px 28px',
+                    fontSize: 14,
+                    fontWeight: 900,
                     fontFamily: 'inherit',
                     cursor: 'pointer',
-                    letterSpacing: '1px',
+                    letterSpacing: '3px',
                     textTransform: 'uppercase' as const,
+                    boxShadow: '0 4px 0 #CC6600, 0 6px 15px rgba(255,140,0,0.4)',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                    transform: 'translateY(-2px)',
                   }}
                 >
                   RANKS
                 </button>
-                {user ? (
-                  <button
-                    onClick={() => setShowShareModal(true)}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: 50,
-                      color: 'rgba(255,255,255,0.5)',
-                      padding: '10px 20px',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      fontFamily: 'inherit',
-                      cursor: 'pointer',
-                      letterSpacing: '1px',
-                      textTransform: 'uppercase' as const,
-                    }}
-                  >
-                    SHARE
-                  </button>
-                ) : (
-                  <ShareButtonContainer
-                    id="share-btn-container"
-                    url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/${GAME_ID}/share/${score}` : ''}
-                    text={`I scored ${score} on DROP! Can you beat me?`}
-                    style="minimal"
-                    socialLoaded={socialLoaded}
-                  />
-                )}
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  style={{
+                    background: 'linear-gradient(180deg, #4ECDC4 0%, #2BA8A0 100%)',
+                    border: 'none',
+                    borderRadius: 50,
+                    color: '#ffffff',
+                    padding: '14px 28px',
+                    fontSize: 14,
+                    fontWeight: 900,
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                    letterSpacing: '3px',
+                    textTransform: 'uppercase' as const,
+                    boxShadow: '0 4px 0 #1E8C85, 0 6px 15px rgba(78,205,196,0.4)',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                    transform: 'translateY(-2px)',
+                  }}
+                >
+                  SHARE
+                </button>
               </div>
             </div>
           </div>
@@ -426,7 +479,7 @@ export default function DropGame() {
         )}
 
         {/* Share modal */}
-        {showShareModal && user && (
+        {showShareModal && (
           <ShareModal
             gameUrl={GAME_URL}
             score={score}

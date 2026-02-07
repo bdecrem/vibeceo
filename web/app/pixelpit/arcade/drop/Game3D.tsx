@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
 const PLATFORM_COUNT = 25;
-const PLATFORM_SPACING = 2;
+const PLATFORM_SPACING = 4;
 const TOWER_RADIUS = 0.4;
 const PLATFORM_OUTER_RADIUS = 2;
 const PLATFORM_THICKNESS = 0.5;
@@ -15,7 +15,6 @@ const BOUNCE_DAMPING = 0.4;    // each bounce = 40% of impact speed
 const MIN_BOUNCE = 0.015;      // below this → ball rests
 const GRAVITY = 0.016;         // per-frame gravity — dense rubber ball, not floaty
 const MAX_FALL_SPEED = 0.5;    // terminal velocity — long freefalls keep accelerating
-const POWER_VELOCITY = 0.35;   // fall speed threshold — must skip 2-3 platforms to earn it
 
 // C minor pentatonic — the game's musical key
 const PENTATONIC = [261.63, 311.13, 349.23, 392.00, 466.16, 523.25, 622.25, 698.46];
@@ -209,6 +208,172 @@ function playSmash() {
   n.start();
 }
 
+// Fireball smash — massive impact, explosive, rewarding
+function playFireballSmash() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Deep boom
+  const boom = audioCtx.createOscillator();
+  const boomG = audioCtx.createGain();
+  boom.type = 'sine';
+  boom.frequency.setValueAtTime(150, t);
+  boom.frequency.exponentialRampToValueAtTime(25, t + 0.25);
+  boomG.gain.setValueAtTime(0.45, t);
+  boomG.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  boom.connect(boomG);
+  boomG.connect(masterGain);
+  boom.start();
+  boom.stop(t + 0.3);
+  // Bright impact ping
+  const ping = audioCtx.createOscillator();
+  const pingG = audioCtx.createGain();
+  ping.type = 'square';
+  ping.frequency.setValueAtTime(800, t);
+  ping.frequency.exponentialRampToValueAtTime(200, t + 0.1);
+  pingG.gain.setValueAtTime(0.12, t);
+  pingG.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  ping.connect(pingG);
+  pingG.connect(masterGain);
+  ping.start();
+  ping.stop(t + 0.1);
+  // Explosion noise burst
+  const len = audioCtx.sampleRate * 0.2;
+  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+  const n = audioCtx.createBufferSource();
+  n.buffer = buf;
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(3000, t);
+  lp.frequency.exponentialRampToValueAtTime(500, t + 0.2);
+  const ng = audioCtx.createGain();
+  ng.gain.setValueAtTime(0.25, t);
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  n.connect(lp);
+  lp.connect(ng);
+  ng.connect(masterGain);
+  n.start();
+}
+
+// Fireball collect — aggressive rising power chord + sub rumble
+function playFireballCollect() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Sub rumble
+  const sub = audioCtx.createOscillator();
+  const subG = audioCtx.createGain();
+  sub.type = 'sine';
+  sub.frequency.setValueAtTime(40, t);
+  sub.frequency.exponentialRampToValueAtTime(80, t + 0.3);
+  subG.gain.setValueAtTime(0.35, t);
+  subG.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+  sub.connect(subG); subG.connect(masterGain);
+  sub.start(); sub.stop(t + 0.4);
+  // Power chord — fast ascending fifths
+  [261.63, 392.00, 523.25, 783.99].forEach((freq, i) => {
+    const osc = audioCtx!.createOscillator();
+    const g = audioCtx!.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.12, t + i * 0.04);
+    g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.04 + 0.15);
+    osc.connect(g); g.connect(masterGain!);
+    osc.start(t + i * 0.04); osc.stop(t + i * 0.04 + 0.15);
+  });
+}
+
+// Shield collect — electric zap + crystalline ring
+function playShieldCollect() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Electric zap — fast frequency sweep
+  const zap = audioCtx.createOscillator();
+  const zapG = audioCtx.createGain();
+  zap.type = 'square';
+  zap.frequency.setValueAtTime(200, t);
+  zap.frequency.exponentialRampToValueAtTime(2000, t + 0.08);
+  zap.frequency.exponentialRampToValueAtTime(600, t + 0.2);
+  zapG.gain.setValueAtTime(0.15, t);
+  zapG.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  zap.connect(zapG); zapG.connect(masterGain);
+  zap.start(); zap.stop(t + 0.25);
+  // Crystalline ring — high sine with shimmer
+  [1046.5, 1318.5, 1568.0].forEach((freq, i) => {
+    const osc = audioCtx!.createOscillator();
+    const g = audioCtx!.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.1, t + 0.05 + i * 0.03);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.05 + i * 0.03 + 0.3);
+    osc.connect(g); g.connect(masterGain!);
+    osc.start(t + 0.05 + i * 0.03); osc.stop(t + 0.05 + i * 0.03 + 0.3);
+  });
+}
+
+// Score2x collect — coin cascade + triumphant fanfare
+function playScore2xCollect() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Rapid coin cascade
+  [784, 988, 1175, 1319, 1568].forEach((freq, i) => {
+    const osc = audioCtx!.createOscillator();
+    const g = audioCtx!.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.15, t + i * 0.035);
+    g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.035 + 0.1);
+    osc.connect(g); g.connect(masterGain!);
+    osc.start(t + i * 0.035); osc.stop(t + i * 0.035 + 0.1);
+  });
+  // Fanfare chord at the peak
+  const chord = audioCtx.createOscillator();
+  const cg = audioCtx.createGain();
+  chord.type = 'sine';
+  chord.frequency.value = 1568;
+  cg.gain.setValueAtTime(0.2, t + 0.18);
+  cg.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  chord.connect(cg); cg.connect(masterGain);
+  chord.start(t + 0.18); chord.stop(t + 0.5);
+}
+
+// Powerup collect — dispatches to per-type SFX
+function playPowerupCollect(type: PowerupType = 'fireball') {
+  if (type === 'fireball') playFireballCollect();
+  else if (type === 'shield') playShieldCollect();
+  else if (type === 'score2x') playScore2xCollect();
+}
+
+// Shield absorb — heavy electric crack + descending buzz
+function playShieldBreak() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Electric crack
+  const len = audioCtx.sampleRate * 0.15;
+  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buf;
+  const bp = audioCtx.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = 3000; bp.Q.value = 3;
+  const ng = audioCtx.createGain();
+  ng.gain.setValueAtTime(0.25, t);
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  noise.connect(bp); bp.connect(ng); ng.connect(masterGain);
+  noise.start();
+  // Descending buzz
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(1200, t);
+  osc.frequency.exponentialRampToValueAtTime(150, t + 0.25);
+  gain.gain.setValueAtTime(0.15, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  osc.connect(gain); gain.connect(masterGain);
+  osc.start(); osc.stop(t + 0.3);
+}
+
 // ─── Music Engine (step sequencer, same arch as BEAM) ───────
 
 let musicInterval: ReturnType<typeof setInterval> | null = null;
@@ -376,6 +541,8 @@ function generatePlatformGap(index: number): { gapAngle: number; gapSize: number
 
 // ─── Game Types ─────────────────────────────────────────────
 
+type PowerupType = 'none' | 'fireball' | 'shield' | 'score2x';
+
 interface PlatformData {
   y: number;
   gapAngle: number;
@@ -387,6 +554,10 @@ interface PlatformData {
   stormSize: number;
   hasGlass: boolean;
   glassBroken: boolean;
+  powerup: PowerupType;
+  powerupAngle: number;
+  powerupSize: number;
+  powerupCollected: boolean;
   passed: boolean;
 }
 
@@ -423,6 +594,9 @@ function spawnShards(worldY: number, angle: number, rotation: number, count = 20
   if (shards.length > MAX_SHARDS) shards = shards.slice(-MAX_SHARDS);
 }
 
+const GAME_DURATION = 60;  // seconds
+const GAME_FRAMES = GAME_DURATION * 60;  // at 60fps
+
 interface GameState {
   ballY: number;
   ballVY: number;
@@ -433,6 +607,10 @@ interface GameState {
   combo: number;
   glassChain: number;
   glassBreakTimer: number;
+  fireballTimer: number;  // frames remaining (5 sec = 300 frames)
+  hasShield: boolean;
+  score2xTimer: number;   // frames remaining (8 sec = 480 frames)
+  timeLeft: number;       // frames remaining
   gameOver: boolean;
   started: boolean;
 }
@@ -482,19 +660,22 @@ function createArcGeo(innerR: number, outerR: number, thetaStart: number, thetaL
 const norm2PI = (a: number) => ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
 
 function Platform({
-  y, gapAngle, gapSize, secondGapAngle, secondGapSize, hasStorm, stormAngle, stormSize, rotation, colorIndex, hasGlass, glassBroken
+  y, gapAngle, gapSize, secondGapAngle, secondGapSize, hasStorm, stormAngle, stormSize,
+  rotation, colorIndex, hasGlass, glassBroken,
+  powerup, powerupAngle, powerupSize, powerupCollected,
 }: {
   y: number; gapAngle: number; gapSize: number;
   secondGapAngle: number; secondGapSize: number;
   hasStorm: boolean; stormAngle: number; stormSize: number;
   rotation: number; colorIndex: number; hasGlass: boolean; glassBroken: boolean;
+  powerup: PowerupType; powerupAngle: number; powerupSize: number; powerupCollected: boolean;
 }) {
   const platformColor = PLATFORM_COLORS[((colorIndex % PLATFORM_COLORS.length) + PLATFORM_COLORS.length) % PLATFORM_COLORS.length];
   const arcs = useMemo(() => {
     const innerR = TOWER_RADIUS;
     const outerR = PLATFORM_OUTER_RADIUS;
 
-    type Arc = { geo: THREE.BufferGeometry; kind: 'solid' | 'storm' | 'glass' };
+    type Arc = { geo: THREE.BufferGeometry; kind: 'solid' | 'storm' | 'glass' | 'powerup' };
     const result: Arc[] = [];
 
     if (hasGlass && secondGapSize > 0.01) {
@@ -521,16 +702,14 @@ function Platform({
       // Glass fills the ENTIRE primary gap
       result.push({ geo: createArcGeo(innerR, outerR, norm2PI(gapAngle - gapSize / 2), gapSize, PLATFORM_THICKNESS), kind: 'glass' });
     } else {
-      // Single-gap platform (no glass, or glass without escape — shouldn't happen)
+      // Single-gap platform
       const solidStart = gapAngle + gapSize / 2;
       const solidLength = Math.PI * 2 - gapSize;
 
-      if (!hasStorm || stormSize < 0.01) {
-        result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
-      } else {
+      if (hasStorm && stormSize > 0.01) {
+        // Split solid around storm zone
         const off0 = norm2PI((stormAngle - stormSize / 2) - solidStart);
         const off1 = norm2PI((stormAngle + stormSize / 2) - solidStart);
-
         if (off0 >= solidLength && off1 >= solidLength) {
           result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
         } else if (off0 < off1 && off1 <= solidLength) {
@@ -542,11 +721,29 @@ function Platform({
         } else {
           result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
         }
+      } else if (powerup !== 'none' && powerupSize > 0.01) {
+        // Split solid around powerup zone
+        const off0 = norm2PI((powerupAngle - powerupSize / 2) - solidStart);
+        const off1 = norm2PI((powerupAngle + powerupSize / 2) - solidStart);
+        if (off0 >= solidLength && off1 >= solidLength) {
+          result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
+        } else if (off0 < off1 && off1 <= solidLength) {
+          if (off0 > 0.02)
+            result.push({ geo: createArcGeo(innerR, outerR, solidStart, off0, PLATFORM_THICKNESS), kind: 'solid' });
+          result.push({ geo: createArcGeo(innerR, outerR, solidStart + off0, off1 - off0, PLATFORM_THICKNESS), kind: 'powerup' });
+          if (solidLength - off1 > 0.02)
+            result.push({ geo: createArcGeo(innerR, outerR, solidStart + off1, solidLength - off1, PLATFORM_THICKNESS), kind: 'solid' });
+        } else {
+          result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
+        }
+      } else {
+        // Plain solid
+        result.push({ geo: createArcGeo(innerR, outerR, solidStart, solidLength, PLATFORM_THICKNESS), kind: 'solid' });
       }
     }
 
     return result;
-  }, [gapAngle, gapSize, secondGapAngle, secondGapSize, hasStorm, stormAngle, stormSize, hasGlass]);
+  }, [gapAngle, gapSize, secondGapAngle, secondGapSize, hasStorm, stormAngle, stormSize, hasGlass, powerup, powerupAngle, powerupSize]);
 
   useEffect(() => {
     return () => { arcs.forEach(a => a.geo.dispose()); };
@@ -556,50 +753,166 @@ function Platform({
     <group position={[0, y, 0]} rotation={[0, rotation, 0]}>
       {arcs.map((a, i) => {
         if (a.kind === 'glass' && glassBroken) return null;
+        const pColor = powerup === 'fireball' ? '#FFD700' : powerup === 'shield' ? '#00E5FF' : '#69DB7C';
         return (
-          <mesh key={i} geometry={a.geo}>
-            {a.kind === 'glass' ? (
-              <meshStandardMaterial
-                color="#d4d4d4"
-                emissive="#ffffff"
-                emissiveIntensity={0.15}
-                transparent
-                opacity={0.75}
-                roughness={0.1}
-                metalness={0.4}
-              />
-            ) : (
-              <meshStandardMaterial
-                color={a.kind === 'storm' ? '#2d2d2d' : platformColor}
-                emissive={a.kind === 'storm' ? '#ff3333' : platformColor}
-                emissiveIntensity={a.kind === 'storm' ? 0.4 : 0.1}
-                roughness={a.kind === 'storm' ? 0.8 : 0.4}
-                metalness={0.0}
-              />
+          <group key={i}>
+            <mesh geometry={a.geo}>
+              {a.kind === 'glass' ? (
+                <meshStandardMaterial
+                  color="#d4d4d4"
+                  emissive="#ffffff"
+                  emissiveIntensity={0.15}
+                  transparent
+                  opacity={0.75}
+                  roughness={0.1}
+                  metalness={0.4}
+                />
+              ) : a.kind === 'powerup' ? (
+                <meshStandardMaterial
+                  color={powerupCollected ? platformColor : pColor}
+                  emissive={powerupCollected ? platformColor : pColor}
+                  emissiveIntensity={powerupCollected ? 0.1 : 0.5}
+                  roughness={powerupCollected ? 0.4 : 0.15}
+                  metalness={powerupCollected ? 0.0 : 0.3}
+                />
+              ) : a.kind === 'storm' ? (
+                <meshStandardMaterial
+                  color="#0d0d0d"
+                  emissive="#CC1100"
+                  emissiveIntensity={0.7}
+                  roughness={0.15}
+                  metalness={0.7}
+                  toneMapped={false}
+                />
+              ) : (
+                <meshStandardMaterial
+                  color={platformColor}
+                  emissive={platformColor}
+                  emissiveIntensity={0.1}
+                  roughness={0.4}
+                  metalness={0.0}
+                />
+              )}
+            </mesh>
+            {/* Storm: hot glow layer — translucent red on top for molten lava look */}
+            {a.kind === 'storm' && (
+              <>
+                <mesh geometry={a.geo}>
+                  <meshStandardMaterial
+                    color="#FF2200"
+                    emissive="#FF4400"
+                    emissiveIntensity={0.5}
+                    transparent
+                    opacity={0.18}
+                    toneMapped={false}
+                    depthWrite={false}
+                  />
+                </mesh>
+                <mesh geometry={a.geo} position={[0, PLATFORM_THICKNESS * 0.51, 0]}>
+                  <meshStandardMaterial
+                    color="#FF0000"
+                    emissive="#FF3300"
+                    emissiveIntensity={1.0}
+                    transparent
+                    opacity={0.12}
+                    toneMapped={false}
+                    depthWrite={false}
+                  />
+                </mesh>
+              </>
             )}
-          </mesh>
+          </group>
         );
       })}
     </group>
   );
 }
 
-function Ball({ y, isPower }: { y: number; isPower: boolean }) {
+function Ball({ y, isFireball, hasShield, isScore2x }: {
+  y: number; isFireball: boolean; hasShield: boolean; isScore2x: boolean;
+}) {
   const x = (TOWER_RADIUS + PLATFORM_OUTER_RADIUS) / 2;
+  const shieldRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
+
+  // Animate shield pulse and score2x glow
+  useFrame(({ clock }) => {
+    if (shieldRef.current) {
+      const pulse = 1.5 + Math.sin(clock.elapsedTime * 6) * 0.15;
+      shieldRef.current.scale.setScalar(pulse);
+      (shieldRef.current.material as THREE.MeshStandardMaterial).opacity =
+        0.2 + Math.sin(clock.elapsedTime * 8) * 0.08;
+    }
+    if (glowRef.current) {
+      const pulse = 1.0 + Math.sin(clock.elapsedTime * 4) * 0.1;
+      glowRef.current.scale.setScalar(pulse);
+    }
+  });
+
+  const ballColor = isFireball ? '#FFD700' : isScore2x ? '#69DB7C' : hasShield ? '#66FFEE' : '#FF2244';
+  const emissiveColor = isFireball ? '#FF6600' : isScore2x ? '#22CC55' : hasShield ? '#00CCB8' : '#FF2244';
+  const intensity = isFireball ? 1.2 : isScore2x ? 0.7 : hasShield ? 0.5 : 0.08;
   return (
     <group position={[x, y, 0]}>
       <mesh>
         <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
         <meshStandardMaterial
-          color={isPower ? '#FFD700' : '#FF2244'}
-          emissive={isPower ? '#FF8800' : '#FF2244'}
-          emissiveIntensity={isPower ? 0.5 : 0.08}
-          roughness={isPower ? 0.0 : 0.15}
-          metalness={isPower ? 0.6 : 0.1}
+          color={ballColor}
+          emissive={emissiveColor}
+          emissiveIntensity={intensity}
+          roughness={isFireball ? 0.0 : isScore2x ? 0.05 : hasShield ? 0.0 : 0.15}
+          metalness={isFireball ? 0.8 : isScore2x ? 0.3 : hasShield ? 0.6 : 0.1}
+          toneMapped={!(isFireball || isScore2x || hasShield)}
         />
       </mesh>
-      {isPower && (
-        <pointLight color="#FF8800" intensity={1.5} distance={4} />
+      {/* Fireball: double point lights + glow shell */}
+      {isFireball && (
+        <>
+          <pointLight color="#FF6600" intensity={3} distance={6} />
+          <pointLight color="#FFD700" intensity={1.5} distance={3} />
+          <mesh>
+            <sphereGeometry args={[BALL_RADIUS * 2.2, 16, 16]} />
+            <meshStandardMaterial
+              color="#FF8800" emissive="#FF6600" emissiveIntensity={0.8}
+              transparent opacity={0.15} toneMapped={false}
+            />
+          </mesh>
+        </>
+      )}
+      {/* Shield: pulsing electric bubble + hexagon wireframe + cyan light */}
+      {hasShield && (
+        <>
+          <pointLight color="#00E5FF" intensity={2} distance={5} />
+          <mesh ref={shieldRef}>
+            <sphereGeometry args={[BALL_RADIUS * 1.6, 8, 6]} />
+            <meshStandardMaterial
+              color="#00E5FF" emissive="#00E5FF" emissiveIntensity={0.6}
+              transparent opacity={0.2} roughness={0.0} metalness={0.8}
+              toneMapped={false} wireframe
+            />
+          </mesh>
+          {/* Inner solid glow */}
+          <mesh>
+            <sphereGeometry args={[BALL_RADIUS * 1.5, 16, 16]} />
+            <meshStandardMaterial
+              color="#00E5FF" emissive="#00E5FF" emissiveIntensity={0.3}
+              transparent opacity={0.1} toneMapped={false}
+            />
+          </mesh>
+        </>
+      )}
+      {/* Score2x: green glow shell + sparkle light */}
+      {isScore2x && (
+        <>
+          <pointLight color="#69DB7C" intensity={2} distance={5} />
+          <mesh ref={glowRef}>
+            <sphereGeometry args={[BALL_RADIUS * 2.0, 16, 16]} />
+            <meshStandardMaterial
+              color="#69DB7C" emissive="#22CC55" emissiveIntensity={0.6}
+              transparent opacity={0.12} toneMapped={false}
+            />
+          </mesh>
+        </>
       )}
     </group>
   );
@@ -705,10 +1018,12 @@ function GlassShards() {
 
 function GameScene({
   onGameOver,
-  onScoreUpdate
+  onScoreUpdate,
+  onPowerup
 }: {
   onGameOver: (score: number) => void;
-  onScoreUpdate: (score: number, combo: number) => void;
+  onScoreUpdate: (score: number, combo: number, timeLeft: number) => void;
+  onPowerup?: (type: PowerupType) => void;
 }) {
   const { camera } = useThree();
   const gameState = useRef<GameState>({
@@ -721,6 +1036,10 @@ function GameScene({
     combo: 0,
     glassChain: 0,
     glassBreakTimer: 0,
+    fireballTimer: 0,
+    hasShield: false,
+    score2xTimer: 0,
+    timeLeft: GAME_FRAMES,
     gameOver: false,
     started: false,
   });
@@ -747,13 +1066,17 @@ function GameScene({
       stormSize: 0,
       hasGlass: false,
       glassBroken: false,
+      powerup: 'none',
+      powerupAngle: 0,
+      powerupSize: 0,
+      powerupCollected: false,
       passed: false,
     });
     for (let i = 1; i < PLATFORM_COUNT; i++) {
       const { gapAngle, gapSize } = generatePlatformGap(i);
       const inChute = genRunRemaining > 0;
-      // Storms ramp: 15% early → 50% late
-      const stormChance = Math.min(0.15 + i * 0.008, 0.5);
+      // Storms ramp: 15% early → 70% late, aggressive ramp
+      const stormChance = Math.min(0.15 + i * 0.012, 0.7);
       const hasStorm = !inChute && i > 3 && Math.random() < stormChance;
       // Glass ramp: 25% early → 45% late
       const glassChance = Math.min(0.25 + i * 0.005, 0.45);
@@ -766,7 +1089,7 @@ function GameScene({
       let stormAngle = 0;
       let stormSize = 0;
       if (hasStorm) {
-        stormSize = 0.8 + Math.random() * 0.4;
+        stormSize = 1.0 + Math.random() * 0.6;
         const margin = (prevGap.gapSize + stormSize) / 2 + 0.3;
         for (let attempt = 0; attempt < 20; attempt++) {
           stormAngle = Math.random() * Math.PI * 2;
@@ -775,6 +1098,18 @@ function GameScene({
           if (d > margin) break;
         }
       }
+      // Powerups: ~10% on plain platforms (no storm, no glass), starting from level 5
+      const hasPowerup = !hasStorm && !hasGlass && i > 5 && Math.random() < 0.18;
+      // Fireball weighted 50%, shield 25%, score2x 25%
+      const pickPowerup = (): PowerupType => {
+        const r = Math.random();
+        if (r < 0.5) return 'fireball';
+        if (r < 0.75) return 'shield';
+        return 'score2x';
+      };
+      const powerupType: PowerupType = hasPowerup ? pickPowerup() : 'none';
+      const powerupAngle = hasPowerup ? norm2PI(gapAngle + Math.PI + (Math.random() - 0.5) * 2.0) : 0;
+      const powerupSize = hasPowerup ? 0.6 : 0;
       platforms.push({
         y: -i * PLATFORM_SPACING,
         gapAngle,
@@ -786,6 +1121,10 @@ function GameScene({
         stormSize,
         hasGlass,
         glassBroken: false,
+        powerup: powerupType,
+        powerupAngle,
+        powerupSize,
+        powerupCollected: false,
         passed: false,
       });
     }
@@ -797,6 +1136,10 @@ function GameScene({
     gameState.current.combo = 0;
     gameState.current.glassChain = 0;
     gameState.current.glassBreakTimer = 0;
+    gameState.current.fireballTimer = 0;
+    gameState.current.hasShield = false;
+    gameState.current.score2xTimer = 0;
+    gameState.current.timeLeft = GAME_FRAMES;
     gameState.current.gameOver = false;
     gameState.current.started = false;
 
@@ -865,6 +1208,21 @@ function GameScene({
     if (d > Math.PI) d = Math.PI * 2 - d;
     return d < p.stormSize / 2;
   };
+  const checkPowerup = (angle: number, p: PlatformData) => {
+    if (p.powerup === 'none' || p.powerupCollected) return false;
+    let d = Math.abs(angle - p.powerupAngle);
+    if (d > Math.PI) d = Math.PI * 2 - d;
+    return d < p.powerupSize / 2;
+  };
+  const collectPowerup = (p: PlatformData) => {
+    p.powerupCollected = true;
+    playPowerupCollect(p.powerup);
+    const s = gameState.current;
+    if (p.powerup === 'fireball') s.fireballTimer = 300;      // 5 seconds
+    else if (p.powerup === 'shield') s.hasShield = true;
+    else if (p.powerup === 'score2x') s.score2xTimer = 480;   // 8 seconds
+    onPowerup?.(p.powerup);
+  };
 
   // Game loop — Helix Jump style: ball always bounces, power ball on long drops
   useFrame(() => {
@@ -872,6 +1230,26 @@ function GameScene({
     if (gs.gameOver) return;
 
     musicScore = gs.score;
+
+    // Powerup timers
+    if (gs.fireballTimer > 0) gs.fireballTimer--;
+    if (gs.score2xTimer > 0) gs.score2xTimer--;
+    const scoreMult = gs.score2xTimer > 0 ? 2 : 1;
+
+    // Countdown timer
+    if (gs.started && gs.timeLeft > 0) {
+      gs.timeLeft--;
+      // Push time to HUD every ~6 frames (10x/sec) or on last frame
+      if (gs.timeLeft % 6 === 0 || gs.timeLeft === 0) {
+        onScoreUpdate(gs.score, gs.combo, Math.ceil(gs.timeLeft / 60));
+      }
+      if (gs.timeLeft <= 0) {
+        gs.gameOver = true;
+        stopMusic();
+        onGameOver(gs.score);
+        return;
+      }
+    }
 
     // Rotation always active
     gs.rotation += gs.rotationVel;
@@ -891,8 +1269,8 @@ function GameScene({
             }
           }
           gs.combo++;
-          gs.score += gs.combo * 2; // Double reward for risky freefall (Key #1)
-          onScoreUpdate(gs.score, gs.combo);
+          gs.score += gs.combo * 2 * scoreMult;
+          onScoreUpdate(gs.score, gs.combo, Math.ceil(gs.timeLeft / 60));
           playFallThrough(gs.combo);
           gs.ballVY = -0.02; // Resume falling
         }
@@ -909,26 +1287,32 @@ function GameScene({
               const inSecondGap = checkSecondGap(ballAngle, platform);
               if (inPrimaryGap || inSecondGap) {
                 if (inPrimaryGap && platform.hasGlass && !platform.glassBroken) {
-                  // Over intact glass — solid when resting
                   gs.ballY = platformTop + BALL_RADIUS;
                 } else {
-                  // Open gap (primary broken/no glass, or escape gap) — fall through
                   platform.passed = true;
                   gs.glassChain = 0;
                   gs.combo++;
-                  gs.score += gs.combo * 2; // Greed rewarded (Key #1)
-                  onScoreUpdate(gs.score, gs.combo);
+                  gs.score += gs.combo * 2 * scoreMult;
+                  onScoreUpdate(gs.score, gs.combo, Math.ceil(gs.timeLeft / 60));
                   playFallThrough(gs.combo);
                   gs.ballVY = -0.01;
                 }
               } else if (checkStorm(ballAngle, platform)) {
-                gs.gameOver = true;
-                stopMusic();
-                playThunder();
-                onGameOver(gs.score);
-                return;
+                if (gs.hasShield) {
+                  gs.hasShield = false;
+                  playShieldBreak();
+                  gs.ballY = platformTop + BALL_RADIUS;
+                } else {
+                  gs.gameOver = true;
+                  stopMusic();
+                  playThunder();
+                  onGameOver(gs.score);
+                  return;
+                }
               } else {
                 gs.ballY = platformTop + BALL_RADIUS;
+                // Check powerup collection while resting
+                if (checkPowerup(ballAngle, platform)) collectPowerup(platform);
               }
               break;
             }
@@ -960,7 +1344,6 @@ function GameScene({
           }
 
           if (gs.ballVY !== 0) {
-            const isPower = gs.ballVY < -POWER_VELOCITY;
             gs.ballVY -= GRAVITY;
             gs.ballVY = Math.max(gs.ballVY, -MAX_FALL_SPEED);
 
@@ -976,25 +1359,26 @@ function GameScene({
                 if (prevY - BALL_RADIUS > platformTop && gs.ballY - BALL_RADIUS <= platformTop) {
                   const inPrimaryGap = checkGap(ballAngle, platform);
                   const inSecondGap = checkSecondGap(ballAngle, platform);
+                  const isFireball = gs.fireballTimer > 0;
 
                   if (inPrimaryGap || inSecondGap) {
                     if (inPrimaryGap && platform.hasGlass && !platform.glassBroken) {
                       // Falling onto intact glass — SHATTER
-                      if (isPower) {
+                      if (isFireball) {
                         platform.glassBroken = true;
                         platform.passed = true;
                         gs.glassChain++;
-                        gs.score += 5 * gs.glassChain;
+                        gs.score += 15 * gs.glassChain * scoreMult;
                         gs.combo++;
-                        onScoreUpdate(gs.score, gs.combo);
-                        playGlassShatter(gs.glassChain);
-                        spawnShards(platform.y, platform.gapAngle, gs.rotation, 25);
+                        onScoreUpdate(gs.score, gs.combo, Math.ceil(gs.timeLeft / 60));
+                        playFireballSmash();
+                        spawnShards(platform.y, platform.gapAngle, gs.rotation, 35);
                         gs.ballVY *= 0.85;
                       } else {
                         platform.glassBroken = true;
                         gs.glassChain++;
-                        gs.score += 3 * gs.glassChain;
-                        onScoreUpdate(gs.score, gs.combo);
+                        gs.score += 3 * gs.glassChain * scoreMult;
+                        onScoreUpdate(gs.score, gs.combo, Math.ceil(gs.timeLeft / 60));
                         playGlassShatter(gs.glassChain);
                         spawnShards(platform.y, platform.gapAngle, gs.rotation, 20);
                         gs.ballY = platformTop + BALL_RADIUS;
@@ -1003,23 +1387,32 @@ function GameScene({
                         break;
                       }
                     } else {
-                      // Fall through open gap (escape gap, or broken glass primary)
+                      // Fall through open gap
                       platform.passed = true;
                       gs.glassChain = 0;
                       gs.combo++;
-                      gs.score += gs.combo * 2; // Greed rewarded (Key #1)
-                      onScoreUpdate(gs.score, gs.combo);
+                      gs.score += gs.combo * 2 * scoreMult;
+                      onScoreUpdate(gs.score, gs.combo, Math.ceil(gs.timeLeft / 60));
                       playFallThrough(gs.combo);
                     }
                   } else if (checkStorm(ballAngle, platform)) {
-                    if (isPower) {
+                    if (isFireball) {
+                      // Fireball smashes through storms — BIG reward
                       platform.passed = true;
-                      gs.score += 5;
+                      gs.score += 30 * scoreMult;
                       gs.combo++;
-                      onScoreUpdate(gs.score, gs.combo);
-                      playSmash();
-                      spawnShards(platform.y, ballAngle, gs.rotation, 25);
-                      gs.ballVY *= 0.6;
+                      onScoreUpdate(gs.score, gs.combo, Math.ceil(gs.timeLeft / 60));
+                      playFireballSmash();
+                      spawnShards(platform.y, ballAngle, gs.rotation, 40);
+                      gs.ballVY *= 0.7;
+                    } else if (gs.hasShield) {
+                      // Shield absorbs storm — bounce off safely
+                      gs.hasShield = false;
+                      playShieldBreak();
+                      gs.ballY = platformTop + BALL_RADIUS;
+                      gs.ballVY = Math.abs(gs.ballVY) * BOUNCE_DAMPING;
+                      gs.combo = 0;
+                      break;
                     } else {
                       gs.gameOver = true;
                       stopMusic();
@@ -1028,30 +1421,32 @@ function GameScene({
                       return;
                     }
                   } else {
-                    // Solid platform — damped bounce or rest
-                    if (isPower) {
+                    // Solid platform
+                    if (isFireball) {
+                      // Fireball smashes through solid — big reward
                       platform.passed = true;
-                      gs.score += 3;
+                      gs.score += 20 * scoreMult;
                       gs.combo++;
-                      onScoreUpdate(gs.score, gs.combo);
-                      playSmash();
-                      spawnShards(platform.y, ballAngle, gs.rotation, 15);
-                      gs.ballVY *= 0.5;
+                      onScoreUpdate(gs.score, gs.combo, Math.ceil(gs.timeLeft / 60));
+                      playFireballSmash();
+                      spawnShards(platform.y, ballAngle, gs.rotation, 30);
+                      gs.ballVY *= 0.7;
                     } else {
+                      // Normal bounce
                       gs.ballY = platformTop + BALL_RADIUS;
                       const bounceSpeed = Math.abs(gs.ballVY) * BOUNCE_DAMPING;
                       if (bounceSpeed < MIN_BOUNCE) {
-                        // Too weak to bounce — rest
                         gs.ballVY = 0;
                       } else {
-                        // Diminishing bounce
                         gs.ballVY = bounceSpeed;
                       }
                       gs.combo = 0;
                       gs.glassChain = 0;
-                      gs.score += 1;
-                      onScoreUpdate(gs.score, gs.combo);
+                      gs.score += 1 * scoreMult;
+                      onScoreUpdate(gs.score, gs.combo, Math.ceil(gs.timeLeft / 60));
                       playBounce(gs.score);
+                      // Collect powerup on bounce landing
+                      if (checkPowerup(ballAngle, platform)) collectPowerup(platform);
                       break;
                     }
                   }
@@ -1072,10 +1467,9 @@ function GameScene({
     }
     camera.lookAt(0, camera.position.y - 3, 0);
 
-    // Screen shake during power mode — amplifies the rush (Key #5)
-    const isPowerNow = gs.ballVY < -POWER_VELOCITY;
-    if (isPowerNow) {
-      const intensity = Math.min((-gs.ballVY - POWER_VELOCITY) * 0.8, 0.12);
+    // Screen shake during fireball — amplifies the rush (Key #5)
+    if (gs.fireballTimer > 0) {
+      const intensity = 0.08;
       camera.position.x += (Math.random() - 0.5) * intensity;
       camera.position.z += (Math.random() - 0.5) * intensity;
     }
@@ -1087,18 +1481,18 @@ function GameScene({
       const { gapAngle, gapSize } = generatePlatformGap(gs.platforms.length);
       const inChute = genRunRemaining > 0;
       const depth = genTotalPlatforms;
-      const stormChance = Math.min(0.15 + depth * 0.006, 0.55);
+      const stormChance = Math.min(0.15 + depth * 0.01, 0.75);
       const hasStorm = !inChute && Math.random() < stormChance;
       const glassChance = Math.min(0.25 + depth * 0.004, 0.5);
       const hasGlass = !hasStorm && Math.random() < glassChance;
-      const stormGrowth = Math.min(depth * 0.005, 0.3);
+      const stormGrowth = Math.min(depth * 0.008, 0.45);
       const secAngle = hasGlass ? norm2PI(gapAngle + Math.PI + (Math.random() - 0.5) * 1.0) : 0;
       const secSize = hasGlass ? gapSize * 0.65 : 0;
       // Storm must NOT overlap the gap of the platform above (unfair death)
       let dynStormAngle = 0;
       let dynStormSize = 0;
       if (hasStorm) {
-        dynStormSize = 0.6 + Math.random() * 0.4 + stormGrowth;
+        dynStormSize = 0.8 + Math.random() * 0.6 + stormGrowth;
         const prevGap = lowestPlatform;
         const margin = (prevGap.gapSize + dynStormSize) / 2 + 0.3;
         for (let attempt = 0; attempt < 20; attempt++) {
@@ -1108,6 +1502,16 @@ function GameScene({
           if (d > margin) break;
         }
       }
+      // Powerups: ~10% on plain platforms (no storm, no glass)
+      const hasPup = !hasStorm && !hasGlass && Math.random() < 0.18;
+      // Fireball weighted 50%, shield 25%, score2x 25%
+      const pickPup = (): PowerupType => {
+        const r = Math.random();
+        if (r < 0.5) return 'fireball';
+        if (r < 0.75) return 'shield';
+        return 'score2x';
+      };
+      const pupType: PowerupType = hasPup ? pickPup() : 'none';
       gs.platforms.push({
         y: newY,
         gapAngle,
@@ -1119,6 +1523,10 @@ function GameScene({
         stormSize: dynStormSize,
         hasGlass,
         glassBroken: false,
+        powerup: pupType,
+        powerupAngle: hasPup ? norm2PI(gapAngle + Math.PI + (Math.random() - 0.5) * 2.0) : 0,
+        powerupSize: hasPup ? 0.6 : 0,
+        powerupCollected: false,
         passed: false,
       });
     }
@@ -1153,10 +1561,19 @@ function GameScene({
           colorIndex={i}
           hasGlass={p.hasGlass}
           glassBroken={p.glassBroken}
+          powerup={p.powerup}
+          powerupAngle={p.powerupAngle}
+          powerupSize={p.powerupSize}
+          powerupCollected={p.powerupCollected}
         />
       ))}
 
-      <Ball y={gs.ballY} isPower={gs.ballVY < -POWER_VELOCITY} />
+      <Ball
+        y={gs.ballY}
+        isFireball={gs.fireballTimer > 0}
+        hasShield={gs.hasShield}
+        isScore2x={gs.score2xTimer > 0}
+      />
       <GlassShards />
       <BackgroundParticles ballY={gs.ballY} />
 
@@ -1166,18 +1583,43 @@ function GameScene({
   );
 }
 
+const POWERUP_LABELS: Record<PowerupType, string> = {
+  fireball: 'FIREBALL',
+  shield: 'SHIELD',
+  score2x: 'DOUBLE',
+  none: '',
+};
+const POWERUP_SUBLABELS: Record<PowerupType, string> = {
+  fireball: 'SMASH EVERYTHING',
+  shield: 'ONE FREE HIT',
+  score2x: 'ALL POINTS 2X',
+  none: '',
+};
+
 export default function Game3D({
   onGameOver,
   onScoreUpdate
 }: {
   onGameOver: (score: number) => void;
-  onScoreUpdate: (score: number, combo: number) => void;
+  onScoreUpdate: (score: number, combo: number, timeLeft: number) => void;
 }) {
   const [mounted, setMounted] = useState(false);
+  const [flash, setFlash] = useState<{ type: PowerupType; key: number } | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handlePowerup = useCallback((type: PowerupType) => {
+    setFlash({ type, key: Date.now() });
+  }, []);
+
+  // Clear flash after animation
+  useEffect(() => {
+    if (!flash) return;
+    const t = setTimeout(() => setFlash(null), 1200);
+    return () => clearTimeout(t);
+  }, [flash]);
 
   if (!mounted) {
     return <div style={{ position: 'absolute', inset: 0, background: '#87CEEB' }} />;
@@ -1189,8 +1631,91 @@ export default function Game3D({
         camera={{ position: [6, 5, 6], fov: 50 }}
         style={{ touchAction: 'none' }}
       >
-        <GameScene onGameOver={onGameOver} onScoreUpdate={onScoreUpdate} />
+        <GameScene onGameOver={onGameOver} onScoreUpdate={onScoreUpdate} onPowerup={handlePowerup} />
       </Canvas>
+
+      {/* Powerup flash overlay */}
+      {flash && (
+        <div
+          key={flash.key}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+            zIndex: 20,
+            animation: `pupFlash-${flash.type} 1.2s ease-out forwards`,
+          }}
+        >
+          <div style={{
+            fontSize: 80,
+            fontWeight: 900,
+            fontFamily: '"SF Pro Rounded", "Nunito", system-ui, sans-serif',
+            color: '#ffffff',
+            letterSpacing: '8px',
+            lineHeight: 1,
+            animation: 'pupTextSlam 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            textShadow: flash.type === 'fireball'
+              ? '0 0 30px #FF6600, 0 0 60px #FF4400, 0 0 120px #CC3300, 0 6px 0 #993300'
+              : flash.type === 'shield'
+              ? '0 0 30px #00E5FF, 0 0 60px #0088FF, 0 0 120px #0044CC, 0 6px 0 #003388'
+              : '0 0 30px #69DB7C, 0 0 60px #22CC55, 0 0 120px #00AA33, 0 6px 0 #006622',
+            WebkitTextStroke: flash.type === 'fireball' ? '2px #FF8800' : flash.type === 'shield' ? '2px #44DDFF' : '2px #88FFAA',
+          }}>
+            {POWERUP_LABELS[flash.type]}
+          </div>
+          <div style={{
+            fontSize: 16,
+            fontWeight: 800,
+            fontFamily: '"SF Pro Rounded", "Nunito", system-ui, sans-serif',
+            color: flash.type === 'fireball' ? '#FFD700' : flash.type === 'shield' ? '#88EEFF' : '#AAFFCC',
+            letterSpacing: '6px',
+            marginTop: 8,
+            animation: 'pupSubText 1.2s ease-out forwards',
+          }}>
+            {POWERUP_SUBLABELS[flash.type]}
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes pupFlash-fireball {
+          0% { background: rgba(255,140,0,0.5); }
+          8% { background: rgba(255,255,200,0.6); }
+          25% { background: rgba(255,100,0,0.15); }
+          100% { background: transparent; }
+        }
+        @keyframes pupFlash-shield {
+          0% { background: rgba(0,200,255,0.5); }
+          8% { background: rgba(200,255,255,0.6); }
+          25% { background: rgba(0,140,255,0.15); }
+          100% { background: transparent; }
+        }
+        @keyframes pupFlash-score2x {
+          0% { background: rgba(100,220,120,0.5); }
+          8% { background: rgba(200,255,200,0.6); }
+          25% { background: rgba(50,200,80,0.15); }
+          100% { background: transparent; }
+        }
+        @keyframes pupTextSlam {
+          0% { opacity: 0; transform: scale(3) translateY(10px); }
+          12% { opacity: 1; transform: scale(0.9) translateY(-5px); }
+          20% { transform: scale(1.05) translateY(0); }
+          30% { transform: scale(1.0) translateY(0); }
+          75% { opacity: 1; transform: scale(1.0) translateY(0); }
+          100% { opacity: 0; transform: scale(0.95) translateY(-20px); }
+        }
+        @keyframes pupSubText {
+          0% { opacity: 0; transform: translateY(15px); }
+          20% { opacity: 0; transform: translateY(15px); }
+          35% { opacity: 1; transform: translateY(0); }
+          75% { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(-10px); }
+        }
+      `}</style>
     </div>
   );
 }
