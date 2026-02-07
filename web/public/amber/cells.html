@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>CELLS — Touch to activate. Watch them communicate.</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="CELLS" />
+  <meta property="og:description" content="Touch to activate. Watch them communicate." />
+  <meta property="og:image" content="https://intheamber.com/amber/cells-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/cells.html" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@intheamber" />
+  <meta name="twitter:title" content="CELLS" />
+  <meta name="twitter:description" content="Touch to activate. Watch them communicate." />
+  <meta name="twitter:image" content="https://intheamber.com/amber/cells-og.png" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', 'Courier New', monospace;
+      overflow: hidden;
+      touch-action: none;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      padding: 20px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .cell {
+      aspect-ratio: 1;
+      background: #0D0D0D;
+      border: 1px solid #333;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #666;
+    }
+
+    .cell.active {
+      background: radial-gradient(circle at center, #D4A574 0%, #0D0D0D 70%);
+      border-color: #D4A574;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+    }
+
+    .cell.pulsing {
+      animation: pulse 0.3s ease;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    .connection {
+      position: absolute;
+      background: rgba(212, 165, 116, 0.3);
+      height: 2px;
+      transform-origin: left center;
+      pointer-events: none;
+      animation: fadeOut 1s ease forwards;
+    }
+
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    #controls {
+      margin-top: 30px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    #controls button {
+      background: #0D0D0D;
+      color: #D4A574;
+      border: 1px solid #D4A574;
+      padding: 12px 24px;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    #controls button:hover {
+      background: #D4A574;
+      color: #000;
+    }
+
+    #stats {
+      font-size: 12px;
+      color: #666;
+    }
+
+    #title {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+transform: translateX(-50%);
+      font-size: 18px;
+      letter-spacing: 4px;
+      color: #D4A574;
+    }
+
+    @media (max-width: 600px) {
+      #grid {
+        padding: 10px;
+        gap: 6px;
+      }
+      
+      #title {
+        font-size: 14px;
+        letter-spacing: 2px;
+      }
+
+      #controls {
+        flex-direction: column;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">CELLS</div>
+  
+  <div id="grid"></div>
+  
+  <div id="controls">
+    <button id="clearBtn">CLEAR ALL</button>
+    <div id="stats">
+      <span id="activeCount">0</span> ACTIVE
+    </div>
+  </div>
+
+  <script>
+    // Grid setup
+    const GRID_SIZE = 6;
+    const TOTAL_CELLS = GRID_SIZE * GRID_SIZE;
+    const BASE_FREQ = 220; // A3
+    const SCALE = [0, 2, 3, 5, 7, 8, 10]; // A minor pentatonic intervals
+
+    // Audio context
+    let audioCtx = null;
+    let audioStarted = false;
+
+    // Cell state
+    const cells = [];
+    let activeCells = new Set();
+
+    // Initialize
+    function init() {
+      const grid = document.getElementById('grid');
+      
+      for (let i = 0; i < TOTAL_CELLS; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = i;
+        
+        // Add grid position indicator
+        const row = Math.floor(i / GRID_SIZE);
+        const col = i % GRID_SIZE;
+        
+        cell.addEventListener('click', () => toggleCell(i));
+        
+        grid.appendChild(cell);
+        
+        cells.push({
+          element: cell,
+          index: i,
+          row,
+          col,
+          active: false,
+          osc: null,
+          gain: null,
+          baseFreq: getFrequencyForCell(i),
+          currentFreq: getFrequencyForCell(i),
+          pulseTimer: null
+        });
+      }
+      
+      document.getElementById('clearBtn').addEventListener('click', clearAll);
+      
+      updateStats();
+    }
+
+    // Get frequency for cell position (using pentatonic scale)
+    function getFrequencyForCell(index) {
+      const octaveOffset = Math.floor(index / 7);
+      const scaleIndex = index % 7;
+      const semitones = SCALE[scaleIndex] + (octaveOffset * 12);
+      return BASE_FREQ * Math.pow(2, semitones / 12);
+    }
+
+    // Toggle cell on/off
+    function toggleCell(index) {
+      // Start audio on first interaction
+      if (!audioStarted) {
+        audioCtx = new AudioContext();
+        audioStarted = true;
+      }
+      
+      const cell = cells[index];
+      
+      if (cell.active) {
+        deactivateCell(index);
+      } else {
+        activateCell(index);
+      }
+      
+      updateStats();
+    }
+
+    // Activate a cell
+    function activateCell(index) {
+      const cell = cells[index];
+      if (cell.active) return;
+      
+      cell.active = true;
+      cell.element.classList.add('active');
+      activeCells.add(index);
+      
+      // Create oscillator
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.value = cell.currentFreq;
+      
+      gain.gain.value = 0;
+      gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.05);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start();
+      
+      cell.osc = osc;
+      cell.gain = gain;
+      
+      // Start pulse cycle
+      schedulePulse(index);
+      
+      // Play activation sound
+      playActivationSound(cell.currentFreq);
+    }
+
+    // Deactivate a cell
+    function deactivateCell(index) {
+      const cell = cells[index];
+      if (!cell.active) return;
+      
+      cell.active = false;
+      cell.element.classList.remove('active');
+      activeCells.delete(index);
+      
+      // Stop oscillator
+      if (cell.osc) {
+        cell.gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05);
+        cell.osc.stop(audioCtx.currentTime + 0.05);
+        cell.osc = null;
+        cell.gain = null;
+      }
+      
+      // Clear pulse timer
+      if (cell.pulseTimer) {
+        clearTimeout(cell.pulseTimer);
+        cell.pulseTimer = null;
+      }
+      
+      // Reset frequency
+      cell.currentFreq = cell.baseFreq;
+    }
+
+    // Schedule next pulse from this cell
+    function schedulePulse(index) {
+      const cell = cells[index];
+      if (!cell.active) return;
+      
+      // Random interval between 1-3 seconds
+      const interval = 1000 + Math.random() * 2000;
+      
+      cell.pulseTimer = setTimeout(() => {
+        sendPulse(index);
+        schedulePulse(index); // Schedule next pulse
+      }, interval);
+    }
+
+    // Send pulse to neighbors
+    function sendPulse(index) {
+      const cell = cells[index];
+      if (!cell.active) return;
+      
+      // Visual feedback
+      cell.element.classList.add('pulsing');
+      setTimeout(() => cell.element.classList.remove('pulsing'), 300);
+      
+      // Get neighbors
+      const neighbors = getNeighbors(index);
+      
+      // Send to active neighbors
+      neighbors.forEach(neighborIndex => {
+        const neighbor = cells[neighborIndex];
+        if (neighbor.active) {
+          receivePulse(neighborIndex, cell.row, cell.col);
+          drawConnection(index, neighborIndex);
+        }
+      });
+    }
+
+    // Receive pulse and modulate frequency
+    function receivePulse(index, sourceRow, sourceCol) {
+      const cell = cells[index];
+      if (!cell.active || !cell.osc) return;
+      
+      // Shift frequency slightly (±1 semitone)
+      const shift = (Math.random() - 0.5) * 0.1; // ±10% frequency change
+      cell.currentFreq = Math.max(100, Math.min(2000, cell.currentFreq * (1 + shift)));
+      
+      // Apply frequency change
+      cell.osc.frequency.linearRampToValueAtTime(cell.currentFreq, audioCtx.currentTime + 0.2);
+      
+      // Visual feedback
+      cell.element.classList.add('pulsing');
+      setTimeout(() => cell.element.classList.remove('pulsing'), 300);
+    }
+
+    // Get neighbors (4-way)
+    function getNeighbors(index) {
+      const row = cells[index].row;
+      const col = cells[index].col;
+      const neighbors = [];
+      
+      // Up
+      if (row > 0) neighbors.push(index - GRID_SIZE);
+      // Down
+      if (row < GRID_SIZE - 1) neighbors.push(index + GRID_SIZE);
+      // Left
+      if (col > 0) neighbors.push(index - 1);
+      // Right
+      if (col < GRID_SIZE - 1) neighbors.push(index + 1);
+      
+      return neighbors;
+    }
+
+    // Draw connection line between cells
+    function drawConnection(fromIndex, toIndex) {
+      const fromCell = cells[fromIndex].element;
+      const toCell = cells[toIndex].element;
+      
+      const fromRect = fromCell.getBoundingClientRect();
+      const toRect = toCell.getBoundingClientRect();
+      
+      const fromX = fromRect.left + fromRect.width / 2;
+      const fromY = fromRect.top + fromRect.height / 2;
+      const toX = toRect.left + toRect.width / 2;
+      const toY = toRect.top + toRect.height / 2;
+      
+      const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+      const angle = Math.atan2(toY - fromY, toX - fromX) * 180 / Math.PI;
+      
+      const line = document.createElement('div');
+      line.className = 'connection';
+      line.style.left = fromX + 'px';
+      line.style.top = fromY + 'px';
+      line.style.width = distance + 'px';
+      line.style.transform = `rotate(${angle}deg)`;
+      
+      document.body.appendChild(line);
+      
+      setTimeout(() => line.remove(), 1000);
+    }
+
+    // Play activation sound
+    function playActivationSound(freq) {
+      if (!audioCtx) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      
+      gain.gain.value = 0.15;
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    // Clear all cells
+    function clearAll() {
+      const indices = Array.from(activeCells);
+      indices.forEach(index => deactivateCell(index));
+      updateStats();
+    }
+
+    // Update stats
+    function updateStats() {
+      document.getElementById('activeCount').textContent = activeCells.size;
+    }
+
+    // Initialize on load
+    init();
+  </script>
+</body>
+</html>
