@@ -31,6 +31,106 @@ interface LaneObject {
 // Audio
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
+let musicInterval: ReturnType<typeof setInterval> | null = null;
+let musicBeat = 0;
+
+// D minor scale - cosmic, mysterious
+const NOTES = {
+  D3: 146.83, F3: 174.61, A3: 220.00, C4: 261.63, D4: 293.66, F4: 349.23, // Melody
+  D2: 73.42, A1: 55.00, F2: 87.31, // Bass
+};
+const ARP = [NOTES.D3, NOTES.F3, NOTES.A3, NOTES.C4, NOTES.D4, NOTES.A3, NOTES.F3, NOTES.D3];
+const BASS = [NOTES.D2, 0, NOTES.D2, 0, NOTES.F2, 0, NOTES.A1, 0];
+const BPM = 90;
+const BEAT_MS = 60000 / BPM / 2;
+
+function playMusicNote() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  const step = musicBeat % 8;
+
+  // Ethereal pad (always on, slow filter sweep)
+  if (musicBeat % 32 === 0) {
+    const pad = audioCtx.createOscillator();
+    const padGain = audioCtx.createGain();
+    const padFilter = audioCtx.createBiquadFilter();
+    pad.type = 'sine';
+    pad.frequency.value = NOTES.D3;
+    padFilter.type = 'lowpass';
+    padFilter.frequency.value = 400;
+    padGain.gain.setValueAtTime(0.08, t);
+    padGain.gain.exponentialRampToValueAtTime(0.001, t + 4);
+    pad.connect(padFilter);
+    padFilter.connect(padGain);
+    padGain.connect(masterGain);
+    pad.start(t);
+    pad.stop(t + 4);
+  }
+
+  // Slow arpeggio (every other beat)
+  if (step % 2 === 0) {
+    const arp = audioCtx.createOscillator();
+    const arpGain = audioCtx.createGain();
+    const arpFilter = audioCtx.createBiquadFilter();
+    arp.type = 'triangle';
+    arp.frequency.value = ARP[step];
+    arpFilter.type = 'lowpass';
+    arpFilter.frequency.value = 1200 + Math.sin(musicBeat * 0.1) * 400;
+    arpGain.gain.setValueAtTime(0.06, t);
+    arpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    arp.connect(arpFilter);
+    arpFilter.connect(arpGain);
+    arpGain.connect(masterGain);
+    arp.start(t);
+    arp.stop(t + 0.4);
+  }
+
+  // Deep bass
+  const bassNote = BASS[step];
+  if (bassNote > 0) {
+    const bass = audioCtx.createOscillator();
+    const bassGain = audioCtx.createGain();
+    bass.type = 'sine';
+    bass.frequency.value = bassNote;
+    bassGain.gain.setValueAtTime(0.12, t);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    bass.connect(bassGain);
+    bassGain.connect(masterGain);
+    bass.start(t);
+    bass.stop(t + 0.3);
+  }
+
+  // Cosmic shimmer (random high notes)
+  if (Math.random() < 0.1) {
+    const shimmer = audioCtx.createOscillator();
+    const shimmerGain = audioCtx.createGain();
+    shimmer.type = 'sine';
+    shimmer.frequency.value = NOTES.D4 * (1 + Math.random() * 0.5);
+    shimmerGain.gain.setValueAtTime(0.03, t);
+    shimmerGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    shimmer.connect(shimmerGain);
+    shimmerGain.connect(masterGain);
+    shimmer.start(t);
+    shimmer.stop(t + 0.5);
+  }
+
+  musicBeat++;
+}
+
+function startMusic() {
+  if (!audioCtx || musicInterval) return;
+  musicBeat = 0;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  playMusicNote();
+  musicInterval = setInterval(playMusicNote, BEAT_MS);
+}
+
+function stopMusic() {
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
+}
 
 function initAudio() {
   if (audioCtx) return;
@@ -354,6 +454,7 @@ export default function OrbitGame() {
     
     setScore(0);
     setGameState('playing');
+    startMusic();
   }, [generateLane, canvasSize]);
 
   // Handle resize
@@ -401,6 +502,7 @@ export default function OrbitGame() {
           game.deathType = 'abducted';
           stopMusic();
           playVoid();
+          stopMusic();
           if (game.maxRow > highScore) setHighScore(game.maxRow);
           setGameState('dead');
           fetch('/api/pixelpit/stats', {
@@ -491,6 +593,7 @@ export default function OrbitGame() {
             game.deathType = 'void';
             stopMusic();
             playVoid();
+            stopMusic();
             if (game.maxRow > highScore) setHighScore(game.maxRow);
             setGameState('dead');
             fetch('/api/pixelpit/stats', {
@@ -511,6 +614,7 @@ export default function OrbitGame() {
                 game.deathType = obj.type === 'mothership' ? 'beam' : 'collision';
                 stopMusic();
                 playZap();
+                stopMusic();
                 if (game.maxRow > highScore) setHighScore(game.maxRow);
                 setGameState('dead');
                 fetch('/api/pixelpit/stats', {
@@ -890,6 +994,7 @@ export default function OrbitGame() {
 
     return () => {
       cancelAnimationFrame(animationId);
+      stopMusic();
       canvas.removeEventListener('touchstart', handleTouchStart);
       canvas.removeEventListener('touchend', handleTouchEnd);
       window.removeEventListener('keydown', handleKeyDown);
