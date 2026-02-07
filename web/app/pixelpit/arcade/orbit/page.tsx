@@ -440,7 +440,13 @@ export default function OrbitGame() {
     displayScore: 0,
     level: 1 as 1 | 2 | 3,
     levelTransition: 0, // 0 = none, >0 = showing banner countdown
-    stars: [] as { x: number; y: number; size: number; twinkle: number }[],
+    transitionFlash: 0, // white/black flash timer
+    stars: [] as { x: number; y: number; size: number; twinkle: number; color?: string }[],
+    // Visual FX
+    screenShake: { x: 0, y: 0 },
+    comets: [] as { x: number; y: number; vx: number; vy: number; life: number }[],
+    nebulaClouds: [] as { x: number; y: number; size: number; alpha: number }[],
+    sparks: [] as { x: number; y: number; vx: number; vy: number; life: number }[],
   });
 
   const generateLane = useCallback((row: number, canvasW: number): Lane => {
@@ -533,16 +539,33 @@ export default function OrbitGame() {
     game.displayScore = 0;
     game.level = 1;
     game.levelTransition = 0;
+    game.transitionFlash = 0;
     game.deathType = '';
+    game.screenShake = { x: 0, y: 0 };
+    game.comets = [];
+    game.sparks = [];
     
-    // Generate stars
+    // Generate stars with potential colors for level 2
+    const starColors = ['#ffffff', '#a5b4fc', '#f9a8d4', '#fcd34d', '#67e8f9'];
     game.stars = [];
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 120; i++) {
       game.stars.push({
         x: Math.random() * canvasSize.w,
         y: Math.random() * 3000 - 1500,
         size: 1 + Math.random() * 2,
         twinkle: Math.random() * Math.PI * 2,
+        color: starColors[Math.floor(Math.random() * starColors.length)],
+      });
+    }
+    
+    // Generate nebula clouds for level 2
+    game.nebulaClouds = [];
+    for (let i = 0; i < 8; i++) {
+      game.nebulaClouds.push({
+        x: Math.random() * canvasSize.w,
+        y: Math.random() * 3000 - 1500,
+        size: 100 + Math.random() * 150,
+        alpha: 0.1 + Math.random() * 0.15,
       });
     }
     
@@ -589,6 +612,47 @@ export default function OrbitGame() {
       if (game.levelTransition > 0) {
         game.levelTransition -= dt;
       }
+      if (game.transitionFlash > 0) {
+        game.transitionFlash -= dt;
+      }
+
+      // Level 3: Screen shake
+      if (game.level === 3 && Math.random() < 0.02) {
+        game.screenShake = { 
+          x: (Math.random() - 0.5) * 4, 
+          y: (Math.random() - 0.5) * 4 
+        };
+      } else {
+        game.screenShake.x *= 0.9;
+        game.screenShake.y *= 0.9;
+      }
+
+      // Level 2: Random comets
+      if (game.level >= 2 && Math.random() < 0.005) {
+        game.comets.push({
+          x: -50,
+          y: game.cameraY + Math.random() * canvasSize.h,
+          vx: 8 + Math.random() * 4,
+          vy: 2 + Math.random() * 2,
+          life: 1,
+        });
+      }
+      // Update comets
+      game.comets = game.comets.filter(c => {
+        c.x += c.vx;
+        c.y += c.vy;
+        c.life -= dt * 0.5;
+        return c.life > 0 && c.x < canvasSize.w + 100;
+      });
+
+      // Update sparks (from damaged satellites in level 3)
+      game.sparks = game.sparks.filter(s => {
+        s.x += s.vx;
+        s.y += s.vy;
+        s.vy += 50 * dt; // gravity
+        s.life -= dt * 2;
+        return s.life > 0;
+      });
 
       const now = Date.now();
 
@@ -758,25 +822,141 @@ export default function OrbitGame() {
       const game = gameRef.current;
       const theme = LEVEL_THEMES[game.level];
       
+      // Apply screen shake
+      ctx.save();
+      ctx.translate(game.screenShake.x, game.screenShake.y);
+      
       // Level-based background
       const gradient = ctx.createLinearGradient(0, 0, 0, canvasSize.h);
       gradient.addColorStop(0, theme.skyTop);
       gradient.addColorStop(1, theme.skyBottom);
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
+      ctx.fillRect(-10, -10, canvasSize.w + 20, canvasSize.h + 20);
 
-      // Stars (tinted by level)
+      // Level 3: Black hole in distance
+      if (game.level === 3) {
+        const bhX = canvasSize.w / 2;
+        const bhY = 80;
+        // Outer glow
+        const bhGrad = ctx.createRadialGradient(bhX, bhY, 0, bhX, bhY, 120);
+        bhGrad.addColorStop(0, 'rgba(0, 0, 0, 1)');
+        bhGrad.addColorStop(0.3, 'rgba(30, 0, 0, 0.8)');
+        bhGrad.addColorStop(0.6, 'rgba(80, 0, 0, 0.3)');
+        bhGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = bhGrad;
+        ctx.beginPath();
+        ctx.arc(bhX, bhY, 120, 0, Math.PI * 2);
+        ctx.fill();
+        // Core
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(bhX, bhY, 25, 0, Math.PI * 2);
+        ctx.fill();
+        // Accretion ring
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(bhX, bhY, 50, 15, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Level 2: Nebula clouds
+      if (game.level >= 2) {
+        for (const cloud of game.nebulaClouds) {
+          const screenY = cloud.y - game.cameraY * 0.3; // Parallax
+          if (screenY < -cloud.size || screenY > canvasSize.h + cloud.size) continue;
+          const nebulaGrad = ctx.createRadialGradient(cloud.x, screenY, 0, cloud.x, screenY, cloud.size);
+          const nebulaColor = game.level === 3 ? '139, 0, 0' : '168, 85, 247';
+          nebulaGrad.addColorStop(0, `rgba(${nebulaColor}, ${cloud.alpha})`);
+          nebulaGrad.addColorStop(0.5, `rgba(${nebulaColor}, ${cloud.alpha * 0.5})`);
+          nebulaGrad.addColorStop(1, `rgba(${nebulaColor}, 0)`);
+          ctx.fillStyle = nebulaGrad;
+          ctx.beginPath();
+          ctx.arc(cloud.x, screenY, cloud.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Level 1: Earth in distance at bottom
+      if (game.level === 1 && game.cameraY < 500) {
+        const earthY = canvasSize.h + 100 - game.cameraY * 0.2;
+        if (earthY < canvasSize.h + 200) {
+          // Earth glow
+          const earthGrad = ctx.createRadialGradient(canvasSize.w / 2, earthY, 80, canvasSize.w / 2, earthY, 150);
+          earthGrad.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
+          earthGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
+          ctx.fillStyle = earthGrad;
+          ctx.beginPath();
+          ctx.arc(canvasSize.w / 2, earthY, 150, 0, Math.PI * 2);
+          ctx.fill();
+          // Earth body
+          ctx.fillStyle = '#1e40af';
+          ctx.beginPath();
+          ctx.arc(canvasSize.w / 2, earthY, 80, 0, Math.PI * 2);
+          ctx.fill();
+          // Continents
+          ctx.fillStyle = '#22c55e';
+          ctx.beginPath();
+          ctx.ellipse(canvasSize.w / 2 - 20, earthY - 10, 25, 15, 0.3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.ellipse(canvasSize.w / 2 + 30, earthY + 20, 20, 12, -0.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Stars
       for (const star of game.stars) {
-        const screenY = star.y - game.cameraY;
+        let screenY = star.y - game.cameraY;
+        
+        // Level 3: Stars get pulled toward black hole
+        if (game.level === 3) {
+          const pullX = canvasSize.w / 2 - star.x;
+          const pullY = 80 - screenY;
+          const dist = Math.sqrt(pullX * pullX + pullY * pullY);
+          if (dist < 300 && dist > 30) {
+            const pull = 0.02 * (300 - dist) / 300;
+            star.x += pullX * pull;
+            screenY += pullY * pull * 0.5;
+          }
+        }
+        
         if (screenY < -10 || screenY > canvasSize.h + 10) continue;
         const twinkle = 0.5 + 0.5 * Math.sin(Date.now() / 500 + star.twinkle);
-        // Level 3: red tint, Level 2: purple tint
-        const starColor = game.level === 3 ? `rgba(255, 200, 200, ${twinkle * 0.8})` 
-                        : game.level === 2 ? `rgba(230, 200, 255, ${twinkle * 0.8})`
-                        : `rgba(255, 255, 255, ${twinkle * 0.8})`;
+        
+        // Level-based star colors
+        let starColor: string;
+        if (game.level === 3) {
+          starColor = `rgba(255, 150, 150, ${twinkle * 0.6})`;
+        } else if (game.level === 2) {
+          // Use colorful stars
+          const rgb = star.color === '#a5b4fc' ? '165, 180, 252' 
+                    : star.color === '#f9a8d4' ? '249, 168, 212'
+                    : star.color === '#fcd34d' ? '252, 211, 77'
+                    : star.color === '#67e8f9' ? '103, 232, 249'
+                    : '255, 255, 255';
+          starColor = `rgba(${rgb}, ${twinkle * 0.9})`;
+        } else {
+          starColor = `rgba(255, 255, 255, ${twinkle * 0.8})`;
+        }
         ctx.fillStyle = starColor;
         ctx.beginPath();
         ctx.arc(star.x, screenY, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Comets (level 2+)
+      for (const comet of game.comets) {
+        const screenY = comet.y - game.cameraY;
+        ctx.strokeStyle = `rgba(255, 255, 255, ${comet.life})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(comet.x, screenY);
+        ctx.lineTo(comet.x - 30, screenY - 10);
+        ctx.stroke();
+        ctx.fillStyle = `rgba(255, 255, 255, ${comet.life})`;
+        ctx.beginPath();
+        ctx.arc(comet.x, screenY, 3, 0, Math.PI * 2);
         ctx.fill();
       }
 
@@ -844,9 +1024,24 @@ export default function OrbitGame() {
           const objY = screenY + TILE_SIZE / 2;
           
           if (obj.type === 'ufo') {
-            // UFO - Level 1: classic, Level 2: angular magenta, Level 3: menacing red
+            // UFO - Level 1: classic, Level 2: angular magenta + trail, Level 3: menacing red + eyes
             const ufoColor = game.level === 3 ? '#dc2626' : game.level === 2 ? '#d946ef' : (obj.color || '#A855F7');
             const domeColor = game.level === 3 ? '#ef4444' : game.level === 2 ? '#f0abfc' : '#22D3EE';
+            
+            // Level 2+: Trail behind UFO
+            if (game.level >= 2) {
+              const trailColor = game.level === 3 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(217, 70, 239, 0.4)';
+              ctx.fillStyle = trailColor;
+              const trailDir = lane.direction > 0 ? -1 : 1;
+              for (let t = 1; t <= 4; t++) {
+                ctx.globalAlpha = 0.3 - t * 0.06;
+                ctx.beginPath();
+                ctx.ellipse(obj.x + obj.width / 2 + trailDir * t * 12, objY, 8, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+              }
+              ctx.globalAlpha = 1;
+            }
+            
             ctx.fillStyle = ufoColor;
             if (game.level >= 2) {
               // Angular shape for level 2+
@@ -868,6 +1063,21 @@ export default function OrbitGame() {
             ctx.beginPath();
             ctx.arc(obj.x + obj.width / 2, objY - 8, 10, Math.PI, 0);
             ctx.fill();
+            
+            // Level 3: Glowing red eyes
+            if (game.level === 3) {
+              ctx.fillStyle = '#ff0000';
+              ctx.shadowColor = '#ff0000';
+              ctx.shadowBlur = 8;
+              ctx.beginPath();
+              ctx.arc(obj.x + obj.width / 2 - 4, objY - 8, 2, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.arc(obj.x + obj.width / 2 + 4, objY - 8, 2, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.shadowBlur = 0;
+            }
+            
             // Lights
             ctx.fillStyle = game.level === 3 ? '#fca5a5' : '#FBBF24';
             for (let l = 0; l < 3; l++) {
@@ -879,6 +1089,13 @@ export default function OrbitGame() {
             // Asteroid - Level 1: gray, Level 2: purple crystal, Level 3: black shards
             const astColor = game.level === 3 ? '#1f1f1f' : game.level === 2 ? '#7c3aed' : '#78716C';
             const astAccent = game.level === 3 ? '#374151' : game.level === 2 ? '#a78bfa' : '#57534E';
+            
+            // Level 2: Glowing crystal asteroids
+            if (game.level === 2) {
+              ctx.shadowColor = '#a78bfa';
+              ctx.shadowBlur = 15;
+            }
+            
             ctx.fillStyle = astColor;
             if (game.level === 3) {
               // Jagged shards
@@ -901,6 +1118,7 @@ export default function OrbitGame() {
               ctx.arc(obj.x + obj.width / 2 - 8, objY - 5, 8, 0, Math.PI * 2);
               ctx.fill();
             }
+            ctx.shadowBlur = 0;
           } else if (obj.type === 'satellite') {
             // Satellite - Level 1: standard, Level 2: rusted, Level 3: emergency beacon
             const satColor = game.level === 3 ? '#991b1b' : game.level === 2 ? '#78716c' : '#6B7280';
@@ -910,12 +1128,26 @@ export default function OrbitGame() {
             ctx.fillStyle = panelColor;
             ctx.fillRect(obj.x - 15, objY - 12, 15, 24);
             ctx.fillRect(obj.x + obj.width, objY - 12, 15, 24);
-            // Level 3: flashing beacon
-            if (game.level === 3 && Math.floor(Date.now() / 300) % 2) {
-              ctx.fillStyle = '#ef4444';
-              ctx.beginPath();
-              ctx.arc(obj.x + obj.width / 2, objY - 12, 4, 0, Math.PI * 2);
-              ctx.fill();
+            // Level 3: flashing beacon + sparks
+            if (game.level === 3) {
+              if (Math.floor(Date.now() / 300) % 2) {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(obj.x + obj.width / 2, objY - 12, 4, 0, Math.PI * 2);
+                ctx.fill();
+              }
+              // Random sparks
+              if (Math.random() < 0.03) {
+                for (let s = 0; s < 3; s++) {
+                  game.sparks.push({
+                    x: obj.x + Math.random() * obj.width,
+                    y: lane.y + TILE_SIZE / 2,
+                    vx: (Math.random() - 0.5) * 60,
+                    vy: -Math.random() * 40 - 20,
+                    life: 0.5 + Math.random() * 0.5,
+                  });
+                }
+              }
             } else {
               ctx.strokeStyle = '#9CA3AF';
               ctx.lineWidth = 2;
@@ -1051,20 +1283,72 @@ export default function OrbitGame() {
         ctx.fillText('SWIPE ← → TO MOVE', canvasSize.w / 2, canvasSize.h - 75);
       }
       
+      // Draw sparks (from damaged satellites in level 3)
+      for (const spark of game.sparks) {
+        const screenY = spark.y - game.cameraY;
+        ctx.fillStyle = `rgba(251, 191, 36, ${spark.life})`;
+        ctx.beginPath();
+        ctx.arc(spark.x, screenY, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Level 3: Vignette (darkened edges)
+      if (game.level === 3) {
+        const vignetteGrad = ctx.createRadialGradient(
+          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.3,
+          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.8
+        );
+        vignetteGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vignetteGrad.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+        ctx.fillStyle = vignetteGrad;
+        ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
+      }
+
       // Level transition banner
       if (game.levelTransition > 0) {
         const alpha = Math.min(game.levelTransition, 1);
-        ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.7})`;
-        ctx.fillRect(0, canvasSize.h / 2 - 50, canvasSize.w, 100);
+        
+        // Level 3: screen goes black first
+        if (game.level === 3 && game.levelTransition > 1.2) {
+          ctx.fillStyle = `rgba(0, 0, 0, ${(game.levelTransition - 1.2) * 3})`;
+          ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
+        }
+        
+        ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.8})`;
+        ctx.fillRect(0, canvasSize.h / 2 - 60, canvasSize.w, 120);
         
         ctx.fillStyle = theme.laneGlow;
-        ctx.font = 'bold 32px ui-monospace';
+        ctx.font = 'bold 36px ui-monospace';
         ctx.textAlign = 'center';
         ctx.shadowColor = theme.laneGlow;
-        ctx.shadowBlur = 20;
-        ctx.fillText(theme.name, canvasSize.w / 2, canvasSize.h / 2 + 10);
+        ctx.shadowBlur = 30;
+        ctx.fillText(theme.name, canvasSize.w / 2, canvasSize.h / 2 + 12);
         ctx.shadowBlur = 0;
+        
+        // Particle burst effect
+        if (game.levelTransition > 1) {
+          const burstAlpha = game.levelTransition - 1;
+          for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2 + Date.now() / 500;
+            const dist = (1.5 - game.levelTransition) * 100 + 30;
+            const px = canvasSize.w / 2 + Math.cos(angle) * dist;
+            const py = canvasSize.h / 2 + Math.sin(angle) * dist;
+            ctx.fillStyle = `rgba(255, 255, 255, ${burstAlpha * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(px, py, 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
       }
+
+      // Transition flash
+      if (game.transitionFlash > 0) {
+        const flashColor = game.level === 3 ? '0, 0, 0' : '255, 255, 255';
+        ctx.fillStyle = `rgba(${flashColor}, ${game.transitionFlash * 2})`;
+        ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
+      }
+
+      ctx.restore(); // End screen shake transform
     };
 
     let lastTime = 0;
@@ -1126,6 +1410,7 @@ export default function OrbitGame() {
         if (newLevel !== game.level) {
           game.level = newLevel;
           game.levelTransition = 1.5; // Show banner for 1.5 seconds
+          game.transitionFlash = newLevel === 3 ? 0.3 : 0.15; // Black flash for void, white for others
           playLevelUp();
           updateMusicLevel(newLevel);
         }
