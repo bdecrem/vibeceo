@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 const GAME_ID = 'crossy';
 
 const TILE_SIZE = 50;
-const PLAYER_SIZE = 35;
+const PLAYER_SIZE = 20;
 const EAGLE_TIMEOUT = 3000; // 3 seconds idle = eagle
 
 // Lane types
@@ -539,42 +539,42 @@ export default function CrossyGame() {
       // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.3)';
       ctx.beginPath();
-      ctx.ellipse(playerScreenX, playerScreenY + TILE_SIZE / 2, 15, 8, 0, 0, Math.PI * 2);
+      ctx.ellipse(playerScreenX, playerScreenY + TILE_SIZE / 2 + 5, 10, 5, 0, 0, Math.PI * 2);
       ctx.fill();
       
-      // Body
+      // Body (smaller chicken)
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
-      ctx.ellipse(playerScreenX, playerScreenY + TILE_SIZE / 2 - 15 - hopOffset, 18, 20, 0, 0, Math.PI * 2);
+      ctx.ellipse(playerScreenX, playerScreenY + TILE_SIZE / 2 - 8 - hopOffset, 10, 12, 0, 0, Math.PI * 2);
       ctx.fill();
       
       // Head
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
-      ctx.arc(playerScreenX, playerScreenY + TILE_SIZE / 2 - 35 - hopOffset, 12, 0, Math.PI * 2);
+      ctx.arc(playerScreenX, playerScreenY + TILE_SIZE / 2 - 22 - hopOffset, 8, 0, Math.PI * 2);
       ctx.fill();
       
       // Beak
       ctx.fillStyle = '#FFA500';
       ctx.beginPath();
-      ctx.moveTo(playerScreenX, playerScreenY + TILE_SIZE / 2 - 35 - hopOffset);
-      ctx.lineTo(playerScreenX + 10, playerScreenY + TILE_SIZE / 2 - 32 - hopOffset);
-      ctx.lineTo(playerScreenX, playerScreenY + TILE_SIZE / 2 - 29 - hopOffset);
+      ctx.moveTo(playerScreenX, playerScreenY + TILE_SIZE / 2 - 22 - hopOffset);
+      ctx.lineTo(playerScreenX + 6, playerScreenY + TILE_SIZE / 2 - 20 - hopOffset);
+      ctx.lineTo(playerScreenX, playerScreenY + TILE_SIZE / 2 - 18 - hopOffset);
       ctx.fill();
       
       // Eyes
       ctx.fillStyle = '#000';
       ctx.beginPath();
-      ctx.arc(playerScreenX - 4, playerScreenY + TILE_SIZE / 2 - 38 - hopOffset, 3, 0, Math.PI * 2);
-      ctx.arc(playerScreenX + 4, playerScreenY + TILE_SIZE / 2 - 38 - hopOffset, 3, 0, Math.PI * 2);
+      ctx.arc(playerScreenX - 3, playerScreenY + TILE_SIZE / 2 - 24 - hopOffset, 2, 0, Math.PI * 2);
+      ctx.arc(playerScreenX + 3, playerScreenY + TILE_SIZE / 2 - 24 - hopOffset, 2, 0, Math.PI * 2);
       ctx.fill();
       
       // Comb
       ctx.fillStyle = '#FF0000';
       ctx.beginPath();
-      ctx.arc(playerScreenX - 5, playerScreenY + TILE_SIZE / 2 - 46 - hopOffset, 4, 0, Math.PI * 2);
-      ctx.arc(playerScreenX, playerScreenY + TILE_SIZE / 2 - 48 - hopOffset, 4, 0, Math.PI * 2);
-      ctx.arc(playerScreenX + 5, playerScreenY + TILE_SIZE / 2 - 46 - hopOffset, 4, 0, Math.PI * 2);
+      ctx.arc(playerScreenX - 3, playerScreenY + TILE_SIZE / 2 - 29 - hopOffset, 3, 0, Math.PI * 2);
+      ctx.arc(playerScreenX, playerScreenY + TILE_SIZE / 2 - 31 - hopOffset, 3, 0, Math.PI * 2);
+      ctx.arc(playerScreenX + 3, playerScreenY + TILE_SIZE / 2 - 29 - hopOffset, 3, 0, Math.PI * 2);
       ctx.fill();
 
       // Eagle
