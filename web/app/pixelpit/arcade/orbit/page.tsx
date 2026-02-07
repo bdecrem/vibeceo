@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 
 const GAME_ID = 'orbit';
 
-const TILE_SIZE = 50;
+const TILE_SIZE = 60; // Taller lanes for clearer positioning
 const PLAYER_SIZE = 20;
 const ABDUCTION_TIMEOUT = 3000; // 3 seconds idle = abducted
 
@@ -153,10 +153,18 @@ export default function OrbitGame() {
     
     const rand = Math.random();
     let type: LaneType;
-    if (rand < 0.3) type = 'platform';
-    else if (rand < 0.7) type = 'lane';
-    else if (rand < 0.9) type = 'debris';
-    else type = 'beam';
+    
+    // No debris fields for first 15 lanes - easier start
+    if (row < 15) {
+      if (rand < 0.35) type = 'platform';
+      else if (rand < 0.9) type = 'lane';
+      else type = 'beam';
+    } else {
+      if (rand < 0.3) type = 'platform';
+      else if (rand < 0.7) type = 'lane';
+      else if (rand < 0.9) type = 'debris';
+      else type = 'beam';
+    }
     
     const direction = Math.random() < 0.5 ? 1 : -1 as 1 | -1;
     const baseSpeed = 1 + Math.min(row / 50, 2);
@@ -598,41 +606,53 @@ export default function OrbitGame() {
       // Draw player (astronaut)
       const playerScreenX = game.playerX;
       const playerScreenY = game.playerY - game.cameraY;
-      const hopOffset = game.isHopping ? Math.sin(game.hopProgress * Math.PI) * 12 : 0;
+      const hopOffset = game.isHopping ? Math.sin(game.hopProgress * Math.PI) * 15 : 0;
       
-      // Shadow
+      // LANE INDICATOR - clear glow showing which lane player is on
+      if (!game.isHopping) {
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.3)';
+        ctx.fillRect(playerScreenX - 20, playerScreenY, 40, TILE_SIZE);
+        ctx.strokeStyle = '#22D3EE';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(playerScreenX - 20, playerScreenY, 40, TILE_SIZE);
+      }
+      
+      // Shadow (at bottom of current lane)
       ctx.fillStyle = 'rgba(0,0,0,0.4)';
       ctx.beginPath();
-      ctx.ellipse(playerScreenX, playerScreenY + TILE_SIZE / 2 + 5, 10, 5, 0, 0, Math.PI * 2);
+      ctx.ellipse(playerScreenX, playerScreenY + TILE_SIZE - 8, 12, 6, 0, 0, Math.PI * 2);
       ctx.fill();
+      
+      // Player centered in lane (TILE_SIZE / 2 is center)
+      const playerCenterY = playerScreenY + TILE_SIZE / 2;
       
       // Suit body
       ctx.fillStyle = '#E5E7EB';
       ctx.beginPath();
-      ctx.ellipse(playerScreenX, playerScreenY + TILE_SIZE / 2 - 8 - hopOffset, 10, 14, 0, 0, Math.PI * 2);
+      ctx.ellipse(playerScreenX, playerCenterY + 5 - hopOffset, 9, 12, 0, 0, Math.PI * 2);
       ctx.fill();
       
       // Helmet
       ctx.fillStyle = '#F3F4F6';
       ctx.beginPath();
-      ctx.arc(playerScreenX, playerScreenY + TILE_SIZE / 2 - 24 - hopOffset, 10, 0, Math.PI * 2);
+      ctx.arc(playerScreenX, playerCenterY - 10 - hopOffset, 9, 0, Math.PI * 2);
       ctx.fill();
       
       // Visor
       ctx.fillStyle = '#1E40AF';
       ctx.beginPath();
-      ctx.arc(playerScreenX, playerScreenY + TILE_SIZE / 2 - 24 - hopOffset, 7, 0, Math.PI * 2);
+      ctx.arc(playerScreenX, playerCenterY - 10 - hopOffset, 6, 0, Math.PI * 2);
       ctx.fill();
       
       // Visor reflection
       ctx.fillStyle = 'rgba(255,255,255,0.3)';
       ctx.beginPath();
-      ctx.arc(playerScreenX - 2, playerScreenY + TILE_SIZE / 2 - 26 - hopOffset, 3, 0, Math.PI * 2);
+      ctx.arc(playerScreenX - 2, playerCenterY - 12 - hopOffset, 2, 0, Math.PI * 2);
       ctx.fill();
       
       // Backpack
       ctx.fillStyle = '#9CA3AF';
-      ctx.fillRect(playerScreenX - 6, playerScreenY + TILE_SIZE / 2 - 15 - hopOffset, 4, 12);
+      ctx.fillRect(playerScreenX - 5, playerCenterY - 2 - hopOffset, 4, 10);
 
       // Abductor (alien ship)
       if (game.abductorActive) {
