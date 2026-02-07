@@ -21,7 +21,6 @@ const LEVEL_THEMES = {
     platformAccent: '#3a3a4a',
     lane: '#1E1B4B',
     laneGlow: '#7c3aed',
-    speedMult: 1.0,
   },
   2: {
     name: 'DEEP SPACE',
@@ -31,7 +30,6 @@ const LEVEL_THEMES = {
     platformAccent: '#2a2a3a',
     lane: '#2a1a3a',
     laneGlow: '#d946ef',
-    speedMult: 1.1,
   },
   3: {
     name: 'VOID EDGE',
@@ -41,7 +39,6 @@ const LEVEL_THEMES = {
     platformAccent: '#1a1a1a',
     lane: '#1a0a0a',
     laneGlow: '#ef4444',
-    speedMult: 1.2,
   },
 };
 
@@ -638,12 +635,11 @@ export default function OrbitGame() {
       const targetCameraY = game.playerY - canvasSize.h * 0.7;
       game.cameraY += (targetCameraY - game.cameraY) * 0.1;
 
-      // Update lane objects - apply level speed multiplier
-      const speedMult = LEVEL_THEMES[game.level].speedMult;
+      // Update lane objects
       for (const lane of game.lanes) {
         for (const obj of lane.objects) {
           if (obj.type !== 'crystal') {
-            obj.x += lane.speed * lane.direction * speedMult;
+            obj.x += lane.speed * lane.direction;
             
             if (lane.direction > 0 && obj.x > canvasSize.w + obj.width) {
               obj.x = -obj.width;
@@ -690,7 +686,7 @@ export default function OrbitGame() {
               // Generous hitbox for landing on satellites (player-favorable)
               if (game.playerX > obj.x - 15 && game.playerX < obj.x + obj.width + 15) {
                 onSatellite = true;
-                game.playerX += currentLane.speed * currentLane.direction * speedMult;
+                game.playerX += currentLane.speed * currentLane.direction;
                 game.targetX = game.playerX;
                 break;
               }
