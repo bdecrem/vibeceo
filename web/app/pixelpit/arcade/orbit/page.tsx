@@ -342,6 +342,7 @@ export default function OrbitGame() {
     abductorY: 0,
     crystals: 0,
     deathType: '',
+    displayScore: 0,
     stars: [] as { x: number; y: number; size: number; twinkle: number }[],
   });
 
@@ -432,6 +433,7 @@ export default function OrbitGame() {
     game.lastMoveTime = Date.now();
     game.abductorActive = false;
     game.crystals = 0;
+    game.displayScore = 0;
     game.deathType = '';
     
     // Generate stars
@@ -883,14 +885,14 @@ export default function OrbitGame() {
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 4;
-      ctx.fillText(`${game.maxRow}`, canvasSize.w / 2, 40);
+      ctx.fillText(`${game.displayScore}`, canvasSize.w / 2, 40);
       
       ctx.font = '16px ui-monospace';
       ctx.fillText(`HI: ${highScore}`, canvasSize.w / 2, 65);
       
       if (game.crystals > 0) {
         ctx.fillStyle = '#22D3EE';
-        ctx.fillText(`💎 ${game.crystals}`, canvasSize.w / 2, 90);
+        ctx.fillText(`💎 ×${1 + game.crystals}`, canvasSize.w / 2, 90);
       }
       
       ctx.shadowBlur = 0;
@@ -952,7 +954,10 @@ export default function OrbitGame() {
 
       if (newRow > game.maxRow) {
         game.maxRow = newRow;
-        setScore(newRow);
+        // Crystals = score multiplier: each hop worth (1 + crystals) points
+        const points = 1 + game.crystals;
+        game.displayScore += points;
+        setScore(game.displayScore);
         updateMusicIntensity(newRow);
       }
 
