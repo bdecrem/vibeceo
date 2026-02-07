@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GARDEN — Plant seeds. Watch them grow.</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="GARDEN">
+  <meta property="og:description" content="Plant seeds. Watch them grow. There's no wrong place to plant.">
+  <meta property="og:image" content="https://intheamber.com/amber/garden-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/garden.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GARDEN">
+  <meta name="twitter:description" content="Plant seeds. Watch them grow. There's no wrong place to plant.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/garden-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #000;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      overflow: hidden;
+      touch-action: none;
+      width: 100vw;
+      height: 100vh;
+      position: fixed;
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      pointer-events: none;
+      font-size: 14px;
+      text-shadow: 0 0 8px rgba(0,0,0,0.8);
+    }
+
+    #planted {
+      color: #2D9596;
+      margin-bottom: 4px;
+    }
+
+    #instructions {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(212, 165, 116, 0.6);
+      font-size: 12px;
+      text-align: center;
+      pointer-events: none;
+      animation: fadeInOut 4s ease-in-out infinite;
+    }
+
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.8; }
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="planted">🌱 0 planted</div>
+  </div>
+
+  <div id="instructions">
+    Tap to plant. Nothing dies here.
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const plantedEl = document.getElementById('planted');
+    
+    let width, height;
+    let plants = [];
+    let audioContext;
+    let plantCount = 0;
+
+    // Load count from localStorage
+    const savedCount = localStorage.getItem('garden_planted');
+    if (savedCount) {
+      plantCount = parseInt(savedCount);
+      plantedEl.textContent = `🌱 ${plantCount} planted`;
+    }
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Plant types with different growth patterns
+    const plantTypes = [
+      { 
+        name: 'flower',
+        maxHeight: 60,
+        color: '#FFD700',
+        stemColor: '#2D9596',
+        growthRate: 0.5,
+        bloomSize: 12
+      },
+      { 
+        name: 'tall',
+        maxHeight: 90,
+        color: '#D4A574',
+        stemColor: '#2D9596',
+        growthRate: 0.4,
+        bloomSize: 8
+      },
+      { 
+        name: 'wide',
+        maxHeight: 40,
+        color: '#7B68EE',
+        stemColor: '#2D9596',
+        growthRate: 0.6,
+        bloomSize: 16
+      },
+      { 
+        name: 'spiral',
+        maxHeight: 70,
+        color: '#FF69B4',
+        stemColor: '#2D9596',
+        growthRate: 0.45,
+        bloomSize: 10
+      },
+      { 
+        name: 'tiny',
+        maxHeight: 30,
+        color: '#00CED1',
+        stemColor: '#2D9596',
+        growthRate: 0.7,
+        bloomSize: 6
+      }
+    ];
+
+    function createPlant(x, y) {
+      const type = plantTypes[Math.floor(Math.random() * plantTypes.length)];
+      return {
+        x,
+        y,
+        height: 0,
+        maxHeight: type.maxHeight,
+        type: type.name,
+        color: type.color,
+        stemColor: type.stemColor,
+        growthRate: type.growthRate,
+        bloomSize: type.bloomSize,
+        age: 0,
+        swayOffset: Math.random() * Math.PI * 2,
+        mature: false
+      };
+    }
+
+    function drawPlant(plant) {
+      const progress = Math.min(plant.height / plant.maxHeight, 1);
+      const actualHeight = plant.height;
+      
+      // Gentle sway
+      const sway = Math.sin(Date.now() / 1000 + plant.swayOffset) * 2;
+      
+      ctx.save();
+      ctx.translate(plant.x, plant.y);
+      
+      // Stem
+      ctx.strokeStyle = plant.stemColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(sway, -actualHeight / 2, sway * 1.5, -actualHeight);
+      ctx.stroke();
+      
+      // Bloom appears when 50% grown
+      if (progress > 0.5) {
+        const bloomProgress = (progress - 0.5) * 2;
+        const bloomRadius = plant.bloomSize * bloomProgress;
+        
+        ctx.translate(sway * 1.5, -actualHeight);
+        
+        // Glow
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, bloomRadius * 2);
+        gradient.addColorStop(0, plant.color + '80');
+        gradient.addColorStop(0.5, plant.color + '30');
+        gradient.addColorStop(1, plant.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, bloomRadius * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Petals (5)
+        for (let i = 0; i < 5; i++) {
+          const angle = (i / 5) * Math.PI * 2 + plant.age * 0.001;
+          const px = Math.cos(angle) * bloomRadius * 0.6;
+          const py = Math.sin(angle) * bloomRadius * 0.6;
+          
+          ctx.fillStyle = plant.color;
+          ctx.beginPath();
+          ctx.ellipse(px, py, bloomRadius * 0.5, bloomRadius * 0.7, angle, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Center
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(0, 0, bloomRadius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      ctx.restore();
+    }
+
+    function updatePlants() {
+      plants.forEach(plant => {
+        if (plant.height < plant.maxHeight) {
+          plant.height += plant.growthRate;
+        } else if (!plant.mature) {
+          plant.mature = true;
+        }
+        plant.age++;
+      });
+    }
+
+    function draw() {
+      // Fade effect for trails
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Draw all plants
+      plants.forEach(drawPlant);
+    }
+
+    function animate() {
+      updatePlants();
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Audio
+    function playPlantSound() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      // Random note from pentatonic scale (peaceful garden sounds)
+      const notes = [440, 495, 550, 660, 770]; // A, B, C#, E, F#
+      const freq = notes[Math.floor(Math.random() * notes.length)];
+      
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      
+      gain.gain.value = 0.1;
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.5);
+    }
+
+    // Interaction
+    function handlePlant(e) {
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const touches = e.touches || [e];
+      
+      for (let touch of touches) {
+        const x = (touch.clientX || touch.pageX) - rect.left;
+        const y = (touch.clientY || touch.pageY) - rect.top;
+        
+        // Plant at this location
+        plants.push(createPlant(x, y));
+        playPlantSound();
+        
+        plantCount++;
+        plantedEl.textContent = `🌱 ${plantCount} planted`;
+        localStorage.setItem('garden_planted', plantCount);
+        
+        // Sparkle particles
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * Math.PI * 2;
+          const speed = 2;
+          const particle = {
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 30,
+            maxLife: 30,
+            size: 3
+          };
+          
+          // Draw particles immediately
+          setTimeout(() => {
+            let remaining = particle.life;
+            const drawParticle = () => {
+              if (remaining <= 0) return;
+              
+              particle.x += particle.vx;
+              particle.y += particle.vy;
+              particle.vy += 0.1; // gravity
+              remaining--;
+              
+              const alpha = remaining / particle.maxLife;
+              ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+              ctx.beginPath();
+              ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+              ctx.fill();
+              
+              requestAnimationFrame(drawParticle);
+            };
+            drawParticle();
+          }, 0);
+        }
+      }
+    }
+
+    canvas.addEventListener('click', handlePlant);
+    canvas.addEventListener('touchstart', handlePlant);
+    canvas.addEventListener('touchmove', handlePlant);
+
+    // Start with one plant in the center to show what it does
+    setTimeout(() => {
+      plants.push(createPlant(width / 2, height / 2));
+      plantedEl.textContent = `🌱 ${++plantCount} planted`;
+      localStorage.setItem('garden_planted', plantCount);
+    }, 500);
+  </script>
+</body>
+</html>
