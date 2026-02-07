@@ -1306,56 +1306,113 @@ export default function OrbitGame() {
         }
       }
 
-      // Draw player (astronaut)
+      // Draw player (astronaut) - cute, iconic, clear silhouette
       const playerScreenX = game.playerX;
       const playerScreenY = game.playerY - game.cameraY;
       const hopOffset = game.isHopping ? Math.sin(game.hopProgress * Math.PI) * 15 : 0;
+      const px = playerScreenX;
+      const py = playerScreenY + TILE_SIZE / 2 - hopOffset;
       
-      // LANE INDICATOR - clear glow showing which lane player is on
+      // LANE INDICATOR - subtle glow column (gameplay clarity)
       if (!game.isHopping) {
-        ctx.fillStyle = 'rgba(34, 211, 238, 0.3)';
-        ctx.fillRect(playerScreenX - 20, playerScreenY, 40, TILE_SIZE);
-        ctx.strokeStyle = '#22D3EE';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(playerScreenX - 20, playerScreenY, 40, TILE_SIZE);
+        const indicatorGrad = ctx.createLinearGradient(px - 20, 0, px + 20, 0);
+        indicatorGrad.addColorStop(0, 'rgba(34, 211, 238, 0)');
+        indicatorGrad.addColorStop(0.3, 'rgba(34, 211, 238, 0.2)');
+        indicatorGrad.addColorStop(0.5, 'rgba(34, 211, 238, 0.3)');
+        indicatorGrad.addColorStop(0.7, 'rgba(34, 211, 238, 0.2)');
+        indicatorGrad.addColorStop(1, 'rgba(34, 211, 238, 0)');
+        ctx.fillStyle = indicatorGrad;
+        ctx.fillRect(px - 22, playerScreenY - 5, 44, TILE_SIZE + 10);
       }
       
-      // Shadow (at bottom of current lane)
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      // Shadow (ground contact)
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
       ctx.beginPath();
-      ctx.ellipse(playerScreenX, playerScreenY + TILE_SIZE - 8, 12, 6, 0, 0, Math.PI * 2);
+      ctx.ellipse(px, playerScreenY + TILE_SIZE - 6, 10, 5, 0, 0, Math.PI * 2);
       ctx.fill();
       
-      // Player centered in lane (TILE_SIZE / 2 is center)
-      const playerCenterY = playerScreenY + TILE_SIZE / 2;
-      
-      // Suit body
-      ctx.fillStyle = '#E5E7EB';
+      // Jetpack (behind body)
+      ctx.fillStyle = '#4B5563';
+      const jpX = px + 8;
+      const jpY = py + 2;
       ctx.beginPath();
-      ctx.ellipse(playerScreenX, playerCenterY + 5 - hopOffset, 9, 12, 0, 0, Math.PI * 2);
+      ctx.roundRect(jpX, jpY - 8, 6, 14, 2);
+      ctx.fill();
+      // Jetpack thrusters
+      ctx.fillStyle = '#374151';
+      ctx.beginPath();
+      ctx.arc(jpX + 3, jpY + 8, 3, 0, Math.PI * 2);
+      ctx.fill();
+      // Thruster glow (subtle)
+      if (game.isHopping) {
+        ctx.fillStyle = 'rgba(251, 146, 60, 0.6)';
+        ctx.beginPath();
+        ctx.ellipse(jpX + 3, jpY + 14, 2, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Body (compact white suit)
+      ctx.fillStyle = '#F9FAFB';
+      ctx.beginPath();
+      ctx.roundRect(px - 7, py - 2, 14, 16, 4);
+      ctx.fill();
+      // Body outline
+      ctx.strokeStyle = '#D1D5DB';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Suit stripe (cyan accent)
+      ctx.fillStyle = '#22D3EE';
+      ctx.fillRect(px - 2, py + 2, 4, 10);
+      
+      // Helmet (big bubble - cute proportions)
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(px, py - 10, 11, 0, Math.PI * 2);
+      ctx.fill();
+      // Helmet rim
+      ctx.strokeStyle = '#E5E7EB';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Visor (golden, reflective)
+      const visorGrad = ctx.createLinearGradient(px - 6, py - 16, px + 6, py - 4);
+      visorGrad.addColorStop(0, '#FCD34D');
+      visorGrad.addColorStop(0.5, '#F59E0B');
+      visorGrad.addColorStop(1, '#D97706');
+      ctx.fillStyle = visorGrad;
+      ctx.beginPath();
+      ctx.arc(px, py - 10, 7, 0, Math.PI * 2);
       ctx.fill();
       
-      // Helmet
-      ctx.fillStyle = '#F3F4F6';
+      // Visor shine (two reflections)
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
       ctx.beginPath();
-      ctx.arc(playerScreenX, playerCenterY - 10 - hopOffset, 9, 0, Math.PI * 2);
+      ctx.arc(px - 3, py - 13, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.beginPath();
+      ctx.arc(px + 2, py - 8, 1.5, 0, Math.PI * 2);
       ctx.fill();
       
-      // Visor
-      ctx.fillStyle = '#1E40AF';
+      // Antenna (adds silhouette + character)
+      ctx.strokeStyle = '#9CA3AF';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(playerScreenX, playerCenterY - 10 - hopOffset, 6, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Visor reflection
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.moveTo(px, py - 21);
+      ctx.lineTo(px, py - 28);
+      ctx.stroke();
+      // Antenna ball (blinks in sync with level)
+      const antennaBlink = Math.sin(Date.now() / 300) > 0;
+      ctx.fillStyle = game.level === 3 ? '#EF4444' : game.level === 2 ? '#A855F7' : '#22D3EE';
+      if (antennaBlink) {
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 6;
+      }
       ctx.beginPath();
-      ctx.arc(playerScreenX - 2, playerCenterY - 12 - hopOffset, 2, 0, Math.PI * 2);
+      ctx.arc(px, py - 30, 3, 0, Math.PI * 2);
       ctx.fill();
-      
-      // Backpack
-      ctx.fillStyle = '#9CA3AF';
-      ctx.fillRect(playerScreenX - 5, playerCenterY - 2 - hopOffset, 4, 10);
+      ctx.shadowBlur = 0;
 
       // Abductor (alien ship)
       if (game.abductorActive) {
