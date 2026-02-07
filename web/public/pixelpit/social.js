@@ -74,6 +74,7 @@ window.PixelpitSocial = (function() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'register', handle, code }),
+      credentials: 'include',
     });
     const data = await res.json();
     if (data.success && data.user) {
@@ -105,6 +106,7 @@ window.PixelpitSocial = (function() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'login', handle, code }),
+      credentials: 'include',
     });
     const data = await res.json();
     if (data.success && data.user) {

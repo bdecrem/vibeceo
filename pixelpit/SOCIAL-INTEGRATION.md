@@ -21,6 +21,7 @@ import {
   GroupTabs,
   StreakBoard,
   CodeInput,
+  SettingsPanel,
 
   // Hooks
   usePixelpitSocial, getGuestName, saveGuestName,
@@ -457,6 +458,37 @@ All follow the same route structure: `share/[score]/layout.tsx`, `share/[score]/
 
 ---
 
+## Session Persistence (Safari ITP)
+
+Safari's ITP purges localStorage after 7 days of inactivity, which logs users out. To fix this, we use a server-set httpOnly cookie (`pp_session`, 30-day maxAge) as a durable fallback.
+
+### How It Works
+
+1. **Write**: On login/register, the server sets a `pp_session` cookie in the response
+2. **Read**: On mount, `usePixelpitSocial` checks localStorage first; if empty, calls `checkSession()` which reads the cookie via `GET /api/pixelpit/auth`
+3. **Clear**: `logout()` clears both localStorage and the cookie
+
+### Critical: `credentials: 'include'` on ALL auth fetches
+
+**Every fetch to `/api/pixelpit/auth` MUST include `credentials: 'include'`** — without it, Safari will not store the `Set-Cookie` response, and the cookie fallback silently fails. This applies to:
+
+- `register()` — writes cookie on account creation
+- `login()` — writes cookie on login
+- `checkSession()` — reads cookie to hydrate localStorage
+- `logout()` — clears the cookie
+
+All four are in `social.js`. If you ever modify auth fetch calls, always include `credentials: 'include'`.
+
+### Key Files
+
+| File | Role |
+|------|------|
+| `web/public/pixelpit/social.js` | `register()`, `login()`, `checkSession()`, `logout()` — all with `credentials: 'include'` |
+| `web/app/api/pixelpit/auth/route.ts` | `setSessionCookie()` on login/register, `GET` handler verifies cookie, `logout` action deletes cookie |
+| `web/app/pixelpit/components/hooks/usePixelpitSocial.ts` | Calls `checkSession()` when localStorage is empty |
+
+---
+
 ## Best Practices
 
 ### For New Games
@@ -857,7 +889,10 @@ The vanilla JS library (`/pixelpit/social.js`) exposes `window.PixelpitSocial` w
 | **Profile** | `getProfile(userId)` | Fetch XP/level/streak data |
 | **Groups** | `getGroups()` | Get current user's groups |
 | | `createGroup(name, type, opts?)` | Create group (opts: `phones`, `gameUrl`, `score`) |
+| | `createQuickGroup(opts?)` | Create streak group with auto-generated name |
 | | `joinGroup(code)` | Join group by 4-char code |
+| | `renameGroup(groupId, name)` | Rename a group (owner only) |
+| | `deleteGroup(groupId)` | Delete a group (owner only) |
 | | `getGroupLeaderboard(gameId, groupCode, limit?)` | Leaderboard filtered to group |
 | | `getSmsInviteLink(phones, groupCode, gameUrl, score?)` | Build `sms:` link for invites |
 | | `getGroupCodeFromUrl()` | Read `?pg=` from URL |
@@ -882,7 +917,9 @@ The vanilla JS library (`/pixelpit/social.js`) exposes `window.PixelpitSocial` w
 | `/api/pixelpit/auth` | GET/POST | Session check (GET), login/register/logout/check handle (POST) |
 | `/api/pixelpit/leaderboard` | GET/POST/PATCH | Fetch leaderboard (GET, supports `groupCode` filter), submit scores (POST, supports `refUserId` for magic streaks, `groupCode` for auto-join), link guest entry to user (PATCH) |
 | `/api/pixelpit/groups` | GET/POST | Fetch user's groups (GET), create group (POST) |
+| `/api/pixelpit/groups/[id]` | PATCH/DELETE | Rename group (PATCH), delete group (DELETE) — owner only |
 | `/api/pixelpit/groups/join` | POST | Join a group by code |
+| `/api/pixelpit/phone` | GET/POST | Phone status (GET), send-code/verify/remove (POST) |
 | `/api/pixelpit/connections` | POST | Record magic streak connection (referral) |
 | `/api/pixelpit/profile` | GET | Fetch user profile with XP/level/streak |
 | `/api/pixelpit/stats` | GET/POST | Track/fetch game play analytics |
@@ -894,12 +931,131 @@ The vanilla JS library (`/pixelpit/social.js`) exposes `window.PixelpitSocial` w
 
 | Table | Purpose |
 |-------|---------|
-| `pixelpit_users` | Handles, 4-char codes, XP, level, streak data |
+| `pixelpit_users` | Handles, 4-char codes, XP, level, streak data, phone/phone_verified/phone_verify_code |
 | `pixelpit_entries` | Scores and creations with game_id, user_id, slug |
 | `pixelpit_groups` | Groups (code, name, type: streak/leaderboard) |
 | `pixelpit_group_members` | Group membership (user_id, group_id) |
 | `pixelpit_connections` | Magic streak connections (referrals between users) |
 | `pixelpit_daily_stats` | Daily play counts per game for analytics |
+
+---
+
+## SettingsPanel (User Preferences)
+
+The `SettingsPanel` is a full-screen overlay accessible from the gear icon on the game-over screen (logged-in users only). It provides group management and phone alerts in one panel.
+
+### What It Shows
+
+1. **YOUR GROUPS** — Lists all groups the user belongs to. Each row shows name, type badge (streak/leaderboard), streak count, and member handles. Owner can rename (inline edit) or delete (with confirmation).
+2. **PHONE ALERTS** — Add/verify phone number to receive SMS notifications when streak group members play.
+3. **Logout** button.
+
+### Group Management
+
+- **Rename**: Tap group name to edit inline (owner only). Calls `PATCH /api/pixelpit/groups/[id]`.
+- **Delete**: Tap trash icon, confirm deletion (owner only). Calls `DELETE /api/pixelpit/groups/[id]`. Deletes all members first, then the group.
+
+### Props
+
+```typescript
+interface SettingsPanelProps {
+  colors: ScoreFlowColors;
+  onClose: () => void;
+}
+```
+
+### Integration
+
+ScoreFlow renders SettingsPanel automatically when the gear icon is tapped:
+
+```tsx
+// Already built into ScoreFlow — no extra code needed for games
+// The gear icon appears at bottom-center for logged-in users
+```
+
+---
+
+## Phone Alerts (SMS Notifications)
+
+Users can add and verify their phone number to receive SMS alerts when streak group members play.
+
+### How It Works
+
+1. **Add phone**: User enters phone number in Settings → "Send Code" → receives 6-digit SMS code
+2. **Verify**: Enter code → phone marked as verified
+3. **Receive alerts**: When a streak group member submits a score, all other verified members get SMS: `"@handle just played gameName! Keep the streak alive → pixelpit.gg/gameName"`
+4. **Remove**: User can remove their phone from Settings at any time
+
+### API Route: `/api/pixelpit/phone`
+
+**GET** `?userId=X` — Returns phone status:
+```json
+{ "phone": "***9508", "verified": true }
+// or
+{ "phone": null }
+```
+
+**POST** actions:
+- `{ action: "send-code", phone: "+16501234567", userId: 1 }` — Send 6-digit verification SMS
+- `{ action: "verify", code: "123456", userId: 1 }` — Verify code
+- `{ action: "remove", userId: 1 }` — Remove phone number
+
+### Database Columns (pixelpit_users)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `phone` | text | E.164 phone number |
+| `phone_verified` | boolean | Whether phone is verified |
+| `phone_verify_code` | text | 6-digit code (cleared after verification) |
+
+### SMS Notification Trigger Points
+
+Notifications fire from two places in `/api/pixelpit/leaderboard`:
+1. **POST** (score submission) — When a logged-in user submits a score, `notifyStreakGroupMembers()` runs
+2. **PATCH** (link guest entry to account) — When a new user registers after playing as guest, their entry gets linked and notifications fire
+
+Both call `notifyStreakGroupMembers(userId, gameId)` which:
+- Finds all streak groups the scorer is in
+- Gets other members with verified phones
+- Sends SMS via Twilio REST API (direct fetch, no SDK)
+
+### Environment Variables (Vercel)
+
+| Variable | Purpose |
+|----------|---------|
+| `TWILIO_ACCOUNT_SID` | Twilio account SID |
+| `TWILIO_AUTH_TOKEN` | Twilio auth token |
+| `TWILIO_PHONE_NUMBER` | Twilio sender number (E.164) |
+
+---
+
+## Group Management API
+
+### `/api/pixelpit/groups/[id]`
+
+**PATCH** — Rename a group (owner only):
+```json
+{ "userId": 1, "name": "New Name" }
+```
+
+**DELETE** — Delete a group (owner only):
+```json
+{ "userId": 1 }
+```
+Deletes all members first, then the group. Returns `{ success: true }`.
+
+### social.js Group Methods
+
+```javascript
+// Rename a group (owner only)
+await PixelpitSocial.renameGroup(groupId, "New Name");
+
+// Delete a group (owner only)
+await PixelpitSocial.deleteGroup(groupId);
+
+// Quick-create a streak group with auto-generated name
+await PixelpitSocial.createQuickGroup({ gameUrl, score });
+```
 
 ---
 
