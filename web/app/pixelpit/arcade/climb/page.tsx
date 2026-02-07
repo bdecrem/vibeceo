@@ -17,9 +17,9 @@ const LEDGE_HEIGHT = 60;
 const LEDGE_WIDTH_MIN = 80;
 const LEDGE_WIDTH_MAX = 140;
 const PLAYER_SIZE = 30;
-const CRUMBLE_WARNING = 2000; // ms
-const CRUMBLE_CRITICAL = 2500; // ms
-const CRUMBLE_DEATH = 3500; // ms
+const CRUMBLE_WARNING = 3000; // ms - cracks appear
+const CRUMBLE_CRITICAL = 4000; // ms - flashing/shaking
+const CRUMBLE_DEATH = 5000; // ms - ledge breaks (5 sec to observe and go)
 
 // Audio
 let audioCtx: AudioContext | null = null;
@@ -253,9 +253,20 @@ export default function ClimbGame() {
       const type = hazardTypes[Math.floor(Math.random() * hazardTypes.length)] as 'rock' | 'eagle' | 'ice';
       
       const fromLeft = Math.random() < 0.5;
-      const targetLedge = game.playerLedge + Math.floor(Math.random() * 5) + 1;
+      // ONLY spawn on the ledge directly above player — so player knows exactly what to watch
+      const targetLedge = game.playerLedge + 1;
       const ledge = game.ledges.find(l => Math.abs(l.y - (-targetLedge * LEDGE_HEIGHT)) < 5);
       if (!ledge) return;
+      
+      // Check if there's already a hazard on this ledge that's too close
+      // This ensures GAPS between hazards
+      const existingOnLedge = game.hazards.filter(h => Math.abs(h.y - (ledge.y - PLAYER_SIZE / 2)) < 10);
+      for (const existing of existingOnLedge) {
+        // If hazard is still near center of screen, don't spawn another
+        if (existing.x > canvasSize.w * 0.2 && existing.x < canvasSize.w * 0.8) {
+          return; // Wait for clear gap
+        }
+      }
       
       const baseSpeed = 2 + zone.speed;
       let speed = baseSpeed;
@@ -291,9 +302,9 @@ export default function ClimbGame() {
 
       const now = Date.now();
       
-      // Spawn hazards
+      // Spawn hazards — slower spawn rate = clearer gaps
       hazardSpawnTimer += dt;
-      const spawnInterval = 1.5 / ZONES[game.zone].speed;
+      const spawnInterval = 2.5 / ZONES[game.zone].speed; // More time between spawns
       if (hazardSpawnTimer > spawnInterval) {
         hazardSpawnTimer = 0;
         spawnHazard(game);
@@ -407,20 +418,22 @@ export default function ClimbGame() {
           continue;
         }
         
-        // Collision with player
-        const playerScreenY = game.playerY;
-        if (Math.abs(h.y - playerScreenY) < PLAYER_SIZE &&
-            Math.abs(h.x - game.playerX) < PLAYER_SIZE) {
-          // Death!
-          game.running = false;
-          playDeath();
-          setGameState('dead');
-          fetch('/api/pixelpit/stats', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ game: GAME_ID }),
-          }).catch(() => {});
-          return;
+        // Collision with player — ONLY when hopping (standing on ledge = safe)
+        if (game.isHopping) {
+          const playerScreenY = game.playerY;
+          if (Math.abs(h.y - playerScreenY) < PLAYER_SIZE &&
+              Math.abs(h.x - game.playerX) < PLAYER_SIZE) {
+            // Death!
+            game.running = false;
+            playDeath();
+            setGameState('dead');
+            fetch('/api/pixelpit/stats', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ game: GAME_ID }),
+            }).catch(() => {});
+            return;
+          }
         }
       }
 
