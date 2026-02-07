@@ -8,6 +8,49 @@ const TILE_SIZE = 60; // Taller lanes for clearer positioning
 const PLAYER_SIZE = 20;
 const ABDUCTION_TIMEOUT = 3000; // 3 seconds idle = abducted
 
+// Level thresholds
+const LEVEL_THRESHOLDS = [0, 25, 50]; // Level 1: 0-24, Level 2: 25-49, Level 3: 50+
+
+// Level themes
+const LEVEL_THEMES = {
+  1: {
+    name: 'EARTH ORBIT',
+    skyTop: '#0a0a2a',
+    skyBottom: '#1a1a4a',
+    platform: '#4a4a5a',
+    platformAccent: '#3a3a4a',
+    lane: '#1E1B4B',
+    laneGlow: '#7c3aed',
+    speedMult: 1.0,
+  },
+  2: {
+    name: 'DEEP SPACE',
+    skyTop: '#1a0a2a',
+    skyBottom: '#3a1a4a',
+    platform: '#3a3a4a',
+    platformAccent: '#2a2a3a',
+    lane: '#2a1a3a',
+    laneGlow: '#d946ef',
+    speedMult: 1.1,
+  },
+  3: {
+    name: 'VOID EDGE',
+    skyTop: '#0a0505',
+    skyBottom: '#1a0a0a',
+    platform: '#2a2a2a',
+    platformAccent: '#1a1a1a',
+    lane: '#1a0a0a',
+    laneGlow: '#ef4444',
+    speedMult: 1.2,
+  },
+};
+
+function getLevel(row: number): 1 | 2 | 3 {
+  if (row >= 50) return 3;
+  if (row >= 25) return 2;
+  return 1;
+}
+
 // Lane types
 type LaneType = 'platform' | 'lane' | 'debris' | 'beam';
 
@@ -170,7 +213,6 @@ function playBeamWarning() {
   const t = audioCtx.currentTime;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  // Softer: sine instead of square, lower freq
   osc.type = 'sine';
   osc.frequency.value = 440;
   gain.gain.setValueAtTime(0.06, t);
@@ -183,25 +225,47 @@ function playBeamWarning() {
   osc.stop(t + 0.3);
 }
 
-// MUSIC SYSTEM: D minor, 95 BPM, sub bass pulse, filtered arp, atmospheric pad, star twinkles
+function playLevelUp() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Rising chord
+  const notes = [D_MINOR.D4, D_MINOR.F4, D_MINOR.A4, D_MINOR.D5];
+  notes.forEach((freq, i) => {
+    const osc = audioCtx!.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const gain = audioCtx!.createGain();
+    gain.gain.setValueAtTime(0, t + i * 0.08);
+    gain.gain.linearRampToValueAtTime(0.08, t + i * 0.08 + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.4);
+    osc.connect(gain);
+    gain.connect(masterGain!);
+    osc.start(t + i * 0.08);
+    osc.stop(t + i * 0.08 + 0.5);
+  });
+}
+
+// MUSIC SYSTEM: D minor, 95 BPM, level-aware layers
 let musicOscs: OscillatorNode[] = [];
 let musicGains: GainNode[] = [];
 let musicIntervals: NodeJS.Timeout[] = [];
+let currentLevel = 1;
 
 // D minor scale frequencies
 const D_MINOR = {
-  D2: 73.42, E2: 82.41, F2: 87.31, G2: 98, A2: 110, Bb2: 116.54, C3: 130.81,
+  D2: 73.42, Eb2: 77.78, E2: 82.41, F2: 87.31, G2: 98, A2: 110, Bb2: 116.54, C3: 130.81,
   D3: 146.83, E3: 164.81, F3: 174.61, G3: 196, A3: 220, Bb3: 233.08, C4: 261.63,
-  D4: 293.66, E4: 329.63, F4: 349.23, G4: 392, A4: 440, Bb4: 466.16, C5: 523.25, D5: 587.33
+  D4: 293.66, Eb4: 311.13, E4: 329.63, F4: 349.23, G4: 392, A4: 440, Bb4: 466.16, C5: 523.25, D5: 587.33
 };
 
 const BPM = 95;
 const BEAT_MS = 60000 / BPM;
 const SIXTEENTH = BEAT_MS / 4;
 
-function startMusic() {
+function startMusic(level: 1 | 2 | 3 = 1) {
   if (!audioCtx || !masterGain) return;
   stopMusic();
+  currentLevel = level;
   
   // Atmospheric pad (D minor chord, slow attack)
   const padNotes = [D_MINOR.D2, D_MINOR.A2, D_MINOR.D3];
@@ -219,7 +283,8 @@ function startMusic() {
     musicGains.push(gain);
   });
   
-  // Sub bass pulse (every 2 beats)
+  // Sub bass pulse - Level 3: every beat (more intense), else every 2 beats
+  const bassRate = level === 3 ? BEAT_MS : BEAT_MS * 2;
   const bassInterval = setInterval(() => {
     if (!audioCtx || !masterGain) return;
     const t = audioCtx.currentTime;
@@ -227,40 +292,40 @@ function startMusic() {
     osc.type = 'sine';
     osc.frequency.value = D_MINOR.D2;
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.15, t);
+    const bassVol = level === 3 ? 0.2 : 0.15;
+    gain.gain.setValueAtTime(bassVol, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
     osc.connect(gain);
     gain.connect(masterGain);
     osc.start(t);
     osc.stop(t + 0.4);
-  }, BEAT_MS * 2);
+  }, bassRate);
   musicIntervals.push(bassInterval);
   
-  // Filtered arpeggio (16th notes with filter sweep)
-  const arpNotes = [D_MINOR.D4, D_MINOR.F4, D_MINOR.A4, D_MINOR.D5, D_MINOR.A4, D_MINOR.F4];
+  // Arpeggio - Level 2+: faster (8th notes), Level 3: add dissonance
+  const arpRate = level >= 2 ? BEAT_MS / 2 : SIXTEENTH;
+  const arpNotes = level === 3 
+    ? [D_MINOR.D4, D_MINOR.Eb4, D_MINOR.A4, D_MINOR.D5, D_MINOR.Eb4, D_MINOR.A4] // Dissonant
+    : [D_MINOR.D4, D_MINOR.F4, D_MINOR.A4, D_MINOR.D5, D_MINOR.A4, D_MINOR.F4];
   let arpIndex = 0;
-  let filterFreq = 800;
+  let filterFreq = 800 + level * 200;
   let filterDir = 1;
   
   const arpInterval = setInterval(() => {
     if (!audioCtx || !masterGain) return;
     const t = audioCtx.currentTime;
     
-    // Intensity ramp: speed up slightly as score increases
-    const intensity = Math.min(currentScore / 50, 1);
-    
     const osc = audioCtx.createOscillator();
     osc.type = 'sawtooth';
     osc.frequency.value = arpNotes[arpIndex];
     
-    // Filter sweep
     const filter = audioCtx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = filterFreq + intensity * 800;
-    filter.Q.value = 3;
+    filter.frequency.value = filterFreq;
+    filter.Q.value = 3 + level;
     
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.04 + intensity * 0.02, t);
+    gain.gain.setValueAtTime(0.04 + level * 0.01, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
     
     osc.connect(filter);
@@ -270,13 +335,40 @@ function startMusic() {
     osc.stop(t + 0.15);
     
     arpIndex = (arpIndex + 1) % arpNotes.length;
-    
-    // Sweep filter
     filterFreq += filterDir * 50;
-    if (filterFreq > 2000) filterDir = -1;
+    if (filterFreq > 2000 + level * 300) filterDir = -1;
     if (filterFreq < 400) filterDir = 1;
-  }, SIXTEENTH);
+  }, arpRate);
   musicIntervals.push(arpInterval);
+  
+  // Hi-hat - Level 2+ only (8th notes)
+  if (level >= 2) {
+    const hihatInterval = setInterval(() => {
+      if (!audioCtx || !masterGain) return;
+      const t = audioCtx.currentTime;
+      
+      const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < noiseData.length; i++) {
+        noiseData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (noiseData.length * 0.1));
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = noiseBuffer;
+      
+      const highpass = audioCtx.createBiquadFilter();
+      highpass.type = 'highpass';
+      highpass.frequency.value = 8000;
+      
+      const gain = audioCtx.createGain();
+      gain.gain.value = level === 3 ? 0.04 : 0.025;
+      
+      noise.connect(highpass);
+      highpass.connect(gain);
+      gain.connect(masterGain);
+      noise.start(t);
+    }, BEAT_MS / 2);
+    musicIntervals.push(hihatInterval);
+  }
   
   // Star twinkle (5% chance per beat)
   const twinkleInterval = setInterval(() => {
@@ -289,7 +381,7 @@ function startMusic() {
     
     const osc = audioCtx.createOscillator();
     osc.type = 'sine';
-    osc.frequency.value = freq * 2; // High octave
+    osc.frequency.value = freq * 2;
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0.03, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
@@ -311,6 +403,12 @@ function stopMusic() {
     clearInterval(interval);
   }
   musicIntervals = [];
+}
+
+function updateMusicLevel(level: 1 | 2 | 3) {
+  if (level !== currentLevel) {
+    startMusic(level);
+  }
 }
 
 function updateMusicIntensity(score: number) {
@@ -343,6 +441,8 @@ export default function OrbitGame() {
     crystals: 0,
     deathType: '',
     displayScore: 0,
+    level: 1 as 1 | 2 | 3,
+    levelTransition: 0, // 0 = none, >0 = showing banner countdown
     stars: [] as { x: number; y: number; size: number; twinkle: number }[],
   });
 
@@ -434,6 +534,8 @@ export default function OrbitGame() {
     game.abductorActive = false;
     game.crystals = 0;
     game.displayScore = 0;
+    game.level = 1;
+    game.levelTransition = 0;
     game.deathType = '';
     
     // Generate stars
@@ -486,6 +588,11 @@ export default function OrbitGame() {
       const game = gameRef.current;
       if (!game.running) return;
 
+      // Level transition countdown
+      if (game.levelTransition > 0) {
+        game.levelTransition -= dt;
+      }
+
       const now = Date.now();
 
       // Abductor (alien mothership if idle)
@@ -531,11 +638,12 @@ export default function OrbitGame() {
       const targetCameraY = game.playerY - canvasSize.h * 0.7;
       game.cameraY += (targetCameraY - game.cameraY) * 0.1;
 
-      // Update lane objects
+      // Update lane objects - apply level speed multiplier
+      const speedMult = LEVEL_THEMES[game.level].speedMult;
       for (const lane of game.lanes) {
         for (const obj of lane.objects) {
           if (obj.type !== 'crystal') {
-            obj.x += lane.speed * lane.direction;
+            obj.x += lane.speed * lane.direction * speedMult;
             
             if (lane.direction > 0 && obj.x > canvasSize.w + obj.width) {
               obj.x = -obj.width;
@@ -582,7 +690,7 @@ export default function OrbitGame() {
               // Generous hitbox for landing on satellites (player-favorable)
               if (game.playerX > obj.x - 15 && game.playerX < obj.x + obj.width + 15) {
                 onSatellite = true;
-                game.playerX += currentLane.speed * currentLane.direction;
+                game.playerX += currentLane.speed * currentLane.direction * speedMult;
                 game.targetX = game.playerX;
                 break;
               }
@@ -652,20 +760,25 @@ export default function OrbitGame() {
 
     const draw = () => {
       const game = gameRef.current;
+      const theme = LEVEL_THEMES[game.level];
       
-      // Deep space background
+      // Level-based background
       const gradient = ctx.createLinearGradient(0, 0, 0, canvasSize.h);
-      gradient.addColorStop(0, '#0a0a1a');
-      gradient.addColorStop(1, '#1a0a2e');
+      gradient.addColorStop(0, theme.skyTop);
+      gradient.addColorStop(1, theme.skyBottom);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
 
-      // Stars
+      // Stars (tinted by level)
       for (const star of game.stars) {
         const screenY = star.y - game.cameraY;
         if (screenY < -10 || screenY > canvasSize.h + 10) continue;
         const twinkle = 0.5 + 0.5 * Math.sin(Date.now() / 500 + star.twinkle);
-        ctx.fillStyle = `rgba(255, 255, 255, ${twinkle * 0.8})`;
+        // Level 3: red tint, Level 2: purple tint
+        const starColor = game.level === 3 ? `rgba(255, 200, 200, ${twinkle * 0.8})` 
+                        : game.level === 2 ? `rgba(230, 200, 255, ${twinkle * 0.8})`
+                        : `rgba(255, 255, 255, ${twinkle * 0.8})`;
+        ctx.fillStyle = starColor;
         ctx.beginPath();
         ctx.arc(star.x, screenY, star.size, 0, Math.PI * 2);
         ctx.fill();
@@ -676,24 +789,32 @@ export default function OrbitGame() {
         const screenY = lane.y - game.cameraY;
         if (screenY < -TILE_SIZE * 2 || screenY > canvasSize.h + TILE_SIZE) continue;
 
-        // Lane background
+        // Lane background - level themed
         if (lane.type === 'platform') {
-          // Moon rock platform
-          ctx.fillStyle = '#374151';
+          ctx.fillStyle = theme.platform;
           ctx.fillRect(0, screenY, canvasSize.w, TILE_SIZE);
-          // Crater details
-          ctx.fillStyle = '#1F2937';
+          // Crater/detail
+          ctx.fillStyle = theme.platformAccent;
           for (let cx = 30; cx < canvasSize.w; cx += 80) {
             ctx.beginPath();
             ctx.arc(cx, screenY + 25, 8, 0, Math.PI * 2);
             ctx.fill();
           }
+          // Level 3: warning stripes
+          if (game.level === 3) {
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+            for (let sx = 0; sx < canvasSize.w; sx += 40) {
+              ctx.beginPath();
+              ctx.moveTo(sx, screenY);
+              ctx.lineTo(sx + 20, screenY + TILE_SIZE);
+              ctx.stroke();
+            }
+          }
         } else if (lane.type === 'lane') {
-          // Space lane
-          ctx.fillStyle = '#1E1B4B';
+          ctx.fillStyle = theme.lane;
           ctx.fillRect(0, screenY, canvasSize.w, TILE_SIZE);
-          // Lane markings (energy lines)
-          ctx.strokeStyle = '#4C1D95';
+          ctx.strokeStyle = theme.laneGlow;
           ctx.lineWidth = 2;
           ctx.setLineDash([15, 15]);
           ctx.beginPath();
@@ -702,21 +823,18 @@ export default function OrbitGame() {
           ctx.stroke();
           ctx.setLineDash([]);
         } else if (lane.type === 'debris') {
-          // Debris field (void)
           ctx.fillStyle = '#030712';
           ctx.fillRect(0, screenY, canvasSize.w, TILE_SIZE);
-          // Void particles
-          ctx.fillStyle = '#4B5563';
+          // Void particles - level colored
+          ctx.fillStyle = game.level === 3 ? '#7f1d1d' : game.level === 2 ? '#581c87' : '#4B5563';
           for (let px = 10; px < canvasSize.w; px += 30) {
             ctx.beginPath();
             ctx.arc(px + Math.sin(Date.now() / 1000 + px) * 5, screenY + 25, 2, 0, Math.PI * 2);
             ctx.fill();
           }
         } else if (lane.type === 'beam') {
-          // Beam lane
           ctx.fillStyle = '#1C1917';
           ctx.fillRect(0, screenY, canvasSize.w, TILE_SIZE);
-          // Warning indicator
           if (lane.hasWarning) {
             ctx.fillStyle = Math.floor(Date.now() / 200) % 2 ? '#EF4444' : '#7F1D1D';
             ctx.beginPath();
@@ -725,68 +843,100 @@ export default function OrbitGame() {
           }
         }
 
-        // Draw objects
+        // Draw objects - level themed
         for (const obj of lane.objects) {
           const objY = screenY + TILE_SIZE / 2;
           
           if (obj.type === 'ufo') {
-            // UFO
-            ctx.fillStyle = obj.color || '#A855F7';
-            ctx.beginPath();
-            ctx.ellipse(obj.x + obj.width / 2, objY, obj.width / 2, 12, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // Dome
-            ctx.fillStyle = '#22D3EE';
+            // UFO - Level 1: classic, Level 2: angular magenta, Level 3: menacing red
+            const ufoColor = game.level === 3 ? '#dc2626' : game.level === 2 ? '#d946ef' : (obj.color || '#A855F7');
+            const domeColor = game.level === 3 ? '#ef4444' : game.level === 2 ? '#f0abfc' : '#22D3EE';
+            ctx.fillStyle = ufoColor;
+            if (game.level >= 2) {
+              // Angular shape for level 2+
+              ctx.beginPath();
+              ctx.moveTo(obj.x, objY);
+              ctx.lineTo(obj.x + obj.width * 0.3, objY - 10);
+              ctx.lineTo(obj.x + obj.width * 0.7, objY - 10);
+              ctx.lineTo(obj.x + obj.width, objY);
+              ctx.lineTo(obj.x + obj.width * 0.7, objY + 8);
+              ctx.lineTo(obj.x + obj.width * 0.3, objY + 8);
+              ctx.closePath();
+              ctx.fill();
+            } else {
+              ctx.beginPath();
+              ctx.ellipse(obj.x + obj.width / 2, objY, obj.width / 2, 12, 0, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.fillStyle = domeColor;
             ctx.beginPath();
             ctx.arc(obj.x + obj.width / 2, objY - 8, 10, Math.PI, 0);
             ctx.fill();
             // Lights
-            ctx.fillStyle = '#FBBF24';
+            ctx.fillStyle = game.level === 3 ? '#fca5a5' : '#FBBF24';
             for (let l = 0; l < 3; l++) {
               ctx.beginPath();
               ctx.arc(obj.x + 10 + l * 12, objY + 5, 3, 0, Math.PI * 2);
               ctx.fill();
             }
           } else if (obj.type === 'asteroid') {
-            // Asteroid
-            ctx.fillStyle = '#78716C';
-            ctx.beginPath();
-            ctx.arc(obj.x + obj.width / 2, objY, obj.width / 3, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#57534E';
-            ctx.beginPath();
-            ctx.arc(obj.x + obj.width / 2 - 8, objY - 5, 8, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(obj.x + obj.width / 2 + 10, objY + 5, 6, 0, Math.PI * 2);
-            ctx.fill();
+            // Asteroid - Level 1: gray, Level 2: purple crystal, Level 3: black shards
+            const astColor = game.level === 3 ? '#1f1f1f' : game.level === 2 ? '#7c3aed' : '#78716C';
+            const astAccent = game.level === 3 ? '#374151' : game.level === 2 ? '#a78bfa' : '#57534E';
+            ctx.fillStyle = astColor;
+            if (game.level === 3) {
+              // Jagged shards
+              ctx.beginPath();
+              ctx.moveTo(obj.x + obj.width / 2, objY - 15);
+              ctx.lineTo(obj.x + obj.width * 0.8, objY - 5);
+              ctx.lineTo(obj.x + obj.width, objY + 5);
+              ctx.lineTo(obj.x + obj.width * 0.6, objY + 12);
+              ctx.lineTo(obj.x + obj.width * 0.3, objY + 8);
+              ctx.lineTo(obj.x, objY);
+              ctx.lineTo(obj.x + obj.width * 0.2, objY - 10);
+              ctx.closePath();
+              ctx.fill();
+            } else {
+              ctx.beginPath();
+              ctx.arc(obj.x + obj.width / 2, objY, obj.width / 3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = astAccent;
+              ctx.beginPath();
+              ctx.arc(obj.x + obj.width / 2 - 8, objY - 5, 8, 0, Math.PI * 2);
+              ctx.fill();
+            }
           } else if (obj.type === 'satellite') {
-            // Satellite
-            ctx.fillStyle = '#6B7280';
+            // Satellite - Level 1: standard, Level 2: rusted, Level 3: emergency beacon
+            const satColor = game.level === 3 ? '#991b1b' : game.level === 2 ? '#78716c' : '#6B7280';
+            const panelColor = game.level === 3 ? '#450a0a' : game.level === 2 ? '#44403c' : '#1E40AF';
+            ctx.fillStyle = satColor;
             ctx.fillRect(obj.x, objY - 8, obj.width, 16);
-            // Solar panels
-            ctx.fillStyle = '#1E40AF';
+            ctx.fillStyle = panelColor;
             ctx.fillRect(obj.x - 15, objY - 12, 15, 24);
             ctx.fillRect(obj.x + obj.width, objY - 12, 15, 24);
-            // Antenna
-            ctx.strokeStyle = '#9CA3AF';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(obj.x + obj.width / 2, objY - 8);
-            ctx.lineTo(obj.x + obj.width / 2, objY - 20);
-            ctx.stroke();
+            // Level 3: flashing beacon
+            if (game.level === 3 && Math.floor(Date.now() / 300) % 2) {
+              ctx.fillStyle = '#ef4444';
+              ctx.beginPath();
+              ctx.arc(obj.x + obj.width / 2, objY - 12, 4, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              ctx.strokeStyle = '#9CA3AF';
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.moveTo(obj.x + obj.width / 2, objY - 8);
+              ctx.lineTo(obj.x + obj.width / 2, objY - 20);
+              ctx.stroke();
+            }
           } else if (obj.type === 'mothership') {
-            // Mothership
             ctx.fillStyle = '#1F2937';
             ctx.fillRect(obj.x, objY - 25, obj.width, 50);
             ctx.fillStyle = '#DC2626';
             ctx.fillRect(obj.x, objY - 25, 40, 50);
-            // Windows
             ctx.fillStyle = '#22D3EE';
             for (let w = 50; w < obj.width - 20; w += 30) {
               ctx.fillRect(obj.x + w, objY - 10, 20, 15);
             }
-            // Beam
             ctx.fillStyle = 'rgba(34, 211, 238, 0.3)';
             ctx.beginPath();
             ctx.moveTo(obj.x + obj.width / 2 - 30, objY + 25);
@@ -904,6 +1054,21 @@ export default function OrbitGame() {
         ctx.fillText('TAP TO JUMP FORWARD', canvasSize.w / 2, canvasSize.h - 100);
         ctx.fillText('SWIPE ← → TO MOVE', canvasSize.w / 2, canvasSize.h - 75);
       }
+      
+      // Level transition banner
+      if (game.levelTransition > 0) {
+        const alpha = Math.min(game.levelTransition, 1);
+        ctx.fillStyle = `rgba(0, 0, 0, ${alpha * 0.7})`;
+        ctx.fillRect(0, canvasSize.h / 2 - 50, canvasSize.w, 100);
+        
+        ctx.fillStyle = theme.laneGlow;
+        ctx.font = 'bold 32px ui-monospace';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = theme.laneGlow;
+        ctx.shadowBlur = 20;
+        ctx.fillText(theme.name, canvasSize.w / 2, canvasSize.h / 2 + 10);
+        ctx.shadowBlur = 0;
+      }
     };
 
     let lastTime = 0;
@@ -959,6 +1124,15 @@ export default function OrbitGame() {
         game.displayScore += points;
         setScore(game.displayScore);
         updateMusicIntensity(newRow);
+        
+        // Check for level change
+        const newLevel = getLevel(newRow);
+        if (newLevel !== game.level) {
+          game.level = newLevel;
+          game.levelTransition = 1.5; // Show banner for 1.5 seconds
+          playLevelUp();
+          updateMusicLevel(newLevel);
+        }
       }
 
       playHop();
