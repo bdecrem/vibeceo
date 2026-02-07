@@ -180,4 +180,11 @@ export const GAME_COLORS = {
     accent: '#9b59b6',           // amethyst crystals
     branding: '#8b7fa8',         // muted lavender
   },
+  drop: {
+    background: 'linear-gradient(180deg, #5BA3D9 0%, #4A8DB7 100%)',
+    primary: '#ffffff',          // white score
+    secondary: '#FFD43B',        // gold accent
+    accent: '#FF2244',           // red ball / CTA
+    branding: '#ffffff80',       // semi-transparent white
+  },
 };

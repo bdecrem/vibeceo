@@ -55,6 +55,7 @@ export {
   CatchDecorations,
   CatTowerDecorations,
   CaveMothDecorations,
+  DropDecorations,
   EmojiDecorations,
   FlappyDecorations,
   FlipDecorations,

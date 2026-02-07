@@ -1616,3 +1616,174 @@ export function TapBeatsDecorations() {
     </div>
   );
 }
+
+/**
+ * DROP-specific decorations: helix tower platforms, ball, storm zones.
+ * Nintendo-bright aesthetic over sky blue gradient.
+ */
+export function DropDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Central tower beam */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 575,
+          width: 50,
+          height: 630,
+          background: '#ffffff10',
+        }}
+      />
+
+      {/* Platform arcs — colorful rings with gaps */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 50,
+          left: 300,
+          width: 600,
+          height: 24,
+          background: '#FF6B6B',
+          borderRadius: 12,
+          opacity: 0.4,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 50,
+          left: 520,
+          width: 80,
+          height: 24,
+          background: '#5BA3D9',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'absolute',
+          top: 120,
+          left: 280,
+          width: 640,
+          height: 24,
+          background: '#FFA94D',
+          borderRadius: 12,
+          opacity: 0.4,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 120,
+          left: 680,
+          width: 90,
+          height: 24,
+          background: '#5BA3D9',
+        }}
+      />
+
+      {/* Storm zone */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 120,
+          left: 380,
+          width: 100,
+          height: 24,
+          background: '#1a0808',
+          borderRadius: 6,
+          boxShadow: '0 0 20px #CC110060',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 120,
+          left: 310,
+          width: 580,
+          height: 24,
+          background: '#69DB7C',
+          borderRadius: 12,
+          opacity: 0.4,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 120,
+          left: 500,
+          width: 80,
+          height: 24,
+          background: '#4A8DB7',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 60,
+          left: 290,
+          width: 620,
+          height: 24,
+          background: '#CC5DE8',
+          borderRadius: 12,
+          opacity: 0.4,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 60,
+          left: 720,
+          width: 85,
+          height: 24,
+          background: '#4A8DB7',
+        }}
+      />
+
+      {/* Fireball powerup glow */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 120,
+          left: 700,
+          width: 50,
+          height: 24,
+          background: '#FFD700',
+          borderRadius: 12,
+          boxShadow: '0 0 20px #FFD700',
+          opacity: 0.6,
+        }}
+      />
+
+      {/* Ball — red with glow */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 170,
+          left: 582,
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          background: '#FF2244',
+          boxShadow: '0 0 25px #FF224480, 0 0 50px #FF224430',
+        }}
+      />
+
+      {/* Speed lines */}
+      <div style={{ position: 'absolute', top: 155, left: 594, width: 12, height: 2, background: '#FF224450', borderRadius: 1 }} />
+      <div style={{ position: 'absolute', top: 148, left: 596, width: 8, height: 2, background: '#FF224430', borderRadius: 1 }} />
+    </div>
+  );
+}
