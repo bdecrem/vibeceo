@@ -18,16 +18,16 @@ const labMessages = [
 ];
 
 const games = [
-  { icon: '🌀', name: 'Drop', href: '/pixelpit/arcade/drop', playable: true, date: 'Thu 2/6' },
-  { icon: '🦋', name: 'Cave Moth', href: '/pixelpit/arcade/cavemoth', playable: true, date: 'Wed 2/5' },
-  { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/arcade/batdash', playable: true, date: 'Tue 2/4' },
-  { icon: '🥁', name: 'Tap Beats', href: '/pixelpit/arcade/tap-beats', playable: true, date: 'Tue 2/4' },
-  { icon: '🌱', name: 'Sprout Run', href: '/pixelpit/arcade/sprout-run', playable: true, date: 'Mon 2/3' },
-  { icon: '🐱', name: 'Cat Tower', href: '/pixelpit/arcade/cattower', playable: true, date: 'Fri 1/31' },
-  { icon: '💥', name: 'Emoji Blaster', href: '/pixelpit/arcade/emoji', playable: true, date: 'Thu 1/30' },
-  { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true, date: 'Wed 1/29' },
+  { icon: '🌀', name: 'Drop', href: '/pixelpit/arcade/drop', playable: true, date: 'Fri 2/6' },
+  { icon: '🦋', name: 'Cave Moth', href: '/pixelpit/arcade/cavemoth', playable: true, date: 'Thu 2/5' },
+  { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/arcade/batdash', playable: true, date: 'Wed 2/4' },
+  { icon: '🥁', name: 'Tap Beats', href: '/pixelpit/arcade/tap-beats', playable: true, date: 'Wed 2/4' },
+  { icon: '🌱', name: 'Sprout Run', href: '/pixelpit/arcade/sprout-run', playable: true, date: 'Tue 2/3' },
+  { icon: '🐱', name: 'Cat Tower', href: '/pixelpit/arcade/cattower', playable: true, date: 'Sat 1/31' },
+  { icon: '💥', name: 'Emoji Blaster', href: '/pixelpit/arcade/emoji', playable: true, date: 'Fri 1/30' },
+  { icon: '⚡', name: 'Beam', href: '/pixelpit/arcade/beam', playable: true, date: 'Thu 1/29' },
   // Older games
-  { icon: '🌀', name: 'Singularity', href: '/pixelpit/arcade/singularity', playable: true, date: 'Tue 1/28' },
+  { icon: '🌀', name: 'Singularity', href: '/pixelpit/arcade/singularity', playable: true, date: 'Wed 1/28' },
 ];
 
 const castBlurbs: Record<string, { bio: string; motto?: string }> = {
@@ -94,18 +94,18 @@ const cast = [
 ];
 
 const labItems = [
-  { icon: '🏔️', name: 'Climb', href: '/pixelpit/lab/climb', date: 'Thu 2/6' },
+  { icon: '🏔️', name: 'Climb', href: '/pixelpit/lab/climb', date: 'Fri 2/6' },
   { icon: '👻', name: 'Haunt', href: '/pixelpit/lab/haunt', date: 'Thu 2/5' },
-  { icon: '🪙', name: 'Catch', href: '/pixelpit/lab/catch', date: 'Tue 2/4' },
-  { icon: '🔄', name: 'Flip', href: '/pixelpit/lab/flip', date: 'Tue 2/4' },
-  { icon: '🧩', name: 'Pixel', href: '/pixelpit/lab/pixel', date: 'Tue 2/4' },
-  { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/lab/bat-dash', date: 'Tue 2/4' },
-  { icon: '🐦', name: 'Flappy', href: '/pixelpit/lab/flappy', date: 'Tue 2/4' },
-  { icon: '🎸', name: 'Pit Jam PJ01', href: '/pixelpit/lab#pit-jam-pj01', date: 'Mon 2/3' },
-  { icon: '🧫', name: 'Swarm P16', href: '/pixelpit/swarm/p16/index.html', date: 'Fri 1/31' },
-  { icon: '🚀', name: 'Swarm P9', href: '/pixelpit/swarm/p9/index.html', date: 'Thu 1/30' },
-  { icon: '⚡', name: 'Swarm P8', href: '/pixelpit/swarm/p8/index.html', date: 'Thu 1/30' },
-  { icon: '🧪', name: 'Swarm T7', href: '/pixelpit/swarm/t7/index.html', date: 'Wed 1/29' },
+  { icon: '🪙', name: 'Catch', href: '/pixelpit/lab/catch', date: 'Wed 2/4' },
+  { icon: '🔄', name: 'Flip', href: '/pixelpit/lab/flip', date: 'Wed 2/4' },
+  { icon: '🧩', name: 'Pixel', href: '/pixelpit/lab/pixel', date: 'Wed 2/4' },
+  { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/lab/bat-dash', date: 'Wed 2/4' },
+  { icon: '🐦', name: 'Flappy', href: '/pixelpit/lab/flappy', date: 'Wed 2/4' },
+  { icon: '🎸', name: 'Pit Jam PJ01', href: '/pixelpit/lab#pit-jam-pj01', date: 'Tue 2/3' },
+  { icon: '🧫', name: 'Swarm P16', href: '/pixelpit/swarm/p16/index.html', date: 'Sat 1/31' },
+  { icon: '🚀', name: 'Swarm P9', href: '/pixelpit/swarm/p9/index.html', date: 'Fri 1/30' },
+  { icon: '⚡', name: 'Swarm P8', href: '/pixelpit/swarm/p8/index.html', date: 'Fri 1/30' },
+  { icon: '🧪', name: 'Swarm T7', href: '/pixelpit/swarm/t7/index.html', date: 'Thu 1/29' },
 ];
 
 const featuredGames = [
