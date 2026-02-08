@@ -211,12 +211,12 @@ export default function DevourGame() {
     startDrone();
     const game = gameRef.current;
     game.running = true;
-    game.holeSize = 20;
-    game.pulseRadius = 20;
+    game.holeSize = 25;
+    game.pulseRadius = 25;
     game.pulseState = 'idle';
     game.pulseTimer = 0;
-    game.maxPulseReach = 80;
-    game.consumeThreshold = 3;
+    game.maxPulseReach = 120; // Bigger initial reach
+    game.consumeThreshold = 4; // Can eat slightly bigger things
     game.diskAngle = 0;
     game.objects = [];
     game.nextObjectId = 0;
@@ -228,8 +228,23 @@ export default function DevourGame() {
     game.comboTimer = 0;
     game.particles = [];
     
-    // Initial objects
-    for (let i = 0; i < 15; i++) {
+    // Initial objects - force small debris CLOSE to center for immediate feedback
+    const centerX = canvasSize.w / 2;
+    const centerY = canvasSize.h / 2;
+    // Close debris (guaranteed consumable)
+    for (let i = 0; i < 8; i++) {
+      game.objects.push({
+        id: game.nextObjectId++,
+        orbitRadius: 70 + Math.random() * 50, // Close!
+        angle: (i / 8) * Math.PI * 2 + Math.random() * 0.3,
+        angularSpeed: (0.4 + Math.random() * 0.3) * (Math.random() < 0.5 ? 1 : -1),
+        size: 1 + Math.random() * 2, // Small = consumable
+        type: 'debris',
+        consumed: false,
+      });
+    }
+    // Outer objects (mix of sizes)
+    for (let i = 0; i < 10; i++) {
       spawnObject(canvasSize.w, canvasSize.h);
     }
     
@@ -507,22 +522,36 @@ export default function DevourGame() {
         ctx.fill();
       }
 
-      // Draw pulse range (when active)
+      // Draw pulse range (when active) - VERY VISIBLE
       if (game.pulseState !== 'idle' && game.pulseState !== 'cooldown') {
-        ctx.strokeStyle = `rgba(139, 92, 246, ${0.3 + Math.sin(Date.now() / 100) * 0.2})`;
-        ctx.lineWidth = 3;
+        // Bright outer ring
+        ctx.strokeStyle = '#a78bfa';
+        ctx.lineWidth = 6;
+        ctx.shadowColor = '#8b5cf6';
+        ctx.shadowBlur = 20;
         ctx.beginPath();
         ctx.arc(centerX, centerY, game.pulseRadius, 0, Math.PI * 2);
         ctx.stroke();
+        ctx.shadowBlur = 0;
         
-        // Inner glow
+        // Pulsing inner fill
+        const pulseAlpha = game.pulseState === 'expanding' ? 0.4 : 0.25;
         const pulseGrad = ctx.createRadialGradient(centerX, centerY, game.holeSize, centerX, centerY, game.pulseRadius);
-        pulseGrad.addColorStop(0, 'rgba(139, 92, 246, 0.2)');
+        pulseGrad.addColorStop(0, `rgba(139, 92, 246, ${pulseAlpha})`);
+        pulseGrad.addColorStop(0.7, `rgba(139, 92, 246, ${pulseAlpha * 0.5})`);
         pulseGrad.addColorStop(1, 'rgba(139, 92, 246, 0)');
         ctx.fillStyle = pulseGrad;
         ctx.beginPath();
         ctx.arc(centerX, centerY, game.pulseRadius, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Flash at start of pulse
+        if (game.pulseState === 'expanding' && game.pulseTimer < 50) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, game.pulseRadius * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
       // Draw black hole
@@ -631,17 +660,24 @@ export default function DevourGame() {
       handlePulse();
     };
 
+    const handlePointerDown = (e: PointerEvent) => {
+      e.preventDefault();
+      handlePulse();
+    };
+
     const handleClick = () => {
       handlePulse();
     };
 
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('pointerdown', handlePointerDown, { passive: false });
     canvas.addEventListener('click', handleClick);
 
     return () => {
       cancelAnimationFrame(animationId);
       stopDrone();
       canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('pointerdown', handlePointerDown);
       canvas.removeEventListener('click', handleClick);
     };
   }, [gameState, canvasSize, spawnObject, highScore]);
