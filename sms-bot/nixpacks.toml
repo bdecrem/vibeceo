@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs-20_x", "python312", "python312Packages.pytz"]
+nixPkgs = ["nodejs_20", "python312", "python312Packages.pytz"]
 
 [variables]
 NODE_VERSION = "20"
