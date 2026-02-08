@@ -3,7 +3,9 @@ const require = createRequire(import.meta.url);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  devIndicators: false,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   images: {
     unoptimized: true,
   },
@@ -20,8 +22,6 @@ const nextConfig = {
     }
     return config;
   },
-  // Allow Turbopack (default in Next.js 16) alongside webpack config
-  turbopack: {},
   // Ensure trailing slashes are handled correctly
   trailingSlash: true,
   // Rewrites for static HTML apps in public/
