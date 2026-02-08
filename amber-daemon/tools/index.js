@@ -265,14 +265,19 @@ export async function executeTool(name, input, session, context = {}) {
 
     case "web_search": {
       const { query } = input;
-      // Use a simple web search - could integrate with Brave API etc
+      const braveKey = process.env.BRAVE_SEARCH_API_KEY;
+      if (!braveKey) return 'Error: BRAVE_SEARCH_API_KEY not set';
       try {
         const encoded = encodeURIComponent(query);
-        const result = execSync(
-          `curl -s "https://html.duckduckgo.com/html/?q=${encoded}" | grep -oP '(?<=<a rel="nofollow" class="result__a" href=")[^"]+' | head -5`,
+        const raw = execSync(
+          `curl -s "https://api.search.brave.com/res/v1/web/search?q=${encoded}&count=5" -H "X-Subscription-Token: ${braveKey}" -H "Accept: application/json"`,
           { encoding: 'utf-8', timeout: 10000 }
         );
-        return result || 'No results found';
+        const data = JSON.parse(raw);
+        if (!data.web?.results?.length) return 'No results found';
+        return data.web.results.map(r =>
+          `${r.title}\n${r.url}\n${r.description || ''}`
+        ).join('\n\n');
       } catch (err) {
         return `Search failed: ${err.message}`;
       }
