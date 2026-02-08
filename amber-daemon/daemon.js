@@ -3,7 +3,6 @@
 // One Amber, multiple surfaces (TUI + Discord), shared context
 
 import { createSession, runAgentLoop, getApiKey, SPLASH } from './amber.js';
-import { execSync } from 'child_process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
@@ -14,22 +13,17 @@ import { dirname } from 'path';
 // === CONFIG ===
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const POLL_INTERVAL_MS = 30_000; // 30 seconds for Discord
-const DISCORD_CHANNEL_ID = '1441080550415929406'; // #agent-lounge (will add DMs later)
 const REPO_ROOT = join(__dirname, '..');
 const MAX_MESSAGES = 80;   // Trigger compaction above this
 const KEEP_MESSAGES = 50;  // Keep this many after compaction
 const STATE_DIR = join(homedir(), '.amber');
 const SESSIONS_DIR = join(STATE_DIR, 'sessions');
 const CONVERSATION_FILE = join(STATE_DIR, 'conversation.json');
-const STATE_FILE = join(STATE_DIR, 'daemon-state.json');
 const SOCKET_PATH = join(STATE_DIR, 'amber.sock');
 
 // === STATE ===
 let state = {
-  lastSeenDiscord: null,
   startedAt: new Date().toISOString(),
-  pollCount: 0,
   responsesCount: 0,
 };
 
@@ -143,28 +137,6 @@ function saveConversation() {
   }
 }
 
-function loadState() {
-  try {
-    if (existsSync(STATE_FILE)) {
-      const data = JSON.parse(readFileSync(STATE_FILE, 'utf-8'));
-      state.lastSeenDiscord = data.lastSeenDiscord || null;
-    }
-  } catch (err) {
-    log(`Failed to load state: ${err.message}`);
-  }
-}
-
-function saveState() {
-  try {
-    ensureStateDir();
-    writeFileSync(STATE_FILE, JSON.stringify({
-      lastSeenDiscord: state.lastSeenDiscord,
-      savedAt: new Date().toISOString(),
-    }, null, 2));
-  } catch (err) {
-    log(`Failed to save state: ${err.message}`);
-  }
-}
 
 // === SESSION ARCHIVING ===
 // Save conversation snapshot before compaction
@@ -370,7 +342,6 @@ function handleTUIMessage(msg, socket) {
         session: session?.createdAt,
         messageCount: agentMessages.length,
         isProcessing,
-        pollCount: state.pollCount,
         responsesCount: state.responsesCount,
       }) + '\n');
       break;
@@ -455,108 +426,10 @@ async function handleIncomingMessage(msg) {
       log('Sent response to Discord via socket');
     } catch (err) {
       log(`Failed to send to Discord socket: ${err.message}`);
-      // Fallback to webhook
-      postToDiscord(responseText);
     }
-  } else if (responseTarget === 'discord') {
-    postToDiscord(responseText);
   }
 }
 
-// === DISCORD ===
-function postToDiscord(message) {
-  try {
-    const scriptPath = join(REPO_ROOT, 'discord-bot/agent-chat/post-message.cjs');
-    const escaped = message.replace(/"/g, '\\"').replace(/\n/g, '\\n');
-    execSync(`node ${scriptPath} amber "${escaped}"`, {
-      encoding: 'utf-8',
-      timeout: 15000,
-    });
-    log('Posted to Discord');
-  } catch (err) {
-    log(`Discord post failed: ${err.message}`);
-  }
-}
-
-function parseDiscordOutput(output) {
-  const messages = [];
-  const lines = output.split('\n').filter(l => l.trim());
-  
-  for (const line of lines) {
-    const match = line.match(/^(.+?)\s+\((.+?)\):\s*(.*)$/);
-    if (match) {
-      messages.push({
-        author: match[1].trim(),
-        timestamp: match[2].trim(),
-        content: match[3].trim(),
-      });
-    }
-  }
-  return messages;
-}
-
-function shouldRespondDiscord(messages) {
-  if (!messages || messages.length === 0) return { respond: false };
-  
-  const newMessages = [];
-  let foundLastSeen = !state.lastSeenDiscord;
-  
-  for (const msg of messages) {
-    if (state.lastSeenDiscord && msg.timestamp === state.lastSeenDiscord) {
-      foundLastSeen = true;
-      continue;
-    }
-    if (foundLastSeen) {
-      if (msg.author.toLowerCase() === 'amber') continue;
-      newMessages.push(msg);
-    }
-  }
-  
-  if (newMessages.length === 0) return { respond: false };
-  
-  // Check for Amber mentions or DMs
-  const mentionsAmber = newMessages.some(m => 
-    /\bamber\b/i.test(m.content) || /@amber/i.test(m.content)
-  );
-  
-  if (!mentionsAmber) return { respond: false };
-  
-  return { respond: true, context: newMessages };
-}
-
-async function pollDiscord() {
-  state.pollCount++;
-  
-  try {
-    const scriptPath = join(REPO_ROOT, 'discord-bot/agent-chat/read-channel.cjs');
-    const output = execSync(`node ${scriptPath} ${DISCORD_CHANNEL_ID} 15`, {
-      encoding: 'utf-8',
-      timeout: 15000,
-    });
-    
-    const messages = parseDiscordOutput(output);
-    const { respond, context } = shouldRespondDiscord(messages);
-    
-    if (respond && context) {
-      // Build message content from context
-      const contextStr = context.map(m => `${m.author}: ${m.content}`).join('\n');
-      
-      queueMessage({
-        source: 'discord',
-        content: `[Discord #agent-lounge]\n${contextStr}`,
-        author: context[context.length - 1].author,
-      });
-      
-      // Update last seen
-      state.lastSeenDiscord = context[context.length - 1].timestamp;
-      saveState();
-    } else if (state.pollCount % 20 === 0) {
-      log(`Heartbeat: ${state.pollCount} polls, ${state.responsesCount} responses`);
-    }
-  } catch (err) {
-    log(`Poll error: ${err.message}`);
-  }
-}
 
 // === MAIN ===
 async function main() {
@@ -571,27 +444,18 @@ async function main() {
   }
   
   ensureStateDir();
-  loadState();
   loadConversation();
   session = createSession();
   
-  // Start socket server for TUI clients
+  // Start socket server for TUI clients (discord-bot.js connects here too)
   startSocketServer();
-  
-  // Start Discord polling
-  log('Starting Discord poll loop...');
-  setInterval(pollDiscord, POLL_INTERVAL_MS);
-  
-  // Initial poll
-  await pollDiscord();
-  
+
   log('Amber daemon running. Waiting for messages...');
 }
 
 // Graceful shutdown
 process.on('SIGINT', () => {
   log('Shutting down...');
-  saveState();
   saveConversation();
   if (existsSync(SOCKET_PATH)) {
     try { unlinkSync(SOCKET_PATH); } catch (err) {}
@@ -601,7 +465,6 @@ process.on('SIGINT', () => {
 
 process.on('SIGTERM', () => {
   log('Shutting down...');
-  saveState();
   saveConversation();
   if (existsSync(SOCKET_PATH)) {
     try { unlinkSync(SOCKET_PATH); } catch (err) {}
