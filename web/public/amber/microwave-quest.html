@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MICROWAVE QUEST — Amber</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="MICROWAVE QUEST">
+  <meta property="og:description" content="Find a microwave that isn't in use. An 8-bit lunch break survival game.">
+  <meta property="og:image" content="https://intheamber.com/amber/microwave-quest-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/microwave-quest.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MICROWAVE QUEST">
+  <meta name="twitter:description" content="Find a microwave that isn't in use. An 8-bit lunch break survival game.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/microwave-quest-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: monospace;
+      overflow: hidden;
+    }
+
+    #gameCanvas {
+      border: 4px solid #D4A574;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      max-width: 95vw;
+      max-height: 90vh;
+      cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+      #gameCanvas {
+        border-width: 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Internal resolution (chunky pixels)
+    const GAME_WIDTH = 320;
+    const GAME_HEIGHT = 240;
+    canvas.width = GAME_WIDTH;
+    canvas.height = GAME_HEIGHT;
+    
+    // Scale up for display
+    const scale = Math.min(
+      Math.floor(window.innerWidth * 0.95 / GAME_WIDTH),
+      Math.floor(window.innerHeight * 0.9 / GAME_HEIGHT),
+      3
+    );
+    canvas.style.width = (GAME_WIDTH * scale) + 'px';
+    canvas.style.height = (GAME_HEIGHT * scale) + 'px';
+
+    // Colors
+    const COLORS = {
+      bg: '#0D0D0D',
+      floor: '#1a1a1a',
+      wall: '#2a2a2a',
+      amber: '#D4A574',
+      gold: '#FFD700',
+      teal: '#2D9596',
+      red: '#FF4444',
+      green: '#44FF44',
+      white: '#FFFFFF',
+      grey: '#666666'
+    };
+
+    // Game state
+    let scene = 'title'; // title, playing, found, timeout
+    let timer = 45;
+    let attempts = parseInt(localStorage.getItem('microwave_attempts') || '0');
+    let bestTime = parseInt(localStorage.getItem('microwave_best') || '999');
+    let startTime = 0;
+    let checkCount = 0;
+    
+    // Audio context
+    let audioCtx = null;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function beep(freq, duration) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      gain.gain.value = 0.1;
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // Draw pixel text
+    function drawText(text, x, y, color, size = 1) {
+      ctx.fillStyle = color;
+      ctx.font = `${8 * size}px monospace`;
+      ctx.fillText(text, x, y);
+    }
+
+    // Draw microwave sprite
+    function drawMicrowave(x, y, inUse) {
+      const w = 48;
+      const h = 32;
+      
+      // Body
+      ctx.fillStyle = COLORS.grey;
+      ctx.fillRect(x, y, w, h);
+      
+      // Window
+      ctx.fillStyle = inUse ? COLORS.amber : COLORS.bg;
+      ctx.fillRect(x + 4, y + 4, 28, 24);
+      
+      // If in use, show spinning food
+      if (inUse) {
+        const spin = Math.floor(Date.now() / 200) % 4;
+        ctx.fillStyle = COLORS.gold;
+        ctx.fillRect(x + 14 + (spin === 0 ? 2 : 0), y + 12, 8, 8);
+      }
+      
+      // Door handle
+      ctx.fillStyle = COLORS.wall;
+      ctx.fillRect(x + 34, y + 12, 2, 8);
+      
+      // Buttons
+      for (let i = 0; i < 3; i++) {
+        ctx.fillStyle = COLORS.teal;
+        ctx.fillRect(x + 36, y + 6 + (i * 6), 6, 4);
+      }
+      
+      // Status indicator
+      ctx.fillStyle = inUse ? COLORS.red : COLORS.green;
+      ctx.fillRect(x + 38, y + 26, 4, 4);
+    }
+
+    // Draw character sprite
+    function drawCharacter(x, y, holding = false) {
+      // Head
+      ctx.fillStyle = COLORS.amber;
+      ctx.fillRect(x + 4, y, 8, 8);
+      
+      // Eyes
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(x + 5, y + 2, 2, 2);
+      ctx.fillRect(x + 9, y + 2, 2, 2);
+      
+      // Body
+      ctx.fillStyle = COLORS.teal;
+      ctx.fillRect(x + 2, y + 8, 12, 10);
+      
+      // Arms
+      ctx.fillStyle = COLORS.amber;
+      if (holding) {
+        // Arms forward holding bowl
+        ctx.fillRect(x, y + 10, 2, 6);
+        ctx.fillRect(x + 14, y + 10, 2, 6);
+        // Bowl
+        ctx.fillStyle = COLORS.red;
+        ctx.fillRect(x + 4, y + 12, 8, 6);
+      } else {
+        // Arms down
+        ctx.fillRect(x, y + 10, 2, 8);
+        ctx.fillRect(x + 14, y + 10, 2, 8);
+      }
+      
+      // Legs
+      ctx.fillRect(x + 4, y + 18, 3, 8);
+      ctx.fillRect(x + 9, y + 18, 3, 8);
+    }
+
+    // Draw title screen
+    function drawTitle() {
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      
+      // Title
+      drawText('MICROWAVE', 90, 40, COLORS.amber, 2);
+      drawText('QUEST', 120, 60, COLORS.gold, 2);
+      
+      // Character with bowl
+      drawCharacter(140, 80, true);
+      
+      // Instructions
+      drawText('LUNCH BREAK SURVIVAL', 70, 120, COLORS.white);
+      drawText('FIND A FREE MICROWAVE', 70, 135, COLORS.white);
+      drawText('BEFORE TIME RUNS OUT', 75, 150, COLORS.white);
+      
+      // Stats
+      drawText(`ATTEMPTS: ${attempts}`, 100, 175, COLORS.teal);
+      if (bestTime < 999) {
+        drawText(`BEST TIME: ${bestTime}s`, 95, 190, COLORS.gold);
+      }
+      
+      // Start prompt
+      const blink = Math.floor(Date.now() / 500) % 2;
+      if (blink) {
+        drawText('TAP TO START', 100, 215, COLORS.green);
+      }
+    }
+
+    // Draw playing screen
+    function drawPlaying() {
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      
+      // Floor
+      const tileSize = 16;
+      for (let y = 0; y < 15; y++) {
+        for (let x = 0; x < 20; x++) {
+          ctx.fillStyle = (x + y) % 2 === 0 ? COLORS.floor : COLORS.wall;
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+        }
+      }
+      
+      // Kitchen counter backdrop
+      ctx.fillStyle = COLORS.wall;
+      ctx.fillRect(0, 40, GAME_WIDTH, 60);
+      
+      // Three microwaves
+      const microwaves = [
+        { x: 30, y: 55, inUse: true },
+        { x: 136, y: 55, inUse: checkCount < 2 }, // This one becomes free
+        { x: 242, y: 55, inUse: true }
+      ];
+      
+      microwaves.forEach(m => drawMicrowave(m.x, m.y, m.inUse));
+      
+      // Character
+      drawCharacter(140, 140, true);
+      
+      // UI overlay
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillRect(0, 0, GAME_WIDTH, 25);
+      
+      // Timer
+      const timeLeft = Math.max(0, timer - Math.floor((Date.now() - startTime) / 1000));
+      const timerColor = timeLeft < 10 ? COLORS.red : COLORS.amber;
+      drawText(`TIME: ${timeLeft}s`, 10, 16, timerColor);
+      
+      // Checked counter
+      drawText(`CHECKED: ${checkCount}/3`, 200, 16, COLORS.teal);
+      
+      // Quest text
+      const questTexts = [
+        'TAP A MICROWAVE TO CHECK',
+        'IN USE... TRY ANOTHER',
+        'STILL IN USE...',
+        'FOUND ONE!'
+      ];
+      const textIndex = Math.min(checkCount, 3);
+      drawText(questTexts[textIndex], 50, 180, COLORS.white);
+      
+      // Check timeout
+      if (timeLeft <= 0) {
+        scene = 'timeout';
+      }
+    }
+
+    // Draw success screen
+    function drawFound() {
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      
+      // Victory!
+      drawText('QUEST', 110, 60, COLORS.green, 2);
+      drawText('COMPLETE!', 85, 80, COLORS.green, 2);
+      
+      // Character celebrating
+      drawCharacter(140, 100, false);
+      
+      // Stats
+      const finalTime = Math.floor((Date.now() - startTime) / 1000);
+      drawText(`TIME: ${finalTime}s`, 115, 150, COLORS.amber);
+      
+      if (finalTime < bestTime) {
+        drawText('NEW BEST!', 110, 170, COLORS.gold);
+      }
+      
+      // Restart prompt
+      const blink = Math.floor(Date.now() / 500) % 2;
+      if (blink) {
+        drawText('TAP TO RETRY', 100, 210, COLORS.teal);
+      }
+    }
+
+    // Draw timeout screen
+    function drawTimeout() {
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      
+      // Game over
+      drawText('QUEST', 110, 60, COLORS.red, 2);
+      drawText('FAILED', 110, 80, COLORS.red, 2);
+      
+      // Sad character
+      drawCharacter(140, 100, true);
+      
+      // Message
+      drawText('YOUR LUNCH IS COLD', 70, 150, COLORS.white);
+      drawText('EAT AT YOUR DESK', 80, 170, COLORS.grey);
+      
+      // Restart prompt
+      const blink = Math.floor(Date.now() / 500) % 2;
+      if (blink) {
+        drawText('TAP TO RETRY', 100, 210, COLORS.teal);
+      }
+    }
+
+    // Main game loop
+    function gameLoop() {
+      switch(scene) {
+        case 'title':
+          drawTitle();
+          break;
+        case 'playing':
+          drawPlaying();
+          break;
+        case 'found':
+          drawFound();
+          break;
+        case 'timeout':
+          drawTimeout();
+          break;
+      }
+      
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Handle clicks
+    canvas.addEventListener('click', (e) => {
+      initAudio();
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (GAME_WIDTH / rect.width);
+      const y = (e.clientY - rect.top) * (GAME_HEIGHT / rect.height);
+      
+      if (scene === 'title') {
+        scene = 'playing';
+        startTime = Date.now();
+        timer = 45;
+        checkCount = 0;
+        attempts++;
+        localStorage.setItem('microwave_attempts', attempts.toString());
+        beep(400, 0.1);
+      } else if (scene === 'playing') {
+        // Check if clicked on a microwave
+        if (y >= 55 && y <= 87) {
+          if (x >= 30 && x < 78) {
+            // Left microwave - always in use
+            checkCount++;
+            beep(200, 0.2);
+          } else if (x >= 136 && x < 184) {
+            // Middle microwave - free after 2 checks
+            if (checkCount < 2) {
+              checkCount++;
+              beep(200, 0.2);
+            } else {
+              // Found it!
+              checkCount = 3;
+              scene = 'found';
+const finalTime = Math.floor((Date.now() - startTime) / 1000);
+              if (finalTime < bestTime) {
+                bestTime = finalTime;
+                localStorage.setItem('microwave_best', bestTime.toString());
+              }
+              beep(800, 0.3);
+            }
+          } else if (x >= 242 && x < 290) {
+            // Right microwave - always in use
+            checkCount++;
+            beep(200, 0.2);
+          }
+        }
+      } else if (scene === 'found' || scene === 'timeout') {
+        scene = 'title';
+        beep(400, 0.1);
+      }
+    });
+
+    // Start game loop
+    gameLoop();
+  </script>
+</body>
+</html>
