@@ -7,7 +7,7 @@ import { connect } from 'net';
 import { join } from 'path';
 import { homedir } from 'os';
 import { existsSync, unlinkSync } from 'fs';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import { SPLASH } from './amber.js';
 
 const LOCAL_SOCKET_PATH = join(homedir(), '.amber', 'amber.sock');
@@ -19,10 +19,6 @@ const REMOTE_USER = (() => {
   if (!REMOTE_HOST) return null;
   const userArg = process.argv.indexOf('--user');
   return userArg !== -1 ? process.argv[userArg + 1] : 'bartssh';
-})();
-const SSH_KEY = (() => {
-  const keyArg = process.argv.indexOf('--key');
-  return keyArg !== -1 ? process.argv[keyArg + 1] : null;
 })();
 const REMOTE_SOCKET = '/home/' + (REMOTE_USER || 'bartssh') + '/.amber/amber.sock';
 const LOCAL_TUNNEL_SOCKET = '/tmp/amber-remote.sock';
@@ -246,56 +242,31 @@ class TUIClient {
       try { unlinkSync(LOCAL_TUNNEL_SOCKET); } catch {}
     }
 
-    this.printSystem(`Tunneling to ${REMOTE_USER}@${REMOTE_HOST}...`);
-    this.printSystem(`Remote socket: ${REMOTE_SOCKET}`);
+    // Establish SSH tunnel with inherited stdio so password prompt works
+    console.log(`\n  🔗 Establishing SSH tunnel to ${REMOTE_USER}@${REMOTE_HOST}...`);
+    console.log(`  Enter password when prompted, then the TUI will start.\n`);
 
     const sshArgs = [
-      '-N',
+      '-f', '-N',
       '-o', 'ExitOnForwardFailure=yes',
       '-o', 'ServerAliveInterval=30',
-      '-o', 'IdentitiesOnly=yes',
-      ...(SSH_KEY ? ['-i', SSH_KEY] : []),
       '-L', `${LOCAL_TUNNEL_SOCKET}:${REMOTE_SOCKET}`,
       `${REMOTE_USER}@${REMOTE_HOST}`,
     ];
 
-    const ssh = spawn('ssh', sshArgs, {
-      stdio: ['ignore', 'ignore', 'pipe'],
-      detached: true,
-    });
-    this.sshProcess = ssh;
-    ssh.unref();
+    const result = spawnSync('ssh', sshArgs, { stdio: 'inherit' });
 
-    // Capture SSH errors
-    let sshStderr = '';
-    ssh.stderr.on('data', (data) => {
-      sshStderr += data.toString();
-    });
+    if (result.status !== 0) {
+      console.error(`  SSH tunnel failed (exit ${result.status}). Check credentials.`);
+      process.exit(1);
+    }
 
-    ssh.on('error', (err) => {
-      this.printSystem(`SSH spawn failed: ${err.message}`);
-    });
+    if (!existsSync(LOCAL_TUNNEL_SOCKET)) {
+      console.error('  SSH tunnel established but socket not found. Is the daemon running on the remote?');
+      process.exit(1);
+    }
 
-    ssh.on('exit', (code) => {
-      if (code !== 0 && code !== null) {
-        this.printSystem(`SSH exited with code ${code}${sshStderr ? ': ' + sshStderr.trim() : ''}`);
-      }
-    });
-
-    // Poll for socket creation (up to 5 seconds)
-    let attempts = 0;
-    const poll = setInterval(() => {
-      attempts++;
-      if (existsSync(LOCAL_TUNNEL_SOCKET)) {
-        clearInterval(poll);
-        this.printSystem('Tunnel established');
-        this.connectSocket(LOCAL_TUNNEL_SOCKET);
-      } else if (attempts >= 20) {
-        clearInterval(poll);
-        const hint = sshStderr ? sshStderr.trim() : 'Check that daemon is running on remote and SSH key is configured';
-        this.printSystem(`SSH tunnel failed: ${hint}`);
-      }
-    }, 250);
+    this.connectSocket(LOCAL_TUNNEL_SOCKET);
   }
 
   connectSocket(socketPath) {
@@ -521,10 +492,6 @@ Just type to talk to Amber.`);
     if (process.stdin.isTTY) process.stdin.setRawMode(false);
     process.stdin.pause();
     if (this.socket) this.socket.destroy();
-    // Kill SSH tunnel if we started one
-    if (this.sshProcess) {
-      try { process.kill(this.sshProcess.pid); } catch {}
-    }
     if (REMOTE_HOST && existsSync(LOCAL_TUNNEL_SOCKET)) {
       try { unlinkSync(LOCAL_TUNNEL_SOCKET); } catch {}
     }
