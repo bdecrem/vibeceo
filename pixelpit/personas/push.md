@@ -158,7 +158,7 @@ const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'lost' 
 )}
 ```
 
-This bug has broken CATCH and HAUNT. Don't let it happen again.
+This bug has broken CATCH, HAUNT, and DEVOUR. Don't let it happen again.
 
 ### 2. XP & Progression (if applicable)
 
