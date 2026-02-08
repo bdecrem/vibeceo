@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["nodejs-20_x"]
+
+[variables]
+NODE_VERSION = "20"
