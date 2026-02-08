@@ -20,10 +20,8 @@ const nextConfig = {
     }
     return config;
   },
-  eslint: {
-    // Global lint remains noisy; prebuild script handles targeted checks
-    ignoreDuringBuilds: true,
-  },
+  // Allow Turbopack (default in Next.js 16) alongside webpack config
+  turbopack: {},
   // Ensure trailing slashes are handled correctly
   trailingSlash: true,
   // Rewrites for static HTML apps in public/
