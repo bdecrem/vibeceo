@@ -6,23 +6,15 @@ import wrapAnsi from 'wrap-ansi';
 import { connect } from 'net';
 import { join } from 'path';
 import { homedir } from 'os';
-import { existsSync, unlinkSync } from 'fs';
-import { spawn, spawnSync } from 'child_process';
+import { existsSync } from 'fs';
 import { SPLASH } from './amber.js';
 
 const LOCAL_SOCKET_PATH = join(homedir(), '.amber', 'amber.sock');
 
-// --remote <host> flag: SSH-tunnel to remote daemon
-const remoteArg = process.argv.indexOf('--remote');
-const REMOTE_HOST = remoteArg !== -1 ? process.argv[remoteArg + 1] : null;
-const REMOTE_USER = (() => {
-  if (!REMOTE_HOST) return null;
-  const userArg = process.argv.indexOf('--user');
-  return userArg !== -1 ? process.argv[userArg + 1] : 'bartssh';
-})();
-const REMOTE_SOCKET = '/home/' + (REMOTE_USER || 'bartssh') + '/.amber/amber.sock';
-const LOCAL_TUNNEL_SOCKET = '/tmp/amber-remote.sock';
-const SOCKET_PATH = REMOTE_HOST ? LOCAL_TUNNEL_SOCKET : LOCAL_SOCKET_PATH;
+// --socket <path> flag: connect to a custom socket (e.g. SSH-tunneled)
+const socketArg = process.argv.indexOf('--socket');
+const SOCKET_PATH = socketArg !== -1 ? process.argv[socketArg + 1] : LOCAL_SOCKET_PATH;
+const IS_REMOTE = socketArg !== -1;
 
 // === ANSI ESCAPE CODES ===
 const ANSI = {
@@ -131,7 +123,7 @@ class TUIClient {
 
   // === DRAWING ===
   drawStatusBar() {
-    const remoteTag = REMOTE_HOST ? ` (${REMOTE_HOST})` : '';
+    const remoteTag = IS_REMOTE ? ' (remote)' : '';
     const status = this.connected
       ? ` 🔮 Amber | Connected${remoteTag} `
       : ` 🔮 Amber | Disconnected `;
@@ -223,55 +215,15 @@ class TUIClient {
 
   // === SOCKET ===
   connect() {
-    if (REMOTE_HOST) {
-      this.connectRemote();
-      return;
-    }
-
     if (!existsSync(SOCKET_PATH)) {
-      this.printSystem('Daemon not running. Start with: node daemon.js');
+      this.printSystem(IS_REMOTE
+        ? `Socket not found: ${SOCKET_PATH} — is the SSH tunnel running?`
+        : 'Daemon not running. Start with: node daemon.js');
       return;
     }
 
-    this.connectSocket(SOCKET_PATH);
-  }
+    this.socket = connect(SOCKET_PATH);
 
-  connectRemote() {
-    // Clean up stale tunnel socket
-    if (existsSync(LOCAL_TUNNEL_SOCKET)) {
-      try { unlinkSync(LOCAL_TUNNEL_SOCKET); } catch {}
-    }
-
-    // Establish SSH tunnel with inherited stdio so password prompt works
-    console.log(`\n  🔗 Establishing SSH tunnel to ${REMOTE_USER}@${REMOTE_HOST}...`);
-    console.log(`  Enter password when prompted, then the TUI will start.\n`);
-
-    const sshArgs = [
-      '-f', '-N',
-      '-o', 'ExitOnForwardFailure=yes',
-      '-o', 'ServerAliveInterval=30',
-      '-L', `${LOCAL_TUNNEL_SOCKET}:${REMOTE_SOCKET}`,
-      `${REMOTE_USER}@${REMOTE_HOST}`,
-    ];
-
-    const result = spawnSync('ssh', sshArgs, { stdio: 'inherit' });
-
-    if (result.status !== 0) {
-      console.error(`  SSH tunnel failed (exit ${result.status}). Check credentials.`);
-      process.exit(1);
-    }
-
-    if (!existsSync(LOCAL_TUNNEL_SOCKET)) {
-      console.error('  SSH tunnel established but socket not found. Is the daemon running on the remote?');
-      process.exit(1);
-    }
-
-    this.connectSocket(LOCAL_TUNNEL_SOCKET);
-  }
-
-  connectSocket(socketPath) {
-    this.socket = connect(socketPath);
-    
     this.socket.on('connect', () => {
       this.connected = true;
       this.printSystem('Connected to Amber daemon');
@@ -492,9 +444,6 @@ Just type to talk to Amber.`);
     if (process.stdin.isTTY) process.stdin.setRawMode(false);
     process.stdin.pause();
     if (this.socket) this.socket.destroy();
-    if (REMOTE_HOST && existsSync(LOCAL_TUNNEL_SOCKET)) {
-      try { unlinkSync(LOCAL_TUNNEL_SOCKET); } catch {}
-    }
     console.log('\n✨ Later.\n');
   }
 
@@ -522,8 +471,8 @@ Just type to talk to Amber.`);
 
     process.stdout.write(ANSI.clearScreen + ANSI.moveTo(1, 1));
     process.stdout.write(SPLASH);
-    console.log(REMOTE_HOST
-      ? `  📡 Remote mode - tunneling to ${REMOTE_HOST}\n`
+    console.log(IS_REMOTE
+      ? `  📡 Remote mode - connecting to ${SOCKET_PATH}\n`
       : '  📡 Client mode - connecting to daemon\n');
     
     this.setupScrollRegion();
