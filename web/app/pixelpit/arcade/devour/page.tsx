@@ -157,6 +157,8 @@ export default function DevourGame() {
     // Score
     consumed: 0,
     milestone: 0,
+    // Decay
+    decayTimer: 0,
     // Effects
     screenPulse: 0,
     comboCount: 0,
@@ -225,6 +227,7 @@ export default function DevourGame() {
     game.spawnTimer = 0;
     game.consumed = 0;
     game.milestone = 0;
+    game.decayTimer = 0;
     game.screenPulse = 0;
     game.comboCount = 0;
     game.comboTimer = 0;
@@ -335,6 +338,33 @@ export default function DevourGame() {
         game.screenPulse -= dt * 3;
       }
 
+      // DECAY - hole shrinks over time (Agar.io tension)
+      game.decayTimer += dt;
+      const decayRate = 2; // Shrink every 2 seconds
+      const decayAmount = 0.5 + game.holeSize * 0.01; // Bigger = decays faster
+      if (game.decayTimer >= decayRate) {
+        game.decayTimer = 0;
+        game.holeSize -= decayAmount;
+        game.maxPulseReach = game.holeSize * 4;
+        game.consumeThreshold = Math.max(3, 3 + Math.floor(game.holeSize / 15));
+      }
+
+      // COLLAPSE - fall below minimum = game over
+      const MIN_SIZE = 12;
+      if (game.holeSize < MIN_SIZE) {
+        game.running = false;
+        stopDrone();
+        playDeath();
+        if (score > highScore) setHighScore(score);
+        setGameState('dead');
+        fetch('/api/pixelpit/stats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ game: GAME_ID }),
+        }).catch(() => {});
+        return;
+      }
+
       // Update objects
       let consumedThisFrame = 0;
       for (const obj of game.objects) {
@@ -378,7 +408,7 @@ export default function DevourGame() {
               playConsume(obj.size);
               
               // Grow
-              game.holeSize += obj.size * 0.3;
+              game.holeSize += obj.size * 0.8; // Growth boost to outpace decay
               game.maxPulseReach = game.holeSize * 4;
               game.consumeThreshold = 3 + Math.floor(game.holeSize / 15);
             } else if (obj.rejectFlash <= 0) {
@@ -624,6 +654,23 @@ export default function DevourGame() {
       ctx.beginPath();
       ctx.arc(centerX + eyeOffset, centerY - eyeOffset * 0.3, eyeSize * 0.8, 0, Math.PI * 2);
       ctx.fill();
+
+      // DANGER indicator - pulsing red when size is low
+      const DANGER_THRESHOLD = 18;
+      if (game.holeSize < DANGER_THRESHOLD) {
+        const dangerAlpha = (1 - game.holeSize / DANGER_THRESHOLD) * (0.5 + Math.sin(Date.now() / 150) * 0.3);
+        ctx.strokeStyle = `rgba(239, 68, 68, ${dangerAlpha})`;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, game.holeSize + 15, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Warning text
+        ctx.fillStyle = `rgba(239, 68, 68, ${dangerAlpha + 0.3})`;
+        ctx.font = 'bold 14px ui-monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('COLLAPSING!', centerX, centerY + game.holeSize + 40);
+      }
 
       // UI
       ctx.fillStyle = '#FFF';
