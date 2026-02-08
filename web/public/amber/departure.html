@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEPARTURE — Amber</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="DEPARTURE">
+  <meta property="og:description" content="Watch form dissolve into space. Touch to accelerate the leaving.">
+  <meta property="og:image" content="https://intheamber.com/amber/departure-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/departure.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DEPARTURE">
+  <meta name="twitter:description" content="Watch form dissolve into space. Touch to accelerate the leaving.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/departure-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
+    
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    #title {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(20px, 4vw, 32px);
+      font-weight: 600;
+      letter-spacing: 0.3em;
+      color: #D4A574;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeIn 2s forwards;
+    }
+    
+    #subtitle {
+      position: fixed;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(10px, 2vw, 14px);
+      letter-spacing: 0.2em;
+      color: #78716c;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeIn 2s 0.5s forwards;
+    }
+    
+    #stats {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(10px, 2vw, 12px);
+      letter-spacing: 0.15em;
+      color: #2D9596;
+      z-index: 10;
+      pointer-events: none;
+      text-align: center;
+    }
+    
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">DEPARTURE</div>
+  <div id="subtitle">Touch to accelerate the leaving</div>
+  <canvas id="canvas"></canvas>
+  <div id="stats">
+    <div>PARTICLES: <span id="particleCount">0</span></div>
+    <div>DISSOLVED: <span id="dissolvedPercent">0</span>%</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W, H;
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Audio context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioStarted = false;
+    
+    function playTone(freq, duration = 0.1, vol = 0.1) {
+      if (!audioStarted) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Color palette
+    const colors = [
+      '#FFD700', // gold
+      '#D4A574', // amber
+      '#2D9596', // teal
+      '#3b82f6', // electric blue
+      '#ec4899', // hot pink
+      '#8b5cf6', // purple
+      '#f97316', // coral
+      '#84cc16', // lime
+      '#60a5fa', // light blue
+      '#f472b6', // pink
+    ];
+    
+    // Central form - a dense cluster of points that will dissolve
+    const formParticles = [];
+    const departingParticles = [];
+    const centerX = W / 2;
+    const centerY = H / 2;
+    const formRadius = Math.min(W, H) * 0.15;
+    
+    // Create the initial form
+    for (let i = 0; i < 2000; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = Math.sqrt(Math.random()) * formRadius; // sqrt for uniform distribution
+      const x = centerX + Math.cos(angle) * dist;
+      const y = centerY + Math.sin(angle) * dist;
+      
+      formParticles.push({
+        x,
+        y,
+        originalX: x,
+        originalY: y,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: Math.random() * 2 + 1,
+        dissolveTime: Math.random() * 10000 + 2000, // when this particle will start leaving
+        life: 1.0,
+        departed: false
+      });
+    }
+    
+    const startTime = Date.now();
+    let touchActive = false;
+    let touchX = 0;
+    let touchY = 0;
+    
+    // Touch/mouse handling
+    function handleStart(e) {
+      audioStarted = true;
+      touchActive = true;
+      const touch = e.touches ? e.touches[0] : e;
+      touchX = touch.clientX;
+      touchY = touch.clientY;
+      playTone(200 + Math.random() * 100, 0.2, 0.05);
+    }
+    
+    function handleMove(e) {
+      if (!touchActive) return;
+      const touch = e.touches ? e.touches[0] : e;
+      touchX = touch.clientX;
+      touchY = touch.clientY;
+    }
+    
+    function handleEnd() {
+      touchActive = false;
+    }
+    
+    canvas.addEventListener('mousedown', handleStart);
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('mouseup', handleEnd);
+    canvas.addEventListener('touchstart', handleStart);
+    canvas.addEventListener('touchmove', handleMove);
+    canvas.addEventListener('touchend', handleEnd);
+    
+    function updateParticles() {
+      const elapsed = Date.now() - startTime;
+      
+      // Check form particles for dissolution
+      for (let i = formParticles.length - 1; i >= 0; i--) {
+        const p = formParticles[i];
+        
+        // Natural dissolution over time
+        let shouldDissolve = elapsed > p.dissolveTime;
+        
+        // Accelerated dissolution if touched
+        if (touchActive) {
+          const dx = p.x - touchX;
+          const dy = p.y - touchY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 150) {
+            shouldDissolve = true;
+          }
+        }
+        
+        if (shouldDissolve && !p.departed) {
+          p.departed = true;
+          
+          // Calculate departure velocity (away from center)
+          const dx = p.x - centerX;
+          const dy = p.y - centerY;
+          const angle = Math.atan2(dy, dx);
+          const speed = Math.random() * 2 + 1;
+          
+          departingParticles.push({
+            x: p.x,
+            y: p.y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            color: p.color,
+            size: p.size,
+            life: 1.0,
+            rotation: Math.random() * Math.PI * 2,
+            rotationSpeed: (Math.random() - 0.5) * 0.1
+          });
+          
+          formParticles.splice(i, 1);
+        }
+      }
+      
+      // Update departing particles
+      for (let i = departingParticles.length - 1; i >= 0; i--) {
+        const p = departingParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rotation += p.rotationSpeed;
+        p.life -= 0.003;
+        
+        // Remove dead particles
+        if (p.life <= 0 || p.x < -100 || p.x > W + 100 || p.y < -100 || p.y > H + 100) {
+          departingParticles.splice(i, 1);
+        }
+      }
+    }
+    
+    function drawParticles() {
+      // Fade trail effect
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.05)';
+      ctx.fillRect(0, 0, W, H);
+      
+      // Draw form particles (still cohesive)
+      ctx.save();
+      for (const p of formParticles) {
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Subtle glow
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+      
+      // Draw departing particles (leaving)
+      ctx.save();
+      for (const p of departingParticles) {
+        ctx.globalAlpha = p.life * 0.8;
+        ctx.fillStyle = p.color;
+        
+        // Draw as small lines showing motion
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.fillRect(-p.size, -p.size / 2, p.size * 2, p.size);
+        ctx.restore();
+        
+        // Glow trail
+        ctx.globalAlpha = p.life * 0.2;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+      
+      // Draw touch ripple
+      if (touchActive) {
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.strokeStyle = '#2D9596';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(touchX, touchY, 150, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+    
+    function updateStats() {
+      document.getElementById('particleCount').textContent = departingParticles.length;
+      const totalParticles = 2000;
+      const remaining = formParticles.length;
+      const dissolved = Math.round(((totalParticles - remaining) / totalParticles) * 100);
+      document.getElementById('dissolvedPercent').textContent = dissolved;
+    }
+    
+    // Animation loop
+    function animate() {
+      updateParticles();
+      drawParticles();
+      updateStats();
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+    
+    // Ambient tone that fades as form dissolves
+    setInterval(() => {
+      if (!audioStarted) return;
+      const remaining = formParticles.length / 2000;
+      if (remaining > 0.1) {
+        playTone(100 + remaining * 100, 0.5, 0.02 * remaining);
+      }
+    }, 2000);
+  </script>
+</body>
+</html>
