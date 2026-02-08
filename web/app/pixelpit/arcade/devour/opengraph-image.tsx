@@ -10,7 +10,7 @@ export default async function Image() {
     (
       <div
         style={{
-          background: 'radial-gradient(circle at center, #1a0a2e 0%, #020108 70%)',
+          background: 'linear-gradient(180deg, #1a0a2e 0%, #020108 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -21,14 +21,14 @@ export default async function Image() {
           overflow: 'hidden',
         }}
       >
-        {/* Black hole effect */}
+        {/* Black hole center */}
         <div
           style={{
             position: 'absolute',
-            width: 300,
-            height: 300,
-            borderRadius: 150,
-            background: 'radial-gradient(circle at center, #000000 0%, #1a0a2e 50%, #8B5CF600 100%)',
+            width: 200,
+            height: 200,
+            borderRadius: 100,
+            background: '#000000',
             boxShadow: '0 0 100px 50px #8B5CF640',
           }}
         />
@@ -37,11 +37,10 @@ export default async function Image() {
         <div
           style={{
             position: 'absolute',
-            width: 400,
-            height: 400,
-            borderRadius: 200,
+            width: 350,
+            height: 350,
+            borderRadius: 175,
             border: '8px solid #8B5CF680',
-            boxShadow: '0 0 60px 20px #8B5CF640, inset 0 0 60px 20px #8B5CF620',
           }}
         />
 
@@ -49,9 +48,9 @@ export default async function Image() {
         <div
           style={{
             position: 'absolute',
-            width: 500,
-            height: 500,
-            borderRadius: 250,
+            width: 450,
+            height: 450,
+            borderRadius: 225,
             border: '4px solid #a78bfa40',
           }}
         />
@@ -97,7 +96,7 @@ export default async function Image() {
             fontSize: 120,
             fontWeight: 900,
             color: '#E5E7EB',
-            textShadow: '0 0 60px #8B5CF6, 0 10px 40px #00000080',
+            textShadow: '0 0 60px #8B5CF6',
             letterSpacing: 8,
             zIndex: 10,
           }}
@@ -134,7 +133,6 @@ export default async function Image() {
               height: 40,
               borderRadius: 20,
               background: '#8B5CF6',
-              boxShadow: '0 0 20px #8B5CF680',
             }}
           />
           <div style={{ fontSize: 24, color: '#6b7280' }}>VS</div>
@@ -144,7 +142,6 @@ export default async function Image() {
               height: 40,
               borderRadius: 20,
               background: '#ef4444',
-              boxShadow: '0 0 20px #ef444480',
             }}
           />
         </div>

@@ -12,7 +12,7 @@ export default async function Image({ params }: { params: { score: string } }) {
     (
       <div
         style={{
-          background: 'radial-gradient(circle at center, #1a0a2e 0%, #020108 70%)',
+          background: 'linear-gradient(180deg, #1a0a2e 0%, #020108 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -27,10 +27,10 @@ export default async function Image({ params }: { params: { score: string } }) {
         <div
           style={{
             position: 'absolute',
-            width: 400,
-            height: 400,
-            borderRadius: 200,
-            background: 'radial-gradient(circle at center, #8B5CF620 0%, #8B5CF600 70%)',
+            width: 300,
+            height: 300,
+            borderRadius: 150,
+            background: '#8B5CF620',
           }}
         />
 
