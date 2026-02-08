@@ -243,28 +243,53 @@ class TUIClient {
     }
 
     this.printSystem(`Tunneling to ${REMOTE_USER}@${REMOTE_HOST}...`);
+    this.printSystem(`Remote socket: ${REMOTE_SOCKET}`);
 
     const sshArgs = [
-      '-N', '-f',
+      '-N',
+      '-o', 'ExitOnForwardFailure=yes',
+      '-o', 'ServerAliveInterval=30',
       '-L', `${LOCAL_TUNNEL_SOCKET}:${REMOTE_SOCKET}`,
       `${REMOTE_USER}@${REMOTE_HOST}`,
     ];
 
-    const ssh = spawn('ssh', sshArgs, { stdio: 'ignore', detached: true });
+    const ssh = spawn('ssh', sshArgs, {
+      stdio: ['ignore', 'ignore', 'pipe'],
+      detached: true,
+    });
     this.sshProcess = ssh;
+    ssh.unref();
 
-    ssh.on('error', (err) => {
-      this.printSystem(`SSH failed: ${err.message}`);
+    // Capture SSH errors
+    let sshStderr = '';
+    ssh.stderr.on('data', (data) => {
+      sshStderr += data.toString();
     });
 
-    // Give SSH a moment to establish the tunnel
-    setTimeout(() => {
-      if (!existsSync(LOCAL_TUNNEL_SOCKET)) {
-        this.printSystem('SSH tunnel failed — socket not created. Check SSH config.');
-        return;
+    ssh.on('error', (err) => {
+      this.printSystem(`SSH spawn failed: ${err.message}`);
+    });
+
+    ssh.on('exit', (code) => {
+      if (code !== 0 && code !== null) {
+        this.printSystem(`SSH exited with code ${code}${sshStderr ? ': ' + sshStderr.trim() : ''}`);
       }
-      this.connectSocket(LOCAL_TUNNEL_SOCKET);
-    }, 1500);
+    });
+
+    // Poll for socket creation (up to 5 seconds)
+    let attempts = 0;
+    const poll = setInterval(() => {
+      attempts++;
+      if (existsSync(LOCAL_TUNNEL_SOCKET)) {
+        clearInterval(poll);
+        this.printSystem('Tunnel established');
+        this.connectSocket(LOCAL_TUNNEL_SOCKET);
+      } else if (attempts >= 20) {
+        clearInterval(poll);
+        const hint = sshStderr ? sshStderr.trim() : 'Check that daemon is running on remote and SSH key is configured';
+        this.printSystem(`SSH tunnel failed: ${hint}`);
+      }
+    }, 250);
   }
 
   connectSocket(socketPath) {
