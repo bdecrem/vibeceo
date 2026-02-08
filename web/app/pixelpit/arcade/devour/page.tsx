@@ -206,7 +206,7 @@ export default function DevourGame() {
 
   const spawnObject = useCallback((canvasW: number, canvasH: number, existingObjects: GameObject[]) => {
     const margin = 40;
-    let x, y;
+    let x: number, y: number;
     let attempts = 0;
     
     // Find a spot not too close to either hole or existing objects
@@ -1099,7 +1099,6 @@ export default function DevourGame() {
               score={finalScore}
               gameId={GAME_ID}
               colors={SCORE_FLOW_COLORS}
-              xpDivisor={1}
               onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
             />
           </div>
