@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Forest Catch</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0f1f0f;overflow:hidden;font-family:-apple-system, sans-serif;touch-action:none;}
+canvas{display:block;}
+#ui{position:fixed;top:20px;left:20px;color:#84cc16;font-size:24px;z-index:10;}
+#score{font-weight:bold;}
+#game-over{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:none;flex-direction:column;justify-content:center;align-items:center;color:white;text-align:center;z-index:100;}
+#game-over.show{display:flex;}
+#game-over h1{font-size:48px;margin-bottom:20px;}
+#game-over .final-score{font-size:32px;margin-bottom:30px;color:#84cc16;}
+#restart{padding:15px 40px;font-size:20px;background:#84cc16;color:#0f1f0f;border:none;border-radius:8px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="ui"><span id="score">0</span></div>
+<canvas id="c"></canvas>
+<div id="game-over">
+  <h1>GAME OVER</h1>
+  <div class="final-score">Score: <span id="final-score">0</span></div>
+  <button id="restart">TAP TO RESTART</button>
+</div>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score');
+const gameOverEl=document.getElementById('game-over');
+const finalScoreEl=document.getElementById('final-score');
+const restartBtn=document.getElementById('restart');
+
+let W,H,score=0,gameRunning=true,spawnTimer=0,spawnInterval=1500,objectSpeed=2,particles=[],objects=[];
+
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+resize();window.onresize=resize;
+
+const player={x:W/2,y:H-80,size:60};
+
+function spawnObject(){
+  const good=Math.random()>0.3;
+  objects.push({
+    x:Math.random()*W,
+    y:-30,
+    size:20,
+    speed:objectSpeed+Math.random()*2,
+    good:good,
+    color:good?'#22c55e':'#ff4444'
+  });
+}
+
+function spawnParticles(x,y){
+  for(let i=0;i<20;i++){
+    particles.push({
+      x:x,
+      y:y,
+      vx:(Math.random()-0.5)*4,
+      vy:(Math.random()-0.5)*4,
+      radius:Math.random()*3+2,
+      alpha:1,
+      color:'#f59e0b'
+    });
+  }
+}
+
+function update(){
+  if(!gameRunning)return;
+  // spawn logic
+  spawnTimer+=1;
+  if(spawnTimer>=spawnInterval){
+    spawnTimer=0;
+    spawnObject();
+    // increase difficulty
+    if(spawnInterval>800)spawnInterval-=20;
+    if(objectSpeed<6)objectSpeed+=0.02;
+  }
+  // update objects
+  objects.forEach(obj=>{obj.y+=obj.speed;});
+  // collision & removal
+  objects=objects.filter(obj=>{
+    const dx=obj.x-player.x;
+    const dy=obj.y-player.y;
+    const dist=Math.hypot(dx,dy);
+    if(dist<obj.size/2+player.size/2){
+      if(obj.good){
+        score+=10;scoreEl.textContent=score;
+        spawnParticles(obj.x,obj.y);
+        return false;
+      }else{
+        endGame();return false;
+      }
+    }
+    if(obj.y>H+50){
+      if(obj.good){score-=5;if(score<0)score=0;scoreEl.textContent=score;}
+      if(!obj.good){endGame();return false;}
+      return false;
+    }
+    return true;
+  });
+  // update particles
+  particles=particles.filter(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.alpha-=0.02;
+    return p.alpha>0;
+  });
+}
+function draw(){
+  ctx.fillStyle='#0f1f0f';
+  ctx.fillRect(0,0,W,H);
+  // chaotic background leaves
+  for(let i=0;i<5;i++){
+    const leafX=Math.random()*W;
+    const leafY=H-(i*30+Math.random()*30);
+    ctx.fillStyle='rgba(34,197,94,0.1)';
+    ctx.beginPath();ctx.arc(leafX,leafY,10,0,Math.PI*2);ctx.fill();
+  }
+  // player
+  ctx.fillStyle='#84cc16';
+  ctx.beginPath();ctx.arc(player.x,player.y,player.size/2,0,Math.PI*2);ctx.fill();
+  // objects
+  objects.forEach(obj=>{
+    ctx.fillStyle=obj.color;
+    ctx.beginPath();ctx.arc(obj.x,obj.y,obj.size/2,0,Math.PI*2);ctx.fill();
+  });
+  // particles
+  particles.forEach(p=>{
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle=p.color;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);ctx.fill();
+  });
+  ctx.globalAlpha=1;
+}
+function endGame(){
+  gameRunning=false;
+  finalScoreEl.textContent=score;
+  gameOverEl.classList.add('show');
+}
+function restart(){
+  score=0;scoreEl.textContent='0';
+  objects=[];particles=[];spawnTimer=0;spawnInterval=1500;objectSpeed=2;
+  player.x=W/2;
+  gameRunning=true;
+  gameOverEl.classList.remove('show');
+}
+function handleMove(x){
+  player.x=Math.max(player.size/2,Math.min(W-player.size/2,x));
+}
+canvas.addEventListener('touchmove',e=>{e.preventDefault();handleMove(e.touches[0].clientX);});
+canvas.addEventListener('touchstart',e=>{e.preventDefault();handleMove(e.touches[0].clientX);});
+canvas.addEventListener('mousemove',e=>handleMove(e.clientX));
+restartBtn.addEventListener('click',restart);
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

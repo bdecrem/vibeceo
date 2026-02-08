@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Tap Timing</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a0a0f;overflow:hidden;font-family:-apple-system,Helvetica,Arial,sans-serif;touch-action:none;}
+canvas{display:block;}
+#ui{position:fixed;top:20px;left:20px;color:#00ff88;font-size:24px;z-index:10;}
+#score{font-weight:bold;}
+#game-over{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  color:white;text-align:center;z-index:100;display:none;
+}
+#game-over.show{display:flex;}
+#game-over h1{font-size:48px;margin-bottom:20px;}
+#game-over .final-score{font-size:32px;margin-bottom:30px;color:#00ff88;}
+#restart{padding:15px 40px;font-size:20px;background:#00ff88;color:#0a0a0f;border:none;border-radius:8px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="ui">Score: <span id="score">0</span></div>
+<canvas id="c"></canvas>
+<div id="game-over">
+  <h1>GAME OVER</h1>
+  <div class="final-score">Score: <span id="final-score">0</span></div>
+  <button id="restart">TAP TO RESTART</button>
+</div>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score');
+const gameOverEl=document.getElementById('game-over');
+const finalScoreEl=document.getElementById('final-score');
+const restartBtn=document.getElementById('restart');
+
+let W,H;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+resize();window.addEventListener('resize',resize);
+
+let score=0;
+let gameRunning=true;
+
+const zoneRadius=30;
+const zoneColor='#00ff88';
+
+let target={x:0,y:H/2,size:40,speed:3};
+let targetSpeed=3;
+let targetSize=40;
+let targetSpawned=false;
+let targetTapped=false;
+let waitRespawn=false;
+let respawnTimer=0;
+
+let particles=[];
+let shakeTime=0, shakeIntensity=0;
+
+function initTarget(){
+  target.x=-targetSize/2;
+  target.y=H/2;
+  target.speed=targetSpeed;
+  targetTapped=false;
+  targetSpawned=true;
+}
+
+initTarget();
+
+function handleTap(e){
+  if(!gameRunning) return;
+  if(!targetSpawned) return;
+  const tapX=e.touches?e.touches[0].clientX:e.clientX;
+  const tapY=e.touches?e.touches[0].clientY:e.clientY;
+  if(Math.abs(target.x-tapX)<=zoneRadius && Math.abs(target.y-tapY- target.y)<=zoneRadius){
+    // success
+    score++;
+    scoreEl.textContent=score;
+    playTone(880,0.2,0.3);
+    spawnParticles(target.x,target.y,10,'#00ff88');
+    screenShake(10,0.3);
+    targetTapped=true;
+    targetSpawned=false;
+    targetSpeed+=0.2;
+    // respawn after 0.5s
+    waitRespawn=true;
+    respawnTimer=0.5;
+  }else{
+    // fail
+    endGame();
+    playTone(220,0.5,0.5,'square');
+    spawnParticles(target.x,target.y,20,'#ff4444');
+    screenShake(20,0.5);
+  }
+}
+
+canvas.addEventListener('touchstart',e=>{e.preventDefault();handleTap(e);});
+canvas.addEventListener('mousedown',e=>{e.preventDefault();handleTap(e);});
+
+function update(delta){
+  if(!gameRunning) return;
+  if(targetSpawned){
+    target.x+=target.speed;
+    if(!targetTapped && target.x - target.size/2 > W/2 + zoneRadius){
+      // passed zone without tap
+      endGame();
+      playTone(220,0.5,0.5,'square');
+      spawnParticles(target.x,target.y,20,'#ff4444');
+      screenShake(20,0.5);
+    }
+    if(target.x - target.size/2 > W){ // off screen right, allow next spawn
+      targetSpawned=false;
+    }
+  }
+  if(waitRespawn){
+    respawnTimer-=delta;
+    if(respawnTimer<=0){
+      initTarget();
+      waitRespawn=false;
+    }
+  }
+  // particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.dx;
+    p.y+=p.dy;
+    p.life-=delta;
+    if(p.life<=0) particles.splice(i,1);
+  }
+  // shake timer
+  if(shakeTime>0){
+    shakeTime-=delta;
+    if(shakeTime<=0) shakeIntensity=0;
+  }
+}
+
+function draw(){
+  ctx.save();
+  ctx.fillStyle='#0a0a0f';
+  ctx.fillRect(0,0,W,H);
+  // zone
+  ctx.fillStyle=zoneColor;
+  ctx.fillRect(W/2-zoneRadius,0,zoneRadius*2,H);
+  // target
+  if(targetSpawned){
+    ctx.shadowColor='rgba(255,0,255,0.8)';
+    ctx.shadowBlur=15;
+    ctx.fillStyle='#ff00ff';
+    ctx.beginPath();
+    ctx.arc(target.x,target.y,target.size/2,0,Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur=0;
+  }
+  // particles
+  particles.forEach(p=>{
+    ctx.globalAlpha=p.life/p.maxLife;
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+  ctx.restore();
+}
+
+function endGame(){
+  gameRunning=false;
+  finalScoreEl.textContent=score;
+  gameOverEl.classList.add('show');
+}
+
+function restart(){
+  score=0;
+  scoreEl.textContent='0';
+  targetSpeed=3;
+  particles=[];
+  gameRunning=true;
+  gameOverEl.classList.remove('show');
+  initTarget();
+}
+
+restartBtn.addEventListener('click',restart);
+canvas.addEventListener('touchstart',e=>{e.preventDefault();});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();});
+
+let lastTime=0;
+function loop(time){
+  const delta=(time-lastTime)/1000;
+  lastTime=time;
+  update(delta);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// Audio
+let audioCtx=null;
+function playTone(freq,dur,vol,type='sine'){
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+  osc.type=type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime+dur);
+}
+
+function spawnParticles(x,y,count,color){
+  for(let i=0;i<count;i++){
+    const angle=Math.random()*Math.PI*2;
+    const speed=Math.random()*3+1;
+    particles.push({
+      x,
+      y,
+      dx:Math.cos(angle)*speed,
+      dy:Math.sin(angle)*speed,
+      radius:Math.random()*3+2,
+      color,
+      life:0.5,
+      maxLife:0.5
+    });
+  }
+}
+
+function screenShake(intensity,time){
+  shakeIntensity=intensity;
+  shakeTime=time;
+}
+</script>
+</body>
+</html>

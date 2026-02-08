@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T12 — FIREFLY Reinterpretations</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 20px;
+  background: #0a0a12; color: #fff;
+  font-family: -apple-system, sans-serif;
+  min-height: 100vh;
+}
+h1 { margin: 0 0 5px; font-size: 24px; color: #D4A574; }
+.subtitle { color: #666; font-size: 14px; margin-bottom: 20px; }
+.status { color: #888; margin-bottom: 20px; font-size: 14px; }
+
+.phase-bar {
+  display: flex; gap: 0; margin-bottom: 20px;
+  background: #111118; border-radius: 8px; overflow: hidden;
+}
+.phase {
+  padding: 10px 20px; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: #444; border-bottom: 2px solid transparent;
+}
+.phase.active { color: #D4A574; border-bottom-color: #D4A574; background: #0a0a12; }
+.phase.complete { color: #666; }
+
+.concepts {
+  background: #111118; border-radius: 8px; padding: 15px;
+  margin-bottom: 20px; max-width: 1400px;
+}
+.concepts summary {
+  cursor: pointer; font-size: 14px; color: #D4A574;
+  font-weight: 600; margin-bottom: 10px;
+}
+.concepts-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 8px; font-size: 12px;
+}
+.concept { color: #888; padding: 6px 0; border-bottom: 1px solid #222; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 15px; max-width: 1400px;
+}
+
+.card {
+  background: #111118; border-radius: 12px; padding: 15px;
+  border: 2px solid #222; cursor: pointer; transition: all 0.2s;
+}
+.card:hover { transform: translateY(-2px); border-color: #333; }
+.card.winner { border-color: #D4A574 !important; box-shadow: 0 0 20px rgba(212,165,116,0.3); }
+
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.twist-name { font-weight: 600; font-size: 16px; }
+.twist-tagline { color: #888; font-size: 12px; margin-bottom: 8px; }
+.twist-desc { color: #555; font-size: 11px; line-height: 1.5; margin-bottom: 10px; max-height: 60px; overflow: hidden; }
+
+.verdict { font-size: 10px; padding: 4px 8px; border-radius: 4px; font-weight: 600; }
+.verdict.ship { background: #00ff8833; color: #00ff88; }
+.verdict.needs-work { background: #ffaa0033; color: #ffaa00; }
+.verdict.broken { background: #ff446633; color: #ff4466; }
+
+.scores { display: flex; gap: 6px; font-size: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.score { background: #0a0a12; padding: 3px 8px; border-radius: 4px; color: #888; }
+.score span { color: #fff; font-weight: 600; }
+
+.screenshot { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; background: #0a0a12; }
+.maker { font-size: 11px; color: #666; margin-top: 8px; }
+.notes { font-size: 11px; color: #888; margin-top: 6px; font-style: italic; }
+
+.card-status { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+.card-status.running { color: #D4A574; }
+
+.production-box {
+  margin-top: 20px; padding: 20px;
+  background: #111118; border: 2px solid #D4A57444;
+  border-radius: 12px; max-width: 600px;
+}
+.production-box h3 { margin: 0 0 12px; font-size: 14px; color: #D4A574; text-transform: uppercase; }
+.production-link {
+  display: inline-block; margin-top: 12px; padding: 10px 20px;
+  background: #D4A574; color: #000; text-decoration: none;
+  border-radius: 6px; font-size: 13px; font-weight: 600;
+}
+
+.preview {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.95); display: none; z-index: 100;
+}
+.preview.active { display: flex; flex-direction: column; }
+.preview-header {
+  padding: 15px 20px; background: #1a1a2e;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.preview-close { background: #ff4466; border: none; color: #fff; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+.preview iframe { flex: 1; border: none; background: #000; }
+</style>
+</head>
+<body>
+<h1>T12 — FIREFLY Reinterpretations</h1>
+<div class="subtitle">10 arcade-style twists on Amber's FIREFLY</div>
+<div class="status" id="status">Loading...</div>
+
+<div class="phase-bar">
+  <div class="phase" id="phase-generation">1. Generation</div>
+  <div class="phase" id="phase-judging">2. Judging</div>
+  <div class="phase" id="phase-selection">3. Selection</div>
+  <div class="phase" id="phase-production">4. Production</div>
+</div>
+
+<details class="concepts" open>
+  <summary>📋 THE 10 TWISTS</summary>
+  <div class="concepts-grid">
+    <div class="concept"><span style="color:#00ff88">1. CHAIN COMBO</span> — Catch quickly for 2x, 3x, 4x multipliers. Miss once, chain resets.</div>
+    <div class="concept"><span style="color:#ff6b6b">2. COLOR MATCH</span> — Only tap the target color shown at top. Wrong color = lose life. Changes every 5-8s.</div>
+    <div class="concept"><span style="color:#ffd700">3. SIZE HUNT</span> — Tiny=1pt (easy), Medium=3pt, Large=5pt (brief glow). Risk/reward.</div>
+    <div class="concept"><span style="color:#ff4466">4. GRAVITY FALL</span> — Fireflies fall from top. Catch before bottom or lose life.</div>
+    <div class="concept"><span style="color:#a855f7">5. HOLD TO CHARGE</span> — Hold on firefly, release at peak glow for max points. Too late = escapes.</div>
+    <div class="concept"><span style="color:#00ddff">6. SWARM DRAG</span> — Drag through many tiny fireflies. Glowing = points, dark = damage.</div>
+    <div class="concept"><span style="color:#f97316">7. ZONE MULTIPLIER</span> — Screen zones give 1x/2x/3x. Wait for fireflies to drift into good zones.</div>
+    <div class="concept"><span style="color:#ec4899">8. RHYTHM FIREFLY</span> — Tap on the beat. Perfect timing = full points. Off-beat = miss.</div>
+    <div class="concept"><span style="color:#ef4444">9. PREDATOR HUNT</span> — Red hunters chase fireflies. Tap hunters to save them.</div>
+    <div class="concept"><span style="color:#8b5cf6">10. POWER-UP FRENZY</span> — Special fireflies grant slow-mo, magnet, shield, 2x, bomb.</div>
+  </div>
+</details>
+
+<div class="grid" id="grid"></div>
+
+<div class="production-box" id="production-box" style="display:none">
+  <h3>🎮 Production Build</h3>
+  <div id="production-status">Waiting...</div>
+  <a class="production-link" id="production-link" href="#" style="display:none">PLAY FINAL GAME</a>
+</div>
+
+<div class="preview" id="preview">
+  <div class="preview-header">
+    <span id="preview-title"></span>
+    <button class="preview-close" onclick="closePreview()">Close</button>
+  </div>
+  <iframe id="preview-iframe"></iframe>
+</div>
+
+<script>
+let lastData = null;
+
+function getVerdictClass(v) {
+  if (!v) return '';
+  const verdict = v.toUpperCase();
+  if (verdict.includes('SHIP')) return 'ship';
+  if (verdict.includes('NEEDS') || verdict.includes('WORK')) return 'needs-work';
+  return 'broken';
+}
+
+function renderCard(a, winnerId) {
+  const isWinner = winnerId === a.id;
+  const verdictClass = getVerdictClass(a.scores?.verdict);
+  const scores = a.scores || {};
+
+  return `
+    <div class="card ${verdictClass} ${isWinner ? 'winner' : ''}" onclick="openPreview(${a.id})" style="border-left: 3px solid ${a.twist_color}">
+      <div class="card-header">
+        <span class="twist-name" style="color: ${a.twist_color}">${a.twist_name}</span>
+        ${scores.verdict ? `<span class="verdict ${verdictClass}">${scores.verdict}</span>` : ''}
+      </div>
+      <div class="twist-tagline">${a.twist_tagline}</div>
+      <div class="twist-desc">${a.twist_desc || ''}</div>
+      ${scores.twist !== undefined ? `
+        <div class="scores">
+          <span class="score">Twist <span>${scores.twist}</span></span>
+          <span class="score">Play <span>${scores.playable}</span></span>
+          <span class="score">Arcade <span>${scores.arcade}</span></span>
+          <span class="score">Polish <span>${scores.polish}</span></span>
+        </div>
+      ` : ''}
+      ${a.screenshot ? `<img class="screenshot" src="screenshots/${a.screenshot}">` : ''}
+      ${!a.scores ? `<div class="card-status ${a.status}">${a.status}...</div>` : ''}
+      <div class="maker">by ${a.maker}${isWinner ? ' ★ WINNER' : ''}</div>
+      ${a.notes ? `<div class="notes">"${a.notes}"</div>` : ''}
+    </div>
+  `;
+}
+
+function render(data) {
+  const phase = data.phase;
+  const done = data.agents.filter(a => a.scores).length;
+
+  document.getElementById('status').textContent = phase === 'done'
+    ? '✓ Complete'
+    : phase === 'production' ? '🏭 Production...'
+    : phase === 'selection' ? '🎯 Selecting winner...'
+    : phase === 'judging' ? `🔍 Judging ${done}/10...`
+    : '⚡ Generating...';
+
+  ['generation', 'judging', 'selection', 'production'].forEach((p, i) => {
+    const el = document.getElementById('phase-' + p);
+    el.className = 'phase';
+    const phases = ['generation', 'judging', 'selection', 'production'];
+    if (phase === p) el.classList.add('active');
+    else if (phases.indexOf(p) < phases.indexOf(phase)) el.classList.add('complete');
+  });
+
+  document.getElementById('grid').innerHTML = data.agents.map(a => renderCard(a, data.winner)).join('');
+
+  const prodBox = document.getElementById('production-box');
+  const prodLink = document.getElementById('production-link');
+
+  if (data.winner !== null) {
+    prodBox.style.display = 'block';
+    const winner = data.agents[data.winner];
+    document.getElementById('production-status').textContent = data.production_status?.startsWith('done')
+      ? `Complete! ${winner.twist_name}`
+      : data.production_status || `Selected: ${winner.twist_name}`;
+    if (data.production_status?.startsWith('done')) {
+      prodLink.style.display = 'inline-block';
+      prodLink.href = 'production/game.html';
+    }
+  }
+}
+
+function openPreview(id) {
+  const a = lastData.agents[id];
+  document.getElementById('preview-title').textContent = a.twist_name + ' by ' + a.maker;
+  document.getElementById('preview-iframe').src = a.url || 'game_' + id + '.html';
+  document.getElementById('preview').classList.add('active');
+}
+function closePreview() {
+  document.getElementById('preview').classList.remove('active');
+  document.getElementById('preview-iframe').src = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePreview(); });
+
+async function poll() {
+  try {
+    const res = await fetch('status.json?' + Date.now());
+    lastData = await res.json();
+    render(lastData);
+  } catch (e) {}
+  setTimeout(poll, 500);
+}
+poll();
+</script>
+</body></html>

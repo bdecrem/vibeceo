@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>T11 — Hyper-Casual Game Swarm</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 20px;
+  background: #0a0a0f; color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+h1 { margin: 0 0 10px; font-size: 24px; color: #00ff88; }
+.subtitle { color: #666; font-size: 14px; margin-bottom: 20px; }
+.status { color: #888; margin-bottom: 20px; font-size: 14px; }
+.status.generation { color: #ffaa00; }
+.status.judging { color: #ff66aa; }
+.status.selection { color: #00ddff; }
+.status.production { color: #ff66aa; }
+.status.done { color: #00ff88; }
+
+.phase-bar {
+  display: flex; gap: 0; margin-bottom: 20px;
+  background: #111118; border-radius: 8px; overflow: hidden;
+}
+.phase {
+  padding: 10px 20px; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: #444; border-bottom: 2px solid transparent;
+}
+.phase.active { color: #00ff88; border-bottom-color: #00ff88; background: #0a0a0f; }
+.phase.complete { color: #666; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+  max-width: 1400px;
+}
+
+.card {
+  background: #111118;
+  border-radius: 12px;
+  padding: 15px;
+  border: 2px solid #222;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.card:hover { transform: translateY(-2px); border-color: #333; }
+.card.winner { border-color: #00ff88 !important; box-shadow: 0 0 20px #00ff8833; }
+.card.ship { border-color: #00ff8844; }
+.card.needs-work { border-color: #ffaa0044; }
+.card.broken { border-color: #ff446644; }
+
+.card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.card-maker {
+  display: flex; align-items: center; gap: 10px;
+}
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid #333;
+}
+.maker-name { font-weight: 600; }
+.verdict {
+  font-size: 10px; padding: 4px 8px;
+  border-radius: 4px; font-weight: 600;
+}
+.verdict.ship { background: #00ff8833; color: #00ff88; }
+.verdict.needs-work { background: #ffaa0033; color: #ffaa00; }
+.verdict.broken { background: #ff446633; color: #ff4466; }
+
+.card-info { font-size: 12px; color: #888; margin-bottom: 10px; }
+.mechanic { color: #00ddff; font-weight: 600; }
+.theme { color: #ff66aa; }
+.style { color: #ffaa00; }
+
+.scores {
+  display: flex; gap: 8px; font-size: 11px;
+  margin-bottom: 10px;
+}
+.score {
+  background: #0a0a0f; padding: 3px 8px;
+  border-radius: 4px; color: #888;
+}
+.score span { color: #fff; font-weight: 600; }
+
+.screenshot {
+  width: 100%; height: 150px;
+  object-fit: cover; border-radius: 8px;
+  background: #0a0a0f;
+}
+
+.card-status {
+  font-size: 11px; color: #666;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.card-status.running { color: #ffaa00; }
+.card-status.judging { color: #ff66aa; }
+
+.production-box {
+  margin-top: 20px; padding: 20px;
+  background: #111118; border: 2px solid #00ff8844;
+  border-radius: 12px; max-width: 600px;
+}
+.production-box h3 {
+  margin: 0 0 12px; font-size: 14px;
+  color: #00ff88; text-transform: uppercase; letter-spacing: 1px;
+}
+.production-status { font-size: 13px; color: #888; }
+.production-link {
+  display: inline-block; margin-top: 12px;
+  padding: 10px 20px; background: #00ff88;
+  color: #000; text-decoration: none;
+  border-radius: 6px; font-size: 13px; font-weight: 600;
+}
+.production-link:hover { background: #00dd77; }
+
+.preview {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.95); display: none; z-index: 100;
+}
+.preview.active { display: flex; flex-direction: column; }
+.preview-header {
+  padding: 15px 20px; background: #1a1a2e;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.preview-title { font-weight: 600; }
+.preview-close {
+  background: #ff4466; border: none; color: #fff;
+  padding: 8px 16px; border-radius: 6px; cursor: pointer;
+}
+.preview iframe { flex: 1; border: none; background: #000; }
+</style>
+</head>
+<body>
+<h1>T11 — Hyper-Casual Game Swarm</h1>
+<div class="subtitle">10 agents building playable mobile games with scoreboards</div>
+<div class="status" id="status">Loading...</div>
+
+<div class="phase-bar">
+  <div class="phase" id="phase-generation">1. Generation</div>
+  <div class="phase" id="phase-judging">2. Judging</div>
+  <div class="phase" id="phase-selection">3. Selection</div>
+  <div class="phase" id="phase-production">4. Production</div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="production-box" id="production-box" style="display:none">
+  <h3>🎮 Production Build</h3>
+  <div class="production-status" id="production-status">Waiting...</div>
+  <a class="production-link" id="production-link" href="#" style="display:none">PLAY FINAL GAME</a>
+</div>
+
+<div class="preview" id="preview">
+  <div class="preview-header">
+    <span class="preview-title" id="preview-title"></span>
+    <button class="preview-close" onclick="closePreview()">Close</button>
+  </div>
+  <iframe id="preview-iframe"></iframe>
+</div>
+
+<script>
+let lastData = null;
+
+function getVerdictClass(v) {
+  if (!v) return '';
+  const verdict = v.toUpperCase();
+  if (verdict.includes('SHIP')) return 'ship';
+  if (verdict.includes('NEEDS') || verdict.includes('WORK')) return 'needs-work';
+  return 'broken';
+}
+
+function renderCard(a, winnerId) {
+  const isWinner = winnerId === a.id;
+  const verdictClass = getVerdictClass(a.scores?.verdict);
+  const scores = a.scores || {};
+
+  return `
+    <div class="card ${verdictClass} ${isWinner ? 'winner' : ''}" onclick="openPreview(${a.id})">
+      <div class="card-header">
+        <div class="card-maker">
+          <img class="avatar" src="${a.avatar}" alt="${a.maker}">
+          <span class="maker-name">${a.maker}</span>
+        </div>
+        ${scores.verdict ? `<span class="verdict ${verdictClass}">${scores.verdict}</span>` : ''}
+      </div>
+      <div class="card-info">
+        <span class="mechanic">${a.mechanic}</span> ·
+        <span class="theme">${a.theme}</span> ·
+        <span class="style">${a.style}</span>
+      </div>
+      ${scores.playable !== undefined ? `
+        <div class="scores">
+          <span class="score">Play <span>${scores.playable}</span></span>
+          <span class="score">Mobile <span>${scores.mobile}</span></span>
+          <span class="score">Polish <span>${scores.polish}</span></span>
+          <span class="score">Fun <span>${scores.fun}</span></span>
+        </div>
+      ` : ''}
+      ${a.screenshot ? `<img class="screenshot" src="screenshots/${a.screenshot}">` : ''}
+      ${!a.scores ? `<div class="card-status ${a.status}">${a.status}...</div>` : ''}
+      ${isWinner ? '<div style="color:#00ff88;font-size:11px;margin-top:8px">★ WINNER</div>' : ''}
+    </div>
+  `;
+}
+
+function render(data) {
+  const phase = data.phase;
+  const done = data.agents.filter(a => a.scores).length;
+
+  document.getElementById('status').className = 'status ' + phase;
+  if (phase === 'done') {
+    document.getElementById('status').textContent = '✓ Complete — ' + done + ' games judged';
+  } else if (phase === 'production') {
+    document.getElementById('status').textContent = '🏭 Production — polishing winner...';
+  } else if (phase === 'selection') {
+    document.getElementById('status').textContent = '🎯 Selection — picking winner...';
+  } else if (phase === 'judging') {
+    document.getElementById('status').textContent = '🔍 Judging — ' + done + '/10 rated';
+  } else {
+    const running = data.agents.filter(a => a.status === 'running').length;
+    document.getElementById('status').textContent = '⚡ Generating — ' + running + ' agents building...';
+  }
+
+  // Phase bar
+  ['generation', 'judging', 'selection', 'production'].forEach(p => {
+    const el = document.getElementById('phase-' + p);
+    el.className = 'phase';
+    if (phase === p) el.classList.add('active');
+    else if (['generation', 'judging', 'selection', 'production'].indexOf(p) < ['generation', 'judging', 'selection', 'production'].indexOf(phase)) {
+      el.classList.add('complete');
+    }
+  });
+
+  // Grid
+  document.getElementById('grid').innerHTML = data.agents.map(a => renderCard(a, data.winner)).join('');
+
+  // Production box
+  const prodBox = document.getElementById('production-box');
+  const prodStatus = document.getElementById('production-status');
+  const prodLink = document.getElementById('production-link');
+
+  if (data.winner !== null) {
+    prodBox.style.display = 'block';
+    const winner = data.agents[data.winner];
+
+    if (data.production_status?.startsWith('done')) {
+      prodStatus.textContent = 'Complete! ' + winner.mechanic + ' by ' + winner.maker;
+      prodLink.style.display = 'inline-block';
+      prodLink.href = 'production/game.html';
+    } else if (data.production_status) {
+      prodStatus.textContent = 'Building: ' + data.production_status;
+    } else {
+      prodStatus.textContent = 'Selected: ' + winner.mechanic + ' by ' + winner.maker + '. ' + (data.winner_reason || '');
+    }
+  }
+}
+
+function openPreview(id) {
+  const a = lastData.agents[id];
+  document.getElementById('preview-title').textContent = a.mechanic + ' by ' + a.maker;
+  document.getElementById('preview-iframe').src = a.url || 'game_' + id + '.html';
+  document.getElementById('preview').classList.add('active');
+}
+
+function closePreview() {
+  document.getElementById('preview').classList.remove('active');
+  document.getElementById('preview-iframe').src = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePreview(); });
+
+async function poll() {
+  try {
+    const res = await fetch('status.json?' + Date.now());
+    const data = await res.json();
+    if (JSON.stringify(data) !== JSON.stringify(lastData)) {
+      lastData = data;
+      render(data);
+    }
+  } catch (e) {}
+  setTimeout(poll, 500);
+}
+
+poll();
+</script>
+</body></html>

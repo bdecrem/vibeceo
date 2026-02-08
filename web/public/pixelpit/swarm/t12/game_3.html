@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GRAVITY FALL</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:#0a0a12;
+    font-family:'Courier New', monospace;
+    overflow:hidden;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    height:100vh;
+    width:100vw;
+  }
+  canvas{display:block;position:fixed;top:0;left:0;width:100%;height:100%}
+  #ui{
+    position:fixed;
+    top:0;left:0;right:0;
+    padding:12px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    color:#D4A574;
+    text-shadow:0 0 8px rgba(212,165,116,.4);
+    font-size:18px;
+    pointer-events:none;
+    z-index:10;
+  }
+  #score{color:#D4A574}
+  #timer{color:#FFD700}
+  #lives{display:flex;gap:6px}
+  .heart{
+    width:20px;height:20px;
+    background:#D4A574;
+    clip-path:path('M10 18.4l-1.16-1.06C3.84 13.89 1 11.42 1 8.4 1 5.94 2.94 4 5.4 4 6.79 4 8.13.65 10 1.67 11.87.65 13.21 0 14.6 0 17.06 0 19 2.94 19 5.4c0 3.02-2.64 5.49-6.84 8.94L10 18.4z');
+    transform:scale(1);
+    transition:transform .2s,opacity .3s;
+    filter:drop-shadow(0 0 8px rgba(212,165,116,.5));
+  }
+  .heart.lost{opacity:.2;transform:scale(.7)}
+  #start-screen,#end-screen{
+    position:fixed;
+    top:0;left:0;right:0;bottom:0;
+    background:rgba(10,10,18,.95);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    z-index:20;
+    color:#D4A574;
+    text-align:center;
+    padding:40px;
+  }
+  #start-screen{display:flex}
+  #end-screen{display:none}
+  h1{font-size:48px;font-weight:normal;margin-bottom:20px;text-shadow:0 0 40px rgba(212,165,116,.6)}
+  .subtitle{color:#8B7355;font-size:14px;margin-bottom:20px}
+  .instruction{color:#6B5344;font-size:13px;line-height:1.8;margin-bottom:30px}
+  button{
+    background:transparent;border:1px solid #D4A574;color:#D4A574;padding:10px 30px;font-size:14px;letter-spacing:2px;cursor:pointer;
+    transition:all .3s;
+  }
+  button:hover{background:#D4A574;color:#0a0a12}
+  #final-score{font-size:120px;margin:20px 0;text-shadow:0 0 60px rgba(212,165,116,.8);opacity:0;transform:scale(.5);animation:popIn .6s ease-out forwards}
+  @keyframes popIn{0%{opacity:0;transform:scale(.5)}50%{transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+  #high-score{color:#FFD700;font-size:18px;margin-bottom:20px;opacity:0;animation:fadeIn .5s ease-out .4s forwards}
+  @keyframes fadeIn{to{opacity:1}}
+  #end-screen button{opacity:0;animation:fadeIn .5s ease-out .6s forwards}
+  .end-subtitle{opacity:0;animation:fadeIn .5s ease-out .2s forwards}
+  .shake{animation:shake .3s ease-out}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  #danger-zone{
+    position:fixed;left:0;bottom:0;width:100%;height:0;pointer-events:none;z-index:5;
+    background:linear-gradient(transparent,#ff4466);
+    opacity:.6;
+    transition:height .2s;
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="score">0</div>
+  <div id="timer">30</div>
+  <div id="lives"></div>
+</div>
+<div id="danger-zone"></div>
+<div id="start-screen">
+  <h1>GRAVITY FALL</h1>
+  <div class="subtitle">catch them before they hit the ground</div>
+  <div class="instruction">tap the glowing fireflies<br>30 seconds<br>how many can you escape?</div>
+  <button id="start-btn">BEGIN</button>
+</div>
+<div id="end-screen">
+  <div class="subtitle end-subtitle">time's up</div>
+  <div id="final-score">0</div>
+  <div id="high-score">best: 0</div>
+  <button id="restart-btn">AGAIN</button>
+</div>
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const ui=document.getElementById('ui');
+const scoreEl=document.getElementById('score');
+const timerEl=document.getElementById('timer');
+const livesEl=document.getElementById('lives');
+const startScreen=document.getElementById('start-screen');
+const endScreen=document.getElementById('end-screen');
+const dangerZone=document.getElementById('danger-zone');
+const startBtn=document.getElementById('start-btn');
+const restartBtn=document.getElementById('restart-btn');
+
+let width,height;
+function resize(){
+  width=canvas.width=window.innerWidth;
+  height=canvas.height=window.innerHeight;
+}
+resize();window.addEventListener('resize',resize);
+
+let fireflies=[];
+let particles=[];
+let score=0;
+let lives=5;
+let difficulty=1;
+let spawnTimer=0;
+let gameRunning=false;
+let gameTimer=null;
+let gameTime=30;
+let highScore=parseInt(localStorage.getItem('gravity-high')||'0');
+
+const AMBER={r:212,g:165,b:116};
+const GOLD={r:255,g:215,b:0};
+const ACCENT='#ff4466';
+const DANGER_HEIGHT=120;
+
+// Audio
+let audioCtx=null;
+let gainNode=null;
+function initAudio(){
+  if(audioCtx)return;
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  gainNode=audioCtx.createGain();gainNode.gain.value=.3;gainNode.connect(audioCtx.destination);
+  audioCtx.resume();
+}
+function playNote(freq,duration=0.2,type='triangle',volume=.15){
+  if(!audioCtx)return;
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+  osc.type=type;osc.frequency.value=freq;
+  gain.gain.setValueAtTime(0,audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(volume,audioCtx.currentTime+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+duration);
+  osc.connect(gain);gain.connect(gainNode);
+  osc.start();osc.stop(audioCtx.currentTime+duration);
+}
+function playSparkle(){
+  playNote(880,0.1,'sine',.2);
+  setTimeout(()=>playNote(1320,.05,'sine',.15),70);
+}
+function playMiss(){
+  playNote(440,.3,'triangle',.1);
+}
+function playDanger(){
+  playNote(220,.2,'sine',.1);
+}
+function startMusic(){
+  initAudio();
+  const loop=()=>{
+    playNote(220,.5,'sine',.05);
+    setTimeout(loop,.75);
+  };
+  loop();
+}
+function stopMusic(){
+  if(gainNode){
+    gainNode.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.5);
+  }
+}
+
+// Firefly
+class Firefly{
+  constructor(){
+    this.reset();
+  }
+  reset(){
+    this.x=Math.random()*width;
+    this.y=-30;
+    this.radius=18+Math.random()*8;
+    this.speed=3+(Math.random()*2)*difficulty;
+    this.caught=false;
+    this.missed=false;
+    this.isBonus=Math.random()<0.1;
+    this.color=this.isBonus?GOLD:AMBER;
+    this.points=this.isBonus?3:1;
+  }
+  update(){
+    if(this.caught||this.missed)return true;
+    this.y+=this.speed;
+    if(this.y>height){
+      this.missed=true;
+      loseLife();
+      return false;
+    }
+    return true;
+  }
+  draw(){
+    if(this.caught){
+      // explosion
+      const size=this.radius+20;
+      ctx.fillStyle=`rgba(255,255,255,0.3)`;
+      ctx.beginPath();ctx.arc(this.x,this.y,size,0,Math.PI*2);ctx.fill();
+      return;
+    }
+    if(this.missed)return;
+    const glowSize=this.radius*1.5;
+    const grad=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,glowSize);
+    grad.addColorStop(0,`rgba(${this.color.r},${this.color.g},${this.color.b},.6)`);
+    grad.addColorStop(.6,`rgba(${this.color.r},${this.color.g},${this.color.b},.2)`);
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();ctx.arc(this.x,this.y,glowSize,0,Math.PI*2);ctx.fill();
+    const bodyGrad=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,this.radius);
+    bodyGrad.addColorStop(0,'white');
+    bodyGrad.addColorStop(.5,`rgba(${this.color.r},${this.color.g},${this.color.b},.8)`);
+    bodyGrad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=bodyGrad;
+    ctx.beginPath();ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);ctx.fill();
+  }
+  contains(x,y){
+    return Math.hypot(x-this.x,y-this.y)<=this.radius+20;
+  }
+}
+
+function spawnFirefly(){
+  const maxCount=5+Math.floor(difficulty);
+  if(fireflies.length<maxCount){
+    fireflies.push(new Firefly());
+  }
+}
+
+function loseLife(){
+  lives--;
+  const hearts=document.querySelectorAll('.heart');
+  if(hearts[lives])hearts[lives].classList.add('lost');
+  document.body.classList.add('shake');
+  setTimeout(()=>document.body.classList.remove('shake'),300);
+  playMiss();
+  if(lives<=0)endGame();
+}
+function addScore(points){
+  score+=points;
+  scoreEl.textContent=score;
+  if(score%5===0)difficulty+=0.2;
+}
+function handleTap(x,y){
+  if(!gameRunning)return;
+  for(const f of fireflies){
+    if(f.caught||f.missed)continue;
+    if(f.contains(x,y)){
+      f.caught=true;
+      addScore(f.points);
+      playSparkle();
+      particles.push({x:f.x,y:f.y,life:1});
+      return;
+    }
+  }
+}
+function update(){
+  fireflies=fireflies.filter(f=>f.update());
+  spawnTimer++;
+  const spawnRate=Math.max(80- difficulty*5,30);
+  if(spawnTimer>=spawnRate){spawnFirefly();spawnTimer=0;}
+  // danger zone glow
+  const nearBottom=fireflies.some(f=>f.y>height-DANGER_HEIGHT);
+  dangerZone.style.height=nearBottom?`${DANGER_HEIGHT}px`:'0';
+  if(nearBottom)playDanger();
+  particles=particles.filter(p=>{
+    p.life-=0.02;
+    return p.life>0;
+  });
+}
+function draw(){
+  ctx.fillStyle='#0a0a12';ctx.fillRect(0,0,width,height);
+  fireflies.forEach(f=>f.draw());
+  particles.forEach(p=>{
+    ctx.fillStyle=`rgba(255,255,255,${p.life})`;
+    ctx.beginPath();ctx.arc(p.x,p.y,8*p.life,0,Math.PI*2);ctx.fill();
+  });
+}
+function gameLoop(){
+  update();draw();requestAnimationFrame(gameLoop);
+}
+function startGame(){
+  startScreen.style.display='none';
+  endScreen.style.display='none';
+  fireflies=[];particles=[];
+  score=0;lives=5;difficulty=1;spawnTimer=0;gameTime=30;
+  scoreEl.textContent='0';timerEl.textContent='30';
+  livesEl.innerHTML='';
+  for(let i=0;i<5;i++){
+    const h=document.createElement('div');h.className='heart';livesEl.appendChild(h);
+  }
+  startMusic();
+  gameRunning=true;
+  gameTimer=setInterval(()=>{
+    gameTime--;timerEl.textContent=gameTime;
+    if(gameTime<=0)endGame();
+  },1000);
+}
+function endGame(){
+  gameRunning=false;
+  clearInterval(gameTimer);
+  stopMusic();
+  if(score>highScore){highScore=score;localStorage.setItem('gravity-high',highScore);}
+  const finalScore=document.getElementById('final-score');
+  const highScoreEl=document.getElementById('high-score');
+  finalScore.textContent=score;
+  highScoreEl.textContent=score>highScore?`✦ new best!`:`best: ${highScore}`;
+  if(score>highScore){
+    finalScore.classList.add('new-best');
+    highScoreEl.classList.add('new-best');
+  }else{
+    finalScore.classList.remove('new-best');
+    highScoreEl.classList.remove('new-best');
+  }
+  setTimeout(()=>{endScreen.style.display='flex';},300);
+}
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const touch=e.touches[0];
+  if(!gameRunning)startGame();
+  handleTap(touch.clientX,touch.clientY);
+},{passive:false});
+canvas.addEventListener('click',e=>{
+  if(!gameRunning)startGame();
+  handleTap(e.clientX,e.clientY);
+});
+startBtn.addEventListener('click',startGame);
+restartBtn.addEventListener('click',startGame);
+gameLoop();
+</script>
+</body>
+</html>

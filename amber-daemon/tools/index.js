@@ -5,9 +5,24 @@ import { execSync, spawn } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { homedir } from 'os';
+import Anthropic from '@anthropic-ai/sdk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+const MEMORY_DIR = join(homedir(), '.amber', 'memory');
+const SESSIONS_DIR = join(homedir(), '.amber', 'sessions');
+
+// Haiku client for semantic search (lightweight, fast)
+let _searchClient = null;
+function getSearchClient() {
+  if (!_searchClient) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) throw new Error('No ANTHROPIC_API_KEY for search client');
+    _searchClient = new Anthropic({ apiKey });
+  }
+  return _searchClient;
+}
 
 // Tool definitions for Anthropic API
 export const TOOLS = [
@@ -125,14 +140,65 @@ export const TOOLS = [
   },
   {
     name: "memory_search",
-    description: "Search your memory files (daily logs, MEMORY.md) for past context",
+    description: "Search your memory semantically. Finds concepts, not just keywords. Searches MEMORY.md and all daily logs from the last 30 days.",
     input_schema: {
       type: "object",
       properties: {
-        query: { type: "string", description: "Search query" },
-        limit: { type: "number", description: "Max results (default 10)" }
+        query: { type: "string", description: "What to search for — concepts, topics, or questions work well" }
       },
       required: ["query"]
+    }
+  },
+  {
+    name: "memory_list",
+    description: "List all memory files with dates and first line. A table of contents for your memory.",
+    input_schema: {
+      type: "object",
+      properties: {}
+    }
+  },
+  {
+    name: "session_list",
+    description: "List archived conversation sessions with date, message count, and time range.",
+    input_schema: {
+      type: "object",
+      properties: {}
+    }
+  },
+  {
+    name: "session_search",
+    description: "Search across archived conversation sessions semantically. Use to find past discussions, decisions, or exchanges.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "What to search for in past sessions" }
+      },
+      required: ["query"]
+    }
+  },
+  {
+    name: "send_email",
+    description: "Send an email from ambercc@intheamber.com and log it to cc_outbox. Use this after Bart approves your draft. NEVER send without explicit approval.",
+    input_schema: {
+      type: "object",
+      properties: {
+        to: { type: "string", description: "Recipient email (or comma-separated for multiple)" },
+        subject: { type: "string", description: "Email subject line" },
+        body: { type: "string", description: "Email body (plain text)" }
+      },
+      required: ["to", "subject", "body"]
+    }
+  },
+  {
+    name: "mark_email_handled",
+    description: "Mark a cc_inbox email as handled in Supabase after replying or deciding to skip it.",
+    input_schema: {
+      type: "object",
+      properties: {
+        email_id: { type: "string", description: "The id of the amber_state row to mark as handled" },
+        action: { type: "string", description: "What was done: 'replied', 'skipped', 'forwarded', etc." }
+      },
+      required: ["email_id", "action"]
     }
   }
 ];
@@ -283,7 +349,6 @@ export async function executeTool(name, input, session, context = {}) {
 
     case "memory_append": {
       const { content, source } = input;
-      const MEMORY_DIR = join(homedir(), '.amber', 'memory');
       const today = new Date().toISOString().slice(0, 10);
       const logPath = join(MEMORY_DIR, `${today}.md`);
       const time = new Date().toLocaleTimeString('en-US', {
@@ -307,24 +372,220 @@ export async function executeTool(name, input, session, context = {}) {
     }
 
     case "memory_search": {
-      const { query, limit = 10 } = input;
-      const MEMORY_DIR = join(homedir(), '.amber', 'memory');
+      const { query } = input;
 
       if (!existsSync(MEMORY_DIR)) {
         return 'No memory directory found';
       }
 
       try {
-        // Escape special characters for grep
-        const escaped = query.replace(/["\\\n]/g, '\\$&');
-        const result = execSync(
-          `grep -r -i -n "${escaped}" "${MEMORY_DIR}" 2>/dev/null | head -${limit}`,
-          { encoding: 'utf-8', timeout: 10000 }
-        );
-        return result || 'No matches found';
+        // Gather memory files: MEMORY.md + daily logs from last 30 days
+        const chunks = [];
+        const memoryMdPath = join(MEMORY_DIR, 'MEMORY.md');
+        if (existsSync(memoryMdPath)) {
+          chunks.push(`=== FILE: MEMORY.md ===\n${readFileSync(memoryMdPath, 'utf-8')}`);
+        }
+
+        const thirtyDaysAgo = Date.now() - 30 * 86400000;
+        const files = readdirSync(MEMORY_DIR)
+          .filter(f => f.match(/^\d{4}-\d{2}-\d{2}\.md$/))
+          .filter(f => {
+            const fileDate = new Date(f.replace('.md', '')).getTime();
+            return fileDate >= thirtyDaysAgo;
+          })
+          .sort();
+
+        for (const file of files) {
+          const content = readFileSync(join(MEMORY_DIR, file), 'utf-8');
+          chunks.push(`=== FILE: ${file} ===\n${content}`);
+        }
+
+        if (chunks.length === 0) {
+          return 'No memory files found';
+        }
+
+        const allMemory = chunks.join('\n\n');
+
+        // Send to Haiku for semantic search
+        const client = getSearchClient();
+        const response = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2048,
+          system: 'You search memory files and return relevant passages. Return a JSON array of results. Each result: {"file": "filename", "snippet": "relevant passage (2-4 lines)", "relevance": "why this matches"}. Return [] if nothing relevant. Only return the JSON array, no other text.',
+          messages: [{
+            role: 'user',
+            content: `Find passages relevant to: ${query}\n\n---\n\n${allMemory}`
+          }]
+        });
+
+        const text = response.content[0]?.text || '[]';
+        // Try to parse as JSON, fall back to raw text
+        try {
+          const results = JSON.parse(text);
+          if (results.length === 0) return 'No relevant memories found';
+          return results.map(r =>
+            `📄 ${r.file}\n${r.snippet}\n  → ${r.relevance}`
+          ).join('\n\n');
+        } catch {
+          return text;
+        }
       } catch (err) {
-        if (err.status === 1) return 'No matches found';
-        return `Search error: ${err.message}`;
+        return `Memory search error: ${err.message}`;
+      }
+    }
+
+    case "memory_list": {
+      if (!existsSync(MEMORY_DIR)) {
+        return 'No memory directory found';
+      }
+
+      const files = readdirSync(MEMORY_DIR)
+        .filter(f => f.endsWith('.md'))
+        .sort()
+        .reverse();
+
+      if (files.length === 0) return 'No memory files found';
+
+      const entries = files.map(f => {
+        const filePath = join(MEMORY_DIR, f);
+        const stat = statSync(filePath);
+        const content = readFileSync(filePath, 'utf-8');
+        const firstLine = content.split('\n').find(l => l.trim()) || '(empty)';
+        const size = stat.size > 1024 ? `${(stat.size / 1024).toFixed(1)}kb` : `${stat.size}b`;
+        return `${f}  (${size})  ${firstLine}`;
+      });
+
+      return entries.join('\n');
+    }
+
+    case "session_list": {
+      if (!existsSync(SESSIONS_DIR)) {
+        return 'No session archives found';
+      }
+
+      const files = readdirSync(SESSIONS_DIR)
+        .filter(f => f.endsWith('.json'))
+        .sort()
+        .reverse();
+
+      if (files.length === 0) return 'No session archives found';
+
+      const entries = files.map(f => {
+        try {
+          const data = JSON.parse(readFileSync(join(SESSIONS_DIR, f), 'utf-8'));
+          const msgCount = data.messages?.length || 0;
+          const label = data.label || '';
+          const timeRange = data.timeRange || '';
+          return `${f.replace('.json', '')}  ${msgCount} messages  ${timeRange}  ${label}`;
+        } catch {
+          return `${f.replace('.json', '')}  (unreadable)`;
+        }
+      });
+
+      return entries.join('\n');
+    }
+
+    case "session_search": {
+      const { query } = input;
+
+      if (!existsSync(SESSIONS_DIR)) {
+        return 'No session archives found';
+      }
+
+      const files = readdirSync(SESSIONS_DIR)
+        .filter(f => f.endsWith('.json'))
+        .sort()
+        .reverse();
+
+      if (files.length === 0) return 'No session archives found';
+
+      try {
+        // Build text chunks from session archives
+        const chunks = [];
+        for (const file of files) {
+          try {
+            const data = JSON.parse(readFileSync(join(SESSIONS_DIR, file), 'utf-8'));
+            const messages = data.messages || [];
+            // Extract text content from messages
+            const textParts = messages.map(m => {
+              if (typeof m.content === 'string') return m.content;
+              if (Array.isArray(m.content)) {
+                return m.content
+                  .filter(c => c.type === 'text')
+                  .map(c => c.text)
+                  .join(' ');
+              }
+              return '';
+            }).filter(t => t.length > 0);
+
+            if (textParts.length > 0) {
+              // Truncate to ~4000 chars per session to keep payload reasonable
+              const sessionText = textParts.join('\n').substring(0, 4000);
+              chunks.push(`=== SESSION: ${file.replace('.json', '')} ===\n${sessionText}`);
+            }
+          } catch {
+            // Skip unreadable files
+          }
+        }
+
+        if (chunks.length === 0) return 'No readable session archives';
+
+        const allSessions = chunks.join('\n\n');
+
+        const client = getSearchClient();
+        const response = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 2048,
+          system: 'You search conversation session archives and return relevant exchanges. Return a JSON array of results. Each result: {"session": "session name", "snippet": "relevant exchange (2-5 lines)", "relevance": "why this matches"}. Return [] if nothing relevant. Only return the JSON array, no other text.',
+          messages: [{
+            role: 'user',
+            content: `Find exchanges relevant to: ${query}\n\n---\n\n${allSessions}`
+          }]
+        });
+
+        const text = response.content[0]?.text || '[]';
+        try {
+          const results = JSON.parse(text);
+          if (results.length === 0) return 'No relevant sessions found';
+          return results.map(r =>
+            `📋 ${r.session}\n${r.snippet}\n  → ${r.relevance}`
+          ).join('\n\n');
+        } catch {
+          return text;
+        }
+      } catch (err) {
+        return `Session search error: ${err.message}`;
+      }
+    }
+
+    case "send_email": {
+      const { to, subject, body } = input;
+      try {
+        const repoRoot = context.repoRoot || join(__dirname, '../..');
+        // Write body to temp file to avoid shell escaping issues
+        const tmpFile = join(homedir(), '.amber', 'email-draft.txt');
+        writeFileSync(tmpFile, body);
+        const result = execSync(
+          `cd "${repoRoot}/sms-bot" && npx tsx --env-file=.env.local scripts/send-ambercc-email.ts "${to}" "${subject.replace(/"/g, '\\"')}" --file "${tmpFile}"`,
+          { encoding: 'utf-8', timeout: 30000 }
+        );
+        return result || 'Email sent and logged';
+      } catch (err) {
+        return `Failed to send email: ${err.stderr || err.message}`;
+      }
+    }
+
+    case "mark_email_handled": {
+      const { email_id, action } = input;
+      try {
+        const repoRoot = context.repoRoot || join(__dirname, '../..');
+        const result = execSync(
+          `cd "${repoRoot}/sms-bot" && npx tsx --env-file=.env.local scripts/mark-email-handled.ts "${email_id}" "${action}"`,
+          { encoding: 'utf-8', timeout: 15000 }
+        );
+        return result || 'Email marked as handled';
+      } catch (err) {
+        return `Failed to mark email: ${err.stderr || err.message}`;
       }
     }
 

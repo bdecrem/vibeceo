@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>NEON PULSE</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a0a0f;overflow:hidden;font-family:-apple-system,Helvetica,Arial,sans-serif;touch-action:none;-webkit-tap-highlight-color:transparent;}
+canvas{display:block;}
+#ui{position:fixed;top:20px;left:20px;color:#00ff88;font-size:20px;z-index:10;text-shadow:0 0 10px #00ff88;}
+#score-label{opacity:0.7;font-size:14px;}
+#score{font-weight:bold;font-size:32px;display:block;}
+#combo{position:fixed;top:20px;right:20px;color:#ff00ff;font-size:18px;text-shadow:0 0 10px #ff00ff;opacity:0;transition:opacity 0.2s;}
+#combo.show{opacity:1;}
+#high{position:fixed;top:80px;left:20px;color:#ffff00;font-size:14px;text-shadow:0 0 8px #ffff00;opacity:0.8;}
+#hint{position:fixed;bottom:30px;left:0;right:0;text-align:center;color:#ffffff;font-size:16px;opacity:0.6;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:0.3;}50%{opacity:0.8;}}
+#game-over{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,10,15,0.95);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  color:white;text-align:center;z-index:100;opacity:0;pointer-events:none;
+  transition:opacity 0.3s;
+}
+#game-over.show{opacity:1;pointer-events:auto;}
+#game-over h1{font-size:42px;margin-bottom:10px;color:#ff00ff;text-shadow:0 0 30px #ff00ff;}
+#game-over .subtitle{font-size:16px;margin-bottom:30px;opacity:0.6;}
+#game-over .final-score{font-size:48px;margin-bottom:10px;color:#00ff88;text-shadow:0 0 20px #00ff88;}
+#game-over .final-label{font-size:14px;opacity:0.6;margin-bottom:20px;}
+#game-over .high-score{font-size:20px;color:#ffff00;text-shadow:0 0 10px #ffff00;margin-bottom:30px;}
+#game-over .new-high{color:#ff00ff;font-size:14px;animation:glow 0.5s infinite alternate;}
+@keyframes glow{from{text-shadow:0 0 10px #ff00ff;}to{text-shadow:0 0 30px #ff00ff,0 0 50px #ff00ff;}}
+#restart{padding:18px 50px;font-size:18px;background:linear-gradient(135deg,#00ff88,#00cc66);color:#0a0a0f;border:none;border-radius:30px;cursor:pointer;font-weight:bold;text-transform:uppercase;box-shadow:0 0 30px rgba(0,255,136,0.5);transition:transform 0.1s,box-shadow 0.1s;}
+#restart:active{transform:scale(0.95);box-shadow:0 0 15px rgba(0,255,136,0.3);}
+</style>
+</head>
+<body>
+<div id="ui">
+  <span id="score-label">SCORE</span>
+  <span id="score">0</span>
+</div>
+<div id="combo">x<span id="combo-num">2</span> COMBO!</div>
+<div id="high">BEST: <span id="high-score">0</span></div>
+<div id="hint">TAP when the orb enters the zone</div>
+<canvas id="c"></canvas>
+<div id="game-over">
+  <h1>GAME OVER</h1>
+  <div class="subtitle">The rhythm has stopped</div>
+  <div class="final-label">FINAL SCORE</div>
+  <div class="final-score"><span id="final-score">0</span></div>
+  <div class="high-score">BEST: <span id="final-high">0</span></div>
+  <div class="new-high" id="new-high" style="display:none;">★ NEW HIGH SCORE! ★</div>
+  <button id="restart">TAP TO RETRY</button>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const comboEl = document.getElementById('combo');
+const comboNumEl = document.getElementById('combo-num');
+const highEl = document.getElementById('high-score');
+const hintEl = document.getElementById('hint');
+const gameOverEl = document.getElementById('game-over');
+const finalScoreEl = document.getElementById('final-score');
+const finalHighEl = document.getElementById('final-high');
+const newHighEl = document.getElementById('new-high');
+const restartBtn = document.getElementById('restart');
+
+let W, H;
+function resize() {
+  W = canvas.width = innerWidth;
+  H = canvas.height = innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Game state
+let score = 0;
+let combo = 0;
+let maxCombo = 0;
+let highScore = parseInt(localStorage.getItem('neonpulse_high') || '0');
+highEl.textContent = highScore;
+let gameRunning = true;
+let firstTap = true;
+let gameTime = 0;
+
+// Zone - centered vertically and horizontally
+const zoneWidth = 100;
+const zoneX = () => W / 2;
+
+// Target orb
+let target = { x: 0, y: 0, speed: 5, size: 60, active: true };
+let baseSpeed = 5;
+let waitRespawn = false;
+let respawnTimer = 0;
+
+// Effects
+let particles = [];
+let shakeX = 0, shakeY = 0;
+let shakeTime = 0, shakeIntensity = 0;
+let flashAlpha = 0;
+let flashColor = '#00ff88';
+let zoneGlow = 0;
+let zonePulse = 0;
+
+// Trail
+let trail = [];
+
+// Feedback text
+let feedbackText = '';
+let feedbackAlpha = 0;
+let feedbackColor = '#00ff88';
+
+// Audio
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function playTone(freq, dur, vol = 0.3, type = 'sine', slide = 0) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(freq + slide, 20), audioCtx.currentTime + dur);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+  } catch (e) {}
+}
+
+function playSuccess(comboLevel) {
+  const baseFreq = 440 + (comboLevel * 60);
+  playTone(baseFreq, 0.1, 0.25, 'sine');
+  playTone(baseFreq * 1.5, 0.12, 0.18, 'triangle');
+  if (comboLevel >= 3) {
+    setTimeout(() => playTone(baseFreq * 2, 0.08, 0.12, 'sine'), 40);
+  }
+  if (comboLevel >= 5) {
+    setTimeout(() => playTone(baseFreq * 2.5, 0.06, 0.1, 'sine'), 80);
+  }
+}
+
+function playFail() {
+  playTone(150, 0.3, 0.35, 'sawtooth', -80);
+  playTone(80, 0.4, 0.25, 'square');
+}
+
+function initTarget() {
+  target.x = -target.size;
+  target.y = H / 2;
+  target.speed = baseSpeed + Math.random() * 1.5;
+  target.active = true;
+  trail = [];
+}
+
+function spawnParticles(x, y, count, color, spread = 5) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * spread + 2;
+    particles.push({
+      x, y,
+      dx: Math.cos(angle) * speed,
+      dy: Math.sin(angle) * speed,
+      radius: Math.random() * 5 + 3,
+      color,
+      life: 0.7 + Math.random() * 0.4,
+      maxLife: 1.1
+    });
+  }
+}
+
+function spawnRing(x, y, color) {
+  particles.push({
+    x, y,
+    dx: 0, dy: 0,
+    radius: 10,
+    ringRadius: 10,
+    isRing: true,
+    color,
+    life: 0.5,
+    maxLife: 0.5
+  });
+}
+
+function showFeedback(text, color) {
+  feedbackText = text;
+  feedbackColor = color;
+  feedbackAlpha = 1;
+}
+
+function screenShake(intensity, time) {
+  shakeIntensity = intensity;
+  shakeTime = time;
+}
+
+function flash(color) {
+  flashColor = color;
+  flashAlpha = 0.4;
+}
+
+function handleTap(e) {
+  initAudio();
+  
+  if (!gameRunning) return;
+  if (!target.active) return;
+  
+  if (firstTap) {
+    firstTap = false;
+    hintEl.style.opacity = '0';
+  }
+
+  // Check if orb is in the zone
+  const zoneLeft = zoneX() - zoneWidth / 2;
+  const zoneRight = zoneX() + zoneWidth / 2;
+  const orbCenter = target.x;
+  const orbInZone = orbCenter >= zoneLeft - target.size / 3 && orbCenter <= zoneRight + target.size / 3;
+  
+  // Check timing precision
+  const zoneCenter = zoneX();
+  const distFromCenter = Math.abs(orbCenter - zoneCenter);
+  const isPerfect = distFromCenter < zoneWidth / 4;
+  
+  if (orbInZone) {
+    // SUCCESS!
+    combo++;
+    maxCombo = Math.max(maxCombo, combo);
+    
+    // Points based on timing and combo
+    let points = 1;
+    if (isPerfect) {
+      points = 2;
+      showFeedback('PERFECT!', '#ffff00');
+    } else {
+      showFeedback('GOOD!', '#00ff88');
+    }
+    points += Math.floor(combo / 3);
+    score += points;
+    scoreEl.textContent = score;
+    
+    // Show combo
+    if (combo >= 2) {
+      comboNumEl.textContent = combo;
+      comboEl.classList.add('show');
+      setTimeout(() => comboEl.classList.remove('show'), 800);
+    }
+    
+    // Effects
+    playSuccess(combo);
+    const particleColor = isPerfect ? '#ffff00' : '#00ff88';
+    spawnParticles(target.x, target.y, 20 + combo * 4, particleColor, 5 + combo);
+    spawnRing(target.x, target.y, particleColor);
+    screenShake(6 + combo * 2, 0.12);
+    flash(particleColor);
+    zoneGlow = 1;
+    
+    target.active = false;
+    
+    // Speed up progressively
+    baseSpeed += 0.12;
+    
+    waitRespawn = true;
+    respawnTimer = Math.max(0.25, 0.5 - score * 0.008);
+  } else {
+    // FAIL - tapped too early or too late
+    showFeedback('MISS!', '#ff4444');
+    endGame();
+  }
+}
+
+function endGame() {
+  gameRunning = false;
+  combo = 0;
+  
+  playFail();
+  spawnParticles(target.x, target.y, 40, '#ff4444', 10);
+  spawnRing(target.x, target.y, '#ff4444');
+  screenShake(30, 0.4);
+  flash('#ff4444');
+  
+  // Update high score
+  let isNewHigh = false;
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('neonpulse_high', highScore.toString());
+    isNewHigh = true;
+  }
+  
+  finalScoreEl.textContent = score;
+  finalHighEl.textContent = highScore;
+  highEl.textContent = highScore;
+  newHighEl.style.display = isNewHigh ? 'block' : 'none';
+  
+  setTimeout(() => {
+    gameOverEl.classList.add('show');
+  }, 600);
+}
+
+function restart() {
+  initAudio();
+  score = 0;
+  combo = 0;
+  maxCombo = 0;
+  baseSpeed = 5;
+  gameTime = 0;
+  scoreEl.textContent = '0';
+  particles = [];
+  gameRunning = true;
+  firstTap = true;
+  hintEl.style.opacity = '0.6';
+  gameOverEl.classList.remove('show');
+  initTarget();
+}
+
+function update(delta) {
+  gameTime += delta;
+  zonePulse = Math.sin(gameTime * 3) * 0.5 + 0.5;
+  
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.dx;
+    p.y += p.dy;
+    p.dy += 0.15; // gravity
+    p.dx *= 0.99; // friction
+    p.life -= delta;
+    if (p.isRing) {
+      p.ringRadius += delta * 250;
+    }
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+  
+  // Shake decay
+  if (shakeTime > 0) {
+    shakeTime -= delta;
+    shakeX = (Math.random() - 0.5) * shakeIntensity * 2;
+    shakeY = (Math.random() - 0.5) * shakeIntensity * 2;
+    if (shakeTime <= 0) {
+      shakeX = shakeY = shakeIntensity = 0;
+    }
+  }
+  
+  // Flash decay
+  if (flashAlpha > 0) {
+    flashAlpha -= delta * 3;
+    if (flashAlpha < 0) flashAlpha = 0;
+  }
+  
+  // Zone glow decay
+  if (zoneGlow > 0) {
+    zoneGlow -= delta * 4;
+    if (zoneGlow < 0) zoneGlow = 0;
+  }
+  
+  // Feedback text decay
+  if (feedbackAlpha > 0) {
+    feedbackAlpha -= delta * 2.5;
+    if (feedbackAlpha < 0) feedbackAlpha = 0;
+  }
+  
+  if (!gameRunning) return;
+  
+  // Target movement
+  if (target.active) {
+    target.x += target.speed * 60 * delta;
+    
+    // Trail
+    if (trail.length === 0 || Math.abs(trail[trail.length - 1].x - target.x) > 8) {
+      trail.push({ x: target.x, y: target.y, alpha: 1 });
+      if (trail.length > 15) trail.shift();
+    }
+    
+    // Check if passed zone without tap
+    const zoneRight = zoneX() + zoneWidth / 2;
+    if (target.x - target.size / 2 > zoneRight + 20) {
+      showFeedback('TOO LATE!', '#ff4444');
+      combo = 0;
+      endGame();
+    }
+  }
+  
+  // Trail fade
+  for (let t of trail) {
+    t.alpha -= delta * 4;
+  }
+  trail = trail.filter(t => t.alpha > 0);
+  
+  // Respawn
+  if (waitRespawn) {
+    respawnTimer -= delta;
+    if (respawnTimer <= 0) {
+      initTarget();
+      waitRespawn = false;
+    }
+  }
+}
+
+function draw() {
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+  
+  // Background
+  ctx.fillStyle = '#0a0a0f';
+  ctx.fillRect(-20, -20, W + 40, H + 40);
+  
+  // Background grid with subtle animation
+  ctx.strokeStyle = `rgba(0,255,136,${0.02 + zonePulse * 0.015})`;
+  ctx.lineWidth = 1;
+  const gridSize = 60;
+  for (let x = 0; x < W; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+  for (let y = 0; y < H; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+  
+  // Zone glow background
+  const zLeft = zoneX() - zoneWidth / 2;
+  const baseGlow = 0.1 + zonePulse * 0.05;
+  ctx.fillStyle = `rgba(0,255,136,${baseGlow + zoneGlow * 0.3})`;
+  ctx.fillRect(zLeft, 0, zoneWidth, H);
+  
+  // Zone border glow
+  const borderAlpha = 0.6 + zonePulse * 0.2 + zoneGlow * 0.4;
+  ctx.shadowColor = '#00ff88';
+  ctx.shadowBlur = 20 + zoneGlow * 30;
+  ctx.strokeStyle = `rgba(0,255,136,${borderAlpha})`;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(zLeft, 0);
+  ctx.lineTo(zLeft, H);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(zLeft + zoneWidth, 0);
+  ctx.lineTo(zLeft + zoneWidth, H);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  
+  // Center line (perfect timing indicator)
+  ctx.strokeStyle = `rgba(255,255,0,${0.2 + zonePulse * 0.1})`;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([10, 10]);
+  ctx.beginPath();
+  ctx.moveTo(zoneX(), 0);
+  ctx.lineTo(zoneX(), H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  
+  // "TAP ZONE" label
+  ctx.fillStyle = `rgba(0,255,136,${0.3 + zonePulse * 0.1})`;
+  ctx.font = 'bold 14px -apple-system, Helvetica, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('TAP ZONE', zoneX(), 40);
+  
+  // Trail
+  for (let i = 0; i < trail.length; i++) {
+    const t = trail[i];
+    ctx.globalAlpha = t.alpha * 0.6;
+    const gradient = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, target.size / 2 * t.alpha);
+    gradient.addColorStop(0, 'rgba(255,0,255,0.8)');
+    gradient.addColorStop(1, 'rgba(255,0,255,0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, target.size / 2 * (0.5 + t.alpha * 0.5), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  
+  // Target orb
+  if (target.active) {
+    const pulseSize = 1 + Math.sin(gameTime * 8) * 0.05;
+    const orbSize = target.size / 2 * pulseSize;
+    
+    // Outer glow
+    ctx.shadowColor = '#ff00ff';
+    ctx.shadowBlur = 40;
+    
+    // Main orb gradient
+    const gradient = ctx.createRadialGradient(target.x, target.y, 0, target.x, target.y, orbSize);
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(0.2, '#ff88ff');
+    gradient.addColorStop(0.6, '#ff00ff');
+    gradient.addColorStop(1, '#cc00cc');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(target.x, target.y, orbSize, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Outer ring
+    ctx.strokeStyle = 'rgba(255,0,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(target.x, target.y, orbSize + 8 + Math.sin(gameTime * 6) * 3, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Inner highlight
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath();
+    ctx.arc(target.x - orbSize / 3, target.y - orbSize / 3, orbSize / 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+  
+  // Particles
+  for (const p of particles) {
+    ctx.globalAlpha = Math.min(1, p.life / p.maxLife * 1.5);
+    if (p.isRing) {
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 4 * (p.life / p.maxLife);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.ringRadius, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius * (p.life / p.maxLife), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+  ctx.globalAlpha = 1;
+  
+  // Feedback text
+  if (feedbackAlpha > 0) {
+    ctx.globalAlpha = feedbackAlpha;
+    ctx.fillStyle = feedbackColor;
+    ctx.shadowColor = feedbackColor;
+    ctx.shadowBlur = 20;
+    ctx.font = 'bold 36px -apple-system, Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(feedbackText, W / 2, H / 2 - 60);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+  
+  // Flash overlay
+  if (flashAlpha > 0) {
+    ctx.fillStyle = flashColor;
+    ctx.globalAlpha = flashAlpha;
+    ctx.fillRect(-20, -20, W + 40, H + 40);
+    ctx.globalAlpha = 1;
+  }
+  
+  ctx.restore();
+}
+
+// Event listeners
+canvas.addEventListener('touchstart', e => { e.preventDefault(); handleTap(e); }, { passive: false });
+canvas.addEventListener('mousedown', e => { e.preventDefault(); handleTap(e); });
+canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+restartBtn.addEventListener('click', restart);
+restartBtn.addEventListener('touchend', e => { e.preventDefault(); restart(); });
+
+// Game loop
+let lastTime = performance.now();
+function loop(time) {
+  const delta = Math.min((time - lastTime) / 1000, 0.1);
+  lastTime = time;
+  update(delta);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+initTarget();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ocean Vacuum</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0c1929;overflow:hidden;font-family:-apple-system,Helvetica,Arial,sans-serif;color:#06b6d4}
+  canvas{display:block}
+  #ui{position:fixed;top:20px;left:20px;font-size:24px;color:#06b6d4;z-index:10}
+  #score{font-weight:bold}
+  #game-over{
+    position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(12,25,41,0.9);
+    display:none;flex:column;justify-content:center;align-items:center;color:#fff;text-align:center;z-index:100
+  }
+  #game-over.show{display:flex}
+  #game-over h1{font-size:48px;margin-bottom:20px}
+  #game-over .final-score{font-size:32px;margin-bottom:30px;color:#06b6d4}
+  #restart{
+    padding:15px 40px;font-size:20px;background:#06b6d4;color:#0c1929;border:none;border-radius:8px;cursor:pointer
+  }
+</style>
+</head>
+<body>
+<div id="ui"><span id="score">0</span></div>
+<canvas id="c"></canvas>
+<div id="game-over">
+  <h1>GAME OVER</h1>
+  <div class="final-score">Score: <span id="final-score">0</span></div>
+  <button id="restart">TAP TO RESTART</button>
+</div>
+<script>
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score'),finalScoreEl=document.getElementById('final-score'),gameOverEl=document.getElementById('game-over'),restartBtn=document.getElementById('restart');
+let W=0,H=0,score=0,gameRunning=true,spawnTimer=0,spawnInterval=1200,difficulty=0;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;player.y=H-120}
+resize();window.onresize=resize;
+const player={x:W/2, y:H-120, targetX:W/2, size:60, radius:30, vacuumSize:80, color:'#06b6d4', swirlAlpha:0.2};
+const objects=[];
+function spawnObject(){
+  const size=20+Math.random()*10;
+  objects.push({
+    x:Math.random()*W,
+    y:-size,
+    size:size,
+    speed:2+Math.random()*3+difficulty*0.5,
+    good:Math.random()>0.25
+  });
+}
+function update(delta){
+  if(!gameRunning)return;
+  spawnTimer-=delta; if(spawnTimer<=0){spawnObject(); spawnTimer=spawnInterval*Math.max(0.3,1-difficulty*0.1);}
+  difficulty+=delta/10000;
+  player.x+= (player.targetX-player.x)*0.15;
+  objects.forEach(o=>o.y+=o.speed);
+  for(let i=objects.length-1;i>=0;i--){
+    const o=objects[i];
+    const dx=o.x-player.x,dy=o.y-player.y,dist=Math.hypot(dx,dy);
+    if(dist<player.size/2+o.size/2){
+      if(o.good){score+=10;scoreEl.textContent=score;objects.splice(i,1);}
+      else{endGame();objects.splice(i,1);}
+    } else if(o.y>H+50){objects.splice(i,1);}
+  }
+}
+function draw(){
+  ctx.fillStyle='#0c1929';ctx.fillRect(0,0,W,H);
+  objects.forEach(o=>{
+    ctx.fillStyle=o.good?'#0ea5e9':'#ff4444';
+    ctx.beginPath();ctx.arc(o.x,o.y,o.size/2,0,Math.PI*2);ctx.fill();
+  });
+  // Vacuum swirl
+  ctx.globalAlpha=player.swirlAlpha;
+  ctx.fillStyle='rgba(255,255,255,0.3)';
+  ctx.beginPath();ctx.arc(player.x,player.y,player.vacuumSize,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=1;
+  // Player
+  ctx.fillStyle='#06b6d4';
+  ctx.beginPath();ctx.arc(player.x,player.y,player.size/2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ffffff';
+  ctx.beginPath();ctx.arc(player.x,player.y,player.size/4,0,Math.PI*2);ctx.fill();
+}
+function endGame(){gameRunning=false;finalScoreEl.textContent=score;gameOverEl.classList.add('show');}
+function restart(){
+  score=0;scoreEl.textContent='0';objects.length=0;player.x=W/2;player.targetX=W/2;gameRunning=true;gameOverEl.classList.remove('show');
+}
+function touchMove(e){e.preventDefault();player.targetX=Math.max(player.size/2,Math.min(W-player.size/2,e.touches[0].clientX));}
+canvas.addEventListener('touchmove',touchMove);
+canvas.addEventListener('touchstart',touchMove);
+restartBtn.addEventListener('click',restart);
+let lastTime=0;
+function loop(time){const delta=time-lastTime;lastTime=time;update(delta);draw();requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

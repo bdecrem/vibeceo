@@ -4,7 +4,7 @@
 
 import { createSession, runAgentLoop, getApiKey, SPLASH } from './amber.js';
 import { execSync } from 'child_process';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { createServer } from 'net';
@@ -20,6 +20,7 @@ const REPO_ROOT = join(__dirname, '..');
 const MAX_MESSAGES = 80;   // Trigger compaction above this
 const KEEP_MESSAGES = 50;  // Keep this many after compaction
 const STATE_DIR = join(homedir(), '.amber');
+const SESSIONS_DIR = join(STATE_DIR, 'sessions');
 const CONVERSATION_FILE = join(STATE_DIR, 'conversation.json');
 const STATE_FILE = join(STATE_DIR, 'daemon-state.json');
 const SOCKET_PATH = join(STATE_DIR, 'amber.sock');
@@ -165,6 +166,61 @@ function saveState() {
   }
 }
 
+// === SESSION ARCHIVING ===
+// Save conversation snapshot before compaction
+function archiveSession() {
+  try {
+    if (!existsSync(SESSIONS_DIR)) {
+      mkdirSync(SESSIONS_DIR, { recursive: true });
+    }
+
+    const now = new Date();
+    const filename = `${now.toISOString().slice(0, 10)}_${now.toISOString().slice(11, 19).replace(/:/g, '')}.json`;
+    const archivePath = join(SESSIONS_DIR, filename);
+
+    // Build time range from messages
+    const userMessages = agentMessages.filter(m => m.role === 'user');
+    const timeRange = `${agentMessages.length} msgs`;
+
+    // Build a brief label from the first user message
+    let label = '';
+    const firstUserMsg = userMessages[0];
+    if (firstUserMsg) {
+      const text = typeof firstUserMsg.content === 'string'
+        ? firstUserMsg.content
+        : (Array.isArray(firstUserMsg.content)
+          ? firstUserMsg.content.filter(c => c.type === 'text').map(c => c.text).join(' ')
+          : '');
+      label = text.substring(0, 80).replace(/\n/g, ' ');
+    }
+
+    writeFileSync(archivePath, JSON.stringify({
+      messages: agentMessages,
+      archivedAt: now.toISOString(),
+      messageCount: agentMessages.length,
+      timeRange,
+      label,
+    }, null, 2));
+
+    log(`Archived session: ${filename} (${agentMessages.length} messages)`);
+
+    // Prune old archives — keep last 20
+    const archives = readdirSync(SESSIONS_DIR)
+      .filter(f => f.endsWith('.json'))
+      .sort();
+
+    if (archives.length > 20) {
+      const toDelete = archives.slice(0, archives.length - 20);
+      for (const old of toDelete) {
+        unlinkSync(join(SESSIONS_DIR, old));
+        log(`Pruned old session archive: ${old}`);
+      }
+    }
+  } catch (err) {
+    log(`Session archive error: ${err.message}`);
+  }
+}
+
 // === CONTEXT COMPACTION ===
 // When conversation gets too long, ask Amber to save important context
 // to her daily log, then compact the message history
@@ -172,6 +228,10 @@ async function checkAndCompact() {
   if (agentMessages.length <= MAX_MESSAGES) return;
 
   log(`Context limit approaching (${agentMessages.length} messages), triggering auto-flush...`, true);
+
+  // Archive conversation before compaction
+  archiveSession();
+
   broadcastToTUI({ type: 'compacting', value: true });
 
   try {

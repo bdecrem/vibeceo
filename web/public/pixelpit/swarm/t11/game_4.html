@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Weave Candy</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#fff5e4;overflow:hidden;font-family:-apple-system,Helvetica,Arial,sans-serif;touch-action:none;}
+canvas{display:block;}
+#ui{position:fixed;top:20px;left:20px;color:#ff6b6b;font-size:24px;}
+#score{font-weight:bold;}
+#game-over{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;
+  flex-direction:column;justify-content:center;align-items:center;color:#fff;text-align:center;z-index:100;
+}
+#game-over.show{display:flex;}
+#game-over h1{font-size:48px;margin-bottom:20px;}
+#game-over .final-score{font-size:32px;margin-bottom:30px;color:#ff6b6b;}
+#restart{
+  padding:15px 40px;font-size:20px;background:#ff6b6b;color:#fff5e4;border:none;border-radius:8px;cursor:pointer;
+}
+</style>
+</head>
+<body>
+<div id="ui"><span id="score">0</span></div>
+<canvas id="c"></canvas>
+<div id="game-over">
+  <h1>GAME OVER</h1>
+  <div class="final-score">Score: <span id="final-score">0</span></div>
+  <button id="restart">TAP TO RESTART</button>
+</div>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score');
+const finalScoreEl=document.getElementById('final-score');
+const gameOverEl=document.getElementById('game-over');
+const restartBtn=document.getElementById('restart');
+
+let W,H,score=0,gameRunning=true,frameCount=0;
+
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+resize();window.onresize=resize;
+
+// Player
+const player={x:W/2,y:H-80,r:30,color:'#ff6b6b'};
+
+// Obstacles
+let obstacles=[];
+let obstacleInterval=120; // frames between spawns
+let obstacleSpeed=2;
+let difficultyTimer=0;
+
+// Score
+function updateScore(){scoreEl.textContent=score;}
+
+// Game logic
+function spawnObstacle(){
+  const gapWidth=150+Math.random()*100; // 150-250
+  const gapStart=Math.random()*(W-gapWidth);
+  obstacles.push({
+    y:-40,
+    gapStart:gapStart,
+    gapWidth:gapWidth,
+    passed:false
+  });
+}
+
+// Update
+function update(){
+  if(!gameRunning)return;
+  frameCount++;
+  difficultyTimer++;
+  if(difficultyTimer%300===0){ // every 5 seconds
+    obstacleSpeed+=0.5;
+    if(obstacleInterval>30)obstacleInterval-=5;
+  }
+  if(frameCount%obstacleInterval===0)spawnObstacle();
+
+  obstacles.forEach(o=>{
+    o.y+=obstacleSpeed;
+  });
+
+  // Collision and scoring
+  obstacles = obstacles.filter(o=>{
+    // check collision if obstacle overlaps player's y
+    if(Math.abs(o.y - player.y) < 40){
+      if(player.x < o.gapStart + player.r && player.x > o.gapStart + o.gapWidth - player.r){
+        // inside gap, safe
+      }else{
+        endGame();
+        return false;
+      }
+    }
+    // score if passed
+    if(!o.passed && o.y > player.y + 50){
+      score+=10;
+      updateScore();
+      o.passed=true;
+    }
+    return o.y < H+50;
+  });
+}
+
+// Draw
+function draw(){
+  ctx.fillStyle='#fff5e4';
+  ctx.fillRect(0,0,W,H);
+
+  // Draw obstacles
+  obstacles.forEach(o=>{
+    ctx.fillStyle='#6bcb77';
+    // top bar
+    ctx.fillRect(0,o.y, W, 20);
+    // bottom bar
+    ctx.fillRect(0,o.y+20+o.gapWidth, W, 20);
+    // gap rectangle (white)
+    ctx.fillStyle='#fff5e4';
+    ctx.fillRect(o.gapStart, o.y+20, o.gapWidth, 20);
+  });
+
+  // Draw player (candy cane with face)
+  ctx.fillStyle=player.color;
+  ctx.beginPath();
+  ctx.arc(player.x,player.y,player.r,0,Math.PI*2);
+  ctx.fill();
+  // Eyes
+  ctx.fillStyle='#fff';
+  ctx.beginPath();
+  ctx.arc(player.x-8,player.y-8,4,0,Math.PI*2);
+  ctx.arc(player.x+8,player.y-8,4,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle='#000';
+  ctx.beginPath();
+  ctx.arc(player.x-8,player.y-8,2,0,Math.PI*2);
+  ctx.arc(player.x+8,player.y-8,2,0,Math.PI*2);
+  ctx.fill();
+  // Mouth
+  ctx.fillStyle='#000';
+  ctx.beginPath();
+  ctx.arc(player.x,player.y+6,6,0,Math.PI, false);
+  ctx.fill();
+}
+
+// End game
+function endGame(){
+  gameRunning=false;
+  finalScoreEl.textContent=score;
+  gameOverEl.classList.add('show');
+}
+
+// Restart
+function restart(){
+  score=0;
+  updateScore();
+  obstacles=[];
+  player.x=W/2;
+  frameCount=0;
+  obstacleSpeed=2;
+  obstacleInterval=120;
+  difficultyTimer=0;
+  gameRunning=true;
+  gameOverEl.classList.remove('show');
+}
+
+// Controls: drag moves player horizontally
+function handleMove(x){
+  player.x=Math.max(player.r, Math.min(W-player.r, x));
+}
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();handleMove(e.touches[0].clientX);
+});
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();handleMove(e.touches[0].clientX);
+});
+canvas.addEventListener('mousemove',e=>handleMove(e.clientX));
+restartBtn.addEventListener('click',restart);
+
+// Main loop
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

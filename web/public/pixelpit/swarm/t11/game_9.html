@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>AIM & SHOOT</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0d0d0d;overflow:hidden;font-family:-apple-system,system-ui,Arial,sans-serif;touch-action:none;}
+canvas{display:block;}
+#ui{position:fixed;top:20px;left:20px;color:#ffd700;font-size:28px;z-index:10;}
+#ui span{font-weight:bold;}
+#game-over{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:none;flex-direction:column;justify-content:center;align-items:center;color:white;z-index:100;}
+#game-over.show{display:flex;}
+#game-over h1{font-size:48px;margin-bottom:20px;}
+#game-over .final-score{font-size:36px;margin-bottom:30px;color:#ffd700;}
+#restart{padding:20px 50px;font-size:22px;background:#ffd700;color:#0d0d0d;border:none;border-radius:10px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="ui"><span id="score">0</span></div>
+<canvas id="c"></canvas>
+<div id="game-over">
+  <h1>GAME OVER</h1>
+  <div class="final-score">Score: <span id="final-score">0</span></div>
+  <button id="restart">TAP TO RESTART</button>
+</div>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score');
+const gameOverEl=document.getElementById('game-over');
+const finalScoreEl=document.getElementById('final-score');
+const restartBtn=document.getElementById('restart');
+let W,H,score=0,gameRunning=true;
+
+function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+resize();window.onresize=resize;
+
+// Player is a fixed cannon at bottom center
+const player={x:W/2,y:H-80,size:30};
+
+// Bullets
+const bullets=[];
+
+// Targets
+const targets=[];
+
+// Spawn control
+let spawnTimer=0;
+let spawnInterval=1200; // ms
+let lastTime=performance.now();
+let targetSpeed=3;
+
+// Update loop
+function update(delta){
+  if(!gameRunning)return;
+  // Spawn targets
+  spawnTimer+=delta;
+  if(spawnTimer>=spawnInterval){
+    spawnTimer=0;
+    spawnTarget();
+  }
+  // Update bullets
+  bullets.forEach((b,i)=>{b.y-=b.speed; if(b.y<-10)bullets.splice(i,1);});
+  // Update targets
+  targets.forEach((t,i)=>{t.y+=t.speed; if(t.y>H+10)targets.splice(i,1);});
+  // Collision
+  bullets.forEach((b,i)=>{
+    targets.forEach((t,j)=>{
+      const dx=b.x-t.x,dy=b.y-t.y;
+      const dist=Math.hypot(dx,dy);
+      if(dist< (b.size+t.size)/2 ){
+        // hit
+        bullets.splice(i,1);
+        targets.splice(j,1);
+        score+=10;
+        scoreEl.textContent=score;
+      }
+    });
+  });
+  // Game over if any target reaches bottom
+  targets.forEach(t=>{
+    if(t.y+ t.size/2 >= H){
+      endGame();
+    }
+  });
+  // Increase difficulty over time
+  if(performance.now() % 20000 < delta){ // every 20s
+    if(spawnInterval>400)spawnInterval-=200;
+    targetSpeed+=0.5;
+  }
+}
+
+// Draw
+function draw(){
+  ctx.fillStyle='#0d0d0d';
+  ctx.fillRect(0,0,W,H);
+  // Draw player
+  ctx.fillStyle='#ffd700';
+  ctx.beginPath();
+  ctx.arc(player.x,player.y,player.size/2,0,Math.PI*2);
+  ctx.fill();
+  // Draw bullets
+  bullets.forEach(b=>{
+    ctx.fillStyle='#2d9596';
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.size/2,0,Math.PI*2);
+    ctx.fill();
+  });
+  // Draw targets
+  targets.forEach(t=>{
+    ctx.fillStyle='#f59e0b';
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,t.size/2,0,Math.PI*2);
+    ctx.fill();
+  });
+}
+
+// Game over
+function endGame(){
+  gameRunning=false;
+  finalScoreEl.textContent=score;
+  gameOverEl.classList.add('show');
+}
+
+// Restart
+function restart(){
+  score=0;
+  scoreEl.textContent='0';
+  bullets.length=0;
+  targets.length=0;
+  spawnInterval=1200;
+  targetSpeed=3;
+  spawnTimer=0;
+  gameRunning=true;
+  gameOverEl.classList.remove('show');
+}
+
+// Spawn target
+function spawnTarget(){
+  const x=Math.random()*W;
+  const size=30;
+  targets.push({x:x,y:-size,size:size,speed:targetSpeed});
+}
+
+// Shooting
+function shoot(){
+  if(!gameRunning)return;
+  bullets.push({x:player.x,y:player.y-15,size:8,speed:7});
+}
+
+// Input
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  shoot();
+});
+canvas.addEventListener('click',e=>{shoot();});
+
+// Loop
+function loop(now){
+  const delta=now-lastTime;
+  lastTime=now;
+  update(delta);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+restartBtn.addEventListener('click',restart);
+</script>
+</body>
+</html>

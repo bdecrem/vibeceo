@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PREDATOR HUNT</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:#0a0a12;
+    min-height:100vh;
+    font-family:'Courier New',monospace;
+    overflow:hidden;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  #game{position:fixed;top:0;left:0;width:100%;height:100%;}
+  #ui{
+    position:fixed;top:0;left:0;right:0;
+    padding:20px;
+    display:flex;justify-content:space-between;align-items:center;
+    z-index:10;
+    pointer-events:none;
+  }
+  #score{color:#FFD700;font-size:24px;text-shadow:0 0 20px rgba(255,215,0,0.5);}
+  #timer{color:#8B7355;font-size:20px;text-shadow:0 0 15px rgba(139,115,85,0.4);}
+  #lives{display:flex;gap:6px;}
+  .heart{
+    width:16px;height:16px;background:#FFD700;
+    clip-path:path('M8 14.4l-1.16-1.06C2.72 9.89 0 7.42 0 4.4 0 1.94 1.94 0 4.4 0 5.79 0 7.13.65 8 1.67 8.87.65 10.21 0 11.6 0 14.06 0 16 1.94 16 4.4c0 3.02-2.72 5.49-6.84 8.94L8 14.4z');
+    transform:scale(1);
+    transition:transform 0.2s,opacity 0.3s;
+    filter:drop-shadow(0 0 8px rgba(255,215,0,0.5));
+  }
+  .heart.lost{opacity:0.2;transform:scale(0.7);}
+  #start-screen,#end-screen{
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:rgba(10,10,18,0.95);
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    z-index:100;color:#FFD700;text-align:center;padding:40px;
+  }
+  #end-screen{display:none;}
+  h1{font-size:48px;font-weight:normal;letter-spacing:12px;margin-bottom:20px;text-shadow:0 0 40px rgba(255,215,0,0.6);}
+  .subtitle{color:#8B7355;font-size:14px;letter-spacing:2px;margin-bottom:60px;}
+  .instruction{color:#6B5344;font-size:13px;line-height:2;margin-bottom:40px;}
+  button{
+    background:transparent;border:1px solid #FFD700;color:#FFD700;padding:15px 50px;font-family:inherit;font-size:14px;letter-spacing:4px;cursor:pointer;transition:all 0.3s;
+  }
+  button:hover{background:#FFD700;color:#0a0a12;}
+  #final-score{
+    font-size:120px;margin:20px 0;text-shadow:0 0 60px rgba(255,215,0,0.8);
+    opacity:0;transform:scale(0.5);
+    animation:popIn 0.6s ease-out forwards;
+  }
+  @keyframes popIn{0%{opacity:0;transform:scale(0.5);}50%{transform:scale(1.1);}100%{opacity:1;transform:scale(1);}}
+  #high-score{color:#8B7355;font-size:14px;margin-bottom:40px;opacity:0;animation:fadeIn 0.5s ease-out 0.4s forwards;}
+  @keyframes fadeIn{to{opacity:1;}}
+  #end-screen button{opacity:0;animation:fadeIn 0.5s ease-out 0.6s forwards;}
+  .end-subtitle{opacity:0;animation:fadeIn 0.5s ease-out 0.2s forwards;}
+  .shake{animation:shake 0.3s ease-out;}
+  @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-10px);}40%{transform:translateX(10px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
+  #glow{
+    position:fixed;top:50%;left:50%;
+    width:300px;height:300px;
+    transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(255,215,0,0.03) 0%,transparent 70%);
+    pointer-events:none;
+    z-index:1;
+  }
+  .new-best{color:#FFD700!important;text-shadow:0 0 30px rgba(255,215,0,0.6);}
+</style>
+</head>
+<body>
+<div id="glow"></div>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="score">0</div>
+  <div id="timer">30</div>
+  <div id="lives"><div class="heart"></div><div class="heart"></div><div class="heart"></div><div class="heart"></div><div class="heart"></div></div>
+</div>
+<div id="start-screen">
+  <h1>PREDATOR HUNT</h1>
+  <div class="subtitle">save the swarm</div>
+  <div class="instruction">
+    tap the red hunters<br>
+    before they catch the golden fireflies<br>
+    30 seconds<br>
+    5 lives<br>
+    try to beat the high score
+  </div>
+  <button id="start-btn">BEGIN</button>
+</div>
+<div id="end-screen">
+  <div class="subtitle end-subtitle">time's up</div>
+  <div id="final-score">0</div>
+  <div id="high-score">best: 0</div>
+  <button id="restart-btn">AGAIN</button>
+</div>
+<script>
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+let width,height;
+function resize(){width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+const AMBER="#FFD700", RED="#ef4444";
+const AMBER_RGB={r:255,g:215,b:0}, RED_RGB={r:239,g:68,b:68};
+let goodFireflies=[],hunters=[],particles=[];
+let score=0,lives=5,difficulty=1;
+let gameRunning=false,gameTime=30,gameTimer=null;
+const highScoreKey="predator-hunt-high";
+let highScore=parseInt(localStorage.getItem(highScoreKey)||0);
+
+// Audio
+let audioCtx=null,masterGain=null;
+function initAudio(){if(audioCtx)return;audioCtx=new (window.AudioContext||window.webkitAudioContext)();masterGain=audioCtx.createGain();masterGain.gain.value=0.3;masterGain.connect(audioCtx.destination);}
+function playNote(freq,duration=0.2,type='sine',volume=0.1){if(!audioCtx)return;const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type=type;osc.frequency.value=freq;gain.gain.setValueAtTime(0,audioCtx.currentTime);gain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime+0.02);gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+duration);osc.connect(gain);gain.connect(masterGain);osc.start();osc.stop(audioCtx.currentTime+duration);}
+function playHunterDestroy(){playNote(880,0.1,'sawtooth',0.2);}
+function playHunterCatch(){playNote(220,0.15,'triangle',0.15);}
+function playMiss(){playNote(110,0.1,'sine',0.1);}
+function playParticle(){playNote(660,0.05,'sine',0.05);}
+function startMusic(){initAudio();if(audioCtx.state==='suspended')audioCtx.resume();}
+function stopMusic(){/* no looping music */}
+
+// Classes
+class GoodFirefly{
+  constructor(){this.reset();}
+  reset(){const m=60;this.x=m+Math.random()*(width-2*m);this.y=m+Math.random()*(height-2*m);this.radius=18+Math.random()*10;this.driftX=(Math.random()-0.5)*0.4;this.driftY=(Math.random()-0.5)*0.4;}
+  update(){this.x+=this.driftX;this.y+=this.driftY;if(this.x<40||this.x>width-40)this.driftX*=-1;if(this.y<80||this.y>height-40)this.driftY*=-1;}
+  draw(){const {r,g,b}=AMBER_RGB;const glowSize=this.radius*2;const grad=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,glowSize);grad.addColorStop(0,`rgba(${r},${g},${b},0.6)`);grad.addColorStop(1,'rgba(0,0,0,0)');ctx.beginPath();ctx.arc(this.x,this.y,glowSize,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();ctx.beginPath();ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);ctx.fillStyle=`rgba(${r+40},${g+40},${b+40},0.8)`;ctx.fill();}
+  contains(x,y){return (x-this.x)**2+(y-this.y)**2< (this.radius+40)**2;}
+}
+class Hunter{
+  constructor(){this.reset();}
+  reset(){const m=60;this.x=m+Math.random()*(width-2*m);this.y=m+Math.random()*(height-2*m);this.radius=22+Math.random()*8;this.driftX=(Math.random()-0.5)*0.3;this.driftY=(Math.random()-0.5)*0.3;this.target=this.findTarget();}
+  findTarget(){if(goodFireflies.length===0)return null;let closest=goodFireflies[0];let bestDist=distSq(this,closest);for(let f of goodFireflies){const d=distSq(this,f);if(d<bestDist){bestDist=d;closest=f;}}return closest;}
+  update(){if(this.target && !this.target.removed){const dx=this.target.x-this.x,dy=this.target.y-this.y;const d=Math.hypot(dx,dy)||1;const speed=0.4+difficulty*0.1;this.x+=dx/d*speed;this.y+=dy/d*speed;if(distSq(this,this.target)<(this.radius+this.target.radius)/2){this.caught=true;}}else{this.x+=this.driftX;this.y+=this.driftY;if(this.x<40||this.x>width-40)this.driftX*=-1;if(this.y<80||this.y>height-40)this.driftY*=-1;}}
+  draw(){const {r,g,b}=RED_RGB;const glowSize=this.radius*2;const grad=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,glowSize);grad.addColorStop(0,`rgba(${r},${g},${b},0.8)`);grad.addColorStop(1,'rgba(0,0,0,0)');ctx.beginPath();ctx.arc(this.x,this.y,glowSize,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();ctx.beginPath();ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);ctx.fillStyle=`rgba(${r+30},${g+30},${b+30},0.9)`;ctx.fill();}
+  contains(x,y){return (x-this.x)**2+(y-this.y)**2< (this.radius+40)**2;}
+}
+function distSq(a,b){return (a.x-b.x)**2+(a.y-b.y)**2;}
+
+// Spawning
+function spawnGood(){goodFireflies.push(new GoodFirefly());}
+function spawnHunter(){hunters.push(new Hunter());}
+
+// Game Mechanics
+function loseLife(){lives--;updateLives();document.body.classList.add('shake');setTimeout(()=>document.body.classList.remove('shake'),300);playMiss();if(lives<=0)endGame();}
+function updateLives(){const hearts=document.querySelectorAll('.heart');if(hearts[lives])hearts[lives].classList.add('lost');}
+function addScore(points){score+=points;document.getElementById('score').textContent=score;if(score>highScore)document.getElementById('score').classList.add('new-best');if(score%50===0){difficulty++;}}
+function handleTap(x,y){if(!gameRunning)return;let hit=false;for(let h of hunters){if(h.contains(x,y)){h.destroyed=true;removeHunter(h);addScore(15);createParticles(h.x,h.y,RED_RGB);playHunterDestroy();hit=true;break;}}if(!hit){createParticles(x,y,{r:120,g:120,b:120});playMiss();}}
+function removeHunter(h){const idx=hunters.indexOf(h);if(idx>-1)hunters.splice(idx,1);}
+function createParticles(x,y,color){for(let i=0;i<20;i++){particles.push({x,y,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4,life:1,color});}}
+function update(){if(!gameRunning)return;goodFireflies.forEach(f=>f.update());hunters.forEach(h=>{h.update();if(h.caught){removeGood(h.target);removeHunter(h);loseLife();createParticles(h.x,h.y,AMBER_RGB);playHunterCatch();}});particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.vx*=0.98;p.life-=0.02;return p.life>0;});}
+function removeGood(f){const idx=goodFireflies.indexOf(f);if(idx>-1)goodFireflies.splice(idx,1);}
+function draw(){ctx.fillStyle='#0a0a12';ctx.fillRect(0,0,width,height);goodFireflies.forEach(f=>f.draw());hunters.forEach(h=>h.draw());particles.forEach(p=>{const {r,g,b}=p.color;ctx.beginPath();ctx.arc(p.x,p.y,3*p.life,0,Math.PI*2);ctx.fillStyle=`rgba(${r},${g},${b},${p.life})`;ctx.fill();});}
+function gameLoop(){update();draw();requestAnimationFrame(gameLoop);}
+function startGame(){initAudio();document.getElementById('start-screen').style.display='none';document.getElementById('end-screen').style.display='none';goodFireflies=[];hunters=[];particles=[];score=0;lives=5;difficulty=1;gameTime=30;gameRunning=true;updateLives();document.getElementById('score').textContent='0';document.getElementById('timer').textContent='30';document.querySelectorAll('.heart').forEach(h=>h.classList.remove('lost'));for(let i=0;i<3;i++)setTimeout(()=>spawnGood(),i*300);for(let i=0;i<2;i++)setTimeout(()=>spawnHunter(),i*500);startMusic();let spawnGoodTimer=0;let spawnHunterTimer=0;const spawnGoodInterval=1500;const spawnHunterInterval=2500;gameTimer=setInterval(()=>{gameTime--;document.getElementById('timer').textContent=gameTime;if(gameTime<=0)endGame();},1000);gameLoop();}
+function endGame(){gameRunning=false;clearInterval(gameTimer);stopMusic();const unsavedGood=goodFireflies.length;score+=unsavedGood*20;document.getElementById('final-score').textContent=score;const isNew=score>highScore;if(isNew){highScore=score;localStorage.setItem(highScoreKey,highScore);}document.getElementById('high-score').textContent=isNew?'✦ new best!':'best: '+highScore;if(isNew){document.getElementById('final-score').classList.add('new-best');document.getElementById('high-score').classList.add('new-best');}else{document.getElementById('final-score').classList.remove('new-best');document.getElementById('high-score').classList.remove('new-best');}document.getElementById('end-screen').style.display='flex';}
+canvas.addEventListener('click',e=>handleTap(e.clientX,e.clientY));
+canvas.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];handleTap(t.clientX,t.clientY);},{passive:false});
+document.getElementById('start-btn').addEventListener('click',startGame);
+document.getElementById('restart-btn').addEventListener('click',startGame);
+gameLoop();
+</script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Pixelpit Dodge</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;overflow:hidden;font-family:-apple-system,system-ui,sans-serif;touch-action:none;}
+canvas{display:block;}
+#ui{position:fixed;top:20px;left:20px;color:#fff;font-size:32px;z-index:10;}
+#score{font-weight:bold;}
+#game-over{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);display:none;flex-direction:column;justify-content:center;align-items:center;color:#fff;text-align:center;z-index:100;}
+#game-over.show{display:flex;}
+#game-over h1{font-size:48px;margin-bottom:20px;}
+#game-over .final-score{font-size:32px;margin-bottom:25px;}
+#restart{padding:12px 30px;font-size:22px;background:#fff;color:#000;border:0;border-radius:8px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="ui"><span id="score">0</span></div>
+<canvas id="c"></canvas>
+<div id="game-over">
+<h1>GAME OVER</h1>
+<div class="final-score">Score: <span id="final-score">0</span></div>
+<button id="restart">TAP TO RESTART</button>
+</div>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score');
+const gameOverEl=document.getElementById('game-over');
+const finalScoreEl=document.getElementById('final-score');
+const restartBtn=document.getElementById('restart');
+
+let W,H,score=0,gameRunning=true;
+
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+resize();window.addEventListener('resize',resize);
+
+let player={x:W/2,y:H-70,size:40};
+
+let obstacles=[];
+
+function spawnObstacle(){
+  const size=40+Math.random()*20;
+  obstacles.push({
+    x:Math.random()*(W-size),
+    y:-size,
+    w:size,
+    h:size,
+    speed:2+Math.random()*3
+  });
+}
+
+function update(dt){
+  if(!gameRunning)return;
+  if(Math.random()<0.02)spawnObstacle();
+  obstacles.forEach(o=>o.y+=o.speed);
+  obstacles=obstacles.filter(o=>{
+    const closestX=Math.max(o.x, Math.min(player.x, o.x+o.w));
+    const closestY=Math.max(o.y, Math.min(player.y, o.y+o.h));
+    const distX=player.x-closestX;
+    const distY=player.y-closestY;
+    const dist=Math.sqrt(distX*distX+distY*distY);
+    if(dist<player.size/2){
+      endGame();
+      return false;
+    }
+    return o.y < H+100;
+  });
+  score += Math.round(dt*10);
+  scoreEl.textContent=score;
+}
+
+function draw(){
+  ctx.fillStyle='#000';
+  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#fff';
+  ctx.beginPath();
+  ctx.arc(player.x,player.y,player.size/2,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle='#888';
+  obstacles.forEach(o=>ctx.fillRect(o.x,o.y,o.w,o.h));
+}
+
+function endGame(){
+  gameRunning=false;
+  finalScoreEl.textContent=score;
+  gameOverEl.classList.add('show');
+}
+
+function restart(){
+  score=0;
+  scoreEl.textContent='0';
+  obstacles=[];
+  player.x=W/2;
+  gameRunning=true;
+  gameOverEl.classList.remove('show');
+}
+
+function handleMove(e){
+  const x=e.touches[0].clientX;
+  player.x=Math.max(player.size/2, Math.min(W-player.size/2, x));
+}
+
+canvas.addEventListener('touchmove',e=>{e.preventDefault();handleMove(e);});
+canvas.addEventListener('touchstart',e=>{e.preventDefault();handleMove(e);});
+restartBtn.addEventListener('click',restart);
+
+let lastTime=performance.now();
+function loop(){
+  const now=performance.now();
+  const dt=(now-lastTime)/1000;
+  lastTime=now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

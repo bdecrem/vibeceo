@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ZONE FIRE</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0a0a12;font-family:'Courier New',monospace;overflow:hidden;touch-action: manipulation;-webkit-tap-highlight-color:transparent;}
+  canvas{position:fixed;width:100%;height:100%;top:0;left:0;}
+  #ui{position:fixed;top:0;left:0;width:100%;display:flex;justify-content:space-between;align-items:center;padding:16px;z-index:2;color:#D4A574;text-shadow:0 0 15px rgba(212,165,116,0.3);}
+  #score{font-size:24px;}
+  #timer{font-size:20px;}
+  #lives{display:flex;gap:6px;}
+  .heart{width:20px;height:20px;background:#D4A574;clip-path:path('M10 18.4l-1.5-1.37C5.5 13.41 3 12.02 3 10.4 3 8.94 4.94 7 7.4 7c1.1 0 2.1.65 3 1.67.9-1.02 1.9-1.67 3-1.67 2.46 0 4.4 1.94 4.4 4.4 0 1.62-2.5 3.01-5.6 5.03l1.5 1.37z');filter:drop-shadow(0 0 8px rgba(212,165,116,0.5));}
+  .heart.lost{opacity:0.2;transform:scale(0.7);}
+  #start-screen,#end-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(10,10,18,0.95);display:flex;flex-direction:column;justify-content:center;align-items:center;color:#D4A574;text-align:center;padding:40px;z-index:3;}
+  #end-screen{display:none;}
+  h1{font-size:48px;margin-bottom:20px;text-shadow:0 0 40px rgba(212,165,116,0.6);letter-spacing:8px;}
+  .subtitle{font-size:14px;margin-bottom:60px;}
+  .instruction{font-size:13px;line-height:1.6;margin-bottom:40px;}
+  button{background:transparent;border:1px solid #D4A574;color:#D4A574;padding:12px 32px;font-size:14px;cursor:pointer;transition:all .3s;}
+  button:hover{background:#D4A574;color:#0a0a12;}
+  #final-score{font-size:120px;color:#FFD700;text-shadow:0 0 60px rgba(255,215,0,0.8);opacity:0;transform:scale(0.5);animation:popIn .6s ease-out forwards;}
+  @keyframes popIn{0%{opacity:0;transform:scale(.5)}50%{transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+  #high-score{font-size:14px;color:#8B7355;margin-bottom:40px;opacity:0;animation:fadeIn .5s .4s forwards;}
+  @keyframes fadeIn{to{opacity:1}}
+  #restart-btn{opacity:0;animation:fadeIn .5s .6s forwards;}
+  .end-subtitle{opacity:0;animation:fadeIn .5s .2s forwards;}
+  .shake{animation:shake .3s ease-out;}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  #zone-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="score">0</div>
+  <div id="timer">30</div>
+  <div id="lives"><div class="heart"></div><div class="heart"></div><div class="heart"></div><div class="heart"></div><div class="heart"></div></div>
+</div>
+<div id="start-screen">
+  <h1>ZONE FIRE</h1>
+  <div class="subtitle">Tap to ignite</div>
+  <div class="instruction">Tap the glowing fireflies in the right zone<br>30 seconds<br>How many can you catch?</div>
+  <button id="start-btn">BEGIN</button>
+</div>
+<div id="end-screen">
+  <div class="subtitle end-subtitle">time's up</div>
+  <div id="final-score">0</div>
+  <div id="high-score">best: 0</div>
+  <button id="restart-btn">AGAIN</button>
+</div>
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+let w,h;
+function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight}
+resize();window.addEventListener('resize',resize);
+
+const ACCENT='#f97316';
+const AMBER={r:212,g:165,b:116};
+const GOLD={r:255,g:215,b:0};
+
+let fireflies=[],particles=[],score=0,lives=5,gameRunning=false,difficulty=1,spawnTimer=0,gameTime=30,gameTimer=null,highScore=+localStorage.getItem('zonefire-high')||0;
+let audioCtx=null,musicGain=null;
+
+// Audio
+function initAudio(){if(audioCtx)return;audioCtx=new (window.AudioContext||window.webkitAudioContext)();musicGain=audioCtx.createGain();musicGain.gain.value=.3;musicGain.connect(audioCtx.destination);}
+function playNote(freq,dur,type='sine',vol=.15){if(!audioCtx)return;const osc=audioCtx.createOscillator();const g=audioCtx.createGain();osc.type=type;osc.frequency.value=freq;g.gain.setValueAtTime(0,audioCtx.currentTime);g.gain.linearRampToValueAtTime(vol,audioCtx.currentTime+0.02);g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);osc.connect(g);g.connect(musicGain);osc.start();osc.stop(audioCtx.currentTime+dur);}
+function playHit(){playNote(660,.15,'triangle',.18);}
+function playMiss(){playNote(480,.2,'sine',.12);}
+function playBackground(){if(!audioCtx||!gameRunning)return;const notes=[440, 523, 659];notes.forEach((n,i)=>{const osc=audioCtx.createOscillator();osc.type='sine';osc.frequency.value=n;osc.connect(musicGain);osc.start();osc.stop(audioCtx.currentTime+1.5);});setTimeout(playBackground,1500);}
+function playBonus(){playNote(880,.1,'square',.2);}
+
+// Firefly class
+class Firefly{
+  constructor(){this.reset();}
+  reset(){const m=60;this.x=m+Math.random()*(w-2*m);this.y=m+Math.random()*(h-2*m);this.r=18+Math.random()*10;this.phase=Math.random()*Math.PI*2;this.speed=.015+Math.random()*.015;this.lifetime=0;this.maxLife=200-(difficulty*5);this.maxLife=Math.max(this.maxLife,120);this.caught=false;this.missed=false;this.fade=0;this.driftX=(Math.random()-.5)*.4;this.driftY=(Math.random()-.5)*.4;this.isBonus=Math.random()<.15;this.color=this.isBonus?GOLD:AMBER;this.points=this.isBonus?3:1;}
+  get brightness(){if(this.caught||this.missed)return 0;const cycle=Math.sin(this.phase)*.5+.5;const fade=Math.min(this.lifetime/30,1)*Math.max(1-(this.lifetime-this.maxLife)/30,0);return cycle*fade;}
+  get glowing(){return this.brightness>0.3;}
+  update(){if(this.caught){this.fade+=.1;return this.fade<1;}if(this.missed){this.fade+=.05;return this.fade<1;}this.phase+=this.speed;this.lifetime++;this.x+=this.driftX;this.y+=this.driftY;if(this.x<40||this.x>w-40)this.driftX*=-1;if(this.y<80||this.y>h-40)this.driftY*=-1;if(this.lifetime>=this.maxLife){this.missed=true;}return true;}
+  draw(){const b=this.brightness;if(this.caught){const p=this.fade;const rad=this.r+50*p;ctx.beginPath();ctx.arc(this.x,this.y,rad,0,Math.PI*2);ctx.fillStyle=`rgba(${this.color.r},${this.color.g},${this.color.b},${(1-p)*.3})`;ctx.fill();for(let i=0;i<8;i++){const ang=(i/8)*Math.PI*2+p*3;const dist=60*p;const sx=this.x+Math.cos(ang)*dist;const sy=this.y+Math.sin(ang)*dist;ctx.beginPath();ctx.arc(sx,sy,3*(1-p),0,Math.PI*2);ctx.fillStyle=`rgba(${this.color.r},${this.color.g},${this.color.b},${1-p})`;ctx.fill();}return;}if(this.missed){const a=(1-this.fade)*.3;ctx.beginPath();ctx.arc(this.x,this.y,this.r*(1-this.fade*0.5),0,Math.PI*2);ctx.fillStyle=`rgba(100,80,60,${a})`;ctx.fill();return;}const glow=this.r*(2+b);const grad=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,glow);grad.addColorStop(0,`rgba(${this.color.r},${this.color.g},${this.color.b},${b*.8})`);grad.addColorStop(.3,`rgba(${this.color.r},${this.color.g},${this.color.b},${b*.3})`);grad.addColorStop(1,'rgba(0,0,0,0)');ctx.beginPath();ctx.arc(this.x,this.y,glow,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();ctx.beginPath();ctx.arc(this.x,this.y,this.r*(.3+b*.3),0,Math.PI*2);ctx.fillStyle=`rgba(${this.color.r+40},${this.color.g+40},${this.color.b+40},${.2+b*.8})`;ctx.fill();}
+  contains(x,y){const dx=x-this.x,dy=y-this.y;return dx*dx+dy*dy<(this.r+40)**2;}
+}
+
+// Zone handling
+let zoneRadius1,zoneRadius2,centerX,centerY;
+function updateZones(){centerX=w/2;centerY=h/2;const min=Math.min(w,h);zoneRadius1=min*0.15;zoneRadius2=min*0.30;}
+function getMultiplier(f){const d=Math.hypot(f.x-centerX,f.y-centerY);if(d<=zoneRadius1)return 1;if(d<=zoneRadius2)return 2;return 3;}
+
+function spawnFirefly(){const max=4+Math.floor(difficulty);if(fireflies.length<max)fireflies.push(new Firefly());}
+function loseLife(){lives--;const hearts=document.querySelectorAll('.heart');if(hearts[lives])hearts[lives].classList.add('lost');document.body.classList.add('shake');setTimeout(()=>document.body.classList.remove('shake'),300);playMiss();if(lives<=0)endGame();}
+function addScore(points,bonus){score+=points;document.getElementById('score').textContent=score;difficulty=1+Math.floor(score/10)*.3;playHit();if(bonus)playBonus();}
+
+function handleTap(x,y){
+  if(!gameRunning)return;
+  for(const f of fireflies){
+    if(f.caught||f.missed)continue;
+    if(f.contains(x,y)){
+      if(f.glowing){
+        f.caught=true;
+        const mult=getMultiplier(f);
+        const pts=f.points*mult;
+        addScore(pts,f.isBonus);
+        // particles
+        for(let i=0;i<15;i++){
+          particles.push({x:f.x,y:f.y,vx:(Math.random()-.5)*6,vy:(Math.random()-.5)*6,life:1,color:f.color});
+        }
+      }else{f.missed=true;loseLife();}
+      return;
+    }
+  }
+  // Missed tap
+  particles.push({x:x,y:y,vx:0,vy:-1,life:.4,color:{r:80,g:60,b:50}});
+}
+
+// UI and drawing
+function drawZones(){
+  ctx.strokeStyle=ACCENT;ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(centerX,centerY,zoneRadius2,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.arc(centerX,centerY,zoneRadius1,0,Math.PI*2);ctx.stroke();
+}
+function draw(){
+  ctx.fillStyle='#0a0a12';ctx.fillRect(0,0,w,h);
+  drawZones();
+  for(const f of fireflies)f.draw();
+  for(const p of particles){const {r,g,b}=p.color;ctx.beginPath();ctx.arc(p.x,p.y,3*p.life,0,Math.PI*2);ctx.fillStyle=`rgba(${r},${g},${b},${p.life})`;ctx.fill();}
+}
+function update(){
+  for(const s of fireflies){if(!s.update()){fireflies.splice(fireflies.indexOf(s),1);}}
+  particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.08;p.vx*=.98;p.life-=.02;return p.life>0;});
+  spawnTimer++;const spawnRate=Math.max(40-difficulty*3,20);if(spawnTimer>=spawnRate){spawnFirefly();spawnTimer=0;}
+}
+function gameLoop(){update();draw();requestAnimationFrame(gameLoop);}
+function startGame(){
+  initAudio();audioCtx.resume();
+  fireflies=[];particles=[];score=0;lives=5;difficulty=1;spawnTimer=0;gameTime=30;gameRunning=true;
+  document.getElementById('score').textContent='0';document.getElementById('timer').textContent='30';document.querySelectorAll('.heart').forEach(h=>h.classList.remove('lost'));
+  document.getElementById('start-screen').style.display='none';
+  updateZones();
+  for(let i=0;i<3;i++)setTimeout(spawnFirefly,i*300);
+  playBackground();
+  gameTimer=setInterval(()=>{gameTime--;document.getElementById('timer').textContent=gameTime;if(gameTime<=0)endGame();},1000);
+}
+function endGame(){
+  gameRunning=false;clearInterval(gameTimer);audioCtx.close();
+  const best=score>highScore; if(best){highScore=score;localStorage.setItem('zonefire-high',highScore);}
+  const fs=document.getElementById('final-score');const hs=document.getElementById('high-score');fs.textContent=score;hs.textContent=best?'✦ new best!':'best: '+highScore;
+  fs.classList.remove('new-best');hs.classList.remove('new-best');if(best){fs.classList.add('new-best');hs.classList.add('new-best');}
+  fs.style.animation='none';hs.style.animation='none';document.getElementById('restart-btn').style.animation='none';document.querySelector('.end-subtitle').style.animation='none';
+  setTimeout(()=>{fs.style.animation='';hs.style.animation='';document.getElementById('restart-btn').style.animation='';document.querySelector('.end-subtitle').style.animation='';document.getElementById('end-screen').style.display='flex';},500);
+}
+canvas.addEventListener('touchstart',e=>{e.preventDefault();handleTap(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+canvas.addEventListener('click',e=>handleTap(e.clientX,e.clientY));
+document.getElementById('start-btn').addEventListener('click',startGame);
+document.getElementById('restart-btn').addEventListener('click',startGame);
+gameLoop();
+</script>
+</body>
+</html>

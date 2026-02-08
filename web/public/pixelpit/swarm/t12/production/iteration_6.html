@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>ZONE FIRE</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0a0a12;font-family:'Courier New',monospace;overflow:hidden;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+  canvas{position:fixed;width:100%;height:100%;top:0;left:0;}
+  #ui{position:fixed;top:0;left:0;width:100%;display:flex;justify-content:space-between;align-items:center;padding:max(16px,env(safe-area-inset-top)) 16px 16px;z-index:2;color:#D4A574;text-shadow:0 0 15px rgba(212,165,116,0.3);}
+  #score-container{display:flex;flex-direction:column;align-items:flex-start;}
+  #score{font-size:32px;font-weight:bold;transition:transform 0.1s;}
+  #score.pop{transform:scale(1.3);color:#f97316;}
+  #combo{font-size:13px;color:#f97316;height:18px;transition:opacity 0.3s;margin-top:4px;text-shadow:0 0 10px rgba(249,115,22,0.6);}
+  #timer{font-size:28px;font-weight:bold;}
+  #timer.warning{color:#f97316;animation:pulse 0.5s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.1)}}
+  #lives{display:flex;gap:8px;}
+  .heart{width:22px;height:22px;background:#D4A574;clip-path:path('M10 18s-6-4.35-7.6-7.6C1.4 8 3 6 5.5 6c1.54 0 2.94.99 3.5 2.36V6h2v2.36C11.56 6.99 12.96 6 14.5 6 17 6 18.6 8 17.6 10.4 16 13.65 10 18 10 18z');filter:drop-shadow(0 0 8px rgba(212,165,116,0.5));transition:all 0.3s;}
+  .heart.lost{opacity:0.15;transform:scale(0.5);}
+  #start-screen,#end-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(10,10,18,0.97);display:flex;flex-direction:column;justify-content:center;align-items:center;color:#D4A574;text-align:center;padding:40px;z-index:3;}
+  #end-screen{display:none;}
+  h1{font-size:clamp(36px,12vw,64px);margin-bottom:16px;text-shadow:0 0 40px rgba(212,165,116,0.6),0 0 80px rgba(249,115,22,0.3);letter-spacing:8px;}
+  .subtitle{font-size:14px;margin-bottom:40px;opacity:0.7;letter-spacing:4px;}
+  .instruction{font-size:14px;line-height:2.2;margin-bottom:40px;opacity:0.85;}
+  .zone-legend{display:flex;gap:24px;margin-bottom:50px;font-size:14px;}
+  .zone-item{display:flex;align-items:center;gap:10px;}
+  .zone-dot{width:16px;height:16px;border-radius:50%;}
+  .zone-dot.outer{background:#f97316;box-shadow:0 0 15px #f97316;}
+  .zone-dot.middle{background:#D4A574;box-shadow:0 0 12px #D4A574;}
+  .zone-dot.center{background:#8B7355;box-shadow:0 0 10px #8B7355;}
+  button{background:transparent;border:2px solid #D4A574;color:#D4A574;padding:16px 48px;font-size:18px;cursor:pointer;transition:all .2s;letter-spacing:4px;border-radius:4px;}
+  button:hover,button:active{background:#D4A574;color:#0a0a12;transform:scale(1.05);}
+  #final-score{font-size:min(130px,28vw);color:#FFD700;text-shadow:0 0 60px rgba(255,215,0,0.8),0 0 120px rgba(249,115,22,0.4);opacity:0;transform:scale(0.5);animation:popIn .6s ease-out forwards;}
+  @keyframes popIn{0%{opacity:0;transform:scale(.5)}50%{transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+  #high-score{font-size:16px;color:#8B7355;margin-bottom:40px;opacity:0;animation:fadeIn .5s .4s forwards;}
+  #high-score.new-best{color:#f97316;text-shadow:0 0 20px rgba(249,115,22,0.6);}
+  @keyframes fadeIn{to{opacity:1}}
+  #restart-btn{opacity:0;animation:fadeIn .5s .6s forwards;}
+  .end-subtitle{opacity:0;animation:fadeIn .5s .2s forwards;letter-spacing:6px;}
+  .shake{animation:shake .35s ease-out;}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="score-container">
+    <div id="score">0</div>
+    <div id="combo"></div>
+  </div>
+  <div id="timer">30</div>
+  <div id="lives"><div class="heart"></div><div class="heart"></div><div class="heart"></div><div class="heart"></div><div class="heart"></div></div>
+</div>
+<div id="start-screen">
+  <h1>ZONE FIRE</h1>
+  <div class="subtitle">position is power</div>
+  <div class="instruction">
+    Tap glowing fireflies to catch them<br>
+    Wait for them to drift into high-value zones!<br>
+    Gold fireflies are worth bonus points
+  </div>
+  <div class="zone-legend">
+    <div class="zone-item"><div class="zone-dot outer"></div>3×</div>
+    <div class="zone-item"><div class="zone-dot middle"></div>2×</div>
+    <div class="zone-item"><div class="zone-dot center"></div>1×</div>
+  </div>
+  <button id="start-btn">BEGIN</button>
+</div>
+<div id="end-screen">
+  <div class="subtitle end-subtitle">time's up</div>
+  <div id="final-score">0</div>
+  <div id="high-score">best: 0</div>
+  <button id="restart-btn">AGAIN</button>
+</div>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth || 800;
+canvas.height = window.innerHeight || 600;
+let w = canvas.width;
+let h = canvas.height;
+
+let centerX = w / 2;
+let centerY = h / 2;
+let zoneRadius1 = Math.min(w, h) * 0.17;
+let zoneRadius2 = Math.min(w, h) * 0.35;
+
+function resize() {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+  centerX = w / 2;
+  centerY = h / 2;
+  const min = Math.min(w, h);
+  zoneRadius1 = min * 0.17;
+  zoneRadius2 = min * 0.35;
+}
+window.addEventListener('resize', resize);
+
+const AMBER = {r: 212, g: 165, b: 116};
+const GOLD = {r: 255, g: 215, b: 0};
+const ORANGE = {r: 249, g: 115, b: 22};
+
+let fireflies = [];
+let particles = [];
+let floatingTexts = [];
+let ambientFireflies = [];
+let score = 0;
+let lives = 5;
+let gameRunning = false;
+let difficulty = 1;
+let spawnTimer = 0;
+let gameTime = 30;
+let gameTimer = null;
+let highScore = parseInt(localStorage.getItem('firefly-zone_score-high')) || 0;
+let audioCtx = null;
+let musicGain = null;
+let combo = 0;
+let lastCatchTime = 0;
+let comboTimeout = null;
+let zonePulse = 0;
+
+// Ambient fireflies
+for (let i = 0; i < 35; i++) {
+  ambientFireflies.push({
+    x: Math.random() * w,
+    y: Math.random() * h,
+    phase: Math.random() * Math.PI * 2,
+    speed: 0.008 + Math.random() * 0.015,
+    size: 1 + Math.random() * 2.5,
+    drift: {x: (Math.random() - 0.5) * 0.25, y: (Math.random() - 0.5) * 0.25}
+  });
+}
+
+// Audio
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    musicGain = audioCtx.createGain();
+    musicGain.gain.value = 0.3;
+    musicGain.connect(audioCtx.destination);
+  } catch (e) {}
+}
+
+function playNote(freq, dur, type = 'sine', vol = 0.15, delay = 0) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, audioCtx.currentTime + delay);
+    g.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + delay + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + dur);
+    osc.connect(g);
+    g.connect(musicGain);
+    osc.start(audioCtx.currentTime + delay);
+    osc.stop(audioCtx.currentTime + delay + dur);
+  } catch (e) {}
+}
+
+function playHit(mult) {
+  const baseFreq = 400 + mult * 130;
+  playNote(baseFreq, 0.1, 'triangle', 0.22);
+  playNote(baseFreq * 1.5, 0.08, 'sine', 0.12, 0.025);
+  if (mult === 3) {
+    playNote(baseFreq * 2, 0.12, 'sine', 0.1, 0.05);
+    playNote(baseFreq * 2.5, 0.08, 'triangle', 0.06, 0.08);
+  }
+}
+
+function playMiss() {
+  playNote(160, 0.3, 'sine', 0.18);
+  playNote(120, 0.35, 'sine', 0.12, 0.05);
+}
+
+function playBonus() {
+  playNote(880, 0.08, 'square', 0.12);
+  playNote(1100, 0.08, 'square', 0.1, 0.06);
+  playNote(1320, 0.1, 'triangle', 0.08, 0.12);
+}
+
+function playComboSound(level) {
+  const freq = 550 + Math.min(level, 8) * 70;
+  playNote(freq, 0.08, 'triangle', 0.15);
+}
+
+// Zone helpers
+function getMultiplier(x, y) {
+  const d = Math.hypot(x - centerX, y - centerY);
+  if (d <= zoneRadius1) return 1;
+  if (d <= zoneRadius2) return 2;
+  return 3;
+}
+
+function getZoneColor(mult) {
+  if (mult === 3) return ORANGE;
+  if (mult === 2) return AMBER;
+  return {r: 139, g: 115, b: 85};
+}
+
+// Floating text
+class FloatingText {
+  constructor(x, y, text, color, size = 24) {
+    this.x = x; this.y = y; this.text = text;
+    this.color = color; this.size = size;
+    this.life = 1; this.vy = -2.5; this.scale = 1.3;
+  }
+  update() {
+    this.y += this.vy;
+    this.vy *= 0.94;
+    this.life -= 0.022;
+    this.scale = 1 + this.life * 0.3;
+    return this.life > 0;
+  }
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.life;
+    ctx.font = `bold ${this.size * this.scale}px 'Courier New'`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 20;
+    ctx.fillText(this.text, this.x, this.y);
+    ctx.restore();
+  }
+}
+
+// Firefly class
+class Firefly {
+  constructor() {
+    const m = 100;
+    this.x = m + Math.random() * (w - 2 * m);
+    this.y = m + Math.random() * (h - 2 * m);
+    this.r = 22 + Math.random() * 12;
+    this.phase = Math.random() * Math.PI * 2;
+    this.speed = 0.028 + Math.random() * 0.018;
+    this.lifetime = 0;
+    this.maxLife = Math.max(120, 220 - difficulty * 10);
+    this.caught = false;
+    this.missed = false;
+    this.fade = 0;
+    this.driftX = (Math.random() - 0.5) * 0.7;
+    this.driftY = (Math.random() - 0.5) * 0.7;
+    this.isBonus = Math.random() < 0.12;
+    this.color = this.isBonus ? GOLD : AMBER;
+    this.basePoints = this.isBonus ? 3 : 1;
+    this.wobble = Math.random() * Math.PI * 2;
+    this.pulseOffset = Math.random() * Math.PI * 2;
+  }
+
+  get brightness() {
+    if (this.caught || this.missed) return 0;
+    const cycle = Math.sin(this.phase) * 0.4 + 0.6;
+    const fadeIn = Math.min(this.lifetime / 12, 1);
+    const fadeOut = Math.max(1 - (this.lifetime - this.maxLife + 50) / 50, 0);
+    return cycle * fadeIn * fadeOut;
+  }
+
+  get glowing() { return this.brightness > 0.38; }
+
+  update() {
+    if (this.caught) {
+      this.fade += 0.07;
+      return this.fade < 1;
+    }
+    if (this.missed) {
+      this.fade += 0.045;
+      return this.fade < 1;
+    }
+    this.phase += this.speed;
+    this.wobble += 0.035;
+    this.lifetime++;
+
+    this.x += this.driftX + Math.sin(this.wobble) * 0.5;
+    this.y += this.driftY + Math.cos(this.wobble * 0.8) * 0.5;
+
+    if (this.x < 70 || this.x > w - 70) this.driftX *= -1;
+    if (this.y < 110 || this.y > h - 70) this.driftY *= -1;
+    this.x = Math.max(50, Math.min(w - 50, this.x));
+    this.y = Math.max(90, Math.min(h - 50, this.y));
+
+    if (this.lifetime >= this.maxLife) this.missed = true;
+    return true;
+  }
+
+  draw() {
+    const b = this.brightness;
+    const mult = getMultiplier(this.x, this.y);
+    const zc = getZoneColor(mult);
+
+    if (this.caught) {
+      const p = this.fade;
+      // Explosion ring
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r + 80 * p, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${this.color.r},${this.color.g},${this.color.b},${(1-p)*0.4})`;
+      ctx.fill();
+      // Sparks
+      for (let i = 0; i < 12; i++) {
+        const ang = (i / 12) * Math.PI * 2 + p * 5;
+        const dist = 100 * p;
+        ctx.beginPath();
+        ctx.arc(this.x + Math.cos(ang) * dist, this.y + Math.sin(ang) * dist, 6 * (1-p), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${this.color.r},${this.color.g},${this.color.b},${1-p})`;
+        ctx.fill();
+      }
+      return;
+    }
+
+    if (this.missed) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r * (1 - this.fade * 0.5), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(90,65,45,${(1-this.fade)*0.5})`;
+      ctx.fill();
+      return;
+    }
+
+    // Zone indicator ring
+    const ringPulse = Math.sin(this.pulseOffset + zonePulse * 2) * 0.15 + 0.85;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r + 20 + b * 12, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${zc.r},${zc.g},${zc.b},${(0.35 + b * 0.4) * ringPulse})`;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Outer glow
+    const glow = this.r * (3.5 + b * 2);
+    const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glow);
+    grad.addColorStop(0, `rgba(${this.color.r},${this.color.g},${this.color.b},${0.55 + b * 0.4})`);
+    grad.addColorStop(0.25, `rgba(${this.color.r},${this.color.g},${this.color.b},${0.25 + b * 0.25})`);
+    grad.addColorStop(0.6, `rgba(${this.color.r},${this.color.g},${this.color.b},${0.05 + b * 0.1})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, glow, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Core
+    const coreSize = this.r * (0.45 + b * 0.3);
+    const coreGrad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, coreSize);
+    coreGrad.addColorStop(0, `rgba(255,255,255,${0.65 + b * 0.35})`);
+    coreGrad.addColorStop(0.35, `rgba(${Math.min(255,this.color.r+50)},${Math.min(255,this.color.g+50)},${Math.min(255,this.color.b+50)},${0.7 + b * 0.3})`);
+    coreGrad.addColorStop(1, `rgba(${this.color.r},${this.color.g},${this.color.b},${0.5 + b * 0.3})`);
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, coreSize, 0, Math.PI * 2);
+    ctx.fillStyle = coreGrad;
+    ctx.fill();
+
+    // Multiplier label
+    if (b > 0.35) {
+      ctx.font = 'bold 18px Courier New';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = `rgba(${zc.r},${zc.g},${zc.b},0.9)`;
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = `rgba(${zc.r},${zc.g},${zc.b},${0.5 + b * 0.5})`;
+      ctx.fillText(`${mult}×`, this.x, this.y - this.r - 28);
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  contains(x, y) {
+    const dx = x - this.x, dy = y - this.y;
+    return dx * dx + dy * dy < (this.r + 45) ** 2;
+  }
+}
+
+// Game functions
+function spawnFirefly() {
+  const max = 6 + Math.floor(difficulty * 0.5);
+  if (fireflies.length < max) fireflies.push(new Firefly());
+}
+
+function updateCombo() {
+  const now = Date.now();
+  if (now - lastCatchTime < 1800) {
+    combo++;
+    playComboSound(combo);
+  } else {
+    combo = 1;
+  }
+  lastCatchTime = now;
+
+  const comboEl = document.getElementById('combo');
+  if (combo > 1) {
+    comboEl.textContent = `COMBO ×${combo}`;
+  } else {
+    comboEl.textContent = '';
+  }
+
+  if (comboTimeout) clearTimeout(comboTimeout);
+  comboTimeout = setTimeout(() => {
+    combo = 0;
+    comboEl.textContent = '';
+  }, 1800);
+}
+
+function loseLife() {
+  lives--;
+  combo = 0;
+  document.getElementById('combo').textContent = '';
+  const hearts = document.querySelectorAll('.heart');
+  if (hearts[lives]) hearts[lives].classList.add('lost');
+  document.body.classList.add('shake');
+  setTimeout(() => document.body.classList.remove('shake'), 350);
+  playMiss();
+  if (lives <= 0) endGame();
+}
+
+function addScore(points, x, y, mult, isBonus) {
+  const comboMult = combo > 1 ? 1 + (combo - 1) * 0.15 : 1;
+  const finalPoints = Math.round(points * comboMult);
+  score += finalPoints;
+
+  const scoreEl = document.getElementById('score');
+  scoreEl.textContent = score;
+  scoreEl.classList.add('pop');
+  setTimeout(() => scoreEl.classList.remove('pop'), 120);
+
+  difficulty = 1 + Math.floor(score / 12) * 0.2;
+
+  const color = mult === 3 ? '#f97316' : mult === 2 ? '#D4A574' : '#8B7355';
+  let text = `+${finalPoints}`;
+  if (combo > 1) text = `+${finalPoints} ×${combo}`;
+  floatingTexts.push(new FloatingText(x, y - 50, text, color, mult === 3 ? 38 : 30));
+
+  playHit(mult);
+  if (isBonus) playBonus();
+}
+
+function handleTap(x, y) {
+  if (!gameRunning) return;
+
+  let hit = false;
+  for (const f of fireflies) {
+    if (f.caught || f.missed) continue;
+    if (f.contains(x, y)) {
+      if (f.glowing) {
+        f.caught = true;
+        const mult = getMultiplier(f.x, f.y);
+        updateCombo();
+        addScore(f.basePoints * mult, f.x, f.y, mult, f.isBonus);
+
+        const col = f.isBonus ? GOLD : getZoneColor(mult);
+        for (let i = 0; i < 30; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const spd = 2.5 + Math.random() * 6;
+          particles.push({
+            x: f.x, y: f.y,
+            vx: Math.cos(ang) * spd,
+            vy: Math.sin(ang) * spd,
+            life: 1,
+            color: col,
+            size: 2.5 + Math.random() * 4
+          });
+        }
+        hit = true;
+      } else {
+        f.missed = true;
+        loseLife();
+        hit = true;
+      }
+      break;
+    }
+  }
+
+  if (!hit) {
+    for (let i = 0; i < 5; i++) {
+      particles.push({
+        x: x + (Math.random() - 0.5) * 20,
+        y: y + (Math.random() - 0.5) * 20,
+        vx: (Math.random() - 0.5) * 2,
+        vy: -1 - Math.random(),
+        life: 0.5,
+        color: {r: 70, g: 55, b: 45},
+        size: 4 + Math.random() * 3
+      });
+    }
+  }
+}
+
+// Drawing
+function drawAmbientFireflies() {
+  for (const af of ambientFireflies) {
+    af.phase += af.speed;
+    af.x += af.drift.x;
+    af.y += af.drift.y;
+    if (af.x < 0 || af.x > w) af.drift.x *= -1;
+    if (af.y < 0 || af.y > h) af.drift.y *= -1;
+
+    const b = Math.sin(af.phase) * 0.35 + 0.45;
+    ctx.beginPath();
+    ctx.arc(af.x, af.y, af.size * (0.8 + b * 0.4), 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(212,165,116,${b * 0.35})`;
+    ctx.fill();
+  }
+}
+
+function drawZones() {
+  zonePulse += 0.02;
+  const pulse = Math.sin(zonePulse) * 0.2 + 0.8;
+
+  // Zone fills
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, Math.max(w, h), 0, Math.PI * 2);
+  ctx.arc(centerX, centerY, zoneRadius2, 0, Math.PI * 2, true);
+  ctx.fillStyle = `rgba(249,115,22,${0.055 * pulse})`;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, zoneRadius2, 0, Math.PI * 2);
+  ctx.arc(centerX, centerY, zoneRadius1, 0, Math.PI * 2, true);
+  ctx.fillStyle = `rgba(212,165,116,${0.065 * pulse})`;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, zoneRadius1, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(139,115,85,${0.075 * pulse})`;
+  ctx.fill();
+
+  // Animated boundaries
+  ctx.setLineDash([14, 10]);
+  ctx.lineDashOffset = -zonePulse * 35;
+
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, zoneRadius2, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(249,115,22,${0.55 * pulse})`;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, zoneRadius1, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(212,165,116,${0.45 * pulse})`;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+  // Zone labels
+  ctx.font = 'bold 22px Courier New';
+  ctx.textAlign = 'center';
+  ctx.shadowBlur = 18;
+
+  ctx.shadowColor = '#f97316';
+  ctx.fillStyle = `rgba(249,115,22,${0.85 * pulse})`;
+  ctx.fillText('3×', centerX, centerY - zoneRadius2 - 28);
+
+  ctx.shadowColor = '#D4A574';
+  ctx.fillStyle = `rgba(212,165,116,${0.75 * pulse})`;
+  ctx.fillText('2×', centerX, centerY - zoneRadius1 - 28);
+
+  ctx.shadowColor = '#8B7355';
+  ctx.fillStyle = `rgba(139,115,85,${0.65 * pulse})`;
+  ctx.fillText('1×', centerX, centerY - 55);
+
+  ctx.shadowBlur = 0;
+}
+
+function draw() {
+  ctx.fillStyle = '#0a0a12';
+  ctx.fillRect(0, 0, w, h);
+
+  drawAmbientFireflies();
+  drawZones();
+
+  for (const p of particles) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${p.color.r},${p.color.g},${p.color.b},${p.life})`;
+    ctx.fill();
+  }
+
+  for (const f of fireflies) f.draw();
+  for (const t of floatingTexts) t.draw();
+}
+
+function update() {
+  fireflies = fireflies.filter(f => f.update());
+
+  particles = particles.filter(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.1;
+    p.vx *= 0.97;
+    p.life -= 0.018;
+    return p.life > 0;
+  });
+
+  floatingTexts = floatingTexts.filter(t => t.update());
+
+  if (gameRunning) {
+    spawnTimer++;
+    const spawnRate = Math.max(35 - difficulty * 3.5, 18);
+    if (spawnTimer >= spawnRate) {
+      spawnFirefly();
+      spawnTimer = 0;
+    }
+  }
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+  gameRunning = false;
+  clearInterval(gameTimer);
+  if (comboTimeout) clearTimeout(comboTimeout);
+
+  const best = score > highScore;
+  if (best) {
+    highScore = score;
+    localStorage.setItem('firefly-zone_score-high', highScore);
+  }
+
+  setTimeout(() => {
+    const fs = document.getElementById('final-score');
+    const hs = document.getElementById('high-score');
+    fs.textContent = score;
+    hs.textContent = best ? '★ NEW BEST ★' : 'best: ' + highScore;
+    hs.classList.toggle('new-best', best);
+    fs.style.animation = 'none';
+    hs.style.animation = 'none';
+    document.getElementById('restart-btn').style.animation = 'none';
+    document.querySelector('.end-subtitle').style.animation = 'none';
+    void fs.offsetWidth;
+    fs.style.animation = '';
+    hs.style.animation = '';
+    document.getElementById('restart-btn').style.animation = '';
+    document.querySelector('.end-subtitle').style.animation = '';
+    document.getElementById('end-screen').style.display = 'flex';
+  }, 500);
+}
+
+function startGame() {
+  initAudio();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+  fireflies = [];
+  particles = [];
+  floatingTexts = [];
+  score = 0;
+  lives = 5;
+  difficulty = 1;
+  spawnTimer = 0;
+  gameTime = 30;
+  gameRunning = true;
+  combo = 0;
+
+  document.getElementById('score').textContent = '0';
+  document.getElementById('timer').textContent = '30';
+  document.getElementById('timer').classList.remove('warning');
+  document.getElementById('combo').textContent = '';
+  document.querySelectorAll('.heart').forEach(h => h.classList.remove('lost'));
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('end-screen').style.display = 'none';
+
+  for (let i = 0; i < 5; i++) fireflies.push(new Firefly());
+
+  gameTimer = setInterval(() => {
+    gameTime--;
+    const timerEl = document.getElementById('timer');
+    timerEl.textContent = gameTime;
+    if (gameTime <= 5) timerEl.classList.add('warning');
+    if (gameTime <= 0) endGame();
+  }, 1000);
+}
+
+// Events
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  for (let i = 0; i < e.touches.length; i++) {
+    handleTap(e.touches[i].clientX, e.touches[i].clientY);
+  }
+}, {passive: false});
+
+canvas.addEventListener('click', e => handleTap(e.clientX, e.clientY));
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', startGame);
+document.addEventListener('touchend', e => e.preventDefault(), {passive: false});
+
+// Start
+gameLoop();
+</script>
+</body>
+</html>

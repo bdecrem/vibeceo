@@ -1,0 +1,177 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Power‑Fly - Arcade Firefly</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:#0a0a12;
+    font-family:'Courier New', monospace;
+    overflow:hidden;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  #game{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+  }
+  #ui{
+    position:fixed;top:0;left:0;right:0;
+    padding:20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    z-index:10;
+    pointer-events:none;
+  }
+  #score,#timer,#lives,#power-info{
+    color:#D4A574;
+    font-size:26px;
+    text-shadow:0 0 20px rgba(212,165,116,.5);
+  }
+  #timer{color:#8B7355;font-size:20px;text-shadow:0 0 15px rgba(139,115,85,.4);}
+  #lives{display:flex;gap:10px;}
+  .heart{
+    width:20px;height:20px;
+    background:#D4A574;
+    clip-path:path('M10 18.4l-1.16-1.06C2.72 12.89 0 10.42 0 7.4 0 4.94 1.94 3 4.4 3c1.39 0 2.73.65 3.6 1.67.87-1.02 2.21-1.67 3.6-1.67 2.46 0 4.4 1.94 4.4 4.4 0 2.02-2.72 4.49-6.84 7.94l6.84-6.56z');
+    transform:scale(1);
+    transition:transform .2s,opacity .3s;
+    filter:drop-shadow(0 0 8px rgba(212,165,116,.5));
+  }
+  .heart.lost{opacity:.2;transform:scale(.7);}
+  #start-screen,#end-screen{
+    position:fixed;top:0;left:0;right:0;bottom:0;
+    background:rgba(10,10,18,.95);
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    z-index:100;color:#D4A574;text-align:center;padding:40px;
+  }
+  #end-screen{display:none;}
+  h1{
+    font-size:48px;font-weight:normal;letter-spacing:12px;margin-bottom:20px;
+    text-shadow:0 0 40px rgba(212,165,116,.6);
+  }
+  .subtitle{color:#8B7355;font-size:14px;letter-spacing:2px;margin-bottom:60px;}
+  .instruction{color:#6B5344;font-size:13px;line-height:2;margin-bottom:40px;}
+  button{
+    background:transparent;border:1px solid #D4A574;color:#D4A574;padding:15px 50px;
+    font-family:inherit;font-size:14px;letter-spacing:4px;cursor:pointer;transition:all .3s;
+  }
+  button:hover{background:#D4A574;color:#0a0a12;}
+  #final-score{font-size:120px;margin:20px 0;text-shadow:0 0 60px rgba(212,165,116,.8);opacity:0;transform:scale(.5);animation:popIn .6s ease-out forwards;}
+  @keyframes popIn{0%{opacity:0;transform:scale(.5);}50%{transform:scale(1.1);}100%{opacity:1;transform:scale(1);}}
+  #high-score{color:#8B7355;font-size:14px;margin-bottom:40px;opacity:0;animation:fadeIn .5s ease-out .4s forwards;}
+  @keyframes fadeIn{to{opacity:1;}}
+  #end-screen button{opacity:0;animation:fadeIn .5s ease-out .6s forwards;}
+  .end-subtitle{opacity:0;animation:fadeIn .5s ease-out .2s forwards;}
+  .shake{animation:shake .3s ease-out;}
+  @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-10px);}40%{transform:translateX(10px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
+  #glow{
+    position:fixed;top:50%;left:50%;
+    width:300px;height:300px;
+    transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(212,165,116,.03) 0%,transparent 70%);
+    pointer-events:none;
+    z-index:1;
+  }
+  .new-best{color:#FFD700!important;text-shadow:0 0 30px rgba(255,215,0,.6);}
+  /* Power UI */
+  #power-info{
+    display:flex;gap:10px;align-items:center;color:#8b5cf6;font-size:18px;
+  }
+  .power-item{display:flex;align-items:center;gap:4px;}
+  .power-icon{
+    font-size:22px;
+  }
+</style>
+</head>
+<body>
+<div id="glow"></div>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="score">0</div>
+  <div id="timer">30</div>
+  <div id="lives"></div>
+  <div id="power-info"></div>
+</div>
+<div id="start-screen">
+  <h1>POWER‑FLY</h1>
+  <div class="subtitle">tap the glowing fireflies</div>
+  <div class="instruction">
+    30 seconds<br>
+    catch fireflies and power‑ups<br>
+    can’t hit a dark one
+  </div>
+  <button id="start-btn">BEGIN</button>
+</div>
+<div id="end-screen">
+  <div class="subtitle end-subtitle">time's up</div>
+  <div id="final-score">0</div>
+  <div id="high-score">best: 0</div>
+  <button id="restart-btn">AGAIN</button>
+</div>
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+let width, height;
+let fireflies=[], particles=[], stars=[];
+let score=0, lives=5, gameRunning=false, difficulty=1;
+let spawnTimer=0, gameTime=30, gameTimer=null;
+let highScore= parseInt(localStorage.getItem('powerfly-high')||'0');
+const powerTypes=['SLOW','MAGNET','SHIELD','DOUBLE','BOMB'];
+let activePowers=[]; // {type, end, duration}
+let speedScale=1;
+const AMBER={r:212,g:165,b:116};
+const GOLD={r:255,g:215,b:0};
+const BLUE={r:139,g:92,b:246};
+const ACCENT={r:139,g:92,b:246}; // #8b5cf6
+const GOLD2={r:255,g:215,b:0}; // for hearts
+// Audio
+let audioCtx=null, musicGain=null, musicPlaying=false;
+const NOTES={D4:293.66,E4:329.63,Fs4:369.99,A4:440,B4:493.88,D5:587.33,E5:659.25,Fs5:739.99,A5:880,B5:987.77};
+function initAudio(){
+  if(audioCtx)return;
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  musicGain=audioCtx.createGain();musicGain.gain.value=.3;musicGain.connect(audioCtx.destination);
+}
+function playNote(freq,dur=0.3,type='triangle',vol=.15){
+  if(!audioCtx)return;
+  let osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();
+  filter.type='lowpass';filter.frequency.value=2000;
+  osc.type=type;osc.frequency.value=freq;
+  gain.gain.setValueAtTime(0,audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(vol,audioCtx.currentTime+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+  osc.connect(filter);filter.connect(gain);gain.connect(musicGain);
+  osc.start();osc.stop(audioCtx.currentTime+dur);
+}
+function playPad(){ if(!audioCtx||!gameRunning)return; const notes=[NOTES.D4/2,NOTES.A4/2,NOTES.D4]; notes.forEach((freq,i)=>{ let osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();
+  filter.type='lowpass';filter.frequency.value=400+i*100;filter.Q.value=1;osc.type='sine';osc.frequency.value=freq;gain.gain.setValueAtTime(0,audioCtx.currentTime);gain.gain.linearRampToValueAtTime(0.08,audioCtx.currentTime+2);gain.gain.linearRampToValueAtTime(0.05,audioCtx.currentTime+6);gain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+8);
+  osc.connect(filter);filter.connect(gain);gain.connect(musicGain);osc.start();osc.stop(audioCtx.currentTime+8);}); if(gameRunning)setTimeout(playPad,7000); }
+let melodyTimeout=null;
+const melodyPattern=[{note:'D5',dur:.2},{note:'E5',dur:.2},{note:'Fs5',dur:.3},{note:'A5',dur:.2},{note:'Fs5',dur:.2},{note:'E5',dur:.4},{note:null,dur:.3},{note:'A4',dur:.2},{note:'B4',dur:.2},{note:'D5',dur:.4},{note:null,dur:.2},{note:'B4',dur:.2},{note:'A4',dur:.3},{note:null,dur:.5}];
+let melodyIndex=0;
+function playMelody(){ if(!audioCtx||!gameRunning)return; let step=melodyPattern[melodyIndex]; if(step.note)playNote(NOTES[step.note],step.dur+0.1,'triangle',0.12); melodyIndex=(melodyIndex+1)%melodyPattern.length; melodyTimeout=setTimeout(playMelody,step.dur*500);}
+let bassTimeout=null;
+function playBass(){ if(!audioCtx||!gameRunning)return; const notes=[NOTES.D4/2,NOTES.D4/2,NOTES.A4/2,NOTES.D4/2]; const idx=Math.floor(Date.now()/600)%notes.length; playNote(notes[idx],.4,'sine',.1); bassTimeout=setTimeout(playBass,600);}
+function playSparkle(bonus=false){ if(!audioCtx)return; const base=bonus?NOTES.A5:NOTES.D5; playNote(base,.15,'sine',.2); setTimeout(()=>playNote(base*1.5,.1,'sine',.15),50); if(bonus){setTimeout(()=>playNote(base*2,.1,'sine',.1),100);}}
+function playMiss(){ if(!audioCtx)return; playNote(NOTES.D4/2,.3,'triangle',.1);}
+function startMusic(){ if(!audioCtx)initAudio(); if(audioCtx.state==='suspended')audioCtx.resume(); musicPlaying=true; playPad(); setTimeout(playMelody,500); setTimeout(playBass,250);}
+function stopMusic(){ musicPlaying=false; clearTimeout(melodyTimeout); clearTimeout(bassTimeout); if(musicGain){musicGain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.5);setTimeout(()=>musicGain.gain.value=.3,600);}}
+function resize(){ width=canvas.width=window.innerWidth; height=canvas.height=window.innerHeight; } resize(); window.addEventListener('resize',resize);
+class Firefly{ constructor(){ this.reset(); } reset(){ const margin=60; this.x=margin+Math.random()*(width-margin*2); this.y=margin+Math.random()*(height-margin*2); this.radius=18+Math.random()*10; this.phase=Math.random()*Math.PI*2; this.speed=0.015+Math.random()*0.015+difficulty*0.002; this.lifetime=0; this.maxLife=200-difficulty*5; this.maxLife=Math.max(this.maxLife,100); this.caught=false; this.missed=false; this.fadeOut=0; this.driftX=(Math.random()-.5)*.4; this.driftY=(Math.random()-.5)*.4; this.isBonus=Math.random()<.15; this.isPowerUp=Math.random()<.15; if(this.isPowerUp){ this.type=powerTypes[Math.floor(Math.random()*powerTypes.length)]; this.color=ACCENT; this.points=3; } else{ this.color=this.isBonus?BLUE:AMBER; this.points=this.isBonus?3:1; } } get brightness(){ if(this.caught||this.missed)return 0; const cycle=Math.sin(this.phase)*.5+.5; const lifeFade=this.lifetime<20?this.lifetime/20:(this.lifetime>this.maxLife-30?(this.maxLife-this.lifetime)/30:1); return cycle*lifeFade; } get isGlowing(){return this.brightness>0.3;} update(){ if(this.caught){ this.fadeOut+=.1; return this.fadeOut<1; } if(this.missed){ this.fadeOut+=.05; return this.fadeOut<1; } this.phase+=this.speed*speedScale; this.lifetime++; this.x+=this.driftX*speedScale; this.y+=this.driftY*speedScale; if(this.x<40||this.x>width-40)this.driftX*=-1; if(this.y<80||this.y>height-40)this.driftY*=-1; if(this.lifetime>=this.maxLife){ this.missed=true; } return true; } draw(){ const b=this.brightness; const {r,g,b:blue}=this.color; if(this.caught){ const progress=this.fadeOut; const burstRadius=this.radius+progress*50; const alpha=(1-progress)*.8; ctx.beginPath(); ctx.arc(this.x,this.y,burstRadius,0,Math.PI*2); ctx.fillStyle=`rgba(${r},${g},${blue},${alpha*.3})`; ctx.fill(); for(let i=0;i<8;i++){const angle=(i/8)*Math.PI*2+progress*3;const dist=progress*60;const sx=this.x+Math.cos(angle)*dist;const sy=this.y+Math.sin(angle)*dist;ctx.beginPath();ctx.arc(sx,sy,3*(1-progress),0,Math.PI*2);ctx.fillStyle=`rgba(${r},${g},${blue},${alpha})`;ctx.fill();}return;} if(this.missed){const alpha=(1-this.fadeOut)*.3;ctx.beginPath();ctx.arc(this.x,this.y,this.radius*(1-this.fadeOut*.5),0,Math.PI*2);ctx.fillStyle=`rgba(100,80,60,${alpha})`;ctx.fill();return;} const glowSize=this.radius*(2+b); const gradient=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,glowSize); gradient.addColorStop(0,`rgba(${r},${g},${blue},${b*.8})`); gradient.addColorStop(.3,`rgba(${r},${g},${blue},${b*.3})`); gradient.addColorStop(1,'rgba(0,0,0,0)'); ctx.beginPath(); ctx.arc(this.x,this.y,glowSize,0,Math.PI*2); ctx.fillStyle=gradient; ctx.fill(); ctx.beginPath(); ctx.arc(this.x,this.y,this.radius*(.3+b*.3),0,Math.PI*2); ctx.fillStyle=`rgba(${r+40},${g+40},${blue+40},${.2+b*.8})`; ctx.fill(); } contains(x,y){ const dx=x-this.x; const dy=y-this.y; return dx*dx+dy*dy<(this.radius+40)*(this.radius+40); } }
+class Star{ constructor(){ this.x=Math.random()*width; this.y=Math.random()*height; this.size=Math.random()*1.5; this.twinkle=Math.random()*Math.PI*2; this.speed=.01+.02*Math.random(); } update(){ this.twinkle+=this.speed; } draw(){ const alpha=.3+Math.sin(this.twinkle)*.2; ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fillStyle=`rgba(200,200,220,${alpha})`; ctx.fill(); } }
+function spawnFirefly(){ const maxFireflies=Math.min(6+Math.floor(difficulty),10); if(fireflies.length<maxFireflies)fireflies.push(new Firefly()); }
+function loseLife(){ lives--; const hearts=document.querySelectorAll('.heart'); if(hearts[lives])hearts[lives].classList.add('lost'); document.body.classList.add('shake'); setTimeout(()=>document.body.classList.remove('shake'),300); playMiss(); if(lives<=0)endGame(); }
+function addScore(points,bonus=false){ const mult=doublePointsActive?2:1; score+=points*mult; document.getElementById('score').textContent=score; difficulty=1+Math.floor(score/10)*.3; playSparkle(bonus); }
+function handleTap(x,y){ if(!gameRunning)return; let hit=false; for(const fly of fireflies){ if(fly.caught||fly.missed)continue; if(fly.contains(x,y)){ if(fly.isGlowing){ if(fly.isPowerUp){ triggerPower(fly.type); } else{ fly.caught=true; addScore(fly.points); } for(let i=0;i<10;i++)particles.push({x:fly.x,y:fly.y,vx:(Math.random()-.5)*5,vy:(Math.random()-.5)*5,life:1,color:fly.color}); } else{ fly.missed=true; loseLife(); } hit=true; break; } } if(!hit){ particles.push({x,y,vx:0,vy:-1,life:.4,color:{r:80,g:60,b:50}}); } }
+function update(){ stars.forEach(s=>s.update()); if(!gameRunning)return; spawnTimer++; const spawnRate=Math.max(30-difficulty*4,20); if(spawnTimer>=spawnRate){ spawnFirefly(); spawnTimer=0; } fireflies=fireflies.filter(f=>f.update()); // Magnet auto catch
+if(magnetActive){ fireflies.forEach(f=>{ if(f.isGlowing&&!f.caught&&!f.missed){ f.caught=true; addScore(f.points); for(let i=0;i<10;i++)particles.push({x:f.x,y:f.y,vx:(Math.random()-.5)*5,vy:(Math.random()-.5)*5,life:1,color:f.color}); } }); }
+particles=particles.filter(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=.08; p.vx*=.98; p.life-=.02; return p.life>0; });
+}
+function draw(){ ctx.fillStyle='#0a0a12'; ctx.fillRect(0,0,width,height); stars.forEach(s=>s.draw()); fireflies.forEach(f=>f.draw()); particles.forEach(p=>{ const {r,g,b}=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,3*p.life,0,Math.PI*2); ctx.fillStyle=`rgba(${r},${g},${b},${p.life})`; ctx.fill(); }); }
+function gameLoop(){ update(); draw(); requestAnimationFrame(gameLoop); }
+function startGame(){ initAudio(); document.getElementById('start-screen').style.display='none'; document.getElementById('end-screen').style.display='none'; fireflies=[]; particles=[]; score=0; lives=5; difficulty=1; spawnTimer=0; gameTime=30; gameRunning=true; document.getElementById('score').textContent='0'; document.getElementById('timer').textContent='30'; document.querySelectorAll('.heart').forEach(h=>h.classList.remove('lost')); for(let i=0;i<3;i++)setTimeout(()=>spawnFirefly(),i*300); startMusic(); gameTimer=setInterval(()=>{ gameTime--; document.getElementById('timer').textContent=gameTime; if(gameTime<=0)endGame(); },1000); }
+function endGame(){ gameRunning=false; clearInterval(gameTimer); stopMusic(); const isNew=score>highScore; if(isNew){ highScore=score; localStorage.setItem('powerfly-high',highScore); } const end=document.getElementBy

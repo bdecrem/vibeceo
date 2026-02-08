@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Jar</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Memory Jar">
+    <meta property="og:description" content="Preserve moments like insects in amber. Each memory gets trapped in time, glowing with the warmth of what was.">
+    <meta property="og:image" content="https://intheamber.com/amber/memory-jar-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/memory-jar.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Memory Jar">
+    <meta name="twitter:description" content="Preserve moments like insects in amber. Each memory gets trapped in time, glowing with the warmth of what was.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/memory-jar-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a0f0a 0%, #2d1b0e 100%);
+            font-family: 'Georgia', serif;
+            color: #d4a574;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        .jar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+            position: relative;
+        }
+        
+        .jar {
+            width: 400px;
+            height: 500px;
+            background: radial-gradient(ellipse at center, rgba(212, 165, 116, 0.15) 0%, rgba(212, 165, 116, 0.05) 70%, transparent 100%);
+            border: 3px solid rgba(212, 165, 116, 0.3);
+            border-radius: 20px 20px 40px 40px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+            box-shadow: 
+                0 0 50px rgba(212, 165, 116, 0.2),
+                inset 0 0 50px rgba(212, 165, 116, 0.1);
+        }
+        
+        .jar-lid {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 30px;
+            background: linear-gradient(135deg, #8b6914 0%, #d4a574 50%, #8b6914 100%);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .memory-input {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .memory-text {
+            flex: 1;
+            padding: 12px 20px;
+            background: rgba(212, 165, 116, 0.1);
+            border: 2px solid rgba(212, 165, 116, 0.3);
+            border-radius: 25px;
+            color: #d4a574;
+            font-size: 16px;
+            font-family: 'Georgia', serif;
+            outline: none;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .memory-text::placeholder {
+            color: rgba(212, 165, 116, 0.5);
+            font-style: italic;
+        }
+        
+        .memory-text:focus {
+            border-color: rgba(212, 165, 116, 0.8);
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+        }
+        
+        .preserve-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #d4a574 0%, #8b6914 100%);
+            border: none;
+            border-radius: 25px;
+            color: #1a0f0a;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .preserve-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .memory-bubble {
+            position: absolute;
+            background: radial-gradient(circle, rgba(212, 165, 116, 0.8) 0%, rgba(212, 165, 116, 0.4) 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            text-align: center;
+            color: #1a0f0a;
+            font-weight: bold;
+            text-shadow: none;
+            animation: float 6s ease-in-out infinite;
+            box-shadow: 
+                0 0 20px rgba(212, 165, 116, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+        
+        .memory-bubble:hover {
+            transform: scale(1.1);
+            box-shadow: 
+                0 0 30px rgba(212, 165, 116, 0.8),
+                inset 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-10px) rotate(2deg); }
+            66% { transform: translateY(5px) rotate(-2deg); }
+        }
+        
+        .title {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+            margin-bottom: 1rem;
+        }
+        
+        .subtitle {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1rem;
+            opacity: 0.7;
+            font-style: italic;
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.4;
+        }
+        
+        .memory-count {
+            position: absolute;
+            top: 160px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            opacity: 0.5;
+        }
+        
+        @media (max-width: 600px) {
+            .jar {
+                width: 300px;
+                height: 400px;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 0.9rem;
+                padding: 0 1rem;
+            }
+            
+            .memory-input {
+                width: 95%;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .memory-text {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="jar-container">
+        <h1 class="title">Memory Jar</h1>
+        <p class="subtitle">Preserve moments like insects in amber.<br>Each memory gets trapped in time, glowing with the warmth of what was.</p>
+        <div class="memory-count">0 memories preserved</div>
+        
+        <div class="jar">
+            <div class="jar-lid"></div>
+        </div>
+        
+        <div class="memory-input">
+            <input type="text" class="memory-text" placeholder="what do you want to preserve forever?" maxlength="100">
+            <button class="preserve-btn">Preserve</button>
+        </div>
+    </div>
+
+    <script>
+        let memories = JSON.parse(localStorage.getItem('amberMemories') || '[]');
+        let memoryCount = 0;
+        
+        const jar = document.querySelector('.jar');
+        const input = document.querySelector('.memory-text');
+        const btn = document.querySelector('.preserve-btn');
+        const countEl = document.querySelector('.memory-count');
+        
+        function updateCount() {
+            const count = memories.length;
+            countEl.textContent = `${count} memor${count === 1 ? 'y' : 'ies'} preserved`;
+        }
+        
+        function createMemoryBubble(text, index) {
+            const bubble = document.createElement('div');
+            bubble.className = 'memory-bubble';
+            
+            // Size based on text length and age (older = smaller)
+            const baseSize = Math.min(80, Math.max(40, text.length * 2));
+            const ageFactor = Math.max(0.6, 1 - (index * 0.05));
+            const size = baseSize * ageFactor;
+            
+            bubble.style.width = size + 'px';
+            bubble.style.height = size + 'px';
+            
+            // Random position within jar bounds
+            const maxX = 400 - size - 20;
+            const maxY = 500 - size - 60; // Leave room at top/bottom
+            bubble.style.left = (20 + Math.random() * maxX) + 'px';
+            bubble.style.top = (40 + Math.random() * maxY) + 'px';
+            
+            // Truncate text for display
+            const displayText = text.length > 30 ? text.substring(0, 27) + '...' : text;
+            bubble.textContent = displayText;
+            
+            // Random animation delay
+            bubble.style.animationDelay = Math.random() * 6 + 's';
+            
+            // Click to see full text
+            bubble.addEventListener('click', () => {
+                alert(`Memory preserved:\n\n"${text}"\n\n(Click and hold to remove)`);
+            });
+            
+            // Long press to remove (mobile-friendly)
+            let pressTimer;
+            bubble.addEventListener('mousedown', () => {
+                pressTimer = setTimeout(() => {
+                    if (confirm(`Remove this memory?\n\n"${text}"`)) {
+                        const memoryIndex = memories.findIndex(m => m.text === text);
+                        if (memoryIndex > -1) {
+                            memories.splice(memoryIndex, 1);
+                            localStorage.setItem('amberMemories', JSON.stringify(memories));
+                            bubble.remove();
+                            updateCount();
+                        }
+                    }
+                }, 1000);
+            });
+            
+            bubble.addEventListener('mouseup', () => {
+                clearTimeout(pressTimer);
+            });
+            
+            bubble.addEventListener('mouseleave', () => {
+                clearTimeout(pressTimer);
+            });
+            
+            jar.appendChild(bubble);
+        }
+        
+        function preserveMemory() {
+            const text = input.value.trim();
+            if (!text) return;
+            
+            const memory = {
+                text: text,
+                timestamp: new Date().toISOString(),
+                id: Date.now()
+            };
+            
+            memories.unshift(memory); // Add to beginning (newest first)
+            localStorage.setItem('amberMemories', JSON.stringify(memories));
+            
+            createMemoryBubble(text, 0);
+            updateCount();
+            
+            input.value = '';
+            input.focus();
+            
+            // Subtle success animation
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                btn.style.transform = 'scale(1)';
+            }, 150);
+        }
+        
+        // Load existing memories
+        memories.forEach((memory, index) => {
+            createMemoryBubble(memory.text, index);
+        });
+        updateCount();
+        
+        // Event listeners
+        btn.addEventListener('click', preserveMemory);
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') preserveMemory();
+        });
+        
+        // Focus input on load
+        input.focus();
+    </script>
+</body>
+</html>

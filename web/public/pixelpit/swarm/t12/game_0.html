@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FIREFLY CHAIN</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0a0a12;font-family:'Courier New',monospace;overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  #game{position:fixed;width:100%;height:100%;cursor:pointer;}
+  #ui{position:fixed;top:0;left:0;width:100%;display:flex;justify-content:space-between;align-items:center;padding:12px 20px;pointer-events:none;}
+  #score{color:#D4A574;font-size:24px;text-shadow:0 0 20px rgba(212,165,116,0.5);}
+  #timer{color:#8B7355;font-size:20px;text-shadow:0 0 15px rgba(139,115,85,0.4);}
+  #lives{display:flex;gap:6px;}
+  .heart{width:24px;height:24px;background:#D4A574;clip-path:path('M12 21.6l-1.84-1.68C8.56 15.93 6 12.71 6 9.2 6 6.07 8.07 4 10.2 4 11.95 4 13.66 4.82 14.8 6.34 15.94 4.82 17.65 4 19.4 4 21.53 4 24 6.07 24 9.2c0 3.51-2.56 6.73-6.44 10.92L12 21.6z');transform:scale(1);transition:transform .2s,opacity .3s;filter:drop-shadow(0 0 8px rgba(212,165,116,0.5));}
+  .heart.lost{opacity:.2;transform:scale(.7);}
+  #combo{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#00ff88;font-size:48px;font-weight:bold;text-shadow:0 0 20px rgba(0,255,136,0.5);pointer-events:none;opacity:0;transition:opacity .3s;}
+  #combo.show{opacity:1;}
+  #flash{position:absolute;top:0;left:0;width:100%;height:100%;background:#00ff88;opacity:0;pointer-events:none;}
+  #start-screen,#end-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(10,10,18,.95);display:flex;flex-direction:column;justify-content:center;align-items:center;color:#D4A574;text-align:center;padding:40px;z-index:10;}
+  #end-screen{display:none;}
+  h1{font-size:48px;font-weight:normal;margin-bottom:20px;text-shadow:0 0 40px rgba(212,165,116,0.6);}
+  .subtitle{color:#8B7355;font-size:14px;margin-bottom:60px;}
+  .instruction{color:#6B5344;font-size:13px;line-height:2;margin-bottom:40px;}
+  button{background:transparent;border:1px solid #D4A574;color:#D4A574;padding:15px 50px;font-family:inherit;font-size:14px;letter-spacing:4px;cursor:pointer;transition:all .3s;}
+  button:hover{background:#D4A574;color:#0a0a12;}
+  #final-score{font-size:120px;margin:20px 0;text-shadow:0 0 60px rgba(212,165,116,.8);opacity:0;transform:scale(.5);animation:popIn .6s ease-out forwards;}
+  @keyframes popIn{0%{opacity:0;transform:scale(.5);}50%{transform:scale(1.1);}100%{opacity:1;transform:scale(1);}}
+  #high-score{color:#8B7355;font-size:14px;margin-bottom:40px;opacity:0;animation:fadeIn .5s ease-out .4s forwards;}
+  @keyframes fadeIn{to{opacity:1;}}
+  #end-screen button{opacity:0;animation:fadeIn .5s ease-out .6s forwards;}
+  .end-subtitle{opacity:0;animation:fadeIn .5s ease-out .2s forwards;}
+  .shake{animation:shake .3s ease-out;}
+  @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-10px);}40%{transform:translateX(10px);}60%{transform:translateX(-5px);}80%{transform:translateX(5px);}}
+  #glow{position:fixed;top:50%;left:50%;width:300px;height:300px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(212,165,116,.03)0%,transparent70%);pointer-events:none;z-index:1;}
+  .new-best{color:#FFD700!important;text-shadow:0 0 30px rgba(255,215,0,.6);}
+</style>
+</head>
+<body>
+<div id="glow"></div>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="score">0</div>
+  <div id="timer">30</div>
+  <div id="lives"></div>
+  <div id="combo"></div>
+</div>
+<div id="start-screen">
+  <h1>FIREFLY CHAIN</h1>
+  <div class="subtitle">Catch the light, build a combo</div>
+  <div class="instruction">
+    tap glowing fireflies<br>
+    30 seconds<br>
+    how many can you catch?
+  </div>
+  <button id="start-btn">TAP TO PLAY</button>
+</div>
+<div id="end-screen">
+  <div class="subtitle end-subtitle">time's up</div>
+  <div id="final-score">0</div>
+  <div id="high-score">best: 0</div>
+  <button id="restart-btn">TAP TO PLAY AGAIN</button>
+</div>
+<div id="flash"></div>
+<script>
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const ui=document.getElementById('ui');
+const scoreEl=document.getElementById('score');
+const timerEl=document.getElementById('timer');
+const livesEl=document.getElementById('lives');
+const comboEl=document.getElementById('combo');
+const startScreen=document.getElementById('start-screen');
+const endScreen=document.getElementById('end-screen');
+const flashEl=document.getElementById('flash');
+
+let width, height;
+let fireflies=[], particles=[];
+let score=0, lives=5, combo=1, lastCatch=0, comboTimer=null;
+let gameRunning=false, difficulty=1, spawnTimer=0;
+let gameTime=30, gameTimer=null, highScore=0;
+let audioCtx=null, musicGain=null;
+
+// -------------------------------------------------
+// Audio helpers
+function initAudio(){
+  if(audioCtx)return;
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  musicGain=audioCtx.createGain();
+  musicGain.gain.value=0.3;
+  musicGain.connect(audioCtx.destination);
+}
+function playNote(freq,dur=0.3,type='triangle',vol=0.15){
+  if(!audioCtx)return;
+  const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();
+  filter.type='lowpass';filter.frequency.value=2000;
+  osc.type=type;osc.frequency.value=freq;
+  gain.gain.setValueAtTime(0,audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(vol,audioCtx.currentTime+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+  osc.connect(filter);filter.connect(gain);gain.connect(musicGain);
+  osc.start();osc.stop(audioCtx.currentTime+dur);
+}
+function playSparkle(bonus){
+  const base=bonus?420:400;
+  playNote(base,0.15,'sine',0.2);
+  setTimeout(()=>playNote(base*1.5,0.1,'sine',0.15),50);
+  if(bonus)setTimeout(()=>playNote(base*2,0.1,'sine',0.1),100);
+}
+function playMiss(){playNote(200,0.3,'triangle',0.1);}
+function playCombo(){playNote(600,0.3,'square',0.2);}
+function playHighCombo(){playNote(800,0.3,'sawtooth',0.3);}
+function playPad(){/*simple pad loop for ambience*/}
+
+// -------------------------------------------------
+// Resize
+function resize(){
+  width=canvas.width=window.innerWidth;
+  height=canvas.height=window.innerHeight;
+  // rebuild lives hearts
+  livesEl.innerHTML='';
+  for(let i=0;i<5;i++){
+    const h=document.createElement('div');h.className='heart';livesEl.appendChild(h);
+  }
+}
+resize();window.addEventListener('resize',resize);
+
+// -------------------------------------------------
+// Firefly class
+class Firefly{
+  constructor(){
+    this.reset();
+  }
+  reset(){
+    const m=60;
+    this.x=m+Math.random()*(width-2*m);
+    this.y=m+Math.random()*(height-2*m);
+    this.radius=18+Math.random()*10;
+    this.phase=Math.random()*Math.PI*2;
+    this.speed=0.015+Math.random()*0.015+difficulty*0.002;
+    this.lifetime=0;
+    this.maxLife=200-difficulty*5;
+    this.maxLife=Math.max(this.maxLife,100);
+    this.caught=false;this.missed=false;this.fadeOut=0;
+    this.driftX=(Math.random()-0.5)*0.4;
+    this.driftY=(Math.random()-0.5)*0.4;
+    this.isBonus=Math.random()<0.15;
+    this.color=this.isBonus?{r:100,g:180,b:255}:{r:212,g:165,b:116};
+    this.points=this.isBonus?3:1;
+  }
+  get brightness(){
+    if(this.caught||this.missed)return 0;
+    const cycle=Math.sin(this.phase)*0.5+0.5;
+    const lifeFade=this.lifetime<20?this.lifetime/20:
+      this.lifetime>this.maxLife-30?(this.maxLife-this.lifetime)/30:1;
+    return cycle*lifeFade;
+  }
+  get isGlowing(){return this.brightness>0.3;}
+  update(){
+    if(this.caught){this.fadeOut+=0.1;return this.fadeOut<1;}
+    if(this.missed){this.fadeOut+=0.05;return this.fadeOut<1;}
+    this.phase+=this.speed;this.lifetime++;this.x+=this.driftX;this.y+=this.driftY;
+    if(this.x<40||this.x>width-40)this.driftX*=-1;
+    if(this.y<80||this.y>height-40)this.driftY*=-1;
+    if(this.lifetime>=this.maxLife){this.missed=true;}
+    return true;
+  }
+  draw(){
+    const b=this.brightness;
+    const {r,g,b:blue}=this.color;
+    if(this.caught){
+      const p=this.fadeOut;const rsz=this.radius+p*50;const a=(1-p)*0.8;
+      ctx.beginPath();ctx.arc(this.x,this.y,rsz,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${blue},${a*0.3})`;ctx.fill();
+      for(let i=0;i<8;i++){
+        const ang=(i/8)*Math.PI*2+p*3;const dist=p*60;
+        const sx=this.x+Math.cos(ang)*dist;const sy=this.y+Math.sin(ang)*dist;
+        ctx.beginPath();ctx.arc(sx,sy,3*(1-p),0,Math.PI*2);
+        ctx.fillStyle=`rgba(${r},${g},${blue},${a})`;ctx.fill();
+      }
+      return;
+    }
+    if(this.missed){
+      const a=(1-this.fadeOut)*0.3;
+      ctx.beginPath();ctx.arc(this.x,this.y,this.radius*(1-this.fadeOut*0.5),0,Math.PI*2);
+      ctx.fillStyle=`rgba(100,80,60,${a})`;ctx.fill();return;
+    }
+    const glowSize=this.radius*(2+b);
+    const grad=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,glowSize);
+    grad.addColorStop(0,`rgba(${r},${g},${blue},${b*0.8})`);
+    grad.addColorStop(0.3,`rgba(${r},${g},${blue},${b*0.3})`);
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.beginPath();ctx.arc(this.x,this.y,glowSize,0,Math.PI*2);
+    ctx.fillStyle=grad;ctx.fill();
+    ctx.beginPath();ctx.arc(this.x,this.y,this.radius*(0.3+b*0.3),0,Math.PI*2);
+    ctx.fillStyle=`rgba(${r+40},${g+40},${blue+40},${0.2+b*0.8})`;ctx.fill();
+  }
+  contains(x,y){const dx=x-this.x,dy=y-this.y;return dx*dx+dy*dy<(this.radius+40)**2;}
+}
+
+// -------------------------------------------------
+// Stars for background
+class Star{constructor(){this.x=Math.random()*width;this.y=Math.random()*height;this.size=Math.random()*1.5;this.twinkle=Math.random()*Math.PI*2;this.speed=0.01+Math.random()*0.02;}
+  update(){this.twinkle+=this.speed;}
+  draw(){const a=0.3+Math.sin(this.twinkle)*0.2;ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fillStyle=`rgba(200,200,220,${a})`;ctx.fill();}
+}
+const stars=Array.from({length:50},()=>new Star());
+
+// -------------------------------------------------
+// Game logic
+function spawnFirefly(){
+  const max=4+Math.floor(difficulty);
+  if(fireflies.length<max)fireflies.push(new Firefly());
+}
+function loseLife(){
+  lives--;const hearts=document.querySelectorAll('.heart');
+  if(hearts[lives])hearts[lives].classList.add('lost');
+  document.body.classList.add('shake');setTimeout(()=>document.body.classList.remove('shake'),300);
+  playMiss();
+  if(lives<=0)endGame();
+}
+function addScore(points,bonus){
+  score+=points;scoreEl.textContent=score;
+  difficulty=1+Math.floor(score/10)*0.3;
+  playSparkle(bonus);
+}
+function handleTap(x,y){
+  if(!gameRunning)return;
+  let hit=false;
+  for(const f of fireflies){
+    if(f.caught||f.missed)continue;
+    if(f.contains(x,y)){
+      if(f.isGlowing){
+        f.caught=true;
+        addScore(f.points,f.isBonus);
+        // combo logic
+        const now=Date.now();
+        if(now-lastCatch<=1000){combo++;}else{combo=1;}
+        lastCatch=now;
+        comboEl.textContent=`Combo: ${combo}x`;comboEl.classList.add('show');
+        if(comboTimer){clearTimeout(comboTimer);}
+        comboTimer=setTimeout(()=>comboEl.classList.remove('show'),2000);
+        if(combo>1)playCombo();
+        if(combo>5)playHighCombo();
+        flashEffect();
+        // particles
+        for(let i=0;i<12;i++){
+          particles.push({x:f.x,y:f.y,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*6,life:1,color:f.color});
+        }
+      }else{f.missed=true;loseLife();}
+      hit=true;break;
+    }
+  }
+  if(!hit){
+    particles.push({x,y, vx:0, vy:-1, life:0.4, color:{r:80,g:60,b:50}});
+  }
+}
+function flashEffect(){
+  flashEl.style.opacity=.4;
+  setTimeout(()=>{flashEl.style.opacity=0;},150);
+}
+function update(){
+  stars.forEach(s=>s.update());
+  if(!gameRunning)return;
+  spawnTimer++;const rate=Math.max(60-difficulty*5,30);
+  if(spawnTimer>=rate){spawnFirefly();spawnTimer=0;}
+  fireflies=fireflies.filter(f=>f.update());
+  particles=particles.filter(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.vx*=0.98;p.life-=0.02;return p.life>0;
+  });
+}
+function draw(){
+  ctx.fillStyle='#0a0a12';ctx.fillRect(0,0,width,height);
+  stars.forEach(s=>s.draw());fireflies.forEach(f=>f.draw());
+  particles.forEach(p=>{
+    const {r,g,b}=p.color;
+    ctx.beginPath();ctx.arc(p.x,p.y,3*p.life,0,Math.PI*2);
+    ctx.fillStyle=`rgba(${r},${g},${b},${p.life})`;ctx.fill();
+  });
+}
+function gameLoop(){update();draw();requestAnimationFrame(gameLoop);}
+gameLoop();
+function startGame(){
+  initAudio();startScreen.style.display='none';endScreen.style.display='none';
+  fireflies=[];particles=[];score=0;lives=5;combo=1;lastCatch=0;difficulty=1;spawnTimer=0;gameTime=30;gameRunning=true;
+  scoreEl.textContent='0';timerEl.textContent='30';comboEl.textContent='Combo: 1x';comboEl.classList.remove('show');
+  document.querySelectorAll('.heart').forEach(h=>h.classList.remove('lost'));
+  for(let i=0;i<3;i++)setTimeout(()=>spawnFirefly(),i*300);
+  gameTimer=setInterval(()=>{gameTime--;timerEl.textContent=gameTime; if(gameTime<=0)endGame();},1000);
+}
+function endGame(){
+  gameRunning=false;clearInterval(gameTimer);flashEl.style.opacity=0;
+  const isNew=score>highScore; if(isNew){highScore=score;localStorage.setItem('firefly-high',highScore);}
+  const finalScore=document.getElementById('final-score');const highScoreEl=document.getElementById('high-score');
+  finalScore.textContent=score;highScoreEl.textContent=isNew?'✦ new best!':'best: '+highScore;
+  if(isNew){finalScore.classList.add('new-best');highScoreEl.classList.add('new-best');}
+  else{finalScore.classList.remove('new-best');highScoreEl.classList.remove('new-best');}
+  finalScore.style.animation='none';highScoreEl.style.animation='none';endScreen.querySelector('button').style.animation='none';
+  setTimeout(()=>{finalScore.style.animation='';highScoreEl.style.animation='';endScreen.querySelector('button').style.animation='';endScreen.style.display='flex';},100);
+}
+
+// -------------------------------------------------
+// Events
+canvas.addEventListener('click',e=>handleTap(e.clientX,e.clientY));
+canvas.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];handleTap(t.clientX,t.clientY);},{passive:false});
+document.getElementById('start-btn').addEventListener('click',startGame);
+document.getElementById('restart-btn').addEventListener('click',startGame);
+
+// high score init
+highScore=parseInt(localStorage.getItem('firefly-high')||'0');
+</script>
+</body>
+</html>

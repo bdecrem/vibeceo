@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RHYTHM FIREFLY</title>
+<style>
+  *, *::before, *::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0a0a12;font-family:sans-serif}
+  #game{position:absolute;top:0;left:0;width:100%;height:100%}
+  #ui{position:absolute;top:0;left:0;width:100%;color:#ec4899;pointer-events:none}
+  #ui .row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px}
+  #score,#timer,#streak{font-size:18px;text-shadow:0 0 8px #ec4899}
+  #lives{display:flex;gap:4px}
+  .heart{width:24px;height:24px;clip-path:url(#heart);fill:#D4A574;filter:drop-shadow(0 0 4px #D4A574)}
+  .lost{opacity:.2}
+  #beat-indicator{position:absolute;top:0;left:0;height:6px;background:#222;overflow:hidden}
+  #beat-bar{height:100%;background:#ec4899;transition:width .05s linear}
+  #start-screen,#end-screen{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(10,10,18,.95);display:flex;flex-direction:column;justify-content:center;align-items:center;color:#ec4899;text-align:center;padding:20px}
+  #start-screen button,#end-screen button{background:transparent;border:2px solid #ec4899;color:#ec4899;padding:12px 24px;margin-top:20px;font-size:16px;cursor:pointer;transition:.3s}
+  #start-screen button:hover,#end-screen button:hover{background:#ec4899;color:#0a0a12}
+  #final-score{font-size:80px;margin:20px 0;text-shadow:0 0 20px #ec4899}
+  #high-score{font-size:18px}
+  .shake{animation:shake .3s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  /* Heart shape */
+  svg{display:none}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="beat-indicator"><div id="beat-bar"></div></div>
+<div id="ui">
+  <div class="row">
+    <div id="score">0</div>
+    <div id="timer">30</div>
+    <div id="streak">x1</div>
+  </div>
+  <div class="row">
+    <div id="lives"></div>
+  </div>
+</div>
+<div id="start-screen">
+  <h1>RHYTHM FIREFLY</h1>
+  <p>Tap the glowing fireflies on the beat!</p>
+  <button id="start-btn">START</button>
+</div>
+<div id="end-screen">
+  <h2>Game Over</h2>
+  <div id="final-score">0</div>
+  <div id="high-score">best: 0</div>
+  <button id="restart-btn">RESTART</button>
+</div>
+<svg viewBox="0 0 32 32"><defs><clipPath id="heart"><path d="M16 28s-7.5-6-10-9-4-4-4-8 2-6 6-6 6 3 6 3 6-3 6-3 6 3 6 3 4 4 4 8-2 4-4 9-10 9-10 9z"/></clipPath></defs></svg>
+<script>
+/* ====================== CONFIG ====================== */
+const BPM = 120;                    // Beats per minute
+const BEAT_DURATION = 600 / BPM;    // ms per beat (120 BPM = 500ms)
+const PERFECT_WINDOW = 70;          // ms window for perfect
+const GOOD_WINDOW = 150;            // ms window for good
+const MAX_LIVES = 5;
+const GAME_LENGTH = 30;             // seconds
+const ACCENT = '#ec4899';
+const AMBER = {r:212,g:165,b:116};
+const GOLD = {r:255,g:215,b:0};
+const BONUS_CHANCE = 0.15;
+
+/* ====================== AUDIO ====================== */
+let audioCtx, mainGain;
+function initAudio(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  mainGain = audioCtx.createGain();
+  mainGain.gain.value = 0.3;
+  mainGain.connect(audioCtx.destination);
+}
+function playSound(freq, dur=0.1, type='sine', vol=0.1){
+  if(!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  osc.type = type;
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  osc.connect(gain);
+  gain.connect(mainGain);
+  osc.start();
+  osc.stop(audioCtx.currentTime + dur);
+}
+function beatClick(){
+  playSound(300,0.05,'triangle',0.15);
+}
+function tapPerfect(){ playSound(600,0.05,'triangle',0.2);}
+function tapGood(){ playSound(400,0.05,'sine',0.15);}
+function tapMiss(){ playSound(200,0.05,'sawtooth',0.1);}
+
+/* ====================== CANVAS ====================== */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let width, height;
+function resize(){
+  width = canvas.width = window.innerWidth;
+  height = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ====================== UI ====================== */
+const scoreEl = document.getElementById('score');
+const timerEl = document.getElementById('timer');
+const streakEl = document.getElementById('streak');
+const livesEl = document.getElementById('lives');
+function updateLives(lives){
+  livesEl.innerHTML = '';
+  for(let i=0;i<MAX_LIVES;i++){
+    const heart = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    heart.setAttribute('width',24);
+    heart.setAttribute('height',24);
+    heart.innerHTML = `<use href="#heart" clipPath="url(#heart)" style="fill:#D4A574;${i<lives?'':'filter:opacity(0.2)'}"/>`;
+    livesEl.appendChild(heart);
+  }
+}
+updateLives(MAX_LIVES);
+
+/* ====================== GAME STATE ====================== */
+let fireflies = [];
+let score = 0;
+let lives = MAX_LIVES;
+let streak = 0;
+let multiplier = 1;
+let gameRunning = false;
+let startTime = 0;
+let lastBeatTime = 0;
+let gameTimer = null;
+let highScore = parseInt(localStorage.getItem('rhythm-firefly-high')||'0');
+
+const startScreen = document.getElementById('start-screen');
+const endScreen = document.getElementById('end-screen');
+const finalScoreEl = document.getElementById('final-score');
+const highScoreEl = document.getElementById('high-score');
+const beatBar = document.getElementById('beat-bar');
+
+/* ====================== FIREFLY CLASS ====================== */
+class Firefly{
+  constructor(){
+    this.reset();
+  }
+  reset(){
+    const margin = 60;
+    this.x = margin + Math.random()*(width-2*margin);
+    this.y = margin + Math.random()*(height-2*margin);
+    this.radius = 18 + Math.random()*10;
+    this.isBonus = Math.random()<BONUS_CHANCE;
+    this.color = this.isBonus?GOLD:AMBER;
+    this.points = this.isBonus?3:1;
+    this.age = 0; // ms
+    this.maxAge = 2000; // 2s lifespan
+    this.hit = false;
+  }
+  contains(x,y){
+    const dx=x-this.x, dy=y-this.y;
+    return dx*dx+dy*dy< (this.radius+20)*(this.radius+20);
+  }
+  update(dt){
+    this.age += dt;
+    if(this.hit) return false;
+    if(this.age > this.maxAge) return false;
+    return true;
+  }
+  draw(){
+    const phase = Math.sin((this.age/BEAT_DURATION)*Math.PI);
+    const bright = Math.max(0, phase);
+    const glowSize = this.radius*(1+bright*1.5);
+    const {r,g,b} = this.color;
+    const grad = ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,glowSize);
+    grad.addColorStop(0,`rgba(${r},${g},${b},${bright*0.8})`);
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,glowSize,0,2*Math.PI);
+    ctx.fill();
+    if(!this.hit){
+      ctx.fillStyle=`rgba(${r+30},${g+30},${b+30},${0.4+bright*0.6})`;
+      ctx.beginPath();
+      ctx.arc(this.x,this.y,this.radius,0,2*Math.PI);
+      ctx.fill();
+    }
+  }
+}
+
+/* ====================== GAME LOOP ====================== */
+let lastFrame = performance.now();
+function gameLoop(now){
+  const dt = now-lastFrame;
+  lastFrame=now;
+  // update beat
+  if(now - lastBeatTime >= BEAT_DURATION){
+    lastBeatTime += BEAT_DURATION;
+    beatClick();
+    // spawn firefly on each beat
+    if(fireflies.length<8) fireflies.push(new Firefly());
+  }
+  const beatProgress = (now - lastBeatTime)/BEAT_DURATION;
+  beatBar.style.width = `${beatProgress*100}%`;
+  // update fireflies
+  fireflies = fireflies.filter(f=>f.update(dt));
+  // draw
+  ctx.fillStyle='#0a0a12';
+  ctx.fillRect(0,0,width,height);
+  fireflies.forEach(f=>f.draw());
+  // schedule next
+  requestAnimationFrame(gameLoop);
+}
+requestAnimationFrame(gameLoop);
+
+/* ====================== INPUT ====================== */
+function handleTap(e){
+  if(!gameRunning) return;
+  const x = e.clientX, y = e.clientY;
+  const now = performance.now();
+  let hitFly = null;
+  for(const f of fireflies){
+    if(f.contains(x,y) && !f.hit){
+      hitFly = f;
+      break;
+    }
+  }
+  if(hitFly){
+    // determine timing
+    const diff = Math.abs(now - (lastBeatTime + Math.round((now-lastBeatTime)/BEAT_DURATION)*BEAT_DURATION));
+    const win = diff <= PERFECT_WINDOW? 'perfect' : diff <= GOOD_WINDOW? 'good' : 'miss';
+    hitFly.hit = true;
+    if(win==='perfect'){
+      const pts = hitFly.points * multiplier;
+      score += pts;
+      scoreEl.textContent = score;
+      multiplier = 1 + Math.floor(streak*0.1);
+      streak++;
+      streakEl.textContent = `x${multiplier.toFixed(1)}`;
+      tapPerfect();
+    }else if(win==='good'){
+      const pts = hitFly.points * 0.5;
+      score += Math.floor(pts);
+      scoreEl.textContent = score;
+      streak=0;
+      multiplier=1;
+      streakEl.textContent = `x${multiplier}`;
+      tapGood();
+    }else{
+      miss();
+      tapMiss();
+    }
+  }else{
+    miss();
+    tapMiss();
+  }
+}
+function miss(){
+  lives--;
+  updateLives(lives);
+  if(lives<=0) endGame();
+}
+canvas.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const touch=e.touches[0];
+  handleTap({clientX:touch.clientX,clientY:touch.clientY});
+},{passive:false});
+canvas.addEventListener('mousedown', handleTap);
+
+/* ====================== GAME CONTROL ====================== */
+function resetGame(){
+  fireflies=[];
+  score=0; lives=MAX_LIVES; streak=0; multiplier=1;
+  scoreEl.textContent='0';
+  timerEl.textContent=GAME_LENGTH;
+  streakEl.textContent='x1';
+  updateLives(lives);
+}
+function startGame(){
+  initAudio();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  startScreen.style.display='none';
+  endScreen.style.display='none';
+  resetGame();
+  gameRunning=true;
+  startTime=performance.now();
+  lastBeatTime=startTime;
+  // timer
+  gameTimer=setInterval(()=>{
+    const elapsed=Math.floor((performance.now()-startTime)/1000);
+    const rem=GAME_LENGTH-elapsed;
+    timerEl.textContent=rem;
+    if(rem<=0) endGame();
+  },1000);
+}
+function endGame(){
+  gameRunning=false;
+  clearInterval(gameTimer);
+  const isNew=score>highScore;
+  if(isNew){highScore=score; localStorage.setItem('rhythm-firefly-high',score);}
+  finalScoreEl.textContent=score;
+  highScoreEl.textContent=isNew?'✦ NEW BEST!':'best: '+highScore;
+  endScreen.style.display='flex';
+}
+
+document.getElementById('start-btn').addEventListener('click',startGame);
+document.getElementById('restart-btn').addEventListener('click',startGame);
+</script>
+</body>
+</html>

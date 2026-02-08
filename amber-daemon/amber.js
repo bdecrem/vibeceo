@@ -69,15 +69,13 @@ function loadIdentity() {
   return identity;
 }
 
-// Load daily logs (today + yesterday) for recent context
+// Load daily logs (last 7 days) for recent context
 function loadDailyLogs() {
   if (!existsSync(MEMORY_DIR)) return '';
 
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-
   let logs = '';
-  for (const date of [yesterday, today]) {
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
     const path = join(MEMORY_DIR, `${date}.md`);
     if (existsSync(path)) {
       logs += `\n\n## Daily Log: ${date}\n\n` + readFileSync(path, 'utf-8');
@@ -248,7 +246,12 @@ You have these tools available:
 - \`supabase_query\` — Query amber_state table (creations, voice sessions, etc.)
 - \`git_log\` — Recent git activity
 - \`memory_append\` — Save notes to today's daily log (persists across sessions)
-- \`memory_search\` — Search your memory files for past context
+- \`memory_search\` — Semantic search across MEMORY.md and daily logs (finds concepts, not just keywords)
+- \`memory_list\` — Browse all memory files (table of contents)
+- \`session_list\` — List archived conversation sessions
+- \`session_search\` — Semantic search across past conversation sessions
+- \`send_email\` — Send email from ambercc@intheamber.com (requires Bart's approval first)
+- \`mark_email_handled\` — Mark a cc_inbox email as handled after replying/skipping
 
 ## Key Paths
 

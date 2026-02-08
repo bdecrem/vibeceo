@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Rhythm Tap</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#1a1a2e;overflow:hidden;font-family:-apple-system, sans-serif;touch-action:none;}
+canvas{display:block;}
+#ui{position:fixed;top:20px;left:20px;color:#ff6b35;font-size:24px;z-index:10;}
+#score{font-weight:bold;}
+#game-over{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:none;flex-direction:column;justify-content:center;align-items:center;color:white;text-align:center;z-index:100;}
+#game-over.show{display:flex;}
+#game-over h1{font-size:48px;margin-bottom:20px;}
+#game-over .final-score{font-size:32px;margin-bottom:30px;color:#ff6b35;}
+#restart{padding:15px 40px;font-size:20px;background:#ff6b35;color:#1a1a2e;border:none;border-radius:8px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="ui"><span id="score">0</span></div>
+<canvas id="c"></canvas>
+<div id="game-over">
+  <h1>GAME OVER</h1>
+  <div class="final-score">Score: <span id="final-score">0</span></div>
+  <button id="restart">TAP TO RESTART</button>
+</div>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score');
+const gameOverEl=document.getElementById('game-over');
+const finalScoreEl=document.getElementById('final-score');
+const restartBtn=document.getElementById('restart');
+
+let W,H;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight;}
+resize();window.onresize=resize;
+
+let score=0;
+let gameRunning=true;
+
+// Target zone
+const zone={x:0,y:0,r:50,color:'#ff6b35'};
+function updateZone(){zone.x=W/2;zone.y=H-80;}
+
+// Objects
+let objects=[];
+let spawnTimer=0;
+let spawnInterval=1200; // ms
+let objectSpeed=2;
+let difficultyTimer=0;
+
+// Start game
+function startGame(){
+  score=0;
+  scoreEl.textContent='0';
+  objects=[];
+  gameRunning=true;
+  spawnTimer=0;
+  spawnInterval=1200;
+  objectSpeed=2;
+  difficultyTimer=0;
+  gameOverEl.classList.remove('show');
+  updateZone();
+}
+
+// Spawn new object
+function spawnObject(){
+  const x=Math.random()*W;
+  const y=-20;
+  const r=20;
+  objects.push({x,y,r,hit:false});
+}
+
+// Update game state
+function update(dt){
+  if(!gameRunning)return;
+  spawnTimer+=dt;
+  if(spawnTimer>=spawnInterval){
+    spawnObject();
+    spawnTimer-=spawnInterval;
+  }
+  difficultyTimer+=dt;
+  if(difficultyTimer>=10000){
+    difficultyTimer-=10000;
+    if(spawnInterval>400)spawnInterval-=100;
+    objectSpeed+=0.5;
+  }
+  objects.forEach(o=>o.y+=objectSpeed);
+  // Check for missed objects
+  for(let i=objects.length-1;i>=0;i--){
+    const o=objects[i];
+    if(o.y>H+50){
+      if(!o.hit)endGame();
+      objects.splice(i,1);
+    }
+  }
+}
+
+// Draw everything
+function draw(){
+  ctx.fillStyle='#1a1a2e';
+  ctx.fillRect(0,0,W,H);
+  // Draw zone
+  ctx.fillStyle=zone.color;
+  ctx.beginPath();ctx.arc(zone.x,zone.y,zone.r,0,Math.PI*2);ctx.fill();
+  // Draw objects
+  objects.forEach(o=>{
+    ctx.fillStyle='#f7c59f';
+    ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,Math.PI*2);ctx.fill();
+  });
+}
+
+// End game
+function endGame(){
+  gameRunning=false;
+  finalScoreEl.textContent=score;
+  gameOverEl.classList.add('show');
+}
+
+// Restart handler
+restartBtn.addEventListener('click',startGame);
+
+// Touch handling
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  if(!gameRunning)return;
+  const touch=e.touches[0];
+  const tx=touch.clientX;
+  // Check if any object is in zone
+  let hitObj=null;
+  for(const o of objects){
+    const dx=o.x- zone.x;
+    const dy=o.y- zone.y;
+    const dist=Math.hypot(dx,dy);
+    if(dist<=zone.r+o.r){
+      hitObj=o;break;
+    }
+  }
+  if(hitObj){
+    hitObj.hit=true;
+    score+=10;
+    scoreEl.textContent=score;
+    // Remove hit object
+    objects=objects.filter(o=>o!==hitObj);
+  }else{
+    endGame();
+  }
+}, {passive:false});
+
+// Game loop
+let lastTime=performance.now();
+function loop(now){
+  const dt=now-lastTime;
+  lastTime=now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

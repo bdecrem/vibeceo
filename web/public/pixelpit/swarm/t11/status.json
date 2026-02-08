@@ -1,0 +1,289 @@
+{
+  "started": "2026-01-30T07:17:33.916100",
+  "completed": null,
+  "phase": "production",
+  "winner": 0,
+  "winner_reason": "",
+  "production_status": "done_max_iterations",
+  "agents": [
+    {
+      "id": 0,
+      "maker": "Amy",
+      "avatar": "/pixelpit/amy.png",
+      "mechanic": "TAP TIMING",
+      "mechanic_desc": "Tap at the right moment. Too early or too late = fail.",
+      "theme": "NEON",
+      "theme_colors": [
+        "#00ff88",
+        "#ff00ff",
+        "#00ffff"
+      ],
+      "theme_bg": "#0a0a0f",
+      "style": "JUICY",
+      "style_desc": "Lots of feedback: screen shake, particles, sound on every action",
+      "status": "done",
+      "time": 39.8,
+      "tokens": 3793,
+      "url": "game_0.html",
+      "screenshot": "game_0.png",
+      "scores": {
+        "playable": 6,
+        "mobile": 8,
+        "polish": 5,
+        "fun": 4,
+        "verdict": "NEEDS_WORK"
+      }
+    },
+    {
+      "id": 1,
+      "maker": "Bob",
+      "avatar": "/pixelpit/bob.png",
+      "mechanic": "HOLD & RELEASE",
+      "mechanic_desc": "Hold to charge, release at the right moment.",
+      "theme": "PASTEL",
+      "theme_colors": [
+        "#ffb3ba",
+        "#baffc9",
+        "#bae1ff"
+      ],
+      "theme_bg": "#fef6e4",
+      "style": "ZEN",
+      "style_desc": "Calm, no pressure, relaxing pace",
+      "status": "done",
+      "time": 41.7,
+      "tokens": 4000,
+      "url": "game_1.html",
+      "screenshot": "game_1.png",
+      "scores": {
+        "playable": 0,
+        "mobile": 0,
+        "polish": 0,
+        "fun": 0,
+        "verdict": "BROKEN"
+      }
+    },
+    {
+      "id": 2,
+      "maker": "Chet",
+      "avatar": "/pixelpit/chet.png",
+      "mechanic": "RHYTHM TAP",
+      "mechanic_desc": "Tap in rhythm with visual or audio cues.",
+      "theme": "RETRO",
+      "theme_colors": [
+        "#ff6b35",
+        "#f7c59f",
+        "#2ec4b6"
+      ],
+      "theme_bg": "#1a1a2e",
+      "style": "FRANTIC",
+      "style_desc": "Fast-paced, things speed up, tension builds",
+      "status": "done",
+      "time": 29.9,
+      "tokens": 2811,
+      "url": "game_2.html",
+      "screenshot": "game_2.png",
+      "scores": {
+        "playable": 4,
+        "mobile": 8,
+        "polish": 6,
+        "fun": 5,
+        "verdict": "NEEDS_WORK"
+      }
+    },
+    {
+      "id": 3,
+      "maker": "Dale",
+      "avatar": "/pixelpit/dale.png",
+      "mechanic": "DODGE",
+      "mechanic_desc": "Move to avoid obstacles coming at you.",
+      "theme": "MINIMAL",
+      "theme_colors": [
+        "#ffffff",
+        "#888888"
+      ],
+      "theme_bg": "#000000",
+      "style": "SATISFYING",
+      "style_desc": "Focus on that perfect moment: the click, the landing, the combo",
+      "status": "done",
+      "time": 36.4,
+      "tokens": 3444,
+      "url": "game_3.html",
+      "screenshot": "game_3.png",
+      "scores": {
+        "playable": 3,
+        "mobile": 7,
+        "polish": 4,
+        "fun": 3,
+        "verdict": "NEEDS_WORK"
+      }
+    },
+    {
+      "id": 4,
+      "maker": "Earl",
+      "avatar": "/pixelpit/earl.png",
+      "mechanic": "WEAVE",
+      "mechanic_desc": "Navigate through gaps in barriers.",
+      "theme": "CANDY",
+      "theme_colors": [
+        "#ff6b6b",
+        "#ffd93d",
+        "#6bcb77"
+      ],
+      "theme_bg": "#fff5e4",
+      "style": "CUTE",
+      "style_desc": "Adorable elements, friendly faces, happy sounds",
+      "status": "done",
+      "time": 20.0,
+      "tokens": 2150,
+      "url": "game_4.html",
+      "screenshot": "game_4.png",
+      "scores": {
+        "playable": 3,
+        "mobile": 6,
+        "polish": 4,
+        "fun": 4,
+        "verdict": "NEEDS_WORK"
+      }
+    },
+    {
+      "id": 5,
+      "maker": "Fran",
+      "avatar": "/pixelpit/fran.png",
+      "mechanic": "ESCAPE",
+      "mechanic_desc": "Outrun something chasing you.",
+      "theme": "SPACE",
+      "theme_colors": [
+        "#a855f7",
+        "#3b82f6",
+        "#ffffff"
+      ],
+      "theme_bg": "#030014",
+      "style": "CLEAN",
+      "style_desc": "Minimal UI, precise shapes, geometric beauty",
+      "status": "done",
+      "time": 32.6,
+      "tokens": 3074,
+      "url": "game_5.html",
+      "screenshot": "game_5.png",
+      "scores": {
+        "playable": 3,
+        "mobile": 6,
+        "polish": 4,
+        "fun": 3,
+        "verdict": "NEEDS_WORK"
+      }
+    },
+    {
+      "id": 6,
+      "maker": "Gus",
+      "avatar": "/pixelpit/gus.png",
+      "mechanic": "CATCH",
+      "mechanic_desc": "Catch falling objects. Miss = lose points or life.",
+      "theme": "FOREST",
+      "theme_colors": [
+        "#84cc16",
+        "#22c55e",
+        "#f59e0b"
+      ],
+      "theme_bg": "#0f1f0f",
+      "style": "CHAOTIC",
+      "style_desc": "Lots happening, particles everywhere, sensory overload",
+      "status": "done",
+      "time": 21.8,
+      "tokens": 2010,
+      "url": "game_6.html",
+      "screenshot": "game_6.png",
+      "scores": {
+        "playable": 2,
+        "mobile": 3,
+        "polish": 2,
+        "fun": 1,
+        "verdict": "BROKEN"
+      }
+    },
+    {
+      "id": 7,
+      "maker": "Hank",
+      "avatar": "/pixelpit/hank.png",
+      "mechanic": "COLLECT",
+      "mechanic_desc": "Gather items while avoiding bad ones.",
+      "theme": "SUNSET",
+      "theme_colors": [
+        "#f97316",
+        "#ec4899",
+        "#8b5cf6"
+      ],
+      "theme_bg": "#1f1020",
+      "style": "RETRO",
+      "style_desc": "Chunky pixels, limited colors, 8-bit sounds",
+      "status": "done",
+      "time": 23.8,
+      "tokens": 2263,
+      "url": "game_7.html",
+      "screenshot": "game_7.png",
+      "scores": {
+        "playable": 3,
+        "mobile": 6,
+        "polish": 4,
+        "fun": 3,
+        "verdict": "NEEDS_WORK"
+      }
+    },
+    {
+      "id": 8,
+      "maker": "Ida",
+      "avatar": "/pixelpit/ida.png",
+      "mechanic": "VACUUM",
+      "mechanic_desc": "Absorb nearby objects by getting close to them.",
+      "theme": "OCEAN",
+      "theme_colors": [
+        "#06b6d4",
+        "#0ea5e9",
+        "#ffffff"
+      ],
+      "theme_bg": "#0c1929",
+      "style": "SMOOTH",
+      "style_desc": "Fluid animations, easing on everything, buttery movement",
+      "status": "done",
+      "time": 21.8,
+      "tokens": 2365,
+      "url": "game_8.html",
+      "screenshot": "game_8.png",
+      "scores": {
+        "playable": 1,
+        "mobile": 2,
+        "polish": 1,
+        "fun": 1,
+        "verdict": "BROKEN"
+      }
+    },
+    {
+      "id": 9,
+      "maker": "Joan",
+      "avatar": "/pixelpit/joan.png",
+      "mechanic": "AIM & SHOOT",
+      "mechanic_desc": "Aim and fire at targets. Accuracy matters.",
+      "theme": "AMBER",
+      "theme_colors": [
+        "#ffd700",
+        "#f59e0b",
+        "#2d9596"
+      ],
+      "theme_bg": "#0d0d0d",
+      "style": "PUNCHY",
+      "style_desc": "Snappy feedback, instant response, impactful",
+      "status": "done",
+      "time": 17.2,
+      "tokens": 1865,
+      "url": "game_9.html",
+      "screenshot": "game_9.png",
+      "scores": {
+        "playable": 6,
+        "mobile": 7,
+        "polish": 4,
+        "fun": 5,
+        "verdict": "NEEDS_WORK"
+      }
+    }
+  ]
+}

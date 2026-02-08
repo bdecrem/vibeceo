@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>COLOR MATCH FIREFLY</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:#0a0a12;
+    overflow:hidden;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+    font-family:'Courier New',monospace;
+  }
+  #game{position:fixed;top:0;left:0;width:100%;height:100%;}
+  #ui{
+    position:fixed;top:0;left:0;width:100%;height:60px;
+    pointer-events:none;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 20px;
+    z-index:10;
+  }
+  #target{
+    width:80px;height:80px;
+    border-radius:50%;
+    border:4px solid #ff6b6b;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 20px rgba(255,107,107,0.6);
+  }
+  #target.flash{
+    animation:flash 0.3s ease-in-out 3;
+  }
+  @keyframes flash{
+    0%,100%{box-shadow:0 0 20px rgba(255,107,107,0.6);}
+    50%{box-shadow:0 0 40px rgba(255,107,107,1);}
+  }
+  #score{color:#FFD700;font-size:24px;text-shadow:0 0 15px rgba(255,215,0,0.6);}
+  #lives{display:flex;gap:6px;}
+  .heart{
+    width:24px;height:24px;
+    background:#FFD700;
+    clip-path:path('M12 24l-1.74-1.6C3.84 14.8 0 11.2 0 6.8 0 3.12 3.12 0 7.2 0 9.4 0 11.2.7 12 2.2 12.8.7 14.6 0 16.8 0 20.88 0 24 3.12 24 6.8c0 4.4-3.84 7.2-9.26 11.8L12 24z');
+    transform:scale(1);
+    transition:transform 0.2s,opacity 0.3s;
+    filter:drop-shadow(0 0 8px rgba(255,215,0,0.5));
+  }
+  .heart.lost{opacity:0.3;transform:scale(0.7);}
+  #start-screen,#end-screen{
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(10,10,18,0.95);
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    z-index:100;
+    color:#FFD700;text-align:center;
+  }
+  #start-screen{display:flex;}
+  #end-screen{display:none;}
+  h1{font-size:48px;margin-bottom:10px;text-shadow:0 0 40px rgba(255,215,0,0.6);}
+  .subtitle{font-size:14px;color:#8B7355;margin-bottom:20px;}
+  .instruction{font-size:13px;color:#6B5344;margin-bottom:20px;line-height:1.5;}
+  button{
+    background:transparent;border:2px solid #FFD700;color:#FFD700;
+    padding:12px 30px;font-size:14px;cursor:pointer;
+    transition:all 0.3s;border-radius:8px;
+  }
+  button:hover{background:#FFD700;color:#0a0a12;}
+  #final-score{font-size:120px;margin:10px 0;text-shadow:0 0 60px rgba(255,215,0,0.8);}
+  #high-score{font-size:18px;color:#8B7355;}
+  .new-best{color:#ff6b6b;text-shadow:0 0 30px rgba(255,107,107,0.6);}
+  #glow{
+    position:fixed;top:50%;left:50%;width:300px;height:300px;
+    transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(255,107,107,0.03) 0%,transparent 70%);
+    pointer-events:none;
+    z-index:1;
+  }
+</style>
+</head>
+<body>
+<div id="glow"></div>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div id="target"></div>
+  <div id="score">0</div>
+  <div id="lives">
+    <div class="heart"></div><div class="heart"></div><div class="heart"></div>
+    <div class="heart"></div><div class="heart"></div>
+  </div>
+</div>
+<div id="start-screen">
+  <h1>COLOR MATCH</h1>
+  <div class="subtitle">tap the right color</div>
+  <div class="instruction">
+    tap the glowing firefly that matches the target<br>
+    30 seconds<br>
+    you have 5 lives
+  </div>
+  <button id="start-btn">BEGIN</button>
+</div>
+<div id="end-screen">
+  <div class="subtitle">time's up</div>
+  <div id="final-score">0</div>
+  <div id="high-score">best: 0</div>
+  <button id="restart-btn">AGAIN</button>
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let width, height;
+  function resize(){width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize);
+
+  // colors
+  const COLOR_MAP = {
+    red:{r:255,g:0,b:0},
+    green:{r:0,g:255,b:0},
+    blue:{r:0,g:0,b:255},
+    yellow:{r:255,g:255,b:0}
+  };
+  const COLORS = Object.keys(COLOR_MAP);
+  let targetIndex = 0;
+  let targetColorName = COLORS[targetIndex];
+  const targetEl = document.getElementById('target');
+  function updateTargetUI(){targetEl.style.background=COLOR_MAP[targetColorName];}
+  updateTargetUI();
+
+  // audio
+  let audioCtx=null,musicGain=null;
+  const NOTES={D4:293.66,E4:329.63,Fs4:369.99,A4:440,B4:493.88};
+  function initAudio(){if(audioCtx)return;audioCtx=new (window.AudioContext||window.webkitAudioContext)();musicGain=audioCtx.createGain();musicGain.gain.value=0.3;musicGain.connect(audioCtx.destination);}
+  function playNote(freq, dur=0.3,type='triangle',vol=0.15){if(!audioCtx)return;const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=2000;osc.type=type;osc.frequency.value=freq;gain.gain.setValueAtTime(0,audioCtx.currentTime);gain.gain.linearRampToValueAtTime(vol,audioCtx.currentTime+0.02);gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);osc.connect(filter);filter.connect(gain);gain.connect(musicGain);osc.start();osc.stop(audioCtx.currentTime+dur);}
+  function playSparkle(){playNote(NOTES.A5,0.15,'sine',0.2);setTimeout(()=>playNote(NOTES.A5*1.5,0.1,'sine',0.15),50);}
+  function playMiss(){playNote(NOTES.D4/2,0.3,'triangle',0.1);}
+  function playBonus(){playNote(NOTES.A4,0.3,'triangle',0.25);}
+
+  // game variables
+  let fireflies=[],particles=[];
+  let score=0,lives=5,difficulty=1;
+  let gameRunning=false,spawnTimer=0,gameTime=30,gameTimer=null,spawnRate=80;
+  let highScore= parseInt(localStorage.getItem('colormatch-high')||'0');
+  let lastColorChange=0,bonusWindow=500;
+
+  // UI elements
+  const scoreEl=document.getElementById('score');
+  const hearts=document.querySelectorAll('.heart');
+  const startScreen=document.getElementById('start-screen');
+  const endScreen=document.getElementById('end-screen');
+  const finalScoreEl=document.getElementById('final-score');
+  const highScoreEl=document.getElementById('high-score');
+
+  // classes
+  class Firefly{
+    constructor(){
+      this.reset();
+    }
+    reset(){
+      const margin=60;
+      this.x=margin+Math.random()*(width-2*margin);
+      this.y=margin+Math.random()*(height-2*margin);
+      this.radius=12+Math.random()*8;
+      this.phase=Math.random()*Math.PI*2;
+      this.speed=0.015+Math.random()*0.015+(difficulty*0.002);
+      this.lifetime=0;
+      this.maxLife=200-(difficulty*5);
+      this.maxLife=Math.max(this.maxLife,100);
+      this.caught=false;
+      this.missed=false;
+      this.fadeOut=0;
+      this.driftX=(Math.random()-0.5)*0.4;
+      this.driftY=(Math.random()-0.5)*0.4;
+      this.colorName=COLORS[Math.floor(Math.random()*COLORS.length)];
+      this.color=COLOR_MAP[this.colorName];
+      this.points=1;
+    }
+    get brightness(){
+      if(this.caught||this.missed)return 0;
+      const cycle=Math.sin(this.phase)*0.5+0.5;
+      const lifeFade=this.lifetime<20?this.lifetime/20:
+        this.lifetime>this.maxLife-30?(this.maxLife-this.lifetime)/30:1;
+      return cycle*lifeFade;
+    }
+    get isGlowing(){return this.brightness>0.3;}
+    update(){
+      if(this.caught){this.fadeOut+=0.1;return this.fadeOut<1;}
+      if(this.missed){this.fadeOut+=0.05;return this.fadeOut<1;}
+      this.phase+=this.speed;this.lifetime++;
+      this.x+=this.driftX;this.y+=this.driftY;
+      if(this.x<40||this.x>width-40)this.driftX*=-1;
+      if(this.y<80||this.y>height-40)this.driftY*=-1;
+      if(this.lifetime>=this.maxLife){this.missed=true;}
+      return true;
+    }
+    draw(){
+      const b=this.brightness;
+      const {r,g,b:bb}=this.color;
+      if(this.caught){
+        const progress=this.fadeOut;
+        const burst=this.radius+progress*50;
+        const alpha=(1-progress)*0.8;
+        ctx.beginPath();ctx.arc(this.x,this.y,burst,0,Math.PI*2);
+        ctx.fillStyle=`rgba(${r},${g},${bb},${alpha*0.3})`;ctx.fill();
+        for(let i=0;i<8;i++){
+          const angle=(i/8)*Math.PI*2+progress*3;
+          const dist=progress*60;
+          const sx=this.x+Math.cos(angle)*dist;
+          const sy=this.y+Math.sin(angle)*dist;
+          ctx.beginPath();ctx.arc(sx,sy,3*(1-progress),0,Math.PI*2);
+          ctx.fillStyle=`rgba(${r},${g},${bb},${alpha})`;ctx.fill();
+        }
+        return;
+      }
+      if(this.missed){
+        const alpha=(1-this.fadeOut)*0.3;
+        ctx.beginPath();ctx.arc(this.x,this.y,this.radius*(1-this.fadeOut*0.5),0,Math.PI*2);
+        ctx.fillStyle=`rgba(100,80,60,${alpha})`;ctx.fill();return;
+      }
+      const glowSize=this.radius*(2+b);
+      const gradient=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,glowSize);
+      gradient.addColorStop(0,`rgba(${r},${g},${bb},${b*0.8})`);
+      gradient.addColorStop(0.3,`rgba(${r},${g},${bb},${b*0.3})`);
+      gradient.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath();ctx.arc(this.x,this.y,glowSize,0,Math.PI*2);
+      ctx.fillStyle=gradient;ctx.fill();
+      ctx.beginPath();ctx.arc(this.x,this.y,this.radius*(0.3+b*0.3),0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r+40},${g+40},${bb+40},${0.2+b*0.8})`;ctx.fill();
+    }
+    contains(px,py){const dx=px-this.x,dy=py-this.y;return dx*dx+dy*dy<(this.radius+40)*(this.radius+40);}
+  }
+
+  // spawn logic
+  function spawnFirefly(){
+    const maxFireflies=Math.min(4+Math.floor(difficulty),8);
+    if(fireflies.length<maxFireflies)fireflies.push(new Firefly());
+  }
+
+  // color change logic
+  function changeTargetColor(){
+    const old=targetColorName;
+    let newIdx;
+    do{newIdx=Math.floor(Math.random()*COLORS.length);}while(COLORS[newIdx]===old);
+    targetColorName=COLORS[newIdx];
+    updateTargetUI();
+    targetEl.classList.add('flash');
+    setTimeout(()=>targetEl.classList.remove('flash'),600);
+    lastColorChange=performance.now();
+  }
+  // game loop
+  function update(){
+    if(!gameRunning)return;
+    spawnTimer++;
+    if(spawnTimer>=spawnRate){spawnFirefly();spawnTimer=0;}
+    fireflies=fireflies.filter(f=>f.update());
+    particles=particles.filter(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.vx*=0.98;p.life-=0.02;
+      return p.life>0;
+    });
+  }
+  function draw(){
+    ctx.fillStyle='#0a0a12';ctx.fillRect(0,0,width,height);
+    fireflies.forEach(f=>f.draw());
+    particles.forEach(p=>{
+      const {r,g,b}=p.color;
+      ctx.beginPath();ctx.arc(p.x,p.y,3*p.life,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},${p.life})`;ctx.fill();
+    });
+  }
+  function gameLoop(){update();draw();requestAnimationFrame(gameLoop);}
+  gameLoop();
+
+  // input
+  function handleTap(e){
+    if(!gameRunning)return;
+    const rect=canvas.getBoundingClientRect();
+    const x=e.clientX-rect.left;
+    const y=e.clientY-rect.top;
+    let hit=false;
+    for(const f of fireflies){
+      if(f.caught||f.missed)continue;
+      if(f.contains(x,y)){
+        hit=true;
+        if(f.isGlowing){
+          if(f.colorName===targetColorName){
+            f.caught=true;
+            const now=performance.now();
+            const isBonus=now-lastColorChange<bonusWindow;
+            addScore(isBonus?3:1,isBonus);
+            for(let i=0;i<10;i++){
+              particles.push({x:f.x,y:f.y,vx:(Math.random()-0.5)*5,vy:(Math.random()-0.5)*5,life:1,color:f.color});
+            }
+            if(isBonus)playBonus();else playSparkle();
+          }else{
+            f.missed=true;
+            loseLife();
+          }
+        }else{
+          f.missed=true;
+          loseLife();
+        }
+        break;
+      }
+    }
+    if(!hit){particles.push({x,y,vx:0,vy:-1,life:0.4,color:{r:80,g:60,b:50}});}
+  }
+  canvas.addEventListener('pointerdown',handleTap);
+
+  // score management
+  function addScore(points,bonus){score+=points;scoreEl.textContent=score;difficulty=1+Math.floor(score/10)*0.3;spawnRate=Math.max(60-difficulty*5,25);if(bonus)score+=2;}
+  function loseLife(){lives--;hearts[lives].classList.add('lost');if(lives<=0){endGame();}}
+  // game start / end
+  function startGame(){
+    initAudio(); if(audioCtx.state==='suspended')audioCtx.resume();
+    fireflies=[];particles=[];score=0;lives=5;difficulty=1;spawnTimer=0;gameTime=30;gameRunning=true;scoreEl.textContent='0';hearts.forEach(h=>h.classList.remove('lost'));
+    targetIndex=0;targetColorName=COLORS[targetIndex];updateTargetUI();changeTargetColor();
+    startScreen.style.display='none';endScreen.style.display='none';
+    spawnFirefly();spawnFirefly();spawnFirefly();
+    playNote(NOTES.E4,1,'sine',0.4);
+    gameTimer=setInterval(()=>{gameTime--;if(gameTime<=0)endGame();},1000);
+  }
+  function endGame(){
+    gameRunning=false;clearInterval(gameTimer);
+    const isNew=score>highScore; if(isNew){highScore=score;localStorage.setItem('colormatch-high',highScore);}
+    finalScoreEl.textContent=score; highScoreEl.textContent=isNew?`✦ new best!`:`best: ${highScore}`;
+    if(isNew){finalScoreEl.classList.add('new-best');highScoreEl.classList.add('new-best');}
+    else{finalScoreEl.classList.remove('new-best');highScoreEl.classList.remove('new-best');}
+    finalScoreEl.style.animation='none';highScoreEl.style.animation='none';
+    setTimeout(()=>{finalScoreEl.style.animation='';highScoreEl.style.animation='';endScreen.style.display='flex';},50);
+  }
+
+  document.getElementById('start-btn').addEventListener('click',startGame);
+  document.getElementById('restart-btn').addEventListener('click',startGame);
+})();
+</script>
+</body>
+</html>

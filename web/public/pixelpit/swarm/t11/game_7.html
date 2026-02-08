@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Sunset Collector</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background: linear-gradient(to bottom, #f97316, #8b5cf6);
+  overflow:hidden;
+  touch-action:none;
+  font-family:-apple-system, sans-serif;
+  color:#f97316;
+}
+canvas{display:block;}
+#ui{position:fixed;top:10px;left:10px;z-index:10;font-size:24px;}
+#score{font-weight:bold;}
+#game-over{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.8);
+  display:none;flex-direction:column;justify-content:center;align-items:center;
+  color:white;text-align:center;z-index:100;
+}
+#game-over.show{display:flex;}
+#game-over h1{font-size:48px;margin:0 0 20px;}
+#game-over .final-score{font-size:32px;margin:0 0 30px;color:#f97316;}
+#restart{
+  padding:15px 40px;font-size:20px;
+  background:#f97316;color:#1f1020;border:none;border-radius:8px;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+<div id="ui">Score: <span id="score">0</span></div>
+<canvas id="c"></canvas>
+<div id="game-over">
+  <h1>GAME OVER</h1>
+  <div class="final-score">Score: <span id="final-score">0</span></div>
+  <button id="restart">TAP TO RESTART</button>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const finalScoreEl = document.getElementById('final-score');
+const gameOverEl = document.getElementById('game-over');
+const restartBtn = document.getElementById('restart');
+
+let W, H;
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+resize(); window.addEventListener('resize', resize);
+
+let score = 0;
+let gameRunning = true;
+let audioCtx, collectGain, collectOsc;
+
+// Audio setup
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    collectGain = audioCtx.createGain();
+    collectGain.gain.value = 0.2;
+    collectGain.connect(audioCtx.destination);
+  }
+}
+function playCollectSound() {
+  initAudio();
+  const osc = audioCtx.createOscillator();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+  osc.connect(collectGain);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.1);
+}
+
+// Game Objects
+let player = {x:0, y:0, size:40};
+let objects = [];
+
+function spawnObject() {
+  objects.push({
+    x: Math.random() * W,
+    y: -20,
+    size: 20,
+    speed: 2 + Math.random() * 3,
+    good: Math.random() > 0.3
+  });
+}
+
+function update() {
+  if (!gameRunning) return;
+
+  if (Math.random() < 0.02) spawnObject();
+
+  objects.forEach(obj => obj.y += obj.speed);
+
+  objects = objects.filter(obj => {
+    const dx = obj.x - player.x;
+    const dy = obj.y - player.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist < (player.size + obj.size)/2) {
+      if (obj.good) {
+        score += 10;
+        scoreEl.textContent = score;
+        playCollectSound();
+        return false;
+      } else {
+        endGame();
+        return false;
+      }
+    }
+    return obj.y < H + 50;
+  });
+}
+
+function draw() {
+  ctx.fillStyle = '#1f1020';
+  ctx.fillRect(0,0,W,H);
+
+  // Draw player
+  ctx.fillStyle = '#f97316';
+  ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
+
+  // Draw objects
+  objects.forEach(obj => {
+    ctx.fillStyle = obj.good ? '#ec4899' : '#ff4444';
+    ctx.fillRect(obj.x - obj.size/2, obj.y - obj.size/2, obj.size, obj.size);
+  });
+}
+
+function endGame() {
+  gameRunning = false;
+  finalScoreEl.textContent = score;
+  gameOverEl.classList.add('show');
+}
+
+function restart() {
+  score = 0; scoreEl.textContent = '0';
+  objects = [];
+  player.x = W/2; player.y = H - 100;
+  gameRunning = true;
+  gameOverEl.classList.remove('show');
+}
+
+function handleMove(x) {
+  player.x = Math.max(player.size/2, Math.min(W - player.size/2, x));
+}
+
+canvas.addEventListener('touchmove', e=>{e.preventDefault();handleMove(e.touches[0].clientX);});
+canvas.addEventListener('touchstart', e=>{e.preventDefault();handleMove(e.touches[0].clientX);});
+restartBtn.addEventListener('click', restart);
+
+player.x = W/2; player.y = H - 100;
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

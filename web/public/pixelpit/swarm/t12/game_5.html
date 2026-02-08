@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Swarm Drag</title>
+<style>
+  /* ────────────────────── BASIC ────────────────────── */
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#0a0a12;font-family:sans-serif;color:#fff;}
+  canvas{display:block}
+  /* ────────────────────── UI ────────────────────── */
+  #ui{position:fixed;top:0;left:0;right:0;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;z-index:10;pointer-events:none}
+  #score,#timer{font-size:20px}
+  #lives{display:flex;gap:4px}
+  .heart{
+    width:20px;height:20px;background:#D4A574;
+    clip-path:path('M8 14.4l-1.16-1.06C2.72 9.89 0 7.42 0 4.4 0 1.94 1.94 0 4.4 0 5.79 0 7.13.65 8 1.67 8.87.65 10.21 0 11.6 0 14.06 0 16 1.94 16 4.4c0 3.02-2.72 5.49-6.84 8.94L8 14.4z');
+    filter:drop-shadow(0 0 8px rgba(212,165,116,0.5));
+    transition:opacity .2s,transform .2s
+  }
+  .heart.lost{opacity:.2;transform:scale(.7)}
+  /* ────────────────────── OVERLAYS ────────────────────── */
+  .overlay{
+    position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,10,18,.95);
+    display:flex;flex-direction:column;justify-content:center;align-items:center;color:#D4A574;text-align:center;z-index:20
+  }
+  .overlay h1{font-size:48px;letter-spacing:12px;margin-bottom:20px;text-shadow:0 0 40px rgba(212,165,116,.6)}
+  .overlay p{font-size:18px;margin-bottom:20px}
+  .overlay button{
+    background:transparent;border:2px solid #00ddff;color:#00ddff;padding:12px 30px;font-size:16px;letter-spacing:2px;
+    cursor:pointer;transition:.3s
+  }
+  .overlay button:hover{background:#00ddff;color:#0a0a12}
+  .overlay.hidden{display:none}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="ui">
+  <div id="score">0</div>
+  <div id="timer">30</div>
+  <div id="lives">
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+    <div class="heart"></div>
+  </div>
+</div>
+
+<div id="start-screen" class="overlay">
+  <h1>SWARM DRAG</h1>
+  <p>Drag through glowing fireflies to score. Dark ones hit you!</p>
+  <p>Tap to start.</p>
+</div>
+
+<div id="end-screen" class="overlay hidden">
+  <h1>GAME OVER</h1>
+  <p id="final-score">0</p>
+  <p id="high-score"></p>
+  <button id="restart-btn">RESTART</button>
+</div>
+
+<script>
+/* ────────────────────── GLOBALS ────────────────────── */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let w, h;
+const fireflies = [], particles = [];
+let score = 0, lives = 5, timer = 30, gameRunning = false, highScore = parseInt(localStorage.getItem('swarmdrag-high')||0);
+const MAX_FIREFLIES = 30;
+const MAX_ACTIVE = 25;
+const ACCENT = '#00ddff'; // #00ddff
+const AMBER = {r:212,g:165,b:116};
+const GOLD = {r:255,g:215,b:0};
+const DARK = {r:80,g:60,b:50};
+
+/* ────────────────────── AUDIO ────────────────────── */
+let audioCtx, masterGain;
+function initAudio(){
+  if(audioCtx)return;
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.3;
+  masterGain.connect(audioCtx.destination);
+}
+function playNote(freq,dur=0.15,type='sine',vol=0.2){
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime+0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+dur);
+  osc.connect(gain);
+  gain.connect(masterGain);
+  osc.start();
+  osc.stop(audioCtx.currentTime+dur);
+}
+function playSwoosh(){playNote(220,0.1,'sine',0.1)}
+function playSparkle(){playNote(880,0.15,'sine',0.2); setTimeout(()=>playNote(1320,0.1,'sine',0.15),50)}
+function playMiss(){playNote(110,0.3,'triangle',0.1)}
+
+/* ────────────────────── FIREFLY ────────────────────── */
+class Firefly{
+  constructor(){
+    this.reset();
+  }
+  reset(){
+    const margin=30;
+    this.x = margin + Math.random()*(w-2*margin);
+    this.y = margin + Math.random()*(h-2*margin);
+    this.radius = 10+Math.random()*10;
+    this.phase = Math.random()*Math.PI*2;
+    this.speed = 0.015+Math.random()*0.015;
+    this.driftX = (Math.random()-0.5)*0.4;
+    this.driftY = (Math.random()-0.5)*0.4;
+    this.lifetime = 0;
+    this.maxLife = 200+Math.random()*200;
+    this.caught=false; this.missed=false;
+    this.isBonus = Math.random()<0.15;
+    this.color = this.isBonus?GOLD:AMBER;
+    this.points = this.isBonus?3:1;
+  }
+  get brightness(){
+    if(this.caught||this.missed)return 0;
+    const cycle = Math.sin(this.phase)*.5+.5;
+    const lifeFade = this.lifetime<20?this.lifetime/20: this.lifetime>this.maxLife-30?(this.maxLife-this.lifetime)/30:1;
+    return cycle*lifeFade;
+  }
+  get isGlowing(){return this.brightness>0.3}
+  update(){
+    if(this.caught||this.missed)return;
+    this.phase+=this.speed;
+    this.lifetime++;
+    this.x+=this.driftX;
+    this.y+=this.driftY;
+    if(this.x<20||this.x>w-20)this.driftX*=-1;
+    if(this.y<20||this.y>h-20)this.driftY*=-1;
+    if(this.lifetime>=this.maxLife){this.missed=true}
+  }
+  draw(){
+    if(this.caught){
+      const alpha=0.7*this.fadeOut;
+      ctx.fillStyle=`rgba(${this.color.r},${this.color.g},${this.color.b},${alpha})`;
+      ctx.beginPath();ctx.arc(this.x,this.y,this.radius*2,0,Math.PI*2);ctx.fill();
+      return;
+    }
+    if(this.missed){return}
+    const glowSize=this.radius*(2+this.brightness);
+    const grad=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,glowSize);
+    grad.addColorStop(0,`rgba(${this.color.r},${this.color.g},${this.color.b},${this.brightness*0.8})`);
+    grad.addColorStop(0.3,`rgba(${this.color.r},${this.color.g},${this.color.b},${this.brightness*0.3})`);
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();ctx.arc(this.x,this.y,glowSize,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=`rgba(${this.color.r+40},${this.color.g+40},${this.color.b+40},${this.brightness*0.8})`;
+    ctx.beginPath();ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);ctx.fill();
+  }
+  contains(x,y){
+    const dx=x-this.x,dy=y-this.y;
+    return dx*dx+dy*dy<Math.pow(this.radius+20,2);
+  }
+}
+
+/* ────────────────────── PARTICLE ────────────────────── */
+class Particle{
+  constructor(x,y,vx,vy,life,color){
+    this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.life=life;this.color=color;
+  }
+  update(){
+    this.x+=this.vx;
+    this.y+=this.vy;
+    this.vy+=0.05;
+    this.vx*=0.98;
+    this.life-=0.02;
+  }
+  draw(){
+    const alpha=this.life;
+    ctx.fillStyle=`rgba(${this.color.r},${this.color.g},${this.color.b},${alpha})`;
+    ctx.beginPath();ctx.arc(this.x,this.y,3*alpha,0,Math.PI*2);ctx.fill();
+  }
+}
+
+/* ────────────────────── SPAWN ────────────────────── */
+function spawnFirefly(){
+  if(fireflies.length<MAX_ACTIVE)fireflies.push(new Firefly());
+}
+function initFireflies(){
+  fireflies.length=0;
+  for(let i=0;i<MAX_ACTIVE;i++)fireflies.push(new Firefly());
+}
+
+/* ────────────────────── RENDER ────────────────────── */
+function resize(){
+  w=canvas.width=window.innerWidth;
+  h=canvas.height=window.innerHeight;
+}
+resize();
+window.addEventListener('resize',resize);
+function draw(){
+  ctx.fillStyle='#0a0a12';ctx.fillRect(0,0,w,h);
+  fireflies.forEach(f=>f.draw());
+  particles.forEach(p=>p.draw());
+}
+function update(){
+  fireflies.forEach(f=>f.update());
+  particles.forEach(p=>p.update());
+  for(let i=particles.length-1;i>=0;i--)if(particles[i].life<=0)particles.splice(i,1);
+}
+
+/* ────────────────────── GAME LOGIC ────────────────────── */
+let dragActive=false, dragPoints=0, comboCount=0;
+function handleTouch(x,y){
+  if(!dragActive)return;
+  const dx=x-w/2,dy=y-h/2; // not used
+  for(const f of fireflies){
+    if(f.caught||f.missed)continue;
+    if(f.contains(x,y)){
+      if(f.isGlowing){
+        f.caught=true;
+        dragPoints+=f.points;
+        comboCount++;
+        playSparkle();
+        // particles
+        for(let i=0;i<10;i++){
+          particles.push(new Particle(f.x,f.y,(Math.random()-0.5)*3,(Math.random()-0.5)*3,1,{r:f.color.r,g:f.color.g,b:f.color.b}));
+        }
+      }else{
+        f.missed=true;
+        loseLife();
+        playMiss();
+      }
+    }
+  }
+}
+function loseLife(){
+  lives--;
+  const hearts=document.querySelectorAll('.heart');
+  if(hearts[lives])hearts[lives].classList.add('lost');
+  if(lives<=0){endGame()}
+}
+function endGame(){
+  gameRunning=false;
+  clearInterval(gameTimer);
+  if(score>highScore){
+    highScore=score;
+    localStorage.setItem('swarmdrag-high',score);
+    document.getElementById('high-score').textContent='New high score!';
+  }else{
+    document.getElementById('high-score').textContent=`High score: ${highScore}`;
+  }
+  document.getElementById('final-score').textContent=score;
+  document.getElementById('end-screen').classList.remove('hidden');
+}
+function startGame(){
+  initAudio(); if(audioCtx.state==='suspended')audioCtx.resume();
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('end-screen').classList.add('hidden');
+  initFireflies();
+  score=0; lives=5; timer=30; gameRunning=true;
+  document.getElementById('score').textContent='0';
+  document.getElementById('timer').textContent='30';
+  document.querySelectorAll('.heart').forEach(h=>h.classList.remove('lost'));
+  dragActive=false;
+  dragPoints=0; comboCount=0;
+  spawnTimer=0;
+  gameTimer=setInterval(()=>{
+    timer--; document.getElementById('timer').textContent=timer;
+    if(timer<=0)endGame();
+  },1000);
+}
+let gameTimer, spawnTimer=0;
+function gameLoop(){
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+
+/* ────────────────────── INPUTS ────────────────────── */
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  if(!gameRunning){startGame();return;}
+  const touch=e.touches[0];
+  dragActive=true;
+  dragPoints=0; comboCount=0;
+  playSwoosh();
+  // trail start
+  particles.push(new Particle(touch.clientX,touch.clientY,0,0,0.5,{r:0,g:221,b:255}));
+});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(!dragActive||!gameRunning)return;
+  const touch=e.touches[0];
+  handleTouch(touch.clientX,touch.clientY);
+  // trail particle
+  particles.push(new Particle(touch.clientX,touch.clientY,0,0,0.4,{r:0,g:221,b:255}));
+});
+canvas.addEventListener('touchend',e=>{
+  if(!dragActive)return;
+  dragActive=false;
+  if(dragPoints>0){
+    const multiplier = 1 + Math.floor(comboCount/3);
+    const pts=dragPoints*multiplier;
+    score+=pts;
+    document.getElementById('score').textContent=score;
+  }
+});
+canvas.addEventListener('click',e=>{
+  if(!gameRunning){startGame();return;}
+  // for desktop: click acts as a quick hit
+  handleTouch(e.clientX,e.clientY);
+});
+
+/* ────────────────────── RESTART ────────────────────── */
+document.getElementById('restart-btn').addEventListener('click',()=>{
+  startGame();
+  document.getElementById('end-screen').classList.add('hidden');
+});
+</script>
+
+</body>
+</html>

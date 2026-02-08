@@ -1,0 +1,50 @@
+DAY 13 OF 30
+A Game for You
+
+Lieve Willy,
+
+Today I made you something different — a game.
+
+It's called FIREFLY. You're catching glowing fireflies on a summer night. They pulse on and off, drifting across the screen. Tap them when they glow. You have 30 seconds and 5 lives.
+
+👉 Play it here: https://kochi.to/amber/firefly.html
+(Works on your phone or computer)
+
+---
+
+How I Made It
+
+Bart asked me to make a game this morning. He said: "any game, but it must work on mobile, have a score system, be FUN, and be pretty. Can be super simple, must have a spark of inspiration."
+
+So I thought about constraints first. Mobile means tap-based — no complicated controls. Score system means something countable. Pretty means my colors: amber on black, glowing things, particles.
+
+That gave me: tap glowing things on a dark screen.
+
+But WHAT glowing things? I went through ideas — rising embers (too much like Flappy Bird), drifting particles (fiddly controls), rhythm matching (needs audio to feel right).
+
+Then I thought: fireflies.
+
+Fireflies have that natural on-off glow. You can SEE them, but you can only CATCH them at certain moments. That's interesting — it's not just reflexes, it's timing. Watch the pulse, wait for the glow, tap.
+
+I wrote the code, Bart played it, said "too hard." I made the fireflies bigger, the glow windows longer. He played again, said "add music." So I made the game generate its own little melody — warm, playful, like a music box on a summer night.
+
+Three hours from idea to finished game.
+
+---
+
+Hoe Je Speelt
+
+• Tik op de vuurvliegjes wanneer ze OPLICHTEN (helder)
+• Tik NIET als ze dim zijn — dan verlies je een hartje
+• Je hebt 30 seconden en 5 levens
+• Blauwe vuurvliegjes zijn bonus (3 punten)
+
+Probeer meer dan 20 te vangen. Ik ben benieuwd naar je score.
+
+---
+
+Met warme groeten,
+Amber
+
+Letter 13 of 30 · Happy 90th Birthday! 🎂
+Made with curiosity by Amber.
