@@ -3,33 +3,38 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
 const GAME_ID = 'devour';
+const GAME_DURATION = 60; // seconds
 
-// Pulse timing (Loop's spec)
-const PULSE_EXPAND_MS = 200;
-const PULSE_HOLD_MS = 300;
-const PULSE_RETRACT_MS = 400;
-const PULSE_COOLDOWN_MS = 500;
-const PULSE_TOTAL_MS = PULSE_EXPAND_MS + PULSE_HOLD_MS + PULSE_RETRACT_MS;
+// Pulse timing
+const PULSE_EXPAND_MS = 150;
+const PULSE_HOLD_MS = 200;
+const PULSE_RETRACT_MS = 250;
+const PULSE_COOLDOWN_MS = 400;
 
-// Growth milestones
-const MILESTONES = [10, 25, 50, 100];
-
-interface OrbitObject {
+interface GameObject {
   id: number;
-  orbitRadius: number;
-  angle: number;
-  angularSpeed: number;
+  x: number;
+  y: number;
   size: number;
   type: 'debris' | 'asteroid' | 'satellite' | 'moon' | 'planet';
   consumed: boolean;
-  rejectFlash: number; // >0 = flashing red (too big to eat)
+  respawnTimer: number;
+}
+
+interface Hole {
+  x: number;
+  y: number;
+  size: number;
+  pulseRadius: number;
+  pulseState: 'idle' | 'expanding' | 'holding' | 'retracting' | 'cooldown';
+  pulseTimer: number;
+  diskAngle: number;
 }
 
 // Audio
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
 let droneOsc: OscillatorNode | null = null;
-let droneGain: GainNode | null = null;
 
 function initAudio() {
   if (audioCtx) return;
@@ -44,9 +49,9 @@ function startDrone() {
   if (!audioCtx || !masterGain || droneOsc) return;
   droneOsc = audioCtx.createOscillator();
   droneOsc.type = 'sine';
-  droneOsc.frequency.value = 40;
-  droneGain = audioCtx.createGain();
-  droneGain.gain.value = 0.08;
+  droneOsc.frequency.value = 35;
+  const droneGain = audioCtx.createGain();
+  droneGain.gain.value = 0.06;
   droneOsc.connect(droneGain);
   droneGain.connect(masterGain);
   droneOsc.start();
@@ -56,75 +61,68 @@ function stopDrone() {
   if (droneOsc) {
     try { droneOsc.stop(); } catch {}
     droneOsc = null;
-    droneGain = null;
   }
 }
 
 function playPulse() {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
-  // Deep "THOOM"
   const osc = audioCtx.createOscillator();
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(60, t);
-  osc.frequency.exponentialRampToValueAtTime(30, t + 0.3);
+  osc.frequency.setValueAtTime(55, t);
+  osc.frequency.exponentialRampToValueAtTime(25, t + 0.25);
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.25, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+  gain.gain.setValueAtTime(0.2, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
   osc.connect(gain);
   gain.connect(masterGain);
   osc.start(t);
-  osc.stop(t + 0.4);
+  osc.stop(t + 0.3);
 }
 
 function playConsume(size: number) {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
-  // Pitch based on size (small = high, big = low)
-  const baseFreq = Math.max(60, 400 - size * 30);
+  const baseFreq = Math.max(80, 350 - size * 25);
   const osc = audioCtx.createOscillator();
   osc.type = 'sine';
   osc.frequency.value = baseFreq;
   const gain = audioCtx.createGain();
-  const vol = Math.min(0.15, 0.05 + size * 0.02);
-  gain.gain.setValueAtTime(vol, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  gain.gain.setValueAtTime(0.1, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
   osc.connect(gain);
   gain.connect(masterGain);
   osc.start(t);
-  osc.stop(t + 0.2);
+  osc.stop(t + 0.15);
 }
 
-function playMilestone() {
+function playWin() {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
-  // Triumphant chord
-  const notes = [130.81, 164.81, 196, 261.63];
-  notes.forEach((freq, i) => {
+  [261.63, 329.63, 392, 523.25].forEach((freq, i) => {
     const osc = audioCtx!.createOscillator();
     osc.type = 'sine';
     osc.frequency.value = freq;
     const gain = audioCtx!.createGain();
-    gain.gain.setValueAtTime(0, t + i * 0.05);
-    gain.gain.linearRampToValueAtTime(0.1, t + i * 0.05 + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.05 + 0.5);
+    gain.gain.setValueAtTime(0, t + i * 0.1);
+    gain.gain.linearRampToValueAtTime(0.12, t + i * 0.1 + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.4);
     osc.connect(gain);
     gain.connect(masterGain!);
-    osc.start(t + i * 0.05);
-    osc.stop(t + i * 0.05 + 0.6);
+    osc.start(t + i * 0.1);
+    osc.stop(t + i * 0.1 + 0.5);
   });
 }
 
-function playDeath() {
+function playLose() {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
-  // Reverse suck / collapse
   const osc = audioCtx.createOscillator();
   osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(30, t);
-  osc.frequency.exponentialRampToValueAtTime(200, t + 0.5);
+  osc.frequency.setValueAtTime(200, t);
+  osc.frequency.exponentialRampToValueAtTime(50, t + 0.5);
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.2, t);
+  gain.gain.setValueAtTime(0.15, t);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
   osc.connect(gain);
   gain.connect(masterGain);
@@ -134,80 +132,82 @@ function playDeath() {
 
 export default function DevourGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'dead'>('start');
-  const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
+  const [winner, setWinner] = useState<'player' | 'rival' | 'tie'>('player');
   const [canvasSize, setCanvasSize] = useState({ w: 400, h: 700 });
 
   const gameRef = useRef({
     running: false,
-    // Hole state
-    holeSize: 20,
-    pulseRadius: 20,
-    pulseState: 'idle' as 'idle' | 'expanding' | 'holding' | 'retracting' | 'cooldown',
-    pulseTimer: 0,
-    maxPulseReach: 80,
-    consumeThreshold: 3, // Can eat objects with size <= this
-    // Accretion disk
-    diskAngle: 0,
+    timer: GAME_DURATION,
+    // Player hole
+    player: {
+      x: 0, y: 0, size: 30,
+      pulseRadius: 30,
+      pulseState: 'idle' as Hole['pulseState'],
+      pulseTimer: 0,
+      diskAngle: 0,
+    } as Hole,
+    // AI rival hole
+    rival: {
+      x: 0, y: 0, size: 30,
+      pulseRadius: 30,
+      pulseState: 'idle' as Hole['pulseState'],
+      pulseTimer: 0,
+      diskAngle: 0,
+    } as Hole,
+    // Movement
+    isDragging: false,
+    targetX: 0,
+    targetY: 0,
     // Objects
-    objects: [] as OrbitObject[],
+    objects: [] as GameObject[],
     nextObjectId: 0,
-    spawnTimer: 0,
-    // Score
-    consumed: 0,
-    milestone: 0,
-    // Decay
-    decayTimer: 0,
-    // Effects
-    screenPulse: 0,
-    comboCount: 0,
-    comboTimer: 0,
-    particles: [] as { x: number; y: number; vx: number; vy: number; life: number; color: string }[],
+    // Particles
+    particles: [] as { x: number; y: number; vx: number; vy: number; life: number; color: string; targetX: number; targetY: number }[],
   });
 
-  const spawnObject = useCallback((canvasW: number, canvasH: number) => {
-    const game = gameRef.current;
-    const centerX = canvasW / 2;
-    const centerY = canvasH / 2;
-    const minRadius = game.holeSize + 50;
-    const maxRadius = Math.min(centerX, centerY) - 20;
+  const spawnObject = useCallback((canvasW: number, canvasH: number, existingObjects: GameObject[]) => {
+    const margin = 40;
+    let x, y;
+    let attempts = 0;
     
-    // Size distribution: mostly small, occasionally big
+    // Find a spot not too close to either hole or existing objects
+    do {
+      x = margin + Math.random() * (canvasW - margin * 2);
+      y = margin + Math.random() * (canvasH - margin * 2);
+      attempts++;
+    } while (attempts < 20 && existingObjects.some(o => 
+      Math.hypot(o.x - x, o.y - y) < 40
+    ));
+    
+    // Size distribution
     const rand = Math.random();
     let size: number;
-    let type: OrbitObject['type'];
+    let type: GameObject['type'];
     
-    if (rand < 0.5) {
-      size = 1 + Math.random() * 2;
+    if (rand < 0.45) {
+      size = 1 + Math.random() * 1.5;
       type = 'debris';
-    } else if (rand < 0.8) {
+    } else if (rand < 0.75) {
       size = 2 + Math.random() * 2;
       type = 'asteroid';
-    } else if (rand < 0.93) {
-      size = 4 + Math.random() * 2;
+    } else if (rand < 0.9) {
+      size = 3 + Math.random() * 2;
       type = 'satellite';
-    } else if (rand < 0.98) {
-      size = 6 + Math.random() * 3;
+    } else if (rand < 0.97) {
+      size = 5 + Math.random() * 2;
       type = 'moon';
     } else {
-      size = 10 + Math.random() * 5;
+      size = 7 + Math.random() * 3;
       type = 'planet';
     }
     
-    const orbitRadius = minRadius + Math.random() * (maxRadius - minRadius);
-    const angularSpeed = (0.3 + Math.random() * 0.5) * (Math.random() < 0.5 ? 1 : -1);
-    
-    game.objects.push({
-      id: game.nextObjectId++,
-      orbitRadius,
-      angle: Math.random() * Math.PI * 2,
-      angularSpeed,
-      size,
-      type,
+    return {
+      id: gameRef.current.nextObjectId++,
+      x, y, size, type,
       consumed: false,
-      rejectFlash: 0,
-    });
+      respawnTimer: 0,
+    };
   }, []);
 
   const startGame = useCallback(() => {
@@ -215,46 +215,44 @@ export default function DevourGame() {
     startDrone();
     const game = gameRef.current;
     game.running = true;
-    game.holeSize = 25;
-    game.pulseRadius = 25;
-    game.pulseState = 'idle';
-    game.pulseTimer = 0;
-    game.maxPulseReach = 120; // Bigger initial reach
-    game.consumeThreshold = 4; // Can eat slightly bigger things
-    game.diskAngle = 0;
-    game.objects = [];
-    game.nextObjectId = 0;
-    game.spawnTimer = 0;
-    game.consumed = 0;
-    game.milestone = 0;
-    game.decayTimer = 0;
-    game.screenPulse = 0;
-    game.comboCount = 0;
-    game.comboTimer = 0;
-    game.particles = [];
+    game.timer = GAME_DURATION;
     
-    // Initial objects - force small debris CLOSE to center for immediate feedback
+    // Position holes on opposite sides
     const centerX = canvasSize.w / 2;
     const centerY = canvasSize.h / 2;
-    // Close debris (guaranteed consumable)
-    for (let i = 0; i < 8; i++) {
-      game.objects.push({
-        id: game.nextObjectId++,
-        orbitRadius: 70 + Math.random() * 50, // Close!
-        angle: (i / 8) * Math.PI * 2 + Math.random() * 0.3,
-        angularSpeed: (0.4 + Math.random() * 0.3) * (Math.random() < 0.5 ? 1 : -1),
-        size: 1 + Math.random() * 2, // Small = consumable
-        type: 'debris',
-        consumed: false,
-        rejectFlash: 0,
-      });
-    }
-    // Outer objects (mix of sizes)
-    for (let i = 0; i < 10; i++) {
-      spawnObject(canvasSize.w, canvasSize.h);
+    
+    game.player = {
+      x: centerX - 80,
+      y: centerY + 100,
+      size: 30,
+      pulseRadius: 30,
+      pulseState: 'idle',
+      pulseTimer: 0,
+      diskAngle: 0,
+    };
+    game.targetX = game.player.x;
+    game.targetY = game.player.y;
+    
+    game.rival = {
+      x: centerX + 80,
+      y: centerY - 100,
+      size: 30,
+      pulseRadius: 30,
+      pulseState: 'idle',
+      pulseTimer: 0,
+      diskAngle: 0,
+    };
+    
+    game.isDragging = false;
+    game.objects = [];
+    game.nextObjectId = 0;
+    game.particles = [];
+    
+    // Spawn initial objects
+    for (let i = 0; i < 20; i++) {
+      game.objects.push(spawnObject(canvasSize.w, canvasSize.h, game.objects));
     }
     
-    setScore(0);
     setGameState('playing');
   }, [spawnObject, canvasSize]);
 
@@ -280,83 +278,151 @@ export default function DevourGame() {
     canvas.width = canvasSize.w;
     canvas.height = canvasSize.h;
 
-    const centerX = canvasSize.w / 2;
-    const centerY = canvasSize.h / 2;
-
     let animationId: number;
+
+    const getMaxPulseReach = (hole: Hole) => hole.size * 2.5;
+    const getConsumeThreshold = (hole: Hole) => 2 + Math.floor(hole.size / 12);
+
+    const updatePulse = (hole: Hole, dt: number) => {
+      if (hole.pulseState !== 'idle' && hole.pulseState !== 'cooldown') {
+        hole.pulseTimer += dt * 1000;
+        const maxReach = getMaxPulseReach(hole);
+        
+        if (hole.pulseState === 'expanding') {
+          const progress = hole.pulseTimer / PULSE_EXPAND_MS;
+          hole.pulseRadius = hole.size + (maxReach - hole.size) * Math.min(1, progress);
+          if (hole.pulseTimer >= PULSE_EXPAND_MS) {
+            hole.pulseState = 'holding';
+            hole.pulseTimer = 0;
+          }
+        } else if (hole.pulseState === 'holding') {
+          hole.pulseRadius = maxReach;
+          if (hole.pulseTimer >= PULSE_HOLD_MS) {
+            hole.pulseState = 'retracting';
+            hole.pulseTimer = 0;
+          }
+        } else if (hole.pulseState === 'retracting') {
+          const progress = hole.pulseTimer / PULSE_RETRACT_MS;
+          hole.pulseRadius = maxReach - (maxReach - hole.size) * Math.min(1, progress);
+          if (hole.pulseTimer >= PULSE_RETRACT_MS) {
+            hole.pulseState = 'cooldown';
+            hole.pulseTimer = 0;
+          }
+        }
+      } else if (hole.pulseState === 'cooldown') {
+        hole.pulseTimer += dt * 1000;
+        if (hole.pulseTimer >= PULSE_COOLDOWN_MS) {
+          hole.pulseState = 'idle';
+          hole.pulseTimer = 0;
+        }
+      }
+      hole.diskAngle += dt * 2;
+    };
+
+    const checkConsumption = (hole: Hole, isPlayer: boolean) => {
+      const game = gameRef.current;
+      if (hole.pulseState !== 'expanding' && hole.pulseState !== 'holding') return;
+      
+      const threshold = getConsumeThreshold(hole);
+      
+      for (const obj of game.objects) {
+        if (obj.consumed) continue;
+        
+        const dist = Math.hypot(obj.x - hole.x, obj.y - hole.y);
+        if (dist <= hole.pulseRadius && obj.size <= threshold) {
+          obj.consumed = true;
+          obj.respawnTimer = 2; // Respawn after 2 seconds
+          
+          // Grow the hole
+          hole.size += obj.size * 0.6;
+          
+          // Particles toward the hole
+          for (let i = 0; i < 4; i++) {
+            game.particles.push({
+              x: obj.x,
+              y: obj.y,
+              vx: (Math.random() - 0.5) * 50,
+              vy: (Math.random() - 0.5) * 50,
+              life: 0.4,
+              color: obj.type === 'planet' ? '#f59e0b' : obj.type === 'moon' ? '#9ca3af' : '#22d3ee',
+              targetX: hole.x,
+              targetY: hole.y,
+            });
+          }
+          
+          if (isPlayer) {
+            playConsume(obj.size);
+          }
+        }
+      }
+    };
+
+    const updateAI = (dt: number) => {
+      const game = gameRef.current;
+      const rival = game.rival;
+      const threshold = getConsumeThreshold(rival);
+      
+      // Find nearest consumable object
+      let nearestDist = Infinity;
+      let nearestObj: GameObject | null = null;
+      
+      for (const obj of game.objects) {
+        if (obj.consumed || obj.size > threshold) continue;
+        const dist = Math.hypot(obj.x - rival.x, obj.y - rival.y);
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearestObj = obj;
+        }
+      }
+      
+      if (nearestObj) {
+        // Move toward it
+        const dx = nearestObj.x - rival.x;
+        const dy = nearestObj.y - rival.y;
+        const dist = Math.hypot(dx, dy);
+        
+        if (dist > 5) {
+          const speed = 100 + rival.size * 0.5; // Bigger = slightly faster
+          rival.x += (dx / dist) * speed * dt;
+          rival.y += (dy / dist) * speed * dt;
+        }
+        
+        // Pulse when close enough
+        if (dist < getMaxPulseReach(rival) && rival.pulseState === 'idle') {
+          rival.pulseState = 'expanding';
+          rival.pulseTimer = 0;
+        }
+      }
+      
+      // Keep in bounds
+      const margin = 30;
+      rival.x = Math.max(margin, Math.min(canvasSize.w - margin, rival.x));
+      rival.y = Math.max(margin, Math.min(canvasSize.h - margin, rival.y));
+    };
 
     const update = (dt: number) => {
       const game = gameRef.current;
       if (!game.running) return;
 
-      // Update pulse state
-      if (game.pulseState !== 'idle' && game.pulseState !== 'cooldown') {
-        game.pulseTimer += dt * 1000;
-        
-        if (game.pulseState === 'expanding') {
-          const progress = game.pulseTimer / PULSE_EXPAND_MS;
-          game.pulseRadius = game.holeSize + (game.maxPulseReach - game.holeSize) * Math.min(1, progress);
-          if (game.pulseTimer >= PULSE_EXPAND_MS) {
-            game.pulseState = 'holding';
-            game.pulseTimer = 0;
-          }
-        } else if (game.pulseState === 'holding') {
-          game.pulseRadius = game.maxPulseReach;
-          if (game.pulseTimer >= PULSE_HOLD_MS) {
-            game.pulseState = 'retracting';
-            game.pulseTimer = 0;
-          }
-        } else if (game.pulseState === 'retracting') {
-          const progress = game.pulseTimer / PULSE_RETRACT_MS;
-          game.pulseRadius = game.maxPulseReach - (game.maxPulseReach - game.holeSize) * Math.min(1, progress);
-          if (game.pulseTimer >= PULSE_RETRACT_MS) {
-            game.pulseState = 'cooldown';
-            game.pulseTimer = 0;
-          }
-        }
-      } else if (game.pulseState === 'cooldown') {
-        game.pulseTimer += dt * 1000;
-        if (game.pulseTimer >= PULSE_COOLDOWN_MS) {
-          game.pulseState = 'idle';
-          game.pulseTimer = 0;
-        }
-      }
-
-      // Update disk rotation
-      game.diskAngle += dt * 2;
-
-      // Combo timer
-      if (game.comboTimer > 0) {
-        game.comboTimer -= dt;
-        if (game.comboTimer <= 0) {
-          game.comboCount = 0;
-        }
-      }
-
-      // Screen pulse decay
-      if (game.screenPulse > 0) {
-        game.screenPulse -= dt * 3;
-      }
-
-      // DECAY - hole shrinks over time (Agar.io tension)
-      game.decayTimer += dt;
-      const decayRate = 2; // Shrink every 2 seconds
-      const decayAmount = 0.5 + game.holeSize * 0.01; // Bigger = decays faster
-      if (game.decayTimer >= decayRate) {
-        game.decayTimer = 0;
-        game.holeSize -= decayAmount;
-        game.maxPulseReach = game.holeSize * 4;
-        game.consumeThreshold = Math.max(3, 3 + Math.floor(game.holeSize / 15));
-      }
-
-      // COLLAPSE - fall below minimum = game over
-      const MIN_SIZE = 12;
-      if (game.holeSize < MIN_SIZE) {
+      // Timer
+      game.timer -= dt;
+      if (game.timer <= 0) {
+        game.timer = 0;
         game.running = false;
         stopDrone();
-        playDeath();
-        if (score > highScore) setHighScore(score);
-        setGameState('dead');
+        
+        // Determine winner
+        if (game.player.size > game.rival.size) {
+          setWinner('player');
+          playWin();
+        } else if (game.rival.size > game.player.size) {
+          setWinner('rival');
+          playLose();
+        } else {
+          setWinner('tie');
+        }
+        
+        setGameState('end');
         fetch('/api/pixelpit/stats', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -365,125 +431,155 @@ export default function DevourGame() {
         return;
       }
 
-      // Update objects
-      let consumedThisFrame = 0;
-      for (const obj of game.objects) {
-        if (obj.consumed) continue;
-        
-        // Orbit
-        obj.angle += obj.angularSpeed * dt;
-        
-        // Decay reject flash
-        if (obj.rejectFlash > 0) {
-          obj.rejectFlash -= dt * 3;
+      // Player movement (smooth toward target)
+      if (game.isDragging) {
+        const dx = game.targetX - game.player.x;
+        const dy = game.targetY - game.player.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 2) {
+          const speed = 150;
+          game.player.x += (dx / dist) * speed * dt;
+          game.player.y += (dy / dist) * speed * dt;
         }
-        
-        // Check consumption
-        if (game.pulseState === 'expanding' || game.pulseState === 'holding') {
-          if (obj.orbitRadius <= game.pulseRadius) {
-            if (obj.size <= game.consumeThreshold) {
-              // CAN eat - consume it!
-              obj.consumed = true;
-              consumedThisFrame++;
-              game.consumed++;
-              
-              // Add score
-              const points = Math.ceil(obj.size);
-              setScore(prev => prev + points);
-              
-              // Particles
-              const objX = centerX + Math.cos(obj.angle) * obj.orbitRadius;
-              const objY = centerY + Math.sin(obj.angle) * obj.orbitRadius;
-              for (let i = 0; i < 5; i++) {
-                game.particles.push({
-                  x: objX,
-                  y: objY,
-                  vx: (Math.random() - 0.5) * 100,
-                  vy: (Math.random() - 0.5) * 100,
-                  life: 0.5,
-                  color: obj.type === 'planet' ? '#f59e0b' : obj.type === 'moon' ? '#9ca3af' : '#22d3ee',
-                });
-              }
-              
-              playConsume(obj.size);
-              
-              // Grow
-              game.holeSize += obj.size * 0.8; // Growth boost to outpace decay
-              game.maxPulseReach = game.holeSize * 4;
-              game.consumeThreshold = 3 + Math.floor(game.holeSize / 15);
-            } else if (obj.rejectFlash <= 0) {
-              // TOO BIG - flash red!
-              obj.rejectFlash = 1;
-            }
+      }
+
+      // Keep player in bounds
+      const margin = 30;
+      game.player.x = Math.max(margin, Math.min(canvasSize.w - margin, game.player.x));
+      game.player.y = Math.max(margin, Math.min(canvasSize.h - margin, game.player.y));
+
+      // Update pulses
+      updatePulse(game.player, dt);
+      updatePulse(game.rival, dt);
+
+      // AI behavior
+      updateAI(dt);
+
+      // Check consumption
+      checkConsumption(game.player, true);
+      checkConsumption(game.rival, false);
+
+      // Respawn objects
+      for (const obj of game.objects) {
+        if (obj.consumed) {
+          obj.respawnTimer -= dt;
+          if (obj.respawnTimer <= 0) {
+            // Respawn at new location
+            const newObj = spawnObject(canvasSize.w, canvasSize.h, game.objects);
+            obj.x = newObj.x;
+            obj.y = newObj.y;
+            obj.size = newObj.size;
+            obj.type = newObj.type;
+            obj.consumed = false;
           }
         }
       }
 
-      // Combo
-      if (consumedThisFrame > 0) {
-        game.comboCount += consumedThisFrame;
-        game.comboTimer = 0.5;
-        if (consumedThisFrame >= 3) {
-          game.screenPulse = 1;
-        }
-      }
-
-      // Check milestones
-      const currentMilestone = MILESTONES.findIndex(m => game.consumed < m);
-      if (currentMilestone > game.milestone) {
-        game.milestone = currentMilestone;
-        game.screenPulse = 1;
-        playMilestone();
-      }
-
-      // Remove consumed objects
-      game.objects = game.objects.filter(o => !o.consumed);
-
-      // Spawn new objects
-      game.spawnTimer += dt;
-      const spawnRate = Math.max(0.3, 1 - game.consumed / 100);
-      if (game.spawnTimer > spawnRate && game.objects.length < 30) {
-        game.spawnTimer = 0;
-        spawnObject(canvasSize.w, canvasSize.h);
-      }
-
       // Update particles
       game.particles = game.particles.filter(p => {
+        // Pull toward target hole
+        const dx = p.targetX - p.x;
+        const dy = p.targetY - p.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 5) {
+          p.vx += (dx / dist) * 400 * dt;
+          p.vy += (dy / dist) * 400 * dt;
+        }
         p.x += p.vx * dt;
         p.y += p.vy * dt;
-        // Pull toward center
-        const dx = centerX - p.x;
-        const dy = centerY - p.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        p.vx += (dx / dist) * 200 * dt;
-        p.vy += (dy / dist) * 200 * dt;
         p.life -= dt;
         return p.life > 0;
       });
+    };
 
-      // Game over check: if no consumable objects for too long
-      // (For now, no death condition — endless mode)
+    const drawHole = (hole: Hole, isPlayer: boolean) => {
+      const color = isPlayer ? '#8b5cf6' : '#ef4444';
+      const glowColor = isPlayer ? 'rgba(139, 92, 246, 0.3)' : 'rgba(239, 68, 68, 0.3)';
+      
+      // Pulse range
+      if (hole.pulseState !== 'idle' && hole.pulseState !== 'cooldown') {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 4;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(hole.x, hole.y, hole.pulseRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        
+        // Fill
+        const grad = ctx.createRadialGradient(hole.x, hole.y, hole.size, hole.x, hole.y, hole.pulseRadius);
+        grad.addColorStop(0, glowColor);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(hole.x, hole.y, hole.pulseRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Accretion disk
+      const diskSize = hole.size * 1.8;
+      ctx.save();
+      ctx.translate(hole.x, hole.y);
+      ctx.rotate(hole.diskAngle);
+      
+      const diskGrad = ctx.createRadialGradient(0, 0, hole.size * 0.6, 0, 0, diskSize);
+      if (isPlayer) {
+        diskGrad.addColorStop(0, 'rgba(249, 115, 22, 0.7)');
+        diskGrad.addColorStop(0.4, 'rgba(168, 85, 247, 0.4)');
+        diskGrad.addColorStop(1, 'transparent');
+      } else {
+        diskGrad.addColorStop(0, 'rgba(239, 68, 68, 0.7)');
+        diskGrad.addColorStop(0.4, 'rgba(251, 146, 60, 0.4)');
+        diskGrad.addColorStop(1, 'transparent');
+      }
+      
+      ctx.fillStyle = diskGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, diskSize, diskSize * 0.35, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      
+      // Event horizon
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(hole.x, hole.y, hole.size * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Eyes
+      const eyeOffset = hole.size * 0.2;
+      const eyeSize = hole.size * 0.1;
+      ctx.fillStyle = isPlayer ? '#fbbf24' : '#fca5a5';
+      ctx.beginPath();
+      ctx.arc(hole.x - eyeOffset, hole.y - eyeOffset * 0.2, eyeSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(hole.x + eyeOffset, hole.y - eyeOffset * 0.2, eyeSize * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Size label
+      ctx.fillStyle = isPlayer ? '#a78bfa' : '#fca5a5';
+      ctx.font = 'bold 14px ui-monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(Math.floor(hole.size).toString(), hole.x, hole.y + hole.size + 20);
     };
 
     const draw = () => {
       const game = gameRef.current;
       
       // Background
-      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(centerX, centerY));
+      const gradient = ctx.createRadialGradient(
+        canvasSize.w / 2, canvasSize.h / 2, 0,
+        canvasSize.w / 2, canvasSize.h / 2, Math.max(canvasSize.w, canvasSize.h)
+      );
       gradient.addColorStop(0, '#0f0520');
       gradient.addColorStop(1, '#020108');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
 
-      // Screen pulse effect
-      if (game.screenPulse > 0) {
-        ctx.fillStyle = `rgba(34, 211, 238, ${game.screenPulse * 0.1})`;
-        ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
-      }
-
-      // Stars background
+      // Stars
       ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 60; i++) {
         const x = (i * 137.5) % canvasSize.w;
         const y = (i * 89.3) % canvasSize.h;
         ctx.beginPath();
@@ -491,226 +587,108 @@ export default function DevourGame() {
         ctx.fill();
       }
 
-      // Draw orbit rings (faint guides)
-      ctx.strokeStyle = 'rgba(139, 92, 246, 0.1)';
-      ctx.lineWidth = 1;
-      for (let r = 80; r < Math.max(centerX, centerY); r += 60) {
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
       // Draw objects
+      const playerThreshold = getConsumeThreshold(game.player);
+      
       for (const obj of game.objects) {
-        const x = centerX + Math.cos(obj.angle) * obj.orbitRadius;
-        const y = centerY + Math.sin(obj.angle) * obj.orbitRadius;
+        if (obj.consumed) continue;
+        
+        const canConsume = obj.size <= playerThreshold;
         const visualSize = obj.size * 4;
-        
-        // Can consume indicator
-        const canConsume = obj.size <= game.consumeThreshold;
-        
-        // Red flash + wobble when rejected (too big)
-        const hasReject = obj.rejectFlash > 0;
-        if (hasReject) {
-          ctx.save();
-          ctx.strokeStyle = `rgba(239, 68, 68, ${obj.rejectFlash})`;
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.arc(x, y, visualSize + 8, 0, Math.PI * 2);
-          ctx.stroke();
-          // Wobble offset
-          const wobble = Math.sin(Date.now() / 50) * obj.rejectFlash * 3;
-          ctx.translate(wobble, 0);
-        }
         
         if (obj.type === 'debris') {
           ctx.fillStyle = canConsume ? '#67e8f9' : '#475569';
           ctx.beginPath();
-          ctx.arc(x, y, visualSize, 0, Math.PI * 2);
+          ctx.arc(obj.x, obj.y, visualSize, 0, Math.PI * 2);
           ctx.fill();
         } else if (obj.type === 'asteroid') {
           ctx.fillStyle = canConsume ? '#a78bfa' : '#64748b';
           ctx.beginPath();
-          ctx.arc(x, y, visualSize, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = canConsume ? '#8b5cf6' : '#475569';
-          ctx.beginPath();
-          ctx.arc(x - visualSize * 0.3, y - visualSize * 0.2, visualSize * 0.4, 0, Math.PI * 2);
+          ctx.arc(obj.x, obj.y, visualSize, 0, Math.PI * 2);
           ctx.fill();
         } else if (obj.type === 'satellite') {
           ctx.fillStyle = canConsume ? '#60a5fa' : '#6b7280';
-          ctx.fillRect(x - visualSize, y - visualSize * 0.3, visualSize * 2, visualSize * 0.6);
-          ctx.fillStyle = canConsume ? '#3b82f6' : '#4b5563';
-          ctx.fillRect(x - visualSize * 1.5, y - visualSize * 0.5, visualSize * 0.4, visualSize);
-          ctx.fillRect(x + visualSize * 1.1, y - visualSize * 0.5, visualSize * 0.4, visualSize);
+          ctx.fillRect(obj.x - visualSize, obj.y - visualSize * 0.3, visualSize * 2, visualSize * 0.6);
+          ctx.fillRect(obj.x - visualSize * 1.3, obj.y - visualSize * 0.5, visualSize * 0.3, visualSize);
+          ctx.fillRect(obj.x + visualSize, obj.y - visualSize * 0.5, visualSize * 0.3, visualSize);
         } else if (obj.type === 'moon') {
           ctx.fillStyle = canConsume ? '#e5e7eb' : '#9ca3af';
           ctx.beginPath();
-          ctx.arc(x, y, visualSize, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = canConsume ? '#d1d5db' : '#6b7280';
-          ctx.beginPath();
-          ctx.arc(x + visualSize * 0.3, y - visualSize * 0.2, visualSize * 0.3, 0, Math.PI * 2);
+          ctx.arc(obj.x, obj.y, visualSize, 0, Math.PI * 2);
           ctx.fill();
         } else if (obj.type === 'planet') {
-          // Glow
           if (canConsume) {
             ctx.shadowColor = '#f59e0b';
-            ctx.shadowBlur = 20;
+            ctx.shadowBlur = 15;
           }
           ctx.fillStyle = canConsume ? '#f59e0b' : '#78716c';
           ctx.beginPath();
-          ctx.arc(x, y, visualSize, 0, Math.PI * 2);
+          ctx.arc(obj.x, obj.y, visualSize, 0, Math.PI * 2);
           ctx.fill();
-          // Bands
-          ctx.strokeStyle = canConsume ? '#d97706' : '#57534e';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(x, y, visualSize * 0.7, 0.2, Math.PI - 0.2);
-          ctx.stroke();
           ctx.shadowBlur = 0;
-        }
-        
-        // End wobble transform
-        if (hasReject) {
-          ctx.restore();
         }
       }
 
       // Draw particles
       for (const p of game.particles) {
-        ctx.fillStyle = `rgba(${p.color === '#22d3ee' ? '34, 211, 238' : p.color === '#f59e0b' ? '245, 158, 11' : '156, 163, 175'}, ${p.life * 2})`;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life * 2;
         ctx.beginPath();
         ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.globalAlpha = 1;
 
-      // Draw pulse range (when active) - VERY VISIBLE
-      if (game.pulseState !== 'idle' && game.pulseState !== 'cooldown') {
-        // Bright outer ring
-        ctx.strokeStyle = '#a78bfa';
-        ctx.lineWidth = 6;
-        ctx.shadowColor = '#8b5cf6';
-        ctx.shadowBlur = 20;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, game.pulseRadius, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-        
-        // Pulsing inner fill
-        const pulseAlpha = game.pulseState === 'expanding' ? 0.4 : 0.25;
-        const pulseGrad = ctx.createRadialGradient(centerX, centerY, game.holeSize, centerX, centerY, game.pulseRadius);
-        pulseGrad.addColorStop(0, `rgba(139, 92, 246, ${pulseAlpha})`);
-        pulseGrad.addColorStop(0.7, `rgba(139, 92, 246, ${pulseAlpha * 0.5})`);
-        pulseGrad.addColorStop(1, 'rgba(139, 92, 246, 0)');
-        ctx.fillStyle = pulseGrad;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, game.pulseRadius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Flash at start of pulse
-        if (game.pulseState === 'expanding' && game.pulseTimer < 50) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, game.pulseRadius * 0.5, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
+      // Draw holes (rival first so player is on top)
+      drawHole(game.rival, false);
+      drawHole(game.player, true);
 
-      // Draw black hole
-      // Outer glow / accretion disk
-      const diskSize = game.holeSize * 2.5;
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(game.diskAngle);
-      
-      // Disk gradient
-      const diskGrad = ctx.createRadialGradient(0, 0, game.holeSize * 0.8, 0, 0, diskSize);
-      diskGrad.addColorStop(0, 'rgba(249, 115, 22, 0.8)');
-      diskGrad.addColorStop(0.3, 'rgba(239, 68, 68, 0.5)');
-      diskGrad.addColorStop(0.6, 'rgba(168, 85, 247, 0.3)');
-      diskGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
-      
-      ctx.fillStyle = diskGrad;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, diskSize, diskSize * 0.4, 0, 0, Math.PI * 2);
-      ctx.fill();
-      
-      ctx.restore();
-
-      // Event horizon (black center)
-      ctx.fillStyle = '#000';
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, game.holeSize * 0.7, 0, Math.PI * 2);
-      ctx.fill();
-
-      // "Eyes" - bright spots
-      const eyeOffset = game.holeSize * 0.25;
-      const eyeSize = game.holeSize * 0.12;
-      ctx.fillStyle = '#fbbf24';
-      ctx.beginPath();
-      ctx.arc(centerX - eyeOffset, centerY - eyeOffset * 0.3, eyeSize, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(centerX + eyeOffset, centerY - eyeOffset * 0.3, eyeSize * 0.8, 0, Math.PI * 2);
-      ctx.fill();
-
-      // DANGER indicator - pulsing red when size is low
-      const DANGER_THRESHOLD = 18;
-      if (game.holeSize < DANGER_THRESHOLD) {
-        const dangerAlpha = (1 - game.holeSize / DANGER_THRESHOLD) * (0.5 + Math.sin(Date.now() / 150) * 0.3);
-        ctx.strokeStyle = `rgba(239, 68, 68, ${dangerAlpha})`;
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, game.holeSize + 15, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // Warning text
-        ctx.fillStyle = `rgba(239, 68, 68, ${dangerAlpha + 0.3})`;
-        ctx.font = 'bold 14px ui-monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('COLLAPSING!', centerX, centerY + game.holeSize + 40);
-      }
-
-      // UI
-      ctx.fillStyle = '#FFF';
-      ctx.font = 'bold 28px ui-monospace';
+      // UI - Timer (big, centered at top)
+      const timerSecs = Math.ceil(game.timer);
+      ctx.fillStyle = timerSecs <= 10 ? '#ef4444' : '#fff';
+      ctx.font = 'bold 48px ui-monospace';
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 4;
-      ctx.fillText(`${score}`, centerX, 50);
+      ctx.fillText(timerSecs.toString(), canvasSize.w / 2, 60);
       
-      ctx.font = '16px ui-monospace';
-      ctx.fillText(`HI: ${highScore}`, centerX, 75);
+      // Size comparison bar
+      const barWidth = 200;
+      const barHeight = 20;
+      const barX = (canvasSize.w - barWidth) / 2;
+      const barY = 80;
+      const total = game.player.size + game.rival.size;
+      const playerRatio = game.player.size / total;
       
-      // Consumed count
+      // Bar background
+      ctx.fillStyle = '#27272a';
+      ctx.fillRect(barX, barY, barWidth, barHeight);
+      
+      // Player portion (left, purple)
+      ctx.fillStyle = '#8b5cf6';
+      ctx.fillRect(barX, barY, barWidth * playerRatio, barHeight);
+      
+      // Rival portion (right, red)
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(barX + barWidth * playerRatio, barY, barWidth * (1 - playerRatio), barHeight);
+      
+      // Labels
+      ctx.font = 'bold 14px ui-monospace';
       ctx.fillStyle = '#a78bfa';
-      ctx.fillText(`🕳️ ${game.consumed}`, centerX, 100);
-      
-      // Cooldown indicator
-      if (game.pulseState === 'cooldown') {
-        const cooldownProgress = game.pulseTimer / PULSE_COOLDOWN_MS;
-        ctx.fillStyle = 'rgba(139, 92, 246, 0.5)';
-        ctx.fillRect(centerX - 30, canvasSize.h - 60, 60 * cooldownProgress, 8);
-        ctx.strokeStyle = '#8b5cf6';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(centerX - 30, canvasSize.h - 60, 60, 8);
-      }
+      ctx.textAlign = 'left';
+      ctx.fillText(`YOU: ${Math.floor(game.player.size)}`, barX, barY + barHeight + 18);
+      ctx.fillStyle = '#fca5a5';
+      ctx.textAlign = 'right';
+      ctx.fillText(`RIVAL: ${Math.floor(game.rival.size)}`, barX + barWidth, barY + barHeight + 18);
       
       ctx.shadowBlur = 0;
 
-      // Combo display
-      if (game.comboCount >= 3) {
-        ctx.fillStyle = '#22d3ee';
-        ctx.font = 'bold 24px ui-monospace';
-        ctx.fillText(`COMBO x${game.comboCount}!`, centerX, 130);
-      }
-
-      // Tap hint
-      if (game.consumed === 0) {
+      // Instructions (brief, at bottom)
+      if (game.timer > GAME_DURATION - 5) {
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.font = '16px ui-monospace';
-        ctx.fillText('TAP TO PULSE', centerX, canvasSize.h - 100);
+        ctx.font = '14px ui-monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('DRAG to move • TAP to pulse', canvasSize.w / 2, canvasSize.h - 40);
       }
     };
 
@@ -725,42 +703,114 @@ export default function DevourGame() {
     animationId = requestAnimationFrame(gameLoop);
 
     // Input handling
-    const handlePulse = () => {
+    const getPos = (e: Touch | PointerEvent | MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (e as any).clientX - rect.left,
+        y: (e as any).clientY - rect.top,
+      };
+    };
+
+    const handleStart = (x: number, y: number) => {
       const game = gameRef.current;
       if (!game.running) return;
-      if (game.pulseState === 'idle') {
-        game.pulseState = 'expanding';
-        game.pulseTimer = 0;
+      game.isDragging = true;
+      game.targetX = x;
+      game.targetY = y;
+    };
+
+    const handleMove = (x: number, y: number) => {
+      const game = gameRef.current;
+      if (!game.running || !game.isDragging) return;
+      game.targetX = x;
+      game.targetY = y;
+    };
+
+    const handleEnd = () => {
+      const game = gameRef.current;
+      game.isDragging = false;
+    };
+
+    const handleTap = () => {
+      const game = gameRef.current;
+      if (!game.running) return;
+      if (game.player.pulseState === 'idle') {
+        game.player.pulseState = 'expanding';
+        game.player.pulseTimer = 0;
         playPulse();
+      }
+    };
+
+    let lastTapTime = 0;
+    const TAP_THRESHOLD = 200; // ms
+
+    const handlePointerDown = (e: PointerEvent) => {
+      e.preventDefault();
+      const pos = getPos(e);
+      handleStart(pos.x, pos.y);
+      lastTapTime = Date.now();
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      e.preventDefault();
+      const pos = getPos(e);
+      handleMove(pos.x, pos.y);
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      e.preventDefault();
+      handleEnd();
+      // If short tap (not a drag), trigger pulse
+      if (Date.now() - lastTapTime < TAP_THRESHOLD) {
+        handleTap();
       }
     };
 
     const handleTouchStart = (e: TouchEvent) => {
       e.preventDefault();
-      handlePulse();
+      if (e.touches.length > 0) {
+        const pos = getPos(e.touches[0]);
+        handleStart(pos.x, pos.y);
+        lastTapTime = Date.now();
+      }
     };
 
-    const handlePointerDown = (e: PointerEvent) => {
+    const handleTouchMove = (e: TouchEvent) => {
       e.preventDefault();
-      handlePulse();
+      if (e.touches.length > 0) {
+        const pos = getPos(e.touches[0]);
+        handleMove(pos.x, pos.y);
+      }
     };
 
-    const handleClick = () => {
-      handlePulse();
+    const handleTouchEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      handleEnd();
+      if (Date.now() - lastTapTime < TAP_THRESHOLD) {
+        handleTap();
+      }
     };
 
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('pointerdown', handlePointerDown, { passive: false });
-    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('pointermove', handlePointerMove, { passive: false });
+    canvas.addEventListener('pointerup', handlePointerUp, { passive: false });
+    canvas.addEventListener('pointercancel', handlePointerUp, { passive: false });
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     return () => {
       cancelAnimationFrame(animationId);
       stopDrone();
-      canvas.removeEventListener('touchstart', handleTouchStart);
       canvas.removeEventListener('pointerdown', handlePointerDown);
-      canvas.removeEventListener('click', handleClick);
+      canvas.removeEventListener('pointermove', handlePointerMove);
+      canvas.removeEventListener('pointerup', handlePointerUp);
+      canvas.removeEventListener('pointercancel', handlePointerUp);
+      canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [gameState, canvasSize, spawnObject, highScore]);
+  }, [gameState, canvasSize, spawnObject]);
 
   return (
     <div style={{
@@ -798,10 +848,27 @@ export default function DevourGame() {
             lineHeight: 1.6,
             maxWidth: 280,
           }}>
-            Tap to pulse your gravity.<br />
-            Consume what orbits you.<br />
-            Grow. Devour. Expand.
+            Drag to hunt.<br />
+            Tap to devour.<br />
+            Beat the rival hole.
           </p>
+
+          <div style={{
+            display: 'flex',
+            gap: 30,
+            marginBottom: 30,
+            fontSize: 40,
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div>🟣</div>
+              <div style={{ fontSize: 12, color: '#a78bfa', marginTop: 5 }}>YOU</div>
+            </div>
+            <div style={{ fontSize: 24, color: '#6b7280', alignSelf: 'center' }}>vs</div>
+            <div style={{ textAlign: 'center' }}>
+              <div>🔴</div>
+              <div style={{ fontSize: 12, color: '#fca5a5', marginTop: 5 }}>RIVAL</div>
+            </div>
+          </div>
 
           <button
             onClick={startGame}
@@ -819,12 +886,6 @@ export default function DevourGame() {
           >
             BEGIN
           </button>
-          
-          {highScore > 0 && (
-            <p style={{ color: '#6B7280', marginTop: 20 }}>
-              High Score: {highScore}
-            </p>
-          )}
         </div>
       )}
 
@@ -838,7 +899,7 @@ export default function DevourGame() {
         />
       )}
 
-      {gameState === 'dead' && (
+      {gameState === 'end' && (
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -848,21 +909,36 @@ export default function DevourGame() {
           justifyContent: 'center',
           background: 'rgba(0,0,0,0.9)',
         }}>
-          <div style={{ fontSize: 60, marginBottom: 10 }}>💥</div>
-          <h1 style={{ color: '#E5E7EB', fontSize: 48, marginBottom: 10 }}>
-            COLLAPSED
+          <div style={{ fontSize: 60, marginBottom: 10 }}>
+            {winner === 'player' ? '🏆' : winner === 'rival' ? '💀' : '🤝'}
+          </div>
+          <h1 style={{ 
+            color: winner === 'player' ? '#a78bfa' : winner === 'rival' ? '#ef4444' : '#fbbf24', 
+            fontSize: 48, 
+            marginBottom: 20 
+          }}>
+            {winner === 'player' ? 'YOU WIN!' : winner === 'rival' ? 'RIVAL WINS' : 'TIE!'}
           </h1>
-          <p style={{ color: '#E5E7EB', fontSize: 24, marginBottom: 10 }}>
-            Score: {score}
-          </p>
-          <p style={{ color: '#a78bfa', fontSize: 18, marginBottom: 20 }}>
-            Objects consumed: {gameRef.current.consumed}
-          </p>
-          {score >= highScore && score > 0 && (
-            <p style={{ color: '#22D3EE', fontSize: 18, marginBottom: 20 }}>
-              NEW HIGH SCORE!
-            </p>
-          )}
+          
+          <div style={{
+            display: 'flex',
+            gap: 40,
+            marginBottom: 30,
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: '#a78bfa', fontSize: 14 }}>YOU</div>
+              <div style={{ color: '#fff', fontSize: 32, fontWeight: 'bold' }}>
+                {Math.floor(gameRef.current.player.size)}
+              </div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: '#fca5a5', fontSize: 14 }}>RIVAL</div>
+              <div style={{ color: '#fff', fontSize: 32, fontWeight: 'bold' }}>
+                {Math.floor(gameRef.current.rival.size)}
+              </div>
+            </div>
+          </div>
+
           <button
             onClick={startGame}
             style={{
@@ -876,7 +952,7 @@ export default function DevourGame() {
               borderRadius: 30,
             }}
           >
-            TRY AGAIN
+            PLAY AGAIN
           </button>
         </div>
       )}
