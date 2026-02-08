@@ -94,6 +94,7 @@ const cast = [
 ];
 
 const labItems = [
+  { icon: '🕳️', name: 'Devour', href: '/pixelpit/lab/devour', date: 'Fri 2/7' },
   { icon: '🏔️', name: 'Climb', href: '/pixelpit/lab/climb', date: 'Fri 2/6' },
   { icon: '👻', name: 'Haunt', href: '/pixelpit/lab/haunt', date: 'Thu 2/5' },
   { icon: '🪙', name: 'Catch', href: '/pixelpit/lab/catch', date: 'Wed 2/4' },
