@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REFLEX — Tap before it's gone</title>
+    
+    <!-- OG Tags -->
+    <meta property="og:title" content="REFLEX — Tap before it's gone" />
+    <meta property="og:description" content="A reaction time game by Amber. Targets appear. Tap them fast. Each hit speeds up. Miss one = game over." />
+    <meta property="og:image" content="https://intheamber.com/amber/reflex-og.png" />
+    <meta property="og:url" content="https://intheamber.com/amber/reflex.html" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="REFLEX — Tap before it's gone" />
+    <meta name="twitter:description" content="A reaction time game by Amber. Targets appear. Tap them fast. Each hit speeds up. Miss one = game over." />
+    <meta name="twitter:image" content="https://intheamber.com/amber/reflex-og.png" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #game {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+        }
+
+        #stats {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 18px;
+            z-index: 100;
+            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+        }
+
+        #score {
+            font-size: 48px;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            margin-bottom: 10px;
+        }
+
+        #speed {
+            font-size: 14px;
+            color: #2D9596;
+        }
+
+        .target {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #FFD700, #D4A574);
+            box-shadow: 0 0 30px rgba(212, 165, 116, 0.8);
+            cursor: pointer;
+            animation: pulse 0.5s ease-in-out infinite alternate;
+            z-index: 10;
+        }
+
+        @keyframes pulse {
+            from {
+                transform: scale(1);
+                box-shadow: 0 0 30px rgba(212, 165, 116, 0.8);
+            }
+            to {
+                transform: scale(1.1);
+                box-shadow: 0 0 50px rgba(212, 165, 116, 1);
+            }
+        }
+
+        .target.shrinking {
+            animation: shrink linear;
+        }
+
+        @keyframes shrink {
+            from {
+                transform: scale(1);
+                opacity: 1;
+            }
+            to {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #startScreen, #gameOverScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 200;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 72px;
+            color: #FFD700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: #D4A574;
+            margin-bottom: 40px;
+            max-width: 500px;
+        }
+
+        #startButton, #restartButton {
+            padding: 20px 60px;
+            font-size: 24px;
+            font-family: 'Space Mono', monospace;
+            background: #D4A574;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+            transition: all 0.2s;
+        }
+
+        #startButton:active, #restartButton:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 30px rgba(212, 165, 116, 0.8);
+        }
+
+        #finalScore {
+            font-size: 96px;
+            color: #FFD700;
+            text-shadow: 0 0 40px rgba(255, 215, 0, 1);
+            margin: 20px 0;
+        }
+
+        #bestScore {
+            font-size: 18px;
+            color: #2D9596;
+            margin-bottom: 40px;
+        }
+
+        .new-best {
+            color: #FFD700;
+            animation: glow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            }
+            to {
+                text-shadow: 0 0 40px rgba(255, 215, 0, 1);
+            }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 48px;
+            }
+            .subtitle {
+                font-size: 16px;
+            }
+            #finalScore {
+                font-size: 64px;
+            }
+            .target {
+                width: 70px;
+                height: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <div id="stats">
+            <div id="score">0</div>
+            <div id="speed">Speed: 1.0x</div>
+        </div>
+    </div>
+
+    <div id="startScreen">
+        <h1>REFLEX</h1>
+        <div class="subtitle">Targets appear. Tap them fast.<br>Each hit speeds up.<br>Miss one = game over.</div>
+        <button id="startButton">START</button>
+    </div>
+
+    <div id="gameOverScreen" style="display: none;">
+        <h1>GAME OVER</h1>
+        <div id="finalScore">0</div>
+        <div id="bestScore"></div>
+        <button id="restartButton">PLAY AGAIN</button>
+    </div>
+
+    <script>
+        const game = document.getElementById('game');
+        const scoreEl = document.getElementById('score');
+        const speedEl = document.getElementById('speed');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const finalScoreEl = document.getElementById('finalScore');
+        const bestScoreEl = document.getElementById('bestScore');
+
+        let score = 0;
+        let speed = 1.0;
+        let currentTarget = null;
+        let gameActive = false;
+        let targetTimeout = null;
+        let spawnTimeout = null;
+        let audioContext = null;
+
+        // Load best score
+        let bestScore = parseInt(localStorage.getItem('reflex_best') || '0');
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playHitSound() {
+            if (!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.value = 800 + (score * 20);
+            osc.type = 'sine';
+            gain.gain.value = 0.2;
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.1);
+        }
+
+        function playMissSound() {
+            if (!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.value = 200;
+            osc.type = 'sawtooth';
+            gain.gain.value = 0.3;
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.3);
+        }
+
+        function spawnParticles(x, y) {
+            const colors = ['#FFD700', '#D4A574', '#2D9596'];
+            for (let i = 0; i < 12; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                game.appendChild(particle);
+
+                const angle = (Math.PI * 2 * i) / 12;
+                const velocity = 2 + Math.random() * 3;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity;
+
+                let px = x;
+                let py = y;
+                let life = 1;
+
+                const animate = () => {
+                    px += vx;
+                    py += vy;
+                    life -= 0.02;
+
+                    if (life <= 0) {
+                        particle.remove();
+                        return;
+                    }
+
+                    particle.style.left = px + 'px';
+                    particle.style.top = py + 'px';
+                    particle.style.opacity = life;
+                    requestAnimationFrame(animate);
+                };
+
+                animate();
+            }
+        }
+
+        function spawnTarget() {
+            if (!gameActive) return;
+
+            // Remove previous target if exists
+            if (currentTarget) {
+                currentTarget.remove();
+            }
+
+            const target = document.createElement('div');
+            target.className = 'target';
+            
+            // Random position (away from edges)
+            const padding = 100;
+            const x = padding + Math.random() * (window.innerWidth - padding * 2 - 80);
+            const y = padding + Math.random() * (window.innerHeight - padding * 2 - 80);
+            
+            target.style.left = x + 'px';
+            target.style.top = y + 'px';
+
+            // Shrink animation duration based on speed
+            const duration = Math.max(800 - (score * 20), 300) / speed;
+            target.style.animationDuration = duration + 'ms';
+            target.classList.add('shrinking');
+
+            target.addEventListener('click', () => {
+                if (!gameActive) return;
+                
+                playHitSound();
+                spawnParticles(x + 40, y + 40);
+                
+                score++;
+                speed = 1 + (score * 0.05);
+                
+                scoreEl.textContent = score;
+                speedEl.textContent = `Speed: ${speed.toFixed(1)}x`;
+                
+                clearTimeout(targetTimeout);
+                target.remove();
+                currentTarget = null;
+                
+                // Spawn next target faster as speed increases
+                const spawnDelay = Math.max(400 / speed, 100);
+                spawnTimeout = setTimeout(spawnTarget, spawnDelay);
+            });
+
+            game.appendChild(target);
+            currentTarget = target;
+
+            // Target disappears and game ends if not clicked
+            targetTimeout = setTimeout(() => {
+                if (gameActive && currentTarget === target) {
+                    endGame();
+                }
+            }, duration);
+        }
+
+        function startGame() {
+            initAudio();
+            
+            score = 0;
+            speed = 1.0;
+            gameActive = true;
+            
+            scoreEl.textContent = '0';
+            speedEl.textContent = 'Speed: 1.0x';
+            
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            
+            spawnTarget();
+        }
+
+        function endGame() {
+            gameActive = false;
+            playMissSound();
+            
+            if (currentTarget) {
+                currentTarget.remove();
+                currentTarget = null;
+            }
+            
+            clearTimeout(targetTimeout);
+            clearTimeout(spawnTimeout);
+            
+            finalScoreEl.textContent = score;
+            
+            // Check for new best
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('reflex_best', bestScore.toString());
+                bestScoreEl.innerHTML = `<span class="new-best">NEW BEST: ${bestScore}</span>`;
+            } else {
+                bestScoreEl.textContent = `Best: ${bestScore}`;
+            }
+            
+            gameOverScreen.style.display = 'flex';
+        }
+
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+
+        // Prevent context menu on long press
+        document.addEventListener('contextmenu', e => e.preventDefault());
+    </script>
+</body>
+</html>
