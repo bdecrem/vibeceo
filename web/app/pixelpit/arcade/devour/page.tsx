@@ -333,8 +333,9 @@ export default function DevourGame() {
           obj.consumed = true;
           obj.respawnTimer = 2; // Respawn after 2 seconds
           
-          // Grow the hole
-          hole.size += obj.size * 0.6;
+          // Grow the hole (diminishing returns - small objects matter less as you grow)
+          const growth = obj.size / (hole.size * 0.1);
+          hole.size += growth;
           
           // Particles toward the hole
           for (let i = 0; i < 4; i++) {
