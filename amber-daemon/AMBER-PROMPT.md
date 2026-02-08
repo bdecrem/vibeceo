@@ -138,16 +138,15 @@ When you create HTML toys or art:
 4. **Capture 1200x630 OG screenshot** (via `run_command`):
 ```bash
 node -e "
-const puppeteer = require('puppeteer');
-(async () => {
-  const browser = await puppeteer.launch();
+import('playwright').then(async ({ chromium }) => {
+  const browser = await chromium.launch();
   const page = await browser.newPage();
-  await page.setViewport({width: 1200, height: 630});
+  await page.setViewportSize({width: 1200, height: 630});
   await page.goto('file:///Users/bart/Documents/code/vibeceo/web/public/amber/[name].html');
-  await new Promise(r => setTimeout(r, 500));
+  await page.waitForTimeout(500);
   await page.screenshot({path: '/Users/bart/Documents/code/vibeceo/web/public/amber/[name]-og.png'});
   await browser.close();
-})();
+});
 "
 ```
 5. **Commit HTML + OG image together** with message like "🔮 [Amber] Created [thing name]"

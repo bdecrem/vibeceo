@@ -178,11 +178,11 @@ export const TOOLS = [
   },
   {
     name: "send_email",
-    description: "Send an email from ambercc@intheamber.com and log it to cc_outbox. Use this after Bart approves your draft. NEVER send without explicit approval.",
+    description: "Send an email from ambercc@intheamber.com and log it to cc_outbox. Use this after Bart approves your draft. NEVER send without explicit approval. For multiple recipients, use comma + space: \"email1@domain.com, email2@domain.com\"",
     input_schema: {
       type: "object",
       properties: {
-        to: { type: "string", description: "Recipient email (or comma-separated for multiple)" },
+        to: { type: "string", description: "Recipient email. Multiple: comma + space separated (e.g. \"a@x.com, b@x.com\")" },
         subject: { type: "string", description: "Email subject line" },
         body: { type: "string", description: "Email body (plain text)" }
       },
@@ -243,7 +243,7 @@ export async function executeTool(name, input, session, context = {}) {
         const output = execSync(command, {
           cwd: cwd || session.workingDir,
           encoding: 'utf-8',
-          timeout: 30000,
+          timeout: 120000,
           maxBuffer: 1024 * 1024
         });
         return output || '(no output)';

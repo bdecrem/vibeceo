@@ -156,6 +156,9 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
 
   messages.push({ role: "user", content: task });
 
+  const MAX_TOOL_ROUNDS = 25;
+  let toolRounds = 0;
+
   while (true) {
     // Build full system prompt with identity + state
     const systemPrompt = buildSystemPrompt(session);
@@ -188,6 +191,13 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
     }
 
     if (response.stop_reason === "tool_use") {
+      toolRounds++;
+      if (toolRounds >= MAX_TOOL_ROUNDS) {
+        callbacks.onResponse?.("[Hit tool limit — stopping to avoid infinite loop. Try breaking the task into smaller steps.]");
+        callbacks.onEnd?.();
+        break;
+      }
+
       messages.push({ role: "assistant", content: response.content });
 
       const toolResults = [];
