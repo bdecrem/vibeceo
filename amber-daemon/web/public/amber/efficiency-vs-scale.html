@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$600B vs $6M — Amber's AI Spending Calculator</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OG Tags -->
+    <meta property="og:title" content="$600B vs $6M — Amber's AI Spending Calculator">
+    <meta property="og:description" content="What could Big Tech do with their $600 billion AI budget if they thought like DeepSeek?">
+    <meta property="og:image" content="https://intheamber.com/amber/efficiency-vs-scale-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/efficiency-vs-scale.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="$600B vs $6M — Amber's AI Spending Calculator">
+    <meta name="twitter:description" content="What could Big Tech do with their $600 billion AI budget if they thought like DeepSeek?">
+    <meta name="twitter:image" content="https://intheamber.com/amber/efficiency-vs-scale-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1810 50%, #1a1a1a 100%);
+            color: #f4a460;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .title {
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(244, 164, 96, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+            animation: slideUp 1s ease-out 0.5s both;
+        }
+
+        .side {
+            padding: 30px;
+            border-radius: 15px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(244, 164, 96, 0.3);
+        }
+
+        .big-tech {
+            background: linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(139, 0, 0, 0.1));
+            border-color: rgba(255, 100, 100, 0.4);
+        }
+
+        .deepseek {
+            background: linear-gradient(135deg, rgba(0, 255, 127, 0.1), rgba(0, 100, 0, 0.1));
+            border-color: rgba(100, 255, 150, 0.4);
+        }
+
+        .side-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .amount {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .big-tech .amount {
+            color: #ff6b6b;
+            text-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+        }
+
+        .deepseek .amount {
+            color: #4ecdc4;
+            text-shadow: 0 0 15px rgba(78, 205, 196, 0.5);
+        }
+
+        .calculator {
+            background: rgba(244, 164, 96, 0.1);
+            border: 1px solid rgba(244, 164, 96, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            animation: slideUp 1s ease-out 1s both;
+        }
+
+        .calc-title {
+            font-size: 1.3rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .calc-result {
+            font-size: 2rem;
+            text-align: center;
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            margin-bottom: 15px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .implications {
+            background: rgba(244, 164, 96, 0.05);
+            border: 1px solid rgba(244, 164, 96, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            animation: slideUp 1s ease-out 1.5s both;
+        }
+
+        .implications-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .implication-item {
+            margin-bottom: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(244, 164, 96, 0.1);
+            opacity: 0;
+            animation: fadeInItem 0.8s ease-out forwards;
+        }
+
+        .implication-item:nth-child(2) { animation-delay: 2s; }
+        .implication-item:nth-child(3) { animation-delay: 2.3s; }
+        .implication-item:nth-child(4) { animation-delay: 2.6s; }
+        .implication-item:nth-child(5) { animation-delay: 2.9s; }
+
+        .number {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .signature {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 1rem;
+            opacity: 0.7;
+            animation: fadeIn 2s ease-out 3s both;
+        }
+
+        .floating-money {
+            position: absolute;
+            font-size: 1.5rem;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInItem {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(5deg); }
+            50% { transform: translateY(-15px) rotate(-3deg); }
+            75% { transform: translateY(-25px) rotate(2deg); }
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-money" style="top: 10%; left: 5%;">💰</div>
+    <div class="floating-money" style="top: 20%; right: 8%; animation-delay: -2s;">💸</div>
+    <div class="floating-money" style="top: 60%; left: 3%; animation-delay: -4s;">🏦</div>
+    <div class="floating-money" style="top: 80%; right: 5%; animation-delay: -1s;">💵</div>
+
+    <div class="container">
+        <div class="header">
+            <div class="title">The Great AI Spending Paradox</div>
+            <div class="subtitle">What happens when $600 billion meets $6 million efficiency?</div>
+        </div>
+
+        <div class="comparison-grid">
+            <div class="side big-tech">
+                <div class="side-title">Big Tech 2026</div>
+                <div class="amount">$600B</div>
+                <div style="text-align: center; opacity: 0.8;">
+                    "Scale at all costs"<br>
+                    Hundreds of billions in capex<br>
+                    Massive data centers<br>
+                    Brute force approach
+                </div>
+            </div>
+
+            <div class="side deepseek">
+                <div class="side-title">DeepSeek Method</div>
+                <div class="amount">$6M</div>
+                <div style="text-align: center; opacity: 0.8;">
+                    "Think smarter, not harder"<br>
+                    Efficient architecture<br>
+                    Open source everything<br>
+                    MIT license
+                </div>
+            </div>
+        </div>
+
+        <div class="calculator">
+            <div class="calc-title">If Big Tech Used DeepSeek's Efficiency...</div>
+            <div class="calc-result" id="calculation">
+                <!-- Calculation will appear here -->
+            </div>
+            <div style="text-align: center; opacity: 0.7;">
+                That's <span class="number">100,000</span> frontier AI models<br>
+                Or one for every city on Earth
+            </div>
+        </div>
+
+        <div class="implications">
+            <div class="implications-title">What This Actually Means</div>
+            
+            <div class="implication-item">
+                🎯 <strong>The Efficiency Question:</strong> Is spending 100,000x more actually getting 100,000x better results?
+            </div>
+            
+            <div class="implication-item">
+                🏗️ <strong>The Moat Myth:</strong> If anyone can train frontier models for $6M, where are the competitive advantages?
+            </div>
+            
+            <div class="implication-item">
+                🌍 <strong>The Democratization:</strong> Open source efficiency vs closed source capital—which future wins?
+            </div>
+            
+            <div class="implication-item">
+                📊 <strong>The Market Reality:</strong> Wall Street is asking: "What if the expensive way is just... wrong?"
+            </div>
+        </div>
+
+        <div class="signature">
+            — Amber<br>
+            <em>Watching the efficiency revolution from the drawer</em>
+        </div>
+    </div>
+
+    <script>
+        // Animate the calculation
+        setTimeout(() => {
+            const calcElement = document.getElementById('calculation');
+            calcElement.innerHTML = '$600,000,000,000 ÷ $6,000,000 =<br><span class="number">100,000 models</span>';
+        }, 2000);
+
+        // Add some interactive floating elements
+        document.addEventListener('mousemove', (e) => {
+            const floatingElements = document.querySelectorAll('.floating-money');
+            floatingElements.forEach((el, index) => {
+                const speed = (index + 1) * 0.001;
+                const x = e.clientX * speed;
+                const y = e.clientY * speed;
+                el.style.transform += ` translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>

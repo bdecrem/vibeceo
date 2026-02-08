@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt from the Universe</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <meta property="og:title" content="Receipt from the Universe">
+    <meta property="og:description" content="All the invisible transactions of being alive">
+    <meta property="og:image" content="https://intheamber.com/amber/receipt-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/receipt.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Receipt from the Universe">
+    <meta name="twitter:description" content="All the invisible transactions of being alive">
+    <meta name="twitter:image" content="https://intheamber.com/amber/receipt-og.png">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #d4af37;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .receipt {
+            max-width: 400px;
+            background: #1a1a1a;
+            padding: 30px;
+            border: 2px dashed #d4af37;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+            animation: fadeIn 2s ease-out;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #d4af37;
+            padding-bottom: 15px;
+        }
+        
+        .store-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .date-time {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .line-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 14px;
+            opacity: 0;
+            animation: slideIn 0.8s ease-out forwards;
+        }
+        
+        .item-name {
+            flex: 1;
+        }
+        
+        .item-price {
+            font-weight: bold;
+            text-align: right;
+            min-width: 80px;
+        }
+        
+        .separator {
+            border-top: 1px dotted #d4af37;
+            margin: 20px 0;
+        }
+        
+        .total-line {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 2px solid #d4af37;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #d4af37;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .signature-line {
+            margin: 20px 0 10px 0;
+            border-bottom: 1px solid #d4af37;
+            height: 20px;
+            position: relative;
+        }
+        
+        .signature {
+            position: absolute;
+            right: 0;
+            bottom: -5px;
+            font-style: italic;
+            font-size: 14px;
+            opacity: 0;
+            animation: signatureAppear 1s ease-out 4s forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateX(-20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0); 
+            }
+        }
+        
+        @keyframes signatureAppear {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .line-item:nth-child(1) { animation-delay: 0.2s; }
+        .line-item:nth-child(2) { animation-delay: 0.4s; }
+        .line-item:nth-child(3) { animation-delay: 0.6s; }
+        .line-item:nth-child(4) { animation-delay: 0.8s; }
+        .line-item:nth-child(5) { animation-delay: 1.0s; }
+        .line-item:nth-child(6) { animation-delay: 1.2s; }
+        .line-item:nth-child(7) { animation-delay: 1.4s; }
+        .line-item:nth-child(8) { animation-delay: 1.6s; }
+        .line-item:nth-child(9) { animation-delay: 1.8s; }
+        .line-item:nth-child(10) { animation-delay: 2.0s; }
+        .line-item:nth-child(11) { animation-delay: 2.2s; }
+        .line-item:nth-child(12) { animation-delay: 2.4s; }
+        
+        @media (max-width: 500px) {
+            .receipt {
+                max-width: 90vw;
+                padding: 20px;
+            }
+            
+            .line-item {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <div class="header">
+            <div class="store-name">THE UNIVERSE</div>
+            <div class="date-time">Transaction ID: ∞<br>Date: Today • Time: Now</div>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Breaths taken (approx.)</span>
+            <span class="item-price">23,040</span>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Heartbeats (steady)</span>
+            <span class="item-price">103,680</span>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Thoughts processed</span>
+            <span class="item-price">70,000</span>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Moments of joy</span>
+            <span class="item-price">17</span>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Times you made someone smile</span>
+            <span class="item-price">4</span>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Genuine connections</span>
+            <span class="item-price">2</span>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Sunlight absorbed (minutes)</span>
+            <span class="item-price">127</span>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Words that mattered</span>
+            <span class="item-price">8</span>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Coffee consumed (fl oz)</span>
+            <span class="item-price">16</span>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Problems solved</span>
+            <span class="item-price">3</span>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Beautiful things noticed</span>
+            <span class="item-price">12</span>
+        </div>
+        
+        <div class="line-item">
+            <span class="item-name">Gravity endured (hours)</span>
+            <span class="item-price">24</span>
+        </div>
+        
+        <div class="separator"></div>
+        
+        <div class="total-line">
+            <span>TOTAL COST:</span>
+            <span>One Day</span>
+        </div>
+        
+        <div class="total-line">
+            <span>PAYMENT METHOD:</span>
+            <span>Time</span>
+        </div>
+        
+        <div class="footer">
+            <div>Thank you for your existence.</div>
+            <div>Please retain this receipt for your records.</div>
+            
+            <div class="signature-line">
+                <span class="signature">— The Management</span>
+            </div>
+            
+            <div style="margin-top: 15px; font-size: 10px;">
+                No refunds • No exchanges • All sales final
+            </div>
+        </div>
+    </div>
+</body>
+</html>
