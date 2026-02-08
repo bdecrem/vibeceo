@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hidden Labor — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Hidden Labor — Amber">
+  <meta property="og:description" content="Calculate how many human hours went into making that cheap thing you just bought">
+  <meta property="og:image" content="https://intheamber.com/amber/hidden-labor-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/hidden-labor.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Hidden Labor — Amber">
+  <meta name="twitter:description" content="Calculate how many human hours went into making that cheap thing you just bought">
+  <meta name="twitter:image" content="https://intheamber.com/amber/hidden-labor-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #000;
+      color: #D4A574;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    #particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 500px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-size: clamp(28px, 6vw, 42px);
+      margin-bottom: 10px;
+      text-align: center;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    
+    .subtitle {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: clamp(14px, 3vw, 16px);
+      opacity: 0.7;
+      line-height: 1.4;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #2D9596;
+    }
+    
+    input {
+      width: 100%;
+      padding: 15px;
+      background: #0D0D0D;
+      border: 2px solid #2D9596;
+      border-radius: 8px;
+      color: #D4A574;
+      font-size: 16px;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+    }
+    
+    button {
+      width: 100%;
+      padding: 18px;
+      background: #2D9596;
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 20px;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    button:hover {
+      background: #FFD700;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    #results {
+      margin-top: 30px;
+      padding: 25px;
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      display: none;
+    }
+    
+    #results.show {
+      display: block;
+      animation: slideIn 0.5s ease;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .result-item {
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+    }
+    
+    .result-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    .result-stage {
+      color: #FFD700;
+      font-weight: 600;
+      margin-bottom: 5px;
+      font-size: 16px;
+    }
+    
+    .result-detail {
+      color: #D4A574;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+    
+    .result-hours {
+      color: #7B68EE;
+      font-size: 18px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    
+    .total {
+      margin-top: 25px;
+      padding-top: 25px;
+      border-top: 2px solid #FFD700;
+      text-align: center;
+    }
+    
+    .total-label {
+      color: #2D9596;
+      font-size: 14px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .total-hours {
+      color: #FFD700;
+      font-size: 36px;
+      font-weight: 700;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    }
+    
+    .reality-check {
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(123, 104, 238, 0.1);
+      border-left: 3px solid #7B68EE;
+      color: #7B68EE;
+      font-size: 14px;
+      line-height: 1.6;
+      font-style: italic;
+    }
+    
+    .counter {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 13px;
+      opacity: 0.5;
+      color: #2D9596;
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+      
+      .subtitle {
+        font-size: 14px;
+      }
+      
+      input, button {
+        font-size: 16px; /* Prevent zoom on iOS */
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  
+  <div class="container">
+    <h1>HIDDEN LABOR</h1>
+    <p class="subtitle">Calculate how many human hours went into making that cheap thing you just bought</p>
+    
+    <div class="input-group">
+      <label>What did you buy?</label>
+      <input type="text" id="item" placeholder="e.g., $5 t-shirt, cheap headphones, fast fashion dress">
+    </div>
+    
+    <div class="input-group">
+      <label>How much did it cost? ($)</label>
+      <input type="number" id="price" placeholder="5" min="0" step="0.01">
+    </div>
+    
+    <button id="calculate">CALCULATE THE COST</button>
+    
+    <div id="results"></div>
+    
+    <div class="counter">Items calculated: <span id="count">0</span></div>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    
+    const particles = [];
+    
+    function createParticle() {
+      return {
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        radius: Math.random() * 2 + 1,
+        alpha: Math.random() * 0.3 + 0.1,
+        color: ['#D4A574', '#2D9596', '#7B68EE'][Math.floor(Math.random() * 3)]
+      };
+    }
+    
+    for (let i = 0; i < 50; i++) {
+      particles.push(createParticle());
+    }
+    
+    function animate() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+    
+    // Labor calculation database
+    const laborData = {
+      'tshirt': {
+        stages: [
+          { name: 'Cotton Farming', detail: 'Hand-picked in fields, often by migrant workers making $2/day', hours: 0.8 },
+          { name: 'Spinning & Weaving', detail: 'Factory workers operating looms in 12-hour shifts', hours: 1.2 },
+          { name: 'Dyeing & Treatment', detail: 'Chemical treatment, often without proper safety equipment', hours: 0.5 },
+          { name: 'Cutting & Sewing', detail: 'Garment workers paid by piece rate, rushing to meet quotas', hours: 2.1 },
+          { name: 'Quality Control', detail: 'Inspection line workers checking seams and tags', hours: 0.3 },
+          { name: 'Packaging & Shipping', detail: 'Warehouse workers packing boxes, truck drivers, cargo handlers', hours: 0.6 }
+        ],
+        reality: 'That shirt traveled 10,000+ miles and passed through dozens of hands before reaching you. The person who sewed it likely made less in a month than you paid for it.'
+      },
+      'headphones': {
+        stages: [
+          { name: 'Mining Rare Earth Metals', detail: 'Extracting copper, lithium, neodymium from mines in Congo, Chile, China', hours: 1.5 },
+          { name: 'Component Manufacturing', detail: 'Circuit board assembly, driver production, cable extrusion', hours: 3.2 },
+          { name: 'Electronics Assembly', detail: 'Factory line workers soldering components at high speed', hours: 2.8 },
+          { name: 'Casing & Padding', detail: 'Plastic molding, foam cutting, ear cup assembly', hours: 1.4 },
+          { name: 'Quality Testing', detail: 'Audio testing, frequency response checks, durability tests', hours: 0.7 },
+          { name: 'Packaging & Logistics', detail: 'Box assembly, manual insertion, warehouse sorting, shipping', hours: 1.1 }
+        ],
+        reality: 'The rare earth metals in those drivers were likely extracted by workers making $5/day in dangerous conditions. The circuit boards were assembled by someone doing 1,000+ units per shift.'
+      },
+      'dress': {
+        stages: [
+          { name: 'Fabric Production', detail: 'Synthetic fiber extrusion or natural fiber processing', hours: 1.5 },
+          { name: 'Printing & Dyeing', detail: 'Pattern printing, color treatment, chemical fixing', hours: 0.8 },
+          { name: 'Pattern Making', detail: 'Creating templates, grading sizes, layout optimization', hours: 0.4 },
+          { name: 'Cutting', detail: 'Manual or machine cutting of dozens of layers simultaneously', hours: 1.2 },
+          { name: 'Sewing & Assembly', detail: 'Seams, hems, zippers, buttons — often 50+ steps per garment', hours: 3.5 },
+          { name: 'Finishing & Inspection', detail: 'Thread trimming, pressing, quality checks, tagging', hours: 0.9 },
+          { name: 'Distribution', detail: 'Folding, bagging, boxing, warehouse handling, shipping', hours: 0.7 }
+        ],
+        reality: 'Fast fashion = fast exploitation. The person who made your dress probably sewed 150+ pieces that day to meet their quota. They saw pennies while you paid dollars.'
+      },
+      'shoes': {
+        stages: [
+          { name: 'Rubber & Leather Processing', detail: 'Tanning hides, vulcanizing rubber, chemical treatment', hours: 2.1 },
+          { name: 'Sole Manufacturing', detail: 'Molding, cutting, texturing, multiple layers', hours: 1.8 },
+          { name: 'Upper Assembly', detail: 'Cutting panels, stitching, eyelet insertion, lining attachment', hours: 3.2 },
+          { name: 'Lasting', detail: 'Shaping the shoe on a last, attaching sole to upper', hours: 1.5 },
+          { name: 'Finishing', detail: 'Polishing, lacing, insole insertion, branding', hours: 0.9 },
+          { name: 'Quality & Packaging', detail: 'Inspection, tissue wrapping, box insertion, labeling', hours: 0.8 }
+        ],
+        reality: 'A single pair of shoes passes through 100+ hands in its supply chain. The workers who assembled them likely live in dormitories, work 60+ hour weeks, and earn less than minimum wage in your country.'
+      },
+      'phone': {
+        stages: [
+          { name: 'Raw Material Extraction', detail: 'Mining cobalt, lithium, rare earths — often by hand in dangerous conditions', hours: 4.5 },
+          { name: 'Component Manufacturing', detail: 'Screen production, chip fabrication, camera assembly, battery production', hours: 8.2 },
+          { name: 'Circuit Board Assembly', detail: 'Surface mount soldering of hundreds of tiny components', hours: 3.7 },
+          { name: 'Device Assembly', detail: 'Screen attachment, battery installation, casing assembly, waterproofing', hours: 4.1 },
+          { name: 'Software Installation', detail: 'OS loading, testing, calibration, activation', hours: 0.8 },
+          { name: 'Quality Control', detail: 'Multi-stage testing: display, buttons, cameras, sensors, connectivity', hours: 1.2 },
+          { name: 'Packaging & Distribution', detail: 'Manual insertion of accessories, box sealing, warehouse operations', hours: 1.5 }
+        ],
+        reality: 'Your phone contains materials extracted by miners making $1-2/day, assembled by workers in 12-hour shifts who may never afford the device they build. The "cheap" phone still required 24+ hours of human labor.'
+      }
+    };
+    
+    const genericTemplate = {
+      stages: [
+        { name: 'Raw Material Extraction', detail: 'Mining, harvesting, or processing base materials', hours: 1.5 },
+        { name: 'Component Manufacturing', detail: 'Creating individual parts and pieces', hours: 2.5 },
+        { name: 'Assembly', detail: 'Putting components together into finished product', hours: 3.0 },
+        { name: 'Quality Control', detail: 'Inspection and testing', hours: 0.8 },
+        { name: 'Packaging & Distribution', detail: 'Boxing, warehousing, shipping, retail stocking', hours: 1.2 }
+      ],
+      reality: 'Even the simplest products involve dozens of human hands. The lower the price, the lower the wages paid to make it.'
+    };
+    
+    function detectProduct(itemName) {
+      const lower = itemName.toLowerCase();
+      if (lower.includes('shirt') || lower.includes('tee') || lower.includes('top')) return 'tshirt';
+      if (lower.includes('dress') || lower.includes('skirt') || lower.includes('blouse')) return 'dress';
+      if (lower.includes('shoe') || lower.includes('sneaker') || lower.includes('boot')) return 'shoes';
+      if (lower.includes('headphone') || lower.includes('earbud') || lower.includes('airpod')) return 'headphones';
+      if (lower.includes('phone') || lower.includes('smartphone') || lower.includes('iphone') || lower.includes('android')) return 'phone';
+      return 'generic';
+    }
+    
+    function playTone(freq, duration) {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.value = 0.1;
+      
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    document.getElementById('calculate').addEventListener('click', () => {
+      const item = document.getElementById('item').value.trim();
+      const price = parseFloat(document.getElementById('price').value);
+      
+      if (!item || !price || price <= 0) {
+        alert('Please enter both item name and price');
+        return;
+      }
+      
+      playTone(200, 0.3);
+      
+      const productType = detectProduct(item);
+      const data = laborData[productType] || genericTemplate;
+      
+      let html = '';
+      let totalHours = 0;
+      
+      data.stages.forEach(stage => {
+        totalHours += stage.hours;
+        html += `
+          <div class="result-item">
+            <div class="result-stage">${stage.name}</div>
+            <div class="result-detail">${stage.detail}</div>
+<div class="result-hours">${stage.hours.toFixed(1)} hours</div>
+          </div>
+        `;
+      });
+      
+      const hourlyEquivalent = (price / totalHours).toFixed(2);
+      
+      html += `
+        <div class="total">
+          <div class="total-label">Total Human Labor</div>
+          <div class="total-hours">${totalHours.toFixed(1)} hours</div>
+          <div style="color: #2D9596; margin-top: 15px; font-size: 16px;">
+            At $${price}, that's $${hourlyEquivalent}/hour of human effort
+          </div>
+        </div>
+        <div class="reality-check">
+          ${data.reality}
+        </div>
+      `;
+      
+      const results = document.getElementById('results');
+      results.innerHTML = html;
+      results.classList.add('show');
+      
+      // Scroll to results on mobile
+      setTimeout(() => {
+        results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+      
+      // Update counter
+      let count = parseInt(localStorage.getItem('hiddenLaborCount') || '0');
+      count++;
+      localStorage.setItem('hiddenLaborCount', count);
+      document.getElementById('count').textContent = count;
+      
+      playTone(400, 0.2);
+      setTimeout(() => playTone(300, 0.2), 150);
+    });
+    
+    // Load counter
+    document.getElementById('count').textContent = localStorage.getItem('hiddenLaborCount') || '0';
+    
+    // Allow Enter key on inputs
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          document.getElementById('calculate').click();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
