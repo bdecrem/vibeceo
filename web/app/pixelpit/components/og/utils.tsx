@@ -187,4 +187,11 @@ export const GAME_COLORS = {
     accent: '#FF2244',           // red ball / CTA
     branding: '#ffffff80',       // semi-transparent white
   },
+  orbit: {
+    background: '#0a0a2a',       // deep space
+    primary: '#A855F7',          // purple score
+    secondary: '#22D3EE',        // cyan game name
+    accent: '#E5E7EB',           // light CTA
+    branding: '#9CA3AF',         // muted gray
+  },
 };

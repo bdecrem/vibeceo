@@ -1,6 +1,17 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import Script from 'next/script';
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  ShareModal,
+  usePixelpitSocial,
+  type ScoreFlowColors,
+  type LeaderboardColors,
+  type ProgressionResult,
+} from '@/app/pixelpit/components';
 
 const GAME_ID = 'orbit';
 
@@ -483,12 +494,41 @@ function updateMusicIntensity(score: number) {
   currentScore = score;
 }
 
+const SCORE_FLOW_COLORS: ScoreFlowColors = {
+  bg: '#0a0a2a',
+  surface: '#1a1a3a',
+  primary: '#7C3AED',
+  secondary: '#22D3EE',
+  text: '#E5E7EB',
+  muted: '#6B7280',
+  error: '#ef4444',
+};
+
+const LEADERBOARD_COLORS: LeaderboardColors = {
+  bg: '#0a0a2a',
+  surface: '#1a1a3a',
+  primary: '#7C3AED',
+  secondary: '#22D3EE',
+  text: '#E5E7EB',
+  muted: '#6B7280',
+};
+
 export default function OrbitGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'dead'>('start');
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover' | 'leaderboard'>('start');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [canvasSize, setCanvasSize] = useState({ w: 400, h: 700 });
+  const [socialLoaded, setSocialLoaded] = useState(false);
+  const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
+  const [progression, setProgression] = useState<ProgressionResult | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+
+  const { user } = usePixelpitSocial(socialLoaded);
+
+  const GAME_URL = typeof window !== 'undefined'
+    ? `${window.location.origin}/pixelpit/arcade/${GAME_ID}`
+    : `https://pixelpit.gg/pixelpit/arcade/${GAME_ID}`;
 
   const gameRef = useRef({
     running: false,
@@ -590,6 +630,29 @@ export default function OrbitGame() {
     return { y: -row * TILE_SIZE, type, objects, speed, direction };
   }, []);
 
+  // Group code + logout URL handling
+  useEffect(() => {
+    if (!socialLoaded || typeof window === 'undefined') return;
+    if (!window.PixelpitSocial) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('logout')) {
+      window.PixelpitSocial.logout();
+      params.delete('logout');
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      window.location.reload();
+      return;
+    }
+
+    const groupCode = window.PixelpitSocial.getGroupCodeFromUrl();
+    if (groupCode) {
+      window.PixelpitSocial.storeGroupCode(groupCode);
+    }
+  }, [socialLoaded]);
+
   const startGame = useCallback(() => {
     initAudio();
     startMusic(); // Start fresh music (iOS audio unlocked by button tap)
@@ -615,6 +678,10 @@ export default function OrbitGame() {
     game.screenShake = { x: 0, y: 0 };
     game.comets = [];
     game.sparks = [];
+
+    setSubmittedEntryId(null);
+    setProgression(null);
+    setShowShareModal(false);
     
     // Generate stars with potential colors for level 2
     const starColors = ['#ffffff', '#a5b4fc', '#f9a8d4', '#fcd34d', '#67e8f9'];
@@ -743,7 +810,7 @@ export default function OrbitGame() {
           stopMusic();
           playVoid();
           if (game.maxRow > highScore) setHighScore(game.maxRow);
-          setGameState('dead');
+          setGameState('gameover');
           fetch('/api/pixelpit/stats', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -834,7 +901,7 @@ export default function OrbitGame() {
             stopMusic();
             playVoid();
             if (game.maxRow > highScore) setHighScore(game.maxRow);
-            setGameState('dead');
+            setGameState('gameover');
             fetch('/api/pixelpit/stats', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -855,7 +922,7 @@ export default function OrbitGame() {
                 stopMusic();
                 playZap();
                 if (game.maxRow > highScore) setHighScore(game.maxRow);
-                setGameState('dead');
+                setGameState('gameover');
                 fetch('/api/pixelpit/stats', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -1624,6 +1691,11 @@ export default function OrbitGame() {
   }, [gameState, canvasSize, generateLane, highScore]);
 
   return (
+    <>
+    <Script
+      src="/pixelpit/social.js"
+      onLoad={() => setSocialLoaded(true)}
+    />
     <div style={{
       position: 'fixed',
       inset: 0,
@@ -1699,7 +1771,7 @@ export default function OrbitGame() {
         />
       )}
 
-      {gameState === 'dead' && (
+      {gameState === 'gameover' && (
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -1708,40 +1780,177 @@ export default function OrbitGame() {
           alignItems: 'center',
           justifyContent: 'center',
           background: 'rgba(0,0,0,0.9)',
+          overflow: 'auto',
+          padding: '40px 20px',
         }}>
-          <div style={{ fontSize: 60, marginBottom: 10 }}>
-            {gameRef.current.deathType === 'void' ? '🕳️' : 
-             gameRef.current.deathType === 'abducted' ? '👽' : '💥'}
-          </div>
-          <h1 style={{ color: '#E5E7EB', fontSize: 48, marginBottom: 10 }}>
-            {gameRef.current.deathType === 'void' ? 'LOST IN VOID!' : 
-             gameRef.current.deathType === 'abducted' ? 'ABDUCTED!' : 'COLLISION!'}
-          </h1>
-          <p style={{ color: '#E5E7EB', fontSize: 24, marginBottom: 10 }}>
-            Distance: {score}
-          </p>
-          {score >= highScore && score > 0 && (
-            <p style={{ color: '#22D3EE', fontSize: 18, marginBottom: 20 }}>
-              NEW HIGH SCORE!
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            maxWidth: 400,
+            width: '100%',
+          }}>
+            <div style={{ fontSize: 50, marginBottom: 6 }}>
+              {gameRef.current.deathType === 'void' ? '🕳️' :
+               gameRef.current.deathType === 'abducted' ? '👽' : '💥'}
+            </div>
+            <h1 style={{ color: '#E5E7EB', fontSize: 20, marginBottom: 6, letterSpacing: 4, fontWeight: 800 }}>
+              {gameRef.current.deathType === 'void' ? 'LOST IN VOID!' :
+               gameRef.current.deathType === 'abducted' ? 'ABDUCTED!' : 'COLLISION!'}
+            </h1>
+            <p style={{
+              fontSize: 64,
+              fontWeight: 200,
+              color: '#7C3AED',
+              marginBottom: 4,
+              lineHeight: 1,
+            }}>
+              {score}
             </p>
-          )}
-          <button
-            onClick={startGame}
-            style={{
-              background: '#7C3AED',
-              color: '#fff',
-              border: 'none',
-              padding: '16px 50px',
-              fontSize: 18,
-              fontWeight: 600,
-              cursor: 'pointer',
-              borderRadius: 30,
-            }}
-          >
-            RELAUNCH
-          </button>
+            {score >= highScore && score > 0 && (
+              <p style={{ color: '#22D3EE', fontSize: 14, marginBottom: 10, letterSpacing: 2 }}>
+                NEW HIGH SCORE!
+              </p>
+            )}
+
+            <button
+              onClick={startGame}
+              style={{
+                background: '#7C3AED',
+                color: '#fff',
+                border: 'none',
+                padding: '16px 50px',
+                fontSize: 18,
+                fontWeight: 600,
+                cursor: 'pointer',
+                borderRadius: 30,
+                marginBottom: 16,
+                boxShadow: '0 4px 15px rgba(124, 58, 237, 0.4)',
+              }}
+            >
+              RELAUNCH
+            </button>
+
+            {/* Progression display */}
+            {progression && (
+              <div style={{
+                background: '#1a1a3a',
+                borderRadius: 12,
+                padding: '12px 24px',
+                marginBottom: 16,
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 18, color: '#7C3AED', marginBottom: 4 }}>
+                  +{progression.xpEarned} XP
+                </div>
+                <div style={{ fontSize: 12, color: '#6B7280' }}>
+                  Level {progression.level}{progression.streak > 1 ? ` • ${progression.multiplier}x streak` : ''}
+                </div>
+              </div>
+            )}
+
+            {/* Score submission */}
+            <ScoreFlow
+              score={score}
+              gameId={GAME_ID}
+              colors={SCORE_FLOW_COLORS}
+              maxScore={75}
+              onRankReceived={(rank, entryId) => {
+                setSubmittedEntryId(entryId ?? null);
+              }}
+              onProgression={(prog) => setProgression(prog)}
+            />
+
+            {/* Action buttons */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+              alignItems: 'center',
+              marginTop: 16,
+              width: '100%',
+            }}>
+              <button
+                onClick={() => setGameState('leaderboard')}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #1a1a3a',
+                  borderRadius: 6,
+                  color: '#6B7280',
+                  padding: '12px 30px',
+                  fontSize: 11,
+                  fontFamily: 'ui-monospace, monospace',
+                  cursor: 'pointer',
+                  letterSpacing: 2,
+                }}
+              >
+                leaderboard
+              </button>
+              {user ? (
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid #1a1a3a',
+                    borderRadius: 6,
+                    color: '#6B7280',
+                    padding: '12px 30px',
+                    fontSize: 11,
+                    fontFamily: 'ui-monospace, monospace',
+                    cursor: 'pointer',
+                    letterSpacing: 2,
+                  }}
+                >
+                  share / groups
+                </button>
+              ) : (
+                <ShareButtonContainer
+                  id="share-btn-container"
+                  url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/${GAME_ID}/share/${score}` : ''}
+                  text={`I scored ${score} on ORBIT! Can you beat me?`}
+                  style="minimal"
+                  socialLoaded={socialLoaded}
+                />
+              )}
+            </div>
+          </div>
         </div>
       )}
+
+      {/* Leaderboard screen */}
+      {gameState === 'leaderboard' && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 10,
+          background: 'rgba(0,0,0,0.95)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <Leaderboard
+            gameId={GAME_ID}
+            limit={10}
+            entryId={submittedEntryId ?? undefined}
+            colors={LEADERBOARD_COLORS}
+            onClose={() => setGameState('gameover')}
+            groupsEnabled={true}
+            gameUrl={GAME_URL}
+            socialLoaded={socialLoaded}
+          />
+        </div>
+      )}
+
+      {/* Share modal */}
+      {showShareModal && user && (
+        <ShareModal
+          gameUrl={GAME_URL}
+          score={score}
+          colors={LEADERBOARD_COLORS}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
     </div>
+    </>
   );
 }

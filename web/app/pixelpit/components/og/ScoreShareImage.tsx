@@ -1618,6 +1618,73 @@ export function TapBeatsDecorations() {
 }
 
 /**
+ * ORBIT-specific decorations: stars, UFOs, astronaut, satellites.
+ * Deep space aesthetic with purple/cyan accents.
+ */
+export function OrbitDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Stars scattered */}
+      <div style={{ position: 'absolute', top: 40, left: 100, width: 4, height: 4, borderRadius: 2, background: '#ffffff80' }} />
+      <div style={{ position: 'absolute', top: 80, left: 300, width: 3, height: 3, borderRadius: 2, background: '#a5b4fc80' }} />
+      <div style={{ position: 'absolute', top: 120, right: 200, width: 5, height: 5, borderRadius: 3, background: '#ffffff60' }} />
+      <div style={{ position: 'absolute', top: 60, right: 400, width: 3, height: 3, borderRadius: 2, background: '#67e8f980' }} />
+      <div style={{ position: 'absolute', bottom: 140, left: 250, width: 4, height: 4, borderRadius: 2, background: '#ffffff70' }} />
+      <div style={{ position: 'absolute', bottom: 100, right: 300, width: 3, height: 3, borderRadius: 2, background: '#f9a8d480' }} />
+      <div style={{ position: 'absolute', top: 200, left: 180, width: 3, height: 3, borderRadius: 2, background: '#fcd34d80' }} />
+      <div style={{ position: 'absolute', bottom: 200, right: 150, width: 4, height: 4, borderRadius: 2, background: '#ffffff50' }} />
+
+      {/* UFO - top left */}
+      <div style={{ position: 'absolute', top: 80, left: 120, display: 'flex' }}>
+        {/* UFO body */}
+        <div style={{ width: 60, height: 20, background: '#A855F7', borderRadius: 10 }} />
+        {/* UFO dome */}
+        <div style={{ position: 'absolute', top: -10, left: 18, width: 24, height: 14, background: '#22D3EE', borderRadius: 12 }} />
+        {/* UFO lights */}
+        <div style={{ position: 'absolute', top: 14, left: 10, width: 6, height: 6, borderRadius: 3, background: '#FBBF24' }} />
+        <div style={{ position: 'absolute', top: 14, left: 24, width: 6, height: 6, borderRadius: 3, background: '#FBBF24' }} />
+        <div style={{ position: 'absolute', top: 14, left: 38, width: 6, height: 6, borderRadius: 3, background: '#FBBF24' }} />
+      </div>
+
+      {/* UFO - bottom right */}
+      <div style={{ position: 'absolute', bottom: 120, right: 100, display: 'flex' }}>
+        <div style={{ width: 50, height: 16, background: '#d946ef', borderRadius: 8 }} />
+        <div style={{ position: 'absolute', top: -8, left: 16, width: 18, height: 12, background: '#22D3EE', borderRadius: 9 }} />
+        <div style={{ position: 'absolute', top: 12, left: 8, width: 5, height: 5, borderRadius: 3, background: '#FBBF24' }} />
+        <div style={{ position: 'absolute', top: 12, left: 20, width: 5, height: 5, borderRadius: 3, background: '#FBBF24' }} />
+        <div style={{ position: 'absolute', top: 12, left: 32, width: 5, height: 5, borderRadius: 3, background: '#FBBF24' }} />
+      </div>
+
+      {/* Satellite - right side */}
+      <div style={{ position: 'absolute', top: 180, right: 160, display: 'flex' }}>
+        {/* Body */}
+        <div style={{ width: 50, height: 16, background: '#6B7280', borderRadius: 4 }} />
+        {/* Solar panels */}
+        <div style={{ position: 'absolute', top: -6, left: -18, width: 16, height: 28, background: '#1E40AF', borderRadius: 2 }} />
+        <div style={{ position: 'absolute', top: -6, left: 52, width: 16, height: 28, background: '#1E40AF', borderRadius: 2 }} />
+      </div>
+
+      {/* Crystal - left side */}
+      <div style={{ position: 'absolute', bottom: 180, left: 200, display: 'flex' }}>
+        <div style={{ width: 20, height: 28, background: '#22D3EE', borderRadius: 4, boxShadow: '0 0 15px #22D3EE' }} />
+      </div>
+
+      {/* Platform lane - subtle */}
+      <div style={{ position: 'absolute', bottom: 80, left: 150, right: 150, height: 12, background: '#4a4a5a', borderRadius: 6, opacity: 0.3 }} />
+    </div>
+  );
+}
+
+/**
  * DROP-specific decorations: helix tower platforms, ball, storm zones.
  * Nintendo-bright aesthetic over sky blue gradient.
  */

@@ -57,6 +57,7 @@ export {
   CaveMothDecorations,
   DropDecorations,
   EmojiDecorations,
+  OrbitDecorations,
   FlappyDecorations,
   FlipDecorations,
   RainDecorations,
