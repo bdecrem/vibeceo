@@ -938,15 +938,64 @@ export default function DevourGame() {
             BEGIN
           </button>
 
-          {/* Leaderboard on start */}
-          <div style={{ marginTop: 30, width: '100%', maxWidth: 320 }}>
+          {/* Leaderboard button on start - opens as modal */}
+          <button
+            onClick={() => setShowLeaderboard(true)}
+            style={{
+              marginTop: 30,
+              background: 'transparent',
+              color: '#a78bfa',
+              border: '1px solid #a78bfa40',
+              padding: '10px 24px',
+              fontSize: 14,
+              cursor: 'pointer',
+              borderRadius: 20,
+            }}
+          >
+            View Leaderboard
+          </button>
+        </div>
+      )}
+
+      {/* Leaderboard Modal - shows on start or end screen */}
+      {showLeaderboard && gameState !== 'playing' && (
+        <div
+          onClick={() => setShowLeaderboard(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.9)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+            padding: 20,
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 400 }}>
             <Leaderboard
               gameId={GAME_ID}
-              limit={5}
+              limit={10}
               entryId={submittedEntryId ?? undefined}
               colors={LEADERBOARD_COLORS}
             />
           </div>
+          <button
+            onClick={() => setShowLeaderboard(false)}
+            style={{
+              marginTop: 20,
+              background: '#8B5CF6',
+              color: '#fff',
+              border: 'none',
+              padding: '12px 30px',
+              fontSize: 14,
+              cursor: 'pointer',
+              borderRadius: 20,
+            }}
+          >
+            Close
+          </button>
         </div>
       )}
 
@@ -1058,16 +1107,6 @@ export default function DevourGame() {
             </button>
           </div>
 
-          {showLeaderboard && (
-            <div style={{ marginTop: 15, width: '100%', maxWidth: 350 }}>
-              <Leaderboard
-                gameId={GAME_ID}
-                limit={5}
-                entryId={submittedEntryId ?? undefined}
-                colors={LEADERBOARD_COLORS}
-              />
-            </div>
-          )}
         </div>
       )}
       </div>
