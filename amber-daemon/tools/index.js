@@ -211,7 +211,12 @@ export async function executeTool(name, input, session, context = {}) {
       if (!existsSync(path)) {
         return `File not found: ${path}`;
       }
-      return readFileSync(path, 'utf-8');
+      const content = readFileSync(path, 'utf-8');
+      const MAX_FILE = 12000;
+      if (content.length > MAX_FILE) {
+        return content.slice(0, MAX_FILE) + `\n\n[...truncated — ${content.length} chars total, showing first ${MAX_FILE}]`;
+      }
+      return content;
     }
 
     case "write_file": {
@@ -239,6 +244,7 @@ export async function executeTool(name, input, session, context = {}) {
 
     case "run_command": {
       const { command, cwd } = input;
+      const MAX_OUTPUT = 12000; // ~3K tokens — prevents context blowout
       try {
         const output = execSync(command, {
           cwd: cwd || session.workingDir,
@@ -246,9 +252,14 @@ export async function executeTool(name, input, session, context = {}) {
           timeout: 120000,
           maxBuffer: 1024 * 1024
         });
-        return output || '(no output)';
+        if (!output) return '(no output)';
+        if (output.length > MAX_OUTPUT) {
+          return output.slice(0, MAX_OUTPUT) + `\n\n[...truncated — ${output.length} chars total, showing first ${MAX_OUTPUT}]`;
+        }
+        return output;
       } catch (err) {
-        return `Error: ${err.message}\n${err.stderr || ''}`;
+        const errMsg = `Error: ${err.message}\n${err.stderr || ''}`;
+        return errMsg.length > MAX_OUTPUT ? errMsg.slice(0, MAX_OUTPUT) + '\n[...truncated]' : errMsg;
       }
     }
 

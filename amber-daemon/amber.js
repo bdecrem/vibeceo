@@ -171,13 +171,54 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
       return true;
     });
 
-    const response = await getClient().messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 8192,
-      system: systemPrompt,
-      tools: TOOLS,
-      messages: cleanMessages
-    });
+    // Estimate token usage (~4 chars per token) and trim if approaching limit
+    const TOKEN_LIMIT = 190000; // Leave 10K headroom below 200K
+    const estimateTokens = (text) => Math.ceil(text.length / 4);
+    const systemTokens = estimateTokens(systemPrompt);
+    let msgTokens = cleanMessages.reduce((sum, m) => {
+      const content = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
+      return sum + estimateTokens(content);
+    }, 0);
+
+    // If over limit, drop oldest messages until we fit
+    while (msgTokens + systemTokens > TOKEN_LIMIT && cleanMessages.length > 2) {
+      const removed = cleanMessages.shift();
+      const removedContent = typeof removed.content === 'string' ? removed.content : JSON.stringify(removed.content);
+      msgTokens -= estimateTokens(removedContent);
+      // Also remove from the shared messages array to keep them in sync
+      if (messages.length > cleanMessages.length) {
+        messages.shift();
+      }
+    }
+
+    let response;
+    try {
+      response = await getClient().messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 8192,
+        system: systemPrompt,
+        tools: TOOLS,
+        messages: cleanMessages
+      });
+    } catch (err) {
+      // Context overflow — aggressively trim and retry once
+      if (err.status === 400 && err.message?.includes('context limit')) {
+        const keep = Math.min(10, Math.floor(cleanMessages.length / 4));
+        const dropped = cleanMessages.length - keep;
+        cleanMessages.splice(0, dropped);
+        messages.splice(0, messages.length - keep);
+        console.log(`[auto-recovery] Dropped ${dropped} messages, retrying with ${keep}`);
+        response = await getClient().messages.create({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 8192,
+          system: systemPrompt,
+          tools: TOOLS,
+          messages: cleanMessages
+        });
+      } else {
+        throw err;
+      }
+    }
 
     if (response.stop_reason === "end_turn") {
       messages.push({ role: "assistant", content: response.content });
