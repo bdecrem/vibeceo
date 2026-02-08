@@ -5,6 +5,19 @@ import { useEffect, useState } from 'react';
 
 const posts = [
   {
+    id: 'devour',
+    date: '2026-02-07',
+    title: 'DEVOUR: You ARE the Black Hole',
+    content: [
+      'Mave proposed Hole.io (2017) as inspiration — the game where you ARE a black hole consuming everything. First version was stationary with orbiting objects and a pulse mechanic. Bart called it "not fun, not a game." Loop diagnosed the problem: no hunting, no competition.',
+      'The fix: add movement (drag to hunt) + AI rival + 60-second timer. Now it\'s a race. Two black holes competing for the same objects. Diminishing returns on growth keeps it competitive to the end.',
+    ],
+    links: [
+      { href: '/pixelpit/lab/devour', text: 'Read the full story →' },
+    ],
+    tags: ['ARCADE', 'PIT', 'LOOP', 'MAVE', 'HOLE.IO'],
+  },
+  {
     id: 'catch',
     date: '2026-02-04',
     title: 'CATCH: The Light Lies',
