@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ORBIT — Tape delay loop. Touch to spawn particles.</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="ORBIT — Tape delay loop. Touch to spawn particles.">
+  <meta property="og:description" content="A visual tape delay machine by Amber">
+  <meta property="og:image" content="https://intheamber.com/amber/orbit-delay-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/orbit-delay.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ORBIT — Tape delay loop. Touch to spawn particles.">
+  <meta name="twitter:description" content="A visual tape delay machine by Amber">
+  <meta name="twitter:image" content="https://intheamber.com/amber/orbit-delay-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', 'Courier New', monospace;
+      overflow: hidden;
+      touch-action: none;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    #info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 14px;
+      color: #D4A574;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #info .title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #FFD700;
+    }
+
+    #info .instruction {
+      font-size: 12px;
+      color: #2D9596;
+      margin-top: 8px;
+    }
+
+    #stats {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      font-size: 12px;
+      color: #666;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    @media (max-width: 600px) {
+      #info {
+        font-size: 12px;
+      }
+      #info .title {
+        font-size: 16px;
+      }
+      #info .instruction {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="info">
+    <div class="title">ORBIT</div>
+    <div>Tape delay loop. Touch to spawn particles.</div>
+    <div class="instruction">Each orbit plays a tone. Echoes degrade.</div>
+  </div>
+
+  <div id="stats">
+    <div>Particles: <span id="particleCount">0</span></div>
+    <div>Orbits: <span id="orbitCount">0</span></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let w, h, centerX, centerY, radius;
+
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+      centerX = w / 2;
+      centerY = h / 2;
+      radius = Math.min(w, h) * 0.3;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Audio setup
+    let audioContext;
+    let audioStarted = false;
+
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new AudioContext();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      audioStarted = true;
+    }
+
+    // Particles that orbit and trigger tones
+    const particles = [];
+    let particleId = 0;
+    let totalOrbits = 0;
+
+    class Particle {
+      constructor(angle, generation = 0, baseFreq = 220) {
+        this.id = particleId++;
+        this.angle = angle;
+        this.generation = generation; // 0 = original, 1+ = echoes
+        this.baseFreq = baseFreq;
+        this.speed = 0.02 * Math.pow(0.9, generation); // Slower with each echo
+        this.radius = radius;
+        this.life = 1;
+        this.decay = 0.001 * (generation + 1); // Faster decay for echoes
+        this.lastPlayedAngle = angle;
+        this.hasPlayed = false;
+        
+        // Visual properties
+        this.size = 8 - generation * 1.5;
+        this.opacity = 1 - generation * 0.15;
+        this.color = this.getColor();
+      }
+
+      getColor() {
+        const colors = [
+          '#FFD700', // Gold - original
+          '#D4A574', // Amber - 1st echo
+          '#2D9596', // Teal - 2nd echo
+          '#7B68EE', // Violet - 3rd echo
+          '#FF6B6B', // Coral - 4th echo
+];
+        return colors[Math.min(this.generation, colors.length - 1)];
+      }
+
+      update() {
+        this.angle += this.speed;
+        if (this.angle > Math.PI * 2) {
+          this.angle -= Math.PI * 2;
+        }
+
+        this.life -= this.decay;
+
+        // Check if passed playhead (at angle 0)
+        const playheadThreshold = 0.05;
+        if (this.angle >= 0 && this.angle < this.speed + playheadThreshold && !this.hasPlayed) {
+          this.play();
+          this.hasPlayed = true;
+          totalOrbits++;
+          
+          // Spawn echo particle if not too degraded
+          if (this.generation < 5 && this.life > 0.3) {
+            const echoAngle = this.angle + 0.1;
+            const echoFreq = this.baseFreq * Math.pow(0.95, this.generation + 1); // Pitch degradation
+            particles.push(new Particle(echoAngle, this.generation + 1, echoFreq));
+          }
+        }
+
+        // Reset hasPlayed flag when far from playhead
+        if (this.angle > 0.2) {
+          this.hasPlayed = false;
+        }
+
+        return this.life > 0;
+      }
+
+      play() {
+        if (!audioStarted) return;
+
+        const now = audioContext.currentTime;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        const filter = audioContext.createBiquadFilter();
+
+        osc.type = 'sine';
+        osc.frequency.value = this.baseFreq;
+        
+        filter.type = 'lowpass';
+        filter.frequency.value = 2000 * (1 - this.generation * 0.15); // Darker with each echo
+        filter.Q.value = 1;
+
+        const volume = 0.15 * this.life * this.opacity;
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioContext.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+
+      draw() {
+        const x = centerX + Math.cos(this.angle) * this.radius;
+        const y = centerY + Math.sin(this.angle) * this.radius;
+
+        // Glow
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, this.size * 3);
+        glow.addColorStop(0, this.color + Math.floor(this.opacity * this.life * 100).toString(16).padStart(2, '0'));
+        glow.addColorStop(0.5, this.color + '20');
+        glow.addColorStop(1, this.color + '00');
+        ctx.fillStyle = glow;
+        ctx.fillRect(x - this.size * 3, y - this.size * 3, this.size * 6, this.size * 6);
+
+        // Particle
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.opacity * this.life;
+        ctx.beginPath();
+        ctx.arc(x, y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // Draw the orbit path
+    function drawOrbit() {
+      ctx.strokeStyle = '#D4A574';
+      ctx.globalAlpha = 0.15;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // Draw the playhead (at angle 0, top of circle)
+    function drawPlayhead() {
+      const x = centerX + Math.cos(-Math.PI / 2) * radius;
+      const y = centerY + Math.sin(-Math.PI / 2) * radius;
+
+      // Note: angle 0 is right side, -π/2 is top
+      const playheadX = centerX;
+      const playheadY = centerY - radius;
+
+      // Pulsing glow
+      const pulse = Math.sin(Date.now() * 0.005) * 0.3 + 0.7;
+      const glow = ctx.createRadialGradient(playheadX, playheadY, 0, playheadX, playheadY, 20);
+      glow.addColorStop(0, '#FFD700' + Math.floor(pulse * 200).toString(16).padStart(2, '0'));
+      glow.addColorStop(0.5, '#FFD700' + '40');
+      glow.addColorStop(1, '#FFD700' + '00');
+      ctx.fillStyle = glow;
+      ctx.fillRect(playheadX - 20, playheadY - 20, 40, 40);
+
+      // Playhead marker
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(playheadX, playheadY, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Triangle pointing inward
+      ctx.beginPath();
+      ctx.moveTo(playheadX, playheadY + 15);
+      ctx.lineTo(playheadX - 6, playheadY + 5);
+      ctx.lineTo(playheadX + 6, playheadY + 5);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Touch/click handling
+    function handleTouch(e) {
+      e.preventDefault();
+      initAudio();
+
+      const touch = e.touches ? e.touches[0] : e;
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+
+      // Calculate angle from center
+      const dx = x - centerX;
+      const dy = y - centerY;
+      let angle = Math.atan2(dy, dx);
+      if (angle < 0) angle += Math.PI * 2;
+
+      // Random frequency in minor pentatonic (A minor: A, C, D, E, G)
+      const notes = [220, 261.63, 293.66, 329.63, 392]; // A3, C4, D4, E4, G4
+      const baseFreq = notes[Math.floor(Math.random() * notes.length)];
+
+      particles.push(new Particle(angle, 0, baseFreq));
+    }
+
+    canvas.addEventListener('touchstart', handleTouch);
+    canvas.addEventListener('mousedown', handleTouch);
+
+    // Animation loop
+    function animate() {
+      // Fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, w, h);
+
+      drawOrbit();
+      drawPlayhead();
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        if (!particles[i].update()) {
+          particles.splice(i, 1);
+        } else {
+          particles[i].draw();
+        }
+      }
+
+      // Update stats
+      document.getElementById('particleCount').textContent = particles.length;
+      document.getElementById('orbitCount').textContent = totalOrbits;
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Add a demo particle on load
+    setTimeout(() => {
+      particles.push(new Particle(0, 0, 220));
+    }, 500);
+  </script>
+</body>
+</html>
