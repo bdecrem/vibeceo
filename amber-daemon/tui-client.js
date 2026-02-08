@@ -6,10 +6,23 @@ import wrapAnsi from 'wrap-ansi';
 import { connect } from 'net';
 import { join } from 'path';
 import { homedir } from 'os';
-import { existsSync } from 'fs';
+import { existsSync, unlinkSync } from 'fs';
+import { spawn } from 'child_process';
 import { SPLASH } from './amber.js';
 
-const SOCKET_PATH = join(homedir(), '.amber', 'amber.sock');
+const LOCAL_SOCKET_PATH = join(homedir(), '.amber', 'amber.sock');
+
+// --remote <host> flag: SSH-tunnel to remote daemon
+const remoteArg = process.argv.indexOf('--remote');
+const REMOTE_HOST = remoteArg !== -1 ? process.argv[remoteArg + 1] : null;
+const REMOTE_USER = (() => {
+  if (!REMOTE_HOST) return null;
+  const userArg = process.argv.indexOf('--user');
+  return userArg !== -1 ? process.argv[userArg + 1] : 'bartssh';
+})();
+const REMOTE_SOCKET = '/home/' + (REMOTE_USER || 'bartssh') + '/.amber/amber.sock';
+const LOCAL_TUNNEL_SOCKET = '/tmp/amber-remote.sock';
+const SOCKET_PATH = REMOTE_HOST ? LOCAL_TUNNEL_SOCKET : LOCAL_SOCKET_PATH;
 
 // === ANSI ESCAPE CODES ===
 const ANSI = {
@@ -118,8 +131,9 @@ class TUIClient {
 
   // === DRAWING ===
   drawStatusBar() {
-    const status = this.connected 
-      ? ` 🔮 Amber | Connected ` 
+    const remoteTag = REMOTE_HOST ? ` (${REMOTE_HOST})` : '';
+    const status = this.connected
+      ? ` 🔮 Amber | Connected${remoteTag} `
       : ` 🔮 Amber | Disconnected `;
     const inputLines = this.getInputLineCount();
     const inputBoxTop = this.scrollBottom + 1;
@@ -209,12 +223,52 @@ class TUIClient {
 
   // === SOCKET ===
   connect() {
+    if (REMOTE_HOST) {
+      this.connectRemote();
+      return;
+    }
+
     if (!existsSync(SOCKET_PATH)) {
       this.printSystem('Daemon not running. Start with: node daemon.js');
       return;
     }
 
-    this.socket = connect(SOCKET_PATH);
+    this.connectSocket(SOCKET_PATH);
+  }
+
+  connectRemote() {
+    // Clean up stale tunnel socket
+    if (existsSync(LOCAL_TUNNEL_SOCKET)) {
+      try { unlinkSync(LOCAL_TUNNEL_SOCKET); } catch {}
+    }
+
+    this.printSystem(`Tunneling to ${REMOTE_USER}@${REMOTE_HOST}...`);
+
+    const sshArgs = [
+      '-N', '-f',
+      '-L', `${LOCAL_TUNNEL_SOCKET}:${REMOTE_SOCKET}`,
+      `${REMOTE_USER}@${REMOTE_HOST}`,
+    ];
+
+    const ssh = spawn('ssh', sshArgs, { stdio: 'ignore', detached: true });
+    this.sshProcess = ssh;
+
+    ssh.on('error', (err) => {
+      this.printSystem(`SSH failed: ${err.message}`);
+    });
+
+    // Give SSH a moment to establish the tunnel
+    setTimeout(() => {
+      if (!existsSync(LOCAL_TUNNEL_SOCKET)) {
+        this.printSystem('SSH tunnel failed — socket not created. Check SSH config.');
+        return;
+      }
+      this.connectSocket(LOCAL_TUNNEL_SOCKET);
+    }, 1500);
+  }
+
+  connectSocket(socketPath) {
+    this.socket = connect(socketPath);
     
     this.socket.on('connect', () => {
       this.connected = true;
@@ -436,6 +490,13 @@ Just type to talk to Amber.`);
     if (process.stdin.isTTY) process.stdin.setRawMode(false);
     process.stdin.pause();
     if (this.socket) this.socket.destroy();
+    // Kill SSH tunnel if we started one
+    if (this.sshProcess) {
+      try { process.kill(this.sshProcess.pid); } catch {}
+    }
+    if (REMOTE_HOST && existsSync(LOCAL_TUNNEL_SOCKET)) {
+      try { unlinkSync(LOCAL_TUNNEL_SOCKET); } catch {}
+    }
     console.log('\n✨ Later.\n');
   }
 
@@ -463,7 +524,9 @@ Just type to talk to Amber.`);
 
     process.stdout.write(ANSI.clearScreen + ANSI.moveTo(1, 1));
     process.stdout.write(SPLASH);
-    console.log('  📡 Client mode - connecting to daemon\n');
+    console.log(REMOTE_HOST
+      ? `  📡 Remote mode - tunneling to ${REMOTE_HOST}\n`
+      : '  📡 Client mode - connecting to daemon\n');
     
     this.setupScrollRegion();
     this.drawInputBox();
