@@ -1,8 +1,37 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import Script from 'next/script';
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  usePixelpitSocial,
+  type ScoreFlowColors,
+  type LeaderboardColors,
+} from '@/app/pixelpit/components';
 
 const GAME_ID = 'devour';
+
+// Social colors - cosmic purple theme
+const SCORE_FLOW_COLORS: ScoreFlowColors = {
+  bg: '#020108',
+  surface: '#0f0520',
+  primary: '#8B5CF6',
+  secondary: '#a78bfa',
+  text: '#E5E7EB',
+  muted: '#9CA3AF',
+  error: '#ef4444',
+};
+
+const LEADERBOARD_COLORS: LeaderboardColors = {
+  bg: '#020108',
+  surface: '#0f0520',
+  primary: '#8B5CF6',
+  secondary: '#a78bfa',
+  text: '#E5E7EB',
+  muted: '#9CA3AF',
+};
 const GAME_DURATION = 60; // seconds
 
 // Pulse timing
@@ -135,6 +164,14 @@ export default function DevourGame() {
   const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
   const [winner, setWinner] = useState<'player' | 'rival' | 'tie'>('player');
   const [canvasSize, setCanvasSize] = useState({ w: 400, h: 700 });
+  
+  // Social integration state
+  const [socialLoaded, setSocialLoaded] = useState(false);
+  const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
+
+  usePixelpitSocial(socialLoaded);
 
   const gameRef = useRef({
     running: false,
@@ -413,6 +450,11 @@ export default function DevourGame() {
         stopDrone();
         
         // Determine winner
+        const playerFinalSize = Math.floor(game.player.size);
+        setFinalScore(playerFinalSize);
+        setSubmittedEntryId(null);
+        setShowLeaderboard(false);
+        
         if (game.player.size > game.rival.size) {
           setWinner('player');
           playWin();
@@ -814,12 +856,20 @@ export default function DevourGame() {
   }, [gameState, canvasSize, spawnObject]);
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: '#020108',
-      fontFamily: 'ui-monospace, monospace',
-    }}>
+    <>
+      {/* Load social.js */}
+      <Script
+        src="/pixelpit/social.js"
+        strategy="afterInteractive"
+        onLoad={() => setSocialLoaded(true)}
+      />
+
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: '#020108',
+        fontFamily: 'ui-monospace, monospace',
+      }}>
       {gameState === 'start' && (
         <div style={{
           position: 'absolute',
@@ -887,6 +937,16 @@ export default function DevourGame() {
           >
             BEGIN
           </button>
+
+          {/* Leaderboard on start */}
+          <div style={{ marginTop: 30, width: '100%', maxWidth: 320 }}>
+            <Leaderboard
+              gameId={GAME_ID}
+              limit={5}
+              entryId={submittedEntryId ?? undefined}
+              colors={LEADERBOARD_COLORS}
+            />
+          </div>
         </div>
       )}
 
@@ -909,6 +969,8 @@ export default function DevourGame() {
           alignItems: 'center',
           justifyContent: 'center',
           background: 'rgba(0,0,0,0.9)',
+          overflowY: 'auto',
+          padding: 20,
         }}>
           <div style={{ fontSize: 60, marginBottom: 10 }}>
             {winner === 'player' ? '🏆' : winner === 'rival' ? '💀' : '🤝'}
@@ -924,12 +986,12 @@ export default function DevourGame() {
           <div style={{
             display: 'flex',
             gap: 40,
-            marginBottom: 30,
+            marginBottom: 20,
           }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ color: '#a78bfa', fontSize: 14 }}>YOU</div>
               <div style={{ color: '#fff', fontSize: 32, fontWeight: 'bold' }}>
-                {Math.floor(gameRef.current.player.size)}
+                {finalScore}
               </div>
             </div>
             <div style={{ textAlign: 'center' }}>
@@ -940,23 +1002,75 @@ export default function DevourGame() {
             </div>
           </div>
 
-          <button
-            onClick={startGame}
-            style={{
-              background: '#8B5CF6',
-              color: '#fff',
-              border: 'none',
-              padding: '16px 50px',
-              fontSize: 18,
-              fontWeight: 600,
-              cursor: 'pointer',
-              borderRadius: 30,
-            }}
-          >
-            PLAY AGAIN
-          </button>
+          {/* ScoreFlow */}
+          <div style={{ width: '100%', maxWidth: 350 }}>
+            <ScoreFlow
+              score={finalScore}
+              gameId={GAME_ID}
+              colors={SCORE_FLOW_COLORS}
+              xpDivisor={1}
+              onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
+            />
+          </div>
+
+          {/* Share button */}
+          <div style={{ marginTop: 15 }}>
+            <ShareButtonContainer
+              id="share-btn-devour"
+              url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/devour/share/${finalScore}`}
+              text={winner === 'player' 
+                ? `I devoured the rival with size ${finalScore} on DEVOUR! Can you beat me? 🕳️`
+                : `I reached size ${finalScore} on DEVOUR! Can you beat the rival? 🕳️`}
+              style="minimal"
+              socialLoaded={socialLoaded}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
+            <button
+              onClick={() => setShowLeaderboard(!showLeaderboard)}
+              style={{
+                background: 'transparent',
+                color: '#a78bfa',
+                border: '1px solid #a78bfa',
+                padding: '12px 20px',
+                fontSize: 14,
+                cursor: 'pointer',
+                borderRadius: 20,
+              }}
+            >
+              {showLeaderboard ? 'Hide' : 'Leaderboard'}
+            </button>
+            <button
+              onClick={startGame}
+              style={{
+                background: '#8B5CF6',
+                color: '#fff',
+                border: 'none',
+                padding: '12px 30px',
+                fontSize: 16,
+                fontWeight: 600,
+                cursor: 'pointer',
+                borderRadius: 20,
+              }}
+            >
+              PLAY AGAIN
+            </button>
+          </div>
+
+          {showLeaderboard && (
+            <div style={{ marginTop: 15, width: '100%', maxWidth: 350 }}>
+              <Leaderboard
+                gameId={GAME_ID}
+                limit={5}
+                entryId={submittedEntryId ?? undefined}
+                colors={LEADERBOARD_COLORS}
+              />
+            </div>
+          )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
