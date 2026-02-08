@@ -115,7 +115,7 @@ export default async function Image({ params }: { params: { score: string } }) {
             marginTop: 10,
           }}
         >
-          FINAL SIZE
+          ROUND
         </div>
 
         {/* Call to action */}
@@ -127,7 +127,7 @@ export default async function Image({ params }: { params: { score: string } }) {
             marginTop: 25,
           }}
         >
-          CAN YOU BEAT ME?
+          CAN YOU SURVIVE LONGER?
         </div>
 
         {/* Pixelpit branding */}

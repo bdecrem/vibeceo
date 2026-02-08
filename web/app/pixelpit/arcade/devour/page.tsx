@@ -32,7 +32,7 @@ const LEADERBOARD_COLORS: LeaderboardColors = {
   text: '#E5E7EB',
   muted: '#9CA3AF',
 };
-const GAME_DURATION = 60; // seconds
+const ROUND_DURATION = 30; // seconds per round
 
 // Pulse timing
 const PULSE_EXPAND_MS = 150;
@@ -162,6 +162,7 @@ function playLose() {
 export default function DevourGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
+  const [round, setRound] = useState(1);
   const [winner, setWinner] = useState<'player' | 'rival' | 'tie'>('player');
   const [canvasSize, setCanvasSize] = useState({ w: 400, h: 700 });
   
@@ -175,7 +176,7 @@ export default function DevourGame() {
 
   const gameRef = useRef({
     running: false,
-    timer: GAME_DURATION,
+    timer: ROUND_DURATION,
     // Player hole
     player: {
       x: 0, y: 0, size: 30,
@@ -247,12 +248,29 @@ export default function DevourGame() {
     };
   }, []);
 
-  const startGame = useCallback(() => {
+  // Get rival stats based on round - player has big advantage early, rivals catch up by round 3
+  const getRivalStats = useCallback((roundNum: number) => {
+    if (roundNum === 1) {
+      return { size: 8, speedMult: 0.5 };  // Tiny, slow rival
+    } else if (roundNum === 2) {
+      return { size: 12, speedMult: 0.75 }; // Medium rival
+    } else {
+      return { size: 15, speedMult: 1.0 };  // Full strength (current behavior)
+    }
+  }, []);
+
+  const startGame = useCallback((startRound: number = 1) => {
     initAudio();
     startDrone();
     const game = gameRef.current;
     game.running = true;
-    game.timer = GAME_DURATION;
+    game.timer = ROUND_DURATION;
+    
+    // Update round state
+    setRound(startRound);
+    
+    // Get rival stats for this round
+    const rivalStats = getRivalStats(startRound);
     
     // Position holes on opposite sides
     const centerX = canvasSize.w / 2;
@@ -261,7 +279,7 @@ export default function DevourGame() {
     game.player = {
       x: centerX - 80,
       y: centerY + 100,
-      size: 15,
+      size: 15,  // Player always starts same size
       pulseRadius: 15,
       pulseState: 'idle',
       pulseTimer: 0,
@@ -273,12 +291,15 @@ export default function DevourGame() {
     game.rival = {
       x: centerX + 80,
       y: centerY - 100,
-      size: 15,
-      pulseRadius: 15,
+      size: rivalStats.size,  // Rival size scales with round
+      pulseRadius: rivalStats.size,
       pulseState: 'idle',
       pulseTimer: 0,
       diskAngle: 0,
     };
+    
+    // Store speed multiplier for AI
+    (game as any).rivalSpeedMult = rivalStats.speedMult;
     
     game.isDragging = false;
     game.objects = [];
@@ -291,7 +312,7 @@ export default function DevourGame() {
     }
     
     setGameState('playing');
-  }, [spawnObject, canvasSize]);
+  }, [spawnObject, canvasSize, getRivalStats]);
 
   // Handle resize
   useEffect(() => {
@@ -420,7 +441,9 @@ export default function DevourGame() {
         const dist = Math.hypot(dx, dy);
         
         if (dist > 5) {
-          const speed = 100 + rival.size * 0.5; // Bigger = slightly faster
+          const baseSpeed = 100 + rival.size * 0.5; // Bigger = slightly faster
+          const speedMult = (gameRef.current as any).rivalSpeedMult || 1.0;
+          const speed = baseSpeed * speedMult;
           rival.x += (dx / dist) * speed * dt;
           rival.y += (dy / dist) * speed * dt;
         }
@@ -449,28 +472,43 @@ export default function DevourGame() {
         game.running = false;
         stopDrone();
         
-        // Determine winner
-        const playerFinalSize = Math.floor(game.player.size);
-        setFinalScore(playerFinalSize);
-        setSubmittedEntryId(null);
-        setShowLeaderboard(false);
-        
+        // Determine round winner
         if (game.player.size > game.rival.size) {
+          // Player won this round - advance to next!
           setWinner('player');
           playWin();
-        } else if (game.rival.size > game.player.size) {
-          setWinner('rival');
-          playLose();
+          
+          // Brief delay then start next round
+          setTimeout(() => {
+            setRound(prev => {
+              const nextRound = prev + 1;
+              startGame(nextRound);
+              return nextRound;
+            });
+          }, 1500);
+          return;
         } else {
-          setWinner('tie');
+          // Player lost or tied - game over
+          const finalRoundScore = game.player.size > game.rival.size ? round : round;
+          setFinalScore(round); // Score = rounds reached
+          setSubmittedEntryId(null);
+          setShowLeaderboard(false);
+          
+          if (game.rival.size > game.player.size) {
+            setWinner('rival');
+            playLose();
+          } else {
+            setWinner('tie');
+            playLose();
+          }
+          
+          setGameState('end');
+          fetch('/api/pixelpit/stats', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ game: GAME_ID }),
+          }).catch(() => {});
         }
-        
-        setGameState('end');
-        fetch('/api/pixelpit/stats', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ game: GAME_ID }),
-        }).catch(() => {});
         return;
       }
 
@@ -689,17 +727,24 @@ export default function DevourGame() {
       // UI - Timer (big, centered at top)
       const timerSecs = Math.ceil(game.timer);
       ctx.fillStyle = timerSecs <= 10 ? '#ef4444' : '#fff';
-      ctx.font = 'bold 48px ui-monospace';
+      // Round indicator
+      ctx.font = 'bold 16px ui-monospace';
       ctx.textAlign = 'center';
+      ctx.fillStyle = '#a78bfa';
+      ctx.fillText(`ROUND ${round}`, canvasSize.w / 2, 25);
+      
+      // Timer
+      ctx.font = 'bold 48px ui-monospace';
+      ctx.fillStyle = '#ffffff';
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = 4;
-      ctx.fillText(timerSecs.toString(), canvasSize.w / 2, 60);
+      ctx.fillText(timerSecs.toString(), canvasSize.w / 2, 70);
       
       // Size comparison bar
       const barWidth = 200;
       const barHeight = 20;
       const barX = (canvasSize.w - barWidth) / 2;
-      const barY = 80;
+      const barY = 95;
       const total = game.player.size + game.rival.size;
       const playerRatio = game.player.size / total;
       
@@ -727,7 +772,7 @@ export default function DevourGame() {
       ctx.shadowBlur = 0;
 
       // Instructions (brief, at bottom)
-      if (game.timer > GAME_DURATION - 5) {
+      if (game.timer > ROUND_DURATION - 5) {
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.font = '14px ui-monospace';
         ctx.textAlign = 'center';
@@ -922,7 +967,7 @@ export default function DevourGame() {
           </div>
 
           <button
-            onClick={startGame}
+            onClick={() => startGame(1)}
             style={{
               background: '#8B5CF6',
               color: '#fff',
@@ -1022,32 +1067,29 @@ export default function DevourGame() {
           padding: 20,
         }}>
           <div style={{ fontSize: 60, marginBottom: 10 }}>
-            {winner === 'player' ? '🏆' : winner === 'rival' ? '💀' : '🤝'}
+            💀
           </div>
           <h1 style={{ 
-            color: winner === 'player' ? '#a78bfa' : winner === 'rival' ? '#ef4444' : '#fbbf24', 
+            color: '#ef4444', 
             fontSize: 48, 
-            marginBottom: 20 
+            marginBottom: 10 
           }}>
-            {winner === 'player' ? 'YOU WIN!' : winner === 'rival' ? 'RIVAL WINS' : 'TIE!'}
+            GAME OVER
           </h1>
+          <p style={{ color: '#9CA3AF', fontSize: 16, marginBottom: 20 }}>
+            {winner === 'rival' ? 'The rival devoured you!' : 'You tied with the rival!'}
+          </p>
           
           <div style={{
             display: 'flex',
-            gap: 40,
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 8,
             marginBottom: 20,
           }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ color: '#a78bfa', fontSize: 14 }}>YOU</div>
-              <div style={{ color: '#fff', fontSize: 32, fontWeight: 'bold' }}>
-                {finalScore}
-              </div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ color: '#fca5a5', fontSize: 14 }}>RIVAL</div>
-              <div style={{ color: '#fff', fontSize: 32, fontWeight: 'bold' }}>
-                {Math.floor(gameRef.current.rival.size)}
-              </div>
+            <div style={{ color: '#a78bfa', fontSize: 14, letterSpacing: 2 }}>ROUNDS REACHED</div>
+            <div style={{ color: '#fff', fontSize: 64, fontWeight: 'bold' }}>
+              {finalScore}
             </div>
           </div>
 
@@ -1067,9 +1109,7 @@ export default function DevourGame() {
             <ShareButtonContainer
               id="share-btn-devour"
               url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/devour/share/${finalScore}`}
-              text={winner === 'player' 
-                ? `I devoured the rival with size ${finalScore} on DEVOUR! Can you beat me? 🕳️`
-                : `I reached size ${finalScore} on DEVOUR! Can you beat the rival? 🕳️`}
+              text={`I reached Round ${finalScore} on DEVOUR! Can you survive longer? 🕳️`}
               style="minimal"
               socialLoaded={socialLoaded}
             />
@@ -1091,7 +1131,7 @@ export default function DevourGame() {
               {showLeaderboard ? 'Hide' : 'Leaderboard'}
             </button>
             <button
-              onClick={startGame}
+              onClick={() => startGame(1)}
               style={{
                 background: '#8B5CF6',
                 color: '#fff',
