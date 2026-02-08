@@ -20,6 +20,10 @@ const REMOTE_USER = (() => {
   const userArg = process.argv.indexOf('--user');
   return userArg !== -1 ? process.argv[userArg + 1] : 'bartssh';
 })();
+const SSH_KEY = (() => {
+  const keyArg = process.argv.indexOf('--key');
+  return keyArg !== -1 ? process.argv[keyArg + 1] : null;
+})();
 const REMOTE_SOCKET = '/home/' + (REMOTE_USER || 'bartssh') + '/.amber/amber.sock';
 const LOCAL_TUNNEL_SOCKET = '/tmp/amber-remote.sock';
 const SOCKET_PATH = REMOTE_HOST ? LOCAL_TUNNEL_SOCKET : LOCAL_SOCKET_PATH;
@@ -249,6 +253,8 @@ class TUIClient {
       '-N',
       '-o', 'ExitOnForwardFailure=yes',
       '-o', 'ServerAliveInterval=30',
+      '-o', 'IdentitiesOnly=yes',
+      ...(SSH_KEY ? ['-i', SSH_KEY] : []),
       '-L', `${LOCAL_TUNNEL_SOCKET}:${REMOTE_SOCKET}`,
       `${REMOTE_USER}@${REMOTE_HOST}`,
     ];
