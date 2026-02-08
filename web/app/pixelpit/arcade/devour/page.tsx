@@ -224,8 +224,8 @@ export default function DevourGame() {
     game.player = {
       x: centerX - 80,
       y: centerY + 100,
-      size: 30,
-      pulseRadius: 30,
+      size: 15,
+      pulseRadius: 15,
       pulseState: 'idle',
       pulseTimer: 0,
       diskAngle: 0,
@@ -236,8 +236,8 @@ export default function DevourGame() {
     game.rival = {
       x: centerX + 80,
       y: centerY - 100,
-      size: 30,
-      pulseRadius: 30,
+      size: 15,
+      pulseRadius: 15,
       pulseState: 'idle',
       pulseTimer: 0,
       diskAngle: 0,
@@ -280,8 +280,8 @@ export default function DevourGame() {
 
     let animationId: number;
 
-    const getMaxPulseReach = (hole: Hole) => hole.size * 2.5;
-    const getConsumeThreshold = (hole: Hole) => 2 + Math.floor(hole.size / 12);
+    const getMaxPulseReach = (hole: Hole) => hole.size * 3;
+    const getConsumeThreshold = (hole: Hole) => 1.5 + Math.floor(hole.size / 8);
 
     const updatePulse = (hole: Hole, dt: number) => {
       if (hole.pulseState !== 'idle' && hole.pulseState !== 'cooldown') {
@@ -334,7 +334,7 @@ export default function DevourGame() {
           obj.respawnTimer = 2; // Respawn after 2 seconds
           
           // Grow the hole (diminishing returns - small objects matter less as you grow)
-          const growth = obj.size / (hole.size * 0.1);
+          const growth = obj.size / (hole.size * 0.15);
           hole.size += growth;
           
           // Particles toward the hole
