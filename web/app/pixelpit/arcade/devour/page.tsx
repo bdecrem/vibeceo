@@ -22,6 +22,7 @@ interface OrbitObject {
   size: number;
   type: 'debris' | 'asteroid' | 'satellite' | 'moon' | 'planet';
   consumed: boolean;
+  rejectFlash: number; // >0 = flashing red (too big to eat)
 }
 
 // Audio
@@ -203,6 +204,7 @@ export default function DevourGame() {
       size,
       type,
       consumed: false,
+      rejectFlash: 0,
     });
   }, []);
 
@@ -241,6 +243,7 @@ export default function DevourGame() {
         size: 1 + Math.random() * 2, // Small = consumable
         type: 'debris',
         consumed: false,
+        rejectFlash: 0,
       });
     }
     // Outer objects (mix of sizes)
@@ -340,37 +343,48 @@ export default function DevourGame() {
         // Orbit
         obj.angle += obj.angularSpeed * dt;
         
+        // Decay reject flash
+        if (obj.rejectFlash > 0) {
+          obj.rejectFlash -= dt * 3;
+        }
+        
         // Check consumption
         if (game.pulseState === 'expanding' || game.pulseState === 'holding') {
-          if (obj.orbitRadius <= game.pulseRadius && obj.size <= game.consumeThreshold) {
-            obj.consumed = true;
-            consumedThisFrame++;
-            game.consumed++;
-            
-            // Add score
-            const points = Math.ceil(obj.size);
-            setScore(prev => prev + points);
-            
-            // Particles
-            const objX = centerX + Math.cos(obj.angle) * obj.orbitRadius;
-            const objY = centerY + Math.sin(obj.angle) * obj.orbitRadius;
-            for (let i = 0; i < 5; i++) {
-              game.particles.push({
-                x: objX,
-                y: objY,
-                vx: (Math.random() - 0.5) * 100,
-                vy: (Math.random() - 0.5) * 100,
-                life: 0.5,
-                color: obj.type === 'planet' ? '#f59e0b' : obj.type === 'moon' ? '#9ca3af' : '#22d3ee',
-              });
+          if (obj.orbitRadius <= game.pulseRadius) {
+            if (obj.size <= game.consumeThreshold) {
+              // CAN eat - consume it!
+              obj.consumed = true;
+              consumedThisFrame++;
+              game.consumed++;
+              
+              // Add score
+              const points = Math.ceil(obj.size);
+              setScore(prev => prev + points);
+              
+              // Particles
+              const objX = centerX + Math.cos(obj.angle) * obj.orbitRadius;
+              const objY = centerY + Math.sin(obj.angle) * obj.orbitRadius;
+              for (let i = 0; i < 5; i++) {
+                game.particles.push({
+                  x: objX,
+                  y: objY,
+                  vx: (Math.random() - 0.5) * 100,
+                  vy: (Math.random() - 0.5) * 100,
+                  life: 0.5,
+                  color: obj.type === 'planet' ? '#f59e0b' : obj.type === 'moon' ? '#9ca3af' : '#22d3ee',
+                });
+              }
+              
+              playConsume(obj.size);
+              
+              // Grow
+              game.holeSize += obj.size * 0.3;
+              game.maxPulseReach = game.holeSize * 4;
+              game.consumeThreshold = 3 + Math.floor(game.holeSize / 15);
+            } else if (obj.rejectFlash <= 0) {
+              // TOO BIG - flash red!
+              obj.rejectFlash = 1;
             }
-            
-            playConsume(obj.size);
-            
-            // Grow
-            game.holeSize += obj.size * 0.3;
-            game.maxPulseReach = game.holeSize * 4;
-            game.consumeThreshold = 3 + Math.floor(game.holeSize / 15);
           }
         }
       }
@@ -465,6 +479,20 @@ export default function DevourGame() {
         // Can consume indicator
         const canConsume = obj.size <= game.consumeThreshold;
         
+        // Red flash + wobble when rejected (too big)
+        const hasReject = obj.rejectFlash > 0;
+        if (hasReject) {
+          ctx.save();
+          ctx.strokeStyle = `rgba(239, 68, 68, ${obj.rejectFlash})`;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(x, y, visualSize + 8, 0, Math.PI * 2);
+          ctx.stroke();
+          // Wobble offset
+          const wobble = Math.sin(Date.now() / 50) * obj.rejectFlash * 3;
+          ctx.translate(wobble, 0);
+        }
+        
         if (obj.type === 'debris') {
           ctx.fillStyle = canConsume ? '#67e8f9' : '#475569';
           ctx.beginPath();
@@ -511,6 +539,11 @@ export default function DevourGame() {
           ctx.arc(x, y, visualSize * 0.7, 0.2, Math.PI - 0.2);
           ctx.stroke();
           ctx.shadowBlur = 0;
+        }
+        
+        // End wobble transform
+        if (hasReject) {
+          ctx.restore();
         }
       }
 
