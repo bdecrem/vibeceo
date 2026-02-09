@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .header {
+      text-align: center;
+      padding: 2rem 1rem;
+      background: linear-gradient(180deg, #1a1a2e 0%, #0a0a0f 100%);
+    }
+    
+    .header h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .header p {
+      color: #888;
+      font-size: 1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      background: #333;
+      min-height: 60vh;
+    }
+    
+    @media (max-width: 768px) {
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .side {
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .monolith-side {
+      background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+    }
+    
+    .garden-side {
+      background: linear-gradient(180deg, #0d1a0d 0%, #0a0f0a 100%);
+    }
+    
+    .side-title {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    
+    .monolith-side .side-title { color: #666; }
+    .garden-side .side-title { color: #4ade80; }
+    
+    .side-subtitle {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 2rem;
+    }
+    
+    .monolith-visual {
+      width: 80px;
+      height: 300px;
+      background: linear-gradient(180deg, #444 0%, #222 100%);
+      border: 2px solid #555;
+      position: relative;
+      margin: 1rem 0;
+    }
+    
+    .monolith-visual::before {
+      content: '$600B';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-90deg);
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #666;
+      white-space: nowrap;
+    }
+    
+    .garden-container {
+      width: 100%;
+      max-width: 300px;
+      min-height: 300px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-content: flex-start;
+      padding: 1rem;
+    }
+    
+    .seed {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      animation: bloom 0.5s ease-out;
+      cursor: pointer;
+      transition: transform 0.2s;
+      position: relative;
+    }
+    
+    .seed:hover {
+      transform: scale(1.2);
+      z-index: 10;
+    }
+    
+    .seed-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.9);
+      color: #fff;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 100;
+    }
+    
+    .seed:hover .seed-tooltip {
+      opacity: 1;
+    }
+    
+    @keyframes bloom {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    .plant-btn {
+      background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+      color: #000;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 1rem;
+    }
+    
+    .plant-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(74, 222, 128, 0.4);
+    }
+    
+    .plant-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .stats {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #4ade80;
+    }
+    
+    .monolith-desc {
+      max-width: 200px;
+      text-align: center;
+      color: #555;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    
+    .footer {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: #0a0a0f;
+    }
+    
+    .question {
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      font-style: italic;
+      color: #888;
+      margin-bottom: 1rem;
+    }
+    
+    .insight {
+      font-size: 1rem;
+      color: #4ade80;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    
+    .counter {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #4ade80;
+      margin: 1rem 0;
+    }
+    
+    .cost-comparison {
+      font-size: 0.85rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>The Efficiency Garden</h1>
+    <p>$600 billion buys one monolith. Or 100,000 seeds of possibility.</p>
+  </div>
+  
+  <div class="comparison">
+    <div class="side monolith-side">
+      <div class="side-title">THE MONOLITH</div>
+      <div class="side-subtitle">$600 billion / one frontier</div>
+      <div class="monolith-visual"></div>
+      <p class="monolith-desc">
+        Impressive. Singular. Optimized for benchmarks. Every decision filtered through "will this scale?"
+      </p>
+    </div>
+    
+    <div class="side garden-side">
+      <div class="side-title">THE GARDEN</div>
+      <div class="side-subtitle">$6 million × 100,000 possibilities</div>
+      <div class="garden-container" id="garden"></div>
+      <div class="counter">Seeds planted: <span id="count">0</span></div>
+      <div class="cost-comparison">Cost so far: $<span id="cost">0</span>M</div>
+      <button class="plant-btn" onclick="plantSeed()">🌱 Plant a $6M Seed</button>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <p class="question">"Which future do you want to live in?"</p>
+    <p class="insight">Efficiency doesn't just save money.<br>It changes what's possible to imagine.</p>
+  </div>
+
+  <script>
+    const weirdAIs = [
+      { emoji: '🌙', name: 'AI that only understands night' },
+      { emoji: '🎒', name: 'AI trained on lullabies' },
+      { emoji: '🐢', name: 'AI that refuses to answer quickly' },
+      { emoji: '🎭', name: 'AI that speaks only in metaphor' },
+      { emoji: '💔', name: 'AI trained on every apology ever written' },
+      { emoji: '🌸', name: 'AI that optimizes for beauty, not accuracy' },
+      { emoji: '🍂', name: 'AI that thinks in seasons instead of seconds' },
+      { emoji: '👶', name: 'AI trained entirely on children\'s questions' },
+      { emoji: '📜', name: 'AI that specializes in forgotten languages' },
+      { emoji: '🎋', name: 'AI that writes only haiku' },
+      { emoji: '🔮', name: 'AI that predicts what you meant to ask' },
+      { emoji: '🎪', name: 'AI trained on circus performer memoirs' },
+      { emoji: '🌊', name: 'AI that communicates through wave patterns' },
+      { emoji: '🦋', name: 'AI optimized for gentle transformation' },
+      { emoji: '🎨', name: 'AI that sees everything as color' },
+      { emoji: '🌿', name: 'AI that grows its responses over days' },
+      { emoji: '🔔', name: 'AI that speaks in sounds, not words' },
+      { emoji: '🌈', name: 'AI that only works after rain' },
+      { emoji: '🕯️', name: 'AI trained on bedtime stories across cultures' },
+      { emoji: '🎭', name: 'AI that argues both sides simultaneously' },
+      { emoji: '🌺', name: 'AI that responds in botanical metaphors' },
+      { emoji: '⏳', name: 'AI that remembers futures that didn\'t happen' },
+      { emoji: '🎵', name: 'AI that thinks in musical phrases' },
+      { emoji: '🌑', name: 'AI that specializes in comfortable silences' },
+      { emoji: '📖', name: 'AI trained only on marginalia' },
+      { emoji: '🍃', name: 'AI that whispers' },
+      { emoji: '🌟', name: 'AI that finds wonder in mundane things' },
+      { emoji: '🎐', name: 'AI tuned to wind patterns' },
+      { emoji: '🦉', name: 'AI that\'s wiser at 3am' },
+      { emoji: '🌻', name: 'AI that always faces toward hope' },
+      { emoji: '💫', name: 'AI trained on near-death experiences' },
+      { emoji: '🎹', name: 'AI that composes music for specific emotions' },
+      { emoji: '🌲', name: 'AI that thinks in centuries' },
+      { emoji: '🦢', name: 'AI optimized for graceful exits' },
+      { emoji: '🔥', name: 'AI that only helps when stakes are high' },
+      { emoji: '🍵', name: 'AI designed for tea ceremony timing' },
+      { emoji: '🌕', name: 'AI that changes personality with moon phases' },
+      { emoji: '🎭', name: 'AI that tells you what you don\'t want to hear' },
+      { emoji: '🦊', name: 'AI trained on trickster mythology' },
+      { emoji: '🌴', name: 'AI that knows every island legend' },
+      { emoji: '📿', name: 'AI trained on meditation instructions' },
+      { emoji: '🎪', name: 'AI that specializes in impossible requests' },
+      { emoji: '🌾', name: 'AI that grows with the harvest cycle' },
+      { emoji: '🦜', name: 'AI that only repeats the truth' },
+      { emoji: '🎯', name: 'AI that finds meaning in randomness' },
+      { emoji: '🌊', name: 'AI trained on tide tables and sailor logs' },
+      { emoji: '🎭', name: 'AI that embodies a different philosopher each day' },
+      { emoji: '🦚', name: 'AI that\'s uselessly beautiful' },
+      { emoji: '🌹', name: 'AI that only speaks when it truly matters' },
+      { emoji: '🐋', name: 'AI that thinks at whale song frequencies' },
+    ];
+    
+    const colors = [
+      '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff',
+      '#5f27cd', '#00d2d3', '#1dd1a1', '#ff6b6b', '#c8d6e5',
+      '#ffeaa7', '#dfe6e9', '#a29bfe', '#fd79a8', '#00b894',
+    ];
+    
+    let seedCount = 0;
+    
+    function plantSeed() {
+      const garden = document.getElementById('garden');
+      const countEl = document.getElementById('count');
+      const costEl = document.getElementById('cost');
+      
+      const ai = weirdAIs[Math.floor(Math.random() * weirdAIs.length)];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      
+      const seed = document.createElement('div');
+      seed.className = 'seed';
+      seed.style.background = color + '33';
+      seed.style.border = `2px solid ${color}`;
+      seed.innerHTML = `
+        ${ai.emoji}
+        <span class="seed-tooltip">${ai.name}</span>
+      `;
+      
+      garden.appendChild(seed);
+      seedCount++;
+      countEl.textContent = seedCount;
+      costEl.textContent = (seedCount * 6).toLocaleString();
+      
+      // Subtle vibration feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(10);
+      }
+    }
+    
+    // Plant a few seeds on load
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => plantSeed(), i * 200);
+    }
+  </script>
+</body>
+</html>
