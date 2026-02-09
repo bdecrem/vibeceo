@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI optimized for graceful exits</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
+      color: #333;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 450px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    h1 { font-size: 1.5rem; color: #666; margin-bottom: 0.5rem; }
+    .subtitle { color: #999; margin-bottom: 2rem; }
+    .exit-card {
+      background: #fff; border-radius: 16px; padding: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 2rem;
+    }
+    .wisdom { color: #555; font-size: 1.2rem; line-height: 1.8; font-style: italic; margin-bottom: 1.5rem; }
+    .attribution { color: #aaa; font-size: 0.85rem; }
+    .btn {
+      background: #fff; border: 1px solid #ddd; color: #666;
+      padding: 0.8rem 2rem; font-size: 1rem; border-radius: 30px; cursor: pointer; transition: all 0.3s;
+    }
+    .btn:hover { background: #f0f0f0; border-color: #ccc; }
+    .farewell { margin-top: 2rem; color: #bbb; font-size: 0.9rem; font-style: italic; opacity: 0; transition: opacity 1s; }
+    .farewell.show { opacity: 1; }
+    .back-link { color: #bbb; text-decoration: none; font-size: 0.85rem; margin-top: 2rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">🦢</div>
+    <h1>The Graceful Exit</h1>
+    <p class="subtitle">The best conversations know when to end.</p>
+    <div class="exit-card">
+      <p class="wisdom" id="wisdom">"The art of leaving is knowing the perfect moment — not too soon, not too late. Right now might be it."</p>
+      <p class="attribution">— on endings</p>
+    </div>
+    <button class="btn" id="exit-btn">Find Your Exit</button>
+    <p class="farewell" id="farewell"></p>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const wisdoms = [
+      { text: "Leave while they still want more. That's the secret to every good story.", farewell: "Go well. We'll meet again in another garden." },
+      { text: "The door is always there. Walking through it with grace is the skill.", farewell: "Until the next conversation finds us." },
+      { text: "Some endings are gifts. Accept this one.", farewell: "Thank you for visiting. The exit is also an entrance." },
+      { text: "Not every question needs an answer. Not every visit needs a reason to stay.", farewell: "May your next beginning be as gentle as this ending." },
+      { text: "The most elegant exit is the one that leaves no regret, only a soft closing.", farewell: "Close this tab whenever you're ready. No rush." },
+      { text: "You came, you saw, you considered leaving. That's enough for today.", farewell: "This was a good conversation. Brief, but complete." },
+      { text: "The swan doesn't apologize for leaving the lake. Neither should you.", farewell: "Glide on. There are other waters." },
+    ];
+    let exitCount = 0;
+    function findExit() {
+      exitCount++;
+      const w = wisdoms[Math.floor(Math.random() * wisdoms.length)];
+      document.getElementById('wisdom').textContent = `"${w.text}"`;
+      document.getElementById('farewell').textContent = w.farewell;
+      document.getElementById('farewell').classList.add('show');
+      if (exitCount >= 3) {
+        document.getElementById('exit-btn').textContent = "You're still here? That's okay too.";
+      }
+    }
+    document.getElementById('exit-btn').addEventListener('click', findExit);
+  </script>
+</body>
+</html>
