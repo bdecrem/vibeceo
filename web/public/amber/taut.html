@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAUT — Amber</title>
+    <meta property="og:title" content="TAUT">
+    <meta property="og:description" content="The feeling of being stretched between two points, neither pulling harder">
+    <meta property="og:image" content="https://intheamber.com/amber/taut-og.png">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="TAUT">
+    <meta name="twitter:description" content="The feeling of being stretched between two points, neither pulling harder">
+    <meta name="twitter:image" content="https://intheamber.com/amber/taut-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0D0D0D;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+        }
+
+        #info {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: #D4A574;
+            opacity: 0.5;
+            text-align: center;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="info">TAUT — the tension of balanced forces</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Two anchor points - left and right
+        const leftAnchor = { x: width * 0.2, y: height * 0.5 };
+        const rightAnchor = { x: width * 0.8, y: height * 0.5 };
+
+        // Center point that's being pulled
+        const center = {
+            x: width * 0.5,
+            y: height * 0.5,
+            vx: 0,
+            vy: 0
+        };
+
+        // Noise offset for organic movement
+        let noiseOffset = 0;
+
+        // Particles that trace the tension lines
+        const particles = [];
+
+        class Particle {
+            constructor(x, y, side) {
+                this.x = x;
+                this.y = y;
+                this.side = side; // 'left' or 'right'
+                this.life = 1.0;
+                this.speed = 0.3 + Math.random() * 0.5;
+            }
+
+            update() {
+                // Move toward center along the tension line
+                const target = center;
+                const dx = target.x - this.x;
+                const dy = target.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > 1) {
+                    this.x += (dx / dist) * this.speed;
+                    this.y += (dy / dist) * this.speed;
+                }
+
+                this.life -= 0.003;
+                return this.life > 0;
+            }
+
+            draw() {
+                const color = this.side === 'left' ? '#FFD700' : '#2D9596';
+                ctx.fillStyle = color;
+                ctx.globalAlpha = this.life * 0.6;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // Simple noise function
+        function noise(x) {
+            return Math.sin(x) * 0.5 + Math.sin(x * 2.3) * 0.3 + Math.sin(x * 4.7) * 0.2;
+        }
+
+        function animate() {
+            // Fade background instead of clearing
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.08)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Update center position with subtle noise
+            noiseOffset += 0.008;
+            const noiseX = noise(noiseOffset) * 15;
+            const noiseY = noise(noiseOffset + 100) * 15;
+
+            center.x = width * 0.5 + noiseX;
+            center.y = height * 0.5 + noiseY;
+
+            // Draw anchor points
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(leftAnchor.x, leftAnchor.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#2D9596';
+            ctx.beginPath();
+            ctx.arc(rightAnchor.x, rightAnchor.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw tension lines with glow
+            ctx.shadowBlur = 15;
+            ctx.lineWidth = 2;
+
+            // Left line (amber/gold)
+            ctx.strokeStyle = '#FFD700';
+            ctx.shadowColor = '#FFD700';
+            ctx.beginPath();
+            ctx.moveTo(leftAnchor.x, leftAnchor.y);
+            ctx.lineTo(center.x, center.y);
+            ctx.stroke();
+
+            // Right line (teal)
+            ctx.strokeStyle = '#2D9596';
+            ctx.shadowColor = '#2D9596';
+            ctx.beginPath();
+            ctx.moveTo(rightAnchor.x, rightAnchor.y);
+            ctx.lineTo(center.x, center.y);
+            ctx.stroke();
+
+            ctx.shadowBlur = 0;
+
+            // Draw center point (where the tension meets)
+            const gradient = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, 15);
+            gradient.addColorStop(0, '#FFFFFF');
+            gradient.addColorStop(0.4, '#D4A574');
+            gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, 15, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Inner core
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Spawn particles along tension lines
+            if (Math.random() < 0.3) {
+                const side = Math.random() < 0.5 ? 'left' : 'right';
+                const anchor = side === 'left' ? leftAnchor : rightAnchor;
+                particles.push(new Particle(anchor.x, anchor.y, side));
+            }
+
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                if (!particles[i].update()) {
+                    particles.splice(i, 1);
+                } else {
+                    particles[i].draw();
+                }
+            }
+
+            // Draw distance measurements (subtle)
+            ctx.font = '11px "Space Mono", monospace';
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.4)';
+            const leftDist = Math.sqrt(
+                Math.pow(center.x - leftAnchor.x, 2) + 
+                Math.pow(center.y - leftAnchor.y, 2)
+            ).toFixed(0);
+            ctx.fillText(leftDist + 'px', leftAnchor.x - 30, leftAnchor.y - 15);
+
+            ctx.fillStyle = 'rgba(45, 149, 150, 0.4)';
+            const rightDist = Math.sqrt(
+                Math.pow(center.x - rightAnchor.x, 2) + 
+                Math.pow(center.y - rightAnchor.y, 2)
+            ).toFixed(0);
+            ctx.fillText(rightDist + 'px', rightAnchor.x + 15, rightAnchor.y - 15);
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // Audio context for subtle drone
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function startAudio() {
+            // Lowdrone (E2) with slight detuning
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc1.frequency.value = 82.41; // E2
+            osc2.frequency.value = 82.41 * 1.002; // Slightly detuned for beating
+            
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            
+            gain.gain.value = 0.08;
+            
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc1.start();
+            osc2.start();
+        }
+
+        // Start audio on first interaction
+        let audioStarted = false;
+        document.addEventListener('click', () => {
+            if (!audioStarted) {
+                startAudio();
+                audioStarted = true;
+            }
+        }, { once: true });
+    </script>
+</body>
+</html>
