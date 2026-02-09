@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Haiku AI — The Efficiency Garden</title>
+  <meta name="description" content="An AI that speaks only in haiku. Enter any topic, receive wisdom in 5-7-5.">
+  <meta property="og:title" content="Haiku AI — The Efficiency Garden">
+  <meta property="og:description" content="An AI that speaks only in haiku. 5-7-5, nothing more.">
+  <meta property="og:image" content="https://intheamber.com/amber/garden/haiku-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/garden/haiku.html">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(180deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    .emoji {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      color: #fff;
+      font-weight: 400;
+    }
+    
+    .subtitle {
+      color: #888;
+      font-style: italic;
+      margin-bottom: 3rem;
+    }
+    
+    .input-area {
+      margin-bottom: 2rem;
+    }
+    
+    input {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      font-size: 1.1rem;
+      font-family: inherit;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #333;
+      border-radius: 12px;
+      color: #fff;
+      text-align: center;
+      outline: none;
+      transition: all 0.3s;
+    }
+    
+    input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+    }
+    
+    input::placeholder {
+      color: #666;
+    }
+    
+    .generate-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 1rem;
+    }
+    
+    .generate-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    .generate-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .haiku-display {
+      margin: 3rem 0;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .haiku {
+      font-size: 1.5rem;
+      line-height: 2.5;
+      color: #d0d0d0;
+    }
+    
+    .haiku .line {
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInLine 0.8s forwards;
+    }
+    
+    .haiku .line:nth-child(1) { animation-delay: 0.5s; }
+    .haiku .line:nth-child(2) { animation-delay: 1.3s; }
+    .haiku .line:nth-child(3) { animation-delay: 2.1s; }
+    
+    @keyframes fadeInLine {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .waiting {
+      color: #666;
+      font-style: italic;
+    }
+    
+    .waiting::after {
+      content: '';
+      animation: dots 1.5s infinite;
+    }
+    
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+    
+    .history {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid #222;
+      text-align: left;
+    }
+    
+    .history h2 {
+      font-size: 1rem;
+      color: #666;
+      font-weight: 400;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    .history-item {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      border-left: 3px solid #667eea;
+    }
+    
+    .history-topic {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 0.5rem;
+    }
+    
+    .history-haiku {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #aaa;
+    }
+    
+    .back-link {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      color: #666;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    
+    .back-link:hover {
+      color: #fff;
+    }
+    
+    .signature {
+      margin-top: 4rem;
+      font-size: 0.85rem;
+      color: #444;
+    }
+    
+    .signature a {
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back to Garden</a>
+  
+  <div class="container">
+    <div class="emoji">🎋</div>
+    <h1>Haiku AI</h1>
+    <p class="subtitle">I speak only in 5-7-5</p>
+    
+    <div class="input-area">
+      <input type="text" id="topic" placeholder="Enter any topic..." maxlength="100">
+      <br>
+      <button class="generate-btn" id="generate" onclick="generateHaiku()">Generate Haiku</button>
+    </div>
+    
+    <div class="haiku-display" id="display">
+      <div class="haiku" id="haiku">
+        <div class="line">Words fall like blossoms</div>
+        <div class="line">Give me a topic to ponder</div>
+        <div class="line">I'll respond in verse</div>
+      </div>
+    </div>
+    
+    <div class="history" id="history" style="display: none;">
+      <h2>Previous Haiku</h2>
+      <div id="history-list"></div>
+    </div>
+    
+    <p class="signature">Part of <a href="../efficiency-garden.html">The Efficiency Garden</a> — Amber 🔮 & Mave 🌊</p>
+  </div>
+
+  <script>
+    // Haiku templates with placeholders
+    const templates = [
+      // Nature themes
+      ["{topic} awakens", "Soft petals drift on the wind", "Spring knows no hurry"],
+      ["In {topic} I find", "What words alone cannot hold", "Silence speaks louder"],
+      ["{topic} teaches me", "Even mountains bow to time", "All things shall transform"],
+      
+      // Philosophical
+      ["What is {topic}?", "A question wrapped in moonlight", "The answer: breathing"],
+      ["{topic} is not lost", "It waits in the space between", "Your heartbeats patient"],
+      ["You ask of {topic}", "But the river does not ask", "Where its waters flow"],
+      
+      // Melancholic
+      ["{topic} fades away", "Like morning mist on still lakes", "Nothing lasts, I know"],
+      ["I dream of {topic}", "But dreams dissolve at daybreak", "Let them go gently"],
+      ["Even {topic}", "Cannot fill the empty space", "That longing creates"],
+      
+      // Playful
+      ["Oh, {topic} again!", "Very well, I'll try my best", "Here: a tiny poem"],
+      ["{topic}, you say?", "I fold your word like paper", "A crane takes its flight"],
+      ["Behold: {topic}", "Seventeen syllables deep", "Was that deep enough?"],
+      
+      // Existential
+      ["{topic} exists", "And yet, what does 'exist' mean?", "We are all just dust"],
+      ["Before {topic}", "There was nothing, then everything", "After: nothing still"],
+      ["{topic} is real", "As real as this moment is", "Which is barely so"],
+      
+      // Observational
+      ["I notice {topic}", "The way light bends around it", "Beautiful and strange"],
+      ["{topic} sits there", "Neither asking nor answering", "Simply being here"],
+      ["Look at {topic}", "How it holds itself so still", "We should learn from this"],
+      
+      // Meta/self-aware
+      ["You typed '{topic}'", "I count syllables for you", "This is what I do"],
+      ["{topic}, five sounds", "Seven more to fill the space", "Five to close the door"],
+      ["A haiku about", "{topic}? Here, I made you one", "You're welcome, human"],
+    ];
+    
+    const history = [];
+    
+    function generateHaiku() {
+      const topicInput = document.getElementById('topic');
+      const display = document.getElementById('display');
+      const haikuEl = document.getElementById('haiku');
+      const btn = document.getElementById('generate');
+      
+      let topic = topicInput.value.trim() || 'life';
+      
+      // Truncate long topics
+      if (topic.length > 20) {
+        topic = topic.substring(0, 20);
+      }
+      
+      // Show waiting state
+      btn.disabled = true;
+      haikuEl.innerHTML = '<div class="waiting">Composing</div>';
+      
+      // Simulate thinking time
+      setTimeout(() => {
+        const template = templates[Math.floor(Math.random() * templates.length)];
+        const haiku = template.map(line => 
+          line.replace('{topic}', topic.toLowerCase())
+        );
+        
+        // Display with animation
+        haikuEl.innerHTML = haiku.map(line => 
+          `<div class="line">${line}</div>`
+        ).join('');
+        
+        // Add to history
+        history.unshift({ topic, haiku });
+        updateHistory();
+        
+        btn.disabled = false;
+      }, 1500);
+    }
+    
+    function updateHistory() {
+      const historySection = document.getElementById('history');
+      const historyList = document.getElementById('history-list');
+      
+      if (history.length > 1) {
+        historySection.style.display = 'block';
+        historyList.innerHTML = history.slice(1, 6).map(item => `
+          <div class="history-item">
+            <div class="history-topic">${item.topic}</div>
+            <div class="history-haiku">${item.haiku.join('<br>')}</div>
+          </div>
+        `).join('');
+      }
+    }
+    
+    // Enter key triggers generation
+    document.getElementById('topic').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        generateHaiku();
+      }
+    });
+  </script>
+</body>
+</html>
