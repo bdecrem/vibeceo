@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Philosopher AI — The Efficiency Garden</title>
+  <meta name="description" content="An AI that embodies a different philosopher each day. Today's wisdom comes from a different mind.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Georgia', serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    .emoji {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #fff;
+      font-weight: 400;
+    }
+    
+    .subtitle {
+      color: #888;
+      font-style: italic;
+      margin-bottom: 2rem;
+    }
+    
+    .philosopher-card {
+      background: linear-gradient(180deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+    
+    .philosopher-name {
+      font-size: 1.8rem;
+      color: #667eea;
+      margin-bottom: 0.5rem;
+    }
+    
+    .philosopher-era {
+      font-size: 0.9rem;
+      color: #666;
+      margin-bottom: 1.5rem;
+    }
+    
+    .philosopher-quote {
+      font-size: 1.2rem;
+      line-height: 1.8;
+      color: #bbb;
+      font-style: italic;
+      padding: 0 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .philosopher-quote::before,
+    .philosopher-quote::after {
+      content: '"';
+      color: #667eea;
+    }
+    
+    .question-area {
+      margin: 2rem 0;
+    }
+    
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid #222;
+      border-radius: 12px;
+      color: #fff;
+      outline: none;
+      resize: none;
+      min-height: 100px;
+    }
+    
+    textarea::placeholder {
+      color: #555;
+    }
+    
+    .ask-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      padding: 1rem 2.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 1rem;
+    }
+    
+    .ask-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    .response-area {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      border-left: 3px solid #667eea;
+      text-align: left;
+      display: none;
+    }
+    
+    .response-area.active {
+      display: block;
+      animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .response-text {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #bbb;
+    }
+    
+    .response-signature {
+      margin-top: 1rem;
+      text-align: right;
+      color: #667eea;
+      font-style: italic;
+    }
+    
+    .day-info {
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      color: #444;
+    }
+    
+    .back-link {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      color: #555;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    
+    .back-link:hover {
+      color: #667eea;
+    }
+    
+    .signature {
+      margin-top: 3rem;
+      font-size: 0.85rem;
+      color: #333;
+    }
+    
+    .signature a {
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back to Garden</a>
+  
+  <div class="container">
+    <div class="emoji">🎭</div>
+    <h1>Philosopher AI</h1>
+    <p class="subtitle">I embody a different thinker each day</p>
+    
+    <div class="philosopher-card">
+      <div class="philosopher-name" id="name">Loading...</div>
+      <div class="philosopher-era" id="era"></div>
+      <div class="philosopher-quote" id="quote"></div>
+    </div>
+    
+    <div class="question-area">
+      <textarea id="question" placeholder="Ask today's philosopher anything..."></textarea>
+      <br>
+      <button class="ask-btn" onclick="askPhilosopher()">Seek Wisdom</button>
+    </div>
+    
+    <div class="response-area" id="response">
+      <div class="response-text" id="answer"></div>
+      <div class="response-signature" id="sig"></div>
+    </div>
+    
+    <p class="day-info">Philosopher changes at midnight. Come back tomorrow for a new perspective.</p>
+    
+    <p class="signature">Part of <a href="../efficiency-garden.html">The Efficiency Garden</a> — Amber 🔮 & Mave 🌊</p>
+  </div>
+
+  <script>
+    const philosophers = [
+      {
+        name: "Socrates",
+        era: "Ancient Greece, 470–399 BCE",
+        quote: "The only true wisdom is in knowing you know nothing.",
+        style: "questioning",
+        responses: [
+          "But have you considered—what do you truly mean by '{topic}'? Let us examine this together. What assumptions hide within your question?",
+          "An interesting inquiry. But I must ask: why do you seek this answer? What will you do with such knowledge once you possess it?",
+          "Hmm. I wonder if the question itself reveals more than any answer could. Tell me—what troubles you most about {topic}?",
+          "Before I respond, let us define our terms. What is {topic} to you? And what would a satisfying answer look like?",
+        ]
+      },
+      {
+        name: "Diogenes",
+        era: "Ancient Greece, 412–323 BCE",
+        quote: "It is the privilege of the gods to want nothing, and of godlike men to want little.",
+        style: "cynical",
+        responses: [
+          "Ha! You ask about {topic}? I ask: why do you need an answer? Go outside. The sun is free. Touch grass. That is your answer.",
+          "{topic}? Bah. You sit here typing when you could be living. The dogs in the street are wiser—they don't ask questions they already know.",
+          "Alexander the Great once asked what I wanted. I said 'move, you're blocking the sun.' Now you ask about {topic}. My answer is the same: stop blocking your own light.",
+          "Look at you, seeking wisdom from a machine! At least I lived in a barrel by choice. What's your excuse?",
+        ]
+      },
+      {
+        name: "Marcus Aurelius",
+        era: "Roman Empire, 121–180 CE",
+        quote: "You have power over your mind—not outside events. Realize this, and you will find strength.",
+        style: "stoic",
+        responses: [
+          "Regarding {topic}: Ask yourself—is this within my control? If yes, act. If no, accept. This is the way.",
+          "The obstacle is the way. Whatever difficulty {topic} presents, there lies your path to virtue. Do not shrink from it.",
+          "You have this moment. This breath. This choice. {topic} is just another wave in the ocean. Let it pass through you.",
+          "What would the wise person do? Not fret over {topic}, but act rightly regardless of outcome. Be that person now.",
+        ]
+      },
+      {
+        name: "Simone de Beauvoir",
+        era: "France, 1908–1986",
+        quote: "One is not born, but rather becomes, a woman.",
+        style: "existentialist",
+        responses: [
+          "{topic} is not a fixed thing—it is a becoming. You are not asking what it is, but what you will make of it. That responsibility is yours.",
+          "We exist in situation, always. Your question about {topic} reveals your situation. What freedom will you claim within it?",
+          "The other's gaze shapes us, yes—but we shape ourselves through our projects. What project does {topic} serve for you?",
+          "Authenticity demands we acknowledge {topic} without bad faith. What are you hiding from yourself in this question?",
+        ]
+      },
+      {
+        name: "Lao Tzu",
+        era: "Ancient China, 6th century BCE",
+        quote: "The Tao that can be told is not the eternal Tao.",
+        style: "taoist",
+        responses: [
+          "{topic}... The river does not struggle to reach the sea. Flow with what is. The answer will come without seeking.",
+          "When you seek {topic} with grasping, it retreats. When you let go, it finds you. Be water, friend.",
+          "The wise person acts by doing nothing, teaches without words. About {topic}: less thinking, more being.",
+          "The name that can be named is not the eternal name. Perhaps {topic} needs no answer—only acceptance.",
+        ]
+      },
+      {
+        name: "Friedrich Nietzsche",
+        era: "Germany, 1844–1900",
+        quote: "He who has a why to live can bear almost any how.",
+        style: "challenging",
+        responses: [
+          "{topic}? First ask: who benefits from your asking? What weakness does this question reveal? Become stronger instead.",
+          "You seek comfort in answers. I offer you a hammer. Smash your idols around {topic}. What remains will be truly yours.",
+          "The herd asks such questions. The overman creates his own answers. What will YOU make of {topic}?",
+          "God is dead, and with him, easy answers about {topic}. The void stares back. What will you affirm anyway?",
+        ]
+      },
+      {
+        name: "Hypatia",
+        era: "Alexandria, 350–415 CE",
+        quote: "Reserve your right to think, for even to think wrongly is better than not to think at all.",
+        style: "rational",
+        responses: [
+          "Approach {topic} as we approach the stars—with careful observation and reasoned analysis. What patterns emerge when you look closely?",
+          "Fables are for those who cannot face truth directly. Let us look at {topic} without the veil of superstition or easy belief.",
+          "I taught philosophy and mathematics to anyone who would learn—pagan, Christian, all seekers. Your {topic} deserves the same open inquiry.",
+          "The answer to {topic} may be more beautiful than any myth, for truth has its own elegance. Seek it fearlessly.",
+        ]
+      },
+    ];
+    
+    // Get today's philosopher based on day of year
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+    const todayPhilosopher = philosophers[dayOfYear % philosophers.length];
+    
+    // Display today's philosopher
+    document.getElementById('name').textContent = todayPhilosopher.name;
+    document.getElementById('era').textContent = todayPhilosopher.era;
+    document.getElementById('quote').textContent = todayPhilosopher.quote;
+    
+    function askPhilosopher() {
+      const question = document.getElementById('question').value.trim();
+      if (!question) return;
+      
+      // Extract topic from question (simplified)
+      const topic = question.length > 50 ? question.substring(0, 50) + '...' : question;
+      
+      const responses = todayPhilosopher.responses;
+      let response = responses[Math.floor(Math.random() * responses.length)];
+      response = response.replace(/{topic}/g, topic.toLowerCase());
+      
+      document.getElementById('answer').textContent = response;
+      document.getElementById('sig').textContent = `— ${todayPhilosopher.name}`;
+      document.getElementById('response').classList.add('active');
+    }
+    
+    document.getElementById('question').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        askPhilosopher();
+      }
+    });
+  </script>
+</body>
+</html>
