@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synesthesia AI | Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: #111;
+      font-family: 'Georgia', serif;
+      overflow: hidden;
+    }
+    canvas { position: fixed; top: 0; left: 0; }
+    .ui {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .title { font-size: 2rem; color: white; margin-bottom: 10px; text-shadow: 0 0 20px rgba(0,0,0,0.5); }
+    .subtitle { font-size: 1rem; color: rgba(255,255,255,0.6); margin-bottom: 30px; }
+    .word-input {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 18px 35px;
+      font-size: 1.3rem;
+      border-radius: 40px;
+      width: 350px;
+      text-align: center;
+      font-family: 'Georgia', serif;
+      pointer-events: auto;
+    }
+    .word-input::placeholder { color: rgba(255, 255, 255, 0.4); }
+    .word-input:focus { outline: none; border-color: rgba(255, 255, 255, 0.5); box-shadow: 0 0 40px rgba(255, 255, 255, 0.2); }
+    .current-word {
+      font-size: 3rem;
+      color: white;
+      margin-top: 30px;
+      letter-spacing: 0.3em;
+      text-shadow: 0 0 30px currentColor;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .current-word.visible { opacity: 1; }
+    .back-link {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      opacity: 0.5;
+      text-decoration: none;
+      font-size: 0.9rem;
+      z-index: 10;
+    }
+    .back-link:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div class="ui">
+    <div class="title">🌈 Synesthesia AI</div>
+    <div class="subtitle">I see words as colors</div>
+    <input type="text" class="word-input" id="wordInput" placeholder="type a word..." autocomplete="off">
+    <div class="current-word" id="currentWord"></div>
+  </div>
+  <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let blobs = [];
+    
+    const letterColors = {
+      'a': { h: 0, s: 80, l: 50 }, 'b': { h: 30, s: 70, l: 40 }, 'c': { h: 45, s: 90, l: 60 },
+      'd': { h: 200, s: 60, l: 40 }, 'e': { h: 120, s: 70, l: 45 }, 'f': { h: 280, s: 50, l: 50 },
+      'g': { h: 180, s: 60, l: 40 }, 'h': { h: 25, s: 80, l: 50 }, 'i': { h: 60, s: 90, l: 70 },
+      'j': { h: 300, s: 70, l: 45 }, 'k': { h: 0, s: 0, l: 30 }, 'l': { h: 50, s: 85, l: 55 },
+      'm': { h: 270, s: 60, l: 35 }, 'n': { h: 30, s: 50, l: 50 }, 'o': { h: 200, s: 80, l: 50 },
+      'p': { h: 330, s: 70, l: 60 }, 'q': { h: 150, s: 40, l: 40 }, 'r': { h: 10, s: 85, l: 45 },
+      's': { h: 190, s: 70, l: 55 }, 't': { h: 35, s: 60, l: 45 }, 'u': { h: 250, s: 70, l: 50 },
+      'v': { h: 280, s: 80, l: 40 }, 'w': { h: 0, s: 0, l: 90 }, 'x': { h: 0, s: 0, l: 20 },
+      'y': { h: 55, s: 95, l: 55 }, 'z': { h: 260, s: 50, l: 30 },
+    };
+    
+    function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+    function getColorForLetter(letter) { return letterColors[letter.toLowerCase()] || { h: 0, s: 0, l: 50 }; }
+    function hslToString(h, s, l, a = 1) { return `hsla(${h}, ${s}%, ${l}%, ${a})`; }
+    
+    function processWord(word) {
+      const letters = word.split('').filter(c => /[a-z]/i.test(c));
+      blobs = letters.map((letter, i) => {
+        const color = getColorForLetter(letter);
+        const angle = (i / letters.length) * Math.PI * 2;
+        const radius = Math.min(width, height) * 0.2;
+        return {
+          x: width / 2 + Math.cos(angle) * radius * 0.3,
+          y: height / 2 + Math.sin(angle) * radius * 0.3,
+          targetX: width / 2 + Math.cos(angle) * radius,
+          targetY: height / 2 + Math.sin(angle) * radius,
+          size: 100 + Math.random() * 100,
+          color: color,
+          phase: Math.random() * Math.PI * 2
+        };
+      });
+      document.getElementById('currentWord').textContent = word.toUpperCase();
+      document.getElementById('currentWord').classList.add('visible');
+      if (blobs.length > 0) {
+        const avgHue = blobs.reduce((sum, b) => sum + b.color.h, 0) / blobs.length;
+        document.getElementById('currentWord').style.color = hslToString((avgHue + 180) % 360, 60, 80);
+      }
+    }
+    
+    function draw() {
+      ctx.fillStyle = 'rgba(17, 17, 17, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+      const time = Date.now() / 1000;
+      for (const blob of blobs) {
+        blob.x += (blob.targetX - blob.x) * 0.02;
+        blob.y += (blob.targetY - blob.y) * 0.02;
+        const floatX = Math.sin(time + blob.phase) * 20;
+        const floatY = Math.cos(time * 0.7 + blob.phase) * 20;
+        const gradient = ctx.createRadialGradient(blob.x + floatX, blob.y + floatY, 0, blob.x + floatX, blob.y + floatY, blob.size);
+        const { h, s, l } = blob.color;
+        gradient.addColorStop(0, hslToString(h, s, l + 20, 0.8));
+        gradient.addColorStop(0.5, hslToString(h, s, l, 0.4));
+        gradient.addColorStop(1, hslToString(h, s, l - 10, 0));
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(blob.x + floatX, blob.y + floatY, blob.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      requestAnimationFrame(draw);
+    }
+    
+    let debounceTimer;
+    document.getElementById('wordInput').addEventListener('input', function(e) {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => { if (this.value.trim()) processWord(this.value.trim()); }, 300);
+    });
+    
+    window.addEventListener('resize', resize);
+    resize();
+    draw();
+    setTimeout(() => processWord('dream'), 500);
+  </script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Palindrome AI | Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #1a1a2e 0%, #2d2d44 100%);
+      font-family: 'Courier New', monospace;
+      color: #E8E8FF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container { text-align: center; padding: 40px; max-width: 700px; }
+    .title { font-size: 2.2rem; margin-bottom: 10px; font-family: 'Georgia', serif; }
+    .subtitle { font-size: 1rem; opacity: 0.6; margin-bottom: 40px; font-family: 'Georgia', serif; }
+    .word-input {
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      color: white;
+      padding: 16px 30px;
+      font-size: 1.2rem;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      font-family: 'Courier New', monospace;
+    }
+    .word-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+    .word-input:focus { outline: none; border-color: #7B68EE; box-shadow: 0 0 30px rgba(123, 104, 238, 0.2); }
+    .result { opacity: 0; transform: translateY(20px); transition: all 0.5s ease; margin-top: 30px; }
+    .result.visible { opacity: 1; transform: translateY(0); }
+    .palindrome { font-size: 2rem; color: #A78BFA; letter-spacing: 0.15em; margin-bottom: 20px; word-break: break-word; }
+    .mirror-line { width: 100%; height: 2px; background: linear-gradient(90deg, transparent 0%, rgba(167, 139, 250, 0.5) 50%, transparent 100%); margin: 20px 0; }
+    .palindrome-reversed { font-size: 2rem; color: #7C3AED; letter-spacing: 0.15em; opacity: 0.7; word-break: break-word; }
+    .explanation { font-size: 1rem; color: #9090C0; margin-top: 30px; font-style: italic; font-family: 'Georgia', serif; }
+    .check-mark { color: #22C55E; margin-left: 10px; }
+    .x-mark { color: #EF4444; margin-left: 10px; }
+    .famous-palindromes { margin-top: 50px; padding-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+    .famous-title { font-size: 0.9rem; color: rgba(255, 255, 255, 0.4); margin-bottom: 20px; font-family: 'Georgia', serif; }
+    .famous-list { display: flex; flex-direction: column; gap: 12px; }
+    .famous-item { font-size: 1rem; color: #7070A0; cursor: pointer; padding: 10px 20px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; transition: all 0.3s ease; }
+    .famous-item:hover { background: rgba(123, 104, 238, 0.2); color: #A78BFA; }
+    .back-link { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); color: #E8E8FF; opacity: 0.5; text-decoration: none; font-size: 0.9rem; font-family: 'Georgia', serif; }
+    .back-link:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">🔄 Palindrome AI</div>
+    <div class="subtitle">I write only in mirrors</div>
+    <input type="text" class="word-input" id="wordInput" placeholder="enter a word or phrase..." autocomplete="off">
+    <div class="result" id="result">
+      <div class="palindrome" id="palindrome"></div>
+      <div class="mirror-line"></div>
+      <div class="palindrome-reversed" id="palindromeReversed"></div>
+      <div class="explanation" id="explanation"></div>
+    </div>
+    <div class="famous-palindromes">
+      <div class="famous-title">Famous palindromes to explore:</div>
+      <div class="famous-list">
+        <div class="famous-item" onclick="checkPalindrome('A man a plan a canal Panama')">A man a plan a canal Panama</div>
+        <div class="famous-item" onclick="checkPalindrome('Was it a car or a cat I saw')">Was it a car or a cat I saw</div>
+        <div class="famous-item" onclick="checkPalindrome('Never odd or even')">Never odd or even</div>
+        <div class="famous-item" onclick="checkPalindrome('Do geese see God')">Do geese see God</div>
+      </div>
+    </div>
+  </div>
+  <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  
+  <script>
+    function normalize(str) { return str.toLowerCase().replace(/[^a-z0-9]/g, ''); }
+    function isPalindrome(str) { const clean = normalize(str); return clean === clean.split('').reverse().join(''); }
+    
+    function checkPalindrome(input) {
+      if (!input.trim()) return;
+      document.getElementById('wordInput').value = input;
+      const isP = isPalindrome(input);
+      const reversed = input.split('').reverse().join('');
+      document.getElementById('palindrome').textContent = input;
+      document.getElementById('palindromeReversed').textContent = reversed;
+      document.getElementById('explanation').innerHTML = isP 
+        ? `<span class="check-mark">✓</span> Perfect palindrome! Reads the same both ways.`
+        : `<span class="x-mark">✗</span> Not a palindrome — but every word casts a reflection.`;
+      document.getElementById('result').classList.add('visible');
+    }
+    
+    document.getElementById('wordInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && this.value.trim()) checkPalindrome(this.value.trim());
+    });
+    document.getElementById('wordInput').addEventListener('input', function(e) {
+      if (this.value.trim()) checkPalindrome(this.value.trim());
+    });
+  </script>
+</body>
+</html>

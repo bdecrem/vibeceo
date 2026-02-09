@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Constellation AI | Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      min-height: 100vh;
+      background: linear-gradient(180deg, #0a0a1a 0%, #1a1a3a 100%);
+      font-family: 'Georgia', serif;
+      color: #E8E8FF;
+      overflow: hidden;
+    }
+    
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+    
+    .ui {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding-top: 15vh;
+    }
+    
+    .title {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      opacity: 0.9;
+    }
+    
+    .subtitle {
+      font-size: 1rem;
+      opacity: 0.5;
+      margin-bottom: 30px;
+    }
+    
+    .word-input {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #E8E8FF;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      border-radius: 30px;
+      width: 300px;
+      text-align: center;
+      font-family: 'Georgia', serif;
+    }
+    
+    .word-input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .word-input:focus {
+      outline: none;
+      border-color: #7B68EE;
+      box-shadow: 0 0 30px rgba(123, 104, 238, 0.3);
+    }
+    
+    .constellation-name {
+      font-size: 1.5rem;
+      font-style: italic;
+      color: #9090C0;
+      margin-top: 30px;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+    
+    .constellation-name.visible { opacity: 1; }
+    
+    .meaning {
+      font-size: 1rem;
+      color: #7070A0;
+      max-width: 400px;
+      margin: 15px auto 0;
+      line-height: 1.6;
+      opacity: 0;
+      transition: opacity 1s ease 0.5s;
+    }
+    
+    .meaning.visible { opacity: 1; }
+    
+    .back-link {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #E8E8FF;
+      opacity: 0.5;
+      text-decoration: none;
+      font-size: 0.9rem;
+      z-index: 10;
+    }
+    
+    .back-link:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="ui">
+    <div class="title">✨ Constellation AI</div>
+    <div class="subtitle">I speak in patterns of stars</div>
+    
+    <input type="text" class="word-input" id="wordInput" 
+           placeholder="enter a word..." 
+           autocomplete="off"
+           maxlength="20">
+    
+    <div class="constellation-name" id="constellationName"></div>
+    <div class="meaning" id="meaning"></div>
+  </div>
+  
+  <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width, height;
+    let stars = [];
+    let constellationStars = [];
+    let connections = [];
+    
+    const meanings = {
+      vowelHeavy: "A word that breathes deeply. It carries emotion in its open sounds.",
+      consonantHeavy: "A word of structure and weight. It builds rather than flows.",
+      short: "Brief but bright. Like a shooting star — gone before you can wish.",
+      long: "A word that stretches across the sky. It has stories within stories.",
+      repeating: "Echoes within itself. The universe loves patterns that repeat.",
+      unique: "Each letter distinct. A constellation of individuals.",
+    };
+    
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      initBackgroundStars();
+    }
+    
+    function initBackgroundStars() {
+      stars = [];
+      for (let i = 0; i < 200; i++) {
+        stars.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          size: Math.random() * 1.5 + 0.5,
+          twinkle: Math.random() * Math.PI * 2,
+          speed: Math.random() * 0.02 + 0.01
+        });
+      }
+    }
+    
+    function drawBackgroundStars() {
+      for (const star of stars) {
+        star.twinkle += star.speed;
+        const alpha = 0.3 + 0.4 * Math.sin(star.twinkle);
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    function generateConstellation(word) {
+      const letters = word.toUpperCase().split('');
+      const centerX = width / 2;
+      const centerY = height / 2 + 50;
+      const radius = Math.min(width, height) * 0.25;
+      
+      constellationStars = [];
+      connections = [];
+      
+      letters.forEach((letter, i) => {
+        const charCode = letter.charCodeAt(0);
+        const angle = (i / letters.length) * Math.PI * 2 - Math.PI / 2;
+        const letterRadius = radius * (0.6 + (charCode % 10) / 20);
+        const offsetX = Math.sin(charCode * 0.5) * 30;
+        const offsetY = Math.cos(charCode * 0.7) * 30;
+        
+        constellationStars.push({
+          x: centerX + Math.cos(angle) * letterRadius + offsetX,
+          y: centerY + Math.sin(angle) * letterRadius + offsetY,
+          size: 3 + (charCode % 5),
+          letter: letter,
+          currentX: centerX,
+          currentY: centerY,
+          delay: i * 100,
+          born: Date.now()
+        });
+      });
+      
+      for (let i = 0; i < constellationStars.length; i++) {
+        if (i < constellationStars.length - 1) {
+          connections.push([i, i + 1]);
+        }
+        const vowels = 'AEIOU';
+        if (vowels.includes(letters[i])) {
+          for (let j = i + 2; j < constellationStars.length; j++) {
+            if (vowels.includes(letters[j])) {
+              connections.push([i, j]);
+              break;
+            }
+          }
+        }
+      }
+      
+      const vowelCount = letters.filter(l => 'AEIOU'.includes(l)).length;
+      const uniqueLetters = new Set(letters).size;
+      
+      let meaningKey;
+      if (letters.length <= 3) meaningKey = 'short';
+      else if (letters.length >= 8) meaningKey = 'long';
+      else if (vowelCount > letters.length / 2) meaningKey = 'vowelHeavy';
+      else if (vowelCount < letters.length / 3) meaningKey = 'consonantHeavy';
+      else if (uniqueLetters < letters.length / 2) meaningKey = 'repeating';
+      else meaningKey = 'unique';
+      
+      document.getElementById('constellationName').textContent = `The ${word} Constellation`;
+      document.getElementById('constellationName').classList.add('visible');
+      document.getElementById('meaning').textContent = meanings[meaningKey];
+      document.getElementById('meaning').classList.add('visible');
+    }
+    
+    function drawConstellation() {
+      const now = Date.now();
+      
+      for (const star of constellationStars) {
+        const elapsed = now - star.born - star.delay;
+        if (elapsed < 0) continue;
+        
+        const progress = Math.min(1, elapsed / 800);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        
+        star.currentX = width / 2 + (star.x - width / 2) * eased;
+        star.currentY = (height / 2 + 50) + (star.y - (height / 2 + 50)) * eased;
+      }
+      
+      ctx.strokeStyle = 'rgba(123, 104, 238, 0.4)';
+      ctx.lineWidth = 1;
+      for (const [i, j] of connections) {
+        const a = constellationStars[i];
+        const b = constellationStars[j];
+        if (!a || !b) continue;
+        
+        const elapsed = Math.min(now - a.born - a.delay, now - b.born - b.delay);
+        if (elapsed < 500) continue;
+        
+        const alpha = Math.min(1, (elapsed - 500) / 500) * 0.4;
+        ctx.strokeStyle = `rgba(123, 104, 238, ${alpha})`;
+        
+        ctx.beginPath();
+        ctx.moveTo(a.currentX, a.currentY);
+        ctx.lineTo(b.currentX, b.currentY);
+        ctx.stroke();
+      }
+      
+      for (const star of constellationStars) {
+        const elapsed = now - star.born - star.delay;
+        if (elapsed < 0) continue;
+        
+        const alpha = Math.min(1, elapsed / 500);
+        
+        ctx.fillStyle = `rgba(123, 104, 238, ${alpha * 0.3})`;
+        ctx.beginPath();
+        ctx.arc(star.currentX, star.currentY, star.size * 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(star.currentX, star.currentY, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    function animate() {
+      ctx.fillStyle = 'rgba(10, 10, 26, 0.3)';
+      ctx.fillRect(0, 0, width, height);
+      
+      drawBackgroundStars();
+      drawConstellation();
+      
+      requestAnimationFrame(animate);
+    }
+    
+    document.getElementById('wordInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && this.value.trim()) {
+        generateConstellation(this.value.trim());
+        this.value = '';
+      }
+    });
+    
+    window.addEventListener('resize', resize);
+    resize();
+    animate();
+  </script>
+</body>
+</html>

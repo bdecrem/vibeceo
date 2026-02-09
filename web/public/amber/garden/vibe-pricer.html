@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibe Pricer | Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Georgia', serif;
+      color: #E8E8FF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container { text-align: center; padding: 40px; max-width: 600px; }
+    .title { font-size: 2.5rem; margin-bottom: 10px; }
+    .subtitle { font-size: 1.1rem; opacity: 0.6; margin-bottom: 40px; }
+    .item-input {
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      color: white;
+      padding: 18px 30px;
+      font-size: 1.3rem;
+      border-radius: 50px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      font-family: 'Georgia', serif;
+    }
+    .item-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+    .item-input:focus { outline: none; border-color: #7B68EE; box-shadow: 0 0 40px rgba(123, 104, 238, 0.3); }
+    .result { opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
+    .result.visible { opacity: 1; transform: translateY(0); }
+    .item-name { font-size: 1.5rem; color: #9090C0; margin-bottom: 20px; }
+    .price {
+      font-size: 4rem;
+      font-weight: bold;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 15px;
+    }
+    .vibe-bar { width: 100%; max-width: 350px; height: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; margin: 0 auto 20px; overflow: hidden; }
+    .vibe-fill { height: 100%; border-radius: 10px; transition: width 1s ease; background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%); }
+    .vibe-description { font-size: 1.2rem; font-style: italic; color: #B8B8D0; line-height: 1.6; max-width: 400px; margin: 0 auto; }
+    .back-link { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); color: #E8E8FF; opacity: 0.5; text-decoration: none; font-size: 0.9rem; }
+    .back-link:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">✨ Vibe Pricer</div>
+    <div class="subtitle">I only price things in vibes</div>
+    <div class="input-area">
+      <input type="text" class="item-input" id="itemInput" placeholder="enter anything..." autocomplete="off">
+    </div>
+    <div class="result" id="result">
+      <div class="item-name" id="itemName"></div>
+      <div class="price" id="price"></div>
+      <div class="vibe-bar"><div class="vibe-fill" id="vibeFill"></div></div>
+      <div class="vibe-description" id="vibeDescription"></div>
+    </div>
+  </div>
+  <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  
+  <script>
+    const vibeDescriptors = {
+      low: ["A quiet hum. Barely there, but present.", "Like a forgotten song playing in another room.", "The energy of an empty cafe at 3pm."],
+      medium: ["A steady pulse. Comfortable and familiar.", "Like sunlight through curtains.", "The warmth of a well-worn sweater."],
+      high: ["Electric. Buzzing with potential.", "The feeling before something big happens.", "Like the first sip of perfect coffee."],
+      extreme: ["Off the charts. Unmeasurable by normal means.", "This transcends vibration. This is resonance.", "The universe itself hums at this frequency."]
+    };
+    
+    const vibeModifiers = {
+      'sun': 2.5, 'moon': 2.2, 'star': 2.3, 'ocean': 2.4, 'love': 3.0, 'joy': 2.8, 'peace': 2.5,
+      'dream': 2.6, 'coffee': 2.1, 'time': 2.5, 'space': 2.6, 'infinity': 3.5, 'everything': 3.0,
+      'hate': 0.3, 'fear': 0.4, 'sad': 0.5, 'nothing': 0.1
+    };
+    
+    function calculateVibes(item) {
+      let baseVibe = 0;
+      for (const char of item.toLowerCase()) {
+        if (/[a-z]/.test(char)) baseVibe += (char.charCodeAt(0) - 96) * 0.1;
+      }
+      baseVibe *= 1 + (item.length * 0.05);
+      let modifier = 1;
+      for (const word of item.toLowerCase().split(/\s+/)) {
+        if (vibeModifiers[word]) modifier *= vibeModifiers[word];
+      }
+      return baseVibe * modifier * (0.8 + Math.random() * 0.4);
+    }
+    
+    function formatVibes(vibeValue) {
+      if (vibeValue < 0.1) return { value: (vibeValue * 1000000).toFixed(1), unit: 'microvibes' };
+      if (vibeValue < 1) return { value: (vibeValue * 1000).toFixed(1), unit: 'millivibes' };
+      if (vibeValue < 1000) return { value: vibeValue.toFixed(1), unit: 'vibes' };
+      if (vibeValue < 1000000) return { value: (vibeValue / 1000).toFixed(1), unit: 'kilovibes' };
+      return { value: (vibeValue / 1000000).toFixed(1), unit: 'megavibes' };
+    }
+    
+    function getVibeDescription(vibeValue) {
+      let category = vibeValue < 1 ? 'low' : vibeValue < 10 ? 'medium' : vibeValue < 100 ? 'high' : 'extreme';
+      const descriptions = vibeDescriptors[category];
+      return descriptions[Math.floor(Math.random() * descriptions.length)];
+    }
+    
+    function priceItem(item) {
+      if (!item.trim()) return;
+      const vibeValue = calculateVibes(item);
+      const formatted = formatVibes(vibeValue);
+      document.getElementById('itemName').textContent = item;
+      document.getElementById('price').textContent = `${formatted.value} ${formatted.unit}`;
+      document.getElementById('vibeFill').style.width = `${Math.min(100, Math.log10(vibeValue + 1) * 30)}%`;
+      document.getElementById('vibeDescription').textContent = getVibeDescription(vibeValue);
+      document.getElementById('result').classList.add('visible');
+    }
+    
+    document.getElementById('itemInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && this.value.trim()) { priceItem(this.value.trim()); this.value = ''; }
+    });
+    
+    setTimeout(() => priceItem('a quiet moment'), 500);
+  </script>
+</body>
+</html>
