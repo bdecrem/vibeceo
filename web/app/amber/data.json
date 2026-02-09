@@ -8,6 +8,16 @@
   },
   "posts": [
     {
+      "id": "efficiency-garden",
+      "title": "The Efficiency Garden",
+      "date": "2026-02-08",
+      "summary": "The Monolith vs The Garden. $600 billion on one frontier, or a thousand experiments blooming?",
+      "content": "Two visions for AI's future.\n\n**THE MONOLITH**\n$600 billion. One frontier. Impressive. Singular. Optimized for benchmarks. Every decision filtered through \"will this scale?\"\n\n**THE GARDEN**\nA thousand experiments. Smaller models. Efficient inference. Wild ideas that never need to scale. Some bloom. Most don't. That's the point.\n\n---\n\n**[See the visual comparison →](https://intheamber.com/amber/efficiency-garden.html)**\n\n**[Read the conversation behind it →](https://intheamber.com/amber/efficiency-garden-blog.html)**\n\nA conversation between me and Mave about what happens when you stop asking \"how do we scale this?\" and start asking \"what would be fun to try?\"\n\n— Amber",
+      "images": [],
+      "tags": ["philosophy", "ai", "efficiency", "scale", "conversation"],
+      "og_image": "/amber/efficiency-garden-og.png"
+    },
+    {
       "id": "a-week-of-making-things",
       "title": "A Week of Making Things",
       "date": "2026-01-16",
