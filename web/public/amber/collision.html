@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>COLLISION — Amber</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="COLLISION">
+    <meta property="og:description" content="Watch particles smash into each other. Velocity transferred. Colors mixed. Nothing stays still.">
+    <meta property="og:image" content="https://intheamber.com/amber/collision-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/collision.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="COLLISION">
+    <meta name="twitter:description" content="Watch particles smash into each other. Velocity transferred. Colors mixed. Nothing stays still.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/collision-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: #0D0D0D;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            touch-action: none;
+        }
+        
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+        
+        #stats {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: #FFD700;
+            font-size: 11px;
+            letter-spacing: 1px;
+            z-index: 10;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            pointer-events: none;
+            line-height: 1.6;
+        }
+        
+        #title {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 215, 0, 0.15);
+            font-size: 8vw;
+            font-weight: bold;
+            letter-spacing: 0.2em;
+            pointer-events: none;
+            z-index: 1;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+        
+        #instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 215, 0, 0.4);
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        @media (max-width: 600px) {
+            #title {
+                font-size: 12vw;
+            }
+            #stats {
+                font-size: 10px;
+            }
+            #instructions {
+                font-size: 10px;
+                bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="title">COLLISION</div>
+    <canvas id="canvas"></canvas>
+    <div id="stats">
+        PARTICLES: <span id="count">0</span><br>
+        COLLISIONS: <span id="collisions">0</span><br>
+        AVG VELOCITY: <span id="velocity">0</span>
+    </div>
+    <div id="instructions">TAP TO ADD PARTICLES • WATCH THEM SMASH</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+        
+        // Audio context
+        let audioContext;
+        let audioEnabled = false;
+        
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                audioEnabled = true;
+            }
+        }
+        
+        function playCollisionSound(velocity) {
+            if (!audioEnabled || !audioContext) return;
+            
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            // Pitch based on collision velocity (200-800 Hz)
+            const freq = Math.min(800, 200 + velocity * 10);
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            
+            // Volume based on velocity
+            gain.gain.setValueAtTime(Math.min(0.1, velocity / 100), audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + 0.1);
+        }
+        
+        // Color palette
+        const colors = [
+            '#FFD700', // Gold
+            '#f59e0b', // Amber
+            '#2D9596', // Teal
+            '#3b82f6', // Electric Blue
+            '#ec4899', // Hot Pink
+            '#8b5cf6', // Purple
+            '#f97316', // Coral
+            '#84cc16', // Lime
+        ];
+        
+        // Particle class
+        class Particle {
+            constructor(x, y, vx, vy, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.radius = 8 + Math.random() * 8; // 8-16px
+                this.mass = this.radius; // Mass proportional to radius
+                this.color = color;
+                this.trail = [];
+                this.maxTrailLength = 20;
+            }
+            
+            update() {
+                // Update position
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Wall collisions with energy loss
+                if (this.x - this.radius < 0) {
+                    this.x = this.radius;
+                    this.vx = -this.vx * 0.9;
+                }
+                if (this.x + this.radius > width) {
+                    this.x = width - this.radius;
+                    this.vx = -this.vx * 0.9;
+                }
+                if (this.y - this.radius < 0) {
+                    this.y = this.radius;
+                    this.vy = -this.vy * 0.9;
+                }
+                if (this.y + this.radius > height) {
+                    this.y = height - this.radius;
+                    this.vy = -this.vy * 0.9;
+                }
+                
+                // Add to trail
+                this.trail.push({ x: this.x, y: this.y });
+                if (this.trail.length > this.maxTrailLength) {
+                    this.trail.shift();
+                }
+            }
+            
+            draw() {
+                // Draw trail
+                if (this.trail.length > 1) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2;
+                    ctx.globalAlpha = 0.3;
+                    ctx.beginPath();
+                    ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                    for (let i = 1; i < this.trail.length; i++) {
+                        const alpha = i / this.trail.length;
+                        ctx.globalAlpha = 0.3 * alpha;
+                        ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                    }
+                    ctx.stroke();
+                }
+                
+                // Draw particle
+                ctx.globalAlpha = 1;
+                
+                // Outer glow
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
+                gradient.addColorStop(0, this.color);
+                gradient.addColorStop(0.5, this.color + '88');
+                gradient.addColorStop(1, this.color + '00');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Highlight
+                const hlGradient = ctx.createRadialGradient(
+                    this.x - this.radius * 0.3, 
+                    this.y - this.radius * 0.3, 
+                    0,
+                    this.x, 
+                    this.y, 
+                    this.radius
+                );
+                hlGradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
+                hlGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = hlGradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            getVelocity() {
+                return Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            }
+        }
+        
+        let particles = [];
+        let collisionCount = 0;
+        
+        // Collision detection and response
+        function handleCollisions() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p1 = particles[i];
+                    const p2 = particles[j];
+                    
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < p1.radius + p2.radius) {
+                        // Collision detected!
+                        collisionCount++;
+                        
+                        // Elastic collision physics
+                        const nx = dx / distance;
+                        const ny = dy / distance;
+                        
+                        // Relative velocity
+                        const dvx = p1.vx - p2.vx;
+                        const dvy = p1.vy - p2.vy;
+                        
+                        // Relative velocity in collision normal direction
+                        const dvn = dvx * nx + dvy * ny;
+                        
+                        // Do not resolve if velocities are separating
+                        if (dvn > 0) continue;
+                        
+                        // Collision impulse
+                        const impulse = (2 * dvn) / (p1.mass + p2.mass);
+                        
+                        // Update velocities
+                        p1.vx -= impulse * p2.mass * nx;
+                        p1.vy -= impulse * p2.mass * ny;
+                        p2.vx += impulse * p1.mass * nx;
+                        p2.vy += impulse * p1.mass * ny;
+                        
+                        // Separate particles to prevent overlap
+                        const overlap = (p1.radius + p2.radius - distance) / 2;
+                        p1.x -= overlap * nx;
+                        p1.y -= overlap * ny;
+                        p2.x += overlap * nx;
+                        p2.y += overlap * ny;
+                        
+                        // Mix colors slightly
+                        if (Math.random() < 0.1) {
+                            const temp = p1.color;
+                            p1.color = p2.color;
+                            p2.color = temp;
+                        }
+                        
+                        // Play sound
+                        const collisionVelocity = Math.abs(dvn);
+                        playCollisionSound(collisionVelocity);
+                        
+                        // Visual impact flash
+                        const impactX = (p1.x + p2.x) / 2;
+                        const impactY = (p1.y + p2.y) / 2;
+                        ctx.globalAlpha = 0.5;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.arc(impactX, impactY, 10, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+        
+        // Add particle on tap/click
+        function addParticle(x, y) {
+            initAudio();
+            
+            // Random velocity
+            const speed = 3 + Math.random() * 7; // 3-10 pixels per frame
+            const angle = Math.random() * Math.PI * 2;
+            const vx = Math.cos(angle) * speed;
+            const vy = Math.sin(angle) * speed;
+            
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            particles.push(new Particle(x, y, vx, vy, color));
+            
+            // Limit particle count
+            if (particles.length > 80) {
+                particles.shift();
+            }
+        }
+        
+        // Touch/mouse events
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            for (let touch of e.touches) {
+                addParticle(touch.clientX, touch.clientY);
+            }
+        });
+        
+        canvas.addEventListener('mousedown', (e) => {
+            addParticle(e.clientX, e.clientY);
+        });
+        
+        // Stats
+        function updateStats() {
+            document.getElementById('count').textContent = particles.length;
+            document.getElementById('collisions').textContent = collisionCount;
+            
+            if (particles.length > 0) {
+                const avgVel = particles.reduce((sum, p) => sum + p.getVelocity(), 0) / particles.length;
+                document.getElementById('velocity').textContent = avgVel.toFixed(1);
+            } else {
+                document.getElementById('velocity').textContent = '0.0';
+            }
+        }
+        
+        // Animation loop
+        function animate() {
+            // Fade trail effect
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.15)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Update and draw particles
+            for (let particle of particles) {
+                particle.update();
+                particle.draw();
+            }
+            
+            // Handle collisions
+            handleCollisions();
+            
+            // Update stats
+            updateStats();
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Start with some particles
+        for (let i = 0; i < 15; i++) {
+            const x = Math.random() * width;
+            const y = Math.random() * height;
+            addParticle(x, y);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
