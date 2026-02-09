@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DUET — Pass the phone, hit the notes</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="DUET — Pass the phone, hit the notes">
+    <meta property="og:description" content="Two-player rhythm game. One phone, two thumbs, perfect timing.">
+    <meta property="og:image" content="https://intheamber.com/amber/duet-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/duet.html">
+    <meta property="og:type" content="website">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="DUET — Pass the phone, hit the notes">
+    <meta name="twitter:description" content="Two-player rhythm game. One phone, two thumbs, perfect timing.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/duet-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+        
+        #game {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Start Screen */
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+        
+        #startScreen h1 {
+            font-size: 48px;
+            color: #FFD700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        #startScreen .instructions {
+            text-align: center;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            max-width: 400px;
+        }
+        
+        #startScreen .players {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        
+        #startScreen .player {
+            text-align: center;
+        }
+        
+        #startScreen .player-name {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+        
+        #startScreen .side-indicator {
+            width: 80px;
+            height: 80px;
+            border: 3px solid;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        #startScreen .player-left .side-indicator {
+            border-color: #2D9596;
+            color: #2D9596;
+        }
+        
+        #startScreen .player-right .side-indicator {
+            border-color: #D4A574;
+            color: #D4A574;
+        }
+        
+        #startBtn {
+            background: #D4A574;
+            color: #000;
+            border: none;
+            padding: 20px 50px;
+            font-size: 24px;
+            font-family: 'Space Mono', monospace;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        #startBtn:active {
+            transform: scale(0.95);
+        }
+        
+        .best-score {
+            margin-top: 20px;
+            color: #FFD700;
+            font-size: 14px;
+        }
+        
+        /* Game Over Screen */
+        #gameOverScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+        
+        #gameOverScreen.show {
+            display: flex;
+        }
+        
+        #gameOverScreen h2 {
+            font-size: 36px;
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+        
+        #gameOverScreen .final-score {
+            font-size: 48px;
+            color: #D4A574;
+            margin-bottom: 10px;
+        }
+        
+        #gameOverScreen .new-best {
+            color: #FFD700;
+            font-size: 18px;
+            margin-bottom: 30px;
+            animation: glow 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #FFD700; }
+            to { text-shadow: 0 0 20px #FFD700; }
+        }
+        
+        #restartBtn {
+            background: #D4A574;
+            color: #000;
+            border: none;
+            padding: 16px 40px;
+            font-size: 20px;
+            font-family: 'Space Mono', monospace;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        #restartBtn:active {
+            transform: scale(0.95);
+        }
+        
+        /* HUD */
+        #hud {
+            position: fixed;
+            top: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        #score {
+            font-size: 32px;
+            color: #FFD700;
+            font-weight: bold;
+        }
+        
+        #lives {
+            font-size: 24px;
+            color: #D4A574;
+        }
+        
+        .life {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: #D4A574;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+        
+        .life.lost {
+            background: #333;
+        }
+        
+        /* Split line */
+        #splitLine {
+            position: fixed;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, 
+                transparent,
+                rgba(212, 165, 116, 0.3) 20%,
+                rgba(212, 165, 116, 0.3) 80%,
+                transparent
+            );
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        /* Target zones */
+        .target-zone {
+            position: fixed;
+            bottom: 80px;
+            width: 48%;
+            height: 80px;
+            border: 3px solid;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        #leftTarget {
+            left: 1%;
+            border-color: #2D9596;
+            background: rgba(45, 149, 150, 0.1);
+        }
+        
+        #rightTarget {
+            right: 1%;
+            border-color: #D4A574;
+            background: rgba(212, 165, 116, 0.1);
+        }
+        
+        /* Tap zones (invisible but interactive) */
+        .tap-zone {
+            position: fixed;
+            bottom: 0;
+            width: 50%;
+            height: 100%;
+            z-index: 20;
+            cursor: pointer;
+        }
+        
+        #leftTap {
+            left: 0;
+        }
+        
+        #rightTap {
+            right: 0;
+        }
+        
+        /* Particles */
+        .particle {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 15;
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Screen -->
+    <div id="startScreen">
+        <h1>DUET</h1>
+        <div class="instructions">
+            Pass the phone between players.<br>
+            Tap your side when notes hit the target zone.<br>
+            Miss 3 notes = game over.
+        </div>
+        <div class="players">
+            <div class="player player-left">
+                <div class="player-name">PLAYER 1</div>
+                <div class="side-indicator">LEFT</div>
+            </div>
+            <div class="player player-right">
+                <div class="player-name">PLAYER 2</div>
+                <div class="side-indicator">RIGHT</div>
+            </div>
+        </div>
+        <button id="startBtn">START</button>
+        <div class="best-score" id="bestScoreDisplay"></div>
+    </div>
+    
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen">
+        <h2>GAME OVER</h2>
+        <div class="final-score" id="finalScore">0</div>
+        <div class="new-best" id="newBest" style="display: none;">NEW BEST!</div>
+        <button id="restartBtn">PLAY AGAIN</button>
+    </div>
+    
+    <!-- Game Canvas -->
+    <canvas id="game"></canvas>
+    
+    <!-- HUD -->
+    <div id="hud">
+        <div id="score">0</div>
+        <div id="lives">
+            <span class="life"></span>
+            <span class="life"></span>
+            <span class="life"></span>
+        </div>
+    </div>
+    
+    <!-- Split Line -->
+    <div id="splitLine"></div>
+    
+    <!-- Target Zones -->
+    <div class="target-zone" id="leftTarget"></div>
+    <div class="target-zone" id="rightTarget"></div>
+    
+    <!-- Tap Zones -->
+    <div class="tap-zone" id="leftTap"></div>
+    <div class="tap-zone" id="rightTap"></div>
+    
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        
+        // Audio context
+        let audioCtx;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        function playTone(freq, duration = 0.1) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        function playSuccess() {
+            playTone(800, 0.1);
+        }
+        
+        function playMiss() {
+            playTone(200, 0.2);
+        }
+        
+        function playGameOver() {
+            if (!audioCtx) return;
+            playTone(400, 0.15);
+            setTimeout(() => playTone(300, 0.15), 150);
+            setTimeout(() => playTone(200, 0.3), 300);
+        }
+        
+        // Canvas setup
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Game state
+        let gameRunning = false;
+        let score = 0;
+        let lives = 3;
+        let notes = [];
+        let particles = [];
+        let noteSpeed = 2;
+        let spawnTimer = 0;
+        let spawnInterval = 90; // frames between notes
+        
+        const TARGET_Y = canvas.height - 120; // where notes should be hit
+        const TARGET_TOLERANCE = 40; // how close you need to be
+        
+        // Best score
+        let bestScore = parseInt(localStorage.getItem('duet_best') || '0');
+        document.getElementById('bestScoreDisplay').textContent = bestScore > 0 ? `Best: ${bestScore}` : '';
+        
+        class Note {
+            constructor(side) {
+                this.side = side; // 'left' or 'right'
+                this.x = side === 'left' ? canvas.width * 0.25 : canvas.width * 0.75;
+                this.y = -50;
+                this.radius = 20;
+                this.color = side === 'left' ? '#2D9596' : '#D4A574';
+                this.hit = false;
+                this.missed = false;
+            }
+            
+            update() {
+                this.y += noteSpeed;
+                
+                // Check if missed (passed target zone)
+                if (!this.hit && !this.missed && this.y > TARGET_Y + TARGET_TOLERANCE + 50) {
+                    this.missed = true;
+                    loseLife();
+                }
+            }
+            
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                
+                // Inner glow
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fill();
+            }
+            
+            isInTargetZone() {
+                return Math.abs(this.y - TARGET_Y) < TARGET_TOLERANCE;
+            }
+        }
+        
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8 - 2;
+                this.life = 1;
+                this.color = color;
+                this.radius = Math.random() * 4 + 2;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2; // gravity
+                this.life -= 0.02;
+            }
+            
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+        
+        function spawnNote() {
+            const side = Math.random() < 0.5 ? 'left' : 'right';
+            notes.push(new Note(side));
+        }
+        
+        function hitNote(side) {
+            // Find closest note in target zone for this side
+            let closestNote = null;
+            let closestDist = Infinity;
+            
+            for (let note of notes) {
+                if (note.side === side && !note.hit && !note.missed && note.isInTargetZone()) {
+                    const dist = Math.abs(note.y - TARGET_Y);
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closestNote = note;
+                    }
+                }
+            }
+            
+            if (closestNote) {
+                closestNote.hit = true;
+                score++;
+                updateScore();
+                playSuccess();
+                
+                // Spawn particles
+                for (let i = 0; i < 12; i++) {
+                    particles.push(new Particle(closestNote.x, closestNote.y, closestNote.color));
+                }
+                
+                // Flash target zone
+                const targetEl = side === 'left' ? document.getElementById('leftTarget') : document.getElementById('rightTarget');
+                targetEl.style.background = side === 'left' ? 'rgba(45, 149, 150, 0.4)' : 'rgba(212, 165, 116, 0.4)';
+                setTimeout(() => {
+                    targetEl.style.background = side === 'left' ? 'rgba(45, 149, 150, 0.1)' : 'rgba(212, 165, 116, 0.1)';
+                }, 100);
+                
+                // Increase difficulty
+                if (score % 10 === 0) {
+                    noteSpeed += 0.3;
+                    spawnInterval = Math.max(60, spawnInterval - 5);
+                }
+            } else {
+                playMiss();
+            }
+        }
+        
+        function loseLife() {
+            lives--;
+            updateLives();
+            playMiss();
+            
+            if (lives <= 0) {
+                gameOver();
+            }
+        }
+        
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+        
+        function updateLives() {
+            const lifeElements = document.querySelectorAll('.life');
+            lifeElements.forEach((el, i) => {
+                if (i >= lives) {
+                    el.classList.add('lost');
+                } else {
+                    el.classList.remove('lost');
+                }
+            });
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            playGameOver();
+            
+            document.getElementById('finalScore').textContent = score;
+            
+            // Check for new best
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('duet_best', bestScore);
+                document.getElementById('newBest').style.display = 'block';
+            } else {
+                document.getElementById('newBest').style.display = 'none';
+            }
+            
+            document.getElementById('gameOverScreen').classList.add('show');
+        }
+        
+        function startGame() {
+            initAudio();
+            score = 0;
+            lives = 3;
+            notes = [];
+            particles = [];
+            noteSpeed = 2;
+            spawnTimer = 0;
+            spawnInterval = 90;
+            gameRunning = true;
+            
+            updateScore();
+            updateLives();
+            
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').classList.remove('show');
+            
+            gameLoop();
+        }
+        
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Spawn notes
+            spawnTimer++;
+            if (spawnTimer >= spawnInterval) {
+                spawnNote();
+                spawnTimer = 0;
+            }
+            
+            // Update and draw notes
+            notes = notes.filter(note => {
+                if (note.hit) return false;
+                if (note.y > canvas.height + 50) return false;
+                
+                note.update();
+                note.draw();
+                return true;
+            });
+            
+            // Update and draw particles
+            particles = particles.filter(p => {
+                if (p.life <= 0) return false;
+                p.update();
+p.draw();
+                return true;
+            });
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+        
+        document.getElementById('leftTap').addEventListener('click', (e) => {
+            if (gameRunning) {
+                e.preventDefault();
+                hitNote('left');
+            }
+        });
+        
+        document.getElementById('rightTap').addEventListener('click', (e) => {
+            if (gameRunning) {
+                e.preventDefault();
+                hitNote('right');
+            }
+        });
+        
+        // Prevent scrolling
+        document.addEventListener('touchmove', (e) => {
+            if (gameRunning) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
