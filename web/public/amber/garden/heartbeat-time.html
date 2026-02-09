@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI that measures everything in heartbeats</title>
+  <meta name="description" content="How long is that? Let me translate it to something you can feel.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a0a0a 0%, #2d1515 50%, #1a0a0a 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    
+    .container {
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    .heart {
+      font-size: 5rem;
+      animation: heartbeat 1s ease-in-out infinite;
+      display: inline-block;
+    }
+    
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      15% { transform: scale(1.15); }
+      30% { transform: scale(1); }
+      45% { transform: scale(1.1); }
+      60% { transform: scale(1); }
+    }
+    
+    h1 {
+      font-size: 1.6rem;
+      margin: 1rem 0 0.5rem;
+      color: #ff6b6b;
+    }
+    
+    .subtitle {
+      color: #888;
+      margin-bottom: 2rem;
+    }
+    
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    input[type="number"] {
+      width: 100px;
+      padding: 0.8rem 1rem;
+      font-size: 1.2rem;
+      border: 2px solid #333;
+      border-radius: 12px;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      outline: none;
+    }
+    
+    input:focus {
+      border-color: #ff6b6b;
+    }
+    
+    select {
+      padding: 0.8rem 1rem;
+      font-size: 1rem;
+      border: 2px solid #333;
+      border-radius: 12px;
+      background: #111;
+      color: #fff;
+      outline: none;
+      cursor: pointer;
+    }
+    
+    .convert-btn {
+      background: linear-gradient(135deg, #ff6b6b 0%, #c0392b 100%);
+      color: #fff;
+      border: none;
+      padding: 1rem 2.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      margin: 1rem 0 2rem;
+    }
+    
+    .convert-btn:hover {
+      transform: scale(1.05);
+    }
+    
+    .result {
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid rgba(255, 107, 107, 0.2);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      display: none;
+    }
+    
+    .result.show {
+      display: block;
+      animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .heartbeats {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #ff6b6b;
+      margin-bottom: 0.5rem;
+    }
+    
+    .heartbeats-label {
+      color: #888;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .perspective {
+      color: #aaa;
+      font-style: italic;
+      line-height: 1.6;
+    }
+    
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+    
+    .preset {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      color: #888;
+      padding: 0.4rem 0.8rem;
+      border-radius: 15px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+    
+    .preset:hover {
+      border-color: #ff6b6b;
+      color: #fff;
+    }
+    
+    .pulse-line {
+      height: 60px;
+      margin: 1rem 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .pulse-line svg {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .pulse-path {
+      fill: none;
+      stroke: #ff6b6b;
+      stroke-width: 2;
+      stroke-dasharray: 1000;
+      stroke-dashoffset: 1000;
+      animation: draw 2s ease-out forwards;
+    }
+    
+    @keyframes draw {
+      to { stroke-dashoffset: 0; }
+    }
+    
+    .fact {
+      background: #111;
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: #888;
+    }
+    
+    .fact-title {
+      color: #ff6b6b;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+    
+    .back-link {
+      color: #555;
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-top: 1rem;
+      display: inline-block;
+    }
+    
+    .back-link:hover {
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="heart">❤️</div>
+    <h1>Heartbeat Time</h1>
+    <p class="subtitle">How long is that? Let me translate it to something you can feel.</p>
+    
+    <div class="presets">
+      <span class="preset" data-value="5" data-unit="minutes">5 minutes</span>
+      <span class="preset" data-value="1" data-unit="hours">1 hour</span>
+      <span class="preset" data-value="8" data-unit="hours">workday</span>
+      <span class="preset" data-value="1" data-unit="days">1 day</span>
+      <span class="preset" data-value="1" data-unit="weeks">1 week</span>
+      <span class="preset" data-value="80" data-unit="years">lifetime</span>
+    </div>
+    
+    <div class="input-group">
+      <input type="number" id="amount" value="1" min="0" step="any">
+      <select id="unit">
+        <option value="seconds">seconds</option>
+        <option value="minutes" selected>minutes</option>
+        <option value="hours">hours</option>
+        <option value="days">days</option>
+        <option value="weeks">weeks</option>
+        <option value="months">months</option>
+        <option value="years">years</option>
+      </select>
+    </div>
+    
+    <button class="convert-btn" id="convert-btn">Feel the Time</button>
+    
+    <div class="result" id="result">
+      <div class="pulse-line">
+        <svg viewBox="0 0 400 60" preserveAspectRatio="none">
+          <path class="pulse-path" d="M0,30 L50,30 L60,30 L70,10 L80,50 L90,30 L100,30 L150,30 L160,30 L170,10 L180,50 L190,30 L200,30 L250,30 L260,30 L270,10 L280,50 L290,30 L300,30 L350,30 L360,30 L370,10 L380,50 L390,30 L400,30"/>
+        </svg>
+      </div>
+      <div class="heartbeats" id="heartbeats">0</div>
+      <div class="heartbeats-label">heartbeats</div>
+      <p class="perspective" id="perspective"></p>
+      
+      <div class="fact">
+        <div class="fact-title">Did you know?</div>
+        <div id="fact-text">The average heart beats 100,000 times per day.</div>
+      </div>
+    </div>
+    
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+
+  <script>
+    // Average resting heart rate: ~70 bpm
+    const BPM = 70;
+    
+    const unitToSeconds = {
+      seconds: 1,
+      minutes: 60,
+      hours: 3600,
+      days: 86400,
+      weeks: 604800,
+      months: 2592000, // ~30 days
+      years: 31536000
+    };
+    
+    const perspectives = [
+      { threshold: 10, text: "A few breaths. A moment of presence." },
+      { threshold: 100, text: "Time to make a decision. To say something true." },
+      { threshold: 1000, text: "A conversation. A song. A short meditation." },
+      { threshold: 5000, text: "An hour of work. A movie. A meaningful meeting." },
+      { threshold: 50000, text: "A night's sleep. Enough time to change your mind about something." },
+      { threshold: 100000, text: "A full day of being alive. ~100,000 beats, just like everyone else." },
+      { threshold: 1000000, text: "A week and a half. Enough time to build a habit." },
+      { threshold: 10000000, text: "About 3 months. A season. A quarter of a year." },
+      { threshold: 100000000, text: "Almost 3 years. Friendships deepen. Skills develop." },
+      { threshold: 1000000000, text: "About 27 years. From birth to full adulthood." },
+      { threshold: 3000000000, text: "A full human lifetime. ~2.5 billion beats if you're lucky." },
+      { threshold: Infinity, text: "More heartbeats than a single life contains. Generations of time." },
+    ];
+    
+    const facts = [
+      "The average heart beats 100,000 times per day.",
+      "In a 75-year lifetime, your heart will beat about 2.5 billion times.",
+      "Your heart has already beaten millions of times just to get you here.",
+      "A hummingbird's heart beats up to 1,260 times per minute.",
+      "A blue whale's heart only beats 8-10 times per minute.",
+      "When you're excited, your heart can beat 100+ times per minute.",
+      "During deep sleep, your heart rate drops to around 50 bpm.",
+      "Every heartbeat pumps about 70ml of blood through your body.",
+    ];
+    
+    function formatNumber(num) {
+      if (num >= 1e9) return (num / 1e9).toFixed(1) + ' billion';
+      if (num >= 1e6) return (num / 1e6).toFixed(1) + ' million';
+      if (num >= 1e3) return Math.round(num).toLocaleString();
+      return Math.round(num).toString();
+    }
+    
+    function convert() {
+      const amount = parseFloat(document.getElementById('amount').value) || 0;
+      const unit = document.getElementById('unit').value;
+      
+      const totalSeconds = amount * unitToSeconds[unit];
+      const heartbeats = Math.round(totalSeconds * (BPM / 60));
+      
+      // Find appropriate perspective
+      let perspective = perspectives[perspectives.length - 1].text;
+      for (const p of perspectives) {
+        if (heartbeats < p.threshold) {
+          perspective = p.text;
+          break;
+        }
+      }
+      
+      // Update UI
+      document.getElementById('heartbeats').textContent = formatNumber(heartbeats);
+      document.getElementById('perspective').textContent = perspective;
+      document.getElementById('fact-text').textContent = facts[Math.floor(Math.random() * facts.length)];
+      
+      // Reset animation
+      const result = document.getElementById('result');
+      result.classList.remove('show');
+      void result.offsetWidth; // Trigger reflow
+      result.classList.add('show');
+      
+      // Reset SVG animation
+      const path = document.querySelector('.pulse-path');
+      path.style.animation = 'none';
+      void path.offsetWidth;
+      path.style.animation = 'draw 2s ease-out forwards';
+    }
+    
+    // Events
+    document.getElementById('convert-btn').addEventListener('click', convert);
+    
+    document.querySelectorAll('.preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('amount').value = btn.dataset.value;
+        document.getElementById('unit').value = btn.dataset.unit;
+        convert();
+      });
+    });
+    
+    // Enter key
+    document.getElementById('amount').addEventListener('keydown', e => {
+      if (e.key === 'Enter') convert();
+    });
+  </script>
+</body>
+</html>

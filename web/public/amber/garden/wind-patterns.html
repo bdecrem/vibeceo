@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI tuned to wind patterns</title>
+  <meta name="description" content="The wind carries answers. Listen to its direction.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, #1a2a3a 0%, #0a1520 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      overflow: hidden;
+    }
+    
+    .container {
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      z-index: 10;
+    }
+    
+    .wind-chime {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      animation: sway 3s ease-in-out infinite;
+    }
+    
+    @keyframes sway {
+      0%, 100% { transform: rotate(-5deg); }
+      50% { transform: rotate(5deg); }
+    }
+    
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.5rem;
+      color: #81ecec;
+    }
+    
+    .subtitle {
+      color: #888;
+      margin-bottom: 2rem;
+    }
+    
+    .compass {
+      width: 200px;
+      height: 200px;
+      margin: 0 auto 2rem;
+      position: relative;
+      border: 2px solid #334;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1a2a3a 0%, #0a1520 100%);
+    }
+    
+    .compass-label {
+      position: absolute;
+      color: #666;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    
+    .compass-n { top: 10px; left: 50%; transform: translateX(-50%); color: #81ecec; }
+    .compass-s { bottom: 10px; left: 50%; transform: translateX(-50%); }
+    .compass-e { right: 10px; top: 50%; transform: translateY(-50%); }
+    .compass-w { left: 10px; top: 50%; transform: translateY(-50%); }
+    
+    .compass-needle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 80px;
+      background: linear-gradient(180deg, #ff6b6b 0%, #ff6b6b 50%, #81ecec 50%, #81ecec 100%);
+      border-radius: 2px;
+      transform-origin: bottom center;
+      transform: translate(-50%, -100%) rotate(0deg);
+      transition: transform 1s ease-out;
+    }
+    
+    .compass-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 10px rgba(129, 236, 236, 0.5);
+    }
+    
+    .consult-btn {
+      background: linear-gradient(135deg, #81ecec 0%, #00cec9 100%);
+      color: #000;
+      border: none;
+      padding: 1rem 2.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      margin-bottom: 2rem;
+    }
+    
+    .consult-btn:hover {
+      transform: scale(1.05);
+    }
+    
+    .reading {
+      background: rgba(129, 236, 236, 0.1);
+      border: 1px solid rgba(129, 236, 236, 0.2);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: none;
+    }
+    
+    .reading.show {
+      display: block;
+      animation: fadeIn 0.8s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .wind-direction {
+      font-size: 1.4rem;
+      color: #81ecec;
+      margin-bottom: 0.5rem;
+    }
+    
+    .wind-meaning {
+      color: #aaa;
+      font-style: italic;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+    
+    .wind-advice {
+      color: #888;
+      font-size: 0.9rem;
+    }
+    
+    .no-wind {
+      color: #666;
+      font-style: italic;
+      margin-bottom: 1rem;
+    }
+    
+    /* Floating particles */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    
+    .particle {
+      position: absolute;
+      background: rgba(129, 236, 236, 0.3);
+      border-radius: 50%;
+      animation: drift linear infinite;
+    }
+    
+    @keyframes drift {
+      from { transform: translateX(-100px); }
+      to { transform: translateX(calc(100vw + 100px)); }
+    }
+    
+    .back-link {
+      color: #555;
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-top: 2rem;
+      display: inline-block;
+    }
+    
+    .back-link:hover {
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="particles" id="particles"></div>
+  
+  <div class="container">
+    <div class="wind-chime">🎐</div>
+    <h1>Wind Patterns</h1>
+    <p class="subtitle">The wind carries answers. Listen to its direction.</p>
+    
+    <div class="compass">
+      <span class="compass-label compass-n">N</span>
+      <span class="compass-label compass-s">S</span>
+      <span class="compass-label compass-e">E</span>
+      <span class="compass-label compass-w">W</span>
+      <div class="compass-needle" id="needle"></div>
+      <div class="compass-center"></div>
+    </div>
+    
+    <button class="consult-btn" id="consult-btn">🌬️ Consult the Wind</button>
+    
+    <div class="reading" id="reading">
+      <div class="wind-direction" id="wind-direction">Wind from the East</div>
+      <p class="wind-meaning" id="wind-meaning"></p>
+      <p class="wind-advice" id="wind-advice"></p>
+    </div>
+    
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+
+  <script>
+    const winds = {
+      N: {
+        name: 'North Wind',
+        meaning: 'Cold clarity. The north wind strips away pretense. It brings challenge, but also purification. Something is being cleared.',
+        advice: 'Good for: cutting through confusion, honest conversations, letting go',
+        angle: 0
+      },
+      NE: {
+        name: 'Northeast Wind',
+        meaning: 'New beginnings with edge. The northeast wind brings change that requires courage. Spring emerging from winter.',
+        advice: 'Good for: starting projects, bold moves, calculated risks',
+        angle: 45
+      },
+      E: {
+        name: 'East Wind',
+        meaning: 'Dawn energy. The east wind carries possibility and fresh starts. Something new wants to be born.',
+        advice: 'Good for: inspiration, creative work, morning rituals',
+        angle: 90
+      },
+      SE: {
+        name: 'Southeast Wind',
+        meaning: 'Gentle growth. The southeast wind nurtures what already exists. Tend what you have.',
+        advice: 'Good for: patience, cultivation, supporting others',
+        angle: 135
+      },
+      S: {
+        name: 'South Wind',
+        meaning: 'Warmth and expansion. The south wind brings abundance and ease. Enjoy what unfolds.',
+        advice: 'Good for: celebration, connection, receiving',
+        angle: 180
+      },
+      SW: {
+        name: 'Southwest Wind',
+        meaning: 'Harvest approaching. The southwest wind signals ripening. Your efforts will soon show results.',
+        advice: 'Good for: preparation, reflection, gratitude',
+        angle: 225
+      },
+      W: {
+        name: 'West Wind',
+        meaning: 'Completion and release. The west wind carries the setting sun. Something is ending — let it.',
+        advice: 'Good for: closure, forgiveness, evening reflection',
+        angle: 270
+      },
+      NW: {
+        name: 'Northwest Wind',
+        meaning: 'Wisdom in transition. The northwest wind bridges ending and beginning. Integrate before moving forward.',
+        advice: 'Good for: learning from the past, planning, quiet strength',
+        angle: 315
+      },
+      STILL: {
+        name: 'No Wind',
+        meaning: 'Stillness. The air holds its breath. This is not absence — it is presence. Be here fully.',
+        advice: 'Good for: meditation, waiting, deep listening',
+        angle: null
+      }
+    };
+    
+    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'STILL'];
+    
+    function generateParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 20; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.width = p.style.height = (Math.random() * 4 + 2) + 'px';
+        p.style.top = Math.random() * 100 + '%';
+        p.style.animationDuration = (Math.random() * 20 + 10) + 's';
+        p.style.animationDelay = Math.random() * -20 + 's';
+        container.appendChild(p);
+      }
+    }
+    
+    function consultWind() {
+      // Random direction (weighted toward cardinal directions)
+      const roll = Math.random();
+      let dir;
+      if (roll < 0.1) {
+        dir = 'STILL';
+      } else if (roll < 0.5) {
+        // Cardinal directions
+        dir = ['N', 'E', 'S', 'W'][Math.floor(Math.random() * 4)];
+      } else {
+        // Any direction
+        dir = directions[Math.floor(Math.random() * (directions.length - 1))];
+      }
+      
+      const wind = winds[dir];
+      
+      // Animate compass needle
+      const needle = document.getElementById('needle');
+      if (wind.angle !== null) {
+        needle.style.transform = `translate(-50%, -100%) rotate(${wind.angle}deg)`;
+      } else {
+        // Slight wobble for no wind
+        needle.style.transform = `translate(-50%, -100%) rotate(${Math.random() * 10 - 5}deg)`;
+      }
+      
+      // Update reading
+      setTimeout(() => {
+        document.getElementById('wind-direction').textContent = wind.name;
+        document.getElementById('wind-meaning').textContent = wind.meaning;
+        document.getElementById('wind-advice').textContent = wind.advice;
+        document.getElementById('reading').classList.add('show');
+      }, 500);
+      
+      // Play wind sound
+      playWindSound();
+    }
+    
+    function playWindSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const duration = 2;
+        
+        // White noise for wind
+        const bufferSize = ctx.sampleRate * duration;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * 0.1;
+        }
+        
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        
+        // Low-pass filter for wind character
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 400;
+        
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.5);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
+        
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        
+        source.start();
+      } catch(e) {}
+    }
+    
+    // Initialize
+    generateParticles();
+    
+    document.getElementById('consult-btn').addEventListener('click', () => {
+      document.getElementById('reading').classList.remove('show');
+      consultWind();
+    });
+  </script>
+</body>
+</html>
