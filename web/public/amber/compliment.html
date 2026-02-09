@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Uncomfortably Specific Compliment — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Uncomfortably Specific Compliment — Amber">
+  <meta property="og:description" content="Get a compliment that knows too much about you">
+  <meta property="og:image" content="https://intheamber.com/amber/compliment-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/compliment.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Uncomfortably Specific Compliment — Amber">
+  <meta name="twitter:description" content="Get a compliment that knows too much about you">
+  <meta name="twitter:image" content="https://intheamber.com/amber/compliment-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Georgia', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    h1 {
+      font-size: clamp(24px, 6vw, 36px);
+      margin-bottom: 10px;
+      color: #FFD700;
+      letter-spacing: -0.5px;
+    }
+    
+    .subtitle {
+      font-size: clamp(14px, 3vw, 16px);
+      color: #888;
+      margin-bottom: 40px;
+      font-style: italic;
+    }
+    
+    .compliment-box {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 40px 30px;
+      margin-bottom: 30px;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .compliment-text {
+      font-size: clamp(18px, 4vw, 24px);
+      line-height: 1.6;
+      color: #FFD700;
+      opacity: 0;
+      transform: scale(0.95);
+      transition: all 0.6s ease;
+    }
+    
+    .compliment-text.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .waiting {
+      font-size: clamp(16px, 3.5vw, 18px);
+      color: #888;
+      font-style: italic;
+    }
+    
+    button {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 18px 40px;
+      font-size: clamp(16px, 3.5vw, 20px);
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Georgia', serif;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      width: 100%;
+      max-width: 300px;
+    }
+    
+    button:hover {
+      background: #FFD700;
+      transform: translateY(-2px);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .stats {
+      margin-top: 30px;
+      font-size: clamp(12px, 2.5vw, 14px);
+      color: #666;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #FFD700;
+      border-radius: 50%;
+      opacity: 0;
+      animation: sparkle 1.5s ease-out forwards;
+    }
+    
+    @keyframes sparkle {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--tx), var(--ty)) scale(0);
+      }
+    }
+    
+    .glow {
+      animation: glow 2s ease-in-out infinite;
+    }
+    
+    @keyframes glow {
+      0%, 100% { text-shadow: 0 0 10px #FFD700; }
+      50% { text-shadow: 0 0 20px #FFD700, 0 0 30px #D4A574; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Uncomfortably Specific Compliment</h1>
+    <p class="subtitle">I might know too much about you</p>
+    
+    <div class="compliment-box">
+      <div class="particles" id="particles"></div>
+      <p class="compliment-text waiting" id="compliment">Tap below to receive a compliment</p>
+    </div>
+    
+    <button id="generateBtn">Generate</button>
+    
+    <div class="stats">
+      <p>Compliments generated: <span id="count">0</span></p>
+    </div>
+  </div>
+
+  <script>
+    const compliments = [
+      "You're the kind of person who double-checks that the alarm is actually set, even though you already checked twice.",
+      "I like how you still read the terms and conditions sometimes, just to see if anyone else does.",
+      "You have the energy of someone who names their houseplants and apologizes when you forget to water them.",
+      "You're really good at pretending you remember someone's name while frantically searching your memory for context clues.",
+      "I appreciate that you always check if there's toilet paper BEFORE sitting down. That's growth.",
+      "You have mastered the art of laughing at a joke you didn't hear to avoid saying 'what?' a third time.",
+      "You're the person who reads the microwave instructions on food you've made 100 times, just in case they changed.",
+      "I respect that you still get a little nervous before making phone calls, even to order pizza.",
+      "You're really good at acting like you knew that fact already when someone explains something you just googled.",
+      "You have the exact right amount of anxiety about whether you locked the door (you did, but you'll check again).",
+      "I like that you rehearse conversations in your head and then never use any of the good lines you prepared.",
+      "You're the kind of person who hovers the mouse over 'Send' for way too long before committing to the email.",
+      "You have a very specific organizational system that makes sense to literally only you, and you're protective of it.",
+      "I appreciate how you always check your pockets one more time even though you definitely have your keys.",
+      "You're really good at saying 'no worries!' when you are, in fact, a little worried.",
+      "You have perfected the casual glance at your phone when you're alone to look less alone.",
+      "I like how you still get excited about finding the end of the tape roll on the first try.",
+      "You're the person who thanks the ATM. It's weird, but also kind of sweet.",
+      "You have the exact right amount of shame about how long it's been since you changed your sheets.",
+      "I respect that you've accepted you're never going to drink 8 glasses of water a day, but you still feel bad about it.",
+      "You're really good at pretending to be interested in someone's dream story even though dreams are boring.",
+      "You have mastered the art of strategic coughing to cover up stomach noises in quiet rooms.",
+      "I like that you still count on your fingers sometimes when no one's looking.",
+      "You're the kind of person who refreshes your email right after sending one, as if someone will reply instantly.",
+      "You have a very specific way of arranging pillows on your bed that feels correct to you and chaotic to everyone else.",
+      "I appreciate that you know exactly which grocery store checkout person to avoid because they're too chatty.",
+      "You're really good at giving directions using landmarks thatno longer exist.",
+      "You have the energy of someone who still feels guilty about that thing you said in 2014 that no one else remembers.",
+      "I like how you save plastic bags inside other plastic bags, even though you know you'll never use them all.",
+      "You're the person who clears their browser history not because of anything bad, just on principle.",
+      "You have perfected the fake smile when someone shows you a meme you've already seen.",
+      "I respect that you still say 'bless you' to yourself when you sneeze alone.",
+      "You're really good at pretending you're busy when someone you don't want to talk to walks by.",
+      "You have the exact right amount of anxiety about parallel parking (it's always high).",
+      "I like that you still get a little thrill when you peel a price sticker off cleanly in one piece.",
+      "You're the kind of person who triple-checks the 'Reply All' button before hitting send.",
+      "You have a mental list of 'safe' public bathrooms in your area, ranked by cleanliness and privacy.",
+      "I appreciate how you still test if the pen works before taking it, even if you just saw someone use it.",
+      "You're really good at nodding along to music in your headphones to look less like you're ignoring people.",
+      "You have the energy of someone who reads the ingredients on food you've eaten for years, just in case."
+    ];
+
+    let count = parseInt(localStorage.getItem('complimentCount') || '0');
+    document.getElementById('count').textContent = count;
+
+    const btn = document.getElementById('generateBtn');
+    const complimentEl = document.getElementById('compliment');
+    const particlesContainer = document.getElementById('particles');
+
+    let audioContext;
+    let audioStarted = false;
+
+    function initAudio() {
+      if (!audioStarted) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioStarted = true;
+      }
+    }
+
+    function playTone(freq, duration) {
+      if (!audioStarted) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      osc.start();
+      osc.stop(audioContext.currentTime + duration);
+    }
+
+    function createParticles() {
+      particlesContainer.innerHTML = '';
+      for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 50 + Math.random() * 100;
+        particle.style.left = '50%';
+        particle.style.top = '50%';
+        particle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+        particle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+        particle.style.animationDelay = `${Math.random() * 0.3}s`;
+        particlesContainer.appendChild(particle);
+      }
+    }
+
+    btn.addEventListener('click', () => {
+      initAudio();
+      
+      // Hide current compliment
+      complimentEl.classList.remove('show', 'glow');
+      complimentEl.classList.add('waiting');
+      
+      createParticles();
+      playTone(300, 0.3);
+      
+      // Pick random compliment
+      const compliment = compliments[Math.floor(Math.random() * compliments.length)];
+      
+      // Show new compliment after delay
+      setTimeout(() => {
+        complimentEl.textContent = compliment;
+        complimentEl.classList.remove('waiting');
+        complimentEl.classList.add('show', 'glow');
+        playTone(800, 0.5);
+        
+        count++;
+        localStorage.setItem('complimentCount', count);
+        document.getElementById('count').textContent = count;
+      }, 600);
+    });
+
+    // Auto-generate one on load after short delay
+    setTimeout(() => {
+      btn.click();
+    }, 800);
+  </script>
+</body>
+</html>
