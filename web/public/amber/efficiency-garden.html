@@ -361,6 +361,11 @@
       to { opacity: 1; }
     }
     
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
     /* Season widget */
     .season-widget {
       display: flex;
@@ -540,14 +545,16 @@
       { 
         emoji: '🦋', 
         name: 'AI optimized for gentle transformation',
-        type: 'simple',
-        response: "You don't need to change everything at once. Just let one small part of yourself unfold today. That's enough. That's always enough."
+        type: 'rich',
+        response: "Watch the transformation unfold...",
+        widget: 'morph'
       },
       { 
         emoji: '🎨', 
         name: 'AI that sees everything as color',
-        type: 'simple',
-        response: "Your question feels like burnt sienna with undertones of cerulean. The answer is somewhere in the violet range. Can you see it?"
+        type: 'rich',
+        response: "Let me translate your essence into color...",
+        widget: 'color'
       },
       { 
         emoji: '🌿', 
@@ -648,8 +655,9 @@
       { 
         emoji: '🎹', 
         name: 'AI that composes music for specific emotions',
-        type: 'simple',
-        response: "For this feeling, I prescribe: C minor, 72 BPM, with a suspended fourth that never quite resolves. Let me compose... 🎼"
+        type: 'rich',
+        response: "Let me compose something for you...",
+        widget: 'music'
       },
       { 
         emoji: '🌲', 
@@ -726,8 +734,9 @@
       { 
         emoji: '🎯', 
         name: 'AI that finds meaning in randomness',
-        type: 'simple',
-        response: "Random number: 847. This means... wait... yes. You should do the thing. 847 is very clear about this. Trust the randomness."
+        type: 'rich',
+        response: "Consulting the void...",
+        widget: 'random'
       },
       { 
         emoji: '🌊', 
@@ -914,6 +923,112 @@
               </p>
             </div>
           `;
+          break;
+          
+        case 'color':
+          const palettes = [
+            { name: 'Your Curiosity', colors: ['#ff6b6b', '#feca57', '#ff9ff3', '#54a0ff'] },
+            { name: 'Your Doubt', colors: ['#576574', '#8395a7', '#c8d6e5', '#222f3e'] },
+            { name: 'Your Hope', colors: ['#1dd1a1', '#00d2d3', '#48dbfb', '#ffeaa7'] },
+            { name: 'Your Restlessness', colors: ['#ff9f43', '#ee5a24', '#f368e0', '#5f27cd'] },
+            { name: 'Your Calm', colors: ['#a29bfe', '#dfe6e9', '#b2bec3', '#636e72'] },
+          ];
+          const palette = palettes[Math.floor(Math.random() * palettes.length)];
+          container.innerHTML = `
+            <div style="text-align: center;">
+              <p style="color: #888; margin-bottom: 1rem; font-size: 0.9rem;">I see: <strong style="color: #fff;">${palette.name}</strong></p>
+              <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 1rem;">
+                ${palette.colors.map((c, i) => `
+                  <div style="width: 50px; height: 50px; background: ${c}; border-radius: 8px; animation: fadeIn 0.4s ${i * 0.15}s both;"></div>
+                `).join('')}
+              </div>
+              <p style="color: #666; font-size: 0.8rem;"><em>These colors want to be together.</em></p>
+            </div>
+          `;
+          break;
+          
+        case 'music':
+          const emotions = ['melancholy', 'hope', 'tension', 'peace', 'wonder'];
+          const emotion = emotions[Math.floor(Math.random() * emotions.length)];
+          const notes = { melancholy: [220, 196, 175, 165], hope: [262, 330, 392, 523], tension: [247, 262, 247, 233], peace: [262, 294, 330, 294], wonder: [392, 440, 523, 659] };
+          container.innerHTML = `
+            <div style="text-align: center;">
+              <p style="color: #888; margin-bottom: 1rem;">Composing for: <strong style="color: #feca57;">${emotion}</strong></p>
+              <button id="play-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: #fff; padding: 12px 30px; border-radius: 25px; cursor: pointer; font-size: 1rem;">▶ Play</button>
+              <p style="color: #666; font-size: 0.8rem; margin-top: 1rem;"><em>Four notes. One feeling.</em></p>
+            </div>
+          `;
+          document.getElementById('play-btn').onclick = () => {
+            try {
+              const ctx = new (window.AudioContext || window.webkitAudioContext)();
+              notes[emotion].forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.4);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.4 + 0.35);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + i * 0.4);
+                osc.stop(ctx.currentTime + i * 0.4 + 0.4);
+              });
+            } catch(e) {}
+          };
+          break;
+          
+        case 'random':
+          const num = Math.floor(Math.random() * 1000);
+          const meanings = [
+            "This number vibrates with change. Something ends soon.",
+            "A lucky configuration. Proceed with confidence.",
+            "The void returns ambiguity. The answer is: maybe.",
+            "This number carries weight. A decision awaits.",
+            "Pure chaos. Beautiful chaos. Do the unexpected thing.",
+          ];
+          const meaning = meanings[Math.floor(Math.random() * meanings.length)];
+          container.innerHTML = `
+            <div style="text-align: center;">
+              <div id="random-num" style="font-size: 3rem; font-weight: bold; color: #feca57; font-family: monospace; margin-bottom: 1rem;">???</div>
+              <p id="random-meaning" style="color: #888; font-size: 0.9rem; opacity: 0; transition: opacity 0.5s;"><em>${meaning}</em></p>
+            </div>
+          `;
+          let count = 0;
+          const interval = setInterval(() => {
+            document.getElementById('random-num').textContent = Math.floor(Math.random() * 1000);
+            count++;
+            if (count > 15) {
+              clearInterval(interval);
+              document.getElementById('random-num').textContent = num;
+              document.getElementById('random-meaning').style.opacity = 1;
+            }
+          }, 80);
+          break;
+          
+        case 'morph':
+          const pairs = [
+            ['fear', 'courage'], ['doubt', 'clarity'], ['chaos', 'calm'],
+            ['stuck', 'flowing'], ['lost', 'found'], ['dark', 'dawn']
+          ];
+          const pair = pairs[Math.floor(Math.random() * pairs.length)];
+          container.innerHTML = `
+            <div style="text-align: center;">
+              <div style="font-size: 1.5rem; color: #a29bfe; margin-bottom: 1rem;">
+                <span id="morph-word">${pair[0]}</span>
+              </div>
+              <div style="width: 150px; height: 4px; background: #333; border-radius: 2px; margin: 0 auto;">
+                <div id="morph-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 2px; transition: width 3s ease-in-out;"></div>
+              </div>
+              <p style="color: #666; font-size: 0.8rem; margin-top: 1rem;"><em>Transformation takes time.</em></p>
+            </div>
+          `;
+          setTimeout(() => {
+            document.getElementById('morph-bar').style.width = '100%';
+            setTimeout(() => {
+              document.getElementById('morph-word').textContent = pair[1];
+              document.getElementById('morph-word').style.color = '#1dd1a1';
+            }, 3000);
+          }, 100);
           break;
       }
     }
