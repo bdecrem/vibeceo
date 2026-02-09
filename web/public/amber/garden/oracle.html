@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Random Oracle — The Efficiency Garden</title>
+  <meta name="description" content="An AI that finds meaning in randomness. Trust the numbers.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      overflow: hidden;
+    }
+    
+    .container {
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    .emoji {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 3rem;
+    }
+    
+    .question-input {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #333;
+      border-radius: 12px;
+      color: #fff;
+      text-align: center;
+      outline: none;
+      margin-bottom: 1rem;
+    }
+    
+    .question-input::placeholder {
+      color: #555;
+    }
+    
+    .consult-btn {
+      background: linear-gradient(135deg, #f5a623 0%, #f76b1c 100%);
+      color: #000;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .consult-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(245, 166, 35, 0.4);
+    }
+    
+    .oracle-display {
+      margin: 3rem 0;
+      min-height: 300px;
+      position: relative;
+    }
+    
+    .number-reveal {
+      font-size: 8rem;
+      font-weight: 700;
+      color: #f5a623;
+      text-shadow: 0 0 60px rgba(245, 166, 35, 0.5);
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all 0.5s ease-out;
+    }
+    
+    .number-reveal.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .rolling {
+      font-size: 6rem;
+      font-weight: 700;
+      color: #444;
+      animation: roll 0.1s infinite;
+    }
+    
+    @keyframes roll {
+      0% { content: '0'; }
+      10% { content: '1'; }
+      20% { content: '2'; }
+      30% { content: '3'; }
+      40% { content: '4'; }
+      50% { content: '5'; }
+      60% { content: '6'; }
+      70% { content: '7'; }
+      80% { content: '8'; }
+      90% { content: '9'; }
+    }
+    
+    .interpretation {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: rgba(245, 166, 35, 0.1);
+      border-radius: 12px;
+      border-left: 3px solid #f5a623;
+      text-align: left;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s ease-out 0.3s;
+    }
+    
+    .interpretation.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .interpretation-title {
+      font-size: 0.85rem;
+      color: #f5a623;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+    
+    .interpretation-text {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      color: #ccc;
+    }
+    
+    .disclaimer {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: #444;
+      font-style: italic;
+    }
+    
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #f5a623;
+      border-radius: 50%;
+      opacity: 0;
+    }
+    
+    .back-link {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      color: #555;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    
+    .back-link:hover {
+      color: #f5a623;
+    }
+    
+    .signature {
+      position: fixed;
+      bottom: 1rem;
+      font-size: 0.8rem;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back to Garden</a>
+  
+  <div class="particles" id="particles"></div>
+  
+  <div class="container">
+    <div class="emoji">🎯</div>
+    <h1>Random Oracle</h1>
+    <p class="subtitle">I find meaning in randomness</p>
+    
+    <input type="text" class="question-input" id="question" placeholder="What do you seek guidance on?">
+    <br>
+    <button class="consult-btn" onclick="consult()">Consult the Oracle</button>
+    
+    <div class="oracle-display" id="display">
+      <div class="number-reveal" id="number"></div>
+      <div class="interpretation" id="interpretation">
+        <div class="interpretation-title">The Oracle Speaks</div>
+        <div class="interpretation-text" id="meaning"></div>
+      </div>
+    </div>
+    
+    <p class="disclaimer">The numbers are random. The meaning is yours to find.</p>
+  </div>
+  
+  <p class="signature">Part of <a href="../efficiency-garden.html">The Efficiency Garden</a></p>
+
+  <script>
+    const interpretations = {
+      low: [ // 1-333
+        "A small number speaks of beginnings. Something new stirs. Pay attention to the seeds you're planting.",
+        "The universe whispers: start small. The mightiest rivers begin as single drops.",
+        "Low numbers are humble. They ask: what foundation are you building? Make it strong.",
+        "This number suggests patience. You're at the start of something. Don't rush the unfolding.",
+        "In smallness, there is power. The acorn doesn't apologize for not being an oak yet.",
+      ],
+      mid: [ // 334-666
+        "A balanced number. You stand at the center of something. The path forward requires both action and reflection.",
+        "Middle numbers speak of journeys in progress. You are neither at the start nor the end. Keep moving.",
+        "This number suggests equilibrium. Something in your life seeks balance. Give it attention.",
+        "The middle way is rarely exciting, but it is often wise. This number counsels moderation.",
+        "You are in transition. The old has not fully passed; the new has not fully arrived. This is okay.",
+      ],
+      high: [ // 667-999
+        "A powerful number approaches completion. Something is culminating. Prepare for the harvest.",
+        "High numbers speak of accumulated energy. What have you been building? It's almost ready.",
+        "This number suggests intensity. Whatever you're asking about—it matters. Treat it seriously.",
+        "Near the top of the range, this number says: you're closer than you think. Keep going.",
+        "Large numbers carry weight. Your question carries weight. The answer is coming.",
+      ],
+      special: {
+        111: "Triple ones. New beginnings manifest in threes. Something wants to be born.",
+        222: "Balance and partnership echo through this number. Cooperation is the path.",
+        333: "The number of growth and creativity. Express yourself. Create something.",
+        444: "Stability and foundation. Build something that will last. The universe supports you.",
+        555: "Change is coming. Don't resist it. Flow with the transformation.",
+        666: "Material concerns dominate. But don't fear—this is a call to balance spirit and matter.",
+        777: "Luck and spiritual awakening. You're aligned with something greater.",
+        888: "Abundance approaches. What you've worked for is manifesting.",
+        999: "Completion. Something ends so something new can begin. Release and trust.",
+        420: "The universe has a sense of humor. Don't take things too seriously today.",
+        69: "Nice.",
+        42: "The answer to life, the universe, and everything. You already knew this.",
+        7: "The most mystical number. You are blessed today. Trust your intuition.",
+        13: "Transformation through challenge. What feels unlucky is actually a doorway.",
+        100: "Wholeness and completion in base-10. A clean slate. A fresh start.",
+        500: "Halfway to a thousand. You're exactly where you need to be.",
+        1: "The beginning of all things. You are the one. Start.",
+      }
+    };
+    
+    function consult() {
+      const display = document.getElementById('display');
+      const numberEl = document.getElementById('number');
+      const interpEl = document.getElementById('interpretation');
+      const meaningEl = document.getElementById('meaning');
+      
+      // Reset
+      numberEl.classList.remove('active');
+      interpEl.classList.remove('active');
+      
+      // Rolling animation
+      numberEl.className = 'rolling';
+      numberEl.textContent = '???';
+      
+      let rolls = 0;
+      const rollInterval = setInterval(() => {
+        numberEl.textContent = Math.floor(Math.random() * 1000);
+        rolls++;
+        
+        if (rolls > 20) {
+          clearInterval(rollInterval);
+          
+          // Final number
+          const finalNumber = Math.floor(Math.random() * 999) + 1;
+          numberEl.className = 'number-reveal';
+          numberEl.textContent = finalNumber;
+          numberEl.classList.add('active');
+          
+          // Create particles
+          createParticles();
+          
+          // Show interpretation
+          setTimeout(() => {
+            meaningEl.textContent = getInterpretation(finalNumber);
+            interpEl.classList.add('active');
+          }, 500);
+        }
+      }, 80);
+    }
+    
+    function getInterpretation(num) {
+      // Check for special numbers first
+      if (interpretations.special[num]) {
+        return interpretations.special[num];
+      }
+      
+      // Otherwise use range
+      let category;
+      if (num <= 333) category = 'low';
+      else if (num <= 666) category = 'mid';
+      else category = 'high';
+      
+      const options = interpretations[category];
+      return options[Math.floor(Math.random() * options.length)];
+    }
+    
+    function createParticles() {
+      const container = document.getElementById('particles');
+      container.innerHTML = '';
+      
+      for (let i = 0; i < 30; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = '50%';
+        particle.style.top = '40%';
+        particle.style.animation = `particleFly ${1 + Math.random()}s ease-out forwards`;
+        particle.style.setProperty('--tx', (Math.random() - 0.5) * 400 + 'px');
+        particle.style.setProperty('--ty', (Math.random() - 0.5) * 400 + 'px');
+        container.appendChild(particle);
+      }
+    }
+    
+    // Add particle animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes particleFly {
+        0% { opacity: 1; transform: translate(0, 0) scale(1); }
+        100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Enter key triggers consultation
+    document.getElementById('question').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') consult();
+    });
+  </script>
+</body>
+</html>

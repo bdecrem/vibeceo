@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI that composes music for emotions</title>
+  <meta name="description" content="Tell me how you feel. I'll compose four notes that capture it.">
+  <meta property="og:title" content="Music for Emotions">
+  <meta property="og:description" content="An AI that composes music for specific feelings.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    
+    .container {
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    .emoji {
+      font-size: 5rem;
+      margin-bottom: 1rem;
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      color: #888;
+      margin-bottom: 2rem;
+      font-size: 1rem;
+    }
+    
+    .input-area {
+      margin-bottom: 2rem;
+    }
+    
+    input {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      font-size: 1.1rem;
+      border: 2px solid #333;
+      border-radius: 50px;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus {
+      border-color: #667eea;
+    }
+    
+    input::placeholder {
+      color: #555;
+    }
+    
+    .compose-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-bottom: 2rem;
+    }
+    
+    .compose-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    .compose-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .visualizer {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 2rem;
+      height: 120px;
+      align-items: flex-end;
+    }
+    
+    .bar {
+      width: 40px;
+      background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+      border-radius: 8px 8px 0 0;
+      transition: height 0.3s ease-out;
+      opacity: 0.3;
+    }
+    
+    .bar.active {
+      opacity: 1;
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+    }
+    
+    .result {
+      background: #111;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      display: none;
+    }
+    
+    .result.show {
+      display: block;
+      animation: fadeIn 0.5s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .emotion-label {
+      color: #feca57;
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .notes-display {
+      font-family: monospace;
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    
+    .replay-btn {
+      background: none;
+      border: 1px solid #444;
+      color: #888;
+      padding: 0.5rem 1.5rem;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .replay-btn:hover {
+      border-color: #667eea;
+      color: #667eea;
+    }
+    
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+    
+    .preset {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      color: #888;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    
+    .preset:hover {
+      border-color: #667eea;
+      color: #fff;
+    }
+    
+    .back-link {
+      color: #555;
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-top: 2rem;
+      display: inline-block;
+    }
+    
+    .back-link:hover {
+      color: #888;
+    }
+    
+    .quote {
+      color: #555;
+      font-style: italic;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">🎹</div>
+    <h1>Music for Emotions</h1>
+    <p class="subtitle">Tell me how you feel. I'll compose four notes.</p>
+    
+    <div class="presets">
+      <button class="preset" data-emotion="melancholy">melancholy</button>
+      <button class="preset" data-emotion="hope">hope</button>
+      <button class="preset" data-emotion="tension">tension</button>
+      <button class="preset" data-emotion="peace">peace</button>
+      <button class="preset" data-emotion="wonder">wonder</button>
+      <button class="preset" data-emotion="longing">longing</button>
+      <button class="preset" data-emotion="joy">joy</button>
+      <button class="preset" data-emotion="fear">fear</button>
+    </div>
+    
+    <div class="input-area">
+      <input type="text" id="emotion-input" placeholder="or type your own emotion..." maxlength="50">
+    </div>
+    
+    <button class="compose-btn" id="compose-btn">▶ Compose</button>
+    
+    <div class="visualizer">
+      <div class="bar" id="bar-0"></div>
+      <div class="bar" id="bar-1"></div>
+      <div class="bar" id="bar-2"></div>
+      <div class="bar" id="bar-3"></div>
+    </div>
+    
+    <div class="result" id="result">
+      <div class="emotion-label" id="emotion-label">melancholy</div>
+      <div class="notes-display" id="notes-display">A3 → G3 → F3 → E3</div>
+      <button class="replay-btn" id="replay-btn">↻ Play Again</button>
+    </div>
+    
+    <p class="quote">"Four notes. One feeling. That's all we need."</p>
+    
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+
+  <script>
+    // Note frequencies
+    const noteFreqs = {
+      'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00, 'A3': 220.00, 'B3': 246.94,
+      'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
+      'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99
+    };
+    
+    // Emotion to notes mapping (expandable)
+    const emotionNotes = {
+      'melancholy': ['A3', 'G3', 'F3', 'E3'],
+      'hope': ['C4', 'E4', 'G4', 'C5'],
+      'tension': ['B3', 'C4', 'B3', 'A3'],
+      'peace': ['C4', 'D4', 'E4', 'D4'],
+      'wonder': ['G4', 'A4', 'C5', 'E5'],
+      'longing': ['D4', 'F4', 'A4', 'G4'],
+      'joy': ['C4', 'E4', 'G4', 'E5'],
+      'fear': ['E3', 'F3', 'E3', 'D3'],
+      'love': ['G4', 'B4', 'D5', 'G5'],
+      'anger': ['C3', 'D3', 'C3', 'B3'],
+      'calm': ['G3', 'A3', 'B3', 'A3'],
+      'excitement': ['C4', 'G4', 'C5', 'G5'],
+      'sadness': ['D3', 'F3', 'E3', 'D3'],
+      'anxiety': ['A3', 'B3', 'A3', 'G3'],
+      'gratitude': ['E4', 'G4', 'B4', 'E5'],
+      'nostalgia': ['G3', 'B3', 'D4', 'G4'],
+    };
+    
+    // Default emotion progressions by "vibe"
+    const defaultProgressions = [
+      ['C4', 'D4', 'E4', 'G4'],  // ascending, bright
+      ['G4', 'E4', 'D4', 'C4'],  // descending, reflective
+      ['E4', 'G4', 'E4', 'C4'],  // arched, questioning
+      ['A3', 'C4', 'E4', 'A4'],  // minor feel, deep
+      ['D4', 'F4', 'A4', 'D5'],  // reaching, yearning
+    ];
+    
+    let audioCtx = null;
+    let currentNotes = [];
+    let currentEmotion = '';
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+    
+    function getNotesForEmotion(emotion) {
+      const lower = emotion.toLowerCase().trim();
+      if (emotionNotes[lower]) {
+        return emotionNotes[lower];
+      }
+      // Hash the emotion to pick a consistent progression
+      let hash = 0;
+      for (let i = 0; i < lower.length; i++) {
+        hash = ((hash << 5) - hash) + lower.charCodeAt(i);
+        hash |= 0;
+      }
+      return defaultProgressions[Math.abs(hash) % defaultProgressions.length];
+    }
+    
+    function playNotes(notes) {
+      initAudio();
+      const bars = document.querySelectorAll('.bar');
+      
+      notes.forEach((note, i) => {
+        setTimeout(() => {
+          const freq = noteFreqs[note] || 440;
+          
+          // Create oscillator
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          
+          // Add slight vibrato for warmth
+          const vibrato = audioCtx.createOscillator();
+          const vibratoGain = audioCtx.createGain();
+          vibrato.frequency.value = 5;
+          vibratoGain.gain.value = 3;
+          vibrato.connect(vibratoGain);
+          vibratoGain.connect(osc.frequency);
+          vibrato.start();
+          
+          // Envelope
+          const t = audioCtx.currentTime;
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(0.25, t + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.8);
+          
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.9);
+          vibrato.stop(audioCtx.currentTime + 0.9);
+          
+          // Visualize
+          bars.forEach(bar => bar.classList.remove('active'));
+          bars[i].classList.add('active');
+          bars[i].style.height = `${40 + (freq / 10)}px`;
+          
+        }, i * 500);
+      });
+      
+      // Reset bars after playing
+      setTimeout(() => {
+        bars.forEach(bar => {
+          bar.classList.remove('active');
+          bar.style.height = '30px';
+        });
+      }, notes.length * 500 + 500);
+    }
+    
+    function compose() {
+      const input = document.getElementById('emotion-input');
+      const emotion = input.value.trim() || 'wonder';
+      
+      currentEmotion = emotion;
+      currentNotes = getNotesForEmotion(emotion);
+      
+      // Update UI
+      document.getElementById('emotion-label').textContent = emotion;
+      document.getElementById('notes-display').textContent = currentNotes.join(' → ');
+      document.getElementById('result').classList.add('show');
+      
+      // Play
+      playNotes(currentNotes);
+    }
+    
+    // Event listeners
+    document.getElementById('compose-btn').addEventListener('click', compose);
+    
+    document.getElementById('replay-btn').addEventListener('click', () => {
+      playNotes(currentNotes);
+    });
+    
+    document.getElementById('emotion-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') compose();
+    });
+    
+    // Preset buttons
+    document.querySelectorAll('.preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('emotion-input').value = btn.dataset.emotion;
+        compose();
+      });
+    });
+    
+    // Initialize bars
+    document.querySelectorAll('.bar').forEach(bar => {
+      bar.style.height = '30px';
+    });
+  </script>
+</body>
+</html>
