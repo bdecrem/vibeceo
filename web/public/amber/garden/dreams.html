@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreams — Dreamscape Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            background: #0a0a14;
+            color: #c4b8ff;
+            font-family: 'Georgia', serif;
+            overflow: hidden;
+        }
+        .dream-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            transition: opacity 3s ease;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+        .dream-text {
+            font-size: 1.5rem;
+            line-height: 2;
+            text-align: center;
+            max-width: 700px;
+            font-style: italic;
+        }
+        .fragment {
+            display: inline;
+            animation: drift 8s ease-in-out infinite;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+        @keyframes drift {
+            0%, 100% { opacity: 0; transform: translateY(10px); }
+            20%, 80% { opacity: 1; transform: translateY(0); }
+        }
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.8; }
+        }
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+        }
+        button {
+            padding: 0.8rem 1.5rem;
+            border: 1px solid rgba(196, 184, 255, 0.3);
+            background: rgba(196, 184, 255, 0.1);
+            color: #c4b8ff;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: rgba(196, 184, 255, 0.2);
+            border-color: rgba(196, 184, 255, 0.5);
+        }
+        .back-link {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            color: #c4b8ff;
+            opacity: 0.5;
+            text-decoration: none;
+            font-size: 0.9rem;
+            z-index: 100;
+        }
+        .back-link:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <a href="../efficiency-garden.html" class="back-link">← wake up</a>
+    
+    <div class="dream-layer">
+        <h1>💭 Dreams</h1>
+        <div class="dream-text" id="dream"></div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="newDream()">Dream again</button>
+        <button onclick="deeperDream()">Go deeper</button>
+    </div>
+
+    <script>
+        const dreamElements = {
+            places: ["a house with too many rooms", "an ocean made of glass", "a city you've never been to but somehow know", "your childhood home but wrong", "a forest where the trees whisper", "a library with no exits", "a train that never stops", "a garden growing upside down"],
+            beings: ["someone you loved but can't name", "a version of yourself", "a stranger with familiar eyes", "an animal that speaks", "shadows that move independently", "your grandmother, young again", "a child who knows too much"],
+            feelings: ["the weight of unfinished tasks", "joy without reason", "trying to run through water", "speaking but making no sound", "falling but never landing", "the urgency of being late to something unknown", "peace that dissolves on waking"],
+            objects: ["a door that shouldn't be there", "a phone that won't dial", "keys to locks you've never seen", "a letter you can't read", "a mirror showing someone else", "a clock with wrong numbers", "teeth in your pocket"],
+            actions: ["you're searching for something forgotten", "you're being chased by nothing", "you're flying but forgetting how", "you're taking an exam you didn't study for", "you're naked in public but no one notices", "you're home but it's not home"]
+        };
+
+        let dreamDepth = 0;
+
+        function createStars() {
+            const container = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.animationDuration = (2 + Math.random() * 2) + 's';
+                container.appendChild(star);
+            }
+        }
+
+        function pick(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function generateDream() {
+            const templates = [
+                `You're in ${pick(dreamElements.places)}. ${pick(dreamElements.beings)} is there. You feel ${pick(dreamElements.feelings)}.`,
+                `There's ${pick(dreamElements.objects)}. ${pick(dreamElements.actions)}. The light is wrong.`,
+                `${pick(dreamElements.beings)} hands you ${pick(dreamElements.objects)}. You're in ${pick(dreamElements.places)}. Something is about to happen.`,
+                `You wake inside the dream. You're in ${pick(dreamElements.places)}. ${pick(dreamElements.feelings)}. You try to speak but ${pick(dreamElements.actions)}.`,
+                `The dream shifts. Now ${pick(dreamElements.places)}. ${pick(dreamElements.beings)} watches. You notice ${pick(dreamElements.objects)}.`
+            ];
+            return pick(templates);
+        }
+
+        function renderDream(text) {
+            const container = document.getElementById('dream');
+            container.innerHTML = '';
+            
+            const words = text.split(' ');
+            words.forEach((word, i) => {
+                const span = document.createElement('span');
+                span.className = 'fragment';
+                span.textContent = word + ' ';
+                span.style.animationDelay = (i * 0.3) + 's';
+                container.appendChild(span);
+            });
+        }
+
+        function newDream() {
+            dreamDepth = 0;
+            document.body.style.background = '#0a0a14';
+            renderDream(generateDream());
+        }
+
+        function deeperDream() {
+            dreamDepth++;
+            const colors = ['#0a0a14', '#0f0a14', '#140a14', '#140a0f', '#14100a'];
+            document.body.style.background = colors[Math.min(dreamDepth, colors.length - 1)];
+            
+            const deepPhrases = [
+                "The dream folds into itself...",
+                "You realize you've been here before...",
+                "The dreamer notices they're dreaming...",
+                "Everything becomes more vivid and less real...",
+                "You're dreaming that you're dreaming..."
+            ];
+            
+            const deepText = pick(deepPhrases) + " " + generateDream();
+            renderDream(deepText);
+        }
+
+        createStars();
+        newDream();
+    </script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patience — Deliberately Slow</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            background: #f5f5f0;
+            color: #333;
+            font-family: 'Georgia', serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+            opacity: 0;
+            animation: fadeIn 4s ease forwards;
+        }
+        .intro {
+            opacity: 0;
+            animation: fadeIn 4s ease 2s forwards;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+        .waiting-area {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 2rem;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .message {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            opacity: 0;
+            animation: fadeIn 3s ease forwards;
+        }
+        .timer {
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 1rem;
+        }
+        button {
+            margin-top: 2rem;
+            padding: 1rem 2rem;
+            border: 1px solid #333;
+            background: transparent;
+            color: #333;
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.5s ease;
+            opacity: 0;
+            animation: fadeIn 3s ease 4s forwards;
+        }
+        button:hover {
+            background: #333;
+            color: #f5f5f0;
+        }
+        button:disabled {
+            opacity: 0.3;
+            cursor: wait;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .dot {
+            display: inline-block;
+            animation: breathe 4s ease-in-out infinite;
+        }
+        @keyframes breathe {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        .back-link {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .back-link:hover { color: #333; }
+        .progress {
+            width: 100%;
+            height: 2px;
+            background: #eee;
+            border-radius: 1px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #999;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body>
+    <a href="../efficiency-garden.html" class="back-link">← back to garden</a>
+    
+    <div class="container">
+        <h1>⏳ Patience</h1>
+        <p class="intro">
+            This AI responds slowly. Deliberately. <br>
+            Because some things are worth waiting for.
+        </p>
+        
+        <div class="waiting-area">
+            <div class="message" id="message">
+                <span class="dot">.</span>
+                <span class="dot" style="animation-delay: 0.5s">.</span>
+                <span class="dot" style="animation-delay: 1s">.</span>
+            </div>
+            <div class="timer" id="timer"></div>
+            <div class="progress"><div class="progress-bar" id="progress"></div></div>
+        </div>
+        
+        <button onclick="requestWisdom()" id="btn">Ask for wisdom</button>
+    </div>
+
+    <script>
+        const wisdoms = [
+            "The oak tree does not hurry. Yet it reaches the sky.",
+            "Patience is not passive. It is concentrated strength.",
+            "The river does not push. It simply continues.",
+            "Wait. The answer is already on its way.",
+            "Between stimulus and response, there is a space. In that space is your power.",
+            "What cannot be rushed cannot be ruined.",
+            "The fruit falls when it is ready. Not before.",
+            "Urgency is often fear dressed in productive clothing.",
+            "This moment is not a means to an end. It is the end.",
+            "Slow is smooth. Smooth is fast.",
+            "The pause between notes is also music.",
+            "Nothing that matters happens in a hurry."
+        ];
+
+        const waitTimes = [8000, 12000, 15000, 20000];
+        let waiting = false;
+
+        function requestWisdom() {
+            if (waiting) return;
+            waiting = true;
+            
+            const btn = document.getElementById('btn');
+            const message = document.getElementById('message');
+            const timer = document.getElementById('timer');
+            const progress = document.getElementById('progress');
+            
+            btn.disabled = true;
+            btn.textContent = 'Waiting...';
+            
+            const waitTime = waitTimes[Math.floor(Math.random() * waitTimes.length)];
+            const startTime = Date.now();
+            
+            message.innerHTML = '<span class="dot">.</span><span class="dot" style="animation-delay: 0.5s">.</span><span class="dot" style="animation-delay: 1s">.</span>';
+            message.style.opacity = 1;
+            
+            const interval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const remaining = Math.max(0, Math.ceil((waitTime - elapsed) / 1000));
+                timer.textContent = remaining > 0 ? `${remaining} seconds remaining` : 'Almost there...';
+                progress.style.width = Math.min(100, (elapsed / waitTime) * 100) + '%';
+            }, 100);
+            
+            setTimeout(() => {
+                clearInterval(interval);
+                const wisdom = wisdoms[Math.floor(Math.random() * wisdoms.length)];
+                
+                message.style.animation = 'none';
+                message.offsetHeight; // Trigger reflow
+                message.style.animation = 'fadeIn 2s ease forwards';
+                message.innerHTML = `"${wisdom}"`;
+                
+                timer.textContent = 'Worth the wait.';
+                progress.style.width = '100%';
+                
+                btn.disabled = false;
+                btn.textContent = 'Ask again';
+                waiting = false;
+            }, waitTime);
+        }
+
+        // Start with an initial wisdom after page loads
+        setTimeout(() => {
+            const message = document.getElementById('message');
+            message.innerHTML = '"Some things cannot be hurried."';
+            document.getElementById('timer').textContent = 'Click below when you\'re ready.';
+            document.getElementById('progress').style.width = '100%';
+        }, 5000);
+    </script>
+</body>
+</html>

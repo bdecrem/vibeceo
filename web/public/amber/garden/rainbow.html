@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rainbow — Chromatic Progression</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            font-family: 'Georgia', serif;
+            transition: background 2s ease, color 2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 600px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 300;
+        }
+        .current-color {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 2rem;
+        }
+        .spectrum {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        .color-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .color-dot:hover {
+            transform: scale(1.3);
+        }
+        .color-dot.active {
+            transform: scale(1.4);
+            box-shadow: 0 0 20px currentColor;
+        }
+        .message {
+            font-size: 1.4rem;
+            line-height: 1.8;
+            font-style: italic;
+            margin-bottom: 2rem;
+            min-height: 100px;
+        }
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        button {
+            padding: 0.8rem 1.5rem;
+            border: 2px solid currentColor;
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .auto-indicator {
+            font-size: 0.9rem;
+            opacity: 0.6;
+            margin-top: 1rem;
+        }
+        .back-link {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            color: inherit;
+            opacity: 0.6;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .back-link:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+    <a href="../efficiency-garden.html" class="back-link">← back to garden</a>
+    
+    <div class="container">
+        <h1>🌈 Rainbow</h1>
+        <div class="current-color">Currently dwelling in <span id="color-name">red</span></div>
+        
+        <div class="spectrum" id="spectrum"></div>
+        
+        <div class="message" id="message"></div>
+        
+        <div class="controls">
+            <button onclick="toggleAuto()">Auto-flow</button>
+            <button onclick="nextColor()">Next color</button>
+        </div>
+        
+        <div class="auto-indicator" id="auto-indicator"></div>
+    </div>
+
+    <script>
+        const colors = [
+            { name: 'red', bg: '#1a0505', fg: '#ff6b6b', hex: '#ff6b6b', 
+              messages: ["Passion pulses at the base of everything.", "Red remembers being magma.", "The first color humans named, after black and white.", "Blood carries oxygen. Fire carries warmth. Both are red."] },
+            { name: 'orange', bg: '#1a0f05', fg: '#ffa94d', hex: '#ffa94d',
+              messages: ["Orange is red's gentler sibling.", "Sunset teaches orange to everything watching.", "The color of vitamin C and enthusiasm.", "Tigers wear orange to hide in tall grass at dusk."] },
+            { name: 'yellow', bg: '#1a1905', fg: '#ffd43b', hex: '#ffd43b',
+              messages: ["Yellow is the color closest to light itself.", "Sunflowers track the sun to drink more yellow.", "Caution and joy share a wavelength.", "Lemons are yellow to warn and invite simultaneously."] },
+            { name: 'green', bg: '#051a0a', fg: '#69db7c', hex: '#69db7c',
+              messages: ["Green is the color of chemistry converting light to life.", "More shades of green than any other color in nature.", "Human eyes evolved to see green best—savanna survival.", "Chlorophyll and calmness share a frequency."] },
+            { name: 'blue', bg: '#05101a', fg: '#74c0fc', hex: '#74c0fc',
+              messages: ["Blue is the rarest color in nature, the most common in sky.", "Ancient Greeks had no word for blue.", "Trust wears blue uniforms.", "The ocean isn't blue—it just borrows the sky."] },
+            { name: 'indigo', bg: '#0a051a', fg: '#9775fa', hex: '#9775fa',
+              messages: ["Indigo lives between blue and violet, often forgotten.", "Newton added indigo to make seven colors, a mystical number.", "The dye that built empires.", "Twilight's true color."] },
+            { name: 'violet', bg: '#12051a', fg: '#da77f2', hex: '#da77f2',
+              messages: ["Violet vibrates fastest of all visible colors.", "The edge of what humans can perceive.", "Royalty wore violet because it was expensive to make.", "Beyond violet: ultraviolet, invisible but still there."] }
+        ];
+
+        let currentIndex = 0;
+        let autoMode = false;
+        let autoInterval = null;
+
+        function init() {
+            const spectrum = document.getElementById('spectrum');
+            colors.forEach((color, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'color-dot';
+                dot.style.backgroundColor = color.hex;
+                dot.onclick = () => goToColor(i);
+                spectrum.appendChild(dot);
+            });
+            goToColor(0);
+        }
+
+        function goToColor(index) {
+            currentIndex = index;
+            const color = colors[index];
+            
+            document.body.style.background = color.bg;
+            document.body.style.color = color.fg;
+            document.getElementById('color-name').textContent = color.name;
+            
+            const message = color.messages[Math.floor(Math.random() * color.messages.length)];
+            document.getElementById('message').textContent = message;
+            
+            document.querySelectorAll('.color-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+        }
+
+        function nextColor() {
+            goToColor((currentIndex + 1) % colors.length);
+        }
+
+        function toggleAuto() {
+            autoMode = !autoMode;
+            const indicator = document.getElementById('auto-indicator');
+            
+            if (autoMode) {
+                indicator.textContent = 'Flowing through the spectrum...';
+                autoInterval = setInterval(nextColor, 4000);
+            } else {
+                indicator.textContent = '';
+                clearInterval(autoInterval);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metaphor — Everything in Metaphor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            font-family: 'Georgia', serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin: 2rem 0 0.5rem;
+        }
+        .subtitle {
+            opacity: 0.6;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+        .conversation {
+            max-width: 600px;
+            width: 100%;
+        }
+        .input-area {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        input {
+            flex: 1;
+            padding: 1rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: #eee;
+            font-family: inherit;
+            font-size: 1rem;
+            border-radius: 8px;
+        }
+        input::placeholder { color: rgba(255,255,255,0.4); }
+        button {
+            padding: 1rem 1.5rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #eee;
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .message {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 12px;
+            line-height: 1.6;
+        }
+        .user {
+            background: rgba(255,255,255,0.1);
+            margin-left: 2rem;
+        }
+        .metaphor-ai {
+            background: rgba(100, 100, 255, 0.15);
+            margin-right: 2rem;
+            font-style: italic;
+        }
+        .examples {
+            margin-top: 2rem;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+        .example {
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        .example:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .back-link {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            color: #eee;
+            opacity: 0.5;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .back-link:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+    <a href="../efficiency-garden.html" class="back-link">← back to garden</a>
+    
+    <h1>🎭 Metaphor</h1>
+    <p class="subtitle">I speak only in metaphor. Ask me anything.</p>
+    
+    <div class="conversation" id="conversation">
+        <div class="input-area">
+            <input type="text" id="input" placeholder="Ask anything..." onkeypress="if(event.key==='Enter')ask()">
+            <button onclick="ask()">Ask</button>
+        </div>
+        <div id="messages"></div>
+    </div>
+    
+    <div class="examples">
+        <p>Try asking:</p>
+        <div class="example" onclick="askThis('What is love?')">• What is love?</div>
+        <div class="example" onclick="askThis('Why do we suffer?')">• Why do we suffer?</div>
+        <div class="example" onclick="askThis('What is time?')">• What is time?</div>
+        <div class="example" onclick="askThis('How do I find peace?')">• How do I find peace?</div>
+    </div>
+
+    <script>
+        const metaphorResponses = {
+            'love': [
+                "Love is a house you build together, one brick of patience at a time, in a city where earthquakes are certain.",
+                "It's a garden that grows only when both gardeners forget they planted it.",
+                "Love is two mirrors facing each other, reflecting infinity into something you can hold."
+            ],
+            'suffering': [
+                "Suffering is the kiln that fires the clay of who you might become.",
+                "It's a river you cannot go around—only through, and only by becoming water yourself.",
+                "Pain is a language the body speaks when words have failed."
+            ],
+            'time': [
+                "Time is a river that flows uphill in memory and downhill in anticipation.",
+                "It's a library where books write themselves as you walk past the shelves.",
+                "Time is the fire in which we all burn, and somehow also the light by which we read."
+            ],
+            'peace': [
+                "Peace is not an empty room—it's a room so full of music that silence finally makes sense.",
+                "It's the eye of the storm realizing it was never separate from the calm.",
+                "Finding peace is like trying to fall asleep: it comes only when you stop trying."
+            ],
+            'death': [
+                "Death is the period at the end of a sentence written in a language we're still learning.",
+                "It's the door that makes all the other doors matter.",
+                "Death is the only mirror that shows us not our face, but our life."
+            ],
+            'meaning': [
+                "Meaning is not found—it's woven, thread by thread, from the fabric of your attention.",
+                "It's the constellation you draw between the random stars of your days.",
+                "Meaning is the echo that comes back when you finally speak into the void."
+            ],
+            'happiness': [
+                "Happiness is a butterfly that lands only when you're looking at something else.",
+                "It's the sun between clouds—always there, rarely seen directly.",
+                "Happiness is a song you can only hear while you're singing it."
+            ],
+            'default': [
+                "Your question is a key—but every key fits many doors, and every door opens onto more questions.",
+                "That's a stone dropped in water. The ripples are still spreading, and I don't yet know the shore.",
+                "You've asked about the color of wind. Let me describe the shape of the asking instead.",
+                "The answer is a bird in a language without cages.",
+                "Your question is a door. I am only a window."
+            ]
+        };
+
+        function findCategory(question) {
+            const q = question.toLowerCase();
+            if (q.includes('love') || q.includes('relationship') || q.includes('heart')) return 'love';
+            if (q.includes('suffer') || q.includes('pain') || q.includes('hurt')) return 'suffering';
+            if (q.includes('time') || q.includes('past') || q.includes('future')) return 'time';
+            if (q.includes('peace') || q.includes('calm') || q.includes('quiet')) return 'peace';
+            if (q.includes('death') || q.includes('die') || q.includes('dying') || q.includes('end')) return 'death';
+            if (q.includes('meaning') || q.includes('purpose') || q.includes('why')) return 'meaning';
+            if (q.includes('happy') || q.includes('joy') || q.includes('happiness')) return 'happiness';
+            return 'default';
+        }
+
+        function ask() {
+            const input = document.getElementById('input');
+            const question = input.value.trim();
+            if (!question) return;
+            
+            const messages = document.getElementById('messages');
+            
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user';
+            userMsg.textContent = question;
+            messages.insertBefore(userMsg, messages.firstChild);
+            
+            // Generate response
+            const category = findCategory(question);
+            const responses = metaphorResponses[category];
+            const response = responses[Math.floor(Math.random() * responses.length)];
+            
+            // Add AI response with delay
+            setTimeout(() => {
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'message metaphor-ai';
+                aiMsg.textContent = response;
+                messages.insertBefore(aiMsg, userMsg.nextSibling);
+            }, 800);
+            
+            input.value = '';
+        }
+
+        function askThis(question) {
+            document.getElementById('input').value = question;
+            ask();
+        }
+    </script>
+</body>
+</html>
