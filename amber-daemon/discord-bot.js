@@ -2,12 +2,28 @@
 // amber-daemon/discord-bot.js - Minimal Discord bot for Amber
 // Connects to Discord gateway, forwards DMs/mentions to daemon
 
-import { Client, GatewayIntentBits, Partials, WebhookClient } from 'discord.js';
+import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import { connect } from 'net';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
+
+// === PIDFILE LOCK — prevent zombie duplicates ===
+const PIDFILE = join(homedir(), '.amber', 'discord-bot.pid');
+
+// Kill any existing instance before we start
+if (existsSync(PIDFILE)) {
+  const oldPid = parseInt(readFileSync(PIDFILE, 'utf-8').trim(), 10);
+  if (oldPid && oldPid !== process.pid) {
+    try { process.kill(oldPid, 'SIGTERM'); } catch (e) {} // ignore if already dead
+    try { execSync(`kill -9 ${oldPid} 2>/dev/null`, { timeout: 2000 }); } catch (e) {}
+    console.log(`[Amber] Killed previous instance (pid ${oldPid})`);
+  }
+}
+writeFileSync(PIDFILE, String(process.pid));
+process.on('exit', () => { try { unlinkSync(PIDFILE); } catch (e) {} });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -26,22 +42,9 @@ if (existsSync(envPath)) {
 
 const SOCKET_PATH = join(homedir(), '.amber', 'amber.sock');
 const BOT_TOKEN = process.env.DISCORD_TOKEN_AMBER || process.env.DISCORD_BOT_TOKEN;
-const AMBER_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_AMBER;
-
 if (!BOT_TOKEN) {
   console.error('❌ No Discord bot token found (set DISCORD_TOKEN_AMBER or DISCORD_BOT_TOKEN)');
   process.exit(1);
-}
-
-// Amber's identity for webhook posts
-const AMBER_NAME = '🔮 Amber';
-const AMBER_AVATAR = 'https://intheamber.com/amber/amber-avatar.png';
-
-// Create webhook client if URL available
-let amberWebhook = null;
-if (AMBER_WEBHOOK_URL) {
-  amberWebhook = new WebhookClient({ url: AMBER_WEBHOOK_URL });
-  console.log('[Amber] Webhook configured');
 }
 
 // === SOCKET CONNECTION ===
@@ -150,10 +153,19 @@ const ALLOWED_BOTS = [
   '1358909827614769263',  // Mave
 ];
 
+// Dedup: track recently processed message IDs
+const recentMessages = new Set();
+
 client.on('messageCreate', async (message) => {
-  // Ignore bots UNLESS they're in the allowed list
+  // Ignore all bots (including webhooks) UNLESS they're in the allowed list
   if (message.author.bot && !ALLOWED_BOTS.includes(message.author.id)) return;
+  if (message.webhookId) return; // Ignore webhook messages
   if (!isForAmber(message, client)) return;
+
+  // Dedup — skip if we've already seen this message ID
+  if (recentMessages.has(message.id)) return;
+  recentMessages.add(message.id);
+  setTimeout(() => recentMessages.delete(message.id), 60000);
 
   const isDM = !message.guild;
   console.log(`[Discord${isDM ? ' DM' : ''}] ${message.author.username}: ${message.content.substring(0, 50)}...`);
@@ -166,7 +178,7 @@ client.on('messageCreate', async (message) => {
   const response = await sendToAmber(message.content, message.author.username, isDM);
 
   if (response) {
-    // Split long messages
+    // Split long messages (Discord 2000 char limit)
     const chunks = [];
     let remaining = response;
     while (remaining.length > 0) {
@@ -181,36 +193,16 @@ client.on('messageCreate', async (message) => {
       remaining = remaining.substring(idx).trimStart();
     }
 
-    // DMs: reply directly. Channels: use webhook if available
-    const isDM = !message.guild;
-    
     for (const chunk of chunks) {
       try {
-        if (isDM) {
-          // DMs - reply directly (appears as bot)
-          await message.reply(chunk);
-        } else if (amberWebhook) {
-          // Channel - use webhook for Amber identity
-          await amberWebhook.send({
-            content: chunk,
-            username: AMBER_NAME,
-            avatarURL: AMBER_AVATAR,
-          });
-        } else {
-          // Fallback - reply as bot
-          await message.reply(chunk);
-        }
+        await message.reply(chunk);
       } catch (e) {
         console.error('[Discord] Send failed:', e.message);
       }
     }
   } else {
     try {
-      if (!message.guild && amberWebhook) {
-        await message.reply("🔮 *something forming... but not quite there yet*\n\n(Amber daemon isn't running)");
-      } else {
-        await message.reply("🔮 *something forming... but not quite there yet*\n\n(Amber daemon isn't running)");
-      }
+      await message.reply("🔮 *something forming... but not quite there yet*\n\n(Amber daemon isn't running)");
     } catch (e) {}
   }
 });

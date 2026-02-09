@@ -102,6 +102,9 @@ function validateConversation(messages) {
     validated.push(msg);
   }
 
+  // Ensure conversation starts with a user message (not assistant, not tool_result)
+  stripOrphanedToolResults(validated);
+
   return validated;
 }
 
