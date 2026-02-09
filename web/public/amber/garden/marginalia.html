@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI trained only on marginalia</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Georgia, serif;
+      background: #f5f0e6;
+      color: #333;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; color: #665544; margin-bottom: 0.5rem; font-family: -apple-system, sans-serif; }
+    .subtitle { color: #887766; margin-bottom: 2rem; font-family: -apple-system, sans-serif; }
+    .page {
+      background: #fffef8; border: 1px solid #d0c8b8;
+      border-radius: 4px; padding: 2rem; text-align: left;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    .page::before {
+      content: '';
+      position: absolute;
+      left: 40px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: #e0d8c8;
+    }
+    .main-text { color: #222; line-height: 2; font-size: 1rem; margin-left: 50px; }
+    .margin-note {
+      position: absolute;
+      left: 10px;
+      width: 35px;
+      font-size: 0.6rem;
+      color: #8866aa;
+      font-style: italic;
+      text-align: right;
+      line-height: 1.3;
+    }
+    .scribble { color: #6644aa; font-style: italic; margin-top: 1rem; font-size: 0.95rem; margin-left: 50px; }
+    .btn {
+      background: #665544; color: #fff; border: none;
+      padding: 0.8rem 2rem; font-size: 1rem; border-radius: 4px; cursor: pointer; margin-top: 1.5rem;
+      font-family: -apple-system, sans-serif;
+    }
+    .btn:hover { background: #554433; }
+    .back-link { color: #998877; text-decoration: none; font-size: 0.85rem; margin-top: 2rem; display: inline-block; font-family: -apple-system, sans-serif; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">📖</div>
+    <h1>The Margins</h1>
+    <p class="subtitle">The real thoughts were never in the main text.</p>
+    <div class="page">
+      <div class="margin-note" id="margin-note" style="top: 30px;"></div>
+      <p class="main-text" id="main-text"></p>
+      <p class="scribble" id="scribble"></p>
+    </div>
+    <button class="btn" id="turn-btn">Turn Page</button>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const pages = [
+      { main: "The meeting went well. Progress was made on all fronts.", margin: "lies!", scribble: "[scribbled in the margins:] 'Progress' means we agreed to meet again. Nothing changed." },
+      { main: "The author argues convincingly for their position.", margin: "NO", scribble: "[underlined three times:] The author THINKS they argue convincingly. That's different." },
+      { main: "It was a simple decision, really.", margin: "??", scribble: "[crammed in the corner:] Simple for whom? I agonized for weeks." },
+      { main: "We remain optimistic about the future.", margin: "do we?", scribble: "[squeezed between lines:] Optimism is a choice, not a feeling. Today I choose it poorly." },
+      { main: "The evidence clearly supports this conclusion.", margin: "see p.47", scribble: "[p.47 is blank — this is the joke]" },
+      { main: "I have no regrets about the path I chose.", margin: "liar", scribble: "[written much later, different ink:] I was young when I wrote this. I have so many." },
+      { main: "Everything happens for a reason.", margin: "prove it", scribble: "[in tiny letters:] Some reasons are just bad luck wearing a costume." },
+    ];
+    function turnPage() {
+      const p = pages[Math.floor(Math.random() * pages.length)];
+      document.getElementById('main-text').textContent = p.main;
+      document.getElementById('margin-note').textContent = p.margin;
+      document.getElementById('scribble').textContent = p.scribble;
+    }
+    turnPage();
+    document.getElementById('turn-btn').addEventListener('click', turnPage);
+  </script>
+</body>
+</html>

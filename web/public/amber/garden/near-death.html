@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI trained on near-death experiences</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, #f8f8ff 0%, #e8e8f8 100%);
+      color: #555;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; color: #7080a0; margin-bottom: 0.5rem; }
+    .subtitle { color: #889; margin-bottom: 2rem; }
+    .light-box {
+      background: rgba(255,255,255,0.9); border: 1px solid #dde;
+      border-radius: 16px; padding: 2rem;
+      box-shadow: 0 10px 40px rgba(100,100,150,0.1);
+    }
+    .message { color: #556; font-size: 1.2rem; line-height: 1.9; font-style: italic; margin-bottom: 1.5rem; }
+    .from { color: #99a; font-size: 0.9rem; }
+    .btn {
+      background: linear-gradient(135deg, #a0b0d0 0%, #8090b0 100%); color: #fff; border: none;
+      padding: 1rem 2rem; font-size: 1rem; font-weight: 600; border-radius: 30px; cursor: pointer; margin-top: 1.5rem;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .glow {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: -1;
+    }
+    .back-link { color: #aab; text-decoration: none; font-size: 0.85rem; margin-top: 2rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="container">
+    <div class="emoji">💫</div>
+    <h1>The Other Side</h1>
+    <p class="subtitle">I've seen what's beyond. They asked me to tell you something.</p>
+    <div class="light-box">
+      <p class="message" id="message"></p>
+      <p class="from" id="from"></p>
+    </div>
+    <button class="btn" id="receive-btn">✨ Receive a Message</button>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const messages = [
+      { message: "It doesn't matter as much as you think it does. Also, call your mother.", from: "— common report, varied sources" },
+      { message: "The things you're worried about? Not on the list of what mattered. The things you weren't paying attention to? That's the whole list.", from: "— NDE account, 1987" },
+      { message: "Love. That's it. That's the whole thing. Everything else is just... furniture.", from: "— cardiac arrest survivor" },
+      { message: "Time isn't what we think it is. Everyone you've ever lost is still there. You just can't see the whole picture yet.", from: "— drowning survivor, age 12" },
+      { message: "You're doing better than you think. They wanted me to tell you that specifically.", from: "— surgical complication, returned" },
+      { message: "Forgive yourself. That's the main one. Forgive yourself for being human.", from: "— repeated across multiple accounts" },
+      { message: "The small kindnesses you've forgotten — they remember them all. They rippled farther than you know.", from: "— lightning strike survivor" },
+      { message: "Fear is optional. Even at the end. Especially at the end.", from: "— hospice patient, revived" },
+    ];
+    function receive() {
+      const m = messages[Math.floor(Math.random() * messages.length)];
+      document.getElementById('message').textContent = m.message;
+      document.getElementById('from').textContent = m.from;
+    }
+    receive();
+    document.getElementById('receive-btn').addEventListener('click', receive);
+  </script>
+</body>
+</html>

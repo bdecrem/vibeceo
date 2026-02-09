@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI that grows with the harvest cycle</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, #1a1510 0%, #0f0d08 100%);
+      color: #c0a060;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; color: #a08040; margin-bottom: 0.5rem; }
+    .subtitle { color: #665; margin-bottom: 2rem; }
+    .field-box {
+      background: rgba(160,128,64,0.1); border: 1px solid rgba(160,128,64,0.2);
+      border-radius: 16px; padding: 2rem;
+    }
+    .season-indicator {
+      display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .season-dot {
+      width: 12px; height: 12px; border-radius: 50%; background: #333;
+      transition: all 0.3s;
+    }
+    .season-dot.active { background: #c0a060; box-shadow: 0 0 10px rgba(192,160,96,0.5); }
+    .current-season { color: #a08040; font-size: 1.3rem; margin-bottom: 0.5rem; }
+    .season-wisdom { color: #c0a060; font-size: 1.1rem; line-height: 1.9; font-style: italic; margin-bottom: 1rem; }
+    .field-advice { color: #776; font-size: 0.9rem; }
+    .progress-label { color: #554; font-size: 0.8rem; margin-top: 1.5rem; }
+    .progress-bar {
+      width: 100%; height: 8px; background: #222; border-radius: 4px; overflow: hidden; margin-top: 0.5rem;
+    }
+    .progress-fill {
+      height: 100%; background: linear-gradient(90deg, #6a8040, #a0a040, #c08040);
+      transition: width 1s ease;
+    }
+    .back-link { color: #554; text-decoration: none; font-size: 0.85rem; margin-top: 2rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">🌾</div>
+    <h1>The Harvest Cycle</h1>
+    <p class="subtitle">I grow with the seasons. So should your questions.</p>
+    <div class="field-box">
+      <div class="season-indicator">
+        <div class="season-dot" id="dot-0"></div>
+        <div class="season-dot" id="dot-1"></div>
+        <div class="season-dot" id="dot-2"></div>
+        <div class="season-dot" id="dot-3"></div>
+      </div>
+      <p class="current-season" id="current-season"></p>
+      <p class="season-wisdom" id="season-wisdom"></p>
+      <p class="field-advice" id="field-advice"></p>
+      <p class="progress-label">Year progress</p>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const seasons = [
+      { name: "🌱 Planting Season", wisdom: "Now is not the time for harvest. It's the time for planting seeds you may never see grow. Trust the dark soil. Trust the unseen work.", advice: "Best for: beginning, intention-setting, blind faith" },
+      { name: "☀️ Growing Season", wisdom: "The seeds have taken root. Your job now is maintenance — water, weed, wait. Growth cannot be rushed. Neither can you.", advice: "Best for: patience, tending, showing up daily" },
+      { name: "🍂 Harvest Season", wisdom: "What you planted is ready. Gather it now — not everything will keep. Celebrate what grew, mourn what didn't. Both are part of the yield.", advice: "Best for: completion, gratitude, collecting what's due" },
+      { name: "❄️ Fallow Season", wisdom: "The field is empty. Good. Rest now. Let the soil recover. Let yourself recover. Not every season is for growth.", advice: "Best for: rest, reflection, preparing for the next cycle" },
+    ];
+    function getSeasonIndex() {
+      const month = new Date().getMonth();
+      if (month >= 2 && month <= 4) return 0; // Mar-May: Planting
+      if (month >= 5 && month <= 7) return 1; // Jun-Aug: Growing
+      if (month >= 8 && month <= 10) return 2; // Sep-Nov: Harvest
+      return 3; // Dec-Feb: Fallow
+    }
+    function getYearProgress() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 1);
+      const end = new Date(now.getFullYear() + 1, 0, 1);
+      return ((now - start) / (end - start)) * 100;
+    }
+    function update() {
+      const idx = getSeasonIndex();
+      const s = seasons[idx];
+      document.getElementById('current-season').textContent = s.name;
+      document.getElementById('season-wisdom').textContent = s.wisdom;
+      document.getElementById('field-advice').textContent = s.advice;
+      for (let i = 0; i < 4; i++) {
+        document.getElementById('dot-' + i).classList.toggle('active', i === idx);
+      }
+      document.getElementById('progress-fill').style.width = getYearProgress() + '%';
+    }
+    update();
+  </script>
+</body>
+</html>
