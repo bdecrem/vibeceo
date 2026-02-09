@@ -4,7 +4,7 @@
 
 import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import { connect } from 'net';
-import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync, readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { fileURLToPath } from 'url';
@@ -153,8 +153,36 @@ const ALLOWED_BOTS = [
   '1358909827614769263',  // Mave
 ];
 
-// Dedup: track recently processed message IDs
-const recentMessages = new Set();
+// === ATOMIC FILE-BASED DEDUP (cross-process safe) ===
+const DEDUP_DIR = join(homedir(), '.amber', 'dedup');
+mkdirSync(DEDUP_DIR, { recursive: true });
+
+// Claim a message ID atomically. Returns true if WE own it, false if another process already claimed it.
+// Uses 'wx' flag: create-exclusive, fails if file exists. Atomic on POSIX filesystems.
+function claimMessage(messageId) {
+  try {
+    writeFileSync(join(DEDUP_DIR, messageId), String(process.pid), { flag: 'wx' });
+    return true;
+  } catch {
+    return false; // another process already claimed it
+  }
+}
+
+// Clean up dedup files older than 2 minutes (run periodically, not on every message)
+let lastCleanup = 0;
+function cleanupDedup() {
+  const now = Date.now();
+  if (now - lastCleanup < 60000) return; // at most once per minute
+  lastCleanup = now;
+  try {
+    for (const f of readdirSync(DEDUP_DIR)) {
+      const fp = join(DEDUP_DIR, f);
+      try {
+        if (now - statSync(fp).mtimeMs > 120000) unlinkSync(fp);
+      } catch {}
+    }
+  } catch {}
+}
 
 client.on('messageCreate', async (message) => {
   // Ignore all bots (including webhooks) UNLESS they're in the allowed list
@@ -162,10 +190,12 @@ client.on('messageCreate', async (message) => {
   if (message.webhookId) return; // Ignore webhook messages
   if (!isForAmber(message, client)) return;
 
-  // Dedup — skip if we've already seen this message ID
-  if (recentMessages.has(message.id)) return;
-  recentMessages.add(message.id);
-  setTimeout(() => recentMessages.delete(message.id), 60000);
+  // Atomic cross-process dedup — only ONE process can claim a message ID
+  if (!claimMessage(message.id)) {
+    console.log(`[Amber] Skipping message ${message.id} — already claimed by another process`);
+    return;
+  }
+  cleanupDedup();
 
   const isDM = !message.guild;
   console.log(`[Discord${isDM ? ' DM' : ''}] ${message.author.username}: ${message.content.substring(0, 50)}...`);
@@ -225,4 +255,24 @@ client.once('ready', () => {
   connectToAmber();
 });
 
-client.login(BOT_TOKEN);
+// === GRACEFUL SHUTDOWN ===
+// Explicitly disconnect from Discord gateway so the token is freed
+// before PM2 spawns a replacement. Without this, two bots can be
+// logged in simultaneously during restarts.
+async function shutdown(signal) {
+  console.log(`[Amber] ${signal} received, disconnecting from Discord...`);
+  try {
+    client.destroy();  // closes gateway websocket immediately
+  } catch (e) {}
+  if (socket && !socket.destroyed) {
+    try { socket.destroy(); } catch (e) {}
+  }
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+// Delay login to let any previous instance fully disconnect from Discord gateway.
+// PM2 restarts can create a brief window where old + new processes coexist.
+setTimeout(() => client.login(BOT_TOKEN), 3000);

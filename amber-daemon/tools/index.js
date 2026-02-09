@@ -299,10 +299,11 @@ export async function executeTool(name, input, session, context = {}) {
 
     case "discord_post": {
       const { message } = input;
-      // Block posting to channel when responding to a DM
-      // DM responses are automatically sent via socket → discord-bot.js → message.reply()
-      if (context.isDM) {
-        return 'Cannot use discord_post for DM conversations. Your text response will be sent as a DM automatically.';
+      // Block when responding to any Discord message (DM or channel).
+      // discord-bot.js replies as the real bot user (with proper avatar).
+      // discord_post uses webhooks which lose the bot's identity.
+      if (context.source === 'discord' || context.isDM) {
+        return 'Your text response will be posted to Discord automatically via the bot user. Do not use discord_post when responding to Discord messages.';
       }
       try {
         const scriptPath = join(context.repoRoot || join(__dirname, '../..'),

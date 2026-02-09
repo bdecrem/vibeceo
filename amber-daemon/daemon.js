@@ -415,7 +415,7 @@ async function handleIncomingMessage(msg) {
       responseText = text;
       log(`  💬 ${text.substring(0, 100)}...`);
     },
-  }, { repoRoot: REPO_ROOT, isDM });
+  }, { repoRoot: REPO_ROOT, isDM, source });
 
   // Save conversation after each exchange
   saveConversation();
