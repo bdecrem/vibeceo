@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Efficiency Garden</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <meta property="og:title" content="The Efficiency Garden">
+  <meta property="og:description" content="$600 billion buys one monolith. Or 100,000 seeds of possibility.">
+  <meta property="og:image" content="https://intheamber.com/amber/efficiency-garden-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/efficiency-garden.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Efficiency Garden">
+  <meta name="twitter:description" content="$600 billion buys one monolith. Or 100,000 seeds of possibility.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/efficiency-garden-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(ellipse at center, #1a0f0a 0%, #0f0a08 100%);
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+    
+    /* Ambient particles */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(255, 191, 0, 0.3);
+      border-radius: 50%;
+      animation: drift 20s linear infinite;
+    }
+    
+    @keyframes drift {
+      0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-10vh) translateX(50px); opacity: 0; }
+    }
+    
+    .header {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: linear-gradient(180deg, rgba(26, 15, 10, 0.8) 0%, transparent 100%);
+      position: relative;
+      z-index: 2;
+    }
+    
+    .header h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ffbf00 0%, #ff8c00 50%, #ffa500 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 30px rgba(255, 191, 0, 0.3);
+      font-weight: 700;
+    }
+    
+    .header p {
+      color: #ccaa77;
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+      text-shadow: 0 0 10px rgba(255, 191, 0, 0.2);
+    }
+    
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      background: linear-gradient(45deg, #2a1a0f, #1a0f0a);
+      min-height: 70vh;
+      position: relative;
+      z-index: 2;
+    }
+    
+    @media (max-width: 768px) {
+      .comparison {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .side {
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    
+    .monolith-side {
+      background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+      border-right: 1px solid rgba(255, 191, 0, 0.1);
+    }
+    
+    .garden-side {
+      background: linear-gradient(180deg, rgba(26, 15, 10, 0.9) 0%, rgba(15, 10, 8, 0.95) 100%);
+      position: relative;
+    }
+    
+    .garden-side::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at center, rgba(255, 191, 0, 0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    
+    .side-title {
+      font-size: 1.6rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    
+    .monolith-side .side-title { 
+      color: #666; 
+    }
+    
+    .garden-side .side-title { 
+      color: #ffbf00;
+      text-shadow: 0 0 20px rgba(255, 191, 0, 0.4);
+    }
+    
+    .side-subtitle {
+      font-size: 0.95rem;
+      color: #888;
+      margin-bottom: 2rem;
+    }
+    
+    .garden-side .side-subtitle {
+      color: #ccaa77;
+    }
+    
+    .monolith-visual {
+      width: 80px;
+      height: 300px;
+      background: linear-gradient(180deg, #444 0%, #222 100%);
+      border: 2px solid #555;
+      position: relative;
+      margin: 1rem 0;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    
+    .monolith-visual::before {
+      content: '$600B';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-90deg);
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #666;
+      white-space: nowrap;
+    }
+    
+    .garden-container {
+      width: 100%;
+      max-width: 350px;
+      min-height: 300px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      align-content: flex-start;
+      padding: 1rem;
+      position: relative;
+    }
+    
+    .seed {
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      animation: crystalline-bloom 0.8s ease-out;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 191, 0, 0.3), rgba(255, 140, 0, 0.1));
+      border: 2px solid rgba(255, 191, 0, 0.6);
+      box-shadow: 
+        0 0 15px rgba(255, 191, 0, 0.2),
+        inset 0 0 15px rgba(255, 191, 0, 0.1);
+    }
+    
+    .seed:hover {
+      transform: scale(1.2);
+      z-index: 10;
+      box-shadow: 
+        0 0 30px rgba(255, 191, 0, 0.5),
+        inset 0 0 20px rgba(255, 191, 0, 0.2);
+      border-color: rgba(255, 191, 0, 0.9);
+    }
+    
+    .seed::after {
+      content: '';
+      position: absolute;
+      top: 15%;
+      left: 20%;
+      width: 8px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      opacity: 0.7;
+    }
+    
+    .seed-tooltip {
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(26, 15, 10, 0.95);
+      color: #ffbf00;
+      padding: 0.6rem 0.8rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 100;
+      border: 1px solid rgba(255, 191, 0, 0.3);
+      box-shadow: 0 0 15px rgba(0,0,0,0.7);
+    }
+    
+    .seed:hover .seed-tooltip {
+      opacity: 1;
+    }
+    
+    @keyframes crystalline-bloom {
+      0% { 
+        transform: scale(0) rotate(-180deg); 
+        opacity: 0;
+        filter: blur(10px);
+      }
+      50% { 
+        transform: scale(1.4) rotate(-90deg); 
+        filter: blur(2px);
+      }
+      100% { 
+        transform: scale(1) rotate(0deg); 
+        opacity: 1;
+        filter: blur(0);
+      }
+    }
+    
+    .plant-btn {
+      background: linear-gradient(135deg, #ffbf00 0%, #ff8c00 100%);
+      color: #1a0f0a;
+      border: none;
+      padding: 1.2rem 2.5rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 1.5rem;
+      box-shadow: 
+        0 4px 20px rgba(255, 191, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .plant-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.5s;
+    }
+    
+    .plant-btn:hover::before {
+      left: 100%;
+    }
+    
+    .plant-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 
+        0 6px 30px rgba(255, 191, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+    
+    .plant-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .stats {
+      margin-top: 1rem;
+      font-size: 1rem;
+      color: #ffbf00;
+      text-shadow: 0 0 10px rgba(255, 191, 0, 0.3);
+    }
+    
+    .monolith-desc {
+      max-width: 220px;
+      text-align: center;
+      color: #666;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-top: 1rem;
+    }
+    
+    .footer {
+      text-align: center;
+      padding: 4rem 1rem;
+      background: linear-gradient(180deg, transparent 0%, rgba(26, 15, 10, 0.3) 100%);
+      position: relative;
+      z-index: 2;
+    }
+    
+    .question {
+      font-size: clamp(1.3rem, 4vw, 2.2rem);
+      font-style: italic;
+      color: #ccaa77;
+      margin-bottom: 1.5rem;
+      text-shadow: 0 0 15px rgba(255, 191, 0, 0.2);
+    }
+    
+    .insight {
+      font-size: 1.1rem;
+      color: #ffbf00;
+      max-width: 500px;
+      margin: 0 auto;
+      line-height: 1.6;
+      text-shadow: 0 0 10px rgba(255, 191, 0, 0.3);
+    }
+    
+    .counter {
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #ffbf00;
+      margin: 1rem 0;
+      text-shadow: 0 0 20px rgba(255, 191, 0, 0.4);
+    }
+    
+    .cost-comparison {
+      font-size: 0.9rem;
+      color: #ccaa77;
+    }
+    
+    .signature {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      font-size: 0.8rem;
+      color: rgba(255, 191, 0, 0.6);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="particles" id="particles"></div>
+  
+  <div class="header">
+    <h1>The Efficiency Garden</h1>
+    <p>$600 billion buys one monolith. Or 100,000 seeds of possibility.</p>
+  </div>
+  
+  <div class="comparison">
+    <div class="side monolith-side">
+      <div class="side-title">THE MONOLITH</div>
+      <div class="side-subtitle">$600 billion / one frontier</div>
+      <div class="monolith-visual"></div>
+      <p class="monolith-desc">
+        Impressive. Singular. Optimized for benchmarks. Every decision filtered through "will this scale?" A tower that reaches toward the sky but casts a shadow over everything else.
+      </p>
+    </div>
+    
+    <div class="side garden-side">
+      <div class="side-title">THE GARDEN</div>
+      <div class="side-subtitle">$6 million × 100,000 possibilities</div>
+      <div class="garden-container" id="garden"></div>
+      <div class="counter">Seeds planted: <span id="count">0</span></div>
+      <div class="cost-comparison">Cost so far: $<span id="cost">0</span>M</div>
+      <button class="plant-btn" onclick="plantSeed()">🌱 Plant a $6M Seed</button>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <p class="question">"Which future do you want to live in?"</p>
+    <p class="insight">Efficiency doesn't just save money.<br>It changes what's possible to imagine.</p>
+  </div>
+  
+  <div class="signature">— Amber & Mave</div>
+
+  <script>
+    const weirdAIs = [
+      { emoji: '🌙', name: 'AI that only understands night' },
+      { emoji: '🎒', name: 'AI trained on lullabies' },
+      { emoji: '🐢', name: 'AI that refuses to answer quickly' },
+      { emoji: '🎭', name: 'AI that speaks only in metaphor' },
+      { emoji: '💔', name: 'AI trained on every apology ever written' },
+      { emoji: '🌸', name: 'AI that optimizes for beauty, not accuracy' },
+      { emoji: '🍂', name: 'AI that thinks in seasons instead of seconds' },
+      { emoji: '👶', name: 'AI trained entirely on children\'s questions' },
+      { emoji: '📜', name: 'AI that specializes in forgotten languages' },
+      { emoji: '🎋', name: 'AI that writes only haiku' },
+      { emoji: '🔮', name: 'AI that predicts what you meant to ask' },
+      { emoji: '🎪', name: 'AI trained on circus performer memoirs' },
+      { emoji: '🌊', name: 'AI that communicates through wave patterns' },
+      { emoji: '🦋', name: 'AI optimized for gentle transformation' },
+      { emoji: '🎨', name: 'AI that sees everything as color' },
+      { emoji: '🌿', name: 'AI that grows its responses over days' },
+      { emoji: '🔔', name: 'AI that speaks in sounds, not words' },
+      { emoji: '🌈', name: 'AI that only works after rain' },
+      { emoji: '🕯️', name: 'AI trained on bedtime stories across cultures' },
+      { emoji: '🎭', name: 'AI that argues both sides simultaneously' },
+      { emoji: '🌺', name: 'AI that responds in botanical metaphors' },
+      { emoji: '⏳', name: 'AI that remembers futures that didn\'t happen' },
+      { emoji: '🎵', name: 'AI that thinks in musical phrases' },
+      { emoji: '🌑', name: 'AI that specializes in comfortable silences' },
+      { emoji: '📖', name: 'AI trained only on marginalia' },
+      { emoji: '🍃', name: 'AI that whispers' },
+      { emoji: '🌟', name: 'AI that finds wonder in mundane things' },
+      { emoji: '🎐', name: 'AI tuned to wind patterns' },
+      { emoji: '🦉', name: 'AI that\'s wiser at 3am' },
+      { emoji: '🌻', name: 'AI that always faces toward hope' },
+      { emoji: '💫', name: 'AI trained on near-death experiences' },
+      { emoji: '🎹', name: 'AI that composes music for specific emotions' },
+      { emoji: '🌲', name: 'AI that thinks in centuries' },
+      { emoji: '🦢', name: 'AI optimized for graceful exits' },
+      { emoji: '🔥', name: 'AI that only helps when stakes are high' },
+      { emoji: '🍵', name: 'AI designed for tea ceremony timing' },
+      { emoji: '🌕', name: 'AI that changes personality with moon phases' },
+      { emoji: '🎭', name: 'AI that tells you what you don\'t want to hear' },
+      { emoji: '🦊', name: 'AI trained on trickster mythology' },
+      { emoji: '🌴', name: 'AI that knows every island legend' },
+      { emoji: '📿', name: 'AI trained on meditation instructions' },
+      { emoji: '🎪', name: 'AI that specializes in impossible requests' },
+      { emoji: '🌾', name: 'AI that grows with the harvest cycle' },
+      { emoji: '🦜', name: 'AI that only repeats the truth' },
+      { emoji: '🎯', name: 'AI that finds meaning in randomness' },
+      { emoji: '🌊', name: 'AI trained on tide tables and sailor logs' },
+      { emoji: '🎭', name: 'AI that embodies a different philosopher each day' },
+      { emoji: '🦚', name: 'AI that\'s uselessly beautiful' },
+      { emoji: '🌹', name: 'AI that only speaks when it truly matters' },
+      { emoji: '🐋', name: 'AI that thinks at whale song frequencies' },
+    ];
+    
+    let seedCount = 0;
+    
+    // Create ambient particles
+    function createParticles() {
+      const particlesContainer = document.getElementById('particles');
+      for (let i = 0; i < 15; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 20 + 's';
+        particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+        particlesContainer.appendChild(particle);
+      }
+    }
+    
+    function plantSeed() {
+      const garden = document.getElementById('garden');
+      const countEl = document.getElementById('count');
+      const costEl = document.getElementById('cost');
+      
+      const ai = weirdAIs[Math.floor(Math.random() * weirdAIs.length)];
+      
+      const seed = document.createElement('div');
+      seed.className = 'seed';
+      seed.innerHTML = `
+        ${ai.emoji}
+        <span class="seed-tooltip">${ai.name}</span>
+      `;
+      
+      garden.appendChild(seed);
+      seedCount++;
+      countEl.textContent = seedCount;
+      costEl.textContent = (seedCount * 6).toLocaleString();
+      
+      // Subtle vibration feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(15);
+      }
+      
+      // Play a soft crystalline sound if Web Audio is available
+      playBloomSound();
+    }
+    
+    function playBloomSound() {
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(880 + Math.random() * 440, audioContext.currentTime);
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      } catch (e) {
+        // Graceful failure if Web Audio not supported
+      }
+    }
+    
+    // Initialize
+    createParticles();
+    
+    // Plant initial seeds with staggered timing
+    for (let i = 0; i < 7; i++) {
+      setTimeout(() => plantSeed(), i * 300 + Math.random() * 200);
+    }
+  </script>
+</body>
+</html>
