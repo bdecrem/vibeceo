@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circus AI | Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { min-height: 100vh; background: linear-gradient(180deg, #1a0a1a 0%, #2d1a2d 50%, #1a0a2a 100%); font-family: 'Georgia', serif; color: #FFD700; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .confetti-piece { position: absolute; width: 10px; height: 10px; animation: fall 4s linear infinite; }
+    @keyframes fall { 0% { transform: translateY(-100px) rotate(0deg); } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+    .container { text-align: center; padding: 40px; max-width: 600px; z-index: 10; }
+    .tent-top { font-size: 4rem; margin-bottom: 10px; animation: wobble 2s ease-in-out infinite; }
+    @keyframes wobble { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+    .title { font-size: 2.5rem; margin-bottom: 10px; text-shadow: 3px 3px 0 #FF1493, -3px -3px 0 #00FFFF; }
+    .subtitle { font-size: 1rem; color: #FF69B4; margin-bottom: 40px; }
+    .prompt-input { background: rgba(255, 215, 0, 0.1); border: 3px solid #FFD700; color: #FFD700; padding: 16px 30px; font-size: 1.2rem; border-radius: 30px; width: 100%; max-width: 400px; text-align: center; }
+    .prompt-input:focus { outline: none; box-shadow: 0 0 30px rgba(255, 215, 0, 0.5); }
+    .result { opacity: 0; transform: scale(0.8); transition: all 0.5s ease; margin-top: 40px; }
+    .result.visible { opacity: 1; transform: scale(1); }
+    .act { font-size: 1.5rem; color: #FF69B4; margin-bottom: 20px; }
+    .performance { font-size: 1.2rem; color: #87CEEB; line-height: 1.8; }
+    .applause { margin-top: 30px; font-size: 2rem; animation: bounce 0.5s ease infinite; }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    .back-link { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); color: #FFD700; opacity: 0.5; text-decoration: none; }
+    .back-link:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="confetti" id="confetti"></div>
+  <div class="container">
+    <div class="tent-top">🎪</div>
+    <div class="title">CIRCUS AI</div>
+    <div class="subtitle">✨ Tonight's show is whatever you imagine ✨</div>
+    <input type="text" class="prompt-input" id="promptInput" placeholder="describe an impossible act..." autocomplete="off">
+    <div class="result" id="result">
+      <div class="act" id="act"></div>
+      <div class="performance" id="performance"></div>
+      <div class="applause">👏 🎉 ✨ 🌟</div>
+    </div>
+  </div>
+  <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  <script>
+    const colors = ['#FFD700', '#FF1493', '#00FFFF', '#FF69B4', '#87CEEB'];
+    const confetti = document.getElementById('confetti');
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.className = 'confetti-piece';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.background = colors[Math.floor(Math.random() * colors.length)];
+      p.style.animationDelay = Math.random() * 4 + 's';
+      confetti.appendChild(p);
+    }
+    const acts = [
+      { intro: "🎭 PRESENTING:", performer: "The Magnificent {WORD} Brothers", desc: "Juggling seventeen impossible thoughts while riding unicycles made of pure contradiction!" },
+      { intro: "🌟 BEHOLD:", performer: "Madame {WORD}", desc: "Escaping from a box filled with your deepest fears using only a smile and sheer audacity!" },
+      { intro: "🎩 MARVEL AT:", performer: "The Amazing {WORD}ini", desc: "Making your expectations disappear... and replacing them with wonder!" },
+    ];
+    function perform(prompt) {
+      const word = prompt.split(' ')[0].toUpperCase();
+      const act = acts[Math.floor(Math.random() * acts.length)];
+      document.getElementById('act').textContent = act.intro + ' ' + act.performer.replace('{WORD}', word);
+      document.getElementById('performance').textContent = act.desc;
+      document.getElementById('result').classList.add('visible');
+    }
+    document.getElementById('promptInput').addEventListener('keypress', e => { if (e.key === 'Enter' && e.target.value.trim()) { perform(e.target.value); e.target.value = ''; } });
+  </script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prediction AI | Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { min-height: 100vh; background: linear-gradient(180deg, #0d0d1a 0%, #1a1a2e 100%); font-family: 'Georgia', serif; color: #C8C8E8; display: flex; align-items: center; justify-content: center; }
+    .container { text-align: center; padding: 40px; max-width: 600px; }
+    .orb { width: 120px; height: 120px; margin: 0 auto 30px; background: radial-gradient(circle at 30% 30%, #9966FF 0%, #6633CC 40%, #330066 100%); border-radius: 50%; box-shadow: 0 0 60px rgba(153, 102, 255, 0.4); animation: pulse 3s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    .title { font-size: 2rem; margin-bottom: 10px; }
+    .subtitle { font-size: 1rem; opacity: 0.6; margin-bottom: 40px; font-style: italic; }
+    .question-input { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(153, 102, 255, 0.3); color: #E8E8FF; padding: 16px 30px; font-size: 1.1rem; border-radius: 30px; width: 100%; max-width: 450px; text-align: center; }
+    .question-input:focus { outline: none; border-color: #9966FF; }
+    .result { opacity: 0; transition: all 0.8s ease; margin-top: 40px; }
+    .result.visible { opacity: 1; }
+    .real-question { font-size: 1.1rem; color: #9999CC; margin-bottom: 25px; font-style: italic; }
+    .answer { font-size: 1.4rem; color: #C8A8E8; line-height: 1.7; }
+    .back-link { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); color: #C8C8E8; opacity: 0.5; text-decoration: none; }
+    .back-link:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="orb"></div>
+    <div class="title">🔮 Prediction AI</div>
+    <div class="subtitle">I answer what you truly meant to ask</div>
+    <input type="text" class="question-input" id="q" placeholder="ask anything..." autocomplete="off">
+    <div class="result" id="result">
+      <div class="real-question" id="rq"></div>
+      <div class="answer" id="a"></div>
+    </div>
+  </div>
+  <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  <script>
+    const qs = [
+      { p: /will (i|we)/i, r: "Am I ready?", a: "You've been ready longer than you know." },
+      { p: /should/i, r: "Do I have permission?", a: "You don't need permission. You need conviction." },
+      { p: /how/i, r: "Why is this so hard?", a: "Because you care. Difficulty is caring made visible." },
+      { p: /what if/i, r: "Am I brave enough?", a: "Bravery is asking 'what if' and moving anyway." },
+      { p: /can i/i, r: "Am I enough?", a: "If you weren't enough, you wouldn't be asking. You are." },
+      { p: /.*/, r: "What am I afraid of?", a: "That you might get what you want. Trust yourself." }
+    ];
+    document.getElementById('q').addEventListener('keypress', e => {
+      if (e.key === 'Enter' && e.target.value.trim()) {
+        const q = e.target.value, m = qs.find(x => x.p.test(q)) || qs[qs.length-1];
+        document.getElementById('rq').textContent = `You asked: "${q}"`;
+        document.getElementById('result').classList.remove('visible');
+        setTimeout(() => {
+          document.getElementById('rq').textContent = `But you meant: "${m.r}"`;
+          document.getElementById('a').textContent = m.a;
+          document.getElementById('result').classList.add('visible');
+        }, 1500);
+        e.target.value = '';
+      }
+    });
+  </script>
+</body>
+</html>
