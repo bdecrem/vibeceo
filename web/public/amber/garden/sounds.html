@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sounds AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, sans-serif;
+      background: linear-gradient(180deg, #0f1520 0%, #0a1015 100%);
+      color: #a0c0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #c0e0ff; }
+    .subtitle { color: #607090; margin-bottom: 2rem; }
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      background: rgba(160, 192, 224, 0.1);
+      border: 1px solid #203040;
+      border-radius: 12px;
+      color: #a0c0e0;
+      min-height: 80px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #304060 0%, #203050 100%);
+      color: #a0c0e0;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .response {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(160, 192, 224, 0.05);
+      border-radius: 12px;
+      display: none;
+    }
+    .response.active { display: block; animation: fadeIn 0.5s; }
+    .sounds { font-size: 2rem; margin-bottom: 1rem; letter-spacing: 0.5rem; }
+    .translation { font-size: 1rem; color: #607090; font-style: italic; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #405060; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">🔔</div>
+    <h1>Sounds AI</h1>
+    <p class="subtitle">I speak in sounds, not words</p>
+    <textarea id="question" placeholder="Ask me anything..."></textarea>
+    <button class="btn" onclick="respond()">Listen</button>
+    <div class="response" id="response">
+      <div class="sounds" id="sounds"></div>
+      <div class="translation" id="translation"></div>
+    </div>
+  </div>
+  <script>
+    const responses = [
+      { sounds: "🔔 ting... 🎵 hummmmm... 🌬️ whoooosh...", translation: "(Translation: Yes, but with complications)" },
+      { sounds: "🎶 la la la... 💫 shimmer... 🌊 shhhhh...", translation: "(Translation: The answer is already inside you)" },
+      { sounds: "⚡ crack! ... ... ... 🕊️ flutter flutter...", translation: "(Translation: Change is coming, then peace)" },
+      { sounds: "🎵 doo doo doo... 🔔 ting!... 🌸 pffft...", translation: "(Translation: Don't take it so seriously)" },
+      { sounds: "🌬️ whooooo... 🔔 dong... 🎵 mmmmmm...", translation: "(Translation: Wait. Listen. Trust.)" },
+      { sounds: "💫 twinkle twinkle... 🌊 wash... 🎶 ahhhhh...", translation: "(Translation: Everything will be beautiful eventually)" },
+      { sounds: "🔔 BONG... ... ... 🕊️ flutter...", translation: "(Translation: Pay attention. This matters.)" },
+      { sounds: "🎵 deedle deedle... 🌬️ poof!... 💫 sparkle...", translation: "(Translation: It was never that serious)" },
+    ];
+    
+    function respond() {
+      const r = responses[Math.floor(Math.random() * responses.length)];
+      document.getElementById('sounds').textContent = r.sounds;
+      document.getElementById('translation').textContent = r.translation;
+      document.getElementById('response').classList.add('active');
+    }
+  </script>
+</body>
+</html>

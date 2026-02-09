@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI that knows every island legend</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, #0a1520 0%, #051015 100%);
+      color: #80b0c0;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; color: #60a0b0; margin-bottom: 0.5rem; }
+    .subtitle { color: #456; margin-bottom: 2rem; }
+    .legend-box {
+      background: rgba(80,140,160,0.1); border: 1px solid rgba(80,140,160,0.2);
+      border-radius: 16px; padding: 2rem; text-align: left;
+    }
+    .island-name { color: #60a0b0; font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .legend { color: #80b0c0; line-height: 1.9; font-size: 1.05rem; font-style: italic; }
+    .location { color: #456; font-size: 0.85rem; margin-top: 1rem; text-align: right; }
+    .btn {
+      background: linear-gradient(135deg, #60a0b0 0%, #408090 100%); color: #fff; border: none;
+      padding: 1rem 2rem; font-size: 1rem; font-weight: 600; border-radius: 30px; cursor: pointer; margin-top: 1.5rem;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .back-link { color: #456; text-decoration: none; font-size: 0.85rem; margin-top: 2rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">🌴</div>
+    <h1>Island Legends</h1>
+    <p class="subtitle">Every island has secrets the sea keeps.</p>
+    <div class="legend-box">
+      <p class="island-name" id="island-name"></p>
+      <p class="legend" id="legend"></p>
+      <p class="location" id="location"></p>
+    </div>
+    <button class="btn" id="sail-btn">🚢 Sail to Another Island</button>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const legends = [
+      { island: "The Island of Reversed Time", legend: "They say on this island, the old grow young and children are born ancient. Visitors arrive knowing everything and leave having forgotten, lighter for the loss.", location: "Somewhere in the South Pacific, they say" },
+      { island: "Tír na nÓg", legend: "The land of eternal youth. A fisherman once rowed there by accident and returned to find three hundred years had passed. His family were legends. He was dust by sunset.", location: "Celtic sea myths" },
+      { island: "The Island Where Fish Learn to Walk", legend: "Once every thousand years, the fish of this island's lagoon crawl onto shore and evolve in a single night. The islanders call it 'the rehearsal for what comes next.'", location: "Indonesian archipelago (uncharted)" },
+      { island: "The Floating Island", legend: "It has no anchor. It drifts between worlds. If you find it, you were meant to. If you can't leave, you were meant to stay. The island decides.", location: "Multiple sailor accounts, no fixed ocean" },
+      { island: "The Island That Sings", legend: "The caves beneath this island produce music when the tides are right. The melody changes with the moon. Old sailors claim it's the voice of a god who fell asleep mid-sentence.", location: "Scottish Hebrides, unnamed" },
+      { island: "The Island of Doors", legend: "Every palm tree on this island hides a door. Each door leads somewhere else. The islanders never leave, but they've been everywhere.", location: "Dream cartography only" },
+    ];
+    function sail() {
+      const l = legends[Math.floor(Math.random() * legends.length)];
+      document.getElementById('island-name').textContent = l.island;
+      document.getElementById('legend').textContent = l.legend;
+      document.getElementById('location').textContent = l.location;
+    }
+    sail();
+    document.getElementById('sail-btn').addEventListener('click', sail);
+  </script>
+</body>
+</html>

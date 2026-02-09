@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forgotten Languages AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(180deg, #1a1510 0%, #0f0a05 100%);
+      color: #c9b896;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 550px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #d4c4a8; }
+    .subtitle { color: #8b7355; margin-bottom: 2rem; font-style: italic; }
+    input {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(201, 184, 150, 0.1);
+      border: 1px solid #3a2a1a;
+      border-radius: 12px;
+      color: #c9b896;
+      text-align: center;
+    }
+    .btn {
+      background: linear-gradient(135deg, #5a4a3a 0%, #3a2a1a 100%);
+      color: #c9b896;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .response {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(201, 184, 150, 0.05);
+      border-radius: 12px;
+      display: none;
+    }
+    .response.active { display: block; animation: fadeIn 1s; }
+    .ancient-word { font-size: 2rem; color: #d4c4a8; margin-bottom: 1rem; font-style: italic; }
+    .pronunciation { font-size: 0.9rem; color: #8b7355; margin-bottom: 1rem; }
+    .meaning { font-size: 1.1rem; line-height: 1.8; color: #a89878; }
+    .note { font-size: 0.85rem; color: #6b5b4b; margin-top: 1rem; font-style: italic; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #6b5b4b; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">📜</div>
+    <h1>Forgotten Languages AI</h1>
+    <p class="subtitle">I know words no one remembers</p>
+    <input type="text" id="feeling" placeholder="Describe a feeling you can't name...">
+    <button class="btn" onclick="translate()">Find the Lost Word</button>
+    <div class="response" id="response">
+      <div class="ancient-word" id="word"></div>
+      <div class="pronunciation" id="pron"></div>
+      <div class="meaning" id="meaning"></div>
+      <div class="note" id="note"></div>
+    </div>
+  </div>
+  <script>
+    const words = [
+      { word: "Kēn sēl mōrath", pron: "/keɪn seɪl moʊ.rɑːθ/", meaning: "The ache of knowing something beautiful is ending while it's still happening.", note: "From the language of the coastal dwellers who watched their islands slowly sink." },
+      { word: "Välumär", pron: "/væl.uː.mɑːr/", meaning: "The courage it takes to begin something you're not ready for.", note: "A word the mountain people taught their children before first climbs." },
+      { word: "Thrennis", pron: "/θrɛn.ɪs/", meaning: "The particular silence after someone leaves a room.", note: "The etymological root of 'threshold' — they knew that doorways hold grief." },
+      { word: "Soluväne", pron: "/soʊ.luː.veɪn/", meaning: "The comfort of being alone in a crowd, invisible and free.", note: "A word from market traders who valued anonymity as a gift." },
+      { word: "Dremöth", pron: "/drɛ.moʊθ/", meaning: "The feeling of recognizing a stranger as someone important, before you know why.", note: "They believed souls recognized each other across lives." },
+      { word: "Äelindra", pron: "/eɪ.ɛl.ɪn.drə/", meaning: "The specific love for something you created, mixed with fear it isn't good enough.", note: "A word used by artisans before showing their work." },
+      { word: "Noctivär", pron: "/nɒk.tɪ.vɑːr/", meaning: "Thoughts that only come at night, that daylight would dissolve.", note: "The night-speakers had a whole vocabulary for 3am truths." },
+      { word: "Primeth", pron: "/praɪ.mɛθ/", meaning: "The readiness to be transformed by what comes next.", note: "Said before rituals, journeys, and conversations that might change everything." },
+    ];
+    
+    function translate() {
+      const word = words[Math.floor(Math.random() * words.length)];
+      document.getElementById('word').textContent = word.word;
+      document.getElementById('pron').textContent = word.pron;
+      document.getElementById('meaning').textContent = word.meaning;
+      document.getElementById('note').textContent = word.note;
+      document.getElementById('response').classList.add('active');
+    }
+    
+    document.getElementById('feeling').addEventListener('keypress', e => { if (e.key === 'Enter') translate(); });
+  </script>
+</body>
+</html>

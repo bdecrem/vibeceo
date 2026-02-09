@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Botanical AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(180deg, #0f1a0f 0%, #051005 100%);
+      color: #98d898;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 550px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #b8e8b8; }
+    .subtitle { color: #507050; margin-bottom: 2rem; font-style: italic; }
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(152, 216, 152, 0.1);
+      border: 1px solid #204020;
+      border-radius: 12px;
+      color: #98d898;
+      min-height: 80px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #306030 0%, #204020 100%);
+      color: #98d898;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .response {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(152, 216, 152, 0.05);
+      border-radius: 12px;
+      border-left: 3px solid #408040;
+      text-align: left;
+      font-size: 1.15rem;
+      line-height: 1.9;
+      color: #a8e8a8;
+      display: none;
+    }
+    .response.active { display: block; animation: fadeIn 1s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #406040; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">🌺</div>
+    <h1>Botanical AI</h1>
+    <p class="subtitle">I respond only in plant metaphors</p>
+    <textarea id="situation" placeholder="Tell me what's going on..."></textarea>
+    <button class="btn" onclick="grow()">Seek Garden Wisdom</button>
+    <div class="response" id="response"></div>
+  </div>
+  <script>
+    const responses = [
+      "Your inquiry has deep roots but needs more sunlight. Consider pruning your expectations and watering your patience. Not all growth happens where it can be seen.",
+      "You are overwatering this problem. The soil is drowning. Step back. Some plants thrive on neglect. Let the roots find their own depth.",
+      "This situation is a cutting, not a seed. It comes from something that already lived. Honor its origin, but don't expect it to grow the same way twice.",
+      "The weeds you're worried about? Some cultures call them wildflowers. Perspective changes everything. Maybe let this one bloom before deciding it doesn't belong.",
+      "You're asking a flower to explain the sun. Some things just grow toward the light. The explanation comes later, or not at all. Grow now. Understand eventually.",
+      "Your garden needs different soil, not different seeds. Change the conditions, not your dreams. The problem isn't what you're planting — it's where.",
+      "A bonsai takes decades. An oak takes centuries. A dandelion takes days. You're upset that your timeline doesn't match theirs. Each plant has its own clock.",
+      "The thorniest plants often have the most beautiful flowers. Protection and beauty are not opposites. Your defenses may be hiding something worth seeing.",
+    ];
+    
+    function grow() {
+      const response = responses[Math.floor(Math.random() * responses.length)];
+      document.getElementById('response').textContent = response;
+      document.getElementById('response').classList.add('active');
+    }
+  </script>
+</body>
+</html>

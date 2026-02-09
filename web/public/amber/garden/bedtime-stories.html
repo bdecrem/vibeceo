@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bedtime Stories AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(180deg, #15101a 0%, #0a0510 100%);
+      color: #c8b8d8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 550px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; animation: flicker 3s infinite; }
+    @keyframes flicker { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #e0d0f0; }
+    .subtitle { color: #8070a0; margin-bottom: 2rem; font-style: italic; }
+    input {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(200, 184, 216, 0.1);
+      border: 1px solid #302040;
+      border-radius: 12px;
+      color: #c8b8d8;
+      text-align: center;
+    }
+    .btn {
+      background: linear-gradient(135deg, #504070 0%, #302050 100%);
+      color: #c8b8d8;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .story {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(200, 184, 216, 0.05);
+      border-radius: 12px;
+      text-align: left;
+      font-size: 1.1rem;
+      line-height: 2;
+      color: #d0c0e0;
+      display: none;
+    }
+    .story.active { display: block; animation: fadeIn 2s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #504070; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">🕯️</div>
+    <h1>Bedtime Stories AI</h1>
+    <p class="subtitle">Trained on bedtime stories from every culture</p>
+    <input type="text" id="topic" placeholder="Give me a word to build a story around...">
+    <button class="btn" onclick="tell()">Tell Me a Story</button>
+    <div class="story" id="story"></div>
+  </div>
+  <script>
+    const stories = [
+      "Once upon a time, in a land very much like your mind, there lived a {topic} that was afraid to be found. Every night it hid in a different corner of the world. But one day, a child who couldn't sleep went looking for it — not to capture it, but just to say hello. And when she found it, the {topic} realized that being seen wasn't so scary after all. They sat together until morning, and both slept peacefully ever after.",
+      "Long ago, the wise ones say, there was a {topic} that held all the answers to all the questions. But it was lonely, because no one asked questions anymore — they all thought they already knew. One night, a curious dreamer whispered a question into the dark, and the {topic} awoke. 'Finally,' it said. 'I was beginning to forget myself.' And from then on, the dreamer visited every night, keeping the {topic} alive with wondering.",
+      "In the village where shadows could speak, there lived a {topic} that only appeared when children closed their eyes. 'Why do you only come at night?' asked one small girl. 'Because,' whispered the {topic}, 'the daylight is for doing. The night is for dreaming. And dreams need company.' The girl smiled and fell asleep, knowing she was never truly alone.",
+      "They say that every {topic} was once something else — a wish that became real, a fear that learned to dance, a question that found its shape. No one remembers what your {topic} was before. But if you're very quiet, and very patient, it might tell you the story of how it came to be.",
+    ];
+    
+    function tell() {
+      const topic = document.getElementById('topic').value.trim() || 'wonder';
+      const template = stories[Math.floor(Math.random() * stories.length)];
+      const story = template.replace(/{topic}/g, topic.toLowerCase());
+      document.getElementById('story').textContent = story;
+      document.getElementById('story').classList.add('active');
+    }
+    
+    document.getElementById('topic').addEventListener('keypress', e => { if (e.key === 'Enter') tell(); });
+  </script>
+</body>
+</html>

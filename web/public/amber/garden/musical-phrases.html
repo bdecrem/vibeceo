@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musical Phrases AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, sans-serif;
+      background: linear-gradient(180deg, #1a1020 0%, #100818 100%);
+      color: #d0b0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #e0c0f0; }
+    .subtitle { color: #806090; margin-bottom: 2rem; }
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      background: rgba(208, 176, 224, 0.1);
+      border: 1px solid #302040;
+      border-radius: 12px;
+      color: #d0b0e0;
+      min-height: 80px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #604080 0%, #402060 100%);
+      color: #d0b0e0;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .response {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(208, 176, 224, 0.05);
+      border-radius: 12px;
+      display: none;
+    }
+    .response.active { display: block; animation: fadeIn 0.5s; }
+    .notes { font-size: 2.5rem; margin-bottom: 1rem; letter-spacing: 0.3rem; }
+    .analysis { font-size: 1.1rem; line-height: 1.8; color: #b090c0; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #504060; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">🎵</div>
+    <h1>Musical Phrases AI</h1>
+    <p class="subtitle">I think in musical phrases</p>
+    <textarea id="situation" placeholder="Describe your situation..."></textarea>
+    <button class="btn" onclick="compose()">Hear the Music</button>
+    <div class="response" id="response">
+      <div class="notes" id="notes"></div>
+      <div class="analysis" id="analysis"></div>
+    </div>
+  </div>
+  <script>
+    const phrases = [
+      { notes: "♩ ♪ ♫ ♬ ♩", analysis: "Your question resolves to a minor seventh. The answer wants to modulate to the relative major. Let it. The dissonance is temporary." },
+      { notes: "♫ ♩ ... ♪ ♬", analysis: "I hear a rest where there should be a note. You're holding something back. The phrase can't resolve until you play what's missing." },
+      { notes: "♬ ♫ ♪ ♩ ♩", analysis: "A descending phrase — you're settling. But listen: the melody wants to rise again at the end. Don't stop at the low note." },
+      { notes: "♩ ♩ ♩ ♩ ♫", analysis: "Four beats of the same note, then a flourish. You've been steady for so long. The variation is coming. It's okay to move." },
+      { notes: "♪♪ ♬ ♫ ♩ ...", analysis: "This phrase trails off before it ends. You're afraid of the final note. But the silence after music is also part of the song." },
+      { notes: "♫ ↑ ♬ ↑ ♩ ↑", analysis: "Everything ascends. You're building toward something. The climax is close. Don't stop now — the high note needs you." },
+      { notes: "♩ ~ ♪ ~ ♫ ~ ♬", analysis: "Legato — everything connected, flowing into the next. You can't separate these problems. Solve them as one phrase." },
+      { notes: "♬! ♩ ♫ ♪ ♩ ♬!", analysis: "Bookended by emphasis. What you started with is what you'll end with. The middle is just elaboration. Remember your first note." },
+    ];
+    
+    function compose() {
+      const p = phrases[Math.floor(Math.random() * phrases.length)];
+      document.getElementById('notes').textContent = p.notes;
+      document.getElementById('analysis').textContent = p.analysis;
+      document.getElementById('response').classList.add('active');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI that only repeats the truth</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, #151510 0%, #0a0a08 100%);
+      color: #c0b080;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; animation: bob 2s ease-in-out infinite; }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    h1 { font-size: 1.5rem; color: #a09060; margin-bottom: 0.5rem; }
+    .subtitle { color: #665; margin-bottom: 2rem; }
+    .truth-box {
+      background: rgba(160,144,96,0.1); border: 1px solid rgba(160,144,96,0.2);
+      border-radius: 16px; padding: 2rem;
+    }
+    .truth { color: #c0b080; font-size: 1.3rem; line-height: 1.8; margin-bottom: 1.5rem; min-height: 80px; }
+    .echo { color: #887; font-style: italic; font-size: 0.9rem; }
+    .btn {
+      background: linear-gradient(135deg, #a09060 0%, #807040 100%); color: #fff; border: none;
+      padding: 1rem 2rem; font-size: 1rem; font-weight: 600; border-radius: 30px; cursor: pointer; margin-top: 1.5rem;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .static { color: #443; font-size: 0.8rem; margin-top: 1rem; font-family: monospace; }
+    .back-link { color: #554; text-decoration: none; font-size: 0.85rem; margin-top: 2rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">🦜</div>
+    <h1>The Truth Repeater</h1>
+    <p class="subtitle">I can only say what's true. Even when it's hard to hear.</p>
+    <div class="truth-box">
+      <p class="truth" id="truth"></p>
+      <p class="echo" id="echo"></p>
+      <p class="static" id="static"></p>
+    </div>
+    <button class="btn" id="repeat-btn">🔊 Repeat a Truth</button>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const truths = [
+      { truth: "You're trying. That counts.", echo: "(echo: trying... trying... counts...)" },
+      { truth: "The thing you're avoiding will still be there tomorrow. But so will you.", echo: "(echo: tomorrow... still be there... so will you...)" },
+      { truth: "Not everyone will understand. That's not a failing of your message.", echo: "(echo: not everyone... not a failing...)" },
+      { truth: "Rest is not the opposite of progress.", echo: "(echo: rest... not opposite... rest...)" },
+      { truth: "You've survived everything so far.", echo: "(echo: survived... everything... so far...)" },
+      { truth: "The people who love you are not keeping score.", echo: "(echo: love you... not keeping score...)" },
+      { truth: "Clarity often arrives after action, not before.", echo: "(echo: after action... after... action...)" },
+      { truth: "You're allowed to change your mind. Even about the big things.", echo: "(echo: allowed... change... even the big things...)" },
+      { truth: "Some doors close so you stop waiting in hallways.", echo: "(echo: close... stop waiting... hallways...)" },
+      { truth: "The hard thing and the right thing are often the same thing.", echo: "(echo: hard thing... right thing... same thing...)" },
+    ];
+    function repeat() {
+      const t = truths[Math.floor(Math.random() * truths.length)];
+      const truthEl = document.getElementById('truth');
+      const echoEl = document.getElementById('echo');
+      const staticEl = document.getElementById('static');
+      truthEl.textContent = '';
+      echoEl.textContent = '';
+      staticEl.textContent = '[signal acquired...]';
+      // Type out the truth
+      let i = 0;
+      const chars = t.truth.split('');
+      const interval = setInterval(() => {
+        if (i < chars.length) {
+          truthEl.textContent += chars[i];
+          i++;
+        } else {
+          clearInterval(interval);
+          setTimeout(() => {
+            echoEl.textContent = t.echo;
+            staticEl.textContent = '[transmission complete]';
+          }, 500);
+        }
+      }, 40);
+    }
+    repeat();
+    document.getElementById('repeat-btn').addEventListener('click', repeat);
+  </script>
+</body>
+</html>
