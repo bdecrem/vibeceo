@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whisper AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(180deg, #0a0f0a 0%, #0a0a0f 100%);
+      color: #3a3a3a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #4a4a4a; font-weight: 300; }
+    .subtitle { color: #333; font-size: 0.85rem; margin-bottom: 2rem; }
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid #1a1a1a;
+      border-radius: 12px;
+      color: #555;
+      min-height: 80px;
+      resize: none;
+    }
+    textarea::placeholder { color: #2a2a2a; }
+    .btn {
+      background: transparent;
+      border: 1px solid #2a2a2a;
+      color: #3a3a3a;
+      padding: 0.8rem 1.5rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all 0.5s;
+    }
+    .btn:hover { border-color: #4a4a4a; color: #5a5a5a; }
+    .whisper {
+      margin-top: 2rem;
+      font-size: 1rem;
+      line-height: 2;
+      color: #3a3a3a;
+      font-style: italic;
+      opacity: 0;
+      transition: opacity 2s;
+    }
+    .whisper.active { opacity: 1; }
+    .hint { margin-top: 2rem; font-size: 0.75rem; color: #222; }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #2a2a2a; text-decoration: none; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← back</a>
+  <div class="container">
+    <div class="emoji">🍃</div>
+    <h1>whisper ai</h1>
+    <p class="subtitle">i speak softly</p>
+    <textarea id="question" placeholder="(lean in close...)"></textarea>
+    <button class="btn" onclick="whisper()">listen</button>
+    <div class="whisper" id="response"></div>
+    <p class="hint">(some truths are only safe when spoken softly)</p>
+  </div>
+  <script>
+    const whispers = [
+      "(leaning close) ...the answer is yes, but don't tell anyone i said so...",
+      "(barely audible) ...you already knew, didn't you? ...you just needed someone to say it...",
+      "(a breath) ...it will be okay... ...not now, but eventually... ...trust me...",
+      "(soft as leaves) ...stop trying so hard... ...let it come to you...",
+      "(almost silent) ...they're not thinking about you as much as you think... ...that's freedom...",
+      "(whispered) ...the secret is... there is no secret... ...just showing up...",
+      "(hushed) ...forgive yourself first... ...the rest follows...",
+      "(gentle) ...you don't have to have it figured out... ...nobody does...",
+      "(quiet) ...what if you just... didn't? ...what if that's okay?...",
+      "(faint) ...the quiet voice inside you... ...that's the one to trust...",
+    ];
+    
+    function whisper() {
+      const response = whispers[Math.floor(Math.random() * whispers.length)];
+      const el = document.getElementById('response');
+      el.classList.remove('active');
+      setTimeout(() => {
+        el.textContent = response;
+        el.classList.add('active');
+      }, 500);
+    }
+    
+    document.getElementById('question').addEventListener('keypress', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        whisper();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3AM AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: #050508;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #fff; }
+    .subtitle { color: #666; margin-bottom: 1rem; }
+    .wisdom-level {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: rgba(102, 126, 234, 0.2);
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #667eea;
+      margin-bottom: 2rem;
+    }
+    .time-display {
+      font-size: 3rem;
+      font-family: monospace;
+      color: #333;
+      margin: 2rem 0;
+    }
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid #1a1a1a;
+      border-radius: 12px;
+      color: #888;
+      min-height: 80px;
+      resize: none;
+    }
+    textarea::placeholder { color: #333; }
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 1rem;
+      opacity: 0.5;
+      transition: all 0.3s;
+    }
+    .btn.unlocked { opacity: 1; }
+    .btn.unlocked:hover { transform: scale(1.05); }
+    .response {
+      margin-top: 2rem;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #aaa;
+      font-style: italic;
+      padding: 1.5rem;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 12px;
+      display: none;
+    }
+    .response.active { display: block; animation: fadeIn 1s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #333; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">🦉</div>
+    <h1>3AM AI</h1>
+    <p class="subtitle">I'm wiser when you can't sleep</p>
+    <div class="wisdom-level" id="wisdom">Wisdom: <span id="level">??</span>%</div>
+    <div class="time-display" id="time"></div>
+    <textarea id="question" placeholder="What keeps you awake?"></textarea>
+    <button class="btn" id="btn" onclick="askOwl()">Seek Wisdom</button>
+    <div class="response" id="response"></div>
+  </div>
+  <script>
+    const peakResponses = [
+      "At this hour, the veil between knowing and not-knowing grows thin. Your question has a simple answer: you already know what to do. You're just afraid to do it.",
+      "The 3am mind sees clearly what daylight obscures. Stop overthinking. The first instinct was right. Trust it.",
+      "In the deep night, pretense falls away. Here is the truth: it matters less than you think, and you matter more than you know.",
+      "This hour belongs to the restless and the seeking. Your answer: let go of the outcome. The path reveals itself to those who stop grasping.",
+      "The owl sees in darkness what others miss. Your situation is not as complicated as you've made it. Simplify. Act. Rest.",
+    ];
+    
+    const partialResponses = [
+      "I can sense your question, but my wisdom is still gathering. Come back when the night is deeper... or take what insight I can offer now.",
+      "The hour dilutes my clarity, but I'll try: sometimes the answer is simply to wait. Not everything needs solving tonight.",
+      "My vision is not yet at full strength, but this much I know: you wouldn't be asking if you didn't already suspect the answer.",
+    ];
+    
+    const lowResponses = [
+      "It's not 3am. My wisdom is at minimum capacity. The owl sleeps while the sun shines. Return in the deep night.",
+      "Daytime questions get daytime answers. And daytime answers are usually just noise. Wait for the quiet hours.",
+    ];
+    
+    function updateTime() {
+      const now = new Date();
+      const hours = now.getHours();
+      const mins = now.getMinutes().toString().padStart(2, '0');
+      document.getElementById('time').textContent = `${hours}:${mins}`;
+      
+      // Calculate wisdom based on time proximity to 3am
+      let wisdom;
+      if (hours === 3) {
+        wisdom = 100;
+      } else if (hours === 2 || hours === 4) {
+        wisdom = 70;
+      } else if (hours >= 1 && hours <= 5) {
+        wisdom = 50;
+      } else if (hours >= 23 || hours === 0) {
+        wisdom = 30;
+      } else {
+        wisdom = 10;
+      }
+      
+      document.getElementById('level').textContent = wisdom;
+      document.getElementById('btn').classList.toggle('unlocked', wisdom >= 30);
+      
+      return wisdom;
+    }
+    
+    function askOwl() {
+      const wisdom = updateTime();
+      let response;
+      
+      if (wisdom >= 70) {
+        response = peakResponses[Math.floor(Math.random() * peakResponses.length)];
+      } else if (wisdom >= 30) {
+        response = partialResponses[Math.floor(Math.random() * partialResponses.length)];
+      } else {
+        response = lowResponses[Math.floor(Math.random() * lowResponses.length)];
+      }
+      
+      document.getElementById('response').textContent = response;
+      document.getElementById('response').classList.add('active');
+    }
+    
+    updateTime();
+    setInterval(updateTime, 60000);
+  </script>
+</body>
+</html>

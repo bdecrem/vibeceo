@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI designed for tea ceremony timing</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, #1a1812 0%, #0f0d0a 100%);
+      color: #d4c5a9;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 400px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; color: #a08060; margin-bottom: 0.5rem; }
+    .subtitle { color: #666; margin-bottom: 2rem; font-size: 0.95rem; }
+    .ceremony { background: rgba(160,128,96,0.1); border-radius: 16px; padding: 2rem; }
+    .step { font-size: 1.4rem; color: #d4c5a9; margin-bottom: 1rem; min-height: 60px; line-height: 1.5; }
+    .timer { font-size: 3rem; font-family: monospace; color: #a08060; margin: 1.5rem 0; }
+    .progress { width: 100%; height: 4px; background: #333; border-radius: 2px; overflow: hidden; margin-bottom: 1.5rem; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, #a08060, #d4c5a9); width: 0%; transition: width 0.1s linear; }
+    .btn {
+      background: none; border: 1px solid #a08060; color: #a08060;
+      padding: 0.8rem 2rem; font-size: 1rem; border-radius: 30px; cursor: pointer; transition: all 0.3s;
+    }
+    .btn:hover { background: rgba(160,128,96,0.2); }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .wisdom { color: #666; font-style: italic; margin-top: 2rem; font-size: 0.9rem; line-height: 1.6; }
+    .back-link { color: #444; text-decoration: none; font-size: 0.85rem; margin-top: 2rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">🍵</div>
+    <h1>Tea Ceremony</h1>
+    <p class="subtitle">Presence requires time. Let me guide you.</p>
+    <div class="ceremony">
+      <div class="step" id="step">Press begin when you're ready to be present.</div>
+      <div class="timer" id="timer">--:--</div>
+      <div class="progress"><div class="progress-bar" id="progress"></div></div>
+      <button class="btn" id="btn">Begin</button>
+    </div>
+    <p class="wisdom" id="wisdom"></p>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const steps = [
+      { text: "Heat the water. Not too hot — 80°C is patience.", duration: 8 },
+      { text: "Watch the steam rise. It carries thoughts away.", duration: 6 },
+      { text: "Warm the cup with a small pour. Discard it.", duration: 5 },
+      { text: "Add the leaves. One spoon. Intention matters more than measure.", duration: 4 },
+      { text: "Pour the water. Fill to stillness.", duration: 5 },
+      { text: "Wait. The leaves are opening. So are you.", duration: 15 },
+      { text: "Lift the cup. Feel its warmth in your palms.", duration: 4 },
+      { text: "Inhale the steam. Let aroma become memory.", duration: 5 },
+      { text: "Sip. Slowly. The first taste teaches.", duration: 8 },
+      { text: "The ceremony is complete. Presence was the practice.", duration: 0 },
+    ];
+    const wisdoms = [
+      "The tea doesn't care about your deadlines.",
+      "Ceremony is just attention, repeated.",
+      "Every cup is the first cup, if you let it be.",
+      "The pause between sips is where wisdom lives.",
+    ];
+    let currentStep = 0;
+    let timer = null;
+    function updateUI(text, time) {
+      document.getElementById('step').textContent = text;
+      document.getElementById('timer').textContent = time > 0 ? `${Math.floor(time/60)}:${(time%60).toString().padStart(2,'0')}` : '✓';
+    }
+    function runStep() {
+      if (currentStep >= steps.length) {
+        document.getElementById('btn').textContent = 'Begin Again';
+        document.getElementById('btn').disabled = false;
+        document.getElementById('wisdom').textContent = wisdoms[Math.floor(Math.random() * wisdoms.length)];
+        currentStep = 0;
+        return;
+      }
+      const step = steps[currentStep];
+      updateUI(step.text, step.duration);
+      document.getElementById('btn').disabled = true;
+      if (step.duration === 0) {
+        document.getElementById('progress').style.width = '100%';
+        setTimeout(() => runStep(), 2000);
+        currentStep++;
+        return;
+      }
+      let remaining = step.duration;
+      document.getElementById('progress').style.width = '0%';
+      timer = setInterval(() => {
+        remaining--;
+        updateUI(step.text, remaining);
+        document.getElementById('progress').style.width = ((step.duration - remaining) / step.duration * 100) + '%';
+        if (remaining <= 0) {
+          clearInterval(timer);
+          currentStep++;
+          setTimeout(() => runStep(), 500);
+        }
+      }, 1000);
+    }
+    document.getElementById('btn').addEventListener('click', () => {
+      if (timer) clearInterval(timer);
+      runStep();
+    });
+  </script>
+</body>
+</html>

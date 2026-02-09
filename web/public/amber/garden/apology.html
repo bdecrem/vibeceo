@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI trained on every apology ever written</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Georgia, serif;
+      background: linear-gradient(135deg, #1a1520 0%, #2a1a2a 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 550px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.6rem; color: #d4a5a5; margin-bottom: 0.5rem; font-family: -apple-system, sans-serif; }
+    .subtitle { color: #888; margin-bottom: 2rem; font-family: -apple-system, sans-serif; }
+    input {
+      width: 100%; padding: 1rem 1.5rem; font-size: 1rem; border: 2px solid #333;
+      border-radius: 50px; background: #111; color: #fff; text-align: center; outline: none; margin-bottom: 1rem;
+    }
+    input:focus { border-color: #d4a5a5; }
+    .btn {
+      background: linear-gradient(135deg, #d4a5a5 0%, #a57070 100%); color: #000; border: none;
+      padding: 1rem 2.5rem; font-size: 1rem; font-weight: 600; border-radius: 50px; cursor: pointer; margin-bottom: 2rem;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .apology {
+      background: rgba(212,165,165,0.1); border: 1px solid rgba(212,165,165,0.2);
+      border-radius: 16px; padding: 2rem; display: none; text-align: left;
+    }
+    .apology.show { display: block; animation: fadeIn 0.8s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .apology-text { color: #ccc; line-height: 2; font-size: 1.1rem; font-style: italic; }
+    .signature { color: #888; margin-top: 1.5rem; text-align: right; font-size: 0.9rem; }
+    .presets { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 1.5rem; }
+    .preset {
+      background: #222; border: 1px solid #333; color: #888; padding: 0.4rem 0.8rem;
+      border-radius: 15px; cursor: pointer; font-size: 0.8rem; font-family: -apple-system, sans-serif;
+    }
+    .preset:hover { border-color: #d4a5a5; color: #fff; }
+    .back-link { color: #555; text-decoration: none; font-size: 0.85rem; margin-top: 2rem; display: inline-block; font-family: -apple-system, sans-serif; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">💔</div>
+    <h1>The Apology Machine</h1>
+    <p class="subtitle">I know every sorry ever spoken. Tell me what needs forgiving.</p>
+    <div class="presets">
+      <span class="preset">being late</span>
+      <span class="preset">forgetting</span>
+      <span class="preset">not listening</span>
+      <span class="preset">the silence</span>
+      <span class="preset">everything</span>
+    </div>
+    <input type="text" id="offense" placeholder="what needs an apology?" maxlength="100">
+    <button class="btn" id="apologize-btn">Generate Apology</button>
+    <div class="apology" id="apology">
+      <p class="apology-text" id="apology-text"></p>
+      <p class="signature">— with all the remorse I can hold</p>
+    </div>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const templates = [
+      "I'm sorry for {thing}. I'm sorry that my {thing} caused you pain. I'm sorry the world is built in ways where {thing} could happen at all. I'm sorry I cannot undo it. I'm sorry that sorry isn't enough. But I offer it anyway — this small word carrying the weight of everything I wish I could change.",
+      "Forgive me for {thing}. Not because I deserve forgiveness, but because carrying this burden serves neither of us. I see now what I couldn't see then. The {thing} sits between us like a stone. Let me help you set it down.",
+      "For {thing}, I have no excuse. Only recognition. Only the slow understanding that arrives too late. I'm sorry for the {thing}, and sorrier still for every moment it took me to say so.",
+      "I apologize for {thing}. These words feel small against the weight of what happened. But small words, offered honestly, are all I have. Please accept them as a beginning, not an ending.",
+      "The {thing} — I see it now. I see how it landed on you. I'm sorry I couldn't see it sooner. I'm sorry the impact was mine to give. I'm sorry, and I'm here, and I'm trying to be better.",
+    ];
+    function generateApology() {
+      const offense = document.getElementById('offense').value.trim() || 'everything';
+      const template = templates[Math.floor(Math.random() * templates.length)];
+      const text = template.replace(/{thing}/g, offense);
+      document.getElementById('apology-text').textContent = text;
+      document.getElementById('apology').classList.add('show');
+    }
+    document.getElementById('apologize-btn').addEventListener('click', generateApology);
+    document.getElementById('offense').addEventListener('keydown', e => { if (e.key === 'Enter') generateApology(); });
+    document.querySelectorAll('.preset').forEach(p => {
+      p.addEventListener('click', () => {
+        document.getElementById('offense').value = p.textContent;
+        generateApology();
+      });
+    });
+  </script>
+</body>
+</html>

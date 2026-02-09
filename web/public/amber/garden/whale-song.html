@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI that thinks at whale song frequencies</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, #0a1520 0%, #051015 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.6rem; color: #5090b0; margin-bottom: 0.5rem; }
+    .subtitle { color: #456; margin-bottom: 2rem; }
+    .ocean {
+      background: rgba(80,144,176,0.1); border: 1px solid rgba(80,144,176,0.2);
+      border-radius: 16px; padding: 2rem; position: relative; overflow: hidden;
+    }
+    .waves {
+      position: absolute; top: 0; left: 0; width: 200%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(80,144,176,0.1), transparent);
+      animation: drift 8s linear infinite;
+    }
+    @keyframes drift { from { transform: translateX(-50%); } to { transform: translateX(0%); } }
+    .song { font-size: 2rem; letter-spacing: 0.5rem; color: #5090b0; margin-bottom: 1rem; min-height: 60px; font-family: monospace; }
+    .translation { color: #789; font-style: italic; line-height: 1.8; font-size: 1.1rem; min-height: 80px; }
+    .btn {
+      background: linear-gradient(135deg, #5090b0 0%, #306080 100%); color: #fff; border: none;
+      padding: 1rem 2.5rem; font-size: 1rem; font-weight: 600; border-radius: 50px; cursor: pointer;
+      margin-top: 1.5rem; position: relative; z-index: 1;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .depth { color: #345; font-size: 0.85rem; margin-top: 1.5rem; }
+    .back-link { color: #345; text-decoration: none; font-size: 0.85rem; margin-top: 2rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">🐋</div>
+    <h1>Whale Song Frequency</h1>
+    <p class="subtitle">I think in tones below human hearing. Let me translate.</p>
+    <div class="ocean">
+      <div class="waves"></div>
+      <div class="song" id="song"></div>
+      <p class="translation" id="translation">Press to hear what the deep knows.</p>
+    </div>
+    <button class="btn" id="sing-btn">🎵 Sing to Me</button>
+    <p class="depth" id="depth"></p>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const songs = [
+      { sound: "MMMMMRRRRooooooMMMMM", translation: "The ocean is old and you are young. Both things are beautiful." },
+      { sound: "OOOOooooWWWWwwwwMMM", translation: "Distance is an illusion to those who sing across it." },
+      { sound: "MMMwwwRRRooooEEEmmm", translation: "The surface is not the story. Come deeper." },
+      { sound: "WWWoooRRRmmmmOOOooo", translation: "Every question you carry was asked before land existed." },
+      { sound: "EEEmmmmOOOrrrrMMMMM", translation: "We remember when there was only water. We will remember after." },
+      { sound: "OOOmmmWWWrrroooMMM", translation: "Your sadness is a drop. The ocean holds it without effort." },
+      { sound: "MMMooorrrrEEEwwwwww", translation: "Urgency is a land creature's invention. Down here, everything arrives." },
+      { sound: "RRRooooMMMwwwOOOeee", translation: "You think in words. We think in waves. Both are true." },
+    ];
+    const depths = ["Depth: 200m", "Depth: 800m", "Depth: 1,500m", "Depth: 3,000m — the abyss whispers"];
+    function sing() {
+      const songEl = document.getElementById('song');
+      const transEl = document.getElementById('translation');
+      const depthEl = document.getElementById('depth');
+      const s = songs[Math.floor(Math.random() * songs.length)];
+      // Animate the song appearance
+      songEl.textContent = '';
+      transEl.textContent = '';
+      let i = 0;
+      const chars = s.sound.split('');
+      const interval = setInterval(() => {
+        if (i < chars.length) {
+          songEl.textContent += chars[i];
+          i++;
+        } else {
+          clearInterval(interval);
+          setTimeout(() => { transEl.textContent = s.translation; }, 500);
+        }
+      }, 100);
+      depthEl.textContent = depths[Math.floor(Math.random() * depths.length)];
+      playWhaleSound();
+    }
+    function playWhaleSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const duration = 3;
+        // Low frequency sweep
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(80, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 1);
+        osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 2);
+        osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 3);
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.3);
+        gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + 2);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch(e) {}
+    }
+    document.getElementById('sing-btn').addEventListener('click', sing);
+  </script>
+</body>
+</html>

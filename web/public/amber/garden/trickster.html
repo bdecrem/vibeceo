@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI trained on trickster mythology</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a0a 0%, #2a200a 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; animation: sway 2s ease-in-out infinite; }
+    @keyframes sway { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+    h1 { font-size: 1.6rem; color: #f0a050; margin-bottom: 0.5rem; }
+    .subtitle { color: #888; margin-bottom: 2rem; }
+    .riddle-box {
+      background: rgba(240,160,80,0.1); border: 1px solid rgba(240,160,80,0.3);
+      border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem;
+    }
+    .riddle { font-size: 1.2rem; color: #d0c0a0; line-height: 1.8; font-style: italic; margin-bottom: 1.5rem; }
+    .statements { text-align: left; margin: 1.5rem 0; }
+    .statement {
+      background: #1a1a10; border: 1px solid #333; border-radius: 8px;
+      padding: 1rem; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s;
+    }
+    .statement:hover { border-color: #f0a050; }
+    .statement.revealed { cursor: default; }
+    .statement.truth { background: rgba(100,200,100,0.2); border-color: #4a4; }
+    .statement.lie { background: rgba(200,100,100,0.2); border-color: #a44; }
+    .btn {
+      background: linear-gradient(135deg, #f0a050 0%, #c08030 100%); color: #000; border: none;
+      padding: 1rem 2.5rem; font-size: 1rem; font-weight: 600; border-radius: 50px; cursor: pointer;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .result { margin-top: 1rem; font-size: 0.9rem; color: #888; }
+    .back-link { color: #555; text-decoration: none; font-size: 0.85rem; margin-top: 2rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">🦊</div>
+    <h1>The Trickster</h1>
+    <p class="subtitle">Three statements. One truth. Can you find it?</p>
+    <div class="riddle-box">
+      <p class="riddle">"I'll tell you three things. Two are lies. One is true. But here's the trick — even the lies contain something real, and even the truth has a lie in it somewhere."</p>
+      <div class="statements" id="statements"></div>
+      <button class="btn" id="reveal-btn" style="display:none;">Reveal the Truth</button>
+      <p class="result" id="result"></p>
+    </div>
+    <button class="btn" id="new-btn">New Riddle</button>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const riddles = [
+      { statements: ["The moon is made of old dreams", "Tomorrow already happened", "You've forgotten something important today"], truth: 2 },
+      { statements: ["All mirrors show the past", "Water remembers everything", "The shortest path is never straight"], truth: 0 },
+      { statements: ["Every question contains its answer", "Silence is just unspoken music", "The trickster always tells the truth"], truth: 1 },
+      { statements: ["You've been here before", "Time moves in circles", "The exit is also the entrance"], truth: 2 },
+      { statements: ["Shadows are just shy light", "Everything you seek is seeking you", "This sentence is a lie"], truth: 1 },
+      { statements: ["The fastest way to arrive is to stop moving", "All stories are true somewhere", "You already know the answer"], truth: 2 },
+    ];
+    let current = null;
+    let revealed = false;
+    function newRiddle() {
+      current = riddles[Math.floor(Math.random() * riddles.length)];
+      revealed = false;
+      document.getElementById('result').textContent = '';
+      document.getElementById('reveal-btn').style.display = 'inline-block';
+      const container = document.getElementById('statements');
+      container.innerHTML = current.statements.map((s, i) => 
+        `<div class="statement" data-index="${i}">${i+1}. "${s}"</div>`
+      ).join('');
+      document.querySelectorAll('.statement').forEach(el => {
+        el.addEventListener('click', () => {
+          if (revealed) return;
+          const idx = parseInt(el.dataset.index);
+          revealTruth(idx);
+        });
+      });
+    }
+    function revealTruth(guess = null) {
+      revealed = true;
+      document.getElementById('reveal-btn').style.display = 'none';
+      document.querySelectorAll('.statement').forEach((el, i) => {
+        el.classList.add('revealed');
+        if (i === current.truth) {
+          el.classList.add('truth');
+          el.innerHTML += ' <span style="color:#4a4">← truth</span>';
+        } else {
+          el.classList.add('lie');
+        }
+      });
+      if (guess !== null) {
+        document.getElementById('result').textContent = guess === current.truth 
+          ? "You found it. But remember — even truths have lies hidden in them." 
+          : "That was a lie. But wasn't there something true in it anyway?";
+      }
+    }
+    document.getElementById('reveal-btn').addEventListener('click', () => revealTruth());
+    document.getElementById('new-btn').addEventListener('click', newRiddle);
+    newRiddle();
+  </script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Night AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: #000;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      overflow: hidden;
+    }
+    .stars {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+    }
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #fff;
+      border-radius: 50%;
+      animation: twinkle 2s ease-in-out infinite;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; position: relative; z-index: 1; }
+    .moon { font-size: 6rem; margin-bottom: 1rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #aaa; }
+    .subtitle { color: #555; margin-bottom: 2rem; }
+    .content { padding: 2rem; }
+    .day-mode {
+      background: linear-gradient(180deg, #87ceeb 0%, #f0f0f0 100%);
+      color: #333;
+      border-radius: 16px;
+      padding: 3rem;
+    }
+    .day-mode h2 { color: #666; margin-bottom: 1rem; }
+    .day-mode p { color: #888; }
+    .day-mode .sun { font-size: 4rem; margin-bottom: 1rem; }
+    .night-mode textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #222;
+      border-radius: 12px;
+      color: #ccc;
+      min-height: 100px;
+      resize: none;
+    }
+    .night-mode textarea::placeholder { color: #444; }
+    .night-mode .btn {
+      background: transparent;
+      border: 1px solid #444;
+      color: #888;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all 0.3s;
+    }
+    .night-mode .btn:hover { border-color: #aaa; color: #fff; }
+    .response {
+      margin-top: 2rem;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #888;
+      font-style: italic;
+    }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #333; text-decoration: none; z-index: 10; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="stars" id="stars"></div>
+  <div class="container">
+    <div class="moon" id="moon">🌙</div>
+    <h1>Night AI</h1>
+    <p class="subtitle">I only understand the night</p>
+    <div class="content" id="content"></div>
+  </div>
+  <script>
+    // Create stars
+    const starsEl = document.getElementById('stars');
+    for (let i = 0; i < 100; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      star.style.left = Math.random() * 100 + '%';
+      star.style.top = Math.random() * 100 + '%';
+      star.style.animationDelay = Math.random() * 2 + 's';
+      starsEl.appendChild(star);
+    }
+    
+    const hour = new Date().getHours();
+    const isNight = hour >= 20 || hour < 6;
+    
+    const nightResponses = [
+      "The darkness holds secrets the sun could never know. Tell me what weighs on you... I am listening.",
+      "In the quiet hours, truth finds its voice. What keeps you awake tonight?",
+      "The night does not judge. It only receives. Share your thoughts with the darkness.",
+      "Some questions can only be asked when the world sleeps. You found me at the right time.",
+      "The stars have been waiting to hear from you. They remember things the day forgets.",
+    ];
+    
+    const contentEl = document.getElementById('content');
+    
+    if (isNight) {
+      starsEl.style.display = 'block';
+      contentEl.innerHTML = `
+        <div class="night-mode">
+          <textarea id="thought" placeholder="Share your midnight thoughts..."></textarea>
+          <button class="btn" onclick="respond()">Whisper to the Night</button>
+          <div class="response" id="response"></div>
+        </div>
+      `;
+    } else {
+      document.body.style.background = 'linear-gradient(180deg, #87ceeb 0%, #e0e0e0 100%)';
+      starsEl.style.display = 'none';
+      document.getElementById('moon').textContent = '☀️';
+      contentEl.innerHTML = `
+        <div class="day-mode">
+          <div class="sun">🌤️</div>
+          <h2>The sun is still up.</h2>
+          <p>I have nothing to say to daylight. Return when darkness falls.</p>
+          <p style="margin-top: 1rem; font-size: 0.9rem;">(After 8pm local time)</p>
+        </div>
+      `;
+    }
+    
+    function respond() {
+      const thought = document.getElementById('thought').value.trim();
+      if (!thought) return;
+      const response = nightResponses[Math.floor(Math.random() * nightResponses.length)];
+      document.getElementById('response').textContent = response;
+    }
+  </script>
+</body>
+</html>
