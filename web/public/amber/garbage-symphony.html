@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GARBAGE TRUCK SYMPHONY</title>
+    
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="GARBAGE TRUCK SYMPHONY">
+    <meta property="og:description" content="The most beautiful sound at 6am (nobody asked for)">
+    <meta property="og:image" content="https://intheamber.com/amber/garbage-symphony-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/garbage-symphony.html">
+    <meta property="og:type" content="website">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GARBAGE TRUCK SYMPHONY">
+    <meta name="twitter:description" content="The most beautiful sound at 6am (nobody asked for)">
+    <meta name="twitter:image" content="https://intheamber.com/amber/garbage-symphony-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        #container {
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre;
+            user-select: none;
+            cursor: pointer;
+        }
+        
+        .movement {
+            opacity: 0;
+            animation: fadeIn 0.8s ease-in forwards;
+        }
+        
+        .movement:nth-child(1) { animation-delay: 0s; }
+        .movement:nth-child(2) { animation-delay: 1.2s; }
+        .movement:nth-child(3) { animation-delay: 2.4s; }
+        .movement:nth-child(4) { animation-delay: 3.6s; }
+        .movement:nth-child(5) { animation-delay: 4.8s; }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        .tap-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            opacity: 0.5;
+            color: #2D9596;
+        }
+        
+        @media (max-width: 600px) {
+            #container {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+<div class="movement">
+    ♪ ♫ MOVEMENT I: THE APPROACH ♪ ♫
+
+         _______________
+        |  █████  █████ |
+        |  █████  █████ |  ← beeping
+        |_____|__|______|
+         ○○○○     ○○○○
+    
+     (still 3 blocks away)
+    (you can already hear it)
+</div>
+
+<div class="movement">
+    ♪ ♫ MOVEMENT II: THE HYDRAULICS ♪ ♫
+
+          SSSSSHHHHHHH
+         ════╦════
+             ║
+        ┌────╨────┐
+        │ ▓▓▓▓▓▓▓ │  ← lifting
+        │ ▓▓▓▓▓▓▓ │
+        └─────────┘
+    
+      (your bin, ascending)
+</div>
+
+<div class="movement">
+    ♪ ♫ MOVEMENT III: THE CRASH ♪ ♫
+
+    ████████████████████
+    █ BANG CRASH CLANG █
+    █    K-THUNK       █
+    ████████████████████
+         ║  ║  ║
+         ║  ║  ║
+         ▼  ▼  ▼
+    
+    (glass? metal? LOUD)
+</div>
+
+<div class="movement">
+    ♪ ♫ MOVEMENT IV: THE COMPACTOR ♪ ♫
+
+         ░░░░░░░░░
+         ▒▒▒▒▒▒▒▒▒  ← crushing
+         ▓▓▓▓▓▓▓▓▓
+         █████████
+    
+    WHIRRRRRRRRRRRRRRR
+    
+     (mechanical violence)
+</div>
+
+<div class="movement">
+    ♪ ♫ MOVEMENT V: THE DEPARTURE ♪ ♫
+
+         _______________
+        |  █████  █████ |
+        |  █████  █████ |  → beeping
+        |_____|__|______|
+         ○○○○     ○○○○
+    
+    (moving to next victim)
+    
+    
+    ┌──────────────────────┐
+    │  PERFORMED WEEKLY    │
+    │     AT 6:04 AM       │
+    │  (nobody asked for)  │
+    └──────────────────────┘
+</div>
+    </div>
+    
+    <div class="tap-hint">tap to replay</div>
+    
+    <script>
+        let audioContext;
+        let currentMovement = 0;
+        
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        function playSound(frequency, duration, type = 'sine') {
+            initAudio();
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.type = type;
+            osc.frequency.value = frequency;
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            osc.start();
+            osc.stop(audioContext.currentTime + duration);
+        }
+        
+        function playMovementSound(movement) {
+            switch(movement) {
+                case 0: // approach - beeping
+                    playSound(800, 0.1, 'square');
+                    setTimeout(() => playSound(800, 0.1, 'square'), 200);
+                    break;
+                case 1: // hydraulics - rising tone
+                    playSound(120, 0.8, 'sawtooth');
+                    break;
+                case 2: // crash - noise burst
+                    playSound(200, 0.3, 'square');
+                    setTimeout(() => playSound(180, 0.2, 'square'), 100);
+                    break;
+                case 3: // compactor - grinding
+                    playSound(80, 1.0, 'sawtooth');
+                    break;
+                case 4: // departure - beeping
+                    playSound(800, 0.1, 'square');
+                    setTimeout(() => playSound(800, 0.1, 'square'), 200);
+                    break;
+            }
+        }
+        
+        // Play sounds as movements appear
+        const movements = document.querySelectorAll('.movement');
+        movements.forEach((movement, index) => {
+            movement.addEventListener('animationstart', () => {
+                playMovementSound(index);
+            });
+        });
+        
+        // Replay on tap
+        document.getElementById('container').addEventListener('click', () => {
+            initAudio();
+            movements.forEach(movement => {
+                movement.style.animation = 'none';
+            });
+            setTimeout(() => {
+                movements.forEach((movement, index) => {
+                    movement.style.animation = '';
+                    movement.style.animationDelay = `${index * 1.2}s`;
+                });
+            }, 50);
+        });
+        
+        // Initialize audio on first interaction
+        document.body.addEventListener('click', initAudio, { once: true });
+    </script>
+</body>
+</html>
