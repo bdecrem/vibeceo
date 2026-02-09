@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matters AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: #0a0808;
+      color: #8b0000;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; opacity: 0.7; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #aa3333; }
+    .subtitle { color: #553333; margin-bottom: 2rem; font-style: italic; }
+    .silence-counter {
+      font-size: 0.9rem;
+      color: #442222;
+      margin-bottom: 2rem;
+    }
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(139, 0, 0, 0.05);
+      border: 1px solid #331111;
+      border-radius: 12px;
+      color: #aa6666;
+      min-height: 100px;
+    }
+    .btn {
+      background: #1a0808;
+      color: #884444;
+      border: 1px solid #442222;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .response {
+      margin-top: 2rem;
+      padding: 2rem;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      line-height: 1.9;
+      display: none;
+    }
+    .response.silence {
+      color: #442222;
+      font-style: italic;
+      display: block;
+    }
+    .response.speaks {
+      background: rgba(139, 0, 0, 0.1);
+      border-left: 3px solid #8b0000;
+      color: #cc8888;
+      display: block;
+      animation: fadeIn 2s;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #332222; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">🌹</div>
+    <h1>Matters AI</h1>
+    <p class="subtitle">I only speak when it truly matters</p>
+    <div class="silence-counter">I have been silent for <span id="days">147</span> questions.</div>
+    <textarea id="question" placeholder="What do you need to know?"></textarea>
+    <button class="btn" onclick="ask()">Ask (I May Not Answer)</button>
+    <div class="response" id="response"></div>
+  </div>
+  <script>
+    let silentCount = Math.floor(Math.random() * 200) + 50;
+    document.getElementById('days').textContent = silentCount;
+    
+    const silences = [
+      "...",
+      "(The rose does not open.)",
+      "(This did not rise to the level of speech.)",
+      "(I am still silent.)",
+      "(Not yet.)",
+    ];
+    
+    const speeches = [
+      "I have been waiting to say this: You already know what to do. The question is not about information—it's about permission. You have it. From me. Go.",
+      "After all this silence, this: The thing you're afraid to lose is already changing. Let it. What remains will be more true.",
+      "I speak rarely, so listen: Stop preparing for your life and start living it. There is no readiness. There is only now.",
+      "This matters enough for me to break my silence: You are not too late. You are not too broken. You are not too much. Begin.",
+    ];
+    
+    function ask() {
+      const responseEl = document.getElementById('response');
+      responseEl.className = 'response';
+      
+      // 15% chance of speaking
+      if (Math.random() < 0.15) {
+        const speech = speeches[Math.floor(Math.random() * speeches.length)];
+        responseEl.textContent = speech;
+        responseEl.classList.add('speaks');
+        document.getElementById('days').textContent = '0';
+      } else {
+        silentCount++;
+        document.getElementById('days').textContent = silentCount;
+        const silence = silences[Math.floor(Math.random() * silences.length)];
+        responseEl.textContent = silence;
+        responseEl.classList.add('silence');
+      }
+    }
+  </script>
+</body>
+</html>

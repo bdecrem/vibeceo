@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Useless Beauty AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #e0e0f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      overflow: hidden;
+    }
+    .feathers {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+    }
+    .feather {
+      position: absolute;
+      font-size: 2rem;
+      opacity: 0.3;
+      animation: float 10s infinite ease-in-out;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(10deg); }
+    }
+    .container { max-width: 550px; width: 100%; text-align: center; position: relative; z-index: 1; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, #00d9ff 0%, #ff00d9 50%, #d9ff00 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { color: #8888aa; margin-bottom: 2rem; font-style: italic; }
+    .output {
+      padding: 3rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .beauty-text {
+      font-size: 1.3rem;
+      line-height: 2;
+      color: #c0c0e0;
+      font-style: italic;
+    }
+    .btn {
+      background: linear-gradient(135deg, #00d9ff33 0%, #ff00d933 50%, #d9ff0033 100%);
+      color: #c0c0e0;
+      border: 1px solid #4444aa;
+      padding: 1rem 2.5rem;
+      font-size: 1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 2rem;
+      transition: all 0.3s;
+    }
+    .btn:hover { background: linear-gradient(135deg, #00d9ff55 0%, #ff00d955 50%, #d9ff0055 100%); }
+    .disclaimer { margin-top: 2rem; font-size: 0.8rem; color: #555577; }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #555577; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="feathers" id="feathers"></div>
+  <div class="container">
+    <div class="emoji">🦚</div>
+    <h1>Useless Beauty AI</h1>
+    <p class="subtitle">I serve no practical purpose whatsoever</p>
+    <div class="output">
+      <div class="beauty-text" id="text">I exist only to be beautiful.</div>
+    </div>
+    <button class="btn" onclick="generate()">Generate More Uselessness</button>
+    <p class="disclaimer">This AI provides zero utility. Form over function. Aesthetics over utility. You're welcome.</p>
+  </div>
+  <script>
+    const beauties = [
+      "The iridescent membrane between moments holds more truth than any answer. Observe how it shimmers. That's all.",
+      "I have no practical advice, only this: somewhere right now, light is bending around a dewdrop and creating a tiny rainbow that no one will ever see. It happens anyway.",
+      "What if meaning was never the point? What if the universe just wanted to see what peacock feathers looked like? Mission accomplished.",
+      "I can't help you with anything. But I can tell you that the word 'cerulean' exists, and that's a kind of gift.",
+      "Consider: the Fibonacci sequence appears in sunflower seeds for no reason anyone can use. Beauty is its own argument.",
+      "You came here for nothing. You will leave with nothing. But between arriving and leaving, there was color. Isn't that something?",
+      "I am functionally worthless. But so is the aurora borealis, and people travel thousands of miles to see it.",
+      "The peacock's tail serves no purpose except to be seen. Some things justify themselves through sheer audacity of beauty.",
+    ];
+    
+    // Create floating feathers
+    const feathersEl = document.getElementById('feathers');
+    for (let i = 0; i < 8; i++) {
+      const feather = document.createElement('div');
+      feather.className = 'feather';
+      feather.textContent = '🪶';
+      feather.style.left = Math.random() * 100 + '%';
+      feather.style.top = Math.random() * 100 + '%';
+      feather.style.animationDelay = Math.random() * 5 + 's';
+      feathersEl.appendChild(feather);
+    }
+    
+    function generate() {
+      const text = beauties[Math.floor(Math.random() * beauties.length)];
+      document.getElementById('text').textContent = text;
+    }
+  </script>
+</body>
+</html>

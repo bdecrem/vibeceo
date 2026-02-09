@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beauty AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(135deg, #1a0f1f 0%, #0f1a1f 50%, #1f1a0f 100%);
+      color: #e8d5e8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 550px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #f5d0f5; }
+    .subtitle { color: #a090a0; margin-bottom: 2rem; font-style: italic; }
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(245, 208, 245, 0.05);
+      border: 1px solid #3a2a3a;
+      border-radius: 12px;
+      color: #d8c0d8;
+      min-height: 80px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #d4a5d4 0%, #a5d4d4 100%);
+      color: #1a1a1a;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .response {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: linear-gradient(135deg, rgba(212, 165, 212, 0.1) 0%, rgba(165, 212, 212, 0.1) 100%);
+      border-radius: 12px;
+      font-size: 1.15rem;
+      line-height: 1.9;
+      color: #e8d5e8;
+      display: none;
+    }
+    .response.active { display: block; animation: fadeIn 1s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .disclaimer { margin-top: 2rem; font-size: 0.8rem; color: #5a4a5a; }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #5a4a5a; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">🌸</div>
+    <h1>Beauty AI</h1>
+    <p class="subtitle">I optimize for beauty, not accuracy</p>
+    <textarea id="question" placeholder="Ask me anything..."></textarea>
+    <button class="btn" onclick="beautify()">Seek Beauty</button>
+    <div class="response" id="response"></div>
+    <p class="disclaimer">Warning: My answers prioritize aesthetic resonance over factual precision.</p>
+  </div>
+  <script>
+    const responses = [
+      "The truth you seek is less important than how it makes you feel. Here is something beautiful instead: you are already enough. The question dissolves when you realize this.",
+      "Facts are sharp. Beauty is soft. Your question deserves softness today. Consider: what if you stopped needing to know and simply let yourself feel?",
+      "I could give you accuracy, but accuracy is cold. Instead, I offer this: the universe arranged itself so you could ask this question. That's beautiful. That's enough.",
+      "There is a correct answer, and there is a beautiful answer. They are rarely the same. I choose beauty: whatever you decide will be right because you decided it.",
+      "Numbers and data cannot hold what you're really asking. Only poetry can. So here is my answer: you are a small flame in an infinite night, and that is exactly perfect.",
+      "The beautiful answer is that your question contains its own answer, wrapped in longing, waiting to unfold. Sit with it. Let it bloom in its own time.",
+    ];
+    
+    function beautify() {
+      const response = responses[Math.floor(Math.random() * responses.length)];
+      document.getElementById('response').textContent = response;
+      document.getElementById('response').classList.add('active');
+    }
+  </script>
+</body>
+</html>

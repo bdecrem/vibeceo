@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>High Stakes AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #0a0505;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; animation: flicker 2s infinite; }
+    @keyframes flicker { 0%, 90%, 100% { opacity: 1; } 95% { opacity: 0.5; } }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #ff4444; }
+    .subtitle { color: #884444; margin-bottom: 2rem; }
+    .question-box {
+      background: rgba(255, 68, 68, 0.1);
+      border: 2px solid #441111;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .question-text { font-size: 1.1rem; color: #cc8888; margin-bottom: 1rem; }
+    .stakes-check {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: left;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #aa6666;
+      font-size: 0.9rem;
+    }
+    .check-item input { accent-color: #ff4444; }
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      background: rgba(255, 68, 68, 0.05);
+      border: 1px solid #331111;
+      border-radius: 12px;
+      color: #cc8888;
+      min-height: 80px;
+      margin-top: 1rem;
+    }
+    .btn {
+      background: #441111;
+      color: #cc8888;
+      border: 1px solid #662222;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: not-allowed;
+      margin-top: 1rem;
+      opacity: 0.5;
+      transition: all 0.3s;
+    }
+    .btn.unlocked {
+      cursor: pointer;
+      opacity: 1;
+      background: linear-gradient(135deg, #882222 0%, #661111 100%);
+    }
+    .btn.unlocked:hover { background: #aa2222; }
+    .response {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(255, 68, 68, 0.1);
+      border-radius: 12px;
+      border-left: 3px solid #ff4444;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      text-align: left;
+      display: none;
+    }
+    .response.active { display: block; animation: fadeIn 0.5s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #553333; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">🔥</div>
+    <h1>High Stakes AI</h1>
+    <p class="subtitle">I only help when it truly matters</p>
+    <div class="question-box">
+      <div class="question-text">Before I engage, confirm this is serious:</div>
+      <div class="stakes-check">
+        <label class="check-item"><input type="checkbox" onchange="checkStakes()"> This matters to my future</label>
+        <label class="check-item"><input type="checkbox" onchange="checkStakes()"> I've already tried easy solutions</label>
+        <label class="check-item"><input type="checkbox" onchange="checkStakes()"> The outcome will significantly affect me</label>
+      </div>
+    </div>
+    <textarea id="situation" placeholder="What's at stake?" disabled></textarea>
+    <button class="btn" id="btn" onclick="engage()">I Don't Help With Small Things</button>
+    <div class="response" id="response"></div>
+  </div>
+  <script>
+    const responses = [
+      "Good. This matters. Here's what you need to hear: the thing you're afraid to do is probably the right thing to do. Fear is not a stop sign—it's a marker of importance. Act anyway.",
+      "Stakes confirmed. My advice is simple and hard: stop preparing and start. The moment of readiness you're waiting for doesn't exist. Move now, adjust later.",
+      "When it matters this much, overthinking becomes the enemy. Your instincts have been trying to tell you something. Listen to the version of yourself that doesn't doubt.",
+      "High stakes deserve high commitment. Whatever you're hedging on—stop hedging. Go all in or walk away. The middle ground is where things go to die slowly.",
+      "I reserve my wisdom for moments like this. Here it is: you are more capable than you believe, and this situation, while serious, is not beyond you. Trust your preparation. Act.",
+    ];
+    
+    function checkStakes() {
+      const boxes = document.querySelectorAll('input[type="checkbox"]');
+      const checked = [...boxes].filter(b => b.checked).length;
+      const btn = document.getElementById('btn');
+      const textarea = document.getElementById('situation');
+      
+      if (checked >= 2) {
+        btn.classList.add('unlocked');
+        btn.textContent = 'Seek Guidance';
+        textarea.disabled = false;
+      } else {
+        btn.classList.remove('unlocked');
+        btn.textContent = 'I Don\'t Help With Small Things';
+        textarea.disabled = true;
+      }
+    }
+    
+    function engage() {
+      const btn = document.getElementById('btn');
+      if (!btn.classList.contains('unlocked')) return;
+      
+      const response = responses[Math.floor(Math.random() * responses.length)];
+      document.getElementById('response').textContent = response;
+      document.getElementById('response').classList.add('active');
+    }
+  </script>
+</body>
+</html>

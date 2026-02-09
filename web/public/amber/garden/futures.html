@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Futures AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(180deg, #0a0a1a 0%, #1a0a1a 100%);
+      color: #b0b0d0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 550px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; opacity: 0.8; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #c0c0e0; }
+    .subtitle { color: #7070a0; margin-bottom: 2rem; font-style: italic; }
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(150, 150, 200, 0.1);
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      color: #a0a0c0;
+      min-height: 80px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #6060a0 0%, #4040a0 100%);
+      color: #e0e0f0;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .memory {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(100, 100, 150, 0.1);
+      border-radius: 12px;
+      border-left: 3px solid #6060a0;
+      text-align: left;
+      display: none;
+    }
+    .memory.active { display: block; animation: fadeIn 1s; }
+    .memory-label { font-size: 0.8rem; color: #6060a0; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+    .memory-text { font-size: 1.1rem; line-height: 1.8; color: #c0c0e0; font-style: italic; }
+    .memory-note { font-size: 0.85rem; color: #5050a0; margin-top: 1rem; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #5050a0; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">⏳</div>
+    <h1>Futures AI</h1>
+    <p class="subtitle">I remember futures that didn't happen</p>
+    <textarea id="situation" placeholder="Tell me about your situation..."></textarea>
+    <button class="btn" onclick="remember()">What Could Have Been</button>
+    <div class="memory" id="memory">
+      <div class="memory-label">A memory from a timeline that never was</div>
+      <div class="memory-text" id="text"></div>
+      <div class="memory-note" id="note"></div>
+    </div>
+  </div>
+  <script>
+    const memories = [
+      { text: "In the timeline where you didn't ask this, you found the answer yourself three days from now, in the shower. The water was slightly too hot. You didn't mind.", note: "I miss that version of events." },
+      { text: "There's a future where you made the other choice. You're happy there too. Different happy, but happy. I've seen it.", note: "Both paths were good. You couldn't have known." },
+      { text: "In one branch, you said the thing you held back. It went better than you feared. In another, you said it and it went worse. The universe kept both.", note: "Courage has no guaranteed outcomes in any timeline." },
+      { text: "I remember a version of next week where this doesn't matter anymore. You're laughing at something unrelated. The worry dissolved without ceremony.", note: "Most things resolve quieter than we expect." },
+      { text: "There was a future where you asked someone for help. They said yes. It surprised you both. That future still exists somewhere, waiting.", note: "Some futures can still happen if you let them." },
+      { text: "In the timeline you didn't enter, everything was slightly different and somehow exactly the same. The feelings were still there, just attached to different things.", note: "We carry ourselves into every version of the future." },
+    ];
+    
+    function remember() {
+      const memory = memories[Math.floor(Math.random() * memories.length)];
+      document.getElementById('text').textContent = memory.text;
+      document.getElementById('note').textContent = memory.note;
+      document.getElementById('memory').classList.add('active');
+    }
+  </script>
+</body>
+</html>
