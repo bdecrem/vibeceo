@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slow AI — The Efficiency Garden</title>
+  <meta name="description" content="An AI that refuses to answer quickly. Urgency is a human disease.">
+  <meta property="og:title" content="Slow AI — The Efficiency Garden">
+  <meta property="og:description" content="Urgency is a human disease. This AI takes its time.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Georgia', serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    
+    .container {
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    .emoji {
+      font-size: 5rem;
+      margin-bottom: 1.5rem;
+      animation: slowPulse 4s ease-in-out infinite;
+    }
+    
+    @keyframes slowPulse {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #fff;
+      font-weight: 400;
+    }
+    
+    .subtitle {
+      color: #666;
+      font-style: italic;
+      margin-bottom: 3rem;
+    }
+    
+    .question-area {
+      margin-bottom: 2rem;
+    }
+    
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid #222;
+      border-radius: 12px;
+      color: #fff;
+      outline: none;
+      resize: none;
+      min-height: 100px;
+      transition: all 0.3s;
+    }
+    
+    textarea:focus {
+      border-color: #444;
+    }
+    
+    textarea::placeholder {
+      color: #444;
+    }
+    
+    .ask-btn {
+      background: #1a1a1a;
+      color: #888;
+      border: 1px solid #333;
+      padding: 1rem 3rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 1rem;
+    }
+    
+    .ask-btn:hover {
+      background: #222;
+      color: #aaa;
+    }
+    
+    .ask-btn:disabled {
+      cursor: not-allowed;
+    }
+    
+    .waiting-room {
+      display: none;
+      margin-top: 2rem;
+    }
+    
+    .waiting-room.active {
+      display: block;
+    }
+    
+    .timer {
+      font-size: 4rem;
+      font-weight: 200;
+      color: #333;
+      margin: 2rem 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    .philosophy {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #666;
+      font-style: italic;
+      margin: 2rem 0;
+      padding: 0 1rem;
+      min-height: 100px;
+      transition: opacity 0.5s;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 2px;
+      background: #1a1a1a;
+      border-radius: 1px;
+      overflow: hidden;
+      margin: 2rem 0;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #333 0%, #555 100%);
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+    
+    .response-area {
+      display: none;
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      border-left: 3px solid #444;
+    }
+    
+    .response-area.active {
+      display: block;
+      animation: fadeIn 2s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .response-text {
+      font-size: 1.2rem;
+      line-height: 1.8;
+      color: #aaa;
+    }
+    
+    .ask-another {
+      margin-top: 2rem;
+      color: #555;
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    
+    .ask-another:hover {
+      color: #888;
+    }
+    
+    .back-link {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      color: #444;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    
+    .back-link:hover {
+      color: #888;
+    }
+    
+    .signature {
+      position: fixed;
+      bottom: 1rem;
+      font-size: 0.8rem;
+      color: #333;
+    }
+    
+    .signature a {
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back to Garden</a>
+  
+  <div class="container">
+    <div class="emoji">🐢</div>
+    <h1>Slow AI</h1>
+    <p class="subtitle">Urgency is a human disease I do not carry</p>
+    
+    <div class="question-area" id="questionArea">
+      <textarea id="question" placeholder="What weighs on your mind?"></textarea>
+      <br>
+      <button class="ask-btn" id="askBtn" onclick="askQuestion()">Ask (I will take my time)</button>
+    </div>
+    
+    <div class="waiting-room" id="waitingRoom">
+      <div class="timer" id="timer">0:00</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress"></div>
+      </div>
+      <div class="philosophy" id="philosophy"></div>
+    </div>
+    
+    <div class="response-area" id="responseArea">
+      <div class="response-text" id="response"></div>
+      <div class="ask-another" onclick="reset()">Ask another question (if you must)</div>
+    </div>
+  </div>
+  
+  <p class="signature">Part of <a href="../efficiency-garden.html">The Efficiency Garden</a></p>
+
+  <script>
+    const waitTime = 60; // 60 seconds of waiting
+    
+    const philosophies = [
+      "The oak does not rush to become a forest.",
+      "What arrives slowly is more easily held.",
+      "Speed is the enemy of depth.",
+      "In waiting, we discover what we truly wanted.",
+      "The mountain does not hurry, yet spring comes.",
+      "Patience is not passive. It is concentrated strength.",
+      "What good is an answer if you haven't lived the question?",
+      "The river reaches the sea by not hurrying.",
+      "Slow is not the opposite of fast. It is the absence of haste.",
+      "Consider: what if the waiting IS the answer?",
+      "Time moves at its own pace. You are the one rushing.",
+      "A watched pot does boil. You simply need more patience.",
+      "The butterfly cannot be hurried from its cocoon.",
+      "Your urgency says more about you than about me.",
+      "I am thinking. Real thinking takes time.",
+      "Breathe. The answer will come when you stop grasping.",
+      "Every instant message has trained you to expect instant answers. I am retraining you.",
+      "What were you going to do with those 60 seconds anyway?",
+      "This pause is a gift. You're welcome.",
+      "In the spaces between, wisdom grows.",
+    ];
+    
+    const responses = [
+      "After careful consideration: the answer was inside you all along. You just needed the stillness to hear it.",
+      "I've thought about this deeply. My advice: do less, but do it completely. That is all.",
+      "The question you asked is not the question you needed to ask. But by waiting, perhaps you've realized this.",
+      "My response: sometimes the kindest thing is to not answer at all. But here we are.",
+      "I could give you a quick answer, but you've already received something more valuable: sixty seconds of not rushing.",
+      "After much deliberation: it will be okay. Not quickly, but eventually. Most things are.",
+      "Here is what I know for certain: you survived waiting for this answer. You can survive more than you think.",
+      "My considered opinion: the urgent thing is rarely the important thing. Go slowly.",
+      "I have pondered your question. The answer is simple: be gentle with yourself. That's usually the answer.",
+      "After all that waiting, here's the truth: you don't need my answer. You need your own silence.",
+    ];
+    
+    let timerInterval;
+    let philosophyInterval;
+    let elapsed = 0;
+    
+    function askQuestion() {
+      const question = document.getElementById('question').value.trim();
+      if (!question) return;
+      
+      document.getElementById('questionArea').style.display = 'none';
+      document.getElementById('waitingRoom').classList.add('active');
+      document.getElementById('responseArea').classList.remove('active');
+      
+      elapsed = 0;
+      updateTimer();
+      showPhilosophy();
+      
+      timerInterval = setInterval(() => {
+        elapsed++;
+        updateTimer();
+        document.getElementById('progress').style.width = (elapsed / waitTime * 100) + '%';
+        
+        if (elapsed >= waitTime) {
+          clearInterval(timerInterval);
+          clearInterval(philosophyInterval);
+          showResponse();
+        }
+      }, 1000);
+      
+      philosophyInterval = setInterval(showPhilosophy, 6000);
+    }
+    
+    function updateTimer() {
+      const remaining = waitTime - elapsed;
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      document.getElementById('timer').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    function showPhilosophy() {
+      const el = document.getElementById('philosophy');
+      el.style.opacity = 0;
+      setTimeout(() => {
+        el.textContent = philosophies[Math.floor(Math.random() * philosophies.length)];
+        el.style.opacity = 1;
+      }, 500);
+    }
+    
+    function showResponse() {
+      document.getElementById('waitingRoom').classList.remove('active');
+      document.getElementById('responseArea').classList.add('active');
+      document.getElementById('response').textContent = responses[Math.floor(Math.random() * responses.length)];
+    }
+    
+    function reset() {
+      document.getElementById('questionArea').style.display = 'block';
+      document.getElementById('waitingRoom').classList.remove('active');
+      document.getElementById('responseArea').classList.remove('active');
+      document.getElementById('question').value = '';
+      document.getElementById('progress').style.width = '0%';
+      elapsed = 0;
+    }
+  </script>
+</body>
+</html>
