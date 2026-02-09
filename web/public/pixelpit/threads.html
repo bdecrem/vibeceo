@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>THREADS — Pixelpit</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #header {
+      margin-top: clamp(16px, 4vh, 40px);
+      text-align: center;
+    }
+    #header h1 {
+      font-size: clamp(28px, 6vw, 42px);
+      letter-spacing: 8px;
+      color: #fbbf24;
+      text-shadow: 0 0 20px #fbbf2440;
+    }
+    #header p {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+      letter-spacing: 2px;
+    }
+
+    #mistakes {
+      display: flex;
+      gap: 8px;
+      margin-top: clamp(8px, 2vh, 16px);
+      justify-content: center;
+      min-height: 20px;
+    }
+    .mistake-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #334155;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .mistake-dot.used {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef444460;
+    }
+
+    #message {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #94a3b8;
+      margin-top: 4px;
+      transition: opacity 0.3s;
+    }
+    #message.flash { color: #fbbf24; }
+    #message.error { color: #f87171; }
+
+    #solved-area {
+      width: min(92vw, 440px);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .solved-group {
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: center;
+      animation: solvedIn 0.4s ease-out;
+    }
+    @keyframes solvedIn {
+      from { opacity: 0; transform: scale(0.9) translateY(-10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .solved-group .group-label {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .solved-group .group-words {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      width: min(92vw, 440px);
+      margin-top: 8px;
+    }
+    .tile {
+      aspect-ratio: 1.6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 10px;
+      font-size: clamp(11px, 2.8vw, 15px);
+      font-weight: 600;
+      font-family: inherit;
+      color: #f8fafc;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      padding: 4px;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    .tile:active { transform: scale(0.95); }
+    .tile.selected {
+      background: #fbbf24;
+      border-color: #fbbf24;
+      color: #0f172a;
+      box-shadow: 0 0 16px #fbbf2440;
+    }
+    .tile.shake {
+      animation: tileShake 0.4s ease;
+    }
+    @keyframes tileShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .tile.pop-out {
+      animation: popOut 0.3s ease forwards;
+    }
+    @keyframes popOut {
+      to { opacity: 0; transform: scale(0.5); }
+    }
+    .tile.hidden { display: none; }
+
+    #controls {
+      display: flex;
+      gap: 10px;
+      margin-top: clamp(10px, 2vh, 16px);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 2px solid #334155;
+      background: transparent;
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn:active { transform: scale(0.95); }
+    .btn:disabled { opacity: 0.3; cursor: default; }
+    .btn.primary {
+      background: #fbbf24;
+      border-color: #fbbf24;
+      color: #0f172a;
+    }
+    .btn.primary:disabled { background: #334155; border-color: #334155; color: #64748b; }
+
+    #result {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin-top: clamp(16px, 3vh, 24px);
+      gap: 12px;
+    }
+    #result.show { display: flex; }
+    #result h2 {
+      font-size: 24px;
+      color: #fbbf24;
+      letter-spacing: 4px;
+    }
+    #result-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 24px);
+      gap: 4px;
+    }
+    .result-cell {
+      width: 24px; height: 24px;
+      border-radius: 4px;
+    }
+
+    #puzzle-select {
+      margin-top: clamp(12px, 2vh, 20px);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .puzzle-btn {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      border: 2px solid #334155;
+      background: transparent;
+      color: #94a3b8;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .puzzle-btn.active {
+      border-color: #fbbf24;
+      color: #fbbf24;
+    }
+    .puzzle-btn.completed {
+      border-color: #22c55e;
+      color: #22c55e;
+    }
+
+    #footer {
+      margin-top: auto;
+      padding: 16px;
+      font-size: 10px;
+      color: #475569;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h1>THREADS</h1>
+  <p>FIND THE FOUR GROUPS</p>
+</div>
+
+<div id="mistakes"></div>
+<div id="message"></div>
+<div id="solved-area"></div>
+<div id="grid"></div>
+
+<div id="controls">
+  <button class="btn" id="btn-shuffle" onclick="shuffle()">SHUFFLE</button>
+  <button class="btn" id="btn-deselect" onclick="deselectAll()">DESELECT</button>
+  <button class="btn primary" id="btn-submit" onclick="submit()" disabled>SUBMIT</button>
+</div>
+
+<div id="result">
+  <h2 id="result-title"></h2>
+  <div id="result-grid"></div>
+  <button class="btn primary" onclick="showPuzzleSelect()">NEXT PUZZLE</button>
+</div>
+
+<div id="puzzle-select"></div>
+
+<div id="footer">PIXELPIT ARCADE</div>
+
+<script>
+// --- PUZZLES ---
+const GROUP_COLORS = [
+  { bg: '#fbbf24', text: '#0f172a', name: 'gold' },
+  { bg: '#22d3ee', text: '#0f172a', name: 'teal' },
+  { bg: '#a78bfa', text: '#0f172a', name: 'violet' },
+  { bg: '#f472b6', text: '#0f172a', name: 'pink' },
+];
+
+const PUZZLES = [
+  {
+    groups: [
+      { label: 'Keyboard shortcuts', words: ['COPY', 'PASTE', 'UNDO', 'SAVE'] },
+      { label: 'Coffee drinks', words: ['LATTE', 'MOCHA', 'DRIP', 'COLD BREW'] },
+      { label: '___ code', words: ['ZIP', 'AREA', 'SOURCE', 'DRESS'] },
+      { label: 'Things that crash', words: ['WAVE', 'MARKET', 'PARTY', 'BROWSER'] },
+    ]
+  },
+  {
+    groups: [
+      { label: 'Planet ___', words: ['FITNESS', 'EARTH', 'HOLLYWOOD', 'MONEY'] },
+      { label: 'Shades of blue', words: ['NAVY', 'SKY', 'ROYAL', 'BABY'] },
+      { label: 'Card games', words: ['BRIDGE', 'SNAP', 'WAR', 'HEARTS'] },
+      { label: 'Things with strings', words: ['GUITAR', 'PUPPET', 'KITE', 'BOW'] },
+    ]
+  },
+  {
+    groups: [
+      { label: 'Units of time', words: ['SECOND', 'MINUTE', 'QUARTER', 'SEASON'] },
+      { label: 'Also a dance', words: ['SWING', 'SALSA', 'TAP', 'TWIST'] },
+      { label: 'Data structures', words: ['TREE', 'STACK', 'QUEUE', 'MAP'] },
+      { label: 'Double ___', words: ['DUTCH', 'DOWN', 'CHECK', 'TAKE'] },
+    ]
+  },
+  {
+    groups: [
+      { label: 'Things in a wallet', words: ['CASH', 'CARD', 'LICENSE', 'RECEIPT'] },
+      { label: 'Modes of transport', words: ['BUS', 'TRAIN', 'FERRY', 'CABLE CAR'] },
+      { label: 'Music genres', words: ['HOUSE', 'METAL', 'SOUL', 'COUNTRY'] },
+      { label: '___ light', words: ['FLASH', 'MOON', 'SPOT', 'GREEN'] },
+    ]
+  },
+  {
+    groups: [
+      { label: 'Breakfast items', words: ['TOAST', 'WAFFLE', 'BAGEL', 'CEREAL'] },
+      { label: 'Internet slang', words: ['LOL', 'BRB', 'TBH', 'GOAT'] },
+      { label: 'Types of test', words: ['BLOOD', 'STRESS', 'UNIT', 'FIELD'] },
+      { label: 'Things that bounce', words: ['BALL', 'CHECK', 'EMAIL', 'IDEA'] },
+    ]
+  },
+  {
+    groups: [
+      { label: 'Ocean creatures', words: ['RAY', 'STAR', 'ANGEL', 'HAMMER'] },
+      { label: 'Types of chart', words: ['BAR', 'PIE', 'LINE', 'FLOW'] },
+      { label: 'Parts of a shoe', words: ['SOLE', 'TONGUE', 'HEEL', 'LACE'] },
+      { label: 'Rock ___', words: ['CLIMB', 'BAND', 'BOTTOM', 'SOLID'] },
+    ]
+  },
+  {
+    groups: [
+      { label: 'Magic words', words: ['PLEASE', 'ABRA', 'PRESTO', 'OPEN'] },
+      { label: 'Pasta shapes', words: ['BOW TIE', 'SHELL', 'ANGEL HAIR', 'ELBOW'] },
+      { label: 'Things that tick', words: ['CLOCK', 'BOMB', 'BOX', 'HEART'] },
+      { label: 'Famous ___ Park', words: ['CENTRAL', 'HYDE', 'JURASSIC', 'FENWAY'] },
+    ]
+  },
+  {
+    groups: [
+      { label: 'Things that are pitched', words: ['TENT', 'BALL', 'IDEA', 'VOICE'] },
+      { label: 'Silent letters', words: ['KNIGHT', 'GNOME', 'PSALM', 'WRIST'] },
+      { label: 'Poker terms', words: ['FOLD', 'RAISE', 'BLUFF', 'FLUSH'] },
+      { label: 'Cloud ___', words: ['NINE', 'BURST', 'ATLAS', 'STORAGE'] },
+    ]
+  },
+];
+
+// --- STATE ---
+let currentPuzzle = 0;
+let words = [];
+let selected = [];
+let solved = [];
+let mistakes = 0;
+let maxMistakes = 4;
+let guessHistory = [];
+let gameOver = false;
+let previousGuesses = [];
+
+// --- INIT ---
+function loadPuzzle(index) {
+  currentPuzzle = index;
+  const puzzle = PUZZLES[index];
+  solved = [];
+  selected = [];
+  mistakes = 0;
+  guessHistory = [];
+  gameOver = false;
+  previousGuesses = [];
+
+  words = [];
+  puzzle.groups.forEach((g, gi) => {
+    g.words.forEach(w => {
+      words.push({ text: w, group: gi });
+    });
+  });
+  shuffleWords();
+
+  document.getElementById('result').classList.remove('show');
+  renderMistakes();
+  setMessage('');
+  renderGrid();
+  renderSolvedArea();
+  updateControls();
+  renderPuzzleSelect();
+}
+
+function shuffleWords() {
+  for (let i = words.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [words[i], words[j]] = [words[j], words[i]];
+  }
+}
+
+// --- RENDER ---
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  const remaining = words.filter(w => !solved.includes(w.group));
+  remaining.forEach((w, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'tile' + (selected.includes(w.text) ? ' selected' : '');
+    tile.textContent = w.text;
+    tile.onclick = () => toggleSelect(w.text);
+    grid.appendChild(tile);
+  });
+}
+
+function renderMistakes() {
+  const el = document.getElementById('mistakes');
+  el.innerHTML = '';
+  for (let i = 0; i < maxMistakes; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'mistake-dot' + (i < mistakes ? ' used' : '');
+    el.appendChild(dot);
+  }
+}
+
+function renderSolvedArea() {
+  const area = document.getElementById('solved-area');
+  area.innerHTML = '';
+  solved.forEach((gi, order) => {
+    const g = PUZZLES[currentPuzzle].groups[gi];
+    const color = GROUP_COLORS[gi];
+    const div = document.createElement('div');
+    div.className = 'solved-group';
+    div.style.background = color.bg;
+    div.style.color = color.text;
+    div.innerHTML = `
+      <div class="group-label">${g.label}</div>
+      <div class="group-words">${g.words.join(', ')}</div>
+    `;
+    area.appendChild(div);
+  });
+}
+
+function updateControls() {
+  document.getElementById('btn-submit').disabled = selected.length !== 4 || gameOver;
+  document.getElementById('btn-deselect').disabled = selected.length === 0 || gameOver;
+  document.getElementById('btn-shuffle').disabled = gameOver;
+}
+
+function setMessage(text, type) {
+  const el = document.getElementById('message');
+  el.textContent = text;
+  el.className = type || '';
+  if (text) {
+    setTimeout(() => {
+      if (el.textContent === text) {
+        el.textContent = '';
+        el.className = '';
+      }
+    }, 2000);
+  }
+}
+
+// --- ACTIONS ---
+function toggleSelect(word) {
+  if (gameOver) return;
+  if (selected.includes(word)) {
+    selected = selected.filter(w => w !== word);
+  } else if (selected.length < 4) {
+    selected.push(word);
+  }
+  renderGrid();
+  updateControls();
+}
+
+function deselectAll() {
+  selected = [];
+  renderGrid();
+  updateControls();
+}
+
+function shuffle() {
+  shuffleWords();
+  renderGrid();
+}
+
+function submit() {
+  if (selected.length !== 4 || gameOver) return;
+
+  const sortedGuess = [...selected].sort().join(',');
+  if (previousGuesses.includes(sortedGuess)) {
+    setMessage('Already guessed!', 'error');
+    return;
+  }
+  previousGuesses.push(sortedGuess);
+
+  const puzzle = PUZZLES[currentPuzzle];
+  let matchedGroup = -1;
+
+  for (let gi = 0; gi < puzzle.groups.length; gi++) {
+    if (solved.includes(gi)) continue;
+    const groupWords = puzzle.groups[gi].words;
+    const overlap = selected.filter(w => groupWords.includes(w));
+    if (overlap.length === 4) {
+      matchedGroup = gi;
+      break;
+    }
+  }
+
+  if (matchedGroup >= 0) {
+    guessHistory.push(matchedGroup);
+    solved.push(matchedGroup);
+    selected = [];
+    words = words.filter(w => w.group !== matchedGroup);
+
+    const tiles = document.querySelectorAll('.tile.selected');
+    tiles.forEach(t => t.classList.add('pop-out'));
+
+    setTimeout(() => {
+      renderSolvedArea();
+      renderGrid();
+      updateControls();
+
+      if (solved.length === 4) {
+        endGame(true);
+      }
+    }, 300);
+  } else {
+    // Check for "one away"
+    let oneAway = false;
+    for (let gi = 0; gi < puzzle.groups.length; gi++) {
+      if (solved.includes(gi)) continue;
+      const groupWords = puzzle.groups[gi].words;
+      const overlap = selected.filter(w => groupWords.includes(w));
+      if (overlap.length === 3) {
+        oneAway = true;
+        break;
+      }
+    }
+
+    mistakes++;
+    guessHistory.push(-1);
+    renderMistakes();
+
+    const tiles = document.querySelectorAll('.tile.selected');
+    tiles.forEach(t => t.classList.add('shake'));
+    setTimeout(() => {
+      tiles.forEach(t => t.classList.remove('shake'));
+    }, 400);
+
+    if (oneAway) {
+      setMessage('One away...', 'flash');
+    } else {
+      setMessage('Not quite...', 'error');
+    }
+
+    if (mistakes >= maxMistakes) {
+      setTimeout(() => {
+        revealAll();
+        endGame(false);
+      }, 600);
+    } else {
+      selected = [];
+      setTimeout(() => {
+        renderGrid();
+        updateControls();
+      }, 400);
+    }
+  }
+}
+
+function revealAll() {
+  const puzzle = PUZZLES[currentPuzzle];
+  for (let gi = 0; gi < puzzle.groups.length; gi++) {
+    if (!solved.includes(gi)) {
+      solved.push(gi);
+    }
+  }
+  words = [];
+  selected = [];
+  renderSolvedArea();
+  renderGrid();
+  updateControls();
+}
+
+function endGame(won) {
+  gameOver = true;
+  updateControls();
+
+  const resultEl = document.getElementById('result');
+  const titleEl = document.getElementById('result-title');
+  const gridEl = document.getElementById('result-grid');
+
+  titleEl.textContent = won ? (mistakes === 0 ? 'PERFECT' : 'SOLVED') : 'GAME OVER';
+  titleEl.style.color = won ? '#fbbf24' : '#f87171';
+
+  gridEl.innerHTML = '';
+  guessHistory.forEach(gi => {
+    const cell = document.createElement('div');
+    cell.className = 'result-cell';
+    if (gi >= 0) {
+      cell.style.background = GROUP_COLORS[gi].bg;
+    } else {
+      cell.style.background = '#475569';
+    }
+    gridEl.appendChild(cell);
+  });
+
+  setTimeout(() => {
+    resultEl.classList.add('show');
+  }, 500);
+
+  // Track analytics
+  const score = won ? (maxMistakes - mistakes) : 0;
+  if (score >= 1) {
+    fetch('/api/pixelpit/stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ game: 'threads' }),
+    }).catch(() => {});
+  }
+}
+
+function showPuzzleSelect() {
+  const next = (currentPuzzle + 1) % PUZZLES.length;
+  loadPuzzle(next);
+}
+
+function renderPuzzleSelect() {
+  const el = document.getElementById('puzzle-select');
+  el.innerHTML = '';
+  PUZZLES.forEach((_, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'puzzle-btn' + (i === currentPuzzle ? ' active' : '');
+    btn.textContent = i + 1;
+    btn.onclick = () => loadPuzzle(i);
+    el.appendChild(btn);
+  });
+}
+
+// --- AUDIO ---
+let audioCtx;
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+document.addEventListener('touchstart', initAudio, { once: true });
+document.addEventListener('click', initAudio, { once: true });
+
+function playTone(freq, dur, type) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + dur);
+}
+
+// Add sound to tile selection
+const origToggle = toggleSelect;
+toggleSelect = function(word) {
+  const wasSelected = selected.includes(word);
+  origToggle(word);
+  if (!wasSelected && selected.includes(word)) {
+    playTone(600 + selected.length * 100, 0.1, 'sine');
+  } else {
+    playTone(400, 0.08, 'sine');
+  }
+};
+
+// Add sound to correct/incorrect
+const origSubmit = submit;
+submit = function() {
+  const prevSolved = solved.length;
+  const prevMistakes = mistakes;
+  origSubmit();
+  if (solved.length > prevSolved) {
+    playTone(523, 0.1); setTimeout(() => playTone(659, 0.1), 80);
+    setTimeout(() => playTone(784, 0.15), 160);
+  } else if (mistakes > prevMistakes) {
+    playTone(200, 0.2, 'triangle');
+  }
+};
+
+// --- START ---
+loadPuzzle(0);
+</script>
+</body>
+</html>
