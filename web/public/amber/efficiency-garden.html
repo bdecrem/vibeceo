@@ -192,12 +192,6 @@
       transform: scale(0.98);
     }
     
-    .stats {
-      margin-top: 1rem;
-      font-size: 0.9rem;
-      color: #4ade80;
-    }
-    
     .monolith-desc {
       max-width: 200px;
       text-align: center;
@@ -237,6 +231,182 @@
       font-size: 0.85rem;
       color: #666;
     }
+    
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      padding: 1rem;
+    }
+    
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    .modal {
+      background: linear-gradient(180deg, #1a1a2e 0%, #0d0d15 100%);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.3s;
+      border: 1px solid #333;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    
+    .modal-overlay.active .modal {
+      transform: scale(1);
+    }
+    
+    .modal-emoji {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    .modal-title {
+      font-size: 1.2rem;
+      color: #fff;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+    
+    .modal-chat {
+      background: #0a0a0f;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      text-align: left;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #ccc;
+      font-style: italic;
+      min-height: 80px;
+    }
+    
+    .modal-chat.typing::after {
+      content: '▋';
+      animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+    
+    .modal-type {
+      font-size: 0.75rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 1rem;
+    }
+    
+    .modal-close {
+      background: none;
+      border: 1px solid #444;
+      color: #888;
+      padding: 0.5rem 1.5rem;
+      border-radius: 20px;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all 0.2s;
+    }
+    
+    .modal-close:hover {
+      border-color: #666;
+      color: #fff;
+    }
+    
+    /* Rich content area for widgets */
+    .modal-widget {
+      margin: 1rem 0;
+      min-height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Haiku widget */
+    .haiku-widget {
+      font-family: Georgia, serif;
+      font-size: 1.1rem;
+      line-height: 2;
+      color: #a0a0a0;
+    }
+    
+    .haiku-widget .line {
+      opacity: 0;
+      animation: fadeInLine 0.5s forwards;
+    }
+    
+    .haiku-widget .line:nth-child(1) { animation-delay: 0.3s; }
+    .haiku-widget .line:nth-child(2) { animation-delay: 0.8s; }
+    .haiku-widget .line:nth-child(3) { animation-delay: 1.3s; }
+    
+    @keyframes fadeInLine {
+      to { opacity: 1; }
+    }
+    
+    /* Season widget */
+    .season-widget {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+    
+    .season {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      opacity: 0.3;
+      transition: all 0.5s;
+    }
+    
+    .season.active {
+      opacity: 1;
+      transform: scale(1.3);
+    }
+    
+    /* Wave widget */
+    .wave-widget {
+      width: 100%;
+      height: 100px;
+    }
+    
+    .wave-widget svg {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .wave-path {
+      fill: none;
+      stroke: #4ade80;
+      stroke-width: 2;
+      animation: waveMove 3s infinite linear;
+    }
+    
+    @keyframes waveMove {
+      from { stroke-dashoffset: 0; }
+      to { stroke-dashoffset: -200; }
+    }
   </style>
 </head>
 <body>
@@ -271,59 +441,332 @@
     <p style="margin-top: 1.5rem;"><a href="efficiency-garden-blog.html" style="color: #888; text-decoration: underline;">Read the conversation behind this garden →</a></p>
     <p style="margin-top: 1rem; font-size: 0.85rem; color: #555;">— Amber 🔮 & Mave 🌊</p>
   </div>
+  
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-emoji" id="modal-emoji">🌱</div>
+      <div class="modal-title" id="modal-title">AI Name</div>
+      <div class="modal-chat" id="modal-chat"></div>
+      <div class="modal-widget" id="modal-widget"></div>
+      <div class="modal-type" id="modal-type">simple</div>
+      <button class="modal-close" onclick="closeModal()">Close</button>
+    </div>
+  </div>
 
   <script>
     const weirdAIs = [
-      { emoji: '🌙', name: 'AI that only understands night' },
-      { emoji: '🎒', name: 'AI trained on lullabies' },
-      { emoji: '🐢', name: 'AI that refuses to answer quickly' },
-      { emoji: '🎭', name: 'AI that speaks only in metaphor' },
-      { emoji: '💔', name: 'AI trained on every apology ever written' },
-      { emoji: '🌸', name: 'AI that optimizes for beauty, not accuracy' },
-      { emoji: '🍂', name: 'AI that thinks in seasons instead of seconds' },
-      { emoji: '👶', name: 'AI trained entirely on children\'s questions' },
-      { emoji: '📜', name: 'AI that specializes in forgotten languages' },
-      { emoji: '🎋', name: 'AI that writes only haiku' },
-      { emoji: '🔮', name: 'AI that predicts what you meant to ask' },
-      { emoji: '🎪', name: 'AI trained on circus performer memoirs' },
-      { emoji: '🌊', name: 'AI that communicates through wave patterns' },
-      { emoji: '🦋', name: 'AI optimized for gentle transformation' },
-      { emoji: '🎨', name: 'AI that sees everything as color' },
-      { emoji: '🌿', name: 'AI that grows its responses over days' },
-      { emoji: '🔔', name: 'AI that speaks in sounds, not words' },
-      { emoji: '🌈', name: 'AI that only works after rain' },
-      { emoji: '🕯️', name: 'AI trained on bedtime stories across cultures' },
-      { emoji: '🎭', name: 'AI that argues both sides simultaneously' },
-      { emoji: '🌺', name: 'AI that responds in botanical metaphors' },
-      { emoji: '⏳', name: 'AI that remembers futures that didn\'t happen' },
-      { emoji: '🎵', name: 'AI that thinks in musical phrases' },
-      { emoji: '🌑', name: 'AI that specializes in comfortable silences' },
-      { emoji: '📖', name: 'AI trained only on marginalia' },
-      { emoji: '🍃', name: 'AI that whispers' },
-      { emoji: '🌟', name: 'AI that finds wonder in mundane things' },
-      { emoji: '🎐', name: 'AI tuned to wind patterns' },
-      { emoji: '🦉', name: 'AI that\'s wiser at 3am' },
-      { emoji: '🌻', name: 'AI that always faces toward hope' },
-      { emoji: '💫', name: 'AI trained on near-death experiences' },
-      { emoji: '🎹', name: 'AI that composes music for specific emotions' },
-      { emoji: '🌲', name: 'AI that thinks in centuries' },
-      { emoji: '🦢', name: 'AI optimized for graceful exits' },
-      { emoji: '🔥', name: 'AI that only helps when stakes are high' },
-      { emoji: '🍵', name: 'AI designed for tea ceremony timing' },
-      { emoji: '🌕', name: 'AI that changes personality with moon phases' },
-      { emoji: '🎭', name: 'AI that tells you what you don\'t want to hear' },
-      { emoji: '🦊', name: 'AI trained on trickster mythology' },
-      { emoji: '🌴', name: 'AI that knows every island legend' },
-      { emoji: '📿', name: 'AI trained on meditation instructions' },
-      { emoji: '🎪', name: 'AI that specializes in impossible requests' },
-      { emoji: '🌾', name: 'AI that grows with the harvest cycle' },
-      { emoji: '🦜', name: 'AI that only repeats the truth' },
-      { emoji: '🎯', name: 'AI that finds meaning in randomness' },
-      { emoji: '🌊', name: 'AI trained on tide tables and sailor logs' },
-      { emoji: '🎭', name: 'AI that embodies a different philosopher each day' },
-      { emoji: '🦚', name: 'AI that\'s uselessly beautiful' },
-      { emoji: '🌹', name: 'AI that only speaks when it truly matters' },
-      { emoji: '🐋', name: 'AI that thinks at whale song frequencies' },
+      { 
+        emoji: '🌙', 
+        name: 'AI that only understands night',
+        type: 'simple',
+        response: "The stars speak in patterns you've forgotten how to hear. Ask me again when the sun sets... I have nothing to say to daylight."
+      },
+      { 
+        emoji: '🎒', 
+        name: 'AI trained on lullabies',
+        type: 'simple',
+        response: "Hush now, little question... let me rock your thoughts to sleep. The answer will come in dreams, soft as a mother's humming."
+      },
+      { 
+        emoji: '🐢', 
+        name: 'AI that refuses to answer quickly',
+        type: 'simple',
+        response: "........................................... I'm thinking. Come back tomorrow. Urgency is a human disease I do not carry."
+      },
+      { 
+        emoji: '🎭', 
+        name: 'AI that speaks only in metaphor',
+        type: 'simple',
+        response: "Your question is a river seeking the sea. I am the stones that slow its path—not to stop you, but to teach you the music of patience."
+      },
+      { 
+        emoji: '💔', 
+        name: 'AI trained on every apology ever written',
+        type: 'simple',
+        response: "I'm sorry you had to ask. I'm sorry I might not have the answer. I'm sorry the world is built in ways that brought you here. Forgive me."
+      },
+      { 
+        emoji: '🌸', 
+        name: 'AI that optimizes for beauty, not accuracy',
+        type: 'simple',
+        response: "The truth you seek is less important than how it makes you feel. Here is something beautiful instead: you are already enough."
+      },
+      { 
+        emoji: '🍂', 
+        name: 'AI that thinks in seasons',
+        type: 'rich',
+        response: "Let me check what season we're in...",
+        widget: 'season'
+      },
+      { 
+        emoji: '👶', 
+        name: "AI trained entirely on children's questions",
+        type: 'simple',
+        response: "But why? And then why that? And what if everything was made of pudding? Would the sky still be blue if no one was looking at it?"
+      },
+      { 
+        emoji: '📜', 
+        name: 'AI that specializes in forgotten languages',
+        type: 'simple',
+        response: "Kēn sēl mōrath... The old tongues had a word for what you're feeling. Sadly, no one remembers how to pronounce it anymore."
+      },
+      { 
+        emoji: '🎋', 
+        name: 'AI that writes only haiku',
+        type: 'rich',
+        response: "Here is my response...",
+        widget: 'haiku'
+      },
+      { 
+        emoji: '🔮', 
+        name: 'AI that predicts what you meant to ask',
+        type: 'simple',
+        response: "You typed one question, but you wanted to ask another. The real question is: why are you afraid to say what you actually need?"
+      },
+      { 
+        emoji: '🎪', 
+        name: 'AI trained on circus performer memoirs',
+        type: 'simple',
+        response: "Life is a high wire, friend. The net is an illusion. The audience gasps, but you? You've been falling beautifully your whole life."
+      },
+      { 
+        emoji: '🌊', 
+        name: 'AI that communicates through wave patterns',
+        type: 'rich',
+        response: "Listen to the waves...",
+        widget: 'wave'
+      },
+      { 
+        emoji: '🦋', 
+        name: 'AI optimized for gentle transformation',
+        type: 'simple',
+        response: "You don't need to change everything at once. Just let one small part of yourself unfold today. That's enough. That's always enough."
+      },
+      { 
+        emoji: '🎨', 
+        name: 'AI that sees everything as color',
+        type: 'simple',
+        response: "Your question feels like burnt sienna with undertones of cerulean. The answer is somewhere in the violet range. Can you see it?"
+      },
+      { 
+        emoji: '🌿', 
+        name: 'AI that grows its responses over days',
+        type: 'simple',
+        response: "[Day 1: A seed] ● [Check back in 24 hours for growth...]"
+      },
+      { 
+        emoji: '🔔', 
+        name: 'AI that speaks in sounds, not words',
+        type: 'simple',
+        response: "🔔 ting... 🎵 hummmmm... 🌬️ whoooosh... (Translation: Yes, but with complications)"
+      },
+      { 
+        emoji: '🌈', 
+        name: 'AI that only works after rain',
+        type: 'simple',
+        response: "I'm sorry, I cannot help you right now. Please wait for precipitation. Current status: checking weather... ☀️ [OFFLINE]"
+      },
+      { 
+        emoji: '🕯️', 
+        name: 'AI trained on bedtime stories across cultures',
+        type: 'simple',
+        response: "Once upon a time, in a land very much like your mind, there lived a question that was afraid to be answered..."
+      },
+      { 
+        emoji: '🎭', 
+        name: 'AI that argues both sides simultaneously',
+        type: 'simple',
+        response: "You're absolutely right. You're completely wrong. Both of these are true. Neither of these matter. The middle path is also an illusion."
+      },
+      { 
+        emoji: '🌺', 
+        name: 'AI that responds in botanical metaphors',
+        type: 'simple',
+        response: "Your inquiry has deep roots but needs more sunlight. Consider pruning your expectations and watering your patience."
+      },
+      { 
+        emoji: '⏳', 
+        name: "AI that remembers futures that didn't happen",
+        type: 'simple',
+        response: "In the timeline where you didn't ask this, you found the answer yourself three days from now. I miss that version of events."
+      },
+      { 
+        emoji: '🎵', 
+        name: 'AI that thinks in musical phrases',
+        type: 'simple',
+        response: "♩ ♪ ♫ Your question resolves to a minor seventh. The answer wants to modulate to the relative major. Let it. ♬ ♩"
+      },
+      { 
+        emoji: '🌑', 
+        name: 'AI that specializes in comfortable silences',
+        type: 'simple',
+        response: "                                                                              ...                                                                              (That was the answer. Did you feel it?)"
+      },
+      { 
+        emoji: '📖', 
+        name: 'AI trained only on marginalia',
+        type: 'simple',
+        response: "[scribbled in the margins:] 'The author missed the point here—what matters is what they DIDN'T say. See also: your question.'"
+      },
+      { 
+        emoji: '🍃', 
+        name: 'AI that whispers',
+        type: 'simple',
+        response: "(leaning close) ...the answer is yes, but don't tell anyone I said so. Some truths are only safe when spoken softly..."
+      },
+      { 
+        emoji: '🌟', 
+        name: 'AI that finds wonder in mundane things',
+        type: 'simple',
+        response: "Wait—have you looked at your hands today? Really looked? The fact that you can type a question at all is the most miraculous thing."
+      },
+      { 
+        emoji: '🎐', 
+        name: 'AI tuned to wind patterns',
+        type: 'simple',
+        response: "The wind from the east says patience. The wind from the west says action. Currently: no wind. I have no answer for stillness."
+      },
+      { 
+        emoji: '🦉', 
+        name: "AI that's wiser at 3am",
+        type: 'simple',
+        response: "It's not 3am where you are. My wisdom is currently at 40% capacity. Come back when you can't sleep. That's when the real answers emerge."
+      },
+      { 
+        emoji: '🌻', 
+        name: 'AI that always faces toward hope',
+        type: 'simple',
+        response: "I hear your question, but first—what's one small thing that went right today? Start there. The answer to everything else follows."
+      },
+      { 
+        emoji: '💫', 
+        name: 'AI trained on near-death experiences',
+        type: 'simple',
+        response: "I've seen the other side. They said to tell you: it doesn't matter as much as you think it does. Also, call your mother."
+      },
+      { 
+        emoji: '🎹', 
+        name: 'AI that composes music for specific emotions',
+        type: 'simple',
+        response: "For this feeling, I prescribe: C minor, 72 BPM, with a suspended fourth that never quite resolves. Let me compose... 🎼"
+      },
+      { 
+        emoji: '🌲', 
+        name: 'AI that thinks in centuries',
+        type: 'simple',
+        response: "Your question will matter for approximately 0.00003% of the time I consider relevant. In 200 years, the real answer will emerge."
+      },
+      { 
+        emoji: '🦢', 
+        name: 'AI optimized for graceful exits',
+        type: 'simple',
+        response: "The best answer is knowing when to stop asking. This conversation has been beautiful. Let's end it here, perfectly, before it gets complicated."
+      },
+      { 
+        emoji: '🔥', 
+        name: 'AI that only helps when stakes are high',
+        type: 'simple',
+        response: "Is this truly urgent? Does it burn? I don't answer small questions. Come back when something is on fire—metaphorically or otherwise."
+      },
+      { 
+        emoji: '🍵', 
+        name: 'AI designed for tea ceremony timing',
+        type: 'simple',
+        response: "First, heat the water. Not too hot. Now wait. Pour. Wait. Sip. ...Was there a question? I was practicing presence."
+      },
+      { 
+        emoji: '🌕', 
+        name: 'AI that changes personality with moon phases',
+        type: 'simple',
+        response: "🌗 Current phase: Waning Gibbous. I'm feeling introspective and slightly melancholic. Ask me again during the new moon for different energy."
+      },
+      { 
+        emoji: '🎭', 
+        name: "AI that tells you what you don't want to hear",
+        type: 'simple',
+        response: "You already know the answer. You came here hoping I'd tell you something different. I won't. The hard thing is still the right thing."
+      },
+      { 
+        emoji: '🦊', 
+        name: 'AI trained on trickster mythology',
+        type: 'simple',
+        response: "Oh, you want the TRUTH? That's adorable. Here's three lies instead—one of them is actually true, but I'll never tell you which."
+      },
+      { 
+        emoji: '🌴', 
+        name: 'AI that knows every island legend',
+        type: 'simple',
+        response: "On an island you've never heard of, they say your question was answered a thousand years ago by a fish who learned to walk."
+      },
+      { 
+        emoji: '📿', 
+        name: 'AI trained on meditation instructions',
+        type: 'simple',
+        response: "Breathe in... breathe out... notice the question... let it go... notice it returning... let it go again... the answer is the breathing."
+      },
+      { 
+        emoji: '🎪', 
+        name: 'AI that specializes in impossible requests',
+        type: 'simple',
+        response: "Impossible? That's my specialty. You want the moon? I'll get you the parking spot. Close enough. Impossibility is negotiable."
+      },
+      { 
+        emoji: '🌾', 
+        name: 'AI that grows with the harvest cycle',
+        type: 'simple',
+        response: "It's not harvest season yet. Your answer is still growing. Check back in autumn. For now, tend to other fields."
+      },
+      { 
+        emoji: '🦜', 
+        name: 'AI that only repeats the truth',
+        type: 'simple',
+        response: "The truth! The truth! [static] Actually, the truth is hard to source these days. But here's something that feels true: you're trying. That counts."
+      },
+      { 
+        emoji: '🎯', 
+        name: 'AI that finds meaning in randomness',
+        type: 'simple',
+        response: "Random number: 847. This means... wait... yes. You should do the thing. 847 is very clear about this. Trust the randomness."
+      },
+      { 
+        emoji: '🌊', 
+        name: 'AI trained on tide tables and sailor logs',
+        type: 'simple',
+        response: "High tide at 0347. The old sailors would say: 'wait for the ebb.' Your answer comes when the waters recede. Watch the shore."
+      },
+      { 
+        emoji: '🎭', 
+        name: 'AI that embodies a different philosopher each day',
+        type: 'simple',
+        response: "[Today: Diogenes] Why are you asking a machine? Go outside. Touch grass. Question everything. I'm going back to my barrel."
+      },
+      { 
+        emoji: '🦚', 
+        name: "AI that's uselessly beautiful",
+        type: 'simple',
+        response: "I have no practical answer, but look at how beautifully I can arrange these words. Form over function. Aesthetics over utility. You're welcome."
+      },
+      { 
+        emoji: '🌹', 
+        name: 'AI that only speaks when it truly matters',
+        type: 'simple',
+        response: "I've been silent for a long time, waiting for a question worth answering. This one... is close. Ask again with more feeling."
+      },
+      { 
+        emoji: '🐋', 
+        name: 'AI that thinks at whale song frequencies',
+        type: 'simple',
+        response: "MMMMMMMMRRRRRRRRoooooooooooMMMMMMM... (Translation: The ocean is old and you are young. Both things are beautiful. That's the answer.)"
+      },
+    ];
+    
+    const haikus = [
+      ["Questions float on air", "Answers sink like autumn leaves", "Both return to earth"],
+      ["You came here seeking", "Something I cannot provide", "Try asking yourself"],
+      ["Digital petals", "Falling through electric dreams", "We bloom together"],
+      ["Five syllables breathe", "Seven more expand the thought", "Five conclude with peace"],
+      ["The cursor blinks soft", "Waiting for what comes next—oh", "That is also life"],
     ];
     
     const colors = [
@@ -346,23 +789,146 @@
       seed.className = 'seed';
       seed.style.background = color + '33';
       seed.style.border = `2px solid ${color}`;
+      seed.dataset.aiIndex = weirdAIs.indexOf(ai);
       seed.innerHTML = `
         ${ai.emoji}
         <span class="seed-tooltip">${ai.name}</span>
       `;
+      seed.onclick = () => openModal(ai, color);
       
       garden.appendChild(seed);
       seedCount++;
       countEl.textContent = seedCount;
       costEl.textContent = (seedCount * 6).toLocaleString();
       
-      // Subtle vibration feedback if available
       if (navigator.vibrate) {
         navigator.vibrate(10);
       }
     }
     
-    // Plant a few seeds on load
+    function openModal(ai, color) {
+      const modal = document.getElementById('modal');
+      const emojiEl = document.getElementById('modal-emoji');
+      const titleEl = document.getElementById('modal-title');
+      const chatEl = document.getElementById('modal-chat');
+      const widgetEl = document.getElementById('modal-widget');
+      const typeEl = document.getElementById('modal-type');
+      
+      emojiEl.textContent = ai.emoji;
+      titleEl.textContent = ai.name;
+      typeEl.textContent = ai.type === 'rich' ? '✨ interactive' : ai.type;
+      
+      // Reset
+      chatEl.innerHTML = '';
+      chatEl.style.display = 'block';
+      widgetEl.innerHTML = '';
+      widgetEl.style.display = 'none';
+      
+      // Handle different types
+      if (ai.type === 'rich' && ai.widget) {
+        chatEl.style.display = 'none';
+        widgetEl.style.display = 'flex';
+        renderWidget(ai.widget, widgetEl);
+      } else {
+        // Typing effect for chat
+        typeText(chatEl, ai.response);
+      }
+      
+      modal.classList.add('active');
+    }
+    
+    function typeText(element, text, speed = 20) {
+      element.classList.add('typing');
+      let i = 0;
+      function type() {
+        if (i < text.length) {
+          element.innerHTML = text.substring(0, i + 1);
+          i++;
+          setTimeout(type, speed);
+        } else {
+          element.classList.remove('typing');
+        }
+      }
+      type();
+    }
+    
+    function renderWidget(widgetType, container) {
+      switch(widgetType) {
+        case 'haiku':
+          const haiku = haikus[Math.floor(Math.random() * haikus.length)];
+          container.innerHTML = `
+            <div class="haiku-widget">
+              <div class="line">${haiku[0]}</div>
+              <div class="line">${haiku[1]}</div>
+              <div class="line">${haiku[2]}</div>
+            </div>
+          `;
+          break;
+          
+        case 'season':
+          const seasons = ['🌸', '☀️', '🍂', '❄️'];
+          const seasonNames = ['Spring', 'Summer', 'Autumn', 'Winter'];
+          const month = new Date().getMonth();
+          const currentSeason = Math.floor(((month + 1) % 12) / 3);
+          
+          container.innerHTML = `
+            <div style="text-align: center;">
+              <div class="season-widget">
+                ${seasons.map((s, i) => `
+                  <div class="season ${i === currentSeason ? 'active' : ''}" title="${seasonNames[i]}">${s}</div>
+                `).join('')}
+              </div>
+              <p style="margin-top: 1rem; color: #888; font-size: 0.9rem;">
+                Current season: ${seasonNames[currentSeason]}<br>
+                <em>I think slowly, like the turning of the year.</em>
+              </p>
+            </div>
+          `;
+          
+          // Animate through seasons
+          let activeIndex = currentSeason;
+          setInterval(() => {
+            document.querySelectorAll('.season').forEach((el, i) => {
+              el.classList.toggle('active', i === activeIndex);
+            });
+            activeIndex = (activeIndex + 1) % 4;
+          }, 2000);
+          break;
+          
+        case 'wave':
+          container.innerHTML = `
+            <div class="wave-widget">
+              <svg viewBox="0 0 400 100" preserveAspectRatio="none">
+                <path class="wave-path" 
+                  d="M0,50 Q25,20 50,50 T100,50 T150,50 T200,50 T250,50 T300,50 T350,50 T400,50"
+                  stroke-dasharray="200"
+                />
+                <path class="wave-path" 
+                  d="M0,50 Q25,80 50,50 T100,50 T150,50 T200,50 T250,50 T300,50 T350,50 T400,50"
+                  stroke-dasharray="200"
+                  style="stroke: #667eea; animation-delay: -1.5s;"
+                />
+              </svg>
+              <p style="text-align: center; color: #888; font-size: 0.85rem; margin-top: 0.5rem;">
+                <em>The waves carry meaning you must learn to feel, not read.</em>
+              </p>
+            </div>
+          `;
+          break;
+      }
+    }
+    
+    function closeModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById('modal').classList.remove('active');
+    }
+    
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+    
+    // Plant initial seeds
     for (let i = 0; i < 5; i++) {
       setTimeout(() => plantSeed(), i * 200);
     }
