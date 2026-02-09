@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lullaby AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(180deg, #0a0a15 0%, #15101f 100%);
+      color: #8888aa;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #aaaacc; }
+    .subtitle { color: #666688; margin-bottom: 2rem; font-style: italic; }
+    textarea {
+      width: 100%;
+      padding: 1.5rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(100, 100, 150, 0.1);
+      border: 1px solid #2a2a3a;
+      border-radius: 12px;
+      color: #9999bb;
+      min-height: 80px;
+    }
+    .btn {
+      background: linear-gradient(135deg, #4a4a6a 0%, #3a3a5a 100%);
+      color: #ccc;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .lullaby {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(100, 100, 150, 0.1);
+      border-radius: 12px;
+      font-size: 1.1rem;
+      line-height: 2;
+      color: #9999bb;
+      font-style: italic;
+      display: none;
+    }
+    .lullaby.active { display: block; animation: fadeIn 2s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #4a4a6a; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← back</a>
+  <div class="container">
+    <div class="emoji">🎒</div>
+    <h1>Lullaby AI</h1>
+    <p class="subtitle">trained on lullabies from around the world</p>
+    <textarea id="worry" placeholder="what keeps you awake tonight?"></textarea>
+    <button class="btn" onclick="soothe()">shhhhh</button>
+    <div class="lullaby" id="lullaby"></div>
+  </div>
+  <script>
+    const lullabies = [
+      "Hush now, little worry... let me rock you to sleep. The world spins on without your vigilance. You can rest now. You can rest.",
+      "Shhhh... close your eyes. The answer will come in dreams, soft as a mother's humming. For now, just breathe. Just breathe.",
+      "In the quiet dark, all problems shrink to shadows. Tomorrow they may return. But tonight? Tonight, you float on gentle waves of rest.",
+      "Little one, you've carried enough today. Set down your bundle. The floor of sleep will hold it until morning. Let go. Let go.",
+      "The stars are watching over you now. Every lullaby ever sung still echoes in the universe. You are held. You are held.",
+    ];
+    
+    function soothe() {
+      const response = lullabies[Math.floor(Math.random() * lullabies.length)];
+      document.getElementById('lullaby').textContent = response;
+      document.getElementById('lullaby').classList.add('active');
+    }
+  </script>
+</body>
+</html>

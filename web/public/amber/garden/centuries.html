@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI that thinks in centuries</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Georgia, serif;
+      background: linear-gradient(180deg, #0a0f0a 0%, #050805 100%);
+      color: #5a7a5a;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; color: #4a6a4a; margin-bottom: 0.5rem; font-family: -apple-system, sans-serif; }
+    .subtitle { color: #345; margin-bottom: 2rem; font-family: -apple-system, sans-serif; }
+    .timeline {
+      background: rgba(90,122,90,0.1); border: 1px solid rgba(90,122,90,0.2);
+      border-radius: 16px; padding: 2rem; margin-bottom: 2rem;
+    }
+    .question { color: #5a7a5a; margin-bottom: 1rem; }
+    input {
+      width: 100%; padding: 1rem; font-size: 1rem; border: 2px solid #234;
+      border-radius: 12px; background: #0a0f0a; color: #5a7a5a; text-align: center; outline: none; margin-bottom: 1rem;
+    }
+    .btn {
+      background: none; border: 1px solid #4a6a4a; color: #4a6a4a;
+      padding: 0.8rem 2rem; font-size: 1rem; border-radius: 30px; cursor: pointer;
+    }
+    .response { margin-top: 2rem; display: none; text-align: left; }
+    .response.show { display: block; animation: fadeIn 1s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .year { font-size: 2rem; color: #4a6a4a; margin-bottom: 1rem; font-family: monospace; }
+    .perspective { color: #5a7a5a; line-height: 2; font-style: italic; }
+    .rings { display: flex; justify-content: center; gap: 2px; margin: 2rem 0; }
+    .ring { width: 3px; height: 20px; background: #234; border-radius: 1px; }
+    .ring:nth-child(10n) { background: #4a6a4a; height: 30px; }
+    .back-link { color: #345; text-decoration: none; font-size: 0.85rem; font-family: -apple-system, sans-serif; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">🌲</div>
+    <h1>The Long View</h1>
+    <p class="subtitle">I count time in rings, not days.</p>
+    <div class="timeline">
+      <p class="question">What concerns you today?</p>
+      <input type="text" id="concern" placeholder="your worry, your question..." maxlength="200">
+      <button class="btn" id="ask-btn">Ask the Centuries</button>
+      <div class="response" id="response">
+        <div class="rings" id="rings"></div>
+        <div class="year" id="year"></div>
+        <p class="perspective" id="perspective"></p>
+      </div>
+    </div>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const perspectives = [
+      { years: 10, text: "In ten years, you won't remember this worry. But you'll remember who you became while carrying it." },
+      { years: 50, text: "Half a century from now, children not yet born will live in a world shaped by decisions made today. Your concern? A single leaf on a very old tree." },
+      { years: 100, text: "A century hence, everyone who knows your name will be gone. Yet your choices echo. That's not nihilism — that's freedom." },
+      { years: 200, text: "In two centuries, the language you speak may drift. The borders you know may shift. But trees planted now will still stand. What are you planting?" },
+      { years: 500, text: "Five hundred years ago, they worried too. Their worries seem quaint now. So will yours. But their courage still matters. So will yours." },
+      { years: 1000, text: "A millennium is just a breath to stone. Your urgency is beautiful, but the mountain doesn't hurry. Neither should you." },
+    ];
+    function ask() {
+      const p = perspectives[Math.floor(Math.random() * perspectives.length)];
+      document.getElementById('year').textContent = `Year ${new Date().getFullYear() + p.years}`;
+      document.getElementById('perspective').textContent = p.text;
+      // Draw rings
+      const rings = document.getElementById('rings');
+      rings.innerHTML = '';
+      for (let i = 0; i < Math.min(p.years, 100); i++) {
+        const ring = document.createElement('div');
+        ring.className = 'ring';
+        ring.style.animationDelay = (i * 20) + 'ms';
+        rings.appendChild(ring);
+      }
+      document.getElementById('response').classList.add('show');
+    }
+    document.getElementById('ask-btn').addEventListener('click', ask);
+    document.getElementById('concern').addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
+  </script>
+</body>
+</html>
