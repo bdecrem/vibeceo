@@ -11,6 +11,7 @@
       color: #f8fafc;
       font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -20,32 +21,120 @@
       user-select: none;
     }
 
-    #header {
-      margin-top: clamp(16px, 4vh, 40px);
-      text-align: center;
+    /* --- TITLE SCREEN --- */
+    #title-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      gap: 24px;
+      padding: 20px;
     }
-    #header h1 {
-      font-size: clamp(28px, 6vw, 42px);
-      letter-spacing: 8px;
+    #title-screen h1 {
+      font-size: clamp(40px, 10vw, 64px);
+      letter-spacing: 12px;
       color: #fbbf24;
-      text-shadow: 0 0 20px #fbbf2440;
+      text-shadow: 0 0 30px #fbbf2440;
     }
-    #header p {
+    #title-screen .subtitle {
+      font-size: 13px;
+      color: #64748b;
+      letter-spacing: 3px;
+    }
+    #title-screen .how {
+      max-width: 320px;
+      text-align: center;
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+    .level-preview {
+      display: flex;
+      gap: 6px;
+      margin: 8px 0;
+    }
+    .level-pip {
+      width: 10px; height: 10px;
+      border-radius: 3px;
+    }
+    #play-btn {
+      padding: 16px 48px;
+      border-radius: 12px;
+      border: none;
+      background: #fbbf24;
+      color: #0f172a;
+      font-family: inherit;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    #play-btn:active { transform: scale(0.95); }
+
+    /* --- GAME SCREEN --- */
+    #game-screen { display: none; width: 100%; align-items: center; flex-direction: column; }
+    #game-screen.show { display: flex; }
+
+    #top-bar {
+      width: min(92vw, 440px);
+      margin-top: clamp(10px, 2vh, 20px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #level-label {
       font-size: 12px;
+      letter-spacing: 2px;
+      color: #94a3b8;
+    }
+    #level-label span { color: #fbbf24; font-weight: 700; }
+    #score-display {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fbbf24;
+      letter-spacing: 2px;
+      text-shadow: 0 0 12px #fbbf2430;
+    }
+
+    #timer-bar-wrap {
+      width: min(92vw, 440px);
+      height: 6px;
+      background: #1e293b;
+      border-radius: 3px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    #timer-bar {
+      height: 100%;
+      background: #22d3ee;
+      border-radius: 3px;
+      transition: width 0.1s linear, background 0.5s;
+      width: 100%;
+    }
+    #timer-bar.warn { background: #fb923c; }
+    #timer-bar.danger { background: #ef4444; }
+
+    #timer-text {
+      font-size: 13px;
       color: #64748b;
       margin-top: 4px;
-      letter-spacing: 2px;
+      letter-spacing: 1px;
+      min-height: 18px;
+      text-align: center;
     }
 
     #mistakes {
       display: flex;
       gap: 8px;
-      margin-top: clamp(8px, 2vh, 16px);
+      margin-top: 6px;
       justify-content: center;
-      min-height: 20px;
+      min-height: 16px;
     }
     .mistake-dot {
-      width: 12px; height: 12px;
+      width: 10px; height: 10px;
       border-radius: 50%;
       background: #334155;
       transition: background 0.3s, box-shadow 0.3s;
@@ -56,14 +145,13 @@
     }
 
     #message {
-      height: 28px;
+      height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 13px;
       color: #94a3b8;
-      margin-top: 4px;
-      transition: opacity 0.3s;
+      margin-top: 2px;
     }
     #message.flash { color: #fbbf24; }
     #message.error { color: #f87171; }
@@ -72,12 +160,12 @@
       width: min(92vw, 440px);
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-top: 8px;
+      gap: 5px;
+      margin-top: 6px;
     }
     .solved-group {
       border-radius: 10px;
-      padding: 12px 16px;
+      padding: 10px 14px;
       text-align: center;
       animation: solvedIn 0.4s ease-out;
     }
@@ -86,23 +174,23 @@
       to { opacity: 1; transform: scale(1) translateY(0); }
     }
     .solved-group .group-label {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 2px;
       text-transform: uppercase;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
     .solved-group .group-words {
-      font-size: 12px;
+      font-size: 11px;
       opacity: 0.85;
     }
 
     #grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
+      gap: 5px;
       width: min(92vw, 440px);
-      margin-top: 8px;
+      margin-top: 6px;
     }
     .tile {
       aspect-ratio: 1.6;
@@ -113,7 +201,7 @@
       background: #1e293b;
       border: 2px solid #334155;
       border-radius: 10px;
-      font-size: clamp(11px, 2.8vw, 15px);
+      font-size: clamp(11px, 2.8vw, 14px);
       font-weight: 600;
       font-family: inherit;
       color: #f8fafc;
@@ -130,9 +218,7 @@
       color: #0f172a;
       box-shadow: 0 0 16px #fbbf2440;
     }
-    .tile.shake {
-      animation: tileShake 0.4s ease;
-    }
+    .tile.shake { animation: tileShake 0.4s ease; }
     @keyframes tileShake {
       0%, 100% { transform: translateX(0); }
       20% { transform: translateX(-6px); }
@@ -140,29 +226,24 @@
       60% { transform: translateX(-4px); }
       80% { transform: translateX(4px); }
     }
-    .tile.pop-out {
-      animation: popOut 0.3s ease forwards;
-    }
-    @keyframes popOut {
-      to { opacity: 0; transform: scale(0.5); }
-    }
-    .tile.hidden { display: none; }
+    .tile.pop-out { animation: popOut 0.3s ease forwards; }
+    @keyframes popOut { to { opacity: 0; transform: scale(0.5); } }
 
     #controls {
       display: flex;
-      gap: 10px;
-      margin-top: clamp(10px, 2vh, 16px);
+      gap: 8px;
+      margin-top: clamp(8px, 1.5vh, 14px);
       flex-wrap: wrap;
       justify-content: center;
     }
     .btn {
-      padding: 10px 20px;
+      padding: 10px 18px;
       border-radius: 8px;
       border: 2px solid #334155;
       background: transparent;
       color: #f8fafc;
       font-family: inherit;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       letter-spacing: 1px;
       cursor: pointer;
@@ -170,67 +251,108 @@
     }
     .btn:active { transform: scale(0.95); }
     .btn:disabled { opacity: 0.3; cursor: default; }
-    .btn.primary {
-      background: #fbbf24;
-      border-color: #fbbf24;
-      color: #0f172a;
-    }
+    .btn.primary { background: #fbbf24; border-color: #fbbf24; color: #0f172a; }
     .btn.primary:disabled { background: #334155; border-color: #334155; color: #64748b; }
 
-    #result {
+    /* --- LEVEL COMPLETE OVERLAY --- */
+    #level-complete {
       display: none;
+      position: fixed;
+      inset: 0;
+      background: #0f172aee;
       flex-direction: column;
       align-items: center;
-      margin-top: clamp(16px, 3vh, 24px);
+      justify-content: center;
       gap: 12px;
+      z-index: 100;
+      animation: fadeIn 0.3s ease;
     }
-    #result.show { display: flex; }
-    #result h2 {
-      font-size: 24px;
-      color: #fbbf24;
+    #level-complete.show { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    #level-complete h2 {
+      font-size: 28px;
       letter-spacing: 4px;
+      color: #22d3ee;
     }
-    #result-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 24px);
-      gap: 4px;
+    .points-row {
+      font-size: 16px;
+      color: #94a3b8;
+      letter-spacing: 1px;
     }
-    .result-cell {
-      width: 24px; height: 24px;
-      border-radius: 4px;
+    .points-row span { color: #fbbf24; font-weight: 700; }
+    #level-total {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fbbf24;
+      letter-spacing: 2px;
+      margin-top: 4px;
     }
 
-    #puzzle-select {
-      margin-top: clamp(12px, 2vh, 20px);
+    /* --- GAME OVER SCREEN --- */
+    #game-over {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0f172af8;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 200;
+      animation: fadeIn 0.4s ease;
+    }
+    #game-over.show { display: flex; }
+    #game-over h2 {
+      font-size: 32px;
+      letter-spacing: 6px;
+    }
+    #final-score {
+      font-size: 48px;
+      font-weight: 700;
+      color: #fbbf24;
+      text-shadow: 0 0 30px #fbbf2440;
+    }
+    #final-breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+    }
+    .breakdown-row {
+      font-size: 13px;
+      color: #64748b;
       display: flex;
       gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
     }
-    .puzzle-btn {
-      width: 36px; height: 36px;
-      border-radius: 8px;
-      border: 2px solid #334155;
-      background: transparent;
-      color: #94a3b8;
+    .breakdown-row .pts { color: #94a3b8; font-weight: 600; }
+    .breakdown-row.cleared .pts { color: #22d3ee; }
+    #level-dots {
+      display: flex;
+      gap: 8px;
+      margin: 4px 0;
+    }
+    .level-dot {
+      width: 16px; height: 16px;
+      border-radius: 4px;
+    }
+    #restart-btn {
+      padding: 14px 40px;
+      border-radius: 10px;
+      border: none;
+      background: #fbbf24;
+      color: #0f172a;
       font-family: inherit;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 3px;
       cursor: pointer;
-      transition: all 0.15s;
+      margin-top: 8px;
     }
-    .puzzle-btn.active {
-      border-color: #fbbf24;
-      color: #fbbf24;
-    }
-    .puzzle-btn.completed {
-      border-color: #22c55e;
-      color: #22c55e;
-    }
+    #restart-btn:active { transform: scale(0.95); }
 
     #footer {
       margin-top: auto;
-      padding: 16px;
+      padding: 12px;
       font-size: 10px;
       color: #475569;
       letter-spacing: 2px;
@@ -239,147 +361,382 @@
 </head>
 <body>
 
-<div id="header">
+<!-- TITLE SCREEN -->
+<div id="title-screen">
   <h1>THREADS</h1>
-  <p>FIND THE FOUR GROUPS</p>
+  <div class="subtitle">FIND THE FOUR GROUPS</div>
+  <div class="how">
+    16 words. 4 hidden groups. 60 seconds.<br>
+    Clear 5 levels. Each one harder.<br>
+    Faster = more points.
+  </div>
+  <div class="level-preview">
+    <div class="level-pip" style="background:#22d3ee"></div>
+    <div class="level-pip" style="background:#22c55e"></div>
+    <div class="level-pip" style="background:#fbbf24"></div>
+    <div class="level-pip" style="background:#fb923c"></div>
+    <div class="level-pip" style="background:#ef4444"></div>
+  </div>
+  <button id="play-btn" onclick="startRun()">PLAY</button>
+  <div style="font-size:11px;color:#64748b;letter-spacing:1px;">MAX SCORE: 1,950</div>
 </div>
 
-<div id="mistakes"></div>
-<div id="message"></div>
-<div id="solved-area"></div>
-<div id="grid"></div>
-
-<div id="controls">
-  <button class="btn" id="btn-shuffle" onclick="shuffle()">SHUFFLE</button>
-  <button class="btn" id="btn-deselect" onclick="deselectAll()">DESELECT</button>
-  <button class="btn primary" id="btn-submit" onclick="submit()" disabled>SUBMIT</button>
+<!-- GAME SCREEN -->
+<div id="game-screen">
+  <div id="top-bar">
+    <div id="level-label">LEVEL <span id="level-num">1</span> <span id="diff-label" style="color:#64748b">/ VERY EASY</span></div>
+    <div id="score-display">0</div>
+  </div>
+  <div id="timer-bar-wrap"><div id="timer-bar"></div></div>
+  <div id="timer-text"></div>
+  <div id="mistakes"></div>
+  <div id="message"></div>
+  <div id="solved-area"></div>
+  <div id="grid"></div>
+  <div id="controls">
+    <button class="btn" id="btn-shuffle" onclick="shuffle()">SHUFFLE</button>
+    <button class="btn" id="btn-deselect" onclick="deselectAll()">DESELECT</button>
+    <button class="btn primary" id="btn-submit" onclick="submitGuess()" disabled>SUBMIT</button>
+  </div>
+  <div id="footer">PIXELPIT ARCADE</div>
 </div>
 
-<div id="result">
-  <h2 id="result-title"></h2>
-  <div id="result-grid"></div>
-  <button class="btn primary" onclick="showPuzzleSelect()">NEXT PUZZLE</button>
+<!-- LEVEL COMPLETE OVERLAY -->
+<div id="level-complete">
+  <h2 id="lc-title">LEVEL CLEAR</h2>
+  <div class="points-row">Base: <span id="lc-base">+100</span></div>
+  <div class="points-row">Time bonus: <span id="lc-time">+65</span></div>
+  <div id="level-total">165</div>
 </div>
 
-<div id="puzzle-select"></div>
-
-<div id="footer">PIXELPIT ARCADE</div>
+<!-- GAME OVER SCREEN -->
+<div id="game-over">
+  <h2 id="go-title" style="color:#f87171">GAME OVER</h2>
+  <div id="final-score">0</div>
+  <div id="level-dots"></div>
+  <div id="final-breakdown"></div>
+  <button id="restart-btn" onclick="backToTitle()">PLAY AGAIN</button>
+</div>
 
 <script>
-// --- PUZZLES ---
-const GROUP_COLORS = [
-  { bg: '#fbbf24', text: '#0f172a', name: 'gold' },
-  { bg: '#22d3ee', text: '#0f172a', name: 'teal' },
-  { bg: '#a78bfa', text: '#0f172a', name: 'violet' },
-  { bg: '#f472b6', text: '#0f172a', name: 'pink' },
+// ============================
+// DIFFICULTY LEVELS
+// ============================
+const LEVELS = [
+  { name: 'VERY EASY', base: 100, color: '#22d3ee' },
+  { name: 'EASY',      base: 200, color: '#22c55e' },
+  { name: 'LOW MED',   base: 300, color: '#fbbf24' },
+  { name: 'MEDIUM',    base: 400, color: '#fb923c' },
+  { name: 'HARD',      base: 500, color: '#ef4444' },
 ];
 
-const PUZZLES = [
-  {
-    groups: [
+const GROUP_COLORS = [
+  { bg: '#fbbf24', text: '#0f172a' },
+  { bg: '#22d3ee', text: '#0f172a' },
+  { bg: '#a78bfa', text: '#0f172a' },
+  { bg: '#f472b6', text: '#0f172a' },
+];
+
+const TIME_LIMIT = 60;
+const MAX_MISTAKES = 4;
+const MAX_TIME_BONUS = 90;
+
+// ============================
+// PUZZLE POOLS BY DIFFICULTY
+// ============================
+const POOL = {
+  0: [ // VERY EASY — obvious, no overlap
+    { groups: [
+      { label: 'Fruits', words: ['APPLE', 'BANANA', 'GRAPE', 'ORANGE'] },
+      { label: 'Colors', words: ['RED', 'BLUE', 'GREEN', 'YELLOW'] },
+      { label: 'Planets', words: ['MARS', 'VENUS', 'SATURN', 'JUPITER'] },
+      { label: 'Animals', words: ['DOG', 'CAT', 'HORSE', 'RABBIT'] },
+    ]},
+    { groups: [
+      { label: 'Body parts', words: ['ARM', 'LEG', 'HEAD', 'FOOT'] },
+      { label: 'Weather', words: ['RAIN', 'SNOW', 'WIND', 'HAIL'] },
+      { label: 'Furniture', words: ['CHAIR', 'TABLE', 'DESK', 'BED'] },
+      { label: 'Sports', words: ['TENNIS', 'SOCCER', 'GOLF', 'HOCKEY'] },
+    ]},
+    { groups: [
+      { label: 'Months', words: ['MARCH', 'JUNE', 'APRIL', 'AUGUST'] },
+      { label: 'Instruments', words: ['PIANO', 'DRUMS', 'VIOLIN', 'FLUTE'] },
+      { label: 'Vegetables', words: ['CARROT', 'ONION', 'PEPPER', 'CELERY'] },
+      { label: 'Shapes', words: ['CIRCLE', 'SQUARE', 'STAR', 'DIAMOND'] },
+    ]},
+  ],
+  1: [ // EASY — clear categories, mild overlap
+    { groups: [
       { label: 'Keyboard shortcuts', words: ['COPY', 'PASTE', 'UNDO', 'SAVE'] },
-      { label: 'Coffee drinks', words: ['LATTE', 'MOCHA', 'DRIP', 'COLD BREW'] },
-      { label: '___ code', words: ['ZIP', 'AREA', 'SOURCE', 'DRESS'] },
-      { label: 'Things that crash', words: ['WAVE', 'MARKET', 'PARTY', 'BROWSER'] },
-    ]
-  },
-  {
-    groups: [
-      { label: 'Planet ___', words: ['FITNESS', 'EARTH', 'HOLLYWOOD', 'MONEY'] },
-      { label: 'Shades of blue', words: ['NAVY', 'SKY', 'ROYAL', 'BABY'] },
+      { label: 'Coffee drinks', words: ['LATTE', 'MOCHA', 'DRIP', 'ESPRESSO'] },
       { label: 'Card games', words: ['BRIDGE', 'SNAP', 'WAR', 'HEARTS'] },
       { label: 'Things with strings', words: ['GUITAR', 'PUPPET', 'KITE', 'BOW'] },
-    ]
-  },
-  {
-    groups: [
-      { label: 'Units of time', words: ['SECOND', 'MINUTE', 'QUARTER', 'SEASON'] },
-      { label: 'Also a dance', words: ['SWING', 'SALSA', 'TAP', 'TWIST'] },
-      { label: 'Data structures', words: ['TREE', 'STACK', 'QUEUE', 'MAP'] },
-      { label: 'Double ___', words: ['DUTCH', 'DOWN', 'CHECK', 'TAKE'] },
-    ]
-  },
-  {
-    groups: [
+    ]},
+    { groups: [
+      { label: 'Breakfast items', words: ['TOAST', 'WAFFLE', 'BAGEL', 'CEREAL'] },
+      { label: 'Shades of blue', words: ['NAVY', 'SKY', 'ROYAL', 'BABY'] },
       { label: 'Things in a wallet', words: ['CASH', 'CARD', 'LICENSE', 'RECEIPT'] },
-      { label: 'Modes of transport', words: ['BUS', 'TRAIN', 'FERRY', 'CABLE CAR'] },
+      { label: 'Modes of transport', words: ['BUS', 'TRAIN', 'FERRY', 'TAXI'] },
+    ]},
+    { groups: [
+      { label: 'Currencies', words: ['DOLLAR', 'EURO', 'POUND', 'YEN'] },
+      { label: 'Dances', words: ['SALSA', 'TANGO', 'WALTZ', 'SWING'] },
+      { label: 'Kitchen tools', words: ['WHISK', 'LADLE', 'TONGS', 'GRATER'] },
+      { label: 'Board games', words: ['CHESS', 'RISK', 'CLUE', 'LIFE'] },
+    ]},
+  ],
+  2: [ // LOW MEDIUM — some ambiguous words
+    { groups: [
       { label: 'Music genres', words: ['HOUSE', 'METAL', 'SOUL', 'COUNTRY'] },
       { label: '___ light', words: ['FLASH', 'MOON', 'SPOT', 'GREEN'] },
-    ]
-  },
-  {
-    groups: [
-      { label: 'Breakfast items', words: ['TOAST', 'WAFFLE', 'BAGEL', 'CEREAL'] },
       { label: 'Internet slang', words: ['LOL', 'BRB', 'TBH', 'GOAT'] },
       { label: 'Types of test', words: ['BLOOD', 'STRESS', 'UNIT', 'FIELD'] },
-      { label: 'Things that bounce', words: ['BALL', 'CHECK', 'EMAIL', 'IDEA'] },
-    ]
-  },
-  {
-    groups: [
-      { label: 'Ocean creatures', words: ['RAY', 'STAR', 'ANGEL', 'HAMMER'] },
-      { label: 'Types of chart', words: ['BAR', 'PIE', 'LINE', 'FLOW'] },
-      { label: 'Parts of a shoe', words: ['SOLE', 'TONGUE', 'HEEL', 'LACE'] },
-      { label: 'Rock ___', words: ['CLIMB', 'BAND', 'BOTTOM', 'SOLID'] },
-    ]
-  },
-  {
-    groups: [
+    ]},
+    { groups: [
+      { label: 'Units of time', words: ['SECOND', 'MINUTE', 'QUARTER', 'SEASON'] },
+      { label: 'Data structures', words: ['TREE', 'STACK', 'QUEUE', 'MAP'] },
+      { label: 'Double ___', words: ['DUTCH', 'DOWN', 'CHECK', 'TAKE'] },
       { label: 'Magic words', words: ['PLEASE', 'ABRA', 'PRESTO', 'OPEN'] },
-      { label: 'Pasta shapes', words: ['BOW TIE', 'SHELL', 'ANGEL HAIR', 'ELBOW'] },
+    ]},
+    { groups: [
+      { label: 'Parts of a shoe', words: ['SOLE', 'TONGUE', 'HEEL', 'LACE'] },
+      { label: 'Types of chart', words: ['BAR', 'PIE', 'LINE', 'FLOW'] },
       { label: 'Things that tick', words: ['CLOCK', 'BOMB', 'BOX', 'HEART'] },
-      { label: 'Famous ___ Park', words: ['CENTRAL', 'HYDE', 'JURASSIC', 'FENWAY'] },
-    ]
-  },
-  {
-    groups: [
-      { label: 'Things that are pitched', words: ['TENT', 'BALL', 'IDEA', 'VOICE'] },
-      { label: 'Silent letters', words: ['KNIGHT', 'GNOME', 'PSALM', 'WRIST'] },
+      { label: 'Planet ___', words: ['FITNESS', 'EARTH', 'HOLLYWOOD', 'MONEY'] },
+    ]},
+  ],
+  3: [ // MEDIUM — tricky overlaps, misdirection
+    { groups: [
+      { label: '___ code', words: ['ZIP', 'AREA', 'SOURCE', 'DRESS'] },
+      { label: 'Things that crash', words: ['WAVE', 'MARKET', 'PARTY', 'BROWSER'] },
+      { label: 'Things that bounce', words: ['BALL', 'CHECK', 'EMAIL', 'IDEA'] },
       { label: 'Poker terms', words: ['FOLD', 'RAISE', 'BLUFF', 'FLUSH'] },
+    ]},
+    { groups: [
+      { label: 'Ocean creatures (___fish/shark)', words: ['RAY', 'ANGEL', 'HAMMER', 'SWORD'] },
+      { label: 'Rock ___', words: ['CLIMB', 'BAND', 'BOTTOM', 'SOLID'] },
+      { label: 'Famous ___ Park', words: ['CENTRAL', 'HYDE', 'JURASSIC', 'FENWAY'] },
+      { label: 'Pasta shapes', words: ['BOW TIE', 'SHELL', 'ELBOW', 'PENNE'] },
+    ]},
+    { groups: [
+      { label: 'Things that are pitched', words: ['TENT', 'VOICE', 'SALE', 'BALL'] },
       { label: 'Cloud ___', words: ['NINE', 'BURST', 'ATLAS', 'STORAGE'] },
-    ]
-  },
-];
+      { label: 'Silent first letter', words: ['KNIGHT', 'GNOME', 'PSALM', 'WRIST'] },
+      { label: 'Sounds like a number', words: ['WON', 'ATE', 'FORE', 'SEW'] },
+    ]},
+  ],
+  4: [ // HARD — abstract, wordplay, brutal misdirection
+    { groups: [
+      { label: 'Can follow BACK', words: ['FIRE', 'TRACK', 'HAND', 'STAGE'] },
+      { label: 'Can follow BREAK', words: ['FAST', 'DOWN', 'THROUGH', 'WATER'] },
+      { label: '___ point', words: ['GUN', 'POWER', 'CHECK', 'VIEW'] },
+      { label: 'Hide another word', words: ['CLAMBER', 'PIRATE', 'PLUMBER', 'STARCH'] },
+    ]},
+    { groups: [
+      { label: 'Anagram of a color', words: ['IRED', 'LUBE', 'NIKT', 'DERANGE'] },
+      { label: 'Slang for money', words: ['BREAD', 'DOUGH', 'CHEDDAR', 'PAPER'] },
+      { label: '___ room', words: ['BATH', 'CHAT', 'BOARD', 'SHOW'] },
+      { label: 'Words before FLY', words: ['BAR', 'BUTTER', 'MAY', 'FIRE'] },
+    ]},
+    { groups: [
+      { label: 'Contains a day', words: ['SUNBURN', 'MONDAY', 'FRIED', 'SATURN'] },
+      { label: 'Two-word compound (___ball)', words: ['BASE', 'SNOW', 'EYE', 'FIRE'] },
+      { label: 'Famous Johns', words: ['LEGEND', 'WAYNE', 'LENNON', 'WICK'] },
+      { label: 'Sounds like food', words: ['BERRY', 'STEAK', 'LEEK', 'THYME'] },
+    ]},
+  ],
+};
 
-// --- STATE ---
-let currentPuzzle = 0;
+// ============================
+// GAME STATE
+// ============================
+let currentLevel = 0;
+let totalScore = 0;
+let levelScores = [];  // { base, timeBonus, cleared }
 let words = [];
 let selected = [];
 let solved = [];
 let mistakes = 0;
-let maxMistakes = 4;
-let guessHistory = [];
-let gameOver = false;
 let previousGuesses = [];
+let levelActive = false;
+let timerStart = 0;
+let timerInterval = null;
+let currentPuzzle = null;
 
-// --- INIT ---
-function loadPuzzle(index) {
-  currentPuzzle = index;
-  const puzzle = PUZZLES[index];
+// ============================
+// FLOW
+// ============================
+function startRun() {
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('game-screen').classList.add('show');
+  currentLevel = 0;
+  totalScore = 0;
+  levelScores = [];
+  updateScoreDisplay();
+  startLevel(0);
+}
+
+function startLevel(level) {
+  currentLevel = level;
+  const pool = POOL[level];
+  currentPuzzle = pool[Math.floor(Math.random() * pool.length)];
+
   solved = [];
   selected = [];
   mistakes = 0;
-  guessHistory = [];
-  gameOver = false;
   previousGuesses = [];
+  levelActive = true;
 
   words = [];
-  puzzle.groups.forEach((g, gi) => {
-    g.words.forEach(w => {
-      words.push({ text: w, group: gi });
-    });
+  currentPuzzle.groups.forEach((g, gi) => {
+    g.words.forEach(w => words.push({ text: w, group: gi }));
   });
   shuffleWords();
 
-  document.getElementById('result').classList.remove('show');
+  document.getElementById('level-num').textContent = level + 1;
+  const diffLabel = document.getElementById('diff-label');
+  diffLabel.textContent = '/ ' + LEVELS[level].name;
+  diffLabel.style.color = LEVELS[level].color;
+
   renderMistakes();
   setMessage('');
-  renderGrid();
   renderSolvedArea();
+  renderGrid();
   updateControls();
-  renderPuzzleSelect();
+  startTimer();
 }
 
+function startTimer() {
+  timerStart = Date.now();
+  clearInterval(timerInterval);
+  updateTimerDisplay();
+  timerInterval = setInterval(updateTimerDisplay, 100);
+}
+
+function updateTimerDisplay() {
+  const elapsed = (Date.now() - timerStart) / 1000;
+  const remaining = Math.max(0, TIME_LIMIT - elapsed);
+  const pct = remaining / TIME_LIMIT;
+
+  const bar = document.getElementById('timer-bar');
+  bar.style.width = (pct * 100) + '%';
+  bar.className = pct < 0.15 ? 'danger' : pct < 0.35 ? 'warn' : '';
+
+  document.getElementById('timer-text').textContent = remaining.toFixed(1) + 's';
+
+  if (remaining <= 0 && levelActive) {
+    levelActive = false;
+    clearInterval(timerInterval);
+    playTone(150, 0.4, 'sawtooth');
+    revealAll();
+    setTimeout(() => endRun(false), 800);
+  }
+}
+
+function getElapsed() {
+  return (Date.now() - timerStart) / 1000;
+}
+
+function levelCleared() {
+  levelActive = false;
+  clearInterval(timerInterval);
+
+  const elapsed = getElapsed();
+  const timeRemaining = Math.max(0, TIME_LIMIT - elapsed);
+  const timeBonus = Math.floor(MAX_TIME_BONUS * timeRemaining / TIME_LIMIT);
+  const base = LEVELS[currentLevel].base;
+  const levelTotal = base + timeBonus;
+
+  totalScore += levelTotal;
+  levelScores.push({ base, timeBonus, cleared: true });
+  updateScoreDisplay();
+
+  // Play victory sound
+  playTone(523, 0.1); setTimeout(() => playTone(659, 0.1), 80);
+  setTimeout(() => playTone(784, 0.12), 160);
+  setTimeout(() => playTone(1047, 0.2), 260);
+
+  // Show level complete overlay
+  const overlay = document.getElementById('level-complete');
+  document.getElementById('lc-title').textContent = currentLevel === 4 ? 'ALL CLEAR!' : 'LEVEL CLEAR';
+  document.getElementById('lc-title').style.color = LEVELS[currentLevel].color;
+  document.getElementById('lc-base').textContent = '+' + base;
+  document.getElementById('lc-time').textContent = '+' + timeBonus;
+  document.getElementById('level-total').textContent = levelTotal;
+  overlay.classList.add('show');
+
+  if (currentLevel < 4) {
+    setTimeout(() => {
+      overlay.classList.remove('show');
+      startLevel(currentLevel + 1);
+    }, 1800);
+  } else {
+    setTimeout(() => {
+      overlay.classList.remove('show');
+      endRun(true);
+    }, 2000);
+  }
+}
+
+function endRun(allCleared) {
+  levelActive = false;
+  clearInterval(timerInterval);
+
+  // Pad levelScores for unplayed levels
+  while (levelScores.length < 5) {
+    levelScores.push({ base: 0, timeBonus: 0, cleared: false });
+  }
+
+  const goEl = document.getElementById('game-over');
+  const titleEl = document.getElementById('go-title');
+  titleEl.textContent = allCleared ? 'COMPLETE' : 'GAME OVER';
+  titleEl.style.color = allCleared ? '#fbbf24' : '#f87171';
+
+  document.getElementById('final-score').textContent = totalScore;
+
+  // Level dots
+  const dotsEl = document.getElementById('level-dots');
+  dotsEl.innerHTML = '';
+  levelScores.forEach((ls, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'level-dot';
+    dot.style.background = ls.cleared ? LEVELS[i].color : '#334155';
+    dotsEl.appendChild(dot);
+  });
+
+  // Breakdown
+  const bdEl = document.getElementById('final-breakdown');
+  bdEl.innerHTML = '';
+  levelScores.forEach((ls, i) => {
+    if (ls.cleared) {
+      const row = document.createElement('div');
+      row.className = 'breakdown-row cleared';
+      row.innerHTML = `LVL ${i + 1}: <span class="pts">${ls.base} + ${ls.timeBonus} time</span>`;
+      bdEl.appendChild(row);
+    }
+  });
+
+  goEl.classList.add('show');
+
+  // Analytics
+  if (totalScore >= 1) {
+    fetch('/api/pixelpit/stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ game: 'threads' }),
+    }).catch(() => {});
+  }
+}
+
+function backToTitle() {
+  document.getElementById('game-over').classList.remove('show');
+  document.getElementById('game-screen').classList.remove('show');
+  document.getElementById('title-screen').style.display = 'flex';
+}
+
+// ============================
+// PUZZLE LOGIC
+// ============================
 function shuffleWords() {
   for (let i = words.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -387,75 +744,14 @@ function shuffleWords() {
   }
 }
 
-// --- RENDER ---
-function renderGrid() {
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-  const remaining = words.filter(w => !solved.includes(w.group));
-  remaining.forEach((w, i) => {
-    const tile = document.createElement('div');
-    tile.className = 'tile' + (selected.includes(w.text) ? ' selected' : '');
-    tile.textContent = w.text;
-    tile.onclick = () => toggleSelect(w.text);
-    grid.appendChild(tile);
-  });
-}
-
-function renderMistakes() {
-  const el = document.getElementById('mistakes');
-  el.innerHTML = '';
-  for (let i = 0; i < maxMistakes; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'mistake-dot' + (i < mistakes ? ' used' : '');
-    el.appendChild(dot);
-  }
-}
-
-function renderSolvedArea() {
-  const area = document.getElementById('solved-area');
-  area.innerHTML = '';
-  solved.forEach((gi, order) => {
-    const g = PUZZLES[currentPuzzle].groups[gi];
-    const color = GROUP_COLORS[gi];
-    const div = document.createElement('div');
-    div.className = 'solved-group';
-    div.style.background = color.bg;
-    div.style.color = color.text;
-    div.innerHTML = `
-      <div class="group-label">${g.label}</div>
-      <div class="group-words">${g.words.join(', ')}</div>
-    `;
-    area.appendChild(div);
-  });
-}
-
-function updateControls() {
-  document.getElementById('btn-submit').disabled = selected.length !== 4 || gameOver;
-  document.getElementById('btn-deselect').disabled = selected.length === 0 || gameOver;
-  document.getElementById('btn-shuffle').disabled = gameOver;
-}
-
-function setMessage(text, type) {
-  const el = document.getElementById('message');
-  el.textContent = text;
-  el.className = type || '';
-  if (text) {
-    setTimeout(() => {
-      if (el.textContent === text) {
-        el.textContent = '';
-        el.className = '';
-      }
-    }, 2000);
-  }
-}
-
-// --- ACTIONS ---
 function toggleSelect(word) {
-  if (gameOver) return;
+  if (!levelActive) return;
   if (selected.includes(word)) {
     selected = selected.filter(w => w !== word);
+    playTone(400, 0.06, 'sine');
   } else if (selected.length < 4) {
     selected.push(word);
+    playTone(500 + selected.length * 80, 0.08, 'sine');
   }
   renderGrid();
   updateControls();
@@ -472,8 +768,8 @@ function shuffle() {
   renderGrid();
 }
 
-function submit() {
-  if (selected.length !== 4 || gameOver) return;
+function submitGuess() {
+  if (selected.length !== 4 || !levelActive) return;
 
   const sortedGuess = [...selected].sort().join(',');
   if (previousGuesses.includes(sortedGuess)) {
@@ -482,12 +778,10 @@ function submit() {
   }
   previousGuesses.push(sortedGuess);
 
-  const puzzle = PUZZLES[currentPuzzle];
   let matchedGroup = -1;
-
-  for (let gi = 0; gi < puzzle.groups.length; gi++) {
+  for (let gi = 0; gi < currentPuzzle.groups.length; gi++) {
     if (solved.includes(gi)) continue;
-    const groupWords = puzzle.groups[gi].words;
+    const groupWords = currentPuzzle.groups[gi].words;
     const overlap = selected.filter(w => groupWords.includes(w));
     if (overlap.length === 4) {
       matchedGroup = gi;
@@ -496,7 +790,7 @@ function submit() {
   }
 
   if (matchedGroup >= 0) {
-    guessHistory.push(matchedGroup);
+    // Correct!
     solved.push(matchedGroup);
     selected = [];
     words = words.filter(w => w.group !== matchedGroup);
@@ -504,65 +798,54 @@ function submit() {
     const tiles = document.querySelectorAll('.tile.selected');
     tiles.forEach(t => t.classList.add('pop-out'));
 
+    playTone(523, 0.08); setTimeout(() => playTone(659, 0.08), 60);
+    setTimeout(() => playTone(784, 0.12), 120);
+
     setTimeout(() => {
       renderSolvedArea();
       renderGrid();
       updateControls();
-
-      if (solved.length === 4) {
-        endGame(true);
-      }
+      if (solved.length === 4) levelCleared();
     }, 300);
   } else {
-    // Check for "one away"
+    // Wrong
     let oneAway = false;
-    for (let gi = 0; gi < puzzle.groups.length; gi++) {
+    for (let gi = 0; gi < currentPuzzle.groups.length; gi++) {
       if (solved.includes(gi)) continue;
-      const groupWords = puzzle.groups[gi].words;
-      const overlap = selected.filter(w => groupWords.includes(w));
-      if (overlap.length === 3) {
+      const groupWords = currentPuzzle.groups[gi].words;
+      if (selected.filter(w => groupWords.includes(w)).length === 3) {
         oneAway = true;
         break;
       }
     }
 
     mistakes++;
-    guessHistory.push(-1);
     renderMistakes();
+    playTone(200, 0.2, 'triangle');
 
     const tiles = document.querySelectorAll('.tile.selected');
     tiles.forEach(t => t.classList.add('shake'));
-    setTimeout(() => {
-      tiles.forEach(t => t.classList.remove('shake'));
-    }, 400);
+    setTimeout(() => tiles.forEach(t => t.classList.remove('shake')), 400);
 
-    if (oneAway) {
-      setMessage('One away...', 'flash');
-    } else {
-      setMessage('Not quite...', 'error');
-    }
+    setMessage(oneAway ? 'One away...' : 'Not quite...', oneAway ? 'flash' : 'error');
 
-    if (mistakes >= maxMistakes) {
+    if (mistakes >= MAX_MISTAKES) {
+      levelActive = false;
+      clearInterval(timerInterval);
       setTimeout(() => {
         revealAll();
-        endGame(false);
-      }, 600);
+        setTimeout(() => endRun(false), 800);
+      }, 500);
     } else {
       selected = [];
-      setTimeout(() => {
-        renderGrid();
-        updateControls();
-      }, 400);
+      setTimeout(() => { renderGrid(); updateControls(); }, 400);
     }
   }
 }
 
 function revealAll() {
-  const puzzle = PUZZLES[currentPuzzle];
-  for (let gi = 0; gi < puzzle.groups.length; gi++) {
-    if (!solved.includes(gi)) {
-      solved.push(gi);
-    }
+  for (let gi = 0; gi < currentPuzzle.groups.length; gi++) {
+    if (!solved.includes(gi)) solved.push(gi);
   }
   words = [];
   selected = [];
@@ -571,62 +854,71 @@ function revealAll() {
   updateControls();
 }
 
-function endGame(won) {
-  gameOver = true;
-  updateControls();
-
-  const resultEl = document.getElementById('result');
-  const titleEl = document.getElementById('result-title');
-  const gridEl = document.getElementById('result-grid');
-
-  titleEl.textContent = won ? (mistakes === 0 ? 'PERFECT' : 'SOLVED') : 'GAME OVER';
-  titleEl.style.color = won ? '#fbbf24' : '#f87171';
-
-  gridEl.innerHTML = '';
-  guessHistory.forEach(gi => {
-    const cell = document.createElement('div');
-    cell.className = 'result-cell';
-    if (gi >= 0) {
-      cell.style.background = GROUP_COLORS[gi].bg;
-    } else {
-      cell.style.background = '#475569';
-    }
-    gridEl.appendChild(cell);
+// ============================
+// RENDER
+// ============================
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  words.filter(w => !solved.includes(w.group)).forEach(w => {
+    const tile = document.createElement('div');
+    tile.className = 'tile' + (selected.includes(w.text) ? ' selected' : '');
+    tile.textContent = w.text;
+    tile.onclick = () => toggleSelect(w.text);
+    grid.appendChild(tile);
   });
+}
 
-  setTimeout(() => {
-    resultEl.classList.add('show');
-  }, 500);
-
-  // Track analytics
-  const score = won ? (maxMistakes - mistakes) : 0;
-  if (score >= 1) {
-    fetch('/api/pixelpit/stats', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ game: 'threads' }),
-    }).catch(() => {});
+function renderMistakes() {
+  const el = document.getElementById('mistakes');
+  el.innerHTML = '';
+  for (let i = 0; i < MAX_MISTAKES; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'mistake-dot' + (i < mistakes ? ' used' : '');
+    el.appendChild(dot);
   }
 }
 
-function showPuzzleSelect() {
-  const next = (currentPuzzle + 1) % PUZZLES.length;
-  loadPuzzle(next);
-}
-
-function renderPuzzleSelect() {
-  const el = document.getElementById('puzzle-select');
-  el.innerHTML = '';
-  PUZZLES.forEach((_, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'puzzle-btn' + (i === currentPuzzle ? ' active' : '');
-    btn.textContent = i + 1;
-    btn.onclick = () => loadPuzzle(i);
-    el.appendChild(btn);
+function renderSolvedArea() {
+  const area = document.getElementById('solved-area');
+  area.innerHTML = '';
+  solved.forEach(gi => {
+    const g = currentPuzzle.groups[gi];
+    const color = GROUP_COLORS[gi];
+    const div = document.createElement('div');
+    div.className = 'solved-group';
+    div.style.background = color.bg;
+    div.style.color = color.text;
+    div.innerHTML = `
+      <div class="group-label">${g.label}</div>
+      <div class="group-words">${g.words.join(', ')}</div>
+    `;
+    area.appendChild(div);
   });
 }
 
-// --- AUDIO ---
+function updateControls() {
+  document.getElementById('btn-submit').disabled = selected.length !== 4 || !levelActive;
+  document.getElementById('btn-deselect').disabled = selected.length === 0 || !levelActive;
+  document.getElementById('btn-shuffle').disabled = !levelActive;
+}
+
+function setMessage(text, type) {
+  const el = document.getElementById('message');
+  el.textContent = text;
+  el.className = type || '';
+  if (text) {
+    setTimeout(() => { if (el.textContent === text) { el.textContent = ''; el.className = ''; } }, 2000);
+  }
+}
+
+function updateScoreDisplay() {
+  document.getElementById('score-display').textContent = totalScore;
+}
+
+// ============================
+// AUDIO
+// ============================
 let audioCtx;
 function initAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -641,42 +933,13 @@ function playTone(freq, dur, type) {
   const gain = audioCtx.createGain();
   osc.type = type || 'sine';
   osc.frequency.value = freq;
-  gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0.07, audioCtx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
   osc.connect(gain);
   gain.connect(audioCtx.destination);
   osc.start();
   osc.stop(audioCtx.currentTime + dur);
 }
-
-// Add sound to tile selection
-const origToggle = toggleSelect;
-toggleSelect = function(word) {
-  const wasSelected = selected.includes(word);
-  origToggle(word);
-  if (!wasSelected && selected.includes(word)) {
-    playTone(600 + selected.length * 100, 0.1, 'sine');
-  } else {
-    playTone(400, 0.08, 'sine');
-  }
-};
-
-// Add sound to correct/incorrect
-const origSubmit = submit;
-submit = function() {
-  const prevSolved = solved.length;
-  const prevMistakes = mistakes;
-  origSubmit();
-  if (solved.length > prevSolved) {
-    playTone(523, 0.1); setTimeout(() => playTone(659, 0.1), 80);
-    setTimeout(() => playTone(784, 0.15), 160);
-  } else if (mistakes > prevMistakes) {
-    playTone(200, 0.2, 'triangle');
-  }
-};
-
-// --- START ---
-loadPuzzle(0);
 </script>
 </body>
 </html>
