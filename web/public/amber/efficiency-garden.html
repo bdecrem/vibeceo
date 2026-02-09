@@ -815,7 +815,23 @@
       }
     }
     
+    // Pages that have full standalone experiences
+    const pageLinks = {
+      '🎋': 'garden/haiku.html',        // Haiku AI
+      '🐢': 'garden/slow.html',         // Slow AI
+      '🎯': 'garden/oracle.html',       // Random Oracle
+      '🎨': 'garden/color-translator.html', // Color translator
+      '🎹': 'garden/music-composer.html',   // Music composer
+      '🌕': 'garden/moon-phase.html',   // Moon phase
+    };
+    
     function openModal(ai, color) {
+      // Check if this seed has a full page
+      if (pageLinks[ai.emoji]) {
+        window.location.href = pageLinks[ai.emoji];
+        return;
+      }
+      
       const modal = document.getElementById('modal');
       const emojiEl = document.getElementById('modal-emoji');
       const titleEl = document.getElementById('modal-title');
