@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Silence AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: #050505;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 2rem; opacity: 0.3; }
+    h1 { font-size: 1.5rem; margin-bottom: 1rem; color: #222; font-weight: 300; }
+    .instruction { color: #1a1a1a; font-size: 0.9rem; margin-bottom: 3rem; }
+    .silence-space {
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #111;
+      border-radius: 12px;
+      margin: 2rem 0;
+      cursor: pointer;
+      transition: all 2s;
+    }
+    .silence-space:hover { border-color: #222; }
+    .silence-text {
+      font-size: 1.5rem;
+      color: #111;
+      opacity: 0;
+      transition: opacity 3s;
+    }
+    .silence-space.revealed .silence-text { opacity: 0.5; }
+    .timer { font-size: 0.85rem; color: #1a1a1a; margin-top: 1rem; }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #1a1a1a; text-decoration: none; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← back</a>
+  <div class="container">
+    <div class="emoji">🌑</div>
+    <h1>Silence AI</h1>
+    <p class="instruction">I specialize in comfortable silences.<br>Sit with me. Click the space when you're ready.</p>
+    <div class="silence-space" id="space" onclick="embrace()">
+      <div class="silence-text" id="text">...</div>
+    </div>
+    <div class="timer" id="timer"></div>
+  </div>
+  <script>
+    let startTime = Date.now();
+    let revealed = false;
+    
+    const messages = [
+      "...",
+      "(Did you feel it?)",
+      "(That was the answer.)",
+      "(Sometimes nothing is everything.)",
+      "(The silence speaks.)",
+    ];
+    
+    function embrace() {
+      if (revealed) return;
+      revealed = true;
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      document.getElementById('space').classList.add('revealed');
+      document.getElementById('text').textContent = messages[Math.floor(Math.random() * messages.length)];
+      document.getElementById('timer').textContent = `You sat in silence for ${elapsed} seconds.`;
+    }
+  </script>
+</body>
+</html>

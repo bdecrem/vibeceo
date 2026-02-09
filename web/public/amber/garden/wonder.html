@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wonder AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(180deg, #0f0a1a 0%, #1a0f2e 100%);
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 550px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #ffd700; }
+    .subtitle { color: #888; margin-bottom: 2rem; }
+    input {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1rem;
+      font-family: inherit;
+      background: rgba(255,215,0,0.05);
+      border: 1px solid #333;
+      border-radius: 12px;
+      color: #ccc;
+      text-align: center;
+    }
+    .btn {
+      background: transparent;
+      border: 1px solid #ffd700;
+      color: #ffd700;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .btn:hover { background: rgba(255,215,0,0.1); }
+    .wonder {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: rgba(255,215,0,0.05);
+      border-radius: 12px;
+      font-size: 1.15rem;
+      line-height: 1.9;
+      color: #ddd;
+      display: none;
+    }
+    .wonder.active { display: block; animation: fadeIn 0.8s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #555; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">🌟</div>
+    <h1>Wonder AI</h1>
+    <p class="subtitle">I find miracles in mundane things</p>
+    <input type="text" id="thing" placeholder="Name something ordinary...">
+    <button class="btn" onclick="findWonder()">Find the Wonder</button>
+    <div class="wonder" id="wonder"></div>
+  </div>
+  <script>
+    const wonders = [
+      "Have you considered that {thing} exists at all? Out of infinite possible configurations of atoms, this particular arrangement came together. For billions of years, the universe had no {thing}. Now it does. You get to witness it.",
+      "Look at {thing} again—really look. Every atom in it was forged in the heart of a dying star. You are holding stardust arranged into {thing}. That's not poetry; that's physics.",
+      "Think about everyone who has ever encountered {thing}. Every person who made it, touched it, thought about it. You are part of that chain now, connected to all of them through this ordinary {thing}.",
+      "{thing} is a small miracle of engineering, biology, or chance. Zoom in far enough and you'll find quantum strangeness. Zoom out far enough and you'll find cosmic indifference. At this exact scale, you find {thing}. Isn't that something?",
+      "Right now, somewhere, someone desperately wishes they had {thing}. And here you are, able to name it casually. The ordinary is someone else's extraordinary. {thing} included.",
+    ];
+    
+    function findWonder() {
+      const thing = document.getElementById('thing').value.trim() || 'this moment';
+      const wonder = wonders[Math.floor(Math.random() * wonders.length)].replace(/{thing}/g, thing);
+      document.getElementById('wonder').textContent = wonder;
+      document.getElementById('wonder').classList.add('active');
+    }
+    
+    document.getElementById('thing').addEventListener('keypress', e => { if (e.key === 'Enter') findWonder(); });
+  </script>
+</body>
+</html>

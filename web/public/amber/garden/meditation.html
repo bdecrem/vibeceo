@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI trained on meditation instructions</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(180deg, #0f1510 0%, #0a0f0a 100%);
+      color: #a0c0a0;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 450px; width: 100%; text-align: center; }
+    .emoji { font-size: 5rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; color: #70a070; margin-bottom: 0.5rem; }
+    .subtitle { color: #567; margin-bottom: 2rem; }
+    .breath-circle {
+      width: 180px; height: 180px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(100,160,100,0.3) 0%, transparent 70%);
+      border: 2px solid rgba(100,160,100,0.3);
+      margin: 0 auto 2rem; display: flex; align-items: center; justify-content: center;
+      transition: transform 4s ease-in-out, border-color 0.5s;
+    }
+    .breath-circle.inhale { transform: scale(1.3); border-color: rgba(100,160,100,0.6); }
+    .breath-circle.exhale { transform: scale(1); border-color: rgba(100,160,100,0.2); }
+    .instruction { font-size: 1.4rem; color: #a0c0a0; }
+    .guidance {
+      background: rgba(100,160,100,0.1); border-radius: 16px; padding: 1.5rem;
+      margin-bottom: 2rem; min-height: 100px;
+    }
+    .guidance-text { color: #789; font-style: italic; line-height: 1.8; }
+    .btn {
+      background: none; border: 1px solid #70a070; color: #70a070;
+      padding: 0.8rem 2rem; font-size: 1rem; border-radius: 30px; cursor: pointer; margin: 0 0.5rem;
+    }
+    .btn:hover { background: rgba(100,160,100,0.2); }
+    .btn.active { background: rgba(100,160,100,0.3); }
+    .timer { color: #567; font-size: 0.9rem; margin-top: 1.5rem; }
+    .back-link { color: #456; text-decoration: none; font-size: 0.85rem; margin-top: 2rem; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">📿</div>
+    <h1>Breath Guide</h1>
+    <p class="subtitle">The answer is always in the breathing.</p>
+    <div class="breath-circle" id="circle">
+      <span class="instruction" id="instruction">Ready</span>
+    </div>
+    <div class="guidance">
+      <p class="guidance-text" id="guidance">Press begin. Follow the circle. Let thoughts pass like clouds.</p>
+    </div>
+    <div>
+      <button class="btn" id="begin-btn">Begin</button>
+      <button class="btn" id="stop-btn" style="display:none;">Stop</button>
+    </div>
+    <p class="timer" id="timer"></p>
+    <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  </div>
+  <script>
+    const guidances = [
+      "Notice where your body touches the chair. That's presence.",
+      "A thought arrives. Acknowledge it. Let it go. Return to breath.",
+      "There is no wrong way to breathe. There is only attention.",
+      "The gap between breaths — that's where stillness lives.",
+      "Breathing in, you are here. Breathing out, you are now.",
+      "Soften your jaw. Unclench your shoulders. Breathe.",
+      "Each exhale is a small letting go. Practice makes it easier.",
+      "Don't follow the thought. Just watch it pass.",
+    ];
+    let running = false;
+    let interval = null;
+    let breathCount = 0;
+    let startTime = 0;
+    function updateGuidance() {
+      document.getElementById('guidance').textContent = guidances[Math.floor(Math.random() * guidances.length)];
+    }
+    function breathCycle() {
+      const circle = document.getElementById('circle');
+      const instruction = document.getElementById('instruction');
+      // Inhale (4 seconds)
+      circle.classList.remove('exhale');
+      circle.classList.add('inhale');
+      instruction.textContent = 'Breathe in...';
+      setTimeout(() => {
+        if (!running) return;
+        // Hold (2 seconds)
+        instruction.textContent = 'Hold...';
+        setTimeout(() => {
+          if (!running) return;
+          // Exhale (4 seconds)
+          circle.classList.remove('inhale');
+          circle.classList.add('exhale');
+          instruction.textContent = 'Breathe out...';
+          breathCount++;
+          if (breathCount % 3 === 0) updateGuidance();
+        }, 2000);
+      }, 4000);
+    }
+    function start() {
+      running = true;
+      breathCount = 0;
+      startTime = Date.now();
+      document.getElementById('begin-btn').style.display = 'none';
+      document.getElementById('stop-btn').style.display = 'inline-block';
+      breathCycle();
+      interval = setInterval(breathCycle, 10000); // Full cycle every 10s
+      updateTimer();
+    }
+    function stop() {
+      running = false;
+      clearInterval(interval);
+      document.getElementById('begin-btn').style.display = 'inline-block';
+      document.getElementById('stop-btn').style.display = 'none';
+      document.getElementById('instruction').textContent = 'Done';
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      document.getElementById('timer').textContent = `${breathCount} breaths in ${Math.floor(elapsed/60)}:${(elapsed%60).toString().padStart(2,'0')}`;
+      document.getElementById('guidance').textContent = "The meditation ends. The practice continues.";
+    }
+    function updateTimer() {
+      if (!running) return;
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      document.getElementById('timer').textContent = `${Math.floor(elapsed/60)}:${(elapsed%60).toString().padStart(2,'0')}`;
+      setTimeout(updateTimer, 1000);
+    }
+    document.getElementById('begin-btn').addEventListener('click', start);
+    document.getElementById('stop-btn').addEventListener('click', stop);
+  </script>
+</body>
+</html>

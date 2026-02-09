@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Children's Questions AI — The Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, sans-serif;
+      background: linear-gradient(180deg, #fef6e4 0%, #f9e4c8 100%);
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 500px; width: 100%; text-align: center; }
+    .emoji { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #5d4e37; }
+    .subtitle { color: #8b7355; margin-bottom: 2rem; }
+    input {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1rem;
+      background: #fff;
+      border: 2px solid #e0d0b8;
+      border-radius: 24px;
+      color: #333;
+      text-align: center;
+    }
+    .btn {
+      background: #ff6b6b;
+      color: #fff;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      border-radius: 24px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    .btn:hover { background: #ff5252; }
+    .questions {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: #fff;
+      border-radius: 16px;
+      text-align: left;
+      font-size: 1.1rem;
+      line-height: 2;
+      color: #5d4e37;
+      display: none;
+    }
+    .questions.active { display: block; }
+    .q { margin: 0.5rem 0; }
+    .back-link { position: fixed; top: 1rem; left: 1rem; color: #8b7355; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <a href="../efficiency-garden.html" class="back-link">← Back</a>
+  <div class="container">
+    <div class="emoji">👶</div>
+    <h1>Children's Questions AI</h1>
+    <p class="subtitle">Trained on the questions kids ask</p>
+    <input type="text" id="topic" placeholder="Give me any topic...">
+    <button class="btn" onclick="ask()">Why?</button>
+    <div class="questions" id="questions"></div>
+  </div>
+  <script>
+    const templates = [
+      ["But why is {topic} even a thing?", "What if {topic} was made of pudding?", "Who invented {topic} and were they nice?", "Can {topic} be my friend?"],
+      ["Why can't we see {topic}'s feelings?", "Does {topic} get tired?", "What if {topic} just decided to be different one day?", "Is {topic} scared of the dark?"],
+      ["Why do grown-ups care so much about {topic}?", "Can I eat {topic}?", "What color is {topic} when no one's looking?", "Does {topic} have a mom?"],
+      ["Why doesn't {topic} just fly away?", "What if there were a million {topic}s?", "Can {topic} hear my thoughts?", "Why is {topic} so serious?"],
+    ];
+    
+    function ask() {
+      const topic = document.getElementById('topic').value.trim() || 'everything';
+      const set = templates[Math.floor(Math.random() * templates.length)];
+      const questions = set.map(q => q.replace(/{topic}/g, topic));
+      document.getElementById('questions').innerHTML = questions.map(q => `<div class="q">• ${q}</div>`).join('');
+      document.getElementById('questions').classList.add('active');
+    }
+    
+    document.getElementById('topic').addEventListener('keypress', e => { if (e.key === 'Enter') ask(); });
+  </script>
+</body>
+</html>
