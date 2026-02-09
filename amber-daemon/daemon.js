@@ -2,7 +2,7 @@
 // amber-daemon/daemon.js - Amber's mini-gateway
 // One Amber, multiple surfaces (TUI + Discord), shared context
 
-import { createSession, runAgentLoop, getApiKey, SPLASH } from './amber.js';
+import { createSession, runAgentLoop, getApiKey, SPLASH, stripOrphanedToolResults } from './amber.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
@@ -226,13 +226,15 @@ async function checkAndCompact() {
     // Compact - keep only recent messages
     const removed = agentMessages.length - KEEP_MESSAGES;
     agentMessages = agentMessages.slice(-KEEP_MESSAGES);
+    stripOrphanedToolResults(agentMessages);
     saveConversation();
-    log(`Compacted conversation: removed ${removed} messages, kept ${KEEP_MESSAGES}`, true);
+    log(`Compacted conversation: removed ${removed} messages, kept ${agentMessages.length}`, true);
   } catch (err) {
     log(`Compaction error: ${err.message}`, true);
     // Still compact even if flush failed, to prevent runaway growth
     const removed = agentMessages.length - KEEP_MESSAGES;
     agentMessages = agentMessages.slice(-KEEP_MESSAGES);
+    stripOrphanedToolResults(agentMessages);
     saveConversation();
     log(`Forced compaction after error: removed ${removed} messages`, true);
   }

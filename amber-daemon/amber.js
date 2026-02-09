@@ -10,6 +10,30 @@ import { homedir } from 'os';
 // Tool registry
 import { TOOLS, executeTool } from './tools/index.js';
 
+// After trimming messages, the first message may be a user message with
+// orphaned tool_results (the matching tool_use was trimmed away).
+// Drop messages from the front until we have a clean start.
+function stripOrphanedToolResults(msgs) {
+  while (msgs.length > 0) {
+    const first = msgs[0];
+    if (first.role === 'user' && Array.isArray(first.content)) {
+      const hasToolResult = first.content.some(c => c.type === 'tool_result');
+      if (hasToolResult) {
+        msgs.shift();
+        continue;
+      }
+    }
+    // Also skip assistant messages at position 0 that have tool_use
+    // (their results were trimmed) — need to start with a user message
+    if (first.role === 'assistant') {
+      msgs.shift();
+      continue;
+    }
+    break;
+  }
+  return msgs;
+}
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // === ENV LOADING ===
@@ -185,11 +209,12 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
       const removed = cleanMessages.shift();
       const removedContent = typeof removed.content === 'string' ? removed.content : JSON.stringify(removed.content);
       msgTokens -= estimateTokens(removedContent);
-      // Also remove from the shared messages array to keep them in sync
       if (messages.length > cleanMessages.length) {
         messages.shift();
       }
     }
+    // Clean up orphaned tool_results after trimming
+    stripOrphanedToolResults(cleanMessages);
 
     let response;
     try {
@@ -201,13 +226,15 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
         messages: cleanMessages
       });
     } catch (err) {
-      // Context overflow — aggressively trim and retry once
-      if (err.status === 400 && err.message?.includes('context limit')) {
+      // Context or tool_result errors — aggressively trim and retry once
+      if (err.status === 400) {
         const keep = Math.min(10, Math.floor(cleanMessages.length / 4));
         const dropped = cleanMessages.length - keep;
         cleanMessages.splice(0, dropped);
         messages.splice(0, messages.length - keep);
-        console.log(`[auto-recovery] Dropped ${dropped} messages, retrying with ${keep}`);
+        stripOrphanedToolResults(cleanMessages);
+        stripOrphanedToolResults(messages);
+        console.log(`[auto-recovery] Dropped ${dropped} messages, retrying with ${cleanMessages.length}`);
         response = await getClient().messages.create({
           model: "claude-sonnet-4-20250514",
           max_tokens: 8192,
@@ -313,7 +340,7 @@ You have these tools available:
 }
 
 // === EXPORTS ===
-export { TOOLS };
+export { TOOLS, stripOrphanedToolResults };
 
 export const SPLASH = `
     █████╗ ███╗   ███╗██████╗ ███████╗██████╗ 
