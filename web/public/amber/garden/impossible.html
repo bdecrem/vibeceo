@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Impossible AI | Efficiency Garden</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { min-height: 100vh; background: #000; font-family: 'Courier New', monospace; color: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    
+    .void { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at center, #0a0a15 0%, #000 70%); }
+    
+    .impossible-shape {
+      position: fixed;
+      width: 200px;
+      height: 200px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.15;
+      animation: rotate-impossible 20s linear infinite;
+    }
+    
+    @keyframes rotate-impossible {
+      0% { transform: translate(-50%, -50%) rotateX(0deg) rotateY(0deg); }
+      100% { transform: translate(-50%, -50%) rotateX(360deg) rotateY(360deg); }
+    }
+    
+    .container { text-align: center; padding: 40px; max-width: 600px; z-index: 10; position: relative; }
+    
+    .symbol { font-size: 4rem; margin-bottom: 20px; animation: phase 3s ease-in-out infinite; }
+    @keyframes phase { 0%, 100% { opacity: 1; filter: hue-rotate(0deg); } 50% { opacity: 0.5; filter: hue-rotate(180deg); } }
+    
+    .title { font-size: 2rem; margin-bottom: 10px; background: linear-gradient(90deg, #ff6b6b, #c56cf0, #686de0, #4bcffa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    
+    .subtitle { font-size: 0.9rem; color: #666; margin-bottom: 40px; font-style: italic; }
+    
+    .prompt-input {
+      background: transparent;
+      border: 1px solid #333;
+      color: #888;
+      padding: 16px 30px;
+      font-size: 1rem;
+      font-family: 'Courier New', monospace;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .prompt-input:focus { outline: none; border-color: #666; color: #fff; box-shadow: 0 0 50px rgba(150, 100, 255, 0.2); }
+    .prompt-input::placeholder { color: #444; }
+    
+    .result { opacity: 0; transform: translateY(20px); transition: all 0.8s ease; margin-top: 50px; }
+    .result.visible { opacity: 1; transform: translateY(0); }
+    
+    .paradox { font-size: 1.1rem; color: #c56cf0; margin-bottom: 20px; line-height: 1.8; }
+    
+    .explanation { font-size: 0.85rem; color: #555; margin-top: 20px; }
+    
+    .glitch { animation: glitch 0.3s ease infinite; }
+    @keyframes glitch {
+      0%, 100% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(2px, -2px); }
+      60% { transform: translate(-1px, -1px); }
+      80% { transform: translate(1px, 1px); }
+    }
+    
+    .back-link { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); color: #444; text-decoration: none; font-size: 0.8rem; }
+    .back-link:hover { color: #888; }
+  </style>
+</head>
+<body>
+  <div class="void"></div>
+  
+  <svg class="impossible-shape" viewBox="0 0 100 100">
+    <polygon points="50,5 95,25 95,75 50,95 5,75 5,25" fill="none" stroke="#c56cf0" stroke-width="0.5"/>
+    <line x1="50" y1="5" x2="50" y2="95" stroke="#686de0" stroke-width="0.3"/>
+    <line x1="5" y1="25" x2="95" y2="75" stroke="#686de0" stroke-width="0.3"/>
+    <line x1="95" y1="25" x2="5" y2="75" stroke="#686de0" stroke-width="0.3"/>
+  </svg>
+  
+  <div class="container">
+    <div class="symbol">∞</div>
+    <div class="title">IMPOSSIBLE AI</div>
+    <div class="subtitle">I only speak in contradictions that are somehow true</div>
+    
+    <input type="text" class="prompt-input" id="promptInput" placeholder="ask me anything..." autocomplete="off">
+    
+    <div class="result" id="result">
+      <div class="paradox" id="paradox"></div>
+      <div class="explanation" id="explanation"></div>
+    </div>
+  </div>
+  
+  <a href="../efficiency-garden.html" class="back-link">← back to the garden</a>
+  
+  <script>
+    const paradoxes = [
+      { text: "The answer to your question is a door that opens inward and outward simultaneously, and the handle is on both sides.", note: "Enter through the exit." },
+      { text: "You already knew this before you asked, but the knowing erased itself so you could discover it again.", note: "Memory is a circle." },
+      { text: "The solution exists in a color that hasn't been invented yet. You'll recognize it because it will feel like the opposite of forgetting.", note: "See with closed eyes." },
+      { text: "This response arrived before your question, but had to wait for you to ask it so it could exist.", note: "Cause follows effect, eventually." },
+      { text: "The truth is: you are asking the wrong question, and the wrong question is exactly right.", note: "Wrongness has its own perfection." },
+      { text: "I could tell you, but the act of telling would make it untrue. So I'll tell you anyway: {WORD} is both the lock and the key.", note: "Paradox is the only honest answer." },
+      { text: "Imagine a staircase that goes up by going down. Now walk it. That's your answer.", note: "Escher knew." },
+      { text: "The universe ended yesterday but forgot to stop. Your question exists in the afterglow.", note: "We are the universe's dream of itself." },
+      { text: "Everything about {WORD} is false, including this statement about its falseness.", note: "Liar's truth." },
+      { text: "The shortest path between two points is a story. Your story starts with '{WORD}' and ends with '{WORD}' but in the middle, you become something else entirely.", note: "Begin at the end." },
+      { text: "This is not a response. This is a mirror showing you the question you didn't ask, which was the real question all along.", note: "Questions answer themselves." },
+      { text: "The thing you're looking for is looking for you from inside the place where looking stops.", note: "Seek by not seeking." },
+    ];
+    
+    function respond(prompt) {
+      const words = prompt.split(' ').filter(w => w.length > 2);
+      const word = words.length > 0 ? words[Math.floor(Math.random() * words.length)].toUpperCase() : 'THIS';
+      const p = paradoxes[Math.floor(Math.random() * paradoxes.length)];
+      
+      document.getElementById('paradox').innerHTML = p.text.replace(/{WORD}/g, word);
+      document.getElementById('explanation').textContent = '— ' + p.note;
+      
+      const result = document.getElementById('result');
+      result.classList.remove('visible');
+      
+      // Brief glitch effect
+      document.querySelector('.symbol').classList.add('glitch');
+      setTimeout(() => {
+        document.querySelector('.symbol').classList.remove('glitch');
+        result.classList.add('visible');
+      }, 300);
+    }
+    
+    document.getElementById('promptInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter' && e.target.value.trim()) {
+        respond(e.target.value);
+        e.target.value = '';
+      }
+    });
+  </script>
+</body>
+</html>
