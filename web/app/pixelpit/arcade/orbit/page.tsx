@@ -1740,53 +1740,164 @@ export default function OrbitGame() {
           alignItems: 'center',
           justifyContent: 'center',
           padding: 20,
-          background: 'linear-gradient(180deg, #0a0a1a 0%, #1a0a2e 100%)',
+          background: 'radial-gradient(ellipse at 50% 30%, #1a0a2e 0%, #0a0a1a 60%, #050510 100%)',
+          overflow: 'hidden',
         }}>
-          <div style={{ fontSize: 80, marginBottom: 10 }}>🚀</div>
+          {/* Starfield background */}
+          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+            {Array.from({ length: 40 }, (_, i) => (
+              <div key={i} style={{
+                position: 'absolute',
+                width: i % 5 === 0 ? 3 : 1.5,
+                height: i % 5 === 0 ? 3 : 1.5,
+                borderRadius: '50%',
+                background: i % 7 === 0 ? '#7C3AED' : i % 11 === 0 ? '#22D3EE' : '#ffffff',
+                opacity: 0.3 + (i % 4) * 0.2,
+                left: `${(i * 37 + 13) % 100}%`,
+                top: `${(i * 53 + 7) % 100}%`,
+                animation: `starPulse ${1.5 + (i % 3) * 0.8}s ease-in-out infinite alternate`,
+                animationDelay: `${(i * 0.2) % 2}s`,
+              }} />
+            ))}
+          </div>
+
+          {/* Orbital ring decoration */}
+          <div style={{
+            position: 'absolute',
+            width: 280,
+            height: 280,
+            border: '1px solid rgba(124, 58, 237, 0.15)',
+            borderRadius: '50%',
+            animation: 'ringRotate 20s linear infinite',
+          }} />
+          <div style={{
+            position: 'absolute',
+            width: 340,
+            height: 340,
+            border: '1px solid rgba(34, 211, 238, 0.08)',
+            borderRadius: '50%',
+            animation: 'ringRotate 30s linear infinite reverse',
+          }} />
+
+          {/* Icon with glow */}
+          <div style={{
+            fontSize: 72,
+            marginBottom: 8,
+            filter: 'drop-shadow(0 0 20px rgba(124, 58, 237, 0.6))',
+            animation: 'iconFloat 3s ease-in-out infinite',
+            position: 'relative',
+            zIndex: 1,
+          }}>
+            🛸
+          </div>
+
+          {/* Title with letter spacing */}
           <h1 style={{
-            color: '#E5E7EB',
-            fontSize: 48,
-            marginBottom: 10,
+            color: '#fff',
+            fontSize: 56,
+            marginBottom: 4,
             fontWeight: 900,
+            letterSpacing: 16,
+            textShadow: '0 0 30px rgba(124, 58, 237, 0.5), 0 0 60px rgba(124, 58, 237, 0.2)',
+            position: 'relative',
+            zIndex: 1,
           }}>
             ORBIT
           </h1>
 
+          {/* Subtitle tagline */}
           <p style={{
-            color: '#9CA3AF',
-            fontSize: 16,
-            marginBottom: 30,
-            textAlign: 'center',
-            lineHeight: 1.6,
-            maxWidth: 280,
+            color: '#7C3AED',
+            fontSize: 11,
+            letterSpacing: 6,
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            marginBottom: 28,
+            position: 'relative',
+            zIndex: 1,
           }}>
-            Tap to jump forward.<br />
-            Swipe to move sideways.<br />
-            Dodge UFOs, ride satellites!
+            Cross the void
           </p>
 
+          {/* Instructions — minimal */}
+          <div style={{
+            display: 'flex',
+            gap: 24,
+            marginBottom: 32,
+            position: 'relative',
+            zIndex: 1,
+          }}>
+            {[
+              { icon: '👆', label: 'Tap = jump' },
+              { icon: '👈', label: 'Swipe = move' },
+              { icon: '🛰️', label: 'Ride satellites' },
+            ].map((hint, i) => (
+              <div key={i} style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+              }}>
+                <span style={{ fontSize: 20 }}>{hint.icon}</span>
+                <span style={{ color: '#6B7280', fontSize: 10, letterSpacing: 1 }}>{hint.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Launch button with pulse */}
           <button
             onClick={startGame}
             style={{
-              background: '#7C3AED',
+              background: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
               color: '#fff',
-              border: 'none',
-              padding: '18px 60px',
-              fontSize: 18,
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              padding: '16px 56px',
+              fontSize: 16,
               fontWeight: 700,
               cursor: 'pointer',
               borderRadius: 30,
-              boxShadow: '0 4px 15px rgba(124, 58, 237, 0.4)',
+              letterSpacing: 4,
+              boxShadow: '0 0 20px rgba(124, 58, 237, 0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+              animation: 'btnPulse 2s ease-in-out infinite',
+              position: 'relative',
+              zIndex: 1,
             }}
           >
             LAUNCH
           </button>
-          
+
           {highScore > 0 && (
-            <p style={{ color: '#6B7280', marginTop: 20 }}>
-              High Score: {highScore}
+            <p style={{
+              color: '#4B5563',
+              marginTop: 20,
+              fontSize: 13,
+              letterSpacing: 2,
+              position: 'relative',
+              zIndex: 1,
+            }}>
+              BEST: {highScore}
             </p>
           )}
+
+          {/* CSS animations */}
+          <style>{`
+            @keyframes starPulse {
+              from { opacity: 0.2; transform: scale(1); }
+              to { opacity: 0.8; transform: scale(1.5); }
+            }
+            @keyframes ringRotate {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+            @keyframes iconFloat {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-8px); }
+            }
+            @keyframes btnPulse {
+              0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.4), inset 0 1px 0 rgba(255,255,255,0.1); }
+              50% { box-shadow: 0 0 35px rgba(124, 58, 237, 0.6), inset 0 1px 0 rgba(255,255,255,0.1); }
+            }
+          `}</style>
         </div>
       )}
 
