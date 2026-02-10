@@ -15,8 +15,23 @@
     <meta name="twitter:description" content="Amber's weekly goal tracker - organized by week, updated through conversation">
     <meta name="twitter:image" content="https://intheamber.com/amber/goals-og.png">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
         
+        :root {
+            --bg: #0a0a0a;
+            --surface: #151515;
+            --border: #2a2a2a;
+            --text: #ffffff;
+            --text-dim: #a0a0a0;
+            --text-subtle: #6a6a6a;
+            --accent: #00ff88;
+            --accent-dim: #00cc6a;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --spacing: 24px;
+            --radius: 8px;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -24,127 +39,172 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(180deg, #f7f7f7 0%, #ffffff 100%);
-            color: #1d1d1f;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+            overflow-x: hidden;
+        }
+
+        .app {
             min-height: 100vh;
-            padding: 0;
-            font-weight: 300;
-            letter-spacing: -0.01em;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: var(--spacing) var(--spacing) 0;
             position: sticky;
             top: 0;
-            z-index: 100;
-            padding: 20px 0;
+            background: var(--bg);
+            z-index: 10;
         }
 
         .header-content {
-            max-width: 980px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 20px;
-            text-align: center;
         }
 
         h1 {
-            font-size: 2.5rem;
-            font-weight: 200;
-            color: #1d1d1f;
-            margin: 0;
-            letter-spacing: -0.025em;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 600;
+            margin-bottom: 4px;
+            background: linear-gradient(135deg, var(--text) 0%, var(--text-dim) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        .week-subtitle {
-            font-size: 1rem;
-            font-weight: 400;
-            color: #86868b;
-            margin-top: 4px;
-            letter-spacing: -0.01em;
+        .week-info {
+            font-size: 0.875rem;
+            color: var(--text-subtle);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            margin-bottom: var(--spacing);
+        }
+
+        .main {
+            flex: 1;
+            padding: 0 var(--spacing) var(--spacing);
         }
 
         .container {
-            max-width: 980px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 40px 20px;
         }
 
         .goals-grid {
             display: grid;
-            gap: 16px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: var(--spacing);
+            margin-bottom: var(--spacing);
         }
 
         .goal-card {
-            background: white;
-            border-radius: 12px;
-            padding: 0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-            border: 1px solid rgba(0, 0, 0, 0.05);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .goal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-dim));
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
 
         .goal-card:hover {
+            border-color: var(--accent);
             transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .goal-card:hover::before {
+            opacity: 1;
         }
 
         .goal-header {
-            padding: 24px 24px 16px;
-            background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
-            color: white;
+            padding: var(--spacing);
+            border-bottom: 1px solid var(--border);
         }
 
         .goal-title {
-            font-size: 1.3rem;
-            font-weight: 500;
-            margin: 0;
-            letter-spacing: -0.02em;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text);
         }
 
-        .goal-progress {
-            margin-top: 12px;
+        .progress-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .progress-bar {
-            height: 3px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 2px;
+            flex: 1;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
             overflow: hidden;
-            margin-bottom: 8px;
+            position: relative;
         }
 
         .progress-fill {
             height: 100%;
-            background: white;
-            border-radius: 2px;
-            transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            background: linear-gradient(90deg, var(--accent), var(--accent-dim));
+            border-radius: 3px;
+            transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
 
         .progress-text {
-            font-size: 0.875rem;
-            font-weight: 400;
-            opacity: 0.9;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
         }
 
         .goal-items {
             list-style: none;
-            padding: 0;
         }
 
         .goal-item {
             display: flex;
             align-items: center;
-            padding: 16px 24px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 16px var(--spacing);
+            border-bottom: 1px solid var(--border);
             cursor: pointer;
-            transition: background-color 0.2s ease;
-            min-height: 60px;
+            transition: all 0.15s ease;
+            position: relative;
         }
 
         .goal-item:last-child {
@@ -152,209 +212,272 @@
         }
 
         .goal-item:hover {
-            background: #f9f9f9;
+            background: rgba(255, 255, 255, 0.02);
         }
 
         .goal-item:active {
-            background: #f0f0f0;
-            transform: scale(0.995);
-            transition: all 0.1s ease;
+            transform: scale(0.998);
+            background: rgba(255, 255, 255, 0.04);
         }
 
         .checkbox {
             width: 20px;
             height: 20px;
+            border: 2px solid var(--border);
             border-radius: 50%;
             margin-right: 16px;
             flex-shrink: 0;
-            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            border: 2px solid #d1d1d6;
-            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+        }
+
+        .checkbox::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+            transform: scale(0);
         }
 
         .checkbox.completed {
-            background: #34c759;
-            border-color: #34c759;
+            border-color: var(--accent);
+            background: var(--accent);
             transform: scale(1.1);
         }
 
         .checkbox.completed::after {
-            content: '✓';
-            color: white;
-            font-size: 11px;
-            font-weight: 600;
+            background: var(--bg);
+            transform: scale(1);
         }
 
         .checkbox.invalid {
-            background: #ff3b30;
-            border-color: #ff3b30;
+            border-color: var(--danger);
+            background: var(--danger);
             transform: scale(1.1);
         }
 
         .checkbox.invalid::after {
-            content: '✗';
-            color: white;
-            font-size: 11px;
-            font-weight: 600;
+            background: var(--bg);
+            transform: scale(1);
+            border-radius: 1px;
+            width: 10px;
+            height: 2px;
         }
 
         .goal-item-text {
             flex: 1;
-            font-size: 1rem;
-            font-weight: 400;
-            color: #1d1d1f;
-            letter-spacing: -0.01em;
-            line-height: 1.4;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            color: var(--text);
+            transition: color 0.2s ease;
         }
 
         .goal-item.completed .goal-item-text {
-            color: #86868b;
+            color: var(--text-dim);
         }
 
         .goal-item.invalid .goal-item-text {
-            color: #86868b;
+            color: var(--text-subtle);
             text-decoration: line-through;
+            text-decoration-thickness: 1px;
+            text-decoration-color: var(--danger);
+        }
+
+        .status-indicator {
+            position: absolute;
+            right: var(--spacing);
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .goal-item.completed .status-indicator {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--accent);
+            opacity: 1;
+        }
+
+        .goal-item.invalid .status-indicator {
+            background: rgba(255, 71, 87, 0.1);
+            color: var(--danger);
+            opacity: 1;
         }
 
         .loading {
-            text-align: center;
-            padding: 80px 20px;
-            color: #86868b;
-            font-size: 1rem;
-            font-weight: 400;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            color: var(--text-dim);
+            gap: 16px;
+        }
+
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--border);
+            border-top: 2px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .footer {
-            text-align: center;
-            padding: 40px 20px;
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
-            margin-top: 40px;
+            padding: var(--spacing);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .update-info {
-            font-size: 0.875rem;
-            color: #86868b;
-            font-weight: 400;
-            margin-bottom: 8px;
+            font-size: 0.8125rem;
+            color: var(--text-subtle);
+            font-weight: 500;
         }
 
         .sync-status {
             font-size: 0.75rem;
-            color: #86868b;
-            font-weight: 400;
+            color: var(--text-subtle);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .sync-status.syncing {
-            color: #007aff;
+        .sync-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
         }
 
-        .sync-status.error {
-            color: #ff3b30;
+        .sync-status.syncing::before {
+            background: var(--warning);
+            animation: pulse 1.5s infinite;
+        }
+
+        .sync-status.error::before {
+            background: var(--danger);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         .signature {
-            font-size: 0.875rem;
-            color: #86868b;
-            font-weight: 300;
-            margin-top: 16px;
-            letter-spacing: -0.01em;
+            font-size: 0.8125rem;
+            color: var(--text-subtle);
+            font-weight: 500;
         }
 
-        /* Different colors for different goal types */
-        .goal-card:nth-child(1) .goal-header {
-            background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
-        }
-
-        .goal-card:nth-child(2) .goal-header {
-            background: linear-gradient(135deg, #34c759 0%, #64d2ff 100%);
-        }
-
-        .goal-card:nth-child(3) .goal-header {
-            background: linear-gradient(135deg, #ff9500 0%, #ffcc02 100%);
-        }
-
-        .goal-card:nth-child(4) .goal-header {
-            background: linear-gradient(135deg, #af52de 0%, #ff2d92 100%);
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px 16px;
+        @media (max-width: 640px) {
+            :root {
+                --spacing: 16px;
+            }
+            
+            .goals-grid {
+                grid-template-columns: 1fr;
             }
             
             h1 {
                 font-size: 2rem;
             }
-
-            .goal-card {
-                border-radius: 8px;
-            }
-
-            .goal-header {
-                padding: 20px 20px 14px;
-            }
-
-            .goal-title {
-                font-size: 1.2rem;
-            }
-
-            .goal-item {
-                padding: 14px 20px;
-                min-height: 56px;
+            
+            .footer {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
 
-        /* Subtle animations */
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Smooth state transitions */
+        .goal-item {
+            --item-bg: transparent;
+            background: var(--item-bg);
         }
 
+        .goal-item.completed {
+            --item-bg: rgba(0, 255, 136, 0.03);
+        }
+
+        .goal-item.invalid {
+            --item-bg: rgba(255, 71, 87, 0.03);
+        }
+
+        /* Micro-interactions */
         .goal-card {
-            animation: slideUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--card-shadow);
         }
 
-        .goal-card:nth-child(1) { animation-delay: 0ms; }
-        .goal-card:nth-child(2) { animation-delay: 100ms; }
-        .goal-card:nth-child(3) { animation-delay: 200ms; }
-        .goal-card:nth-child(4) { animation-delay: 300ms; }
+        .goal-card:hover {
+            --card-shadow: 0 8px 32px rgba(0, 255, 136, 0.1);
+        }
+
+        /* Focus states for accessibility */
+        .goal-item:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: -2px;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <h1>Weekly Goals</h1>
-            <div class="week-subtitle" id="weekHeader">Week of February 10–16, 2026</div>
-        </div>
-    </div>
-
-    <div class="container">
-        <div id="loadingState" class="loading">
-            Loading your goals...
+    <div class="app">
+        <div class="header">
+            <div class="header-content">
+                <h1>Weekly Goals</h1>
+                <div class="week-info" id="weekHeader">Week of Feb 10–16, 2026</div>
+            </div>
         </div>
 
-        <div id="goalsContainer" class="goals-grid" style="display: none;">
-            <!-- Goals will be populated here -->
-        </div>
-    </div>
+        <div class="main">
+            <div class="container">
+                <div id="loadingState" class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Loading goals...</div>
+                </div>
 
-    <div class="footer">
-        <div class="update-info">
-            Tap items to cycle: Incomplete → Complete → Won't Do
+                <div id="goalsContainer" class="goals-grid" style="display: none;">
+                    <!-- Goals will be populated here -->
+                </div>
+            </div>
         </div>
-        <div class="sync-status" id="syncStatus">
-            Synced
+
+        <div class="footer">
+            <div class="footer-left">
+                <div class="update-info">Tap to cycle states</div>
+                <div class="sync-status" id="syncStatus">Synced</div>
+            </div>
+            <div class="signature">Amber</div>
         </div>
-        <div class="signature">Amber</div>
     </div>
 
     <script>
@@ -394,8 +517,7 @@
                 document.getElementById('goalsContainer').style.display = 'grid';
             } catch (error) {
                 console.error('Error loading goals:', error);
-                document.getElementById('loadingState').innerHTML = 'Unable to load goals. Using offline mode.';
-                // Fall back to localStorage
+                document.getElementById('loadingState').innerHTML = '<div>Failed to load goals</div>';
                 loadFromLocalStorage();
             }
         }
@@ -404,7 +526,7 @@
             if (isSyncing) return;
             
             isSyncing = true;
-            updateSyncStatus('Syncing...', 'syncing');
+            updateSyncStatus('Syncing', 'syncing');
             
             try {
                 const response = await fetch('/api/amber/goals', {
@@ -425,8 +547,7 @@
                 }
             } catch (error) {
                 console.error('Error saving goals:', error);
-                updateSyncStatus('Sync failed', 'error');
-                // Fall back to localStorage
+                updateSyncStatus('Error', 'error');
                 saveToLocalStorage();
             }
             
@@ -442,11 +563,10 @@
                 setTimeout(() => {
                     status.textContent = 'Synced';
                     status.className = 'sync-status';
-                }, 1500);
+                }, 1000);
             }
         }
 
-        // Fallback localStorage functions
         function loadFromLocalStorage() {
             const saved = localStorage.getItem('weeklyGoals');
             if (saved) {
@@ -466,16 +586,14 @@
             }));
         }
 
-        // Render goals HTML
         function renderGoals() {
             const container = document.getElementById('goalsContainer');
             container.innerHTML = '';
 
-            Object.keys(currentGoals).forEach((goalKey, index) => {
+            Object.keys(currentGoals).forEach((goalKey) => {
                 const goal = currentGoals[goalKey];
                 const goalEl = document.createElement('div');
                 goalEl.className = 'goal-card';
-                goalEl.id = goalKey;
 
                 let itemsHTML = '';
                 goal.items.forEach((item, itemIndex) => {
@@ -484,19 +602,23 @@
                     
                     let itemClass = 'goal-item';
                     let checkboxClass = 'checkbox';
+                    let statusText = '';
                     
                     if (state === 'completed') {
                         itemClass += ' completed';
                         checkboxClass += ' completed';
+                        statusText = 'Done';
                     } else if (state === 'invalid') {
                         itemClass += ' invalid';
                         checkboxClass += ' invalid';
+                        statusText = 'Skip';
                     }
                     
                     itemsHTML += `
-                        <li class="${itemClass}" data-item="${itemKey}">
+                        <li class="${itemClass}" data-item="${itemKey}" tabindex="0">
                             <div class="${checkboxClass}"></div>
                             <span class="goal-item-text">${item}</span>
+                            <div class="status-indicator">${statusText}</div>
                         </li>
                     `;
                 });
@@ -504,11 +626,11 @@
                 goalEl.innerHTML = `
                     <div class="goal-header">
                         <div class="goal-title">${goal.title}</div>
-                        <div class="goal-progress">
+                        <div class="progress-wrapper">
                             <div class="progress-bar">
                                 <div class="progress-fill" id="${goalKey}Progress" style="width: 0%"></div>
                             </div>
-                            <div class="progress-text" id="${goalKey}Text">0 of ${goal.items.length}</div>
+                            <div class="progress-text" id="${goalKey}Text">0/${goal.items.length}</div>
                         </div>
                     </div>
                     <ul class="goal-items">
@@ -523,10 +645,15 @@
             // Add event listeners
             document.querySelectorAll('.goal-item').forEach(item => {
                 item.addEventListener('click', toggleItem);
+                item.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleItem(e);
+                    }
+                });
             });
         }
 
-        // Toggle item between states: blank → completed → invalid → blank
         function toggleItem(event) {
             const itemKey = event.currentTarget.dataset.item;
             const currentState = completionState[itemKey] || 'blank';
@@ -542,32 +669,35 @@
             
             completionState[itemKey] = nextState;
             
-            // Update UI immediately
             const checkbox = event.currentTarget.querySelector('.checkbox');
             const listItem = event.currentTarget;
+            const statusIndicator = event.currentTarget.querySelector('.status-indicator');
             
             // Remove all state classes
             checkbox.classList.remove('completed', 'invalid');
             listItem.classList.remove('completed', 'invalid');
             
-            // Add new state class
+            // Add new state class and update status
             if (nextState === 'completed') {
                 checkbox.classList.add('completed');
                 listItem.classList.add('completed');
+                statusIndicator.textContent = 'Done';
             } else if (nextState === 'invalid') {
                 checkbox.classList.add('invalid');
                 listItem.classList.add('invalid');
+                statusIndicator.textContent = 'Skip';
+            } else {
+                statusIndicator.textContent = '';
             }
             
-            // Update progress for this goal
+            // Update progress
             const goalKey = itemKey.split('_')[0];
             updateProgress(goalKey);
             
-            // Save to backend
+            // Save
             saveGoals();
         }
 
-        // Update progress bar for a specific goal
         function updateProgress(goalKey) {
             const goal = currentGoals[goalKey];
             if (!goal) return;
@@ -575,7 +705,6 @@
             const totalItems = goal.items.length;
             let completedItems = 0;
             
-            // Count only completed items (not invalid ones)
             goal.items.forEach((item, index) => {
                 const itemKey = `${goalKey}_${index}`;
                 if (completionState[itemKey] === 'completed') {
@@ -593,11 +722,10 @@
             }
             
             if (progressText) {
-                progressText.textContent = `${completedItems} of ${totalItems}`;
+                progressText.textContent = `${completedItems}/${totalItems}`;
             }
         }
 
-        // Initialize on page load
         window.addEventListener('load', loadGoals);
     </script>
 </body>
