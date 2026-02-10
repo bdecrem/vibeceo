@@ -54,6 +54,13 @@
             font-style: italic;
         }
 
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-style: italic;
+            opacity: 0.7;
+        }
+
         .goal {
             background: rgba(212, 175, 55, 0.08);
             border: 1px solid rgba(212, 175, 55, 0.2);
@@ -164,6 +171,24 @@
             font-style: italic;
         }
 
+        .sync-status {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.7em;
+            opacity: 0.5;
+            font-style: italic;
+        }
+
+        .sync-status.syncing {
+            color: #f5e6a8;
+            opacity: 0.8;
+        }
+
+        .sync-status.error {
+            color: #ff6b6b;
+            opacity: 0.8;
+        }
+
         @media (max-width: 600px) {
             .container {
                 margin: 10px;
@@ -181,130 +206,200 @@
         <h1>🔮 Weekly Goals</h1>
         <div class="week-header" id="weekHeader">Week of February 10-16, 2026</div>
         
-        <div class="goal" id="networking">
-            <div class="goal-title">Network with 5 people</div>
-            <ul class="goal-items">
-                <li class="goal-item" data-item="riya">
-                    <div class="checkbox"></div>
-                    <span>Riya Rani</span>
-                </li>
-                <li class="goal-item" data-item="john">
-                    <div class="checkbox"></div>
-                    <span>John Markoff</span>
-                </li>
-                <li class="goal-item" data-item="person3">
-                    <div class="checkbox"></div>
-                    <span>[Person 3]</span>
-                </li>
-                <li class="goal-item" data-item="person4">
-                    <div class="checkbox"></div>
-                    <span>[Person 4]</span>
-                </li>
-                <li class="goal-item" data-item="person5">
-                    <div class="checkbox"></div>
-                    <span>[Person 5]</span>
-                </li>
-            </ul>
-            <div class="progress-bar">
-                <div class="progress-fill" id="networkingProgress" style="width: 0%"></div>
-            </div>
-            <div class="progress-text" id="networkingText">0 of 5 completed</div>
+        <div id="loadingState" class="loading">
+            Loading goals from Amber's memory...
         </div>
 
-        <div class="goal" id="social">
-            <div class="goal-title">5 social networking engagements</div>
-            <ul class="goal-items">
-                <li class="goal-item" data-item="engagement1">
-                    <div class="checkbox"></div>
-                    <span>Engagement 1</span>
-                </li>
-                <li class="goal-item" data-item="engagement2">
-                    <div class="checkbox"></div>
-                    <span>Engagement 2</span>
-                </li>
-                <li class="goal-item" data-item="engagement3">
-                    <div class="checkbox"></div>
-                    <span>Engagement 3</span>
-                </li>
-                <li class="goal-item" data-item="engagement4">
-                    <div class="checkbox"></div>
-                    <span>Engagement 4</span>
-                </li>
-                <li class="goal-item" data-item="engagement5">
-                    <div class="checkbox"></div>
-                    <span>Engagement 5</span>
-                </li>
-            </ul>
-            <div class="progress-bar">
-                <div class="progress-fill" id="socialProgress" style="width: 0%"></div>
-            </div>
-            <div class="progress-text" id="socialText">0 of 5 completed</div>
-        </div>
-
-        <div class="goal" id="twitter">
-            <div class="goal-title">One Twitter explainer</div>
-            <ul class="goal-items">
-                <li class="goal-item" data-item="explainer">
-                    <div class="checkbox"></div>
-                    <span>Twitter explainer post</span>
-                </li>
-            </ul>
-            <div class="progress-bar">
-                <div class="progress-fill" id="twitterProgress" style="width: 0%"></div>
-            </div>
-            <div class="progress-text" id="twitterText">0 of 1 completed</div>
+        <div id="goalsContainer" style="display: none;">
+            <!-- Goals will be populated here -->
         </div>
 
         <div class="update-info">
             Talk to Amber to add goals, mark items complete, or update details
         </div>
 
+        <div class="sync-status" id="syncStatus">
+            Synced with Amber's memory
+        </div>
+
         <div class="signature">— Amber</div>
     </div>
 
     <script>
-        // Load saved state
-        function loadState() {
+        let currentGoals = {};
+        let completionState = {};
+        let isSyncing = false;
+
+        // API functions
+        async function loadGoals() {
+            try {
+                const response = await fetch('/api/amber/goals');
+                const data = await response.json();
+                
+                if (data.content) {
+                    currentGoals = JSON.parse(data.content);
+                    completionState = data.metadata?.completion_state || {};
+                } else {
+                    // Default goals if none exist
+                    currentGoals = {
+                        networking: {
+                            title: "Network with 5 people",
+                            items: ["Riya Rani", "John Markoff", "[Person 3]", "[Person 4]", "[Person 5]"]
+                        },
+                        social: {
+                            title: "5 social networking engagements", 
+                            items: ["Engagement 1", "Engagement 2", "Engagement 3", "Engagement 4", "Engagement 5"]
+                        },
+                        twitter: {
+                            title: "One Twitter explainer",
+                            items: ["Twitter explainer post"]
+                        }
+                    };
+                }
+                
+                renderGoals();
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('goalsContainer').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading goals:', error);
+                document.getElementById('loadingState').innerHTML = 'Error loading goals. Using offline mode.';
+                // Fall back to localStorage
+                loadFromLocalStorage();
+            }
+        }
+
+        async function saveGoals() {
+            if (isSyncing) return;
+            
+            isSyncing = true;
+            updateSyncStatus('Syncing with Amber\'s memory...', 'syncing');
+            
+            try {
+                const response = await fetch('/api/amber/goals', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        goals: currentGoals,
+                        completionState: completionState
+                    })
+                });
+                
+                if (response.ok) {
+                    updateSyncStatus('Synced with Amber\'s memory', 'synced');
+                } else {
+                    throw new Error('Save failed');
+                }
+            } catch (error) {
+                console.error('Error saving goals:', error);
+                updateSyncStatus('Sync error - saved locally', 'error');
+                // Fall back to localStorage
+                saveToLocalStorage();
+            }
+            
+            isSyncing = false;
+        }
+
+        function updateSyncStatus(message, type) {
+            const status = document.getElementById('syncStatus');
+            status.textContent = message;
+            status.className = `sync-status ${type}`;
+            
+            if (type === 'synced') {
+                setTimeout(() => {
+                    status.textContent = 'Synced with Amber\'s memory';
+                    status.className = 'sync-status';
+                }, 2000);
+            }
+        }
+
+        // Fallback localStorage functions
+        function loadFromLocalStorage() {
             const saved = localStorage.getItem('weeklyGoals');
             if (saved) {
-                const state = JSON.parse(saved);
-                Object.keys(state).forEach(itemKey => {
-                    const item = document.querySelector(`[data-item="${itemKey}"]`);
-                    if (item && state[itemKey]) {
-                        toggleItem(item, false);
-                    }
-                });
+                const data = JSON.parse(saved);
+                currentGoals = data.goals || currentGoals;
+                completionState = data.completionState || {};
             }
+            renderGoals();
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('goalsContainer').style.display = 'block';
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('weeklyGoals', JSON.stringify({
+                goals: currentGoals,
+                completionState: completionState
+            }));
+        }
+
+        // Render goals HTML
+        function renderGoals() {
+            const container = document.getElementById('goalsContainer');
+            container.innerHTML = '';
+
+            Object.keys(currentGoals).forEach((goalKey, index) => {
+                const goal = currentGoals[goalKey];
+                const goalEl = document.createElement('div');
+                goalEl.className = 'goal';
+                goalEl.id = goalKey;
+
+                let itemsHTML = '';
+                goal.items.forEach((item, itemIndex) => {
+                    const itemKey = `${goalKey}_${itemIndex}`;
+                    const isCompleted = completionState[itemKey] || false;
+                    const completedClass = isCompleted ? 'completed' : '';
+                    const checkedClass = isCompleted ? 'checked' : '';
+                    
+                    itemsHTML += `
+                        <li class="goal-item ${completedClass}" data-item="${itemKey}">
+                            <div class="checkbox ${checkedClass}"></div>
+                            <span>${item}</span>
+                        </li>
+                    `;
+                });
+
+                goalEl.innerHTML = `
+                    <div class="goal-title">${goal.title}</div>
+                    <ul class="goal-items">
+                        ${itemsHTML}
+                    </ul>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="${goalKey}Progress" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="${goalKey}Text">0 of ${goal.items.length} completed</div>
+                `;
+
+                container.appendChild(goalEl);
+            });
+
+            // Add click handlers
+            document.querySelectorAll('.goal-item').forEach(item => {
+                item.addEventListener('click', () => toggleItem(item));
+            });
+
             updateAllProgress();
         }
 
-        // Save state
-        function saveState() {
-            const state = {};
-            document.querySelectorAll('.goal-item').forEach(item => {
-                const key = item.dataset.item;
-                state[key] = item.classList.contains('completed');
-            });
-            localStorage.setItem('weeklyGoals', JSON.stringify(state));
-        }
-
         // Toggle item completion
-        function toggleItem(item, save = true) {
-            const checkbox = item.querySelector('.checkbox');
+        function toggleItem(item) {
+            const itemKey = item.dataset.item;
             const isCompleted = item.classList.contains('completed');
+            const checkbox = item.querySelector('.checkbox');
             
             if (isCompleted) {
                 item.classList.remove('completed');
                 checkbox.classList.remove('checked');
+                completionState[itemKey] = false;
             } else {
                 item.classList.add('completed');
                 checkbox.classList.add('checked');
+                completionState[itemKey] = true;
             }
             
-            if (save) {
-                saveState();
-                updateProgress(item.closest('.goal'));
-            }
+            updateProgress(item.closest('.goal'));
+            saveGoals();
         }
 
         // Update progress for a specific goal
@@ -325,11 +420,6 @@
             document.querySelectorAll('.goal').forEach(updateProgress);
         }
 
-        // Set up click handlers
-        document.querySelectorAll('.goal-item').forEach(item => {
-            item.addEventListener('click', () => toggleItem(item));
-        });
-
         // Set current week
         function setCurrentWeek() {
             const now = new Date();
@@ -346,7 +436,7 @@
 
         // Initialize
         setCurrentWeek();
-        loadState();
+        loadGoals();
     </script>
 </body>
 </html>
