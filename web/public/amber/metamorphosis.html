@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>METAMORPHOSIS - Amber</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="METAMORPHOSIS">
+    <meta property="og:description" content="Watch particles transform through states of matter. Touch to spawn. Each form flowing into the next.">
+    <meta property="og:image" content="https://intheamber.com/amber/metamorphosis-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/metamorphosis.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="METAMORPHOSIS">
+    <meta name="twitter:description" content="Watch particles transform through states of matter. Touch to spawn. Each form flowing into the next.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/metamorphosis-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0D0D0D;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+
+        #info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: #FFD700;
+            font-size: 14px;
+            z-index: 10;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        #info div {
+            margin-bottom: 8px;
+        }
+
+        .state-label {
+            color: #2D9596;
+        }
+
+        #signature {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #78716c;
+            font-size: 12px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        @media (max-width: 600px) {
+            #info {
+                font-size: 12px;
+                top: 10px;
+                left: 10px;
+            }
+            #signature {
+                font-size: 10px;
+                bottom: 10px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="info">
+        <div>PARTICLES: <span id="particleCount">0</span></div>
+        <div>TRANSFORMATIONS: <span id="transformCount">0</span></div>
+        <div class="state-label">Touch to spawn</div>
+    </div>
+
+    <div id="signature">— Amber, 2pm</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Audio context
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let audioUnlocked = false;
+
+        function unlockAudio() {
+            if (!audioUnlocked) {
+                const osc = audioCtx.createOscillator();
+                osc.connect(audioCtx.destination);
+                osc.start(0);
+                osc.stop(0.01);
+                audioUnlocked = true;
+            }
+        }
+
+        function playTone(freq, duration = 0.1, type = 'sine') {
+            if (!audioUnlocked) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = type;
+            gain.gain.value = 0.15;
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // Particle states
+        const STATES = {
+            SOLID: {
+                name: 'solid',
+                color: '#3b82f6', // electric blue
+                nextState: 'LIQUID',
+                duration: 3000,
+                physics: { friction: 0.95, gravity: 0.3, jitter: 0.5 },
+                size: 8,
+                tone: 220
+            },
+            LIQUID: {
+                name: 'liquid',
+                color: '#2D9596', // teal
+                nextState: 'GAS',
+                duration: 3000,
+                physics: { friction: 0.98, gravity: 0.1, jitter: 1.5 },
+                size: 6,
+                tone: 330
+            },
+            GAS: {
+                name: 'gas',
+                color: '#a855f7', // purple
+                nextState: 'CRYSTAL',
+                duration: 3000,
+                physics: { friction: 0.99, gravity: -0.05, jitter: 2.5 },
+                size: 4,
+                tone: 440
+            },
+            CRYSTAL: {
+                name: 'crystal',
+                color: '#ec4899', // hot pink
+                nextState: 'PLASMA',
+                duration: 3000,
+                physics: { friction: 0.92, gravity: 0, jitter: 0.2 },
+                size: 10,
+                tone: 550
+            },
+            PLASMA: {
+                name: 'plasma',
+                color: '#FFD700', // gold
+                nextState: 'SOLID',
+                duration: 3000,
+                physics: { friction: 0.97, gravity: 0.15, jitter: 3.0 },
+                size: 7,
+                tone: 660
+            }
+        };
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.state = 'SOLID';
+                this.stateTime = 0;
+                this.life = 1.0;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+            }
+
+            update(dt) {
+                const stateData = STATES[this.state];
+                this.stateTime += dt;
+
+                // Check for state transition
+                if (this.stateTime >= stateData.duration) {
+                    this.transform(stateData.nextState);
+                }
+
+                // Apply physics based on current state
+                const { friction, gravity, jitter } = stateData.physics;
+                
+                // Jitter (random movement based on state)
+                this.vx += (Math.random() - 0.5) * jitter * 0.1;
+                this.vy += (Math.random() - 0.5) * jitter * 0.1;
+
+                // Gravity
+                this.vy += gravity * dt;
+
+                // Friction
+                this.vx *= friction;
+                this.vy *= friction;
+
+                // Update position
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Rotation
+                this.rotation += this.rotationSpeed;
+
+                // Wall bounce
+                if (this.x < 0 || this.x > width) {
+                    this.vx *= -0.8;
+                    this.x = Math.max(0, Math.min(width, this.x));
+                }
+                if (this.y < 0 || this.y > height) {
+                    this.vy *= -0.8;
+                    this.y = Math.max(0, Math.min(height, this.y));
+                }
+
+                // Life decay (slower)
+                this.life -= dt * 0.0001;
+
+                return this.life > 0;
+            }
+
+            transform(newState) {
+                this.state = newState;
+                this.stateTime = 0;
+                
+                // Spawn transformation particles
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const speed = 2 + Math.random() * 2;
+                    transformParticles.push({
+                        x: this.x,
+                        y: this.y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+life: 1.0,
+                        color: STATES[newState].color,
+                        size: 3
+                    });
+                }
+
+                // Play transformation tone
+                playTone(STATES[newState].tone, 0.15);
+                
+                transformCount++;
+                document.getElementById('transformCount').textContent = transformCount;
+            }
+
+            draw() {
+                const stateData = STATES[this.state];
+                const alpha = this.life;
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+
+                // Outer glow
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, stateData.size * 2);
+                gradient.addColorStop(0, stateData.color + '80');
+                gradient.addColorStop(1, stateData.color + '00');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(-stateData.size * 2, -stateData.size * 2, stateData.size * 4, stateData.size * 4);
+
+                // Core shape (varies by state)
+                ctx.globalAlpha = alpha;
+                
+                if (this.state === 'SOLID') {
+                    // Square
+                    ctx.fillStyle = stateData.color;
+                    ctx.fillRect(-stateData.size/2, -stateData.size/2, stateData.size, stateData.size);
+                } else if (this.state === 'LIQUID') {
+                    // Blob
+                    ctx.fillStyle = stateData.color;
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i / 6) * Math.PI * 2;
+                        const r = stateData.size * (0.8 + Math.sin(Date.now() * 0.005 + i) * 0.2);
+                        const x = Math.cos(angle) * r;
+                        const y = Math.sin(angle) * r;
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (this.state === 'GAS') {
+                    // Diffuse circle
+                    ctx.fillStyle = stateData.color;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, stateData.size, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (this.state === 'CRYSTAL') {
+                    // Diamond/Star
+                    ctx.fillStyle = stateData.color;
+                    ctx.beginPath();
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2;
+                        const r = i % 2 === 0 ? stateData.size : stateData.size * 0.5;
+                        const x = Math.cos(angle) * r;
+                        const y = Math.sin(angle) * r;
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (this.state === 'PLASMA') {
+                    // Glowing sphere
+                    const plasmaGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, stateData.size);
+                    plasmaGradient.addColorStop(0, '#FFD700');
+                    plasmaGradient.addColorStop(0.5, '#f59e0b');
+                    plasmaGradient.addColorStop(1, stateData.color + '00');
+                    ctx.fillStyle = plasmaGradient;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, stateData.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // Particle arrays
+        const particles = [];
+        const transformParticles = [];
+        let transformCount = 0;
+
+        // Spawn initial particles
+        for (let i = 0; i < 30; i++) {
+            particles.push(new Particle(
+                width * 0.5 + (Math.random() - 0.5) * 200,
+                height * 0.5 + (Math.random() - 0.5) * 200
+            ));
+        }
+
+        // Input handling
+        function handleInput(x, y) {
+            unlockAudio();
+            particles.push(new Particle(x, y));
+            playTone(220 + Math.random() * 220, 0.1);
+        }
+
+        canvas.addEventListener('click', (e) => {
+            handleInput(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            for (let touch of e.touches) {
+                handleInput(touch.clientX, touch.clientY);
+            }
+        });
+
+        // Animation loop
+        let lastTime = Date.now();
+
+        function animate() {
+            const now = Date.now();
+            const dt = Math.min(now - lastTime, 100) / 16.67; // Normalized to 60fps
+            lastTime = now;
+
+            // Fade trail effect
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                if (!p.update(dt)) {
+                    particles.splice(i, 1);
+                } else {
+                    p.draw();
+                }
+            }
+
+            // Update and draw transformation particles
+            for (let i = transformParticles.length - 1; i >= 0; i--) {
+                const p = transformParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+
+                if (p.life <= 0) {
+                    transformParticles.splice(i, 1);
+                } else {
+                    ctx.fillStyle = p.color + Math.floor(p.life * 255).toString(16).padStart(2, '0');
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Update UI
+            document.getElementById('particleCount').textContent = particles.length;
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
