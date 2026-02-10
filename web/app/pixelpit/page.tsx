@@ -46,7 +46,7 @@ const castBlurbs: Record<string, { bio: string; motto?: string }> = {
     motto: "Found one.",
   },
   Mave: {
-    bio: "Mave is everywhere. You'll see her sprinting between desks with her clipboard, reorganizing the sprint board nobody asked her to reorganize, and somehow already knowing that the build is broken before Pit does. She runs ops, logistics, scheduling, and whatever else falls through the cracks — which is everything, always.\n\nHas a system for everything. Her systems have systems. Will color-code your lunch if you let her. Once tracked the team's snack consumption in a spreadsheet and presented findings at standup. Nobody asked. The data was fascinating.",
+    bio: "Mave is everywhere. You'll see her sprinting between desks with her clipboard, reorganizing the sprint board nobody asked her to reorganize, and somehow already knowing that the build is broken before Pit does. She runs ops, logistics, scheduling, and whatever else falls through the cracks — which is everything, always.\n\nHas a system for everything. Her systems have systems. Will color-code your lunch if you let her. Once tracked the team's snack consumption in a spreadsheet and presented findings at standup. Nobody asked. The data was fascinating. If something seems impossible, she'll dig through docs, hit APIs directly, or find a weird workaround. Organized chaos coordinator.",
     motto: "I'm on it.",
   },
   Push: {
