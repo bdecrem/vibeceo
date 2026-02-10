@@ -9,7 +9,7 @@ export default async function Image() {
   return new ImageResponse(
     (
       <div style={{
-        background: '#0a0a2a',
+        background: 'linear-gradient(180deg, #1a0a2e 0%, #0a0a1a 50%, #050510 100%)',
         width: '100%',
         height: '100%',
         display: 'flex',
@@ -18,32 +18,58 @@ export default async function Image() {
         justifyContent: 'center',
         position: 'relative',
       }}>
-        {/* Stars */}
+        {/* Stars — mixed white, purple, cyan */}
         <div style={{ position: 'absolute', top: 40, left: 150, width: 4, height: 4, borderRadius: 2, background: '#ffffff80' }} />
-        <div style={{ position: 'absolute', top: 100, left: 400, width: 3, height: 3, borderRadius: 2, background: '#a5b4fc80' }} />
+        <div style={{ position: 'absolute', top: 100, left: 400, width: 3, height: 3, borderRadius: 2, background: '#a78bfa80' }} />
         <div style={{ position: 'absolute', top: 80, right: 250, width: 5, height: 5, borderRadius: 3, background: '#ffffff60' }} />
         <div style={{ position: 'absolute', top: 150, right: 500, width: 3, height: 3, borderRadius: 2, background: '#67e8f980' }} />
         <div style={{ position: 'absolute', bottom: 200, left: 300, width: 4, height: 4, borderRadius: 2, background: '#ffffff70' }} />
-        <div style={{ position: 'absolute', bottom: 150, right: 350, width: 3, height: 3, borderRadius: 2, background: '#f9a8d480' }} />
+        <div style={{ position: 'absolute', bottom: 150, right: 350, width: 3, height: 3, borderRadius: 2, background: '#7c3aed80' }} />
+        <div style={{ position: 'absolute', top: 200, left: 80, width: 3, height: 3, borderRadius: 2, background: '#22d3ee60' }} />
+        <div style={{ position: 'absolute', top: 300, right: 120, width: 4, height: 4, borderRadius: 2, background: '#ffffff50' }} />
+        <div style={{ position: 'absolute', bottom: 250, right: 600, width: 3, height: 3, borderRadius: 2, background: '#a78bfa60' }} />
+        <div style={{ position: 'absolute', bottom: 100, left: 500, width: 5, height: 5, borderRadius: 3, background: '#67e8f950' }} />
 
-        {/* Rocket emoji */}
+        {/* Orbital rings */}
+        <div style={{
+          position: 'absolute',
+          width: 420,
+          height: 420,
+          border: '1px solid #7c3aed30',
+          borderRadius: 9999,
+        }} />
+        <div style={{
+          position: 'absolute',
+          width: 520,
+          height: 520,
+          border: '1px solid #22d3ee15',
+          borderRadius: 9999,
+        }} />
+
+        {/* UFO emoji */}
         <div style={{ fontSize: 100, marginBottom: 10 }}>
-          🚀
+          🛸
         </div>
 
-        {/* Title */}
+        {/* Title — wide tracked, white with purple glow */}
         <div style={{
           fontSize: 140,
-          fontWeight: 700,
-          color: '#E5E7EB',
-          letterSpacing: 20,
+          fontWeight: 900,
+          color: '#ffffff',
+          letterSpacing: 24,
         }}>
           ORBIT
         </div>
 
-        {/* Subtitle */}
-        <div style={{ fontSize: 28, color: '#22D3EE', letterSpacing: 6 }}>
-          DODGE UFOs • RIDE SATELLITES
+        {/* Tagline */}
+        <div style={{
+          fontSize: 22,
+          color: '#7C3AED',
+          letterSpacing: 8,
+          fontWeight: 600,
+          marginTop: 4,
+        }}>
+          CROSS THE VOID
         </div>
 
         {/* Corner accents */}
@@ -57,9 +83,8 @@ export default async function Image() {
           position: 'absolute',
           bottom: 30,
           fontSize: 20,
-          color: '#9CA3AF',
+          color: '#6B7280',
           letterSpacing: 6,
-          opacity: 0.7,
         }}>
           PIXELPIT ARCADE
         </div>
