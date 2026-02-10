@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_KEY! // Use service role key for full access
 );
 
 export async function GET() {
@@ -11,7 +11,8 @@ export async function GET() {
     const { data, error } = await supabase
       .from('amber_state')
       .select('content, metadata')
-      .eq('type', 'weekly_goals')
+      .eq('type', 'creation')
+      .eq('metadata->>type', 'weekly_goals')
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -20,8 +21,18 @@ export async function GET() {
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
-    const goals = data?.[0] || { content: null, metadata: {} };
-    return NextResponse.json(goals);
+    if (data && data.length > 0) {
+      const record = data[0];
+      return NextResponse.json({
+        content: JSON.stringify(record.metadata.goals),
+        metadata: {
+          completion_state: record.metadata.completion_state || {},
+          week: record.metadata.week
+        }
+      });
+    }
+
+    return NextResponse.json({ content: null, metadata: {} });
   } catch (err) {
     console.error('API error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
@@ -39,15 +50,18 @@ export async function POST(request: NextRequest) {
     const { data: existing } = await supabase
       .from('amber_state')
       .select('id')
-      .eq('type', 'weekly_goals')
+      .eq('type', 'creation')
+      .eq('metadata->>type', 'weekly_goals')
       .eq('metadata->>week', currentWeek)
       .limit(1);
 
-    const goalData = {
-      type: 'weekly_goals',
-      content: JSON.stringify(goals),
-      source: 'amber_goals_app',
+    const recordData = {
+      type: 'creation' as const,
+      content: `Weekly goals tracker - Bart's week of ${getWeekDateRange(currentWeek)}`,
+      source: 'amber',
       metadata: {
+        type: 'weekly_goals',
+        goals: goals,
         completion_state: completionState,
         week: currentWeek,
         updated_at: new Date().toISOString()
@@ -61,14 +75,14 @@ export async function POST(request: NextRequest) {
       // Update existing record
       const result = await supabase
         .from('amber_state')
-        .update(goalData)
+        .update(recordData)
         .eq('id', existing[0].id);
       error = result.error;
     } else {
       // Insert new record
       const result = await supabase
         .from('amber_state')
-        .insert(goalData);
+        .insert(recordData);
       error = result.error;
     }
 
@@ -95,4 +109,15 @@ function getCurrentWeekKey() {
   const weekNumber = Math.ceil(((monday.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7);
   
   return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+}
+
+function getWeekDateRange(weekKey: string) {
+  const now = new Date();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - now.getDay() + 1);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  
+  const formatDate = (date: Date) => date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  return `${formatDate(monday)} - ${formatDate(sunday)}, ${now.getFullYear()}`;
 }
