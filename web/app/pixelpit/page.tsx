@@ -115,6 +115,7 @@ const _makers = [
 ];
 
 const labItems = [
+  { icon: '🐢', name: 'Yertle', href: '/pixelpit/lab/yertle', date: 'Mon 2/9', shipped: true },
   { icon: '🧵', name: 'Threads', href: '/pixelpit/lab/threads', date: 'Mon 2/9' },
   { icon: '🌿', name: 'The Garden', href: '/pixelpit/lab/efficiency-garden', date: 'Mon 2/9' },
   { icon: '🕳️', name: 'Devour', href: '/pixelpit/lab/devour', date: 'Fri 2/7' },
