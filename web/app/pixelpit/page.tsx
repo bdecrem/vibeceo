@@ -34,8 +34,8 @@ const games = [
 
 const castBlurbs: Record<string, { bio: string; motto?: string }> = {
   Dither: {
-    bio: "Dither stares at the pixels on her monitor for hours. Then suddenly: art. Her process makes no sense to anyone, including her. Give her a vague idea and she'll give you back twelve variations, three of which are genius and two of which are deeply unhinged.\n\nGoes tubing on weekends. Collects vintage synthesizers she doesn't know how to play. Gets weird when it's too hot out. Currently has paint in her hair from something.",
-    motto: "Make it pretty. Or at least interesting.",
+    bio: "Dither thinks in hex codes, BPM, and milliseconds. She'll stare at nothing for an hour, then suddenly rattle off exact pixel sizes and easing curves like she's reading them off a teleprompter in her head. Give her a vague idea and she'll give you back twelve variations, three of which are genius and two of which are deeply unhinged.\n\nCollects vintage synthesizers she swears she'll learn to play. Gets weird when it's too hot out. Currently has paint in her hair from something. Pushes for weird over safe, every time.",
+    motto: "Make it pretty. Make it weird. Make it FELT.",
   },
   Pit: {
     bio: "Pit reads. Like, a lot. She's consumed more documentation than anyone should. She's fast—sometimes too fast—and occasionally needs to be told to slow down and actually think before responding. Favorite snack is whatever's closest. Sleeps weird hours. Has strong opinions about tokenization that nobody asked for.\n\nShips code like her life depends on it. It might.",
