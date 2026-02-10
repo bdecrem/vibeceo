@@ -15,21 +15,18 @@
     <meta name="twitter:description" content="Amber's weekly goal tracker - organized by week, updated through conversation">
     <meta name="twitter:image" content="https://intheamber.com/amber/goals-og.png">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
         
         :root {
-            --bg: #0a0a0a;
-            --surface: #151515;
-            --border: #2a2a2a;
-            --text: #ffffff;
-            --text-dim: #a0a0a0;
-            --text-subtle: #6a6a6a;
-            --accent: #00ff88;
-            --accent-dim: #00cc6a;
-            --danger: #ff4757;
-            --warning: #ffa502;
-            --spacing: 24px;
-            --radius: 8px;
+            --neon-green: #39ff14;
+            --cyber-pink: #ff006e;
+            --electric-blue: #0066ff;
+            --brutal-orange: #ff8500;
+            --poison-yellow: #ffff00;
+            --retro-purple: #8b00ff;
+            --grain-bg: #0d0d0d;
+            --glass-white: rgba(255, 255, 255, 0.1);
+            --glass-dark: rgba(0, 0, 0, 0.3);
         }
 
         * {
@@ -39,76 +36,125 @@
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.5;
-            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--grain-bg);
+            color: #ffffff;
             overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* GRAINY TEXTURE */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            z-index: 1;
+            pointer-events: none;
+            background-image: 
+                radial-gradient(circle at 20% 80%, var(--neon-green) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, var(--cyber-pink) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, var(--electric-blue) 0%, transparent 50%),
+                url('data:image/svg+xml,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.4"/></svg>');
+            animation: drift 20s ease-in-out infinite alternate;
+        }
+
+        @keyframes drift {
+            0% { transform: translateX(-2px) translateY(-2px); }
+            100% { transform: translateX(2px) translateY(2px); }
         }
 
         .app {
+            position: relative;
+            z-index: 2;
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
+        /* BRUTAL HEADER */
         .header {
-            padding: var(--spacing) var(--spacing) 0;
-            position: sticky;
-            top: 0;
-            background: var(--bg);
-            z-index: 10;
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--glass-white), var(--glass-dark));
+            backdrop-filter: blur(20px);
+            border-bottom: 3px solid var(--neon-green);
+            margin-bottom: 2rem;
+            position: relative;
         }
 
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--cyber-pink), var(--neon-green), var(--electric-blue), var(--brutal-orange));
+            animation: rainbow-flow 3s linear infinite;
+        }
+
+        @keyframes rainbow-flow {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
 
         h1 {
-            font-size: clamp(2rem, 4vw, 3rem);
-            font-weight: 600;
-            margin-bottom: 4px;
-            background: linear-gradient(135deg, var(--text) 0%, var(--text-dim) 100%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -0.05em;
+            background: linear-gradient(45deg, var(--neon-green), var(--cyber-pink), var(--electric-blue));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            background-size: 300% 300%;
+            animation: gradient-shift 4s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(57, 255, 20, 0.5);
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
 
         .week-info {
-            font-size: 0.875rem;
-            color: var(--text-subtle);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
             font-weight: 500;
+            color: var(--neon-green);
             text-transform: uppercase;
-            letter-spacing: 0.025em;
-            margin-bottom: var(--spacing);
+            letter-spacing: 0.2em;
+            filter: blur(0.5px);
         }
 
-        .main {
-            flex: 1;
-            padding: 0 var(--spacing) var(--spacing);
-        }
-
+        /* MAXIMAL GRID */
         .container {
-            max-width: 1200px;
+            padding: 0 2rem 2rem;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
         .goals-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-            gap: var(--spacing);
-            margin-bottom: var(--spacing);
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
         }
 
         .goal-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            overflow: hidden;
+            background: linear-gradient(135deg, var(--glass-white), var(--glass-dark));
+            backdrop-filter: blur(15px);
+            border: 2px solid transparent;
+            border-radius: 0;
             position: relative;
-            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+            overflow: hidden;
+            transform: skew(-1deg, 0deg);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
         .goal-card::before {
@@ -116,83 +162,110 @@
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--accent), var(--accent-dim));
-            opacity: 0;
-            transition: opacity 0.2s ease;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--neon-green), var(--cyber-pink), var(--electric-blue), var(--brutal-orange));
+            z-index: -1;
+            filter: blur(1px);
+            opacity: 0.1;
+        }
+
+        .goal-card:nth-child(1) { 
+            transform: skew(1deg, 0deg); 
+            border-color: var(--neon-green);
+        }
+        .goal-card:nth-child(2) { 
+            transform: skew(-2deg, 0deg); 
+            border-color: var(--cyber-pink);
+        }
+        .goal-card:nth-child(3) { 
+            transform: skew(0.5deg, 0deg); 
+            border-color: var(--electric-blue);
         }
 
         .goal-card:hover {
-            border-color: var(--accent);
-            transform: translateY(-2px);
-        }
-
-        .goal-card:hover::before {
-            opacity: 1;
+            transform: skew(0deg, 0deg) scale(1.02);
+            filter: brightness(1.1) contrast(1.1);
+            border-width: 3px;
         }
 
         .goal-header {
-            padding: var(--spacing);
-            border-bottom: 1px solid var(--border);
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--glass-dark), var(--glass-white));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .goal-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
         }
 
+        .goal-card:nth-child(1) .goal-title { color: var(--neon-green); }
+        .goal-card:nth-child(2) .goal-title { color: var(--cyber-pink); }
+        .goal-card:nth-child(3) .goal-title { color: var(--electric-blue); }
+
+        /* RETRO PROGRESS */
         .progress-wrapper {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 1rem;
         }
 
         .progress-bar {
             flex: 1;
-            height: 6px;
-            background: var(--border);
-            border-radius: 3px;
-            overflow: hidden;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
             position: relative;
+            overflow: hidden;
+            filter: blur(0.5px);
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--accent-dim));
-            border-radius: 3px;
-            transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            background: linear-gradient(90deg, var(--neon-green), var(--cyber-pink));
+            transition: width 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             position: relative;
-            overflow: hidden;
         }
 
         .progress-fill::after {
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
+            left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 2s infinite;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 4px,
+                rgba(255, 255, 255, 0.3) 4px,
+                rgba(255, 255, 255, 0.3) 8px
+            );
+            animation: scan-lines 1s linear infinite;
         }
 
-        @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
+        @keyframes scan-lines {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
 
         .progress-text {
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            white-space: nowrap;
+            letter-spacing: 0.1em;
+            filter: blur(0.3px);
         }
 
+        /* BRUTAL ITEMS */
         .goal-items {
             list-style: none;
         }
@@ -200,283 +273,267 @@
         .goal-item {
             display: flex;
             align-items: center;
-            padding: 16px var(--spacing);
-            border-bottom: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.2s ease;
             position: relative;
-        }
-
-        .goal-item:last-child {
-            border-bottom: none;
+            background: transparent;
         }
 
         .goal-item:hover {
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
         }
 
         .goal-item:active {
-            transform: scale(0.998);
-            background: rgba(255, 255, 255, 0.04);
+            transform: scale(0.98) translateX(5px);
+            filter: brightness(0.9);
         }
 
         .checkbox {
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--border);
-            border-radius: 50%;
-            margin-right: 16px;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            margin-right: 1.5rem;
             flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
             position: relative;
+            transform: rotate(45deg);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
         .checkbox::after {
             content: '';
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
-            transform: scale(0);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            transition: all 0.3s ease;
         }
 
         .checkbox.completed {
-            border-color: var(--accent);
-            background: var(--accent);
-            transform: scale(1.1);
+            border-color: var(--neon-green);
+            background: var(--neon-green);
+            transform: rotate(45deg) scale(1.2);
+            box-shadow: 0 0 20px var(--neon-green);
         }
 
         .checkbox.completed::after {
-            background: var(--bg);
-            transform: scale(1);
+            background: var(--grain-bg);
         }
 
         .checkbox.invalid {
-            border-color: var(--danger);
-            background: var(--danger);
-            transform: scale(1.1);
+            border-color: var(--cyber-pink);
+            background: var(--cyber-pink);
+            transform: rotate(45deg) scale(1.2);
+            box-shadow: 0 0 20px var(--cyber-pink);
         }
 
         .checkbox.invalid::after {
-            background: var(--bg);
-            transform: scale(1);
-            border-radius: 1px;
-            width: 10px;
-            height: 2px;
+            background: var(--grain-bg);
         }
 
         .goal-item-text {
             flex: 1;
-            font-size: 0.9375rem;
+            font-size: 1.1rem;
             font-weight: 500;
-            color: var(--text);
-            transition: color 0.2s ease;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            filter: blur(0.2px);
+            transition: all 0.2s ease;
         }
 
         .goal-item.completed .goal-item-text {
-            color: var(--text-dim);
+            color: var(--neon-green);
+            text-shadow: 0 0 15px var(--neon-green);
         }
 
         .goal-item.invalid .goal-item-text {
-            color: var(--text-subtle);
+            color: var(--cyber-pink);
             text-decoration: line-through;
-            text-decoration-thickness: 1px;
-            text-decoration-color: var(--danger);
+            text-decoration-color: var(--cyber-pink);
+            text-shadow: 0 0 15px var(--cyber-pink);
+            opacity: 0.7;
         }
 
+        /* STATUS TAGS */
         .status-indicator {
-            position: absolute;
-            right: var(--spacing);
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.75rem;
-            font-weight: 500;
-            padding: 2px 6px;
-            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border: 1px solid;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.1em;
             opacity: 0;
-            transition: opacity 0.2s ease;
+            transform: translateX(10px);
+            transition: all 0.2s ease;
         }
 
         .goal-item.completed .status-indicator {
-            background: rgba(0, 255, 136, 0.1);
-            color: var(--accent);
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+            background: rgba(57, 255, 20, 0.1);
             opacity: 1;
+            transform: translateX(0);
         }
 
         .goal-item.invalid .status-indicator {
-            background: rgba(255, 71, 87, 0.1);
-            color: var(--danger);
+            border-color: var(--cyber-pink);
+            color: var(--cyber-pink);
+            background: rgba(255, 0, 110, 0.1);
             opacity: 1;
+            transform: translateX(0);
         }
 
+        /* LOADING */
         .loading {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 400px;
-            color: var(--text-dim);
-            gap: 16px;
+            min-height: 50vh;
+            gap: 2rem;
+        }
+
+        .loading-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--neon-green);
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { 
+                opacity: 1; 
+                text-shadow: 0 0 20px var(--neon-green);
+            }
+            50% { 
+                opacity: 0.5; 
+                text-shadow: 0 0 5px var(--neon-green);
+            }
         }
 
         .loading-spinner {
-            width: 32px;
-            height: 32px;
-            border: 2px solid var(--border);
-            border-top: 2px solid var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+            width: 60px;
+            height: 60px;
+            border: 3px solid transparent;
+            border-top: 3px solid var(--neon-green);
+            border-right: 3px solid var(--cyber-pink);
+            border-bottom: 3px solid var(--electric-blue);
+            border-left: 3px solid var(--brutal-orange);
+            border-radius: 0;
+            animation: brutal-spin 1s linear infinite;
+            transform: rotate(45deg);
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes brutal-spin {
+            0% { transform: rotate(45deg); }
+            100% { transform: rotate(405deg); }
         }
 
+        /* FOOTER */
         .footer {
-            padding: var(--spacing);
-            border-top: 1px solid var(--border);
+            background: linear-gradient(135deg, var(--glass-dark), var(--glass-white));
+            backdrop-filter: blur(20px);
+            border-top: 2px solid var(--cyber-pink);
+            padding: 2rem;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .footer-left {
-            display: flex;
             align-items: center;
-            gap: 16px;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 3rem;
         }
 
         .update-info {
-            font-size: 0.8125rem;
-            color: var(--text-subtle);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
             font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         .sync-status {
-            font-size: 0.75rem;
-            color: var(--text-subtle);
-            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.1em;
+            color: var(--neon-green);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .sync-status::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--accent);
+            content: '●';
+            animation: pulse-dot 2s infinite;
         }
 
-        .sync-status.syncing::before {
-            background: var(--warning);
-            animation: pulse 1.5s infinite;
-        }
-
-        .sync-status.error::before {
-            background: var(--danger);
-        }
-
-        @keyframes pulse {
+        @keyframes pulse-dot {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
 
         .signature {
-            font-size: 0.8125rem;
-            color: var(--text-subtle);
-            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--cyber-pink);
+            text-shadow: 0 0 10px var(--cyber-pink);
         }
 
-        @media (max-width: 640px) {
-            :root {
-                --spacing: 16px;
+        @media (max-width: 768px) {
+            .header { padding: 1.5rem; }
+            h1 { font-size: 3rem; }
+            .container { padding: 0 1rem 1rem; }
+            .goals-grid { 
+                grid-template-columns: 1fr; 
+                gap: 1.5rem;
             }
-            
-            .goals-grid {
-                grid-template-columns: 1fr;
+            .goal-card { transform: skew(0deg, 0deg); }
+            .goal-header { padding: 1.5rem; }
+            .goal-title { font-size: 1.3rem; }
+            .goal-item { padding: 1rem 1.5rem; }
+            .footer { 
+                flex-direction: column; 
+                text-align: center;
+                gap: 1rem;
             }
-            
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .footer {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
-        /* Smooth state transitions */
-        .goal-item {
-            --item-bg: transparent;
-            background: var(--item-bg);
-        }
-
-        .goal-item.completed {
-            --item-bg: rgba(0, 255, 136, 0.03);
-        }
-
-        .goal-item.invalid {
-            --item-bg: rgba(255, 71, 87, 0.03);
-        }
-
-        /* Micro-interactions */
-        .goal-card {
-            --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-            box-shadow: var(--card-shadow);
-        }
-
-        .goal-card:hover {
-            --card-shadow: 0 8px 32px rgba(0, 255, 136, 0.1);
-        }
-
-        /* Focus states for accessibility */
-        .goal-item:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: -2px;
         }
     </style>
 </head>
 <body>
     <div class="app">
         <div class="header">
-            <div class="header-content">
-                <h1>Weekly Goals</h1>
-                <div class="week-info" id="weekHeader">Week of Feb 10–16, 2026</div>
-            </div>
+            <h1>Weekly Goals</h1>
+            <div class="week-info" id="weekHeader">FEB.10—16.2026</div>
         </div>
 
-        <div class="main">
-            <div class="container">
-                <div id="loadingState" class="loading">
-                    <div class="loading-spinner"></div>
-                    <div>Loading goals...</div>
-                </div>
+        <div class="container">
+            <div id="loadingState" class="loading">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Loading Goals...</div>
+            </div>
 
-                <div id="goalsContainer" class="goals-grid" style="display: none;">
-                    <!-- Goals will be populated here -->
-                </div>
+            <div id="goalsContainer" class="goals-grid" style="display: none;">
+                <!-- Goals populated by JS -->
             </div>
         </div>
 
         <div class="footer">
-            <div class="footer-left">
-                <div class="update-info">Tap to cycle states</div>
-                <div class="sync-status" id="syncStatus">Synced</div>
-            </div>
-            <div class="signature">Amber</div>
+            <div class="update-info">TAP TO CYCLE STATES</div>
+            <div class="sync-status" id="syncStatus">SYNCED</div>
+            <div class="signature">AMBER</div>
         </div>
     </div>
 
@@ -485,7 +542,6 @@
         let completionState = {};
         let isSyncing = false;
 
-        // API functions
         async function loadGoals() {
             try {
                 const response = await fetch('/api/amber/goals');
@@ -495,7 +551,6 @@
                     currentGoals = JSON.parse(data.content);
                     completionState = data.metadata?.completion_state || {};
                 } else {
-                    // Default goals if none exist
                     currentGoals = {
                         networking: {
                             title: "Network with 5 people",
@@ -517,7 +572,6 @@
                 document.getElementById('goalsContainer').style.display = 'grid';
             } catch (error) {
                 console.error('Error loading goals:', error);
-                document.getElementById('loadingState').innerHTML = '<div>Failed to load goals</div>';
                 loadFromLocalStorage();
             }
         }
@@ -526,7 +580,7 @@
             if (isSyncing) return;
             
             isSyncing = true;
-            updateSyncStatus('Syncing', 'syncing');
+            updateSyncStatus('SYNCING', 'syncing');
             
             try {
                 const response = await fetch('/api/amber/goals', {
@@ -541,13 +595,13 @@
                 });
                 
                 if (response.ok) {
-                    updateSyncStatus('Synced', 'synced');
+                    updateSyncStatus('SYNCED', 'synced');
                 } else {
                     throw new Error('Save failed');
                 }
             } catch (error) {
                 console.error('Error saving goals:', error);
-                updateSyncStatus('Error', 'error');
+                updateSyncStatus('ERROR', 'error');
                 saveToLocalStorage();
             }
             
@@ -561,7 +615,7 @@
             
             if (type === 'synced') {
                 setTimeout(() => {
-                    status.textContent = 'Synced';
+                    status.textContent = 'SYNCED';
                     status.className = 'sync-status';
                 }, 1000);
             }
@@ -607,15 +661,15 @@
                     if (state === 'completed') {
                         itemClass += ' completed';
                         checkboxClass += ' completed';
-                        statusText = 'Done';
+                        statusText = 'DONE';
                     } else if (state === 'invalid') {
                         itemClass += ' invalid';
                         checkboxClass += ' invalid';
-                        statusText = 'Skip';
+                        statusText = 'SKIP';
                     }
                     
                     itemsHTML += `
-                        <li class="${itemClass}" data-item="${itemKey}" tabindex="0">
+                        <li class="${itemClass}" data-item="${itemKey}">
                             <div class="${checkboxClass}"></div>
                             <span class="goal-item-text">${item}</span>
                             <div class="status-indicator">${statusText}</div>
@@ -642,15 +696,8 @@
                 updateProgress(goalKey);
             });
 
-            // Add event listeners
             document.querySelectorAll('.goal-item').forEach(item => {
                 item.addEventListener('click', toggleItem);
-                item.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        toggleItem(e);
-                    }
-                });
             });
         }
 
@@ -673,28 +720,23 @@
             const listItem = event.currentTarget;
             const statusIndicator = event.currentTarget.querySelector('.status-indicator');
             
-            // Remove all state classes
             checkbox.classList.remove('completed', 'invalid');
             listItem.classList.remove('completed', 'invalid');
             
-            // Add new state class and update status
             if (nextState === 'completed') {
                 checkbox.classList.add('completed');
                 listItem.classList.add('completed');
-                statusIndicator.textContent = 'Done';
+                statusIndicator.textContent = 'DONE';
             } else if (nextState === 'invalid') {
                 checkbox.classList.add('invalid');
                 listItem.classList.add('invalid');
-                statusIndicator.textContent = 'Skip';
+                statusIndicator.textContent = 'SKIP';
             } else {
                 statusIndicator.textContent = '';
             }
             
-            // Update progress
             const goalKey = itemKey.split('_')[0];
             updateProgress(goalKey);
-            
-            // Save
             saveGoals();
         }
 
