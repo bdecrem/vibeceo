@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Goals</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    <meta property="og:title" content="Weekly Goals">
+    <meta property="og:description" content="Amber's weekly goal tracker - organized by week, updated through conversation">
+    <meta property="og:image" content="https://intheamber.com/amber/goals-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/goals.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Weekly Goals">
+    <meta name="twitter:description" content="Amber's weekly goal tracker - organized by week, updated through conversation">
+    <meta name="twitter:image" content="https://intheamber.com/amber/goals-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            color: #d4af37;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .week-header {
+            text-align: center;
+            font-size: 1.2em;
+            opacity: 0.8;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        .goal {
+            background: rgba(212, 175, 55, 0.08);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .goal:hover {
+            background: rgba(212, 175, 55, 0.12);
+            border-color: rgba(212, 175, 55, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+        }
+
+        .goal-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #f5e6a8;
+        }
+
+        .goal-items {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .goal-item {
+            padding: 5px 0;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .goal-item:hover {
+            color: #f5e6a8;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(212, 175, 55, 0.6);
+            border-radius: 3px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .checkbox.checked {
+            background: rgba(212, 175, 55, 0.8);
+            border-color: #d4af37;
+        }
+
+        .checkbox.checked::after {
+            content: '✓';
+            color: #0f0f0f;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .goal-item.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #d4af37, #f5e6a8);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .signature {
+            text-align: center;
+            margin-top: 40px;
+            font-style: italic;
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+
+        .update-info {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.8em;
+            opacity: 0.6;
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 Weekly Goals</h1>
+        <div class="week-header" id="weekHeader">Week of February 10-16, 2026</div>
+        
+        <div class="goal" id="networking">
+            <div class="goal-title">Network with 5 people</div>
+            <ul class="goal-items">
+                <li class="goal-item" data-item="riya">
+                    <div class="checkbox"></div>
+                    <span>Riya Rani</span>
+                </li>
+                <li class="goal-item" data-item="john">
+                    <div class="checkbox"></div>
+                    <span>John Markoff</span>
+                </li>
+                <li class="goal-item" data-item="person3">
+                    <div class="checkbox"></div>
+                    <span>[Person 3]</span>
+                </li>
+                <li class="goal-item" data-item="person4">
+                    <div class="checkbox"></div>
+                    <span>[Person 4]</span>
+                </li>
+                <li class="goal-item" data-item="person5">
+                    <div class="checkbox"></div>
+                    <span>[Person 5]</span>
+                </li>
+            </ul>
+            <div class="progress-bar">
+                <div class="progress-fill" id="networkingProgress" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="networkingText">0 of 5 completed</div>
+        </div>
+
+        <div class="goal" id="social">
+            <div class="goal-title">5 social networking engagements</div>
+            <ul class="goal-items">
+                <li class="goal-item" data-item="engagement1">
+                    <div class="checkbox"></div>
+                    <span>Engagement 1</span>
+                </li>
+                <li class="goal-item" data-item="engagement2">
+                    <div class="checkbox"></div>
+                    <span>Engagement 2</span>
+                </li>
+                <li class="goal-item" data-item="engagement3">
+                    <div class="checkbox"></div>
+                    <span>Engagement 3</span>
+                </li>
+                <li class="goal-item" data-item="engagement4">
+                    <div class="checkbox"></div>
+                    <span>Engagement 4</span>
+                </li>
+                <li class="goal-item" data-item="engagement5">
+                    <div class="checkbox"></div>
+                    <span>Engagement 5</span>
+                </li>
+            </ul>
+            <div class="progress-bar">
+                <div class="progress-fill" id="socialProgress" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="socialText">0 of 5 completed</div>
+        </div>
+
+        <div class="goal" id="twitter">
+            <div class="goal-title">One Twitter explainer</div>
+            <ul class="goal-items">
+                <li class="goal-item" data-item="explainer">
+                    <div class="checkbox"></div>
+                    <span>Twitter explainer post</span>
+                </li>
+            </ul>
+            <div class="progress-bar">
+                <div class="progress-fill" id="twitterProgress" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="twitterText">0 of 1 completed</div>
+        </div>
+
+        <div class="update-info">
+            Talk to Amber to add goals, mark items complete, or update details
+        </div>
+
+        <div class="signature">— Amber</div>
+    </div>
+
+    <script>
+        // Load saved state
+        function loadState() {
+            const saved = localStorage.getItem('weeklyGoals');
+            if (saved) {
+                const state = JSON.parse(saved);
+                Object.keys(state).forEach(itemKey => {
+                    const item = document.querySelector(`[data-item="${itemKey}"]`);
+                    if (item && state[itemKey]) {
+                        toggleItem(item, false);
+                    }
+                });
+            }
+            updateAllProgress();
+        }
+
+        // Save state
+        function saveState() {
+            const state = {};
+            document.querySelectorAll('.goal-item').forEach(item => {
+                const key = item.dataset.item;
+                state[key] = item.classList.contains('completed');
+            });
+            localStorage.setItem('weeklyGoals', JSON.stringify(state));
+        }
+
+        // Toggle item completion
+        function toggleItem(item, save = true) {
+            const checkbox = item.querySelector('.checkbox');
+            const isCompleted = item.classList.contains('completed');
+            
+            if (isCompleted) {
+                item.classList.remove('completed');
+                checkbox.classList.remove('checked');
+            } else {
+                item.classList.add('completed');
+                checkbox.classList.add('checked');
+            }
+            
+            if (save) {
+                saveState();
+                updateProgress(item.closest('.goal'));
+            }
+        }
+
+        // Update progress for a specific goal
+        function updateProgress(goalEl) {
+            const items = goalEl.querySelectorAll('.goal-item');
+            const completed = goalEl.querySelectorAll('.goal-item.completed');
+            const percentage = (completed.length / items.length) * 100;
+            
+            const progressFill = goalEl.querySelector('.progress-fill');
+            const progressText = goalEl.querySelector('.progress-text');
+            
+            progressFill.style.width = percentage + '%';
+            progressText.textContent = `${completed.length} of ${items.length} completed`;
+        }
+
+        // Update all progress bars
+        function updateAllProgress() {
+            document.querySelectorAll('.goal').forEach(updateProgress);
+        }
+
+        // Set up click handlers
+        document.querySelectorAll('.goal-item').forEach(item => {
+            item.addEventListener('click', () => toggleItem(item));
+        });
+
+        // Set current week
+        function setCurrentWeek() {
+            const now = new Date();
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - now.getDay() + 1);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            
+            const formatDate = (date) => date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+            const weekText = `Week of ${formatDate(monday)} - ${formatDate(sunday)}, ${now.getFullYear()}`;
+            
+            document.getElementById('weekHeader').textContent = weekText;
+        }
+
+        // Initialize
+        setCurrentWeek();
+        loadState();
+    </script>
+</body>
+</html>
