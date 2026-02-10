@@ -115,7 +115,7 @@ const _makers = [
 
 const labItems = [
   { icon: '🧵', name: 'Threads', href: '/pixelpit/lab/threads', date: 'Mon 2/9' },
-  { icon: '🌿', name: 'Efficiency Garden', href: '/pixelpit/lab/efficiency-garden', date: 'Mon 2/9' },
+  { icon: '🌿', name: 'The Garden', href: '/pixelpit/lab/efficiency-garden', date: 'Mon 2/9' },
   { icon: '🕳️', name: 'Devour', href: '/pixelpit/lab/devour', date: 'Fri 2/7' },
   { icon: '🏔️', name: 'Climb', href: '/pixelpit/lab/climb', date: 'Fri 2/6', shipped: true },
   { icon: '👻', name: 'Haunt', href: '/pixelpit/lab/haunt', date: 'Thu 2/5' },
