@@ -312,28 +312,9 @@ function CastCarousel() {
           <div
             key={i}
             onClick={() => setSelectedMember(member)}
-            className={`flex-shrink-0 w-40 rounded-2xl overflow-hidden bg-gradient-to-b ${member.bg} p-4 pt-6 hover:scale-105 transition-transform cursor-pointer shadow-lg relative`}
-            style={{ 
-              boxShadow: member.name === 'Dither' 
-                ? '0 4px 20px rgba(255, 20, 147, 0.4), 0 0 40px rgba(255, 20, 147, 0.2)' 
-                : '0 4px 15px rgba(0,0,0,0.15)' 
-            }}
+            className={`flex-shrink-0 w-40 rounded-2xl overflow-hidden bg-gradient-to-b ${member.bg} p-4 pt-6 hover:scale-105 transition-transform cursor-pointer shadow-lg`}
+            style={{ boxShadow: '0 4px 15px rgba(0,0,0,0.15)' }}
           >
-            {/* Dither special: paint splash decoration */}
-            {member.name === 'Dither' && (
-              <>
-                <div className="absolute top-2 right-2 text-[8px] font-mono opacity-60" style={{ color: '#FF1493' }}>#FF1493</div>
-                <div className="absolute bottom-12 left-2 text-[7px] font-mono opacity-50" style={{ color: '#22d3ee' }}>95 BPM</div>
-                <div className="absolute -bottom-1 -right-1 w-12 h-12 opacity-30" style={{ 
-                  background: 'radial-gradient(circle at 30% 70%, #FF1493 0%, #c56cf0 40%, transparent 70%)',
-                  filter: 'blur(4px)'
-                }} />
-                <div className="absolute -bottom-1 -left-2 w-8 h-8 opacity-25" style={{ 
-                  background: 'radial-gradient(circle, #22d3ee 0%, transparent 70%)',
-                  filter: 'blur(3px)'
-                }} />
-              </>
-            )}
             <div className="relative h-28 flex items-center justify-center">
               {member.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -345,10 +326,6 @@ function CastCarousel() {
             <div className="mt-3 text-center">
               <h3 className="text-lg font-bold" style={{ color: member.color }}>{member.name}</h3>
               <p className="text-gray-400 text-xs">{member.role}</p>
-              {/* Dither special: 50ms tag */}
-              {member.name === 'Dither' && (
-                <p className="text-[9px] font-mono mt-1 opacity-50" style={{ color: '#FF1493' }}>50ms ✨</p>
-              )}
             </div>
           </div>
         ))}
@@ -368,11 +345,48 @@ function CastCarousel() {
             onClick={(e) => e.stopPropagation()}
             className="relative max-w-md w-full rounded-3xl overflow-hidden"
             style={{
-              background: 'linear-gradient(180deg, #1A1A2E 0%, #0f0f1a 100%)',
+              background: selectedMember.name === 'Dither' 
+                ? 'linear-gradient(180deg, #1A1A2E 0%, #1a0a1a 50%, #0f0f1a 100%)' 
+                : 'linear-gradient(180deg, #1A1A2E 0%, #0f0f1a 100%)',
               border: `3px solid ${selectedMember.color}`,
-              boxShadow: `0 0 60px ${selectedMember.color}40, 0 0 100px ${selectedMember.color}20`,
+              boxShadow: selectedMember.name === 'Dither'
+                ? `0 0 80px ${selectedMember.color}60, 0 0 120px ${selectedMember.color}30, inset 0 0 60px rgba(255, 20, 147, 0.1)`
+                : `0 0 60px ${selectedMember.color}40, 0 0 100px ${selectedMember.color}20`,
             }}
           >
+            {/* DITHER SPECIAL: Paint splashes and floating hex codes */}
+            {selectedMember.name === 'Dither' && (
+              <>
+                {/* Paint splash top-left */}
+                <div className="absolute -top-4 -left-4 w-32 h-32 opacity-40 pointer-events-none" style={{ 
+                  background: 'radial-gradient(ellipse at 30% 30%, #FF1493 0%, #c56cf0 30%, transparent 60%)',
+                  filter: 'blur(8px)',
+                  transform: 'rotate(-15deg)'
+                }} />
+                {/* Paint splash bottom-right */}
+                <div className="absolute -bottom-6 -right-6 w-40 h-40 opacity-35 pointer-events-none" style={{ 
+                  background: 'radial-gradient(ellipse at 70% 70%, #22d3ee 0%, #686de0 35%, transparent 65%)',
+                  filter: 'blur(10px)',
+                  transform: 'rotate(20deg)'
+                }} />
+                {/* Floating hex codes */}
+                <div className="absolute top-16 right-6 text-[10px] font-mono opacity-50 pointer-events-none" style={{ color: '#FF1493', transform: 'rotate(12deg)' }}>#FF1493</div>
+                <div className="absolute top-28 right-12 text-[9px] font-mono opacity-40 pointer-events-none" style={{ color: '#22d3ee', transform: 'rotate(-8deg)' }}>#22d3ee</div>
+                <div className="absolute bottom-24 left-4 text-[11px] font-mono opacity-45 pointer-events-none" style={{ color: '#c56cf0', transform: 'rotate(-5deg)' }}>95 BPM</div>
+                <div className="absolute bottom-16 right-8 text-[10px] font-mono opacity-35 pointer-events-none" style={{ color: '#facc15', transform: 'rotate(7deg)' }}>50ms</div>
+                <div className="absolute top-40 left-6 text-[8px] font-mono opacity-30 pointer-events-none" style={{ color: '#FF1493', transform: 'rotate(15deg)' }}>easeOutBack</div>
+                {/* Drip effect */}
+                <div className="absolute top-0 left-1/4 w-1 h-12 opacity-30 pointer-events-none" style={{ 
+                  background: 'linear-gradient(180deg, #FF1493 0%, transparent 100%)',
+                  borderRadius: '0 0 4px 4px'
+                }} />
+                <div className="absolute top-0 right-1/3 w-0.5 h-8 opacity-25 pointer-events-none" style={{ 
+                  background: 'linear-gradient(180deg, #22d3ee 0%, transparent 100%)',
+                  borderRadius: '0 0 4px 4px'
+                }} />
+              </>
+            )}
+
             {/* Close button */}
             <button
               onClick={() => setSelectedMember(null)}
@@ -382,7 +396,7 @@ function CastCarousel() {
             </button>
 
             {/* Header with character */}
-            <div className={`bg-gradient-to-b ${selectedMember.bg} p-6 pb-4 flex items-center gap-4`}>
+            <div className={`bg-gradient-to-b ${selectedMember.bg} p-6 pb-4 flex items-center gap-4 relative`}>
               {selectedMember.image && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -400,7 +414,7 @@ function CastCarousel() {
             </div>
 
             {/* Bio content */}
-            <div className="p-6 pt-4">
+            <div className="p-6 pt-4 relative">
               <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">
                 {blurb.bio}
               </p>
@@ -408,6 +422,18 @@ function CastCarousel() {
                 <p className="mt-4 text-sm italic" style={{ color: selectedMember.color }}>
                   &ldquo;{blurb.motto}&rdquo;
                 </p>
+              )}
+              {/* Dither special: signature line */}
+              {selectedMember.name === 'Dither' && (
+                <div className="mt-4 pt-3 border-t border-pink-500/20 flex items-center gap-2">
+                  <span className="text-[10px] font-mono opacity-60" style={{ color: '#FF1493' }}>24px</span>
+                  <span className="text-[10px] opacity-40">•</span>
+                  <span className="text-[10px] font-mono opacity-60" style={{ color: '#22d3ee' }}>150ms</span>
+                  <span className="text-[10px] opacity-40">•</span>
+                  <span className="text-[10px] font-mono opacity-60" style={{ color: '#c56cf0' }}>4px shadow</span>
+                  <span className="text-[10px] opacity-40">•</span>
+                  <span className="text-[10px] opacity-50">✨</span>
+                </div>
               )}
             </div>
           </div>
