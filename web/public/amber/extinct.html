@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EXTINCT SOUNDS — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="EXTINCT SOUNDS — Amber">
+  <meta property="og:description" content="An audio museum of sounds that don't exist anymore. Dial-up modems. VHS rewinding. Sounds the internet killed.">
+  <meta property="og:image" content="https://intheamber.com/amber/extinct-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/extinct.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="EXTINCT SOUNDS — Amber">
+  <meta name="twitter:description" content="An audio museum of sounds that don't exist anymore. Dial-up modems. VHS rewinding. Sounds the internet killed.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/extinct-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    #museum {
+      max-width: 600px;
+      width: 100%;
+      padding: 20px;
+    }
+    
+    h1 {
+      font-size: clamp(24px, 6vw, 36px);
+      color: #FFD700;
+      text-align: center;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      text-align: center;
+      font-size: clamp(12px, 3vw, 14px);
+      color: #D4A574;
+      margin-bottom: 40px;
+      opacity: 0.8;
+    }
+    
+    .exhibit {
+      background: rgba(13, 13, 13, 0.8);
+      border: 1px solid #D4A574;
+      padding: 20px;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .exhibit:hover {
+      border-color: #FFD700;
+      background: rgba(13, 13, 13, 1);
+    }
+    
+    .exhibit.playing {
+      border-color: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+      animation: pulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+    
+    .exhibit-name {
+      font-size: clamp(16px, 4vw, 20px);
+      color: #FFD700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .play-icon {
+      font-size: 16px;
+      color: #2D9596;
+    }
+    
+    .exhibit-year {
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: #2D9596;
+      margin-bottom: 8px;
+    }
+    
+    .exhibit-desc {
+      font-size: clamp(12px, 3vw, 14px);
+      color: #D4A574;
+      line-height: 1.6;
+      opacity: 0.9;
+    }
+    
+    .stats {
+      text-align: center;
+      margin-top: 40px;
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: #2D9596;
+      opacity: 0.7;
+    }
+    
+    .intro {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 20px;
+      background: rgba(45, 149, 150, 0.1);
+      border: 1px solid #2D9596;
+      font-size: clamp(12px, 3vw, 14px);
+      line-height: 1.8;
+      color: #D4A574;
+    }
+    
+    .now-playing {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 215, 0, 0.2);
+      border: 1px solid #FFD700;
+      padding: 10px 15px;
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: #FFD700;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      max-width: 200px;
+    }
+    
+    .now-playing.visible {
+      opacity: 1;
+    }
+    
+    @media (max-width: 600px) {
+      .now-playing {
+        top: 10px;
+        right: 10px;
+        font-size: 10px;
+        padding: 8px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="museum">
+    <h1>EXTINCT SOUNDS</h1>
+    <div class="subtitle">An audio museum of things the internet killed</div>
+    
+    <div class="intro">
+      These sounds used to be everywhere. Now they exist only in memory and synthesized reconstruction. Tap to hear them one last time.
+    </div>
+    
+    <div class="exhibit" data-sound="dialup">
+      <div class="exhibit-name"><span class="play-icon">▶</span> Dial-Up Modem Connecting</div>
+      <div class="exhibit-year">Extinct: ~2004</div>
+      <div class="exhibit-desc">The screech of patience. You'd hear this for 30-60 seconds while connecting to the internet at 56kbps. If someone picked up the phone, it all died.</div>
+    </div>
+    
+    <div class="exhibit" data-sound="vhs">
+      <div class="exhibit-name"><span class="play-icon">▶</span> VHS Rewinding</div>
+      <div class="exhibit-year">Extinct: ~2006</div>
+      <div class="exhibit-desc">The mechanical whirr of magnetic tape spooling backward. "Be kind, rewind." If you didn't, Blockbuster charged you $1.</div>
+    </div>
+    
+    <div class="exhibit" data-sound="payphone">
+      <div class="exhibit-name"><span class="play-icon">▶</span> Pay Phone Coin Drop</div>
+      <div class="exhibit-year">Extinct: ~2008</div>
+      <div class="exhibit-desc">The metallic clunk of quarters dropping through the slot. 25 cents bought you 3 minutes. Now pay phones are museum pieces.</div>
+    </div>
+    
+    <div class="exhibit" data-sound="floppy">
+      <div class="exhibit-name"><span class="play-icon">▶</span> Floppy Disk Save</div>
+      <div class="exhibit-year">Extinct: ~2003</div>
+      <div class="exhibit-desc">The grinding seek-and-write sound. 1.44 MB of storage, which felt like plenty. The save icon still looks like one.</div>
+    </div>
+    
+    <div class="exhibit" data-sound="blockbuster">
+      <div class="exhibit-name"><span class="play-icon">▶</span> Blockbuster Receipt Printer</div>
+      <div class="exhibit-year">Extinct: 2013</div>
+      <div class="exhibit-desc">The dot-matrix printer churning out your rental receipt. "Due back by 11:59 PM Tuesday." Late fees were brutal.</div>
+    </div>
+    
+    <div class="exhibit" data-sound="aol">
+      <div class="exhibit-name"><span class="play-icon">▶</span> "You've Got Mail"</div>
+      <div class="exhibit-year">Extinct: ~2009</div>
+      <div class="exhibit-desc">The most exciting three words of the late 90s. AOL's email notification. Now email is a source of dread, not joy.</div>
+    </div>
+    
+    <div class="exhibit" data-sound="cd">
+      <div class="exhibit-name"><span class="play-icon">▶</span> CD-ROM Drive Spinning Up</div>
+      <div class="exhibit-year">Extinct: ~2010</div>
+      <div class="exhibit-desc">The accelerating whirr of a disc spinning to 7200 RPM. Installing software from a CD took forever. Scratches were fatal.</div>
+    </div>
+    
+    <div class="exhibit" data-sound="camera">
+      <div class="exhibit-name"><span class="play-icon">▶</span> Film Camera Advance</div>
+      <div class="exhibit-year">Extinct: ~2005</div>
+      <div class="exhibit-desc">The mechanical winding sound after taking a photo. You had 24 or 36 shots per roll. No deleting. No previews. Just hope.</div>
+    </div>
+    
+    <div class="exhibit" data-sound="tv">
+      <div class="exhibit-name"><span class="play-icon">▶</span> CRT TV Powering On</div>
+      <div class="exhibit-year">Extinct: ~2007</div>
+      <div class="exhibit-desc">The electronic hum and crackle as the cathode ray tube warmed up. The screen would glow before the picture appeared.</div>
+    </div>
+    
+    <div class="stats">
+      <span id="played-count">0</span> sounds played • <span id="total-exhibits">9</span> exhibits
+    </div>
+  </div>
+  
+  <div id="now-playing" class="now-playing"></div>
+
+  <script>
+    let audioContext = null;
+    let currentSound = null;
+    let playedCount = 0;
+    
+    const exhibits = document.querySelectorAll('.exhibit');
+    const nowPlayingDiv = document.getElementById('now-playing');
+    const playedCountSpan = document.getElementById('played-count');
+    const totalExhibitsSpan = document.getElementById('total-exhibits');
+    
+    totalExhibitsSpan.textContent = exhibits.length;
+    
+    // Initialize audio context on first interaction
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    // Sound synthesis functions
+    const sounds = {
+      dialup: (ctx) => {
+        const duration = 4;
+        const now = ctx.currentTime;
+        
+        // Create the screeching dial-up sound
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const noise = ctx.createBufferSource();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+        
+        // White noise
+        const bufferSize = ctx.sampleRate * duration;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        noise.buffer = buffer;
+        
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1000, now);
+        filter.frequency.exponentialRampToValueAtTime(3000, now + duration / 2);
+        filter.frequency.exponentialRampToValueAtTime(1500, now + duration);
+        
+        osc1.type = 'square';
+        osc1.frequency.setValueAtTime(800, now);
+        osc1.frequency.exponentialRampToValueAtTime(2400, now + duration);
+        
+        osc2.type = 'sawtooth';
+        osc2.frequency.setValueAtTime(400, now);
+        osc2.frequency.exponentialRampToValueAtTime(1200, now + duration);
+        
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0, now + duration);
+        
+        noise.connect(filter);
+        filter.connect(gain);
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(ctx.destination);
+        
+        noise.start(now);
+        osc1.start(now);
+        osc2.start(now);
+        noise.stop(now + duration);
+        osc1.stop(now + duration);
+        osc2.stop(now + duration);
+        
+        return duration;
+      },
+      
+      vhs: (ctx) => {
+        const duration = 3;
+        const now = ctx.currentTime;
+        
+        // Mechanical whirring sound
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + duration);
+        
+        filter.type = 'lowpass';
+        filter.frequency.value = 400;
+        
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0, now + duration);
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+        
+        return duration;
+      },
+      
+      payphone: (ctx) => {
+        const duration = 2;
+        const now = ctx.currentTime;
+        
+        // Coin drop metallic clinks
+        for (let i = 0; i < 3; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          
+          osc.type = 'triangle';
+          osc.frequency.value = 800 - i * 100;
+          
+          const startTime = now + i * 0.15;
+          gain.gain.setValueAtTime(0.3, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+          
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          
+          osc.start(startTime);
+          osc.stop(startTime + 0.3);
+        }
+        
+        return duration;
+      },
+      
+      floppy: (ctx) => {
+        const duration = 2.5;
+        const now = ctx.currentTime;
+        
+        // Grinding seek sound
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        
+        osc.type = 'square';
+        filter.type = 'lowpass';
+        filter.frequency.value = 300;
+        
+gain.gain.setValueAtTime(0.2, now);
+        
+        // Pulsing frequency for seek sound
+        for (let i = 0; i < 10; i++) {
+          const time = now + i * 0.25;
+          osc.frequency.setValueAtTime(100, time);
+          osc.frequency.setValueAtTime(150, time + 0.1);
+        }
+        
+        gain.gain.linearRampToValueAtTime(0, now + duration);
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+        
+        return duration;
+      },
+      
+      blockbuster: (ctx) => {
+        const duration = 2;
+        const now = ctx.currentTime;
+        
+        // Dot matrix printer sound
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = 'square';
+        osc.frequency.value = 220;
+        
+        gain.gain.setValueAtTime(0, now);
+        
+        // Rapid pulses
+        for (let i = 0; i < 30; i++) {
+          const time = now + i * 0.06;
+          gain.gain.setValueAtTime(0.15, time);
+          gain.gain.setValueAtTime(0, time + 0.03);
+        }
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+        
+        return duration;
+      },
+      
+      aol: (ctx) => {
+        const duration = 2;
+        const now = ctx.currentTime;
+        
+        // Approximation of "You've got mail" - friendly rising tones
+        const notes = [400, 450, 500, 550, 600];
+        
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          
+          const startTime = now + i * 0.15;
+          gain.gain.setValueAtTime(0.2, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+          
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          
+          osc.start(startTime);
+          osc.stop(startTime + 0.3);
+        });
+        
+        return duration;
+      },
+      
+      cd: (ctx) => {
+        const duration = 3;
+        const now = ctx.currentTime;
+        
+        // CD spinning up - accelerating whirr
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(50, now);
+        osc.frequency.exponentialRampToValueAtTime(400, now + duration);
+        
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(200, now);
+        filter.frequency.exponentialRampToValueAtTime(800, now + duration);
+        
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.linearRampToValueAtTime(0, now + duration);
+        
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+        
+        return duration;
+      },
+      
+      camera: (ctx) => {
+        const duration = 1.5;
+        const now = ctx.currentTime;
+        
+        // Film advance mechanical sound
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc1.type = 'square';
+        osc1.frequency.value = 180;
+        
+        osc2.type = 'square';
+        osc2.frequency.value = 120;
+        
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.linearRampToValueAtTime(0, now + duration);
+        
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + duration);
+        osc2.stop(now + duration);
+        
+        return duration;
+      },
+      
+      tv: (ctx) => {
+        const duration = 2;
+        const now = ctx.currentTime;
+        
+        // CRT power-on hum
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(60, now);
+        osc.frequency.exponentialRampToValueAtTime(120, now + duration);
+        
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.5);
+        gain.gain.linearRampToValueAtTime(0.1, now + duration);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+        
+        return duration;
+      }
+    };
+    
+    function playSound(soundName, exhibitElement) {
+      initAudio();
+      
+      // Stop current sound if playing
+      if (currentSound) {
+        const current = document.querySelector('.exhibit.playing');
+        if (current) current.classList.remove('playing');
+      }
+      
+      // Play the sound
+      const duration = sounds[soundName](audioContext);
+      currentSound = soundName;
+      
+      // Visual feedback
+      exhibitElement.classList.add('playing');
+      nowPlayingDiv.textContent = `♪ ${exhibitElement.querySelector('.exhibit-name').textContent.replace('▶ ', '')}`;
+      nowPlayingDiv.classList.add('visible');
+      
+      // Update counter
+      playedCount++;
+      playedCountSpan.textContent = playedCount;
+      
+      // Clear playing state after duration
+      setTimeout(() => {
+        exhibitElement.classList.remove('playing');
+        nowPlayingDiv.classList.remove('visible');
+        currentSound = null;
+      }, duration * 1000);
+    }
+    
+    // Add click handlers
+    exhibits.forEach(exhibit => {
+      exhibit.addEventListener('click', () => {
+        const soundName = exhibit.getAttribute('data-sound');
+        playSound(soundName, exhibit);
+      });
+    });
+  </script>
+</body>
+</html>
