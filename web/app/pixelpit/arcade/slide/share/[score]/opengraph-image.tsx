@@ -45,7 +45,7 @@ export default async function Image({ params }: { params: { score: string } }) {
             right: 0,
             height: 200,
             background: '#e0e7ff',
-            borderRadius: '100% 100% 0 0',
+            borderRadius: '9999px 9999px 0 0',
           }}
         />
 
