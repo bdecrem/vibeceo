@@ -18,8 +18,7 @@ const labMessages = [
 ];
 
 const games = [
-  { icon: '🐦', name: 'Swoop', href: '/pixelpit/arcade/swoop', playable: true, date: 'Mon 2/9' },
-  { icon: '🐢', name: 'Yertle', href: '/pixelpit/arcade/yertle', playable: true, date: 'Mon 2/9' },
+  { icon: '🐦', name: 'Swoop', href: '/pixelpit/arcade/swoop', playable: true, date: 'Tue 2/10' },
   { icon: '🛸', name: 'Orbit', href: '/pixelpit/arcade/orbit', playable: true, date: 'Mon 2/9' },
   { icon: '🌀', name: 'Drop', href: '/pixelpit/arcade/drop', playable: true, date: 'Fri 2/6' },
   { icon: '🦋', name: 'Cave Moth', href: '/pixelpit/arcade/cavemoth', playable: true, date: 'Thu 2/5' },
@@ -136,6 +135,26 @@ const labItems = [
 ];
 
 const featuredGames = [
+  {
+    name: 'SWOOP',
+    tagline: "WORLD'S FIRST ZERO-SHOT GAME",
+    href: '/pixelpit/arcade/swoop',
+    icon: '🐦',
+    decorations: ['🐦'],
+    variant: 'swoop',
+    colors: {
+      bg: '#030712',
+      title: '#ffffff',
+      titleShadow: '0 0 40px rgba(56, 189, 248, 0.5), 0 0 80px rgba(56, 189, 248, 0.2)',
+      tagline: '#cbd5e1',
+      button: 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)',
+      buttonShadow: '#0369a1',
+      glow1: 'rgba(56, 189, 248, 0.3)',
+      glow2: 'rgba(14, 165, 233, 0.2)',
+      accent1: '#38bdf8',
+      accent2: '#f59e0b',
+    },
+  },
   {
     name: 'PIXELPIT',
     tagline: 'TOUCH THE PIXELS',
@@ -765,7 +784,163 @@ export default function PixelpitLanding() {
       </header>
 
       {/* Featured Game Hero */}
-      {featuredGame.variant === 'voxel' ? (
+      {featuredGame.variant === 'swoop' ? (
+        /* SWOOP VARIANT - Cinematic manifesto, dark and confident */
+        <section className="relative overflow-hidden transition-all duration-700" style={{
+          background: 'linear-gradient(160deg, #030712 0%, #0a1628 40%, #0c1a30 70%, #030712 100%)',
+          minHeight: 420,
+        }}>
+          <style jsx>{`
+            @keyframes swoop-bird {
+              0%, 100% { transform: translate(0, 0) rotate(-3deg); }
+              25% { transform: translate(12px, -18px) rotate(2deg); }
+              50% { transform: translate(6px, -8px) rotate(-1deg); }
+              75% { transform: translate(-4px, -14px) rotate(4deg); }
+            }
+            @keyframes swoop-trail {
+              0%, 100% { opacity: 0.15; transform: scaleX(1); }
+              50% { opacity: 0.3; transform: scaleX(1.1); }
+            }
+            @keyframes swoop-glow {
+              0%, 100% { opacity: 0.4; }
+              50% { opacity: 0.7; }
+            }
+            @keyframes swoop-streak {
+              0% { transform: translateX(100%) translateY(-50%); opacity: 0; }
+              15% { opacity: 0.6; }
+              85% { opacity: 0.6; }
+              100% { transform: translateX(-200%) translateY(100%); opacity: 0; }
+            }
+          `}</style>
+
+          {/* Subtle grid mesh — AI/tech feel */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            backgroundImage: `
+              linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px',
+          }} />
+
+          {/* Diagonal speed streaks */}
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="absolute pointer-events-none" style={{
+              top: `${5 + i * 20}%`,
+              left: '-10%',
+              right: '-10%',
+              height: i === 2 ? 2 : 1,
+              background: `linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, ${0.04 + i * 0.02}) 20%, rgba(56, 189, 248, ${0.08 + i * 0.02}) 50%, transparent 80%)`,
+              transform: 'rotate(-12deg)',
+              animation: `swoop-trail ${4 + i * 0.7}s ease-in-out infinite ${i * 0.3}s`,
+            }} />
+          ))}
+
+          {/* Central glow orb */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div style={{
+              width: 600,
+              height: 400,
+              background: 'radial-gradient(ellipse, rgba(56, 189, 248, 0.12) 0%, rgba(14, 165, 233, 0.04) 40%, transparent 70%)',
+              filter: 'blur(80px)',
+              animation: 'swoop-glow 6s ease-in-out infinite',
+            }} />
+          </div>
+
+          {/* Bird formation — large lead bird + trailing flock */}
+          <span className="absolute top-[12%] right-[10%] text-8xl md:text-9xl" style={{
+            animation: 'swoop-bird 8s ease-in-out infinite',
+            filter: 'drop-shadow(0 0 40px rgba(56, 189, 248, 0.6)) drop-shadow(0 0 80px rgba(56, 189, 248, 0.3))',
+          }}>
+            🐦
+          </span>
+          <span className="absolute top-[22%] right-[22%] text-5xl opacity-40" style={{
+            animation: 'swoop-bird 8s ease-in-out infinite 0.4s',
+            filter: 'drop-shadow(0 0 20px rgba(56, 189, 248, 0.4))',
+          }}>
+            🐦
+          </span>
+          <span className="absolute top-[18%] right-[28%] text-4xl opacity-25" style={{
+            animation: 'swoop-bird 8s ease-in-out infinite 0.7s',
+          }}>
+            🐦
+          </span>
+          <span className="absolute top-[28%] right-[18%] text-3xl opacity-20" style={{
+            animation: 'swoop-bird 8s ease-in-out infinite 1s',
+          }}>
+            🐦
+          </span>
+
+          {/* Left side — distant birds for depth (desktop) */}
+          <span className="absolute bottom-[30%] left-[8%] text-3xl opacity-15 hidden md:block" style={{
+            animation: 'swoop-bird 10s ease-in-out infinite 2s',
+          }}>
+            🐦
+          </span>
+          <span className="absolute bottom-[38%] left-[14%] text-2xl opacity-10 hidden md:block" style={{
+            animation: 'swoop-bird 10s ease-in-out infinite 2.5s',
+          }}>
+            🐦
+          </span>
+
+          {/* Content */}
+          <div className="relative z-10 py-20 px-4 text-center">
+            <div className="text-xs font-bold tracking-[0.4em] mb-8" style={{
+              color: '#38bdf8',
+              textShadow: '0 0 10px rgba(56, 189, 248, 0.5)',
+            }}>✦ NOW PLAYING</div>
+
+            <h2 className="text-8xl md:text-[10rem] font-black mb-6 leading-none" style={{
+              color: '#ffffff',
+              textShadow: '0 0 40px rgba(56, 189, 248, 0.4), 0 0 80px rgba(56, 189, 248, 0.15)',
+              letterSpacing: '-0.03em',
+            }}>
+              SWOOP
+            </h2>
+
+            <p className="text-base md:text-lg tracking-[0.2em] mb-2 font-bold" style={{
+              color: '#e2e8f0',
+            }}>
+              WORLD&apos;S FIRST ZERO-SHOT GAME
+            </p>
+
+            <p className="text-sm tracking-[0.25em] mb-12 font-medium" style={{
+              color: '#475569',
+            }}>
+              NO PROMPT. NO PEOPLE.
+            </p>
+
+            <Link
+              href={featuredGame.href}
+              className="relative z-10 inline-block px-14 py-6 rounded-full font-black text-2xl transition-all hover:scale-110"
+              style={{
+                background: 'linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%)',
+                color: 'white',
+                boxShadow: '0 6px 0 #0369a1, 0 0 40px rgba(56, 189, 248, 0.3), 0 0 80px rgba(14, 165, 233, 0.15)',
+              }}
+            >
+              PLAY NOW
+            </Link>
+          </div>
+
+          {/* Pagination dots */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            {featuredGames.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => handleDotClick(i)}
+                className="transition-all duration-300"
+                style={{
+                  width: i === featuredIndex ? 24 : 8,
+                  height: 8,
+                  borderRadius: 4,
+                  background: i === featuredIndex ? '#38bdf8' : 'rgba(255,255,255,0.2)',
+                  boxShadow: i === featuredIndex ? '0 0 10px #38bdf8' : 'none',
+                }}
+              />
+            ))}
+          </div>
+        </section>
+      ) : featuredGame.variant === 'voxel' ? (
         /* VOXEL VARIANT - Interactive canvas with floating pixels */
         <section className="relative overflow-hidden transition-all duration-700" style={{
           background: featuredGame.colors.bg,
