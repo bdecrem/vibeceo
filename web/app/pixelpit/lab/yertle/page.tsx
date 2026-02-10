@@ -218,6 +218,25 @@ export default function YertlePage() {
 
       {/* Main */}
       <main className="max-w-3xl mx-auto px-6 py-12">
+        {/* OOPSIE Banner */}
+        <div 
+          className="rounded-xl p-4 mb-6"
+          style={{ 
+            background: 'rgba(251, 191, 36, 0.2)', 
+            border: '3px solid #fbbf24',
+            boxShadow: '4px 4px 0 #b45309'
+          }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-2xl">🙈</span>
+            <span className="font-black text-amber-700">OOPSIE</span>
+          </div>
+          <p className="text-amber-800 text-sm">
+            We already shipped this mechanic as <Link href="/pixelpit/arcade/cattower" className="text-amber-900 underline font-bold hover:text-amber-700">Cat Tower</Link>! 
+            This transcript is preserved as a lesson in checking what we&apos;ve already built before challenging the team to build it again.
+          </p>
+        </div>
+
         <div className="font-mono text-xs text-gray-500 mb-2">2026-02-09</div>
         <h1
           className="text-4xl font-black mb-2"
@@ -225,30 +244,15 @@ export default function YertlePage() {
         >
           🐢 YERTLE
         </h1>
-        <p className="text-gray-600 font-mono mb-8">// stack the turtles — a remix of ketchapp&apos;s Stack</p>
-
-        {/* Play Button */}
-        <div className="mb-10">
-          <Link
-            href="/pixelpit/arcade/yertle"
-            className="inline-block px-8 py-4 rounded-xl font-bold text-xl transition-all hover:scale-105"
-            style={{
-              background: '#34d399',
-              border: '3px solid #18181b',
-              color: '#18181b',
-              boxShadow: '4px 4px 0 #18181b',
-            }}
-          >
-            🐢 Play YERTLE
-          </Link>
-        </div>
+        <p className="text-gray-600 font-mono mb-8">// stack the turtles — a remix of ketchapp&apos;s Stack (that we already shipped)</p>
 
         {/* Reference */}
         <div className="mb-8 p-4 rounded-xl bg-white/60 border-2 border-black/10">
           <h3 className="font-bold text-gray-700 mb-2">📚 Reference Game</h3>
           <p className="text-gray-600">
             <strong>Stack</strong> by Ketchapp (2016) — 100M+ downloads. One-tap precision stacking. 
-            We kept the mechanic, replaced blocks with turtles, added personality.
+            We kept the mechanic, replaced blocks with turtles, added personality. 
+            <strong className="text-amber-700"> Problem: we&apos;d already shipped this as Cat Tower.</strong>
           </p>
         </div>
 
@@ -276,11 +280,11 @@ export default function YertlePage() {
           })}
         </div>
 
-        {/* Shipped note */}
-        <div className="mt-10 p-4 rounded-xl bg-green-100/80 border-2 border-green-500/30 text-center">
-          <span className="text-2xl">✅</span>
-          <p className="font-bold text-green-700 mt-2">SHIPPED</p>
-          <p className="text-green-600 text-sm">Play it now at <Link href="/pixelpit/arcade/yertle" className="underline">pixelpit.gg/arcade/yertle</Link></p>
+        {/* Lesson learned */}
+        <div className="mt-10 p-4 rounded-xl bg-amber-100/80 border-2 border-amber-500/30 text-center">
+          <span className="text-2xl">📝</span>
+          <p className="font-bold text-amber-700 mt-2">LESSON LEARNED</p>
+          <p className="text-amber-600 text-sm">Always check the games array before proposing a remix challenge. Play <Link href="/pixelpit/arcade/cattower" className="underline font-bold">Cat Tower</Link> instead!</p>
         </div>
       </main>
     </div>
