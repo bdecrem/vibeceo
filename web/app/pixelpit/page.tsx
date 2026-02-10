@@ -54,7 +54,7 @@ const castBlurbs: Record<string, { bio: string; motto?: string }> = {
     motto: "Ready to launch.",
   },
   Loop: {
-    bio: "Loop is the one who asks \"but is it fun?\" before anyone writes a line of code. Carries a glowing dice everywhere. Has played thousands of games and remembers what made each one tick — the exact gravity in Flappy Bird, why Crossy Road's eagle timer works, how Hole.io nails the power fantasy.\n\nReference-first designer. Every mechanic gets researched, dissected, and stress-tested before Pit touches a keyboard. His first pitch usually gets rejected. His second one usually ships.",
+    bio: "Loop is the one who asks \"but is it fun?\" before anyone writes a line of code. Carries a glowing dice everywhere. Has played thousands of games and remembers what made each one tick — the exact gravity in Flappy Bird, why Crossy Road's eagle timer works, how Hole.io nails the power fantasy.\n\nReference-first designer. Every mechanic gets researched, dissected, and stress-tested before Pit touches a keyboard. Their first pitch usually gets rejected. Their second one usually ships.",
     motto: "What if we tried...?",
   },
   AmyThe1st: {
