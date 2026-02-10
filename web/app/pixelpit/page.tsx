@@ -347,10 +347,18 @@ function CastCarousel() {
             style={{
               background: selectedMember.name === 'Dither' 
                 ? 'linear-gradient(180deg, #1A1A2E 0%, #1a0a1a 50%, #0f0f1a 100%)' 
+                : selectedMember.name === 'Pit'
+                ? 'linear-gradient(180deg, #1A1A2E 0%, #0a1a0f 50%, #0f0f1a 100%)'
+                : selectedMember.name === 'Loop'
+                ? 'linear-gradient(180deg, #1A1A2E 0%, #1a160a 50%, #0f0f1a 100%)'
                 : 'linear-gradient(180deg, #1A1A2E 0%, #0f0f1a 100%)',
               border: `3px solid ${selectedMember.color}`,
               boxShadow: selectedMember.name === 'Dither'
                 ? `0 0 80px ${selectedMember.color}60, 0 0 120px ${selectedMember.color}30, inset 0 0 60px rgba(255, 20, 147, 0.1)`
+                : selectedMember.name === 'Pit'
+                ? `0 0 60px ${selectedMember.color}50, 0 0 100px ${selectedMember.color}25, inset 0 0 40px rgba(34, 197, 94, 0.05)`
+                : selectedMember.name === 'Loop'
+                ? `0 0 60px ${selectedMember.color}50, 0 0 100px ${selectedMember.color}25, inset 0 0 40px rgba(245, 158, 11, 0.05)`
                 : `0 0 60px ${selectedMember.color}40, 0 0 100px ${selectedMember.color}20`,
             }}
           >
@@ -384,6 +392,43 @@ function CastCarousel() {
                   background: 'linear-gradient(180deg, #22d3ee 0%, transparent 100%)',
                   borderRadius: '0 0 4px 4px'
                 }} />
+              </>
+            )}
+
+            {/* PIT SPECIAL: Terminal vibes, minimal */}
+            {selectedMember.name === 'Pit' && (
+              <>
+                {/* Subtle terminal glow */}
+                <div className="absolute -top-2 -right-2 w-24 h-24 opacity-20 pointer-events-none" style={{ 
+                  background: 'radial-gradient(circle, #22c55e 0%, transparent 70%)',
+                  filter: 'blur(12px)'
+                }} />
+                {/* Floating terminal elements */}
+                <div className="absolute top-16 right-6 text-[10px] font-mono opacity-40 pointer-events-none" style={{ color: '#22c55e' }}>{'> _'}</div>
+                <div className="absolute bottom-20 left-4 text-[9px] font-mono opacity-30 pointer-events-none" style={{ color: '#22c55e' }}>git push</div>
+                <div className="absolute top-32 left-6 text-[11px] font-mono opacity-25 pointer-events-none" style={{ color: '#22c55e' }}>{'{ }'}</div>
+                <div className="absolute bottom-32 right-6 text-[8px] font-mono opacity-20 pointer-events-none" style={{ color: '#4ade80' }}>shipped</div>
+              </>
+            )}
+
+            {/* LOOP SPECIAL: Game feel numbers, analytical */}
+            {selectedMember.name === 'Loop' && (
+              <>
+                {/* Subtle amber glow */}
+                <div className="absolute -bottom-4 -left-4 w-28 h-28 opacity-15 pointer-events-none" style={{ 
+                  background: 'radial-gradient(circle, #f59e0b 0%, transparent 70%)',
+                  filter: 'blur(15px)'
+                }} />
+                {/* Game feel numbers */}
+                <div className="absolute top-16 right-5 text-[9px] font-mono opacity-35 pointer-events-none" style={{ color: '#fbbf24' }}>0.4 gravity</div>
+                <div className="absolute top-24 right-10 text-[8px] font-mono opacity-30 pointer-events-none" style={{ color: '#f59e0b' }}>150ms</div>
+                <div className="absolute bottom-28 left-4 text-[10px] font-mono opacity-35 pointer-events-none" style={{ color: '#fcd34d' }}>60fps</div>
+                <div className="absolute bottom-20 right-6 text-[8px] font-mono opacity-25 pointer-events-none" style={{ color: '#d97706' }}>1.2x multiplier</div>
+                {/* Ghost reference games */}
+                <div className="absolute top-40 left-3 text-[7px] font-mono opacity-15 pointer-events-none" style={{ color: '#fbbf24' }}>Crossy Road</div>
+                <div className="absolute bottom-36 right-4 text-[7px] font-mono opacity-12 pointer-events-none" style={{ color: '#f59e0b' }}>Stack Ball</div>
+                {/* Dice glow */}
+                <div className="absolute top-14 left-8 text-sm opacity-20 pointer-events-none">🎲</div>
               </>
             )}
 
@@ -433,6 +478,25 @@ function CastCarousel() {
                   <span className="text-[10px] font-mono opacity-60" style={{ color: '#c56cf0' }}>4px shadow</span>
                   <span className="text-[10px] opacity-40">•</span>
                   <span className="text-[10px] opacity-50">✨</span>
+                </div>
+              )}
+              {/* Pit special: terminal signature */}
+              {selectedMember.name === 'Pit' && (
+                <div className="mt-4 pt-3 border-t border-green-500/20 flex items-center gap-2">
+                  <span className="text-[10px] font-mono opacity-50" style={{ color: '#22c55e' }}>$</span>
+                  <span className="text-[10px] font-mono opacity-60" style={{ color: '#4ade80' }}>git commit -m</span>
+                  <span className="text-[10px] font-mono opacity-50" style={{ color: '#22c55e' }}>&quot;shipped&quot;</span>
+                  <span className="text-[10px] opacity-40">⚙️</span>
+                </div>
+              )}
+              {/* Loop special: game specs signature */}
+              {selectedMember.name === 'Loop' && (
+                <div className="mt-4 pt-3 border-t border-amber-500/20 flex items-center gap-2">
+                  <span className="text-[10px] font-mono opacity-50" style={{ color: '#fbbf24' }}>ref:</span>
+                  <span className="text-[10px] font-mono opacity-60" style={{ color: '#f59e0b' }}>proven_mechanic</span>
+                  <span className="text-[10px] opacity-40">→</span>
+                  <span className="text-[10px] font-mono opacity-60" style={{ color: '#fcd34d' }}>new_skin</span>
+                  <span className="text-[10px] opacity-40">🎲</span>
                 </div>
               )}
             </div>
