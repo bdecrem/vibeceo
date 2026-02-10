@@ -1182,15 +1182,44 @@ export default function OrbitGame() {
           ctx.stroke();
           ctx.setLineDash([]);
         } else if (lane.type === 'debris') {
-          ctx.fillStyle = '#030712';
+          // Deep void background
+          ctx.fillStyle = '#050008';
           ctx.fillRect(0, screenY, canvasSize.w, TILE_SIZE);
-          // Void particles - level colored
-          ctx.fillStyle = game.level === 3 ? '#7f1d1d' : game.level === 2 ? '#581c87' : '#4B5563';
-          for (let px = 10; px < canvasSize.w; px += 30) {
-            ctx.beginPath();
-            ctx.arc(px + Math.sin(Date.now() / 1000 + px) * 5, screenY + 25, 2, 0, Math.PI * 2);
-            ctx.fill();
+
+          // Animated electric scanlines
+          const t = Date.now() / 1000;
+          const dangerColor = game.level === 3 ? [220, 38, 38] : game.level === 2 ? [168, 85, 247] : [239, 68, 68];
+          for (let sy = 0; sy < TILE_SIZE; sy += 4) {
+            const flicker = Math.sin(t * 3 + sy * 0.5 + lane.y * 0.1) * 0.5 + 0.5;
+            const alpha = flicker * 0.12;
+            ctx.fillStyle = `rgba(${dangerColor[0]},${dangerColor[1]},${dangerColor[2]},${alpha})`;
+            ctx.fillRect(0, screenY + sy, canvasSize.w, 2);
           }
+
+          // Crackling sparks — random electric dots
+          for (let px = 8; px < canvasSize.w; px += 18) {
+            const sparkPhase = Math.sin(t * 5.7 + px * 1.3 + lane.y) * Math.cos(t * 3.1 + px * 0.7);
+            if (sparkPhase > 0.3) {
+              const sparkY = screenY + TILE_SIZE * 0.5 + Math.sin(t * 4 + px) * (TILE_SIZE * 0.35);
+              const sparkAlpha = (sparkPhase - 0.3) * 1.2;
+              ctx.fillStyle = `rgba(${dangerColor[0]},${dangerColor[1]},${dangerColor[2]},${sparkAlpha})`;
+              ctx.beginPath();
+              ctx.arc(px, sparkY, 1.5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          // Top & bottom edge glow — danger borders
+          const edgeGrad = ctx.createLinearGradient(0, screenY, 0, screenY + 8);
+          edgeGrad.addColorStop(0, `rgba(${dangerColor[0]},${dangerColor[1]},${dangerColor[2]},0.35)`);
+          edgeGrad.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = edgeGrad;
+          ctx.fillRect(0, screenY, canvasSize.w, 8);
+          const botGrad = ctx.createLinearGradient(0, screenY + TILE_SIZE - 8, 0, screenY + TILE_SIZE);
+          botGrad.addColorStop(0, 'rgba(0,0,0,0)');
+          botGrad.addColorStop(1, `rgba(${dangerColor[0]},${dangerColor[1]},${dangerColor[2]},0.35)`);
+          ctx.fillStyle = botGrad;
+          ctx.fillRect(0, screenY + TILE_SIZE - 8, canvasSize.w, 8);
         } else if (lane.type === 'beam') {
           ctx.fillStyle = '#1C1917';
           ctx.fillRect(0, screenY, canvasSize.w, TILE_SIZE);
