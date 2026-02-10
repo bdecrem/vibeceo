@@ -270,10 +270,10 @@ function CastCarousel() {
 
   return (
     <div className="relative mx-auto overflow-hidden" style={{ maxWidth: containerWidth }}>
-      {/* Left Arrow */}
+      {/* Left Arrow — mobile only */}
       <button
         onClick={() => scroll('left')}
-        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all ${canScrollLeft ? 'opacity-100 hover:scale-110' : 'opacity-0 pointer-events-none'}`}
+        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all md:hidden ${canScrollLeft ? 'opacity-100 hover:scale-110' : 'opacity-0 pointer-events-none'}`}
         style={{
           background: 'linear-gradient(135deg, rgba(255, 105, 180, 0.4) 0%, rgba(255, 20, 147, 0.3) 100%)',
           border: '2px solid rgba(255, 105, 180, 0.7)',
@@ -284,10 +284,10 @@ function CastCarousel() {
         <span className="text-pink-300 text-xl font-bold">‹</span>
       </button>
 
-      {/* Right Arrow */}
+      {/* Right Arrow — mobile only */}
       <button
         onClick={() => scroll('right')}
-        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all ${canScrollRight ? 'opacity-100 hover:scale-110' : 'opacity-0 pointer-events-none'}`}
+        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all md:hidden ${canScrollRight ? 'opacity-100 hover:scale-110' : 'opacity-0 pointer-events-none'}`}
         style={{
           background: 'linear-gradient(135deg, rgba(255, 105, 180, 0.4) 0%, rgba(255, 20, 147, 0.3) 100%)',
           border: '2px solid rgba(255, 105, 180, 0.7)',
