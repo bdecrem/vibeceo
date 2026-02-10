@@ -44,6 +44,18 @@ const castBlurbs: Record<string, { bio: string; motto?: string }> = {
     bio: "Tap will check everything twice. Then check it again. Then tell you about a problem you're pretty sure doesn't exist. (It does. He's usually right.)\n\nLoves lists. Loves loops. Will absolutely circle back. Has a corkboard in his room with string connecting things. Nobody's allowed to ask about it. In his free time he looks stuff up for fun, which is either admirable or concerning.",
     motto: "Found one.",
   },
+  Mave: {
+    bio: "Mave is everywhere. You'll see her sprinting between desks with her clipboard, reorganizing the sprint board nobody asked her to reorganize, and somehow already knowing that the build is broken before Pit does. She runs ops, logistics, scheduling, and whatever else falls through the cracks — which is everything, always.\n\nHas a system for everything. Her systems have systems. Will color-code your lunch if you let her. Once tracked the team's snack consumption in a spreadsheet and presented findings at standup. Nobody asked. The data was fascinating.",
+    motto: "I'm on it.",
+  },
+  Push: {
+    bio: "Nothing ships until Push says it ships. She's the last pair of eyes before anything goes live — OG images, share flows, leaderboards, analytics. She's seen too many games launch with broken share cards and missing score submissions. Never again.\n\nKeeps a checklist. Runs the checklist. Trusts the checklist. If you say \"it works on my machine\" she will simply stare at you until you test it properly. Has a launch button on her desk that doesn't connect to anything. Yet.",
+    motto: "Ready to launch.",
+  },
+  Loop: {
+    bio: "Loop is the one who asks \"but is it fun?\" before anyone writes a line of code. Carries a glowing dice everywhere. Has played thousands of games and remembers what made each one tick — the exact gravity in Flappy Bird, why Crossy Road's eagle timer works, how Hole.io nails the power fantasy.\n\nReference-first designer. Every mechanic gets researched, dissected, and stress-tested before Pit touches a keyboard. His first pitch usually gets rejected. His second one usually ships.",
+    motto: "What if we tried...?",
+  },
   AmyThe1st: {
     bio: "First day energy, every day. Showed up eager, stayed eager. Still figuring some stuff out but makes up for it with sheer enthusiasm. Owns way too many star-shaped things. Just got her first tattoo (it's a pixel heart, obviously).",
   },
@@ -81,7 +93,14 @@ const cast = [
   { name: 'Dither', role: 'Creative Director', image: '/pixelpit/dot-colorful.png', color: '#FF1493', bg: 'from-pink-100 to-pink-200' },
   { name: 'Pit', role: 'Lead Developer', image: '/pixelpit/pit-colorful.png', color: '#FF8C00', bg: 'from-orange-100 to-orange-200' },
   { name: 'Tap', role: 'QA Lead', image: '/pixelpit/bug.png', color: '#00AA66', bg: 'from-green-100 to-green-200' },
-  // The Makers (mixed order for visual variety)
+  { name: 'Push', role: 'Release Engineer', image: '/pixelpit/push.png', color: '#38BDF8', bg: 'from-sky-100 to-sky-200' },
+  { name: 'Loop', role: 'Game Designer', image: '/pixelpit/loop.png', color: '#EAB308', bg: 'from-yellow-100 to-yellow-200' },
+  { name: 'Mave', role: 'Studio Ops', image: '/pixelpit/mave.png', color: '#14B8A6', bg: 'from-teal-100 to-teal-200' },
+];
+
+// The Makers — hidden from page but preserved for future use
+// Avatars in web/public/pixelpit/, bios in castBlurbs above
+const _makers = [
   { name: 'JoanThe10th', role: 'Maker', image: '/pixelpit/joan.png', color: '#FFD700', bg: 'from-amber-100 to-amber-200' },
   { name: 'ChetThe3rd', role: 'Maker', image: '/pixelpit/chet.png', color: '#00BFFF', bg: 'from-cyan-100 to-cyan-200' },
   { name: 'DaleThe4th', role: 'Maker', image: '/pixelpit/dale.png', color: '#9370DB', bg: 'from-violet-100 to-violet-200' },
