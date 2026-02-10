@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2AM FRIDGE QUEST</title>
+    
+    <!-- OG tags -->
+    <meta property="og:title" content="2AM FRIDGE QUEST">
+    <meta property="og:description" content="8-bit pixel art: the eternal midnight snack quest">
+    <meta property="og:image" content="https://intheamber.com/amber/fridge-2am-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/fridge-2am.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="2AM FRIDGE QUEST">
+    <meta name="twitter:description" content="8-bit pixel art: the eternal midnight snack quest">
+    <meta name="twitter:image" content="https://intheamber.com/amber/fridge-2am-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            aspect-ratio: 4/3;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            border: 4px solid #D4A574;
+            box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+        }
+        
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            color: #FFD700;
+            font-size: 14px;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none;
+        }
+        
+        .stat-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 8px;
+        }
+        
+        .bar {
+            flex: 1;
+            height: 16px;
+            background: #1a1a1a;
+            border: 2px solid #FFD700;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .bar-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+        
+        .hunger-fill { background: #ff4444; }
+        .hope-fill { background: #2D9596; }
+        
+        .message-box {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 4px solid #D4A574;
+            padding: 16px;
+            color: #FFD700;
+            font-size: 16px;
+            line-height: 1.6;
+            display: none;
+        }
+        
+        .message-box.show {
+            display: block;
+            animation: blink 0.5s;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .press-space {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #FFD700;
+            font-size: 18px;
+            text-shadow: 2px 2px 0 #000;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+            50% { opacity: 0.6; transform: translateX(-50%) scale(1.05); }
+        }
+        
+        @media (max-width: 600px) {
+            #ui-overlay {
+                font-size: 12px;
+            }
+            .message-box {
+                font-size: 14px;
+            }
+            .press-space {
+                font-size: 14px;
+                bottom: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="canvas" width="320" height="240"></canvas>
+        
+        <div id="ui-overlay">
+            <div class="stat-bar">
+                <span style="width: 80px;">HUNGER:</span>
+                <div class="bar">
+                    <div class="bar-fill hunger-fill" id="hunger-bar" style="width: 85%"></div>
+                </div>
+            </div>
+            <div class="stat-bar">
+                <span style="width: 80px;">HOPE:</span>
+                <div class="bar">
+                    <div class="bar-fill hope-fill" id="hope-bar" style="width: 12%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="press-space">TAP TO OPEN FRIDGE</div>
+        
+        <div id="message-box" class="message-box"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const messageBox = document.getElementById('message-box');
+        const hungerBar = document.getElementById('hunger-bar');
+        const hopeBar = document.getElementById('hope-bar');
+        
+        let fridgeOpen = false;
+        let messageIndex = 0;
+        let audioContext = null;
+        
+        // Game state
+        const state = {
+            hunger: 85,
+            hope: 12,
+            attempts: 0
+        };
+        
+        const messages = [
+            "You open the fridge...",
+            "The light is too bright.",
+            "There's leftover pizza from 3 days ago.",
+            "Is that... still good?",
+            "Cheese. Just cheese. Lots of cheese.",
+            "Half an onion in a ziplock bag.",
+            "Condiments. So many condiments.",
+            "You don't want any of this.",
+            "But you're still hungry.",
+            "Maybe if you close it and open it again...",
+            "Quest failed: Edible food not found."
+        ];
+        
+        // Initialize audio
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        // Play tone
+        function playTone(freq, duration) {
+            initAudio();
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.value = freq;
+            gain.gain.value = 0.1;
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            osc.start();
+            osc.stop(audioContext.currentTime + duration);
+        }
+        
+        // 8-bit color palette
+        const colors = {
+            black: '#000000',
+            darkGray: '#1a1a1a',
+            gray: '#404040',
+            lightGray: '#808080',
+            white: '#ffffff',
+            amber: '#D4A574',
+            gold: '#FFD700',
+            teal: '#2D9596',
+            blue: '#4444ff',
+            skin: '#ffcc99',
+            shirt: '#7B68EE',
+            fridge: '#e0e0e0',
+            fridgeDark: '#b0b0b0',
+            light: '#ffffaa'
+        };
+        
+        // Draw checkered floor
+        function drawFloor() {
+            const tileSize = 16;
+            for (let y = 200; y< 240; y += tileSize) {
+                for (let x = 0; x < 320; x += tileSize) {
+                    const isEven = ((x / tileSize) + (y / tileSize)) % 2 === 0;
+                    ctx.fillStyle = isEven ? colors.darkGray : colors.gray;
+                    ctx.fillRect(x, y, tileSize, tileSize);
+                }
+            }
+        }
+        
+        // Draw closed fridge
+        function drawFridgeClosed() {
+            // Fridge body
+            ctx.fillStyle = colors.fridge;
+            ctx.fillRect(200, 60, 80, 140);
+            
+            // Door outline
+            ctx.strokeStyle = colors.fridgeDark;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(200, 60, 80, 140);
+            
+            // Freezer section
+            ctx.strokeRect(200, 60, 80, 50);
+            
+            // Handle
+            ctx.fillStyle = colors.gray;
+            ctx.fillRect(275, 120, 4, 30);
+            
+            // Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(200, 200, 82, 4);
+        }
+        
+        // Draw open fridge with contents
+        function drawFridgeOpen() {
+            // Fridge body (open)
+            ctx.fillStyle = colors.fridge;
+            ctx.fillRect(180, 60, 100, 140);
+            
+            // Interior glow
+            ctx.fillStyle = colors.light;
+            ctx.fillRect(190, 70, 80, 120);
+            
+            // Shelves
+            ctx.fillStyle = colors.fridgeDark;
+            ctx.fillRect(190, 100, 80, 2);
+            ctx.fillRect(190, 130, 80, 2);
+            ctx.fillRect(190, 160, 80, 2);
+            
+            // Pizza box (sad)
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(200, 75, 20, 20);
+            ctx.fillStyle = colors.darkGray;
+            ctx.fillRect(202, 77, 16, 16);
+            
+            // Cheese blocks
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(195, 105, 12, 12);
+            ctx.fillRect(210, 105, 12, 12);
+            ctx.fillRect(225, 105, 12, 12);
+            
+            // Onion in bag
+            ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
+            ctx.fillRect(195, 135, 18, 18);
+            ctx.fillStyle = '#8B008B';
+            ctx.fillRect(200, 140, 8, 8);
+            
+            // Condiment bottles
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(195, 165, 8, 20);
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(210, 165, 8, 20);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(225, 165, 8, 20);
+            
+            // Door opened to side
+            ctx.fillStyle = colors.fridge;
+            ctx.fillRect(280, 60, 30, 140);
+            ctx.strokeStyle = colors.fridgeDark;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(280, 60, 30, 140);
+            
+            // Light beam
+            const gradient = ctx.createLinearGradient(270, 130, 140, 130);
+            gradient.addColorStop(0, 'rgba(255, 255, 170, 0.4)');
+            gradient.addColorStop(1, 'rgba(255, 255, 170, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(140, 80, 130, 100);
+        }
+        
+        // Draw character sprite (16x24 pixels)
+        function drawCharacter() {
+            const x = 120;
+            const y = 170;
+            
+            // Head
+            ctx.fillStyle = colors.skin;
+            ctx.fillRect(x + 4, y, 8, 8);
+            
+            // Eyes (tired)
+            ctx.fillStyle = colors.black;
+            ctx.fillRect(x + 5, y + 3, 2, 2);
+            ctx.fillRect(x + 9, y + 3, 2, 2);
+            
+            // Mouth (flat line - unenthused)
+            ctx.fillRect(x + 6, y + 6, 4, 1);
+            
+            // Body (shirt)
+            ctx.fillStyle = colors.shirt;
+            ctx.fillRect(x + 2, y + 8, 12, 10);
+            
+            // Arms
+            ctx.fillStyle = colors.skin;
+            ctx.fillRect(x, y + 10, 2, 8); // left arm
+            ctx.fillRect(x + 14, y + 10, 2, 8); // right arm
+            
+            // Pants
+            ctx.fillStyle = colors.darkGray;
+            ctx.fillRect(x + 4, y + 18, 4, 6);
+            ctx.fillRect(x + 8, y + 18, 4, 6);
+        }
+        
+        // Draw darkness (nighttime)
+        function drawDarkness() {
+            const gradient = ctx.createRadialGradient(240, 130, 50, 240, 130, 200);
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.8)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 320, 240);
+        }
+        
+        // Show message
+        function showMessage(text) {
+            messageBox.textContent = text;
+            messageBox.classList.add('show');
+            
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Update stats
+        function updateStats() {
+            state.hope = Math.max(0, state.hope - 3);
+            hopeBar.style.width = state.hope + '%';
+            
+            if (state.hope === 0) {
+                showMessage("Quest failed: Edible food not found.");
+                setTimeout(() => {
+                    fridgeOpen = false;
+                    messageIndex = 0;
+                    state.hope = 12;
+                    state.attempts++;
+                    hopeBar.style.width = state.hope + '%';
+                    draw();
+                }, 3000);
+            }
+        }
+        
+        // Main draw function
+        function draw() {
+            // Clear
+            ctx.fillStyle = colors.black;
+            ctx.fillRect(0, 0, 320, 240);
+            
+            // Draw floor
+            drawFloor();
+            
+            // Draw wall
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, 320, 200);
+            
+            // Draw fridge
+            if (fridgeOpen) {
+                drawFridgeOpen();
+            } else {
+                drawFridgeClosed();
+            }
+            
+            // Draw character
+            drawCharacter();
+            
+            // Draw darkness
+            drawDarkness();
+            
+            // Draw time
+            ctx.fillStyle = colors.gold;
+            ctx.font = '12px monospace';
+            ctx.fillText('TIME: 2:47 AM', 10, 20);
+            ctx.fillText('ATTEMPTS: ' + state.attempts, 10, 36);
+        }
+        
+        // Handle interaction
+        function handleInteraction() {
+            initAudio();
+            
+            if (!fridgeOpen) {
+                fridgeOpen = true;
+                messageIndex = 0;
+                playTone(400, 0.3);
+                draw();
+                
+                // Show first message
+                setTimeout(() => {
+                    showMessage(messages[messageIndex]);
+                    messageIndex++;
+                }, 500);
+                
+                // Cycle through messages
+                const interval = setInterval(() => {
+                    if (messageIndex < messages.length) {
+                        showMessage(messages[messageIndex]);
+                        updateStats();
+                        messageIndex++;
+                        playTone(300, 0.2);
+                    } else {
+                        clearInterval(interval);
+                    }
+                }, 3000);
+            }
+        }
+        
+        // Event listeners
+        canvas.addEventListener('click', handleInteraction);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleInteraction();
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                handleInteraction();
+            }
+        });
+        
+        // Initial draw
+        draw();
+    </script>
+</body>
+</html>
