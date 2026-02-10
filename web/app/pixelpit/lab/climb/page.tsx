@@ -260,19 +260,46 @@ export default function ClimbPage() {
         </h1>
         <p className="text-sky-400/60 font-mono mb-8">// crossy road, but you&apos;re ascending a mountain</p>
 
-        {/* Play Button */}
-        <div className="mb-10">
+        {/* Evolution */}
+        <p className="text-sm text-white/50 mb-4">
+          CLIMB was the original prototype straight from the transcript below. CROSSY stripped it back to basics — pure Crossy Road, no frills. ORBIT is what we shipped: the full game with debris fields, beam cannons, and three escalating zones.
+        </p>
+        <div className="flex flex-wrap gap-3 mb-10">
           <Link
             href="/pixelpit/arcade/climb"
-            className="inline-block px-8 py-4 rounded-xl font-bold text-xl transition-all hover:scale-105"
+            className="inline-block px-6 py-3 rounded-xl font-bold transition-all hover:scale-105"
             style={{
               background: 'linear-gradient(135deg, #0c1220 0%, #1e293b 100%)',
-              border: '3px solid #38bdf8',
+              border: '2px solid #38bdf8',
               color: '#38bdf8',
-              boxShadow: '0 0 30px rgba(56, 189, 248, 0.4)',
+              boxShadow: '0 0 20px rgba(56, 189, 248, 0.3)',
             }}
           >
-            🏔️ Play CLIMB
+            🏔️ Climb
+          </Link>
+          <Link
+            href="/pixelpit/arcade/crossy"
+            className="inline-block px-6 py-3 rounded-xl font-bold transition-all hover:scale-105"
+            style={{
+              background: 'linear-gradient(135deg, #0c1220 0%, #1e293b 100%)',
+              border: '2px solid #a78bfa',
+              color: '#a78bfa',
+              boxShadow: '0 0 20px rgba(167, 139, 250, 0.3)',
+            }}
+          >
+            🐔 Crossy
+          </Link>
+          <Link
+            href="/pixelpit/arcade/orbit"
+            className="inline-block px-6 py-3 rounded-xl font-bold transition-all hover:scale-105"
+            style={{
+              background: 'linear-gradient(135deg, #0c1220 0%, #1e293b 100%)',
+              border: '2px solid #7C3AED',
+              color: '#fff',
+              boxShadow: '0 0 20px rgba(124, 58, 237, 0.4)',
+            }}
+          >
+            🛸 Orbit
           </Link>
         </div>
 

@@ -95,14 +95,15 @@ const cast = [
 ];
 
 const labItems = [
+  { icon: '🌿', name: 'Efficiency Garden', href: '/pixelpit/lab/efficiency-garden', date: 'Mon 2/9' },
   { icon: '🕳️', name: 'Devour', href: '/pixelpit/lab/devour', date: 'Fri 2/7' },
-  { icon: '🏔️', name: 'Climb', href: '/pixelpit/lab/climb', date: 'Fri 2/6' },
+  { icon: '🏔️', name: 'Climb', href: '/pixelpit/lab/climb', date: 'Fri 2/6', shipped: true },
   { icon: '👻', name: 'Haunt', href: '/pixelpit/lab/haunt', date: 'Thu 2/5' },
   { icon: '🪙', name: 'Catch', href: '/pixelpit/lab/catch', date: 'Wed 2/4' },
-  { icon: '🔄', name: 'Flip', href: '/pixelpit/lab/flip', date: 'Wed 2/4' },
+  { icon: '🔄', name: 'Flip', href: '/pixelpit/lab/flip', date: 'Wed 2/4', shipped: true },
   { icon: '🧩', name: 'Pixel', href: '/pixelpit/lab/pixel', date: 'Wed 2/4' },
-  { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/lab/bat-dash', date: 'Wed 2/4' },
-  { icon: '🐦', name: 'Flappy', href: '/pixelpit/lab/flappy', date: 'Wed 2/4' },
+  { icon: '🦇', name: 'Bat Dash', href: '/pixelpit/lab/bat-dash', date: 'Wed 2/4', shipped: true },
+  { icon: '🐦', name: 'Flappy', href: '/pixelpit/lab/flappy', date: 'Wed 2/4', shipped: true },
   { icon: '🎸', name: 'Pit Jam PJ01', href: '/pixelpit/lab#pit-jam-pj01', date: 'Tue 2/3' },
   { icon: '🧫', name: 'Swarm P16', href: '/pixelpit/swarm/p16/index.html', date: 'Sat 1/31' },
   { icon: '🚀', name: 'Swarm P9', href: '/pixelpit/swarm/p9/index.html', date: 'Fri 1/30' },
@@ -488,12 +489,21 @@ function LabGrid() {
 
   const renderItem = (experiment: typeof labItems[0], i: number) => {
     const isActive = !!experiment.href;
-    const cardClass = `bg-[#252525] border rounded-2xl p-4 text-center hover:border-[#00FFAA]/50 hover:bg-[#2a2a2a] transition-all cursor-pointer select-none ${
+    const cardClass = `relative bg-[#252525] border rounded-2xl p-4 text-center hover:border-[#00FFAA]/50 hover:bg-[#2a2a2a] transition-all cursor-pointer select-none ${
       isActive ? 'border-[#00FFAA]/30' : 'border-[#444]/50'
     } ${clickedIndex === i ? 'border-[#00FFAA] bg-[#00FFAA]/10' : ''}`;
 
     const content = (
       <>
+        {experiment.shipped && (
+          <div
+            className="absolute top-2 right-2 w-2 h-2 rounded-full"
+            style={{
+              background: '#00FFAA',
+              boxShadow: '0 0 6px #00FFAA',
+            }}
+          />
+        )}
         <div className={`text-4xl mb-2 transition-transform hover:scale-110 ${clickedIndex === i ? 'scale-125' : ''}`}>
           {experiment.icon}
         </div>
