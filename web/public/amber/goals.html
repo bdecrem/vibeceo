@@ -112,23 +112,48 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
+            position: relative;
         }
 
-        .checkbox.checked {
-            background: rgba(212, 175, 55, 0.8);
-            border-color: #d4af37;
+        /* State 1: Blank (default) */
+        .checkbox {
+            background: transparent;
         }
 
-        .checkbox.checked::after {
+        /* State 2: Green checkmark (completed) */
+        .checkbox.completed {
+            background: rgba(46, 204, 113, 0.8);
+            border-color: #2ecc71;
+        }
+
+        .checkbox.completed::after {
             content: '✓';
-            color: #0f0f0f;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* State 3: Strikethrough (invalid/won't do) */
+        .checkbox.invalid {
+            background: rgba(231, 76, 60, 0.8);
+            border-color: #e74c3c;
+        }
+
+        .checkbox.invalid::after {
+            content: '✗';
+            color: white;
             font-weight: bold;
             font-size: 12px;
         }
 
         .goal-item.completed {
             opacity: 0.6;
+        }
+
+        .goal-item.invalid {
+            opacity: 0.5;
             text-decoration: line-through;
+            color: #888;
         }
 
         .progress-bar {
@@ -215,7 +240,7 @@
         </div>
 
         <div class="update-info">
-            Talk to Amber to add goals, mark items complete, or update details
+            Click items to cycle: Blank → ✓ Complete → ✗ Invalid/Won't Do
         </div>
 
         <div class="sync-status" id="syncStatus">
@@ -348,13 +373,22 @@
                 let itemsHTML = '';
                 goal.items.forEach((item, itemIndex) => {
                     const itemKey = `${goalKey}_${itemIndex}`;
-                    const isCompleted = completionState[itemKey] || false;
-                    const completedClass = isCompleted ? 'completed' : '';
-                    const checkedClass = isCompleted ? 'checked' : '';
+                    const state = completionState[itemKey] || 'blank';
+                    
+                    let itemClass = 'goal-item';
+                    let checkboxClass = 'checkbox';
+                    
+                    if (state === 'completed') {
+                        itemClass += ' completed';
+                        checkboxClass += ' completed';
+                    } else if (state === 'invalid') {
+                        itemClass += ' invalid';
+                        checkboxClass += ' invalid';
+                    }
                     
                     itemsHTML += `
-                        <li class="goal-item ${completedClass}" data-item="${itemKey}">
-                            <div class="checkbox ${checkedClass}"></div>
+                        <li class="${itemClass}" data-item="${itemKey}">
+                            <div class="${checkboxClass}"></div>
                             <span>${item}</span>
                         </li>
                     `;
@@ -368,75 +402,92 @@
                     <div class="progress-bar">
                         <div class="progress-fill" id="${goalKey}Progress" style="width: 0%"></div>
                     </div>
-                    <div class="progress-text" id="${goalKey}Text">0 of ${goal.items.length} completed</div>
+                    <div class="progress-text" id="${goalKey}Text">0 of ${goal.items.length} complete</div>
                 `;
 
                 container.appendChild(goalEl);
+                updateProgress(goalKey);
             });
 
-            // Add click handlers
+            // Add event listeners
             document.querySelectorAll('.goal-item').forEach(item => {
-                item.addEventListener('click', () => toggleItem(item));
+                item.addEventListener('click', toggleItem);
             });
-
-            updateAllProgress();
         }
 
-        // Toggle item completion
-        function toggleItem(item) {
-            const itemKey = item.dataset.item;
-            const isCompleted = item.classList.contains('completed');
-            const checkbox = item.querySelector('.checkbox');
+        // Toggle item between states: blank → completed → invalid → blank
+        function toggleItem(event) {
+            const itemKey = event.currentTarget.dataset.item;
+            const currentState = completionState[itemKey] || 'blank';
             
-            if (isCompleted) {
-                item.classList.remove('completed');
-                checkbox.classList.remove('checked');
-                completionState[itemKey] = false;
+            let nextState;
+            if (currentState === 'blank') {
+                nextState = 'completed';
+            } else if (currentState === 'completed') {
+                nextState = 'invalid';
             } else {
-                item.classList.add('completed');
-                checkbox.classList.add('checked');
-                completionState[itemKey] = true;
+                nextState = 'blank';
             }
             
-            updateProgress(item.closest('.goal'));
+            completionState[itemKey] = nextState;
+            
+            // Update UI immediately
+            const checkbox = event.currentTarget.querySelector('.checkbox');
+            const listItem = event.currentTarget;
+            
+            // Remove all state classes
+            checkbox.classList.remove('completed', 'invalid');
+            listItem.classList.remove('completed', 'invalid');
+            
+            // Add new state class
+            if (nextState === 'completed') {
+                checkbox.classList.add('completed');
+                listItem.classList.add('completed');
+            } else if (nextState === 'invalid') {
+                checkbox.classList.add('invalid');
+                listItem.classList.add('invalid');
+            }
+            
+            // Update progress for this goal
+            const goalKey = itemKey.split('_')[0];
+            updateProgress(goalKey);
+            
+            // Save to backend
             saveGoals();
         }
 
-        // Update progress for a specific goal
-        function updateProgress(goalEl) {
-            const items = goalEl.querySelectorAll('.goal-item');
-            const completed = goalEl.querySelectorAll('.goal-item.completed');
-            const percentage = (completed.length / items.length) * 100;
+        // Update progress bar for a specific goal
+        function updateProgress(goalKey) {
+            const goal = currentGoals[goalKey];
+            if (!goal) return;
             
-            const progressFill = goalEl.querySelector('.progress-fill');
-            const progressText = goalEl.querySelector('.progress-text');
+            const totalItems = goal.items.length;
+            let completedItems = 0;
             
-            progressFill.style.width = percentage + '%';
-            progressText.textContent = `${completed.length} of ${items.length} completed`;
+            // Count only completed items (not invalid ones)
+            goal.items.forEach((item, index) => {
+                const itemKey = `${goalKey}_${index}`;
+                if (completionState[itemKey] === 'completed') {
+                    completedItems++;
+                }
+            });
+            
+            const percentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+            
+            const progressFill = document.getElementById(`${goalKey}Progress`);
+            const progressText = document.getElementById(`${goalKey}Text`);
+            
+            if (progressFill) {
+                progressFill.style.width = `${percentage}%`;
+            }
+            
+            if (progressText) {
+                progressText.textContent = `${completedItems} of ${totalItems} complete`;
+            }
         }
 
-        // Update all progress bars
-        function updateAllProgress() {
-            document.querySelectorAll('.goal').forEach(updateProgress);
-        }
-
-        // Set current week
-        function setCurrentWeek() {
-            const now = new Date();
-            const monday = new Date(now);
-            monday.setDate(now.getDate() - now.getDay() + 1);
-            const sunday = new Date(monday);
-            sunday.setDate(monday.getDate() + 6);
-            
-            const formatDate = (date) => date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-            const weekText = `Week of ${formatDate(monday)} - ${formatDate(sunday)}, ${now.getFullYear()}`;
-            
-            document.getElementById('weekHeader').textContent = weekText;
-        }
-
-        // Initialize
-        setCurrentWeek();
-        loadGoals();
+        // Initialize on page load
+        window.addEventListener('load', loadGoals);
     </script>
 </body>
 </html>
