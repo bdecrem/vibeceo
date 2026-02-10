@@ -312,9 +312,28 @@ function CastCarousel() {
           <div
             key={i}
             onClick={() => setSelectedMember(member)}
-            className={`flex-shrink-0 w-40 rounded-2xl overflow-hidden bg-gradient-to-b ${member.bg} p-4 pt-6 hover:scale-105 transition-transform cursor-pointer shadow-lg`}
-            style={{ boxShadow: '0 4px 15px rgba(0,0,0,0.15)' }}
+            className={`flex-shrink-0 w-40 rounded-2xl overflow-hidden bg-gradient-to-b ${member.bg} p-4 pt-6 hover:scale-105 transition-transform cursor-pointer shadow-lg relative`}
+            style={{ 
+              boxShadow: member.name === 'Dither' 
+                ? '0 4px 20px rgba(255, 20, 147, 0.4), 0 0 40px rgba(255, 20, 147, 0.2)' 
+                : '0 4px 15px rgba(0,0,0,0.15)' 
+            }}
           >
+            {/* Dither special: paint splash decoration */}
+            {member.name === 'Dither' && (
+              <>
+                <div className="absolute top-2 right-2 text-[8px] font-mono opacity-60" style={{ color: '#FF1493' }}>#FF1493</div>
+                <div className="absolute bottom-12 left-2 text-[7px] font-mono opacity-50" style={{ color: '#22d3ee' }}>95 BPM</div>
+                <div className="absolute -bottom-1 -right-1 w-12 h-12 opacity-30" style={{ 
+                  background: 'radial-gradient(circle at 30% 70%, #FF1493 0%, #c56cf0 40%, transparent 70%)',
+                  filter: 'blur(4px)'
+                }} />
+                <div className="absolute -bottom-1 -left-2 w-8 h-8 opacity-25" style={{ 
+                  background: 'radial-gradient(circle, #22d3ee 0%, transparent 70%)',
+                  filter: 'blur(3px)'
+                }} />
+              </>
+            )}
             <div className="relative h-28 flex items-center justify-center">
               {member.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -326,6 +345,10 @@ function CastCarousel() {
             <div className="mt-3 text-center">
               <h3 className="text-lg font-bold" style={{ color: member.color }}>{member.name}</h3>
               <p className="text-gray-400 text-xs">{member.role}</p>
+              {/* Dither special: 50ms tag */}
+              {member.name === 'Dither' && (
+                <p className="text-[9px] font-mono mt-1 opacity-50" style={{ color: '#FF1493' }}>50ms ✨</p>
+              )}
             </div>
           </div>
         ))}
