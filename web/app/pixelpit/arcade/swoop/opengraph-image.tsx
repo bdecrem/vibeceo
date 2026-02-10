@@ -66,7 +66,7 @@ export default async function Image() {
             height: 100,
             borderRadius: 50,
             border: '8px solid #18181b',
-            background: 'transparent',
+            background: '#00000000',
           }}
         />
         <div
@@ -78,7 +78,7 @@ export default async function Image() {
             height: 80,
             borderRadius: 40,
             border: '6px solid #18181b',
-            background: 'transparent',
+            background: '#00000000',
           }}
         />
         <div
@@ -90,7 +90,7 @@ export default async function Image() {
             height: 90,
             borderRadius: 45,
             border: '6px solid #d946ef',
-            background: 'transparent',
+            background: '#00000000',
           }}
         />
 

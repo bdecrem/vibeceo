@@ -557,7 +557,7 @@ export default function SwoopGame() {
       }).catch(() => {});
     };
 
-    const drawBird = (bird: Bird, cameraX: number, isNightZone: boolean) => {
+    const drawBird = (bird: Bird, cameraX: number, isNightZone: boolean, combo: number) => {
       const x = bird.x - cameraX;
       const y = bird.y;
       
@@ -566,10 +566,10 @@ export default function SwoopGame() {
       ctx.rotate(bird.rotation * Math.PI / 180);
       ctx.scale(bird.scale.x, bird.scale.y);
       
-      // Night zone glow
-      if (isNightZone) {
+      // Combo glow (grows with streak) or Night zone glow
+      if (combo >= 2 || isNightZone) {
         ctx.shadowColor = '#facc15';
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = isNightZone ? 8 : Math.min(4 + combo * 2, 20);
       }
       
       // Body (yellow circle)
@@ -703,7 +703,7 @@ export default function SwoopGame() {
       }
       
       // Bird
-      drawBird(game.bird, game.camera.x, game.zone === 3);
+      drawBird(game.bird, game.camera.x, game.zone === 3, game.combo);
       
       // UI
       ctx.fillStyle = '#18181b';
