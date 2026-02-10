@@ -15,10 +15,10 @@ const GAME_ID = 'swoop';
 
 // PLAYROOM theme colors
 const ZONES = [
-  { name: 'Morning Sky', sky1: '#87CEEB', sky2: '#f0f9ff', clouds: '#ffffff' },
-  { name: 'Golden Hour', sky1: '#fcd34d', sky2: '#fb923c', clouds: '#fef3c7' },
-  { name: 'Twilight', sky1: '#a78bfa', sky2: '#3b82f6', clouds: '#c4b5fd' },
-  { name: 'Night Flight', sky1: '#1e3a5f', sky2: '#0f172a', clouds: '#334155' },
+  { name: 'Morning Sky', sky1: '#87CEEB', sky2: '#f0f9ff', clouds: '#ffffff', loopStroke: '#18181b', loopAccent: '#22d3ee' },
+  { name: 'Golden Hour', sky1: '#fcd34d', sky2: '#fb923c', clouds: '#fef3c7', loopStroke: '#18181b', loopAccent: '#facc15' },
+  { name: 'Twilight', sky1: '#a78bfa', sky2: '#4c1d95', clouds: '#c4b5fd', loopStroke: '#18181b', loopAccent: '#d946ef' },
+  { name: 'Night Flight', sky1: '#1e1b4b', sky2: '#000000', clouds: '#334155', loopStroke: '#facc15', loopAccent: '#22d3ee' },
 ];
 
 const ZONE_THRESHOLDS = [0, 1000, 2500, 4000];
@@ -557,7 +557,7 @@ export default function SwoopGame() {
       }).catch(() => {});
     };
 
-    const drawBird = (bird: Bird, cameraX: number) => {
+    const drawBird = (bird: Bird, cameraX: number, isNightZone: boolean) => {
       const x = bird.x - cameraX;
       const y = bird.y;
       
@@ -565,6 +565,12 @@ export default function SwoopGame() {
       ctx.translate(x, y);
       ctx.rotate(bird.rotation * Math.PI / 180);
       ctx.scale(bird.scale.x, bird.scale.y);
+      
+      // Night zone glow
+      if (isNightZone) {
+        ctx.shadowColor = '#facc15';
+        ctx.shadowBlur = 8;
+      }
       
       // Body (yellow circle)
       ctx.fillStyle = '#facc15';
@@ -574,6 +580,9 @@ export default function SwoopGame() {
       ctx.arc(0, 0, 15, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      
+      // Reset shadow after body
+      ctx.shadowBlur = 0;
       
       // Beak
       ctx.fillStyle = '#f97316';
@@ -605,26 +614,26 @@ export default function SwoopGame() {
       ctx.restore();
     };
 
-    const drawLoop = (loop: Loop, cameraX: number) => {
+    const drawLoop = (loop: Loop, cameraX: number, zone: typeof ZONES[0]) => {
       const x = loop.x - cameraX;
       const y = loop.y;
       
       // Outer glow
-      ctx.strokeStyle = loop.color + '40';
+      ctx.strokeStyle = zone.loopAccent + '40';
       ctx.lineWidth = 12;
       ctx.beginPath();
       ctx.arc(x, y, loop.radius, 0, Math.PI * 2);
       ctx.stroke();
       
-      // Main ring
-      ctx.strokeStyle = '#18181b';
+      // Main ring (gold in night zone, black otherwise)
+      ctx.strokeStyle = zone.loopStroke;
       ctx.lineWidth = 6;
       ctx.beginPath();
       ctx.arc(x, y, loop.radius, 0, Math.PI * 2);
       ctx.stroke();
       
-      // Color highlight
-      ctx.strokeStyle = loop.color;
+      // Color highlight (use zone accent)
+      ctx.strokeStyle = zone.loopAccent;
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.arc(x, y, loop.radius, -Math.PI * 0.3, Math.PI * 0.3);
@@ -670,7 +679,7 @@ export default function SwoopGame() {
       // Loops
       for (const loop of game.loops) {
         if (!loop.passed) {
-          drawLoop(loop, game.camera.x);
+          drawLoop(loop, game.camera.x, zone);
         }
       }
       
@@ -694,7 +703,7 @@ export default function SwoopGame() {
       }
       
       // Bird
-      drawBird(game.bird, game.camera.x);
+      drawBird(game.bird, game.camera.x, game.zone === 3);
       
       // UI
       ctx.fillStyle = '#18181b';
