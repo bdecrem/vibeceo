@@ -15,6 +15,8 @@
     <meta name="twitter:description" content="Amber's weekly goal tracker - organized by week, updated through conversation">
     <meta name="twitter:image" content="https://intheamber.com/amber/goals-og.png">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
@@ -22,232 +24,337 @@
         }
 
         body {
-            font-family: 'Georgia', serif;
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
-            color: #d4af37;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(180deg, #f7f7f7 0%, #ffffff 100%);
+            color: #1d1d1f;
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
+            font-weight: 300;
+            letter-spacing: -0.01em;
         }
 
-        .container {
-            max-width: 800px;
+        .header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 20px 0;
+        }
+
+        .header-content {
+            max-width: 980px;
             margin: 0 auto;
-            background: rgba(212, 175, 55, 0.1);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+            padding: 0 20px;
+            text-align: center;
         }
 
         h1 {
-            text-align: center;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            font-size: 2.5rem;
+            font-weight: 200;
+            color: #1d1d1f;
+            margin: 0;
+            letter-spacing: -0.025em;
         }
 
-        .week-header {
-            text-align: center;
-            font-size: 1.2em;
-            opacity: 0.8;
-            margin-bottom: 30px;
-            font-style: italic;
+        .week-subtitle {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #86868b;
+            margin-top: 4px;
+            letter-spacing: -0.01em;
         }
 
-        .loading {
-            text-align: center;
-            padding: 40px;
-            font-style: italic;
-            opacity: 0.7;
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 40px 20px;
         }
 
-        .goal {
-            background: rgba(212, 175, 55, 0.08);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
+        .goals-grid {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 40px;
         }
 
-        .goal:hover {
-            background: rgba(212, 175, 55, 0.12);
-            border-color: rgba(212, 175, 55, 0.4);
+        .goal-card {
+            background: white;
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .goal-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .goal-header {
+            padding: 24px 24px 16px;
+            background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
+            color: white;
         }
 
         .goal-title {
-            font-size: 1.3em;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #f5e6a8;
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .goal-progress {
+            margin-top: 12px;
+        }
+
+        .progress-bar {
+            height: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 2px;
+            transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            font-weight: 400;
+            opacity: 0.9;
         }
 
         .goal-items {
             list-style: none;
-            padding-left: 20px;
+            padding: 0;
         }
 
         .goal-item {
-            padding: 5px 0;
             display: flex;
             align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background-color 0.2s ease;
+            min-height: 60px;
+        }
+
+        .goal-item:last-child {
+            border-bottom: none;
         }
 
         .goal-item:hover {
-            color: #f5e6a8;
+            background: #f9f9f9;
+        }
+
+        .goal-item:active {
+            background: #f0f0f0;
+            transform: scale(0.995);
+            transition: all 0.1s ease;
         }
 
         .checkbox {
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(212, 175, 55, 0.6);
-            border-radius: 3px;
-            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 16px;
+            flex-shrink: 0;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            border: 2px solid #d1d1d6;
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
         }
 
-        /* State 1: Blank (default) */
-        .checkbox {
-            background: transparent;
-        }
-
-        /* State 2: Green checkmark (completed) */
         .checkbox.completed {
-            background: rgba(46, 204, 113, 0.8);
-            border-color: #2ecc71;
+            background: #34c759;
+            border-color: #34c759;
+            transform: scale(1.1);
         }
 
         .checkbox.completed::after {
             content: '✓';
             color: white;
-            font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
+            font-weight: 600;
         }
 
-        /* State 3: Strikethrough (invalid/won't do) */
         .checkbox.invalid {
-            background: rgba(231, 76, 60, 0.8);
-            border-color: #e74c3c;
+            background: #ff3b30;
+            border-color: #ff3b30;
+            transform: scale(1.1);
         }
 
         .checkbox.invalid::after {
             content: '✗';
             color: white;
-            font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
+            font-weight: 600;
         }
 
-        .goal-item.completed {
-            opacity: 0.6;
+        .goal-item-text {
+            flex: 1;
+            font-size: 1rem;
+            font-weight: 400;
+            color: #1d1d1f;
+            letter-spacing: -0.01em;
+            line-height: 1.4;
         }
 
-        .goal-item.invalid {
-            opacity: 0.5;
+        .goal-item.completed .goal-item-text {
+            color: #86868b;
+        }
+
+        .goal-item.invalid .goal-item-text {
+            color: #86868b;
             text-decoration: line-through;
-            color: #888;
         }
 
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: rgba(212, 175, 55, 0.2);
-            border-radius: 4px;
-            margin-top: 15px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #d4af37, #f5e6a8);
-            border-radius: 4px;
-            transition: width 0.5s ease;
-            box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-        }
-
-        .progress-text {
+        .loading {
             text-align: center;
-            margin-top: 10px;
-            font-size: 0.9em;
-            opacity: 0.8;
+            padding: 80px 20px;
+            color: #86868b;
+            font-size: 1rem;
+            font-weight: 400;
         }
 
-        .signature {
+        .footer {
             text-align: center;
+            padding: 40px 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
             margin-top: 40px;
-            font-style: italic;
-            opacity: 0.7;
-            font-size: 0.9em;
         }
 
         .update-info {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.8em;
-            opacity: 0.6;
-            font-style: italic;
+            font-size: 0.875rem;
+            color: #86868b;
+            font-weight: 400;
+            margin-bottom: 8px;
         }
 
         .sync-status {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 0.7em;
-            opacity: 0.5;
-            font-style: italic;
+            font-size: 0.75rem;
+            color: #86868b;
+            font-weight: 400;
         }
 
         .sync-status.syncing {
-            color: #f5e6a8;
-            opacity: 0.8;
+            color: #007aff;
         }
 
         .sync-status.error {
-            color: #ff6b6b;
-            opacity: 0.8;
+            color: #ff3b30;
+        }
+
+        .signature {
+            font-size: 0.875rem;
+            color: #86868b;
+            font-weight: 300;
+            margin-top: 16px;
+            letter-spacing: -0.01em;
+        }
+
+        /* Different colors for different goal types */
+        .goal-card:nth-child(1) .goal-header {
+            background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
+        }
+
+        .goal-card:nth-child(2) .goal-header {
+            background: linear-gradient(135deg, #34c759 0%, #64d2ff 100%);
+        }
+
+        .goal-card:nth-child(3) .goal-header {
+            background: linear-gradient(135deg, #ff9500 0%, #ffcc02 100%);
+        }
+
+        .goal-card:nth-child(4) .goal-header {
+            background: linear-gradient(135deg, #af52de 0%, #ff2d92 100%);
         }
 
         @media (max-width: 600px) {
             .container {
-                margin: 10px;
-                padding: 20px;
+                padding: 20px 16px;
             }
             
             h1 {
-                font-size: 2em;
+                font-size: 2rem;
+            }
+
+            .goal-card {
+                border-radius: 8px;
+            }
+
+            .goal-header {
+                padding: 20px 20px 14px;
+            }
+
+            .goal-title {
+                font-size: 1.2rem;
+            }
+
+            .goal-item {
+                padding: 14px 20px;
+                min-height: 56px;
             }
         }
+
+        /* Subtle animations */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .goal-card {
+            animation: slideUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .goal-card:nth-child(1) { animation-delay: 0ms; }
+        .goal-card:nth-child(2) { animation-delay: 100ms; }
+        .goal-card:nth-child(3) { animation-delay: 200ms; }
+        .goal-card:nth-child(4) { animation-delay: 300ms; }
     </style>
 </head>
 <body>
+    <div class="header">
+        <div class="header-content">
+            <h1>Weekly Goals</h1>
+            <div class="week-subtitle" id="weekHeader">Week of February 10–16, 2026</div>
+        </div>
+    </div>
+
     <div class="container">
-        <h1>🔮 Weekly Goals</h1>
-        <div class="week-header" id="weekHeader">Week of February 10-16, 2026</div>
-        
         <div id="loadingState" class="loading">
-            Loading goals from Amber's memory...
+            Loading your goals...
         </div>
 
-        <div id="goalsContainer" style="display: none;">
+        <div id="goalsContainer" class="goals-grid" style="display: none;">
             <!-- Goals will be populated here -->
         </div>
+    </div>
 
+    <div class="footer">
         <div class="update-info">
-            Click items to cycle: Blank → ✓ Complete → ✗ Invalid/Won't Do
+            Tap items to cycle: Incomplete → Complete → Won't Do
         </div>
-
         <div class="sync-status" id="syncStatus">
-            Synced with Amber's memory
+            Synced
         </div>
-
-        <div class="signature">— Amber</div>
+        <div class="signature">Amber</div>
     </div>
 
     <script>
@@ -284,10 +391,10 @@
                 
                 renderGoals();
                 document.getElementById('loadingState').style.display = 'none';
-                document.getElementById('goalsContainer').style.display = 'block';
+                document.getElementById('goalsContainer').style.display = 'grid';
             } catch (error) {
                 console.error('Error loading goals:', error);
-                document.getElementById('loadingState').innerHTML = 'Error loading goals. Using offline mode.';
+                document.getElementById('loadingState').innerHTML = 'Unable to load goals. Using offline mode.';
                 // Fall back to localStorage
                 loadFromLocalStorage();
             }
@@ -297,7 +404,7 @@
             if (isSyncing) return;
             
             isSyncing = true;
-            updateSyncStatus('Syncing with Amber\'s memory...', 'syncing');
+            updateSyncStatus('Syncing...', 'syncing');
             
             try {
                 const response = await fetch('/api/amber/goals', {
@@ -312,13 +419,13 @@
                 });
                 
                 if (response.ok) {
-                    updateSyncStatus('Synced with Amber\'s memory', 'synced');
+                    updateSyncStatus('Synced', 'synced');
                 } else {
                     throw new Error('Save failed');
                 }
             } catch (error) {
                 console.error('Error saving goals:', error);
-                updateSyncStatus('Sync error - saved locally', 'error');
+                updateSyncStatus('Sync failed', 'error');
                 // Fall back to localStorage
                 saveToLocalStorage();
             }
@@ -333,9 +440,9 @@
             
             if (type === 'synced') {
                 setTimeout(() => {
-                    status.textContent = 'Synced with Amber\'s memory';
+                    status.textContent = 'Synced';
                     status.className = 'sync-status';
-                }, 2000);
+                }, 1500);
             }
         }
 
@@ -349,7 +456,7 @@
             }
             renderGoals();
             document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('goalsContainer').style.display = 'block';
+            document.getElementById('goalsContainer').style.display = 'grid';
         }
 
         function saveToLocalStorage() {
@@ -367,7 +474,7 @@
             Object.keys(currentGoals).forEach((goalKey, index) => {
                 const goal = currentGoals[goalKey];
                 const goalEl = document.createElement('div');
-                goalEl.className = 'goal';
+                goalEl.className = 'goal-card';
                 goalEl.id = goalKey;
 
                 let itemsHTML = '';
@@ -389,20 +496,24 @@
                     itemsHTML += `
                         <li class="${itemClass}" data-item="${itemKey}">
                             <div class="${checkboxClass}"></div>
-                            <span>${item}</span>
+                            <span class="goal-item-text">${item}</span>
                         </li>
                     `;
                 });
 
                 goalEl.innerHTML = `
-                    <div class="goal-title">${goal.title}</div>
+                    <div class="goal-header">
+                        <div class="goal-title">${goal.title}</div>
+                        <div class="goal-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="${goalKey}Progress" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-text" id="${goalKey}Text">0 of ${goal.items.length}</div>
+                        </div>
+                    </div>
                     <ul class="goal-items">
                         ${itemsHTML}
                     </ul>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="${goalKey}Progress" style="width: 0%"></div>
-                    </div>
-                    <div class="progress-text" id="${goalKey}Text">0 of ${goal.items.length} complete</div>
                 `;
 
                 container.appendChild(goalEl);
@@ -482,7 +593,7 @@
             }
             
             if (progressText) {
-                progressText.textContent = `${completedItems} of ${totalItems} complete`;
+                progressText.textContent = `${completedItems} of ${totalItems}`;
             }
         }
 
