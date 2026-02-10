@@ -1630,6 +1630,7 @@ export default function Game3D({
       <Canvas
         camera={{ position: [6, 5, 6], fov: 50 }}
         style={{ touchAction: 'none' }}
+        flat
       >
         <GameScene onGameOver={onGameOver} onScoreUpdate={onScoreUpdate} onPowerup={handlePowerup} />
       </Canvas>

@@ -120,3 +120,11 @@ html {
 body {
 	scroll-behavior: smooth;
 }
+
+/* Hide R3F/pmndrs logo in development */
+[data-projection-id],
+.r3f-perf,
+[class*="pmndrs"],
+a[href*="pmnd.rs"] {
+  display: none !important;
+}
