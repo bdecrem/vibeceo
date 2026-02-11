@@ -6,255 +6,390 @@
   <title>ORBIT — Amber</title>
   
   <!-- Open Graph -->
-  <meta property="og:title" content="ORBIT">
-  <meta property="og:description" content="Six drum voices orbiting. Each one sounds when it reaches the top. Geometric techno.">
+  <meta property="og:title" content="ORBIT — Amber">
+  <meta property="og:description" content="Touch to create gravity. Watch particles find new paths.">
   <meta property="og:image" content="https://intheamber.com/amber/orbit-og.png">
-  <meta property="og:url" content="https://kochi.to/amber/orbit.html">
+  <meta property="og:url" content="https://intheamber.com/amber/orbit.html">
   <meta property="og:type" content="website">
   
-  <!-- Twitter -->
+  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="ORBIT">
-  <meta name="twitter:description" content="Six drum voices orbiting. Each one sounds when it reaches the top. Geometric techno.">
-  <meta name="twitter:image" content="https://intheamber.com/amber/amber/orbit-og.png">
+  <meta name="twitter:title" content="ORBIT — Amber">
+  <meta name="twitter:description" content="Touch to create gravity. Watch particles find new paths.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/orbit-og.png">
   
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     body {
-      font-family: 'Space Mono', 'Courier New', monospace;
-      background: #000;
-      color: #D4A574;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+      background: #0a0a0a;
       overflow: hidden;
-      touch-action: manipulation;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      touch-action: none;
     }
 
-    #title {
-      position: absolute;
-      top: 30px;
-      font-size: 24px;
-      font-weight: bold;
-      letter-spacing: 4px;
-      z-index: 10;
-      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
-    }
-
-    #canvas {
+    canvas {
       display: block;
-      cursor: pointer;
-    }
-
-    #playButton {
-      position: absolute;
-      bottom: 60px;
-      padding: 16px 40px;
-      font-family: 'Space Mono', monospace;
-      font-size: 18px;
-      font-weight: bold;
-      background: transparent;
-      color: #D4A574;
-      border: 2px solid #D4A574;
-      cursor: pointer;
-      letter-spacing: 2px;
-      transition: all 0.3s ease;
-      z-index: 10;
-    }
-
-    #playButton:hover {
-      background: #D4A574;
-      color: #000;
-      box-shadow: 0 0 30px rgba(212, 165, 116, 0.6);
-    }
-
-    #playButton.playing {
-      border-color: #2D9596;
-      color: #2D9596;
-    }
-
-    #playButton.playing:hover {
-      background: #2D9596;
-      color: #000;
+      width: 100vw;
+      height: 100vh;
     }
 
     #info {
-      position: absolute;
+      position: fixed;
       bottom: 20px;
+      left: 20px;
+      color: #FFD700;
       font-size: 11px;
-      color: rgba(212, 165, 116, 0.5);
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
+      opacity: 0.6;
+      font-family: 'Space Mono', monospace;
+      pointer-events: none;
+    }
+
+    #stats {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      color: #2D9596;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      text-align: right;
+      font-family: 'Space Mono', monospace;
+      pointer-events: none;
+    }
+
+    .stat-line {
+      margin-bottom: 4px;
+      opacity: 0.8;
     }
   </style>
 </head>
 <body>
-  <div id="title">ORBIT</div>
   <canvas id="canvas"></canvas>
-  <button id="playButton">START</button>
-  <div id="info">120 BPM × TR-909 × 6 VOICES</div>
+  <div id="info">TAP TO CREATE GRAVITY</div>
+  <div id="stats">
+    <div class="stat-line">PARTICLES: <span id="particle-count">0</span></div>
+    <div class="stat-line">GRAVITY WELLS: <span id="well-count">0</span></div>
+    <div class="stat-line">ORBITS: <span id="orbit-count">0</span></div>
+  </div>
 
-  <script type="module">
-    import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
-
+  <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const playButton = document.getElementById('playButton');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
 
-    let width, height, centerX, centerY;
-    let audioContext, drums;
-    let isPlaying = false;
-    let audioStarted = false;
-    let time = 0;
-    const bpm = 120;
-    const beatsPerSecond = bpm / 60;
+    // Audio context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioUnlocked = false;
 
-    // Six orbiting voices
-    const orbiters = [
-      { voice: 'kick', radius: 80, speed: 1, angle: 0, color: '#FFD700', name: 'KICK' },
-      { voice: 'snare', radius: 120, speed: 0.8, angle: Math.PI / 3, color: '#D4A574', name: 'SNARE' },
-      { voice: 'ch', radius: 160, speed: 1.2, angle: Math.PI * 2 / 3, color: '#2D9596', name: 'CH' },
-      { voice: 'oh', radius: 200, speed: 0.9, angle: Math.PI, color: '#7B68EE', name: 'OH' },
-      { voice: 'clap', radius: 240, speed: 1.1, angle: Math.PI * 4 / 3, color: '#FF6B6B', name: 'CLAP' },
-      { voice: 'rimshot', radius: 280, speed: 0.7, angle: Math.PI * 5 / 3, color: '#4ECDC4', name: 'RIM' }
-    ];
-
-    // Track last trigger to prevent double hits
-    orbiters.forEach(o => o.lastTrigger = -1);
-
-    function resize() {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-      centerX = width / 2;
-      centerY = height / 2;
+    function unlockAudio() {
+      if (!audioUnlocked) {
+        const osc = audioCtx.createOscillator();
+        osc.connect(audioCtx.destination);
+        osc.start(0);
+        osc.stop(0);
+        audioUnlocked = true;
+      }
     }
 
-    async function initAudio() {
-      if (audioStarted) return;
+    function playTone(freq, duration = 0.1, type = 'sine', volume = 0.1) {
+      if (!audioUnlocked) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
       
-      audioContext = new AudioContext();
-      drums = new TR909Engine({ context: audioContext });
+      osc.type = type;
+      osc.frequency.value = freq;
       
-      // Set voice parameters for nice sound
-      const kick = drums.voices.get('kick');
-      if (kick) kick.decay = 0.4;
+      gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
       
-      const snare = drums.voices.get('snare');
-      if (snare) snare.tone = 0.6;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
       
-      const ch = drums.voices.get('ch');
-      if (ch) ch.decay = 0.12;
-      
-      const oh = drums.voices.get('oh');
-      if (oh) oh.decay = 0.3;
-
-      audioStarted = true;
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + duration);
     }
 
-    function draw() {
-      // Clear with fade trail
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-      ctx.fillRect(0, 0, width, height);
+    // Color palette - bold and saturated for high energy mood
+    const colors = {
+      amber: '#FFD700',
+      gold: '#f59e0b',
+      teal: '#2D9596',
+      electricBlue: '#3b82f6',
+      hotPink: '#ec4899',
+      purple: '#8b5cf6',
+      coral: '#f97316',
+      lime: '#84cc16'
+    };
 
-      // Draw center point
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#D4A574';
-      ctx.fill();
+    const colorArray = Object.values(colors);
 
-      // Draw orbit paths
-      orbiters.forEach(o => {
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, o.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = `${o.color}22`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      });
+    // Gravity wells
+    class GravityWell {
+      constructor(x, y, mass) {
+        this.x = x;
+        this.y = y;
+        this.mass = mass;
+        this.radius = Math.sqrt(mass) * 3;
+        this.color = colorArray[Math.floor(Math.random() * colorArray.length)];
+        this.pulsePhase = Math.random() * Math.PI * 2;
+        this.life = 1.0;
+        this.maxLife = 300; // frames
+        this.age = 0;
+      }
 
-      // Draw orbiters
-      orbiters.forEach(o => {
-        const x = centerX + Math.cos(o.angle) * o.radius;
-        const y = centerY + Math.sin(o.angle) * o.radius;
+      update() {
+        this.pulsePhase += 0.05;
+        this.age++;
+        this.life = 1.0 - (this.age / this.maxLife);
+      }
 
-        // Check if at top (trigger zone)
-        const atTop = Math.abs(o.angle % (Math.PI * 2) - (Math.PI * 1.5)) < 0.1;
-        const shouldTrigger = atTop && isPlaying && audioStarted;
+      draw() {
+        const pulse = Math.sin(this.pulsePhase) * 0.3 + 1.0;
         
-        // Trigger sound if crossing top and enough time passed
-        if (shouldTrigger && (time - o.lastTrigger > 0.1)) {
-          const voice = drums.voices.get(o.voice);
-          if (voice) {
-            voice.trigger(audioContext.currentTime, 1.0);
-            o.lastTrigger = time;
+        // Outer glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * pulse * 2);
+        gradient.addColorStop(0, this.color + '40');
+        gradient.addColorStop(0.5, this.color + '20');
+        gradient.addColorStop(1, this.color + '00');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * pulse * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Core
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.life * 0.8;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+      }
+
+      isDead() {
+        return this.life <= 0;
+      }
+    }
+
+    // Orbiting particles
+    class Particle {
+      constructor(x, y, vx, vy) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.radius = 3 + Math.random() * 2;
+        this.color = colorArray[Math.floor(Math.random() * colorArray.length)];
+        this.trail = [];
+        this.maxTrailLength = 30;
+        this.orbitCount = 0;
+        this.lastAngle = null;
+      }
+
+      applyGravity(wells) {
+        wells.forEach(well => {
+          const dx = well.x - this.x;
+          const dy = well.y - this.y;
+          const distSq = dx * dx + dy * dy;
+          const dist = Math.sqrt(distSq);
+          
+          if (dist > 1) {
+            const force = (well.mass * 0.5) / distSq;
+            const ax = (dx / dist) * force;
+            const ay = (dy / dist) * force;
+            
+            this.vx += ax;
+            this.vy += ay;
+          }
+        });
+      }
+
+      update(wells) {
+        // Track orbit completion (simplified: check angle change around nearest well)
+        if (wells.length > 0) {
+          const nearest = wells.reduce((closest, well) => {
+            const dx = well.x - this.x;
+            const dy = well.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            return dist < closest.dist ? {well, dist} : closest;
+          }, {well: null, dist: Infinity});
+
+          if (nearest.well) {
+            const dx = this.x - nearest.well.x;
+            const dy = this.y - nearest.well.y;
+            const angle = Math.atan2(dy, dx);
+            
+            if (this.lastAngle !== null) {
+              const angleDiff = angle - this.lastAngle;
+              // Detect orbit completion (angle wraps around)
+              if (Math.abs(angleDiff) > Math.PI) {
+                this.orbitCount++;
+                totalOrbits++;
+                playTone(200 + (this.orbitCount % 8) * 50, 0.05, 'sine', 0.02);
+              }
+            }
+            this.lastAngle = angle;
           }
         }
 
-        // Draw glow when at top
-        if (atTop) {
-          const gradient = ctx.createRadialGradient(x, y, 0, x, y, 30);
-          gradient.addColorStop(0, `${o.color}88`);
-          gradient.addColorStop(1, `${o.color}00`);
-          ctx.fillStyle = gradient;
+        this.applyGravity(wells);
+        
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Velocity damping (slight friction)
+        this.vx *= 0.995;
+        this.vy *= 0.995;
+        
+        // Bounds wrapping
+        if (this.x < 0) this.x = width;
+        if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height;
+        if (this.y > height) this.y = 0;
+        
+        // Trail
+        this.trail.push({x: this.x, y: this.y});
+        if (this.trail.length > this.maxTrailLength) {
+          this.trail.shift();
+        }
+      }
+
+      draw() {
+        // Trail
+        if (this.trail.length > 1) {
+          ctx.strokeStyle = this.color;
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = 0.3;
           ctx.beginPath();
-          ctx.arc(x, y, 30, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.moveTo(this.trail[0].x, this.trail[0].y);
+          for (let i = 1; i < this.trail.length; i++) {
+            const alpha = i / this.trail.length;
+            ctx.globalAlpha = alpha * 0.3;
+            ctx.lineTo(this.trail[i].x, this.trail[i].y);
+          }
+          ctx.stroke();
+          ctx.globalAlpha = 1.0;
         }
-
-        // Draw orbiter circle
+        
+        // Particle glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 3);
+        gradient.addColorStop(0, this.color);
+        gradient.addColorStop(0.5, this.color + '40');
+        gradient.addColorStop(1, this.color + '00');
+        
+        ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(x, y, 12, 0, Math.PI * 2);
-        ctx.fillStyle = o.color;
+        ctx.arc(this.x, this.y, this.radius * 3, 0, Math.PI * 2);
         ctx.fill();
-
-        // Draw label
-        ctx.fillStyle = o.color;
-        ctx.font = '10px Space Mono, monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(o.name, x, y + 30);
-
-        // Update angle
-        if (isPlaying) {
-          o.angle += o.speed * 0.01 * beatsPerSecond;
-        }
-      });
+        
+        // Core
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
-    function animate() {
-      if (isPlaying) {
-        time += 1/60;
+    // State
+    let particles = [];
+    let wells = [];
+    let totalOrbits = 0;
+    
+    // Initialize with 3 gravity wells and 60 particles
+    function init() {
+      // Create initial wells
+      wells.push(new GravityWell(width * 0.3, height * 0.5, 100));
+      wells.push(new GravityWell(width * 0.7, height * 0.5, 100));
+      wells.push(new GravityWell(width * 0.5, height * 0.3, 80));
+      
+      // Create initial particles with random velocities
+      for (let i = 0; i < 60; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 2;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+        particles.push(new Particle(x, y, vx, vy));
       }
-      draw();
+    }
+
+    // Touch/mouse interaction
+    function handleInteraction(x, y) {
+      unlockAudio();
+      
+      // Create new gravity well
+      const mass = 60 + Math.random() * 40;
+      wells.push(new GravityWell(x, y, mass));
+      
+      // Spawn 5 new particles near the touch point
+      for (let i = 0; i < 5; i++) {
+        const angle = (Math.PI * 2 * i) / 5;
+        const dist = 50 + Math.random() * 50;
+        const px = x + Math.cos(angle) * dist;
+        const py = y + Math.sin(angle) * dist;
+        const speed = 2 + Math.random() * 3;
+        const vx = Math.cos(angle + Math.PI / 2) * speed;
+        const vy = Math.sin(angle + Math.PI / 2) * speed;
+        particles.push(new Particle(px, py, vx, vy));
+      }
+      
+      playTone(400 + Math.random() * 200, 0.2, 'sine', 0.15);
+    }
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleInteraction(touch.clientX, touch.clientY);
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      handleInteraction(e.clientX, e.clientY);
+    });
+
+    // Animation loop
+    function animate() {
+      // Fade effect (not full clear)
+      ctx.fillStyle = 'rgba(10, 10, 10, 0.15)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update and draw wells
+      wells = wells.filter(well => {
+        well.update();
+        well.draw();
+        return !well.isDead();
+      });
+      
+      // Update and draw particles
+      particles.forEach(particle => {
+        particle.update(wells);
+        particle.draw();
+      });
+      
+      // Update stats
+      document.getElementById('particle-count').textContent = particles.length;
+      document.getElementById('well-count').textContent = wells.length;
+      document.getElementById('orbit-count').textContent = totalOrbits;
+      
       requestAnimationFrame(animate);
     }
 
-    playButton.addEventListener('click', async () => {
-      if (!audioStarted) {
-        await initAudio();
-      }
-      
-      await audioContext.resume();
-      
-      isPlaying = !isPlaying;
-      
-      if (isPlaying) {
-        playButton.textContent = 'STOP';
-        playButton.classList.add('playing');
-      } else {
-        playButton.textContent = 'START';
-        playButton.classList.remove('playing');
-      }
-    });
-
-    window.addEventListener('resize', resize);
-    resize();
+    init();
     animate();
   </script>
 </body>
