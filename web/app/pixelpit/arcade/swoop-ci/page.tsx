@@ -743,87 +743,135 @@ export default function SwoopCiGame() {
       // Bird
       drawBird(game.bird, game.camera.x, game.zone === 3, game.combo);
 
-      // === PRETTY HUD ===
-      const isNight = game.zone === 3;
-      const hudBg = isNight ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.85)';
-      const hudText = isNight ? '#f0f9ff' : '#18181b';
-      const hudMuted = isNight ? '#94a3b8' : '#64748b';
-      const hudAccent = '#facc15';
-      
-      // Top HUD bar background
-      ctx.fillStyle = hudBg;
-      ctx.beginPath();
-      ctx.roundRect(10, 10, canvasSize.w - 20, 70, 16);
-      ctx.fill();
-      
-      // Score (left side)
-      ctx.textAlign = 'left';
-      ctx.font = 'bold 14px ui-rounded, system-ui, sans-serif';
-      ctx.fillStyle = hudMuted;
-      ctx.fillText('SCORE', 24, 32);
-      ctx.font = 'bold 32px ui-rounded, system-ui, sans-serif';
-      ctx.fillStyle = hudText;
-      ctx.fillText(game.score.toString(), 24, 64);
-      
-      // Timer (center) - with urgency coloring
-      const timeLeft = Math.ceil(game.timeRemaining);
-      const timerColor = timeLeft <= 10 ? '#ef4444' : timeLeft <= 20 ? '#f97316' : hudAccent;
-      ctx.textAlign = 'center';
-      ctx.font = 'bold 14px ui-rounded, system-ui, sans-serif';
-      ctx.fillStyle = hudMuted;
-      ctx.fillText('TIME', canvasSize.w / 2, 32);
-      ctx.font = 'bold 36px ui-rounded, system-ui, sans-serif';
-      ctx.fillStyle = timerColor;
-      // Pulse effect when low time
-      if (timeLeft <= 10 && Math.floor(game.timeRemaining * 4) % 2 === 0) {
-        ctx.shadowColor = timerColor;
-        ctx.shadowBlur = 10;
-      }
-      ctx.fillText(timeLeft.toString(), canvasSize.w / 2, 64);
-      ctx.shadowBlur = 0;
-      
-      // Combo multiplier (right side)
-      ctx.textAlign = 'right';
-      ctx.font = 'bold 14px ui-rounded, system-ui, sans-serif';
-      ctx.fillStyle = hudMuted;
-      ctx.fillText('COMBO', canvasSize.w - 24, 32);
-      ctx.font = 'bold 32px ui-rounded, system-ui, sans-serif';
-      if (game.combo >= 2) {
-        ctx.fillStyle = '#f97316';
-        ctx.fillText(`${game.combo}x`, canvasSize.w - 24, 64);
-      } else {
-        ctx.fillStyle = hudText;
-        ctx.fillText('—', canvasSize.w - 24, 64);
-      }
-      
-      // Combo popup (floating up from center)
-      if (game.comboPopup) {
-        ctx.globalAlpha = game.comboPopup.alpha;
-        ctx.textAlign = 'center';
-        ctx.font = 'bold 28px ui-rounded, system-ui, sans-serif';
-        ctx.fillStyle = '#f97316';
-        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      // === HUD ===
+      const hudColor = '#fde68a';  // soft gold — reads on all 4 zones
+      const hudOutline = 'rgba(15, 15, 26, 0.65)';  // consistent dark cut-out
+
+      // Helper: outlined text for readability over any sky
+      const drawOutlined = (text: string, x: number, y: number, fill: string, fontSize: number, align: CanvasTextAlign = 'left', weight = 'bold') => {
+        ctx.save();
+        ctx.textAlign = align;
+        ctx.font = `${weight} ${fontSize}px ui-rounded, system-ui, sans-serif`;
+        ctx.strokeStyle = hudOutline;
         ctx.lineWidth = 4;
-        ctx.strokeText(game.comboPopup.text, canvasSize.w / 2, 130 + game.comboPopup.y);
-        ctx.fillText(game.comboPopup.text, canvasSize.w / 2, 130 + game.comboPopup.y);
-        ctx.globalAlpha = 1;
-        ctx.lineWidth = 1;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(text, x, y);
+        ctx.fillStyle = fill;
+        ctx.fillText(text, x, y);
+        ctx.restore();
+      };
+
+      // Shared HUD grid: all 3 items on the same baseline
+      const hudBaseline = 50;
+      const hudSize = 42;
+      const hudSecondaryY = 62;
+      const hudPad = 20;
+
+      // -- SCORE (top left) --
+      const scoreStr = game.score.toString();
+      drawOutlined(scoreStr, hudPad, hudBaseline, hudColor, hudSize, 'left', '900');
+      // "pts" suffix
+      ctx.save();
+      ctx.font = `900 ${hudSize}px ui-rounded, system-ui, sans-serif`;
+      const scoreMeasured = ctx.measureText(scoreStr).width;
+      drawOutlined('pts', hudPad + scoreMeasured + 5, hudBaseline, hudColor + '80', 12, 'left', '600');
+      ctx.restore();
+
+      // -- TIMER (top center) --
+      const timeLeft = Math.ceil(game.timeRemaining);
+      const timeFraction = game.timeRemaining / GAME_DURATION;
+      const timerX = canvasSize.w / 2;
+
+      if (timeLeft <= 10) {
+        const pulse = (Math.sin(game.timeRemaining * 8) + 1) / 2;
+        ctx.save();
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 6 + pulse * 14;
+        drawOutlined(timeLeft.toString(), timerX, hudBaseline, hudColor, hudSize, 'center', '900');
+        ctx.restore();
+      } else {
+        drawOutlined(timeLeft.toString(), timerX, hudBaseline, hudColor, hudSize, 'center', '900');
       }
 
-      // Bottom bar - zone name and distance
-      ctx.fillStyle = hudBg;
+      // Depleting bar under timer
+      const barW = 72;
+      const barH = 3;
+      const barX = timerX - barW / 2;
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
       ctx.beginPath();
-      ctx.roundRect(10, canvasSize.h - 50, canvasSize.w - 20, 40, 12);
+      ctx.roundRect(barX, hudSecondaryY, barW, barH, 2);
       ctx.fill();
-      
-      ctx.textAlign = 'left';
-      ctx.font = '14px ui-rounded, system-ui, sans-serif';
-      ctx.fillStyle = hudMuted;
-      ctx.fillText(`${Math.floor(game.distance)}m`, 24, canvasSize.h - 24);
-      
-      ctx.textAlign = 'right';
-      ctx.fillStyle = hudText;
-      ctx.fillText(zone.name, canvasSize.w - 24, canvasSize.h - 24);
+      const barColor = timeLeft <= 10 ? '#ef4444' : timeLeft <= 20 ? '#f97316' : hudColor;
+      ctx.fillStyle = barColor;
+      ctx.beginPath();
+      ctx.roundRect(barX, hudSecondaryY, Math.max(0, barW * timeFraction), barH, 2);
+      ctx.fill();
+
+      // -- COMBO (top right) -- hidden until earned
+      if (game.combo >= 2) {
+        const comboStr = `${game.combo}x`;
+        ctx.save();
+        ctx.shadowColor = hudColor;
+        ctx.shadowBlur = 8 + Math.min(game.combo * 3, 20);
+        drawOutlined(comboStr, canvasSize.w - hudPad, hudBaseline, hudColor, hudSize, 'right', '900');
+        ctx.restore();
+
+        // Streak dots
+        const dotCount = Math.min(game.combo, 8);
+        const dotSpacing = 9;
+        const dotsWidth = (dotCount - 1) * dotSpacing;
+        const dotStartX = canvasSize.w - hudPad - dotsWidth;
+        for (let di = 0; di < dotCount; di++) {
+          ctx.fillStyle = hudColor;
+          ctx.beginPath();
+          ctx.arc(dotStartX + di * dotSpacing, hudSecondaryY + 1, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // -- COMBO POPUP -- punchy, floating up from bird
+      if (game.comboPopup) {
+        ctx.save();
+        ctx.globalAlpha = game.comboPopup.alpha;
+        ctx.shadowColor = hudColor;
+        ctx.shadowBlur = 16;
+        drawOutlined(
+          game.comboPopup.text,
+          canvasSize.w / 2,
+          110 + game.comboPopup.y,
+          hudColor,
+          34,
+          'center',
+          '900'
+        );
+        ctx.globalAlpha = 1;
+        ctx.restore();
+      }
+
+      // -- BOTTOM PILL -- zone + distance, centered floating
+      const distStr = `${Math.floor(game.distance)}m`;
+      const zoneLabel = `${zone.name}  ·  ${distStr}`;
+      ctx.save();
+      ctx.font = '600 12px ui-rounded, system-ui, sans-serif';
+      const labelW = ctx.measureText(zoneLabel).width;
+      const pillPad = 14;
+      const pillW = labelW + pillPad * 2;
+      const pillH = 24;
+      const pillX = (canvasSize.w - pillW) / 2;
+      const pillY = canvasSize.h - 38;
+
+      // Frosted pill
+      ctx.fillStyle = hudOutline;
+      ctx.beginPath();
+      ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+      ctx.fill();
+
+      // Zone text
+      ctx.textAlign = 'center';
+      ctx.font = '600 12px ui-rounded, system-ui, sans-serif';
+      ctx.fillStyle = hudColor;
+      ctx.fillText(zoneLabel, canvasSize.w / 2, pillY + 16);
+      ctx.restore();
     };
 
     const gameLoop = (timestamp: number) => {
