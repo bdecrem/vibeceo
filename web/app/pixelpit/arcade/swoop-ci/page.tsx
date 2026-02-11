@@ -763,8 +763,8 @@ export default function SwoopCiGame() {
 
       // Shared HUD grid: all 3 items on the same baseline
       const hudBaseline = 50;
-      const hudScoreSize = 42;
-      const hudSmallSize = 28;
+      const hudScoreSize = 48;  // SCORE - largest
+      const hudSmallSize = 24;  // timer & combo - smaller
       const hudSecondaryY = 58;
       const hudPad = 20;
 

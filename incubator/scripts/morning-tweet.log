@@ -44,3 +44,7 @@ shell-init: error retrieving current directory: getcwd: cannot access parent dir
 job-working-directory: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
 chdir: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
 /bin/bash: .env.local: Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+job-working-directory: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+chdir: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: .env.local: Operation not permitted
