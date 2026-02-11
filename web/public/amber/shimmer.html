@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHIMMER — Tap to spawn acid bass notes that drift and evolve</title>
+  <meta property="og:title" content="SHIMMER — Tap to spawn acid bass notes">
+  <meta property="og:description" content="A music machine by Amber">
+  <meta property="og:image" content="https://intheamber.com/amber/shimmer-og.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SHIMMER — Tap to spawn acid bass notes">
+  <meta name="twitter:description" content="A music machine by Amber">
+  <meta name="twitter:image" content="https://intheamber.com/amber/shimmer-og.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    #overlay.hidden {
+      display: none;
+    }
+
+    #startBtn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px 50px;
+      font-size: 24px;
+      font-family: 'Space Mono', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+      margin-bottom: 20px;
+    }
+
+    #startBtn:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+
+    #instruction {
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.7;
+      text-align: center;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+
+    #stats {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      font-size: 11px;
+      color: #D4A574;
+      opacity: 0.5;
+      font-family: 'Space Mono', monospace;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 768px) {
+      #startBtn {
+        padding: 16px 40px;
+        font-size: 20px;
+      }
+      #instruction {
+        font-size: 13px;
+        padding: 0 20px;
+      }
+      #stats {
+        font-size: 10px;
+        bottom: 12px;
+        left: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="overlay">
+    <button id="startBtn">START</button>
+    <div id="instruction">
+      Tap anywhere to spawn acid bass notes<br>
+      Watch them drift and evolve their filter<br>
+      TB-303 meets particle physics
+    </div>
+  </div>
+
+  <div id="stats">
+    ACTIVE NOTES: <span id="notes">0</span><br>
+    TOTAL SPAWNED: <span id="spawned">0</span><br>
+    DRIFT: <span id="drift">organic</span>
+  </div>
+
+  <script type="module">
+    import { TB303Controller } from '/303/dist/api/index.js';
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('startBtn');
+    const notesStat = document.getElementById('notes');
+    const spawnedStat = document.getElementById('spawned');
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    });
+
+    // 303 Setup
+    let bass = null;
+    let audioStarted = false;
+    let totalSpawned = 0;
+
+    // E minor pentatonic scale (MIDI notes)
+    const scale = [40, 43, 45, 47, 50, 52, 55, 57, 59, 62]; // E1 to D4
+
+    // Bass note particles
+    const bassNotes = [];
+
+    class BassNote {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.note = scale[Math.floor(Math.random() * scale.length)];
+        this.cutoff = Math.random() * 0.5 + 0.3; // 0.3 to 0.8
+        this.resonance = Math.random() * 0.3 + 0.6; // 0.6 to 0.9
+        this.life = 1.0;
+        this.decay = 0.003; // Long life
+        this.size = 30 + Math.random() * 20;
+        this.hue = (this.cutoff * 180) + 30; // Maps cutoff to color (amber to teal)
+        this.pulsePhase = Math.random() * Math.PI * 2;
+        this.lastTrigger = 0;
+        this.triggerInterval = 800 + Math.random() * 400; // Trigger every 800-1200ms
+        this.driftSpeed = 0.00005 + Math.random() * 0.0001;
+        this.driftPhase = Math.random() * Math.PI * 2;
+      }
+
+      update(time) {
+        // Drift physics
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Bounce off walls with energy loss
+        if (this.x < this.size || this.x > width - this.size) {
+          this.vx *= -0.7;
+          this.x = Math.max(this.size, Math.min(width - this.size, this.x));
+        }
+        if (this.y < this.size || this.y > height - this.size) {
+          this.vy *= -0.7;
+          this.y = Math.max(this.size, Math.min(height - this.size, this.y));
+        }
+
+        // Friction
+        this.vx *= 0.99;
+        this.vy *= 0.99;
+
+        // Filter cutoff evolves based on position
+        this.driftPhase += this.driftSpeed;
+        this.cutoff = 0.3 + (Math.sin(this.driftPhase) * 0.25) + 0.25;
+        this.cutoff = Math.max(0.2, Math.min(0.95, this.cutoff));
+
+        // Update color based on cutoff
+        this.hue = (this.cutoff * 180) + 30;
+
+        // Life decay
+        this.life -= this.decay;
+
+        // Pulse phase
+        this.pulsePhase += 0.05;
+
+        // Trigger notes periodically
+        if (time - this.lastTrigger > this.triggerInterval && bass && this.life > 0.3) {
+          this.trigger();
+          this.lastTrigger = time;
+        }
+      }
+
+      trigger() {
+        const now = bass.engine.context.currentTime;
+        bass.engine.setCutoff(this.cutoff);
+        bass.engine.setResonance(this.resonance);
+        bass.engine.triggerNote(now, this.note, 0.15, false); // 150ms note
+      }
+
+      draw() {
+        const pulse = Math.sin(this.pulsePhase) * 0.2 + 0.8;
+        const alpha = this.life * 0.8;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+
+        // Outer glow
+        const outerGradient = ctx.createRadialGradient(
+          this.x, this.y, 0,
+          this.x, this.y, this.size * pulse * 2
+        );
+        outerGradient.addColorStop(0, `hsla(${this.hue}, 80%, 60%, 0.4)`);
+        outerGradient.addColorStop(0.5, `hsla(${this.hue}, 70%, 50%, 0.2)`);
+        outerGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = outerGradient;
+        ctx.fillRect(
+          this.x - this.size * pulse * 2,
+          this.y - this.size * pulse * 2,
+          this.size * pulse * 4,
+          this.size * pulse * 4
+        );
+
+        // Inner glow
+        const innerGradient = ctx.createRadialGradient(
+          this.x, this.y, 0,
+          this.x, this.y, this.size * pulse
+        );
+        innerGradient.addColorStop(0, `hsla(${this.hue}, 90%, 70%, 0.9)`);
+        innerGradient.addColorStop(1, `hsla(${this.hue}, 80%, 50%, 0)`);
+        ctx.fillStyle = innerGradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core
+        ctx.fillStyle = `hsla(${this.hue}, 95%, 75%, 1)`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * pulse * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cutoff ring indicator
+        ctx.strokeStyle = `hsla(${this.hue}, 90%, 70%, 0.6)`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * pulse * this.cutoff, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    }
+
+    function spawnBassNote(x, y) {
+      if (bassNotes.length >= 20) {
+        bassNotes.shift(); // Remove oldest
+      }
+      bassNotes.push(new BassNote(x, y));
+      totalSpawned++;
+    }
+
+    function initAudio() {
+      if (bass) return;
+      bass = new TB303Controller();
+      bass.engine.context.resume();
+    }
+
+    startBtn.addEventListener('click', async () => {
+      initAudio();
+      audioStarted = true;
+      overlay.classList.add('hidden');
+
+      // Spawn 3 starter notes
+      spawnBassNote(width * 0.3, height * 0.5);
+      setTimeout(() => spawnBassNote(width * 0.5, height * 0.4), 200);
+      setTimeout(() => spawnBassNote(width * 0.7, height * 0.6), 400);
+    });
+
+    // Touch/mouse handling
+    function handleInteraction(e) {
+      if (!audioStarted) return;
+
+      const touch = e.touches ? e.touches[0] : e;
+      const rect = canvas.getBoundingClientRect();
+      const x = (touch.clientX - rect.left) * (width / rect.width);
+      const y = (touch.clientY - rect.top) * (height / rect.height);
+
+      spawnBassNote(x, y);
+    }
+
+    canvas.addEventListener('click', handleInteraction);
+    canvas.addEventListener('touchstart', handleInteraction);
+
+    // Animation loop
+    let lastTime = 0;
+    function animate(time) {
+      // Trail effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update and draw bass notes
+      for (let i = bassNotes.length - 1; i >= 0; i--) {
+        bassNotes[i].update(time);
+        bassNotes[i].draw();
+
+        if (bassNotes[i].life <= 0) {
+          bassNotes.splice(i, 1);
+        }
+      }
+
+      // Update stats
+      notesStat.textContent = bassNotes.length;
+      spawnedStat.textContent = totalSpawned;
+
+      lastTime = time;
+      requestAnimationFrame(animate);
+    }
+
+    animate(0);
+  </script>
+</body>
+</html>
