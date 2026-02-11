@@ -291,21 +291,52 @@
       totalSpawned++;
     }
 
-    function initAudio() {
-      if (bass) return;
-      bass = new TB303Controller();
-      bass.engine.context.resume();
+    async function startAudio() {
+      if (audioStarted) return;
+      
+      try {
+        // Initialize audio - must happen in user gesture for iOS
+        bass = new TB303Controller();
+        
+        // iOS requires explicit resume on user gesture
+        if (bass.engine.context.state === 'suspended') {
+          await bass.engine.context.resume();
+        }
+        
+        // Double-check it's running
+        if (bass.engine.context.state !== 'running') {
+          console.warn('Audio context state:', bass.engine.context.state);
+        }
+        
+        audioStarted = true;
+        overlay.classList.add('hidden');
+
+        // Spawn 3 starter notes
+        spawnBassNote(width * 0.3, height * 0.5);
+        setTimeout(() => spawnBassNote(width * 0.5, height * 0.4), 200);
+        setTimeout(() => spawnBassNote(width * 0.7, height * 0.6), 400);
+      } catch (err) {
+        console.error('Audio init error:', err);
+        alert('Audio failed to start. Try tapping again.');
+      }
     }
 
-    startBtn.addEventListener('click', async () => {
-      initAudio();
-      audioStarted = true;
-      overlay.classList.add('hidden');
-
-      // Spawn 3 starter notes
-      spawnBassNote(width * 0.3, height * 0.5);
-      setTimeout(() => spawnBassNote(width * 0.5, height * 0.4), 200);
-      setTimeout(() => spawnBassNote(width * 0.7, height * 0.6), 400);
+    // Handle both click and touch for iOS compatibility
+    startBtn.addEventListener('click', startAudio);
+    startBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      startAudio();
+    });
+    
+    // Also allow tapping anywhere on overlay
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) startAudio();
+    });
+    overlay.addEventListener('touchend', (e) => {
+      if (e.target === overlay) {
+        e.preventDefault();
+        startAudio();
+      }
     });
 
     // Touch/mouse handling
