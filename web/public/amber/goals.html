@@ -15,23 +15,95 @@
     <meta name="twitter:description" content="Amber's weekly goal tracker - organized by week, updated through conversation">
     <meta name="twitter:image" content="https://intheamber.com/amber/goals-og.png">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
         
         :root {
-            --pixel-blue: #4ecdc4;
-            --pixel-pink: #ff6b9d;
-            --pixel-yellow: #ffe66d;
-            --pixel-purple: #a8e6cf;
-            --pixel-orange: #ffab91;
-            --pixel-mint: #b8f2ff;
-            --pixel-lavender: #dcc7ff;
-            --pixel-peach: #ffd3a5;
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --shadow-dark: rgba(0, 0, 0, 0.3);
-            --shadow-light: rgba(255, 255, 255, 0.2);
-            --text-dark: #2c3e50;
-            --text-medium: #34495e;
-            --text-light: #7f8c8d;
+            /* Sophisticated Color System */
+            --primary-600: #4f46e5;
+            --primary-500: #6366f1;
+            --primary-400: #818cf8;
+            --primary-100: #e0e7ff;
+            
+            --success-600: #059669;
+            --success-500: #10b981;
+            --success-400: #34d399;
+            --success-100: #d1fae5;
+            
+            --warning-600: #d97706;
+            --warning-500: #f59e0b;
+            --warning-400: #fbbf24;
+            --warning-100: #fef3c7;
+            
+            --error-600: #dc2626;
+            --error-500: #ef4444;
+            --error-400: #f87171;
+            --error-100: #fee2e2;
+            
+            --purple-600: #7c3aed;
+            --purple-500: #8b5cf6;
+            --purple-400: #a78bfa;
+            --purple-100: #ede9fe;
+            
+            --pink-600: #db2777;
+            --pink-500: #ec4899;
+            --pink-400: #f472b6;
+            --pink-100: #fce7f3;
+            
+            --cyan-600: #0891b2;
+            --cyan-500: #06b6d4;
+            --cyan-400: #22d3ee;
+            --cyan-100: #cffafe;
+            
+            --emerald-600: #059669;
+            --emerald-500: #10b981;
+            --emerald-400: #34d399;
+            --emerald-100: #d1fae5;
+            
+            /* Neutral System */
+            --gray-950: #030712;
+            --gray-900: #111827;
+            --gray-800: #1f2937;
+            --gray-700: #374151;
+            --gray-600: #4b5563;
+            --gray-500: #6b7280;
+            --gray-400: #9ca3af;
+            --gray-300: #d1d5db;
+            --gray-200: #e5e7eb;
+            --gray-100: #f3f4f6;
+            --gray-50: #f9fafb;
+            
+            /* Semantic Colors */
+            --bg-primary: #ffffff;
+            --bg-secondary: var(--gray-50);
+            --text-primary: var(--gray-900);
+            --text-secondary: var(--gray-600);
+            --text-tertiary: var(--gray-500);
+            --border-primary: var(--gray-200);
+            --border-secondary: var(--gray-100);
+            
+            /* Spacing & Layout */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --space-10: 2.5rem;
+            --space-12: 3rem;
+            --space-16: 4rem;
+            
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            
+            /* Animation */
+            --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms;
+            --duration-normal: 250ms;
+            --duration-slow: 350ms;
         }
 
         * {
@@ -41,15 +113,17 @@
         }
 
         body {
-            font-family: 'Space Mono', monospace;
-            background: var(--bg-gradient);
-            color: var(--text-dark);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
             min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* FLOATING PIXEL DECORATIONS */
+        /* Ambient Background */
         body::before {
             content: '';
             position: fixed;
@@ -57,236 +131,221 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: 
-                radial-gradient(circle at 10% 20%, var(--pixel-pink) 0%, transparent 50%),
-                radial-gradient(circle at 90% 80%, var(--pixel-yellow) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, var(--pixel-mint) 0%, transparent 50%);
-            opacity: 0.1;
-            animation: float-bg 20s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 1;
+            background: 
+                radial-gradient(600px circle at 20% 30%, var(--primary-100), transparent),
+                radial-gradient(800px circle at 80% 70%, var(--success-100), transparent),
+                radial-gradient(400px circle at 60% 50%, var(--warning-100), transparent);
+            opacity: 0.4;
+            z-index: -1;
+            animation: ambient-drift 30s ease-in-out infinite;
         }
 
-        @keyframes float-bg {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(-10px) rotate(1deg); }
-            66% { transform: translateY(10px) rotate(-1deg); }
+        @keyframes ambient-drift {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-20px, -10px) scale(1.05); }
+            66% { transform: translate(10px, 20px) scale(0.95); }
         }
 
         .app {
-            position: relative;
-            z-index: 2;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
-        /* ISOMETRIC HEADER */
+        /* Professional Header */
         .header {
-            padding: 3rem 2rem 2rem;
-            text-align: center;
-            position: relative;
-            background: linear-gradient(135deg, var(--pixel-mint), var(--pixel-lavender));
-            border-bottom: 4px solid var(--text-dark);
-            box-shadow: 
-                0 8px 0 var(--shadow-dark),
-                0 12px 20px var(--shadow-dark);
-            transform: perspective(1000px) rotateX(5deg);
-            margin-bottom: 2rem;
+            padding: var(--space-8) var(--space-6);
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-primary);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.95);
         }
 
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -8px;
-            left: 8px;
-            width: 100%;
-            height: 100%;
-            background: var(--shadow-dark);
-            z-index: -1;
-            border-bottom: 4px solid var(--text-dark);
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: var(--space-4);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
         }
 
         h1 {
-            font-size: clamp(3rem, 8vw, 5rem);
+            font-size: 2rem;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-dark);
-            text-shadow: 
-                2px 2px 0 var(--pixel-yellow),
-                4px 4px 0 var(--pixel-pink),
-                6px 6px 0 var(--shadow-dark);
-            margin-bottom: 0.5rem;
-            animation: pixel-bounce 3s ease-in-out infinite;
+            background: linear-gradient(135deg, var(--primary-600), var(--purple-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
-        @keyframes pixel-bounce {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
+        .week-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            background: var(--primary-100);
+            color: var(--primary-600);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
         }
 
-        .week-info {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--text-medium);
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            background: var(--pixel-yellow);
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            border: 3px solid var(--text-dark);
-            box-shadow: 4px 4px 0 var(--shadow-dark);
-            transform: rotate(-2deg);
+        .week-badge::before {
+            content: '📅';
+            font-size: 1rem;
         }
 
-        /* MAIN CONTENT */
+        /* Main Content */
         .container {
             flex: 1;
-            padding: 0 2rem 2rem;
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
+            padding: var(--space-8) var(--space-6);
             width: 100%;
         }
 
         .goals-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 3rem;
-            margin-bottom: 3rem;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: var(--space-6);
+            margin-bottom: var(--space-8);
         }
 
-        /* ISOMETRIC GOAL CARDS */
+        /* Sophisticated Goal Cards */
         .goal-card {
-            position: relative;
-            background: white;
-            border: 4px solid var(--text-dark);
-            box-shadow: 
-                8px 8px 0 var(--shadow-dark),
-                12px 12px 20px rgba(0, 0, 0, 0.2);
-            transform: perspective(1000px) rotateY(-5deg) rotateX(5deg);
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
             overflow: hidden;
-        }
-
-        .goal-card:nth-child(1) {
-            background: var(--pixel-blue);
-            transform: perspective(1000px) rotateY(3deg) rotateX(5deg);
-        }
-        .goal-card:nth-child(2) {
-            background: var(--pixel-pink);
-            transform: perspective(1000px) rotateY(-3deg) rotateX(5deg);
-        }
-        .goal-card:nth-child(3) {
-            background: var(--pixel-yellow);
-            transform: perspective(1000px) rotateY(2deg) rotateX(5deg);
-        }
-        .goal-card:nth-child(4) {
-            background: var(--pixel-purple);
-            transform: perspective(1000px) rotateY(-2deg) rotateX(5deg);
+            position: relative;
+            transition: all var(--duration-normal) var(--ease-smooth);
+            box-shadow: 
+                0 1px 3px rgba(0, 0, 0, 0.1),
+                0 1px 2px rgba(0, 0, 0, 0.06);
         }
 
         .goal-card:hover {
-            transform: perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(-10px);
+            transform: translateY(-2px);
             box-shadow: 
-                12px 12px 0 var(--shadow-dark),
-                16px 16px 30px rgba(0, 0, 0, 0.3);
+                0 10px 25px rgba(0, 0, 0, 0.1),
+                0 4px 8px rgba(0, 0, 0, 0.06);
+            border-color: var(--border-secondary);
+        }
+
+        /* Color-coded borders */
+        .goal-card:nth-child(1)::before {
+            background: linear-gradient(135deg, var(--primary-500), var(--primary-400));
+        }
+        .goal-card:nth-child(2)::before {
+            background: linear-gradient(135deg, var(--success-500), var(--emerald-400));
+        }
+        .goal-card:nth-child(3)::before {
+            background: linear-gradient(135deg, var(--warning-500), var(--warning-400));
+        }
+        .goal-card:nth-child(4)::before {
+            background: linear-gradient(135deg, var(--purple-500), var(--pink-500));
         }
 
         .goal-card::before {
             content: '';
             position: absolute;
-            top: -4px;
-            right: 4px;
-            width: 100%;
-            height: 100%;
-            background: var(--shadow-dark);
-            z-index: -1;
-            border: 4px solid var(--text-dark);
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            transition: opacity var(--duration-fast) var(--ease-smooth);
+            opacity: 0.6;
+        }
+
+        .goal-card:hover::before {
+            opacity: 1;
         }
 
         .goal-header {
-            padding: 2rem;
-            background: white;
-            border-bottom: 4px solid var(--text-dark);
-            position: relative;
+            padding: var(--space-6);
+            border-bottom: 1px solid var(--border-secondary);
         }
 
         .goal-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-dark);
-            margin-bottom: 1.5rem;
-            text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.5);
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-4);
         }
 
-        /* CHUNKY PROGRESS BARS */
+        /* Modern Progress Bars */
         .progress-wrapper {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: var(--space-3);
+        }
+
+        .progress-container {
+            flex: 1;
+            position: relative;
         }
 
         .progress-bar {
-            flex: 1;
-            height: 20px;
-            background: var(--text-light);
-            border: 3px solid var(--text-dark);
-            position: relative;
+            width: 100%;
+            height: 6px;
+            background: var(--gray-200);
+            border-radius: var(--radius-sm);
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            background: var(--pixel-mint);
-            border-right: 3px solid var(--text-dark);
-            transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: var(--radius-sm);
+            transition: all var(--duration-slow) var(--ease-spring);
             position: relative;
         }
 
-        .progress-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                90deg,
-                transparent,
-                transparent 8px,
-                rgba(255, 255, 255, 0.3) 8px,
-                rgba(255, 255, 255, 0.3) 16px
-            );
+        .goal-card:nth-child(1) .progress-fill {
+            background: linear-gradient(90deg, var(--primary-500), var(--primary-400));
+        }
+        .goal-card:nth-child(2) .progress-fill {
+            background: linear-gradient(90deg, var(--success-500), var(--emerald-400));
+        }
+        .goal-card:nth-child(3) .progress-fill {
+            background: linear-gradient(90deg, var(--warning-500), var(--warning-400));
+        }
+        .goal-card:nth-child(4) .progress-fill {
+            background: linear-gradient(90deg, var(--purple-500), var(--pink-500));
         }
 
         .progress-text {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text-dark);
-            background: white;
-            padding: 0.25rem 0.5rem;
-            border: 2px solid var(--text-dark);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
             white-space: nowrap;
         }
 
-        /* PIXEL ITEMS */
+        /* Refined Goal Items */
         .goal-items {
             list-style: none;
-            background: white;
         }
 
         .goal-item {
             display: flex;
             align-items: center;
-            padding: 1.5rem 2rem;
-            border-bottom: 3px solid var(--text-dark);
+            padding: var(--space-4) var(--space-6);
+            border-bottom: 1px solid var(--border-secondary);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all var(--duration-fast) var(--ease-smooth);
             position: relative;
-            background: white;
         }
 
         .goal-item:last-child {
@@ -294,247 +353,263 @@
         }
 
         .goal-item:hover {
-            background: rgba(255, 255, 255, 0.8);
-            transform: translateX(8px);
+            background: var(--gray-50);
         }
 
         .goal-item:active {
-            transform: scale(0.98) translateX(8px);
+            transform: scale(0.995);
+            background: var(--gray-100);
         }
 
-        /* CHUNKY CHECKBOXES */
+        /* Professional Checkboxes */
         .checkbox {
-            width: 32px;
-            height: 32px;
-            background: var(--text-light);
-            border: 4px solid var(--text-dark);
-            margin-right: 1.5rem;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--gray-300);
+            border-radius: var(--radius-sm);
+            margin-right: var(--space-4);
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--duration-normal) var(--ease-spring);
             position: relative;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
         }
 
         .checkbox::after {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 16px;
-            height: 16px;
-            background: var(--text-dark);
+            width: 10px;
+            height: 10px;
+            transition: all var(--duration-fast) var(--ease-smooth);
             opacity: 0;
-            transition: all 0.2s ease;
+            transform: scale(0.5);
         }
 
         .checkbox.completed {
-            background: var(--pixel-mint);
-            transform: rotate(5deg) scale(1.1);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+            background: var(--success-500);
+            border-color: var(--success-500);
+            transform: scale(1.05);
         }
 
         .checkbox.completed::after {
-            opacity: 1;
-            background: var(--text-dark);
+            background: var(--bg-primary);
             clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+            opacity: 1;
+            transform: scale(1);
         }
 
         .checkbox.invalid {
-            background: var(--pixel-pink);
-            transform: rotate(-5deg) scale(1.1);
-            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+            background: var(--error-500);
+            border-color: var(--error-500);
+            transform: scale(1.05);
         }
 
         .checkbox.invalid::after {
+            background: var(--bg-primary);
+            border-radius: 1px;
+            width: 8px;
+            height: 2px;
             opacity: 1;
-            background: var(--text-dark);
-            clip-path: polygon(20% 0%, 0% 20%, 30% 50%, 0% 80%, 20% 100%, 50% 70%, 80% 100%, 100% 80%, 70% 50%, 100% 20%, 80% 0%, 50% 30%);
+            transform: scale(1);
         }
 
         .goal-item-text {
             flex: 1;
-            font-size: 1.1rem;
+            font-size: 0.9375rem;
             font-weight: 400;
-            color: var(--text-dark);
-            line-height: 1.4;
+            color: var(--text-primary);
+            transition: color var(--duration-fast) var(--ease-smooth);
         }
 
         .goal-item.completed .goal-item-text {
-            color: var(--text-medium);
-            text-decoration: line-through;
-            text-decoration-color: var(--pixel-mint);
-            text-decoration-thickness: 3px;
+            color: var(--text-secondary);
         }
 
         .goal-item.invalid .goal-item-text {
-            color: var(--text-light);
+            color: var(--text-tertiary);
             text-decoration: line-through;
-            text-decoration-color: var(--pixel-pink);
-            text-decoration-thickness: 3px;
+            text-decoration-color: var(--error-400);
         }
 
-        /* PIXEL STATUS BADGES */
+        /* Elegant Status Indicators */
         .status-indicator {
-            font-size: 0.8rem;
-            font-weight: 700;
-            padding: 0.5rem 1rem;
-            border: 3px solid var(--text-dark);
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            background: white;
+            letter-spacing: 0.025em;
             opacity: 0;
-            transform: translateX(20px) rotate(5deg);
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+            transform: translateX(8px);
+            transition: all var(--duration-normal) var(--ease-spring);
         }
 
         .goal-item.completed .status-indicator {
-            background: var(--pixel-mint);
-            color: var(--text-dark);
+            background: var(--success-100);
+            color: var(--success-600);
             opacity: 1;
-            transform: translateX(0) rotate(0deg);
+            transform: translateX(0);
         }
 
         .goal-item.invalid .status-indicator {
-            background: var(--pixel-pink);
-            color: var(--text-dark);
+            background: var(--error-100);
+            color: var(--error-600);
             opacity: 1;
-            transform: translateX(0) rotate(0deg);
+            transform: translateX(0);
         }
 
-        /* LOADING STATE */
+        /* Professional Loading State */
         .loading {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 50vh;
-            gap: 2rem;
-        }
-
-        .loading-text {
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: var(--text-dark);
-            background: var(--pixel-yellow);
-            padding: 1rem 2rem;
-            border: 4px solid var(--text-dark);
-            box-shadow: 6px 6px 0 var(--shadow-dark);
-            animation: loading-bounce 2s ease-in-out infinite;
-        }
-
-        @keyframes loading-bounce {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-10px) rotate(2deg); }
+            min-height: 400px;
+            gap: var(--space-6);
+            color: var(--text-secondary);
         }
 
         .loading-spinner {
-            width: 80px;
-            height: 80px;
-            background: var(--pixel-blue);
-            border: 4px solid var(--text-dark);
-            animation: pixel-spin 2s linear infinite;
-            box-shadow: 8px 8px 0 var(--shadow-dark);
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--gray-200);
+            border-top: 2px solid var(--primary-500);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
-        @keyframes pixel-spin {
+        @keyframes spin {
             0% { transform: rotate(0deg); }
-            25% { transform: rotate(90deg); background: var(--pixel-pink); }
-            50% { transform: rotate(180deg); background: var(--pixel-yellow); }
-            75% { transform: rotate(270deg); background: var(--pixel-purple); }
-            100% { transform: rotate(360deg); background: var(--pixel-blue); }
+            100% { transform: rotate(360deg); }
         }
 
-        /* CHUNKY FOOTER */
+        .loading-text {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        /* Refined Footer */
         .footer {
-            background: white;
-            border-top: 4px solid var(--text-dark);
-            box-shadow: 0 -8px 0 var(--shadow-dark);
-            padding: 2rem;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-primary);
+            padding: var(--space-6);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
             flex-wrap: wrap;
-            gap: 1rem;
-            margin-top: 2rem;
+            gap: var(--space-4);
         }
 
         .update-info {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .update-info::before {
+            content: '💡';
             font-size: 1rem;
-            font-weight: 700;
-            color: var(--text-dark);
-            background: var(--pixel-lavender);
-            padding: 0.5rem 1rem;
-            border: 3px solid var(--text-dark);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
         }
 
         .sync-status {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: var(--text-dark);
-            background: var(--pixel-mint);
-            padding: 0.5rem 1rem;
-            border: 3px solid var(--text-dark);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: var(--space-2);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
         }
 
-        .sync-status::before {
-            content: '●';
-            width: 12px;
-            height: 12px;
-            background: var(--pixel-yellow);
-            border: 2px solid var(--text-dark);
-            border-radius: 0;
-            animation: pixel-pulse 2s infinite;
+        .sync-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-400);
+            animation: pulse-gentle 2s infinite;
         }
 
-        @keyframes pixel-pulse {
-            0%, 100% { background: var(--pixel-yellow); }
-            50% { background: var(--pixel-orange); }
+        .sync-status.syncing .sync-indicator {
+            background: var(--warning-400);
+        }
+
+        .sync-status.error .sync-indicator {
+            background: var(--error-400);
+        }
+
+        @keyframes pulse-gentle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .signature {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--text-dark);
-            background: var(--pixel-peach);
-            padding: 0.5rem 1rem;
-            border: 3px solid var(--text-dark);
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            transform: rotate(-1deg);
-            box-shadow: 4px 4px 0 var(--shadow-dark);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
         }
 
+        .signature::before {
+            content: '🔮';
+            font-size: 1rem;
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .header { 
-                padding: 2rem 1rem; 
-                transform: perspective(1000px) rotateX(2deg);
+            .header {
+                padding: var(--space-6) var(--space-4);
             }
-            h1 { font-size: 2.5rem; }
-            .container { padding: 0 1rem 1rem; }
-            .goals-grid { 
-                grid-template-columns: 1fr; 
-                gap: 2rem;
+            
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
             }
-            .goal-card { 
-                transform: perspective(1000px) rotateY(0deg) rotateX(3deg);
+            
+            .container {
+                padding: var(--space-6) var(--space-4);
             }
-            .goal-header { padding: 1.5rem; }
-            .goal-item { padding: 1rem 1.5rem; }
-            .footer { 
-                flex-direction: column; 
-                text-align: center;
-                gap: 1rem;
+            
+            .goals-grid {
+                grid-template-columns: 1fr;
+                gap: var(--space-5);
+            }
+            
+            .goal-header {
+                padding: var(--space-5);
+            }
+            
+            .goal-item {
+                padding: var(--space-3) var(--space-5);
+            }
+            
+            .footer-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        /* Micro-interactions */
+        @media (prefers-reduced-motion: no-preference) {
+            .goal-card {
+                transition: all var(--duration-normal) var(--ease-spring);
+            }
+            
+            .checkbox:hover {
+                transform: scale(1.1);
+                border-color: var(--gray-400);
+            }
+            
+            .goal-item:hover .checkbox {
+                border-color: var(--primary-400);
             }
         }
     </style>
@@ -542,14 +617,18 @@
 <body>
     <div class="app">
         <div class="header">
-            <h1>Weekly Goals</h1>
-            <div class="week-info" id="weekHeader">Feb 10—16, 2026</div>
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>Weekly Goals</h1>
+                    <div class="week-badge" id="weekHeader">Feb 10–16, 2026</div>
+                </div>
+            </div>
         </div>
 
         <div class="container">
             <div id="loadingState" class="loading">
                 <div class="loading-spinner"></div>
-                <div class="loading-text">Loading Goals...</div>
+                <div class="loading-text">Loading your goals...</div>
             </div>
 
             <div id="goalsContainer" class="goals-grid" style="display: none;">
@@ -558,9 +637,14 @@
         </div>
 
         <div class="footer">
-            <div class="update-info">Tap to Cycle</div>
-            <div class="sync-status" id="syncStatus">Synced</div>
-            <div class="signature">Amber</div>
+            <div class="footer-content">
+                <div class="update-info">Click items to cycle through states</div>
+                <div class="sync-status" id="syncStatus">
+                    <div class="sync-indicator"></div>
+                    <span>Synced</span>
+                </div>
+                <div class="signature">Amber</div>
+            </div>
         </div>
     </div>
 
@@ -637,14 +721,15 @@
 
         function updateSyncStatus(message, type) {
             const status = document.getElementById('syncStatus');
-            status.textContent = message;
+            const span = status.querySelector('span');
+            span.textContent = message;
             status.className = `sync-status ${type}`;
             
             if (type === 'synced') {
                 setTimeout(() => {
-                    status.textContent = 'Synced';
+                    span.textContent = 'Synced';
                     status.className = 'sync-status';
-                }, 1000);
+                }, 1500);
             }
         }
 
@@ -708,8 +793,10 @@
                     <div class="goal-header">
                         <div class="goal-title">${goal.title}</div>
                         <div class="progress-wrapper">
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="${goalKey}Progress" style="width: 0%"></div>
+                            <div class="progress-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="${goalKey}Progress" style="width: 0%"></div>
+                                </div>
                             </div>
                             <div class="progress-text" id="${goalKey}Text">0/${goal.items.length}</div>
                         </div>
