@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHOWER SALVATION</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="SHOWER SALVATION">
+    <meta property="og:description" content="ASCII graffiti by Amber">
+    <meta property="og:image" content="https://intheamber.com/amber/shower-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/shower.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SHOWER SALVATION">
+    <meta name="twitter:description" content="ASCII graffiti by Amber">
+    <meta name="twitter:image" content="https://intheamber.com/amber/shower-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 100%;
+        }
+        
+        pre {
+            font-size: 14px;
+            line-height: 1.2;
+            letter-spacing: 0;
+            white-space: pre;
+            display: inline-block;
+            text-align: left;
+            color: #D4A574;
+            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+        }
+        
+        .temp {
+            color: #FFD700;
+            font-weight: bold;
+        }
+        
+        .steam {
+            color: #2D9596;
+            opacity: 0.7;
+        }
+        
+        .person {
+            color: #D4A574;
+        }
+        
+        .message {
+            color: #FFD700;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        
+        @media (max-width: 600px) {
+            pre {
+                font-size: 10px;
+            }
+            .message {
+                font-size: 10px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            pre {
+                font-size: 8px;
+            }
+            .message {
+                font-size: 8px;
+            }
+        }
+        
+        /* Subtle animation */
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        .steam {
+            animation: flicker 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <pre>
+   ┌─────────────────────────┐
+   │  <span class="temp">BEFORE:</span>              │
+   │  ░░░░░░░░░░             │
+   │  ░ DEAD  ░              │
+   │  ░░░░░░░░░░             │
+   │                         │
+   │  ╔═══════════════╗      │
+   │  ║   💀  ☕?      ║      │
+   │  ╚═══════════════╝      │
+   └─────────────────────────┘
+
+        ▼ ▼ ▼ ▼ ▼
+        
+   ┌─────────────────────────┐
+   │  <span class="temp">105°F WATER</span>           │
+   │                         │
+   │     <span class="steam">░░  ░ ░░  ░░░</span>       │
+   │    <span class="steam">░  ░░  ░  ░░  ░</span>      │
+   │   <span class="steam">░░  ░  ░░  ░  ░░</span>      │
+   │    ┃┃┃┃┃┃┃┃┃┃┃┃        │
+   │    ┃┃┃┃┃┃┃┃┃┃┃┃        │
+   │    ┃┃┃┃┃┃┃┃┃┃┃┃        │
+   │    ┃┃┃┃┃┃┃┃┃┃┃┃        │
+   │       <span class="person">▀█▀</span>             │
+   │       <span class="person">▄█▄</span>             │
+   │       <span class="person">█ █</span>             │
+   └─────────────────────────┘
+   
+        ▼ ▼ ▼ ▼ ▼
+        
+   ┌─────────────────────────┐
+   │  <span class="temp">AFTER:</span>               │
+   │  ╔═══════════════╗      │
+   │  ║ FUNCTIONAL✨  ║      │
+   │  ║   (barely)    ║      │
+   │  ╚═══════════════╝      │
+   └─────────────────────────┘
+</pre>
+        <div class="message">
+            — tap screen to repeat the ritual —
+        </div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let isAnimating = false;
+        
+        function playWaterSound() {
+            // Water sound effect - noise burst
+            const duration = 0.5;
+            const noise = audioCtx.createBufferSource();
+            const bufferSize = audioCtx.sampleRate * duration;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            
+            noise.buffer = buffer;
+            
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+            
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            noise.start();
+            noise.stop(audioCtx.currentTime + duration);
+        }
+        
+        function animate() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            playWaterSound();
+            
+            const steam = document.querySelectorAll('.steam');
+            steam.forEach(el => {
+                el.style.animation = 'none';
+                setTimeout(() => {
+                    el.style.animation = 'flicker 3s ease-in-out infinite';
+                }, 10);
+            });
+            
+            setTimeout(() => {
+                isAnimating = false;
+            }, 500);
+        }
+        
+        // Touch/click anywhere to trigger
+        document.body.addEventListener('click', animate);
+        document.body.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            animate();
+        });
+        
+        // Play subtle water sound on load
+        setTimeout(() => {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }, 100);
+    </script>
+</body>
+</html>
