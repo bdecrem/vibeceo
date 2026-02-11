@@ -221,6 +221,7 @@ export default function SwoopCiGame() {
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
+  const [gameCompleted, setGameCompleted] = useState(false);
 
   const { user } = usePixelpitSocial(socialLoaded);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -229,12 +230,16 @@ export default function SwoopCiGame() {
     ? `${window.location.origin}/pixelpit/arcade/swoop-ci`
     : 'https://pixelpit.gg/pixelpit/arcade/swoop-ci';
 
+  const GAME_DURATION = 60; // 60 second game
+
   const gameRef = useRef({
     running: false,
     distance: 0,
     score: 0,
     combo: 0,
     loopsPassed: 0,
+    timeRemaining: GAME_DURATION,
+    comboPopup: null as { text: string; y: number; alpha: number } | null,
     bird: {
       x: 100,
       y: 300,
@@ -337,6 +342,8 @@ export default function SwoopCiGame() {
     game.combo = 0;
     game.loopsPassed = 0;
     game.zone = 0;
+    game.timeRemaining = GAME_DURATION;
+    game.comboPopup = null;
 
     game.bird = {
       x: 100,
@@ -487,9 +494,19 @@ export default function SwoopCiGame() {
             // Perfect!
             loop.passed = true;
             game.combo++;
-            game.score += getFibonacci(game.combo - 1) * 10;
+            const points = getFibonacci(game.combo - 1) * 10;
+            game.score += points;
             game.loopsPassed++;
             playPerfectLoop();
+
+            // Show combo popup
+            if (game.combo >= 2) {
+              game.comboPopup = {
+                text: `+${points} 🔥${game.combo}x`,
+                y: 0,
+                alpha: 1,
+              };
+            }
 
             // Sparkle particles
             for (let i = 0; i < 8; i++) {
@@ -519,9 +536,17 @@ export default function SwoopCiGame() {
       // Remove old loops
       game.loops = game.loops.filter(l => l.x > game.camera.x - 100);
 
-      // Bounds check
+      // Timer countdown
+      game.timeRemaining -= dt;
+      if (game.timeRemaining <= 0) {
+        game.timeRemaining = 0;
+        endGame(true); // Time's up - successful completion
+        return;
+      }
+
+      // Bounds check (crash)
       if (bird.y < -50 || bird.y > canvasSize.h + 50) {
-        endGame();
+        endGame(false); // Crashed
         return;
       }
 
@@ -533,6 +558,15 @@ export default function SwoopCiGame() {
         return p.life > 0;
       });
 
+      // Update combo popup
+      if (game.comboPopup) {
+        game.comboPopup.y -= dt * 60;
+        game.comboPopup.alpha -= dt * 0.8;
+        if (game.comboPopup.alpha <= 0) {
+          game.comboPopup = null;
+        }
+      }
+
       // Update clouds (parallax)
       for (const cloud of game.clouds) {
         if (cloud.x < game.camera.x - cloud.size * 2) {
@@ -542,13 +576,14 @@ export default function SwoopCiGame() {
       }
     };
 
-    const endGame = () => {
+    const endGame = (completed: boolean = false) => {
       const game = gameRef.current;
       game.running = false;
       stopMusic();
-      playMiss();
+      if (!completed) playMiss();
 
       setFinalScore(game.score);
+      setGameCompleted(completed);
       setSubmittedEntryId(null);
       setShowLeaderboard(false);
       setGameState('end');
@@ -708,35 +743,87 @@ export default function SwoopCiGame() {
       // Bird
       drawBird(game.bird, game.camera.x, game.zone === 3, game.combo);
 
-      // UI
-      ctx.font = 'bold 48px ui-rounded, system-ui, sans-serif';
+      // === PRETTY HUD ===
+      const isNight = game.zone === 3;
+      const hudBg = isNight ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.85)';
+      const hudText = isNight ? '#f0f9ff' : '#18181b';
+      const hudMuted = isNight ? '#94a3b8' : '#64748b';
+      const hudAccent = '#facc15';
+      
+      // Top HUD bar background
+      ctx.fillStyle = hudBg;
+      ctx.beginPath();
+      ctx.roundRect(10, 10, canvasSize.w - 20, 70, 16);
+      ctx.fill();
+      
+      // Score (left side)
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 14px ui-rounded, system-ui, sans-serif';
+      ctx.fillStyle = hudMuted;
+      ctx.fillText('SCORE', 24, 32);
+      ctx.font = 'bold 32px ui-rounded, system-ui, sans-serif';
+      ctx.fillStyle = hudText;
+      ctx.fillText(game.score.toString(), 24, 64);
+      
+      // Timer (center) - with urgency coloring
+      const timeLeft = Math.ceil(game.timeRemaining);
+      const timerColor = timeLeft <= 10 ? '#ef4444' : timeLeft <= 20 ? '#f97316' : hudAccent;
       ctx.textAlign = 'center';
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = '#ffffff';
-      ctx.strokeText(game.score.toString(), canvasSize.w / 2, 60);
-      ctx.fillStyle = '#18181b';
-      ctx.fillText(game.score.toString(), canvasSize.w / 2, 60);
-      ctx.lineWidth = 1;
-
-      // Combo
+      ctx.font = 'bold 14px ui-rounded, system-ui, sans-serif';
+      ctx.fillStyle = hudMuted;
+      ctx.fillText('TIME', canvasSize.w / 2, 32);
+      ctx.font = 'bold 36px ui-rounded, system-ui, sans-serif';
+      ctx.fillStyle = timerColor;
+      // Pulse effect when low time
+      if (timeLeft <= 10 && Math.floor(game.timeRemaining * 4) % 2 === 0) {
+        ctx.shadowColor = timerColor;
+        ctx.shadowBlur = 10;
+      }
+      ctx.fillText(timeLeft.toString(), canvasSize.w / 2, 64);
+      ctx.shadowBlur = 0;
+      
+      // Combo multiplier (right side)
+      ctx.textAlign = 'right';
+      ctx.font = 'bold 14px ui-rounded, system-ui, sans-serif';
+      ctx.fillStyle = hudMuted;
+      ctx.fillText('COMBO', canvasSize.w - 24, 32);
+      ctx.font = 'bold 32px ui-rounded, system-ui, sans-serif';
       if (game.combo >= 2) {
-        ctx.font = 'bold 20px ui-rounded, system-ui, sans-serif';
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#ffffff';
-        ctx.strokeText(`🔥 ${game.combo}x COMBO`, canvasSize.w / 2, 90);
         ctx.fillStyle = '#f97316';
-        ctx.fillText(`🔥 ${game.combo}x COMBO`, canvasSize.w / 2, 90);
+        ctx.fillText(`${game.combo}x`, canvasSize.w - 24, 64);
+      } else {
+        ctx.fillStyle = hudText;
+        ctx.fillText('—', canvasSize.w - 24, 64);
+      }
+      
+      // Combo popup (floating up from center)
+      if (game.comboPopup) {
+        ctx.globalAlpha = game.comboPopup.alpha;
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 28px ui-rounded, system-ui, sans-serif';
+        ctx.fillStyle = '#f97316';
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        ctx.lineWidth = 4;
+        ctx.strokeText(game.comboPopup.text, canvasSize.w / 2, 130 + game.comboPopup.y);
+        ctx.fillText(game.comboPopup.text, canvasSize.w / 2, 130 + game.comboPopup.y);
+        ctx.globalAlpha = 1;
         ctx.lineWidth = 1;
       }
 
-      // Zone name
-      ctx.font = '14px ui-rounded, system-ui, sans-serif';
-      ctx.fillStyle = '#64748b';
-      ctx.fillText(zone.name, canvasSize.w / 2, canvasSize.h - 30);
-
-      // Distance
+      // Bottom bar - zone name and distance
+      ctx.fillStyle = hudBg;
+      ctx.beginPath();
+      ctx.roundRect(10, canvasSize.h - 50, canvasSize.w - 20, 40, 12);
+      ctx.fill();
+      
       ctx.textAlign = 'left';
-      ctx.fillText(`${Math.floor(game.distance)}m`, 20, canvasSize.h - 30);
+      ctx.font = '14px ui-rounded, system-ui, sans-serif';
+      ctx.fillStyle = hudMuted;
+      ctx.fillText(`${Math.floor(game.distance)}m`, 24, canvasSize.h - 24);
+      
+      ctx.textAlign = 'right';
+      ctx.fillStyle = hudText;
+      ctx.fillText(zone.name, canvasSize.w - 24, canvasSize.h - 24);
     };
 
     const gameLoop = (timestamp: number) => {
@@ -949,17 +1036,20 @@ export default function SwoopCiGame() {
             overflowY: 'auto',
             padding: 20,
           }}>
-            <div style={{ fontSize: 60, marginBottom: 10 }}>🐦</div>
+            <div style={{ fontSize: 60, marginBottom: 10 }}>{gameCompleted ? '🏆' : '🐦'}</div>
             <h1 style={{
-              color: '#f0f9ff',
+              color: gameCompleted ? '#facc15' : '#f0f9ff',
               fontSize: 36,
               marginBottom: 5,
               fontWeight: 900,
             }}>
-              CRASH!
+              {gameCompleted ? 'TIME!' : 'CRASH!'}
             </h1>
             <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 20 }}>
-              You flew {Math.floor(gameRef.current.distance)}m
+              {gameCompleted 
+                ? `You survived 60 seconds! ${Math.floor(gameRef.current.distance)}m flown`
+                : `You flew ${Math.floor(gameRef.current.distance)}m`
+              }
             </p>
 
             <div style={{
