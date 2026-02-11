@@ -295,18 +295,40 @@
       if (audioStarted) return;
       
       try {
-        // Initialize audio - must happen in user gesture for iOS
+        // iOS audio unlock trick: create context and play silent buffer FIRST
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const unlockCtx = new AudioContext();
+        
+        // Create and play a silent buffer to unlock audio on iOS
+        const buffer = unlockCtx.createBuffer(1, 1, 22050);
+        const source = unlockCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(unlockCtx.destination);
+        source.start(0);
+        
+        // Resume if suspended
+        if (unlockCtx.state === 'suspended') {
+          await unlockCtx.resume();
+        }
+        
+        // Close the unlock context, we'll use the 303's context
+        await unlockCtx.close();
+        
+        // Now initialize the 303 - audio should be unlocked
         bass = new TB303Controller();
         
-        // iOS requires explicit resume on user gesture
+        // Resume the 303's context too
         if (bass.engine.context.state === 'suspended') {
           await bass.engine.context.resume();
         }
         
-        // Double-check it's running
-        if (bass.engine.context.state !== 'running') {
-          console.warn('Audio context state:', bass.engine.context.state);
-        }
+        // Play a test note immediately to confirm audio works
+        const now = bass.engine.context.currentTime;
+        bass.engine.setCutoff(0.5);
+        bass.engine.setResonance(0.7);
+        bass.engine.triggerNote(now, 40, 0.1, false); // Quick E1 test tone
+        
+        console.log('Audio context state:', bass.engine.context.state);
         
         audioStarted = true;
         overlay.classList.add('hidden');
@@ -317,7 +339,7 @@
         setTimeout(() => spawnBassNote(width * 0.7, height * 0.6), 400);
       } catch (err) {
         console.error('Audio init error:', err);
-        alert('Audio failed to start. Try tapping again.');
+        alert('Audio failed: ' + err.message);
       }
     }
 
