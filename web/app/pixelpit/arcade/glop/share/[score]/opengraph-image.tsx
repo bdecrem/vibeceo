@@ -23,16 +23,16 @@ export default async function Image({ params }: { params: { score: string } }) {
           overflow: 'hidden',
         }}
       >
-        {/* Glow effect */}
+        {/* Glow effect - solid fallback */}
         <div
           style={{
             position: 'absolute',
             bottom: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
+            left: 300,
             width: 600,
-            height: 300,
-            background: 'radial-gradient(circle at center bottom, #a3e63530, transparent 70%)',
+            height: 150,
+            background: '#a3e63520',
+            borderRadius: '300px 300px 0 0',
           }}
         />
 

@@ -21,16 +21,16 @@ export default async function Image() {
           overflow: 'hidden',
         }}
       >
-        {/* Cauldron glow */}
+        {/* Cauldron glow - solid fallback */}
         <div
           style={{
             position: 'absolute',
             bottom: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
+            left: 200,
             width: 800,
-            height: 400,
-            background: 'radial-gradient(ellipse at center bottom, #a3e63540, transparent 60%)',
+            height: 200,
+            background: '#a3e63520',
+            borderRadius: '400px 400px 0 0',
           }}
         />
 
