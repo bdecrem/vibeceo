@@ -267,7 +267,7 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose, grou
                   color: colors.secondary,
                   fontSize: 14,
                 }}>
-                  {entry.score}
+                  {entry.score.toLocaleString()}
                 </span>
               </div>
             ))}
@@ -315,7 +315,7 @@ export function Leaderboard({ gameId, limit = 10, entryId, colors, onClose, grou
                     color: colors.secondary,
                     fontSize: 14,
                   }}>
-                    {displayPlayerEntry.score}
+                    {displayPlayerEntry.score.toLocaleString()}
                   </span>
                 </div>
               </>
