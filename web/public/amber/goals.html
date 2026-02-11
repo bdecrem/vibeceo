@@ -155,13 +155,10 @@
         /* Professional Header */
         .header {
             padding: var(--space-8) var(--space-6);
-            background: var(--bg-primary);
-            border-bottom: 1px solid var(--border-primary);
-            position: sticky;
-            top: 0;
+            background: transparent;
+            border-bottom: none;
+            position: relative;
             z-index: 50;
-            backdrop-filter: blur(12px);
-            background: rgba(255, 255, 255, 0.95);
         }
 
         .header-content {
@@ -1017,7 +1014,6 @@
                 root.style.setProperty('--border-secondary', 'rgba(148, 163, 184, 0.1)');
                 root.style.setProperty('--gray-50', 'rgba(51, 65, 85, 0.5)');
                 root.style.setProperty('--gray-100', 'rgba(71, 85, 105, 0.5)');
-                document.querySelector('.header').style.background = 'rgba(30, 27, 75, 0.95)';
                 document.querySelector('.footer').style.background = 'rgba(30, 27, 75, 0.95)';
             } else {
                 root.style.setProperty('--bg-primary', '#ffffff');
@@ -1029,7 +1025,6 @@
                 root.style.setProperty('--border-secondary', '#f3f4f6');
                 root.style.setProperty('--gray-50', '#f9fafb');
                 root.style.setProperty('--gray-100', '#f3f4f6');
-                document.querySelector('.header').style.background = 'rgba(255, 255, 255, 0.95)';
                 document.querySelector('.footer').style.background = '#ffffff';
             }
             
