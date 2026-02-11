@@ -761,10 +761,11 @@ export default function SwoopCiGame() {
         ctx.restore();
       };
 
-      // Shared HUD grid: all 3 items on the same baseline
+      // Shared HUD grid
       const hudBaseline = 50;
       const hudScoreSize = 48;  // SCORE - largest
       const hudSmallSize = 24;  // timer & combo - smaller
+      const hudSmallBaseline = hudBaseline - (hudScoreSize - hudSmallSize) / 2;  // vertically center smaller text
       const hudSecondaryY = 58;
       const hudPad = 20;
 
@@ -778,10 +779,10 @@ export default function SwoopCiGame() {
         ctx.save();
         ctx.shadowColor = '#ef4444';
         ctx.shadowBlur = 6 + pulse * 14;
-        drawOutlined(timeLeft.toString() + 's', hudPad, hudBaseline, timerColor, hudSmallSize, 'left', '900');
+        drawOutlined(timeLeft.toString() + 's', hudPad, hudSmallBaseline, timerColor, hudSmallSize, 'left', '900');
         ctx.restore();
       } else {
-        drawOutlined(timeLeft.toString() + 's', hudPad, hudBaseline, hudColor, hudSmallSize, 'left', '900');
+        drawOutlined(timeLeft.toString() + 's', hudPad, hudSmallBaseline, hudColor, hudSmallSize, 'left', '900');
       }
 
       // Depleting bar under timer (left side)
@@ -808,7 +809,7 @@ export default function SwoopCiGame() {
         ctx.save();
         ctx.shadowColor = hudColor;
         ctx.shadowBlur = 8 + Math.min(game.combo * 3, 20);
-        drawOutlined(comboStr, canvasSize.w - hudPad, hudBaseline, hudColor, hudSmallSize, 'right', '900');
+        drawOutlined(comboStr, canvasSize.w - hudPad, hudSmallBaseline, hudColor, hudSmallSize, 'right', '900');
         ctx.restore();
 
         // Streak dots
