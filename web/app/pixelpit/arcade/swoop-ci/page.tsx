@@ -1028,8 +1028,8 @@ export default function SwoopCiGame() {
               style={{
                 marginTop: 30,
                 background: 'transparent',
-                color: '#0e7490',
-                border: '2px solid #0e7490',
+                color: '#facc15',
+                border: '2px solid #facc15',
                 padding: '10px 24px',
                 fontSize: 14,
                 fontWeight: 600,
@@ -1043,53 +1043,16 @@ export default function SwoopCiGame() {
         )}
 
         {showLeaderboard && gameState !== 'playing' && (
-          <div
-            onClick={() => setShowLeaderboard(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(255,255,255,0.95)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 100,
-              padding: 20,
-            }}
-          >
-            <button
-              onClick={() => setShowLeaderboard(false)}
-              style={{
-                position: 'absolute',
-                top: 20,
-                left: 20,
-                background: '#f0f9ff',
-                color: '#18181b',
-                border: '2px solid #18181b',
-                padding: '10px 16px',
-                fontSize: 16,
-                fontWeight: 600,
-                cursor: 'pointer',
-                borderRadius: 12,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              ← Back
-            </button>
-            <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 400 }}>
-              <Leaderboard
-                gameId={GAME_ID}
-                limit={10}
-                entryId={submittedEntryId ?? undefined}
-                colors={LEADERBOARD_COLORS}
-                groupsEnabled={true}
-                gameUrl={GAME_URL}
-                socialLoaded={socialLoaded}
-              />
-            </div>
-          </div>
+          <Leaderboard
+            gameId={GAME_ID}
+            limit={10}
+            entryId={submittedEntryId ?? undefined}
+            colors={LEADERBOARD_COLORS}
+            onClose={() => setShowLeaderboard(false)}
+            groupsEnabled={true}
+            gameUrl={GAME_URL}
+            socialLoaded={socialLoaded}
+          />
         )}
 
         {gameState === 'playing' && (
@@ -1202,7 +1165,7 @@ export default function SwoopCiGame() {
                     borderRadius: 20,
                   }}
                 >
-                  share / groups
+                  Share / Groups
                 </button>
               ) : (
                 <ShareButtonContainer
