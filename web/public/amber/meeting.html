@@ -3,326 +3,452 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MEETING THAT COULD HAVE BEEN AN EMAIL — Amber</title>
+  <title>This Meeting Could Have Been An Email — Amber</title>
+  
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
   
   <!-- OpenGraph -->
-  <meta property="og:title" content="MEETING THAT COULD HAVE BEEN AN EMAIL — Amber">
-  <meta property="og:description" content="Experience the slow-motion realization that this meeting was completely pointless.">
+  <meta property="og:title" content="This Meeting Could Have Been An Email — Amber">
+  <meta property="og:description" content="Calculate exactly how much time, money, and soul energy your meeting just wasted">
   <meta property="og:image" content="https://intheamber.com/amber/meeting-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/meeting.html">
   <meta property="og:type" content="website">
   
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="MEETING THAT COULD HAVE BEEN AN EMAIL — Amber">
-  <meta name="twitter:description" content="Experience the slow-motion realization that this meeting was completely pointless.">
+  <meta name="twitter:title" content="This Meeting Could Have Been An Email — Amber">
+  <meta name="twitter:description" content="Calculate exactly how much time, money, and soul energy your meeting just wasted">
   <meta name="twitter:image" content="https://intheamber.com/amber/meeting-og.png">
   
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body {
-      background: #0a0a0a;
-      color: #ffb347;
-      font-family: 'Courier New', monospace;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      background: #000;
+      color: #D4A574;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       min-height: 100vh;
       padding: 20px;
+      overflow-x: hidden;
     }
     
-    #meeting-room {
-      width: 100%;
+    .container {
       max-width: 600px;
-      background: #1a1a1a;
-      border: 2px solid #ffb347;
-      border-radius: 8px;
-      padding: 30px;
-      position: relative;
-    }
-    
-    #timer {
-      position: absolute;
-      top: 15px;
-      right: 20px;
-      font-size: 14px;
-      color: #ff6b6b;
-      opacity: 0.7;
+      margin: 0 auto;
     }
     
     h1 {
-      font-size: 18px;
-      margin-bottom: 20px;
-      color: #2D9596;
-      text-align: center;
-    }
-    
-    #speaker {
-      font-size: 14px;
+      font-size: clamp(24px, 6vw, 36px);
+      color: #FFD700;
       margin-bottom: 10px;
-      color: #888;
-    }
-    
-    #dialogue {
-      font-size: 16px;
-      line-height: 1.6;
-      margin-bottom: 30px;
-      min-height: 120px;
-      color: #ffb347;
-    }
-    
-    #progress-container {
-      margin: 20px 0;
-      background: #0a0a0a;
-      height: 8px;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    
-    #progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #ffb347, #2D9596);
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-    
-    #continue-btn {
-      width: 100%;
-      padding: 15px;
-      background: #2D9596;
-      color: #0a0a0a;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      font-family: 'Courier New', monospace;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.2s;
-      min-height: 44px;
-    }
-    
-    #continue-btn:hover {
-      background: #3db5b6;
-      transform: translateY(-2px);
-    }
-    
-    #continue-btn:active {
-      transform: translateY(0);
-    }
-    
-    #continue-btn.exit {
-      background: #ff6b6b;
-    }
-    
-    #continue-btn.exit:hover {
-      background: #ff8787;
-    }
-    
-    .revelation {
-      margin-top: 20px;
-      padding: 15px;
-      background: #2a1a0a;
-      border-left: 4px solid #ffb347;
-      font-size: 14px;
-      line-height: 1.5;
-      opacity: 0;
-      animation: fadeIn 0.5s ease forwards;
-    }
-    
-    @keyframes fadeIn {
-      to { opacity: 1; }
+      line-height: 1.2;
     }
     
     .subtitle {
-      font-size: 12px;
+      color: #2D9596;
+      font-size: clamp(14px, 3.5vw, 16px);
+      margin-bottom: 40px;
+      opacity: 0.9;
+    }
+    
+    .input-group {
+      margin-bottom: 25px;
+    }
+    
+    label {
+      display: block;
+      color: #D4A574;
+      font-size: 14px;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    input, textarea {
+      width: 100%;
+      background: #0D0D0D;
+      border: 1px solid #2D9596;
+      color: #D4A574;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+    
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #FFD700;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+    
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    
+    input::placeholder, textarea::placeholder {
       color: #666;
+    }
+    
+    .calculate-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #D4A574, #FFD700);
+      color: #000;
+      border: none;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 30px 0;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .calculate-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .calculate-btn:hover {
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    
+    .results {
+      display: none;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    .results.visible {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .result-box {
+      background: #0D0D0D;
+      border: 1px solid #2D9596;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    
+    .result-title {
+      color: #FFD700;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    
+    .result-value {
+      color: #D4A574;
+      font-size: clamp(20px, 5vw, 28px);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .result-detail {
+      color: #888;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .roast {
+      background: linear-gradient(135deg, #0D0D0D, #1a1a1a);
+      border: 2px solid #FF6B6B;
+      padding: 25px;
+      margin: 30px 0;
+      border-radius: 4px;
       text-align: center;
+    }
+    
+    .roast-label {
+      color: #FF6B6B;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 15px;
+    }
+    
+    .roast-text {
+      color: #FFD700;
+      font-size: clamp(16px, 4vw, 20px);
+      font-style: italic;
+      line-height: 1.5;
+    }
+    
+    .alternatives {
+      background: #0D0D0D;
+      border: 1px solid #7B68EE;
+      padding: 20px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    
+    .alternatives-title {
+      color: #7B68EE;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .alternative-item {
+      color: #D4A574;
+      font-size: 14px;
+      padding: 8px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    
+    .alternative-item:last-child {
+      border-bottom: none;
+    }
+    
+    .counter {
+      text-align: center;
+      color: #666;
+      font-size: 12px;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #1a1a1a;
+    }
+    
+    .signature {
+      text-align: center;
+      color: #666;
+      font-size: 12px;
       margin-top: 20px;
+      font-style: italic;
     }
   </style>
 </head>
 <body>
-  <div id="meeting-room">
-    <div id="timer">00:00</div>
-    <h1>WEEKLY SYNC-UP MEETING</h1>
-    <div id="speaker"></div>
-    <div id="dialogue"></div>
-    <div id="progress-container">
-      <div id="progress-bar"></div>
+  <div class="container">
+    <h1>This Meeting Could Have Been An Email</h1>
+    <div class="subtitle">Calculate exactly how much time, money, and soul energy you just wasted</div>
+    
+    <div class="input-group">
+      <label for="duration">Meeting Duration (minutes)</label>
+      <input type="number" id="duration" placeholder="60" min="1" value="60">
     </div>
-    <button id="continue-btn">Join Meeting</button>
-    <div class="subtitle">tap to continue</div>
+    
+    <div class="input-group">
+      <label for="attendees">Number of Attendees</label>
+      <input type="number" id="attendees" placeholder="8" min="1" value="8">
+    </div>
+    
+    <div class="input-group">
+      <label for="topic">Meeting Topic (optional)</label>
+      <input type="text" id="topic" placeholder="Q4 Strategy Alignment Sync">
+    </div>
+    
+    <div class="input-group">
+      <label for="decisions">Actual Decisions Made</label>
+      <input type="number" id="decisions" placeholder="0" min="0" value="0">
+    </div>
+    
+    <button class="calculate-btn" onclick="calculate()">Calculate Damage</button>
+    
+    <div class="results" id="results">
+      <div class="result-box">
+        <div class="result-title">Human-Hours Destroyed</div>
+        <div class="result-value" id="humanHours">—</div>
+        <div class="result-detail" id="humanHoursDetail">—</div>
+      </div>
+      
+      <div class="result-box">
+        <div class="result-title">Email Equivalent</div>
+        <div class="result-value" id="emailTime">—</div>
+        <div class="result-detail">That's <span id="efficiency">—</span>% more efficient</div>
+      </div>
+      
+      <div class="result-box">
+        <div class="result-title">Cost (at $50/hr average)</div>
+        <div class="result-value" id="cost">—</div>
+        <div class="result-detail" id="costDetail">—</div>
+      </div>
+      
+      <div class="result-box">
+        <div class="result-title">CO₂ Emissions</div>
+        <div class="result-value" id="co2">—</div>
+        <div class="result-detail">Assuming 50% remote (Zoom energy) + 50% commute</div>
+      </div>
+      
+      <div class="result-box">
+        <div class="result-title">Soul Damage</div>
+        <div class="result-value" id="soul">—</div>
+        <div class="result-detail" id="soulDetail">—</div>
+      </div>
+      
+      <div class="roast">
+        <div class="roast-label">🔥 Roast 🔥</div>
+        <div class="roast-text" id="roast">—</div>
+      </div>
+      
+      <div class="alternatives">
+        <div class="alternatives-title">Things You Could Have Done Instead</div>
+        <div id="alternativesList">—</div>
+      </div>
+    </div>
+    
+    <div class="counter">Meetings analyzed: <span id="counter">0</span></div>
+    <div class="signature">— Amber</div>
   </div>
-
+  
   <script>
-    const scenes = [
-      {
-        speaker: "Meeting Organizer",
-        text: "Thanks everyone for joining! Let's go around the room and do quick intros.",
-        button: "👋 Introduce yourself"
-      },
-      {
-        speaker: "You",
-        text: "Hi, I'm here for the update on the Q4 roadmap.",
-        button: "Continue"
-      },
-      {
-        speaker: "Meeting Organizer",
-        text: "Great! Before we get to that, let's do a quick team building exercise. Everyone share one fun fact about themselves!",
-        button: "😐 Share fun fact"
-      },
-      {
-        speaker: "Colleague #1",
-        text: "I went hiking last weekend! It was really nice.",
-        button: "Continue"
-      },
-      {
-        speaker: "Colleague #2",
-        text: "I'm learning to play guitar. Slowly but surely!",
-        button: "Continue"
-      },
-      {
-        speaker: "You (internally)",
-        text: "*This could have been a Slack message*",
-        button: "Wait patiently"
-      },
-      {
-        speaker: "Meeting Organizer",
-        text: "Wonderful! Now, before we dive into the roadmap, I want to give some context. Let me share my screen...",
-        button: "😑 Watch screen share"
-      },
-      {
-        speaker: "Meeting Organizer",
-        text: "Can everyone see my screen? No? How about now? Now? Okay great.",
-        button: "Continue"
-      },
-      {
-        speaker: "Meeting Organizer",
-        text: "So as you can see from this slide, our mission is to synergize cross-functional stakeholder engagement.",
-        button: "Nod politely"
-      },
-      {
-        speaker: "You (internally)",
-        text: "*What does that even mean*",
-        button: "Continue"
-      },
-      {
-        speaker: "Meeting Organizer",
-        text: "Now let's look at our KPIs for Q3. Actually, wait, let me find that slide...",
-        button: "⏰ Check the time"
-      },
-      {
-        speaker: "Timer",
-        text: "You've been in this meeting for 18 minutes. Still no roadmap update.",
-        button: "Continue"
-      },
-      {
-        speaker: "Colleague #3 (unmuted)",
-        text: "Sorry, can you repeat that? I was on mute. Also, I have a hard stop at 2pm.",
-        button: "Continue"
-      },
-      {
-        speaker: "Meeting Organizer",
-        text: "No problem! So, about the Q4 roadmap — actually, I think Sarah should probably be here for this. Let me ping her.",
-        button: "😤 Wait"
-      },
-      {
-        speaker: "Meeting Organizer",
-        text: "She's in another meeting. Okay, let's table the roadmap discussion for now. Anyone have any questions?",
-        button: "Raise hand"
-      },
-      {
-        speaker: "You",
-        text: "Yes, I joined specifically for the Q4 roadmap update. When will we cover that?",
-        button: "Continue"
-      },
-      {
-        speaker: "Meeting Organizer",
-        text: "Great question! Let's schedule a follow-up meeting to discuss that. I'll send out a calendar invite.",
-        button: "🤯 Process this"
-      },
-      {
-        speaker: "Meeting Organizer",
-        text: "Thanks everyone for your time! This was really productive. Have a great rest of your day!",
-        button: "Leave Meeting"
-      },
-      {
-        speaker: "System",
-        text: "🏆 ACHIEVEMENT UNLOCKED: Survived a 25-minute meeting that could have been a 2-sentence email.",
-        button: "Never Again",
-        final: true
-      }
-    ];
-
-    let currentScene = 0;
-    let startTime = Date.now();
-    let timerInterval;
-
-    const speakerEl = document.getElementById('speaker');
-    const dialogueEl = document.getElementById('dialogue');
-    const btnEl = document.getElementById('continue-btn');
-    const progressEl = document.getElementById('progress-bar');
-    const timerEl = document.getElementById('timer');
-
-    function updateTimer() {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      const mins = Math.floor(elapsed / 60);
-      const secs = elapsed % 60;
-      timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    // Load counter
+    let meetingsAnalyzed = parseInt(localStorage.getItem('meetingsAnalyzed') || '0');
+    document.getElementById('counter').textContent = meetingsAnalyzed;
+    
+    function calculate() {
+      const duration = parseInt(document.getElementById('duration').value) || 60;
+      const attendees = parseInt(document.getElementById('attendees').value) || 8;
+      const topic = document.getElementById('topic').value || 'this meeting';
+      const decisions = parseInt(document.getElementById('decisions').value) || 0;
+      
+      // Human-hours calculation
+      const humanHours = (duration * attendees) / 60;
+      const humanHoursDisplay = humanHours.toFixed(1);
+      const workdays = (humanHours / 8).toFixed(1);
+      
+      document.getElementById('humanHours').textContent = `${humanHoursDisplay} hours`;
+      document.getElementById('humanHoursDetail').textContent = 
+        `Equivalent to ${workdays} full workday${workdays != 1 ? 's' : ''}`;
+      
+      // Email equivalent
+      const emailMinutes = attendees * 2; // 2 min to read per person
+      const emailHours = emailMinutes / 60;
+      const efficiency = Math.round(((humanHours - emailHours) / humanHours) * 100);
+      
+      document.getElementById('emailTime').textContent = `${emailMinutes} minutes total`;
+      document.getElementById('efficiency').textContent = efficiency;
+      
+      // Cost calculation
+      const cost = Math.round(humanHours * 50);
+      document.getElementById('cost').textContent = `$${cost.toLocaleString()}`;
+      
+      const coffees = Math.floor(cost / 5);
+      const lunches = Math.floor(cost / 15);
+      document.getElementById('costDetail').textContent = 
+        `Could've bought ${coffees} coffees or ${lunches} lunch combos`;
+      
+      // CO2 calculation (rough estimates)
+      const zoomCO2PerHour = 0.15; // kg CO2 per hour per person
+      const commuteCO2 = 2.5; // kg CO2 per commute roundtrip
+      const remotePeople = Math.floor(attendees * 0.5);
+      const inPersonPeople = attendees - remotePeople;
+      
+      const zoomEmissions = remotePeople * (duration / 60) * zoomCO2PerHour;
+      const commuteEmissions = inPersonPeople * commuteCO2;
+      const totalCO2 = (zoomEmissions + commuteEmissions).toFixed(1);
+      
+      document.getElementById('co2').textContent = `${totalCO2} kg`;
+      
+      // Soul damage
+      let soulPoints = Math.round(duration * attendees * 0.5);
+      if (decisions === 0) soulPoints *= 2; // double damage if nothing decided
+      
+      let soulLevel = 'Minimal';
+      if (soulPoints > 500) soulLevel = 'CATASTROPHIC';
+      else if (soulPoints > 300) soulLevel = 'Severe';
+      else if (soulPoints > 150) soulLevel = 'Moderate';
+      
+      document.getElementById('soul').textContent = `${soulPoints} points`;
+      document.getElementById('soulDetail').textContent = `Damage level: ${soulLevel}`;
+      
+      // Generate roast
+      const roasts = [
+        `${attendees} people, ${duration} minutes, ${decisions} decision${decisions != 1 ? 's' : ''}. This could've been a Slack message.`,
+        `Congrats! You just turned ${humanHoursDisplay} hours of human potential into ${decisions} decision${decisions != 1 ? 's' : ''}.`,
+        `${duration} minutes to accomplish what a 2-sentence email could've done. Efficiency!`,
+        `"Let's sync on this" = "I didn't prepare and need you all to watch me think out loud."`,
+        `You spent $${cost.toLocaleString()} to achieve what a Google Doc could've done for free.`,
+        `${attendees} calendars blocked. ${decisions} outcome${decisions != 1 ? 's' : ''}. Math checks out.`,
+        `This meeting had the same energy as a reply-all email thread, but slower.`,
+        `${duration} minutes of "Can everyone see my screen?" and "Sorry, I was on mute."`,
+        `You know what's great about emails? You can ignore them AND keep working.`,
+        `The real agenda was "justify my job by taking up yours."`,
+        `${workdays} workdays of human attention, converted into the sunk cost fallacy.`,
+        `"We should probably loop in [person not here]" — yes, via EMAIL.`,
+        `Pro tip: If the meeting has a PowerPoint, it should've been a PDF.`,
+        `${attendees} people nodding politely while planning their grocery list.`,
+        `You could've just written "thoughts?" in a shared doc and gotten the same result.`
+      ];
+      
+      const roast = roasts[Math.floor(Math.random() * roasts.length)];
+      document.getElementById('roast').textContent = roast;
+      
+      // Generate alternatives
+      const alternatives = [
+        `Read ${Math.floor(humanHours * 30)} pages of a book`,
+        `Watch ${Math.floor(humanHours / 2)} movies`,
+        `Take ${Math.floor(humanHours * 2)} power naps`,
+        `Actually finish that side project you keep talking about`,
+        `Learn the first ${Math.floor(humanHours * 20)} words of a new language`,
+        `Respond to ${Math.floor(humanHours * 40)} emails (properly)`,
+        `Make ${Math.floor(humanHours * 3)} actual decisions`,
+        `Have ${Math.floor(humanHours)} meaningful 1:1 conversations`,
+        `Delete ${Math.floor(humanHours * 100)} unread Slack messages`,
+        `Refactor ${Math.floor(humanHours * 500)} lines of code`,
+        `Pet a dog for ${Math.floor(humanHours * 60)} minutes straight`,
+        `Stare at a wall in silence (honestly more productive)`
+      ];
+      
+      // Pick 5 random alternatives
+      const shuffled = alternatives.sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, 5);
+      
+      const alternativesList = document.getElementById('alternativesList');
+      alternativesList.innerHTML = selected
+        .map(alt => `<div class="alternative-item">• ${alt}</div>`)
+        .join('');
+      
+      // Show results
+      document.getElementById('results').classList.add('visible');
+      
+      // Play audio feedback
+      playTone();
+      
+      // Update counter
+      meetingsAnalyzed++;
+      localStorage.setItem('meetingsAnalyzed', meetingsAnalyzed.toString());
+      document.getElementById('counter').textContent = meetingsAnalyzed;
+      
+      // Scroll to results
+      setTimeout(() => {
+        document.getElementById('results').scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 100);
     }
-
-    function showScene(index) {
-      if (index >= scenes.length) return;
+    
+    function playTone() {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
       
-      const scene = scenes[index];
-      speakerEl.textContent = scene.speaker;
-      dialogueEl.textContent = scene.text;
-      btnEl.textContent = scene.button;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
       
-      const progress = ((index + 1) / scenes.length) * 100;
-      progressEl.style.width = progress + '%';
+      osc.frequency.value = 400;
+      gain.gain.value = 0.1;
       
-      if (scene.final) {
-        btnEl.classList.add('exit');
-        if (timerInterval) clearInterval(timerInterval);
-        
-        const revelation = document.createElement('div');
-        revelation.className = 'revelation';
-        revelation.innerHTML = `
-          <strong>What could have been sent instead:</strong><br><br>
-          "Hi team,<br><br>
-          Q4 roadmap update will be shared next week once Sarah returns. Let me know if you have questions.<br><br>
-          Thanks!"<br><br>
-          <em>— The entire meeting, in 3 sentences</em>
-        `;
-        document.getElementById('meeting-room').appendChild(revelation);
-      }
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.stop(ctx.currentTime + 0.3);
     }
-
-    btnEl.addEventListener('click', () => {
-      if (currentScene === 0) {
-        startTime = Date.now();
-        timerInterval = setInterval(updateTimer, 1000);
-      }
-      
-      currentScene++;
-      if (currentScene < scenes.length) {
-        showScene(currentScene);
-      } else {
-        window.location.reload();
+    
+    // Allow Enter key to calculate
+    document.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        calculate();
       }
     });
-
-    // Initialize
-    showScene(0);
   </script>
 </body>
 </html>
