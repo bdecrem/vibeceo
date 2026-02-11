@@ -768,36 +768,26 @@ export default function SwoopCiGame() {
       const hudSecondaryY = 58;
       const hudPad = 20;
 
-      // -- SCORE (top left) --
-      const scoreStr = game.score.toString();
-      drawOutlined(scoreStr, hudPad, hudBaseline, hudColor, hudScoreSize, 'left', '900');
-      // "pts" suffix
-      ctx.save();
-      ctx.font = `900 ${hudScoreSize}px ui-rounded, system-ui, sans-serif`;
-      const scoreMeasured = ctx.measureText(scoreStr).width;
-      drawOutlined('pts', hudPad + scoreMeasured + 5, hudBaseline, hudColor + '80', 12, 'left', '600');
-      ctx.restore();
-
-      // -- TIMER (top center) --
+      // -- TIMER (top left, small) --
       const timeLeft = Math.ceil(game.timeRemaining);
       const timeFraction = game.timeRemaining / GAME_DURATION;
-      const timerX = canvasSize.w / 2;
+      const timerColor = timeLeft <= 10 ? '#ef4444' : timeLeft <= 20 ? '#f97316' : hudColor;
 
       if (timeLeft <= 10) {
         const pulse = (Math.sin(game.timeRemaining * 8) + 1) / 2;
         ctx.save();
         ctx.shadowColor = '#ef4444';
         ctx.shadowBlur = 6 + pulse * 14;
-        drawOutlined(timeLeft.toString(), timerX, hudBaseline, hudColor, hudSmallSize, 'center', '900');
+        drawOutlined(timeLeft.toString() + 's', hudPad, hudBaseline, timerColor, hudSmallSize, 'left', '900');
         ctx.restore();
       } else {
-        drawOutlined(timeLeft.toString(), timerX, hudBaseline, hudColor, hudSmallSize, 'center', '900');
+        drawOutlined(timeLeft.toString() + 's', hudPad, hudBaseline, hudColor, hudSmallSize, 'left', '900');
       }
 
-      // Depleting bar under timer
-      const barW = 60;
+      // Depleting bar under timer (left side)
+      const barW = 50;
       const barH = 3;
-      const barX = timerX - barW / 2;
+      const barX = hudPad;
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
       ctx.beginPath();
       ctx.roundRect(barX, hudSecondaryY, barW, barH, 2);
@@ -808,7 +798,11 @@ export default function SwoopCiGame() {
       ctx.roundRect(barX, hudSecondaryY, Math.max(0, barW * timeFraction), barH, 2);
       ctx.fill();
 
-      // -- COMBO (top right) -- hidden until earned
+      // -- SCORE (top center, LARGE) --
+      const scoreStr = game.score.toString();
+      drawOutlined(scoreStr, canvasSize.w / 2, hudBaseline, hudColor, hudScoreSize, 'center', '900');
+
+      // -- COMBO (top right, small) -- hidden until earned
       if (game.combo >= 2) {
         const comboStr = `${game.combo}x`;
         ctx.save();
