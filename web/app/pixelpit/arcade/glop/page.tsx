@@ -31,10 +31,10 @@ const SPAWN_WEIGHTS = [40, 30, 20, 10];
 // Physics
 const GRAVITY = 0.5;
 const MAX_FALL_SPEED = 12;
-const BOUNCE = 0.6;
-const FRICTION = 0.92;
+const BOUNCE = 0.4; // Lower = less bouncy, easier to merge
+const FRICTION = 0.85; // Higher friction = settle faster
 const WALL_BOUNCE = 0.5;
-const MERGE_OVERLAP = 0.5;
+const MERGE_OVERLAP = 0.15; // Lower = easier to merge (was 0.5)
 
 // Cauldron dimensions
 const CAULDRON_WIDTH = 300;
