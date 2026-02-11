@@ -170,9 +170,28 @@ interface Particle {
   color: string;
 }
 
+// Tutorial steps
+const TUTORIAL_STEPS = [
+  {
+    title: 'MATCH',
+    instruction: 'DROP ON THE SAME COLOR',
+    emoji: '🎯',
+  },
+  {
+    title: 'AIM',
+    instruction: 'FIND THE MATCH',
+    emoji: '👈',
+  },
+  {
+    title: 'CHAIN',
+    instruction: 'WATCH THE COMBO',
+    emoji: '🔥',
+  },
+];
+
 export default function GlopGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'tutorial' | 'end'>('start');
   const [canvasSize, setCanvasSize] = useState({ w: 400, h: 700 });
   
   // Social
@@ -180,6 +199,10 @@ export default function GlopGame() {
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
+  
+  // Tutorial
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [tutorialMessage, setTutorialMessage] = useState('');
 
   usePixelpitSocial(socialLoaded);
 
@@ -198,6 +221,11 @@ export default function GlopGame() {
     slowMo: false,
     slowMoTimer: 0,
     bubbles: [] as { x: number; y: number; size: number; speed: number }[],
+    // Tutorial state
+    isTutorial: false,
+    tutorialStep: 0,
+    tutorialWaitingForMerge: false,
+    tutorialComplete: false,
   });
 
   const getSpawnTier = useCallback(() => {
@@ -218,16 +246,13 @@ export default function GlopGame() {
     return canvasSize.h - CAULDRON_HEIGHT - 50;
   }, [canvasSize.h]);
 
-  const startGame = useCallback(() => {
-    initAudio();
-    
+  const initGameState = useCallback(() => {
     const game = gameRef.current;
     game.running = true;
     game.score = 0;
     game.highestTier = 0;
     game.slimes = [];
     game.nextSlimeId = 0;
-    game.nextTier = getSpawnTier();
     game.dropX = CAULDRON_WIDTH / 2;
     game.canDrop = true;
     game.particles = [];
@@ -235,6 +260,10 @@ export default function GlopGame() {
     game.shakeAmount = 0;
     game.slowMo = false;
     game.slowMoTimer = 0;
+    game.isTutorial = false;
+    game.tutorialStep = 0;
+    game.tutorialWaitingForMerge = false;
+    game.tutorialComplete = false;
     
     // Ambient bubbles
     game.bubbles = [];
@@ -246,9 +275,110 @@ export default function GlopGame() {
         speed: 0.5 + Math.random() * 1,
       });
     }
+  }, []);
+
+  const setupTutorialStep = useCallback((step: number) => {
+    const game = gameRef.current;
+    game.slimes = [];
+    game.nextSlimeId = 0;
+    game.particles = [];
+    game.canDrop = true;
+    game.tutorialWaitingForMerge = false;
+    
+    if (step === 0) {
+      // Step 1: One cyan in cauldron, give them cyan
+      game.slimes.push({
+        id: game.nextSlimeId++,
+        tier: 0, // Cyan
+        x: CAULDRON_WIDTH / 2,
+        y: CAULDRON_HEIGHT - 50,
+        vx: 0,
+        vy: 0,
+        merged: false,
+        mergeTimer: 0,
+        squash: 1,
+      });
+      game.nextTier = 0; // Cyan
+      game.dropX = CAULDRON_WIDTH / 2;
+    } else if (step === 1) {
+      // Step 2: Cyan left, Lime right, give them cyan
+      game.slimes.push({
+        id: game.nextSlimeId++,
+        tier: 0, // Cyan
+        x: CAULDRON_WIDTH * 0.3,
+        y: CAULDRON_HEIGHT - 50,
+        vx: 0,
+        vy: 0,
+        merged: false,
+        mergeTimer: 0,
+        squash: 1,
+      });
+      game.slimes.push({
+        id: game.nextSlimeId++,
+        tier: 1, // Lime
+        x: CAULDRON_WIDTH * 0.7,
+        y: CAULDRON_HEIGHT - 50,
+        vx: 0,
+        vy: 0,
+        merged: false,
+        mergeTimer: 0,
+        squash: 1,
+      });
+      game.nextTier = 0; // Cyan
+      game.dropX = CAULDRON_WIDTH * 0.3;
+    } else if (step === 2) {
+      // Step 3: Chain setup - cyan touching lime
+      game.slimes.push({
+        id: game.nextSlimeId++,
+        tier: 0, // Cyan
+        x: CAULDRON_WIDTH / 2 - 30,
+        y: CAULDRON_HEIGHT - 50,
+        vx: 0,
+        vy: 0,
+        merged: false,
+        mergeTimer: 0,
+        squash: 1,
+      });
+      game.slimes.push({
+        id: game.nextSlimeId++,
+        tier: 1, // Lime (will be created when cyans merge)
+        x: CAULDRON_WIDTH / 2 + 30,
+        y: CAULDRON_HEIGHT - 50,
+        vx: 0,
+        vy: 0,
+        merged: false,
+        mergeTimer: 0,
+        squash: 1,
+      });
+      game.nextTier = 0; // Cyan
+      game.dropX = CAULDRON_WIDTH / 2 - 30;
+    }
+    
+    setTutorialStep(step);
+    setTutorialMessage('');
+  }, []);
+
+  const startTutorial = useCallback(() => {
+    initAudio();
+    initGameState();
+    
+    const game = gameRef.current;
+    game.isTutorial = true;
+    game.tutorialStep = 0;
+    
+    setupTutorialStep(0);
+    setGameState('tutorial');
+  }, [initGameState, setupTutorialStep]);
+
+  const startGame = useCallback(() => {
+    initAudio();
+    initGameState();
+    
+    const game = gameRef.current;
+    game.nextTier = getSpawnTier();
     
     setGameState('playing');
-  }, [getSpawnTier]);
+  }, [getSpawnTier, initGameState]);
 
   const dropSlime = useCallback(() => {
     const game = gameRef.current;
@@ -453,6 +583,46 @@ export default function GlopGame() {
                   });
                 }
               }
+              
+              // Tutorial merge detection
+              if (game.isTutorial) {
+                game.tutorialWaitingForMerge = true;
+                // Delay to let player see the merge
+                setTimeout(() => {
+                  if (!game.isTutorial) return;
+                  
+                  if (game.tutorialStep === 0) {
+                    setTutorialMessage('MERGE! 🎉');
+                    setTimeout(() => {
+                      if (!game.isTutorial) return;
+                      game.tutorialStep = 1;
+                      setupTutorialStep(1);
+                    }, 1000);
+                  } else if (game.tutorialStep === 1) {
+                    setTutorialMessage('NICE! 🎯');
+                    setTimeout(() => {
+                      if (!game.isTutorial) return;
+                      game.tutorialStep = 2;
+                      setupTutorialStep(2);
+                    }, 1000);
+                  } else if (game.tutorialStep === 2) {
+                    // Check if it was a chain (newTier >= 2 means we went cyan->lime->yellow)
+                    if (newTier >= 2) {
+                      setTutorialMessage('COMBO! 🔥');
+                      game.tutorialComplete = true;
+                      setTimeout(() => {
+                        if (!game.isTutorial) return;
+                        setTutorialMessage('READY!');
+                        setTimeout(() => {
+                          startGame();
+                        }, 1000);
+                      }, 1500);
+                    } else {
+                      setTutorialMessage('MERGE! Keep going...');
+                    }
+                  }
+                }, 300);
+              }
             } else {
               // Push apart
               const nx = dx / dist;
@@ -496,14 +666,17 @@ export default function GlopGame() {
         }
       }
 
-      if (hasOverflow) {
-        game.overflowTimer += dt;
-        if (game.overflowTimer >= 1) {
-          endGame();
-          return;
+      // Skip overflow in tutorial
+      if (!game.isTutorial) {
+        if (hasOverflow) {
+          game.overflowTimer += dt;
+          if (game.overflowTimer >= 1) {
+            endGame();
+            return;
+          }
+        } else {
+          game.overflowTimer = Math.max(0, game.overflowTimer - dt);
         }
-      } else {
-        game.overflowTimer = Math.max(0, game.overflowTimer - dt);
       }
 
       // Shake decay
@@ -741,7 +914,7 @@ export default function GlopGame() {
     };
 
     const handleTap = () => {
-      if (gameState === 'playing') {
+      if (gameState === 'playing' || gameState === 'tutorial') {
         dropSlime();
       }
     };
@@ -765,7 +938,7 @@ export default function GlopGame() {
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [gameState, canvasSize, cauldronLeft, cauldronTop, dropSlime]);
+  }, [gameState, canvasSize, cauldronLeft, cauldronTop, dropSlime, setupTutorialStep, startGame]);
 
   return (
     <>
@@ -859,19 +1032,35 @@ export default function GlopGame() {
             </button>
 
             <button
-              onClick={() => setShowLeaderboard(true)}
+              onClick={startTutorial}
               style={{
-                marginTop: 30,
+                marginTop: 20,
                 background: 'transparent',
                 color: THEME.glow,
-                border: `2px solid ${THEME.glow}50`,
+                border: `2px solid ${THEME.glow}`,
+                padding: '12px 28px',
+                fontSize: 14,
+                cursor: 'pointer',
+                borderRadius: 20,
+              }}
+            >
+              HOW TO PLAY
+            </button>
+
+            <button
+              onClick={() => setShowLeaderboard(true)}
+              style={{
+                marginTop: 12,
+                background: 'transparent',
+                color: '#71717a',
+                border: `2px solid #71717a50`,
                 padding: '10px 24px',
                 fontSize: 14,
                 cursor: 'pointer',
                 borderRadius: 20,
               }}
             >
-              View Leaderboard
+              Leaderboard
             </button>
           </div>
         )}
@@ -917,14 +1106,67 @@ export default function GlopGame() {
           </div>
         )}
 
-        {gameState === 'playing' && (
-          <canvas
-            ref={canvasRef}
-            style={{
-              display: 'block',
-              touchAction: 'none',
-            }}
-          />
+        {(gameState === 'playing' || gameState === 'tutorial') && (
+          <>
+            <canvas
+              ref={canvasRef}
+              style={{
+                display: 'block',
+                touchAction: 'none',
+              }}
+            />
+            {gameState === 'tutorial' && (
+              <div style={{
+                position: 'absolute',
+                top: 100,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                pointerEvents: 'none',
+                zIndex: 10,
+              }}>
+                {tutorialMessage ? (
+                  <div style={{
+                    background: THEME.glow,
+                    color: THEME.bg,
+                    padding: '16px 32px',
+                    borderRadius: 16,
+                    fontSize: 24,
+                    fontWeight: 700,
+                    boxShadow: `0 0 30px ${THEME.glow}`,
+                  }}>
+                    {tutorialMessage}
+                  </div>
+                ) : (
+                  <>
+                    <div style={{
+                      fontSize: 48,
+                      marginBottom: 10,
+                    }}>
+                      {TUTORIAL_STEPS[tutorialStep]?.emoji}
+                    </div>
+                    <div style={{
+                      background: '#18181bdd',
+                      color: THEME.text,
+                      padding: '12px 24px',
+                      borderRadius: 12,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      border: `2px solid ${THEME.glow}`,
+                      textAlign: 'center',
+                    }}>
+                      <div style={{ color: THEME.glow, fontSize: 12, marginBottom: 4 }}>
+                        STEP {tutorialStep + 1}/3: {TUTORIAL_STEPS[tutorialStep]?.title}
+                      </div>
+                      {TUTORIAL_STEPS[tutorialStep]?.instruction}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         {gameState === 'end' && (
