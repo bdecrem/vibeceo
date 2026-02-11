@@ -709,16 +709,24 @@ export default function SwoopCiGame() {
       drawBird(game.bird, game.camera.x, game.zone === 3, game.combo);
 
       // UI
-      ctx.fillStyle = '#18181b';
       ctx.font = 'bold 48px ui-rounded, system-ui, sans-serif';
       ctx.textAlign = 'center';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeText(game.score.toString(), canvasSize.w / 2, 60);
+      ctx.fillStyle = '#18181b';
       ctx.fillText(game.score.toString(), canvasSize.w / 2, 60);
+      ctx.lineWidth = 1;
 
       // Combo
       if (game.combo >= 2) {
         ctx.font = 'bold 20px ui-rounded, system-ui, sans-serif';
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeText(`🔥 ${game.combo}x COMBO`, canvasSize.w / 2, 90);
         ctx.fillStyle = '#f97316';
         ctx.fillText(`🔥 ${game.combo}x COMBO`, canvasSize.w / 2, 90);
+        ctx.lineWidth = 1;
       }
 
       // Zone name
