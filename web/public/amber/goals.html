@@ -563,6 +563,41 @@
             font-size: 1rem;
         }
 
+        /* Color Dice Button */
+        .color-dice {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: var(--space-2) var(--space-3);
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: all var(--duration-normal) var(--ease-spring);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .color-dice:hover {
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .color-dice:active {
+            transform: scale(0.95) rotate(-15deg);
+        }
+
+        .color-dice.rolling {
+            animation: dice-roll 0.5s var(--ease-spring);
+        }
+
+        @keyframes dice-roll {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.2); }
+            50% { transform: rotate(180deg) scale(1); }
+            75% { transform: rotate(270deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .header {
@@ -644,6 +679,7 @@
                     <span>Synced</span>
                 </div>
                 <div class="signature">Amber</div>
+                <button class="color-dice" id="colorDice" title="Randomize colors">🎲</button>
             </div>
         </div>
     </div>
@@ -883,6 +919,174 @@
         }
 
         window.addEventListener('load', loadGoals);
+
+        // Color scheme randomizer
+        const colorSchemes = [
+            {
+                name: 'Ocean',
+                bg: 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #e0f7fa 100%)',
+                accent1: '#0891b2', accent2: '#06b6d4', accent3: '#22d3ee',
+                glow1: 'rgba(8, 145, 178, 0.15)', glow2: 'rgba(6, 182, 212, 0.1)', glow3: 'rgba(34, 211, 238, 0.1)'
+            },
+            {
+                name: 'Sunset',
+                bg: 'linear-gradient(135deg, #fef3c7 0%, #fff7ed 50%, #fce7f3 100%)',
+                accent1: '#ea580c', accent2: '#f97316', accent3: '#fb923c',
+                glow1: 'rgba(234, 88, 12, 0.15)', glow2: 'rgba(249, 115, 22, 0.1)', glow3: 'rgba(251, 146, 60, 0.1)'
+            },
+            {
+                name: 'Forest',
+                bg: 'linear-gradient(135deg, #d1fae5 0%, #ecfdf5 50%, #f0fdf4 100%)',
+                accent1: '#059669', accent2: '#10b981', accent3: '#34d399',
+                glow1: 'rgba(5, 150, 105, 0.15)', glow2: 'rgba(16, 185, 129, 0.1)', glow3: 'rgba(52, 211, 153, 0.1)'
+            },
+            {
+                name: 'Lavender',
+                bg: 'linear-gradient(135deg, #ede9fe 0%, #f5f3ff 50%, #fce7f3 100%)',
+                accent1: '#7c3aed', accent2: '#8b5cf6', accent3: '#a78bfa',
+                glow1: 'rgba(124, 58, 237, 0.15)', glow2: 'rgba(139, 92, 246, 0.1)', glow3: 'rgba(167, 139, 250, 0.1)'
+            },
+            {
+                name: 'Rose',
+                bg: 'linear-gradient(135deg, #fce7f3 0%, #fff1f2 50%, #fef2f2 100%)',
+                accent1: '#db2777', accent2: '#ec4899', accent3: '#f472b6',
+                glow1: 'rgba(219, 39, 119, 0.15)', glow2: 'rgba(236, 72, 153, 0.1)', glow3: 'rgba(244, 114, 182, 0.1)'
+            },
+            {
+                name: 'Midnight',
+                bg: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a5f 100%)',
+                accent1: '#818cf8', accent2: '#a5b4fc', accent3: '#c7d2fe',
+                glow1: 'rgba(129, 140, 248, 0.2)', glow2: 'rgba(165, 180, 252, 0.15)', glow3: 'rgba(199, 210, 254, 0.1)',
+                dark: true
+            },
+            {
+                name: 'Ember',
+                bg: 'linear-gradient(135deg, #292524 0%, #44403c 50%, #1c1917 100%)',
+                accent1: '#f97316', accent2: '#fb923c', accent3: '#fdba74',
+                glow1: 'rgba(249, 115, 22, 0.2)', glow2: 'rgba(251, 146, 60, 0.15)', glow3: 'rgba(253, 186, 116, 0.1)',
+                dark: true
+            },
+            {
+                name: 'Aurora',
+                bg: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0c4a6e 100%)',
+                accent1: '#22d3ee', accent2: '#a78bfa', accent3: '#f472b6',
+                glow1: 'rgba(34, 211, 238, 0.2)', glow2: 'rgba(167, 139, 250, 0.15)', glow3: 'rgba(244, 114, 182, 0.1)',
+                dark: true
+            },
+            {
+                name: 'Mint',
+                bg: 'linear-gradient(135deg, #ccfbf1 0%, #f0fdfa 50%, #ecfeff 100%)',
+                accent1: '#0d9488', accent2: '#14b8a6', accent3: '#2dd4bf',
+                glow1: 'rgba(13, 148, 136, 0.15)', glow2: 'rgba(20, 184, 166, 0.1)', glow3: 'rgba(45, 212, 191, 0.1)'
+            },
+            {
+                name: 'Gold',
+                bg: 'linear-gradient(135deg, #fef9c3 0%, #fefce8 50%, #fffbeb 100%)',
+                accent1: '#ca8a04', accent2: '#eab308', accent3: '#facc15',
+                glow1: 'rgba(202, 138, 4, 0.15)', glow2: 'rgba(234, 179, 8, 0.1)', glow3: 'rgba(250, 204, 21, 0.1)'
+            }
+        ];
+
+        let currentSchemeIndex = 0;
+
+        function applyColorScheme(scheme) {
+            const root = document.documentElement;
+            
+            // Apply background
+            document.body.style.background = scheme.bg;
+            
+            // Update CSS variables for accents
+            root.style.setProperty('--primary-600', scheme.accent1);
+            root.style.setProperty('--primary-500', scheme.accent2);
+            root.style.setProperty('--primary-400', scheme.accent3);
+            
+            // Update ambient background
+            const bodyBefore = document.querySelector('body::before');
+            root.style.setProperty('--glow-1', scheme.glow1);
+            root.style.setProperty('--glow-2', scheme.glow2);
+            root.style.setProperty('--glow-3', scheme.glow3);
+            
+            // Handle dark mode schemes
+            if (scheme.dark) {
+                root.style.setProperty('--bg-primary', 'rgba(30, 27, 75, 0.9)');
+                root.style.setProperty('--bg-secondary', 'rgba(15, 23, 42, 0.9)');
+                root.style.setProperty('--text-primary', '#f1f5f9');
+                root.style.setProperty('--text-secondary', '#cbd5e1');
+                root.style.setProperty('--text-tertiary', '#94a3b8');
+                root.style.setProperty('--border-primary', 'rgba(148, 163, 184, 0.2)');
+                root.style.setProperty('--border-secondary', 'rgba(148, 163, 184, 0.1)');
+                root.style.setProperty('--gray-50', 'rgba(51, 65, 85, 0.5)');
+                root.style.setProperty('--gray-100', 'rgba(71, 85, 105, 0.5)');
+                document.querySelector('.header').style.background = 'rgba(30, 27, 75, 0.95)';
+                document.querySelector('.footer').style.background = 'rgba(30, 27, 75, 0.95)';
+            } else {
+                root.style.setProperty('--bg-primary', '#ffffff');
+                root.style.setProperty('--bg-secondary', '#f9fafb');
+                root.style.setProperty('--text-primary', '#111827');
+                root.style.setProperty('--text-secondary', '#4b5563');
+                root.style.setProperty('--text-tertiary', '#6b7280');
+                root.style.setProperty('--border-primary', '#e5e7eb');
+                root.style.setProperty('--border-secondary', '#f3f4f6');
+                root.style.setProperty('--gray-50', '#f9fafb');
+                root.style.setProperty('--gray-100', '#f3f4f6');
+                document.querySelector('.header').style.background = 'rgba(255, 255, 255, 0.95)';
+                document.querySelector('.footer').style.background = '#ffffff';
+            }
+            
+            // Update progress bar colors
+            document.querySelectorAll('.goal-card').forEach((card, index) => {
+                const colors = [scheme.accent1, scheme.accent2, scheme.accent3, scheme.accent1];
+                const progressFill = card.querySelector('.progress-fill');
+                if (progressFill) {
+                    progressFill.style.background = `linear-gradient(90deg, ${colors[index % 4]}, ${scheme.accent3})`;
+                }
+                card.style.setProperty('--card-accent', colors[index % 4]);
+            });
+            
+            // Update h1 gradient
+            document.querySelector('h1').style.background = `linear-gradient(135deg, ${scheme.accent1}, ${scheme.accent2})`;
+            document.querySelector('h1').style.webkitBackgroundClip = 'text';
+            document.querySelector('h1').style.backgroundClip = 'text';
+            
+            // Update week badge
+            document.querySelector('.week-badge').style.background = scheme.glow1;
+            document.querySelector('.week-badge').style.color = scheme.accent1;
+            
+            // Save preference
+            localStorage.setItem('goalColorScheme', currentSchemeIndex);
+        }
+
+        function randomizeColors() {
+            const dice = document.getElementById('colorDice');
+            dice.classList.add('rolling');
+            
+            // Pick a random scheme different from current
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * colorSchemes.length);
+            } while (newIndex === currentSchemeIndex && colorSchemes.length > 1);
+            
+            currentSchemeIndex = newIndex;
+            
+            setTimeout(() => {
+                applyColorScheme(colorSchemes[currentSchemeIndex]);
+                dice.classList.remove('rolling');
+            }, 500);
+        }
+
+        // Load saved color scheme on start
+        function loadColorScheme() {
+            const saved = localStorage.getItem('goalColorScheme');
+            if (saved !== null) {
+                currentSchemeIndex = parseInt(saved, 10);
+                if (currentSchemeIndex >= 0 && currentSchemeIndex < colorSchemes.length) {
+                    applyColorScheme(colorSchemes[currentSchemeIndex]);
+                }
+            }
+        }
+
+        document.getElementById('colorDice').addEventListener('click', randomizeColors);
+        window.addEventListener('load', loadColorScheme);
     </script>
 </body>
 </html>
