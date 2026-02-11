@@ -150,7 +150,7 @@ useEffect(() => {
 ```tsx
 {user ? (
   <button onClick={() => setShowShareModal(true)}>
-    share / groups
+    Share / Groups
   </button>
 ) : (
   <ShareButtonContainer
@@ -163,15 +163,18 @@ useEffect(() => {
 )}
 ```
 
-**Leaderboard — modal with groups enabled:**
+**Leaderboard — with groups enabled:**
+
+**IMPORTANT:** Do NOT wrap `<Leaderboard>` in a custom modal/overlay — the component renders its own full-screen layout. Use the `onClose` prop for the back button. Wrapping it causes the back button to be hidden behind the component.
+
 ```tsx
-{gameState === 'leaderboard' && (
+{showLeaderboard && (
   <Leaderboard
     gameId={GAME_ID}
     limit={8}
     entryId={submittedEntryId ?? undefined}
     colors={LEADERBOARD_COLORS}
-    onClose={() => setGameState('gameover')}
+    onClose={() => setShowLeaderboard(false)}
     groupsEnabled={true}
     gameUrl={GAME_URL}
     socialLoaded={socialLoaded}
