@@ -710,11 +710,7 @@
                 const response = await fetch('/api/amber/goals');
                 const data = await response.json();
                 
-                if (data.content) {
-                    currentGoals = JSON.parse(data.content);
-                    completionState = data.metadata?.completion_state || {};
-                } else {
-                    currentGoals = {
+                const defaultGoals = {
                         networking: {
                             title: "Network with 5 people",
                             items: ["Riya Rani", "John Markoff", "[Person 3]", "[Person 4]", "[Person 5]"]
@@ -735,6 +731,18 @@
                             ]
                         }
                     };
+                
+                if (data.content) {
+                    currentGoals = JSON.parse(data.content);
+                    // Merge in any missing default categories
+                    Object.keys(defaultGoals).forEach(key => {
+                        if (!currentGoals[key]) {
+                            currentGoals[key] = defaultGoals[key];
+                        }
+                    });
+                    completionState = data.metadata?.completion_state || {};
+                } else {
+                    currentGoals = defaultGoals;
                 }
                 
                 renderGoals();
