@@ -763,16 +763,17 @@ export default function SwoopCiGame() {
 
       // Shared HUD grid: all 3 items on the same baseline
       const hudBaseline = 50;
-      const hudSize = 42;
-      const hudSecondaryY = 62;
+      const hudScoreSize = 42;
+      const hudSmallSize = 28;
+      const hudSecondaryY = 58;
       const hudPad = 20;
 
       // -- SCORE (top left) --
       const scoreStr = game.score.toString();
-      drawOutlined(scoreStr, hudPad, hudBaseline, hudColor, hudSize, 'left', '900');
+      drawOutlined(scoreStr, hudPad, hudBaseline, hudColor, hudScoreSize, 'left', '900');
       // "pts" suffix
       ctx.save();
-      ctx.font = `900 ${hudSize}px ui-rounded, system-ui, sans-serif`;
+      ctx.font = `900 ${hudScoreSize}px ui-rounded, system-ui, sans-serif`;
       const scoreMeasured = ctx.measureText(scoreStr).width;
       drawOutlined('pts', hudPad + scoreMeasured + 5, hudBaseline, hudColor + '80', 12, 'left', '600');
       ctx.restore();
@@ -787,14 +788,14 @@ export default function SwoopCiGame() {
         ctx.save();
         ctx.shadowColor = '#ef4444';
         ctx.shadowBlur = 6 + pulse * 14;
-        drawOutlined(timeLeft.toString(), timerX, hudBaseline, hudColor, hudSize, 'center', '900');
+        drawOutlined(timeLeft.toString(), timerX, hudBaseline, hudColor, hudSmallSize, 'center', '900');
         ctx.restore();
       } else {
-        drawOutlined(timeLeft.toString(), timerX, hudBaseline, hudColor, hudSize, 'center', '900');
+        drawOutlined(timeLeft.toString(), timerX, hudBaseline, hudColor, hudSmallSize, 'center', '900');
       }
 
       // Depleting bar under timer
-      const barW = 72;
+      const barW = 60;
       const barH = 3;
       const barX = timerX - barW / 2;
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
@@ -813,7 +814,7 @@ export default function SwoopCiGame() {
         ctx.save();
         ctx.shadowColor = hudColor;
         ctx.shadowBlur = 8 + Math.min(game.combo * 3, 20);
-        drawOutlined(comboStr, canvasSize.w - hudPad, hudBaseline, hudColor, hudSize, 'right', '900');
+        drawOutlined(comboStr, canvasSize.w - hudPad, hudBaseline, hudColor, hudSmallSize, 'right', '900');
         ctx.restore();
 
         // Streak dots
