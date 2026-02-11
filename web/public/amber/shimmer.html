@@ -225,10 +225,9 @@
       }
 
       trigger() {
-        const now = bass.engine.context.currentTime;
-        bass.engine.setCutoff(this.cutoff);
-        bass.engine.setResonance(this.resonance);
-        bass.engine.triggerNote(now, this.note, 0.15, false); // 150ms note
+        bass.engine.setParameter('cutoff', this.cutoff);
+        bass.engine.setParameter('resonance', this.resonance);
+        bass.engine.playNote(this.note, false);
       }
 
       draw() {
@@ -293,43 +292,30 @@
 
     async function startAudio() {
       if (audioStarted) return;
-      
+
       try {
-        // iOS audio unlock trick: create context and play silent buffer FIRST
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const unlockCtx = new AudioContext();
-        
-        // Create and play a silent buffer to unlock audio on iOS
-        const buffer = unlockCtx.createBuffer(1, 1, 22050);
-        const source = unlockCtx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(unlockCtx.destination);
-        source.start(0);
-        
-        // Resume if suspended
-        if (unlockCtx.state === 'suspended') {
-          await unlockCtx.resume();
-        }
-        
-        // Close the unlock context, we'll use the 303's context
-        await unlockCtx.close();
-        
-        // Now initialize the 303 - audio should be unlocked
+        // Initialize the 303
         bass = new TB303Controller();
-        
-        // Resume the 303's context too
+
+        // Resume the 303's own context (required for iOS Safari)
         if (bass.engine.context.state === 'suspended') {
           await bass.engine.context.resume();
         }
-        
-        // Play a test note immediately to confirm audio works
-        const now = bass.engine.context.currentTime;
-        bass.engine.setCutoff(0.5);
-        bass.engine.setResonance(0.7);
-        bass.engine.triggerNote(now, 40, 0.1, false); // Quick E1 test tone
-        
+
+        // iOS unlock: play a silent buffer through the 303's context
+        const silentBuf = bass.engine.context.createBuffer(1, 1, 22050);
+        const silentSrc = bass.engine.context.createBufferSource();
+        silentSrc.buffer = silentBuf;
+        silentSrc.connect(bass.engine.context.destination);
+        silentSrc.start(0);
+
+        // Play a test note to confirm audio works
+        bass.engine.setParameter('cutoff', 0.5);
+        bass.engine.setParameter('resonance', 0.7);
+        bass.engine.playNote(40, false);
+
         console.log('Audio context state:', bass.engine.context.state);
-        
+
         audioStarted = true;
         overlay.classList.add('hidden');
 
