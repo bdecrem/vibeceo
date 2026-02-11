@@ -10,6 +10,7 @@ import {
   usePixelpitSocial,
   type ScoreFlowColors,
   type LeaderboardColors,
+  type ProgressionResult,
 } from '@/app/pixelpit/components';
 
 const GAME_ID = 'swoop-ci';
@@ -222,6 +223,7 @@ export default function SwoopCiGame() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
   const [gameCompleted, setGameCompleted] = useState(false);
+  const [progression, setProgression] = useState<ProgressionResult | null>(null);
 
   const { user } = usePixelpitSocial(socialLoaded);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -231,6 +233,29 @@ export default function SwoopCiGame() {
     : 'https://pixelpit.gg/pixelpit/arcade/swoop-ci';
 
   const GAME_DURATION = 60; // 60 second game
+
+  // Group code + logout URL handling
+  useEffect(() => {
+    if (!socialLoaded || typeof window === 'undefined') return;
+    if (!(window as any).PixelpitSocial) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('logout')) {
+      (window as any).PixelpitSocial.logout();
+      params.delete('logout');
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      window.location.reload();
+      return;
+    }
+
+    const groupCode = (window as any).PixelpitSocial.getGroupCodeFromUrl();
+    if (groupCode) {
+      (window as any).PixelpitSocial.storeGroupCode(groupCode);
+    }
+  }, [socialLoaded]);
 
   const gameRef = useRef({
     running: false,
@@ -1059,6 +1084,9 @@ export default function SwoopCiGame() {
                 limit={10}
                 entryId={submittedEntryId ?? undefined}
                 colors={LEADERBOARD_COLORS}
+                groupsEnabled={true}
+                gameUrl={GAME_URL}
+                socialLoaded={socialLoaded}
               />
             </div>
           </div>
@@ -1119,6 +1147,7 @@ export default function SwoopCiGame() {
               <ScoreFlow
                 score={finalScore}
                 gameId={GAME_ID}
+                maxScore={200}
                 colors={{
                   bg: '#1e1b4b',
                   surface: '#27264a',
@@ -1129,8 +1158,19 @@ export default function SwoopCiGame() {
                   error: '#ef4444',
                 }}
                 onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
+                onProgression={(prog) => setProgression(prog)}
               />
             </div>
+
+            {progression && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+                <div style={{ color: '#facc15', fontSize: 14, fontWeight: 700 }}>+{progression.xpEarned} XP</div>
+                <div style={{ color: '#94a3b8', fontSize: 13 }}>Level {progression.level}</div>
+                {progression.streak > 1 && (
+                  <div style={{ color: '#22d3ee', fontSize: 13 }}>{progression.multiplier}x streak</div>
+                )}
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
               <button
@@ -1148,7 +1188,7 @@ export default function SwoopCiGame() {
               >
                 {showLeaderboard ? 'Hide' : 'Ranks'}
               </button>
-              {user && (
+              {user ? (
                 <button
                   onClick={() => setShowShareModal(true)}
                   style={{
@@ -1162,8 +1202,16 @@ export default function SwoopCiGame() {
                     borderRadius: 20,
                   }}
                 >
-                  Share
+                  share / groups
                 </button>
+              ) : (
+                <ShareButtonContainer
+                  id="share-btn-container"
+                  url={`${GAME_URL}/share/${finalScore}`}
+                  text={`I scored ${finalScore} on SWOOP CI! Can you beat me?`}
+                  style="minimal"
+                  socialLoaded={socialLoaded}
+                />
               )}
             </div>
             <button
