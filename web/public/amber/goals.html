@@ -429,6 +429,25 @@
             text-decoration-color: var(--error-400);
         }
 
+        .goal-item-link {
+            color: var(--primary-500);
+            text-decoration: none;
+            transition: color var(--duration-fast) var(--ease-smooth);
+        }
+
+        .goal-item-link:hover {
+            color: var(--primary-600);
+            text-decoration: underline;
+        }
+
+        .goal-item.completed .goal-item-link {
+            color: var(--text-secondary);
+        }
+
+        .goal-item.invalid .goal-item-link {
+            color: var(--text-tertiary);
+        }
+
         /* Elegant Status Indicators */
         .status-indicator {
             font-size: 0.75rem;
@@ -707,6 +726,13 @@
                         twitter: {
                             title: "One Twitter explainer",
                             items: ["Twitter explainer post"]
+                        },
+                        stuff: {
+                            title: "Stuff",
+                            items: [
+                                { text: "Stanford DCI Fellowship", url: "https://dci.stanford.edu/becoming-a-fellow/" },
+                                { text: "a16z link", url: "https://go2.a16z.com/MzgyLVpaQi03OTgAAAGfvv3Vgbkpi_bke0b0Vy1qs8i0Px9TRZJi5cQ4BZYI1Rmp0PajvDCc9jvIVyLDoSjCFcq-lZA=" }
+                            ]
                         }
                     };
                 }
@@ -813,10 +839,17 @@
                         statusText = 'Skip';
                     }
                     
+                    // Handle both string items and object items with url
+                    const itemText = typeof item === 'object' ? item.text : item;
+                    const itemUrl = typeof item === 'object' ? item.url : null;
+                    const textContent = itemUrl 
+                        ? `<a href="${itemUrl}" target="_blank" class="goal-item-link" onclick="event.stopPropagation()">${itemText}</a>`
+                        : itemText;
+                    
                     itemsHTML += `
                         <li class="${itemClass}" data-item="${itemKey}">
                             <div class="${checkboxClass}"></div>
-                            <span class="goal-item-text">${item}</span>
+                            <span class="goal-item-text">${textContent}</span>
                             <div class="status-indicator">${statusText}</div>
                         </li>
                     `;
