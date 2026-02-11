@@ -967,7 +967,7 @@ export default function SwoopCiGame() {
               </div>
             </div>
 
-            <div style={{ width: '100%', maxWidth: 350 }}>
+            <div style={{ width: '100%', maxWidth: 350, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <ScoreFlow
                 score={finalScore}
                 gameId={GAME_ID}
@@ -998,7 +998,7 @@ export default function SwoopCiGame() {
                   borderRadius: 20,
                 }}
               >
-                {showLeaderboard ? 'Hide' : 'Leaderboard'}
+                {showLeaderboard ? 'Hide' : 'Ranks'}
               </button>
               {user && (
                 <button
