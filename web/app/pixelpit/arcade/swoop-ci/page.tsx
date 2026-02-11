@@ -988,6 +988,27 @@ export default function SwoopCiGame() {
               padding: 20,
             }}
           >
+            <button
+              onClick={() => setShowLeaderboard(false)}
+              style={{
+                position: 'absolute',
+                top: 20,
+                left: 20,
+                background: '#f0f9ff',
+                color: '#18181b',
+                border: '2px solid #18181b',
+                padding: '10px 16px',
+                fontSize: 16,
+                fontWeight: 600,
+                cursor: 'pointer',
+                borderRadius: 12,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              ← Back
+            </button>
             <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 400 }}>
               <Leaderboard
                 gameId={GAME_ID}
@@ -996,21 +1017,6 @@ export default function SwoopCiGame() {
                 colors={LEADERBOARD_COLORS}
               />
             </div>
-            <button
-              onClick={() => setShowLeaderboard(false)}
-              style={{
-                marginTop: 20,
-                background: '#facc15',
-                color: '#18181b',
-                border: '2px solid #18181b',
-                padding: '12px 30px',
-                fontSize: 14,
-                cursor: 'pointer',
-                borderRadius: 20,
-              }}
-            >
-              Close
-            </button>
           </div>
         )}
 
