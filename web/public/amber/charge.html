@@ -1,503 +1,518 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>CHARGE — Hold. Release. Perfect timing wins.</title>
-    <meta name="description" content="A one-button timing game. Hold to charge power, release at the perfect moment to score. Miss the zone and you're done.">
-    
-    <!-- OG Tags -->
-    <meta property="og:title" content="CHARGE — Hold. Release. Perfect timing wins.">
-    <meta property="og:description" content="A one-button timing game. Hold to charge power, release at the perfect moment to score.">
-    <meta property="og:image" content="https://kochi.to/amber/charge-og.png">
-    <meta property="og:url" content="https://kochi.to/amber/charge.html">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="CHARGE — Hold. Release. Perfect timing wins.">
-    <meta name="twitter:description" content="A one-button timing game. Hold to charge power, release at the perfect moment to score.">
-    <meta name="twitter:image" content="https://kochi.to/amber/charge-og.png">
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        body {
-            font-family: 'Space Mono', monospace;
-            background: #000;
-            color: #D4A574;
-            overflow: hidden;
-            touch-action: none;
-            user-select: none;
-        }
-        
-        #container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        #title {
-            font-size: 24px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            opacity: 0.9;
-        }
-        
-        #canvas {
-            display: block;
-            touch-action: none;
-        }
-        
-        #info {
-            font-size: 14px;
-            opacity: 0.7;
-            text-align: center;
-            max-width: 300px;
-            line-height: 1.6;
-        }
-        
-        #stats {
-            display: flex;
-            gap: 30px;
-            font-size: 16px;
-        }
-        
-        .stat {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .stat-label {
-            font-size: 11px;
-            opacity: 0.6;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #FFD700;
-        }
-        
-        #button {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, #FFD700, #D4A574);
-            border: 3px solid #FFD700;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #000;
-        }
-        
-        #button:active {
-            transform: scale(0.95);
-        }
-        
-        #button.charging {
-            animation: pulse 0.1s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        
-        #message {
-            font-size: 18px;
-            font-weight: bold;
-            color: #2D9596;
-            min-height: 24px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        #message.perfect { color: #FFD700; }
-        #message.good { color: #2D9596; }
-        #message.miss { color: #ff4444; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>CHARGE — Hold to power up. Release to fire.</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="CHARGE — Hold to power up. Release to fire.">
+  <meta property="og:description" content="A hold-and-release power shot toy by Amber">
+  <meta property="og:image" content="https://intheamber.com/amber/charge-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/charge.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CHARGE — Hold to power up. Release to fire.">
+  <meta name="twitter:description" content="A hold-and-release power shot toy by Amber">
+  <meta name="twitter:image" content="https://intheamber.com/amber/charge-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 14px;
+      pointer-events: none;
+      z-index: 10;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.8);
+    }
+
+    #charge-bar {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 30px;
+      border: 2px solid #D4A574;
+      border-radius: 4px;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+
+    #charge-bar.active {
+      opacity: 1;
+    }
+
+    #charge-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #D4A574, #FFD700, #2D9596);
+      transition: width 0.05s linear;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+
+    #instructions {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      font-size: 18px;
+      opacity: 1;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    #instructions.hidden {
+      opacity: 0;
+    }
+
+    .large {
+      font-size: 24px;
+      color: #FFD700;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 600px) {
+      #ui {
+        font-size: 12px;
+      }
+      #charge-bar {
+        width: 160px;
+        height: 24px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div id="container">
-        <div id="title">CHARGE</div>
-        
-        <canvas id="canvas" width="300" height="300"></canvas>
-        
-        <div id="button">HOLD</div>
-        
-        <div id="message"></div>
-        
-        <div id="stats">
-            <div class="stat">
-                <div class="stat-label">Score</div>
-                <div class="stat-value" id="score">0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Best</div>
-                <div class="stat-value" id="best">0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Streak</div>
-                <div class="stat-value" id="streak">0</div>
-            </div>
-        </div>
-        
-        <div id="info">Hold the button to charge. Release in the PERFECT zone for max points. Miss and you lose your streak.</div>
-    </div>
-    
-    <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const button = document.getElementById('button');
-        const message = document.getElementById('message');
-        const scoreEl = document.getElementById('score');
-        const bestEl = document.getElementById('best');
-        const streakEl = document.getElementById('streak');
-        
-        // Audio context
-        let audioCtx;
-        
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div>SCORE: <span id="score">0</span></div>
+    <div>BEST: <span id="best">0</span></div>
+    <div>COMBO: <span id="combo">0</span>x</div>
+  </div>
+
+  <div id="charge-bar">
+    <div id="charge-fill"></div>
+  </div>
+
+  <div id="instructions">
+    <div class="large">HOLD TO CHARGE</div>
+    <div>Release to fire</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
+    const comboEl = document.getElementById('combo');
+    const chargeBar = document.getElementById('charge-bar');
+    const chargeFill = document.getElementById('charge-fill');
+    const instructions = document.getElementById('instructions');
+
+    let W, H;
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Audio context
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTone(freq, duration = 0.1, type = 'sine', volume = 0.3) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.value = volume;
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // Game state
+    let score = 0;
+    let best = parseInt(localStorage.getItem('charge_best') || '0');
+    let combo = 0;
+    let targets = [];
+    let projectiles = [];
+    let particles = [];
+    let isCharging = false;
+    let chargeStart = 0;
+    let chargeAmount = 0;
+    let chargeX = 0;
+    let chargeY = 0;
+    let hasPlayed = false;
+
+    bestEl.textContent = best;
+
+    // Target class
+    class Target {
+      constructor() {
+        this.radius = 20 + Math.random() * 30;
+        this.x = this.radius + Math.random() * (W - this.radius * 2);
+        this.y = this.radius + Math.random() * (H * 0.6 - this.radius * 2);
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.health = Math.floor(this.radius / 10);
+        this.maxHealth = this.health;
+        this.color = '#2D9596';
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x - this.radius < 0 || this.x + this.radius > W) {
+          this.vx *= -1;
+          this.x = Math.max(this.radius, Math.min(W - this.radius, this.x));
         }
-        
-        function playTone(freq, duration, type = 'sine') {
-            if (!audioCtx)return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            osc.frequency.value = freq;
-            osc.type = type;
-            
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-            
-            osc.start(audioCtx.currentTime);
-            osc.stop(audioCtx.currentTime + duration);
+        if (this.y - this.radius < 0 || this.y + this.radius > H * 0.6) {
+          this.vy *= -1;
+          this.y = Math.max(this.radius, Math.min(H * 0.6 - this.radius, this.y));
         }
+      }
+
+      draw() {
+        // Outer glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+        gradient.addColorStop(0, this.color + '80');
+        gradient.addColorStop(0.7, this.color + '40');
+        gradient.addColorStop(1, this.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+
+        // Main circle
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Health bar
+        const barWidth = this.radius * 2;
+        const barHeight = 4;
+        const barY = this.y - this.radius - 10;
+        ctx.fillStyle = '#0D0D0D';
+        ctx.fillRect(this.x - barWidth / 2, barY, barWidth, barHeight);
+        const healthPct = this.health / this.maxHealth;
+        ctx.fillStyle = healthPct > 0.5 ? '#2D9596' : healthPct > 0.25 ? '#FFD700' : '#FF6B6B';
+        ctx.fillRect(this.x - barWidth / 2, barY, barWidth * healthPct, barHeight);
+      }
+
+      hit(damage) {
+        this.health -= damage;
+        return this.health <= 0;
+      }
+    }
+
+    // Projectile class
+    class Projectile {
+      constructor(x, y, targetX, targetY, power) {
+        this.x = x;
+        this.y = y;
+        this.power = power;
+        this.radius = 5 + power * 10;
         
-        function playChargeTone(power) {
-            const freq = 200 + power * 400; // 200Hz to 600Hz
-            playTone(freq, 0.05, 'sine');
-        }
+        const angle = Math.atan2(targetY - y, targetX - x);
+        const speed = 10 + power * 5;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
         
-        function playSuccessTone() {
-            playTone(523, 0.1); // C5
-            setTimeout(() => playTone(659, 0.1), 100); // E5
-            setTimeout(() => playTone(784, 0.2), 200); // G5
-        }
-        
-        function playFailTone() {
-            playTone(200, 0.3, 'sawtooth');
-        }
-        
-        // Game state
-        let charging = false;
-        let power = 0;
-        let speed = 0.015; // How fast the power charges
-        let score = 0;
-        let best = parseInt(localStorage.getItem('charge_best') || '0');
-        let streak = 0;
-        let lastToneTime = 0;
-        
-        bestEl.textContent = best;
-        
-        // Particles
-        let particles = [];
-        
-        class Particle {
-            constructor(x, y, color, vx, vy) {
-                this.x = x;
-                this.y = y;
-                this.color = color;
-                this.vx = vx;
-                this.vy = vy;
-                this.life = 1;
-                this.decay = 0.02;
-                this.size = Math.random() * 3 + 2;
-            }
+        this.life = 1;
+        this.color = power > 0.66 ? '#FFD700' : power > 0.33 ? '#D4A574' : '#2D9596';
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+this.life -= 0.01;
+
+        // Check collision with targets
+        for (let i = targets.length - 1; i >= 0; i--) {
+          const t = targets[i];
+          const dx = this.x - t.x;
+          const dy = this.y - t.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < this.radius + t.radius) {
+            // Hit!
+            const damage = Math.ceil(this.power * 3);
+            const destroyed = t.hit(damage);
             
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= this.decay;
-                this.vy += 0.1; // gravity
-            }
-            
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.life;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-        
-        function spawnParticles(x, y, color, count = 20) {
-            for (let i = 0; i < count; i++) {
-                const angle = (Math.PI * 2 * i) / count;
-                const speed = Math.random() * 3 + 2;
-                const vx = Math.cos(angle) * speed;
-                const vy = Math.sin(angle) * speed;
-                particles.push(new Particle(x, y, color, vx, vy));
-            }
-        }
-        
-        function draw() {
-            // Clear
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const maxRadius = 120;
-            
-            // Draw charge zones (background)
-            // Miss zone: 0-0.3 and 0.9-1.0 (red)
-            // Good zone: 0.3-0.6 and 0.7-0.9 (teal)
-            // Perfect zone: 0.6-0.7 (gold)
-            
-            // Miss zone (outer)
-            ctx.fillStyle = 'rgba(255, 68, 68, 0.1)';
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Good zone
-            ctx.fillStyle = 'rgba(45, 149, 150, 0.15)';
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius * 0.9, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Miss zone (inner)
-            ctx.fillStyle = 'rgba(255, 68, 68, 0.1)';
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius * 0.6, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Perfect zone
-            ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius * 0.7, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Draw zone boundaries
-            ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius * 0.6, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius * 0.7, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            ctx.strokeStyle = 'rgba(45, 149, 150, 0.3)';
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius * 0.3, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, maxRadius * 0.9, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            // Draw current power level (expanding circle)
-            if (charging) {
-                const radius = power * maxRadius;
-                const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-                
-                if (power >= 0.6 && power <= 0.7) {
-                    gradient.addColorStop(0, 'rgba(255, 215, 0, 0.5)');
-                    gradient.addColorStop(1, 'rgba(255, 215, 0, 0.1)');
-                } else if (power >= 0.3 && power < 0.6) {
-                    gradient.addColorStop(0, 'rgba(45, 149, 150, 0.5)');
-                    gradient.addColorStop(1, 'rgba(45, 149, 150, 0.1)');
-                } else if (power >= 0.7 && power < 0.9) {
-                    gradient.addColorStop(0, 'rgba(45, 149, 150, 0.5)');
-                    gradient.addColorStop(1, 'rgba(45, 149, 150, 0.1)');
-                } else {
-                    gradient.addColorStop(0, 'rgba(255, 68, 68, 0.5)');
-                    gradient.addColorStop(1, 'rgba(255, 68, 68, 0.1)');
-                }
-                
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Glow ring at current radius
-                ctx.strokeStyle = power >= 0.6 && power <= 0.7 ? '#FFD700' : 
-                                  (power >= 0.3 && power < 0.9 ? '#2D9596' : '#ff4444');
-                ctx.lineWidth = 3;
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = ctx.strokeStyle;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.shadowBlur = 0;
-            }
-            
-            // Draw particles
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            particles = particles.filter(p => p.life > 0);
-            
-            // Draw center dot
-            ctx.fillStyle = '#D4A574';
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, 5, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        function update() {
-            if (charging) {
-                power += speed;
-                
-                // Play charging tone at intervals
-                const now = Date.now();
-                if (now - lastToneTime > 100) {
-                    playChargeTone(power);
-                    lastToneTime = now;
-                }
-                
-                // Wrap around if > 1
-                if (power > 1) {
-                    power = 0;
-                    speed *= 1.05; // Speed up slightly each cycle
-                }
-            }
-            
-            draw();
-            requestAnimationFrame(update);
-        }
-        
-        function startCharge() {
-            initAudio();
-            charging = true;
-            power = 0;
-            message.textContent = '';
-            message.className = '';
-            button.textContent = 'CHARGING';
-            button.classList.add('charging');
-            lastToneTime = Date.now();
-        }
-        
-        function releaseCharge() {
-            if (!charging) return;
-            
-            charging = false;
-            button.textContent = 'HOLD';
-            button.classList.remove('charging');
-            
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            
-            // Scoring
-            let points = 0;
-            let feedback = '';
-            let feedbackClass = '';
-            let color = '';
-            
-            if (power >= 0.6 && power <= 0.7) {
-                points = 100;
-                feedback = '⚡ PERFECT! +100';
-                feedbackClass = 'perfect';
-                color = '#FFD700';
-                streak++;
-                playSuccessTone();
-            } else if ((power >= 0.3 && power < 0.6) || (power > 0.7 && power < 0.9)) {
-                points = 50;
-                feedback = '✓ GOOD +50';
-                feedbackClass = 'good';
-                color = '#2D9596';
-                streak++;
-                playTone(440, 0.15);
+            if (destroyed) {
+              targets.splice(i, 1);
+              score += Math.ceil(t.maxHealth * 10);
+              combo++;
+              scoreEl.textContent = score;
+              comboEl.textContent = combo;
+              playTone(800 + combo * 50, 0.15, 'sine', 0.4);
+              spawnParticles(t.x, t.y, 20, '#FFD700');
             } else {
-                points = 0;
-                feedback = '✗ MISS';
-                feedbackClass = 'miss';
-                color = '#ff4444';
-                streak = 0;
-                speed = 0.015; // Reset speed
-                playFailTone();
+              playTone(400, 0.1, 'triangle', 0.3);
+              spawnParticles(this.x, this.y, 10, this.color);
             }
-            
-            // Apply streak multiplier
-            if (streak > 1) {
-                points *= streak;
-                feedback += ` (×${streak} STREAK!)`;
-            }
-            
-            score += points;
-            scoreEl.textContent = score;
-            streakEl.textContent = streak;
-            
-            if (score > best) {
-                best = score;
-                bestEl.textContent = best;
-                localStorage.setItem('charge_best', best.toString());
-            }
-            
-            message.textContent = feedback;
-            message.className = feedbackClass;
-            
-            // Spawn particles
-            const radius = power * 120;
-            const particleX = centerX + Math.cos(0) * radius;
-            const particleY = centerY + Math.sin(0) * radius;
-            spawnParticles(centerX, centerY, color, points > 0 ? 30 : 15);
+
+            this.life = 0;
+            break;
+          }
         }
+
+        return this.life > 0 && this.x > 0 && this.x < W && this.y > 0 && this.y < H;
+      }
+
+      draw() {
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+        gradient.addColorStop(0, this.color);
+        gradient.addColorStop(0.5, this.color + 'CC');
+        gradient.addColorStop(1, this.color + '00');
         
-        // Event listeners
-        button.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            startCharge();
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Particle class
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 4;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.life = 1;
+        this.color = color;
+        this.size = 3 + Math.random() * 5;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2; // gravity
+        this.life -= 0.02;
+        return this.life > 0;
+      }
+
+      draw() {
+        ctx.fillStyle = this.color + Math.floor(this.life * 255).toString(16).padStart(2, '0');
+        ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+      }
+    }
+
+    function spawnParticles(x, y, count, color) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    }
+
+    // Spawn initial targets
+    function spawnTargets(count) {
+      for (let i = 0; i < count; i++) {
+        targets.push(new Target());
+      }
+    }
+
+    spawnTargets(5);
+
+    // Input handling
+    let isTouch = false;
+
+    function handleStart(x, y) {
+      initAudio();
+      
+      if (!hasPlayed) {
+        instructions.classList.add('hidden');
+        hasPlayed = true;
+      }
+
+      isCharging = true;
+      chargeStart = Date.now();
+      chargeAmount = 0;
+      chargeX = x;
+      chargeY = y;
+      chargeBar.classList.add('active');
+      playTone(200, 0.05, 'sine', 0.2);
+    }
+
+    function handleEnd(x, y) {
+      if (!isCharging) return;
+
+      isCharging = false;
+      chargeBar.classList.remove('active');
+      chargeFill.style.width = '0%';
+
+      // Fire projectile
+      if (chargeAmount > 0.05) {
+        projectiles.push(new Projectile(chargeX, chargeY, x, y, chargeAmount));
+        const freq = 300 + chargeAmount * 500;
+        playTone(freq, 0.2, 'square', 0.3);
+        spawnParticles(chargeX, chargeY, 8, '#D4A574');
+      }
+
+      // Check for missed shot (no targets nearby)
+      if (targets.length > 0) {
+        let nearestDist = Infinity;
+        targets.forEach(t => {
+          const dx = x - t.x;
+          const dy = y - t.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          nearestDist = Math.min(nearestDist, dist);
         });
-        
-        button.addEventListener('mouseup', (e) => {
-            e.preventDefault();
-            releaseCharge();
-        });
-        
-        button.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startCharge();
-        });
-        
-        button.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            releaseCharge();
-        });
-        
-        // Start animation loop
-        update();
-    </script>
+
+        if (nearestDist > 150) {
+          combo = 0;
+          comboEl.textContent = combo;
+          playTone(150, 0.3, 'sawtooth', 0.2);
+        }
+      }
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (isTouch) return;
+      handleStart(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener('mouseup', (e) => {
+      if (isTouch) return;
+      handleEnd(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      isTouch = true;
+      const touch = e.touches[0];
+      handleStart(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      const touch = e.changedTouches[0];
+      handleEnd(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    // Game loop
+    function update() {
+      // Update charge
+      if (isCharging) {
+        const elapsed = Date.now() - chargeStart;
+        chargeAmount = Math.min(elapsed / 2000, 1); // 2 seconds to full charge
+        chargeFill.style.width = (chargeAmount * 100) + '%';
+      }
+
+      // Update targets
+      targets.forEach(t => t.update());
+
+      // Spawn new targets if needed
+      if (targets.length < 5 && Math.random() < 0.02) {
+        targets.push(new Target());
+      }
+
+      // Update projectiles
+      projectiles = projectiles.filter(p => p.update());
+
+      // Update particles
+      particles = particles.filter(p => p.update());
+
+      // Update best score
+      if (score > best) {
+        best = score;
+        bestEl.textContent = best;
+        localStorage.setItem('charge_best', best);
+      }
+    }
+
+    function draw() {
+      // Fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, W, H);
+
+      // Draw targets
+      targets.forEach(t => t.draw());
+
+      // Draw projectiles
+      projectiles.forEach(p => p.draw());
+
+      // Draw particles
+      particles.forEach(p => p.draw());
+
+      // Draw charge indicator
+      if (isCharging && chargeAmount > 0.05) {
+        const radius = 20 + chargeAmount * 40;
+        const gradient = ctx.createRadialGradient(chargeX, chargeY, 0, chargeX, chargeY, radius);
+        const color = chargeAmount > 0.66 ? '#FFD700' : chargeAmount > 0.33 ? '#D4A574' : '#2D9596';
+        gradient.addColorStop(0, color + '80');
+        gradient.addColorStop(0.7, color + '40');
+        gradient.addColorStop(1, color + '00');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(chargeX, chargeY, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Pulsing ring
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        const pulseRadius = radius * (0.8 + Math.sin(Date.now() / 100) * 0.2);
+        ctx.arc(chargeX, chargeY, pulseRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
 </body>
 </html>
