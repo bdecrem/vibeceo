@@ -1211,10 +1211,19 @@ async function findUntweetedCreation(): Promise<{ id: string; content: string; u
 
       // Find one where tweeted is false or undefined
       if (meta?.tweeted === false || meta?.tweeted === undefined) {
+        // URL may be in metadata.url or embedded in content as "URL: https://..."
+        let url = meta?.url || '';
+        if (!url && row.content) {
+          const urlMatch = row.content.match(/URL:\s*(https:\/\/[^\s"')]+)/i);
+          if (urlMatch) {
+            url = urlMatch[1];
+          }
+        }
+
         return {
           id: row.id,
           content: row.content || '',
-          url: meta?.url || '',
+          url,
           tags: meta?.tags || [],
         };
       }
@@ -1309,15 +1318,18 @@ function buildCreationSmsMessage(creation: { content: string; url: string }): st
   lines.push("🎨 Hey, I made something");
   lines.push("");
 
-  // Creation name (truncate if needed)
-  const name = creation.content.length > 100
-    ? creation.content.slice(0, 97) + "..."
-    : creation.content;
+  // Use first line as title (content may include long description paragraphs)
+  const firstLine = creation.content.split('\n')[0].trim();
+  const name = firstLine.length > 100
+    ? firstLine.slice(0, 97) + "..."
+    : firstLine;
   lines.push(name);
   lines.push("");
 
   // Inline link with trailing text (prevents iMessage splitting)
-  lines.push(`${creation.url} — come see`);
+  if (creation.url) {
+    lines.push(`${creation.url} — come see`);
+  }
 
   return lines.join("\n");
 }
