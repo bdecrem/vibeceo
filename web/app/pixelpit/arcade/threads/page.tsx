@@ -373,43 +373,67 @@ export default function ThreadsGame() {
     osc.stop(ctx.currentTime + dur);
   }, []);
 
-  // --- Music engine (chill ambient) ---
+  // --- Music engine (mellow electronic) ---
+  const musicFilterRef = useRef<BiquadFilterNode | null>(null);
+  const musicLfoStepRef = useRef(0);
+
   const MUSIC = {
-    bpm: 88,
-    // Chord progression: Am7 → Fmaj7 → Dm7 → Em7 (each chord = 32 steps = 2 bars)
+    bpm: 84,
+    // Wide-voiced chords (root spread across octaves for depth)
+    // Each chord = 32 steps (2 bars). Pad tones + sub bass root.
     chords: [
-      [110, 262, 330, 392],   // Am7
-      [87.3, 220, 262, 330],  // Fmaj7
-      [73.4, 175, 220, 262],  // Dm7
-      [82.4, 196, 247, 330],  // Em7
+      { pad: [220, 330, 494, 659], sub: 55 },    // Am9: A3 E4 B4 E5, sub A1
+      { pad: [175, 262, 440, 659], sub: 43.6 },   // Fmaj9: F3 C4 A4 E5, sub F1
+      { pad: [147, 220, 370, 587], sub: 36.7 },   // Dm9: D3 A3 F#4 D5, sub D1
+      { pad: [165, 247, 392, 587], sub: 41.2 },   // Em9: E3 B3 G4 D5, sub E1
     ],
-    // Pluck pattern: sparse pentatonic notes (Am pentatonic)
-    pluck: [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-    pluckNotes: [440, 523, 587, 659, 784, 880, 659, 523],
+    // Arp sequence: Am pentatonic melody with rests (0 = rest)
+    arp: [
+      659, 0, 784, 0, 0, 587, 0, 0, 880, 0, 0, 659, 0, 784, 0, 0,
+      587, 0, 0, 440, 0, 0, 523, 0, 0, 0, 659, 0, 0, 0, 0, 0,
+    ],
+    // Soft rhythmic pulse pattern (1 = tick)
+    pulse: [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
   };
 
-  const playPad = useCallback((freqs: number[]) => {
+  // Warm pad: 3 detuned oscillators per tone through shared filter
+  const playPad = useCallback((tones: number[]) => {
     const ctx = audioCtxRef.current;
     const master = musicGainRef.current;
     if (!ctx || !master || !musicOnRef.current) return;
-    freqs.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.value = freq;
-      // Detune slightly for warmth
-      osc.detune.value = (i - 1.5) * 4;
-      gain.gain.setValueAtTime(0, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.025, ctx.currentTime + 0.4);
-      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.8);
-      osc.connect(gain);
-      gain.connect(master);
-      osc.start();
-      osc.stop(ctx.currentTime + 2);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 800;
+    filter.Q.value = 0.7;
+    filter.connect(master);
+    // Slow filter open over the chord's duration
+    filter.frequency.setValueAtTime(600, ctx.currentTime);
+    filter.frequency.linearRampToValueAtTime(1400, ctx.currentTime + 2.5);
+    filter.frequency.linearRampToValueAtTime(700, ctx.currentTime + 5);
+
+    tones.forEach((freq, i) => {
+      // 3 detuned oscillators per voice for thickness
+      [-7, 0, 7].forEach((detune, di) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = di === 1 ? 'sine' : 'triangle';
+        osc.frequency.value = freq;
+        osc.detune.value = detune + (i * 1.5); // spread detuning per voice
+        // Slow attack, long sustain, gentle release
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.012, ctx.currentTime + 1.2);
+        gain.gain.setValueAtTime(0.012, ctx.currentTime + 3.5);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 5.5);
+        osc.connect(gain);
+        gain.connect(filter);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 5.8);
+      });
     });
   }, []);
 
-  const playPluck = useCallback((freq: number) => {
+  // Sub bass: deep sine with gentle envelope
+  const playSub = useCallback((freq: number) => {
     const ctx = audioCtxRef.current;
     const master = musicGainRef.current;
     if (!ctx || !master || !musicOnRef.current) return;
@@ -419,33 +443,91 @@ export default function ThreadsGame() {
     osc.type = 'sine';
     osc.frequency.value = freq;
     filter.type = 'lowpass';
-    filter.frequency.value = 2000;
-    filter.Q.value = 0.5;
-    gain.gain.setValueAtTime(0.06, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    filter.frequency.value = 120;
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.8);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime + 3);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 5);
     osc.connect(filter);
     filter.connect(gain);
     gain.connect(master);
     osc.start();
-    osc.stop(ctx.currentTime + 0.7);
+    osc.stop(ctx.currentTime + 5.2);
+  }, []);
+
+  // Filtered arp with delay echoes
+  const playArpNote = useCallback((freq: number) => {
+    const ctx = audioCtxRef.current;
+    const master = musicGainRef.current;
+    if (!ctx || !master || !musicOnRef.current) return;
+    const stepSec = 60 / MUSIC.bpm / 4;
+    // Play note + 2 delay echoes (quieter each time)
+    [0, stepSec * 3, stepSec * 6].forEach((delay, i) => {
+      const vol = [0.04, 0.02, 0.01][i];
+      const cutoff = [2800, 1800, 1000][i]; // filter closes on echoes
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      filter.type = 'lowpass';
+      filter.frequency.value = cutoff;
+      filter.Q.value = 2;
+      gain.gain.setValueAtTime(vol, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.5);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(master);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.55);
+    });
+  }, []);
+
+  // Soft rhythmic texture (filtered noise click)
+  const playPulse = useCallback(() => {
+    const ctx = audioCtxRef.current;
+    const master = musicGainRef.current;
+    if (!ctx || !master || !musicOnRef.current) return;
+    const len = ctx.sampleRate * 0.06;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 4000;
+    bp.Q.value = 3;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.015, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+    src.connect(bp);
+    bp.connect(gain);
+    gain.connect(master);
+    src.start();
   }, []);
 
   const musicTick = useCallback(() => {
     if (!musicPlayingRef.current || !musicOnRef.current) return;
     const step = musicStepRef.current;
     const barStep = step % 16;
-    // Pad: play on first step of each 2-bar phrase (every 32 steps)
+
+    // Pad + sub: every 2 bars (32 steps)
     if (step % 32 === 0) {
-      const chordIndex = Math.floor(step / 32) % MUSIC.chords.length;
-      playPad(MUSIC.chords[chordIndex]);
+      const ci = Math.floor(step / 32) % MUSIC.chords.length;
+      playPad(MUSIC.chords[ci].pad);
+      playSub(MUSIC.chords[ci].sub);
     }
-    // Pluck
-    if (MUSIC.pluck[barStep]) {
-      const noteIndex = Math.floor(step / 2) % MUSIC.pluckNotes.length;
-      playPluck(MUSIC.pluckNotes[noteIndex]);
-    }
+
+    // Arp melody
+    const arpNote = MUSIC.arp[step % MUSIC.arp.length];
+    if (arpNote > 0) playArpNote(arpNote);
+
+    // Rhythmic pulse texture
+    if (MUSIC.pulse[barStep]) playPulse();
+
     musicStepRef.current++;
-  }, [playPad, playPluck]);
+  }, [playPad, playSub, playArpNote, playPulse]);
 
   const startMusic = useCallback(() => {
     if (musicPlayingRef.current) return;
@@ -453,7 +535,6 @@ export default function ThreadsGame() {
     const ctx = audioCtxRef.current;
     if (!ctx) return;
     if (ctx.state === 'suspended') ctx.resume();
-    // Create music master gain
     if (!musicGainRef.current) {
       musicGainRef.current = ctx.createGain();
       musicGainRef.current.gain.value = 1;
