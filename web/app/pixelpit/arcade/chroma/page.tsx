@@ -166,9 +166,9 @@ interface Particle {
 
 // Tutorial steps
 const TUTORIAL_STEPS = [
-  { title: 'TAP', instruction: 'TAP TO HOP', emoji: '👆' },
-  { title: 'MATCH', instruction: 'GO THROUGH PINK', emoji: '🎯' },
-  { title: 'CHANGE', instruction: 'EAT THE BUG', emoji: '🐛' },
+  { title: 'TAP', instruction: 'TAP ANYWHERE TO HOP', emoji: '👆' },
+  { title: 'MATCH', instruction: 'YOU ARE PINK — HOP THROUGH PINK', emoji: '💗' },
+  { title: 'CHANGE', instruction: 'EAT THE BUG TO CHANGE COLOR', emoji: '🐛' },
 ];
 
 export default function ChromaGame() {
@@ -345,45 +345,33 @@ export default function ChromaGame() {
     };
 
     if (step === 0) {
-      // Step 1: Just hop - no obstacles
-      // Empty space
+      // Step 1: Just hop - no obstacles, just learn to tap
+      // Empty space - nothing to hit
     } else if (step === 1) {
-      // Step 2: Match - slow pink ring
+      // Step 2: Match - STATIC pink ring (no spinning!)
       game.obstacles.push({
-        y: canvasSize.h - 350,
+        y: canvasSize.h - 320,
         type: 'ring',
-        rotation: 0, // Pink at top
-        spinSpeed: (Math.PI * 2) / 6, // Very slow - 6 seconds per rotation
-        spinDirection: 1,
+        rotation: Math.PI / 4, // Pink segment at a good angle
+        spinSpeed: 0, // NOT SPINNING - totally static
+        spinDirection: 0,
         colorOffset: 0, // Pink is segment 0
         passed: false,
         currentColorIndex: 0,
         colorTimer: 0,
-        colorDuration: 0.8,
+        colorDuration: 999,
       });
     } else if (step === 2) {
-      // Step 3: Change - bug then cyan ring
-      // Cyan bug in the path
+      // Step 3: Eat bug to change color
+      // Big obvious cyan bug right in the path
       game.bugs.push({
-        y: canvasSize.h - 280,
+        y: canvasSize.h - 250,
         x: canvasSize.w / 2,
         colorIndex: 1, // Cyan
         eaten: false,
         orbitAngle: 0,
       });
-      // Cyan ring (after the bug)
-      game.obstacles.push({
-        y: canvasSize.h - 420,
-        type: 'ring',
-        rotation: 0,
-        spinSpeed: (Math.PI * 2) / 6, // Slow
-        spinDirection: 1,
-        colorOffset: 1, // Cyan is segment 0
-        passed: false,
-        currentColorIndex: 1,
-        colorTimer: 0,
-        colorDuration: 0.8,
-      });
+      // NO ring in step 3 - just eat the bug and you're done
     }
 
     setTutorialStep(step);
@@ -665,7 +653,15 @@ export default function ChromaGame() {
           // Tutorial: bug eaten
           if (game.isTutorial && game.tutorialStep === 2) {
             game.tutorialAte = true;
-            setTutorialMessage('NOW YOU\'RE CYAN!');
+            setTutorialMessage('YOU\'RE CYAN NOW! 🦎');
+            // Step 3 complete - go to real game
+            setTimeout(() => {
+              if (!game.isTutorial) return;
+              setTutorialMessage('READY!');
+              setTimeout(() => {
+                startGame();
+              }, 800);
+            }, 1000);
           }
         }
       }
