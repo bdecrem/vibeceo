@@ -438,7 +438,7 @@ export default function ChromaGame() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || gameState !== 'playing') return;
+    if (!canvas || (gameState !== 'playing' && gameState !== 'tutorial')) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
