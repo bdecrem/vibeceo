@@ -751,17 +751,22 @@ export default function ThreadsGame() {
     });
     setGameState('level-complete');
 
-    if (level < 4) {
-      setTimeout(() => {
-        setGameState('playing');
-        startLevel(level + 1);
-      }, 1800);
-    } else {
+    if (level === 4) {
       setTimeout(() => {
         endRun(true);
       }, 2000);
     }
-  }, [stopTimer, getElapsed, playTone, startLevel, endRun, silentScoreSubmit]);
+    // Levels 0-3: user chooses NEXT or DONE via overlay buttons
+  }, [stopTimer, getElapsed, playTone, endRun, silentScoreSubmit]);
+
+  // --- Advance to next level (from level-complete overlay) ---
+  const advanceLevel = useCallback(() => {
+    const level = currentLevelRef.current;
+    if (level < 4) {
+      setGameState('playing');
+      startLevel(level + 1);
+    }
+  }, [startLevel]);
 
   // --- Start run ---
   const startRun = useCallback(() => {
@@ -1322,6 +1327,36 @@ export default function ThreadsGame() {
               }}>
                 TOTAL: {lcInfo.runningTotal}
               </div>
+              {currentLevel < 4 && (
+                <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                  <button
+                    onClick={advanceLevel}
+                    style={{
+                      padding: '10px 24px', borderRadius: 8,
+                      border: 'none',
+                      background: COLORS.primary,
+                      color: COLORS.bg,
+                      fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+                      letterSpacing: 2, cursor: 'pointer',
+                    }}
+                  >
+                    NEXT
+                  </button>
+                  <button
+                    onClick={() => endRun(false)}
+                    style={{
+                      padding: '10px 20px', borderRadius: 8,
+                      border: `1px solid ${COLORS.border}`,
+                      background: 'transparent',
+                      color: COLORS.muted,
+                      fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
+                      letterSpacing: 2, cursor: 'pointer',
+                    }}
+                  >
+                    DONE
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
