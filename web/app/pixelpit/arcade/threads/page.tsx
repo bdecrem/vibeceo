@@ -333,6 +333,14 @@ export default function ThreadsGame() {
   const setBurnedRef = useRef(false);
   const levelClearedRef = useRef(false);
 
+  // Music state
+  const [musicOn, setMusicOn] = useState(true);
+  const musicOnRef = useRef(true);
+  const musicPlayingRef = useRef(false);
+  const musicIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const musicStepRef = useRef(0);
+  const musicGainRef = useRef<GainNode | null>(null);
+
   const GAME_URL = typeof window !== 'undefined'
     ? `${window.location.origin}/pixelpit/arcade/${GAME_ID}`
     : `https://pixelpit.io/pixelpit/arcade/${GAME_ID}`;
@@ -363,6 +371,114 @@ export default function ThreadsGame() {
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + dur);
+  }, []);
+
+  // --- Music engine (chill ambient) ---
+  const MUSIC = {
+    bpm: 88,
+    // Chord progression: Am7 → Fmaj7 → Dm7 → Em7 (each chord = 32 steps = 2 bars)
+    chords: [
+      [110, 262, 330, 392],   // Am7
+      [87.3, 220, 262, 330],  // Fmaj7
+      [73.4, 175, 220, 262],  // Dm7
+      [82.4, 196, 247, 330],  // Em7
+    ],
+    // Pluck pattern: sparse pentatonic notes (Am pentatonic)
+    pluck: [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+    pluckNotes: [440, 523, 587, 659, 784, 880, 659, 523],
+  };
+
+  const playPad = useCallback((freqs: number[]) => {
+    const ctx = audioCtxRef.current;
+    const master = musicGainRef.current;
+    if (!ctx || !master || !musicOnRef.current) return;
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      // Detune slightly for warmth
+      osc.detune.value = (i - 1.5) * 4;
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.025, ctx.currentTime + 0.4);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.8);
+      osc.connect(gain);
+      gain.connect(master);
+      osc.start();
+      osc.stop(ctx.currentTime + 2);
+    });
+  }, []);
+
+  const playPluck = useCallback((freq: number) => {
+    const ctx = audioCtxRef.current;
+    const master = musicGainRef.current;
+    if (!ctx || !master || !musicOnRef.current) return;
+    const osc = ctx.createOscillator();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    filter.type = 'lowpass';
+    filter.frequency.value = 2000;
+    filter.Q.value = 0.5;
+    gain.gain.setValueAtTime(0.06, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(master);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.7);
+  }, []);
+
+  const musicTick = useCallback(() => {
+    if (!musicPlayingRef.current || !musicOnRef.current) return;
+    const step = musicStepRef.current;
+    const barStep = step % 16;
+    // Pad: play on first step of each 2-bar phrase (every 32 steps)
+    if (step % 32 === 0) {
+      const chordIndex = Math.floor(step / 32) % MUSIC.chords.length;
+      playPad(MUSIC.chords[chordIndex]);
+    }
+    // Pluck
+    if (MUSIC.pluck[barStep]) {
+      const noteIndex = Math.floor(step / 2) % MUSIC.pluckNotes.length;
+      playPluck(MUSIC.pluckNotes[noteIndex]);
+    }
+    musicStepRef.current++;
+  }, [playPad, playPluck]);
+
+  const startMusic = useCallback(() => {
+    if (musicPlayingRef.current) return;
+    initAudio();
+    const ctx = audioCtxRef.current;
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    // Create music master gain
+    if (!musicGainRef.current) {
+      musicGainRef.current = ctx.createGain();
+      musicGainRef.current.gain.value = 1;
+      musicGainRef.current.connect(ctx.destination);
+    }
+    musicPlayingRef.current = true;
+    musicStepRef.current = 0;
+    const stepTime = (60 / MUSIC.bpm) * 1000 / 4;
+    musicIntervalRef.current = setInterval(musicTick, stepTime);
+  }, [initAudio, musicTick]);
+
+  const stopMusic = useCallback(() => {
+    musicPlayingRef.current = false;
+    if (musicIntervalRef.current) {
+      clearInterval(musicIntervalRef.current);
+      musicIntervalRef.current = null;
+    }
+  }, []);
+
+  const toggleMusic = useCallback(() => {
+    setMusicOn(prev => {
+      const next = !prev;
+      musicOnRef.current = next;
+      return next;
+    });
   }, []);
 
   // --- Group code detection on mount ---
@@ -425,6 +541,7 @@ export default function ThreadsGame() {
     levelActiveRef.current = false;
     setLevelActive(false);
     stopTimer();
+    stopMusic();
 
     setLevelScores(prev => {
       const padded = [...prev];
@@ -446,7 +563,7 @@ export default function ThreadsGame() {
     // Re-read localStorage to update title screen
     setSetsUsed(getNextSetIndex());
     setGameState('game-over');
-  }, [stopTimer]);
+  }, [stopTimer, stopMusic]);
 
   // --- Reveal all unsolved groups ---
   const revealAll = useCallback((puzzle: Puzzle, currentSolved: number[]) => {
@@ -573,6 +690,7 @@ export default function ThreadsGame() {
     setBurnedRef.current = false;
 
     initAudio();
+    startMusic();
     totalScoreRef.current = 0;
     setTotalScore(0);
     setLevelScores([]);
@@ -581,7 +699,7 @@ export default function ThreadsGame() {
     setShowShareModal(false);
     setGameState('playing');
     startLevel(0);
-  }, [initAudio, startLevel]);
+  }, [initAudio, startMusic, startLevel]);
 
   // --- Tile toggle ---
   const toggleSelect = useCallback((word: string) => {
@@ -688,14 +806,15 @@ export default function ThreadsGame() {
   // --- Back to title ---
   const backToTitle = useCallback(() => {
     stopTimer();
+    stopMusic();
     setSetsUsed(getNextSetIndex());
     setGameState('title');
-  }, [stopTimer]);
+  }, [stopTimer, stopMusic]);
 
-  // Cleanup timer on unmount
+  // Cleanup on unmount
   useEffect(() => {
-    return () => { stopTimer(); };
-  }, [stopTimer]);
+    return () => { stopTimer(); stopMusic(); };
+  }, [stopTimer, stopMusic]);
 
   // Pad level scores for display
   const displayScores = [...levelScores];
@@ -860,13 +979,26 @@ export default function ThreadsGame() {
               LEVEL <span style={{ color: LEVEL_COLORS[currentLevel] || COLORS.primary, fontWeight: 700 }}>{currentLevel + 1}</span>
               <span style={{ color: COLORS.mutedDark }}> / 5</span>
             </div>
-            <div style={{
-              fontSize: 18, fontWeight: 700,
-              color: COLORS.primary,
-              letterSpacing: 2,
-              textShadow: '0 0 12px #fbbf2430',
-            }}>
-              {totalScore}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                fontSize: 18, fontWeight: 700,
+                color: COLORS.primary,
+                letterSpacing: 2,
+                textShadow: '0 0 12px #fbbf2430',
+              }}>
+                {totalScore}
+              </div>
+              <button
+                onClick={toggleMusic}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 16, padding: 0, lineHeight: 1,
+                  opacity: musicOn ? 0.7 : 0.3,
+                }}
+                aria-label={musicOn ? 'Mute music' : 'Unmute music'}
+              >
+                {musicOn ? '\u266A' : '\u2716'}
+              </button>
             </div>
           </div>
 
