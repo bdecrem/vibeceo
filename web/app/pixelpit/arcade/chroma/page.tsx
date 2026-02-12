@@ -164,11 +164,11 @@ interface Particle {
   color: string;
 }
 
-// Tutorial steps
+// Tutorial steps - ULTRA SIMPLE
 const TUTORIAL_STEPS = [
-  { title: 'TAP', instruction: 'TAP ANYWHERE TO HOP', emoji: '👆' },
-  { title: 'MATCH', instruction: 'YOU ARE PINK — HOP THROUGH PINK', emoji: '💗' },
-  { title: 'CHANGE', instruction: 'EAT THE BUG TO CHANGE COLOR', emoji: '🐛' },
+  { title: 'HOP', instruction: 'TAP TO HOP UP', emoji: '👆' },
+  { title: 'COLOR', instruction: 'YOU ARE PINK — GO THROUGH PINK GATE', emoji: '💗' },
+  { title: 'BUG', instruction: 'EAT BUG = CHANGE COLOR', emoji: '🐛' },
 ];
 
 export default function ChromaGame() {
@@ -345,33 +345,20 @@ export default function ChromaGame() {
     };
 
     if (step === 0) {
-      // Step 1: Just hop - no obstacles, just learn to tap
-      // Empty space - nothing to hit
+      // Step 1: Just hop up - nothing else
+      // Target line at certain height - just reach it
     } else if (step === 1) {
-      // Step 2: Match - STATIC pink ring (no spinning!)
-      game.obstacles.push({
-        y: canvasSize.h - 320,
-        type: 'ring',
-        rotation: Math.PI / 4, // Pink segment at a good angle
-        spinSpeed: 0, // NOT SPINNING - totally static
-        spinDirection: 0,
-        colorOffset: 0, // Pink is segment 0
-        passed: false,
-        currentColorIndex: 0,
-        colorTimer: 0,
-        colorDuration: 999,
-      });
+      // Step 2: Simple gate - just a pink zone to pass through
+      // No complex obstacles - just reach the pink target
     } else if (step === 2) {
-      // Step 3: Eat bug to change color
-      // Big obvious cyan bug right in the path
+      // Step 3: Eat the bug
       game.bugs.push({
-        y: canvasSize.h - 250,
+        y: canvasSize.h - 300,
         x: canvasSize.w / 2,
         colorIndex: 1, // Cyan
         eaten: false,
         orbitAngle: 0,
       });
-      // NO ring in step 3 - just eat the bug and you're done
     }
 
     setTutorialStep(step);
@@ -400,16 +387,6 @@ export default function ChromaGame() {
     game.chameleon.squash = 0.7;
     playHop();
     
-    // Tutorial: first hop
-    if (game.isTutorial && game.tutorialStep === 0 && !game.tutorialHopped) {
-      game.tutorialHopped = true;
-      setTutorialMessage('🎉');
-      setTimeout(() => {
-        if (!game.isTutorial) return;
-        game.tutorialStep = 1;
-        setupTutorialStep(1);
-      }, 800);
-    }
   }, [setupTutorialStep]);
 
   useEffect(() => {
@@ -482,17 +459,48 @@ export default function ChromaGame() {
       const height = Math.max(0, (canvasSize.h - 150) - cham.y + game.cameraY);
       game.score = Math.max(game.score, Math.floor(height / 10));
 
-      // Update zone
-      game.zone = getZone(game.score * 10);
+      // TUTORIAL: Height-based step completion
+      if (game.isTutorial) {
+        const gateY = canvasSize.h - 350;
+        const chamScreenY = cham.y - game.cameraY;
+        
+        if (game.tutorialStep === 0 && !game.tutorialPassed && chamScreenY < gateY) {
+          // Reached the target line
+          game.tutorialPassed = true;
+          setTutorialMessage('NICE! 👆');
+          setTimeout(() => {
+            if (!game.isTutorial) return;
+            game.tutorialStep = 1;
+            setupTutorialStep(1);
+          }, 1000);
+        } else if (game.tutorialStep === 1 && !game.tutorialPassed && chamScreenY < gateY) {
+          // Passed through the pink gate
+          game.tutorialPassed = true;
+          setTutorialMessage('YES! ✨');
+          setTimeout(() => {
+            if (!game.isTutorial) return;
+            game.tutorialStep = 2;
+            setupTutorialStep(2);
+          }, 1000);
+        }
+        // Step 3 (bug) is handled in bug collision code below
+      }
 
-      // Spawn new obstacles
-      while (game.nextObstacleY > game.cameraY - 200) {
-        spawnObstacle(game.nextObstacleY, game.zone);
-        game.nextObstacleY -= 130 + Math.random() * 40;
+      // Update zone (not in tutorial)
+      if (!game.isTutorial) {
+        game.zone = getZone(game.score * 10);
+      }
 
-        // Spawn bug every 3-5 obstacles
-        if (Math.random() < 0.25) {
-          spawnBug(game.nextObstacleY + 60, cham.colorIndex);
+      // Spawn new obstacles (NOT in tutorial)
+      if (!game.isTutorial) {
+        while (game.nextObstacleY > game.cameraY - 200) {
+          spawnObstacle(game.nextObstacleY, game.zone);
+          game.nextObstacleY -= 130 + Math.random() * 40;
+
+          // Spawn bug every 3-5 obstacles
+          if (Math.random() < 0.25) {
+            spawnBug(game.nextObstacleY + 60, cham.colorIndex);
+          }
         }
       }
 
@@ -704,17 +712,65 @@ export default function ChromaGame() {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
 
-      // Draw decorative vines
-      ctx.strokeStyle = '#166534';
-      ctx.lineWidth = 3;
-      for (let i = 0; i < 3; i++) {
-        const x = 50 + i * 150;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        for (let y = 0; y < canvasSize.h; y += 20) {
-          ctx.lineTo(x + Math.sin((y - game.cameraY * 0.1) / 30) * 15, y);
+      // Draw decorative vines (not in tutorial - keep it clean)
+      if (!game.isTutorial) {
+        ctx.strokeStyle = '#166534';
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 3; i++) {
+          const x = 50 + i * 150;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          for (let y = 0; y < canvasSize.h; y += 20) {
+            ctx.lineTo(x + Math.sin((y - game.cameraY * 0.1) / 30) * 15, y);
+          }
+          ctx.stroke();
         }
-        ctx.stroke();
+      }
+
+      // TUTORIAL: Draw simple gates
+      if (game.isTutorial) {
+        const gateY = canvasSize.h - 350;
+        const gateWidth = 100;
+        
+        if (game.tutorialStep === 0) {
+          // Step 1: Target line - just hop up to here
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 4;
+          ctx.setLineDash([10, 10]);
+          ctx.beginPath();
+          ctx.moveTo(canvasSize.w / 2 - 60, gateY);
+          ctx.lineTo(canvasSize.w / 2 + 60, gateY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // Arrow pointing up
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 32px ui-monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('↑', canvasSize.w / 2, gateY + 50);
+          
+        } else if (game.tutorialStep === 1) {
+          // Step 2: Pink gate - walls on sides, pink gap in middle
+          // Left wall (gray)
+          ctx.fillStyle = '#4b5563';
+          ctx.fillRect(0, gateY - 15, canvasSize.w / 2 - gateWidth / 2, 30);
+          // Right wall (gray)
+          ctx.fillRect(canvasSize.w / 2 + gateWidth / 2, gateY - 15, canvasSize.w / 2 - gateWidth / 2, 30);
+          // Pink gap highlight
+          ctx.fillStyle = COLORS[0].hex; // Pink
+          ctx.fillRect(canvasSize.w / 2 - gateWidth / 2, gateY - 15, gateWidth, 30);
+          // Border
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(canvasSize.w / 2 - gateWidth / 2, gateY - 15, gateWidth, 30);
+          
+          // "PINK" label
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 20px ui-monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('PINK', canvasSize.w / 2, gateY - 30);
+        }
+        // Step 3 has the bug drawn by normal bug drawing code
       }
 
       // Draw obstacles
