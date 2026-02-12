@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INBOX QUEST — 999+ Unread</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="INBOX QUEST — 999+ Unread">
+  <meta property="og:description" content="8-bit pixel art: The eternal struggle">
+  <meta property="og:image" content="https://intheamber.com/amber/inbox-quest-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/inbox-quest.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="INBOX QUEST — 999+ Unread">
+  <meta name="twitter:description" content="8-bit pixel art: The eternal struggle">
+  <meta name="twitter:image" content="https://intheamber.com/amber/inbox-quest-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0a0a0a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+    }
+    
+    #game-container {
+      width: 100%;
+      max-width: 640px;
+      aspect-ratio: 4/3;
+      position: relative;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 4px solid #D4A574;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+    }
+    
+    canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    
+    #ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    
+    .tap-hint {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #D4A574;
+      font-size: 14px;
+      text-align: center;
+      animation: pulse 2s ease-in-out infinite;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    
+    @media (max-width: 768px) {
+      #game-container {
+        max-width: 100vw;
+        max-height: 100vh;
+        border: none;
+      }
+      
+      .tap-hint {
+        font-size: 12px;
+        bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="canvas"></canvas>
+    <div id="ui-overlay">
+      <div class="tap-hint">TAP TO CHECK INBOX</div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Game resolution
+    const WIDTH = 320;
+    const HEIGHT = 240;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+    
+    // Colors - classic NES palette style
+    const COLORS = {
+      bg: '#0a0a0a',
+      floor: '#1a1a1a',
+      desk: '#3d2817',
+      screen: '#1a3a1a',
+      screenGlow: '#2d6b2d',
+      char1: '#d4a574', // amber
+      char2: '#8b6f47', // darker amber
+      ui: '#2d9596', // teal
+      text: '#FFD700', // gold
+      red: '#ff4444',
+      white: '#ffffff',
+      gray: '#666666'
+    };
+    
+    let sanity = 100;
+    let unreadCount = 999;
+    let animFrame = 0;
+    let inboxOpen = false;
+    let emailsChecked = 0;
+    
+    // 8-bit beep sounds
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioUnlocked = false;
+    
+    function unlockAudio() {
+      if (!audioUnlocked) {
+        const osc = audioCtx.createOscillator();
+        osc.connect(audioCtx.destination);
+        osc.start(0);
+        osc.stop(0);
+        audioUnlocked = true;
+      }
+    }
+    
+    function beep(freq, duration, type = 'square') {
+      if (!audioUnlocked) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      osc.type = type;
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Draw pixel-perfect rectangle
+    function rect(x, y, w, h, color) {
+      ctx.fillStyle = color;
+ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+    }
+    
+    // Draw checkered floor
+    function drawFloor() {
+      const tileSize = 16;
+      for (let y = 160; y < HEIGHT; y += tileSize) {
+        for (let x = 0; x < WIDTH; x += tileSize) {
+          const isEven = (Math.floor(x / tileSize) + Math.floor(y / tileSize)) % 2 === 0;
+          rect(x, y, tileSize, tileSize, isEven ? COLORS.floor : COLORS.bg);
+        }
+      }
+    }
+    
+    // Draw desk
+    function drawDesk() {
+      rect(40, 140, 240, 20, COLORS.desk);
+      rect(40, 130, 240, 10, '#4d3827'); // lighter top
+    }
+    
+    // Draw computer screen
+    function drawScreen() {
+      // Monitor bezel
+      rect(100, 60, 120, 90, COLORS.gray);
+      rect(105, 65, 110, 75, COLORS.screen);
+      
+      // Screen glow
+      if (animFrame % 60 < 30) {
+        ctx.fillStyle = COLORS.screenGlow;
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(105, 65, 110, 75);
+        ctx.globalAlpha = 1;
+      }
+      
+      // Email icon (8x8 pixel envelope)
+      const iconX = 145;
+      const iconY = 80;
+      const scale = 2;
+      
+      // Envelope
+      rect(iconX, iconY, 8*scale, 6*scale, COLORS.white);
+      rect(iconX+scale, iconY+scale, 6*scale, 4*scale, COLORS.screen);
+      
+      // Envelope flap
+      ctx.fillStyle = COLORS.red;
+      ctx.beginPath();
+      ctx.moveTo(iconX, iconY);
+      ctx.lineTo(iconX + 4*scale, iconY + 3*scale);
+      ctx.lineTo(iconX + 8*scale, iconY);
+      ctx.fill();
+      
+      // Unread count
+      ctx.fillStyle = COLORS.text;
+      ctx.font = '12px "Courier New"';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${unreadCount}+`, 160, 115);
+      ctx.fillText('UNREAD', 160, 128);
+    }
+    
+    // Draw character sprite (16x24 pixels)
+    function drawCharacter() {
+      const x = 60;
+      const y = 110;
+      const scale = 2;
+      
+      // Head
+      rect(x + 4*scale, y, 8*scale, 8*scale, COLORS.char1);
+      
+      // Eyes (tired dots)
+      rect(x + 6*scale, y + 3*scale, scale, scale, COLORS.bg);
+      rect(x + 10*scale, y + 3*scale, scale, scale, COLORS.bg);
+      
+      // Body
+      rect(x + 3*scale, y + 8*scale, 10*scale, 10*scale, COLORS.char2);
+      
+      // Arms (typing position)
+      rect(x + scale, y + 10*scale, 2*scale, 6*scale, COLORS.char1);
+      rect(x + 13*scale, y + 10*scale, 2*scale, 6*scale, COLORS.char1);
+      
+      // Keyboard in front
+      rect(x + 8*scale, y + 16*scale, 16, 4, COLORS.gray);
+      
+      // ZZZ if low sanity
+      if (sanity < 30) {
+        ctx.fillStyle = COLORS.white;
+        ctx.font = '8px "Courier New"';
+        const offset = Math.sin(animFrame * 0.1) * 2;
+        ctx.fillText('z', x + 20*scale, y - 5 + offset);
+        ctx.fillText('Z', x + 24*scale, y - 10 + offset);
+      }
+    }
+    
+    // Draw UI bars
+    function drawUI() {
+      // SANITY bar
+      const barX = 10;
+      const barY = 10;
+      const barW = 100;
+      const barH = 16;
+      
+      ctx.fillStyle = COLORS.text;
+      ctx.font = '8px "Courier New"';
+      ctx.textAlign = 'left';
+      ctx.fillText('SANITY', barX, barY - 2);
+      
+      // Bar background
+      rect(barX, barY, barW, barH, COLORS.bg);
+      
+      // Bar fill
+      const fillW = (sanity / 100) * barW;
+      const barColor = sanity > 50 ? COLORS.ui : sanity > 25 ? COLORS.text : COLORS.red;
+      rect(barX, barY, fillW, barH, barColor);
+      
+      // Bar border
+      ctx.strokeStyle = COLORS.white;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(barX, barY, barW, barH);
+      
+      // INVENTORY
+      const invX = 210;
+      const invY = 10;
+      ctx.fillStyle = COLORS.text;
+      ctx.textAlign = 'left';
+      ctx.fillText('INVENTORY', invX, invY - 2);
+      
+      rect(invX, invY, 100, 40, COLORS.bg);
+      ctx.strokeStyle = COLORS.white;
+      ctx.strokeRect(invX, invY, 100, 40);
+      
+      ctx.fillStyle = COLORS.red;
+      ctx.font = '10px "Courier New"';
+      ctx.fillText('EMAILS:', invX + 5, invY + 15);
+      ctx.fillStyle = COLORS.white;
+      ctx.fillText(`${unreadCount}+`, invX + 5, invY + 30);
+      
+      // Checked counter
+      ctx.fillStyle = COLORS.ui;
+      ctx.font = '8px "Courier New"';
+      ctx.textAlign = 'right';
+      ctx.fillText(`CHECKED: ${emailsChecked}`, WIDTH - 10, HEIGHT - 10);
+    }
+    
+    // Draw quest dialogue
+    function drawDialogue() {
+      if (!inboxOpen) return;
+      
+      const boxX = 40;
+      const boxY = 170;
+      const boxW = 240;
+      const boxH = 60;
+      
+      // Dialogue box
+      rect(boxX, boxY, boxW, boxH, COLORS.bg);
+      ctx.strokeStyle = COLORS.text;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(boxX, boxY, boxW, boxH);
+      
+      // Text
+      ctx.fillStyle = COLORS.white;
+      ctx.font = '10px "Courier New"';
+      ctx.textAlign = 'left';
+      
+      const messages = [
+        'You opened an email...',
+        '"URGENT: ACTION REQUIRED"',
+        '',
+        'It was a newsletter.'
+      ];
+      
+      messages.forEach((msg, i) => {
+        ctx.fillText(msg, boxX + 10, boxY + 15 + i * 12);
+      });
+    }
+    
+    // Main render loop
+    function render() {
+      // Clear
+      rect(0, 0, WIDTH, HEIGHT, COLORS.bg);
+      
+      // Draw scene
+      drawFloor();
+      drawDesk();
+      drawScreen();
+      drawCharacter();
+      drawUI();
+      drawDialogue();
+      
+      animFrame++;
+      requestAnimationFrame(render);
+    }
+    
+    // Handle tap
+    canvas.addEventListener('click', () => {
+      unlockAudio();
+      
+      if (unreadCount > 0) {
+        unreadCount = Math.max(0, unreadCount - 1);
+        sanity = Math.max(0, sanity - 2);
+        emailsChecked++;
+        inboxOpen = true;
+        
+        beep(400, 0.1);
+        
+        setTimeout(() => {
+          inboxOpen = false;
+        }, 2000);
+      } else {
+        beep(200, 0.3, 'sawtooth');
+      }
+    });
+    
+    // Start
+    render();
+  </script>
+</body>
+</html>
