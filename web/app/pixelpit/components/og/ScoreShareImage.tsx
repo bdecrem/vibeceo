@@ -1688,6 +1688,82 @@ export function OrbitDecorations() {
  * DROP-specific decorations: helix tower platforms, ball, storm zones.
  * Nintendo-bright aesthetic over sky blue gradient.
  */
+/**
+ * THREADS-specific decorations: faint 4x4 grid tiles and colored connection lines.
+ * NYT Connections-style word puzzle aesthetic.
+ */
+export function ThreadsDecorations() {
+  const groupColors = ['#fbbf24', '#22d3ee', '#a78bfa', '#f472b6'];
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Faint 4x4 grid tiles — left side */}
+      {[0, 1, 2, 3].map((row) =>
+        [0, 1].map((col) => (
+          <div
+            key={`l-${row}-${col}`}
+            style={{
+              position: 'absolute',
+              left: 60 + col * 90,
+              top: 120 + row * 60,
+              width: 80,
+              height: 50,
+              background: '#f8fafc',
+              borderRadius: 8,
+              opacity: 0.06,
+            }}
+          />
+        ))
+      )}
+
+      {/* Faint 4x4 grid tiles — right side */}
+      {[0, 1, 2, 3].map((row) =>
+        [0, 1].map((col) => (
+          <div
+            key={`r-${row}-${col}`}
+            style={{
+              position: 'absolute',
+              right: 60 + col * 90,
+              top: 120 + row * 60,
+              width: 80,
+              height: 50,
+              background: '#f8fafc',
+              borderRadius: 8,
+              opacity: 0.06,
+            }}
+          />
+        ))
+      )}
+
+      {/* Colored connection lines — horizontal */}
+      {groupColors.map((color, i) => (
+        <div
+          key={`line-${i}`}
+          style={{
+            position: 'absolute',
+            left: i % 2 === 0 ? 80 : 'auto',
+            right: i % 2 === 1 ? 80 : 'auto',
+            top: 140 + i * 60,
+            width: 160,
+            height: 3,
+            background: color,
+            opacity: 0.2,
+            borderRadius: 2,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function DropDecorations() {
   return (
     <div

@@ -194,4 +194,11 @@ export const GAME_COLORS = {
     accent: '#E5E7EB',           // light CTA
     branding: '#9CA3AF',         // muted gray
   },
+  threads: {
+    background: '#0f172a',       // dark blue
+    primary: '#fbbf24',          // gold score
+    secondary: '#22d3ee',        // teal game name
+    accent: '#a78bfa',           // purple CTA
+    branding: '#64748b',         // muted slate
+  },
 };
