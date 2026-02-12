@@ -145,6 +145,8 @@ interface Obstacle {
   currentColorIndex: number;
   colorTimer: number;
   colorDuration: number;
+  // For training wheels (first 15 obstacles)
+  specialColors?: number[]; // Override segment colors [0,1,2,3] = 4 segments
 }
 
 interface Bug {
@@ -164,13 +166,9 @@ interface Particle {
   color: string;
 }
 
-// Tutorial steps
-type TutorialStep = 0 | 1 | 2 | 3; // 0 = identity, 1 = hop through, 2 = eat bug, 3 = done
-
 export default function ChromaGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'tutorial' | 'playing' | 'end'>('start');
-  const [tutorialStep, setTutorialStep] = useState<TutorialStep>(0);
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
   const [canvasSize, setCanvasSize] = useState({ w: 400, h: 700 });
   const [finalScore, setFinalScore] = useState(0);
 
@@ -204,11 +202,7 @@ export default function ChromaGame() {
     nextObstacleY: 400,
     lastObstacleType: 'ring' as string,
     zone: 1,
-    // Tutorial state
-    tutorialWall: null as { y: number; gapColorIndex: number } | null,
-    tutorialBug: null as { x: number; y: number; colorIndex: number; eaten: boolean } | null,
-    tutorialMessage: '',
-    tutorialComplete: false,
+    obstacleCount: 0, // Track how many obstacles spawned for training wheels
   });
 
   const getZone = useCallback((height: number) => {
@@ -218,25 +212,65 @@ export default function ChromaGame() {
     return 4;
   }, []);
 
-  const getSpinSpeed = useCallback((baseSpeed: number, zone: number) => {
-    // Zone 1 is SUPER SLOW (8 second rotation) to let players learn
-    const multipliers = [0.4, 0.8, 1.2, 1.6];
-    return baseSpeed * multipliers[zone - 1];
+  const getSpinSpeed = useCallback((baseSpeed: number, obstacleNum: number) => {
+    // Training wheels: first 5 obstacles are glacially slow
+    // Obstacles 1-5: 0.2x (10 sec rotation)
+    // Obstacles 6-15: 0.4x (5 sec rotation)  
+    // Obstacles 16+: Normal zone-based speed
+    if (obstacleNum <= 5) return baseSpeed * 0.2;
+    if (obstacleNum <= 15) return baseSpeed * 0.4;
+    if (obstacleNum <= 30) return baseSpeed * 0.8;
+    return baseSpeed * 1.2;
   }, []);
 
-  const spawnObstacle = useCallback((y: number, zone: number) => {
+  const spawnObstacle = useCallback((y: number, playerColorIndex: number) => {
     const game = gameRef.current;
+    game.obstacleCount++;
+    const num = game.obstacleCount;
     
-    // Normal obstacles - zone 1 is already super slow due to getSpinSpeed multipliers
-    const types: ('ring' | 'bars' | 'flower')[] = zone < 3 
-      ? ['ring', 'bars'] 
-      : ['ring', 'bars', 'flower'];
+    // TRAINING WHEELS: First 5 obstacles teach by being easy, not by explaining
+    // Obs 1-2: ALL segments are player's color (impossible to fail)
+    // Obs 3: Player color + gray (teaches: not-your-color = bad)
+    // Obs 4-5: Player color + one other (2 colors, easy timing)
+    // Obs 6-15: 2 colors, slow spin
+    // Obs 16+: Full 4 colors, normal speed
     
-    let type = types[Math.floor(Math.random() * types.length)];
+    let type: 'ring' | 'bars' | 'flower' = 'ring';
+    let colorOffset = 0;
+    let specialColors: number[] | null = null; // null = use normal random colors
     
-    // Avoid too many of the same type in a row
-    if (type === game.lastObstacleType && Math.random() > 0.3) {
-      type = types[(types.indexOf(type) + 1) % types.length];
+    if (num <= 2) {
+      // ALL SAME COLOR - literally impossible to fail
+      type = 'ring';
+      specialColors = [playerColorIndex, playerColorIndex, playerColorIndex, playerColorIndex];
+    } else if (num === 3) {
+      // Player color in 2 segments, gray (treated as wall) in 2
+      // Actually: just make it 2-color with player + one other, very slow
+      type = 'ring';
+      const otherColor = (playerColorIndex + 2) % 4; // Opposite color
+      specialColors = [playerColorIndex, otherColor, playerColorIndex, otherColor];
+    } else if (num <= 5) {
+      // 2 colors: player + one other
+      type = 'ring';
+      const otherColor = (playerColorIndex + 1) % 4;
+      specialColors = [playerColorIndex, otherColor, playerColorIndex, otherColor];
+    } else if (num <= 15) {
+      // 2-color rings, random which 2
+      type = 'ring';
+      const color1 = Math.floor(Math.random() * 4);
+      const color2 = (color1 + 2) % 4;
+      specialColors = [color1, color2, color1, color2];
+    } else {
+      // Full game: random types, 4 colors
+      const types: ('ring' | 'bars' | 'flower')[] = num < 40 
+        ? ['ring', 'bars'] 
+        : ['ring', 'bars', 'flower'];
+      type = types[Math.floor(Math.random() * types.length)];
+      
+      // Avoid too many of the same type in a row
+      if (type === game.lastObstacleType && Math.random() > 0.3) {
+        type = types[(types.indexOf(type) + 1) % types.length];
+      }
     }
     game.lastObstacleType = type;
 
@@ -246,13 +280,15 @@ export default function ChromaGame() {
       y,
       type,
       rotation: Math.random() * Math.PI * 2,
-      spinSpeed: getSpinSpeed(baseSpinSpeed, zone),
+      spinSpeed: getSpinSpeed(baseSpinSpeed, num),
       spinDirection: Math.random() > 0.5 ? 1 : -1,
-      colorOffset: Math.floor(Math.random() * 4),
+      colorOffset: specialColors ? 0 : Math.floor(Math.random() * 4),
       passed: false,
       currentColorIndex: Math.floor(Math.random() * 4),
       colorTimer: 0,
-      colorDuration: zone < 3 ? 0.8 : 0.4,
+      colorDuration: num < 30 ? 0.8 : 0.4,
+      // Store special colors for training wheels
+      specialColors: specialColors ?? undefined,
     };
 
     game.obstacles.push(obstacle);
@@ -273,17 +309,12 @@ export default function ChromaGame() {
     gameRef.current.bugs.push(bug);
   }, []);
 
-  const startTutorial = useCallback(() => {
-    initAudio();
-    setTutorialStep(0);
-    setGameState('tutorial');
-  }, []);
-
   const startGame = useCallback(() => {
     initAudio();
     
     const game = gameRef.current;
     game.running = true;
+    game.obstacleCount = 0; // Reset training wheel counter
     game.chameleon = {
       x: canvasSize.w / 2,
       y: canvasSize.h - 150,
@@ -303,75 +334,18 @@ export default function ChromaGame() {
     game.particles = [];
     game.nextObstacleY = canvasSize.h - 300;
     game.zone = 1;
-    game.tutorialWall = null;
-    game.tutorialBug = null;
-    game.tutorialComplete = false;
 
-    // Spawn initial obstacles
+    // Spawn initial obstacles (training wheels - pass player color)
     for (let i = 0; i < 5; i++) {
-      spawnObstacle(game.nextObstacleY, 1);
+      spawnObstacle(game.nextObstacleY, game.chameleon.colorIndex);
       game.nextObstacleY -= 150;
     }
 
-    // Spawn first bug
-    spawnBug(canvasSize.h - 200, 0);
+    // Spawn first bug after obstacle 3-4 area (teaches color change early)
+    spawnBug(canvasSize.h - 450, 0);
 
     setGameState('playing');
   }, [canvasSize, spawnObstacle, spawnBug]);
-  
-  // Tutorial step handlers
-  const setupTutorialStep1 = useCallback(() => {
-    // Step 1: Wall with PINK gap - player is pink - can't fail
-    const game = gameRef.current;
-    game.running = true;
-    game.chameleon = {
-      x: canvasSize.w / 2,
-      y: canvasSize.h - 120,
-      vy: 0,
-      colorIndex: 0, // Pink
-      squash: 1,
-      eyeOffset: { x: 0, y: 0 },
-      tongueOut: false,
-      tongueTimer: 0,
-      dead: false,
-      deathTimer: 0,
-    };
-    game.cameraY = 0;
-    game.tutorialWall = { y: canvasSize.h - 280, gapColorIndex: 0 }; // Pink gap
-    game.tutorialBug = null;
-    game.tutorialMessage = '';
-    game.particles = [];
-    setTutorialStep(1);
-  }, [canvasSize]);
-  
-  const setupTutorialStep2 = useCallback(() => {
-    // Step 2: Wall with CYAN gap - player is pink - needs to eat cyan bug
-    const game = gameRef.current;
-    game.running = true;
-    game.chameleon = {
-      x: canvasSize.w / 2,
-      y: canvasSize.h - 120,
-      vy: 0,
-      colorIndex: 0, // Still Pink
-      squash: 1,
-      eyeOffset: { x: 0, y: 0 },
-      tongueOut: false,
-      tongueTimer: 0,
-      dead: false,
-      deathTimer: 0,
-    };
-    game.cameraY = 0;
-    game.tutorialWall = { y: canvasSize.h - 280, gapColorIndex: 1 }; // Cyan gap
-    game.tutorialBug = { 
-      x: canvasSize.w / 2, 
-      y: canvasSize.h - 200, 
-      colorIndex: 1, // Cyan bug
-      eaten: false 
-    };
-    game.tutorialMessage = '';
-    game.particles = [];
-    setTutorialStep(2);
-  }, [canvasSize]);
 
   const hop = useCallback(() => {
     const game = gameRef.current;
@@ -457,11 +431,12 @@ export default function ChromaGame() {
 
       // Spawn new obstacles
       while (game.nextObstacleY > game.cameraY - 200) {
-        spawnObstacle(game.nextObstacleY, game.zone);
+        spawnObstacle(game.nextObstacleY, cham.colorIndex);
         game.nextObstacleY -= 130 + Math.random() * 40;
 
-        // Spawn bug every 3-5 obstacles
-        if (Math.random() < 0.25) {
+        // Spawn bug: guaranteed after obs 3, then every 3-4 obstacles
+        const bugChance = game.obstacleCount <= 5 ? 0.4 : 0.25;
+        if (Math.random() < bugChance) {
           spawnBug(game.nextObstacleY + 60, cham.colorIndex);
         }
       }
@@ -494,7 +469,11 @@ export default function ChromaGame() {
               const chamAngle = Math.atan2(cham.x - canvasSize.w / 2, 0) + Math.PI;
               const normalizedAngle = ((chamAngle - obs.rotation) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
               const segment = Math.floor((normalizedAngle / (Math.PI * 2)) * 4);
-              const segmentColor = (segment + obs.colorOffset) % 4;
+              
+              // Use specialColors if present (training wheels), otherwise normal offset
+              const segmentColor = obs.specialColors 
+                ? obs.specialColors[segment]
+                : (segment + obs.colorOffset) % 4;
               
               // Check if chameleon is passing through the ring
               const distFromCenter = Math.abs(cham.x - canvasSize.w / 2);
@@ -667,7 +646,11 @@ export default function ChromaGame() {
           for (let i = 0; i < 4; i++) {
             const startAngle = obs.rotation + (i * Math.PI / 2);
             const endAngle = startAngle + Math.PI / 2 - 0.1;
-            const colorIndex = (i + obs.colorOffset) % 4;
+            
+            // Use specialColors if present (training wheels), otherwise normal offset
+            const colorIndex = obs.specialColors 
+              ? obs.specialColors[i]
+              : (i + obs.colorOffset) % 4;
             
             ctx.beginPath();
             ctx.arc(0, 0, radius, startAngle, endAngle);
@@ -897,386 +880,6 @@ export default function ChromaGame() {
     };
   }, [gameState, canvasSize, hop, getZone, spawnObstacle, spawnBug, startGame]);
 
-  // Tutorial canvas effect
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || gameState !== 'tutorial' || tutorialStep === 0) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = canvasSize.w;
-    canvas.height = canvasSize.h;
-
-    let animationId: number;
-    let lastTime = 0;
-
-    const update = (dt: number) => {
-      const game = gameRef.current;
-      if (!game.running) return;
-
-      const cham = game.chameleon;
-
-      // Physics
-      cham.vy += GRAVITY;
-      cham.vy = Math.min(cham.vy, MAX_FALL_SPEED);
-      cham.y += cham.vy;
-
-      // Squash recovery
-      cham.squash += (1 - cham.squash) * 0.2;
-
-      // Tongue timer
-      if (cham.tongueOut) {
-        cham.tongueTimer -= dt;
-        if (cham.tongueTimer <= 0) {
-          cham.tongueOut = false;
-        }
-      }
-
-      // Floor collision
-      if (cham.y > canvasSize.h - 80) {
-        cham.y = canvasSize.h - 80;
-        cham.vy = 0;
-      }
-
-      // Check bug collision (Step 2)
-      if (game.tutorialBug && !game.tutorialBug.eaten) {
-        const bug = game.tutorialBug;
-        const dx = cham.x - bug.x;
-        const dy = cham.y - bug.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < 45) {
-          bug.eaten = true;
-          cham.colorIndex = bug.colorIndex;
-          cham.tongueOut = true;
-          cham.tongueTimer = 0.15;
-          playEat();
-          game.tutorialMessage = 'NOW YOU\'RE CYAN!';
-
-          // Particles
-          for (let i = 0; i < 12; i++) {
-            game.particles.push({
-              x: cham.x,
-              y: cham.y,
-              vx: (Math.random() - 0.5) * 6,
-              vy: (Math.random() - 0.5) * 6,
-              life: 0.6,
-              color: COLORS[bug.colorIndex].hex,
-            });
-          }
-        }
-      }
-
-      // Check wall collision
-      if (game.tutorialWall) {
-        const wall = game.tutorialWall;
-        const gapWidth = 120;
-        
-        // If chameleon passed through wall successfully
-        if (cham.y < wall.y - 30 && !game.tutorialComplete) {
-          // Check if we're in the gap
-          const distFromCenter = Math.abs(cham.x - canvasSize.w / 2);
-          
-          if (distFromCenter < gapWidth / 2) {
-            // Passed through!
-            game.tutorialComplete = true;
-            playPass();
-            game.tutorialMessage = 'PERFECT!';
-
-            // Particles
-            for (let i = 0; i < 10; i++) {
-              game.particles.push({
-                x: cham.x,
-                y: cham.y,
-                vx: (Math.random() - 0.5) * 5,
-                vy: (Math.random() - 0.5) * 5,
-                life: 0.5,
-                color: COLORS[wall.gapColorIndex].hex,
-              });
-            }
-
-            // After a delay, move to next step or start game
-            setTimeout(() => {
-              if (tutorialStep === 1) {
-                setupTutorialStep2();
-              } else if (tutorialStep === 2) {
-                startGame();
-              }
-            }, 800);
-          }
-        }
-      }
-
-      // Update particles
-      game.particles = game.particles.filter((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life -= dt * 2;
-        return p.life > 0;
-      });
-    };
-
-    const drawChameleon = (x: number, y: number, colorIndex: number, squash: number, tongueOut: boolean, scale: number = 1) => {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.scale(scale, scale);
-
-      // Body
-      const bodyWidth = 28 * (1 / squash);
-      const bodyHeight = 22 * squash;
-      
-      ctx.fillStyle = COLORS[colorIndex].hex;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, bodyWidth, bodyHeight, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Belly
-      ctx.fillStyle = '#00000020';
-      ctx.beginPath();
-      ctx.ellipse(0, 5, bodyWidth * 0.8, bodyHeight * 0.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Tail
-      ctx.strokeStyle = COLORS[colorIndex].hex;
-      ctx.lineWidth = 6;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(-bodyWidth, 0);
-      ctx.quadraticCurveTo(-bodyWidth - 15, -10, -bodyWidth - 10, -20);
-      ctx.stroke();
-
-      // Tongue
-      if (tongueOut) {
-        ctx.strokeStyle = '#f472b6';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(bodyWidth - 5, -5);
-        ctx.lineTo(bodyWidth + 30, -15);
-        ctx.stroke();
-        ctx.fillStyle = '#f472b6';
-        ctx.beginPath();
-        ctx.arc(bodyWidth + 30, -15, 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Eyes
-      const eyeOffsetX = Math.sin(Date.now() / 500) * 2;
-      const eyeOffsetY = Math.cos(Date.now() / 700) * 1;
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.ellipse(-8, -10, 10, 10, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(8, -10, 10, 10, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#000000';
-      ctx.beginPath();
-      ctx.arc(-8 + eyeOffsetX, -10 + eyeOffsetY, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(8 - eyeOffsetX, -10 - eyeOffsetY, 4, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Legs
-      ctx.strokeStyle = COLORS[colorIndex].hex;
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(-10, bodyHeight - 5);
-      ctx.lineTo(-15, bodyHeight + 8);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(10, bodyHeight - 5);
-      ctx.lineTo(15, bodyHeight + 8);
-      ctx.stroke();
-
-      ctx.restore();
-    };
-
-    const drawBug = (x: number, y: number, colorIndex: number) => {
-      // Bug body
-      ctx.fillStyle = COLORS[colorIndex].hex;
-      ctx.beginPath();
-      ctx.ellipse(x, y, 12, 10, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Wings
-      ctx.fillStyle = '#ffffff80';
-      const wingFlap = Math.sin(Date.now() / 30) * 0.3;
-      ctx.beginPath();
-      ctx.ellipse(x - 6, y - 10 + wingFlap * 5, 8, 5, -0.3, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(x + 6, y - 10 - wingFlap * 5, 8, 5, 0.3, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Eyes
-      ctx.fillStyle = '#000';
-      ctx.beginPath();
-      ctx.arc(x - 4, y - 2, 3, 0, Math.PI * 2);
-      ctx.arc(x + 4, y - 2, 3, 0, Math.PI * 2);
-      ctx.fill();
-    };
-
-    const draw = () => {
-      const game = gameRef.current;
-      const cham = game.chameleon;
-
-      // Background
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvasSize.h);
-      gradient.addColorStop(0, THEME.bgLight);
-      gradient.addColorStop(1, THEME.bg);
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
-
-      // Draw wall
-      if (game.tutorialWall) {
-        const wall = game.tutorialWall;
-        const gapWidth = 120;
-        const wallHeight = 25;
-        const pulse = Math.sin(Date.now() / 200) * 0.15 + 1;
-        
-        // Left wall (gray)
-        ctx.fillStyle = '#374151';
-        ctx.fillRect(0, wall.y - wallHeight / 2, canvasSize.w / 2 - gapWidth / 2, wallHeight);
-        
-        // Right wall (gray)
-        ctx.fillRect(canvasSize.w / 2 + gapWidth / 2, wall.y - wallHeight / 2, canvasSize.w / 2 - gapWidth / 2, wallHeight);
-        
-        // Gap (colored, glowing)
-        ctx.save();
-        ctx.shadowColor = COLORS[wall.gapColorIndex].hex;
-        ctx.shadowBlur = 20 * pulse;
-        ctx.fillStyle = COLORS[wall.gapColorIndex].hex;
-        ctx.fillRect(canvasSize.w / 2 - gapWidth / 2, wall.y - wallHeight / 2, gapWidth, wallHeight);
-        ctx.restore();
-        
-        // Gap border
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(canvasSize.w / 2 - gapWidth / 2, wall.y - wallHeight / 2, gapWidth, wallHeight);
-
-        // Arrow pointing at gap
-        if (!game.tutorialComplete) {
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 24px ui-monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText('↓', canvasSize.w / 2, wall.y - 40);
-        }
-      }
-
-      // Draw bug (Step 2)
-      if (game.tutorialBug && !game.tutorialBug.eaten) {
-        const bob = Math.sin(Date.now() / 200) * 5;
-        drawBug(game.tutorialBug.x, game.tutorialBug.y + bob, game.tutorialBug.colorIndex);
-        
-        // Arrow pointing at bug
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 20px ui-monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('← EAT BUG', game.tutorialBug.x + 60, game.tutorialBug.y + 5);
-      }
-
-      // Draw chameleon
-      drawChameleon(cham.x, cham.y, cham.colorIndex, cham.squash, cham.tongueOut);
-
-      // Draw particles
-      for (const p of game.particles) {
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life * 2;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-
-      // Tutorial instruction at top
-      ctx.fillStyle = 'rgba(0,0,0,0.8)';
-      ctx.fillRect(0, 0, canvasSize.w, 120);
-      
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 20px ui-monospace';
-      ctx.textAlign = 'center';
-      
-      if (tutorialStep === 1) {
-        ctx.fillText('YOU ARE PINK', canvasSize.w / 2, 40);
-        ctx.fillStyle = COLORS[0].hex;
-        ctx.fillRect(canvasSize.w / 2 - 40, 50, 80, 30);
-        ctx.fillStyle = '#000';
-        ctx.font = 'bold 16px ui-monospace';
-        ctx.fillText('PINK', canvasSize.w / 2, 72);
-        
-        if (!game.tutorialComplete) {
-          ctx.fillStyle = '#ffffff';
-          ctx.font = '16px ui-monospace';
-          ctx.fillText('HOP THROUGH THE PINK GAP', canvasSize.w / 2, 105);
-        }
-      } else if (tutorialStep === 2) {
-        if (!game.tutorialBug?.eaten) {
-          ctx.fillText('DOOR IS CYAN. YOU\'RE PINK.', canvasSize.w / 2, 40);
-          ctx.fillStyle = '#86efac';
-          ctx.font = '16px ui-monospace';
-          ctx.fillText('EAT THE BUG TO CHANGE COLOR!', canvasSize.w / 2, 70);
-        } else if (!game.tutorialComplete) {
-          ctx.fillText('NOW YOU\'RE CYAN!', canvasSize.w / 2, 40);
-          ctx.fillStyle = COLORS[1].hex;
-          ctx.fillRect(canvasSize.w / 2 - 40, 50, 80, 30);
-          ctx.fillStyle = '#000';
-          ctx.font = 'bold 16px ui-monospace';
-          ctx.fillText('CYAN', canvasSize.w / 2, 72);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = '16px ui-monospace';
-          ctx.fillText('GO THROUGH!', canvasSize.w / 2, 105);
-        }
-      }
-
-      // Show message (PERFECT!, NOW YOU'RE CYAN!, etc.)
-      if (game.tutorialMessage) {
-        ctx.fillStyle = '#facc15';
-        ctx.font = 'bold 36px ui-monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(game.tutorialMessage, canvasSize.w / 2, canvasSize.h / 2);
-      }
-
-      // TAP TO HOP at bottom
-      if (!game.tutorialComplete) {
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(0, canvasSize.h - 50, canvasSize.w, 50);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 18px ui-monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('TAP TO HOP', canvasSize.w / 2, canvasSize.h - 20);
-      }
-    };
-
-    const gameLoop = (timestamp: number) => {
-      const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
-      lastTime = timestamp;
-      update(dt);
-      draw();
-      animationId = requestAnimationFrame(gameLoop);
-    };
-    animationId = requestAnimationFrame(gameLoop);
-
-    // Input
-    const handleTap = () => {
-      const game = gameRef.current;
-      if (game.tutorialComplete) return;
-      game.chameleon.vy = HOP_FORCE;
-      game.chameleon.squash = 0.7;
-      playHop();
-    };
-
-    canvas.addEventListener('click', handleTap);
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      handleTap();
-    }, { passive: false });
-
-    return () => {
-      cancelAnimationFrame(animationId);
-    };
-  }, [gameState, tutorialStep, canvasSize, setupTutorialStep2, startGame]);
-
   return (
     <>
       <Script
@@ -1358,7 +961,7 @@ export default function ChromaGame() {
             </div>
 
             <button
-              onClick={startTutorial}
+              onClick={startGame}
               style={{
                 background: '#facc15',
                 color: THEME.textDark,
@@ -1437,92 +1040,6 @@ export default function ChromaGame() {
               Close
             </button>
           </div>
-        )}
-
-        {/* Tutorial Step 0: Identity Screen */}
-        {gameState === 'tutorial' && tutorialStep === 0 && (
-          <div
-            onClick={setupTutorialStep1}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 20,
-              background: `linear-gradient(180deg, ${THEME.bgLight} 0%, ${THEME.bg} 100%)`,
-              cursor: 'pointer',
-            }}
-          >
-            {/* Big pulsing chameleon */}
-            <div style={{ 
-              fontSize: 120, 
-              marginBottom: 20,
-              animation: 'pulse 1.5s ease-in-out infinite',
-            }}>
-              🦎
-            </div>
-            
-            {/* YOU ARE PINK */}
-            <h1 style={{
-              color: '#ffffff',
-              fontSize: 36,
-              marginBottom: 15,
-              fontWeight: 900,
-            }}>
-              YOU ARE
-            </h1>
-            
-            {/* Big pink color swatch with label */}
-            <div style={{
-              background: COLORS[0].hex,
-              padding: '15px 50px',
-              borderRadius: 15,
-              border: '4px solid #ffffff',
-              marginBottom: 40,
-              boxShadow: `0 0 30px ${COLORS[0].hex}80`,
-            }}>
-              <span style={{
-                color: '#000000',
-                fontSize: 32,
-                fontWeight: 900,
-              }}>
-                PINK
-              </span>
-            </div>
-            
-            {/* Tap to continue */}
-            <div style={{
-              color: '#86efac',
-              fontSize: 18,
-              animation: 'blink 1s ease-in-out infinite',
-            }}>
-              TAP TO CONTINUE
-            </div>
-            
-            <style>{`
-              @keyframes pulse {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(1.1); }
-              }
-              @keyframes blink {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.5; }
-              }
-            `}</style>
-          </div>
-        )}
-
-        {/* Tutorial Steps 1 & 2: Canvas */}
-        {gameState === 'tutorial' && tutorialStep > 0 && (
-          <canvas
-            ref={canvasRef}
-            style={{
-              display: 'block',
-              touchAction: 'none',
-            }}
-          />
         )}
 
         {gameState === 'playing' && (
