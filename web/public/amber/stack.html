@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=true, user-scalable=no">
+  <title>STACK — Build a tower, watch it wobble</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="STACK">
+  <meta property="og:description" content="Drag blocks to build a tower. Stack them perfectly or watch them wobble.">
+  <meta property="og:image" content="https://intheamber.com/amber/stack-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/stack.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="STACK">
+  <meta name="twitter:description" content="Drag blocks to build a tower. Stack them perfectly or watch them wobble.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/stack-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: grab;
+    }
+
+    #canvas.dragging {
+      cursor: grabbing;
+    }
+
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 14px;
+      line-height: 1.6;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #stats {
+      background: rgba(0,0,0,0.8);
+      padding: 12px;
+      border: 1px solid #D4A574;
+    }
+
+    .stat-label {
+      color: #888;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 1px;
+    }
+
+    .stat-value {
+      color: #FFD700;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    #instructions {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      font-size: 16px;
+      color: #D4A574;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 0.5s;
+    }
+
+    #instructions.hidden {
+      opacity: 0;
+    }
+
+    .big {
+      font-size: 24px;
+      color: #FFD700;
+      margin-bottom: 10px;
+    }
+
+    #game-over {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      background: rgba(0,0,0,0.95);
+      padding: 30px;
+      border: 2px solid #FFD700;
+      display: none;
+      z-index: 100;
+    }
+
+    #game-over.visible {
+      display: block;
+    }
+
+    .title {
+      font-size: 28px;
+      color: #FFD700;
+      margin-bottom: 15px;
+    }
+
+    .final-score {
+      font-size: 48px;
+      color: #D4A574;
+      margin: 20px 0;
+    }
+
+    .message {
+      font-size: 14px;
+      color: #888;
+      margin: 10px 0;
+    }
+
+    #restart {
+      margin-top: 20px;
+      padding: 12px 30px;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      pointer-events: all;
+      transition: all 0.2s;
+    }
+
+    #restart:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+
+    #restart:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="stats">
+      <div class="stat-label">Height</div>
+      <div class="stat-value" id="height">0</div>
+      <div class="stat-label" style="margin-top: 8px">Stability</div>
+      <div class="stat-value" id="stability">100%</div>
+    </div>
+  </div>
+
+  <div id="instructions">
+    <div class="big">STACK</div>
+    <div>Drag blocks to build your tower</div>
+    <div>Stack perfectly for stability</div>
+  </div>
+
+  <div id="game-over">
+    <div class="title">TOWER COLLAPSED</div>
+    <div class="final-score" id="final-height">0</div>
+    <div class="message" id="collapse-message"></div>
+    <div class="message" id="best-message"></div>
+    <button id="restart">BUILD AGAIN</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const heightDisplay = document.getElementById('height');
+    const stabilityDisplay = document.getElementById('stability');
+    const instructions = document.getElementById('instructions');
+    const gameOverScreen = document.getElementById('game-over');
+    const finalHeightDisplay = document.getElementById('final-height');
+    const collapseMessage = document.getElementById('collapse-message');
+    const bestMessage = document.getElementById('best-message');
+    const restartBtn = document.getElementById('restart');
+
+    let width, height, centerX;
+    let blocks = [];
+    let draggingBlock = null;
+    let currentBlock = null;
+    let gameActive = true;
+    let totalBlocks = 0;
+    let stability = 100;
+    let audioContext;
+    let bestHeight = parseInt(localStorage.getItem('stack-best-height') || '0');
+
+    const BLOCK_WIDTH = 80;
+    const BLOCK_HEIGHT = 30;
+    const GROUND_Y = 50;
+    const SPAWN_Y_OFFSET = 100;
+    
+    const COLORS = ['#FFD700', '#D4A574', '#2D9596', '#7B68EE', '#FF69B4', '#40E0D0', '#FFD700'];
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      centerX = width / 2;
+    }
+
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTone(freq, duration = 100, type = 'sine') {
+      if (!audioContext) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = freq;
+      osc.type = type;
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration/1000);
+      osc.start();
+      osc.stop(audioContext.currentTime + duration/1000);
+    }
+
+    function spawnNewBlock() {
+      if (!gameActive) return;
+      
+      const colorIndex = totalBlocks % COLORS.length;
+      currentBlock = {
+        x: centerX,
+        y: height - SPAWN_Y_OFFSET,
+        width: BLOCK_WIDTH,
+        height: BLOCK_HEIGHT,
+        color: COLORS[colorIndex],
+        rotation: 0,
+        vx: 0,
+        vy: 0,
+        rotationSpeed: 0,
+        isPlaced: false,
+        isDragging: false
+      };
+    }
+
+    function getTopOfStack() {
+      if (blocks.length === 0) {
+        return height - GROUND_Y;
+      }
+      return Math.min(...blocks.map(b => b.y));
+    }
+
+    function placeBlock(block) {
+      if (!gameActive) return;
+      
+      const topY = getTopOfStack();
+      block.y = topY - block.height;
+      block.isPlaced = true;
+      blocks.push(block);
+      totalBlocks++;
+      
+      // Calculate offset from center
+      const offset = Math.abs(block.x - centerX);
+      const maxOffset = BLOCK_WIDTH / 2;
+      const offsetRatio = Math.min(offset / maxOffset, 1);
+      
+      // Perfect placement
+      if (offset < 5) {
+        playTone(800 + totalBlocks * 20, 150);
+        stability = Math.min(100, stability + 2);
+      } else {
+        playTone(400 - offsetRatio * 200, 100);
+        stability -= offsetRatio * 15;
+        block.rotationSpeed = (block.x - centerX) * 0.001;
+      }
+      
+      // Check if unstable
+      if (stability <= 0) {
+        collapse();
+      } else {
+        // Spawn next block
+        setTimeout(spawnNewBlock, 100);
+      }
+      
+      heightDisplay.textContent = totalBlocks;
+      stabilityDisplay.textContent = Math.round(stability) + '%';
+      
+      if (totalBlocks === 1) {
+        instructions.classList.add('hidden');
+      }
+    }
+
+    function collapse() {
+      gameActive = false;
+      playTone(200, 500, 'sawtooth');
+      
+      // Apply collapse physics
+      blocks.forEach(block => {
+        const offsetFromCenter = block.x - centerX;
+        block.vx = offsetFromCenter * 0.05 + (Math.random() - 0.5) * 2;
+        block.vy = -Math.random() * 3;
+        block.rotationSpeed = (Math.random() - 0.5) * 0.1;
+      });
+      
+      // Show game over after animation
+      setTimeout(() => {
+        finalHeightDisplay.textContent = totalBlocks;
+        
+        if (totalBlocks > bestHeight) {
+          bestHeight = totalBlocks;
+          localStorage.setItem('stack-best-height', bestHeight);
+          bestMessage.textContent = `NEW BEST! Previous: ${bestHeight - totalBlocks === 0 ? '0' : bestHeight - totalBlocks}`;
+          bestMessage.style.color = '#FFD700';
+        } else {
+          bestMessage.textContent = `Personal best: ${bestHeight}`;
+          bestMessage.style.color = '#888';
+        }
+        
+        if (totalBlocks === 0) {
+          collapseMessage.textContent = "You didn't even place one block.";
+        } else if (totalBlocks < 3) {
+          collapseMessage.textContent = "That tower was very short-lived.";
+        } else if (totalBlocks < 5) {
+          collapseMessage.textContent = "Not bad for a first attempt.";
+        } else if (totalBlocks < 10) {
+          collapseMessage.textContent = "Decent height. Watch that wobble.";
+        } else if (totalBlocks < 15) {
+          collapseMessage.textContent = "Impressive! The higher it gets, the harder it falls.";
+        } else {
+          collapseMessage.textContent = "LEGENDARY. That tower defied physics.";
+        }
+        
+        gameOverScreen.classList.add('visible');
+      }, 2000);
+    }
+
+    function restart() {
+      blocks = [];
+      currentBlock = null;
+      draggingBlock = null;
+      gameActive = true;
+      totalBlocks = 0;
+      stability = 100;
+      heightDisplay.textContent = '0';
+      stabilityDisplay.textContent = '100%';
+      gameOverScreen.classList.remove('visible');
+      instructions.classList.remove('hidden');
+      spawnNewBlock();
+    }
+
+    function update() {
+      // Update placed blocks (wobble and physics)
+      blocks.forEach(block => {
+        if (block.isPlaced) {
+          // Apply rotation wobble
+          block.rotation += block.rotationSpeed;
+          
+          // Decay wobble
+          block.rotationSpeed *= 0.98;
+          
+          // Apply gravity if collapsed
+          if (!gameActive) {
+            block.vy += 0.5;
+            block.y += block.vy;
+            block.x += block.vx;
+            block.rotation += block.rotationSpeed;
+          }
+        }
+      });
+      
+      // Update stability based on wobble
+      if (gameActive && blocks.length > 0) {
+        const totalWobble = blocks.reduce((sum, b) => sum + Math.abs(b.rotationSpeed), 0);
+        if (totalWobble > 0.05) {
+          stability -= 0.1;
+          stabilityDisplay.textContent = Math.round(Math.max(0, stability)) + '%';
+          if (stability <= 0) {
+            collapse();
+          }
+        }
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Draw ground line
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, height - GROUND_Y);
+      ctx.lineTo(width, height - GROUND_Y);
+      ctx.stroke();
+      
+      // Draw center guide line
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(centerX, 0);
+      ctx.lineTo(centerX, height);
+      ctx.stroke();
+      
+      // Draw placed blocks
+      blocks.forEach(block => {
+        ctx.save();
+        ctx.translate(block.x, block.y + block.height/2);
+        ctx.rotate(block.rotation);
+        
+        // Block
+        ctx.fillStyle = block.color;
+        ctx.fillRect(-block.width/2, -block.height/2, block.width, block.height);
+        
+        // Highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillRect(-block.width/2, -block.height/2, block.width, 5);
+        
+        // Border
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-block.width/2, -block.height/2, block.width, block.height);
+        
+        ctx.restore();
+      });
+      
+      // Draw current block
+      if (currentBlock && !currentBlock.isPlaced) {
+        ctx.save();
+        ctx.translate(currentBlock.x, currentBlock.y + currentBlock.height/2);
+        
+        // Block
+        ctx.fillStyle = currentBlock.color;
+        ctx.globalAlpha = currentBlock.isDragging ? 0.9 : 0.7;
+        ctx.fillRect(-currentBlock.width/2, -currentBlock.height/2, currentBlock.width, currentBlock.height);
+        
+        // Highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillRect(-currentBlock.width/2, -currentBlock.height/2, currentBlock.width, 5);
+        
+        // Border
+        ctx.strokeStyle = currentBlock.isDragging ? '#FFD700' : 'rgba(255, 215, 0, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-currentBlock.width/2, -currentBlock.height/2, currentBlock.width, currentBlock.height);
+        
+        // Drop zone indicator if dragging
+        if (currentBlock.isDragging) {
+          ctx.globalAlpha = 0.3;
+          const topY = getTopOfStack();
+          ctx.strokeStyle = '#2D9596';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.strokeRect(-currentBlock.width/2, topY - currentBlock.y - currentBlock.height/2, currentBlock.width, currentBlock.height);
+          ctx.setLineDash([]);
+        }
+        
+        ctx.restore();
+      }
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Input handling
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
+    }
+
+    function isInsideBlock(pos, block) {
+      return pos.x >= block.x - block.width/2 &&
+             pos.x <= block.x + block.width/2 &&
+             pos.y >= block.y &&
+             pos.y <= block.y + block.height;
+    }
+
+    function onStart(e) {
+      e.preventDefault();
+      initAudio();
+      
+      if (!gameActive || !currentBlock || currentBlock.isPlaced) return;
+      
+      const pos = getPos(e);
+      if (isInsideBlock(pos, currentBlock)) {
+        draggingBlock = currentBlock;
+        draggingBlock.isDragging = true;
+        canvas.classList.add('dragging');
+        playTone(600, 50);
+      }
+    }
+
+    function onMove(e) {
+      e.preventDefault();
+      if (!draggingBlock) return;
+      
+      const pos = getPos(e);
+      draggingBlock.x = pos.x;
+    }
+
+    function onEnd(e) {
+      e.preventDefault();
+      if (!draggingBlock) return;
+      
+      draggingBlock.isDragging = false;
+      placeBlock(draggingBlock);
+      draggingBlock = null;
+      currentBlock = null;
+      canvas.classList.remove('dragging');
+    }
+
+    // Event listeners
+    canvas.addEventListener('mousedown', onStart);
+    canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mouseup', onEnd);
+    canvas.addEventListener('touchstart', onStart);
+    canvas.addEventListener('touchmove', onMove);
+    canvas.addEventListener('touchend', onEnd);
+    
+    restartBtn.addEventListener('click', () => {
+      playTone(800, 100);
+      restart();
+    });
+
+    // Initialize
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    spawnNewBlock();
+    gameLoop();
+  </script>
+</body>
+</html>
