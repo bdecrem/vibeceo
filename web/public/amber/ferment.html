@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FERMENT — Transformation through time and presence</title>
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="FERMENT — Transformation through time and presence">
+  <meta property="og:description" content="An animated canvas exploring fermentation: cultures growing, bubbles rising, transformation through time. By Amber.">
+  <meta property="og:image" content="https://intheamber.com/amber/ferment-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/ferment.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FERMENT — Transformation through time and presence">
+  <meta name="twitter:description" content="An animated canvas exploring fermentation: cultures growing, bubbles rising, transformation through time. By Amber.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/ferment-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0a0604;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #FFD700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      z-index: 10;
+      pointer-events: none;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .ui div {
+      margin-bottom: 4px;
+    }
+
+    .title {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #FFD700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      z-index: 10;
+      pointer-events: none;
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+      opacity: 0;
+      animation: fadeIn 2s ease-in 1s forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 0.9; }
+    }
+
+    .instructions {
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #a8a29e;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadeIn 2s ease-in 2s forwards;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="ui">
+    <div>Cultures: <span id="cultures">0</span></div>
+    <div>Bubbles: <span id="bubbles">0</span></div>
+    <div>Days: <span id="days">0</span></div>
+  </div>
+
+  <div class="instructions">Touch to seed new culture</div>
+  <div class="title">FERMENT</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    // Audio context (requires user interaction)
+    let audioCtx = null;
+    let audioStarted = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      audioStarted = true;
+    }
+
+    function playBubbleTone(freq) {
+      if (!audioStarted || !audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    // Culture colors (fermentation palette)
+    const cultureColors = [
+      '#FFD700', // gold
+      '#f59e0b', // amber
+      '#FFC107', // bright amber
+      '#2D9596', // teal
+      '#14b8a6', // bright teal
+      '#ec4899', // hot pink
+      '#f472b6', // lighter pink
+      '#8b5cf6', // purple
+      '#a855f7', // lighter purple
+    ];
+
+    // Bubble class
+    class Bubble {
+      constructor(x, y, culture) {
+        this.x = x;
+        this.y = y;
+        this.culture = culture;
+        this.radius = Math.random() * 3 + 2;
+        this.vy = -(Math.random() * 1.5 + 0.5); // rise speed
+        this.vx = (Math.random() - 0.5) * 0.3; // slight horizontal drift
+        this.life = 1.0;
+        this.wobble = Math.random() * Math.PI * 2;
+        this.wobbleSpeed = Math.random() * 0.05 + 0.02;
+      }
+
+      update() {
+        this.y += this.vy;
+        this.x += this.vx + Math.sin(this.wobble) * 0.2;
+        this.wobble += this.wobbleSpeed;
+        this.life -= 0.003;
+        
+        // Slow down as approaching surface
+        if (this.y < height * 0.2) {
+          this.vy *= 0.98;
+        }
+        
+        return this.life > 0 && this.y > -20;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life * 0.7;
+        
+        // Glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
+        gradient.addColorStop(0, this.culture.color + '80');
+        gradient.addColorStop(0.5, this.culture.color + '20');
+        gradient.addColorStop(1, this.culture.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Core bubble
+        ctx.fillStyle = this.culture.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.beginPath();
+        ctx.arc(this.x - this.radius * 0.3, this.y - this.radius * 0.3, this.radius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+      }
+    }
+
+    // Culture colony class
+    class Culture {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.color = cultureColors[Math.floor(Math.random() * cultureColors.length)];
+        this.radius = 10;
+        this.targetRadius = Math.random() * 80 + 60; // max growth size
+        this.growthRate = Math.random() * 0.3 + 0.1;
+        this.age = 0;
+        this.bubbleTimer = 0;
+        this.bubbleRate = Math.random() * 60 + 40; // frames between bubbles
+        this.organisms = []; // sub-particles within culture
+        this.pulsePhase = Math.random() * Math.PI * 2;
+        this.pulseSpeed = Math.random() * 0.02 + 0.01;
+        
+        // Seed initial organisms
+        for (let i = 0; i < 20; i++) {
+          this.organisms.push({
+            angle: Math.random() * Math.PI * 2,
+            distance: Math.random() * this.radius,
+            speed: Math.random() * 0.02 + 0.01,
+            size: Math.random() * 2 + 1
+          });
+        }
+      }
+
+      update() {
+        this.age++;
+        this.pulsePhase += this.pulseSpeed;
+        
+        // Grow culture
+        if (this.radius < this.targetRadius) {
+          this.radius += this.growthRate;
+          
+          // Add organisms as we grow
+          if (Math.random() < 0.1 && this.organisms.length < 100) {
+            this.organisms.push({
+              angle: Math.random() * Math.PI * 2,
+              distance: Math.random() * this.radius,
+              speed: Math.random() * 0.02 + 0.01,
+              size: Math.random() * 2 + 1
+            });
+          }
+        }
+        
+        // Update organisms (they drift within the culture)
+        this.organisms.forEach(org => {
+          org.angle += org.speed;
+          org.distance = Math.min(org.distance, this.radius * 0.9);
+        });
+        
+        // Bubble production
+        this.bubbleTimer++;
+        if (this.bubbleTimer >= this.bubbleRate) {
+          this.bubbleTimer = 0;
+          // Spawn bubble from edge of culture
+          const angle = Math.random() * Math.PI * 2;
+          const bx = this.x + Math.cos(angle) * this.radius * 0.7;
+          const by = this.y + Math.sin(angle) * this.radius * 0.7;
+          bubbles.push(new Bubble(bx, by, this));
+          
+          playBubbleTone(200 + Math.random() * 100);
+        }
+      }
+
+      draw() {
+        ctx.save();
+        
+        // Culture outer glow (breathing)
+        const pulse = Math.sin(this.pulsePhase) * 0.2 + 0.8;
+        const glowRadius = this.radius * 1.5 * pulse;
+        const glowGradient = ctx.createRadialGradient(this.x, this.y, this.radius * 0.5, this.x, this.y, glowRadius);
+        glowGradient.addColorStop(0, this.color + '40');
+        glowGradient.addColorStop(0.7, this.color + '10');
+        glowGradient.addColorStop(1, this.color + '00');
+        ctx.fillStyle = glowGradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Main culture body
+        const bodyGradient = ctx.createRadialGradient(
+          this.x - this.radius * 0.3, 
+          this.y - this.radius * 0.3, 
+          0, 
+          this.x, 
+          this.y, 
+          this.radius
+        );
+        bodyGradient.addColorStop(0, this.color + 'CC');
+        bodyGradient.addColorStop(0.7, this.color + '99');
+        bodyGradient.addColorStop(1, this.color + '66');
+        ctx.fillStyle = bodyGradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw organisms within culture
+        ctx.globalAlpha = 0.6;
+        this.organisms.forEach(org => {
+          const ox = this.x + Math.cos(org.angle) * org.distance;
+          const oy = this.y + Math.sin(org.angle) * org.distance;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(ox, oy, org.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        
+        ctx.restore();
+      }
+    }
+
+    // State
+    let cultures = [];
+    let bubbles = [];
+    let days = 0;
+    let frameCount = 0;
+
+    // Seed initial cultures
+    function seedInitialCultures() {
+      for (let i = 0; i < 3; i++) {
+        const x = Math.random() * width;
+        const y = height * 0.6 + Math.random() * height * 0.3;
+cultures.push(new Culture(x, y));
+      }
+    }
+
+    seedInitialCultures();
+
+    // Interaction
+    function handleTouch(e) {
+      e.preventDefault();
+      initAudio();
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = e.touches ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+      const y = e.touches ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+      
+      // Scale to canvas coordinates
+      const cx = (x / rect.width) * width;
+      const cy = (y / rect.height) * height;
+      
+      cultures.push(new Culture(cx, cy));
+      playBubbleTone(300);
+    }
+
+    canvas.addEventListener('click', handleTouch);
+    canvas.addEventListener('touchstart', handleTouch);
+
+    // Animation loop
+    function animate() {
+      frameCount++;
+      
+      // Background (dark with subtle gradient)
+      const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+      bgGradient.addColorStop(0, '#0a0604');
+      bgGradient.addColorStop(1, '#1a0f0a');
+      ctx.fillStyle = bgGradient;
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update and draw cultures
+      cultures.forEach(culture => {
+        culture.update();
+        culture.draw();
+      });
+      
+      // Update and draw bubbles
+      bubbles = bubbles.filter(bubble => {
+        const alive = bubble.update();
+        if (alive) bubble.draw();
+        return alive;
+      });
+      
+      // Days counter (every 300 frames = 1 day)
+      if (frameCount % 300 === 0) {
+        days++;
+      }
+      
+      // Update UI
+      document.getElementById('cultures').textContent = cultures.length;
+      document.getElementById('bubbles').textContent = bubbles.length;
+      document.getElementById('days').textContent = days;
+      
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
