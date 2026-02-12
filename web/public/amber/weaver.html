@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WEAVER — Two voices chase each other in circles</title>
+  <meta property="og:title" content="WEAVER — Two voices chase each other">
+  <meta property="og:description" content="A music machine by Amber">
+  <meta property="og:image" content="https://intheamber.com/amber/weaver-og.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="WEAVER — Two voices chase each other">
+  <meta name="twitter:description" content="A music machine by Amber">
+  <meta name="twitter:image" content="https://intheamber.com/amber/weaver-og.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    #overlay.hidden {
+      display: none;
+    }
+
+    #startBtn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px 50px;
+      font-size: 24px;
+      font-family: 'Space Mono', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+      margin-bottom: 20px;
+    }
+
+    #startBtn:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+
+    #instruction {
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.7;
+      text-align: center;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+
+    #stats {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      font-size: 11px;
+      color: #D4A574;
+      opacity: 0.5;
+      font-family: 'Space Mono', monospace;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 768px) {
+      #startBtn {
+        padding: 16px 40px;
+        font-size: 20px;
+      }
+      #instruction {
+        font-size: 13px;
+        padding: 0 20px;
+      }
+      #stats {
+        font-size: 10px;
+        bottom: 12px;
+        left: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="overlay">
+    <button id="startBtn">START</button>
+    <div id="instruction">
+      Two voices chase each other in circles<br>
+      Tap to change their speeds<br>
+      Watch counterpoint emerge
+    </div>
+  </div>
+
+  <div id="stats">
+    VOICE 1 (BASS): <span id="speed1">1.0x</span><br>
+    VOICE 2 (LEAD): <span id="speed2">1.3x</span><br>
+    INTERVAL: <span id="interval">harmony</span>
+  </div>
+
+  <script type="module">
+    import { TB303Controller } from '/303/dist/api/index.js';
+    import { SH101Controller } from '/101/dist/api/index.js';
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('startBtn');
+    const speed1Stat = document.getElementById('speed1');
+    const speed2Stat = document.getElementById('speed2');
+    const intervalStat = document.getElementById('interval');
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    });
+
+    // Audio engines
+    let bass = null;
+    let lead = null;
+    let audioStarted = false;
+
+    // E minor scale (MIDI notes) - covering 2 octaves
+    const bassScale = [40, 43, 45, 47, 50, 52, 55]; // E2 to D3
+    const leadScale = [64, 67, 69, 71, 74, 76, 79]; // E4 to D5
+
+    // Voices
+    const voices = [
+      {
+        angle: 0,
+        speed: 0.008, // radians per frame
+        color: '#D4A574', // Amber
+        radius: 150,
+        scale: bassScale,
+        engine: null,
+        name: 'BASS',
+        lastNote: -1,
+        triggerZones: [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2], // 4 cardinal points
+        size: 25
+      },
+      {
+        angle: Math.PI / 3, // Start offset
+        speed: 0.010, // Slightly faster
+        color: '#2D9596', // Teal
+        radius: 200,
+        scale: leadScale,
+        engine: null,
+        name: 'LEAD',
+        lastNote: -1,
+        triggerZones: [Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4], // Offset zones
+        size: 20
+      }
+    ];
+
+    // Draw circles and trigger zones
+    function drawPath() {
+      const cx = width / 2;
+      const cy = height / 2;
+
+      // Draw orbit paths
+      voices.forEach(voice => {
+        ctx.strokeStyle = voice.color + '20';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, voice.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+
+      // Draw trigger zones
+      voices.forEach(voice => {
+        voice.triggerZones.forEach(angle => {
+          const x = cx + Math.cos(angle) * voice.radius;
+          const y = cy + Math.sin(angle) * voice.radius;
+          
+          // Small marker
+          ctx.fillStyle = voice.color + '30';
+          ctx.beginPath();
+          ctx.arc(x, y, 8, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
+    }
+
+    // Check if voice is near a trigger zone
+    function checkTrigger(voice) {
+      for (let zone of voice.triggerZones) {
+        const diff = Math.abs(voice.angle - zone) % (Math.PI * 2);
+        if (diff < 0.1 || diff > (Math.PI * 2) - 0.1) { // Within 0.1 radians
+          return zone;
+        }
+      }
+      return null;
+    }
+
+    // Trigger note for voice
+    function triggerNote(voice, zoneIndex) {
+      if (!voice.engine) return;
+      
+      const noteIndex = zoneIndex % voice.scale.length;
+      const note = voice.scale[noteIndex];
+      
+      if (note !== voice.lastNote) {
+        if (voice.name === 'BASS') {
+          bass.engine.setParameter('cutoff', 0.4 + Math.random() * 0.3);
+          bass.engine.setParameter('resonance', 0.7);
+          bass.engine.playNote(note, false);
+        } else {
+          lead.engine.setParameter('cutoff', 0.6 + Math.random() * 0.2);
+          lead.engine.setParameter('resonance', 0.3);
+          lead.engine.playNote(note, false);
+        }
+        
+        voice.lastNote = note;
+        
+        // Create visual burst
+        createBurst(voice);
+      }
+    }
+
+    // Visual burst effect
+    const bursts = [];
+    function createBurst(voice) {
+      const cx = width / 2;
+      const cy = height / 2;
+      const x = cx + Math.cos(voice.angle) * voice.radius;
+      const y = cy + Math.sin(voice.angle) * voice.radius;
+      
+      for (let i = 0; i < 12; i++) {
+        bursts.push({
+          x, y,
+          vx: Math.cos(i * Math.PI / 6) * 3,
+          vy: Math.sin(i * Math.PI / 6) * 3,
+          life: 1.0,
+          color: voice.color
+        });
+      }
+    }
+
+    // Update and draw bursts
+    function updateBursts() {
+      for (let i = bursts.length - 1; i >= 0; i--) {
+        const b = bursts[i];
+        b.x += b.vx;
+        b.y += b.vy;
+        b.life -= 0.02;
+        
+        if (b.life <= 0) {
+          bursts.splice(i, 1);
+          continue;
+        }
+        
+        ctx.fillStyle = b.color + Math.floor(b.life * 255).toString(16).padStart(2, '0');
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Calculate interval between two voices
+    function getInterval() {
+      const diff = Math.abs(voices[0].lastNote - voices[1].lastNote);
+      if (diff === 0) return 'unison';
+      if (diff === 3 || diff === 4) return 'third';
+      if (diff === 5) return 'fourth';
+      if (diff === 7) return 'fifth';
+      if (diff === 12) return 'octave';
+      return 'dissonant';
+    }
+
+    async function startAudio() {
+      if (audioStarted) return;
+
+      try {
+        // Initialize engines
+        bass = new TB303Controller();
+        lead = new SH101Controller();
+
+        // Resume contexts
+        if (bass.engine.context.state === 'suspended') {
+          await bass.engine.context.resume();
+        }
+        if (lead.engine.context.state === 'suspended') {
+          await lead.engine.context.resume();
+        }
+
+        // iOS unlock for both contexts
+        const unlockContext = async (ctx) => {
+          const silentBuf = ctx.createBuffer(1, 1, 22050);
+          const silentSrc = ctx.createBufferSource();
+          silentSrc.buffer = silentBuf;
+          silentSrc.connect(ctx.destination);
+          silentSrc.start(0);
+        };
+
+        await unlockContext(bass.engine.context);
+        await unlockContext(lead.engine.context);
+
+        voices[0].engine = bass;
+        voices[1].engine = lead;
+
+        console.log('Audio ready');
+
+        audioStarted = true;
+        overlay.classList.add('hidden');
+      } catch (err) {
+        console.error('Audio init error:', err);
+        alert('Audio failed: ' + err.message);
+      }
+    }
+
+    // Handle click/touch to change speeds
+    function handleInteraction(e) {
+      if (!audioStarted) return;
+
+      // Randomize speeds slightly
+      voices[0].speed = 0.006 + Math.random() * 0.006; // 0.006 to 0.012
+      voices[1].speed = 0.008 + Math.random() * 0.008; // 0.008 to 0.016
+      
+      // Create visual feedback
+      const cx = width / 2;
+      const cy = height / 2;
+      
+      for (let i = 0; i < 20; i++) {
+        const angle = (i / 20) * Math.PI * 2;
+        bursts.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * 5,
+          vy: Math.sin(angle) * 5,
+          life: 1.0,
+          color: '#FFD700'
+        });
+      }
+    }
+
+    startBtn.addEventListener('click', startAudio);
+    startBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      startAudio();
+    });
+    
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) startAudio();
+    });
+
+    canvas.addEventListener('click', handleInteraction);
+    canvas.addEventListener('touchstart', handleInteraction);
+
+    // Animation loop
+    let lastTriggers = [null, null];
+    
+    function animate() {
+      // Clear with trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+      ctx.fillRect(0, 0, width, height);
+
+      const cx = width / 2;
+      const cy = height / 2;
+
+      // Draw paths and zones
+      drawPath();
+
+      // Update voices
+      voices.forEach((voice, idx) => {
+        // Update angle
+        voice.angle += voice.speed;
+        if (voice.angle > Math.PI * 2) voice.angle -= Math.PI * 2;
+
+        // Check for trigger zone crossing
+        const currentZone = checkTrigger(voice);
+        if (currentZone !== null && currentZone !== lastTriggers[idx]) {
+          const zoneIndex = voice.triggerZones.indexOf(currentZone);
+          triggerNote(voice, zoneIndex);
+          lastTriggers[idx] = currentZone;
+        } else if (currentZone === null) {
+          lastTriggers[idx] = null;
+        }
+
+        // Draw voice
+        const x = cx + Math.cos(voice.angle) * voice.radius;
+        const y = cy + Math.sin(voice.angle) * voice.radius;
+
+        // Glow
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, voice.size * 2);
+        gradient.addColorStop(0, voice.color + 'AA');
+        gradient.addColorStop(0.5, voice.color + '44');
+        gradient.addColorStop(1, voice.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - voice.size * 2, y - voice.size * 2, voice.size * 4, voice.size * 4);
+
+        // Core
+        ctx.fillStyle = voice.color;
+        ctx.beginPath();
+        ctx.arc(x, y, voice.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner highlight
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath();
+        ctx.arc(x - voice.size * 0.3, y - voice.size * 0.3, voice.size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Connection line between voices
+      const x1 = cx + Math.cos(voices[0].angle) * voices[0].radius;
+      const y1 = cy + Math.sin(voices[0].angle) * voices[0].radius;
+      const x2 = cx + Math.cos(voices[1].angle) * voices[1].radius;
+      const y2 = cy + Math.sin(voices[1].angle) * voices[1].radius;
+      
+      ctx.strokeStyle = '#FFD70030';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      // Update bursts
+      updateBursts();
+
+      // Update stats
+      speed1Stat.textContent = voices[0].speed.toFixed(3) + 'x';
+      speed2Stat.textContent = voices[1].speed.toFixed(3) + 'x';
+      if (audioStarted && voices[0].lastNote !== -1 && voices[1].lastNote !== -1) {
+        intervalStat.textContent = getInterval();
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
