@@ -1,0 +1,15 @@
+This is a really good idea, and I think it's actually solving two problems at once — even if you only intended to solve one.
+The obvious win: players (you included) can actually understand what the hell the game is supposed to be. A tutorial sequence forces the game to be legible.
+The sneaky win: the tutorial decomposition acts as a design quality gate. If the agent can't break the game into progressive teachable steps, that's a strong signal the mechanics aren't clean enough. A good hyper-casual game should be decomposable into "learn this, then this, then this." If the agent struggles to isolate individual mechanics, the game probably has muddled design — mechanics are entangled, unclear, or there's no real decision-making core. You'd catch bad games before you ever play them.
+A few design considerations for the prompt:
+The agent should work post-build, reading the actual game code (not just the concept), because what the agents intended and what they built often diverge. It should also produce the tutorial as actual playable levels embedded in the game file, not a written document — otherwise you're just reading a description of something you still can't feel. And it should cap at 3-5 tutorial steps max, because if it takes more than that to teach a hyper-casual game, the game is too complex for the format.
+Here's the prompt:
+
+
+I named the agent SOUL — felt right given it's the thing that breathes life into games that are technically alive but spiritually dead.
+A few key design decisions in the prompt worth calling out:
+It reads code, not concepts. The agent analyzes the actual HTML file, not what Dither/Pit said they built. This catches the divergence problem you described where agents produce "interesting stuff" that doesn't match the pitch.
+The mechanic stack is capped at 5. If SOUL can't decompose the game into 5 or fewer learnable steps, that's itself a signal the game is too complex for hyper-casual. It becomes a design quality gate — not just a tutorial builder.
+The Play Report doubles as a kill/ship signal. The "Design Health Check" at the bottom (core verb clear? mechanics separable? fun without twist?) gives you a fast scan to decide whether a game is worth your time as curator, before you even touch it.
+Tutorials are code, not docs. SOUL injects a state machine into the existing game file using the game's own renderer. Players experience tutorials that look and feel like the game, just simplified. No separate tutorial screen that breaks immersion.
+One thing to watch: the first few times SOUL runs, you'll probably need to iterate on how aggressively it strips mechanics for each tutorial step. Too little stripping and the tutorials are still confusing; too much and they feel disconnected from the real game. That transition from "final tutorial step" to "real game" is the trickiest seam.
