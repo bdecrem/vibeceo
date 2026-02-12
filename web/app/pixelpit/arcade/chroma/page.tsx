@@ -164,16 +164,9 @@ interface Particle {
   color: string;
 }
 
-// Tutorial steps - ULTRA SIMPLE
-const TUTORIAL_STEPS = [
-  { title: 'HOP', instruction: 'TAP TO HOP UP', emoji: '👆' },
-  { title: 'COLOR', instruction: 'YOU ARE PINK — GO THROUGH PINK GATE', emoji: '💗' },
-  { title: 'BUG', instruction: 'EAT BUG = CHANGE COLOR', emoji: '🐛' },
-];
-
 export default function ChromaGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'tutorial' | 'end'>('start');
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
   const [canvasSize, setCanvasSize] = useState({ w: 400, h: 700 });
   const [finalScore, setFinalScore] = useState(0);
 
@@ -182,9 +175,8 @@ export default function ChromaGame() {
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   
-  // Tutorial
-  const [tutorialStep, setTutorialStep] = useState(0);
-  const [tutorialMessage, setTutorialMessage] = useState('');
+  // Instructions card
+  const [showInstructions, setShowInstructions] = useState(false);
 
   usePixelpitSocial(socialLoaded);
 
@@ -211,12 +203,6 @@ export default function ChromaGame() {
     nextObstacleY: 400,
     lastObstacleType: 'ring' as string,
     zone: 1,
-    // Tutorial
-    isTutorial: false,
-    tutorialStep: 0,
-    tutorialHopped: false,
-    tutorialPassed: false,
-    tutorialAte: false,
   });
 
   const getZone = useCallback((height: number) => {
@@ -227,7 +213,8 @@ export default function ChromaGame() {
   }, []);
 
   const getSpinSpeed = useCallback((baseSpeed: number, zone: number) => {
-    const multipliers = [1, 1.2, 1.5, 2];
+    // Zone 1 is SUPER SLOW (8 second rotation) to let players learn
+    const multipliers = [0.4, 0.8, 1.2, 1.6];
     return baseSpeed * multipliers[zone - 1];
   }, []);
 
@@ -310,74 +297,9 @@ export default function ChromaGame() {
 
     // Spawn first bug
     spawnBug(canvasSize.h - 200, 0);
-    
-    // Reset tutorial state
-    game.isTutorial = false;
-    game.tutorialStep = 0;
-    game.tutorialHopped = false;
-    game.tutorialPassed = false;
-    game.tutorialAte = false;
 
     setGameState('playing');
   }, [canvasSize, spawnObstacle, spawnBug]);
-
-  const setupTutorialStep = useCallback((step: number) => {
-    const game = gameRef.current;
-    game.obstacles = [];
-    game.bugs = [];
-    game.particles = [];
-    game.tutorialHopped = false;
-    game.tutorialPassed = false;
-    game.tutorialAte = false;
-    game.cameraY = 0;
-    
-    game.chameleon = {
-      x: canvasSize.w / 2,
-      y: canvasSize.h - 150,
-      vy: 0,
-      colorIndex: 0, // Pink
-      squash: 1,
-      eyeOffset: { x: 0, y: 0 },
-      tongueOut: false,
-      tongueTimer: 0,
-      dead: false,
-      deathTimer: 0,
-    };
-
-    if (step === 0) {
-      // Step 1: Just hop up - nothing else
-      // Target line at certain height - just reach it
-    } else if (step === 1) {
-      // Step 2: Simple gate - just a pink zone to pass through
-      // No complex obstacles - just reach the pink target
-    } else if (step === 2) {
-      // Step 3: Eat the bug
-      game.bugs.push({
-        y: canvasSize.h - 300,
-        x: canvasSize.w / 2,
-        colorIndex: 1, // Cyan
-        eaten: false,
-        orbitAngle: 0,
-      });
-    }
-
-    setTutorialStep(step);
-    setTutorialMessage('');
-  }, [canvasSize]);
-
-  const startTutorial = useCallback(() => {
-    initAudio();
-    
-    const game = gameRef.current;
-    game.running = true;
-    game.isTutorial = true;
-    game.tutorialStep = 0;
-    game.score = 0;
-    game.zone = 1;
-    
-    setupTutorialStep(0);
-    setGameState('tutorial');
-  }, [setupTutorialStep]);
 
   const hop = useCallback(() => {
     const game = gameRef.current;
@@ -386,8 +308,7 @@ export default function ChromaGame() {
     game.chameleon.vy = HOP_FORCE;
     game.chameleon.squash = 0.7;
     playHop();
-    
-  }, [setupTutorialStep]);
+  }, []);
 
   useEffect(() => {
     const updateSize = () => {
@@ -403,7 +324,7 @@ export default function ChromaGame() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || (gameState !== 'playing' && gameState !== 'tutorial')) return;
+    if (!canvas || gameState !== 'playing') return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -459,48 +380,17 @@ export default function ChromaGame() {
       const height = Math.max(0, (canvasSize.h - 150) - cham.y + game.cameraY);
       game.score = Math.max(game.score, Math.floor(height / 10));
 
-      // TUTORIAL: Height-based step completion
-      if (game.isTutorial) {
-        const gateY = canvasSize.h - 350;
-        const chamScreenY = cham.y - game.cameraY;
-        
-        if (game.tutorialStep === 0 && !game.tutorialPassed && chamScreenY < gateY) {
-          // Reached the target line
-          game.tutorialPassed = true;
-          setTutorialMessage('NICE! 👆');
-          setTimeout(() => {
-            if (!game.isTutorial) return;
-            game.tutorialStep = 1;
-            setupTutorialStep(1);
-          }, 1000);
-        } else if (game.tutorialStep === 1 && !game.tutorialPassed && chamScreenY < gateY) {
-          // Passed through the pink gate
-          game.tutorialPassed = true;
-          setTutorialMessage('YES! ✨');
-          setTimeout(() => {
-            if (!game.isTutorial) return;
-            game.tutorialStep = 2;
-            setupTutorialStep(2);
-          }, 1000);
-        }
-        // Step 3 (bug) is handled in bug collision code below
-      }
+      // Update zone
+      game.zone = getZone(game.score * 10);
 
-      // Update zone (not in tutorial)
-      if (!game.isTutorial) {
-        game.zone = getZone(game.score * 10);
-      }
+      // Spawn new obstacles
+      while (game.nextObstacleY > game.cameraY - 200) {
+        spawnObstacle(game.nextObstacleY, game.zone);
+        game.nextObstacleY -= 130 + Math.random() * 40;
 
-      // Spawn new obstacles (NOT in tutorial)
-      if (!game.isTutorial) {
-        while (game.nextObstacleY > game.cameraY - 200) {
-          spawnObstacle(game.nextObstacleY, game.zone);
-          game.nextObstacleY -= 130 + Math.random() * 40;
-
-          // Spawn bug every 3-5 obstacles
-          if (Math.random() < 0.25) {
-            spawnBug(game.nextObstacleY + 60, cham.colorIndex);
-          }
+        // Spawn bug every 3-5 obstacles
+        if (Math.random() < 0.25) {
+          spawnBug(game.nextObstacleY + 60, cham.colorIndex);
         }
       }
 
@@ -539,8 +429,8 @@ export default function ChromaGame() {
               if (distFromCenter < ringRadius + 20 && distFromCenter > ringRadius - 20) {
                 if (segmentColor === chamColor) {
                   inSafeZone = true;
-                } else if (!game.isTutorial) {
-                  // Hit wrong color (not in tutorial)
+                } else {
+                  // Hit wrong color
                   cham.dead = true;
                   playDeath();
                 }
@@ -559,7 +449,7 @@ export default function ChromaGame() {
                 const activeColor = barPhase > 0 ? topBarColor : bottomBarColor;
                 if (activeColor === chamColor) {
                   inSafeZone = true;
-                } else if (!game.isTutorial) {
+                } else {
                   cham.dead = true;
                   playDeath();
                 }
@@ -575,7 +465,7 @@ export default function ChromaGame() {
                 const distFromCenter = Math.abs(cham.x - canvasSize.w / 2);
                 if (distFromCenter < 25) {
                   inSafeZone = true;
-                } else if (distFromCenter < 70 && !game.isTutorial) {
+                } else if (distFromCenter < 70) {
                   cham.dead = true;
                   playDeath();
                 } else {
@@ -598,28 +488,6 @@ export default function ChromaGame() {
                   life: 0.5,
                   color: COLORS[chamColor].hex,
                 });
-              }
-              
-              // Tutorial: obstacle passed
-              if (game.isTutorial) {
-                game.tutorialPassed = true;
-                if (game.tutorialStep === 1) {
-                  setTutorialMessage('PERFECT! ✨');
-                  setTimeout(() => {
-                    if (!game.isTutorial) return;
-                    game.tutorialStep = 2;
-                    setupTutorialStep(2);
-                  }, 1200);
-                } else if (game.tutorialStep === 2 && game.tutorialAte) {
-                  setTutorialMessage('YOU GOT IT! 🦎');
-                  setTimeout(() => {
-                    if (!game.isTutorial) return;
-                    setTutorialMessage('READY?');
-                    setTimeout(() => {
-                      startGame();
-                    }, 1000);
-                  }, 1200);
-                }
               }
             }
           }
@@ -657,20 +525,6 @@ export default function ChromaGame() {
               color: COLORS[bug.colorIndex].hex,
             });
           }
-          
-          // Tutorial: bug eaten
-          if (game.isTutorial && game.tutorialStep === 2) {
-            game.tutorialAte = true;
-            setTutorialMessage('YOU\'RE CYAN NOW! 🦎');
-            // Step 3 complete - go to real game
-            setTimeout(() => {
-              if (!game.isTutorial) return;
-              setTutorialMessage('READY!');
-              setTimeout(() => {
-                startGame();
-              }, 800);
-            }, 1000);
-          }
         }
       }
 
@@ -686,8 +540,8 @@ export default function ChromaGame() {
       game.obstacles = game.obstacles.filter((o) => o.y > game.cameraY - 100);
       game.bugs = game.bugs.filter((b) => b.y > game.cameraY - 100 && !b.eaten);
 
-      // Death by falling (not in tutorial)
-      if (!game.isTutorial && cham.y - game.cameraY > canvasSize.h + 100) {
+      // Death by falling
+      if (cham.y - game.cameraY > canvasSize.h + 100) {
         cham.dead = true;
         playDeath();
       }
@@ -712,65 +566,17 @@ export default function ChromaGame() {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
 
-      // Draw decorative vines (not in tutorial - keep it clean)
-      if (!game.isTutorial) {
-        ctx.strokeStyle = '#166534';
-        ctx.lineWidth = 3;
-        for (let i = 0; i < 3; i++) {
-          const x = 50 + i * 150;
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          for (let y = 0; y < canvasSize.h; y += 20) {
-            ctx.lineTo(x + Math.sin((y - game.cameraY * 0.1) / 30) * 15, y);
-          }
-          ctx.stroke();
+      // Draw decorative vines
+      ctx.strokeStyle = '#166534';
+      ctx.lineWidth = 3;
+      for (let i = 0; i < 3; i++) {
+        const x = 50 + i * 150;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        for (let y = 0; y < canvasSize.h; y += 20) {
+          ctx.lineTo(x + Math.sin((y - game.cameraY * 0.1) / 30) * 15, y);
         }
-      }
-
-      // TUTORIAL: Draw simple gates
-      if (game.isTutorial) {
-        const gateY = canvasSize.h - 350;
-        const gateWidth = 100;
-        
-        if (game.tutorialStep === 0) {
-          // Step 1: Target line - just hop up to here
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 4;
-          ctx.setLineDash([10, 10]);
-          ctx.beginPath();
-          ctx.moveTo(canvasSize.w / 2 - 60, gateY);
-          ctx.lineTo(canvasSize.w / 2 + 60, gateY);
-          ctx.stroke();
-          ctx.setLineDash([]);
-          
-          // Arrow pointing up
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 32px ui-monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText('↑', canvasSize.w / 2, gateY + 50);
-          
-        } else if (game.tutorialStep === 1) {
-          // Step 2: Pink gate - walls on sides, pink gap in middle
-          // Left wall (gray)
-          ctx.fillStyle = '#4b5563';
-          ctx.fillRect(0, gateY - 15, canvasSize.w / 2 - gateWidth / 2, 30);
-          // Right wall (gray)
-          ctx.fillRect(canvasSize.w / 2 + gateWidth / 2, gateY - 15, canvasSize.w / 2 - gateWidth / 2, 30);
-          // Pink gap highlight
-          ctx.fillStyle = COLORS[0].hex; // Pink
-          ctx.fillRect(canvasSize.w / 2 - gateWidth / 2, gateY - 15, gateWidth, 30);
-          // Border
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 3;
-          ctx.strokeRect(canvasSize.w / 2 - gateWidth / 2, gateY - 15, gateWidth, 30);
-          
-          // "PINK" label
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 20px ui-monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText('PINK', canvasSize.w / 2, gateY - 30);
-        }
-        // Step 3 has the bug drawn by normal bug drawing code
+        ctx.stroke();
       }
 
       // Draw obstacles
@@ -1026,7 +832,7 @@ export default function ChromaGame() {
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [gameState, canvasSize, hop, getZone, spawnObstacle, spawnBug, setupTutorialStep, startGame]);
+  }, [gameState, canvasSize, hop, getZone, spawnObstacle, spawnBug, startGame]);
 
   return (
     <>
@@ -1126,7 +932,7 @@ export default function ChromaGame() {
             </button>
 
             <button
-              onClick={startTutorial}
+              onClick={() => setShowInstructions(true)}
               style={{
                 marginTop: 15,
                 background: '#ffffff',
@@ -1208,66 +1014,88 @@ export default function ChromaGame() {
           </div>
         )}
 
-        {(gameState === 'playing' || gameState === 'tutorial') && (
-          <>
-            <canvas
-              ref={canvasRef}
+        {/* INSTRUCTION CARD */}
+        {showInstructions && (
+          <div
+            onClick={() => setShowInstructions(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.9)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 100,
+              padding: 20,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
               style={{
-                display: 'block',
-                touchAction: 'none',
+                background: '#166534',
+                borderRadius: 20,
+                padding: 30,
+                maxWidth: 320,
+                textAlign: 'center',
               }}
-            />
-            {gameState === 'tutorial' && (
-              <div style={{
-                position: 'absolute',
-                top: 80,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                pointerEvents: 'none',
-                zIndex: 10,
-              }}>
-                {tutorialMessage ? (
-                  <div style={{
-                    background: '#facc15',
-                    color: THEME.textDark,
-                    padding: '16px 32px',
-                    borderRadius: 16,
-                    fontSize: 24,
-                    fontWeight: 700,
-                    boxShadow: '0 4px 20px #00000040',
-                  }}>
-                    {tutorialMessage}
-                  </div>
-                ) : (
-                  <>
-                    <div style={{
-                      fontSize: 48,
-                      marginBottom: 10,
-                    }}>
-                      {TUTORIAL_STEPS[tutorialStep]?.emoji}
-                    </div>
-                    <div style={{
-                      background: '#000000cc',
-                      color: THEME.text,
-                      padding: '12px 24px',
-                      borderRadius: 12,
-                      fontSize: 18,
-                      fontWeight: 700,
-                      textAlign: 'center',
-                    }}>
-                      <div style={{ color: '#facc15', fontSize: 12, marginBottom: 4 }}>
-                        STEP {tutorialStep + 1}/3
-                      </div>
-                      {TUTORIAL_STEPS[tutorialStep]?.instruction}
-                    </div>
-                  </>
-                )}
+            >
+              <div style={{ fontSize: 48, marginBottom: 10 }}>🦎</div>
+              <h2 style={{ color: '#ffffff', fontSize: 24, marginBottom: 20 }}>HOW TO PLAY</h2>
+
+              {/* Rule 1: Tap to hop */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 32 }}>👆</div>
+                <div style={{ color: '#facc15', fontSize: 16, fontWeight: 700 }}>TAP = HOP</div>
               </div>
-            )}
-          </>
+
+              {/* Rule 2: Match colors */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 15, background: COLORS[0].hex, border: '3px solid #fff' }} />
+                  <div style={{ color: '#fff', fontSize: 24, lineHeight: '30px' }}>→</div>
+                  <div style={{ width: 30, height: 30, borderRadius: 15, background: COLORS[0].hex, border: '3px solid #fff' }} />
+                </div>
+                <div style={{ color: '#facc15', fontSize: 16, fontWeight: 700 }}>MATCH YOUR COLOR</div>
+                <div style={{ color: '#86efac', fontSize: 12 }}>You&apos;re pink? Go through pink!</div>
+              </div>
+
+              {/* Rule 3: Bugs change you */}
+              <div style={{ marginBottom: 25 }}>
+                <div style={{ fontSize: 32 }}>🐛</div>
+                <div style={{ color: '#facc15', fontSize: 16, fontWeight: 700 }}>EAT BUGS = NEW COLOR</div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowInstructions(false);
+                  startGame();
+                }}
+                style={{
+                  background: '#facc15',
+                  color: '#166534',
+                  border: 'none',
+                  padding: '16px 50px',
+                  fontSize: 18,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  borderRadius: 30,
+                }}
+              >
+                GOT IT!
+              </button>
+            </div>
+          </div>
+        )}
+
+        {gameState === 'playing' && (
+          <canvas
+            ref={canvasRef}
+            style={{
+              display: 'block',
+              touchAction: 'none',
+            }}
+          />
         )}
 
         {gameState === 'end' && (
