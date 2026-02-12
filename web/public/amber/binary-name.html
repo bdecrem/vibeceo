@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YOUR NAME IN BINARY — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="YOUR NAME IN BINARY — Amber">
+  <meta property="og:description" content="Type your name. Hear it as morse code. Watch it pulse as binary data.">
+  <meta property="og:image" content="https://intheamber.com/amber/binary-name-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/binary-name.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="YOUR NAME IN BINARY — Amber">
+  <meta name="twitter:description" content="Type your name. Hear it as morse code. Watch it pulse as binary data.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/binary-name-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+    }
+    
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+    
+    .ui {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    h1 {
+      font-size: clamp(24px, 5vw, 36px);
+      margin-bottom: 10px;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      font-size: clamp(12px, 3vw, 14px);
+      margin-bottom: 30px;
+      color: #2D9596;
+      opacity: 0.8;
+    }
+    
+    input {
+      width: 100%;
+      padding: 15px;
+      font-size: clamp(16px, 4vw, 20px);
+      font-family: 'Courier New', monospace;
+      background: rgba(13, 13, 13, 0.9);
+      border: 2px solid #D4A574;
+      color: #FFD700;
+      text-align: center;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      outline: none;
+      transition: all 0.3s;
+    }
+    
+    input:focus {
+      border-color: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    
+    input::placeholder {
+      color: #D4A574;
+      opacity: 0.5;
+    }
+    
+    .binary-display {
+      font-size: clamp(14px, 3.5vw, 18px);
+      line-height: 1.8;
+      word-break: break-all;
+      color: #2D9596;
+      margin-bottom: 20px;
+      min-height: 80px;
+      padding: 15px;
+      background: rgba(13, 13, 13, 0.7);
+      border-radius: 8px;
+      border: 1px solid rgba(45, 149, 150, 0.3);
+      font-family: 'Courier New', monospace;
+      letter-spacing: 1px;
+    }
+    
+    button {
+      padding: 15px 40px;
+      font-size: clamp(16px, 4vw, 20px);
+      font-family: 'Courier New', monospace;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin: 10px;
+      min-width: 180px;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    button:hover {
+      background: #FFD700;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+      transform: translateY(-2px);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .info {
+      margin-top: 30px;
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: #D4A574;
+      opacity: 0.6;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+    
+    .stats {
+      margin-top: 20px;
+      font-size: clamp(12px, 3vw, 14px);
+      color: #7B68EE;
+      opacity: 0.8;
+    }
+    
+    @media (max-width: 600px) {
+      .ui {
+        padding: 0 10px;
+      }
+      
+      button {
+        min-width: 150px;
+        padding: 12px 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="ui">
+    <h1>YOUR NAME IN BINARY</h1>
+    <div class="subtitle">Type your name. Hear it as morse code. Watch it pulse as binary data.</div>
+    
+    <input 
+      type="text" 
+      id="nameInput" 
+      placeholder="Type your name..." 
+      maxlength="30"
+      autocomplete="off"
+    >
+
+    <div class="binary-display" id="binaryDisplay">
+      Binary will appear here...
+    </div>
+    
+    <button id="playBtn" disabled>▶ PLAY YOUR NAME</button>
+    
+    <div class="stats" id="stats"></div>
+    
+    <div class="info">
+      Each letter converts to 8-bit binary (ASCII). 
+      <br>1 = high beep, 0 = low beep. 
+      <br>Your name becomes a unique binary melody.
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const nameInput = document.getElementById('nameInput');
+    const binaryDisplay = document.getElementById('binaryDisplay');
+    const playBtn = document.getElementById('playBtn');
+    const statsDiv = document.getElementById('stats');
+    
+    let audioCtx = null;
+    let isPlaying = false;
+    let binaryString = '';
+    let particles = [];
+    
+    // Setup canvas
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Convert text to binary
+    function textToBinary(text) {
+      return text
+        .split('')
+        .map(char => {
+          const binary = char.charCodeAt(0).toString(2).padStart(8, '0');
+          return binary;
+        })
+        .join(' ');
+    }
+    
+    // Update binary display
+    nameInput.addEventListener('input', () => {
+      const name = nameInput.value;
+      if (name.length > 0) {
+        binaryString = textToBinary(name);
+        binaryDisplay.textContent = binaryString;
+        playBtn.disabled = false;
+        
+        const bits = binaryString.replace(/\s/g, '').length;
+        const ones = (binaryString.match(/1/g) || []).length;
+        const zeros = (binaryString.match(/0/g) || []).length;
+        
+        statsDiv.textContent = `${bits} bits total • ${ones} ones • ${zeros} zeros`;
+      } else {
+        binaryDisplay.textContent = 'Binary will appear here...';
+        playBtn.disabled = true;
+        statsDiv.textContent = '';
+      }
+    });
+    
+    // Particle system
+    class Particle {
+      constructor(x, y, bit) {
+        this.x = x;
+        this.y = y;
+        this.bit = bit; // '0' or '1'
+        this.size = Math.random() * 3 + 2;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.life = 1;
+        this.decay = Math.random() * 0.01 + 0.005;
+        this.color = bit === '1' ? '#FFD700' : '#2D9596';
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+        this.size *= 0.99;
+      }
+      
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+        ctx.restore();
+      }
+    }
+    
+    // Create particles for a bit
+    function createBitParticles(bit) {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      
+      for (let i = 0; i < 15; i++) {
+        particles.push(new Particle(centerX, centerY, bit));
+      }
+    }
+    
+    // Animation loop
+    function animate() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      particles = particles.filter(p => p.life > 0);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      
+      requestAnimationFrame(animate);
+    }
+    animate();
+    
+    // Play morse code
+    async function playBinaryMorse(binary) {
+      if (!audioCtx) {
+        audioCtx = new AudioContext();
+      }
+      
+      isPlaying = true;
+      playBtn.disabled = true;
+      playBtn.textContent = '⏸ PLAYING...';
+      
+      const bits = binary.replace(/\s/g, '').split('');
+      const bitDuration = 150; // ms per bit
+      
+      for (let i = 0; i < bits.length; i++) {
+        if (!isPlaying) break;
+        
+        const bit = bits[i];
+        const freq = bit === '1' ? 800 : 300; // High beep for 1, low for 0
+        
+        // Play beep
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.frequency.value = freq;
+        osc.type = 'square';
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + bitDuration/1000);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + bitDuration/1000);
+        
+        // Create particles
+        createBitParticles(bit);
+        
+        // Wait for bit duration
+        await new Promise(resolve => setTimeout(resolve, bitDuration));
+      }
+      
+      isPlaying = false;
+      playBtn.disabled = false;
+      playBtn.textContent = '▶ PLAY AGAIN';
+    }
+    
+    // Play button
+    playBtn.addEventListener('click', () => {
+      if (binaryString && !isPlaying) {
+        playBinaryMorse(binaryString);
+      }
+    });
+    
+    // Start with ambient particles
+    setInterval(() => {
+      if (!isPlaying) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const bit = Math.random() > 0.5 ? '1' : '0';
+        particles.push(new Particle(x, y, bit));
+      }
+    }, 200);
+  </script>
+</body>
+</html>
