@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=true, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>STACK — Build a tower, watch it wobble</title>
   
   <!-- OG Tags -->
@@ -534,9 +534,9 @@
     canvas.addEventListener('mousedown', onStart);
     canvas.addEventListener('mousemove', onMove);
     canvas.addEventListener('mouseup', onEnd);
-    canvas.addEventListener('touchstart', onStart);
-    canvas.addEventListener('touchmove', onMove);
-    canvas.addEventListener('touchend', onEnd);
+    canvas.addEventListener('touchstart', onStart, { passive: false });
+    canvas.addEventListener('touchmove', onMove, { passive: false });
+    canvas.addEventListener('touchend', onEnd, { passive: false });
     
     restartBtn.addEventListener('click', () => {
       playTone(800, 100);
