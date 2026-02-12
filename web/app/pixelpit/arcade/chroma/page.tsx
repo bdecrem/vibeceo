@@ -164,9 +164,16 @@ interface Particle {
   color: string;
 }
 
+// Tutorial steps
+const TUTORIAL_STEPS = [
+  { title: 'TAP', instruction: 'TAP TO HOP', emoji: '👆' },
+  { title: 'MATCH', instruction: 'GO THROUGH PINK', emoji: '🎯' },
+  { title: 'CHANGE', instruction: 'EAT THE BUG', emoji: '🐛' },
+];
+
 export default function ChromaGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'tutorial' | 'end'>('start');
   const [canvasSize, setCanvasSize] = useState({ w: 400, h: 700 });
   const [finalScore, setFinalScore] = useState(0);
 
@@ -174,6 +181,10 @@ export default function ChromaGame() {
   const [socialLoaded, setSocialLoaded] = useState(false);
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  
+  // Tutorial
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [tutorialMessage, setTutorialMessage] = useState('');
 
   usePixelpitSocial(socialLoaded);
 
@@ -200,6 +211,12 @@ export default function ChromaGame() {
     nextObstacleY: 400,
     lastObstacleType: 'ring' as string,
     zone: 1,
+    // Tutorial
+    isTutorial: false,
+    tutorialStep: 0,
+    tutorialHopped: false,
+    tutorialPassed: false,
+    tutorialAte: false,
   });
 
   const getZone = useCallback((height: number) => {
@@ -293,9 +310,99 @@ export default function ChromaGame() {
 
     // Spawn first bug
     spawnBug(canvasSize.h - 200, 0);
+    
+    // Reset tutorial state
+    game.isTutorial = false;
+    game.tutorialStep = 0;
+    game.tutorialHopped = false;
+    game.tutorialPassed = false;
+    game.tutorialAte = false;
 
     setGameState('playing');
   }, [canvasSize, spawnObstacle, spawnBug]);
+
+  const setupTutorialStep = useCallback((step: number) => {
+    const game = gameRef.current;
+    game.obstacles = [];
+    game.bugs = [];
+    game.particles = [];
+    game.tutorialHopped = false;
+    game.tutorialPassed = false;
+    game.tutorialAte = false;
+    game.cameraY = 0;
+    
+    game.chameleon = {
+      x: canvasSize.w / 2,
+      y: canvasSize.h - 150,
+      vy: 0,
+      colorIndex: 0, // Pink
+      squash: 1,
+      eyeOffset: { x: 0, y: 0 },
+      tongueOut: false,
+      tongueTimer: 0,
+      dead: false,
+      deathTimer: 0,
+    };
+
+    if (step === 0) {
+      // Step 1: Just hop - no obstacles
+      // Empty space
+    } else if (step === 1) {
+      // Step 2: Match - slow pink ring
+      game.obstacles.push({
+        y: canvasSize.h - 350,
+        type: 'ring',
+        rotation: 0, // Pink at top
+        spinSpeed: (Math.PI * 2) / 6, // Very slow - 6 seconds per rotation
+        spinDirection: 1,
+        colorOffset: 0, // Pink is segment 0
+        passed: false,
+        currentColorIndex: 0,
+        colorTimer: 0,
+        colorDuration: 0.8,
+      });
+    } else if (step === 2) {
+      // Step 3: Change - bug then cyan ring
+      // Cyan bug in the path
+      game.bugs.push({
+        y: canvasSize.h - 280,
+        x: canvasSize.w / 2,
+        colorIndex: 1, // Cyan
+        eaten: false,
+        orbitAngle: 0,
+      });
+      // Cyan ring (after the bug)
+      game.obstacles.push({
+        y: canvasSize.h - 420,
+        type: 'ring',
+        rotation: 0,
+        spinSpeed: (Math.PI * 2) / 6, // Slow
+        spinDirection: 1,
+        colorOffset: 1, // Cyan is segment 0
+        passed: false,
+        currentColorIndex: 1,
+        colorTimer: 0,
+        colorDuration: 0.8,
+      });
+    }
+
+    setTutorialStep(step);
+    setTutorialMessage('');
+  }, [canvasSize]);
+
+  const startTutorial = useCallback(() => {
+    initAudio();
+    
+    const game = gameRef.current;
+    game.running = true;
+    game.isTutorial = true;
+    game.tutorialStep = 0;
+    game.score = 0;
+    game.zone = 1;
+    
+    setupTutorialStep(0);
+    setGameState('tutorial');
+  }, [setupTutorialStep]);
 
   const hop = useCallback(() => {
     const game = gameRef.current;
@@ -304,7 +411,18 @@ export default function ChromaGame() {
     game.chameleon.vy = HOP_FORCE;
     game.chameleon.squash = 0.7;
     playHop();
-  }, []);
+    
+    // Tutorial: first hop
+    if (game.isTutorial && game.tutorialStep === 0 && !game.tutorialHopped) {
+      game.tutorialHopped = true;
+      setTutorialMessage('🎉');
+      setTimeout(() => {
+        if (!game.isTutorial) return;
+        game.tutorialStep = 1;
+        setupTutorialStep(1);
+      }, 800);
+    }
+  }, [setupTutorialStep]);
 
   useEffect(() => {
     const updateSize = () => {
@@ -485,6 +603,28 @@ export default function ChromaGame() {
                   color: COLORS[chamColor].hex,
                 });
               }
+              
+              // Tutorial: obstacle passed
+              if (game.isTutorial) {
+                game.tutorialPassed = true;
+                if (game.tutorialStep === 1) {
+                  setTutorialMessage('PERFECT! ✨');
+                  setTimeout(() => {
+                    if (!game.isTutorial) return;
+                    game.tutorialStep = 2;
+                    setupTutorialStep(2);
+                  }, 1200);
+                } else if (game.tutorialStep === 2 && game.tutorialAte) {
+                  setTutorialMessage('YOU GOT IT! 🦎');
+                  setTimeout(() => {
+                    if (!game.isTutorial) return;
+                    setTutorialMessage('READY?');
+                    setTimeout(() => {
+                      startGame();
+                    }, 1000);
+                  }, 1200);
+                }
+              }
             }
           }
         }
@@ -520,6 +660,12 @@ export default function ChromaGame() {
               life: 0.6,
               color: COLORS[bug.colorIndex].hex,
             });
+          }
+          
+          // Tutorial: bug eaten
+          if (game.isTutorial && game.tutorialStep === 2) {
+            game.tutorialAte = true;
+            setTutorialMessage('NOW YOU\'RE CYAN!');
           }
         }
       }
@@ -828,7 +974,7 @@ export default function ChromaGame() {
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [gameState, canvasSize, hop, getZone, spawnObstacle, spawnBug]);
+  }, [gameState, canvasSize, hop, getZone, spawnObstacle, spawnBug, setupTutorialStep, startGame]);
 
   return (
     <>
@@ -927,6 +1073,22 @@ export default function ChromaGame() {
               START
             </button>
 
+            <button
+              onClick={startTutorial}
+              style={{
+                marginTop: 15,
+                background: 'transparent',
+                color: THEME.text,
+                border: `2px solid ${THEME.text}`,
+                padding: '12px 28px',
+                fontSize: 14,
+                cursor: 'pointer',
+                borderRadius: 20,
+              }}
+            >
+              HOW TO PLAY
+            </button>
+
             {gameRef.current.highScore > 0 && (
               <div style={{ marginTop: 20, color: '#86efac', fontSize: 16 }}>
                 Best: {gameRef.current.highScore}
@@ -992,14 +1154,66 @@ export default function ChromaGame() {
           </div>
         )}
 
-        {gameState === 'playing' && (
-          <canvas
-            ref={canvasRef}
-            style={{
-              display: 'block',
-              touchAction: 'none',
-            }}
-          />
+        {(gameState === 'playing' || gameState === 'tutorial') && (
+          <>
+            <canvas
+              ref={canvasRef}
+              style={{
+                display: 'block',
+                touchAction: 'none',
+              }}
+            />
+            {gameState === 'tutorial' && (
+              <div style={{
+                position: 'absolute',
+                top: 80,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                pointerEvents: 'none',
+                zIndex: 10,
+              }}>
+                {tutorialMessage ? (
+                  <div style={{
+                    background: '#facc15',
+                    color: THEME.textDark,
+                    padding: '16px 32px',
+                    borderRadius: 16,
+                    fontSize: 24,
+                    fontWeight: 700,
+                    boxShadow: '0 4px 20px #00000040',
+                  }}>
+                    {tutorialMessage}
+                  </div>
+                ) : (
+                  <>
+                    <div style={{
+                      fontSize: 48,
+                      marginBottom: 10,
+                    }}>
+                      {TUTORIAL_STEPS[tutorialStep]?.emoji}
+                    </div>
+                    <div style={{
+                      background: '#000000cc',
+                      color: THEME.text,
+                      padding: '12px 24px',
+                      borderRadius: 12,
+                      fontSize: 18,
+                      fontWeight: 700,
+                      textAlign: 'center',
+                    }}>
+                      <div style={{ color: '#facc15', fontSize: 12, marginBottom: 4 }}>
+                        STEP {tutorialStep + 1}/3
+                      </div>
+                      {TUTORIAL_STEPS[tutorialStep]?.instruction}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         {gameState === 'end' && (
