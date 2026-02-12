@@ -1077,13 +1077,15 @@ export default function ChromaGame() {
               onClick={startTutorial}
               style={{
                 marginTop: 15,
-                background: 'transparent',
-                color: THEME.text,
-                border: `2px solid ${THEME.text}`,
-                padding: '12px 28px',
-                fontSize: 14,
+                background: '#ffffff',
+                color: '#166534',
+                border: 'none',
+                padding: '14px 32px',
+                fontSize: 16,
+                fontWeight: 700,
                 cursor: 'pointer',
-                borderRadius: 20,
+                borderRadius: 25,
+                boxShadow: '0 2px 0 #d1d5db',
               }}
             >
               HOW TO PLAY
