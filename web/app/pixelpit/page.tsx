@@ -18,10 +18,6 @@ const labMessages = [
 ];
 
 const games = [
-  { icon: '🦎', name: 'Chroma', href: '/pixelpit/arcade/chroma', playable: true, date: 'Wed 2/11' },
-  { icon: '🐝', name: 'Swarm', href: '/pixelpit/arcade/swarm', playable: true, date: 'Wed 2/11' },
-  { icon: '👑', name: 'Glop', href: '/pixelpit/arcade/glop', playable: true, date: 'Tue 2/10' },
-  { icon: '🐦', name: 'Swoop CI', href: '/pixelpit/arcade/swoop-ci', playable: true, date: 'Wed 2/11' },
   { icon: '🐦', name: 'Swoop', href: '/pixelpit/arcade/swoop', playable: true, date: 'Tue 2/10' },
   { icon: '🛸', name: 'Orbit', href: '/pixelpit/arcade/orbit', playable: true, date: 'Mon 2/9' },
   { icon: '🌀', name: 'Drop', href: '/pixelpit/arcade/drop', playable: true, date: 'Fri 2/6' },
