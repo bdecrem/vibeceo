@@ -543,8 +543,8 @@ export default function ChromaGame() {
               if (distFromCenter < ringRadius + 20 && distFromCenter > ringRadius - 20) {
                 if (segmentColor === chamColor) {
                   inSafeZone = true;
-                } else {
-                  // Hit wrong color
+                } else if (!game.isTutorial) {
+                  // Hit wrong color (not in tutorial)
                   cham.dead = true;
                   playDeath();
                 }
@@ -563,7 +563,7 @@ export default function ChromaGame() {
                 const activeColor = barPhase > 0 ? topBarColor : bottomBarColor;
                 if (activeColor === chamColor) {
                   inSafeZone = true;
-                } else {
+                } else if (!game.isTutorial) {
                   cham.dead = true;
                   playDeath();
                 }
@@ -579,7 +579,7 @@ export default function ChromaGame() {
                 const distFromCenter = Math.abs(cham.x - canvasSize.w / 2);
                 if (distFromCenter < 25) {
                   inSafeZone = true;
-                } else if (distFromCenter < 70) {
+                } else if (distFromCenter < 70 && !game.isTutorial) {
                   cham.dead = true;
                   playDeath();
                 } else {
@@ -682,8 +682,8 @@ export default function ChromaGame() {
       game.obstacles = game.obstacles.filter((o) => o.y > game.cameraY - 100);
       game.bugs = game.bugs.filter((b) => b.y > game.cameraY - 100 && !b.eaten);
 
-      // Death by falling
-      if (cham.y - game.cameraY > canvasSize.h + 100) {
+      // Death by falling (not in tutorial)
+      if (!game.isTutorial && cham.y - game.cameraY > canvasSize.h + 100) {
         cham.dead = true;
         playDeath();
       }
