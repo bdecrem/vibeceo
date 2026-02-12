@@ -135,7 +135,7 @@ function playDeath() {
 
 interface Obstacle {
   y: number;
-  type: 'ring' | 'bars' | 'flower';
+  type: 'ring' | 'bars' | 'flower' | 'gate'; // 'gate' = simple tutorial obstacle
   rotation: number;
   spinSpeed: number;
   spinDirection: number;
@@ -145,6 +145,8 @@ interface Obstacle {
   currentColorIndex: number;
   colorTimer: number;
   colorDuration: number;
+  // For gate type (simple)
+  gateColorIndex?: number; // The color of the gap (matches player)
 }
 
 interface Bug {
@@ -175,9 +177,6 @@ export default function ChromaGame() {
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   
-  // Instructions card
-  const [showInstructions, setShowInstructions] = useState(false);
-
   usePixelpitSocial(socialLoaded);
 
   const gameRef = useRef({
@@ -219,6 +218,28 @@ export default function ChromaGame() {
   }, []);
 
   const spawnObstacle = useCallback((y: number, zone: number) => {
+    const game = gameRef.current;
+    
+    // FIRST 5 OBSTACLES: Simple gates only (no spinning, just a gap of your color)
+    if (game.obstacles.length < 5) {
+      const obstacle: Obstacle = {
+        y,
+        type: 'gate',
+        rotation: 0,
+        spinSpeed: 0,
+        spinDirection: 0,
+        colorOffset: 0,
+        passed: false,
+        currentColorIndex: 0,
+        colorTimer: 0,
+        colorDuration: 999,
+        gateColorIndex: game.chameleon.colorIndex, // Gap matches YOUR color
+      };
+      game.obstacles.push(obstacle);
+      return;
+    }
+    
+    // Normal obstacles after the first 5
     const types: ('ring' | 'bars' | 'flower')[] = zone < 3 
       ? ['ring', 'bars'] 
       : ['ring', 'bars', 'flower'];
@@ -226,10 +247,10 @@ export default function ChromaGame() {
     let type = types[Math.floor(Math.random() * types.length)];
     
     // Avoid too many of the same type in a row
-    if (type === gameRef.current.lastObstacleType && Math.random() > 0.3) {
+    if (type === game.lastObstacleType && Math.random() > 0.3) {
       type = types[(types.indexOf(type) + 1) % types.length];
     }
-    gameRef.current.lastObstacleType = type;
+    game.lastObstacleType = type;
 
     const baseSpinSpeed = type === 'ring' ? (Math.PI * 2) / 3 : (Math.PI * 2) / 2;
     
@@ -246,7 +267,7 @@ export default function ChromaGame() {
       colorDuration: zone < 3 ? 0.8 : 0.4,
     };
 
-    gameRef.current.obstacles.push(obstacle);
+    game.obstacles.push(obstacle);
   }, [getSpinSpeed]);
 
   const spawnBug = useCallback((y: number, currentColorIndex: number) => {
@@ -472,6 +493,20 @@ export default function ChromaGame() {
                   inSafeZone = true;
                 }
               }
+            } else if (obs.type === 'gate') {
+              // SIMPLE GATE: Wall with a gap in the middle
+              // Gap is 100px wide, centered
+              const gapWidth = 100;
+              const distFromCenter = Math.abs(cham.x - canvasSize.w / 2);
+              
+              if (distFromCenter < gapWidth / 2) {
+                // In the gap - always safe (gap matches your color)
+                inSafeZone = true;
+              } else {
+                // Hit the wall
+                cham.dead = true;
+                playDeath();
+              }
             }
 
             if (inSafeZone && chamScreenY < screenY - 20) {
@@ -644,6 +679,34 @@ export default function ChromaGame() {
           ctx.beginPath();
           ctx.arc(0, 0, 20, 0, Math.PI * 2);
           ctx.fill();
+        } else if (obs.type === 'gate') {
+          // SIMPLE GATE: Gray wall with colored gap in the middle
+          const gapWidth = 100;
+          const wallHeight = 20;
+          const halfW = canvasSize.w / 2;
+          
+          // Left wall (gray)
+          ctx.fillStyle = '#4b5563';
+          ctx.fillRect(-halfW, -wallHeight / 2, halfW - gapWidth / 2, wallHeight);
+          
+          // Right wall (gray)
+          ctx.fillRect(gapWidth / 2, -wallHeight / 2, halfW - gapWidth / 2, wallHeight);
+          
+          // Gap highlight (your color)
+          const gateColor = obs.gateColorIndex !== undefined ? obs.gateColorIndex : 0;
+          ctx.fillStyle = COLORS[gateColor].hex;
+          ctx.fillRect(-gapWidth / 2, -wallHeight / 2, gapWidth, wallHeight);
+          
+          // White border around gap
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(-gapWidth / 2, -wallHeight / 2, gapWidth, wallHeight);
+          
+          // Arrow pointing at gap
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 20px ui-monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('↓ GO HERE ↓', 0, -25);
         }
 
         ctx.restore();
@@ -799,13 +862,30 @@ export default function ChromaGame() {
       const zoneNames = ['Forest Floor', 'Understory', 'Canopy', 'Treetops'];
       ctx.fillText(zoneNames[game.zone - 1], 15, 35);
 
-      // Instructions
-      if (game.score === 0 && !cham.dead) {
-        ctx.fillStyle = '#ffffff80';
-        ctx.font = '16px ui-monospace';
+      // BIG CLEAR INSTRUCTIONS for first 5 obstacles
+      if (game.obstacles.length <= 5 && !cham.dead) {
+        // Dark overlay at top for readability
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 60, canvasSize.w, 80);
+        
+        // YOU ARE [COLOR] - GO THROUGH [COLOR]
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px ui-monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('TAP TO HOP', canvasSize.w / 2, canvasSize.h - 50);
-        ctx.fillText('Match your color!', canvasSize.w / 2, canvasSize.h - 30);
+        ctx.fillText('YOU ARE', canvasSize.w / 2, 90);
+        
+        // Color name with color background
+        const colorName = COLORS[cham.colorIndex].name.toUpperCase();
+        ctx.fillStyle = COLORS[cham.colorIndex].hex;
+        ctx.fillRect(canvasSize.w / 2 - 50, 98, 100, 30);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 20px ui-monospace';
+        ctx.fillText(colorName, canvasSize.w / 2, 120);
+        
+        // TAP TO HOP at bottom
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px ui-monospace';
+        ctx.fillText('TAP TO HOP THROUGH ' + colorName, canvasSize.w / 2, canvasSize.h - 30);
       }
     };
 
@@ -931,24 +1011,6 @@ export default function ChromaGame() {
               START
             </button>
 
-            <button
-              onClick={() => setShowInstructions(true)}
-              style={{
-                marginTop: 15,
-                background: '#ffffff',
-                color: '#166534',
-                border: 'none',
-                padding: '14px 32px',
-                fontSize: 16,
-                fontWeight: 700,
-                cursor: 'pointer',
-                borderRadius: 25,
-                boxShadow: '0 2px 0 #d1d5db',
-              }}
-            >
-              HOW TO PLAY
-            </button>
-
             {gameRef.current.highScore > 0 && (
               <div style={{ marginTop: 20, color: '#86efac', fontSize: 16 }}>
                 Best: {gameRef.current.highScore}
@@ -1011,80 +1073,6 @@ export default function ChromaGame() {
             >
               Close
             </button>
-          </div>
-        )}
-
-        {/* INSTRUCTION CARD */}
-        {showInstructions && (
-          <div
-            onClick={() => setShowInstructions(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.9)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 100,
-              padding: 20,
-            }}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                background: '#166534',
-                borderRadius: 20,
-                padding: 30,
-                maxWidth: 320,
-                textAlign: 'center',
-              }}
-            >
-              <div style={{ fontSize: 48, marginBottom: 10 }}>🦎</div>
-              <h2 style={{ color: '#ffffff', fontSize: 24, marginBottom: 20 }}>HOW TO PLAY</h2>
-
-              {/* Rule 1: Tap to hop */}
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 32 }}>👆</div>
-                <div style={{ color: '#facc15', fontSize: 16, fontWeight: 700 }}>TAP = HOP</div>
-              </div>
-
-              {/* Rule 2: Match colors */}
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 15, background: COLORS[0].hex, border: '3px solid #fff' }} />
-                  <div style={{ color: '#fff', fontSize: 24, lineHeight: '30px' }}>→</div>
-                  <div style={{ width: 30, height: 30, borderRadius: 15, background: COLORS[0].hex, border: '3px solid #fff' }} />
-                </div>
-                <div style={{ color: '#facc15', fontSize: 16, fontWeight: 700 }}>MATCH YOUR COLOR</div>
-                <div style={{ color: '#86efac', fontSize: 12 }}>You&apos;re pink? Go through pink!</div>
-              </div>
-
-              {/* Rule 3: Bugs change you */}
-              <div style={{ marginBottom: 25 }}>
-                <div style={{ fontSize: 32 }}>🐛</div>
-                <div style={{ color: '#facc15', fontSize: 16, fontWeight: 700 }}>EAT BUGS = NEW COLOR</div>
-              </div>
-
-              <button
-                onClick={() => {
-                  setShowInstructions(false);
-                  startGame();
-                }}
-                style={{
-                  background: '#facc15',
-                  color: '#166534',
-                  border: 'none',
-                  padding: '16px 50px',
-                  fontSize: 18,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  borderRadius: 30,
-                }}
-              >
-                GOT IT!
-              </button>
-            </div>
           </div>
         )}
 
