@@ -170,8 +170,8 @@
 
   <div id="instructions">
     <div class="big">STACK</div>
-    <div>Drag blocks to build your tower</div>
-    <div>Stack perfectly for stability</div>
+    <div>Tap & drag to place blocks</div>
+    <div>Center them for stability</div>
   </div>
 
   <div id="game-over">
@@ -204,10 +204,10 @@
     let audioContext;
     let bestHeight = parseInt(localStorage.getItem('stack-best-height') || '0');
 
-    const BLOCK_WIDTH = 80;
-    const BLOCK_HEIGHT = 30;
-    const GROUND_Y = 50;
-    const SPAWN_Y_OFFSET = 100;
+    const BLOCK_WIDTH = 100;
+    const BLOCK_HEIGHT = 40;
+    const GROUND_Y = 80;
+    const SPAWN_Y_OFFSET = 200;
     
     const COLORS = ['#FFD700', '#D4A574', '#2D9596', '#7B68EE', '#FF69B4', '#40E0D0', '#FFD700'];
 
@@ -503,12 +503,12 @@
       if (!gameActive || !currentBlock || currentBlock.isPlaced) return;
       
       const pos = getPos(e);
-      if (isInsideBlock(pos, currentBlock)) {
-        draggingBlock = currentBlock;
-        draggingBlock.isDragging = true;
-        canvas.classList.add('dragging');
-        playTone(600, 50);
-      }
+      // Tap anywhere to grab the current block
+      draggingBlock = currentBlock;
+      draggingBlock.isDragging = true;
+      draggingBlock.x = pos.x; // Snap block to touch position
+      canvas.classList.add('dragging');
+      playTone(600, 50);
     }
 
     function onMove(e) {
