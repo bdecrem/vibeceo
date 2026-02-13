@@ -376,6 +376,25 @@ export default function PourGame() {
     setGameState('playing');
   }, [level, initLevel, spawnRaindrop]);
 
+  const skipDrop = useCallback(() => {
+    const game = gameRef.current;
+    if (!game.raindrop || game.lives <= 1) {
+      // Can't skip if no drop or would die
+      if (game.lives <= 1) {
+        game.lives = 0;
+        playMiss();
+        setGameState('gameOver');
+      }
+      return;
+    }
+    // Cost: 1 life
+    game.lives--;
+    playMiss();
+    game.raindrop = null;
+    // Respawn after short delay
+    setTimeout(spawnRaindrop, 300);
+  }, [spawnRaindrop]);
+
   useEffect(() => {
     const updateSize = () => {
       const w = Math.min(window.innerWidth, 500);
@@ -905,12 +924,36 @@ export default function PourGame() {
       )}
 
       {(gameState === 'playing' || gameState === 'levelComplete') && (
-        <canvas
-          ref={canvasRef}
-          width={canvasSize.w}
-          height={canvasSize.h}
-          style={{ touchAction: 'none' }}
-        />
+        <>
+          <canvas
+            ref={canvasRef}
+            width={canvasSize.w}
+            height={canvasSize.h}
+            style={{ touchAction: 'none' }}
+          />
+          {/* Skip button - costs 1 life */}
+          {gameState === 'playing' && gameRef.current.raindrop && gameRef.current.lives > 0 && (
+            <button
+              onClick={skipDrop}
+              style={{
+                position: 'absolute',
+                bottom: 20,
+                right: 20,
+                background: 'rgba(0,0,0,0.5)',
+                color: '#fff',
+                border: '2px solid rgba(255,255,255,0.3)',
+                padding: '10px 20px',
+                fontSize: 14,
+                fontWeight: 'bold',
+                borderRadius: 20,
+                cursor: 'pointer',
+                fontFamily: 'ui-monospace, monospace',
+              }}
+            >
+              SKIP (-1❤️)
+            </button>
+          )}
+        </>
       )}
 
       {gameState === 'gameOver' && (
