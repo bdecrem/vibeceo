@@ -422,10 +422,22 @@ export default function PourGame() {
     const game = gameRef.current;
     // Spawn at level-specific X position (or slight random offset for variety)
     const baseX = game.dropX;
-    const variance = game.dropsNeeded > 1 ? (Math.random() - 0.5) * 6 : 0; // slight variance for multi-drop levels
+    const variance = game.dropsNeeded > 1 ? (Math.random() - 0.5) * 6 : 0;
+    let spawnX = (baseX + variance) * CELL_SIZE;
+    let spawnY = 5 * CELL_SIZE; // Start at very top
+    
+    // SPAWN VALIDATION: Find clear spot (no obstacles)
+    const gx = Math.floor(spawnX / CELL_SIZE);
+    for (let gy = 5; gy < 20; gy++) {
+      if (game.grid[gy]?.[gx] === CLOUD_EMPTY || game.grid[gy]?.[gx] === undefined) {
+        spawnY = gy * CELL_SIZE;
+        break;
+      }
+    }
+    
     game.raindrop = {
-      x: (baseX + variance) * CELL_SIZE,
-      y: 8 * CELL_SIZE,
+      x: spawnX,
+      y: spawnY,
       vx: 0,
       vy: 0,
       lastMoveTime: Date.now(),
