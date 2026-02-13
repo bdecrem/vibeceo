@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EROSION — Amber</title>
+    <meta name="description" content="Watch solid forms slowly crumble into flowing particles. Nothing stays intact forever.">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="EROSION — Amber">
+    <meta property="og:description" content="Watch solid forms slowly crumble into flowing particles. Nothing stays intact forever.">
+    <meta property="og:image" content="https://intheamber.com/amber/erosion-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/erosion.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="EROSION — Amber">
+    <meta name="twitter:description" content="Watch solid forms slowly crumble into flowing particles. Nothing stays intact forever.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/erosion-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(180deg, #0D0D0D 0%, #1a1a1a 100%);
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            touch-action: none;
+        }
+        
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: #FFD700;
+            font-size: 14px;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            z-index: 10;
+            pointer-events: none;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .instruction {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #2D9596;
+            font-size: 16px;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0.8;
+            z-index: 10;
+        }
+        
+        .title {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 215, 0, 0.15);
+            font-size: 18vw;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            pointer-events: none;
+            z-index: 1;
+            font-family: 'Arial Black', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="title">EROSION</div>
+    <div class="ui">
+        <div>FORMS: <span id="formCount">0</span></div>
+        <div>PARTICLES: <span id="particleCount">0</span></div>
+        <div>ERODED: <span id="erodedCount">0</span></div>
+    </div>
+    <div class="instruction">TAP TO CREATE SOLID FORMS • WATCH THEM ERODE</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+        
+        // Audio context
+        let audioCtx;
+        const initAudio = () => {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        };
+        
+        const playErosionTone = (frequency, duration = 0.1) => {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = frequency;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        };
+        
+        // Particle class
+        class Particle {
+            constructor(x, y, vx, vy, color, fromForm = false) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.radius = fromForm ? 2 + Math.random() * 2 : 3;
+                this.life = 1;
+                this.decay = 0.003 + Math.random() * 0.002;
+                this.fromForm = fromForm;
+                this.gravity = 0.15;
+            }
+            
+            update() {
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+                this.life -= this.decay;
+                
+                // Floor bounce
+                if (this.y > height - this.radius) {
+                    this.y = height - this.radius;
+                    this.vy *= -0.4;
+                    this.vx *= 0.9;
+                }
+                
+                // Wall bounce
+                if (this.x < this.radius) {
+                    this.x = this.radius;
+                    this.vx *= -0.5;
+                }
+                if (this.x > width - this.radius) {
+                    this.x = width - this.radius;
+                    this.vx *= -0.5;
+                }
+            }
+            
+            draw() {
+                const alpha = this.life;
+                ctx.fillStyle = this.color.replace('1)', `${alpha})`);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Inner glow
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
+                gradient.addColorStop(0, this.color.replace('1)', `${alpha * 0.5})`));
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Solid Form class
+        class SolidForm {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 60 + Math.random() * 80;
+                this.height = 60 + Math.random() * 80;
+                this.integrity = 100;
+                this.erosionRate = 0.05 + Math.random() * 0.1;
+                this.lastErosion = 0;
+                this.erosionInterval = 30 + Math.random() * 20;
+                
+                // Color palette based on energy/valence
+                const colors = [
+                    'rgba(255, 215, 0, 1)',   // gold
+                    'rgba(245, 158, 11, 1)',  // amber
+                    'rgba(45, 149, 150, 1)',  // teal
+                    'rgba(59, 130, 246, 1)',  // electric blue
+                    'rgba(236, 72, 153, 1)',  // hot pink
+                ];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Build particle grid for this form
+                this.particles = [];
+                const particlesPerRow = Math.ceil(this.width / 5);
+                const particlesPerCol = Math.ceil(this.height / 5);
+                
+                for (let row = 0; row < particlesPerCol; row++) {
+                    for (let col = 0; col < particlesPerRow; col++) {
+                        this.particles.push({
+                            offsetX: col * (this.width / particlesPerRow) - this.width / 2,
+                            offsetY: row * (this.height / particlesPerCol) - this.height / 2,
+                            intact: true
+                        });
+                    }
+                }
+            }
+            
+            update() {
+                this.lastErosion++;
+                
+                if (this.lastErosion >= this.erosionInterval && this.integrity > 0) {
+                    this.erode();
+                    this.lastErosion = 0;
+                }
+            }
+            
+            erode() {
+                // Find edge particles (particles with fewer neighbors)
+                const intactParticles = this.particles.filter(p => p.intact);
+                if (intactParticles.length === 0) {
+                    this.integrity = 0;
+                    return;
+                }
+                
+                // Erode random edge particles
+                const erodeCount = Math.ceil(intactParticles.length * 0.05);
+                for (let i = 0; i < erodeCount && intactParticles.length > 0; i++) {
+                    const idx = Math.floor(Math.random() * intactParticles.length);
+                    const particle = intactParticles[idx];
+                    particle.intact = false;
+                    
+                    // Create erosion particle
+                    const px = this.x + particle.offsetX;
+                    const py = this.y + particle.offsetY;
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 1 + Math.random() * 2;
+                    particles.push(new Particle(
+                        px, py,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed - 2,
+                        this.color,
+                        true
+                    ));
+                    
+                    intactParticles.splice(idx, 1);
+                    erodedCount++;
+                    
+                    // Subtle erosion tone
+                    playErosionTone(200 + Math.random() * 200, 0.05);
+                }
+                
+                this.integrity = (intactParticles.length / this.particles.length) * 100;
+            }
+            
+            draw() {
+                // Draw intact particles as cohesive form
+                const intactParticles = this.particles.filter(p => p.intact);
+                
+                if (intactParticles.length === 0) return;
+                
+                // Draw form shadow
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = this.color;
+                
+                intactParticles.forEach(p => {
+                    const px = this.x + p.offsetX;
+                    const py = this.y + p.offsetY;
+                    
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(px - 2.5, py - 2.5, 5, 5);
+                });
+                
+                ctx.shadowBlur = 0;
+                
+                // Draw integrity indicator
+                const barWidth = this.width;
+                const barHeight = 4;
+                const barX = this.x - barWidth / 2;
+                const barY = this.y - this.height / 2 - 15;
+                
+                // Background
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                
+                // Integrity bar
+                const integrityColor = this.integrity > 50 ? '#2D9596' : 
+                                       this.integrity > 20 ? '#FFD700' : '#ec4899';
+                ctx.fillStyle = integrityColor;
+                ctx.fillRect(barX, barY, barWidth * (this.integrity / 100), barHeight);
+            }
+        }
+        
+        let forms = [];
+        let particles = [];
+        let erodedCount = 0;
+        
+        // Spawn initial forms
+        const spawnInitialForms = () => {
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    forms.push(new SolidForm(
+                        width * 0.2 + Math.random() * width * 0.6,
+                        height * 0.3 + Math.random() * height * 0.3
+                    ));
+                }, i * 500);
+            }
+        };
+        
+        // Touch/click handler
+        canvas.addEventListener('click', (e) => {
+            initAudio();
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            forms.push(new SolidForm(x, y));
+            playErosionTone(400, 0.1);
+        });
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            initAudio();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            forms.push(new SolidForm(x, y));
+            playErosionTone(400, 0.1);
+        });
+        
+        // Animation loop
+        const animate = () => {
+            // Fade trail effect
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Update and draw forms
+            forms = forms.filter(form => form.integrity > 0);
+            forms.forEach(form => {
+                form.update();
+                form.draw();
+            });
+            
+            // Update and draw particles
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            
+            // Update UI
+            document.getElementById('formCount').textContent = forms.length;
+            document.getElementById('particleCount').textContent = particles.length;
+            document.getElementById('erodedCount').textContent = erodedCount;
+            
+            requestAnimationFrame(animate);
+        };
+        
+        spawnInitialForms();
+        animate();
+    </script>
+</body>
+</html>
