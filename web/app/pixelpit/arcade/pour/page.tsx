@@ -279,21 +279,21 @@ const LEVELS = [
     hint: null,
   },
 
-  // Level 9: "Low Ceiling" — carve UNDER the gray
+  // Level 9: "Low Ceiling" — carve around the gray ceiling
   {
     drops: 3,
     lives: 3,
     dropX: 25,
     clouds: (grid: number[][]) => {
-      // White cloud (lower portion)
-      for (let y = 30; y < 55; y++) {
+      // White cloud - FULL coverage so player can carve a path
+      for (let y = 15; y < 55; y++) {
         for (let x = 10; x < 40; x++) {
           grid[y][x] = CLOUD_WHITE;
         }
       }
-      // Gray ceiling
-      for (let y = 20; y < 30; y++) {
-        for (let x = 15; x < 35; x++) {
+      // Gray ceiling in middle — must carve AROUND it (left or right)
+      for (let y = 28; y < 38; y++) {
+        for (let x = 18; x < 32; x++) {
           grid[y][x] = CLOUD_GRAY;
         }
       }
@@ -512,20 +512,25 @@ export default function PourGame() {
 
   const skipDrop = useCallback(() => {
     const game = gameRef.current;
-    if (!game.raindrop || game.lives <= 1) {
-      // Can't skip if no drop or would die
-      if (game.lives <= 1) {
-        game.lives = 0;
-        playMiss();
-        setGameState('gameOver');
-      }
+    
+    // If no active drop, just spawn one (no cost)
+    if (!game.raindrop) {
+      spawnRaindrop();
       return;
     }
-    // Cost: 1 life
+    
+    // If this would kill us, game over
+    if (game.lives <= 1) {
+      game.lives = 0;
+      playMiss();
+      setGameState('gameOver');
+      return;
+    }
+    
+    // Cost: 1 life, respawn drop
     game.lives--;
     playMiss();
     game.raindrop = null;
-    // Respawn after short delay
     setTimeout(spawnRaindrop, 300);
   }, [spawnRaindrop]);
 
@@ -1065,8 +1070,8 @@ export default function PourGame() {
             height={canvasSize.h}
             style={{ touchAction: 'none' }}
           />
-          {/* Skip button - costs 1 life */}
-          {gameState === 'playing' && gameRef.current.raindrop && gameRef.current.lives > 0 && (
+          {/* Skip button - costs 1 life, always visible during play */}
+          {gameState === 'playing' && (
             <button
               onClick={skipDrop}
               style={{
