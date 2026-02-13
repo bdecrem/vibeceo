@@ -647,6 +647,17 @@ export default function ThreadsGame() {
     setGameState('game-over');
   }, [stopTimer, stopMusic]);
 
+  // --- Reveal all unsolved groups ---
+  const revealAll = useCallback((puzzle: Puzzle, currentSolved: number[]) => {
+    const allGroups: number[] = [...currentSolved];
+    for (let gi = 0; gi < puzzle.groups.length; gi++) {
+      if (!allGroups.includes(gi)) allGroups.push(gi);
+    }
+    setSolved(allGroups);
+    setWords([]);
+    setSelected([]);
+  }, []);
+
   // --- Show reveal screen (answers shown, user must dismiss) ---
   const showRevealScreen = useCallback(() => {
     levelActiveRef.current = false;
@@ -690,17 +701,6 @@ export default function ThreadsGame() {
 
     setSetsUsed(getNextSetIndex());
     setGameState('game-over');
-  }, []);
-
-  // --- Reveal all unsolved groups ---
-  const revealAll = useCallback((puzzle: Puzzle, currentSolved: number[]) => {
-    const allGroups: number[] = [...currentSolved];
-    for (let gi = 0; gi < puzzle.groups.length; gi++) {
-      if (!allGroups.includes(gi)) allGroups.push(gi);
-    }
-    setSolved(allGroups);
-    setWords([]);
-    setSelected([]);
   }, []);
 
   // --- Start level ---
