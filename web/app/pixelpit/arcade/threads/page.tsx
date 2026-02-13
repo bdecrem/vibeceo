@@ -296,7 +296,7 @@ type LevelScore = { base: number; timeBonus: number; cleared: boolean };
 
 export default function ThreadsGame() {
   // --- State ---
-  const [gameState, setGameState] = useState<'title' | 'playing' | 'level-complete' | 'game-over' | 'leaderboard'>('title');
+  const [gameState, setGameState] = useState<'title' | 'playing' | 'level-complete' | 'reveal' | 'game-over' | 'leaderboard'>('title');
   const [currentLevel, setCurrentLevel] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
   const [levelScores, setLevelScores] = useState<LevelScore[]>([]);
@@ -617,7 +617,7 @@ export default function ThreadsGame() {
     return (Date.now() - timerStartRef.current) / 1000;
   }, []);
 
-  // --- End run ---
+  // --- End run (go to game-over) ---
   const endRun = useCallback((allCleared: boolean) => {
     levelActiveRef.current = false;
     setLevelActive(false);
@@ -645,6 +645,51 @@ export default function ThreadsGame() {
     setSetsUsed(getNextSetIndex());
     setGameState('game-over');
   }, [stopTimer, stopMusic]);
+
+  // --- Show reveal screen (answers shown, user must dismiss) ---
+  const showRevealScreen = useCallback(() => {
+    levelActiveRef.current = false;
+    setLevelActive(false);
+    stopTimer();
+    stopMusic();
+    if (currentPuzzle) {
+      revealAll(currentPuzzle, solved);
+    }
+    setGameState('reveal');
+  }, [stopTimer, stopMusic, currentPuzzle, solved, revealAll]);
+
+  // --- Quit game (from playing) ---
+  const quitGame = useCallback(() => {
+    // Burn the set if not already burned
+    if (!setBurnedRef.current) {
+      setBurnedRef.current = true;
+      burnSet(currentSetRef.current);
+    }
+    showRevealScreen();
+  }, [showRevealScreen]);
+
+  // --- Dismiss reveal screen and go to game-over ---
+  const dismissReveal = useCallback(() => {
+    setLevelScores(prev => {
+      const padded = [...prev];
+      while (padded.length < 5) {
+        padded.push({ base: 0, timeBonus: 0, cleared: false });
+      }
+      return padded;
+    });
+
+    // Analytics
+    if (totalScoreRef.current >= 1) {
+      fetch('/api/pixelpit/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: GAME_ID }),
+      }).catch(() => {});
+    }
+
+    setSetsUsed(getNextSetIndex());
+    setGameState('game-over');
+  }, []);
 
   // --- Reveal all unsolved groups ---
   const revealAll = useCallback((puzzle: Puzzle, currentSolved: number[]) => {
@@ -697,7 +742,7 @@ export default function ThreadsGame() {
         timerIntervalRef.current = null;
         playTone(150, 0.4, 'sawtooth');
         revealAll(puzzle, []);
-        setTimeout(() => endRun(false), 800);
+        setGameState('reveal');
       }
     }, 100);
   }, [shuffleArray, stopTimer, playTone, setMessage, revealAll, endRun]);
@@ -881,7 +926,7 @@ export default function ThreadsGame() {
         stopTimer();
         setTimeout(() => {
           revealAll(currentPuzzle, solved);
-          setTimeout(() => endRun(false), 800);
+          setGameState('reveal');
         }, 500);
       } else {
         setTimeout(() => setSelected([]), 400);
@@ -1061,9 +1106,27 @@ export default function ThreadsGame() {
             justifyContent: 'space-between',
             alignItems: 'center',
           }}>
-            <div style={{ fontSize: 12, letterSpacing: 2, color: COLORS.muted }}>
-              LEVEL <span style={{ color: LEVEL_COLORS[currentLevel] || COLORS.primary, fontWeight: 700 }}>{currentLevel + 1}</span>
-              <span style={{ color: COLORS.mutedDark }}> / 5</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button
+                onClick={quitGame}
+                style={{
+                  background: 'none',
+                  border: `1px solid ${COLORS.border}`,
+                  borderRadius: 4,
+                  padding: '4px 8px',
+                  fontSize: 10,
+                  color: COLORS.mutedDark,
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                  letterSpacing: 1,
+                }}
+              >
+                QUIT
+              </button>
+              <div style={{ fontSize: 12, letterSpacing: 2, color: COLORS.muted }}>
+                LEVEL <span style={{ color: LEVEL_COLORS[currentLevel] || COLORS.primary, fontWeight: 700 }}>{currentLevel + 1}</span>
+                <span style={{ color: COLORS.mutedDark }}> / 5</span>
+              </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{
@@ -1359,6 +1422,87 @@ export default function ThreadsGame() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* --- REVEAL SCREEN (show answers, wait for dismiss) --- */}
+      {gameState === 'reveal' && currentPuzzle && (
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          animation: 'fadeIn 0.4s ease',
+        }}>
+          <h2 style={{
+            fontSize: 24, letterSpacing: 4,
+            color: COLORS.errorLight,
+            marginBottom: 20,
+          }}>
+            THE ANSWERS
+          </h2>
+
+          {/* Show all groups */}
+          <div style={{
+            width: 'min(92vw, 400px)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}>
+            {currentPuzzle.groups.map((g, gi) => {
+              const color = GROUP_COLORS[gi];
+              return (
+                <div key={gi} style={{
+                  borderRadius: 10,
+                  padding: '12px 16px',
+                  textAlign: 'center',
+                  background: color.bg,
+                  color: color.text,
+                }}>
+                  <div style={{
+                    fontSize: 13, fontWeight: 700,
+                    letterSpacing: 2, textTransform: 'uppercase',
+                    marginBottom: 4,
+                  }}>
+                    {g.label}
+                  </div>
+                  <div style={{ fontSize: 12, opacity: 0.85 }}>
+                    {g.words.join(', ')}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Current score */}
+          <div style={{
+            fontSize: 16, color: COLORS.muted,
+            letterSpacing: 2, marginTop: 24,
+          }}>
+            SCORE: <span style={{ color: COLORS.primary, fontWeight: 700 }}>{totalScore}</span>
+          </div>
+
+          {/* Dismiss button */}
+          <button
+            onClick={dismissReveal}
+            style={{
+              marginTop: 24,
+              padding: '14px 40px',
+              borderRadius: 10,
+              border: 'none',
+              background: COLORS.primary,
+              color: COLORS.bg,
+              fontFamily: 'inherit',
+              fontSize: 14,
+              fontWeight: 700,
+              letterSpacing: 3,
+              cursor: 'pointer',
+            }}
+          >
+            DONE
+          </button>
         </div>
       )}
 
