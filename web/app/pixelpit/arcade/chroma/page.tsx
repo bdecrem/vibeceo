@@ -219,84 +219,105 @@ export default function ChromaGame() {
     return 4;
   }, []);
 
-  // ZONE CONFIG (Loop spec)
-  const ZONE_CONFIG = {
-    1: { // Forest Floor (0-250)
-      spinMult: 0.4,  // 0.4x = very slow, ~10 sec rotation
-      gap: 200,       // lots of time between obstacles
-      bugEvery: 3,    // bug every 3rd obstacle
-      ringChance: 1.0, barChance: 0, flowerChance: 0,
-    },
-    2: { // Understory (250-500)
-      spinMult: 0.6,
-      gap: 180,
-      bugEvery: 4,
-      ringChance: 0.7, barChance: 0.3, flowerChance: 0,
-    },
-    3: { // Canopy (500-1000)
-      spinMult: 0.8,
-      gap: 150,
-      bugEvery: 5,
-      ringChance: 0.5, barChance: 0.3, flowerChance: 0.2,
-    },
-    4: { // Treetops (1000+)
-      spinMult: 1.0,
-      gap: 120,
-      bugEvery: 6,
-      ringChance: 0.4, barChance: 0.3, flowerChance: 0.3,
-    },
-  } as const;
+  // ZONE CONFIG (Loop spec - revised with Zone 1A/1B split)
+  // Uses distance thresholds: 0-100, 100-250, 250-500, 500-1000, 1000+
+  const getZoneConfig = (distance: number) => {
+    if (distance < 100) {
+      // Zone 1A: COLOR MATCHING (can't die, learn colors)
+      return {
+        zone: '1A',
+        spinMult: 0.3,  // Very slow
+        gap: 220,       // Very generous spacing
+        bugEvery: 0,    // NO BUGS - just learn colors
+        ringChance: 1.0, barChance: 0, flowerChance: 0,
+        colorCount: 1,  // All same color = impossible to fail
+      };
+    } else if (distance < 250) {
+      // Zone 1B: COLOR CHANGE (introduce bugs)
+      return {
+        zone: '1B',
+        spinMult: 0.4,
+        gap: 200,
+        bugEvery: 2,    // Bug every 2nd obstacle (very frequent)
+        ringChance: 1.0, barChance: 0, flowerChance: 0,
+        colorCount: 2,  // 2 colors
+      };
+    } else if (distance < 500) {
+      // Zone 2: UNDERSTORY
+      return {
+        zone: '2',
+        spinMult: 0.6,
+        gap: 180,
+        bugEvery: 4,
+        ringChance: 0.7, barChance: 0.3, flowerChance: 0,
+        colorCount: 2,
+      };
+    } else if (distance < 1000) {
+      // Zone 3: CANOPY
+      return {
+        zone: '3',
+        spinMult: 0.8,
+        gap: 150,
+        bugEvery: 5,
+        ringChance: 0.5, barChance: 0.3, flowerChance: 0.2,
+        colorCount: 4,
+      };
+    } else {
+      // Zone 4: TREETOPS
+      return {
+        zone: '4',
+        spinMult: 1.0,
+        gap: 120,
+        bugEvery: 6,
+        ringChance: 0.4, barChance: 0.3, flowerChance: 0.3,
+        colorCount: 4,
+      };
+    }
+  };
 
-  const getSpinSpeed = useCallback((baseSpeed: number, zone: number) => {
+  const getSpinSpeed = useCallback((baseSpeed: number, distance: number) => {
     // Zone-based spin speed (Loop spec)
-    const config = ZONE_CONFIG[zone as keyof typeof ZONE_CONFIG] || ZONE_CONFIG[1];
+    const config = getZoneConfig(distance);
     return baseSpeed * config.spinMult;
   }, []);
 
-  const spawnObstacle = useCallback((y: number, playerColorIndex: number) => {
+  const spawnObstacle = useCallback((y: number, playerColorIndex: number, distance: number) => {
     const game = gameRef.current;
     game.obstacleCount++;
-    const num = game.obstacleCount;
     
-    // TRAINING WHEELS: First 5 obstacles teach by being easy, not by explaining
-    // Obs 1-2: ALL segments are player's color (impossible to fail)
-    // Obs 3: Player color + gray (teaches: not-your-color = bad)
-    // Obs 4-5: Player color + one other (2 colors, easy timing)
-    // Obs 6-15: 2 colors, slow spin
-    // Obs 16+: Full 4 colors, normal speed
+    const config = getZoneConfig(distance);
     
-    const type: 'ring' | 'bars' | 'flower' = 'ring';
+    // Obstacle type based on zone (Loop spec)
+    let type: 'ring' | 'bars' | 'flower' = 'ring';
+    const typeRoll = Math.random();
+    if (typeRoll < config.ringChance) {
+      type = 'ring';
+    } else if (typeRoll < config.ringChance + config.barChance) {
+      type = 'bars';
+    } else {
+      type = 'flower';
+    }
 
-    // EVERY ring guarantees the player's current color in at least one segment.
-    // Difficulty comes from spin speed + number of other colors, not unsolvable states.
+    // Color complexity based on zone's colorCount
     let specialColors: number[];
 
-    if (num <= 2) {
-      // All same — impossible to fail
+    if (config.colorCount === 1) {
+      // Zone 1A: All same color — IMPOSSIBLE TO FAIL
       specialColors = [playerColorIndex, playerColorIndex, playerColorIndex, playerColorIndex];
-    } else if (num <= 5) {
-      // 2 colors: player + one other (50/50 timing)
+    } else if (config.colorCount === 2) {
+      // Zone 1B/2: 2 colors, guaranteed player color in 2 slots
       const other = (playerColorIndex + 1 + Math.floor(Math.random() * 3)) % 4;
-      specialColors = [playerColorIndex, other, playerColorIndex, other];
-    } else if (num <= 15) {
-      // 2 colors: player + one random other
-      const other = (playerColorIndex + 1 + Math.floor(Math.random() * 3)) % 4;
-      // Randomize positions but guarantee player color in 2 of 4 slots
       const slots = [playerColorIndex, other, playerColorIndex, other];
-      // Rotate randomly so player color isn't always in the same position
       const shift = Math.floor(Math.random() * 4);
       specialColors = slots.map((_, i) => slots[(i + shift) % 4]);
     } else {
-      // Full 4 colors: player color + 3 others (25% timing window)
-      // Build array with player color in one random slot, other 3 are random non-player colors
+      // Zone 3+: Full 4 colors (25% timing window)
       const others = [0, 1, 2, 3].filter(c => c !== playerColorIndex);
-      // Shuffle others
       for (let i = others.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [others[i], others[j]] = [others[j], others[i]];
       }
       specialColors = [others[0], others[1], others[2], playerColorIndex];
-      // Rotate randomly
       const shift = Math.floor(Math.random() * 4);
       specialColors = specialColors.map((_, i) => specialColors[(i + shift) % 4]);
     }
@@ -308,7 +329,7 @@ export default function ChromaGame() {
       y,
       type,
       rotation: Math.random() * Math.PI * 2,
-      spinSpeed: getSpinSpeed(baseSpinSpeed, num),
+      spinSpeed: getSpinSpeed(baseSpinSpeed, distance),
       spinDirection: Math.random() > 0.5 ? 1 : -1,
       colorOffset: 0,
       passed: false,
@@ -371,10 +392,12 @@ export default function ChromaGame() {
     game.nextObstacleY = canvasSize.h - 250;
     game.zone = 1;
 
-    // Spawn initial rings
-    for (let i = 0; i < 6; i++) {
-      spawnObstacle(game.nextObstacleY, game.chameleon.colorIndex);
-      game.nextObstacleY -= 120;
+    // Spawn initial rings (Zone 1A = can't die)
+    const startConfig = getZoneConfig(0);
+    for (let i = 0; i < 4; i++) {
+      const spawnDistance = Math.abs(game.nextObstacleY - (canvasSize.h - 250));
+      spawnObstacle(game.nextObstacleY, game.chameleon.colorIndex, spawnDistance);
+      game.nextObstacleY -= startConfig.gap;
     }
 
     // Spawn first bug
@@ -571,14 +594,20 @@ export default function ChromaGame() {
       game.score = Math.max(game.score, Math.floor(height / 10));
       game.zone = getZone(game.score * 10);
 
-      // Spawn new obstacles
+      // Spawn new obstacles (distance-based spacing and bug frequency)
       while (game.nextObstacleY > game.cameraY - 200) {
-        spawnObstacle(game.nextObstacleY, cham.colorIndex);
-        game.nextObstacleY -= 110 + Math.random() * 30;
+        // Calculate distance from start (higher Y = lower distance)
+        const spawnDistance = Math.abs(game.nextObstacleY - (canvasSize.h - 250));
+        const config = getZoneConfig(spawnDistance);
+        
+        spawnObstacle(game.nextObstacleY, cham.colorIndex, spawnDistance);
+        
+        // Zone-based gap between obstacles
+        game.nextObstacleY -= config.gap + Math.random() * 20;
 
-        const bugChance = game.obstacleCount <= 5 ? 0.4 : 0.25;
-        if (Math.random() < bugChance) {
-          spawnBug(game.nextObstacleY + 60, cham.colorIndex);
+        // Zone-based bug frequency (0 = no bugs in Zone 1A)
+        if (config.bugEvery > 0 && game.obstacleCount % config.bugEvery === 0) {
+          spawnBug(game.nextObstacleY + config.gap * 0.3, cham.colorIndex);
         }
       }
 
