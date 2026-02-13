@@ -10,7 +10,7 @@ export default async function Image() {
     (
       <div
         style={{
-          background: 'linear-gradient(180deg, #1e3a5f 0%, #7f1d1d 100%)',
+          background: 'linear-gradient(180deg, #000000 0%, #1a0000 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -21,108 +21,121 @@ export default async function Image() {
           overflow: 'hidden',
         }}
       >
-        {/* Ice rings at top */}
+        {/* Lava slashes — horizontal heat lines */}
         <div
           style={{
             position: 'absolute',
-            top: 80,
-            left: 300,
-            width: 200,
+            bottom: 140,
+            left: 200,
+            width: 300,
+            height: 4,
+            background: '#ff4400',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 136,
+            left: 220,
+            width: 260,
+            height: 2,
+            background: '#ff8844',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 180,
+            right: 200,
+            width: 250,
+            height: 4,
+            background: '#ff4400',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 176,
+            right: 220,
+            width: 210,
+            height: 2,
+            background: '#ff8844',
+          }}
+        />
+
+        {/* Heat glow from below */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
             height: 200,
-            borderRadius: 100,
-            border: '20px solid #0ea5e9',
-            opacity: 0.4,
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            top: 120,
-            right: 280,
-            width: 150,
-            height: 150,
-            borderRadius: 75,
-            border: '15px solid #0ea5e9',
-            opacity: 0.3,
+            background: 'linear-gradient(180deg, #00000000 0%, #8b000040 100%)',
           }}
         />
 
-        {/* Lava rings at bottom */}
+        {/* Ice shard — the player */}
         <div
           style={{
             position: 'absolute',
-            bottom: 80,
-            left: 250,
-            width: 180,
-            height: 180,
-            borderRadius: 90,
-            border: '18px solid #f97316',
-            boxShadow: '0 0 40px #fbbf24',
-            opacity: 0.5,
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 120,
-            right: 300,
-            width: 140,
-            height: 140,
-            borderRadius: 70,
-            border: '14px solid #f97316',
-            boxShadow: '0 0 30px #fbbf24',
-            opacity: 0.4,
+            top: 180,
+            left: 520,
+            width: 40,
+            height: 40,
+            background: '#ffffff',
+            transform: 'rotate(45deg)',
           }}
         />
 
-        {/* Snowball */}
+        {/* Ice diamond pickup */}
         <div
           style={{
             position: 'absolute',
-            top: 200,
-            left: 550,
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            background: '#f0f9ff',
-            boxShadow: '0 0 30px #bae6fd',
+            top: 280,
+            right: 350,
+            width: 20,
+            height: 20,
+            background: '#aaeeff',
+            transform: 'rotate(45deg)',
           }}
         />
 
         {/* Game title */}
         <div
           style={{
-            fontSize: 140,
-            fontWeight: 700,
-            color: '#f0f9ff',
-            textShadow: '0 0 60px #bae6fd, 0 10px 40px #f97316',
-            letterSpacing: 12,
+            fontSize: 160,
+            fontWeight: 900,
+            color: '#ffffff',
+            letterSpacing: 20,
+            zIndex: 10,
           }}
         >
           MELT
         </div>
 
+        {/* Accent bar */}
+        <div
+          style={{
+            width: 60,
+            height: 3,
+            background: '#cc2200',
+            marginTop: 10,
+            zIndex: 10,
+          }}
+        />
+
         {/* Tagline */}
         <div
           style={{
-            fontSize: 28,
-            color: '#bae6fd',
-            marginTop: 15,
-            letterSpacing: 4,
+            fontSize: 24,
+            color: '#444444',
+            marginTop: 20,
+            letterSpacing: 8,
+            zIndex: 10,
           }}
         >
-          you are a snowball
-        </div>
-
-        {/* Sub-tagline */}
-        <div
-          style={{
-            fontSize: 22,
-            color: '#f97316',
-            marginTop: 10,
-          }}
-        >
-          you want to reach hell
+          DODGE LAVA • COLLECT ICE • STAY ALIVE
         </div>
 
         {/* Pixelpit branding */}
@@ -130,10 +143,9 @@ export default async function Image() {
           style={{
             position: 'absolute',
             bottom: 30,
-            fontSize: 20,
-            color: '#f0f9ff',
-            letterSpacing: 6,
-            opacity: 0.6,
+            fontSize: 18,
+            color: '#444444',
+            letterSpacing: 8,
           }}
         >
           PIXELPIT ARCADE

@@ -5,27 +5,20 @@ export async function generateMetadata({
 }: {
   params: { score: string };
 }): Promise<Metadata> {
-  const layers = params.score;
-  const won = parseInt(layers) >= 40;
+  const score = params.score;
 
   return {
-    title: won ? 'Reached Hell - MELT' : `${layers} Layers - MELT`,
-    description: won 
-      ? 'I melted all the way to hell! Can you make it?'
-      : `I descended ${layers} layers on MELT. Can you beat me?`,
+    title: `Score ${score} - MELT`,
+    description: `I scored ${score} on MELT! Can you survive the heat?`,
     openGraph: {
-      title: won ? 'Reached Hell - MELT' : `${layers} Layers - MELT`,
-      description: won
-        ? 'I melted all the way to hell!'
-        : `I descended ${layers} layers. Can you beat me?`,
+      title: `Score ${score} - MELT`,
+      description: `I scored ${score} on MELT! Can you survive the heat?`,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: won ? 'Reached Hell - MELT' : `${layers} Layers - MELT`,
-      description: won
-        ? 'Made it to hell!'
-        : `${layers} layers descended. Beat me?`,
+      title: `Score ${score} - MELT`,
+      description: `Score ${score}. Can you survive the heat?`,
     },
   };
 }

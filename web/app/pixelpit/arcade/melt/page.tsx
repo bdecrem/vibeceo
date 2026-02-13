@@ -1,6 +1,19 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import Script from 'next/script';
+import {
+  ScoreFlow,
+  Leaderboard,
+  ShareButtonContainer,
+  ShareModal,
+  usePixelpitSocial,
+  type ScoreFlowColors,
+  type LeaderboardColors,
+  type ProgressionResult,
+} from '@/app/pixelpit/components';
+
+const GAME_ID = 'melt';
 
 // Game settings
 const GAME_WIDTH = 400;
@@ -33,6 +46,26 @@ const THEME = {
   danger: '#ff2200',
 };
 
+// Social colors — match the dark/gritty aesthetic
+const SCORE_FLOW_COLORS: ScoreFlowColors = {
+  bg: '#000000',
+  surface: '#111111',
+  primary: '#ff4400',
+  secondary: '#aaeeff',
+  text: '#ffffff',
+  muted: '#444444',
+  error: '#ff2200',
+};
+
+const LEADERBOARD_COLORS: LeaderboardColors = {
+  bg: '#000000',
+  surface: '#111111',
+  primary: '#ff4400',
+  secondary: '#aaeeff',
+  text: '#ffffff',
+  muted: '#444444',
+};
+
 interface Particle {
   x: number;
   y: number;
@@ -56,63 +89,267 @@ interface IcePickup {
   collected: boolean;
 }
 
-// Audio
+// ============================================================
+// AUDIO — dark ambient step sequencer + SFX (BEAM-style)
+// ============================================================
 let audioCtx: AudioContext | null = null;
+let masterGain: GainNode | null = null;
+let musicGain: GainNode | null = null;
+let musicPlaying = false;
+let musicInterval: ReturnType<typeof setInterval> | null = null;
+let musicStep = 0;
+let arpStep = 0;
 
 function initAudio() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.5;
+  masterGain.connect(audioCtx.destination);
+  musicGain = audioCtx.createGain();
+  musicGain.gain.value = 0.18;
+  musicGain.connect(masterGain);
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-function playCrystallize() {
-  if (!audioCtx) return;
+// --- Music: dark minor-key step sequencer ---
+const MUSIC = {
+  bpm: 100,
+  // Sub bass in D minor territory — D1, rests, C1, Bb0
+  bass: [36.7, 0, 36.7, 0, 0, 0, 36.7, 0, 32.7, 0, 0, 0, 29.14, 0, 32.7, 0],
+  // Dark minor arps — Dm, Am, Gm, Bb
+  arp: [
+    [294, 349, 440, 523],   // Dm: D4 F4 A4 C5
+    [220, 262, 330, 392],   // Am: A3 C4 E4 G4
+    [196, 233, 294, 349],   // Gm: G3 Bb3 D4 F4
+    [233, 294, 349, 440],   // Bb: Bb3 D4 F4 A4
+  ],
+  // Sparse kick — rumble not dance
+  kick: [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+  // Off-beat hats, very quiet
+  hat:  [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+};
+
+function playKick() {
+  if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
-  [1200, 1500, 1800].forEach((freq, i) => {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(musicGain!);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(80, t);
+  osc.frequency.exponentialRampToValueAtTime(25, t + 0.15);
+  gain.gain.setValueAtTime(0.35, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  osc.start(t);
+  osc.stop(t + 0.25);
+}
+
+function playHat() {
+  if (!audioCtx || !musicGain) return;
+  const bufLen = audioCtx.sampleRate * 0.03;
+  const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 8000;
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 11000;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+  src.connect(hp);
+  hp.connect(lp);
+  lp.connect(gain);
+  gain.connect(musicGain);
+  src.start();
+}
+
+function playBass(freq: number) {
+  if (!audioCtx || !musicGain || freq === 0) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  osc.connect(flt);
+  flt.connect(gain);
+  gain.connect(musicGain);
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  flt.type = 'lowpass';
+  flt.frequency.value = 150;
+  gain.gain.setValueAtTime(0.22, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  osc.start(t);
+  osc.stop(t + 0.2);
+}
+
+function playArp(freqs: number[]) {
+  if (!audioCtx || !musicGain) return;
+  const t = audioCtx.currentTime;
+  const freq = freqs[arpStep % freqs.length];
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  osc.connect(flt);
+  flt.connect(gain);
+  gain.connect(musicGain);
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  flt.type = 'lowpass';
+  flt.frequency.value = 1500;
+  flt.Q.value = 2;
+  gain.gain.setValueAtTime(0.04, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+  osc.start(t);
+  osc.stop(t + 0.16);
+}
+
+function musicTick() {
+  if (!audioCtx || !musicPlaying) return;
+  if (MUSIC.kick[musicStep % 16]) playKick();
+  if (MUSIC.hat[musicStep % 16]) playHat();
+  if (musicStep % 2 === 0) playBass(MUSIC.bass[(musicStep / 2) % 16]);
+  const barIndex = Math.floor(musicStep / 16) % 4;
+  playArp(MUSIC.arp[barIndex]);
+  arpStep++;
+  musicStep++;
+}
+
+function startMusic() {
+  if (musicPlaying) return;
+  initAudio();
+  if (audioCtx?.state === 'suspended') audioCtx.resume();
+  musicPlaying = true;
+  musicStep = 0;
+  arpStep = 0;
+  const stepTime = (60 / MUSIC.bpm) * 1000 / 4;
+  musicInterval = setInterval(musicTick, stepTime);
+}
+
+function stopMusic() {
+  musicPlaying = false;
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
+}
+
+// --- SFX — all routed through masterGain ---
+
+function playCrystallize() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Bright rising chime — ice pickup
+  [880, 1175, 1480].forEach((freq, i) => {
     const osc = audioCtx!.createOscillator();
+    const flt = audioCtx!.createBiquadFilter();
     const gain = audioCtx!.createGain();
+    osc.connect(flt);
+    flt.connect(gain);
+    gain.connect(masterGain!);
     osc.type = 'sine';
     osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.1, t + i * 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.05 + 0.15);
-    osc.connect(gain);
-    gain.connect(audioCtx!.destination);
-    osc.start(t + i * 0.05);
-    osc.stop(t + i * 0.05 + 0.15);
+    flt.type = 'lowpass';
+    flt.frequency.value = 3000;
+    gain.gain.setValueAtTime(0.1, t + i * 0.06);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.06 + 0.18);
+    osc.start(t + i * 0.06);
+    osc.stop(t + i * 0.06 + 0.2);
   });
 }
 
 function playSizzle() {
-  if (!audioCtx) return;
-  const bufferSize = audioCtx.sampleRate * 0.2;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-  }
-  const source = audioCtx.createBufferSource();
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Filtered noise burst + sub thud
+  const bufLen = audioCtx.sampleRate * 0.2;
+  const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / bufLen);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const flt = audioCtx.createBiquadFilter();
+  flt.type = 'lowpass';
+  flt.frequency.value = 600;
   const gain = audioCtx.createGain();
-  source.buffer = buffer;
-  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-  source.connect(gain);
-  gain.connect(audioCtx.destination);
-  source.start();
+  gain.gain.setValueAtTime(0.12, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  src.connect(flt);
+  flt.connect(gain);
+  gain.connect(masterGain);
+  src.start();
+  // Sub thud
+  const sub = audioCtx.createOscillator();
+  const subGain = audioCtx.createGain();
+  sub.connect(subGain);
+  subGain.connect(masterGain);
+  sub.type = 'sine';
+  sub.frequency.value = 50;
+  subGain.gain.setValueAtTime(0.15, t);
+  subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  sub.start(t);
+  sub.stop(t + 0.22);
 }
 
 function playEvaporate() {
-  if (!audioCtx) return;
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Descending sweep + noise wash — death
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
-  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
   osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.5);
+  gain.connect(masterGain);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(500, t);
+  osc.frequency.exponentialRampToValueAtTime(60, t + 0.6);
+  gain.gain.setValueAtTime(0.18, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+  osc.start(t);
+  osc.stop(t + 0.6);
+  // Noise wash
+  const bufLen = audioCtx.sampleRate * 0.4;
+  const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / bufLen) * 0.5;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const flt = audioCtx.createBiquadFilter();
+  flt.type = 'lowpass';
+  flt.frequency.setValueAtTime(4000, t);
+  flt.frequency.exponentialRampToValueAtTime(200, t + 0.5);
+  const nGain = audioCtx.createGain();
+  nGain.gain.setValueAtTime(0.1, t);
+  nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  src.connect(flt);
+  flt.connect(nGain);
+  nGain.connect(masterGain);
+  src.start();
+}
+
+function playLaneSwitch() {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Quick soft tick on lane change
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  osc.connect(flt);
+  flt.connect(gain);
+  gain.connect(masterGain);
+  osc.type = 'triangle';
+  osc.frequency.value = 400;
+  flt.type = 'lowpass';
+  flt.frequency.value = 1200;
+  gain.gain.setValueAtTime(0.06, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+  osc.start(t);
+  osc.stop(t + 0.05);
 }
 
 export default function MeltGame() {
@@ -121,6 +358,19 @@ export default function MeltGame() {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [canvasSize, setCanvasSize] = useState({ w: GAME_WIDTH, h: GAME_HEIGHT });
+
+  // Social
+  const [socialLoaded, setSocialLoaded] = useState(false);
+  const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [progression, setProgression] = useState<ProgressionResult | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+
+  const { user } = usePixelpitSocial(socialLoaded);
+
+  const GAME_URL = typeof window !== 'undefined'
+    ? `${window.location.origin}/pixelpit/arcade/melt`
+    : 'https://pixelpit.gg/pixelpit/arcade/melt';
 
   const gameRef = useRef({
     lane: 1, // 0=left, 1=center, 2=right
@@ -187,6 +437,7 @@ export default function MeltGame() {
 
   const startGame = useCallback(() => {
     initAudio();
+    startMusic();
     const game = gameRef.current;
     game.lane = 1;
     game.targetLane = 1;
@@ -214,15 +465,43 @@ export default function MeltGame() {
     // After 10s: normal spawning
     
     setScore(0);
+    setSubmittedEntryId(null);
+    setShowLeaderboard(false);
+    setShowShareModal(false);
+    setProgression(null);
     setGameState('playing');
   }, []);
 
   const switchLane = useCallback((direction: number) => {
     const game = gameRef.current;
     const newLane = Math.max(0, Math.min(2, game.lane + direction));
+    if (newLane !== game.lane) playLaneSwitch();
     game.lane = newLane;
     game.targetLane = newLane;
   }, []);
+
+  // Group code + logout URL handling
+  useEffect(() => {
+    if (!socialLoaded || typeof window === 'undefined') return;
+    if (!(window as any).PixelpitSocial) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('logout')) {
+      (window as any).PixelpitSocial.logout();
+      params.delete('logout');
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      window.location.reload();
+      return;
+    }
+
+    const groupCode = (window as any).PixelpitSocial.getGroupCodeFromUrl();
+    if (groupCode) {
+      (window as any).PixelpitSocial.storeGroupCode(groupCode);
+    }
+  }, [socialLoaded]);
 
   useEffect(() => {
     const updateSize = () => {
@@ -369,6 +648,7 @@ export default function MeltGame() {
       
       // Check death
       if (game.playerSize <= MIN_SIZE) {
+        stopMusic();
         playEvaporate();
         // Big steam burst
         for (let i = 0; i < 20; i++) {
@@ -385,6 +665,13 @@ export default function MeltGame() {
         }
         setHighScore(h => Math.max(h, game.score));
         setGameState('gameOver');
+        if (game.score >= 1) {
+          fetch('/api/pixelpit/stats', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ game: GAME_ID }),
+          }).catch(() => {});
+        }
         return;
       }
       
@@ -493,33 +780,29 @@ export default function MeltGame() {
     const draw = () => {
       const game = gameRef.current;
       const t = Date.now() / 1000;
+      const sizePercent = (game.playerSize - MIN_SIZE) / (MAX_SIZE - MIN_SIZE);
 
-      // Screen shake offset
-      const shakeX = game.screenShake * (Math.random() - 0.5) * 10;
-      const shakeY = game.screenShake * (Math.random() - 0.5) * 10;
+      // Screen shake
+      const shakeX = game.screenShake * (Math.random() - 0.5) * 14;
+      const shakeY = game.screenShake * (Math.random() - 0.5) * 14;
 
-      // === BACKGROUND — volcanic depth ===
-      const bgGrad = ctx.createLinearGradient(0, 0, 0, canvasSize.h);
-      bgGrad.addColorStop(0, THEME.bg);
-      bgGrad.addColorStop(0.7, THEME.bgDeep);
-      bgGrad.addColorStop(1, '#1a0505');
-      ctx.fillStyle = bgGrad;
+      // === BACKGROUND — pure black with heat ===
+      ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
 
-      // Ambient lava glow at bottom
-      const bottomGlow = ctx.createRadialGradient(
-        canvasSize.w / 2, canvasSize.h + 50, 0,
-        canvasSize.w / 2, canvasSize.h + 50, canvasSize.h * 0.6
+      // Subtle heat glow from below — the only color in the background
+      const heatGlow = ctx.createRadialGradient(
+        canvasSize.w / 2, canvasSize.h * 1.1, 0,
+        canvasSize.w / 2, canvasSize.h * 1.1, canvasSize.h * 0.8
       );
-      const glowPulse = 0.08 + Math.sin(t * 1.5) * 0.03;
-      bottomGlow.addColorStop(0, `rgba(249, 115, 22, ${glowPulse})`);
-      bottomGlow.addColorStop(1, 'transparent');
-      ctx.fillStyle = bottomGlow;
+      heatGlow.addColorStop(0, `rgba(139, 0, 0, ${0.12 + Math.sin(t) * 0.04})`);
+      heatGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = heatGlow;
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
 
-      // Red flash on hit
+      // Hit flash — full screen red
       if (game.flashRed > 0) {
-        ctx.fillStyle = `rgba(244, 63, 94, ${game.flashRed * 0.4})`;
+        ctx.fillStyle = `rgba(255, 34, 0, ${game.flashRed * 0.5})`;
         ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
       }
 
@@ -527,408 +810,223 @@ export default function MeltGame() {
       ctx.translate(offsetX + shakeX, offsetY + shakeY);
       ctx.scale(scale, scale);
 
-      // === VOLCANIC CRACKS — glowing fissures in the ground ===
-      const crackOffset = (game.scrollY * 0.4) % 160;
-      for (let cy = -crackOffset; cy < GAME_HEIGHT + 100; cy += 80) {
-        const crackPulse = 0.15 + Math.sin(t * 2 + cy * 0.02) * 0.1;
-        ctx.strokeStyle = `rgba(249, 115, 22, ${crackPulse})`;
-        ctx.lineWidth = 1.5;
-        // Left wall cracks
+      // === SPEED LINES — vertical streaks that sell velocity ===
+      const lineOffset = (game.scrollY * 2) % 40;
+      ctx.strokeStyle = 'rgba(255,255,255,0.015)';
+      ctx.lineWidth = 1;
+      for (let lx = 20; lx < GAME_WIDTH; lx += 18) {
         ctx.beginPath();
-        ctx.moveTo(8, cy);
-        ctx.lineTo(18 + Math.sin(cy * 0.1) * 8, cy + 20);
-        ctx.lineTo(10, cy + 40);
-        ctx.stroke();
-        // Right wall cracks
-        ctx.beginPath();
-        ctx.moveTo(GAME_WIDTH - 8, cy + 30);
-        ctx.lineTo(GAME_WIDTH - 20 + Math.cos(cy * 0.08) * 6, cy + 50);
-        ctx.lineTo(GAME_WIDTH - 12, cy + 70);
+        ctx.moveTo(lx + Math.sin(lx) * 3, -lineOffset);
+        ctx.lineTo(lx + Math.sin(lx) * 3, GAME_HEIGHT);
         ctx.stroke();
       }
 
-      // === LANE MARKERS — subtle volcanic grooves ===
-      for (let i = 0; i < 2; i++) {
-        const lx = (LANES[i] + LANES[i + 1]) / 2;
-        const grooveGrad = ctx.createLinearGradient(lx, 0, lx, GAME_HEIGHT);
-        grooveGrad.addColorStop(0, 'rgba(255,255,255,0.02)');
-        grooveGrad.addColorStop(0.5, 'rgba(255,255,255,0.05)');
-        grooveGrad.addColorStop(1, 'rgba(255,255,255,0.02)');
-        ctx.strokeStyle = grooveGrad;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(lx, 0);
-        ctx.lineTo(lx, GAME_HEIGHT);
-        ctx.stroke();
-      }
-
-      // === LAVA POOLS — menacing and alive ===
+      // === LAVA — harsh, hot, dangerous ===
       for (const obs of game.obstacles) {
         const oy = obs.y - game.scrollY;
         if (oy < -60 || oy > GAME_HEIGHT + 60) continue;
         const ox = LANES[obs.lane];
-        const lavaPulse = 1 + Math.sin(t * 4 + obs.y * 0.05) * 0.12;
-        const bubblePulse = Math.sin(t * 6 + obs.y * 0.1);
+        const pulse = Math.sin(t * 5 + obs.y * 0.08);
 
-        // Outer glow (no shadowBlur — manual radial)
-        const lavaGlow = ctx.createRadialGradient(ox, oy, 0, ox, oy, 55);
-        lavaGlow.addColorStop(0, 'rgba(249, 115, 22, 0.15)');
-        lavaGlow.addColorStop(1, 'transparent');
-        ctx.fillStyle = lavaGlow;
-        ctx.fillRect(ox - 60, oy - 60, 120, 120);
-
-        // Dark crust ring
-        ctx.fillStyle = '#1a0505';
+        // Warning glow — a faint hot circle
+        ctx.fillStyle = `rgba(204, 34, 0, ${0.06 + pulse * 0.02})`;
         ctx.beginPath();
-        ctx.ellipse(ox, oy, 38 * lavaPulse, 22 * lavaPulse, 0, 0, Math.PI * 2);
+        ctx.arc(ox, oy, 50, 0, Math.PI * 2);
         ctx.fill();
 
-        // Molten pool
-        const poolGrad = ctx.createRadialGradient(ox, oy - 2, 0, ox, oy, 30 * lavaPulse);
-        poolGrad.addColorStop(0, THEME.lavaWhite);
-        poolGrad.addColorStop(0.3, THEME.lavaHot);
-        poolGrad.addColorStop(0.7, THEME.lavaMid);
-        poolGrad.addColorStop(1, THEME.lavaDark);
-        ctx.fillStyle = poolGrad;
-        ctx.beginPath();
-        ctx.ellipse(ox, oy, 30 * lavaPulse, 16 * lavaPulse, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Bubbles
-        if (bubblePulse > 0.5) {
-          ctx.fillStyle = THEME.lavaHot;
-          ctx.beginPath();
-          ctx.arc(ox + 8, oy - 4, 3 * (bubblePulse - 0.5) * 2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        if (bubblePulse < -0.3) {
-          ctx.fillStyle = THEME.lavaHot;
-          ctx.beginPath();
-          ctx.arc(ox - 10, oy + 2, 2.5 * (-bubblePulse - 0.3) * 2, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        // Core — white-hot horizontal slash
+        ctx.fillStyle = THEME.lavaHot;
+        ctx.fillRect(ox - 30, oy - 4, 60, 8);
+        // Bright center line
+        ctx.fillStyle = THEME.lavaWhite;
+        ctx.fillRect(ox - 20, oy - 2, 40, 4);
+        // Outer heat haze bars
+        ctx.fillStyle = `rgba(204, 34, 0, ${0.4 + pulse * 0.2})`;
+        ctx.fillRect(ox - 36, oy - 8, 72, 2);
+        ctx.fillRect(ox - 36, oy + 6, 72, 2);
       }
 
-      // === ICE PICKUPS — crystalline beacons ===
+      // === ICE PICKUPS — sharp, bright, precious ===
       for (const ice of game.icePickups) {
         if (ice.collected) continue;
         const iy = ice.y - game.scrollY;
         if (iy < -60 || iy > GAME_HEIGHT + 60) continue;
         const ix = LANES[ice.lane];
-        const spin = t * 2 + ice.y * 0.01;
-        const bob = Math.sin(t * 3 + ice.y * 0.05) * 4;
+        const flicker = Math.sin(t * 8 + ice.y) > 0 ? 1 : 0.7;
 
-        // Beacon column (faint vertical light)
-        const beaconGrad = ctx.createLinearGradient(ix, iy - 80, ix, iy + 40);
-        beaconGrad.addColorStop(0, 'transparent');
-        beaconGrad.addColorStop(0.4, 'rgba(6, 182, 212, 0.06)');
-        beaconGrad.addColorStop(0.6, 'rgba(6, 182, 212, 0.1)');
-        beaconGrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = beaconGrad;
-        ctx.fillRect(ix - 15, iy - 80, 30, 120);
-
-        // Frost aura
-        const frostGlow = ctx.createRadialGradient(ix, iy + bob, 0, ix, iy + bob, 30);
-        frostGlow.addColorStop(0, 'rgba(103, 232, 249, 0.2)');
-        frostGlow.addColorStop(1, 'transparent');
-        ctx.fillStyle = frostGlow;
-        ctx.fillRect(ix - 35, iy + bob - 35, 70, 70);
-
-        // Crystal body — rotating diamond
-        ctx.save();
-        ctx.translate(ix, iy + bob);
-        ctx.rotate(spin);
-        // Outer crystal
-        ctx.fillStyle = THEME.ice;
+        // Vertical beacon line
+        ctx.strokeStyle = `rgba(170, 238, 255, ${0.08 * flicker})`;
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(0, -16);
-        ctx.lineTo(11, 0);
-        ctx.lineTo(0, 16);
-        ctx.lineTo(-11, 0);
+        ctx.moveTo(ix, iy - 60);
+        ctx.lineTo(ix, iy + 60);
+        ctx.stroke();
+
+        // The pickup — a simple bright diamond
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.9 * flicker})`;
+        ctx.beginPath();
+        ctx.moveTo(ix, iy - 12);
+        ctx.lineTo(ix + 8, iy);
+        ctx.lineTo(ix, iy + 12);
+        ctx.lineTo(ix - 8, iy);
         ctx.closePath();
         ctx.fill();
-        // Inner highlight
-        ctx.fillStyle = THEME.iceCore;
-        ctx.beginPath();
-        ctx.moveTo(0, -9);
-        ctx.lineTo(5, 0);
-        ctx.lineTo(0, 9);
-        ctx.lineTo(-5, 0);
-        ctx.closePath();
-        ctx.fill();
-        // Hot-white center dot
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
       }
 
       // === PARTICLES ===
       for (const p of game.particles) {
         ctx.globalAlpha = Math.min(1, p.life * 1.5);
+        ctx.fillStyle = p.color;
         if (p.type === 'sparkle') {
-          // Diamond sparkle
-          ctx.fillStyle = p.color;
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.rotate(t * 8);
-          ctx.fillRect(-p.size * p.life / 2, -1, p.size * p.life, 2);
-          ctx.fillRect(-1, -p.size * p.life / 2, 2, p.size * p.life);
-          ctx.restore();
+          ctx.fillRect(p.x - 1, p.y - 1, 2, 2);
         } else {
-          ctx.fillStyle = p.color;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, Math.max(1, p.size * p.life), 0, Math.PI * 2);
           ctx.fill();
         }
       }
       ctx.globalAlpha = 1;
 
-      // === PLAYER — the ice cube ===
+      // === PLAYER — a shard of ice, not a cartoon ===
       const size = game.playerSize;
       const x = game.playerX;
       const y = game.playerY;
-      const sizePercent = (size - MIN_SIZE) / (MAX_SIZE - MIN_SIZE);
-      const worry = 1 - sizePercent;
-
-      // Frost trail on ground behind player
-      const trailGrad = ctx.createRadialGradient(x, y + size / 2 + 5, 0, x, y + size / 2 + 5, size * 0.8);
-      trailGrad.addColorStop(0, `rgba(6, 182, 212, ${0.08 * sizePercent})`);
-      trailGrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = trailGrad;
-      ctx.fillRect(x - size, y, size * 2, size);
-
-      // Ice glow — shifts from cyan to pink when endangered
-      const glowColor = worry > 0.6
-        ? `rgba(244, 63, 94, ${0.3 + Math.sin(t * 8) * 0.15})`
-        : `rgba(6, 182, 212, 0.25)`;
-      const iceGlow = ctx.createRadialGradient(x, y, size * 0.2, x, y, size);
-      iceGlow.addColorStop(0, glowColor);
-      iceGlow.addColorStop(1, 'transparent');
-      ctx.fillStyle = iceGlow;
-      ctx.fillRect(x - size, y - size, size * 2, size * 2);
-
-      // Main ice body — faceted look
       const halfS = size / 2;
-      const bevel = size * 0.12;
 
-      // Shadow face (bottom-right)
-      ctx.fillStyle = 'rgba(0,0,0,0.2)';
-      ctx.beginPath();
-      ctx.moveTo(x + halfS, y - halfS + bevel);
-      ctx.lineTo(x + halfS, y + halfS - bevel);
-      ctx.lineTo(x + halfS - bevel, y + halfS);
-      ctx.lineTo(x - halfS + bevel, y + halfS);
-      ctx.lineTo(x - halfS + bevel + 3, y + halfS - 3);
-      ctx.lineTo(x + halfS - 3, y + halfS - 3);
-      ctx.lineTo(x + halfS - 3, y - halfS + bevel + 3);
-      ctx.closePath();
-      ctx.fill();
+      // Trail — fading afterimage
+      ctx.fillStyle = `rgba(170, 238, 255, ${0.03 * sizePercent})`;
+      ctx.fillRect(x - halfS * 0.6, y + halfS, halfS * 1.2, 30);
 
-      // Body — color shifts warmer when melting
-      const bodyColor = worry > 0.6 ? '#0891b2' : THEME.ice;
+      // Glow — gets redder as you shrink
+      const r = Math.floor(255 * (1 - sizePercent));
+      const g = Math.floor(238 * sizePercent);
+      const b = Math.floor(255 * sizePercent);
+      const glowAlpha = 0.15 + (1 - sizePercent) * 0.15;
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, size * 1.2);
+      glow.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${glowAlpha})`);
+      glow.addColorStop(1, 'transparent');
+      ctx.fillStyle = glow;
+      ctx.fillRect(x - size * 1.5, y - size * 1.5, size * 3, size * 3);
+
+      // Body — sharp geometric shard, pure white fading to grey as it melts
+      const brightness = Math.floor(180 + 75 * sizePercent);
+      const bodyColor = `rgb(${brightness}, ${brightness}, ${brightness})`;
       ctx.fillStyle = bodyColor;
       ctx.beginPath();
-      ctx.moveTo(x - halfS + bevel, y - halfS);
-      ctx.lineTo(x + halfS - bevel, y - halfS);
-      ctx.lineTo(x + halfS, y - halfS + bevel);
-      ctx.lineTo(x + halfS, y + halfS - bevel);
-      ctx.lineTo(x + halfS - bevel, y + halfS);
-      ctx.lineTo(x - halfS + bevel, y + halfS);
-      ctx.lineTo(x - halfS, y + halfS - bevel);
-      ctx.lineTo(x - halfS, y - halfS + bevel);
+      ctx.moveTo(x, y - halfS);           // top point
+      ctx.lineTo(x + halfS, y);           // right
+      ctx.lineTo(x + halfS * 0.6, y + halfS); // bottom right
+      ctx.lineTo(x - halfS * 0.6, y + halfS); // bottom left
+      ctx.lineTo(x - halfS, y);           // left
       ctx.closePath();
       ctx.fill();
 
-      // Top-left highlight facet
-      ctx.fillStyle = `rgba(236, 254, 255, ${0.25 + sizePercent * 0.15})`;
+      // Internal fracture line
+      ctx.strokeStyle = `rgba(170, 238, 255, ${0.2 * sizePercent})`;
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(x - halfS + bevel, y - halfS);
-      ctx.lineTo(x - halfS + bevel + size * 0.35, y - halfS);
-      ctx.lineTo(x - halfS + bevel + size * 0.25, y - halfS + size * 0.25);
-      ctx.lineTo(x - halfS, y - halfS + bevel + size * 0.25);
-      ctx.lineTo(x - halfS, y - halfS + bevel);
+      ctx.moveTo(x - halfS * 0.3, y - halfS * 0.4);
+      ctx.lineTo(x + halfS * 0.1, y + halfS * 0.3);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + halfS * 0.2, y - halfS * 0.2);
+      ctx.lineTo(x - halfS * 0.1, y + halfS * 0.5);
+      ctx.stroke();
+
+      // Highlight edge — top-left facet
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.15 + sizePercent * 0.1})`;
+      ctx.beginPath();
+      ctx.moveTo(x, y - halfS);
+      ctx.lineTo(x - halfS, y);
+      ctx.lineTo(x - halfS * 0.5, y - halfS * 0.1);
       ctx.closePath();
       ctx.fill();
 
-      // Melting drip (when worried)
-      if (worry > 0.2) {
-        const dripLen = worry * 10 + Math.sin(t * 4) * 3;
-        ctx.fillStyle = bodyColor;
+      // Melting drips — just thin lines falling off
+      if (sizePercent < 0.7) {
+        const dripAlpha = (0.7 - sizePercent) * 0.6;
+        ctx.strokeStyle = `rgba(${brightness}, ${brightness}, ${brightness}, ${dripAlpha})`;
+        ctx.lineWidth = 1.5;
+        const d1 = Math.sin(t * 3) * 4;
         ctx.beginPath();
-        ctx.ellipse(x + size * 0.15, y + halfS + dripLen * 0.5, 3, dripLen, 0, 0, Math.PI * 2);
-        ctx.fill();
-        if (worry > 0.5) {
-          const drip2 = worry * 7 + Math.sin(t * 3 + 2) * 2;
+        ctx.moveTo(x + halfS * 0.3, y + halfS);
+        ctx.lineTo(x + halfS * 0.3, y + halfS + 8 + d1);
+        ctx.stroke();
+        if (sizePercent < 0.4) {
+          const d2 = Math.sin(t * 4 + 1) * 3;
           ctx.beginPath();
-          ctx.ellipse(x - size * 0.2, y + halfS + drip2 * 0.4, 2.5, drip2, 0, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.moveTo(x - halfS * 0.2, y + halfS);
+          ctx.lineTo(x - halfS * 0.2, y + halfS + 6 + d2);
+          ctx.stroke();
         }
-      }
-
-      // Face
-      const eyeSize = Math.max(2, size * 0.08);
-      const eyeY = y - size * 0.08;
-      const eyeSpacing = size * 0.18;
-      const eyeStretch = 1 + worry * 0.6;
-
-      // Eye whites (when worried)
-      if (worry > 0.3) {
-        ctx.fillStyle = '#ecfeff';
-        ctx.beginPath();
-        ctx.ellipse(x - eyeSpacing, eyeY, eyeSize * 1.6, eyeSize * 1.6 * eyeStretch, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(x + eyeSpacing, eyeY, eyeSize * 1.6, eyeSize * 1.6 * eyeStretch, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Pupils
-      ctx.fillStyle = '#0a0a0a';
-      ctx.beginPath();
-      ctx.ellipse(x - eyeSpacing, eyeY, eyeSize, eyeSize * eyeStretch, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(x + eyeSpacing, eyeY, eyeSize, eyeSize * eyeStretch, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Eye shine
-      ctx.fillStyle = '#ecfeff';
-      ctx.beginPath();
-      ctx.arc(x - eyeSpacing + 1, eyeY - eyeSize * 0.4, eyeSize * 0.35, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(x + eyeSpacing + 1, eyeY - eyeSize * 0.4, eyeSize * 0.35, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Eyebrows
-      if (worry > 0.3) {
-        ctx.strokeStyle = '#0a0a0a';
-        ctx.lineWidth = Math.max(1.5, size * 0.04);
-        ctx.lineCap = 'round';
-        const browLift = worry * 4;
-        ctx.beginPath();
-        ctx.moveTo(x - eyeSpacing - eyeSize * 1.5, eyeY - eyeSize * 2.2);
-        ctx.lineTo(x - eyeSpacing + eyeSize * 0.5, eyeY - eyeSize * 2 - browLift);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(x + eyeSpacing + eyeSize * 1.5, eyeY - eyeSize * 2.2);
-        ctx.lineTo(x + eyeSpacing - eyeSize * 0.5, eyeY - eyeSize * 2 - browLift);
-        ctx.stroke();
-      }
-
-      // Mouth
-      ctx.strokeStyle = '#0a0a0a';
-      ctx.lineWidth = Math.max(1.5, size * 0.035);
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      if (worry > 0.6) {
-        // Panicked open mouth
-        ctx.fillStyle = '#0a0a0a';
-        ctx.ellipse(x, y + size * 0.22, size * 0.1, size * 0.08, 0, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (worry > 0.3) {
-        // Worried squiggle
-        ctx.moveTo(x - size * 0.1, y + size * 0.2);
-        ctx.quadraticCurveTo(x - size * 0.04, y + size * 0.15, x, y + size * 0.2);
-        ctx.quadraticCurveTo(x + size * 0.04, y + size * 0.25, x + size * 0.1, y + size * 0.2);
-        ctx.stroke();
-      } else {
-        // Chill smile
-        ctx.arc(x, y + size * 0.1, size * 0.12, 0.1, Math.PI - 0.1);
-        ctx.stroke();
       }
 
       ctx.restore();
 
-      // === DANGER VIGNETTE ===
+      // === SCANLINES — CRT overlay ===
+      ctx.fillStyle = 'rgba(0,0,0,0.04)';
+      for (let sy = 0; sy < canvasSize.h; sy += 3) {
+        ctx.fillRect(0, sy, canvasSize.w, 1);
+      }
+
+      // === VIGNETTE — always on, darker at edges ===
+      const vig = ctx.createRadialGradient(
+        canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.3,
+        canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.7
+      );
+      vig.addColorStop(0, 'transparent');
+      vig.addColorStop(1, 'rgba(0,0,0,0.5)');
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
+
+      // === DANGER VIGNETTE — red overlay when dying ===
       if (sizePercent < 0.25) {
-        const pulse = Math.sin(t * 6) * 0.5 + 0.5;
-        const vignette = ctx.createRadialGradient(
-          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.25,
-          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.65
+        const pulse = Math.sin(t * 8) * 0.5 + 0.5;
+        const dVig = ctx.createRadialGradient(
+          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.15,
+          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.55
         );
-        vignette.addColorStop(0, 'transparent');
-        vignette.addColorStop(1, `rgba(244, 63, 94, ${pulse * 0.35})`);
-        ctx.fillStyle = vignette;
+        dVig.addColorStop(0, 'transparent');
+        dVig.addColorStop(1, `rgba(255, 34, 0, ${pulse * 0.4})`);
+        ctx.fillStyle = dVig;
         ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
       }
 
       // === POPUP TEXT ===
       if (game.popupText && game.popupTimer > 0) {
-        const popupProgress = 1 - game.popupTimer / 0.5;
-        const popupScale = 1 + popupProgress * 0.3;
-        const popupAlpha = game.popupTimer * 2;
+        const popupAlpha = Math.min(1, game.popupTimer * 3);
         ctx.save();
-        ctx.globalAlpha = Math.min(1, popupAlpha);
-        ctx.translate(canvasSize.w / 2, canvasSize.h * 0.4);
-        ctx.scale(popupScale, popupScale);
-        ctx.font = 'bold 42px ui-monospace';
+        ctx.globalAlpha = popupAlpha;
+        ctx.font = 'bold 36px ui-monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.letterSpacing = '4px';
-        const popColor = game.popupText === 'OUCH!' ? THEME.danger :
-                         game.popupText === 'ICE!' ? THEME.iceCore : THEME.text;
-        // Text shadow
-        ctx.fillStyle = '#0a0a0a';
-        ctx.fillText(game.popupText, 2, 2);
-        // Text
-        ctx.fillStyle = popColor;
-        ctx.fillText(game.popupText, 0, 0);
+        ctx.fillStyle = game.popupText === 'OUCH!' ? THEME.danger : '#ffffff';
+        ctx.fillText(game.popupText, canvasSize.w / 2, canvasSize.h * 0.38);
         ctx.restore();
       }
 
-      // === HUD ===
-      // Score
-      ctx.fillStyle = THEME.text;
-      ctx.font = 'bold 28px ui-monospace';
+      // === HUD — minimal, out of the way ===
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 24px ui-monospace';
       ctx.textAlign = 'left';
-      ctx.fillText(`${game.score}`, 20, 42);
+      ctx.fillText(`${game.score}`, 16, 36);
 
-      // Multiplier badge
+      // Multiplier
       const multiplier = 1 + sizePercent;
       if (multiplier >= 1.3) {
-        ctx.fillStyle = THEME.iceCore;
-        ctx.font = 'bold 14px ui-monospace';
-        ctx.fillText(`${multiplier.toFixed(1)}x`, 20, 62);
+        ctx.fillStyle = THEME.textDim;
+        ctx.font = '12px ui-monospace';
+        ctx.fillText(`${multiplier.toFixed(1)}x`, 16, 54);
       }
 
-      // Size bar — integrated look
-      const barW = 80;
-      const barH = 6;
-      const barX = canvasSize.w - barW - 20;
-      const barY = 34;
-
-      // Bar background
-      ctx.fillStyle = 'rgba(255,255,255,0.08)';
-      ctx.beginPath();
-      ctx.roundRect(barX, barY, barW, barH, 3);
-      ctx.fill();
-
-      // Bar fill
-      const barColor = sizePercent > 0.3 ? THEME.ice : THEME.danger;
-      ctx.fillStyle = barColor;
-      ctx.beginPath();
-      ctx.roundRect(barX, barY, barW * Math.max(0, sizePercent), barH, 3);
-      ctx.fill();
-
-      // Bar glow when healthy
-      if (sizePercent > 0.5) {
-        ctx.shadowColor = THEME.ice;
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = THEME.ice;
-        ctx.beginPath();
-        ctx.roundRect(barX, barY, barW * sizePercent, barH, 3);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      }
-
-      // Label
-      ctx.fillStyle = 'rgba(255,255,255,0.4)';
-      ctx.font = '11px ui-monospace';
-      ctx.textAlign = 'right';
-      ctx.fillText('ICE', barX - 6, barY + 6);
+      // Size bar — thin line at top right
+      const barW = 60;
+      const barX = canvasSize.w - barW - 16;
+      const barY = 30;
+      ctx.fillStyle = '#111';
+      ctx.fillRect(barX, barY, barW, 3);
+      ctx.fillStyle = sizePercent > 0.25 ? '#fff' : THEME.danger;
+      ctx.fillRect(barX, barY, barW * Math.max(0, sizePercent), 3);
     };
 
     const gameLoop = (timestamp: number) => {
@@ -980,6 +1078,7 @@ export default function MeltGame() {
 
     return () => {
       cancelAnimationFrame(animationId);
+      stopMusic();
       canvas.removeEventListener('touchstart', handleTouchStart);
       canvas.removeEventListener('touchend', handleTouchEnd);
       canvas.removeEventListener('click', handleClick);
@@ -988,144 +1087,270 @@ export default function MeltGame() {
   }, [gameState, canvasSize, spawnObstacles, switchLane]);
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: THEME.bg,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'ui-monospace, monospace',
-      }}
-    >
-      {gameState === 'start' && (
-        <div style={{ textAlign: 'center', padding: 30, maxWidth: 360 }}>
-          <div style={{ fontSize: 72, marginBottom: 4 }}>🧊</div>
-          <h1 style={{
-            color: THEME.text,
-            fontSize: 56,
-            margin: '0 0 4px',
-            fontWeight: 900,
-            letterSpacing: '6px',
-          }}>
-            MELT
-          </h1>
-          <p style={{
-            color: THEME.ice,
-            fontSize: 13,
-            marginBottom: 32,
-            lineHeight: 2,
-            letterSpacing: '1px',
-            opacity: 0.7,
-          }}>
-            SWIPE TO DODGE LAVA<br />
-            COLLECT ICE TO SURVIVE<br />
-            <span style={{ color: THEME.lavaMid }}>BIGGER = MORE POINTS</span>
-          </p>
-          <button
-            onClick={startGame}
-            style={{
-              background: 'transparent',
-              color: THEME.ice,
-              border: `2px solid ${THEME.ice}`,
-              padding: '14px 56px',
-              fontSize: 16,
-              fontWeight: 700,
-              letterSpacing: '4px',
-              borderRadius: 0,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = THEME.ice;
-              e.currentTarget.style.color = THEME.bg;
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = THEME.ice;
-            }}
-          >
-            START
-          </button>
-        </div>
-      )}
+    <>
+      <Script
+        src="/pixelpit/social.js"
+        strategy="afterInteractive"
+        onLoad={() => setSocialLoaded(true)}
+      />
 
-      {gameState === 'playing' && (
-        <canvas
-          ref={canvasRef}
-          width={canvasSize.w}
-          height={canvasSize.h}
-          style={{ touchAction: 'none' }}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: THEME.bg,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'ui-monospace, monospace',
+        }}
+      >
+        {gameState === 'start' && (
+          <div style={{ textAlign: 'center', padding: 30, maxWidth: 360 }}>
+            <h1 style={{
+              color: THEME.text,
+              fontSize: 64,
+              margin: '0 0 6px',
+              fontWeight: 900,
+              letterSpacing: '8px',
+            }}>
+              MELT
+            </h1>
+            <div style={{
+              width: 40,
+              height: 2,
+              background: THEME.lavaMid,
+              margin: '0 auto 28px',
+            }} />
+            <p style={{
+              color: THEME.textDim,
+              fontSize: 11,
+              marginBottom: 36,
+              lineHeight: 2.2,
+              letterSpacing: '3px',
+              textTransform: 'uppercase',
+            }}>
+              DODGE LAVA<br />
+              COLLECT ICE<br />
+              <span style={{ color: THEME.lavaMid }}>STAY ALIVE</span>
+            </p>
+            <button
+              onClick={startGame}
+              style={{
+                background: 'transparent',
+                color: THEME.text,
+                border: `1px solid ${THEME.textDim}`,
+                padding: '14px 56px',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '6px',
+                borderRadius: 0,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = THEME.text;
+                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = THEME.textDim;
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              START
+            </button>
+            <button
+              onClick={() => setShowLeaderboard(true)}
+              style={{
+                display: 'block',
+                margin: '24px auto 0',
+                background: 'transparent',
+                color: THEME.textDim,
+                border: 'none',
+                padding: '8px 16px',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '3px',
+                cursor: 'pointer',
+              }}
+            >
+              LEADERBOARD
+            </button>
+          </div>
+        )}
+
+        {showLeaderboard && gameState !== 'playing' && (
+          <Leaderboard
+            gameId={GAME_ID}
+            limit={10}
+            entryId={submittedEntryId ?? undefined}
+            colors={LEADERBOARD_COLORS}
+            onClose={() => setShowLeaderboard(false)}
+            groupsEnabled={true}
+            gameUrl={GAME_URL}
+            socialLoaded={socialLoaded}
+          />
+        )}
+
+        {gameState === 'playing' && (
+          <canvas
+            ref={canvasRef}
+            width={canvasSize.w}
+            height={canvasSize.h}
+            style={{ touchAction: 'none' }}
+          />
+        )}
+
+        {gameState === 'gameOver' && (
+          <div style={{
+            textAlign: 'center',
+            padding: 20,
+            maxWidth: 360,
+            overflowY: 'auto',
+            maxHeight: '100vh',
+          }}>
+            <h1 style={{
+              color: THEME.danger,
+              fontSize: 14,
+              margin: '0 0 16px',
+              fontWeight: 700,
+              letterSpacing: '6px',
+            }}>
+              EVAPORATED
+            </h1>
+            <div style={{
+              color: THEME.text,
+              fontSize: 72,
+              fontWeight: 900,
+              marginBottom: 4,
+              letterSpacing: '2px',
+            }}>
+              {score}
+            </div>
+            {score >= highScore && highScore > 0 && (
+              <p style={{
+                color: THEME.lavaMid,
+                fontSize: 11,
+                letterSpacing: '4px',
+                marginBottom: 4,
+              }}>
+                NEW BEST
+              </p>
+            )}
+            <p style={{
+              color: THEME.textDim,
+              fontSize: 11,
+              marginBottom: 16,
+              letterSpacing: '2px',
+            }}>
+              BEST {highScore}
+            </p>
+
+            <div style={{ width: '100%', maxWidth: 350, margin: '0 auto' }}>
+              <ScoreFlow
+                score={score}
+                gameId={GAME_ID}
+                maxScore={500}
+                colors={SCORE_FLOW_COLORS}
+                onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
+                onProgression={(prog) => setProgression(prog)}
+              />
+            </div>
+
+            {progression && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 8 }}>
+                <div style={{ color: THEME.lavaHot, fontSize: 13, fontWeight: 700 }}>+{progression.xpEarned} XP</div>
+                <div style={{ color: THEME.textDim, fontSize: 12 }}>Level {progression.level}</div>
+                {progression.streak > 1 && (
+                  <div style={{ color: THEME.iceCore, fontSize: 12 }}>{progression.multiplier}x streak</div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 12 }}>
+              <button
+                onClick={() => setShowLeaderboard(!showLeaderboard)}
+                style={{
+                  background: 'transparent',
+                  color: THEME.textDim,
+                  border: `1px solid ${THEME.textDim}`,
+                  padding: '10px 16px',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '2px',
+                  borderRadius: 0,
+                  cursor: 'pointer',
+                }}
+              >
+                {showLeaderboard ? 'HIDE' : 'RANKS'}
+              </button>
+              {user ? (
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  style={{
+                    background: 'transparent',
+                    color: THEME.textDim,
+                    border: `1px solid ${THEME.textDim}`,
+                    padding: '10px 16px',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: '2px',
+                    borderRadius: 0,
+                    cursor: 'pointer',
+                  }}
+                >
+                  SHARE / GROUPS
+                </button>
+              ) : (
+                <ShareButtonContainer
+                  id="share-btn-container"
+                  url={`${GAME_URL}/share/${score}`}
+                  text={`I scored ${score} on MELT! Can you survive the heat?`}
+                  style="minimal"
+                  socialLoaded={socialLoaded}
+                />
+              )}
+            </div>
+
+            <button
+              onClick={startGame}
+              style={{
+                marginTop: 12,
+                background: 'transparent',
+                color: THEME.text,
+                border: `1px solid ${THEME.textDim}`,
+                padding: '14px 44px',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '6px',
+                borderRadius: 0,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = THEME.text;
+                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = THEME.textDim;
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              AGAIN
+            </button>
+          </div>
+        )}
+      </div>
+
+      {showShareModal && user && (
+        <ShareModal
+          gameUrl={GAME_URL}
+          score={score}
+          colors={LEADERBOARD_COLORS}
+          onClose={() => setShowShareModal(false)}
         />
       )}
-
-      {gameState === 'gameOver' && (
-        <div style={{ textAlign: 'center', padding: 30, maxWidth: 360 }}>
-          <div style={{ fontSize: 56, marginBottom: 8 }}>💧</div>
-          <h1 style={{
-            color: THEME.danger,
-            fontSize: 32,
-            margin: '0 0 20px',
-            fontWeight: 900,
-            letterSpacing: '4px',
-          }}>
-            EVAPORATED
-          </h1>
-          <div style={{
-            color: THEME.text,
-            fontSize: 56,
-            fontWeight: 900,
-            marginBottom: 4,
-          }}>
-            {score}
-          </div>
-          {score >= highScore && highScore > 0 && (
-            <p style={{
-              color: THEME.lavaMid,
-              fontSize: 14,
-              letterSpacing: '2px',
-              marginBottom: 8,
-            }}>
-              NEW BEST
-            </p>
-          )}
-          <p style={{
-            color: THEME.text,
-            fontSize: 13,
-            marginBottom: 32,
-            opacity: 0.3,
-          }}>
-            BEST {highScore}
-          </p>
-          <button
-            onClick={startGame}
-            style={{
-              background: 'transparent',
-              color: THEME.ice,
-              border: `2px solid ${THEME.ice}`,
-              padding: '14px 44px',
-              fontSize: 14,
-              fontWeight: 700,
-              letterSpacing: '4px',
-              borderRadius: 0,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = THEME.ice;
-              e.currentTarget.style.color = THEME.bg;
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = THEME.ice;
-            }}
-          >
-            AGAIN
-          </button>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

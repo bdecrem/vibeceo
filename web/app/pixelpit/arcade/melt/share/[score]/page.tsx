@@ -17,12 +17,14 @@ export default function MeltSharePage() {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100vh',
-        background: 'linear-gradient(180deg, #1e3a5f 0%, #7f1d1d 100%)',
-        color: '#f0f9ff',
+        background: '#000000',
+        color: '#444444',
         fontFamily: 'ui-monospace, monospace',
+        letterSpacing: '4px',
+        fontSize: 12,
       }}
     >
-      Loading MELT...
+      LOADING MELT...
     </div>
   );
 }
