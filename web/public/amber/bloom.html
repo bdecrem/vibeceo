@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLOOM — Plant seeds. Watch melodies grow.</title>
+  <meta property="og:title" content="BLOOM — Plant seeds. Watch melodies grow.">
+  <meta property="og:description" content="A music machine by Amber">
+  <meta property="og:image" content="https://intheamber.com/amber/bloom-og.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BLOOM — Plant seeds. Watch melodies grow.">
+  <meta name="twitter:description" content="A music machine by Amber">
+  <meta name="twitter:image" content="https://intheamber.com/amber/bloom-og.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 10;
+cursor: pointer;
+    }
+
+    #overlay.hidden {
+      display: none;
+    }
+
+    #startBtn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px 50px;
+      font-size: 24px;
+      font-family: 'Space Mono', monospace;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+      margin-bottom: 20px;
+    }
+
+    #startBtn:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+
+    #instruction {
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.7;
+      text-align: center;
+      max-width: 400px;
+      line-height: 1.6;
+    }
+
+    #stats {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      font-size: 11px;
+      color: #D4A574;
+      opacity: 0.5;
+      font-family: 'Space Mono', monospace;
+      line-height: 1.8;
+    }
+
+    #clearBtn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(212, 165, 116, 0.2);
+      color: #D4A574;
+      border: 1px solid #D4A574;
+      padding: 10px 20px;
+      font-size: 12px;
+      font-family: 'Space Mono', monospace;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    #clearBtn:hover {
+      background: rgba(212, 165, 116, 0.4);
+    }
+
+    @media (max-width: 768px) {
+      #startBtn {
+        padding: 16px 40px;
+        font-size: 20px;
+      }
+      #instruction {
+        font-size: 13px;
+        padding: 0 20px;
+      }
+      #stats {
+        font-size: 10px;
+        bottom: 12px;
+        left: 12px;
+      }
+      #clearBtn {
+        top: 12px;
+        right: 12px;
+        padding: 8px 16px;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="overlay">
+    <button id="startBtn">PLANT</button>
+    <div id="instruction">
+      Click anywhere to plant a seed<br>
+      Watch it grow into branching melodies<br>
+      Each branch sings its own note
+    </div>
+  </div>
+
+  <button id="clearBtn" style="display: none;">CLEAR GARDEN</button>
+
+  <div id="stats">
+    PLANTS: <span id="plantCount">0</span><br>
+    BRANCHES: <span id="branchCount">0</span><br>
+    NOTES PLAYED: <span id="noteCount">0</span>
+  </div>
+
+  <script type="module">
+    import { SH101Controller } from '/101/dist/api/index.js';
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('startBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const plantCountStat = document.getElementById('plantCount');
+    const branchCountStat = document.getElementById('branchCount');
+    const noteCountStat = document.getElementById('noteCount');
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    });
+
+    // Audio
+    let synth = null;
+    let audioStarted = false;
+
+    // D minor pentatonic scale (MIDI notes) across 3 octaves
+    const scale = [
+      50, 53, 55, 57, 60, // D3 to C4
+      62, 65, 67, 69, 72, // D4 to C5
+      74, 77, 79, 81, 84  // D5 to C6
+    ];
+
+    // Branch colors by generation
+    const colors = [
+      '#D4A574', // Amber - trunk
+      '#FFD700', // Gold - gen 1
+      '#2D9596', // Teal - gen 2
+      '#7B68EE', // Violet - gen 3
+      '#FF69B4', // Pink - gen 4
+      '#00CED1', // Cyan - gen 5
+      '#FF7F50'  // Coral - gen 6
+    ];
+
+    // Plants (growing trees)
+    const plants = [];
+    let totalNotes = 0;
+    let totalBranches = 0;
+
+    class Branch {
+      constructor(x, y, angle, length, generation, parent) {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.angle = angle;
+        this.targetLength = length;
+        this.currentLength = 0;
+        this.generation = generation;
+        this.parent = parent;
+        this.children = [];
+        this.growing = true;
+        this.hasPlayed = false;
+        this.note = scale[Math.min(generation, scale.length - 1)];
+        this.growSpeed = 1.5;
+        this.pulse = 0;
+      }
+
+      get endX() {
+        return this.startX + Math.cos(this.angle) * this.currentLength;
+      }
+
+      get endY() {
+        return this.startY + Math.sin(this.angle) * this.currentLength;
+      }
+
+      get color() {
+        return colors[Math.min(this.generation, colors.length - 1)];
+      }
+
+      update() {
+        if (this.growing) {
+          this.currentLength += this.growSpeed;
+          if (this.currentLength >= this.targetLength) {
+            this.currentLength = this.targetLength;
+            this.growing = false;
+            this.playNote();
+            this.branch();
+          }
+        }
+
+        // Pulse effect
+        this.pulse = Math.sin(Date.now() / 500 + this.generation) * 0.5 + 0.5;
+
+        // Update children
+        this.children.forEach(child => child.update());
+      }
+
+      playNote() {
+        if (this.hasPlayed || !synth) return;
+        this.hasPlayed = true;
+
+        synth.engine.setParameter('cutoff', 0.5 + (this.generation / 10) * 0.3);
+        synth.engine.setParameter('resonance', 0.2 + Math.random() * 0.2);
+        synth.engine.playNote(this.note, false);
+        
+        totalNotes++;
+
+        // Create bloom particles
+        this.createBloom();
+      }
+
+      createBloom() {
+        const particleCount = 8;
+        for (let i = 0; i < particleCount; i++) {
+          const angle = (i / particleCount) * Math.PI * 2;
+          bloomParticles.push({
+            x: this.endX,
+            y: this.endY,
+            vx: Math.cos(angle) * 2,
+            vy: Math.sin(angle) * 2,
+            life: 1.0,
+            color: this.color
+          });
+        }
+      }
+
+      branch() {
+        // Stop branching after 6 generations
+        if (this.generation >= 6) return;
+
+        // Stop branching if too close to edge
+        const margin = 100;
+        if (this.endX < margin || this.endX > width - margin || 
+            this.endY < margin || this.endY > height - margin) {
+          return;
+        }
+
+        // Create 2-3 child branches
+        const numChildren = Math.random() > 0.3 ? 2 : 3;
+        const angleSpread = Math.PI / 3; // 60 degrees spread
+        
+        for (let i = 0; i < numChildren; i++) {
+          const childAngle = this.angle - angleSpread / 2 + (i / (numChildren - 1)) * angleSpread + 
+                           (Math.random() - 0.5) * 0.3; // Add some randomness
+          const childLength = this.targetLength * (0.6 + Math.random() * 0.2); // 60-80% of parent
+          
+          const child = new Branch(
+            this.endX,
+            this.endY,
+            childAngle,
+            childLength,
+            this.generation + 1,
+            this
+          );
+          
+          this.children.push(child);
+          totalBranches++;
+        }
+      }
+
+      draw() {
+        if (this.currentLength <= 0) return;
+
+        // Draw branch line
+        const thickness = Math.max(1, 8 - this.generation * 1.2);
+        const alpha = Math.floor((0.6 + this.pulse * 0.4) * 255).toString(16).padStart(2, '0');
+        
+        ctx.strokeStyle = this.color + alpha;
+        ctx.lineWidth = thickness;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(this.startX, this.startY);
+        ctx.lineTo(this.endX, this.endY);
+        ctx.stroke();
+
+        // Draw glow at end if just finished growing
+        if (!this.growing && this.pulse > 0.5) {
+          const gradient = ctx.createRadialGradient(this.endX, this.endY, 0, this.endX, this.endY, 15);
+          gradient.addColorStop(0, this.color + 'AA');
+          gradient.addColorStop(0.5, this.color + '44');
+          gradient.addColorStop(1, this.color + '00');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(this.endX - 15, this.endY - 15, 30, 30);
+        }
+
+        // Draw children
+        this.children.forEach(child => child.draw());
+      }
+    }
+
+    class Plant {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.4; // Mostly upward, slight variation
+        const length = 40 + Math.random() * 30;
+        this.trunk = new Branch(x, y, angle, length, 0, null);
+        totalBranches++;
+      }
+
+      update() {
+        this.trunk.update();
+      }
+
+      draw() {
+        this.trunk.draw();
+      }
+
+      getBranchCount() {
+        const count = (branch) => {
+          return 1 + branch.children.reduce((sum, child) => sum + count(child), 0);
+        };
+        return count(this.trunk);
+      }
+    }
+
+    // Bloom particles
+    const bloomParticles = [];
+
+    function updateBloomParticles() {
+      for (let i = bloomParticles.length - 1; i >= 0; i--) {
+        const p = bloomParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.1; // Slight gravity
+        p.life -= 0.02;
+
+        if (p.life <= 0) {
+          bloomParticles.splice(i, 1);
+          continue;
+        }
+
+        const alpha = Math.floor(p.life * 255).toString(16).padStart(2, '0');
+        ctx.fillStyle = p.color + alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    async function startAudio() {
+      if (audioStarted) return;
+
+      try {
+        synth = new SH101Controller();
+
+        if (synth.engine.context.state === 'suspended') {
+          await synth.engine.context.resume();
+        }
+
+        // iOS unlock
+        const silentBuf = synth.engine.context.createBuffer(1, 1, 22050);
+        const silentSrc = synth.engine.context.createBufferSource();
+        silentSrc.buffer = silentBuf;
+        silentSrc.connect(synth.engine.context.destination);
+        silentSrc.start(0);
+
+        console.log('Audio ready');
+        audioStarted = true;
+        overlay.classList.add('hidden');
+        clearBtn.style.display = 'block';
+      } catch (err) {
+        console.error('Audio init error:', err);
+        alert('Audio failed: ' + err.message);
+      }
+    }
+
+    function plantSeed(x, y) {
+      if (!audioStarted) return;
+
+      const plant = new Plant(x, y);
+      plants.push(plant);
+    }
+
+    function clearGarden() {
+      plants.length = 0;
+      bloomParticles.length = 0;
+      totalBranches = 0;
+      totalNotes = 0;
+    }
+
+    startBtn.addEventListener('click', startAudio);
+    startBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      startAudio();
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) startAudio();
+    });
+
+    canvas.addEventListener('click', (e) => {
+      plantSeed(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      plantSeed(touch.clientX, touch.clientY);
+    });
+
+    clearBtn.addEventListener('click', clearGarden);
+
+    // Animation loop
+    function animate() {
+      // Clear with trail effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update and draw plants
+      plants.forEach(plant => {
+        plant.update();
+        plant.draw();
+      });
+
+      // Update bloom particles
+      updateBloomParticles();
+
+      // Update stats
+      plantCountStat.textContent = plants.length;
+      branchCountStat.textContent = totalBranches;
+      noteCountStat.textContent = totalNotes;
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
