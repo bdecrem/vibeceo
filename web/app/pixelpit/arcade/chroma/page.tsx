@@ -56,43 +56,156 @@ const LEADERBOARD_COLORS: LeaderboardColors = {
   muted: '#86efac',
 };
 
-// Audio
+// Audio - Jungle Beats (Dither spec)
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
+let musicGain: GainNode | null = null;
+let currentZone = 0;
+let musicPlaying = false;
+let musicIntervalId: number | null = null;
 
 function initAudio() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.3;
+  masterGain.gain.value = 0.4;
   masterGain.connect(audioCtx.destination);
+  musicGain = audioCtx.createGain();
+  musicGain.gain.value = 0.15;
+  musicGain.connect(audioCtx.destination);
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
+// === MUSIC: Zone-layered jungle beats at 120 BPM ===
+const BPM = 120;
+const BEAT_MS = 60000 / BPM;
+
+// Marimba notes (C major pentatonic: C4, D4, E4, G4, A4)
+const MARIMBA_NOTES = [261.63, 293.66, 329.63, 392.00, 440.00];
+// Bass notes
+const BASS_NOTES = [130.81, 146.83, 164.81]; // C3, D3, E3
+
+function playMarimba(freq: number, time: number, duration = 0.15) {
+  if (!audioCtx || !musicGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  // Quick attack, medium decay (marimba-like)
+  gain.gain.setValueAtTime(0.3, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+  osc.connect(gain);
+  gain.connect(musicGain!);
+  osc.start(time);
+  osc.stop(time + duration);
+}
+
+function playBongo(time: number, high = false) {
+  if (!audioCtx || !musicGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(high ? 400 : 200, time);
+  osc.frequency.exponentialRampToValueAtTime(high ? 200 : 100, time + 0.05);
+  gain.gain.setValueAtTime(0.2, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+  osc.connect(gain);
+  gain.connect(musicGain!);
+  osc.start(time);
+  osc.stop(time + 0.1);
+}
+
+function playBass(freq: number, time: number) {
+  if (!audioCtx || !musicGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.25, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
+  osc.connect(gain);
+  gain.connect(musicGain!);
+  osc.start(time);
+  osc.stop(time + 0.3);
+}
+
+function playBirdChirp(time: number) {
+  if (!audioCtx || !musicGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(1200, time);
+  osc.frequency.setValueAtTime(1600, time + 0.05);
+  osc.frequency.setValueAtTime(1400, time + 0.1);
+  gain.gain.setValueAtTime(0.08, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+  osc.connect(gain);
+  gain.connect(musicGain!);
+  osc.start(time);
+  osc.stop(time + 0.15);
+}
+
+let beatCount = 0;
+function playMusicBeat(zone: number) {
+  if (!audioCtx || !musicGain) return;
+  const t = audioCtx.currentTime;
+  beatCount++;
+  
+  // Marimba pattern (all zones) - simple arpeggios
+  const noteIndex = beatCount % MARIMBA_NOTES.length;
+  playMarimba(MARIMBA_NOTES[noteIndex], t, 0.2);
+  
+  // Light percussion (all zones)
+  if (beatCount % 2 === 0) {
+    playBongo(t + 0.01, beatCount % 4 === 0);
+  }
+  
+  // Zone 2+: Add bass on beats 1 and 3
+  if (zone >= 2 && (beatCount % 4 === 1 || beatCount % 4 === 3)) {
+    const bassNote = BASS_NOTES[Math.floor(beatCount / 4) % BASS_NOTES.length];
+    playBass(bassNote, t);
+  }
+  
+  // Zone 3+: Bird chirps occasionally
+  if (zone >= 3 && Math.random() < 0.15) {
+    playBirdChirp(t + Math.random() * 0.2);
+  }
+}
+
+function startMusic() {
+  if (musicPlaying) return;
+  musicPlaying = true;
+  beatCount = 0;
+  musicIntervalId = window.setInterval(() => {
+    playMusicBeat(currentZone);
+  }, BEAT_MS / 2); // Half-beat for more movement
+}
+
+function stopMusic() {
+  musicPlaying = false;
+  if (musicIntervalId) {
+    clearInterval(musicIntervalId);
+    musicIntervalId = null;
+  }
+}
+
+function setMusicZone(zone: number) {
+  currentZone = zone;
+}
+
+// === SFX (Dither spec) ===
+
+// Hop: Soft springy "boing"
 function playHop() {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
   const osc = audioCtx.createOscillator();
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(400, t);
-  osc.frequency.exponentialRampToValueAtTime(600, t + 0.08);
+  osc.frequency.setValueAtTime(280, t);
+  osc.frequency.exponentialRampToValueAtTime(420, t + 0.06);
+  osc.frequency.exponentialRampToValueAtTime(350, t + 0.12);
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.15, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start(t);
-  osc.stop(t + 0.1);
-}
-
-function playPass() {
-  if (!audioCtx || !masterGain) return;
-  const t = audioCtx.currentTime;
-  const osc = audioCtx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.value = 800;
-  const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.1, t);
+  gain.gain.setValueAtTime(0.18, t);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
   osc.connect(gain);
   gain.connect(masterGain);
@@ -100,36 +213,101 @@ function playPass() {
   osc.stop(t + 0.15);
 }
 
+// Correct pass: Chime/ding (pitch based on zone)
+function playPass(zone = 1) {
+  if (!audioCtx || !masterGain) return;
+  const t = audioCtx.currentTime;
+  // Higher pitch for higher zones
+  const baseFreq = 600 + (zone - 1) * 150;
+  
+  const osc = audioCtx.createOscillator();
+  const osc2 = audioCtx.createOscillator();
+  osc.type = 'sine';
+  osc2.type = 'sine';
+  osc.frequency.value = baseFreq;
+  osc2.frequency.value = baseFreq * 1.5; // Perfect fifth harmony
+  
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.12, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  
+  osc.connect(gain);
+  osc2.connect(gain);
+  gain.connect(masterGain);
+  osc.start(t);
+  osc2.start(t);
+  osc.stop(t + 0.25);
+  osc2.stop(t + 0.25);
+}
+
+// Bug eat: "Thwip" tongue + tiny "gulp"
 function playEat() {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
-  const osc = audioCtx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(300, t);
-  osc.frequency.exponentialRampToValueAtTime(500, t + 0.1);
-  osc.frequency.exponentialRampToValueAtTime(400, t + 0.15);
-  const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.2, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start(t);
-  osc.stop(t + 0.2);
+  
+  // Thwip (fast rising then falling)
+  const osc1 = audioCtx.createOscillator();
+  osc1.type = 'sine';
+  osc1.frequency.setValueAtTime(200, t);
+  osc1.frequency.exponentialRampToValueAtTime(800, t + 0.04);
+  osc1.frequency.exponentialRampToValueAtTime(400, t + 0.08);
+  const gain1 = audioCtx.createGain();
+  gain1.gain.setValueAtTime(0.2, t);
+  gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  osc1.connect(gain1);
+  gain1.connect(masterGain);
+  osc1.start(t);
+  osc1.stop(t + 0.1);
+  
+  // Gulp (low bubble)
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(150, t + 0.08);
+  osc2.frequency.exponentialRampToValueAtTime(80, t + 0.15);
+  const gain2 = audioCtx.createGain();
+  gain2.gain.setValueAtTime(0, t);
+  gain2.gain.setValueAtTime(0.15, t + 0.08);
+  gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  osc2.connect(gain2);
+  gain2.connect(masterGain);
+  osc2.start(t + 0.08);
+  osc2.stop(t + 0.2);
 }
 
+// Death: Record scratch + sad thud
 function playDeath() {
   if (!audioCtx || !masterGain) return;
   const t = audioCtx.currentTime;
+  stopMusic();
+  
+  // Record scratch (noise burst with falling pitch)
+  const bufferSize = audioCtx.sampleRate * 0.15;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const noiseGain = audioCtx.createGain();
+  noiseGain.gain.setValueAtTime(0.2, t);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  noise.connect(noiseGain);
+  noiseGain.connect(masterGain);
+  noise.start(t);
+  
+  // Sad thud
   const osc = audioCtx.createOscillator();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(400, t);
-  osc.frequency.exponentialRampToValueAtTime(100, t + 0.4);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(150, t + 0.1);
+  osc.frequency.exponentialRampToValueAtTime(60, t + 0.4);
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.15, t);
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.setValueAtTime(0.25, t + 0.1);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
   osc.connect(gain);
   gain.connect(masterGain);
-  osc.start(t);
+  osc.start(t + 0.1);
   osc.stop(t + 0.5);
 }
 
@@ -403,6 +581,10 @@ export default function ChromaGame() {
     // Spawn first bug
     spawnBug(canvasSize.h - 400, 0);
 
+    // Start jungle beats!
+    setMusicZone(1);
+    startMusic();
+
     setGameState('playing');
   }, [canvasSize, spawnObstacle, spawnBug]);
 
@@ -528,7 +710,7 @@ export default function ChromaGame() {
               cham.y = landingY;
               cham.vy = 0;
               cham.squash = 0.8;
-              playPass();
+              playPass(game.zone);
 
               // Snap ring so landed segment is centered at bottom
               obs.rotation = Math.PI / 4 - segment * Math.PI / 2;
@@ -592,7 +774,11 @@ export default function ChromaGame() {
       // Score based on height
       const height = Math.max(0, (canvasSize.h - 150) - cham.y + game.cameraY);
       game.score = Math.max(game.score, Math.floor(height / 10));
-      game.zone = getZone(game.score * 10);
+      const newZone = getZone(game.score * 10);
+      if (newZone !== game.zone) {
+        game.zone = newZone;
+        setMusicZone(newZone); // Update music layers
+      }
 
       // Spawn new obstacles (distance-based spacing and bug frequency)
       while (game.nextObstacleY > game.cameraY - 200) {
