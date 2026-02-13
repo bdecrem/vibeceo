@@ -133,6 +133,10 @@ export default function MeltGame() {
     lastSpawnY: 0,
     screenShake: 0,
     flashRed: 0,
+    gameTime: 0, // Track time for tutorial phases
+    popupText: '' as string,
+    popupTimer: 0,
+    tutorialPhase: 0, // 0=melting, 1=first ice, 2=first rock, 3=normal
   });
 
   const spawnRow = useCallback((y: number) => {
@@ -182,23 +186,30 @@ export default function MeltGame() {
     game.targetLane = 1;
     game.playerX = LANES[1];
     game.playerY = GAME_HEIGHT * 0.75;
-    game.playerSize = START_SIZE;
+    game.playerSize = MAX_SIZE; // Start at MAX for tutorial
     game.scrollY = 0;
     game.obstacles = [];
     game.icePickups = [];
     game.particles = [];
     game.score = 0;
     game.distance = 0;
-    game.lastSpawnY = 0;
+    game.lastSpawnY = GAME_HEIGHT;
     game.screenShake = 0;
     game.flashRed = 0;
+    game.gameTime = 0;
+    game.popupText = '';
+    game.popupTimer = 0;
+    game.tutorialPhase = 0;
     
-    // Initial obstacles
-    spawnObstacles(GAME_HEIGHT, GAME_HEIGHT + 1500);
+    // NO initial obstacles - tutorial approach
+    // Phase 0-3s: empty, just melting
+    // Phase 3-6s: first ice appears
+    // Phase 6-10s: first rock appears
+    // After 10s: normal spawning
     
     setScore(0);
     setGameState('playing');
-  }, [spawnObstacles]);
+  }, []);
 
   const switchLane = useCallback((direction: number) => {
     const game = gameRef.current;
@@ -235,6 +246,62 @@ export default function MeltGame() {
 
     const update = (dt: number) => {
       const game = gameRef.current;
+      
+      // Track game time for tutorial
+      game.gameTime += dt;
+      
+      // Tutorial phases
+      if (game.tutorialPhase === 0 && game.gameTime < 3) {
+        // Phase 0: Just melting, show "YOU'RE MELTING!"
+        if (game.gameTime < 0.1) {
+          game.popupText = "YOU'RE MELTING!";
+          game.popupTimer = 2.5;
+        }
+      } else if (game.tutorialPhase === 0 && game.gameTime >= 3) {
+        // Phase 1: Spawn first ice in center lane
+        game.tutorialPhase = 1;
+        game.icePickups.push({ lane: 1, y: game.scrollY + GAME_HEIGHT + 100, collected: false });
+      } else if (game.tutorialPhase === 1 && game.gameTime >= 6) {
+        // Phase 2: Spawn first rock (in side lane, easy to dodge)
+        game.tutorialPhase = 2;
+        game.obstacles.push({ lane: 0, y: game.scrollY + GAME_HEIGHT + 100, type: 'lava' });
+      } else if (game.tutorialPhase === 2 && game.gameTime >= 10) {
+        // Phase 3: Normal gameplay
+        game.tutorialPhase = 3;
+      }
+      
+      // Normal spawning after tutorial
+      if (game.tutorialPhase >= 3 && game.scrollY + GAME_HEIGHT > game.lastSpawnY - 300) {
+        const spacing = 180;
+        for (let y = game.lastSpawnY; y < game.lastSpawnY + 500; y += spacing) {
+          // Normal spawn logic
+          const lavaCount = Math.random() < 0.7 ? (Math.random() < 0.5 ? 1 : 2) : 0;
+          const hasIce = Math.random() < 0.3;
+          const usedLanes: number[] = [];
+          
+          for (let i = 0; i < lavaCount; i++) {
+            let lane: number;
+            do { lane = Math.floor(Math.random() * 3); } while (usedLanes.includes(lane));
+            usedLanes.push(lane);
+            game.obstacles.push({ lane, y, type: 'lava' });
+          }
+          
+          if (hasIce) {
+            const emptyLanes = [0, 1, 2].filter(l => !usedLanes.includes(l));
+            if (emptyLanes.length > 0) {
+              const lane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+              game.icePickups.push({ lane, y, collected: false });
+            }
+          }
+        }
+        game.lastSpawnY += 500;
+      }
+      
+      // Update popup timer
+      if (game.popupTimer > 0) {
+        game.popupTimer -= dt;
+        if (game.popupTimer <= 0) game.popupText = '';
+      }
       
       // Scroll
       game.scrollY += SCROLL_SPEED * dt;
@@ -284,11 +351,6 @@ export default function MeltGame() {
       const dx = targetX - game.playerX;
       game.playerX += dx * 12 * dt;
       
-      // Spawn more obstacles
-      if (game.scrollY + GAME_HEIGHT > game.lastSpawnY - 500) {
-        spawnObstacles(game.lastSpawnY, game.lastSpawnY + 500);
-      }
-      
       // Check collisions
       const halfSize = game.playerSize / 2;
       
@@ -305,6 +367,8 @@ export default function MeltGame() {
             game.playerSize -= LAVA_DAMAGE;
             game.screenShake = 0.3;
             game.flashRed = 0.2;
+            game.popupText = 'OUCH!';
+            game.popupTimer = 0.5;
             playSizzle();
             
             // Sizzle particles
@@ -338,6 +402,8 @@ export default function MeltGame() {
           if (dist < halfSize + 20) {
             ice.collected = true;
             game.playerSize = Math.min(MAX_SIZE, game.playerSize + ICE_GAIN);
+            game.popupText = 'ICE!';
+            game.popupTimer = 0.5;
             playCrystallize();
             
             // Sparkle particles
@@ -562,23 +628,66 @@ export default function MeltGame() {
       
       ctx.restore();
       
+      // DANGER PULSE when near death (size < 20)
+      const sizePercent = (game.playerSize - MIN_SIZE) / (MAX_SIZE - MIN_SIZE);
+      if (sizePercent < 0.25) {
+        const pulse = Math.sin(Date.now() / 100) * 0.5 + 0.5;
+        ctx.fillStyle = `rgba(239, 68, 68, ${pulse * 0.2})`;
+        ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
+        
+        // Red vignette
+        const vignette = ctx.createRadialGradient(
+          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.3,
+          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.7
+        );
+        vignette.addColorStop(0, 'transparent');
+        vignette.addColorStop(1, `rgba(239, 68, 68, ${pulse * 0.4})`);
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
+      }
+      
+      // POPUP TEXT (center screen)
+      if (game.popupText && game.popupTimer > 0) {
+        const popupScale = 1 + (0.5 - game.popupTimer) * 0.5;
+        ctx.save();
+        ctx.translate(canvasSize.w / 2, canvasSize.h / 2);
+        ctx.scale(popupScale, popupScale);
+        ctx.font = 'bold 48px ui-monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = game.popupText === 'OUCH!' ? THEME.danger : 
+                        game.popupText === 'ICE!' ? THEME.icePickup : THEME.text;
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 20;
+        ctx.fillText(game.popupText, 0, 0);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
+      
       // UI
       ctx.fillStyle = THEME.text;
       ctx.font = 'bold 24px ui-monospace';
       ctx.textAlign = 'left';
       ctx.fillText(`${game.score}`, 20, 40);
       
+      // Score multiplier indicator (when big)
+      const multiplier = 1 + sizePercent;
+      if (multiplier >= 1.5) {
+        ctx.fillStyle = THEME.icePickup;
+        ctx.font = 'bold 16px ui-monospace';
+        ctx.fillText(`${multiplier.toFixed(1)}x`, 20, 62);
+      }
+      
       // Size bar
       const barWidth = 100;
       const barHeight = 12;
       const barX = canvasSize.w - barWidth - 20;
       const barY = 30;
-      const sizePercent = (game.playerSize - MIN_SIZE) / (MAX_SIZE - MIN_SIZE);
       
       ctx.fillStyle = THEME.rock;
       ctx.fillRect(barX, barY, barWidth, barHeight);
       ctx.fillStyle = sizePercent > 0.3 ? THEME.ice : THEME.danger;
-      ctx.fillRect(barX, barY, barWidth * sizePercent, barHeight);
+      ctx.fillRect(barX, barY, barWidth * Math.max(0, sizePercent), barHeight);
       ctx.strokeStyle = THEME.text + '40';
       ctx.strokeRect(barX, barY, barWidth, barHeight);
       
