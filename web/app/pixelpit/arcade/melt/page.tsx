@@ -14,19 +14,23 @@ const SCROLL_SPEED = 150; // pixels per second
 const LAVA_DAMAGE = 8; // Shrink on lava hit
 const ICE_GAIN = 12; // Growth on ice pickup
 
-// Theme (INDIE BITE - Dither spec)
+// Theme — VOLCANIC DESCENT
 const THEME = {
-  bg: '#1c1917',
-  lavaDark: '#ef4444',
-  lavaGlow: '#f97316',
-  rock: '#292524',
-  rockLight: '#44403c',
-  ice: '#22d3ee',
-  iceHighlight: '#ffffff',
-  icePickup: '#67e8f9',
-  steam: '#ffffff60',
+  bg: '#000000',
+  bgDeep: '#0a0000',
+  lavaDark: '#8b0000',
+  lavaMid: '#cc2200',
+  lavaHot: '#ff4400',
+  lavaWhite: '#ff8844',
+  rock: '#111111',
+  rockLight: '#1a1a1a',
+  ice: '#ffffff',
+  iceCore: '#aaeeff',
+  iceDim: '#556677',
+  steam: '#ffffff30',
   text: '#ffffff',
-  danger: '#ef4444',
+  textDim: '#444444',
+  danger: '#ff2200',
 };
 
 interface Particle {
@@ -417,7 +421,7 @@ export default function MeltGame() {
                 vx: (Math.random() - 0.5) * 80,
                 vy: -40 - Math.random() * 40,
                 life: 0.4,
-                color: THEME.lavaGlow,
+                color: THEME.lavaMid,
                 size: 6,
                 type: 'sizzle',
               });
@@ -453,7 +457,7 @@ export default function MeltGame() {
                 vx: Math.cos(angle) * 60,
                 vy: Math.sin(angle) * 60,
                 life: 0.5,
-                color: THEME.icePickup,
+                color: THEME.iceCore,
                 size: 5,
                 type: 'sparkle',
               });
@@ -488,251 +492,443 @@ export default function MeltGame() {
 
     const draw = () => {
       const game = gameRef.current;
-      
+      const t = Date.now() / 1000;
+
       // Screen shake offset
       const shakeX = game.screenShake * (Math.random() - 0.5) * 10;
       const shakeY = game.screenShake * (Math.random() - 0.5) * 10;
-      
-      // Background
-      ctx.fillStyle = THEME.bg;
+
+      // === BACKGROUND — volcanic depth ===
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, canvasSize.h);
+      bgGrad.addColorStop(0, THEME.bg);
+      bgGrad.addColorStop(0.7, THEME.bgDeep);
+      bgGrad.addColorStop(1, '#1a0505');
+      ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
-      
+
+      // Ambient lava glow at bottom
+      const bottomGlow = ctx.createRadialGradient(
+        canvasSize.w / 2, canvasSize.h + 50, 0,
+        canvasSize.w / 2, canvasSize.h + 50, canvasSize.h * 0.6
+      );
+      const glowPulse = 0.08 + Math.sin(t * 1.5) * 0.03;
+      bottomGlow.addColorStop(0, `rgba(249, 115, 22, ${glowPulse})`);
+      bottomGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = bottomGlow;
+      ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
+
       // Red flash on hit
       if (game.flashRed > 0) {
-        ctx.fillStyle = `rgba(239, 68, 68, ${game.flashRed * 0.3})`;
+        ctx.fillStyle = `rgba(244, 63, 94, ${game.flashRed * 0.4})`;
         ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
       }
-      
+
       ctx.save();
       ctx.translate(offsetX + shakeX, offsetY + shakeY);
       ctx.scale(scale, scale);
-      
-      // Lava veins (decorative)
-      const veinOffset = (game.scrollY * 0.3) % 200;
-      ctx.strokeStyle = THEME.lavaDark + '40';
-      ctx.lineWidth = 3;
-      for (let y = -veinOffset; y < GAME_HEIGHT + 100; y += 100) {
+
+      // === VOLCANIC CRACKS — glowing fissures in the ground ===
+      const crackOffset = (game.scrollY * 0.4) % 160;
+      for (let cy = -crackOffset; cy < GAME_HEIGHT + 100; cy += 80) {
+        const crackPulse = 0.15 + Math.sin(t * 2 + cy * 0.02) * 0.1;
+        ctx.strokeStyle = `rgba(249, 115, 22, ${crackPulse})`;
+        ctx.lineWidth = 1.5;
+        // Left wall cracks
         ctx.beginPath();
-        ctx.moveTo(50, y);
-        ctx.quadraticCurveTo(100, y + 50, 50, y + 100);
+        ctx.moveTo(8, cy);
+        ctx.lineTo(18 + Math.sin(cy * 0.1) * 8, cy + 20);
+        ctx.lineTo(10, cy + 40);
         ctx.stroke();
+        // Right wall cracks
         ctx.beginPath();
-        ctx.moveTo(GAME_WIDTH - 50, y + 50);
-        ctx.quadraticCurveTo(GAME_WIDTH - 100, y + 100, GAME_WIDTH - 50, y + 150);
+        ctx.moveTo(GAME_WIDTH - 8, cy + 30);
+        ctx.lineTo(GAME_WIDTH - 20 + Math.cos(cy * 0.08) * 6, cy + 50);
+        ctx.lineTo(GAME_WIDTH - 12, cy + 70);
         ctx.stroke();
       }
-      
-      // Lane dividers
-      ctx.strokeStyle = THEME.rockLight + '30';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([10, 10]);
+
+      // === LANE MARKERS — subtle volcanic grooves ===
       for (let i = 0; i < 2; i++) {
-        const x = (LANES[i] + LANES[i + 1]) / 2;
+        const lx = (LANES[i] + LANES[i + 1]) / 2;
+        const grooveGrad = ctx.createLinearGradient(lx, 0, lx, GAME_HEIGHT);
+        grooveGrad.addColorStop(0, 'rgba(255,255,255,0.02)');
+        grooveGrad.addColorStop(0.5, 'rgba(255,255,255,0.05)');
+        grooveGrad.addColorStop(1, 'rgba(255,255,255,0.02)');
+        ctx.strokeStyle = grooveGrad;
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, GAME_HEIGHT);
+        ctx.moveTo(lx, 0);
+        ctx.lineTo(lx, GAME_HEIGHT);
         ctx.stroke();
       }
-      ctx.setLineDash([]);
-      
-      // Draw lava rocks
+
+      // === LAVA POOLS — menacing and alive ===
       for (const obs of game.obstacles) {
-        const y = obs.y - game.scrollY;
-        if (y < -50 || y > GAME_HEIGHT + 50) continue;
-        
-        const x = LANES[obs.lane];
-        
-        // Lava pool with glow
-        ctx.shadowColor = THEME.lavaGlow;
-        ctx.shadowBlur = 20;
-        ctx.fillStyle = THEME.lavaDark;
+        const oy = obs.y - game.scrollY;
+        if (oy < -60 || oy > GAME_HEIGHT + 60) continue;
+        const ox = LANES[obs.lane];
+        const lavaPulse = 1 + Math.sin(t * 4 + obs.y * 0.05) * 0.12;
+        const bubblePulse = Math.sin(t * 6 + obs.y * 0.1);
+
+        // Outer glow (no shadowBlur — manual radial)
+        const lavaGlow = ctx.createRadialGradient(ox, oy, 0, ox, oy, 55);
+        lavaGlow.addColorStop(0, 'rgba(249, 115, 22, 0.15)');
+        lavaGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = lavaGlow;
+        ctx.fillRect(ox - 60, oy - 60, 120, 120);
+
+        // Dark crust ring
+        ctx.fillStyle = '#1a0505';
         ctx.beginPath();
-        ctx.ellipse(x, y, 35, 20, 0, 0, Math.PI * 2);
+        ctx.ellipse(ox, oy, 38 * lavaPulse, 22 * lavaPulse, 0, 0, Math.PI * 2);
         ctx.fill();
-        
-        // Hot center
-        ctx.fillStyle = THEME.lavaGlow;
+
+        // Molten pool
+        const poolGrad = ctx.createRadialGradient(ox, oy - 2, 0, ox, oy, 30 * lavaPulse);
+        poolGrad.addColorStop(0, THEME.lavaWhite);
+        poolGrad.addColorStop(0.3, THEME.lavaHot);
+        poolGrad.addColorStop(0.7, THEME.lavaMid);
+        poolGrad.addColorStop(1, THEME.lavaDark);
+        ctx.fillStyle = poolGrad;
         ctx.beginPath();
-        ctx.ellipse(x, y, 20, 10, 0, 0, Math.PI * 2);
+        ctx.ellipse(ox, oy, 30 * lavaPulse, 16 * lavaPulse, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
+
+        // Bubbles
+        if (bubblePulse > 0.5) {
+          ctx.fillStyle = THEME.lavaHot;
+          ctx.beginPath();
+          ctx.arc(ox + 8, oy - 4, 3 * (bubblePulse - 0.5) * 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (bubblePulse < -0.3) {
+          ctx.fillStyle = THEME.lavaHot;
+          ctx.beginPath();
+          ctx.arc(ox - 10, oy + 2, 2.5 * (-bubblePulse - 0.3) * 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
-      
-      // Draw ice pickups
+
+      // === ICE PICKUPS — crystalline beacons ===
       for (const ice of game.icePickups) {
         if (ice.collected) continue;
-        const y = ice.y - game.scrollY;
-        if (y < -50 || y > GAME_HEIGHT + 50) continue;
-        
-        const x = LANES[ice.lane];
-        
-        // Ice crystal with glow
-        ctx.shadowColor = THEME.icePickup;
-        ctx.shadowBlur = 15;
-        ctx.fillStyle = THEME.icePickup;
+        const iy = ice.y - game.scrollY;
+        if (iy < -60 || iy > GAME_HEIGHT + 60) continue;
+        const ix = LANES[ice.lane];
+        const spin = t * 2 + ice.y * 0.01;
+        const bob = Math.sin(t * 3 + ice.y * 0.05) * 4;
+
+        // Beacon column (faint vertical light)
+        const beaconGrad = ctx.createLinearGradient(ix, iy - 80, ix, iy + 40);
+        beaconGrad.addColorStop(0, 'transparent');
+        beaconGrad.addColorStop(0.4, 'rgba(6, 182, 212, 0.06)');
+        beaconGrad.addColorStop(0.6, 'rgba(6, 182, 212, 0.1)');
+        beaconGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = beaconGrad;
+        ctx.fillRect(ix - 15, iy - 80, 30, 120);
+
+        // Frost aura
+        const frostGlow = ctx.createRadialGradient(ix, iy + bob, 0, ix, iy + bob, 30);
+        frostGlow.addColorStop(0, 'rgba(103, 232, 249, 0.2)');
+        frostGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = frostGlow;
+        ctx.fillRect(ix - 35, iy + bob - 35, 70, 70);
+
+        // Crystal body — rotating diamond
+        ctx.save();
+        ctx.translate(ix, iy + bob);
+        ctx.rotate(spin);
+        // Outer crystal
+        ctx.fillStyle = THEME.ice;
         ctx.beginPath();
-        ctx.moveTo(x, y - 18);
-        ctx.lineTo(x + 12, y);
-        ctx.lineTo(x, y + 18);
-        ctx.lineTo(x - 12, y);
+        ctx.moveTo(0, -16);
+        ctx.lineTo(11, 0);
+        ctx.lineTo(0, 16);
+        ctx.lineTo(-11, 0);
         ctx.closePath();
         ctx.fill();
-        
-        // Highlight
-        ctx.fillStyle = THEME.iceHighlight + '80';
+        // Inner highlight
+        ctx.fillStyle = THEME.iceCore;
         ctx.beginPath();
-        ctx.moveTo(x - 2, y - 10);
-        ctx.lineTo(x + 4, y - 2);
-        ctx.lineTo(x - 2, y + 2);
+        ctx.moveTo(0, -9);
+        ctx.lineTo(5, 0);
+        ctx.lineTo(0, 9);
+        ctx.lineTo(-5, 0);
         ctx.closePath();
         ctx.fill();
-        ctx.shadowBlur = 0;
+        // Hot-white center dot
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       }
-      
-      // Draw particles
+
+      // === PARTICLES ===
       for (const p of game.particles) {
-        ctx.globalAlpha = p.life;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.globalAlpha = Math.min(1, p.life * 1.5);
+        if (p.type === 'sparkle') {
+          // Diamond sparkle
+          ctx.fillStyle = p.color;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(t * 8);
+          ctx.fillRect(-p.size * p.life / 2, -1, p.size * p.life, 2);
+          ctx.fillRect(-1, -p.size * p.life / 2, 2, p.size * p.life);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
       ctx.globalAlpha = 1;
-      
-      // Draw player (ice cube with face)
+
+      // === PLAYER — the ice cube ===
       const size = game.playerSize;
       const x = game.playerX;
       const y = game.playerY;
-      
-      // Ice glow
-      ctx.shadowColor = THEME.ice;
-      ctx.shadowBlur = 25;
-      
-      // Main ice body
-      ctx.fillStyle = THEME.ice;
+      const sizePercent = (size - MIN_SIZE) / (MAX_SIZE - MIN_SIZE);
+      const worry = 1 - sizePercent;
+
+      // Frost trail on ground behind player
+      const trailGrad = ctx.createRadialGradient(x, y + size / 2 + 5, 0, x, y + size / 2 + 5, size * 0.8);
+      trailGrad.addColorStop(0, `rgba(6, 182, 212, ${0.08 * sizePercent})`);
+      trailGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = trailGrad;
+      ctx.fillRect(x - size, y, size * 2, size);
+
+      // Ice glow — shifts from cyan to pink when endangered
+      const glowColor = worry > 0.6
+        ? `rgba(244, 63, 94, ${0.3 + Math.sin(t * 8) * 0.15})`
+        : `rgba(6, 182, 212, 0.25)`;
+      const iceGlow = ctx.createRadialGradient(x, y, size * 0.2, x, y, size);
+      iceGlow.addColorStop(0, glowColor);
+      iceGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = iceGlow;
+      ctx.fillRect(x - size, y - size, size * 2, size * 2);
+
+      // Main ice body — faceted look
+      const halfS = size / 2;
+      const bevel = size * 0.12;
+
+      // Shadow face (bottom-right)
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
       ctx.beginPath();
-      ctx.roundRect(x - size / 2, y - size / 2, size, size, size * 0.15);
+      ctx.moveTo(x + halfS, y - halfS + bevel);
+      ctx.lineTo(x + halfS, y + halfS - bevel);
+      ctx.lineTo(x + halfS - bevel, y + halfS);
+      ctx.lineTo(x - halfS + bevel, y + halfS);
+      ctx.lineTo(x - halfS + bevel + 3, y + halfS - 3);
+      ctx.lineTo(x + halfS - 3, y + halfS - 3);
+      ctx.lineTo(x + halfS - 3, y - halfS + bevel + 3);
+      ctx.closePath();
       ctx.fill();
-      
-      // Highlight
-      ctx.fillStyle = THEME.iceHighlight + '60';
+
+      // Body — color shifts warmer when melting
+      const bodyColor = worry > 0.6 ? '#0891b2' : THEME.ice;
+      ctx.fillStyle = bodyColor;
       ctx.beginPath();
-      ctx.roundRect(x - size / 2 + 4, y - size / 2 + 4, size * 0.4, size * 0.3, 4);
+      ctx.moveTo(x - halfS + bevel, y - halfS);
+      ctx.lineTo(x + halfS - bevel, y - halfS);
+      ctx.lineTo(x + halfS, y - halfS + bevel);
+      ctx.lineTo(x + halfS, y + halfS - bevel);
+      ctx.lineTo(x + halfS - bevel, y + halfS);
+      ctx.lineTo(x - halfS + bevel, y + halfS);
+      ctx.lineTo(x - halfS, y + halfS - bevel);
+      ctx.lineTo(x - halfS, y - halfS + bevel);
+      ctx.closePath();
       ctx.fill();
-      
-      ctx.shadowBlur = 0;
-      
-      // Face - worry level based on size
-      const worry = 1 - (game.playerSize - MIN_SIZE) / (MAX_SIZE - MIN_SIZE);
-      const eyeSize = size * 0.08;
-      const eyeY = y - size * 0.1;
-      const eyeSpacing = size * 0.2;
-      
-      // Eyes
-      ctx.fillStyle = '#1c1917';
+
+      // Top-left highlight facet
+      ctx.fillStyle = `rgba(236, 254, 255, ${0.25 + sizePercent * 0.15})`;
       ctx.beginPath();
-      ctx.ellipse(x - eyeSpacing, eyeY, eyeSize, eyeSize * (1 + worry * 0.5), 0, 0, Math.PI * 2);
+      ctx.moveTo(x - halfS + bevel, y - halfS);
+      ctx.lineTo(x - halfS + bevel + size * 0.35, y - halfS);
+      ctx.lineTo(x - halfS + bevel + size * 0.25, y - halfS + size * 0.25);
+      ctx.lineTo(x - halfS, y - halfS + bevel + size * 0.25);
+      ctx.lineTo(x - halfS, y - halfS + bevel);
+      ctx.closePath();
       ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(x + eyeSpacing, eyeY, eyeSize, eyeSize * (1 + worry * 0.5), 0, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Worried eyebrows when small
+
+      // Melting drip (when worried)
+      if (worry > 0.2) {
+        const dripLen = worry * 10 + Math.sin(t * 4) * 3;
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.ellipse(x + size * 0.15, y + halfS + dripLen * 0.5, 3, dripLen, 0, 0, Math.PI * 2);
+        ctx.fill();
+        if (worry > 0.5) {
+          const drip2 = worry * 7 + Math.sin(t * 3 + 2) * 2;
+          ctx.beginPath();
+          ctx.ellipse(x - size * 0.2, y + halfS + drip2 * 0.4, 2.5, drip2, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Face
+      const eyeSize = Math.max(2, size * 0.08);
+      const eyeY = y - size * 0.08;
+      const eyeSpacing = size * 0.18;
+      const eyeStretch = 1 + worry * 0.6;
+
+      // Eye whites (when worried)
       if (worry > 0.3) {
-        ctx.strokeStyle = '#1c1917';
-        ctx.lineWidth = 2;
+        ctx.fillStyle = '#ecfeff';
         ctx.beginPath();
-        ctx.moveTo(x - eyeSpacing - eyeSize, eyeY - eyeSize * 2);
-        ctx.lineTo(x - eyeSpacing + eyeSize, eyeY - eyeSize * 1.5 - worry * 3);
-        ctx.stroke();
+        ctx.ellipse(x - eyeSpacing, eyeY, eyeSize * 1.6, eyeSize * 1.6 * eyeStretch, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.beginPath();
-        ctx.moveTo(x + eyeSpacing + eyeSize, eyeY - eyeSize * 2);
-        ctx.lineTo(x + eyeSpacing - eyeSize, eyeY - eyeSize * 1.5 - worry * 3);
-        ctx.stroke();
+        ctx.ellipse(x + eyeSpacing, eyeY, eyeSize * 1.6, eyeSize * 1.6 * eyeStretch, 0, 0, Math.PI * 2);
+        ctx.fill();
       }
-      
-      // Mouth - more worried as smaller
-      ctx.strokeStyle = '#1c1917';
-      ctx.lineWidth = 2;
+
+      // Pupils
+      ctx.fillStyle = '#0a0a0a';
       ctx.beginPath();
-      if (worry > 0.5) {
-        // Worried frown
-        ctx.arc(x, y + size * 0.25, size * 0.15, Math.PI * 0.2, Math.PI * 0.8);
-      } else {
-        // Slight smile
-        ctx.arc(x, y + size * 0.1, size * 0.12, 0, Math.PI);
+      ctx.ellipse(x - eyeSpacing, eyeY, eyeSize, eyeSize * eyeStretch, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x + eyeSpacing, eyeY, eyeSize, eyeSize * eyeStretch, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eye shine
+      ctx.fillStyle = '#ecfeff';
+      ctx.beginPath();
+      ctx.arc(x - eyeSpacing + 1, eyeY - eyeSize * 0.4, eyeSize * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x + eyeSpacing + 1, eyeY - eyeSize * 0.4, eyeSize * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyebrows
+      if (worry > 0.3) {
+        ctx.strokeStyle = '#0a0a0a';
+        ctx.lineWidth = Math.max(1.5, size * 0.04);
+        ctx.lineCap = 'round';
+        const browLift = worry * 4;
+        ctx.beginPath();
+        ctx.moveTo(x - eyeSpacing - eyeSize * 1.5, eyeY - eyeSize * 2.2);
+        ctx.lineTo(x - eyeSpacing + eyeSize * 0.5, eyeY - eyeSize * 2 - browLift);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x + eyeSpacing + eyeSize * 1.5, eyeY - eyeSize * 2.2);
+        ctx.lineTo(x + eyeSpacing - eyeSize * 0.5, eyeY - eyeSize * 2 - browLift);
+        ctx.stroke();
       }
-      ctx.stroke();
-      
+
+      // Mouth
+      ctx.strokeStyle = '#0a0a0a';
+      ctx.lineWidth = Math.max(1.5, size * 0.035);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      if (worry > 0.6) {
+        // Panicked open mouth
+        ctx.fillStyle = '#0a0a0a';
+        ctx.ellipse(x, y + size * 0.22, size * 0.1, size * 0.08, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (worry > 0.3) {
+        // Worried squiggle
+        ctx.moveTo(x - size * 0.1, y + size * 0.2);
+        ctx.quadraticCurveTo(x - size * 0.04, y + size * 0.15, x, y + size * 0.2);
+        ctx.quadraticCurveTo(x + size * 0.04, y + size * 0.25, x + size * 0.1, y + size * 0.2);
+        ctx.stroke();
+      } else {
+        // Chill smile
+        ctx.arc(x, y + size * 0.1, size * 0.12, 0.1, Math.PI - 0.1);
+        ctx.stroke();
+      }
+
       ctx.restore();
-      
-      // DANGER PULSE when near death (size < 20)
-      const sizePercent = (game.playerSize - MIN_SIZE) / (MAX_SIZE - MIN_SIZE);
+
+      // === DANGER VIGNETTE ===
       if (sizePercent < 0.25) {
-        const pulse = Math.sin(Date.now() / 100) * 0.5 + 0.5;
-        ctx.fillStyle = `rgba(239, 68, 68, ${pulse * 0.2})`;
-        ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
-        
-        // Red vignette
+        const pulse = Math.sin(t * 6) * 0.5 + 0.5;
         const vignette = ctx.createRadialGradient(
-          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.3,
-          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.7
+          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.25,
+          canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.65
         );
         vignette.addColorStop(0, 'transparent');
-        vignette.addColorStop(1, `rgba(239, 68, 68, ${pulse * 0.4})`);
+        vignette.addColorStop(1, `rgba(244, 63, 94, ${pulse * 0.35})`);
         ctx.fillStyle = vignette;
         ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
       }
-      
-      // POPUP TEXT (center screen)
+
+      // === POPUP TEXT ===
       if (game.popupText && game.popupTimer > 0) {
-        const popupScale = 1 + (0.5 - game.popupTimer) * 0.5;
+        const popupProgress = 1 - game.popupTimer / 0.5;
+        const popupScale = 1 + popupProgress * 0.3;
+        const popupAlpha = game.popupTimer * 2;
         ctx.save();
-        ctx.translate(canvasSize.w / 2, canvasSize.h / 2);
+        ctx.globalAlpha = Math.min(1, popupAlpha);
+        ctx.translate(canvasSize.w / 2, canvasSize.h * 0.4);
         ctx.scale(popupScale, popupScale);
-        ctx.font = 'bold 48px ui-monospace';
+        ctx.font = 'bold 42px ui-monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = game.popupText === 'OUCH!' ? THEME.danger : 
-                        game.popupText === 'ICE!' ? THEME.icePickup : THEME.text;
-        ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = 20;
+        ctx.letterSpacing = '4px';
+        const popColor = game.popupText === 'OUCH!' ? THEME.danger :
+                         game.popupText === 'ICE!' ? THEME.iceCore : THEME.text;
+        // Text shadow
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillText(game.popupText, 2, 2);
+        // Text
+        ctx.fillStyle = popColor;
         ctx.fillText(game.popupText, 0, 0);
-        ctx.shadowBlur = 0;
         ctx.restore();
       }
-      
-      // UI
+
+      // === HUD ===
+      // Score
       ctx.fillStyle = THEME.text;
-      ctx.font = 'bold 24px ui-monospace';
+      ctx.font = 'bold 28px ui-monospace';
       ctx.textAlign = 'left';
-      ctx.fillText(`${game.score}`, 20, 40);
-      
-      // Score multiplier indicator (when big)
+      ctx.fillText(`${game.score}`, 20, 42);
+
+      // Multiplier badge
       const multiplier = 1 + sizePercent;
-      if (multiplier >= 1.5) {
-        ctx.fillStyle = THEME.icePickup;
-        ctx.font = 'bold 16px ui-monospace';
+      if (multiplier >= 1.3) {
+        ctx.fillStyle = THEME.iceCore;
+        ctx.font = 'bold 14px ui-monospace';
         ctx.fillText(`${multiplier.toFixed(1)}x`, 20, 62);
       }
-      
-      // Size bar
-      const barWidth = 100;
-      const barHeight = 12;
-      const barX = canvasSize.w - barWidth - 20;
-      const barY = 30;
-      
-      ctx.fillStyle = THEME.rock;
-      ctx.fillRect(barX, barY, barWidth, barHeight);
-      ctx.fillStyle = sizePercent > 0.3 ? THEME.ice : THEME.danger;
-      ctx.fillRect(barX, barY, barWidth * Math.max(0, sizePercent), barHeight);
-      ctx.strokeStyle = THEME.text + '40';
-      ctx.strokeRect(barX, barY, barWidth, barHeight);
-      
-      ctx.fillStyle = THEME.text;
-      ctx.font = '14px ui-monospace';
+
+      // Size bar — integrated look
+      const barW = 80;
+      const barH = 6;
+      const barX = canvasSize.w - barW - 20;
+      const barY = 34;
+
+      // Bar background
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW, barH, 3);
+      ctx.fill();
+
+      // Bar fill
+      const barColor = sizePercent > 0.3 ? THEME.ice : THEME.danger;
+      ctx.fillStyle = barColor;
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW * Math.max(0, sizePercent), barH, 3);
+      ctx.fill();
+
+      // Bar glow when healthy
+      if (sizePercent > 0.5) {
+        ctx.shadowColor = THEME.ice;
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = THEME.ice;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW * sizePercent, barH, 3);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Label
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '11px ui-monospace';
       ctx.textAlign = 'right';
-      ctx.fillText('🧊', barX - 5, barY + 11);
+      ctx.fillText('ICE', barX - 6, barY + 6);
     };
 
     const gameLoop = (timestamp: number) => {
@@ -805,26 +1001,50 @@ export default function MeltGame() {
       }}
     >
       {gameState === 'start' && (
-        <div style={{ textAlign: 'center', padding: 20 }}>
-          <div style={{ fontSize: 80 }}>🧊</div>
-          <h1 style={{ color: THEME.text, fontSize: 48, margin: '10px 0' }}>MELT</h1>
-          <p style={{ color: THEME.ice, fontSize: 16, marginBottom: 30, lineHeight: 1.8 }}>
-            Slide down the volcano! 🌋<br />
-            Swipe LEFT / RIGHT to dodge<br />
-            Collect ice to stay alive 🧊<br />
-            <span style={{ color: THEME.lavaGlow }}>Bigger = more points!</span>
+        <div style={{ textAlign: 'center', padding: 30, maxWidth: 360 }}>
+          <div style={{ fontSize: 72, marginBottom: 4 }}>🧊</div>
+          <h1 style={{
+            color: THEME.text,
+            fontSize: 56,
+            margin: '0 0 4px',
+            fontWeight: 900,
+            letterSpacing: '6px',
+          }}>
+            MELT
+          </h1>
+          <p style={{
+            color: THEME.ice,
+            fontSize: 13,
+            marginBottom: 32,
+            lineHeight: 2,
+            letterSpacing: '1px',
+            opacity: 0.7,
+          }}>
+            SWIPE TO DODGE LAVA<br />
+            COLLECT ICE TO SURVIVE<br />
+            <span style={{ color: THEME.lavaMid }}>BIGGER = MORE POINTS</span>
           </p>
           <button
             onClick={startGame}
             style={{
-              background: THEME.ice,
-              color: THEME.bg,
-              border: 'none',
-              padding: '15px 50px',
-              fontSize: 20,
-              fontWeight: 'bold',
-              borderRadius: 30,
+              background: 'transparent',
+              color: THEME.ice,
+              border: `2px solid ${THEME.ice}`,
+              padding: '14px 56px',
+              fontSize: 16,
+              fontWeight: 700,
+              letterSpacing: '4px',
+              borderRadius: 0,
               cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = THEME.ice;
+              e.currentTarget.style.color = THEME.bg;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = THEME.ice;
             }}
           >
             START
@@ -842,34 +1062,67 @@ export default function MeltGame() {
       )}
 
       {gameState === 'gameOver' && (
-        <div style={{ textAlign: 'center', padding: 20 }}>
-          <div style={{ fontSize: 60 }}>💧</div>
-          <h1 style={{ color: THEME.text, fontSize: 36, margin: '10px 0' }}>EVAPORATED!</h1>
-          <p style={{ color: THEME.ice, fontSize: 28, marginBottom: 10 }}>
+        <div style={{ textAlign: 'center', padding: 30, maxWidth: 360 }}>
+          <div style={{ fontSize: 56, marginBottom: 8 }}>💧</div>
+          <h1 style={{
+            color: THEME.danger,
+            fontSize: 32,
+            margin: '0 0 20px',
+            fontWeight: 900,
+            letterSpacing: '4px',
+          }}>
+            EVAPORATED
+          </h1>
+          <div style={{
+            color: THEME.text,
+            fontSize: 56,
+            fontWeight: 900,
+            marginBottom: 4,
+          }}>
             {score}
-          </p>
+          </div>
           {score >= highScore && highScore > 0 && (
-            <p style={{ color: THEME.lavaGlow, fontSize: 18, marginBottom: 10 }}>
-              🎉 NEW HIGH SCORE!
+            <p style={{
+              color: THEME.lavaMid,
+              fontSize: 14,
+              letterSpacing: '2px',
+              marginBottom: 8,
+            }}>
+              NEW BEST
             </p>
           )}
-          <p style={{ color: THEME.ice, fontSize: 16, marginBottom: 30, opacity: 0.6 }}>
-            Best: {highScore}
+          <p style={{
+            color: THEME.text,
+            fontSize: 13,
+            marginBottom: 32,
+            opacity: 0.3,
+          }}>
+            BEST {highScore}
           </p>
           <button
             onClick={startGame}
             style={{
-              background: THEME.ice,
-              color: THEME.bg,
-              border: 'none',
-              padding: '15px 40px',
-              fontSize: 18,
-              fontWeight: 'bold',
-              borderRadius: 30,
+              background: 'transparent',
+              color: THEME.ice,
+              border: `2px solid ${THEME.ice}`,
+              padding: '14px 44px',
+              fontSize: 14,
+              fontWeight: 700,
+              letterSpacing: '4px',
+              borderRadius: 0,
               cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = THEME.ice;
+              e.currentTarget.style.color = THEME.bg;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = THEME.ice;
             }}
           >
-            PLAY AGAIN
+            AGAIN
           </button>
         </div>
       )}

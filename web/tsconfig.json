@@ -43,6 +43,7 @@
     "node_modules",
     "UPLOADS/**/*",
     "**/*.bak.ts",
-    "**/*.bak.tsx"
+    "**/*.bak.tsx",
+    "app/pixelpit/**"
   ]
 }

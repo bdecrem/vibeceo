@@ -18,7 +18,7 @@ const labMessages = [
 ];
 
 const games = [
-  { icon: '🧊', name: 'Melt', href: '/pixelpit/arcade/melt', playable: true, date: 'Thu 2/13' },
+  { icon: '🧊', name: 'Melt', href: '/pixelpit/arcade/melt', playable: true, date: 'Fri 2/13' },
   { icon: '🧵', name: 'Threads', href: '/pixelpit/arcade/threads', playable: true, date: 'Thu 2/12' },
   { icon: '🐦', name: 'Swoop CI', href: '/pixelpit/arcade/swoop-ci', playable: true, date: 'Wed 2/11' },
   { icon: '🐦', name: 'Swoop', href: '/pixelpit/arcade/swoop', playable: true, date: 'Tue 2/10' },
@@ -118,7 +118,7 @@ const _makers = [
 ];
 
 const labItems = [
-  { icon: '🧊', name: 'Melt', href: '/pixelpit/lab/melt', date: 'Thu 2/13', shipped: true },
+  { icon: '🧊', name: 'Melt', href: '/pixelpit/lab/melt', date: 'Fri 2/13', shipped: true },
   { icon: '💧', name: 'Pour', href: '/pixelpit/lab/pour', date: 'Thu 2/13' },
   { icon: '🦎', name: 'Chroma', href: '/pixelpit/lab/chroma', date: 'Tue 2/11' },
   { icon: '🐝', name: 'Swarm', href: '/pixelpit/lab/swarm', date: 'Tue 2/11' },
