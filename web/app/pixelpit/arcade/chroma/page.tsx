@@ -22,10 +22,10 @@ const COLORS = [
 ];
 
 // Physics
-const HOP_FORCE = -10;
+const HOP_FORCE = -13;
 const GRAVITY = 0.45;
 const MAX_FALL_SPEED = 12;
-const HITBOX_FORGIVENESS = 6;
+const LANDING_OFFSET = 30; // chameleon center Y relative to ring center when landed
 
 // PLAYROOM theme - Jungle
 const THEME = {
@@ -139,8 +139,9 @@ interface Obstacle {
   rotation: number;
   spinSpeed: number;
   spinDirection: number;
-  colorOffset: number; // Which color is at top
+  colorOffset: number;
   passed: boolean;
+  landed: boolean;
   // For flower type
   currentColorIndex: number;
   colorTimer: number;
@@ -155,6 +156,9 @@ interface Bug {
   colorIndex: number;
   eaten: boolean;
   orbitAngle: number;
+  baseX: number; // center of patrol
+  patrolWidth: number; // how far left/right it drifts
+  patrolSpeed: number; // how fast it drifts
 }
 
 interface Particle {
@@ -192,6 +196,9 @@ export default function ChromaGame() {
       tongueTimer: 0,
       dead: false,
       deathTimer: 0,
+      onGround: true,
+      currentPlatform: null as null | Obstacle,
+      previousPlatform: null as null | Obstacle,
     },
     cameraY: 0,
     score: 0,
@@ -235,79 +242,82 @@ export default function ChromaGame() {
     // Obs 6-15: 2 colors, slow spin
     // Obs 16+: Full 4 colors, normal speed
     
-    let type: 'ring' | 'bars' | 'flower' = 'ring';
-    let colorOffset = 0;
-    let specialColors: number[] | null = null; // null = use normal random colors
-    
+    const type: 'ring' | 'bars' | 'flower' = 'ring';
+
+    // EVERY ring guarantees the player's current color in at least one segment.
+    // Difficulty comes from spin speed + number of other colors, not unsolvable states.
+    let specialColors: number[];
+
     if (num <= 2) {
-      // ALL SAME COLOR - literally impossible to fail
-      type = 'ring';
+      // All same — impossible to fail
       specialColors = [playerColorIndex, playerColorIndex, playerColorIndex, playerColorIndex];
-    } else if (num === 3) {
-      // Player color in 2 segments, gray (treated as wall) in 2
-      // Actually: just make it 2-color with player + one other, very slow
-      type = 'ring';
-      const otherColor = (playerColorIndex + 2) % 4; // Opposite color
-      specialColors = [playerColorIndex, otherColor, playerColorIndex, otherColor];
     } else if (num <= 5) {
-      // 2 colors: player + one other
-      type = 'ring';
-      const otherColor = (playerColorIndex + 1) % 4;
-      specialColors = [playerColorIndex, otherColor, playerColorIndex, otherColor];
+      // 2 colors: player + one other (50/50 timing)
+      const other = (playerColorIndex + 1 + Math.floor(Math.random() * 3)) % 4;
+      specialColors = [playerColorIndex, other, playerColorIndex, other];
     } else if (num <= 15) {
-      // 2-color rings, random which 2
-      type = 'ring';
-      const color1 = Math.floor(Math.random() * 4);
-      const color2 = (color1 + 2) % 4;
-      specialColors = [color1, color2, color1, color2];
+      // 2 colors: player + one random other
+      const other = (playerColorIndex + 1 + Math.floor(Math.random() * 3)) % 4;
+      // Randomize positions but guarantee player color in 2 of 4 slots
+      const slots = [playerColorIndex, other, playerColorIndex, other];
+      // Rotate randomly so player color isn't always in the same position
+      const shift = Math.floor(Math.random() * 4);
+      specialColors = slots.map((_, i) => slots[(i + shift) % 4]);
     } else {
-      // Full game: random types, 4 colors
-      const types: ('ring' | 'bars' | 'flower')[] = num < 40 
-        ? ['ring', 'bars'] 
-        : ['ring', 'bars', 'flower'];
-      type = types[Math.floor(Math.random() * types.length)];
-      
-      // Avoid too many of the same type in a row
-      if (type === game.lastObstacleType && Math.random() > 0.3) {
-        type = types[(types.indexOf(type) + 1) % types.length];
+      // Full 4 colors: player color + 3 others (25% timing window)
+      // Build array with player color in one random slot, other 3 are random non-player colors
+      const others = [0, 1, 2, 3].filter(c => c !== playerColorIndex);
+      // Shuffle others
+      for (let i = others.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [others[i], others[j]] = [others[j], others[i]];
       }
+      specialColors = [others[0], others[1], others[2], playerColorIndex];
+      // Rotate randomly
+      const shift = Math.floor(Math.random() * 4);
+      specialColors = specialColors.map((_, i) => specialColors[(i + shift) % 4]);
     }
     game.lastObstacleType = type;
 
-    const baseSpinSpeed = type === 'ring' ? (Math.PI * 2) / 3 : (Math.PI * 2) / 2;
-    
+    const baseSpinSpeed = (Math.PI * 2) / 3;
+
     const obstacle: Obstacle = {
       y,
       type,
       rotation: Math.random() * Math.PI * 2,
       spinSpeed: getSpinSpeed(baseSpinSpeed, num),
       spinDirection: Math.random() > 0.5 ? 1 : -1,
-      colorOffset: specialColors ? 0 : Math.floor(Math.random() * 4),
+      colorOffset: 0,
       passed: false,
-      currentColorIndex: Math.floor(Math.random() * 4),
+      landed: false,
+      currentColorIndex: 0,
       colorTimer: 0,
-      colorDuration: num < 30 ? 0.8 : 0.4,
-      // Store special colors for training wheels
-      specialColors: specialColors ?? undefined,
+      colorDuration: 0,
+      specialColors,
     };
 
     game.obstacles.push(obstacle);
   }, [getSpinSpeed]);
 
-  const spawnBug = useCallback((y: number, currentColorIndex: number) => {
-    // Bug gives you the NEXT color in sequence
-    const nextColorIndex = (currentColorIndex + 1) % 4;
-    
+  const spawnBug = useCallback((y: number, _currentColorIndex: number) => {
+    // Random color — player decides whether to catch or avoid
+    const colorIndex = Math.floor(Math.random() * 4);
+    const centerX = canvasSize.w / 2;
+    const patrolWidth = 60 + Math.random() * 40; // 60-100px drift from center
+
     const bug: Bug = {
       y,
-      x: 100 + Math.random() * 200,
-      colorIndex: nextColorIndex,
+      x: centerX,
+      baseX: centerX,
+      colorIndex,
       eaten: false,
       orbitAngle: Math.random() * Math.PI * 2,
+      patrolWidth,
+      patrolSpeed: 1.5 + Math.random() * 1.5, // 1.5-3x speed
     };
 
     gameRef.current.bugs.push(bug);
-  }, []);
+  }, [canvasSize]);
 
   const startGame = useCallback(() => {
     initAudio();
@@ -317,42 +327,53 @@ export default function ChromaGame() {
     game.obstacleCount = 0; // Reset training wheel counter
     game.chameleon = {
       x: canvasSize.w / 2,
-      y: canvasSize.h - 150,
+      y: canvasSize.h - 100,
       vy: 0,
-      colorIndex: 0, // Start pink
+      colorIndex: 0,
       squash: 1,
       eyeOffset: { x: 0, y: 0 },
       tongueOut: false,
       tongueTimer: 0,
       dead: false,
       deathTimer: 0,
+      onGround: true,
+      currentPlatform: null,
+      previousPlatform: null,
     };
     game.cameraY = 0;
     game.score = 0;
     game.obstacles = [];
     game.bugs = [];
     game.particles = [];
-    game.nextObstacleY = canvasSize.h - 300;
+    game.nextObstacleY = canvasSize.h - 250;
     game.zone = 1;
 
-    // Spawn initial obstacles (training wheels - pass player color)
-    for (let i = 0; i < 5; i++) {
+    // Spawn initial rings
+    for (let i = 0; i < 6; i++) {
       spawnObstacle(game.nextObstacleY, game.chameleon.colorIndex);
-      game.nextObstacleY -= 150;
+      game.nextObstacleY -= 120;
     }
 
-    // Spawn first bug after obstacle 3-4 area (teaches color change early)
-    spawnBug(canvasSize.h - 450, 0);
+    // Spawn first bug
+    spawnBug(canvasSize.h - 400, 0);
 
     setGameState('playing');
   }, [canvasSize, spawnObstacle, spawnBug]);
 
   const hop = useCallback(() => {
     const game = gameRef.current;
-    if (game.chameleon.dead) return;
-    
-    game.chameleon.vy = HOP_FORCE;
-    game.chameleon.squash = 0.7;
+    const cham = game.chameleon;
+    if (cham.dead) return;
+
+    // Leave current platform
+    if (cham.onGround || cham.currentPlatform) {
+      cham.previousPlatform = cham.currentPlatform;
+      cham.currentPlatform = null;
+      cham.onGround = false;
+    }
+
+    cham.vy = HOP_FORCE;
+    cham.squash = 0.7;
     playHop();
   }, []);
 
@@ -400,10 +421,110 @@ export default function ChromaGame() {
         return;
       }
 
-      // Physics
-      cham.vy += GRAVITY;
-      cham.vy = Math.min(cham.vy, MAX_FALL_SPEED);
-      cham.y += cham.vy;
+      // Physics - only when airborne
+      if (!cham.onGround && !cham.currentPlatform) {
+        const prevY = cham.y;
+        cham.vy += GRAVITY;
+        cham.vy = Math.min(cham.vy, MAX_FALL_SPEED);
+        cham.y += cham.vy;
+
+        // Landing detection — check each ring
+        for (const obs of game.obstacles) {
+          if (obs.passed) continue;
+
+          const landingY = obs.y + LANDING_OFFSET;
+
+          // Rising into a ring from below
+          if (prevY > landingY && cham.y <= landingY) {
+            // Re-landing on the ring we just left — always safe
+            if (obs === cham.previousPlatform) {
+              cham.currentPlatform = obs;
+              cham.y = landingY;
+              cham.vy = 0;
+              cham.squash = 0.8;
+              break;
+            }
+
+            // New ring — which segment is at the bottom?
+            // Check each segment to find which one contains angle π/2 (bottom)
+            let segment = 0;
+            for (let i = 0; i < 4; i++) {
+              const segStart = ((obs.rotation + i * Math.PI / 2) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+              const segEnd = ((obs.rotation + (i + 1) * Math.PI / 2) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+              const target = Math.PI / 2;
+              // Check if target is within [segStart, segEnd), handling wraparound
+              if (segStart <= segEnd) {
+                if (target >= segStart && target < segEnd) { segment = i; break; }
+              } else {
+                if (target >= segStart || target < segEnd) { segment = i; break; }
+              }
+            }
+            const segmentColor = obs.specialColors
+              ? obs.specialColors[segment]
+              : (segment + obs.colorOffset) % 4;
+
+            console.log('LANDING:', {
+              rotation: (obs.rotation * 180 / Math.PI).toFixed(1) + '°',
+              segment,
+              segmentColor,
+              colorName: COLORS[segmentColor]?.name,
+              chamColor: cham.colorIndex,
+              chamColorName: COLORS[cham.colorIndex]?.name,
+              specialColors: obs.specialColors,
+              colorOffset: obs.colorOffset,
+              match: segmentColor === cham.colorIndex,
+            });
+
+            if (segmentColor === cham.colorIndex) {
+              // Safe landing!
+              cham.currentPlatform = obs;
+              obs.landed = true;
+              cham.y = landingY;
+              cham.vy = 0;
+              cham.squash = 0.8;
+              playPass();
+
+              // Snap ring so landed segment is centered at bottom
+              obs.rotation = Math.PI / 4 - segment * Math.PI / 2;
+
+              // Mark all rings below as passed
+              for (const other of game.obstacles) {
+                if (other.y > obs.y && other !== obs) {
+                  other.passed = true;
+                }
+              }
+
+              // Particles
+              for (let p = 0; p < 8; p++) {
+                game.particles.push({
+                  x: cham.x,
+                  y: cham.y - game.cameraY,
+                  vx: (Math.random() - 0.5) * 4,
+                  vy: (Math.random() - 0.5) * 4,
+                  life: 0.5,
+                  color: COLORS[cham.colorIndex].hex,
+                });
+              }
+              break;
+            } else {
+              // Wrong color — death!
+              cham.dead = true;
+              cham.vy = HOP_FORCE / 2; // Bounce off
+              playDeath();
+              break;
+            }
+          }
+
+          // Falling back down through previous platform
+          if (obs === cham.previousPlatform && prevY < landingY && cham.y >= landingY) {
+            cham.currentPlatform = obs;
+            cham.y = landingY;
+            cham.vy = 0;
+            cham.squash = 0.8;
+            break;
+          }
+        }
+      }
 
       // Squash recovery
       cham.squash += (1 - cham.squash) * 0.2;
@@ -422,136 +543,37 @@ export default function ChromaGame() {
         game.cameraY = targetCameraY;
       }
 
-      // Update score based on height
+      // Score based on height
       const height = Math.max(0, (canvasSize.h - 150) - cham.y + game.cameraY);
       game.score = Math.max(game.score, Math.floor(height / 10));
-
-      // Update zone
       game.zone = getZone(game.score * 10);
 
       // Spawn new obstacles
       while (game.nextObstacleY > game.cameraY - 200) {
         spawnObstacle(game.nextObstacleY, cham.colorIndex);
-        game.nextObstacleY -= 130 + Math.random() * 40;
+        game.nextObstacleY -= 110 + Math.random() * 30;
 
-        // Spawn bug: guaranteed after obs 3, then every 3-4 obstacles
         const bugChance = game.obstacleCount <= 5 ? 0.4 : 0.25;
         if (Math.random() < bugChance) {
           spawnBug(game.nextObstacleY + 60, cham.colorIndex);
         }
       }
 
-      // Update obstacles
+      // Update obstacles — freeze the ring the chameleon is sitting on
       for (const obs of game.obstacles) {
+        if (obs === cham.currentPlatform) continue;
         obs.rotation += obs.spinSpeed * obs.spinDirection * dt;
-
-        if (obs.type === 'flower') {
-          obs.colorTimer += dt;
-          if (obs.colorTimer >= obs.colorDuration) {
-            obs.colorTimer = 0;
-            obs.currentColorIndex = (obs.currentColorIndex + 1) % 4;
-          }
-        }
-
-        // Check collision
-        if (!obs.passed) {
-          const screenY = obs.y - game.cameraY;
-          const chamScreenY = cham.y - game.cameraY;
-
-          if (chamScreenY < screenY + 30 && chamScreenY > screenY - 30) {
-            // In the obstacle zone - check color
-            let inSafeZone = false;
-            const chamColor = cham.colorIndex;
-
-            if (obs.type === 'ring') {
-              // Ring has 4 segments
-              const ringRadius = 80;
-              const chamAngle = Math.atan2(cham.x - canvasSize.w / 2, 0) + Math.PI;
-              const normalizedAngle = ((chamAngle - obs.rotation) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-              const segment = Math.floor((normalizedAngle / (Math.PI * 2)) * 4);
-              
-              // Use specialColors if present (training wheels), otherwise normal offset
-              const segmentColor = obs.specialColors 
-                ? obs.specialColors[segment]
-                : (segment + obs.colorOffset) % 4;
-              
-              // Check if chameleon is passing through the ring
-              const distFromCenter = Math.abs(cham.x - canvasSize.w / 2);
-              if (distFromCenter < ringRadius + 20 && distFromCenter > ringRadius - 20) {
-                if (segmentColor === chamColor) {
-                  inSafeZone = true;
-                } else {
-                  // Hit wrong color
-                  cham.dead = true;
-                  playDeath();
-                }
-              } else if (distFromCenter <= ringRadius - 20) {
-                // Safely inside
-                inSafeZone = true;
-              }
-            } else if (obs.type === 'bars') {
-              // Two bars swinging
-              const barPhase = Math.sin(obs.rotation);
-              const topBarColor = (obs.colorOffset) % 4;
-              const bottomBarColor = (obs.colorOffset + 2) % 4;
-              
-              const barY = screenY + barPhase * 15;
-              if (Math.abs(chamScreenY - barY) < 15) {
-                const activeColor = barPhase > 0 ? topBarColor : bottomBarColor;
-                if (activeColor === chamColor) {
-                  inSafeZone = true;
-                } else {
-                  cham.dead = true;
-                  playDeath();
-                }
-              } else {
-                inSafeZone = true;
-              }
-            } else if (obs.type === 'flower') {
-              // Flower pulses between colors
-              if (obs.currentColorIndex === chamColor) {
-                inSafeZone = true;
-              } else {
-                // Check if we're in the center (safe) or edge (color matters)
-                const distFromCenter = Math.abs(cham.x - canvasSize.w / 2);
-                if (distFromCenter < 25) {
-                  inSafeZone = true;
-                } else if (distFromCenter < 70) {
-                  cham.dead = true;
-                  playDeath();
-                } else {
-                  inSafeZone = true;
-                }
-              }
-            }
-
-            if (inSafeZone && chamScreenY < screenY - 20) {
-              obs.passed = true;
-              playPass();
-              
-              // Particles
-              for (let i = 0; i < 8; i++) {
-                game.particles.push({
-                  x: cham.x,
-                  y: cham.y,
-                  vx: (Math.random() - 0.5) * 4,
-                  vy: (Math.random() - 0.5) * 4,
-                  life: 0.5,
-                  color: COLORS[chamColor].hex,
-                });
-              }
-            }
-          }
-        }
       }
 
-      // Check bug collisions
+      // Bug collisions
       for (const bug of game.bugs) {
         if (bug.eaten) continue;
 
-        bug.orbitAngle += dt * 2;
-        const bugScreenX = bug.x + Math.cos(bug.orbitAngle) * 8;
-        const bugScreenY = bug.y - game.cameraY + Math.sin(bug.orbitAngle) * 8;
+        bug.orbitAngle += dt * bug.patrolSpeed;
+        // Drift left/right so player can catch or avoid
+        bug.x = bug.baseX + Math.sin(bug.orbitAngle) * bug.patrolWidth;
+        const bugScreenX = bug.x;
+        const bugScreenY = bug.y - game.cameraY + Math.cos(bug.orbitAngle * 2) * 6;
         const chamScreenY = cham.y - game.cameraY;
 
         const dx = cham.x - bugScreenX;
@@ -565,8 +587,7 @@ export default function ChromaGame() {
           cham.tongueTimer = 0.1;
           playEat();
 
-          // Color change particles
-          for (let i = 0; i < 12; i++) {
+          for (let p = 0; p < 12; p++) {
             game.particles.push({
               x: cham.x,
               y: cham.y - game.cameraY,
@@ -579,7 +600,7 @@ export default function ChromaGame() {
         }
       }
 
-      // Update particles
+      // Particles
       game.particles = game.particles.filter((p) => {
         p.x += p.vx;
         p.y += p.vy;
@@ -587,7 +608,7 @@ export default function ChromaGame() {
         return p.life > 0;
       });
 
-      // Cleanup off-screen objects
+      // Cleanup off-screen
       game.obstacles = game.obstacles.filter((o) => o.y > game.cameraY - 100);
       game.bugs = game.bugs.filter((b) => b.y > game.cameraY - 100 && !b.eaten);
 
@@ -708,8 +729,8 @@ export default function ChromaGame() {
       for (const bug of game.bugs) {
         if (bug.eaten) continue;
         
-        const screenX = bug.x + Math.cos(bug.orbitAngle) * 8;
-        const screenY = bug.y - game.cameraY + Math.sin(bug.orbitAngle) * 8;
+        const screenX = bug.x;
+        const screenY = bug.y - game.cameraY + Math.cos(bug.orbitAngle * 2) * 6;
         
         if (screenY < -50 || screenY > canvasSize.h + 50) continue;
 
