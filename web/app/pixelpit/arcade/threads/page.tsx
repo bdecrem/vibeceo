@@ -297,6 +297,7 @@ type LevelScore = { base: number; timeBonus: number; cleared: boolean };
 export default function ThreadsGame() {
   // --- State ---
   const [gameState, setGameState] = useState<'title' | 'playing' | 'level-complete' | 'reveal' | 'game-over' | 'leaderboard'>('title');
+  const [prevGameState, setPrevGameState] = useState<'title' | 'game-over'>('title');
   const [currentLevel, setCurrentLevel] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
   const [levelScores, setLevelScores] = useState<LevelScore[]>([]);
@@ -1043,16 +1044,56 @@ export default function ThreadsGame() {
           {allSetsPlayed ? (
             <>
               <div style={{
-                fontSize: 16, color: COLORS.muted,
-                letterSpacing: 2, textAlign: 'center',
+                fontSize: 18, color: COLORS.muted,
+                letterSpacing: 3, textAlign: 'center',
+                marginBottom: 16,
               }}>
-                ALL 6 SETS PLAYED
+                ALL DONE
               </div>
-              <div style={{
-                fontSize: 12, color: COLORS.mutedDark,
-                letterSpacing: 1, textAlign: 'center',
-              }}>
-                Check the leaderboard to see how you did.
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+                <button
+                  onClick={() => { setPrevGameState('title'); setGameState('leaderboard'); }}
+                  style={{
+                    padding: '14px 36px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: COLORS.primary,
+                    color: COLORS.bg,
+                    fontFamily: 'inherit',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    letterSpacing: 3,
+                    cursor: 'pointer',
+                  }}
+                >
+                  LEADERBOARD
+                </button>
+                {user ? (
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    style={{
+                      background: 'transparent',
+                      border: `1px solid ${COLORS.border}`,
+                      borderRadius: 6,
+                      color: COLORS.muted,
+                      padding: '12px 30px',
+                      fontSize: 11,
+                      fontFamily: 'inherit',
+                      cursor: 'pointer',
+                      letterSpacing: 2,
+                    }}
+                  >
+                    SHARE / GROUPS
+                  </button>
+                ) : (
+                  <ShareButtonContainer
+                    id="share-btn-title"
+                    url={GAME_URL}
+                    text="THREADS 🧵 Find the four groups. Can you beat my score?"
+                    style="minimal"
+                    socialLoaded={socialLoaded}
+                  />
+                )}
               </div>
             </>
           ) : (
@@ -1627,7 +1668,7 @@ export default function ThreadsGame() {
               </div>
             )}
             <button
-              onClick={() => setGameState('leaderboard')}
+              onClick={() => { setPrevGameState('game-over'); setGameState('leaderboard'); }}
               style={{
                 background: 'transparent',
                 border: `1px solid ${COLORS.surface}`,
@@ -1687,7 +1728,7 @@ export default function ThreadsGame() {
             limit={10}
             entryId={submittedEntryId ?? undefined}
             colors={LEADERBOARD_COLORS}
-            onClose={() => setGameState('game-over')}
+            onClose={() => setGameState(prevGameState)}
             groupsEnabled={true}
             gameUrl={GAME_URL}
             socialLoaded={socialLoaded}
