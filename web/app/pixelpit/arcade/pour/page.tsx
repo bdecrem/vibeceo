@@ -113,81 +113,92 @@ function playBloom() {
   });
 }
 
-// Level definitions (World 1: all white clouds)
+// Level definitions (World 1: teaching by doing)
+// Each level adds ONE concept
 const LEVELS = [
-  // Level 1: Simple vertical path
+  // Level 1: "Swipe to dig" — thin strip, straight path, impossible to fail
   {
-    drops: 3,
+    drops: 1,
     lives: 3,
+    dropX: 25, // center, directly above pot
     clouds: (grid: number[][]) => {
-      // Fill middle section with white clouds
-      for (let y = 15; y < 55; y++) {
-        for (let x = 15; x < 35; x++) {
-          grid[y][x] = CLOUD_WHITE;
-        }
-      }
-    },
-    potX: 25, // center
-  },
-  // Level 2: Slightly wider cloud block
-  {
-    drops: 3,
-    lives: 3,
-    clouds: (grid: number[][]) => {
-      for (let y = 12; y < 58; y++) {
-        for (let x = 10; x < 40; x++) {
-          grid[y][x] = CLOUD_WHITE;
-        }
-      }
-    },
-    potX: 25,
-  },
-  // Level 3: Two cloud blocks with gap
-  {
-    drops: 4,
-    lives: 3,
-    clouds: (grid: number[][]) => {
-      // Left block
-      for (let y = 15; y < 50; y++) {
-        for (let x = 8; x < 22; x++) {
-          grid[y][x] = CLOUD_WHITE;
-        }
-      }
-      // Right block
-      for (let y = 15; y < 50; y++) {
-        for (let x = 28; x < 42; x++) {
-          grid[y][x] = CLOUD_WHITE;
-        }
-      }
-    },
-    potX: 25,
-  },
-  // Level 4: Diagonal arrangement
-  {
-    drops: 4,
-    lives: 3,
-    clouds: (grid: number[][]) => {
-      for (let y = 10; y < 55; y++) {
-        const offset = Math.floor((y - 10) * 0.3);
-        for (let x = 12 + offset; x < 32 + offset; x++) {
-          if (x < GRID_WIDTH) grid[y][x] = CLOUD_WHITE;
-        }
-      }
-    },
-    potX: 30,
-  },
-  // Level 5: Thick cloud layer
-  {
-    drops: 5,
-    lives: 3,
-    clouds: (grid: number[][]) => {
-      for (let y = 10; y < 60; y++) {
+      // THIN cloud strip - only 4 rows, full width
+      for (let y = 35; y < 39; y++) {
         for (let x = 5; x < 45; x++) {
           grid[y][x] = CLOUD_WHITE;
         }
       }
     },
     potX: 25,
+    hint: 'SWIPE TO DIG ☝️',
+  },
+  // Level 2: "Dig a longer path" — thicker cloud, still straight
+  {
+    drops: 2,
+    lives: 3,
+    dropX: 25,
+    clouds: (grid: number[][]) => {
+      // Thicker cloud block
+      for (let y = 25; y < 50; y++) {
+        for (let x = 10; x < 40; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+    },
+    potX: 25,
+    hint: null,
+  },
+  // Level 3: "Angle your path" — drop offset from pot
+  {
+    drops: 2,
+    lives: 3,
+    dropX: 15, // left side
+    clouds: (grid: number[][]) => {
+      for (let y = 20; y < 50; y++) {
+        for (let x = 8; x < 42; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+    },
+    potX: 35, // right side — must carve diagonal
+    hint: null,
+  },
+  // Level 4: "Multiple drops" — 3 drops, one path
+  {
+    drops: 3,
+    lives: 3,
+    dropX: 25,
+    clouds: (grid: number[][]) => {
+      for (let y = 18; y < 52; y++) {
+        for (let x = 10; x < 40; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+    },
+    potX: 25,
+    hint: null,
+  },
+  // Level 5: "Obstacles exist" — first gray cloud appears
+  {
+    drops: 3,
+    lives: 3,
+    dropX: 25,
+    clouds: (grid: number[][]) => {
+      // Main white cloud
+      for (let y = 15; y < 55; y++) {
+        for (let x = 8; x < 42; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+      // Gray obstacle in middle — must go around
+      for (let y = 32; y < 40; y++) {
+        for (let x = 20; x < 30; x++) {
+          grid[y][x] = CLOUD_GRAY;
+        }
+      }
+    },
+    potX: 25,
+    hint: 'GRAY = HARDER TO DIG',
   },
 ];
 
@@ -231,8 +242,12 @@ export default function PourGame() {
     lives: 3,
     dropsNeeded: 3,
     potX: 25,
+    dropX: 25, // level-specific drop spawn X
     isDrawing: false,
     levelCompleteTimer: 0,
+    hint: null as string | null,
+    showHint: true, // fades after first swipe
+    hasSwipedOnce: false,
   });
 
   const initLevel = useCallback((levelIndex: number) => {
@@ -262,15 +277,21 @@ export default function PourGame() {
     game.lives = levelData.lives;
     game.dropsNeeded = levelData.drops;
     game.potX = levelData.potX;
+    game.dropX = levelData.dropX ?? 25;
     game.levelCompleteTimer = 0;
+    game.hint = levelData.hint ?? null;
+    game.showHint = !!levelData.hint;
+    game.hasSwipedOnce = false;
   }, []);
 
   const spawnRaindrop = useCallback(() => {
     const game = gameRef.current;
-    // Spawn at top, random x within playable area
+    // Spawn at level-specific X position (or slight random offset for variety)
+    const baseX = game.dropX;
+    const variance = game.dropsNeeded > 1 ? (Math.random() - 0.5) * 6 : 0; // slight variance for multi-drop levels
     game.raindrop = {
-      x: (10 + Math.random() * 30) * CELL_SIZE,
-      y: 5 * CELL_SIZE,
+      x: (baseX + variance) * CELL_SIZE,
+      y: 8 * CELL_SIZE,
       vx: 0,
       vy: 0,
       lastMoveTime: Date.now(),
@@ -321,6 +342,11 @@ export default function PourGame() {
     
     if (carved) {
       playPoof();
+      // Hide hint after first successful swipe
+      if (!game.hasSwipedOnce) {
+        game.hasSwipedOnce = true;
+        game.showHint = false;
+      }
     }
   }, []);
 
@@ -644,6 +670,18 @@ export default function PourGame() {
       
       ctx.textAlign = 'right';
       ctx.fillText('❤️'.repeat(game.lives), canvasSize.w - 15, 30);
+
+      // Hint text (fades after first swipe)
+      if (game.showHint && game.hint) {
+        ctx.fillStyle = THEME.text;
+        ctx.font = 'bold 28px ui-monospace';
+        ctx.textAlign = 'center';
+        // Pulsing opacity
+        const pulse = 0.7 + Math.sin(Date.now() / 300) * 0.3;
+        ctx.globalAlpha = pulse;
+        ctx.fillText(game.hint, canvasSize.w / 2, canvasSize.h / 2);
+        ctx.globalAlpha = 1;
+      }
     };
 
     const gameLoop = (timestamp: number) => {
