@@ -12,7 +12,7 @@ const GRID_HEIGHT = 80; // cells
 const GRAVITY = 0.3;
 const SLIDE_FRICTION = 0.85;
 const BOUNCE = 0.2;
-const STUCK_THRESHOLD = 2000; // ms before nudge
+const STUCK_THRESHOLD = 800; // ms before nudge (reduced from 2000)
 
 // Cloud types
 const CLOUD_EMPTY = 0;
@@ -283,17 +283,17 @@ const LEVELS = [
   {
     drops: 3,
     lives: 3,
-    dropX: 25,
+    dropX: 12, // Spawn LEFT of the obstacle
     clouds: (grid: number[][]) => {
-      // White cloud - FULL coverage so player can carve a path
+      // White cloud - FULL coverage
       for (let y = 15; y < 55; y++) {
-        for (let x = 10; x < 40; x++) {
+        for (let x = 8; x < 42; x++) {
           grid[y][x] = CLOUD_WHITE;
         }
       }
-      // Gray ceiling in middle — must carve AROUND it (left or right)
-      for (let y = 28; y < 38; y++) {
-        for (let x = 18; x < 32; x++) {
+      // Gray obstacle on RIGHT side — drop spawns left, must navigate
+      for (let y = 28; y < 42; y++) {
+        for (let x = 25; x < 40; x++) {
           grid[y][x] = CLOUD_GRAY;
         }
       }
@@ -622,10 +622,27 @@ export default function PourGame() {
           drop.lastMoveTime = Date.now();
         }
         
-        // Unstick if stuck too long
+        // Unstick if stuck too long - find nearest clear path
         if (Date.now() - drop.lastMoveTime > STUCK_THRESHOLD) {
-          drop.vx += (Math.random() - 0.5) * 2;
-          drop.vy += 1;
+          const gx = Math.floor(drop.x / CELL_SIZE);
+          const gy = Math.floor(drop.y / CELL_SIZE);
+          
+          // Check left vs right for nearest clear path
+          let leftDist = 0, rightDist = 0;
+          for (let i = 1; i < 10; i++) {
+            if (leftDist === 0 && gx - i >= 0 && game.grid[gy]?.[gx - i] === CLOUD_EMPTY) leftDist = i;
+            if (rightDist === 0 && gx + i < GRID_WIDTH && game.grid[gy]?.[gx + i] === CLOUD_EMPTY) rightDist = i;
+          }
+          
+          // Nudge toward nearest clear path
+          if (leftDist > 0 && (rightDist === 0 || leftDist < rightDist)) {
+            drop.vx = -3;
+          } else if (rightDist > 0) {
+            drop.vx = 3;
+          } else {
+            drop.vx = (Math.random() > 0.5 ? 1 : -1) * 3;
+          }
+          drop.vy = 1;
           drop.lastMoveTime = Date.now();
         }
         
