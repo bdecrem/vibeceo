@@ -219,15 +219,38 @@ export default function ChromaGame() {
     return 4;
   }, []);
 
-  const getSpinSpeed = useCallback((baseSpeed: number, obstacleNum: number) => {
-    // Training wheels: first 5 obstacles are glacially slow
-    // Obstacles 1-5: 0.2x (10 sec rotation)
-    // Obstacles 6-15: 0.4x (5 sec rotation)  
-    // Obstacles 16+: Normal zone-based speed
-    if (obstacleNum <= 5) return baseSpeed * 0.2;
-    if (obstacleNum <= 15) return baseSpeed * 0.4;
-    if (obstacleNum <= 30) return baseSpeed * 0.8;
-    return baseSpeed * 1.2;
+  // ZONE CONFIG (Loop spec)
+  const ZONE_CONFIG = {
+    1: { // Forest Floor (0-250)
+      spinMult: 0.4,  // 0.4x = very slow, ~10 sec rotation
+      gap: 200,       // lots of time between obstacles
+      bugEvery: 3,    // bug every 3rd obstacle
+      ringChance: 1.0, barChance: 0, flowerChance: 0,
+    },
+    2: { // Understory (250-500)
+      spinMult: 0.6,
+      gap: 180,
+      bugEvery: 4,
+      ringChance: 0.7, barChance: 0.3, flowerChance: 0,
+    },
+    3: { // Canopy (500-1000)
+      spinMult: 0.8,
+      gap: 150,
+      bugEvery: 5,
+      ringChance: 0.5, barChance: 0.3, flowerChance: 0.2,
+    },
+    4: { // Treetops (1000+)
+      spinMult: 1.0,
+      gap: 120,
+      bugEvery: 6,
+      ringChance: 0.4, barChance: 0.3, flowerChance: 0.3,
+    },
+  } as const;
+
+  const getSpinSpeed = useCallback((baseSpeed: number, zone: number) => {
+    // Zone-based spin speed (Loop spec)
+    const config = ZONE_CONFIG[zone as keyof typeof ZONE_CONFIG] || ZONE_CONFIG[1];
+    return baseSpeed * config.spinMult;
   }, []);
 
   const spawnObstacle = useCallback((y: number, playerColorIndex: number) => {
