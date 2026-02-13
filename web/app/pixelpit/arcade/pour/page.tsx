@@ -334,6 +334,150 @@ const LEVELS = [
     potX: 25,
     hint: null,
   },
+
+  // ========== ZONE 3: STORM (Levels 11-15) ==========
+  // Introduces dark clouds (indestructible)
+
+  // Level 11: "Dark Wall" — dark barrier in center
+  {
+    drops: 4,
+    lives: 3,
+    dropX: 15, // Clear path on left
+    clouds: (grid: number[][]) => {
+      // White cloud everywhere
+      for (let y = 15; y < 55; y++) {
+        for (let x = 5; x < 45; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+      // Dark wall in center (NOT under spawn x=15)
+      for (let y = 15; y < 55; y++) {
+        for (let x = 22; x < 28; x++) {
+          grid[y][x] = CLOUD_DARK;
+        }
+      }
+    },
+    potX: 35,
+    hint: null,
+  },
+
+  // Level 12: "Funnel" — dark walls on sides, center channel open
+  {
+    drops: 4,
+    lives: 3,
+    dropX: 25, // Center channel clear
+    clouds: (grid: number[][]) => {
+      // White cloud in center channel
+      for (let y = 15; y < 55; y++) {
+        for (let x = 16; x < 34; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+      // Dark walls on left
+      for (let y = 20; y < 50; y++) {
+        for (let x = 8; x < 16; x++) {
+          grid[y][x] = CLOUD_DARK;
+        }
+      }
+      // Dark walls on right
+      for (let y = 20; y < 50; y++) {
+        for (let x = 34; x < 42; x++) {
+          grid[y][x] = CLOUD_DARK;
+        }
+      }
+    },
+    potX: 25,
+    hint: null,
+  },
+
+  // Level 13: "Zigzag" — dark shelves alternating
+  {
+    drops: 5,
+    lives: 3,
+    dropX: 10, // Left edge clear
+    clouds: (grid: number[][]) => {
+      // White cloud everywhere
+      for (let y = 15; y < 55; y++) {
+        for (let x = 5; x < 45; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+      // Dark shelves (all start at x=15+, not under spawn x=10)
+      for (let y = 22; y < 26; y++) {
+        for (let x = 15; x < 35; x++) {
+          grid[y][x] = CLOUD_DARK;
+        }
+      }
+      for (let y = 32; y < 36; y++) {
+        for (let x = 20; x < 45; x++) {
+          grid[y][x] = CLOUD_DARK;
+        }
+      }
+      for (let y = 42; y < 46; y++) {
+        for (let x = 15; x < 35; x++) {
+          grid[y][x] = CLOUD_DARK;
+        }
+      }
+    },
+    potX: 25,
+    hint: null,
+  },
+
+  // Level 14: "Two Pots" — split paths
+  {
+    drops: 6,
+    lives: 3,
+    dropX: 15, // Alternates with 35
+    clouds: (grid: number[][]) => {
+      // White cloud full coverage
+      for (let y = 15; y < 55; y++) {
+        for (let x = 5; x < 45; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+      // Dark divider in center (not under spawns at x=15 or x=35)
+      for (let y = 35; y < 55; y++) {
+        for (let x = 23; x < 27; x++) {
+          grid[y][x] = CLOUD_DARK;
+        }
+      }
+    },
+    potX: 15, // First pot - second at 35 (need multi-pot support)
+    hint: null,
+  },
+
+  // Level 15: "Storm Maze" — complex dark maze
+  {
+    drops: 5,
+    lives: 2,
+    dropX: 10, // Left edge guaranteed clear
+    clouds: (grid: number[][]) => {
+      // White cloud full coverage
+      for (let y = 15; y < 55; y++) {
+        for (let x = 5; x < 45; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+      // Maze walls (never extend to x<12)
+      for (let y = 20; y < 28; y++) {
+        for (let x = 18; x < 35; x++) {
+          grid[y][x] = CLOUD_DARK;
+        }
+      }
+      for (let y = 32; y < 40; y++) {
+        for (let x = 12; x < 28; x++) {
+          grid[y][x] = CLOUD_DARK;
+        }
+      }
+      for (let y = 44; y < 52; y++) {
+        for (let x = 22; x < 40; x++) {
+          grid[y][x] = CLOUD_DARK;
+        }
+      }
+    },
+    potX: 25,
+    hint: null,
+  },
 ];
 
 interface Particle {
