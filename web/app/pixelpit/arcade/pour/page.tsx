@@ -200,6 +200,140 @@ const LEVELS = [
     potX: 25,
     hint: null,
   },
+
+  // ========== ZONE 2: GARDEN (Levels 6-10) ==========
+  // Introduces gray obstacles
+
+  // Level 6: "First Block" — center gray obstacle
+  {
+    drops: 3,
+    lives: 3,
+    dropX: 25,
+    clouds: (grid: number[][]) => {
+      // White cloud
+      for (let y = 20; y < 50; y++) {
+        for (let x = 10; x < 40; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+      // Gray block in center
+      for (let y = 30; y < 35; y++) {
+        for (let x = 22; x < 28; x++) {
+          grid[y][x] = CLOUD_GRAY;
+        }
+      }
+    },
+    potX: 25,
+    hint: null,
+  },
+
+  // Level 7: "Side Wall" — left side blocked
+  {
+    drops: 3,
+    lives: 3,
+    dropX: 20,
+    clouds: (grid: number[][]) => {
+      // White cloud
+      for (let y = 15; y < 55; y++) {
+        for (let x = 10; x < 40; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+      // Gray wall on left
+      for (let y = 15; y < 55; y++) {
+        for (let x = 10; x < 15; x++) {
+          grid[y][x] = CLOUD_GRAY;
+        }
+      }
+    },
+    potX: 30,
+    hint: null,
+  },
+
+  // Level 8: "Two Drops" — pillars force choice
+  {
+    drops: 4,
+    lives: 3,
+    dropX: 15, // Will alternate with 35
+    clouds: (grid: number[][]) => {
+      // White cloud
+      for (let y = 20; y < 50; y++) {
+        for (let x = 8; x < 42; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+      // Left pillar
+      for (let y = 25; y < 45; y++) {
+        for (let x = 18; x < 20; x++) {
+          grid[y][x] = CLOUD_GRAY;
+        }
+      }
+      // Right pillar
+      for (let y = 25; y < 45; y++) {
+        for (let x = 30; x < 32; x++) {
+          grid[y][x] = CLOUD_GRAY;
+        }
+      }
+    },
+    potX: 25,
+    hint: null,
+  },
+
+  // Level 9: "Low Ceiling" — carve UNDER the gray
+  {
+    drops: 3,
+    lives: 3,
+    dropX: 25,
+    clouds: (grid: number[][]) => {
+      // White cloud (lower portion)
+      for (let y = 30; y < 55; y++) {
+        for (let x = 10; x < 40; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+      // Gray ceiling
+      for (let y = 20; y < 30; y++) {
+        for (let x = 15; x < 35; x++) {
+          grid[y][x] = CLOUD_GRAY;
+        }
+      }
+    },
+    potX: 25,
+    hint: null,
+  },
+
+  // Level 10: "Mini Maze" — scattered obstacles
+  {
+    drops: 4,
+    lives: 3,
+    dropX: 25,
+    clouds: (grid: number[][]) => {
+      // White cloud fills area
+      for (let y = 15; y < 55; y++) {
+        for (let x = 5; x < 45; x++) {
+          grid[y][x] = CLOUD_WHITE;
+        }
+      }
+      // Scattered gray blocks
+      for (let y = 20; y < 25; y++) {
+        for (let x = 15; x < 20; x++) {
+          grid[y][x] = CLOUD_GRAY;
+        }
+      }
+      for (let y = 30; y < 35; y++) {
+        for (let x = 30; x < 35; x++) {
+          grid[y][x] = CLOUD_GRAY;
+        }
+      }
+      for (let y = 40; y < 45; y++) {
+        for (let x = 20; x < 25; x++) {
+          grid[y][x] = CLOUD_GRAY;
+        }
+      }
+    },
+    potX: 25,
+    hint: null,
+  },
 ];
 
 interface Particle {
