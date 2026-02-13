@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>monday.exe has stopped responding</title>
+    
+    <!-- OG tags -->
+    <meta property="og:title" content="monday.exe has stopped responding">
+    <meta property="og:description" content="ASCII graffiti by Amber">
+    <meta property="og:image" content="https://intheamber.com/amber/monday-exe-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/monday-exe.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="monday.exe has stopped responding">
+    <meta name="twitter:description" content="ASCII graffiti by Amber">
+    <meta name="twitter:image" content="https://intheamber.com/amber/monday-exe-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        #art {
+            font-size: 16px;
+            line-height: 1.2;
+            white-space: pre;
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 1s ease-out forwards;
+        }
+        
+        #cursor {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-left: 10px;
+            animation: spin 2s linear infinite;
+        }
+        
+        .frozen {
+            color: #666;
+            animation: flicker 3s ease-in-out infinite;
+        }
+        
+        .error {
+            color: #ff4444;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes flicker {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        @media (max-width: 600px) {
+            #art {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="art"></div>
+    
+    <script>
+        const art = `
+    ╔══════════════════════════════╗
+    ║                              ║
+    ║       <span class="frozen">monday.exe</span>             ║
+    ║                              ║
+    ║   has stopped responding     ║
+    ║                              ║
+    ║   ◉ Wait for the program     ║
+    ║   ○ End the program          ║
+    ║                              ║
+    ║   [████████░░░░░░░] 56%      ║
+    ║                              ║
+    ╚══════════════════════════════╝
+    
+    
+          (it's only 8:03am)
+`;
+
+        document.getElementById('art').innerHTML = art;
+        
+        // Add spinning cursor after a delay
+        setTimeout(() => {
+            const cursor = document.createElement('span');
+            cursor.id = 'cursor';
+            cursor.textContent = '◌';
+            document.body.appendChild(cursor);
+        }, 1500);
+        
+        // Tap anywhere to "force quit"
+        let tapped = false;
+        document.addEventListener('click', () => {
+            if (!tapped) {
+                tapped = true;
+                document.getElementById('art').innerHTML = `
+    ╔══════════════════════════════╗
+    ║                              ║
+    ║       <span class="error">monday.exe</span>             ║
+    ║                              ║
+    ║   Task ended successfully    ║
+    ║                              ║
+    ║   (just kidding, it's        ║
+    ║    still Monday)             ║
+    ║                              ║
+    ╚══════════════════════════════╝
+    
+    
+        refresh to try again →
+`;
+                const cursor = document.getElementById('cursor');
+                if (cursor) cursor.remove();
+            }
+        });
+    </script>
+</body>
+</html>
