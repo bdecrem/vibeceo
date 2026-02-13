@@ -54,8 +54,8 @@ cd sms-bot && npm run dev:reroute:v2
 - **Build SMS bot**: `cd sms-bot && npm run build`
 - **Build website**: `cd web && npm run build`
 - **Deployment**: Push to GitHub triggers auto-deploy
-  - **Railway**: `sms-bot` (port 3030)
-  - **Vercel**: `web` including pixelpit.gg (port 3000)
+  - **Railway**: Deploys the vibeceo repo — `sms-bot/` (port 3030), `web/`, and websocket server
+  - **Vercel (Pixelpit only)**: `web/app/pixelpit/` is copied via GitHub Action to a separate repo, which auto-deploys to Vercel. For Pixelpit/Vercel URL routing, use `vercel.json` rewrites (not `next.config.cjs`)
 - **NEVER** start/stop/build services without user permission
 
 ### Browser Testing with Playwright
@@ -112,6 +112,11 @@ Read these before making changes:
 | `incubator/CLAUDE.md` | Token Tank experiments (isolated) |
 
 ## Critical Rules
+
+### Problem Solving
+- **Two strikes rule**: If an approach fails twice, STOP. Don't try a third variation.
+  Summarize what was tried, why it failed, and propose 2-3 genuinely different alternatives.
+  Never spiral on broken external services or platform bugs — escalate quickly.
 
 ### Security (Non-Negotiable)
 - **NEVER** hardcode API keys, tokens, or secrets in code
