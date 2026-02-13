@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 
 // Grid settings
 const CELL_SIZE = 8;
-const BRUSH_RADIUS = 24; // pixels
+const BRUSH_RADIUS = 12; // pixels (narrow tunnels)
 const GRID_WIDTH = 50; // cells
 const GRID_HEIGHT = 80; // cells
 
@@ -198,7 +198,7 @@ const LEVELS = [
       }
     },
     potX: 25,
-    hint: 'GRAY = HARDER TO DIG',
+    hint: 'GRAY = OBSTACLE',
   },
 ];
 
@@ -316,7 +316,8 @@ export default function PourGame() {
         if (dist > BRUSH_RADIUS) continue;
         
         const cloudType = game.grid[gy][gx];
-        if (cloudType === CLOUD_EMPTY || cloudType === CLOUD_DARK) continue;
+        // Can only carve white clouds — gray and dark are obstacles
+        if (cloudType !== CLOUD_WHITE) continue;
         
         game.gridHealth[gy][gx]--;
         
