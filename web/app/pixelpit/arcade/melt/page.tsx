@@ -2,113 +2,30 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
+// Game settings
+const GAME_WIDTH = 400;
+const GAME_HEIGHT = 700;
+const MELT_RATE = 0.3; // Size lost per second
+const MIN_SIZE = 15;
+const MAX_SIZE = 80;
+const START_SIZE = 40;
+const SCROLL_SPEED = 120; // pixels per second
+const PLAYER_SPEED = 250;
+
+// Theme (volcanic)
 const THEME = {
-  snowball: '#e2e8f0',
-  frost: '#94a3b8',
-  gear: '#92400e', // rust/bronze
-  gearGlow: '#d97706',
-  bg: '#0c0a09', // almost black
-  bgAccent: '#1c1917', // dark brown
-  text: '#a8a29e',
-  danger: '#dc2626',
+  bg1: '#1a0a0a',
+  bg2: '#2d1810',
+  lava: '#ff4500',
+  lavaGlow: '#ff6b35',
+  rock: '#3d3d3d',
+  rockLight: '#5a5a5a',
+  ice: '#a8e6ff',
+  iceCore: '#e0f7ff',
+  icePickup: '#40c4ff',
+  steam: '#ffffff80',
+  text: '#ffffff',
 };
-
-const GAME_ID = 'melt';
-const NUM_PLATFORMS = 25;
-const MAX_HEALTH = 100;
-
-// Audio
-let audioCtx: AudioContext | null = null;
-let masterGain: GainNode | null = null;
-
-function initAudio() {
-  if (audioCtx) return;
-  audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-  masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.3;
-  masterGain.connect(audioCtx.destination);
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-}
-
-function playSizzle() {
-  if (!audioCtx || !masterGain) return;
-  const bufferSize = audioCtx.sampleRate * 0.3;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-  }
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = buffer;
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = 'highpass';
-  filter.frequency.value = 2000;
-  const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  noise.connect(filter);
-  filter.connect(gain);
-  gain.connect(masterGain);
-  noise.start();
-}
-
-function playPass() {
-  if (!audioCtx || !masterGain) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.value = 600;
-  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.1);
-}
-
-function playWin() {
-  if (!audioCtx || !masterGain) return;
-  [262, 330, 392].forEach((freq, i) => {
-    setTimeout(() => {
-      if (!audioCtx || !masterGain) return;
-      const osc = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      g.gain.setValueAtTime(0.15, audioCtx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
-      osc.connect(g);
-      g.connect(masterGain);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.8);
-    }, i * 150);
-  });
-}
-
-function playDeath() {
-  if (!audioCtx || !masterGain) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5);
-  gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.5);
-}
-
-interface Platform {
-  y: number;
-  x: number; // offset from center
-  radius: number;
-  gapAngle: number;
-  gapSize: number;
-  rotation: number;
-  speed: number;
-  passed: boolean;
-}
 
 interface Particle {
   x: number;
@@ -116,99 +33,175 @@ interface Particle {
   vx: number;
   vy: number;
   life: number;
+  color: string;
+  size: number;
+}
+
+interface Obstacle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  type: 'rock' | 'lava';
+}
+
+interface IcePickup {
+  x: number;
+  y: number;
+  size: number;
+  collected: boolean;
+}
+
+// Audio
+let audioCtx: AudioContext | null = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playCollect() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.15);
+}
+
+function playHit() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.2);
+}
+
+function playMelt() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.3);
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.3);
 }
 
 export default function MeltGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'won' | 'dead'>('start');
-  const [finalHealth, setFinalHealth] = useState(MAX_HEALTH);
-  const [layersDescended, setLayersDescended] = useState(0);
-  const [canvasSize, setCanvasSize] = useState({ w: 400, h: 700 });
+  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameOver'>('start');
+  const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0);
+  const [canvasSize, setCanvasSize] = useState({ w: GAME_WIDTH, h: GAME_HEIGHT });
 
   const gameRef = useRef({
-    running: false,
-    holding: false,
-    ballX: 0,
-    ballY: 80,
-    ballSize: 18,
-    ballVY: 0,
-    cameraY: 0,
-    platforms: [] as Platform[],
+    playerX: GAME_WIDTH / 2,
+    playerY: GAME_HEIGHT * 0.7,
+    playerSize: START_SIZE,
+    targetX: GAME_WIDTH / 2,
+    scrollY: 0,
+    obstacles: [] as Obstacle[],
+    icePickups: [] as IcePickup[],
     particles: [] as Particle[],
-    layersPassed: 0,
-    health: MAX_HEALTH,
-    stuckTo: null as number | null, // platform index ball is riding
-    stuckAngle: 0, // angle on platform where ball is stuck
+    score: 0,
+    distance: 0,
+    lastSpawnY: 0,
+    isDragging: false,
   });
 
-  const generatePlatforms = useCallback((canvasW: number) => {
-    const platforms: Platform[] = [];
-    let currentY = 350;
+  const spawnObstacles = useCallback((startY: number, endY: number) => {
+    const game = gameRef.current;
+    const spacing = 150;
     
-    for (let i = 0; i < NUM_PLATFORMS; i++) {
-      const progress = i / NUM_PLATFORMS; // 0 to 1
+    for (let y = startY; y < endY; y += spacing) {
+      // Spawn 1-3 obstacles per row
+      const count = 1 + Math.floor(Math.random() * 2);
+      const usedX: number[] = [];
       
-      // Difficulty progression
-      // Gap between platforms: starts big, gets tighter
-      const baseGap = 350 - progress * 150; // 350 -> 200
-      currentY += baseGap;
+      for (let i = 0; i < count; i++) {
+        let x: number;
+        let attempts = 0;
+        do {
+          x = 30 + Math.random() * (GAME_WIDTH - 100);
+          attempts++;
+        } while (usedX.some(ux => Math.abs(ux - x) < 80) && attempts < 10);
+        
+        usedX.push(x);
+        
+        const isLava = Math.random() < 0.3;
+        game.obstacles.push({
+          x,
+          y: y + (Math.random() - 0.5) * 40,
+          width: 40 + Math.random() * 40,
+          height: isLava ? 15 : 25 + Math.random() * 20,
+          type: isLava ? 'lava' : 'rock',
+        });
+      }
       
-      // Radius: starts big, varies more later
-      const baseRadius = 120 - progress * 40; // 120 -> 80
-      const radiusVariance = progress * 30;
-      const radius = baseRadius + (Math.random() - 0.5) * radiusVariance;
-      
-      // X offset: starts centered, more offset later
-      const maxOffset = progress * (canvasW * 0.25);
-      const xOffset = (Math.random() - 0.5) * maxOffset;
-      
-      // Gap size: starts big (easy), gets smaller (hard)
-      const gapSize = 1.4 - progress * 0.7; // ~80deg -> ~40deg
-      
-      // Rotation speed: starts slow, gets faster
-      const speed = (0.3 + progress * 0.5) * (Math.random() < 0.5 ? 1 : -1);
-      
-      platforms.push({
-        y: currentY,
-        x: xOffset,
-        radius: Math.max(60, radius),
-        gapAngle: Math.random() * Math.PI * 2,
-        gapSize: Math.max(0.5, gapSize + (Math.random() - 0.5) * 0.3),
-        rotation: 0,
-        speed,
-        passed: false,
-      });
+      // Spawn ice pickup (30% chance)
+      if (Math.random() < 0.3) {
+        let iceX = 40 + Math.random() * (GAME_WIDTH - 80);
+        // Avoid obstacles
+        while (usedX.some(ux => Math.abs(ux - iceX) < 60)) {
+          iceX = 40 + Math.random() * (GAME_WIDTH - 80);
+        }
+        game.icePickups.push({
+          x: iceX,
+          y: y + 50,
+          size: 15 + Math.random() * 10,
+          collected: false,
+        });
+      }
     }
-    return platforms;
+    game.lastSpawnY = endY;
   }, []);
 
   const startGame = useCallback(() => {
     initAudio();
     const game = gameRef.current;
-    game.running = true;
-    game.holding = false;
-    game.ballX = canvasSize.w / 2;
-    game.ballY = 80;
-    game.ballSize = 18;
-    game.ballVY = 0;
-    game.cameraY = 0;
-    game.platforms = generatePlatforms(canvasSize.w);
+    game.playerX = GAME_WIDTH / 2;
+    game.playerY = GAME_HEIGHT * 0.7;
+    game.playerSize = START_SIZE;
+    game.targetX = GAME_WIDTH / 2;
+    game.scrollY = 0;
+    game.obstacles = [];
+    game.icePickups = [];
     game.particles = [];
-    game.layersPassed = 0;
-    game.health = MAX_HEALTH;
-    game.stuckTo = null;
-    game.stuckAngle = 0;
-    setLayersDescended(0);
+    game.score = 0;
+    game.distance = 0;
+    game.lastSpawnY = 0;
+    
+    // Initial obstacles
+    spawnObstacles(GAME_HEIGHT, GAME_HEIGHT + 1000);
+    
+    setScore(0);
     setGameState('playing');
-  }, [generatePlatforms, canvasSize.w]);
+  }, [spawnObstacles]);
 
-  // Handle resize
   useEffect(() => {
     const updateSize = () => {
-      setCanvasSize({
-        w: window.innerWidth,
-        h: window.innerHeight,
-      });
+      const w = Math.min(window.innerWidth, 500);
+      const h = Math.min(window.innerHeight, 800);
+      setCanvasSize({ w, h });
     };
     updateSize();
     window.addEventListener('resize', updateSize);
@@ -216,489 +209,411 @@ export default function MeltGame() {
   }, []);
 
   useEffect(() => {
+    if (gameState !== 'playing') return;
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width = canvasSize.w;
-    canvas.height = canvasSize.h;
-
     let animationId: number;
-    const PIZZA_THICKNESS = 25;
+    let lastTime = performance.now();
 
-    const update = () => {
+    const scale = Math.min(canvasSize.w / GAME_WIDTH, canvasSize.h / GAME_HEIGHT);
+    const offsetX = (canvasSize.w - GAME_WIDTH * scale) / 2;
+    const offsetY = (canvasSize.h - GAME_HEIGHT * scale) / 2;
+
+    const update = (dt: number) => {
       const game = gameRef.current;
-      if (!game.running) return;
-
-      // Rotate all platforms first
-      for (let i = 0; i < game.platforms.length; i++) {
-        game.platforms[i].rotation += game.platforms[i].speed * 0.015;
+      
+      // Scroll (ice slides down volcano)
+      game.scrollY += SCROLL_SPEED * dt;
+      game.distance += SCROLL_SPEED * dt;
+      
+      // Melt!
+      game.playerSize -= MELT_RATE * dt;
+      
+      // Check if melted completely
+      if (game.playerSize <= MIN_SIZE) {
+        playMelt();
+        setHighScore(h => Math.max(h, game.score));
+        setGameState('gameOver');
+        return;
       }
-
-      // Platform riding logic
-      if (game.stuckTo !== null) {
-        const platform = game.platforms[game.stuckTo];
-        const platformX = canvasSize.w / 2 + platform.x;
+      
+      // Move player toward target
+      const dx = game.targetX - game.playerX;
+      game.playerX += dx * 8 * dt;
+      
+      // Clamp to screen
+      const halfSize = game.playerSize / 2;
+      game.playerX = Math.max(halfSize, Math.min(GAME_WIDTH - halfSize, game.playerX));
+      
+      // Spawn more obstacles as we scroll
+      if (game.scrollY + GAME_HEIGHT > game.lastSpawnY - 500) {
+        spawnObstacles(game.lastSpawnY, game.lastSpawnY + 500);
+      }
+      
+      // Check collisions with obstacles
+      const playerTop = game.playerY - halfSize;
+      const playerBottom = game.playerY + halfSize;
+      const playerLeft = game.playerX - halfSize;
+      const playerRight = game.playerX + halfSize;
+      
+      for (const obs of game.obstacles) {
+        const obsY = obs.y - game.scrollY;
+        if (obsY < -100 || obsY > GAME_HEIGHT + 100) continue;
         
-        // Ball is FULLY GLUED to the wheel
-        // stuckAngle is relative to platform - worldAngle = stuckAngle + platform.rotation
-        const worldAngle = game.stuckAngle + platform.rotation;
+        const obsLeft = obs.x - obs.width / 2;
+        const obsRight = obs.x + obs.width / 2;
+        const obsTop = obsY - obs.height / 2;
+        const obsBottom = obsY + obs.height / 2;
         
-        // Position ball ON the platform's edge (fully locked)
-        const stickRadius = platform.radius - game.ballSize * 0.5;
-        game.ballX = platformX + Math.cos(worldAngle) * stickRadius;
-        game.ballY = platform.y + Math.sin(worldAngle) * stickRadius;
-        game.ballVY = 0;
-        
-        // Check if gap has rotated to our position
-        const currentGapAngle = platform.gapAngle + platform.rotation;
-        
-        let diff = Math.abs(worldAngle - currentGapAngle);
-        // Normalize to [0, 2PI]
-        diff = diff % (Math.PI * 2);
-        if (diff > Math.PI) diff = Math.PI * 2 - diff;
-        
-        const overGap = diff < platform.gapSize / 2;
-        
-        // If holding OR over gap, unstick and fall
-        if (game.holding || overGap) {
-          game.stuckTo = null;
-          game.ballVY = game.holding ? 5 : 2;
-          if (overGap && !platform.passed) {
-            platform.passed = true;
-            game.layersPassed++;
-            setLayersDescended(game.layersPassed);
-            playPass();
-          }
-        }
-      } else {
-        // Not stuck — normal physics
-        game.ballX = canvasSize.w / 2;
-        
-        const gravity = game.holding ? 0.9 : 0.2;
-        game.ballVY += gravity;
-        game.ballVY = Math.min(game.ballVY, game.holding ? 16 : 3);
-        game.ballY += game.ballVY;
-
-        // Collision with platforms — ONLY VISIBLE ONES
-        for (let i = 0; i < game.platforms.length; i++) {
-          const platform = game.platforms[i];
-          const screenY = platform.y - game.cameraY;
-          
-          // Skip platforms that aren't visible on screen
-          if (screenY < -platform.radius - 50 || screenY > canvasSize.h + platform.radius + 50) {
-            continue;
-          }
-          
-          const ballBottom = game.ballY + game.ballSize;
-          const ballTop = game.ballY - game.ballSize;
-          const platformX = canvasSize.w / 2 + platform.x;
-          
-          // Check if ball is at platform level
-          if (ballBottom > platform.y - PIZZA_THICKNESS/2 && 
-              ballTop < platform.y + PIZZA_THICKNESS/2) {
-            
-            // Check distance from platform center
-            const dx = game.ballX - platformX;
-            const distFromCenter = Math.abs(dx);
-            
-            // Only collide if ball is within platform radius
-            if (distFromCenter < platform.radius) {
-              // Check if in gap — ball falls from TOP so check -PI/2 angle
-              const currentGapAngle = (platform.gapAngle + platform.rotation) % (Math.PI * 2);
-              
-              // -PI/2 is "top" in canvas coords (Y down), normalize to positive
-              const topAngle = ((-Math.PI / 2) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-              let diff = Math.abs(topAngle - currentGapAngle);
-              if (diff > Math.PI) diff = Math.PI * 2 - diff;
-              
-              const inGap = diff < platform.gapSize / 2;
-              
-              if (inGap) {
-                // Fall through gap
-                if (!platform.passed) {
-                  platform.passed = true;
-                  game.layersPassed++;
-                  setLayersDescended(game.layersPassed);
-                  playPass();
-                }
-              } else {
-                // Hit solid part
-                if (game.holding) {
-                  // Smashing through while holding = damage + bounce
-                  if (!platform.passed) {
-                    playSizzle();
-                    game.health -= 18;
-                    game.ballSize = Math.max(8, 8 + (game.health / MAX_HEALTH) * 10);
-                    game.ballVY = -7;
-                    platform.passed = true;
-                    
-                    for (let j = 0; j < 8; j++) {
-                      game.particles.push({
-                        x: game.ballX + (Math.random() - 0.5) * 40,
-                        y: platform.y,
-                        vx: (Math.random() - 0.5) * 5,
-                        vy: -2 - Math.random() * 4,
-                        life: 30,
-                      });
-                    }
-                    
-                    if (game.health <= 0) {
-                      game.running = false;
-                      playDeath();
-                      setFinalHealth(0);
-                      setGameState('dead');
-                      return;
-                    }
-                  }
-                } else {
-                  // Not holding = stick to platform and ride
-                  game.stuckTo = i;
-                  // stuckAngle is relative to platform rotation — start at TOP (-PI/2)
-                  game.stuckAngle = -Math.PI / 2 - platform.rotation;
-                  game.ballVY = 0;
-                }
-              }
+        // AABB collision
+        if (playerRight > obsLeft && playerLeft < obsRight &&
+            playerBottom > obsTop && playerTop < obsBottom) {
+          if (obs.type === 'lava') {
+            // Lava = instant big melt
+            game.playerSize -= 15;
+            playHit();
+            // Particles
+            for (let i = 0; i < 10; i++) {
+              game.particles.push({
+                x: game.playerX,
+                y: game.playerY,
+                vx: (Math.random() - 0.5) * 100,
+                vy: (Math.random() - 0.5) * 100 - 50,
+                life: 0.5,
+                color: THEME.steam,
+                size: 8,
+              });
+            }
+          } else {
+            // Rock = push and shrink a bit
+            game.playerSize -= 3;
+            playHit();
+            // Push away from obstacle center
+            if (game.playerX < obs.x) {
+              game.playerX = obsLeft - halfSize;
+              game.targetX = game.playerX;
+            } else {
+              game.playerX = obsRight + halfSize;
+              game.targetX = game.playerX;
             }
           }
         }
       }
-
-      // Camera follows ball
-      const targetCameraY = game.ballY - canvasSize.h / 3;
-      game.cameraY += (targetCameraY - game.cameraY) * 0.1;
-
-      // Win
-      const lastPlatform = game.platforms[game.platforms.length - 1];
-      if (game.ballY > lastPlatform.y + 200) {
-        game.running = false;
-        playWin();
-        setFinalHealth(game.health);
-        setGameState('won');
-        fetch('/api/pixelpit/stats', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ game: GAME_ID }),
-        }).catch(() => {});
+      
+      // Check ice pickups
+      for (const ice of game.icePickups) {
+        if (ice.collected) continue;
+        const iceY = ice.y - game.scrollY;
+        if (iceY < -50 || iceY > GAME_HEIGHT + 50) continue;
+        
+        const dist = Math.sqrt((game.playerX - ice.x) ** 2 + (game.playerY - iceY) ** 2);
+        if (dist < halfSize + ice.size) {
+          ice.collected = true;
+          game.playerSize = Math.min(MAX_SIZE, game.playerSize + ice.size);
+          game.score += Math.floor(ice.size * 10);
+          setScore(game.score);
+          playCollect();
+          
+          // Sparkle particles
+          for (let i = 0; i < 8; i++) {
+            game.particles.push({
+              x: ice.x,
+              y: iceY,
+              vx: (Math.random() - 0.5) * 80,
+              vy: (Math.random() - 0.5) * 80,
+              life: 0.4,
+              color: THEME.icePickup,
+              size: 5,
+            });
+          }
+        }
       }
-
-      // Particles
+      
+      // Score based on distance + size bonus
+      const sizeBonus = Math.floor((game.playerSize - MIN_SIZE) / 10);
+      game.score = Math.floor(game.distance / 10) + sizeBonus * 50;
+      setScore(game.score);
+      
+      // Update particles
       game.particles = game.particles.filter(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.15;
-        p.life--;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt * 2;
         return p.life > 0;
       });
+      
+      // Cleanup old obstacles/pickups
+      game.obstacles = game.obstacles.filter(o => o.y - game.scrollY > -200);
+      game.icePickups = game.icePickups.filter(i => i.y - game.scrollY > -100 && !i.collected);
     };
 
     const draw = () => {
       const game = gameRef.current;
       
-      // Industrial dark background
-      ctx.fillStyle = THEME.bg;
+      // Background gradient (volcanic)
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvasSize.h);
+      gradient.addColorStop(0, THEME.bg1);
+      gradient.addColorStop(1, THEME.bg2);
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
       
-      // Subtle industrial lines
-      ctx.strokeStyle = THEME.bgAccent;
-      ctx.lineWidth = 1;
-      for (let y = 0; y < canvasSize.h; y += 40) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvasSize.w, y);
-        ctx.stroke();
-      }
-
-      // Draw gears
-      for (const platform of game.platforms) {
-        const screenY = platform.y - game.cameraY;
-        if (screenY < -platform.radius - 50 || screenY > canvasSize.h + platform.radius + 50) continue;
-
-        const platformX = canvasSize.w / 2 + platform.x;
-        const currentGapAngle = platform.gapAngle + platform.rotation;
-        const gapStart = currentGapAngle - platform.gapSize / 2;
-        const gapEnd = currentGapAngle + platform.gapSize / 2;
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      ctx.scale(scale, scale);
+      
+      // Volcanic side walls
+      ctx.fillStyle = THEME.rock;
+      ctx.fillRect(0, 0, 20, GAME_HEIGHT);
+      ctx.fillRect(GAME_WIDTH - 20, 0, 20, GAME_HEIGHT);
+      
+      // Lava glow at edges
+      const edgeGlow = ctx.createLinearGradient(0, 0, 30, 0);
+      edgeGlow.addColorStop(0, THEME.lavaGlow + '40');
+      edgeGlow.addColorStop(1, 'transparent');
+      ctx.fillStyle = edgeGlow;
+      ctx.fillRect(0, 0, 30, GAME_HEIGHT);
+      
+      const edgeGlow2 = ctx.createLinearGradient(GAME_WIDTH, 0, GAME_WIDTH - 30, 0);
+      edgeGlow2.addColorStop(0, THEME.lavaGlow + '40');
+      edgeGlow2.addColorStop(1, 'transparent');
+      ctx.fillStyle = edgeGlow2;
+      ctx.fillRect(GAME_WIDTH - 30, 0, 30, GAME_HEIGHT);
+      
+      // Draw obstacles
+      for (const obs of game.obstacles) {
+        const y = obs.y - game.scrollY;
+        if (y < -100 || y > GAME_HEIGHT + 100) continue;
         
-        // Gear teeth
-        const numTeeth = Math.floor(platform.radius / 8);
-        const toothSize = 12;
-        ctx.fillStyle = THEME.gear;
-        ctx.shadowColor = THEME.gearGlow;
-        ctx.shadowBlur = 8;
-        
-        for (let t = 0; t < numTeeth; t++) {
-          const angle = (t / numTeeth) * Math.PI * 2 + platform.rotation;
-          // Skip teeth in the gap
-          let angleDiff = Math.abs(angle - currentGapAngle);
-          if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
-          if (angleDiff < platform.gapSize / 2 + 0.1) continue;
-          
-          const tx = platformX + Math.cos(angle) * (platform.radius + toothSize/2);
-          const ty = screenY + Math.sin(angle) * (platform.radius + toothSize/2);
+        if (obs.type === 'lava') {
+          // Lava pool
+          ctx.fillStyle = THEME.lava;
+          ctx.shadowColor = THEME.lavaGlow;
+          ctx.shadowBlur = 15;
           ctx.beginPath();
-          ctx.arc(tx, ty, toothSize/2, 0, Math.PI * 2);
+          ctx.ellipse(obs.x, y, obs.width / 2, obs.height / 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        } else {
+          // Rock
+          ctx.fillStyle = THEME.rock;
+          ctx.beginPath();
+          ctx.roundRect(obs.x - obs.width / 2, y - obs.height / 2, obs.width, obs.height, 8);
+          ctx.fill();
+          ctx.fillStyle = THEME.rockLight;
+          ctx.beginPath();
+          ctx.roundRect(obs.x - obs.width / 2 + 4, y - obs.height / 2 + 4, obs.width - 16, obs.height / 3, 4);
           ctx.fill();
         }
+      }
+      
+      // Draw ice pickups
+      for (const ice of game.icePickups) {
+        if (ice.collected) continue;
+        const y = ice.y - game.scrollY;
+        if (y < -50 || y > GAME_HEIGHT + 50) continue;
         
-        // Main gear body
+        // Ice crystal
+        ctx.fillStyle = THEME.icePickup;
+        ctx.shadowColor = THEME.icePickup;
+        ctx.shadowBlur = 10;
         ctx.beginPath();
-        ctx.moveTo(platformX, screenY);
-        ctx.arc(platformX, screenY, platform.radius, gapEnd, gapStart + Math.PI * 2);
-        ctx.lineTo(platformX, screenY);
+        ctx.moveTo(ice.x, y - ice.size);
+        ctx.lineTo(ice.x + ice.size * 0.7, y);
+        ctx.lineTo(ice.x, y + ice.size);
+        ctx.lineTo(ice.x - ice.size * 0.7, y);
         ctx.closePath();
         ctx.fill();
-        
-        // Center hub
-        ctx.fillStyle = THEME.bgAccent;
-        ctx.shadowBlur = 0;
-        ctx.beginPath();
-        ctx.arc(platformX, screenY, platform.radius * 0.15, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.fillStyle = THEME.gear;
         ctx.shadowBlur = 0;
       }
-
-      // Particles
+      
+      // Draw particles
       for (const p of game.particles) {
-        const screenY = p.y - game.cameraY;
-        ctx.fillStyle = '#fff';
-        ctx.globalAlpha = p.life / 30;
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.arc(p.x, screenY, 4, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1;
-
-      // Snowball
-      const ballScreenY = game.ballY - game.cameraY;
       
-      ctx.fillStyle = THEME.snowball;
-      ctx.shadowColor = THEME.frost;
+      // Draw player (ice cube)
+      const size = game.playerSize;
+      const x = game.playerX;
+      const y = game.playerY;
+      
+      // Ice glow
+      ctx.shadowColor = THEME.ice;
       ctx.shadowBlur = 20;
+      
+      // Main ice body
+      ctx.fillStyle = THEME.ice;
       ctx.beginPath();
-      ctx.arc(game.ballX, ballScreenY, game.ballSize, 0, Math.PI * 2);
+      ctx.roundRect(x - size / 2, y - size / 2, size, size, size * 0.2);
       ctx.fill();
+      
+      // Ice core (lighter)
+      ctx.fillStyle = THEME.iceCore;
+      ctx.beginPath();
+      ctx.roundRect(x - size / 3, y - size / 3, size * 0.5, size * 0.5, size * 0.1);
+      ctx.fill();
+      
+      // Shine
+      ctx.fillStyle = '#ffffff80';
+      ctx.beginPath();
+      ctx.ellipse(x - size / 4, y - size / 4, size / 6, size / 8, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+      
       ctx.shadowBlur = 0;
       
-      // Eyes
-      const eyeSpacing = game.ballSize * 0.35;
-      const eyeY = ballScreenY - game.ballSize * 0.1;
-      const eyeSize = Math.max(2, game.ballSize * 0.12);
+      ctx.restore();
       
-      ctx.fillStyle = '#1e293b';
-      ctx.beginPath();
-      ctx.arc(game.ballX - eyeSpacing, eyeY, eyeSize, 0, Math.PI * 2);
-      ctx.arc(game.ballX + eyeSpacing, eyeY, eyeSize, 0, Math.PI * 2);
-      ctx.fill();
+      // UI
+      ctx.fillStyle = THEME.text;
+      ctx.font = 'bold 24px ui-monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(`Score: ${game.score}`, 15, 35);
       
-      if (game.ballSize <= 12) {
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(game.ballX, ballScreenY + game.ballSize * 0.15, game.ballSize * 0.25, 0.2, Math.PI - 0.2);
-        ctx.stroke();
-      }
-
-      // Skinny health bar at very top - industrial style
-      const barHeight = 4;
-      const barPadding = 0;
-      ctx.fillStyle = THEME.bgAccent;
-      ctx.fillRect(barPadding, barPadding, canvasSize.w - barPadding * 2, barHeight);
-      ctx.fillStyle = game.health > 30 ? THEME.frost : THEME.danger;
-      ctx.fillRect(barPadding, barPadding, (game.health / MAX_HEALTH) * (canvasSize.w - barPadding * 2), barHeight);
+      ctx.textAlign = 'right';
+      // Size indicator
+      const sizePercent = Math.floor(((game.playerSize - MIN_SIZE) / (MAX_SIZE - MIN_SIZE)) * 100);
+      ctx.fillText(`🧊 ${sizePercent}%`, canvasSize.w - 15, 35);
     };
 
-    const gameLoop = () => {
-      update();
+    const gameLoop = (timestamp: number) => {
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+      lastTime = timestamp;
+      update(dt);
       draw();
       animationId = requestAnimationFrame(gameLoop);
     };
     animationId = requestAnimationFrame(gameLoop);
 
-    const handleDown = (e: MouseEvent | TouchEvent) => {
-      e.preventDefault();
-      if (gameRef.current.running) {
-        gameRef.current.holding = true;
-      }
-    };
-    const handleUp = () => {
-      gameRef.current.holding = false;
+    // Input handlers
+    const getX = (e: MouseEvent | TouchEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      return (clientX - rect.left - offsetX) / scale;
     };
 
-    canvas.addEventListener('mousedown', handleDown);
-    canvas.addEventListener('mouseup', handleUp);
-    canvas.addEventListener('mouseleave', handleUp);
-    canvas.addEventListener('touchstart', handleDown, { passive: false });
-    canvas.addEventListener('touchend', handleUp);
+    const handleStart = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
+      gameRef.current.isDragging = true;
+      gameRef.current.targetX = getX(e);
+    };
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!gameRef.current.isDragging) return;
+      e.preventDefault();
+      gameRef.current.targetX = getX(e);
+    };
+
+    const handleEnd = () => {
+      gameRef.current.isDragging = false;
+    };
+
+    canvas.addEventListener('mousedown', handleStart);
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('mouseup', handleEnd);
+    canvas.addEventListener('mouseleave', handleEnd);
+    canvas.addEventListener('touchstart', handleStart, { passive: false });
+    canvas.addEventListener('touchmove', handleMove, { passive: false });
+    canvas.addEventListener('touchend', handleEnd);
 
     return () => {
       cancelAnimationFrame(animationId);
-      canvas.removeEventListener('mousedown', handleDown);
-      canvas.removeEventListener('mouseup', handleUp);
-      canvas.removeEventListener('mouseleave', handleUp);
-      canvas.removeEventListener('touchstart', handleDown);
-      canvas.removeEventListener('touchend', handleUp);
+      canvas.removeEventListener('mousedown', handleStart);
+      canvas.removeEventListener('mousemove', handleMove);
+      canvas.removeEventListener('mouseup', handleEnd);
+      canvas.removeEventListener('mouseleave', handleEnd);
+      canvas.removeEventListener('touchstart', handleStart);
+      canvas.removeEventListener('touchmove', handleMove);
+      canvas.removeEventListener('touchend', handleEnd);
     };
-  }, [gameState, canvasSize]);
+  }, [gameState, canvasSize, spawnObstacles]);
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: THEME.bg,
-      fontFamily: 'ui-monospace, monospace',
-    }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: THEME.bg1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'ui-monospace, monospace',
+      }}
+    >
       {gameState === 'start' && (
-        <div style={{ 
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 20,
-        }}>
-          <h1 style={{ 
-            color: THEME.gear, 
-            fontSize: 64, 
-            marginBottom: 10,
-            textShadow: `0 0 40px ${THEME.gearGlow}`,
-            fontWeight: 900,
-            letterSpacing: '-2px',
-          }}>
-            MELT
-          </h1>
-          
-          <p style={{ color: THEME.text, fontSize: 18, marginBottom: 25, lineHeight: 1.5 }}>
-            Trapped in the machine.<br/>
-            <span style={{ color: THEME.gear }}>Fall through the gears. ↓</span>
+        <div style={{ textAlign: 'center', padding: 20 }}>
+          <div style={{ fontSize: 80 }}>🧊</div>
+          <h1 style={{ color: THEME.text, fontSize: 48, margin: '10px 0' }}>MELT</h1>
+          <p style={{ color: THEME.ice, fontSize: 16, marginBottom: 30, lineHeight: 1.6 }}>
+            Slide down the volcano!<br />
+            Collect ice to grow 🧊<br />
+            Avoid rocks and lava 🌋<br />
+            Bigger = more points!
           </p>
-          
-          <div style={{ 
-            background: 'rgba(0,0,0,0.6)', 
-            padding: 20, 
-            borderRadius: 4,
-            marginBottom: 30,
-            textAlign: 'left',
-            maxWidth: 260,
-            border: `1px solid ${THEME.bgAccent}`,
-          }}>
-            <p style={{ color: THEME.text, fontSize: 15, marginBottom: 10 }}>
-              <strong style={{ color: THEME.frost }}>HOLD</strong> — drop fast
-            </p>
-            <p style={{ color: THEME.text, fontSize: 15, marginBottom: 10 }}>
-              <strong style={{ color: THEME.frost }}>RELEASE</strong> — float slow
-            </p>
-            <p style={{ color: THEME.gear, fontSize: 15 }}>
-              Wait for the gap. Slip through.
-            </p>
-          </div>
-          
           <button
             onClick={startGame}
             style={{
-              background: THEME.gear,
-              color: '#fff',
+              background: THEME.ice,
+              color: THEME.bg1,
               border: 'none',
-              padding: '18px 60px',
-              fontSize: 18,
-              fontWeight: 700,
+              padding: '15px 50px',
+              fontSize: 20,
+              fontWeight: 'bold',
+              borderRadius: 30,
               cursor: 'pointer',
-              borderRadius: 4,
-              textTransform: 'uppercase',
-              letterSpacing: '2px',
             }}
           >
-            Enter
+            START
           </button>
         </div>
       )}
 
       {gameState === 'playing' && (
-        <canvas 
-          ref={canvasRef} 
-          style={{ 
-            display: 'block',
-            touchAction: 'none',
-          }} 
+        <canvas
+          ref={canvasRef}
+          width={canvasSize.w}
+          height={canvasSize.h}
+          style={{ touchAction: 'none' }}
         />
       )}
 
-      {gameState === 'won' && (
-        <div style={{ 
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-          <h1 style={{ 
-            color: THEME.gearGlow, 
-            fontSize: 56, 
-            marginBottom: 10,
-            textShadow: `0 0 40px ${THEME.gear}`,
-          }}>
-            MELTED 😊
-          </h1>
-          <p style={{ color: THEME.text, fontSize: 20, marginBottom: 10 }}>
-            You reached hell. You're free.
+      {gameState === 'gameOver' && (
+        <div style={{ textAlign: 'center', padding: 20 }}>
+          <div style={{ fontSize: 60 }}>💧</div>
+          <h1 style={{ color: THEME.text, fontSize: 36, margin: '10px 0' }}>MELTED!</h1>
+          <p style={{ color: THEME.ice, fontSize: 24, marginBottom: 10 }}>
+            Score: {score}
           </p>
-          <p style={{ color: THEME.frost, fontSize: 16, marginBottom: 30 }}>
-            Health: {Math.round(finalHealth)}%
+          {score >= highScore && highScore > 0 && (
+            <p style={{ color: THEME.lava, fontSize: 18, marginBottom: 10 }}>
+              🎉 NEW HIGH SCORE!
+            </p>
+          )}
+          <p style={{ color: THEME.ice, fontSize: 16, marginBottom: 30, opacity: 0.7 }}>
+            Best: {highScore}
           </p>
           <button
             onClick={startGame}
             style={{
-              background: THEME.gearGlow,
-              color: '#fff',
+              background: THEME.ice,
+              color: THEME.bg1,
               border: 'none',
-              padding: '16px 50px',
+              padding: '15px 40px',
               fontSize: 18,
-              fontWeight: 600,
+              fontWeight: 'bold',
+              borderRadius: 30,
               cursor: 'pointer',
-              borderRadius: 12,
             }}
           >
-            Melt Again
-          </button>
-        </div>
-      )}
-
-      {gameState === 'dead' && (
-        <div style={{ 
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-          <h1 style={{ color: '#ef4444', fontSize: 56, marginBottom: 10 }}>
-            EVAPORATED
-          </h1>
-          <p style={{ color: THEME.text, fontSize: 20, marginBottom: 10 }}>
-            Too much heat.
-          </p>
-          <p style={{ color: THEME.frost, fontSize: 16, marginBottom: 30 }}>
-            Layers: {layersDescended}
-          </p>
-          <button
-            onClick={startGame}
-            style={{
-              background: THEME.frost,
-              color: THEME.bg,
-              border: 'none',
-              padding: '16px 50px',
-              fontSize: 18,
-              fontWeight: 600,
-              cursor: 'pointer',
-              borderRadius: 12,
-            }}
-          >
-            Try Again
+            PLAY AGAIN
           </button>
         </div>
       )}
