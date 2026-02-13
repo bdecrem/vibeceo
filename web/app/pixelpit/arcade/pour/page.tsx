@@ -416,6 +416,21 @@ export default function PourGame() {
     game.hint = levelData.hint ?? null;
     game.showHint = !!levelData.hint;
     game.hasSwipedOnce = false;
+    
+    // VALIDATION: Check drop spawn has clear initial path (no gray/dark in first 15 rows)
+    const spawnX = game.dropX;
+    let hasObstacleInPath = false;
+    for (let y = 5; y < 20; y++) {
+      const cell = game.grid[y]?.[spawnX];
+      if (cell === CLOUD_GRAY || cell === CLOUD_DARK) {
+        hasObstacleInPath = true;
+        console.error(`LEVEL ${levelIndex + 1} BROKEN: Obstacle at spawn path (${spawnX}, ${y})`);
+        break;
+      }
+    }
+    if (hasObstacleInPath) {
+      console.error(`Level ${levelIndex + 1} has obstacle in drop path! Fix level design.`);
+    }
   }, []);
 
   const spawnRaindrop = useCallback(() => {
