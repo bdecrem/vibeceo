@@ -137,6 +137,8 @@ export default function MeltGame() {
     popupText: '' as string,
     popupTimer: 0,
     tutorialPhase: 0, // 0=melting, 1=first ice, 2=first rock, 3=normal
+    difficultyPhase: 1, // 1=onboarding, 2=learning, 3=challenge, 4=mastery
+    lastPhaseAnnounced: 0,
   });
 
   const spawnRow = useCallback((y: number) => {
@@ -270,23 +272,60 @@ export default function MeltGame() {
         game.tutorialPhase = 3;
       }
       
+      // DIFFICULTY PHASE DETECTION
+      // Phase 1: 0-20s (onboarding) - handled by tutorialPhase
+      // Phase 2: 20-45s (learning) - pairs, 1.2x speed
+      // Phase 3: 45-90s (challenge) - patterns, 1.5x speed
+      // Phase 4: 90s+ (mastery) - dense, 2x speed, faster melt
+      const prevPhase = game.difficultyPhase;
+      if (game.gameTime >= 90) game.difficultyPhase = 4;
+      else if (game.gameTime >= 45) game.difficultyPhase = 3;
+      else if (game.gameTime >= 20) game.difficultyPhase = 2;
+      else game.difficultyPhase = 1;
+      
+      // Announce phase transitions
+      if (game.difficultyPhase !== prevPhase && game.difficultyPhase > 1) {
+        const phaseNames = ['', '', 'PHASE 2', 'PHASE 3', 'MASTERY!'];
+        game.popupText = phaseNames[game.difficultyPhase];
+        game.popupTimer = 1.0;
+        game.lastPhaseAnnounced = game.difficultyPhase;
+      }
+      
+      // Difficulty parameters per phase
+      const phaseConfig = {
+        1: { spacing: 200, rockChance: 0.5, maxRocks: 1, iceChance: 0.4, speedMult: 1.0, meltMult: 1.0 },
+        2: { spacing: 160, rockChance: 0.7, maxRocks: 2, iceChance: 0.3, speedMult: 1.2, meltMult: 1.0 },
+        3: { spacing: 130, rockChance: 0.85, maxRocks: 2, iceChance: 0.2, speedMult: 1.5, meltMult: 1.0 },
+        4: { spacing: 100, rockChance: 0.95, maxRocks: 2, iceChance: 0.15, speedMult: 2.0, meltMult: 1.5 },
+      }[game.difficultyPhase] || phaseConfig[1];
+      
       // Normal spawning after tutorial
       if (game.tutorialPhase >= 3 && game.scrollY + GAME_HEIGHT > game.lastSpawnY - 300) {
-        const spacing = 180;
-        for (let y = game.lastSpawnY; y < game.lastSpawnY + 500; y += spacing) {
-          // Normal spawn logic
-          const lavaCount = Math.random() < 0.7 ? (Math.random() < 0.5 ? 1 : 2) : 0;
-          const hasIce = Math.random() < 0.3;
+        for (let y = game.lastSpawnY; y < game.lastSpawnY + 500; y += phaseConfig.spacing) {
           const usedLanes: number[] = [];
           
-          for (let i = 0; i < lavaCount; i++) {
-            let lane: number;
-            do { lane = Math.floor(Math.random() * 3); } while (usedLanes.includes(lane));
-            usedLanes.push(lane);
-            game.obstacles.push({ lane, y, type: 'lava' });
+          // Spawn rocks based on phase
+          if (Math.random() < phaseConfig.rockChance) {
+            const rockCount = game.difficultyPhase >= 2 ? 
+              (Math.random() < 0.5 ? 2 : 1) : 1; // Pairs in phase 2+
+            
+            for (let i = 0; i < Math.min(rockCount, phaseConfig.maxRocks); i++) {
+              let lane: number;
+              let attempts = 0;
+              do { 
+                lane = Math.floor(Math.random() * 3); 
+                attempts++;
+              } while (usedLanes.includes(lane) && attempts < 10);
+              
+              if (!usedLanes.includes(lane)) {
+                usedLanes.push(lane);
+                game.obstacles.push({ lane, y, type: 'lava' });
+              }
+            }
           }
           
-          if (hasIce) {
+          // Spawn ice based on phase
+          if (Math.random() < phaseConfig.iceChance) {
             const emptyLanes = [0, 1, 2].filter(l => !usedLanes.includes(l));
             if (emptyLanes.length > 0) {
               const lane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
@@ -303,12 +342,16 @@ export default function MeltGame() {
         if (game.popupTimer <= 0) game.popupText = '';
       }
       
-      // Scroll
-      game.scrollY += SCROLL_SPEED * dt;
-      game.distance += SCROLL_SPEED * dt;
+      // Scroll (speed based on difficulty phase)
+      const speedMult = game.difficultyPhase === 4 ? 2.0 : 
+                        game.difficultyPhase === 3 ? 1.5 : 
+                        game.difficultyPhase === 2 ? 1.2 : 1.0;
+      game.scrollY += SCROLL_SPEED * speedMult * dt;
+      game.distance += SCROLL_SPEED * speedMult * dt;
       
-      // Melt!
-      game.playerSize -= MELT_RATE * dt;
+      // Melt! (faster in phase 4)
+      const meltMult = game.difficultyPhase === 4 ? 1.5 : 1.0;
+      game.playerSize -= MELT_RATE * meltMult * dt;
       
       // Spawn steam particles (more when small)
       const steamRate = 0.3 + (1 - game.playerSize / MAX_SIZE) * 0.5;
