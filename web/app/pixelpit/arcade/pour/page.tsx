@@ -130,7 +130,7 @@ const LEVELS = [
       }
     },
     potX: 25,
-    hint: 'SWIPE TO DIG ☝️',
+    hint: null,
   },
   // Level 2: "Dig a longer path" — thicker cloud, still straight
   {
@@ -198,7 +198,7 @@ const LEVELS = [
       }
     },
     potX: 25,
-    hint: 'GRAY = OBSTACLE',
+    hint: null,
   },
 ];
 
