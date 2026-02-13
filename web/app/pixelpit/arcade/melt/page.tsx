@@ -272,44 +272,39 @@ export default function MeltGame() {
         game.tutorialPhase = 3;
       }
       
-      // DIFFICULTY PHASE DETECTION
-      // Phase 1: 0-20s (onboarding) - handled by tutorialPhase
-      // Phase 2: 20-45s (learning) - pairs, 1.2x speed
-      // Phase 3: 45-90s (challenge) - patterns, 1.5x speed
-      // Phase 4: 90s+ (mastery) - dense, 2x speed, faster melt
-      const prevPhase = game.difficultyPhase;
-      if (game.gameTime >= 90) game.difficultyPhase = 4;
-      else if (game.gameTime >= 45) game.difficultyPhase = 3;
-      else if (game.gameTime >= 20) game.difficultyPhase = 2;
-      else game.difficultyPhase = 1;
+      // CONTINUOUS DIFFICULTY RAMP (no discrete phases)
+      // All parameters scale smoothly with distance
+      const dist = game.distance;
       
-      // Announce phase transitions
-      if (game.difficultyPhase !== prevPhase && game.difficultyPhase > 1) {
-        const phaseNames = ['', '', 'PHASE 2', 'PHASE 3', 'MASTERY!'];
-        game.popupText = phaseNames[game.difficultyPhase];
-        game.popupTimer = 1.0;
-        game.lastPhaseAnnounced = game.difficultyPhase;
-      }
+      // Speed: 1.0x at start → 2.0x at 5000 distance (capped)
+      const speedMult = Math.min(2.0, 1.0 + (dist / 5000) * 1.0);
       
-      // Difficulty parameters per phase
-      const phaseConfig = {
-        1: { spacing: 200, rockChance: 0.5, maxRocks: 1, iceChance: 0.4, speedMult: 1.0, meltMult: 1.0 },
-        2: { spacing: 160, rockChance: 0.7, maxRocks: 2, iceChance: 0.3, speedMult: 1.2, meltMult: 1.0 },
-        3: { spacing: 130, rockChance: 0.85, maxRocks: 2, iceChance: 0.2, speedMult: 1.5, meltMult: 1.0 },
-        4: { spacing: 100, rockChance: 0.95, maxRocks: 2, iceChance: 0.15, speedMult: 2.0, meltMult: 1.5 },
-      }[game.difficultyPhase] || phaseConfig[1];
+      // Melt rate: 1.0x at start → 1.5x at 8000 distance
+      const meltMult = Math.min(1.5, 1.0 + (dist / 8000) * 0.5);
+      
+      // Rock density: spacing shrinks from 200 → 100 over 5000 distance
+      const spacing = Math.max(100, 200 - (dist / 5000) * 100);
+      
+      // Rock chance: 0.4 at start → 0.9 at 3000 distance
+      const rockChance = Math.min(0.9, 0.4 + (dist / 3000) * 0.5);
+      
+      // Ice frequency: 0.4 at start → 0.15 at 4000 distance
+      const iceChance = Math.max(0.15, 0.4 - (dist / 4000) * 0.25);
+      
+      // Pairs chance: increases with distance (0% at start, 60% at 2000+)
+      const pairsChance = Math.min(0.6, dist / 3000);
       
       // Normal spawning after tutorial
       if (game.tutorialPhase >= 3 && game.scrollY + GAME_HEIGHT > game.lastSpawnY - 300) {
-        for (let y = game.lastSpawnY; y < game.lastSpawnY + 500; y += phaseConfig.spacing) {
+        for (let y = game.lastSpawnY; y < game.lastSpawnY + 500; y += spacing) {
           const usedLanes: number[] = [];
           
-          // Spawn rocks based on phase
-          if (Math.random() < phaseConfig.rockChance) {
-            const rockCount = game.difficultyPhase >= 2 ? 
-              (Math.random() < 0.5 ? 2 : 1) : 1; // Pairs in phase 2+
+          // Spawn rocks (continuous scaling)
+          if (Math.random() < rockChance) {
+            // Sometimes spawn pairs (more likely as distance increases)
+            const rockCount = Math.random() < pairsChance ? 2 : 1;
             
-            for (let i = 0; i < Math.min(rockCount, phaseConfig.maxRocks); i++) {
+            for (let i = 0; i < rockCount; i++) {
               let lane: number;
               let attempts = 0;
               do { 
@@ -324,8 +319,8 @@ export default function MeltGame() {
             }
           }
           
-          // Spawn ice based on phase
-          if (Math.random() < phaseConfig.iceChance) {
+          // Spawn ice (continuous scaling - rarer as distance increases)
+          if (Math.random() < iceChance) {
             const emptyLanes = [0, 1, 2].filter(l => !usedLanes.includes(l));
             if (emptyLanes.length > 0) {
               const lane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
@@ -342,15 +337,11 @@ export default function MeltGame() {
         if (game.popupTimer <= 0) game.popupText = '';
       }
       
-      // Scroll (speed based on difficulty phase)
-      const speedMult = game.difficultyPhase === 4 ? 2.0 : 
-                        game.difficultyPhase === 3 ? 1.5 : 
-                        game.difficultyPhase === 2 ? 1.2 : 1.0;
+      // Scroll (continuous speed ramp)
       game.scrollY += SCROLL_SPEED * speedMult * dt;
       game.distance += SCROLL_SPEED * speedMult * dt;
       
-      // Melt! (faster in phase 4)
-      const meltMult = game.difficultyPhase === 4 ? 1.5 : 1.0;
+      // Melt! (continuous melt ramp)
       game.playerSize -= MELT_RATE * meltMult * dt;
       
       // Spawn steam particles (more when small)
