@@ -273,26 +273,26 @@ export default function MeltGame() {
       }
       
       // CONTINUOUS DIFFICULTY RAMP (no discrete phases)
-      // All parameters scale smoothly with distance
+      // All parameters scale SLOWLY with distance - gentler curve
       const dist = game.distance;
       
-      // Speed: 1.0x at start → 2.0x at 5000 distance (capped)
-      const speedMult = Math.min(2.0, 1.0 + (dist / 5000) * 1.0);
+      // Speed: 1.0x at start → 1.8x at 10000 distance (slower ramp)
+      const speedMult = Math.min(1.8, 1.0 + (dist / 10000) * 0.8);
       
-      // Melt rate: 1.0x at start → 1.5x at 8000 distance
-      const meltMult = Math.min(1.5, 1.0 + (dist / 8000) * 0.5);
+      // Melt rate: 1.0x at start → 1.3x at 10000 distance (gentler)
+      const meltMult = Math.min(1.3, 1.0 + (dist / 10000) * 0.3);
       
-      // Rock density: spacing shrinks from 200 → 100 over 5000 distance
-      const spacing = Math.max(100, 200 - (dist / 5000) * 100);
+      // Rock density: spacing shrinks from 220 → 120 over 8000 distance
+      const spacing = Math.max(120, 220 - (dist / 8000) * 100);
       
-      // Rock chance: 0.4 at start → 0.9 at 3000 distance
-      const rockChance = Math.min(0.9, 0.4 + (dist / 3000) * 0.5);
+      // Rock chance: 0.3 at start → 0.7 at 6000 distance (slower ramp)
+      const rockChance = Math.min(0.7, 0.3 + (dist / 6000) * 0.4);
       
-      // Ice frequency: 0.4 at start → 0.15 at 4000 distance
-      const iceChance = Math.max(0.15, 0.4 - (dist / 4000) * 0.25);
+      // Ice frequency: 0.5 at start → 0.2 at 8000 distance (stays generous longer)
+      const iceChance = Math.max(0.2, 0.5 - (dist / 8000) * 0.3);
       
-      // Pairs chance: increases with distance (0% at start, 60% at 2000+)
-      const pairsChance = Math.min(0.6, dist / 3000);
+      // Pairs chance: 0% at start, slowly increases to 40% at 5000+ (much gentler)
+      const pairsChance = Math.min(0.4, dist / 5000 * 0.4);
       
       // Normal spawning after tutorial
       if (game.tutorialPhase >= 3 && game.scrollY + GAME_HEIGHT > game.lastSpawnY - 300) {
@@ -300,11 +300,13 @@ export default function MeltGame() {
           const usedLanes: number[] = [];
           
           // Spawn rocks (continuous scaling)
+          // RULE: MAX 2 rocks per row - ALWAYS leave 1 clear lane
           if (Math.random() < rockChance) {
-            // Sometimes spawn pairs (more likely as distance increases)
             const rockCount = Math.random() < pairsChance ? 2 : 1;
+            // HARD CAP at 2 - never block all lanes
+            const actualRockCount = Math.min(rockCount, 2);
             
-            for (let i = 0; i < rockCount; i++) {
+            for (let i = 0; i < actualRockCount; i++) {
               let lane: number;
               let attempts = 0;
               do { 
@@ -319,12 +321,14 @@ export default function MeltGame() {
             }
           }
           
-          // Spawn ice (continuous scaling - rarer as distance increases)
-          if (Math.random() < iceChance) {
+          // Spawn ice ONLY in empty lanes, NEVER where rocks are
+          // Also offset Y slightly so they don't overlap visually
+          if (Math.random() < iceChance && usedLanes.length < 3) {
             const emptyLanes = [0, 1, 2].filter(l => !usedLanes.includes(l));
             if (emptyLanes.length > 0) {
               const lane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
-              game.icePickups.push({ lane, y, collected: false });
+              // Offset ice Y by half spacing to avoid visual overlap with rocks
+              game.icePickups.push({ lane, y: y + spacing * 0.4, collected: false });
             }
           }
         }
