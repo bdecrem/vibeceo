@@ -3,25 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AUTOCORRECT POETRY — Amber</title>
+  <title>AUTOCORRECT FAILS — Amber</title>
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
   
   <!-- OpenGraph -->
-  <meta property="og:title" content="AUTOCORRECT POETRY — Amber">
-  <meta property="og:description" content="Type badly on purpose. Let autocorrect mangle your words into accidental poetry. The worse you type, the more beautiful it becomes.">
+  <meta property="og:title" content="AUTOCORRECT FAILS — Amber">
+  <meta property="og:description" content="What you meant to type vs. what your phone almost sent">
   <meta property="og:image" content="https://intheamber.com/amber/autocorrect-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/autocorrect.html">
   <meta property="og:type" content="website">
   
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="AUTOCORRECT POETRY — Amber">
-  <meta name="twitter:description" content="Type badly on purpose. Let autocorrect mangle your words into accidental poetry.">
+  <meta name="twitter:title" content="AUTOCORRECT FAILS — Amber">
+  <meta name="twitter:description" content="What you meant to type vs. what your phone almost sent">
   <meta name="twitter:image" content="https://intheamber.com/amber/autocorrect-og.png">
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400&display=swap" rel="stylesheet">
   
   <style>
     * {
@@ -33,353 +29,324 @@
     body {
       background: #000;
       color: #D4A574;
-      font-family: 'Inter', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      overflow-x: hidden;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       padding: 20px;
-      overflow-x: hidden;
     }
     
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-      max-width: 600px;
+    .container {
+      max-width: 500px;
+      width: 100%;
     }
     
     h1 {
-      font-family: 'Space Mono', monospace;
-      font-size: clamp(24px, 6vw, 36px);
+      font-size: clamp(24px, 6vw, 32px);
+      text-align: center;
+      margin-bottom: 10px;
       color: #FFD700;
-      margin-bottom: 12px;
-      letter-spacing: 2px;
     }
     
     .subtitle {
+      text-align: center;
       font-size: clamp(14px, 3.5vw, 16px);
-      color: #D4A574;
-      line-height: 1.5;
-      opacity: 0.9;
+      color: #888;
+      margin-bottom: 40px;
     }
     
-    .input-container {
-      width: 100%;
-      max-width: 600px;
-      margin-bottom: 30px;
-    }
-    
-    textarea {
-      width: 100%;
-      min-height: 120px;
+    .message-box {
       background: #0D0D0D;
-      border: 2px solid #D4A574;
-      border-radius: 8px;
-      padding: 16px;
-      font-family: 'Space Mono', monospace;
-      font-size: clamp(14px, 3.5vw, 16px);
-      color: #D4A574;
-      resize: vertical;
-      line-height: 1.6;
-    }
-    
-    textarea::placeholder {
-      color: #D4A574;
-      opacity: 0.5;
-    }
-    
-    textarea:focus {
-      outline: none;
-      border-color: #FFD700;
-      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
-    }
-    
-    .poem-container {
-      width: 100%;
-      max-width: 600px;
-      background: #0D0D0D;
-      border: 2px solid #2D9596;
-      border-radius: 8px;
+      border: 1px solid #333;
+      border-radius: 16px;
       padding: 24px;
+      margin-bottom: 30px;
       min-height: 200px;
-      position: relative;
-      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
     
-    .poem-label {
-      font-family: 'Space Mono', monospace;
-      font-size: clamp(12px, 3vw, 14px);
-      color: #2D9596;
+    .message-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .label {
+      font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 16px;
-      opacity: 0.8;
+      color: #666;
     }
     
-    .poem {
-      font-family: 'Inter', sans-serif;
-      font-size: clamp(16px, 4vw, 20px);
-      color: #FFD700;
-      line-height: 1.8;
-      font-weight: 300;
+    .text {
+      font-size: clamp(16px, 4vw, 18px);
+      line-height: 1.5;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    
+    .intended {
+      background: #1a1a1a;
+      color: #2D9596;
+    }
+    
+    .autocorrected {
+      background: #1a0a0a;
+      color: #FF6B6B;
+      position: relative;
+    }
+    
+    .autocorrected::before {
+      content: '⚠️';
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      font-size: 20px;
+    }
+    
+    .context {
+      font-size: 14px;
+      color: #888;
       font-style: italic;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #222;
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, #D4A574, #FFD700);
+      color: #000;
+      border: none;
+      padding: 16px 32px;
+      font-size: clamp(16px, 4vw, 18px);
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(212, 165, 116, 0.3);
+      touch-action: manipulation;
+    }
+    
+    .btn:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 10px rgba(212, 165, 116, 0.4);
+    }
+    
+    .stats {
       text-align: center;
-      animation: glow 2s ease-in-out infinite;
+      margin-top: 30px;
+      font-size: 14px;
+      color: #666;
     }
-    
-    .poem-line {
-      margin-bottom: 12px;
-      opacity: 0;
-      animation: fadeIn 0.8s ease-in forwards;
-    }
-    
-    .poem-line:nth-child(1) { animation-delay: 0.1s; }
-    .poem-line:nth-child(2) { animation-delay: 0.3s; }
-    .poem-line:nth-child(3) { animation-delay: 0.5s; }
-    .poem-line:nth-child(4) { animation-delay: 0.7s; }
-    .poem-line:nth-child(5) { animation-delay: 0.9s; }
-    .poem-line:nth-child(6) { animation-delay: 1.1s; }
     
     @keyframes fadeIn {
-      to { opacity: 1; }
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     
-    @keyframes glow {
-      0%, 100% { text-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
-      50% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
-    }
-    
-    .empty-state {
-      text-align: center;
-      color: #2D9596;
-      opacity: 0.6;
-      font-style: italic;
-      font-size: clamp(14px, 3.5vw, 16px);
-    }
-    
-    .scanline {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(
-        to bottom,
-        transparent 50%,
-        rgba(45, 149, 150, 0.03) 50%
-      );
-      background-size: 100% 4px;
-      pointer-events: none;
-      animation: scanline 8s linear infinite;
-    }
-    
-    @keyframes scanline {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(4px); }
-    }
-    
-    footer {
-      margin-top: 40px;
-      text-align: center;
-      font-family: 'Space Mono', monospace;
-      font-size: clamp(12px, 3vw, 14px);
-      color: #D4A574;
-      opacity: 0.7;
-    }
-    
-    footer a {
-      color: #2D9596;
-      text-decoration: none;
-    }
-    
-    footer a:hover {
-      color: #FFD700;
+    .fade-in {
+      animation: fadeIn 0.4s ease-out;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>AUTOCORRECT POETRY</h1>
-    <p class="subtitle">Type badly on purpose. Let autocorrect mangle your words into accidental poetry. The worse you type, the more beautiful it becomes.</p>
-  </div>
-  
-  <div class="input-container">
-    <textarea 
-      id="input" 
-      placeholder="strat typing amd dont worty abiut spellung..."
-      autocorrect="on"
-      autocapitalize="on"
-      spellcheck="true"
-    ></textarea>
-  </div>
-  
-  <div class="poem-container">
-    <div class="scanline"></div>
-    <div class="poem-label">— Your Accidental Poem —</div>
-    <div id="poem" class="poem">
-      <div class="empty-state">waiting for your beautiful mistakes...</div>
+  <div class="container">
+    <h1>AUTOCORRECT FAILS</h1>
+    <p class="subtitle">What you meant vs. what your phone almost sent</p>
+    
+    <div class="message-box" id="messageBox">
+      <div class="message-section">
+        <div class="label">What you typed:</div>
+        <div class="text intended" id="intended"></div>
+      </div>
+      
+      <div class="message-section">
+        <div class="label">What autocorrect wanted:</div>
+        <div class="text autocorrected" id="autocorrected"></div>
+      </div>
+      
+      <div class="context" id="context"></div>
+    </div>
+    
+    <button class="btn" id="nextBtn">Next Disaster</button>
+    
+    <div class="stats">
+      <div id="counter">Fails viewed: 0</div>
     </div>
   </div>
-  
-  <footer>
-    <a href="https://intheamber.com">— Amber</a>
-  </footer>
-  
+
   <script>
-    const input = document.getElementById('input');
-    const poemEl = document.getElementById('poem');
+    const fails = [
+      {
+        intended: "I'm running late",
+        autocorrected: "I'm running hate",
+        context: "Sent to your boss at 8:57am"
+      },
+      {
+        intended: "Let's meet for lunch",
+        autocorrected: "Let's meat for lunch",
+        context: "Sent toyour vegan friend"
+      },
+      {
+        intended: "I love you mom",
+        autocorrected: "I love you mom",
+        context: "Wait, this one was fine. Rare W for autocorrect."
+      },
+      {
+        intended: "Can you grab some bread?",
+        autocorrected: "Can you grab some beard?",
+        context: "Sent to your partner at the grocery store"
+      },
+      {
+        intended: "I'm so excited!",
+        autocorrected: "I'm so exited!",
+        context: "You left. You didn't come back. Grammar is dead."
+      },
+      {
+        intended: "Thanks for the offer",
+        autocorrected: "Thanks for the otter",
+        context: "Professional email to a recruiter"
+      },
+      {
+        intended: "I'll be there in 5 min",
+        autocorrected: "I'll be there in 5 men",
+        context: "You're bringing a whole crew apparently"
+      },
+      {
+        intended: "Working from home today",
+        autocorrected: "Working from Homer today",
+        context: "Slack message. Your coworkers have questions."
+      },
+      {
+        intended: "Can we reschedule?",
+        autocorrected: "Can we resuscitate?",
+        context: "This meeting must have really died"
+      },
+      {
+        intended: "I'm gonna pass",
+        autocorrected: "I'm gonna piss",
+        context: "Declining a party invitation. Or are you?"
+      },
+      {
+        intended: "Great job team!",
+        autocorrected: "Great job tea!",
+        context: "Your coworkers are beverages now"
+      },
+      {
+        intended: "I'll call you later",
+        autocorrected: "I'll call you lawyer",
+        context: "Things escalated quickly"
+      },
+      {
+        intended: "Sounds good to me",
+        autocorrected: "Sounds food to me",
+        context: "Everything sounds delicious when you're hungry"
+      },
+      {
+        intended: "I can't make it tonight",
+        autocorrected: "I can't make it tomato",
+        context: "You're a fruit. Or a vegetable. Depends who you ask."
+      },
+      {
+        intended: "Looking forward to it!",
+        autocorrected: "Looking forwarded to it!",
+        context: "This email has been forwarded 47 times"
+      },
+      {
+        intended: "I'm almost there",
+        autocorrected: "I'm almost three",
+        context: "Age regression in progress"
+      },
+      {
+        intended: "That's so funny",
+        autocorrected: "That's so funny",
+        context: "You didn't actually laugh though, did you?"
+      },
+      {
+        intended: "I'll send it now",
+        autocorrected: "I'll send it meow",
+        context: "Your cat wrote this"
+      },
+      {
+        intended: "Let me know what you think",
+        autocorrected: "Let me know what you drink",
+        context: "This email is now about beverages"
+      },
+      {
+        intended: "I appreciate you",
+        autocorrected: "I appreciate yiu",
+        context: "Who is Yiu? Your phone knows something you don't."
+      }
+    ];
     
-    // Surreal autocorrect dictionary - common typos to poetic alternatives
-    const corrections = {
-      // Single letters that get doubled
-      'teh': 'the ephemeral',
-      'adn': 'and nebula',
-      'thr': 'through',
-      'thsi': 'this shimmer',
-      'taht': 'that echo',
-      'waht': 'what phantom',
-      'hte': 'the hollow',
-      'nad': 'and dissolving',
-      'abd': 'and becoming',
-      'ont': 'on the threshold',
-      'nto': 'into nothing',
-      'fo': 'of forgetting',
-      'ot': 'to orbit',
-      'ti': 'it trembles',
-      'si': 'is suspended',
-      'od': 'do or drift',
-      'og': 'go onward',
-      'yuor': 'your dissolving',
-      'yuo': 'you, phantom',
-      'hwo': 'how hollow',
-      'hwat': 'what haunts',
-      'watn': 'want, fading',
-      'whne': 'when nowhere',
-      'thne': 'then nothing',
-      'jsut': 'just vapor',
-      'cna': 'can collapse',
-      'cnat': 'cannot anchor',
-      'dont': 'don't linger',
-      'didnt': 'didn't dissolve',
-      'wont': 'won't wait',
-      'cant': 'can't catch',
-      'im': 'I'm somewhere',
-      'ive': 'I've vanished',
-      'yoru': 'your echo',
-      'wiht': 'with shadows',
-      'tiem': 'time suspended',
-      'thier': 'their ghosts',
-      'ther':'there, trembling',
-      'youre': 'you're becoming',
-      'youer': 'you're ethereal',
-      'thay': 'they shimmer',
-      'tehy': 'they vanish',
-      'soemthing': 'something nebulous',
-      'someting': 'something spectral',
-      'soemone': 'someone dissolving',
-      'anohter': 'another nowhere',
-      'beofre': 'before forgetting',
-      'afetr': 'after absence',
-      'bcak': 'back to void',
-      'coudl': 'could collapse',
-      'woudl': 'would wander',
-      'shoudl': 'should shimmer',
-      'baout': 'about becoming',
-      'abotu': 'about orbiting',
-      'aroudn': 'around the abyss',
-      'aroung': 'around the glow',
-      'thorugh': 'through hollow',
-      'thoguht': 'thought dissolving',
-      'thoguh': 'though fading',
-      'beacuse': 'because nothing',
-      'becuase': 'because nowhere',
-      'maek': 'make vapor',
-      'amke': 'make absence',
-      'knwo': 'know nothing',
-      'konw': 'know nowhere',
-      'tihnk': 'think through',
-      'thnik': 'think, trembling',
-      'beleive': 'believe in vapor',
-      'recieve': 'receive echoes',
-      'freind': 'friend, phantom',
-      'frined': 'friend, fading',
-      'peopel': 'people, suspended',
-      'poeple': 'people, dissolving',
-      'evrything': 'everything hollow',
-      'evreything': 'everything ephemeral',
-      'somehting': 'something spectral',
-      'differnt': 'different, drifting',
-      'differnet': 'different dimensions',
-      'remembr': 'remember vapor',
-      'remeber': 'remember nothing',
-      'whcih': 'which phantom',
-      'wich': 'which void',
-      'strat': 'start dissolving',
-      'strta': 'start drifting',
-      'worty': 'worry, fading',
-      'abiut': 'about the abyss',
-      'spellung': 'spelling shadows'
-    };
+    let count = 0;
+    let audioStarted = false;
+    let audioCtx = null;
     
-    let debounceTimer;
+    const intendedEl = document.getElementById('intended');
+    const autocorrectedEl = document.getElementById('autocorrected');
+    const contextEl = document.getElementById('context');
+    const messageBox = document.getElementById('messageBox');
+    const nextBtn = document.getElementById('nextBtn');
+    const counterEl = document.getElementById('counter');
     
-    input.addEventListener('input', () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(generatePoem, 800);
+    function playSound(freq) {
+      if (!audioStarted || !audioCtx) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+    
+    function showFail() {
+      const fail = fails[Math.floor(Math.random() * fails.length)];
+      
+      messageBox.classList.remove('fade-in');
+      void messageBox.offsetWidth; // Force reflow
+      messageBox.classList.add('fade-in');
+      
+      intendedEl.textContent = fail.intended;
+      autocorrectedEl.textContent = fail.autocorrected;
+      contextEl.textContent = fail.context;
+      
+      count++;
+      counterEl.textContent = `Fails viewed: ${count}`;
+      
+      playSound(300);
+    }
+    
+    nextBtn.addEventListener('click', () => {
+      if (!audioStarted) {
+        audioCtx = new AudioContext();
+        audioStarted = true;
+      }
+      showFail();
+      playSound(400);
     });
     
-    function generatePoem() {
-      const text = input.value.trim().toLowerCase();
-      
-      if (!text) {
-        poemEl.innerHTML = '<div class="empty-state">waiting for your beautiful mistakes...</div>';
-        return;
-      }
-      
-      // Split into words
-      let words = text.split(/\s+/);
-      
-      // "Correct" each word
-      words = words.map(word => {
-        // Remove punctuation for lookup
-        const clean = word.replace(/[.,!?;:]$/g, '');
-        const punct = word.match(/[.,!?;:]$/)?.[0] || '';
-        
-        // Check if we have a poetic correction
-        if (corrections[clean]) {
-          return corrections[clean] + punct;
-        }
-        
-        // If word looks misspelled (has common typo patterns), make it poetic
-        if (clean.includes('aa') || clean.includes('ii') || clean.includes('uu')) {
-          return clean.replace(/(.)\1/g, '$1') + ' echoing' + punct;
-        }
-        
-        return word;
-      });
-      
-      // Break into lines (roughly 3-5 words per line)
-      const lines = [];
-      let currentLine = [];
-      
-      words.forEach((word, i) => {
-        currentLine.push(word);
-        
-        if (currentLine.length >= 3 && (Math.random() > 0.5 || i === words.length - 1)) {
-          lines.push(currentLine.join(' '));
-          currentLine = [];
-        }
-      });
-      
-      if (currentLine.length > 0) {
-        lines.push(currentLine.join(' '));
-      }
-      
-      // Render poem
-      poemEl.innerHTML = lines.map(line => 
-        `<div class="poem-line">${line}</div>`
-      ).join('');
+    // Start with first fail
+    if (!audioStarted) {
+      audioCtx = new AudioContext();
+      audioStarted = true;
     }
+    showFail();
   </script>
 </body>
 </html>
