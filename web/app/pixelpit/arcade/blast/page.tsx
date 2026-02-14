@@ -28,16 +28,19 @@ const THEME = {
 
 // Shape sizes
 const SIZE = {
-  big: 40,
-  medium: 25,
-  small: 15,
+  big: 32,      // Loop spec
+  medium: 20,   // Loop spec
+  small: 12,    // Loop spec
 };
 
-// Physics
+// Physics (Loop spec)
 const PLAYER_SPEED = 400;
-const GOO_SPEED = 500;
+const GOO_SPEED = 500;       // ~8px per frame at 60fps
 const BASE_ENEMY_SPEED = 40;
-const DESCENT_STEP = 20;
+const DESCENT_STEP = 16;     // Loop spec
+const MAX_BULLETS = 3;       // Loop spec: max 3 on screen
+const MAX_SHAPES = 20;       // Loop spec: cap to prevent chaos
+const ENEMY_FIRE_INTERVAL = 2; // seconds, starting wave 3
 
 type ShapeType = 'triangle' | 'square' | 'hexagon';
 type ShapeSize = 'big' | 'medium' | 'small';
@@ -211,12 +214,14 @@ export default function BlastPage() {
     particles: [] as Particle[],
     boss: null as Boss | null,
     bossProjectiles: [] as { x: number; y: number; vx: number; vy: number }[],
+    enemyProjectiles: [] as { x: number; y: number; vy: number }[], // Shapes fire back
     wave: 1,
     score: 0,
     combo: 0,
     comboTimer: 0,
     enemyDirection: 1,
     enemySpeed: BASE_ENEMY_SPEED,
+    enemyFireTimer: ENEMY_FIRE_INTERVAL,
     moveDown: false,
     shapeIdCounter: 0,
     screenShake: 0,
@@ -251,53 +256,92 @@ export default function BlastPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Spawn wave
+  // Spawn wave (Loop spec)
   const spawnWave = useCallback((waveNum: number) => {
     const game = gameRef.current;
     game.shapes = [];
     game.boss = null;
     game.bossProjectiles = [];
+    game.enemyFireTimer = ENEMY_FIRE_INTERVAL;
     
     // Boss every 5 waves
     if (waveNum % 5 === 0) {
+      const bossHp = 8 + Math.floor(waveNum / 5) * 2; // Start at 8, +2 per boss
       game.boss = {
         x: canvasSize.w / 2,
         y: 80,
-        hp: 10 + waveNum,
-        maxHp: 10 + waveNum,
+        hp: bossHp,
+        maxHp: bossHp,
         phase: 0,
         attackTimer: 2,
       };
       return;
     }
     
-    // Regular wave: 4-6 columns, 3-4 rows
-    const cols = Math.min(4 + Math.floor(waveNum / 3), 7);
-    const rows = Math.min(3 + Math.floor(waveNum / 5), 5);
-    const spacing = 55;
+    // Wave progression per Loop spec
+    let largeCount: number, mediumCount: number, smallCount: number, rows: number;
+    if (waveNum === 1) {
+      largeCount = 3; mediumCount = 0; smallCount = 0; rows = 1;
+    } else if (waveNum === 2) {
+      largeCount = 4; mediumCount = 2; smallCount = 0; rows = 2;
+    } else if (waveNum === 3) {
+      largeCount = 5; mediumCount = 3; smallCount = 2; rows = 3;
+    } else if (waveNum === 4) {
+      largeCount = 6; mediumCount = 4; smallCount = 4; rows = 3;
+    } else {
+      // Wave 6+: scaling
+      largeCount = 6 + Math.floor((waveNum - 5) / 2);
+      mediumCount = 4 + Math.floor((waveNum - 5) / 2);
+      smallCount = 4 + Math.floor((waveNum - 5) / 3);
+      rows = Math.min(4 + Math.floor((waveNum - 5) / 3), 6);
+    }
+    
+    // Create shape pool with proper size distribution
+    const shapePool: { size: ShapeSize; type: ShapeType }[] = [];
+    const types: ShapeType[] = ['triangle', 'square', 'hexagon'];
+    
+    for (let i = 0; i < largeCount; i++) {
+      shapePool.push({ size: 'big', type: types[i % 3] });
+    }
+    for (let i = 0; i < mediumCount; i++) {
+      shapePool.push({ size: 'medium', type: types[(i + 1) % 3] });
+    }
+    for (let i = 0; i < smallCount; i++) {
+      shapePool.push({ size: 'small', type: types[(i + 2) % 3] });
+    }
+    
+    // Shuffle pool
+    for (let i = shapePool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shapePool[i], shapePool[j]] = [shapePool[j], shapePool[i]];
+    }
+    
+    // Layout in grid
+    const cols = Math.ceil(shapePool.length / rows);
+    const spacing = 50;
     const startX = (canvasSize.w - (cols - 1) * spacing) / 2;
     const startY = 60;
     
-    const types: ShapeType[] = ['triangle', 'square', 'hexagon'];
-    
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const type = types[(row + col) % 3];
+    let shapeIndex = 0;
+    for (let row = 0; row < rows && shapeIndex < shapePool.length; row++) {
+      for (let col = 0; col < cols && shapeIndex < shapePool.length; col++) {
+        const { size, type } = shapePool[shapeIndex];
         game.shapes.push({
           id: game.shapeIdCounter++,
           x: startX + col * spacing,
           y: startY + row * spacing,
           type,
-          size: 'big',
+          size,
           rotation: Math.random() * Math.PI * 2,
           rotationSpeed: (Math.random() - 0.5) * 2,
           hp: 1,
         });
+        shapeIndex++;
       }
     }
     
-    // Speed scales with wave
-    game.enemySpeed = BASE_ENEMY_SPEED + waveNum * 5;
+    // Speed scales with wave (Loop spec: 1 + wave × 0.05)
+    game.enemySpeed = BASE_ENEMY_SPEED * (1 + waveNum * 0.05);
     game.enemyDirection = 1;
   }, [canvasSize]);
 
@@ -308,11 +352,13 @@ export default function BlastPage() {
     game.player = { x: canvasSize.w / 2, y: canvasSize.h - 50, squash: 1, shootCooldown: 0 };
     game.goos = [];
     game.particles = [];
+    game.enemyProjectiles = [];
     game.wave = 1;
     game.score = 0;
     game.combo = 0;
     game.comboTimer = 0;
     game.screenShake = 0;
+    game.enemyFireTimer = ENEMY_FIRE_INTERVAL;
     inputRef.current.targetX = canvasSize.w / 2;
     spawnWave(1);
     setScore(0);
@@ -443,9 +489,9 @@ export default function BlastPage() {
       }
       game.player.x = Math.max(25, Math.min(canvasSize.w - 25, game.player.x));
 
-      // Shooting
+      // Shooting (Loop spec: max 3 bullets on screen)
       game.player.shootCooldown -= dt;
-      if (input.firing && game.player.shootCooldown <= 0) {
+      if (input.firing && game.player.shootCooldown <= 0 && game.goos.length < MAX_BULLETS) {
         game.goos.push({
           x: game.player.x,
           y: game.player.y - 20,
@@ -615,8 +661,45 @@ export default function BlastPage() {
           }
         }
         
+        // Enemy fire (Loop spec: starting wave 3, one shot per 2 seconds)
+        if (game.wave >= 3 && game.shapes.length > 0) {
+          game.enemyFireTimer -= dt;
+          if (game.enemyFireTimer <= 0) {
+            game.enemyFireTimer = ENEMY_FIRE_INTERVAL;
+            // Pick random shape to fire
+            const shooter = game.shapes[Math.floor(Math.random() * game.shapes.length)];
+            game.enemyProjectiles.push({
+              x: shooter.x,
+              y: shooter.y + getShapeSize(shooter.size),
+              vy: 150, // Slow projectile
+            });
+          }
+        }
+        
+        // Update enemy projectiles
+        for (const proj of game.enemyProjectiles) {
+          proj.y += proj.vy * dt;
+          
+          // Hit player
+          const dx = proj.x - game.player.x;
+          const dy = proj.y - game.player.y;
+          if (Math.sqrt(dx * dx + dy * dy) < 25) {
+            playDeath();
+            game.screenShake = 20;
+            setGameState('gameover');
+            setSocialLoaded(true);
+            if (game.score > highScore) {
+              setHighScore(game.score);
+              localStorage.setItem('blast_highscore', game.score.toString());
+            }
+            return;
+          }
+        }
+        game.enemyProjectiles = game.enemyProjectiles.filter(p => p.y < canvasSize.h + 20);
+        
         // Check wave clear
         if (game.shapes.length === 0) {
+          game.enemyProjectiles = []; // Clear projectiles on wave clear
           playWaveClear();
           game.wave++;
           setWave(game.wave);
@@ -762,6 +845,17 @@ export default function BlastPage() {
           ctx.fill();
         }
       }
+      
+      // Enemy projectiles (shapes firing back, wave 3+)
+      ctx.fillStyle = THEME.triangle;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = THEME.triangle;
+      for (const proj of game.enemyProjectiles) {
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
 
       // Draw particles
       for (const p of game.particles) {
