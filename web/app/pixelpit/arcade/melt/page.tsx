@@ -104,10 +104,10 @@ function initAudio() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.5;
+  masterGain.gain.value = 1.0;
   masterGain.connect(audioCtx.destination);
   musicGain = audioCtx.createGain();
-  musicGain.gain.value = 0.32;
+  musicGain.gain.value = 1.0;
   musicGain.connect(masterGain);
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
