@@ -275,6 +275,17 @@ export default function SeancePage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Analytics tracking (Push: fire on game complete)
+  useEffect(() => {
+    if (gameState === 'gameComplete' && currentLevel >= 1) {
+      fetch('/api/pixelpit/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: GAME_ID }),
+      }).catch(() => {}); // Silent fail
+    }
+  }, [gameState, currentLevel]);
+
   // Calculate grid cell size
   const getGridSize = useCallback(() => {
     const level = LEVELS[currentLevel];
