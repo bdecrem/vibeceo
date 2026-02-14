@@ -580,22 +580,45 @@ export default function SeancePage() {
       // Exit portal
       const portalX = offsetX + level.exit.x * cellSize + cellSize / 2;
       const portalY = offsetY + level.exit.y * cellSize + cellSize / 2;
-      const portalPulse = Math.sin(now / 200) * 0.2 + 0.8;
       
       // Check if player is adjacent to portal
       const player = game.pieces.find(p => p.type === 'player');
       const isAdjacent = player && (
         Math.abs(player.x - level.exit.x) + Math.abs(player.y - level.exit.y) <= 1
       );
-      const pulseSpeed = isAdjacent ? 100 : 200;
-      const actualPulse = Math.sin(now / pulseSpeed) * 0.3 + 0.7;
+      // Slow when far (1 pulse/2s = 1000ms), fast when adjacent (3 pulses/s = 333ms)
+      const pulseSpeed = isAdjacent ? 333 : 2000;
+      const actualPulse = Math.sin(now / pulseSpeed * Math.PI * 2) * 0.25 + 0.85;
       
+      // Draw portal particles (sparkles drifting toward center)
       ctx.save();
-      ctx.shadowBlur = 20 * actualPulse;
+      for (let i = 0; i < 5; i++) {
+        const angle = (now / 1000 + i * Math.PI * 0.4) % (Math.PI * 2);
+        const dist = 25 + Math.sin(now / 300 + i) * 10;
+        const sparkleX = portalX + Math.cos(angle) * dist;
+        const sparkleY = portalY + Math.sin(angle) * dist;
+        const sparkleSize = 2 + Math.sin(now / 200 + i * 2) * 1;
+        
+        ctx.globalAlpha = 0.6 + Math.sin(now / 150 + i) * 0.3;
+        ctx.fillStyle = '#c084fc';
+        ctx.beginPath();
+        ctx.arc(sparkleX, sparkleY, sparkleSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+      
+      // Portal glow (BRIGHT per Dither)
+      ctx.save();
+      ctx.shadowBlur = 30 * actualPulse;
       ctx.shadowColor = THEME.portal;
       ctx.fillStyle = THEME.portal;
       ctx.beginPath();
-      ctx.arc(portalX, portalY, cellSize * 0.35 * actualPulse, 0, Math.PI * 2);
+      ctx.arc(portalX, portalY, cellSize * 0.38 * actualPulse, 0, Math.PI * 2);
+      ctx.fill();
+      // Inner bright core
+      ctx.fillStyle = '#e9d5ff';
+      ctx.beginPath();
+      ctx.arc(portalX, portalY, cellSize * 0.15, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
       
@@ -626,47 +649,89 @@ export default function SeancePage() {
           continue;
         }
         
-        // Spook wave shake
+        // Spook wave shake (bigger wobble per Dither)
         let shakeX = 0, shakeY = 0;
-        if (game.showSpookWave && piece.type !== 'furniture') {
-          shakeX = (Math.random() - 0.5) * 4;
-          shakeY = (Math.random() - 0.5) * 4;
+        const isSpooking = game.showSpookWave && piece.type !== 'furniture';
+        if (isSpooking) {
+          shakeX = (Math.random() - 0.5) * 8;
+          shakeY = (Math.random() - 0.5) * 8;
         }
         
         ctx.save();
         
         if (piece.type === 'player' || piece.type === 'ghost') {
-          // Ghost glow
-          ctx.shadowBlur = game.showSpookWave ? 20 : 10;
-          ctx.shadowColor = piece.color;
-          ctx.fillStyle = piece.color;
+          // Ghost glow (flash white during spook wave)
+          ctx.shadowBlur = isSpooking ? 25 : 12;
+          const glowColor = isSpooking ? '#ffffff' : piece.color;
+          ctx.shadowColor = glowColor;
+          ctx.fillStyle = isSpooking ? '#ffffff' : piece.color;
           
-          // Draw ghost shape (rounded blob)
+          // Draw ghost shape
           const cx = px + 2 + pw/2 + shakeX;
           const cy = py + 2 + ph/2 + shakeY;
           
-          if (piece.width === 1 && piece.height === 1) {
-            // Circle for 1x1
+          if (piece.type === 'player') {
+            // PLAYER: Rounder, friendlier shape (circle with wavy bottom)
             ctx.beginPath();
-            ctx.arc(cx, cy, Math.min(pw, ph) / 2 - 2, 0, Math.PI * 2);
+            const r = Math.min(pw, ph) / 2 - 2;
+            // Top dome
+            ctx.arc(cx, cy - r * 0.2, r, Math.PI, 0);
+            // Wavy bottom
+            const waveY = cy + r * 0.6;
+            ctx.quadraticCurveTo(cx + r, waveY, cx + r * 0.5, waveY + r * 0.3);
+            ctx.quadraticCurveTo(cx, waveY, cx - r * 0.5, waveY + r * 0.3);
+            ctx.quadraticCurveTo(cx - r, waveY, cx - r, cy - r * 0.2);
             ctx.fill();
           } else {
-            // Rounded rect for larger
+            // BLOCKERS: More angular, slightly menacing
             ctx.beginPath();
-            const r = 10;
-            ctx.roundRect(px + 2 + shakeX, py + 2 + shakeY, pw, ph, r);
+            if (piece.width > piece.height) {
+              // Horizontal ghost - stretched hexagon
+              const halfW = pw / 2;
+              const halfH = ph / 2 - 2;
+              ctx.moveTo(px + 2 + shakeX + 8, py + 2 + shakeY);
+              ctx.lineTo(px + 2 + shakeX + pw - 8, py + 2 + shakeY);
+              ctx.lineTo(px + 2 + shakeX + pw, py + 2 + shakeY + halfH);
+              ctx.lineTo(px + 2 + shakeX + pw - 8, py + 2 + shakeY + ph);
+              ctx.lineTo(px + 2 + shakeX + 8, py + 2 + shakeY + ph);
+              ctx.lineTo(px + 2 + shakeX, py + 2 + shakeY + halfH);
+              ctx.closePath();
+            } else {
+              // Vertical ghost - stretched hexagon
+              const halfW = pw / 2 - 2;
+              const halfH = ph / 2;
+              ctx.moveTo(px + 2 + shakeX + halfW + 2, py + 2 + shakeY);
+              ctx.lineTo(px + 2 + shakeX + pw, py + 2 + shakeY + 8);
+              ctx.lineTo(px + 2 + shakeX + pw, py + 2 + shakeY + ph - 8);
+              ctx.lineTo(px + 2 + shakeX + halfW + 2, py + 2 + shakeY + ph);
+              ctx.lineTo(px + 2 + shakeX, py + 2 + shakeY + ph - 8);
+              ctx.lineTo(px + 2 + shakeX, py + 2 + shakeY + 8);
+              ctx.closePath();
+            }
             ctx.fill();
           }
           
-          // Eyes for player
-          if (piece.type === 'player') {
-            ctx.fillStyle = THEME.bg;
-            const eyeSize = Math.min(pw, ph) / 6;
-            ctx.beginPath();
-            ctx.arc(cx - eyeSize * 1.2, cy - eyeSize * 0.5, eyeSize, 0, Math.PI * 2);
-            ctx.arc(cx + eyeSize * 1.2, cy - eyeSize * 0.5, eyeSize, 0, Math.PI * 2);
-            ctx.fill();
-          }
+          // EYES for ALL ghosts (big, cute, slightly worried)
+          ctx.fillStyle = THEME.bg;
+          const eyeSize = piece.type === 'player' 
+            ? Math.min(pw, ph) / 5  // Bigger eyes for player
+            : Math.min(pw, ph) / 6;
+          const eyeY = cy - eyeSize * 0.3;
+          const eyeSpacing = piece.type === 'player' ? eyeSize * 1.5 : eyeSize * 1.2;
+          
+          // Eye whites
+          ctx.beginPath();
+          ctx.arc(cx - eyeSpacing, eyeY, eyeSize, 0, Math.PI * 2);
+          ctx.arc(cx + eyeSpacing, eyeY, eyeSize, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Pupils (looking slightly down = worried)
+          ctx.fillStyle = '#18181b';
+          const pupilSize = eyeSize * 0.5;
+          ctx.beginPath();
+          ctx.arc(cx - eyeSpacing, eyeY + pupilSize * 0.3, pupilSize, 0, Math.PI * 2);
+          ctx.arc(cx + eyeSpacing, eyeY + pupilSize * 0.3, pupilSize, 0, Math.PI * 2);
+          ctx.fill();
         } else {
           // Furniture (muted, no glow)
           ctx.fillStyle = piece.color;
