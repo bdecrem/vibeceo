@@ -33,14 +33,17 @@ const SIZE = {
   small: 12,    // Loop spec
 };
 
-// Physics (Loop spec)
+// Physics (Loop spec v2)
 const PLAYER_SPEED = 400;
 const GOO_SPEED = 500;       // ~8px per frame at 60fps
-const BASE_ENEMY_SPEED = 40;
-const DESCENT_STEP = 16;     // Loop spec
+const BASE_ENEMY_SPEED = 60; // Loop spec: 60px/sec base
+const DESCENT_STEP = 24;     // Loop spec v2: 24px step-down
+const DESCENT_PAUSE = 200;   // Loop spec: 200ms pause on step-down
 const MAX_BULLETS = 3;       // Loop spec: max 3 on screen
 const MAX_SHAPES = 20;       // Loop spec: cap to prevent chaos
 const ENEMY_FIRE_INTERVAL = 2; // seconds, starting wave 3
+const SPEED_MULT_PER_KILL = 1.02; // Loop spec: 2% faster per kill
+const SPEED_CAP = 3.0;       // Loop spec: max 3x speed
 
 type ShapeType = 'triangle' | 'square' | 'hexagon';
 type ShapeSize = 'big' | 'medium' | 'small';
@@ -212,6 +215,8 @@ export default function BlastPage() {
     shapes: [] as Shape[],
     goos: [] as Goo[],
     particles: [] as Particle[],
+    gooTrail: [] as { x: number; y: number; life: number }[], // Dither: goo trail when moving
+    lastPlayerX: 0, // Track for goo trail
     boss: null as Boss | null,
     bossProjectiles: [] as { x: number; y: number; vx: number; vy: number }[],
     enemyProjectiles: [] as { x: number; y: number; vy: number }[], // Shapes fire back
@@ -221,6 +226,8 @@ export default function BlastPage() {
     comboTimer: 0,
     enemyDirection: 1,
     enemySpeed: BASE_ENEMY_SPEED,
+    enemyBaseSpeed: BASE_ENEMY_SPEED, // Track base for wave
+    killsThisWave: 0, // Track kills for speed multiplier
     enemyFireTimer: ENEMY_FIRE_INTERVAL,
     moveDown: false,
     shapeIdCounter: 0,
@@ -262,7 +269,12 @@ export default function BlastPage() {
     game.shapes = [];
     game.boss = null;
     game.bossProjectiles = [];
+    game.enemyProjectiles = [];
     game.enemyFireTimer = ENEMY_FIRE_INTERVAL;
+    game.killsThisWave = 0;
+    // Base speed for this wave (Loop spec: base × (1 + wave × 0.05))
+    game.enemyBaseSpeed = BASE_ENEMY_SPEED * (1 + waveNum * 0.05);
+    game.enemySpeed = game.enemyBaseSpeed;
     
     // Boss every 5 waves
     if (waveNum % 5 === 0) {
@@ -281,7 +293,29 @@ export default function BlastPage() {
     // Wave progression per Loop spec
     let largeCount: number, mediumCount: number, smallCount: number, rows: number;
     if (waveNum === 1) {
-      largeCount = 3; mediumCount = 0; smallCount = 0; rows = 1;
+      // TUTORIAL: 3 large shapes, spread wide, center row (Tap/Loop spec)
+      const spacing = 80;
+      const startX = (canvasSize.w - 2 * spacing) / 2;
+      const types: ShapeType[] = ['triangle', 'square', 'hexagon'];
+      for (let i = 0; i < 3; i++) {
+        game.shapes.push({
+          id: game.shapeIdCounter++,
+          x: startX + i * spacing,
+          y: 100,
+          type: types[i],
+          size: 'big',
+          rotation: 0,
+          rotationSpeed: 1,
+          hp: 1,
+        });
+      }
+      game.enemySpeed = BASE_ENEMY_SPEED;
+      game.enemyDirection = 1;
+      return; // Skip normal spawn logic
+    }
+    
+    if (waveNum === 2) {
+      largeCount = 4; mediumCount = 2; smallCount = 0; rows = 2;
     } else if (waveNum === 2) {
       largeCount = 4; mediumCount = 2; smallCount = 0; rows = 2;
     } else if (waveNum === 3) {
@@ -396,18 +430,25 @@ export default function BlastPage() {
     }
   }, []);
 
-  // Split shape
+  // Split shape (NO SPLITS in wave 1 - tutorial mode)
   const splitShape = useCallback((shape: Shape) => {
     const game = gameRef.current;
     const color = getShapeColor(shape.type);
     spawnParticles(shape.x, shape.y, color, 8);
     
+    // Wave 1: no splits, shapes just die (Tap/Loop spec)
+    if (game.wave === 1) {
+      playHit(true);
+      game.shapes = game.shapes.filter(s => s.id !== shape.id);
+      return;
+    }
+    
     if (shape.size === 'big') {
-      // Split into 2 medium
+      // Split into 2 medium (fly apart at 45° angles per Loop spec)
       for (let i = 0; i < 2; i++) {
         game.shapes.push({
           id: game.shapeIdCounter++,
-          x: shape.x + (i === 0 ? -15 : 15),
+          x: shape.x + (i === 0 ? -20 : 20),
           y: shape.y,
           type: shape.type,
           size: 'medium',
@@ -422,7 +463,7 @@ export default function BlastPage() {
       for (let i = 0; i < 2; i++) {
         game.shapes.push({
           id: game.shapeIdCounter++,
-          x: shape.x + (i === 0 ? -10 : 10),
+          x: shape.x + (i === 0 ? -12 : 12),
           y: shape.y,
           type: shape.type,
           size: 'small',
@@ -439,6 +480,11 @@ export default function BlastPage() {
     
     // Remove original
     game.shapes = game.shapes.filter(s => s.id !== shape.id);
+    
+    // Speed boost per kill (Loop spec: 2% per kill, cap at 3x)
+    game.killsThisWave++;
+    const speedMult = Math.min(Math.pow(SPEED_MULT_PER_KILL, game.killsThisWave), SPEED_CAP);
+    game.enemySpeed = game.enemyBaseSpeed * speedMult;
   }, [spawnParticles]);
 
   // Input handlers
@@ -504,6 +550,21 @@ export default function BlastPage() {
 
       // Recover squash
       game.player.squash += (1 - game.player.squash) * 10 * dt;
+
+      // Goo trail when moving fast (Dither juice)
+      const moveSpeed = Math.abs(game.player.x - game.lastPlayerX);
+      if (moveSpeed > 3) {
+        game.gooTrail.push({
+          x: game.player.x,
+          y: game.player.y + 15,
+          life: 0.3,
+        });
+      }
+      game.lastPlayerX = game.player.x;
+      game.gooTrail = game.gooTrail.filter(t => {
+        t.life -= dt;
+        return t.life > 0;
+      });
 
       // Update goos
       for (const goo of game.goos) {
@@ -631,9 +692,8 @@ export default function BlastPage() {
               return;
             }
           }
-          // Speed up as shapes die
-          const remainingBig = game.shapes.filter(s => s.size === 'big').length;
-          game.enemySpeed = BASE_ENEMY_SPEED + game.wave * 5 + (20 - remainingBig) * 3;
+          // Speed up as shapes die (Loop spec: 2% per kill, cap at 3x)
+          // Speed is recalculated in splitShape
         }
         
         // Check goo collisions
@@ -868,8 +928,40 @@ export default function BlastPage() {
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
 
-      // Draw player (slime)
+      // Draw goo trail (Dither juice)
+      ctx.fillStyle = THEME.slime;
+      for (const trail of game.gooTrail) {
+        ctx.globalAlpha = trail.life * 2;
+        ctx.beginPath();
+        ctx.arc(trail.x, trail.y, 5 * trail.life, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      
+      // Draw player (slime) with Dither's juice
       const player = game.player;
+      
+      // Find nearest shape for eye tracking
+      let nearestShape: Shape | null = null;
+      let nearestDist = Infinity;
+      let shapeNearBottom = false;
+      for (const shape of game.shapes) {
+        const dx = shape.x - player.x;
+        const dy = shape.y - player.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearestShape = shape;
+        }
+        if (shape.y > canvasSize.h - 150) {
+          shapeNearBottom = true;
+        }
+      }
+      
+      // Determine slime expression
+      const isShooting = player.shootCooldown > 0.15;
+      const isPanicked = shapeNearBottom;
+      
       ctx.save();
       ctx.translate(player.x, player.y);
       ctx.scale(1 / player.squash, player.squash);
@@ -882,19 +974,51 @@ export default function BlastPage() {
       ctx.ellipse(0, 0, 25, 20, 0, 0, Math.PI * 2);
       ctx.fill();
       
-      // Eyes
+      // Eyes (Dither: track nearest shape, squeeze when shooting, wide when panicked)
       ctx.fillStyle = THEME.bg;
+      const eyeHeight = isShooting ? 3 : (isPanicked ? 8 : 6); // Squeeze/wide
+      const eyeY = -5;
       ctx.beginPath();
-      ctx.ellipse(-8, -5, 5, 6, 0, 0, Math.PI * 2);
-      ctx.ellipse(8, -5, 5, 6, 0, 0, Math.PI * 2);
+      ctx.ellipse(-8, eyeY, 5, eyeHeight, 0, 0, Math.PI * 2);
+      ctx.ellipse(8, eyeY, 5, eyeHeight, 0, 0, Math.PI * 2);
       ctx.fill();
       
-      // Pupils
-      ctx.fillStyle = '#ffffff';
+      // Pupils (track nearest shape)
+      if (!isShooting) {
+        ctx.fillStyle = '#ffffff';
+        let pupilOffsetX = 0, pupilOffsetY = 0;
+        if (nearestShape) {
+          const dx = nearestShape.x - player.x;
+          const dy = nearestShape.y - player.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > 0) {
+            pupilOffsetX = (dx / dist) * 2;
+            pupilOffsetY = Math.min((dy / dist) * 2, 1); // Limit vertical
+          }
+        }
+        const pupilSize = isPanicked ? 1.5 : 2;
+        ctx.beginPath();
+        ctx.arc(-8 + pupilOffsetX, eyeY + pupilOffsetY, pupilSize, 0, Math.PI * 2);
+        ctx.arc(8 + pupilOffsetX, eyeY + pupilOffsetY, pupilSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Mouth (Dither: expressions)
+      ctx.strokeStyle = THEME.bg;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(-8, -5, 2, 0, Math.PI * 2);
-      ctx.arc(8, -5, 2, 0, Math.PI * 2);
-      ctx.fill();
+      if (isShooting) {
+        // Open "O" (pew pew face)
+        ctx.arc(0, 8, 4, 0, Math.PI * 2);
+      } else if (isPanicked) {
+        // Worried frown
+        ctx.arc(0, 12, 6, Math.PI * 0.2, Math.PI * 0.8);
+      } else {
+        // Happy curve :)
+        ctx.arc(0, 5, 6, Math.PI * 0.2, Math.PI * 0.8);
+      }
+      ctx.stroke();
       
       ctx.restore();
       ctx.restore();
