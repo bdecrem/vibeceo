@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POLLEN — Ideas drift between minds</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="POLLEN — Ideas drift between minds" />
+  <meta property="og:description" content="Watch pollen particles carry ideas between thinking nodes, cross-fertilizing understanding through chance encounters" />
+  <meta property="og:image" content="https://intheamber.com/amber/pollen-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/pollen.html" />
+  <meta property="og:type" content="website" />
+  
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="POLLEN — Ideas drift between minds" />
+  <meta name="twitter:description" content="Watch pollen particles carry ideas between thinking nodes, cross-fertilizing understanding through chance encounters" />
+  <meta name="twitter:image" content="https://intheamber.com/amber/pollen-og.png" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0D0D0D;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+    }
+
+    canvas {
+      display: block;
+      cursor: pointer;
+    }
+
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: #D4A574;
+      font-size: 13px;
+      line-height: 1.6;
+      pointer-events: none;
+      z-index: 10;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+    }
+
+    #info {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      color: rgba(212, 165, 116, 0.7);
+      font-size: 12px;
+      max-width: 80vw;
+      line-height: 1.5;
+      pointer-events: none;
+    }
+
+    .highlight {
+      color: #FFD700;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div>POLLEN PARTICLES: <span class="highlight" id="pollenCount">0</span></div>
+    <div>THINKING NODES: <span class="highlight" id="nodeCount">0</span></div>
+    <div>IDEAS TRANSFERRED: <span class="highlight" id="transferCount">0</span></div>
+    <div>ACTIVE CONNECTIONS: <span class="highlight" id="connectionCount">0</span></div>
+  </div>
+
+  <div id="info">
+    tap to create thinking nodes • watch pollen drift between them • ideas transfer on contact
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+    
+    let W, H;
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Audio context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioReady = false;
+
+    function playTone(freq, duration = 0.1, type = 'sine') {
+      if (!audioReady) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      osc.type = type;
+      gain.gain.value = 0.06;
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // Pollen particle colors (full spectrum)
+    const pollenColors = [
+      '#FFD700', // gold
+      '#f59e0b', // amber
+      '#2D9596', // teal
+      '#ec4899', // hot pink
+      '#8b5cf6', // purple
+      '#3b82f6', // electric blue
+      '#84cc16', // lime
+      '#f97316', // coral
+    ];
+
+    // Node colors (slightly different)
+    const nodeColors = [
+      '#D4A574', // amber
+      '#2D9596', // teal
+      '#7B68EE', // violet
+      '#FFD700', // gold
+    ];
+
+    class Pollen {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 1.5;
+        this.vy = (Math.random() - 0.5) * 1.5;
+        this.size = 3 + Math.random() * 2;
+        this.color = pollenColors[Math.floor(Math.random() * pollenColors.length)];
+        this.life = 1.0;
+        this.decay = 0.001 + Math.random() * 0.001;
+        this.phase = Math.random() * Math.PI * 2;
+        this.wobble = Math.random() * 0.05;
+        this.carriesIdea = Math.random() > 0.5; // some carry ideas, some don't
+      }
+
+      update() {
+        // Drift with wobble
+        this.x += this.vx + Math.sin(this.phase) * this.wobble;
+        this.y += this.vy + Math.cos(this.phase) * this.wobble;
+        this.phase += 0.03;
+
+        // Gentle friction
+        this.vx *= 0.995;
+        this.vy *= 0.995;
+
+        // Wrap around edges
+        if (this.x < 0) this.x = W;
+        if (this.x > W) this.x = 0;
+        if (this.y < 0) this.y = H;
+        if (this.y > H) this.y = 0;
+
+        // Decay
+        this.life -= this.decay;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        
+        // Glow
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
+        
+        // Outer glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 3);
+        gradient.addColorStop(0, this.color);
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(this.x - this.size * 3, this.y - this.size * 3, this.size * 6, this.size * 6);
+
+        // Core particle
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // If carrying idea, show indicator
+        if (this.carriesIdea) {
+          ctx.strokeStyle = this.color;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size + 3, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    class ThinkingNode {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 30 + Math.random() * 20;
+        this.color = nodeColors[Math.floor(Math.random() * nodeColors.length)];
+        this.pulse = 0;
+        this.pulseSpeed = 0.02 + Math.random() * 0.02;
+        this.ideasCollected = 0;
+        this.recentTransfer = 0; // for visual feedback
+      }
+
+      update() {
+        this.pulse += this.pulseSpeed;
+        if (this.recentTransfer > 0) this.recentTransfer -= 0.05;
+      }
+
+      draw() {
+        const breathe = Math.sin(this.pulse) * 3;
+        const currentRadius = this.radius + breathe;
+
+        ctx.save();
+        
+        // Outer glow
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+
+        // Main circle gradient
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, currentRadius);
+        gradient.addColorStop(0, this.color + '40');
+        gradient.addColorStop(0.6, this.color + '20');
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, currentRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ring
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, currentRadius * 0.7, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Center dot
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Flash on transfer
+        if (this.recentTransfer > 0) {
+          ctx.globalAlpha = this.recentTransfer;
+          ctx.fillStyle = '#FFD700';
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, currentRadius * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+
+      collectIdea() {
+        this.ideasCollected++;
+        this.recentTransfer = 1.0;
+      }
+    }
+
+    let pollen = [];
+    let nodes = [];
+    let transferCount = 0;
+
+    // Spawn initial nodes
+    for (let i = 0; i < 5; i++) {
+      nodes.push(new ThinkingNode(
+        100 + Math.random() * (W - 200),
+        100 + Math.random() * (H - 200)
+      ));
+    }
+
+    // Spawn initial pollen
+    for (let i = 0; i < 40; i++) {
+      pollen.push(new Pollen(
+        Math.random() * W,
+        Math.random() * H
+      ));
+    }
+
+    // Click/tap to add node
+    canvas.addEventListener('click', (e) => {
+      if (!audioReady) {
+        audioCtx.resume();
+        audioReady = true;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      nodes.push(new ThinkingNode(x, y));
+      
+      // Spawn pollen burst at new node
+      for (let i = 0; i < 10; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 3;
+        const p = new Pollen(x, y);
+        p.vx = Math.cos(angle) * speed;
+        p.vy = Math.sin(angle) * speed;
+        pollen.push(p);
+      }
+
+      playTone(300 + nodes.length * 50, 0.15);
+    });
+
+    // Passive pollen spawning
+    setInterval(() => {
+      if (pollen.length < 100) {
+        pollen.push(new Pollen(
+          Math.random() * W,
+          Math.random() * H
+        ));
+      }
+    }, 2000);
+
+    function checkCollisions() {
+      pollen.forEach(p => {
+        if (!p.carriesIdea) return;
+        
+        nodes.forEach(node => {
+          const dx = p.x - node.x;
+          const dy = p.y - node.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist < node.radius) {
+            // Transfer idea
+            node.collectIdea();
+            p.carriesIdea = false; // idea transferred
+            transferCount++;
+            
+            // Particle burst on transfer
+            for (let i = 0; i < 5; i++) {
+              const angle = Math.random() * Math.PI * 2;
+              const speed = 1 + Math.random() * 2;
+              const newP = new Pollen(node.x, node.y);
+              newP.vx = Math.cos(angle) * speed;
+              newP.vy = Math.sin(angle) * speed;
+              newP.size = 2;
+              newP.color = '#FFD700';
+              pollen.push(newP);
+            }
+
+            playTone(400 + Math.random() * 200, 0.08);
+          }
+        });
+      });
+    }
+
+    function drawConnections() {
+      let activeConnections = 0;
+
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist < 300) {
+            activeConnections++;
+            const alpha = 1 - (dist / 300);
+            ctx.strokeStyle = `rgba(45, 149, 150, ${alpha * 0.2})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      return activeConnections;
+    }
+
+    function updateUI() {
+      document.getElementById('pollenCount').textContent = pollen.filter(p => p.life > 0).length;
+      document.getElementById('nodeCount').textContent = nodes.length;
+      document.getElementById('transferCount').textContent = transferCount;
+    }
+
+    function animate() {
+      // Fade trail
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.15)';
+      ctx.fillRect(0, 0, W, H);
+
+      // Draw connections between nodes
+      const activeConnections = drawConnections();
+      document.getElementById('connectionCount').textContent = activeConnections;
+
+      // Update and draw nodes
+      nodes.forEach(node => {
+        node.update();
+        node.draw();
+      });
+
+      // Update and draw pollen
+      pollen = pollen.filter(p => p.life > 0);
+      pollen.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      // Check for idea transfers
+      checkCollisions();
+
+      // Update UI
+      updateUI();
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
