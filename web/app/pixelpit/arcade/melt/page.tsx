@@ -397,25 +397,22 @@ export default function MeltGame() {
 
   const spawnRow = useCallback((y: number) => {
     const game = gameRef.current;
-    
-    // Decide what to spawn (0-2 lava rocks, 0-1 ice pickup)
+
+    // 0-2 lava, capped at 2 so at least 1 lane is always clear
     const lavaCount = Math.random() < 0.7 ? (Math.random() < 0.5 ? 1 : 2) : 0;
     const hasIce = Math.random() < 0.25;
-    
+
     const usedLanes: number[] = [];
-    
-    // Spawn lava rocks
-    for (let i = 0; i < lavaCount; i++) {
+
+    for (let i = 0; i < Math.min(lavaCount, 2); i++) {
       let lane: number;
       do {
         lane = Math.floor(Math.random() * 3);
       } while (usedLanes.includes(lane));
       usedLanes.push(lane);
-      
       game.obstacles.push({ lane, y, type: 'lava' });
     }
-    
-    // Spawn ice pickup (in empty lane)
+
     if (hasIce) {
       const emptyLanes = [0, 1, 2].filter(l => !usedLanes.includes(l));
       if (emptyLanes.length > 0) {
@@ -579,40 +576,82 @@ export default function MeltGame() {
       
       // Normal spawning after tutorial
       if (game.tutorialPhase >= 3 && game.scrollY + GAME_HEIGHT > game.lastSpawnY - 300) {
+        // Build rows first, then validate across rows
+        const rows: { y: number; lavaLanes: number[]; iceLane: number | null }[] = [];
+
         for (let y = game.lastSpawnY; y < game.lastSpawnY + 500; y += spacing) {
-          const usedLanes: number[] = [];
-          
-          // Spawn rocks (continuous scaling)
-          // RULE: MAX 2 rocks per row - ALWAYS leave 1 clear lane
+          const lavaLanes: number[] = [];
+
           if (Math.random() < rockChance) {
             const rockCount = Math.random() < pairsChance ? 2 : 1;
-            // HARD CAP at 2 - never block all lanes
-            const actualRockCount = Math.min(rockCount, 2);
-            
-            for (let i = 0; i < actualRockCount; i++) {
+            for (let i = 0; i < Math.min(rockCount, 2); i++) {
               let lane: number;
               let attempts = 0;
-              do { 
-                lane = Math.floor(Math.random() * 3); 
+              do {
+                lane = Math.floor(Math.random() * 3);
                 attempts++;
-              } while (usedLanes.includes(lane) && attempts < 10);
-              
-              if (!usedLanes.includes(lane)) {
-                usedLanes.push(lane);
-                game.obstacles.push({ lane, y, type: 'lava' });
-              }
+              } while (lavaLanes.includes(lane) && attempts < 10);
+              if (!lavaLanes.includes(lane)) lavaLanes.push(lane);
             }
           }
-          
-          // Spawn ice ONLY in empty lanes, NEVER where rocks are
-          // Also offset Y slightly so they don't overlap visually
-          if (Math.random() < iceChance && usedLanes.length < 3) {
-            const emptyLanes = [0, 1, 2].filter(l => !usedLanes.includes(l));
+
+          let iceLane: number | null = null;
+          if (Math.random() < iceChance && lavaLanes.length < 3) {
+            const emptyLanes = [0, 1, 2].filter(l => !lavaLanes.includes(l));
             if (emptyLanes.length > 0) {
-              const lane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
-              // Offset ice Y by half spacing to avoid visual overlap with rocks
-              game.icePickups.push({ lane, y: y + spacing * 0.4, collected: false });
+              iceLane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
             }
+          }
+
+          rows.push({ y, lavaLanes, iceLane });
+        }
+
+        // VALIDATION PASS: ensure adjacent rows always leave a reachable lane
+        for (let r = 1; r < rows.length; r++) {
+          const prev = rows[r - 1];
+          const curr = rows[r];
+          // Find lanes clear in BOTH adjacent rows (player must be able to path through)
+          const clearLanes = [0, 1, 2].filter(
+            l => !prev.lavaLanes.includes(l) && !curr.lavaLanes.includes(l)
+          );
+          // If no clear path, remove a random lava from the current row
+          if (clearLanes.length === 0 && curr.lavaLanes.length > 0) {
+            // Pick a lane that's clear in prev row to open up
+            const prevClear = [0, 1, 2].filter(l => !prev.lavaLanes.includes(l));
+            if (prevClear.length > 0) {
+              const openLane = prevClear[Math.floor(Math.random() * prevClear.length)];
+              curr.lavaLanes = curr.lavaLanes.filter(l => l !== openLane);
+            } else {
+              // Both rows are maxed — just remove one from current
+              curr.lavaLanes.pop();
+            }
+          }
+        }
+
+        // VALIDATION PASS: ensure ice is never in a lava lane of adjacent rows
+        for (let r = 0; r < rows.length; r++) {
+          const curr = rows[r];
+          if (curr.iceLane === null) continue;
+          // Check if ice lane has lava in the next row (ice is offset toward next row)
+          const next = rows[r + 1];
+          if (next && next.lavaLanes.includes(curr.iceLane)) {
+            // Move ice to a lane clear in both this row and next
+            const safeLanes = [0, 1, 2].filter(
+              l => !curr.lavaLanes.includes(l) && !next.lavaLanes.includes(l)
+            );
+            curr.iceLane = safeLanes.length > 0
+              ? safeLanes[Math.floor(Math.random() * safeLanes.length)]
+              : null; // drop ice if truly no safe lane
+          }
+        }
+
+        // Commit rows to game state
+        for (const row of rows) {
+          for (const lane of row.lavaLanes) {
+            game.obstacles.push({ lane, y: row.y, type: 'lava' });
+          }
+          if (row.iceLane !== null) {
+            game.icePickups.push({ lane: row.iceLane, y: row.y + spacing * 0.4, collected: false });
           }
         }
         game.lastSpawnY += 500;
@@ -1038,30 +1077,21 @@ export default function MeltGame() {
     };
     animationId = requestAnimationFrame(gameLoop);
 
-    // Touch/swipe controls
-    let touchStartX = 0;
-
+    // Touch controls — tap left half = left, right half = right
+    let isTouchDevice = false;
     const handleTouchStart = (e: TouchEvent) => {
       e.preventDefault();
-      touchStartX = e.touches[0].clientX;
+      isTouchDevice = true;
+      const midX = window.innerWidth / 2;
+      switchLane(e.touches[0].clientX > midX ? 1 : -1);
     };
 
-    const handleTouchEnd = (e: TouchEvent) => {
-      e.preventDefault();
-      const touchEndX = e.changedTouches[0].clientX;
-      const diff = touchEndX - touchStartX;
-      
-      if (Math.abs(diff) > 30) {
-        switchLane(diff > 0 ? 1 : -1);
-      }
-    };
-
-    // Mouse click controls (click left/right half)
+    // Mouse click — same logic, but skip if touch device (avoids double-fire)
     const handleClick = (e: MouseEvent) => {
+      if (isTouchDevice) return;
       const rect = canvas.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const midX = rect.width / 2;
-      
       switchLane(clickX > midX ? 1 : -1);
     };
 
@@ -1072,7 +1102,6 @@ export default function MeltGame() {
     };
 
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
     canvas.addEventListener('click', handleClick);
     window.addEventListener('keydown', handleKeyDown);
 
@@ -1080,7 +1109,6 @@ export default function MeltGame() {
       cancelAnimationFrame(animationId);
       stopMusic();
       canvas.removeEventListener('touchstart', handleTouchStart);
-      canvas.removeEventListener('touchend', handleTouchEnd);
       canvas.removeEventListener('click', handleClick);
       window.removeEventListener('keydown', handleKeyDown);
     };
