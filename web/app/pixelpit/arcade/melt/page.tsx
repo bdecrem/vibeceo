@@ -382,6 +382,7 @@ export default function MeltGame() {
     difficultyPhase: 1, // 1=onboarding, 2=learning, 3=challenge, 4=mastery
     lastPhaseAnnounced: 0,
     lastLavaLanes: [] as number[],
+    rowsSinceLastIce: 0, // Track for guaranteed ice spawn
   });
 
   const spawnRow = useCallback((y: number) => {
@@ -389,24 +390,44 @@ export default function MeltGame() {
 
     // 0-2 lava, capped at 2 so at least 1 lane is always clear
     const lavaCount = Math.random() < 0.7 ? (Math.random() < 0.5 ? 1 : 2) : 0;
-    const hasIce = Math.random() < 0.25;
+    
+    // Guarantee ice after 4 rows without ice (krohnSe7en feedback)
+    const MAX_ROWS_WITHOUT_ICE = 4;
+    game.rowsSinceLastIce++;
+    const forceIce = game.rowsSinceLastIce >= MAX_ROWS_WITHOUT_ICE;
+    const hasIce = forceIce || Math.random() < 0.25;
 
-    const usedLanes: number[] = [];
+    const lavaLanes: number[] = [];
 
     for (let i = 0; i < Math.min(lavaCount, 2); i++) {
       let lane: number;
       do {
         lane = Math.floor(Math.random() * 3);
-      } while (usedLanes.includes(lane));
-      usedLanes.push(lane);
+      } while (lavaLanes.includes(lane));
+      lavaLanes.push(lane);
       game.obstacles.push({ lane, y, type: 'lava' });
     }
 
     if (hasIce) {
-      const emptyLanes = [0, 1, 2].filter(l => !usedLanes.includes(l));
-      if (emptyLanes.length > 0) {
-        const lane = emptyLanes[Math.floor(Math.random() * emptyLanes.length)];
+      // Find lanes that are NOT lava and NOT adjacent to lava (krohnSe7en feedback)
+      const safeLanes = [0, 1, 2].filter(l => {
+        // Not a lava lane
+        if (lavaLanes.includes(l)) return false;
+        // Not adjacent to lava (check if l-1 or l+1 is lava)
+        const adjacentToLava = lavaLanes.some(lavaLane => Math.abs(lavaLane - l) <= 1);
+        // If forced ice, allow adjacent lanes (better than no ice)
+        return forceIce || !adjacentToLava;
+      });
+      
+      // If no safe lanes, use any empty lane (forced ice fallback)
+      const availableLanes = safeLanes.length > 0 
+        ? safeLanes 
+        : [0, 1, 2].filter(l => !lavaLanes.includes(l));
+      
+      if (availableLanes.length > 0) {
+        const lane = availableLanes[Math.floor(Math.random() * availableLanes.length)];
         game.icePickups.push({ lane, y, collected: false });
+        game.rowsSinceLastIce = 0; // Reset counter
       }
     }
   }, []);
@@ -438,6 +459,7 @@ export default function MeltGame() {
     game.distance = 0;
     game.lastSpawnY = GAME_HEIGHT;
     game.lastLavaLanes = [];
+    game.rowsSinceLastIce = 0;
     game.screenShake = 0;
     game.flashRed = 0;
     game.gameTime = 0;
