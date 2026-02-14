@@ -98,7 +98,7 @@ let musicGain: GainNode | null = null;
 let musicPlaying = false;
 let musicInterval: ReturnType<typeof setInterval> | null = null;
 let musicStep = 0;
-let arpStep = 0;
+
 
 function initAudio() {
   if (audioCtx) return;
@@ -107,27 +107,18 @@ function initAudio() {
   masterGain.gain.value = 0.5;
   masterGain.connect(audioCtx.destination);
   musicGain = audioCtx.createGain();
-  musicGain.gain.value = 0.18;
+  musicGain.gain.value = 0.32;
   musicGain.connect(masterGain);
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-// --- Music: dark minor-key step sequencer ---
+// --- Music: dark techno step sequencer ---
 const MUSIC = {
-  bpm: 100,
-  // Sub bass in D minor territory — D1, rests, C1, Bb0
-  bass: [36.7, 0, 36.7, 0, 0, 0, 36.7, 0, 32.7, 0, 0, 0, 29.14, 0, 32.7, 0],
-  // Dark minor arps — Dm, Am, Gm, Bb
-  arp: [
-    [294, 349, 440, 523],   // Dm: D4 F4 A4 C5
-    [220, 262, 330, 392],   // Am: A3 C4 E4 G4
-    [196, 233, 294, 349],   // Gm: G3 Bb3 D4 F4
-    [233, 294, 349, 440],   // Bb: Bb3 D4 F4 A4
-  ],
-  // Sparse kick — rumble not dance
-  kick: [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-  // Off-beat hats, very quiet
-  hat:  [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+  bpm: 128,
+  bass: [55, 0, 55, 0, 0, 55, 0, 0, 52, 0, 52, 0, 0, 52, 0, 0],
+  lead: [220, 0, 220, 0, 196, 0, 220, 0, 262, 0, 247, 0, 220, 0, 196, 0],
+  kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+  hat:  [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
 };
 
 function playKick() {
@@ -183,41 +174,39 @@ function playBass(freq: number) {
   osc.frequency.value = freq;
   flt.type = 'lowpass';
   flt.frequency.value = 150;
-  gain.gain.setValueAtTime(0.22, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  gain.gain.setValueAtTime(0.28, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
   osc.start(t);
-  osc.stop(t + 0.2);
+  osc.stop(t + 0.24);
 }
 
-function playArp(freqs: number[]) {
-  if (!audioCtx || !musicGain) return;
+function playLead(freq: number) {
+  if (!audioCtx || !musicGain || freq === 0) return;
   const t = audioCtx.currentTime;
-  const freq = freqs[arpStep % freqs.length];
   const osc = audioCtx.createOscillator();
   const flt = audioCtx.createBiquadFilter();
   const gain = audioCtx.createGain();
   osc.connect(flt);
   flt.connect(gain);
   gain.connect(musicGain);
-  osc.type = 'triangle';
+  osc.type = 'square';
   osc.frequency.value = freq;
   flt.type = 'lowpass';
-  flt.frequency.value = 1500;
-  flt.Q.value = 2;
-  gain.gain.setValueAtTime(0.04, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+  flt.frequency.value = 1400;
+  flt.Q.value = 4;
+  gain.gain.setValueAtTime(0.07, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
   osc.start(t);
-  osc.stop(t + 0.16);
+  osc.stop(t + 0.14);
 }
 
 function musicTick() {
   if (!audioCtx || !musicPlaying) return;
-  if (MUSIC.kick[musicStep % 16]) playKick();
-  if (MUSIC.hat[musicStep % 16]) playHat();
+  const s = musicStep % 16;
+  if (MUSIC.kick[s]) playKick();
+  if (MUSIC.hat[s]) playHat();
   if (musicStep % 2 === 0) playBass(MUSIC.bass[(musicStep / 2) % 16]);
-  const barIndex = Math.floor(musicStep / 16) % 4;
-  playArp(MUSIC.arp[barIndex]);
-  arpStep++;
+  playLead(MUSIC.lead[s]);
   musicStep++;
 }
 
@@ -227,7 +216,6 @@ function startMusic() {
   if (audioCtx?.state === 'suspended') audioCtx.resume();
   musicPlaying = true;
   musicStep = 0;
-  arpStep = 0;
   const stepTime = (60 / MUSIC.bpm) * 1000 / 4;
   musicInterval = setInterval(musicTick, stepTime);
 }
