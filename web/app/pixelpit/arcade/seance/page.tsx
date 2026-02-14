@@ -131,6 +131,7 @@ const LEVELS: Level[] = [
     ],
   },
   // LEVEL 8: 5x5 challenge (5 moves)
+  // Fixed: f1 height 2 (was 3) so it can move to clear y=2
   {
     grid: 5,
     exit: { x: 4, y: 2, side: 'right' },
@@ -139,10 +140,11 @@ const LEVELS: Level[] = [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'g1', type: 'ghost', x: 1, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
       { id: 'g2', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
-      { id: 'f1', type: 'furniture', x: 3, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
+      { id: 'f1', type: 'furniture', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
     ],
   },
   // LEVEL 9: 6x6 intro (5 moves) - Learn: "Final grid size"
+  // Fixed: g2 moved to y=1 so it doesn't block exit row
   {
     grid: 6,
     exit: { x: 5, y: 2, side: 'right' },
@@ -150,7 +152,7 @@ const LEVELS: Level[] = [
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 3, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'g2', type: 'ghost', x: 3, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
       { id: 'g3', type: 'ghost', x: 5, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
     ],
   },
