@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SHAKE TO SETTLE — Liquid physics in a jar</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="SHAKE TO SETTLE — Liquid physics in a jar">
+  <meta property="og:description" content="Shake your device to mix the bubbles. Hold still to watch them separate by density. Tilt to pour.">
+  <meta property="og:image" content="https://intheamber.com/amber/shake-settle-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/shake-settle.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SHAKE TO SETTLE — Liquid physics in a jar">
+  <meta name="twitter:description" content="Shake your device to mix the bubbles. Hold still to watch them separate by density. Tilt to pour.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/shake-settle-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #000;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      overflow: hidden;
+      touch-action: none;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+    
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #FFD700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      margin-bottom: 5px;
+    }
+    
+    #instruction {
+      font-size: 12px;
+      color: #2D9596;
+      opacity: 0.8;
+    }
+    
+    #stats {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 11px;
+      color: #D4A574;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    #shake-indicator {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      font-weight: bold;
+      color: #FFD700;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+    
+    #tap-start {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(212, 165, 116, 0.1);
+      border: 2px solid #D4A574;
+      padding: 20px 40px;
+      border-radius: 8px;
+      font-size: 16px;
+      color: #FFD700;
+      cursor: pointer;
+      pointer-events: all;
+      transition: all 0.3s;
+    }
+    
+    #tap-start:hover {
+      background: rgba(212, 165, 116, 0.2);
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="title">SHAKE TO SETTLE</div>
+    <div id="instruction">Shake to mix • Tilt to pour • Be still to settle</div>
+  </div>
+  
+  <div id="shake-indicator">SHAKING!</div>
+  
+  <div id="stats">
+    <div>Bubbles: <span id="bubble-count">0</span></div>
+    <div>Shake Intensity: <span id="shake-level">0</span>%</div>
+  </div>
+  
+  <div id="tap-start">TAP TO START</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const tapStart = document.getElementById('tap-start');
+    const shakeIndicator = document.getElementById('shake-indicator');
+    const bubbleCountEl = document.getElementById('bubble-count');
+    const shakeLevelEl = document.getElementById('shake-level');
+    
+    let W, H;
+    let started = false;
+    let bubbles = [];
+    let audioContext;
+    
+    // Device motion tracking
+    let lastAccel = { x: 0, y: 0, z: 0 };
+    let shakeIntensity = 0;
+    let tiltX = 0; // -1 to 1
+    let tiltY = 0; // -1 to 1
+    
+    // Bubble types with different densities
+    const BUBBLE_TYPES = [
+      { color: '#FFD700', density: 0.3, name: 'gold' },     // lightest - floats
+      { color: '#D4A574', density: 0.5, name: 'amber' },    // medium
+      { color: '#2D9596', density: 0.7, name: 'teal' },     // denser
+      { color: '#7B68EE', density: 0.9, name: 'violet' },   // heaviest - sinks
+      { color: '#FF1493', density: 0.6, name: 'pink' }      // medium-light
+    ];
+    
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    
+    class Bubble {
+      constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.r = 15 + Math.random() * 15; // 15-30px radius
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.mass = this.r * type.density;
+      }
+      
+      update() {
+        // Apply shake force
+        if (shakeIntensity > 0.1) {
+          this.vx += (Math.random() - 0.5) * shakeIntensity * 2;
+          this.vy += (Math.random() - 0.5) * shakeIntensity * 2;
+        }
+        
+        // Apply tilt gravity
+        this.vx += tiltX * 0.3;
+        this.vy += tiltY * 0.3;
+        
+        // Apply buoyancy (lighter bubbles float, heavier sink)
+        const buoyancyForce = (0.5 - this.type.density) * 0.15;
+        this.vy += buoyancyForce;
+        
+        // Regular gravity (very gentle)
+        this.vy += 0.05;
+        
+        // Friction/damping
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+        
+        // Update position
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Bounce off walls with energy loss
+        if (this.x - this.r < 0) {
+          this.x = this.r;
+          this.vx *= -0.6;
+        }
+        if (this.x + this.r > W) {
+          this.x = W - this.r;
+          this.vx *= -0.6;
+        }
+        if (this.y - this.r < 0) {
+          this.y = this.r;
+          this.vy *= -0.6;
+        }
+        if (this.y + this.r > H) {
+          this.y = H - this.r;
+          this.vy *= -0.6;
+        }
+      }
+      
+      collideWith(other) {
+        const dx = other.x - this.x;
+        const dy = other.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const minDist = this.r + other.r;
+        
+        if (dist < minDist && dist > 0) {
+          // Separate bubbles
+          const overlap = minDist - dist;
+          const angle = Math.atan2(dy, dx);
+          const moveX = Math.cos(angle) * overlap * 0.5;
+          const moveY = Math.sin(angle) * overlap * 0.5;
+          
+          this.x -= moveX;
+          this.y -= moveY;
+          other.x += moveX;
+          other.y += moveY;
+          
+          // Elastic collision
+          const nx = dx / dist;
+          const ny = dy / dist;
+          const dvx = other.vx - this.vx;
+          const dvy = other.vy - this.vy;
+          const dvn = dvx * nx + dvy * ny;
+          
+          if (dvn < 0) return; // Moving apart
+          
+          const impulse = (2 * dvn) / (this.mass + other.mass);
+          this.vx += impulse * other.mass * nx * 0.8;
+          this.vy += impulse * other.mass * ny * 0.8;
+          other.vx -= impulse * this.mass * nx * 0.8;
+          other.vy -= impulse * this.mass * ny * 0.8;
+        }
+      }
+      
+      draw() {
+        // Outer glow
+        const gradient = ctx.createRadialGradient(
+          this.x, this.y, 0,
+          this.x, this.y, this.r * 1.5
+        );
+        gradient.addColorStop(0, this.type.color + '44');
+        gradient.addColorStop(0.5, this.type.color + '22');
+        gradient.addColorStop(1, this.type.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Main bubble
+        const bubbleGrad = ctx.createRadialGradient(
+          this.x - this.r * 0.3, this.y - this.r * 0.3, 0,
+          this.x, this.y, this.r
+        );
+        bubbleGrad.addColorStop(0, this.type.color + 'FF');
+        bubbleGrad.addColorStop(0.6, this.type.color + 'CC');
+        bubbleGrad.addColorStop(1, this.type.color + '88');
+        ctx.fillStyle = bubbleGrad;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.beginPath();
+        ctx.arc(this.x - this.r * 0.3, this.y - this.r * 0.3, this.r * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function playTone(freq, duration = 0.1) {
+      if (!audioContext) return;
+      
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      osc.start();
+      osc.stop(audioContext.currentTime + duration);
+    }
+    
+    function spawnBubbles() {
+      bubbles = [];
+      // Spawn bubbles of different types
+      for (let i = 0; i < 50; i++) {
+        const type = BUBBLE_TYPES[Math.floor(Math.random() * BUBBLE_TYPES.length)];
+        const x = W * 0.3 + Math.random() * W * 0.4;
+        const y = H * 0.3 + Math.random() * H * 0.4;
+        bubbles.push(new Bubble(x, y, type));
+      }
+    }
+    
+    function handleDeviceMotion(event) {
+      if (!started) return;
+      
+      const accel = event.accelerationIncludingGravity;
+      if (!accel) return;
+      
+      // Calculate shake intensity from acceleration changes
+      const dx = Math.abs(accel.x - lastAccel.x);
+      const dy = Math.abs(accel.y - lastAccel.y);
+      const dz = Math.abs(accel.z - lastAccel.z);
+      const shake = dx + dy + dz;
+      
+      shakeIntensity = Math.min(shake / 30, 1); // Normalize to 0-1
+      
+      // Update shake indicator
+      if (shakeIntensity > 0.3) {
+        shakeIndicator.style.opacity = shakeIntensity;
+        if (Math.random() < 0.1) {
+          playTone(300 + shakeIntensity * 200, 0.05);
+        }
+      } else {
+        shakeIndicator.style.opacity = 0;
+      }
+      
+      lastAccel = { x: accel.x || 0, y: accel.y || 0, z: accel.z || 0 };
+    }
+    
+    function handleDeviceOrientation(event) {
+      if (!started) return;
+      
+      // Beta: front-to-back tilt (-180 to 180)
+      // Gamma: left-to-right tilt (-90 to 90)
+      const beta = event.beta || 0;
+      const gamma = event.gamma || 0;
+      
+      // Normalize to -1 to 1
+      tiltX = Math.max(-1, Math.min(1, gamma / 45));
+      tiltY = Math.max(-1, Math.min(1, (beta - 90) / 45)); // 90 is flat
+    }
+    
+    function update() {
+      // Decay shake intensity
+      shakeIntensity *= 0.9;
+      
+      // Update bubbles
+      bubbles.forEach(b => b.update());
+      
+      // Collision detection
+      for (let i = 0; i < bubbles.length; i++) {
+        for (let j = i + 1; j < bubbles.length; j++) {
+          bubbles[i].collideWith(bubbles[j]);
+        }
+      }
+      
+      // Update stats
+      bubbleCountEl.textContent = bubbles.length;
+      shakeLevelEl.textContent = Math.round(shakeIntensity * 100);
+    }
+    
+    function draw() {
+      // Dark background with fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, W, H);
+      
+      // Draw bubbles
+      bubbles.forEach(b => b.draw());
+    }
+    
+    function animate() {
+      if (started) {
+        update();
+        draw();
+      }
+      requestAnimationFrame(animate);
+    }
+    
+    function start() {
+      if (started) return;
+      
+      initAudio();
+      started = true;
+      tapStart.style.display = 'none';
+      
+      spawnBubbles();
+      
+      playTone(440, 0.2);
+      
+      // Request device motion permission (iOS 13+)
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              window.addEventListener('devicemotion', handleDeviceMotion);
+            }
+          })
+          .catch(console.error);
+      } else {
+        window.addEventListener('devicemotion', handleDeviceMotion);
+      }
+      
+      // Request device orientation permission
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              window.addEventListener('deviceorientation', handleDeviceOrientation);
+            }
+          })
+          .catch(console.error);
+      } else {
+        window.addEventListener('deviceorientation', handleDeviceOrientation);
+      }
+    }
+    
+    // For desktop: simulate shake with mouse movement
+    let lastMouseX = 0, lastMouseY = 0;
+    canvas.addEventListener('mousemove', (e) => {
+      if (!started) return;
+      
+      const dx = Math.abs(e.clientX - lastMouseX);
+      const dy = Math.abs(e.clientY - lastMouseY);
+      shakeIntensity = Math.min((dx + dy) / 50, 1);
+      
+      // Simulate tilt based on mouse position
+      tiltX = (e.clientX / W - 0.5) * 2;
+      tiltY = (e.clientY / H - 0.5) * 2;
+      
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+    });
+    
+    // Tap to add bubbles
+    canvas.addEventListener('click', (e) => {
+      if (!started) return;
+      
+      const type = BUBBLE_TYPES[Math.floor(Math.random() * BUBBLE_TYPES.length)];
+      bubbles.push(new Bubble(e.clientX, e.clientY, type));
+      playTone(400 + Math.random() * 200, 0.1);
+    });
+    
+    tapStart.addEventListener('click', start);
+    
+    window.addEventListener('resize', resize);
+    resize();
+    animate();
+  </script>
+</body>
+</html>
