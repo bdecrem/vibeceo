@@ -540,7 +540,7 @@ export default function SeancePage() {
       
       // Update exit animation
       if (game.exitAnimation) {
-        game.exitAnimationProgress += dt * 2;
+        game.exitAnimationProgress += dt * 5; // ~200ms total (Dither spec)
       }
       
       // Background
@@ -629,22 +629,57 @@ export default function SeancePage() {
         const pw = piece.width * cellSize - 4;
         const ph = piece.height * cellSize - 4;
         
-        // Skip player if exit animation
+        // Skip player if exit animation — PORTAL SUCC effect (Dither request)
         if (piece.type === 'player' && game.exitAnimation) {
-          // Animate player into portal
           const progress = Math.min(game.exitAnimationProgress, 1);
-          const animX = px + 2 + (portalX - px - 2 - pw/2) * progress;
-          const animY = py + 2 + (portalY - py - 2 - ph/2) * progress;
-          const scale = 1 - progress * 0.8;
+          
+          // Position: start -> portal center
+          const startX = px + 2 + pw/2;
+          const startY = py + 2 + ph/2;
+          const animX = startX + (portalX - startX) * progress;
+          const animY = startY + (portalY - startY) * progress;
+          
+          // Stretch effect: elongate toward portal as it gets sucked in
+          // Early: normal shape. Late: stretched thin toward portal
+          const stretchProgress = Math.pow(progress, 0.7); // Ease in
+          const baseRadius = pw / 2 - 2;
+          
+          // Calculate angle to portal
+          const angleToPortal = Math.atan2(portalY - startY, portalX - startX);
+          
+          // Stretch multipliers (perpendicular shrinks, parallel stretches)
+          const stretchParallel = 1 + stretchProgress * 1.5;  // Gets longer
+          const stretchPerp = 1 - stretchProgress * 0.6;       // Gets thinner
+          
+          // Scale down as it enters
+          const scale = 1 - progress * 0.9;
           
           ctx.save();
-          ctx.globalAlpha = 1 - progress;
-          ctx.shadowBlur = 15;
-          ctx.shadowColor = piece.color;
+          ctx.globalAlpha = 1 - progress * progress; // Fade accelerates at end
+          ctx.shadowBlur = 20 + progress * 15;
+          ctx.shadowColor = THEME.portal; // Glow shifts to portal color
           ctx.fillStyle = piece.color;
+          
+          // Transform for stretch effect
+          ctx.translate(animX, animY);
+          ctx.rotate(angleToPortal);
+          ctx.scale(stretchParallel * scale, stretchPerp * scale);
+          
+          // Draw stretched ellipse
           ctx.beginPath();
-          ctx.arc(animX + pw/2 * scale, animY + ph/2 * scale, pw/2 * scale, 0, Math.PI * 2);
+          ctx.arc(0, 0, baseRadius, 0, Math.PI * 2);
           ctx.fill();
+          
+          // Eyes (stretched and fading)
+          if (progress < 0.7) {
+            ctx.fillStyle = THEME.bg;
+            const eyeSize = baseRadius / 4 * (1 - progress);
+            ctx.beginPath();
+            ctx.arc(-eyeSize * 2, -eyeSize, eyeSize, 0, Math.PI * 2);
+            ctx.arc(eyeSize * 2, -eyeSize, eyeSize, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          
           ctx.restore();
           continue;
         }
