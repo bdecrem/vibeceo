@@ -50,60 +50,119 @@ interface Level {
   minMoves: number;
 }
 
-// 5 starter levels (4x4 grid, 2-4 moves each)
+// 10 levels with proper tutorial progression (Tap spec)
 const LEVELS: Level[] = [
-  // Level 1: Just move right (2 moves)
+  // LEVEL 1: One vertical blocker (2 moves) - Learn: "Drag blocker to clear path"
   {
     grid: 4,
     exit: { x: 3, y: 1, side: 'right' },
     minMoves: 2,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 2, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
     ],
   },
-  // Level 2: Move blocker up, then exit (3 moves)
+  // LEVEL 2: One horizontal blocker (2 moves) - Learn: "Horizontal pieces move horizontally"
+  {
+    grid: 4,
+    exit: { x: 1, y: 3, side: 'bottom' },
+    minMoves: 2,
+    pieces: [
+      { id: 'player', type: 'player', x: 1, y: 0, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'g1', type: 'ghost', x: 0, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+    ],
+  },
+  // LEVEL 3: V + H ghost combo (3 moves) - Learn: "Both orientations"
+  {
+    grid: 4,
+    exit: { x: 3, y: 2, side: 'right' },
+    minMoves: 3,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'g1', type: 'ghost', x: 1, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+    ],
+  },
+  // LEVEL 4: Two vertical ghosts (3 moves) - Learn: "Sequencing - which one first?"
   {
     grid: 4,
     exit: { x: 3, y: 1, side: 'right' },
     minMoves: 3,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
-    ],
-  },
-  // Level 3: Two blockers (4 moves)
-  {
-    grid: 4,
-    exit: { x: 3, y: 1, side: 'right' },
-    minMoves: 4,
-    pieces: [
-      { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 1, y: 0, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+      { id: 'g1', type: 'ghost', x: 1, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
       { id: 'g2', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
     ],
   },
-  // Level 4: Furniture + ghost (4 moves)
+  // LEVEL 5: Introduce furniture (2 moves) - Learn: "Furniture works the same"
   {
     grid: 4,
     exit: { x: 3, y: 2, side: 'right' },
-    minMoves: 4,
+    minMoves: 2,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'f1', type: 'furniture', x: 1, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
-      { id: 'g1', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
     ],
   },
-  // Level 5: The first real puzzle (5 moves)
+  // LEVEL 6: Ghost + furniture mix (4 moves) - Learn: "Mix piece types"
   {
     grid: 4,
     exit: { x: 3, y: 1, side: 'right' },
-    minMoves: 5,
+    minMoves: 4,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 1, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
-      { id: 'f1', type: 'furniture', x: 0, y: 3, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 2, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'f1', type: 'furniture', x: 1, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g2', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+    ],
+  },
+  // LEVEL 7: 5x5 grid intro (4 moves) - Learn: "Bigger grid, more planning"
+  {
+    grid: 5,
+    exit: { x: 4, y: 2, side: 'right' },
+    minMoves: 4,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 3, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+    ],
+  },
+  // LEVEL 8: 5x5 challenge (5 moves)
+  {
+    grid: 5,
+    exit: { x: 4, y: 2, side: 'right' },
+    minMoves: 5,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'g1', type: 'ghost', x: 1, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'f1', type: 'furniture', x: 3, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
+    ],
+  },
+  // LEVEL 9: 6x6 intro (5 moves) - Learn: "Final grid size"
+  {
+    grid: 6,
+    exit: { x: 5, y: 2, side: 'right' },
+    minMoves: 5,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 3, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'g3', type: 'ghost', x: 5, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
+    ],
+  },
+  // LEVEL 10: Grand finale (6+ moves)
+  {
+    grid: 6,
+    exit: { x: 5, y: 3, side: 'right' },
+    minMoves: 6,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'g1', type: 'ghost', x: 1, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 2, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g3', type: 'ghost', x: 4, y: 1, width: 1, height: 3, orientation: 'vertical', color: THEME.ghostGreen },
+      { id: 'f1', type: 'furniture', x: 3, y: 4, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'f2', type: 'furniture', x: 5, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.furnitureDark },
     ],
   },
 ];
