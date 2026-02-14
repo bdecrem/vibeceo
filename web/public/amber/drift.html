@@ -2,561 +2,465 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Drift</title>
-  <meta property="og:title" content="Drift">
-  <meta property="og:description" content="Generative ethereal electronic. Each listen is different.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DRIFT — Sine waves morph through particle space</title>
+  <meta property="og:title" content="DRIFT — Sine waves morph through particle space">
+  <meta property="og:description" content="A music machine by Amber">
   <meta property="og:image" content="https://intheamber.com/amber/drift-og.png">
-  <meta property="og:url" content="https://kochi.to/amber/drift.html">
+  <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DRIFT — Sine waves morph through particle space">
+  <meta name="twitter:description" content="A music machine by Amber">
   <meta name="twitter:image" content="https://intheamber.com/amber/drift-og.png">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #08080a;
-      color: #666;
-      font-family: 'Courier New', monospace;
-      height: 100vh;
-      overflow: hidden;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    #canvas {
-      position: fixed;
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    #overlay {
+      position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.95);
+z-index: 10;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 0.5s;
     }
 
-    .ui {
-      position: fixed;
-      bottom: 2rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      text-align: center;
+    #overlay.hidden {
+      opacity: 0;
     }
 
-    h1 {
-      font-size: 0.75rem;
-      font-weight: normal;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      margin-bottom: 1rem;
-      opacity: 0.5;
-    }
-
-    #playBtn {
-      background: transparent;
-      border: 1px solid #333;
-      color: #555;
-      padding: 0.8rem 2.5rem;
-      font-family: inherit;
-      font-size: 0.7rem;
+    #startBtn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px 50px;
+      font-size: 24px;
+      font-family: 'Space Mono', monospace;
+      font-weight: bold;
       cursor: pointer;
-      transition: all 0.3s ease;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
+      border-radius: 4px;
+      transition: all 0.2s;
+      margin-bottom: 20px;
+      pointer-events: all;
     }
 
-    #playBtn:hover {
-      border-color: #555;
-      color: #888;
+    #startBtn:hover {
+      background: #FFD700;
+      transform: scale(1.05);
     }
 
-    .key-display {
-      margin-top: 1rem;
-      font-size: 0.65rem;
-      opacity: 0.3;
-      letter-spacing: 0.2em;
-      min-height: 1em;
+    #instruction {
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.7;
+      text-align: center;
+      max-width: 500px;
+      line-height: 1.8;
+      padding: 0 20px;
+    }
+
+    #stats {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      font-size: 11px;
+      color: #D4A574;
+      opacity: 0.5;
+      font-family: 'Space Mono', monospace;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 768px) {
+      #startBtn {
+        padding: 16px 40px;
+        font-size: 20px;
+      }
+      #instruction {
+        font-size: 13px;
+      }
+      #stats {
+        font-size: 10px;
+        bottom: 12px;
+        left: 12px;
+      }
     }
   </style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
 
-  <div class="ui">
-    <h1>Drift</h1>
-    <button id="playBtn">Enter</button>
-    <p class="key-display" id="keyDisplay"></p>
+  <div id="overlay">
+    <button id="startBtn">START</button>
+    <div id="instruction">
+      Five drones drift through harmonic space<br>
+      Each particle pulls frequencies toward itself<br>
+      Tap to add gravity wells<br>
+      Let it evolve
+    </div>
+  </div>
+
+  <div id="stats">
+    DRONES: <span id="droneCount">5</span><br>
+    WELLS: <span id="wellCount">8</span><br>
+    DRIFT: <span id="driftSpeed">slow</span>
   </div>
 
   <script>
-    // === VISUAL LAYER ===
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    let width, height;
-    let particles = [];
-    let bassIntensity = 0;
-    let highIntensity = 0;
-    let filterValue = 0;
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('startBtn');
+    const droneCountStat = document.getElementById('droneCount');
+    const wellCountStat = document.getElementById('wellCount');
+    const driftSpeedStat = document.getElementById('driftSpeed');
 
-    function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener('resize', resize);
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
 
-    class Particle {
-      constructor() {
-        this.reset();
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    });
+
+    // Audio setup
+    let audioCtx = null;
+    let audioStarted = false;
+
+    // D minor pentatonic frequencies (Hz) - across 3 octaves for variation
+    const scaleFreqs = [
+      146.83, // D3
+      164.81, // E3
+      174.61, // F3
+      220.00, // A3
+      246.94, // B3
+      293.66, // D4
+      329.63, // E4
+      349.23, // F4
+      440.00, // A4
+      493.88, // B4
+      587.33, // D5
+      659.25, // E5
+    ];
+
+    // Drones - continuous sine wave oscillators
+    const drones = [];
+    const DRONE_COUNT = 5;
+
+    class Drone {
+      constructor(index) {
+        this.index = index;
+        this.targetFreq = scaleFreqs[index % scaleFreqs.length];
+        this.currentFreq = this.targetFreq;
+        this.color = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#FF69B4'][index % 5];
+        
+        // Web Audio nodes
+        this.osc = null;
+        this.gain = null;
+        this.filter = null;
+        
+        // Visual position (follows target frequency)
+        this.x = width * (0.2 + (index / DRONE_COUNT) * 0.6);
+        this.y = height / 2;
+        this.size = 15;
+        this.phase = Math.random() * Math.PI * 2; // For breathing animation
       }
 
-      reset() {
-        this.x = Math.random() * width;
-        this.y = height + Math.random() * 100;
-        this.size = Math.random() * 2 + 0.5;
-        this.speedY = -Math.random() * 0.5 - 0.1;
-        this.speedX = (Math.random() - 0.5) * 0.3;
-        this.opacity = Math.random() * 0.3 + 0.1;
-        this.life = 1;
+      init(audioContext) {
+        this.osc = audioContext.createOscillator();
+        this.gain = audioContext.createGain();
+        this.filter = audioContext.createBiquadFilter();
+        
+        this.osc.type = 'sine';
+        this.osc.frequency.value = this.currentFreq;
+        
+        this.filter.type = 'lowpass';
+        this.filter.frequency.value = 800;
+        this.filter.Q.value = 1;
+        
+        this.gain.gain.value = 0.08; // Quiet, ambient volume
+        
+        this.osc.connect(this.filter);
+        this.filter.connect(this.gain);
+        this.gain.connect(audioContext.destination);
+        
+        this.osc.start();
       }
 
-      update() {
-        this.y += this.speedY * (1 + bassIntensity * 2);
-        this.x += this.speedX + Math.sin(this.y * 0.01) * 0.2;
-        this.life -= 0.001;
+      update(wells) {
+        if (!this.osc) return;
 
-        if (this.y < -10 || this.life <= 0) {
-          this.reset();
+        // Calculate target frequency based on gravity wells
+        let totalPull = 0;
+        let weightedFreq = 0;
+
+        wells.forEach(well => {
+          const dx = well.x - this.x;
+          const dy = well.y - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const pull = well.mass / (dist + 50); // Prevent division by zero
+          
+          totalPull += pull;
+          weightedFreq += well.freq * pull;
+        });
+
+        if (totalPull > 0) {
+          this.targetFreq = weightedFreq / totalPull;
         }
+
+        // Smoothly interpolate toward target frequency (slow drift)
+        this.currentFreq += (this.targetFreq - this.currentFreq) * 0.005;
+        
+        // Apply frequency to oscillator
+        this.osc.frequency.setTargetAtTime(this.currentFreq, audioCtx.currentTime, 0.1);
+
+        // Update visual position based on frequency (map freq to Y position)
+        const freqIndex = scaleFreqs.indexOf(scaleFreqs.reduce((prev, curr) => 
+          Math.abs(curr - this.currentFreq) < Math.abs(prev - this.currentFreq) ? curr : prev
+        ));
+        
+        const targetY = height * 0.2 + (freqIndex / scaleFreqs.length) * height * 0.6;
+        this.y += (targetY - this.y) * 0.01;
+
+        // Update breathing phase
+        this.phase += 0.02;
       }
 
       draw() {
-        const alpha = this.opacity * this.life * (0.3 + highIntensity * 0.5);
+        const breathe = Math.sin(this.phase) * 0.2 + 1.0; // 0.8 to 1.2
+        const size = this.size * breathe;
+
+        // Outer glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, size * 3);
+        gradient.addColorStop(0, this.color + 'AA');
+        gradient.addColorStop(0.4, this.color + '44');
+        gradient.addColorStop(1, this.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(this.x - size * 3, this.y - size * 3, size * 6, size * 6);
+
+        // Core
+        ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size * (1 + bassIntensity), 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(100, 120, 140, ${alpha})`;
+        ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Frequency ring
+        ctx.strokeStyle = this.color + '80';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, size * 1.8, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      destroy() {
+        if (this.osc) this.osc.stop();
+        if (this.gain) this.gain.disconnect();
+        if (this.filter) this.filter.disconnect();
+      }
+    }
+
+    // Gravity wells - attract drone frequencies
+    const wells = [];
+
+    class Well {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.mass = 150 + Math.random() * 200;
+        this.freq = scaleFreqs[Math.floor(Math.random() * scaleFreqs.length)];
+        this.life = 1.0;
+        this.decay = 0.001; // Very slow fade
+        this.color = '#FFD700';
+        this.pulse = 0;
+      }
+
+      update() {
+        this.life -= this.decay;
+        this.pulse += 0.05;
+      }
+
+      draw() {
+        const pulse = Math.sin(this.pulse) * 0.3 + 0.7;
+        const alpha = Math.floor(this.life * 120).toString(16).padStart(2, '0');
+        
+        // Radial rings
+        for (let i = 3; i > 0; i--) {
+          ctx.strokeStyle = this.color + Math.floor(alpha * (i / 3) * 0.5).toString(16).padStart(2, '0');
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, (this.mass / 10) * pulse * i * 0.5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Core
+        ctx.fillStyle = this.color + alpha;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 8, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
-    // Initialize particles
-    for (let i = 0; i < 100; i++) {
-      const p = new Particle();
-      p.y = Math.random() * height;
-      particles.push(p);
+    // Initialize audio
+    async function startAudio() {
+      if (audioStarted) return;
+
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // iOS unlock
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
+
+        // Create drones
+        for (let i = 0; i < DRONE_COUNT; i++) {
+          const drone = new Drone(i);
+          drone.init(audioCtx);
+          drones.push(drone);
+        }
+
+        // Spawn initial gravity wells
+        for (let i = 0; i < 8; i++) {
+          wells.push(new Well(
+            width * (0.2 + Math.random() * 0.6),
+            height * (0.2 + Math.random() * 0.6)
+          ));
+        }
+
+        audioStarted = true;
+        overlay.classList.add('hidden');
+        
+      } catch (err) {
+        console.error('Audio init error:', err);
+        alert('Audio failed: ' + err.message);
+      }
     }
 
-    function drawVisuals() {
-      // Fade with slight color tint based on filter
-      const r = 8 + filterValue * 5;
-      const g = 8 + filterValue * 3;
-      const b = 10 + filterValue * 8;
-      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.08)`;
+    // Handle interaction - add new gravity well
+    function handleInteraction(e) {
+      if (!audioStarted) return;
+      
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+      
+      wells.push(new Well(x, y));
+    }
+
+    startBtn.addEventListener('click', startAudio);
+    startBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      startAudio();
+    });
+
+    canvas.addEventListener('click', handleInteraction);
+    canvas.addEventListener('touchstart', handleInteraction);
+
+    // Animation loop
+    function animate() {
+      // Dark fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
       ctx.fillRect(0, 0, width, height);
 
-      // Central glow
-      if (bassIntensity > 0.05) {
-        const gradient = ctx.createRadialGradient(
-          width / 2, height / 2, 0,
-          width / 2, height / 2, height * 0.4
-        );
-        gradient.addColorStop(0, `rgba(60, 80, 120, ${bassIntensity * 0.1})`);
-        gradient.addColorStop(1, 'transparent');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, height);
-      }
-
-      // Horizontal scan line
-      if (highIntensity > 0.1) {
-        const lineY = (Date.now() * 0.02) % height;
-        ctx.strokeStyle = `rgba(80, 100, 130, ${highIntensity * 0.15})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, lineY);
-        ctx.lineTo(width, lineY);
-        ctx.stroke();
-      }
-
-      // Particles
-      particles.forEach(p => {
-        p.update();
-        p.draw();
-      });
-
-      // Decay
-      bassIntensity *= 0.95;
-      highIntensity *= 0.92;
-
-      requestAnimationFrame(drawVisuals);
-    }
-    drawVisuals();
-
-    // === MUSIC ENGINE ===
-    let audioCtx = null;
-    let isPlaying = false;
-    let masterGain = null;
-    let filterNode = null;
-    let reverbNode = null;
-    let reverbGain = null;
-    let compressor = null;
-
-    // Dark modes only
-    const MODES = [
-      { name: 'minor', intervals: [0, 2, 3, 5, 7, 8, 10] },
-      { name: 'phrygian', intervals: [0, 1, 3, 5, 7, 8, 10] },
-      { name: 'dorian', intervals: [0, 2, 3, 5, 7, 9, 10] },
-      { name: 'locrian', intervals: [0, 1, 3, 5, 6, 8, 10] }
-    ];
-
-    let currentKey = 0;
-    let currentMode = null;
-    let currentTempo = 85;
-    let currentOctaveBase = 2;
-    let filterFreq = 800;
-    let targetFilterFreq = 800;
-
-    function noteToFreq(note) {
-      return 440 * Math.pow(2, (note - 69) / 12);
-    }
-
-    function getScaleNote(degree, octaveOffset = 0) {
-      const octave = currentOctaveBase + octaveOffset + Math.floor(degree / 7);
-      const interval = currentMode.intervals[((degree % 7) + 7) % 7];
-      const midiNote = (octave + 1) * 12 + currentKey + interval;
-      return noteToFreq(midiNote);
-    }
-
-    // Create reverb
-    function createReverb() {
-      const sampleRate = audioCtx.sampleRate;
-      const length = sampleRate * 4;
-      const impulse = audioCtx.createBuffer(2, length, sampleRate);
-
-      for (let channel = 0; channel < 2; channel++) {
-        const data = impulse.getChannelData(channel);
-        for (let i = 0; i < length; i++) {
-          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 1.5);
+      if (audioStarted) {
+        // Update wells
+        for (let i = wells.length - 1; i >= 0; i--) {
+          wells[i].update();
+          wells[i].draw();
+          
+          if (wells[i].life <= 0) {
+            wells.splice(i, 1);
+          }
         }
-      }
 
-      const convolver = audioCtx.createConvolver();
-      convolver.buffer = impulse;
-      return convolver;
-    }
-
-    // Synth pad (filtered saw)
-    function playPad(freq, startTime, duration, velocity = 0.12) {
-      const osc = audioCtx.createOscillator();
-      const osc2 = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      const filter = audioCtx.createBiquadFilter();
-
-      osc.type = 'sawtooth';
-      osc.frequency.value = freq;
-      osc2.type = 'sawtooth';
-      osc2.frequency.value = freq * 1.005; // Detune
-
-      filter.type = 'lowpass';
-      filter.frequency.value = filterFreq;
-      filter.Q.value = 2;
-
-      const attack = 1.5;
-      const release = 2;
-
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(velocity, startTime + attack);
-      gain.gain.setValueAtTime(velocity, startTime + duration - release);
-      gain.gain.linearRampToValueAtTime(0, startTime + duration);
-
-      osc.connect(filter);
-      osc2.connect(filter);
-      filter.connect(gain);
-      gain.connect(filterNode);
-
-      osc.start(startTime);
-      osc.stop(startTime + duration + 0.1);
-      osc2.start(startTime);
-      osc2.stop(startTime + duration + 0.1);
-
-      bassIntensity = Math.max(bassIntensity, velocity * 3);
-    }
-
-    // Sub bass
-    function playBass(freq, startTime, duration) {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(0.2, startTime + 0.1);
-      gain.gain.setValueAtTime(0.2, startTime + duration - 0.5);
-      gain.gain.linearRampToValueAtTime(0, startTime + duration);
-
-      osc.connect(gain);
-      gain.connect(masterGain);
-
-      osc.start(startTime);
-      osc.stop(startTime + duration + 0.1);
-
-      bassIntensity = Math.max(bassIntensity, 0.8);
-    }
-
-    // Pluck synth (for arpeggios)
-    function playPluck(freq, startTime, velocity = 0.15) {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      const filter = audioCtx.createBiquadFilter();
-
-      osc.type = 'square';
-      osc.frequency.value = freq;
-
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(filterFreq * 2, startTime);
-      filter.frequency.exponentialRampToValueAtTime(200, startTime + 0.5);
-      filter.Q.value = 5;
-
-      gain.gain.setValueAtTime(velocity, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.8);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(filterNode);
-
-      osc.start(startTime);
-      osc.stop(startTime + 1);
-
-      highIntensity = Math.max(highIntensity, velocity * 4);
-    }
-
-    // Hi-hat / noise
-    function playHat(startTime, velocity = 0.05) {
-      const bufferSize = audioCtx.sampleRate * 0.1;
-      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
-      }
-
-      const noise = audioCtx.createBufferSource();
-      noise.buffer = buffer;
-
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'highpass';
-      filter.frequency.value = 8000;
-
-      const gain = audioCtx.createGain();
-      gain.gain.setValueAtTime(velocity, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.08);
-
-      noise.connect(filter);
-      filter.connect(gain);
-      gain.connect(reverbGain);
-
-      noise.start(startTime);
-      noise.stop(startTime + 0.1);
-
-      highIntensity = Math.max(highIntensity, velocity * 5);
-    }
-
-    // === COMPOSITION ===
-    let phraseIndex = 0;
-    let measureInPhrase = 0;
-    const MEASURES_PER_PHRASE = 8;
-
-    function chooseNewKey() {
-      const shifts = [0, 5, 7, -2, -5];
-      currentKey = (currentKey + shifts[Math.floor(Math.random() * shifts.length)] + 12) % 12;
-
-      if (Math.random() < 0.4) {
-        currentMode = MODES[Math.floor(Math.random() * MODES.length)];
-      }
-
-      // Filter sweep on key change
-      targetFilterFreq = 400 + Math.random() * 1200;
-
-      updateKeyDisplay();
-    }
-
-    function updateKeyDisplay() {
-      const keyNames = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
-      document.getElementById('keyDisplay').textContent =
-        `${keyNames[currentKey]} ${currentMode.name}`.toLowerCase();
-    }
-
-    function generateMeasure(startTime) {
-      const beatDuration = 60 / currentTempo;
-      const measureDuration = beatDuration * 4;
-
-      // Filter automation
-      filterFreq += (targetFilterFreq - filterFreq) * 0.1;
-      filterNode.frequency.setTargetAtTime(filterFreq, startTime, 0.5);
-      filterValue = (filterFreq - 400) / 1600;
-
-      if (measureInPhrase === 0 && phraseIndex > 0 && Math.random() < 0.3) {
-        chooseNewKey();
-      }
-
-      const chordRoots = [
-        [0, 0, 3, 4],
-        [0, 5, 3, 4],
-        [0, 3, 5, 4],
-        [0, 0, 0, 3]
-      ];
-      const progression = chordRoots[phraseIndex % chordRoots.length];
-      const root = progression[measureInPhrase % 4];
-
-      // Pad chord
-      if (Math.random() < 0.7) {
-        const padNotes = [root, root + 2, root + 4];
-        padNotes.forEach(degree => {
-          playPad(getScaleNote(degree, 1), startTime, measureDuration * 1.2, 0.06 + Math.random() * 0.03);
+        // Draw connection lines from drones to nearby wells
+        drones.forEach(drone => {
+          wells.forEach(well => {
+            const dx = well.x - drone.x;
+            const dy = well.y - drone.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 200) {
+              const alpha = Math.floor((1 - dist / 200) * well.life * 40).toString(16).padStart(2, '0');
+              ctx.strokeStyle = '#2D9596' + alpha;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(drone.x, drone.y);
+              ctx.lineTo(well.x, well.y);
+              ctx.stroke();
+            }
+          });
         });
-      }
 
-      // Sub bass on 1 and 3
-      if (measureInPhrase % 2 === 0) {
-        playBass(getScaleNote(root, -1), startTime, measureDuration * 0.9);
-      }
+        // Update and draw drones
+        drones.forEach(drone => {
+          drone.update(wells);
+          drone.draw();
+        });
 
-      // Arpeggio patterns
-      const arpPatterns = [
-        () => {
-          // Rising
-          [0, 2, 4, 7].forEach((d, i) => {
-            playPluck(getScaleNote(root + d, 2), startTime + i * beatDuration * 0.5, 0.1);
-          });
-        },
-        () => {
-          // Falling
-          [7, 4, 2, 0].forEach((d, i) => {
-            playPluck(getScaleNote(root + d, 2), startTime + i * beatDuration * 0.5, 0.1);
-          });
-        },
-        () => {
-          // Sparse
-          playPluck(getScaleNote(root + 4, 2), startTime + beatDuration, 0.12);
-          playPluck(getScaleNote(root + 7, 2), startTime + beatDuration * 2.5, 0.08);
-        },
-        () => {
-          // Rapid
-          for (let i = 0; i < 8; i++) {
-            const deg = [0, 2, 4, 7, 4, 2, 0, -3][i];
-            playPluck(getScaleNote(root + deg, 2), startTime + i * beatDuration * 0.25, 0.07);
-          }
-        },
-        () => {} // Silence
-      ];
-
-      if (Math.random() < 0.8) {
-        const pattern = arpPatterns[Math.floor(Math.random() * arpPatterns.length)];
-        pattern();
-      }
-
-      // Hi-hats
-      if (Math.random() < 0.6) {
-        for (let i = 0; i < 4; i++) {
-          if (Math.random() < 0.7) {
-            playHat(startTime + i * beatDuration, 0.03 + Math.random() * 0.02);
-          }
-          if (Math.random() < 0.3) {
-            playHat(startTime + i * beatDuration + beatDuration * 0.5, 0.02);
-          }
-        }
-      }
-
-      // Advance
-      measureInPhrase++;
-      if (measureInPhrase >= MEASURES_PER_PHRASE) {
-        measureInPhrase = 0;
-        phraseIndex++;
-
-        if (Math.random() < 0.3) {
-          currentTempo = 75 + Math.floor(Math.random() * 20);
-        }
-      }
-
-      return measureDuration;
-    }
-
-    let nextMeasureTime = 0;
-    let schedulerInterval = null;
-
-    function scheduler() {
-      while (nextMeasureTime < audioCtx.currentTime + 0.5) {
-        const duration = generateMeasure(nextMeasureTime);
-        nextMeasureTime += duration;
-      }
-    }
-
-    function startMusic() {
-      if (isPlaying) return;
-
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-      // Master chain
-      compressor = audioCtx.createDynamicsCompressor();
-      compressor.threshold.value = -20;
-      compressor.ratio.value = 4;
-      compressor.connect(audioCtx.destination);
-
-      masterGain = audioCtx.createGain();
-      masterGain.gain.value = 0.8;
-      masterGain.connect(compressor);
-
-      // Main filter
-      filterNode = audioCtx.createBiquadFilter();
-      filterNode.type = 'lowpass';
-      filterNode.frequency.value = 800;
-      filterNode.Q.value = 1;
-      filterNode.connect(masterGain);
-
-      // Reverb
-      reverbNode = createReverb();
-      reverbGain = audioCtx.createGain();
-      reverbGain.gain.value = 0.4;
-      reverbNode.connect(reverbGain);
-      reverbGain.connect(compressor);
-      filterNode.connect(reverbNode);
-
-      // Initialize
-      currentKey = Math.floor(Math.random() * 12);
-      currentMode = MODES[Math.floor(Math.random() * MODES.length)];
-      currentTempo = 75 + Math.floor(Math.random() * 20);
-      filterFreq = 600 + Math.random() * 600;
-      targetFilterFreq = filterFreq;
-      phraseIndex = 0;
-      measureInPhrase = 0;
-
-      updateKeyDisplay();
-
-      nextMeasureTime = audioCtx.currentTime + 0.1;
-      schedulerInterval = setInterval(scheduler, 100);
-
-      isPlaying = true;
-      document.getElementById('playBtn').textContent = '...';
-      document.getElementById('playBtn').style.opacity = '0.3';
-    }
-
-    function stopMusic() {
-      if (!isPlaying) return;
-
-      clearInterval(schedulerInterval);
-      masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
-
-      setTimeout(() => {
-        audioCtx.close();
-        audioCtx = null;
-        isPlaying = false;
-        document.getElementById('playBtn').textContent = 'Enter';
-        document.getElementById('playBtn').style.opacity = '1';
-        document.getElementById('keyDisplay').textContent = '';
-      }, 2100);
-    }
-
-    document.getElementById('playBtn').addEventListener('click', () => {
-      if (isPlaying) {
-        stopMusic();
+        // Update stats
+        wellCountStat.textContent = wells.length;
       } else {
-        startMusic();
+        // Preview animation - pulsing circles
+        const previewTime = Date.now() * 0.001;
+        for (let i = 0; i < 5; i++) {
+          const x = width * (0.2 + (i / 5) * 0.6);
+          const y = height / 2;
+          const pulse = Math.sin(previewTime * 2 + i * 0.5) * 0.3 + 0.7;
+          const colors = ['#D4A574', '#FFD700', '#2D9596', '#7B68EE', '#FF69B4'];
+          
+          ctx.fillStyle = colors[i] + '40';
+          ctx.beginPath();
+          ctx.arc(x, y, 15 * pulse, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      drones.forEach(d => d.destroy());
+      if (audioCtx) audioCtx.close();
     });
   </script>
 </body>
