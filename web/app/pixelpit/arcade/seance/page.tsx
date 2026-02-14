@@ -73,7 +73,7 @@ const LEVELS: Level[] = [
     ],
   },
   // LEVEL 3: V + H ghost combo (3 moves) - Learn: "Both orientations"
-  // Fixed: g2 starts at y=1 so it can move UP to clear y=2
+  // g2 at y=1 (covers 2,1-2,2) can move UP to (2,0-2,1) clearing (2,2)
   {
     grid: 4,
     exit: { x: 3, y: 2, side: 'right' },
@@ -81,7 +81,7 @@ const LEVELS: Level[] = [
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'g1', type: 'ghost', x: 1, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g2', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
     ],
   },
   // LEVEL 4: Two vertical ghosts (3 moves) - Learn: "Sequencing - which one first?"
@@ -107,7 +107,7 @@ const LEVELS: Level[] = [
     ],
   },
   // LEVEL 6: Ghost + furniture mix (4 moves) - Learn: "Mix piece types"
-  // Fixed: g1 starts at y=1 so it can move DOWN to clear y=1, g2 can move DOWN too
+  // All pieces at y=1 can move DOWN to clear y=1
   {
     grid: 4,
     exit: { x: 3, y: 1, side: 'right' },
@@ -115,7 +115,7 @@ const LEVELS: Level[] = [
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'g1', type: 'ghost', x: 1, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'f1', type: 'furniture', x: 2, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
+      { id: 'f1', type: 'furniture', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
       { id: 'g2', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
     ],
   },
