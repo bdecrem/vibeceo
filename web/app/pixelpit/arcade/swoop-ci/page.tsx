@@ -215,6 +215,7 @@ interface Cloud {
 export default function SwoopCiGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gameState, setGameState] = useState<'start' | 'playing' | 'end'>('start');
+  const [zenMode, setZenMode] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ w: 400, h: 700 });
 
   // Social
@@ -281,6 +282,7 @@ export default function SwoopCiGame() {
     lastLoopX: 0,
     zone: 0,
     boostSoundTimer: 0,
+    zen: false,
   });
 
   const getFibonacci = (n: number): number => {
@@ -356,12 +358,14 @@ export default function SwoopCiGame() {
     return x + (type === 'double' ? 120 : 0);
   }, [canvasSize.h]);
 
-  const startGame = useCallback(() => {
+  const startGame = useCallback((zen = false) => {
     initAudio();
     startMusic();
+    setZenMode(zen);
 
     const game = gameRef.current;
     game.running = true;
+    game.zen = zen;
     game.distance = 0;
     game.score = 0;
     game.combo = 0;
@@ -465,7 +469,7 @@ export default function SwoopCiGame() {
           });
         }
       } else {
-        bird.vy += GRAVITY * speedMult;
+        bird.vy += GRAVITY * (game.zen ? 0.33 : 1) * speedMult;
         bird.scale.x = 1.1;
         bird.scale.y = 0.9;
       }
@@ -561,18 +565,31 @@ export default function SwoopCiGame() {
       // Remove old loops
       game.loops = game.loops.filter(l => l.x > game.camera.x - 100);
 
-      // Timer countdown
-      game.timeRemaining -= dt;
-      if (game.timeRemaining <= 0) {
-        game.timeRemaining = 0;
-        endGame(true); // Time's up - successful completion
-        return;
+      // Timer countdown (disabled in zen mode)
+      if (!game.zen) {
+        game.timeRemaining -= dt;
+        if (game.timeRemaining <= 0) {
+          game.timeRemaining = 0;
+          endGame(true); // Time's up - successful completion
+          return;
+        }
       }
 
-      // Bounds check (crash)
-      if (bird.y < -50 || bird.y > canvasSize.h + 50) {
-        endGame(false); // Crashed
-        return;
+      // Bounds check
+      if (game.zen) {
+        // Zen mode: bounce off floor/ceiling back to center
+        if (bird.y > canvasSize.h) {
+          bird.y = canvasSize.h;
+          bird.vy = -(canvasSize.h * 0.5) / 30; // smooth arc to center (~0.5s)
+        } else if (bird.y < 0) {
+          bird.y = 0;
+          bird.vy = (canvasSize.h * 0.5) / 30;
+        }
+      } else {
+        if (bird.y < -50 || bird.y > canvasSize.h + 50) {
+          endGame(false); // Crashed
+          return;
+        }
       }
 
       // Update particles
@@ -794,35 +811,37 @@ export default function SwoopCiGame() {
       const hudSecondaryY = 58;
       const hudPad = 20;
 
-      // -- TIMER (top left, small) --
-      const timeLeft = Math.ceil(game.timeRemaining);
-      const timeFraction = game.timeRemaining / GAME_DURATION;
-      const timerColor = timeLeft <= 10 ? '#ef4444' : timeLeft <= 20 ? '#f97316' : hudColor;
+      // -- TIMER (top left, small) -- hidden in zen mode
+      if (!game.zen) {
+        const timeLeft = Math.ceil(game.timeRemaining);
+        const timeFraction = game.timeRemaining / GAME_DURATION;
+        const timerColor = timeLeft <= 10 ? '#ef4444' : timeLeft <= 20 ? '#f97316' : hudColor;
 
-      if (timeLeft <= 10) {
-        const pulse = (Math.sin(game.timeRemaining * 8) + 1) / 2;
-        ctx.save();
-        ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = 6 + pulse * 14;
-        drawOutlined(timeLeft.toString() + 's', hudPad, hudSmallBaseline, timerColor, hudSmallSize, 'left', '900');
-        ctx.restore();
-      } else {
-        drawOutlined(timeLeft.toString() + 's', hudPad, hudSmallBaseline, hudColor, hudSmallSize, 'left', '900');
+        if (timeLeft <= 10) {
+          const pulse = (Math.sin(game.timeRemaining * 8) + 1) / 2;
+          ctx.save();
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 6 + pulse * 14;
+          drawOutlined(timeLeft.toString() + 's', hudPad, hudSmallBaseline, timerColor, hudSmallSize, 'left', '900');
+          ctx.restore();
+        } else {
+          drawOutlined(timeLeft.toString() + 's', hudPad, hudSmallBaseline, hudColor, hudSmallSize, 'left', '900');
+        }
+
+        // Depleting bar under timer (left side)
+        const barW = 50;
+        const barH = 3;
+        const barX = hudPad;
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.beginPath();
+        ctx.roundRect(barX, hudSecondaryY, barW, barH, 2);
+        ctx.fill();
+        const barColor = timeLeft <= 10 ? '#ef4444' : timeLeft <= 20 ? '#f97316' : hudColor;
+        ctx.fillStyle = barColor;
+        ctx.beginPath();
+        ctx.roundRect(barX, hudSecondaryY, Math.max(0, barW * timeFraction), barH, 2);
+        ctx.fill();
       }
-
-      // Depleting bar under timer (left side)
-      const barW = 50;
-      const barH = 3;
-      const barX = hudPad;
-      ctx.fillStyle = 'rgba(255,255,255,0.15)';
-      ctx.beginPath();
-      ctx.roundRect(barX, hudSecondaryY, barW, barH, 2);
-      ctx.fill();
-      const barColor = timeLeft <= 10 ? '#ef4444' : timeLeft <= 20 ? '#f97316' : hudColor;
-      ctx.fillStyle = barColor;
-      ctx.beginPath();
-      ctx.roundRect(barX, hudSecondaryY, Math.max(0, barW * timeFraction), barH, 2);
-      ctx.fill();
 
       // -- SCORE (top center, LARGE) --
       const scoreStr = game.score.toString();
@@ -1007,7 +1026,7 @@ export default function SwoopCiGame() {
             </p>
 
             <button
-              onClick={startGame}
+              onClick={() => startGame(false)}
               style={{
                 background: '#facc15',
                 color: '#18181b',
@@ -1021,6 +1040,23 @@ export default function SwoopCiGame() {
               }}
             >
               FLY
+            </button>
+
+            <button
+              onClick={() => startGame(true)}
+              style={{
+                marginTop: 12,
+                background: 'transparent',
+                color: '#a78bfa',
+                border: '2px solid #a78bfa',
+                padding: '12px 36px',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer',
+                borderRadius: 20,
+              }}
+            >
+              Kori Mode
             </button>
 
             <button
@@ -1056,13 +1092,44 @@ export default function SwoopCiGame() {
         )}
 
         {gameState === 'playing' && (
-          <canvas
-            ref={canvasRef}
-            style={{
-              display: 'block',
-              touchAction: 'none',
-            }}
-          />
+          <div style={{ position: 'relative' }}>
+            <canvas
+              ref={canvasRef}
+              style={{
+                display: 'block',
+                touchAction: 'none',
+              }}
+            />
+            {zenMode && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  gameRef.current.running = false;
+                  stopMusic();
+                  setFinalScore(gameRef.current.score);
+                  setGameCompleted(false);
+                  setGameState('end');
+                }}
+                onTouchStart={(e) => e.stopPropagation()}
+                style={{
+                  position: 'absolute',
+                  top: 10,
+                  left: 16,
+                  background: 'none',
+                  border: 'none',
+                  padding: 8,
+                  cursor: 'pointer',
+                  zIndex: 10,
+                  color: '#fde68a',
+                  font: '900 24px ui-rounded, system-ui, sans-serif',
+                  lineHeight: 1,
+                  textShadow: '-2px -2px 0 rgba(15,15,26,0.65), 2px -2px 0 rgba(15,15,26,0.65), -2px 2px 0 rgba(15,15,26,0.65), 2px 2px 0 rgba(15,15,26,0.65)',
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
         )}
 
         {gameState === 'end' && (
@@ -1106,79 +1173,86 @@ export default function SwoopCiGame() {
               </div>
             </div>
 
-            <div style={{ width: '100%', maxWidth: 350, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <ScoreFlow
-                score={finalScore}
-                gameId={GAME_ID}
-                maxScore={200}
-                colors={{
-                  bg: '#1e1b4b',
-                  surface: '#27264a',
-                  primary: '#facc15',
-                  secondary: '#22d3ee',
-                  text: '#f0f9ff',
-                  muted: '#94a3b8',
-                  error: '#ef4444',
-                }}
-                onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
-                onProgression={(prog) => setProgression(prog)}
-              />
-            </div>
+            {!zenMode && (
+              <>
+                <div style={{ width: '100%', maxWidth: 350, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <ScoreFlow
+                    score={finalScore}
+                    gameId={GAME_ID}
+                    maxScore={200}
+                    colors={{
+                      bg: '#1e1b4b',
+                      surface: '#27264a',
+                      primary: '#facc15',
+                      secondary: '#22d3ee',
+                      text: '#f0f9ff',
+                      muted: '#94a3b8',
+                      error: '#ef4444',
+                    }}
+                    onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
+                    onProgression={(prog) => setProgression(prog)}
+                  />
+                </div>
 
-            {progression && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
-                <div style={{ color: '#facc15', fontSize: 14, fontWeight: 700 }}>+{progression.xpEarned} XP</div>
-                <div style={{ color: '#94a3b8', fontSize: 13 }}>Level {progression.level}</div>
-                {progression.streak > 1 && (
-                  <div style={{ color: '#22d3ee', fontSize: 13 }}>{progression.multiplier}x streak</div>
+                {progression && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+                    <div style={{ color: '#facc15', fontSize: 14, fontWeight: 700 }}>+{progression.xpEarned} XP</div>
+                    <div style={{ color: '#94a3b8', fontSize: 13 }}>Level {progression.level}</div>
+                    {progression.streak > 1 && (
+                      <div style={{ color: '#22d3ee', fontSize: 13 }}>{progression.multiplier}x streak</div>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
-              <button
-                onClick={() => setShowLeaderboard(!showLeaderboard)}
-                style={{
-                  background: 'transparent',
-                  color: '#22d3ee',
-                  border: '2px solid #22d3ee',
-                  padding: '12px 20px',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  borderRadius: 20,
-                }}
-              >
-                {showLeaderboard ? 'Hide' : 'Ranks'}
-              </button>
-              {user ? (
-                <button
-                  onClick={() => setShowShareModal(true)}
-                  style={{
-                    background: 'transparent',
-                    color: '#22d3ee',
-                    border: '2px solid #22d3ee',
-                    padding: '12px 20px',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    borderRadius: 20,
-                  }}
-                >
-                  Share / Groups
-                </button>
-              ) : (
-                <ShareButtonContainer
-                  id="share-btn-container"
-                  url={`${GAME_URL}/share/${finalScore}`}
-                  text={`I scored ${finalScore} on SWOOP CI! Can you beat me?`}
-                  style="minimal"
-                  socialLoaded={socialLoaded}
-                />
-              )}
-            </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
+                  <button
+                    onClick={() => setShowLeaderboard(!showLeaderboard)}
+                    style={{
+                      background: 'transparent',
+                      color: '#22d3ee',
+                      border: '2px solid #22d3ee',
+                      padding: '12px 20px',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      borderRadius: 20,
+                    }}
+                  >
+                    {showLeaderboard ? 'Hide' : 'Ranks'}
+                  </button>
+                  {user ? (
+                    <button
+                      onClick={() => setShowShareModal(true)}
+                      style={{
+                        background: 'transparent',
+                        color: '#22d3ee',
+                        border: '2px solid #22d3ee',
+                        padding: '12px 20px',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        borderRadius: 20,
+                      }}
+                    >
+                      Share / Groups
+                    </button>
+                  ) : (
+                    <ShareButtonContainer
+                      id="share-btn-container"
+                      url={`${GAME_URL}/share/${finalScore}`}
+                      text={`I scored ${finalScore} on SWOOP CI! Can you beat me?`}
+                      style="minimal"
+                      socialLoaded={socialLoaded}
+                    />
+                  )}
+                </div>
+              </>
+            )}
+            {zenMode && (
+              <p style={{ color: '#a78bfa', fontSize: 13, marginTop: 10 }}>Kori Mode — scores not ranked</p>
+            )}
             <button
-              onClick={startGame}
+              onClick={() => startGame(zenMode)}
               style={{
                 marginTop: 10,
                 background: '#facc15',

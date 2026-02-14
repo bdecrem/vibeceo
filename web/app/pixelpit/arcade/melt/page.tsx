@@ -381,6 +381,7 @@ export default function MeltGame() {
     tutorialPhase: 0, // 0=melting, 1=first ice, 2=first rock, 3=normal
     difficultyPhase: 1, // 1=onboarding, 2=learning, 3=challenge, 4=mastery
     lastPhaseAnnounced: 0,
+    lastLavaLanes: [] as number[],
   });
 
   const spawnRow = useCallback((y: number) => {
@@ -436,6 +437,7 @@ export default function MeltGame() {
     game.score = 0;
     game.distance = 0;
     game.lastSpawnY = GAME_HEIGHT;
+    game.lastLavaLanes = [];
     game.screenShake = 0;
     game.flashRed = 0;
     game.gameTime = 0;
@@ -595,26 +597,26 @@ export default function MeltGame() {
         }
 
         // VALIDATION PASS: ensure adjacent rows always leave a reachable lane
-        for (let r = 1; r < rows.length; r++) {
-          const prev = rows[r - 1];
+        // Include previous batch's last row for cross-batch validation
+        const prevBatchLava = game.lastLavaLanes;
+        for (let r = 0; r < rows.length; r++) {
+          const prevLava = r === 0 ? prevBatchLava : rows[r - 1].lavaLanes;
           const curr = rows[r];
-          // Find lanes clear in BOTH adjacent rows (player must be able to path through)
           const clearLanes = [0, 1, 2].filter(
-            l => !prev.lavaLanes.includes(l) && !curr.lavaLanes.includes(l)
+            l => !prevLava.includes(l) && !curr.lavaLanes.includes(l)
           );
-          // If no clear path, remove a random lava from the current row
           if (clearLanes.length === 0 && curr.lavaLanes.length > 0) {
-            // Pick a lane that's clear in prev row to open up
-            const prevClear = [0, 1, 2].filter(l => !prev.lavaLanes.includes(l));
+            const prevClear = [0, 1, 2].filter(l => !prevLava.includes(l));
             if (prevClear.length > 0) {
               const openLane = prevClear[Math.floor(Math.random() * prevClear.length)];
               curr.lavaLanes = curr.lavaLanes.filter(l => l !== openLane);
             } else {
-              // Both rows are maxed — just remove one from current
               curr.lavaLanes.pop();
             }
           }
         }
+        // Save last row for next batch
+        game.lastLavaLanes = rows[rows.length - 1]?.lavaLanes ?? [];
 
         // VALIDATION PASS: ensure ice is never in a lava lane of adjacent rows
         for (let r = 0; r < rows.length; r++) {
