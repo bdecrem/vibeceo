@@ -201,4 +201,18 @@ export const GAME_COLORS = {
     accent: '#a78bfa',           // purple CTA
     branding: '#64748b',         // muted slate
   },
+  blast: {
+    background: '#09090b',       // void black
+    primary: '#22d3ee',          // cyan slime
+    secondary: '#f472b6',        // pink shapes
+    accent: '#facc15',           // yellow hexagon
+    branding: '#ffffff',         // white text
+  },
+  seance: {
+    background: '#0f0a1a',       // dark purple
+    primary: '#a78bfa',          // purple portal
+    secondary: '#22d3ee',        // cyan ghost glow
+    accent: '#f472b6',           // pink accent
+    branding: '#f8fafc',         // white text
+  },
 };

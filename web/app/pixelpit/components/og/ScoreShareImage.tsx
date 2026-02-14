@@ -1899,3 +1899,124 @@ export function DropDecorations() {
     </div>
   );
 }
+
+/**
+ * BLAST-specific decorations: slime at bottom, geometric shapes, goo projectiles.
+ * Space Invaders remix with Asteroids split mechanic.
+ */
+export function BlastDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Enemy formation - geometric shapes */}
+      {/* Row 1 - triangles (pink) */}
+      <div style={{ position: 'absolute', top: 80, left: 350, width: 0, height: 0, borderLeft: '20px solid #00000000', borderRight: '20px solid #00000000', borderBottom: '35px solid #f472b6' }} />
+      <div style={{ position: 'absolute', top: 80, left: 450, width: 0, height: 0, borderLeft: '25px solid #00000000', borderRight: '25px solid #00000000', borderBottom: '40px solid #f472b6' }} />
+      <div style={{ position: 'absolute', top: 80, left: 550, width: 0, height: 0, borderLeft: '20px solid #00000000', borderRight: '20px solid #00000000', borderBottom: '35px solid #f472b6' }} />
+      <div style={{ position: 'absolute', top: 80, left: 650, width: 0, height: 0, borderLeft: '25px solid #00000000', borderRight: '25px solid #00000000', borderBottom: '40px solid #f472b6' }} />
+      <div style={{ position: 'absolute', top: 80, left: 750, width: 0, height: 0, borderLeft: '20px solid #00000000', borderRight: '20px solid #00000000', borderBottom: '35px solid #f472b6' }} />
+      
+      {/* Row 2 - squares (purple) */}
+      <div style={{ position: 'absolute', top: 150, left: 380, width: 30, height: 30, background: '#a78bfa', borderRadius: 4 }} />
+      <div style={{ position: 'absolute', top: 150, left: 480, width: 35, height: 35, background: '#a78bfa', borderRadius: 4 }} />
+      <div style={{ position: 'absolute', top: 150, left: 580, width: 30, height: 30, background: '#a78bfa', borderRadius: 4 }} />
+      <div style={{ position: 'absolute', top: 150, left: 680, width: 35, height: 35, background: '#a78bfa', borderRadius: 4 }} />
+      
+      {/* Row 3 - hexagons (yellow - simplified as rounded squares) */}
+      <div style={{ position: 'absolute', top: 220, left: 400, width: 28, height: 28, background: '#facc15', borderRadius: 6 }} />
+      <div style={{ position: 'absolute', top: 220, left: 520, width: 32, height: 32, background: '#facc15', borderRadius: 8 }} />
+      <div style={{ position: 'absolute', top: 220, left: 640, width: 28, height: 28, background: '#facc15', borderRadius: 6 }} />
+
+      {/* Goo projectiles (cyan) */}
+      <div style={{ position: 'absolute', bottom: 180, left: 590, width: 16, height: 24, borderRadius: 8, background: '#22d3ee', boxShadow: '0 0 15px #22d3ee' }} />
+      <div style={{ position: 'absolute', bottom: 280, left: 520, width: 14, height: 20, borderRadius: 7, background: '#67e8f9', boxShadow: '0 0 12px #67e8f9' }} />
+      <div style={{ position: 'absolute', bottom: 320, left: 680, width: 14, height: 20, borderRadius: 7, background: '#67e8f9', boxShadow: '0 0 12px #67e8f9' }} />
+
+      {/* Slime player at bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          left: 560,
+          width: 80,
+          height: 50,
+          background: '#22d3ee',
+          borderRadius: 40,
+          boxShadow: '0 0 30px #22d3ee60',
+        }}
+      />
+      {/* Slime eyes */}
+      <div style={{ position: 'absolute', bottom: 105, left: 575, width: 14, height: 18, background: '#09090b', borderRadius: 7 }} />
+      <div style={{ position: 'absolute', bottom: 105, left: 610, width: 14, height: 18, background: '#09090b', borderRadius: 7 }} />
+      {/* Slime pupils */}
+      <div style={{ position: 'absolute', bottom: 110, left: 580, width: 6, height: 6, background: '#ffffff', borderRadius: 3 }} />
+      <div style={{ position: 'absolute', bottom: 110, left: 615, width: 6, height: 6, background: '#ffffff', borderRadius: 3 }} />
+
+      {/* Particle effects */}
+      <div style={{ position: 'absolute', top: 140, left: 320, width: 8, height: 8, borderRadius: 4, background: '#f472b680' }} />
+      <div style={{ position: 'absolute', top: 200, right: 300, width: 6, height: 6, borderRadius: 3, background: '#a78bfa80' }} />
+      <div style={{ position: 'absolute', top: 260, left: 280, width: 5, height: 5, borderRadius: 3, background: '#facc1580' }} />
+    </div>
+  );
+}
+
+/**
+ * SÉANCE-specific decorations: ghost sliding puzzle.
+ * Rush Hour style with spooky cute ghosts.
+ */
+export function SeanceDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Grid background */}
+      <div style={{ position: 'absolute', top: 100, left: 350, width: 500, height: 400, background: '#1a1030', borderRadius: 16, opacity: 0.5 }} />
+      
+      {/* Grid lines */}
+      <div style={{ position: 'absolute', top: 100, left: 433, width: 2, height: 400, background: '#ffffff10' }} />
+      <div style={{ position: 'absolute', top: 100, left: 516, width: 2, height: 400, background: '#ffffff10' }} />
+      <div style={{ position: 'absolute', top: 100, left: 600, width: 2, height: 400, background: '#ffffff10' }} />
+      <div style={{ position: 'absolute', top: 100, left: 683, width: 2, height: 400, background: '#ffffff10' }} />
+      <div style={{ position: 'absolute', top: 100, left: 766, width: 2, height: 400, background: '#ffffff10' }} />
+      <div style={{ position: 'absolute', top: 166, left: 350, width: 500, height: 2, background: '#ffffff10' }} />
+      <div style={{ position: 'absolute', top: 233, left: 350, width: 500, height: 2, background: '#ffffff10' }} />
+      <div style={{ position: 'absolute', top: 300, left: 350, width: 500, height: 2, background: '#ffffff10' }} />
+      <div style={{ position: 'absolute', top: 366, left: 350, width: 500, height: 2, background: '#ffffff10' }} />
+      <div style={{ position: 'absolute', top: 433, left: 350, width: 500, height: 2, background: '#ffffff10' }} />
+
+      {/* Player ghost (white, round) */}
+      <div style={{ position: 'absolute', top: 180, left: 380, width: 50, height: 60, background: '#ffffff', borderRadius: 25, boxShadow: '0 0 25px #22d3ee60' }} />
+      <div style={{ position: 'absolute', top: 195, left: 390, width: 10, height: 14, background: '#0f0a1a', borderRadius: 5 }} />
+      <div style={{ position: 'absolute', top: 195, left: 410, width: 10, height: 14, background: '#0f0a1a', borderRadius: 5 }} />
+
+      {/* Blocker ghosts (colored, angular) */}
+      <div style={{ position: 'absolute', top: 180, left: 520, width: 100, height: 50, background: '#22d3ee', borderRadius: 8, boxShadow: '0 0 20px #22d3ee40' }} />
+      <div style={{ position: 'absolute', top: 320, left: 460, width: 50, height: 100, background: '#f472b6', borderRadius: 8, boxShadow: '0 0 20px #f472b640' }} />
+      <div style={{ position: 'absolute', top: 380, left: 600, width: 120, height: 50, background: '#71717a', borderRadius: 8 }} />
+
+      {/* Exit portal */}
+      <div style={{ position: 'absolute', top: 175, right: 180, width: 60, height: 60, borderRadius: 30, background: '#a78bfa', boxShadow: '0 0 40px #a78bfa, 0 0 60px #f472b6' }} />
+      <div style={{ position: 'absolute', top: 190, right: 195, width: 30, height: 30, borderRadius: 15, background: '#ffffff' }} />
+
+      {/* Sparkle particles */}
+      <div style={{ position: 'absolute', top: 160, right: 200, width: 6, height: 6, borderRadius: 3, background: '#f472b6' }} />
+      <div style={{ position: 'absolute', top: 220, right: 165, width: 5, height: 5, borderRadius: 3, background: '#a78bfa' }} />
+      <div style={{ position: 'absolute', top: 185, right: 150, width: 4, height: 4, borderRadius: 2, background: '#22d3ee' }} />
+    </div>
+  );
+}

@@ -263,6 +263,17 @@ export default function BlastPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Analytics tracking (Push: fire on game over)
+  useEffect(() => {
+    if (gameState === 'gameover' && score >= 1) {
+      fetch('/api/pixelpit/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game: GAME_ID }),
+      }).catch(() => {}); // Silent fail
+    }
+  }, [gameState, score]);
+
   // Spawn wave (Loop spec)
   const spawnWave = useCallback((waveNum: number) => {
     const game = gameRef.current;

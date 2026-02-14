@@ -52,6 +52,7 @@ export type {
 export {
   createScoreShareImage,
   BeamDecorations,
+  BlastDecorations,
   CatchDecorations,
   CatTowerDecorations,
   CaveMothDecorations,
@@ -61,6 +62,7 @@ export {
   FlappyDecorations,
   FlipDecorations,
   RainDecorations,
+  SeanceDecorations,
   SingularityDecorations,
   SproutRunDecorations,
   TapBeatsDecorations,
