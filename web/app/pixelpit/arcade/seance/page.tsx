@@ -453,7 +453,11 @@ export default function SeancePage() {
     
     const piece = game.pieces.find(p => p.id === game.dragging);
     if (!piece) return;
-    
+
+    // Player already on exit — lock in place until pointerUp triggers win
+    const level = LEVELS[currentLevel];
+    if (piece.type === 'player' && piece.x === level.exit.x && piece.y === level.exit.y) return;
+
     // Calculate target cell
     const targetX = Math.round((x - offsetX - game.dragOffset.x) / cellSize);
     const targetY = Math.round((y - offsetY - game.dragOffset.y) / cellSize);
@@ -467,7 +471,6 @@ export default function SeancePage() {
     if (piece.orientation === 'vertical') dx = 0;
     
     // Try to move step by step
-    const level = LEVELS[currentLevel];
     while (dx !== 0 || dy !== 0) {
       const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
       const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
