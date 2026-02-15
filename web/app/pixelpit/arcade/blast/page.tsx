@@ -563,8 +563,8 @@ export default function BlastPage() {
       game.player.squash += (1 - game.player.squash) * 10 * dt;
 
       // Goo trail when moving fast (Dither juice)
-      const moveSpeed = Math.abs(game.player.x - game.lastPlayerX);
-      if (moveSpeed > 3) {
+      const moveDelta = Math.abs(game.player.x - game.lastPlayerX);
+      if (moveDelta > 3) {
         game.gooTrail.push({
           x: game.player.x,
           y: game.player.y + 15,
