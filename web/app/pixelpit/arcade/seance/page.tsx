@@ -106,6 +106,141 @@ const LEVELS: Level[] = [
       { id: 'f1', type: 'furniture', x: 0, y: 3, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
     ],
   },
+  // Level 6: Single Corridor (5x5, Par: 2) - LOOP spec
+  {
+    grid: 5,
+    exit: { x: 4, y: 2, side: 'right' },
+    minMoves: 2,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 0, y: 0, width: 5, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 0, y: 3, width: 5, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 2, y: 2, width: 1, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+    ],
+  },
+  // Level 7: Two Horizontal (5x5, Par: 3)
+  {
+    grid: 5,
+    exit: { x: 4, y: 2, side: 'right' },
+    minMoves: 3,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 0, y: 0, width: 5, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 0, y: 3, width: 5, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 1, y: 2, width: 1, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 3, y: 2, width: 1, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+    ],
+  },
+  // Level 8: Wide Blocker (5x5, Par: 2)
+  {
+    grid: 5,
+    exit: { x: 4, y: 2, side: 'right' },
+    minMoves: 2,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 0, y: 0, width: 5, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 0, y: 3, width: 5, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 2, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+    ],
+  },
+  // Level 9: Two Corridors (5x5, Par: 4)
+  {
+    grid: 5,
+    exit: { x: 4, y: 4, side: 'right' },
+    minMoves: 4,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 0, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 1, y: 0, width: 4, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 0, y: 2, width: 4, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'wall3', type: 'furniture', x: 1, y: 4, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 0, y: 1, width: 1, height: 1, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 0, y: 3, width: 1, height: 1, orientation: 'vertical', color: THEME.ghostPink },
+    ],
+  },
+  // Level 10: The Gauntlet (5x5, Par: 5)
+  {
+    grid: 5,
+    exit: { x: 4, y: 2, side: 'right' },
+    minMoves: 5,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 0, y: 0, width: 5, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 0, y: 3, width: 5, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 1, y: 2, width: 1, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 2, y: 2, width: 1, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'g3', type: 'ghost', x: 3, y: 2, width: 1, height: 1, orientation: 'horizontal', color: THEME.ghostGreen },
+    ],
+  },
+  // Level 11: Big Grid Intro (6x6, Par: 3)
+  {
+    grid: 6,
+    exit: { x: 5, y: 2, side: 'right' },
+    minMoves: 3,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 0, y: 0, width: 6, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 0, y: 3, width: 6, height: 3, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 2, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+    ],
+  },
+  // Level 12: Cross Traffic (6x6, Par: 4)
+  {
+    grid: 6,
+    exit: { x: 5, y: 2, side: 'right' },
+    minMoves: 4,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 0, y: 0, width: 6, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 0, y: 4, width: 6, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 3, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 4, y: 2, width: 1, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+    ],
+  },
+  // Level 13: The Squeeze (6x6, Par: 5)
+  {
+    grid: 6,
+    exit: { x: 5, y: 3, side: 'right' },
+    minMoves: 5,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 0, y: 0, width: 6, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 0, y: 4, width: 5, height: 2, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 1, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 3, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'g3', type: 'ghost', x: 3, y: 3, width: 1, height: 1, orientation: 'horizontal', color: THEME.ghostGreen },
+    ],
+  },
+  // Level 14: Rush Hour (6x6, Par: 6)
+  {
+    grid: 6,
+    exit: { x: 5, y: 2, side: 'right' },
+    minMoves: 6,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 0, y: 0, width: 6, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 0, y: 5, width: 6, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 4, y: 1, width: 1, height: 3, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g3', type: 'ghost', x: 2, y: 3, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostGreen },
+      { id: 'g4', type: 'ghost', x: 1, y: 4, width: 1, height: 1, orientation: 'horizontal', color: THEME.ghostOrange },
+    ],
+  },
+  // Level 15: The Grand Séance (6x6, Par: 8)
+  {
+    grid: 6,
+    exit: { x: 5, y: 2, side: 'right' },
+    minMoves: 8,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 0, y: 0, width: 6, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 0, y: 5, width: 6, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 1, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 2, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'g3', type: 'ghost', x: 4, y: 1, width: 1, height: 3, orientation: 'vertical', color: THEME.ghostGreen },
+      { id: 'g4', type: 'ghost', x: 2, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostOrange },
+      { id: 'g5', type: 'ghost', x: 3, y: 4, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+    ],
+  },
 ];
 
 // Social colors
