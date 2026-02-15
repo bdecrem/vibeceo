@@ -380,14 +380,14 @@ export default function SeancePage() {
   const [moves, setMoves] = useState(0);
 
   // Debug: ?level=N jumps straight to that level
+  const debugLevelRef = useRef<number | null>(null);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const lvl = params.get('level');
     if (lvl) {
-      const n = parseInt(lvl, 10) - 1; // 1-indexed in URL
+      const n = parseInt(lvl, 10) - 1;
       if (n >= 0 && n < LEVELS.length) {
-        setCurrentLevel(n);
-        setGameState('playing');
+        debugLevelRef.current = n;
       }
     }
   }, []);
@@ -460,6 +460,14 @@ export default function SeancePage() {
     setMoves(0);
     setGameState('playing');
   }, []);
+
+  // Auto-start debug level from ?level=N
+  useEffect(() => {
+    if (debugLevelRef.current !== null && gameState === 'menu') {
+      startLevel(debugLevelRef.current);
+      debugLevelRef.current = null;
+    }
+  }, [startLevel, gameState]);
 
   // Check win condition
   const checkWin = useCallback(() => {
