@@ -66,7 +66,7 @@ const LEVELS: Level[] = [
   {
     grid: 4,
     exit: { x: 3, y: 1, side: 'right' },
-    minMoves: 3,
+    minMoves: 2,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
@@ -76,7 +76,7 @@ const LEVELS: Level[] = [
   {
     grid: 4,
     exit: { x: 3, y: 1, side: 'right' },
-    minMoves: 4,
+    minMoves: 2,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'g1', type: 'ghost', x: 1, y: 0, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
@@ -98,7 +98,7 @@ const LEVELS: Level[] = [
   {
     grid: 4,
     exit: { x: 3, y: 1, side: 'right' },
-    minMoves: 5,
+    minMoves: 4,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'g1', type: 'ghost', x: 1, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
@@ -149,7 +149,7 @@ const LEVELS: Level[] = [
   {
     grid: 5,
     exit: { x: 4, y: 2, side: 'right' },
-    minMoves: 5,
+    minMoves: 3,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 4, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
@@ -177,7 +177,7 @@ const LEVELS: Level[] = [
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
-    minMoves: 4,
+    minMoves: 3,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
@@ -190,7 +190,7 @@ const LEVELS: Level[] = [
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
-    minMoves: 5,
+    minMoves: 3,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
@@ -204,7 +204,7 @@ const LEVELS: Level[] = [
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
-    minMoves: 6,
+    minMoves: 4,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
@@ -219,7 +219,7 @@ const LEVELS: Level[] = [
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
-    minMoves: 6,
+    minMoves: 5,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
@@ -234,7 +234,7 @@ const LEVELS: Level[] = [
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
-    minMoves: 8,
+    minMoves: 6,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
