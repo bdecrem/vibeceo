@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Your Unlock Habits — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="Your Unlock Habits — Amber">
+    <meta property="og:description" content="Tap to unlock. Your phone knows exactly what kind of person you are.">
+    <meta property="og:image" content="https://intheamber.com/amber/unlock-habits-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/unlock-habits.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Your Unlock Habits — Amber">
+    <meta name="twitter:description" content="Tap to unlock. Your phone knows exactly what kind of person you are.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/unlock-habits-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000;
+            color: #D4A574;
+            overflow: hidden;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        #lockScreen {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+        
+        #time {
+            font-size: 72px;
+            font-weight: 200;
+            letter-spacing: -2px;
+            color: #D4A574;
+            text-align: center;
+        }
+        
+        #date {
+            font-size: 18px;
+            color: #D4A574;
+            opacity: 0.7;
+            margin-top: -30px;
+        }
+        
+        #lockIcon {
+            width: 60px;
+            height: 60px;
+            margin: 40px 0;
+            opacity: 0.8;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+        
+        #unlockPrompt {
+            font-size: 16px;
+            color: #2D9596;
+            text-align: center;
+            animation: fadeIn 1s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        #unlockCounter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 12px;
+            color: #D4A574;
+            opacity: 0.5;
+        }
+        
+        #revelationScreen {
+            display: none;
+            width: 100%;
+            max-width: 500px;
+            padding: 30px 20px;
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        #revelationScreen.active {
+            display: block;
+        }
+        
+        .stat {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(212, 165, 116, 0.05);
+            border-left: 3px solid #D4A574;
+            border-radius: 4px;
+        }
+        
+        .statLabel {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #2D9596;
+            margin-bottom: 8px;
+        }
+        
+        .statValue {
+            font-size: 28px;
+            font-weight: 600;
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+        
+        .statRoast {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #D4A574;
+            font-style: italic;
+        }
+        
+        #diagnosis {
+            margin-top: 40px;
+            padding: 25px;
+            background: rgba(123, 104, 238, 0.1);
+            border: 2px solid #7B68EE;
+            border-radius: 8px;
+        }
+        
+        .diagnosisTitle {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7B68EE;
+            margin-bottom: 15px;
+        }
+        
+        .diagnosisText {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #FFD700;
+        }
+        
+        #lockAgainBtn {
+            width: 200px;
+            margin: 30px auto 0;
+            padding: 15px;
+            background: rgba(212, 165, 116, 0.1);
+            border: 1px solid #D4A574;
+            color: #D4A574;
+            font-size: 14px;
+            border-radius: 25px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        #lockAgainBtn:active {
+            background: rgba(212, 165, 116, 0.2);
+            transform: scale(0.98);
+        }
+        
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <canvas class="particles"></canvas>
+    
+    <div id="container">
+        <div id="lockScreen">
+            <div id="unlockCounter">Unlock #<span id="unlockCount">1</span></div>
+            <div id="time">3:47</div>
+            <div id="date">Saturday, February 15</div>
+            
+            <svg id="lockIcon" viewBox="0 0 24 24" fill="none" stroke="#D4A574" stroke-width="2">
+                <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                <path d="M12 17v-3"></path>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            
+            <div id="unlockPrompt">Tap anywhere to unlock</div>
+        </div>
+        
+        <div id="revelationScreen">
+            <div class="stat">
+                <div class="statLabel">Times Unlocked Today</div>
+                <div class="statValue" id="unlocksToday">0</div>
+                <div class="statRoast" id="unlockRoast"></div>
+            </div>
+            
+            <div class="stat">
+                <div class="statLabel">Average Session Length</div>
+                <div class="statValue" id="sessionLength">0</div>
+                <div class="statRoast" id="sessionRoast"></div>
+            </div>
+            
+            <div class="stat">
+                <div class="statLabel">Time Since Last Unlock</div>
+                <div class="statValue" id="timeSince">0</div>
+                <div class="statRoast" id="timeRoast"></div>
+            </div>
+            
+            <div id="diagnosis">
+                <div class="diagnosisTitle">Diagnosis</div>
+                <div class="diagnosisText" id="diagnosisText"></div>
+</div>
+            
+            <div id="lockAgainBtn">Lock Again</div>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.querySelector('.particles');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const particles = [];
+        const particleCount = 30;
+        
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = (Math.random() - 0.5) * 0.3;
+                this.size = Math.random() * 2 + 1;
+                this.color = Math.random() > 0.5 ? '#D4A574' : '#2D9596';
+                this.alpha = Math.random() * 0.3 + 0.1;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+            
+            draw() {
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Audio context
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+        
+        function playUnlockSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = 600;
+            gain.gain.value = 0.1;
+            
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+        
+        // Unlock tracking
+        let unlockCount = 0;
+        let lastUnlockTime = Date.now();
+        let sessionStart = Date.now();
+        
+        const unlockRoasts = [
+            "You've checked your phone more times than you've blinked today.",
+            "At this rate, you'll unlock it 200+ times today. Totally normal.",
+            "The average is 96 times/day. You're not average.",
+            "Your thumb knows the unlock motion better than your own signature.",
+            "That's a lot of compulsive checking for someone with notifications turned on.",
+            "Fun fact: you spent more time unlocking than actually using it.",
+            "Each unlock is a tiny hit of dopamine you didn't need.",
+            "Your phone is more attached to you than you are to it."
+        ];
+        
+        const sessionRoasts = [
+            "Looked at it for 4 seconds, learned nothing, locked it again.",
+            "Quick check = anxiety relief, not information gathering.",
+            "That's barely enough time to read a single notification.",
+            "You opened it just to see if anything changed in 2 minutes. It didn't.",
+            "If your sessions were any shorter, you'd be refresh-button spam.",
+            "The screen barely had time to turn on before you locked it again.",
+            "Looked, saw nothing, felt worse, repeated.",
+            "This is what 'doomscrolling' looks like in fast-forward."
+        ];
+        
+        const timeRoasts = [
+            "You lasted 47 seconds without checking. Personal record?",
+            "2 minutes of freedom before the anxiety kicked in.",
+            "You went a whole 90 seconds without looking. Are you okay?",
+            "That's less time than it takes to microwave popcorn.",
+            "Even goldfish have longer attention spans.",
+            "You made it 3 minutes. The phone was getting lonely.",
+            "Couldn't even finish a single task before checking again.",
+            "Your brain sent 'check phone now' signal after exactly 73 seconds."
+        ];
+        
+        const diagnoses = [
+            "You have Compulsive Unlock Syndrome. The cure is deleting Instagram, but we both know you won't.",
+            "Classic Notification Anxiety Disorder. Every buzz is a tiny emergency. None of them are.",
+            "Terminal FOMO. The thing you're missing is: nothing. You're missing nothing.",
+            "Phantom Vibration Syndrome + Refresh Addiction. Your phone didn't buzz. It never does.",
+            "Digital Pacifier Dependency. You're soothing yourself with screen glow.",
+            "Productivity Theater — unlocking to look busy while avoiding actual work.",
+            "Social Media Slot Machine Addiction. Pull to refresh = pull the lever. Same dopamine hit.",
+            "Boredom Intolerance Disorder. You can't sit with your thoughts for 30 seconds without reaching for it."
+        ];
+        
+        function unlock() {
+            initAudio();
+            playUnlockSound();
+            
+            unlockCount++;
+            const timeSinceLastUnlock = Math.floor((Date.now() - lastUnlockTime) / 1000);
+            lastUnlockTime = Date.now();
+            
+            // Generate fake but plausible stats
+            const unlocksToday = Math.floor(Math.random() * 50) + 80 + unlockCount;
+            const sessionSeconds = Math.floor(Math.random() * 10) + 3;
+            
+            document.getElementById('unlockCount').textContent = unlockCount;
+            document.getElementById('unlocksToday').textContent = unlocksToday;
+            document.getElementById('unlockRoast').textContent = unlockRoasts[Math.floor(Math.random() * unlockRoasts.length)];
+            
+            document.getElementById('sessionLength').textContent = sessionSeconds + 's';
+            document.getElementById('sessionRoast').textContent = sessionRoasts[Math.floor(Math.random() * sessionRoasts.length)];
+            
+            const minutesSince = Math.floor(timeSinceLastUnlock / 60);
+            const secondsSince = timeSinceLastUnlock % 60;
+            const timeSinceText = minutesSince > 0 ? `${minutesSince}m ${secondsSince}s` : `${secondsSince}s`;
+            
+            document.getElementById('timeSince').textContent = timeSinceText;
+            document.getElementById('timeRoast').textContent = timeRoasts[Math.floor(Math.random() * timeRoasts.length)];
+            
+            document.getElementById('diagnosisText').textContent = diagnoses[Math.floor(Math.random() * diagnoses.length)];
+            
+            document.getElementById('lockScreen').style.display = 'none';
+            document.getElementById('revelationScreen').classList.add('active');
+        }
+        
+        function lock() {
+            playUnlockSound();
+            document.getElementById('lockScreen').style.display = 'flex';
+            document.getElementById('revelationScreen').classList.remove('active');
+        }
+        
+        // Touch/click handlers
+        document.getElementById('lockScreen').addEventListener('click', unlock);
+        document.getElementById('lockAgainBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            lock();
+});
+        
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            document.getElementById('time').textContent = `${hours}:${minutes.toString().padStart(2, '0')}`;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+</html>
