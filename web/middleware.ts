@@ -180,6 +180,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
+    // Shipwreck lives at /shipwreck, not /kochi/shipwreck
+    if (pathname.startsWith('/shipwreck')) {
+      return NextResponse.next()
+    }
+
     // Rewrite all other paths to /kochi/* (e.g., /peel -> /kochi/peel)
     const newUrl = new URL(`/kochi${pathname}`, request.url)
     log(`[Middleware] Kochi domain rewrite ${pathname} -> ${newUrl.pathname}`)
@@ -442,11 +447,6 @@ export function middleware(request: NextRequest) {
 
     // Don't double-rewrite paths already under /pixelpit
     if (pathname.startsWith('/pixelpit')) {
-      return NextResponse.next()
-    }
-
-    // Shipwreck lives at /shipwreck, not /pixelpit/shipwreck
-    if (pathname.startsWith('/shipwreck')) {
       return NextResponse.next()
     }
 
