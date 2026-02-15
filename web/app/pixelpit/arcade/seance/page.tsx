@@ -50,125 +50,60 @@ interface Level {
   minMoves: number;
 }
 
-// 10 levels with proper tutorial progression (Tap spec)
+// 5 starter levels (4x4 grid, 2-5 moves each)
 const LEVELS: Level[] = [
-  // LEVEL 1: One vertical blocker (2 moves) - Learn: "Drag blocker to clear path"
+  // Level 1: Just move right (2 moves)
   {
     grid: 4,
     exit: { x: 3, y: 1, side: 'right' },
     minMoves: 2,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g1', type: 'ghost', x: 2, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
     ],
   },
-  // LEVEL 2: One horizontal blocker (2 moves) - Learn: "Horizontal pieces move horizontally"
+  // Level 2: Move blocker up, then exit (3 moves)
   {
     grid: 4,
-    exit: { x: 1, y: 3, side: 'bottom' },
-    minMoves: 2,
+    exit: { x: 3, y: 1, side: 'right' },
+    minMoves: 3,
     pieces: [
-      { id: 'player', type: 'player', x: 1, y: 0, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 0, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
     ],
   },
-  // LEVEL 3: V + H ghost combo (3 moves) - Learn: "Both orientations"
-  // g2 at y=1 (covers 2,1-2,2) can move UP to (2,0-2,1) clearing (2,2)
+  // Level 3: Two blockers (4 moves)
+  {
+    grid: 4,
+    exit: { x: 3, y: 1, side: 'right' },
+    minMoves: 4,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'g1', type: 'ghost', x: 1, y: 0, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+    ],
+  },
+  // Level 4: Furniture + ghost (4 moves)
   {
     grid: 4,
     exit: { x: 3, y: 2, side: 'right' },
-    minMoves: 3,
-    pieces: [
-      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 1, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
-    ],
-  },
-  // LEVEL 4: Two vertical ghosts (3 moves) - Learn: "Sequencing - which one first?"
-  // Fixed: Both ghosts start at y=1 so they can move DOWN to clear y=1
-  {
-    grid: 4,
-    exit: { x: 3, y: 1, side: 'right' },
-    minMoves: 3,
-    pieces: [
-      { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 1, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
-    ],
-  },
-  // LEVEL 5: Introduce furniture (2 moves) - Learn: "Furniture works the same"
-  // f1 blocks the exit cell (4,2), must slide UP to clear it
-  {
-    grid: 5,
-    exit: { x: 4, y: 2, side: 'right' },
-    minMoves: 2,
-    pieces: [
-      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'f1', type: 'furniture', x: 4, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
-    ],
-  },
-  // LEVEL 6: Ghost + furniture mix (4 moves) - Learn: "Mix piece types"
-  // All pieces at y=1 can move DOWN to clear y=1
-  {
-    grid: 4,
-    exit: { x: 3, y: 1, side: 'right' },
-    minMoves: 4,
-    pieces: [
-      { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 1, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'f1', type: 'furniture', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
-      { id: 'g2', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
-    ],
-  },
-  // LEVEL 7: 5x5 grid intro (4 moves) - Learn: "Bigger grid, more planning"
-  {
-    grid: 5,
-    exit: { x: 4, y: 2, side: 'right' },
     minMoves: 4,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 3, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'f1', type: 'furniture', x: 1, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
     ],
   },
-  // LEVEL 8: 5x5 challenge (5 moves)
-  // Fixed: f1 height 2 (was 3) so it can move to clear y=2
+  // Level 5: The first real puzzle (5 moves)
   {
-    grid: 5,
-    exit: { x: 4, y: 2, side: 'right' },
+    grid: 4,
+    exit: { x: 3, y: 1, side: 'right' },
     minMoves: 5,
     pieces: [
-      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 1, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
-      { id: 'f1', type: 'furniture', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
-    ],
-  },
-  // LEVEL 9: 6x6 intro (5 moves) - Learn: "Final grid size"
-  // Fixed: g2 moved to y=1 so it doesn't block exit row
-  {
-    grid: 6,
-    exit: { x: 5, y: 2, side: 'right' },
-    minMoves: 5,
-    pieces: [
-      { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 3, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
-      { id: 'g3', type: 'ghost', x: 5, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
-    ],
-  },
-  // LEVEL 10: Grand finale (6+ moves)
-  {
-    grid: 6,
-    exit: { x: 5, y: 3, side: 'right' },
-    minMoves: 6,
-    pieces: [
-      { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'g1', type: 'ghost', x: 1, y: 2, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 2, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
-      { id: 'g3', type: 'ghost', x: 4, y: 1, width: 1, height: 3, orientation: 'vertical', color: THEME.ghostGreen },
-      { id: 'f1', type: 'furniture', x: 3, y: 4, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
-      { id: 'f2', type: 'furniture', x: 5, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.furnitureDark },
+      { id: 'player', type: 'player', x: 0, y: 1, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'g1', type: 'ghost', x: 1, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'f1', type: 'furniture', x: 0, y: 3, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
     ],
   },
 ];
