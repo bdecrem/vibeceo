@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>REVEAL — Pinch to see what's hidden in the dark</title>
+    
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="REVEAL — Pinch to see what's hidden in the dark">
+    <meta property="og:description" content="Two-finger pinch to zoom in and discover what's lurking in the darkness. A toy about looking closer.">
+    <meta property="og:image" content="https://intheamber.com/amber/reveal-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/reveal.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="REVEAL — Pinch to see what's hidden in the dark">
+    <meta name="twitter:description" content="Two-finger pinch to zoom in and discover what's lurking in the darkness.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/reveal-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            touch-action: none;
+        }
+
+        #canvas {
+            display: block;
+            background: #000;
+        }
+
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            color: #D4A574;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #title {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #FFD700;
+        }
+
+        #hint {
+            opacity: 0.7;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        #stats {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: #2D9596;
+            font-size: 12px;
+        }
+
+        #discovered {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            text-align: right;
+            color: #D4A574;
+            font-size: 12px;
+        }
+
+        .found-item {
+            margin-bottom: 4px;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        #complete {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #FFD700;
+            font-size: 24px;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        #complete.show {
+            opacity: 1;
+        }
+
+        #reset {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            background: #0D0D0D;
+            border: 2px solid #D4A574;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            pointer-events: all;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        #reset.show {
+            opacity: 1;
+        }
+
+        #reset:hover {
+            background: #D4A574;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="ui">
+        <div id="title">REVEAL</div>
+        <div id="hint">Pinch to zoom in. Find what's hidden.</div>
+    </div>
+
+    <div id="stats">
+        <div>Zoom: <span id="zoomLevel">1.0</span>x</div>
+        <div>Found: <span id="foundCount">0</span>/8</div>
+    </div>
+
+    <div id="discovered"></div>
+
+    <div id="complete">
+        You found them all.<br>
+        <small style="font-size: 16px; opacity: 0.7; margin-top: 8px; display: block;">
+            The darkness was full of life.
+        </small>
+    </div>
+
+    <button id="reset">SEARCH AGAIN</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const discoveredEl = document.getElementById('discovered');
+        const completeEl = document.getElementById('complete');
+        const resetBtn = document.getElementById('reset');
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        // Audio context
+        let audioCtx;
+        let audioStarted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            audioStarted = true;
+        }
+
+        function playTone(freq, duration = 0.1, volume = 0.1) {
+            if (!audioCtx) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // Zoom state
+        let zoom = 1.0;
+        let offsetX = 0;
+        let offsetY = 0;
+        let isDragging = false;
+        let lastDragX = 0;
+        let lastDragY = 0;
+
+        // Hidden objects
+        const objects = [
+            { x: 0.2, y: 0.3, name: "A sleeping cat", emoji: "🐱", minZoom: 2.5, found: false, color: '#FFD700' },
+            { x: 0.7, y: 0.2, name: "A tiny moon", emoji: "🌙", minZoom: 3.0, found: false, color: '#2D9596' },
+            { x: 0.4, y: 0.6, name: "A glowing mushroom", emoji: "🍄", minZoom: 2.0, found: false, color: '#7B68EE' },
+            { x: 0.8, y: 0.7, name: "A firefly", emoji: "✨", minZoom: 2.8, found: false, color: '#FFD700' },
+            { x: 0.15, y: 0.75, name: "A secret flower", emoji: "🌸", minZoom: 2.5, found: false, color: '#FF1493' },
+            { x: 0.6, y: 0.4, name: "A wise owl", emoji: "🦉", minZoom: 3.2, found: false, color: '#D4A574' },
+            { x: 0.3, y: 0.85, name: "A crystal", emoji: "💎", minZoom: 2.7, found: false, color: '#2D9596' },
+            { x: 0.85, y: 0.5, name: "A ghost", emoji: "👻", minZoom: 3.5, found: false, color: '#7B68EE' }
+        ];
+
+        let foundCount = 0;
+
+        // Particle system for discoveries
+        const particles = [];
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.life = 1.0;
+                this.color = color;
+                this.size = Math.random() * 3 + 2;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.1; // gravity
+                this.life -= 0.02;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        // Touch handling for pinch
+        let touches = [];
+        let initialDistance = 0;
+        let initialZoom = 1.0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            initAudio();
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 2) {
+                initialDistance = getDistance(touches[0], touches[1]);
+                initialZoom = zoom;
+            } else if (touches.length === 1) {
+                isDragging = true;
+                lastDragX = touches[0].clientX;
+                lastDragY = touches[0].clientY;
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 2) {
+                const currentDistance = getDistance(touches[0], touches[1]);
+                zoom = Math.max(1.0, Math.min(5.0, initialZoom * (currentDistance / initialDistance)));
+                
+                document.getElementById('zoomLevel').textContent = zoom.toFixed(1);
+                
+                // Check for newly revealed objects
+                checkDiscoveries();
+            } else if (touches.length === 1 && isDragging) {
+                const dx = touches[0].clientX - lastDragX;
+                const dy = touches[0].clientY - lastDragY;
+                
+                offsetX += dx;
+                offsetY += dy;
+                
+                // Constrain offset
+                const maxOffsetX = width * (zoom - 1) / 2;
+                const maxOffsetY = height * (zoom - 1) / 2;
+                offsetX = Math.max(-maxOffsetX, Math.min(maxOffsetX, offsetX));
+                offsetY = Math.max(-maxOffsetY, Math.min(maxOffsetY, offsetY));
+                
+                lastDragX = touches[0].clientX;
+                lastDragY = touches[0].clientY;
+            }
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            touches = Array.from(e.touches);
+            
+            if (touches.length < 2) {
+                initialDistance = 0;
+            }
+            if (touches.length === 0) {
+                isDragging = false;
+            }
+        });
+
+        // Mouse support for desktop testing
+        let mouseDown = false;
+
+        canvas.addEventListener('mousedown', (e) => {
+            initAudio();
+            mouseDown = true;
+            lastDragX = e.clientX;
+            lastDragY = e.clientY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (mouseDown) {
+                const dx = e.clientX - lastDragX;
+                const dy = e.clientY - lastDragY;
+                
+                offsetX += dx;
+                offsetY += dy;
+                
+                const maxOffsetX = width * (zoom - 1) / 2;
+                const maxOffsetY = height * (zoom - 1) / 2;
+                offsetX = Math.max(-maxOffsetX, Math.min(maxOffsetX, offsetX));
+                offsetY = Math.max(-maxOffsetY, Math.min(maxOffsetY, offsetY));
+                
+                lastDragX = e.clientX;
+                lastDragY = e.clientY;
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            mouseDown = false;
+        });
+
+        // Wheel for zoom (desktop)
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            initAudio();
+            
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            zoom = Math.max(1.0, Math.min(5.0, zoom * delta));
+            
+            document.getElementById('zoomLevel').textContent = zoom.toFixed(1);
+            checkDiscoveries();
+        });
+
+        function getDistance(touch1, touch2) {
+            const dx = touch2.clientX - touch1.clientX;
+            const dy = touch2.clientY - touch1.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function checkDiscoveries() {
+            objects.forEach(obj => {
+                if (!obj.found && zoom >= obj.minZoom) {
+                    // Check if object is in viewport
+                    const screenX = (obj.x * width * zoom) + offsetX + width/2 - (width * zoom / 2);
+                    const screenY = (obj.y * height * zoom) + offsetY + height/2 - (height * zoom / 2);
+                    
+                    if (screenX > -100 && screenX < width + 100 && 
+                        screenY > -100 && screenY < height + 100) {
+                        obj.found = true;
+                        foundCount++;
+                        
+                        // Add to discovered list
+                        const item = document.createElement('div');
+                        item.className = 'found-item';
+                        item.textContent = `${obj.emoji} ${obj.name}`;
+                        discoveredEl.appendChild(item);
+                        
+                        // Spawn particles
+                        for (let i = 0; i < 20; i++) {
+                            particles.push(new Particle(screenX, screenY, obj.color));
+                        }
+                        
+                        // Play discovery sound
+                        playTone(400 + foundCount * 100, 0.2, 0.15);
+                        
+                        document.getElementById('foundCount').textContent = foundCount;
+                        
+                        // Check if complete
+                        if (foundCount === objects.length) {
+                            setTimeout(() => {
+                                completeEl.classList.add('show');
+                                resetBtn.classList.add('show');
+                                playTone(800, 0.5, 0.2);
+                            }, 500);
+                        }
+                    }
+                }
+            });
+        }
+
+        // Reset
+        resetBtn.addEventListener('click', () => {
+            zoom = 1.0;
+            offsetX = 0;
+            offsetY = 0;
+            foundCount = 0;
+            
+            objects.forEach(obj => obj.found = false);
+            particles.length = 0;
+            
+            discoveredEl.innerHTML = '';
+            document.getElementById('foundCount').textContent = '0';
+            document.getElementById('zoomLevel').textContent = '1.0';
+            
+            completeEl.classList.remove('show');
+            resetBtn.classList.remove('show');
+            
+            playTone(200, 0.1, 0.1);
+        });
+
+        // Animation loop
+        function animate() {
+            // Clear with fade for trails
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.save();
+            
+            // Apply zoom and offset
+            ctx.translate(width/2, height/2);
+            ctx.scale(zoom, zoom);
+            ctx.translate(-width/2 + offsetX/zoom, -height/2 + offsetY/zoom);
+            
+            // Draw ambient particles (noise in the darkness)
+            ctx.globalAlpha = 0.3;
+            for (let i = 0; i < 30; i++) {
+                const x = (Math.sin(Date.now() * 0.001 + i) * 0.5 + 0.5) * width;
+                const y = (Math.cos(Date.now() * 0.0007 + i * 2) * 0.5 + 0.5) * height;
+                const size = Math.sin(Date.now() * 0.002 + i) * 1 + 1.5;
+                
+                ctx.fillStyle = '#D4A574';
+                ctx.fillRect(x - size/2, y - size/2, size, size);
+            }
+            ctx.globalAlpha = 1.0;
+            
+            // Draw found objects
+            objects.forEach(obj => {
+                if (obj.found) {
+                    const x = obj.x * width;
+                    const y = obj.y * height;
+                    
+                    // Glow
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = obj.color;
+                    
+                    // Draw emoji
+                    ctx.font = '48px serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(obj.emoji, x, y);
+                    
+                    // Pulse ring
+                    const pulseSize = (Math.sin(Date.now() * 0.003) * 10 + 20);
+                    ctx.strokeStyle = obj.color;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(x, y, pulseSize, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    ctx.shadowBlur = 0;
+                }
+            });
+            
+            ctx.restore();
+            
+            // Update and draw particles (in screen space)
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        });
+
+        animate();
+    </script>
+</body>
+</html>
