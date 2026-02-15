@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PILLOW GRAVITY</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="PILLOW GRAVITY">
+  <meta property="og:description" content="ASCII graffiti capturing the inescapable force that keeps you horizontal at 8am">
+  <meta property="og:image" content="https://intheamber.com/amber/pillow-gravity-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/pillow-gravity.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PILLOW GRAVITY">
+  <meta name="twitter:description" content="ASCII graffiti capturing the inescapable force that keeps you horizontal at 8am">
+  <meta name="twitter:image" content="https://intheamber.com/amber/pillow-gravity-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.4;
+      overflow: hidden;
+    }
+    
+    #art {
+      font-size: clamp(8px, 2.5vw, 16px);
+      white-space: pre;
+      text-align: center;
+      letter-spacing: 0.05em;
+      animation: pulse 3s ease-in-out infinite;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    #note {
+      margin-top: 30px;
+      font-size: clamp(10px, 3vw, 14px);
+      color: #2D9596;
+      opacity: 0.7;
+      max-width: 300px;
+      text-align: center;
+    }
+    
+    #tap-hint {
+      position: absolute;
+      bottom: 20px;
+      font-size: 12px;
+      color: #D4A574;
+      opacity: 0.4;
+      animation: fade-hint 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.9; }
+      50% { opacity: 1; transform: scale(1.02); }
+    }
+    
+    @keyframes fade-hint {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 0.6; }
+    }
+    
+    .pulled-back {
+      animation: pull-down 0.5s ease-out;
+    }
+    
+    @keyframes pull-down {
+      0% { transform: translateY(-10px); opacity: 0.6; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="art">
+    ╔═══════════════════════════╗
+    ║   PILLOW GRAVITY: 9.8g    ║
+    ╚═══════════════════════════╝
+
+         ↓ ↓ ↓ ↓ ↓ ↓ ↓
+        ╔═══════════════╗
+        ║▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓║
+        ║▓▓▓ PILLOW ▓▓▓▓║
+        ║▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓║
+        ╚═══════════════╝
+         ↑ ↑ ↑ ↑ ↑ ↑ ↑
+
+      (gravitational field)
+  </div>
+  
+  <div id="note">
+    The force that keeps you<br>
+    horizontal at 8am
+  </div>
+  
+  <div id="tap-hint">tap to resist (briefly)</div>
+  
+  <audio id="beep" preload="auto"></audio>
+  
+  <script>
+    // Create audio context and oscillator on first interaction
+    let audioCtx = null;
+    let hasInteracted = false;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function playBeep(freq, duration) {
+      if (!audioCtx) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      
+      gain.gain.value = 0.1;
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    const art = document.getElementById('art');
+    const hint = document.getElementById('tap-hint');
+    
+    // Tap to "resist" gravity (briefly)
+    document.body.addEventListener('click', () => {
+      if (!hasInteracted) {
+        initAudio();
+        hasInteracted = true;
+      }
+      
+      // Try to move up
+      art.style.transform = 'translateY(-20px)';
+      art.style.transition = 'transform 0.1s ease-out';
+      playBeep(600, 0.1);
+      
+      // But gravity pulls you back down
+      setTimeout(() => {
+        art.style.transform = 'translateY(0)';
+        art.style.transition = 'transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        playBeep(200, 0.4);
+      }, 120);
+      
+      // Hide hint after first tap
+      if (hint) {
+        hint.style.opacity = '0';
+        hint.style.transition = 'opacity 0.5s';
+      }
+    });
+    
+    // Touch support
+    document.body.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      document.body.click();
+    });
+  </script>
+</body>
+</html>
