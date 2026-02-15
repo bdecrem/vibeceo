@@ -601,6 +601,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/voice-chat') ||
       pathname.startsWith('/simple-voice') ||
       pathname.startsWith('/pixelpit') ||
+      pathname.startsWith('/shipwreck') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()
