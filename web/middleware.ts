@@ -445,6 +445,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // Shipwreck lives at /shipwreck, not /pixelpit/shipwreck
+    if (pathname.startsWith('/shipwreck')) {
+      return NextResponse.next()
+    }
+
     // All other paths → /pixelpit/*
     const newUrl = new URL(`/pixelpit${pathname}`, request.url)
     log(`[Middleware] Pixelpit domain rewrite ${pathname} -> ${newUrl.pathname}`)
