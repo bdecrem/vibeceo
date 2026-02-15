@@ -378,6 +378,19 @@ export default function SeancePage() {
   const [gameState, setGameState] = useState<'menu' | 'playing' | 'levelComplete' | 'gameComplete'>('menu');
   const [currentLevel, setCurrentLevel] = useState(0);
   const [moves, setMoves] = useState(0);
+
+  // Debug: ?level=N jumps straight to that level
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const lvl = params.get('level');
+    if (lvl) {
+      const n = parseInt(lvl, 10) - 1; // 1-indexed in URL
+      if (n >= 0 && n < LEVELS.length) {
+        setCurrentLevel(n);
+        setGameState('playing');
+      }
+    }
+  }, []);
   const [totalStars, setTotalStars] = useState(0);
   const [socialLoaded, setSocialLoaded] = useState(false);
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
