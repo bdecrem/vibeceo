@@ -50,7 +50,7 @@ interface Level {
   minMoves: number;
 }
 
-// 5 starter levels (4x4 grid, 2-5 moves each)
+// 5 starter levels (4x4 grid, 2-4 moves each)
 const LEVELS: Level[] = [
   // Level 1: Just move right (2 moves)
   {
@@ -467,20 +467,39 @@ export default function SeancePage() {
     if (piece.orientation === 'vertical') dx = 0;
     
     // Try to move step by step
+    const level = LEVELS[currentLevel];
     while (dx !== 0 || dy !== 0) {
       const stepX = dx > 0 ? 1 : dx < 0 ? -1 : 0;
       const stepY = dy > 0 ? 1 : dy < 0 ? -1 : 0;
-      
-      if (canMoveTo(piece, piece.x + stepX, piece.y + stepY)) {
+
+      let moved = false;
+      // Try combined diagonal step first
+      if (stepX !== 0 && stepY !== 0 && canMoveTo(piece, piece.x + stepX, piece.y + stepY)) {
         piece.x += stepX;
         piece.y += stepY;
         dx -= stepX;
         dy -= stepY;
-      } else {
+        moved = true;
+      } else if (stepX !== 0 && canMoveTo(piece, piece.x + stepX, piece.y)) {
+        // Fall back to horizontal only
+        piece.x += stepX;
+        dx -= stepX;
+        moved = true;
+      } else if (stepY !== 0 && canMoveTo(piece, piece.x, piece.y + stepY)) {
+        // Fall back to vertical only
+        piece.y += stepY;
+        dy -= stepY;
+        moved = true;
+      }
+
+      if (!moved) break;
+
+      // Stop on exit cell so player can't overshoot
+      if (piece.type === 'player' && piece.x === level.exit.x && piece.y === level.exit.y) {
         break;
       }
     }
-  }, [gameState, getGridSize, canMoveTo]);
+  }, [gameState, getGridSize, canMoveTo, currentLevel]);
 
   const handlePointerUp = useCallback(() => {
     const game = gameRef.current;
@@ -552,15 +571,6 @@ export default function SeancePage() {
       // Update exit animation
       if (game.exitAnimation) {
         game.exitAnimationProgress += dt * 5; // ~200ms total (Dither spec)
-      }
-      
-      // Defensive win check - catch cases where pointerUp didn't trigger
-      if (!game.exitAnimation && !game.dragging) {
-        const player = game.pieces.find(p => p.type === 'player');
-        if (player && player.x === level.exit.x && player.y === level.exit.y) {
-          game.exitAnimation = true;
-          handleLevelComplete();
-        }
       }
       
       // Background
@@ -827,7 +837,7 @@ export default function SeancePage() {
     
     draw();
     return () => cancelAnimationFrame(animationId);
-  }, [gameState, canvasSize, currentLevel, moves, getGridSize, handleLevelComplete]);
+  }, [gameState, canvasSize, currentLevel, moves, getGridSize]);
 
   // Handle undo button click
   const handleClick = useCallback((e: React.MouseEvent) => {
