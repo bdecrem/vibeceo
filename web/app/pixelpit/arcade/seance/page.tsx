@@ -132,31 +132,34 @@ const LEVELS: Level[] = [
       { id: 'g2', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
     ],
   },
-  // Level 8: The Tall One (5x5, Par: 3) + gatekeeper
+  // Level 8: Chain Dependencies (5x5, Par: 4) - Loop redesign + Tap fix
   {
     grid: 5,
     exit: { x: 4, y: 2, side: 'right' },
-    minMoves: 3,
+    minMoves: 4,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 4, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
       { id: 'wall2', type: 'furniture', x: 4, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
-      { id: 'g1', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g1', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g2', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g3', type: 'ghost', x: 1, y: 0, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostGreen },
+      { id: 'floor1', type: 'furniture', x: 1, y: 4, width: 3, height: 1, orientation: 'horizontal', color: THEME.furniture },
     ],
   },
-  // Level 9: The Interlock (5x5, Par: 5) + gatekeeper
+  // Level 9: L-shaped Chain (5x5, Par: 4) - Loop redesign, Tap validated
   {
     grid: 5,
     exit: { x: 4, y: 2, side: 'right' },
-    minMoves: 3,
+    minMoves: 4,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 4, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
       { id: 'wall2', type: 'furniture', x: 4, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
-      { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 1, y: 0, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
-      { id: 'g3', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
+      { id: 'g1', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g2', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g3', type: 'ghost', x: 2, y: 0, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostGreen },
+      { id: 'g4', type: 'ghost', x: 1, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostOrange },
     ],
   },
   // Level 10: Triple Threat (5x5, Par: 4)
@@ -173,31 +176,35 @@ const LEVELS: Level[] = [
       { id: 'g3', type: 'ghost', x: 3, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
     ],
   },
-  // Level 11: Big Grid (6x6, Par: 4) + gatekeeper
+  // Level 11: 6x6 Interlock (Par: 4) - Loop redesign + Tap fix
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
-    minMoves: 3,
+    minMoves: 4,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
       { id: 'wall2', type: 'furniture', x: 5, y: 4, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
-      { id: 'g1', type: 'ghost', x: 3, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g1', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g2', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g3', type: 'ghost', x: 3, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostGreen },
+      { id: 'floor1', type: 'furniture', x: 3, y: 5, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
     ],
   },
-  // Level 12: Cross Pattern (6x6, Par: 5) + gatekeeper
+  // Level 12: Three-way Interlock (6x6, Par: 5) - Loop redesign, Tap validated
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
-    minMoves: 3,
+    minMoves: 5,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
       { id: 'wall2', type: 'furniture', x: 5, y: 4, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
-      { id: 'g1', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 1, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
-      { id: 'g3', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
+      { id: 'g1', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g2', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g3', type: 'ghost', x: 1, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
+      { id: 'g4', type: 'ghost', x: 1, y: 1, width: 3, height: 1, orientation: 'horizontal', color: THEME.ghostOrange },
+      { id: 'g5', type: 'ghost', x: 2, y: 5, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
     ],
   },
   // Level 13: The Maze (6x6, Par: 6) + gatekeeper
