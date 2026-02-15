@@ -132,7 +132,7 @@ const LEVELS: Level[] = [
       { id: 'g2', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
     ],
   },
-  // Level 8: Chain Dependencies (5x5, Par: 4) - Loop redesign + Tap fix
+  // Level 8: Chain Dependencies (5x5, Par: 4) - Loop redesign v2 + floor furniture, Tap validated
   {
     grid: 5,
     exit: { x: 4, y: 2, side: 'right' },
@@ -144,10 +144,10 @@ const LEVELS: Level[] = [
       { id: 'g1', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
       { id: 'g2', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
       { id: 'g3', type: 'ghost', x: 1, y: 0, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostGreen },
-      { id: 'floor1', type: 'furniture', x: 1, y: 4, width: 3, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'f3', type: 'furniture', x: 1, y: 4, width: 3, height: 1, orientation: 'horizontal', color: THEME.furniture },
     ],
   },
-  // Level 9: L-shaped Chain (5x5, Par: 4) - Loop redesign, Tap validated
+  // Level 9: L-shaped Chain (5x5, Par: 4) - Loop redesign v2, Tap validated
   {
     grid: 5,
     exit: { x: 4, y: 2, side: 'right' },
@@ -176,7 +176,7 @@ const LEVELS: Level[] = [
       { id: 'g3', type: 'ghost', x: 3, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
     ],
   },
-  // Level 11: 6x6 Interlock (Par: 4) - Loop redesign + Tap fix
+  // Level 11: 6x6 Interlock (Par: 4) - Loop redesign v2 + floor furniture, Tap validated
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
@@ -188,10 +188,10 @@ const LEVELS: Level[] = [
       { id: 'g1', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
       { id: 'g2', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
       { id: 'g3', type: 'ghost', x: 3, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostGreen },
-      { id: 'floor1', type: 'furniture', x: 3, y: 5, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'f3', type: 'furniture', x: 3, y: 5, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
     ],
   },
-  // Level 12: Three-way Interlock (6x6, Par: 5) - Loop redesign, Tap validated
+  // Level 12: Three-way Interlock (6x6, Par: 5) - Loop redesign v2, Tap validated
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
@@ -207,19 +207,22 @@ const LEVELS: Level[] = [
       { id: 'g5', type: 'ghost', x: 2, y: 5, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
     ],
   },
-  // Level 13: The Maze (6x6, Par: 6) + gatekeeper
+  // Level 13: Ceiling Chain (6x6, Par: 5) - Loop redesign + ceiling fix, Tap validated
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
-    minMoves: 4,
+    minMoves: 5,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
       { id: 'wall2', type: 'furniture', x: 5, y: 4, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
-      { id: 'g1', type: 'ghost', x: 1, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 3, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
-      { id: 'g3', type: 'ghost', x: 2, y: 0, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostGreen },
-      { id: 'g4', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostOrange },
+      { id: 'f3', type: 'furniture', x: 4, y: 1, width: 1, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g2', type: 'ghost', x: 3, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g3', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
+      { id: 'g4', type: 'ghost', x: 1, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostOrange },
+      { id: 'g5', type: 'ghost', x: 2, y: 0, width: 3, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+      { id: 'g6', type: 'ghost', x: 1, y: 4, width: 4, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
     ],
   },
   // Level 14: The Squeeze (6x6, Par: 6)
