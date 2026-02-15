@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>RESONANCE — Harmonic interference patterns</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="RESONANCE">
+  <meta property="og:description" content="Touch to create resonant nodes. Watch them interfere. Listen to the harmonics.">
+  <meta property="og:image" content="https://intheamber.com/amber/resonance-v2-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/resonance-v2.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="RESONANCE">
+  <meta name="twitter:description" content="Touch to create resonant nodes. Watch them interfere. Listen to the harmonics.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/resonance-v2-og.png">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Space Mono', 'Courier New', monospace;
+      color: #D4A574;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    #title {
+      font-size: 28px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      color: #FFD700;
+      margin-bottom: 8px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+
+    #subtitle {
+      font-size: 13px;
+      color: #D4A574;
+      opacity: 0.8;
+      letter-spacing: 1px;
+    }
+
+    #stats {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10;
+      text-align: right;
+      font-size: 11px;
+      color: #2D9596;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    #instruction {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 16px;
+      color: #D4A574;
+      opacity: 0.7;
+      text-align: center;
+      letter-spacing: 2px;
+      pointer-events: none;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.9; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="ui">
+    <div id="title">RESONANCE</div>
+    <div id="subtitle">Touch to spawn resonant nodes</div>
+  </div>
+
+  <div id="stats">
+    <div>NODES: <span id="nodeCount">0</span></div>
+    <div>FREQ RANGE: <span id="freqRange">—</span></div>
+  </div>
+
+  <div id="instruction">TAP ANYWHERE</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W, H;
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Audio setup
+    let audioContext = null;
+    let audioStarted = false;
+
+    // Node class
+    class ResonantNode {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        
+        // Map Y position to frequency (higher = higher pitch)
+        // A2 (110 Hz) to A5 (880 Hz)
+        const yNorm = 1 - (y / H); // Invert: top = high freq
+        this.frequency = 110 + yNorm * 770;
+        
+        // Quantize to pentatonic scale (A minor pentatonic)
+        // A, C, D, E, G pattern
+        const baseFreq = 110;
+        const octave = Math.floor(Math.log2(this.frequency / baseFreq));
+        const noteInOctave = Math.round((Math.log2(this.frequency / baseFreq) - octave) * 5);
+        const pentatonicSteps = [0, 3, 5, 7, 10]; // A, C, D, E, G in semitones
+        const semitone = pentatonicSteps[noteInOctave % 5];
+        this.frequency = baseFreq * Math.pow(2, octave + semitone / 12);
+        
+        this.phase = Math.random() * Math.PI * 2;
+        this.phaseSpeed = 0.02;
+        
+        // Color based on frequency
+        const hue = (this.frequency - 110) / 770;
+        if (hue < 0.33) {
+          this.color = '#D4A574'; // Amber (low)
+        } else if (hue < 0.66) {
+          this.color = '#2D9596'; // Teal (mid)
+        } else {
+          this.color = '#7B68EE'; // Violet (high)
+        }
+        
+        this.radius = 40;
+        this.life = 1.0;
+        this.decay = 0.001; // Very slow decay
+        
+        // Audio
+        this.osc = null;
+        this.gain = null;
+        this.initAudio();
+      }
+      
+      initAudio() {
+        if (!audioContext) return;
+        
+        this.osc = audioContext.createOscillator();
+        this.osc.type = 'sine';
+        this.osc.frequency.value = this.frequency;
+        
+        this.gain = audioContext.createGain();
+        this.gain.gain.value = 0.08; // Quiet ambient level
+        
+        this.osc.connect(this.gain);
+        this.gain.connect(audioContext.destination);
+        this.osc.start();
+      }
+      
+      update() {
+        this.phase += this.phaseSpeed;
+        this.life -= this.decay;
+      }
+      
+      draw() {
+        // Pulsing radius based on phase
+        const pulseRadius = this.radius + Math.sin(this.phase) * 5;
+        
+        // Core circle
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, pulseRadius * 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = this.color + '40'; // 25% opacity
+        ctx.fill();
+        
+        // Outer glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, pulseRadius);
+        gradient.addColorStop(0, this.color + '60');
+        gradient.addColorStop(0.5, this.color + '20');
+        gradient.addColorStop(1, this.color + '00');
+        
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, pulseRadius, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Bright center
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFD700';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#FFD700';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      
+      cleanup() {
+        if (this.osc) {
+          this.gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1);
+          this.osc.stop(audioContext.currentTime + 0.1);
+        }
+      }
+    }
+
+    // Nodes array
+    const nodes = [];
+    const maxNodes = 12;
+
+    // Add node
+    function addNode(x, y) {
+      if (nodes.length >= maxNodes) {
+        const oldest = nodes.shift();
+        oldest.cleanup();
+      }
+      
+      nodes.push(new ResonantNode(x, y));
+      document.getElementById('instruction').style.display = 'none';
+      
+      // Play audio feedback
+      if (audioContext) {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.frequency.value = nodes[nodes.length - 1].frequency;
+        gain.gain.value = 0.2;
+        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start();
+        osc.stop(audioContext.currentTime + 0.3);
+      }
+    }
+
+    // Draw interference patterns between nodes
+    function drawInterference() {
+      // Draw lines between nearby nodes
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const n1 = nodes[i];
+          const n2 = nodes[j];
+          
+          const dx = n2.x - n1.x;
+          const dy = n2.y - n1.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist < 300) {
+            // Line opacity based on distance
+            const opacity = 1 - (dist / 300);
+            
+            // Draw connecting line
+            ctx.beginPath();
+            ctx.moveTo(n1.x, n1.y);
+            ctx.lineTo(n2.x, n2.y);
+            ctx.strokeStyle = '#2D9596' + Math.floor(opacity * 80).toString(16).padStart(2, '0');
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Draw interference pattern along the line
+            const numRings = Math.floor(dist / 30);
+            for (let k = 0; k < numRings; k++) {
+              const t = k / numRings;
+              const x = n1.x + dx * t;
+              const y = n1.y + dy * t;
+              
+              // Ring size based on phase difference
+              const phaseDiff = Math.abs(n1.phase - n2.phase);
+              const ringSize = 10 + Math.sin(phaseDiff + k * 0.5) * 5;
+              
+              ctx.beginPath();
+              ctx.arc(x, y, ringSize, 0, Math.PI * 2);
+              ctx.strokeStyle = '#FFD700' + Math.floor(opacity * 40).toString(16).padStart(2, '0');
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
+          }
+        }
+      }
+    }
+
+    // Update stats
+    function updateStats() {
+      document.getElementById('nodeCount').textContent = nodes.length;
+      
+      if (nodes.length > 0) {
+        const freqs = nodes.map(n => n.frequency);
+        const minFreq = Math.min(...freqs);
+        const maxFreq = Math.max(...freqs);
+        document.getElementById('freqRange').textContent = 
+          `${Math.round(minFreq)}–${Math.round(maxFreq)} Hz`;
+      } else {
+        document.getElementById('freqRange').textContent = '—';
+      }
+    }
+
+    // Animation loop
+    function animate() {
+      // Dark fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, W, H);
+      
+      // Update and draw nodes
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        nodes[i].update();
+        
+        if (nodes[i].life <= 0) {
+          nodes[i].cleanup();
+          nodes.splice(i, 1);
+        }
+      }
+      
+      // Draw interference patterns
+      drawInterference();
+      
+      // Draw nodes on top
+      nodes.forEach(node => node.draw());
+      
+      updateStats();
+      requestAnimationFrame(animate);
+    }
+
+    // Input handling
+    function handleInput(e) {
+      e.preventDefault();
+      
+      // Start audio on first interaction
+      if (!audioStarted) {
+        audioContext = new AudioContext();
+        audioStarted = true;
+      }
+      
+      // Get touch/click position
+      const rect = canvas.getBoundingClientRect();
+      let x, y;
+      
+      if (e.touches) {
+        x = e.touches[0].clientX - rect.left;
+        y = e.touches[0].clientY - rect.top;
+      } else {
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+      }
+      
+      addNode(x, y);
+    }
+
+    canvas.addEventListener('touchstart', handleInput);
+    canvas.addEventListener('mousedown', handleInput);
+
+    // Start animation
+    animate();
+
+    // Add 3 starter nodes after a moment
+    setTimeout(() => {
+      addNode(W * 0.3, H * 0.4);
+      setTimeout(() => {
+        addNode(W * 0.5, H * 0.6);
+        setTimeout(() => {
+          addNode(W * 0.7, H * 0.3);
+        }, 300);
+      }, 300);
+    }, 500);
+  </script>
+</body>
+</html>
