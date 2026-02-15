@@ -619,6 +619,15 @@ export default function SeancePage() {
         game.exitAnimationProgress += dt * 5; // ~200ms total (Dither spec)
       }
       
+      // Defensive win check - catch cases where pointerUp didn't trigger
+      if (!game.exitAnimation && !game.dragging) {
+        const player = game.pieces.find(p => p.type === 'player');
+        if (player && player.x === level.exit.x && player.y === level.exit.y) {
+          game.exitAnimation = true;
+          handleLevelComplete();
+        }
+      }
+      
       // Background
       ctx.fillStyle = THEME.bg;
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
@@ -883,7 +892,7 @@ export default function SeancePage() {
     
     draw();
     return () => cancelAnimationFrame(animationId);
-  }, [gameState, canvasSize, currentLevel, moves, getGridSize]);
+  }, [gameState, canvasSize, currentLevel, moves, getGridSize, handleLevelComplete]);
 
   // Handle undo button click
   const handleClick = useCallback((e: React.MouseEvent) => {
