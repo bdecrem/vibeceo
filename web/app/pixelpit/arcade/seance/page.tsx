@@ -97,14 +97,14 @@ const LEVELS: Level[] = [
     ],
   },
   // LEVEL 5: Introduce furniture (2 moves) - Learn: "Furniture works the same"
-  // Fixed: 5x5 grid, vertical furniture that can slide DOWN to clear path
+  // f1 blocks the exit cell (4,2), must slide UP to clear it
   {
     grid: 5,
     exit: { x: 4, y: 2, side: 'right' },
     minMoves: 2,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'f1', type: 'furniture', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
+      { id: 'f1', type: 'furniture', x: 4, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
     ],
   },
   // LEVEL 6: Ghost + furniture mix (4 moves) - Learn: "Mix piece types"
