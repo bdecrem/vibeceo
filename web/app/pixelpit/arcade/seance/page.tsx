@@ -106,17 +106,17 @@ const LEVELS: Level[] = [
       { id: 'f1', type: 'furniture', x: 0, y: 3, width: 2, height: 1, orientation: 'horizontal', color: THEME.furniture },
     ],
   },
-  // Level 6: The Gatekeeper (5x5, Par: 2) - LOOP v2 spec
-  // Column wall pattern - vertical ghosts slide UP/DOWN to clear
+  // Level 6: The Gatekeeper (5x5, Par: 3) - LOOP v2 spec + gatekeeper fix
   {
     grid: 5,
     exit: { x: 4, y: 2, side: 'right' },
-    minMoves: 2,
+    minMoves: 3,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 4, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
       { id: 'wall2', type: 'furniture', x: 4, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
       { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
     ],
   },
   // Level 7: Two Gatekeepers (5x5, Par: 3)
@@ -132,29 +132,31 @@ const LEVELS: Level[] = [
       { id: 'g2', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
     ],
   },
-  // Level 8: The Tall One (5x5, Par: 2)
+  // Level 8: The Tall One (5x5, Par: 3) + gatekeeper
   {
     grid: 5,
     exit: { x: 4, y: 2, side: 'right' },
-    minMoves: 2,
+    minMoves: 3,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 4, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
       { id: 'wall2', type: 'furniture', x: 4, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
       { id: 'g1', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
     ],
   },
-  // Level 9: The Interlock (5x5, Par: 4)
+  // Level 9: The Interlock (5x5, Par: 5) + gatekeeper
   {
     grid: 5,
     exit: { x: 4, y: 2, side: 'right' },
-    minMoves: 4,
+    minMoves: 5,
     pieces: [
       { id: 'player', type: 'player', x: 0, y: 2, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 4, y: 0, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
       { id: 'wall2', type: 'furniture', x: 4, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
       { id: 'g1', type: 'ghost', x: 2, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
       { id: 'g2', type: 'ghost', x: 1, y: 0, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'g3', type: 'ghost', x: 3, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
     ],
   },
   // Level 10: Triple Threat (5x5, Par: 4)
@@ -171,19 +173,7 @@ const LEVELS: Level[] = [
       { id: 'g3', type: 'ghost', x: 3, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
     ],
   },
-  // Level 11: Big Grid (6x6, Par: 3)
-  {
-    grid: 6,
-    exit: { x: 5, y: 3, side: 'right' },
-    minMoves: 3,
-    pieces: [
-      { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
-      { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
-      { id: 'wall2', type: 'furniture', x: 5, y: 4, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
-      { id: 'g1', type: 'ghost', x: 3, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-    ],
-  },
-  // Level 12: Cross Pattern (6x6, Par: 4)
+  // Level 11: Big Grid (6x6, Par: 4) + gatekeeper
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
@@ -192,11 +182,11 @@ const LEVELS: Level[] = [
       { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
       { id: 'wall2', type: 'furniture', x: 5, y: 4, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
-      { id: 'g1', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
-      { id: 'g2', type: 'ghost', x: 1, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'g1', type: 'ghost', x: 3, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
     ],
   },
-  // Level 13: The Maze (6x6, Par: 5)
+  // Level 12: Cross Pattern (6x6, Par: 5) + gatekeeper
   {
     grid: 6,
     exit: { x: 5, y: 3, side: 'right' },
@@ -205,9 +195,24 @@ const LEVELS: Level[] = [
       { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
       { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
       { id: 'wall2', type: 'furniture', x: 5, y: 4, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g2', type: 'ghost', x: 1, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'g3', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
+    ],
+  },
+  // Level 13: The Maze (6x6, Par: 6) + gatekeeper
+  {
+    grid: 6,
+    exit: { x: 5, y: 3, side: 'right' },
+    minMoves: 6,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 5, y: 4, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
       { id: 'g1', type: 'ghost', x: 1, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
       { id: 'g2', type: 'ghost', x: 3, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
       { id: 'g3', type: 'ghost', x: 2, y: 0, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostGreen },
+      { id: 'g4', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostOrange },
     ],
   },
   // Level 14: The Squeeze (6x6, Par: 6)
