@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIGRATION — Amber</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="MIGRATION — Amber">
+  <meta property="og:description" content="Touch to create nodes. Watch migration flows form and fade.">
+  <meta property="og:image" content="https://intheamber.com/amber/migration-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/migration.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MIGRATION — Amber">
+  <meta name="twitter:description" content="Touch to create nodes. Watch migration flows form and fade.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/migration-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #FFD700;
+    }
+    
+    canvas {
+      display: block;
+      cursor: crosshair;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+      pointer-events: none;
+    }
+    
+    #title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #FFD700;
+      margin-bottom: 8px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    #subtitle {
+      font-size: 13px;
+      color: #D4A574;
+      opacity: 0.8;
+      margin-bottom: 16px;
+    }
+    
+    #stats {
+      font-size: 11px;
+      color: #78716c;
+      font-family: 'Monaco', 'Courier New', monospace;
+      line-height: 1.6;
+    }
+    
+    #hint {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #78716c;
+      opacity: 0.6;
+      animation: fadeInOut 4s ease-in-out infinite;
+    }
+    
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.8; }
+    }
+    
+    @media (max-width: 768px) {
+      #title { font-size: 20px; }
+      #subtitle { font-size: 12px; }
+      #stats { font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="title">MIGRATION</div>
+    <div id="subtitle">Touch to create nodes</div>
+    <div id="stats">
+      <div>Nodes: <span id="nodeCount">0</span></div>
+      <div>Active flows: <span id="flowCount">0</span></div>
+      <div>Particles: <span id="particleCount">0</span></div>
+    </div>
+  </div>
+  
+  <div id="hint">Tap anywhere to create source/destination nodes</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+    
+    // Audio context (needs user interaction)
+    let audioCtx = null;
+    let audioInitialized = false;
+    
+    function initAudio() {
+      if (!audioInitialized) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioInitialized = true;
+      }
+    }
+    
+    function playTone(freq, duration = 0.15, gain = 0.08) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gainNode.gain.setValueAtTime(gain, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Color palette (migration types)
+    const colors = [
+      { name: 'teal', color: '#2D9596', freq: 300 },
+      { name: 'blue', color: '#3b82f6', freq: 350 },
+      { name: 'coral', color: '#f97316', freq: 400 },
+      { name: 'gold', color: '#FFD700', freq: 450 },
+      { name: 'pink', color: '#ec4899', freq: 500 },
+      { name: 'purple', color: '#8b5cf6', freq: 550 }
+    ];
+    
+    // Nodes (sources/destinations)
+    const nodes = [];
+    
+    // Particles (migrants)
+    const particles = [];
+    
+    // Flows (connections between nodes)
+    const flows = [];
+    
+    class Node {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 8;
+        this.pulse = 0;
+        this.colorData = colors[Math.floor(Math.random() * colors.length)];
+        this.strength = 0.5 + Math.random() * 0.5; // migration strength
+        this.age = 0;
+        this.maxAge = 300 + Math.random() * 300; // nodes fade over time
+      }
+      
+      update() {
+        this.pulse += 0.05;
+        this.age++;
+      }
+      
+      draw() {
+        const alpha = 1 - (this.age / this.maxAge);
+        if (alpha <= 0) return;
+        
+        // Pulsing glow
+        const pulseScale = 1 + Math.sin(this.pulse) * 0.2;
+        
+        // Outer glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * pulseScale * 3);
+        gradient.addColorStop(0, this.colorData.color + '40');
+        gradient.addColorStop(1, this.colorData.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(this.x - this.radius * 3, this.y - this.radius * 3, this.radius * 6, this.radius * 6);
+        
+        // Core
+        ctx.fillStyle = this.colorData.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * pulseScale, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Ring
+        ctx.strokeStyle = this.colorData.color + Math.floor(alpha * 180).toString(16).padStart(2, '0');
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * pulseScale * 1.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      
+      isDead() {
+        return this.age >= this.maxAge;
+      }
+    }
+    
+    class Flow {
+      constructor(source, destination) {
+        this.source = source;
+        this.dest = destination;
+        this.particleRate = 0.3; // particles per frame
+        this.frameCount = 0;
+        this.age = 0;
+      }
+      
+      update() {
+        this.frameCount++;
+        this.age++;
+        
+        // Spawn particles along this flow
+        if (Math.random() < this.particleRate * this.source.strength) {
+          particles.push(new Particle(this.source, this.dest));
+        }
+      }
+      
+      draw() {
+        // Draw connection line
+        const alpha = Math.min(this.source.strength, 1 - (this.source.age / this.source.maxAge));
+        if (alpha <= 0) return;
+        
+        ctx.strokeStyle = this.source.colorData.color + Math.floor(alpha * 40).toString(16).padStart(2, '0');
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(this.source.x, this.source.y);
+        ctx.lineTo(this.dest.x, this.dest.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      
+      isValid() {
+        return !this.source.isDead() && !this.dest.isDead();
+      }
+    }
+    
+    class Particle {
+      constructor(source, destination) {
+        this.x = source.x;
+        this.y = source.y;
+        this.targetX = destination.x;
+        this.targetY = destination.y;
+        this.progress = 0;
+        this.speed = 0.005 + Math.random() * 0.01;
+        this.colorData = source.colorData;
+        this.size = 2 + Math.random() * 2;
+        this.trail = [];
+        this.maxTrailLength = 20;
+      }
+      
+      update() {
+        this.progress += this.speed;
+        
+        // Record trail
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > this.maxTrailLength) {
+          this.trail.shift();
+        }
+        
+        // Interpolate position
+        this.x = this.x + (this.targetX - this.x) * this.speed * 10;
+        this.y = this.y + (this.targetY - this.y) * this.speed * 10;
+      }
+      
+      draw() {
+        // Draw trail
+        for (let i = 0; i < this.trail.length; i++) {
+          const point = this.trail[i];
+          const alpha = (i / this.trail.length) * 0.3;
+          ctx.fillStyle = this.colorData.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, this.size * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Draw particle
+        ctx.fillStyle = this.colorData.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.colorData.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      
+      isDead() {
+        return this.progress >= 1;
+      }
+    }
+    
+    // Create initial nodes
+    function spawnInitialNodes() {
+      for (let i = 0; i < 4; i++) {
+        const x = width * 0.2 + Math.random() * width * 0.6;
+        const y = height * 0.2 + Math.random() * height * 0.6;
+        nodes.push(new Node(x, y));
+      }
+      
+      // Create initial flows
+      updateFlows();
+    }
+    
+    // Update flows between nodes
+    function updateFlows() {
+      flows.length = 0;
+      
+      // Create flows from each node to nearest neighbors
+      for (const node of nodes) {
+        if (node.isDead()) continue;
+        
+        // Find 1-2 closest nodes
+        const distances = nodes
+          .filter(n => n !== node && !n.isDead())
+          .map(n => ({
+            node: n,
+            dist: Math.hypot(n.x - node.x, n.y - node.y)
+          }))
+          .sort((a, b) => a.dist - b.dist);
+        
+        const numConnections = 1 + Math.floor(Math.random() * 2);
+        for (let i = 0; i < Math.min(numConnections, distances.length); i++) {
+          flows.push(new Flow(node, distances[i].node));
+        }
+      }
+    }
+    
+    // Handle touch/click
+    function handleInteraction(x, y) {
+      initAudio();
+      
+      // Create new node
+      const node = new Node(x, y);
+      nodes.push(node);
+      
+      // Play tone
+      playTone(node.colorData.freq, 0.2, 0.1);
+      
+      // Update flows
+      updateFlows();
+      
+      // Spawn particle burst
+      for (let i = 0; i < 8; i++) {
+        const angle = (Math.PI * 2 * i) / 8;
+        const speed = 2 + Math.random() * 2;
+        const px = x + Math.cos(angle) * 20;
+        const py = y + Math.sin(angle) * 20;
+        // Quick fade particles
+        particles.push({
+          x: px,
+          y: py,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          size: 2,
+          life: 30,
+          maxLife: 30,
+          colorData: node.colorData,
+          update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vx *= 0.95;
+            this.vy *= 0.95;
+            this.life--;
+          },
+          draw() {
+            const alpha = this.life / this.maxLife;
+            ctx.fillStyle = this.colorData.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+          },
+          isDead() {
+            return this.life <= 0;
+          }
+        });
+      }
+    }
+    
+    canvas.addEventListener('click', (e) => {
+      handleInteraction(e.clientX, e.clientY);
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleInteraction(touch.clientX, touch.clientY);
+    });
+    
+    // Animation loop
+    function animate() {
+      // Dark fade (trail effect)
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update and draw nodes
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        nodes[i].update();
+        nodes[i].draw();
+        if (nodes[i].isDead() && Math.random() < 0.01) {
+          nodes.splice(i, 1);
+          updateFlows();
+        }
+      }
+      
+      // Update and draw flows
+      for (const flow of flows) {
+        flow.update();
+        flow.draw();
+      }
+      
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].isDead()) {
+          particles.splice(i, 1);
+        }
+      }
+      
+      // Update stats
+      document.getElementById('nodeCount').textContent = nodes.length;
+      document.getElementById('flowCount').textContent = flows.length;
+      document.getElementById('particleCount').textContent = particles.length;
+      
+      // Periodically update flows
+      if (Math.random() < 0.01) {
+        updateFlows();
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Start
+    spawnInitialNodes();
+    animate();
+  </script>
+</body>
+</html>
