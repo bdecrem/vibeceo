@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>DOOMLEARN — You're going to scroll anyway.</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--black:#0D0D0D;--green:#B8FF57;--orange:#FF6B35;--dim:#555;--card-bg:#141414}
+html,body{height:100%;overflow:hidden;background:var(--black);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+
+/* Progress bar */
+#progress{position:fixed;top:0;left:0;height:2px;background:var(--green);z-index:100;transition:width .3s ease}
+
+/* Streak counter */
+#streak{position:fixed;bottom:20px;left:20px;font-size:14px;color:var(--dim);z-index:100;display:flex;align-items:center;gap:6px}
+#streak .fire{color:var(--orange);font-size:18px}
+#streak .count{color:var(--orange);font-weight:700}
+
+/* Stash counter */
+#stash{position:fixed;bottom:20px;right:20px;font-size:14px;color:var(--dim);z-index:100;cursor:pointer}
+#stash .num{color:var(--green);font-weight:700}
+
+/* Feed container */
+#feed{height:100vh;overflow-y:scroll;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch}
+#feed::-webkit-scrollbar{display:none}
+
+/* Cards */
+.card{height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 28px;text-align:center;position:relative;cursor:pointer;user-select:none;-webkit-user-select:none}
+
+.card-inner{max-width:560px;transition:transform .3s ease}
+.card.flipped .card-inner{transform:rotateX(5deg) scale(0.97);opacity:.7}
+.card .deeper{display:none;margin-top:24px;font-size:16px;line-height:1.6;color:#999;max-width:500px}
+.card.flipped .deeper{display:block}
+.card.flipped .card-inner{transform:none;opacity:1}
+
+/* Knowledge cards */
+.card.knowledge .text{font-size:24px;line-height:1.5;font-weight:400;letter-spacing:-0.01em}
+.card.knowledge .text em{font-style:normal;color:var(--green);font-weight:600}
+
+/* Quiz cards */
+.card.quiz .question{font-size:22px;line-height:1.5;margin-bottom:32px}
+.card.quiz .options{display:flex;flex-direction:column;gap:12px;width:100%;max-width:400px}
+.card.quiz .opt{padding:16px 24px;border:1px solid #333;border-radius:0;font-size:18px;background:transparent;color:#fff;cursor:pointer;transition:all .15s ease;text-align:left}
+.card.quiz .opt:hover{border-color:var(--green)}
+.card.quiz .opt.correct{background:var(--green);color:var(--black);border-color:var(--green);font-weight:600}
+.card.quiz .opt.wrong{background:#ff4444;color:#fff;border-color:#ff4444}
+
+/* Milestone cards */
+.card.milestone{background:var(--black)}
+.card.milestone .emoji{font-size:48px;margin-bottom:20px}
+.card.milestone .text{font-size:22px;line-height:1.5;color:var(--green);font-weight:600}
+.card.milestone .share{margin-top:24px;padding:10px 24px;border:1px solid var(--green);color:var(--green);background:transparent;font-size:14px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .15s}
+.card.milestone .share:hover{background:var(--green);color:var(--black)}
+
+/* Rabbit hole cards */
+.card.rabbit .text{font-size:20px;color:#999;line-height:1.5}
+.card.rabbit .link{display:inline-block;margin-top:20px;color:var(--green);font-size:20px;font-weight:600;border-bottom:2px solid var(--green);padding-bottom:2px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* Breadcrumb */
+#breadcrumb{position:fixed;left:12px;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;text-orientation:mixed;font-size:11px;color:#333;letter-spacing:2px;z-index:100}
+
+/* Saved toast */
+#toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.8);background:var(--green);color:var(--black);padding:12px 24px;font-weight:700;font-size:16px;opacity:0;transition:all .25s ease;z-index:200;pointer-events:none}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* Landing */
+.card.landing .tagline{font-size:36px;font-weight:700;letter-spacing:-0.02em;line-height:1.2}
+.card.landing .sub{font-size:16px;color:#777;margin-top:16px;line-height:1.6;max-width:420px}
+.card.landing .cta{margin-top:32px;font-size:12px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;animation:pulse 2s ease-in-out infinite}
+.card.landing .swipe-hint{margin-top:48px;font-size:24px;animation:bob 1.5s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+</style>
+</head>
+<body>
+
+<div id="progress" style="width:0%"></div>
+<div id="breadcrumb">BLACK HOLES</div>
+<div id="streak"><span class="fire">🔥</span> <span class="count">1</span> day · <span id="scroll-time">0m</span></div>
+<div id="stash">📚 <span class="num" id="stash-count">0</span></div>
+<div id="toast">✓ Stashed</div>
+
+<div id="feed"></div>
+
+<script>
+const cards = [
+  {type:'landing'},
+  {type:'knowledge', text:'A <em>black hole</em> is a region of spacetime where gravity is so strong that nothing — not even light — can escape once it crosses the boundary called the event horizon.', deeper:'The concept was first theorized by John Michell in 1783, over a century before Einstein\'s general relativity gave us the math to describe them properly.'},
+  {type:'knowledge', text:'The boundary of no return is called the <em>event horizon</em>. Cross it, and you\'re going in — no engine, no speed, no force in the universe can pull you back.', deeper:'The name "event horizon" comes from the fact that no event occurring inside it can ever affect an outside observer. It\'s not a physical surface — you wouldn\'t feel anything crossing it.'},
+  {type:'knowledge', text:'At the very center lies the <em>singularity</em> — a point of theoretically infinite density where our understanding of physics completely breaks down.', deeper:'Whether singularities truly exist or whether quantum gravity effects prevent them is one of the biggest open questions in physics. Most physicists suspect they\'re a sign our theory is incomplete.'},
+  {type:'quiz', question:'What is the boundary of a black hole called?', options:['The singularity','The event horizon','The photon sphere','The accretion disk'], answer:1},
+  {type:'knowledge', text:'Black holes come in sizes. <em>Stellar black holes</em> form when massive stars collapse — they\'re typically 5 to 50 times the mass of our Sun, packed into a space smaller than a city.', deeper:'When a star over ~25 solar masses runs out of fuel, the core collapses so violently that nothing can stop it. The outer layers explode as a supernova; the core becomes a black hole.'},
+  {type:'knowledge', text:'Then there are the monsters: <em>supermassive black holes</em> sitting at the centers of galaxies. Millions to billions of solar masses. Every large galaxy has one. Including ours.', deeper:'How supermassive black holes formed is still debated. They may have grown from stellar black holes that merged and fed over billions of years, or they may have formed directly from massive gas clouds in the early universe.'},
+  {type:'milestone', emoji:'🕳️', text:'You just learned more about black holes than 91% of people.'},
+  {type:'knowledge', text:'Our galaxy\'s black hole is called <em>Sagittarius A*</em> (Sgr A*). It\'s 4 million solar masses, 26,000 light-years away, and we photographed it in 2022.', deeper:'The Event Horizon Telescope — a network of radio dishes spanning the globe — captured the image. It took years of data processing. The orange ring you saw is superheated gas orbiting just outside the event horizon.'},
+  {type:'knowledge', text:'Nothing escapes a black hole. But in 1974, Stephen Hawking showed they aren\'t completely black — they emit faint <em>Hawking radiation</em> due to quantum effects near the event horizon.', deeper:'This radiation is incredibly faint for stellar-mass black holes. A black hole the mass of the Sun would have a temperature of about 60 nanokelvins — far colder than the cosmic microwave background. It would absorb more than it emits.'},
+  {type:'rabbit', text:'This connects to one of the deepest puzzles in physics...', link:'The Black Hole Information Paradox →'},
+  {type:'knowledge', text:'<em>Time slows down</em> near a black hole. An astronaut falling in would appear to freeze at the event horizon from an outside observer\'s perspective — hovering there for eternity.', deeper:'This is gravitational time dilation, predicted by general relativity. GPS satellites have to correct for it — clocks in orbit tick faster than clocks on Earth\'s surface by about 38 microseconds per day.'},
+  {type:'knowledge', text:'But from the astronaut\'s perspective? They\'d cross the event horizon without noticing. Nothing special happens at the boundary. The weirdness is only visible to <em>outside observers</em>.', deeper:'This is the "no drama" principle. For a large enough black hole, the tidal forces at the event horizon are gentle. You\'d only realize your mistake when you tried to turn around.'},
+  {type:'quiz', question:'What happens to time near a black hole?', options:['It speeds up','It slows down','It reverses','Nothing changes'], answer:1},
+  {type:'knowledge', text:'If you fell into a stellar black hole, the tidal forces would stretch you into a thin strand of atoms. Physicists actually call this <em>spaghettification</em>. Yes, really.', deeper:'The technical term is "tidal disruption." The gravity gradient between your head and feet becomes so extreme that you\'re pulled apart like taffy. For supermassive black holes, this happens inside the event horizon. For stellar ones, it happens outside — you\'d be destroyed before you crossed.'},
+  {type:'milestone', emoji:'🍝', text:'You now know what spaghettification means. You\'re never forgetting that.'},
+  {type:'knowledge', text:'Black holes can <em>spin</em>. A rotating black hole drags spacetime itself around with it — this effect is called <em>frame dragging</em>. Space near it literally swirls.', deeper:'Rotating black holes are described by the Kerr metric. They have an additional region called the ergosphere, where spacetime is dragged so violently that nothing can remain stationary — not even light.'},
+  {type:'knowledge', text:'In the <em>ergosphere</em> — a region just outside the event horizon of a spinning black hole — you could theoretically extract energy. Roger Penrose proposed this in 1969.', deeper:'The Penrose process works by sending an object into the ergosphere that splits in two. One piece falls in, the other escapes with more energy than the original had. The black hole loses a tiny bit of rotational energy. Some astrophysicists think jets from black holes may be powered by a similar mechanism.'},
+  {type:'knowledge', text:'In 2015, LIGO detected <em>gravitational waves</em> for the first time — ripples in spacetime from two black holes spiraling together and merging 1.3 billion years ago.', deeper:'The signal lasted 0.2 seconds. In that moment, the merging black holes radiated more energy than all the stars in the observable universe combined. The peak power output was about 3.6 × 10⁴⁹ watts.'},
+  {type:'quiz', question:'What did LIGO detect in 2015?', options:['Hawking radiation','Dark matter','Gravitational waves','A new planet'], answer:2},
+  {type:'knowledge', text:'When two black holes merge, the resulting black hole <em>"rings"</em> like a struck bell — vibrating spacetime around it until it settles into a stable shape. This is called a <em>ringdown</em>.', deeper:'The ringdown frequencies are determined entirely by the mass and spin of the final black hole — nothing else. This is a consequence of the "no-hair theorem": black holes are completely described by just mass, charge, and spin.'},
+  {type:'knowledge', text:'Black holes have no hair. The <em>no-hair theorem</em> says a black hole is completely described by just three numbers: mass, electric charge, and spin. Everything else is lost.', deeper:'This means if you made a black hole out of chairs and another out of antimatter, and they had the same mass, charge, and spin — they\'d be identical. All information about what fell in is apparently destroyed. Or is it? That\'s the information paradox.'},
+  {type:'rabbit', text:'If black holes destroy information, quantum mechanics has a problem...', link:'Hawking\'s Black Hole Bet →'},
+  {type:'milestone', emoji:'🧠', text:'You\'ve doomscrolled 23 cards of astrophysics. Your brain just grew. Screenshot this.'},
+  {type:'knowledge', text:'The largest known black hole is <em>Phoenix A</em> — roughly 100 billion solar masses. Its event horizon is larger than our entire solar system. By a lot.', deeper:'Phoenix A sits at the center of a galaxy cluster 5.8 billion light-years away. For comparison, Sagittarius A* is 4 million solar masses. Phoenix A is 25,000 times more massive. Its event horizon diameter is roughly 590 billion kilometers.'},
+  {type:'knowledge', text:'Black holes might not be the end of everything. Some physicists speculate that <em>inside every black hole, a new universe is born</em> — a baby universe we can never observe.', deeper:'Lee Smolin\'s "cosmological natural selection" hypothesis suggests that black holes spawn new universes with slightly different physical constants. Universes that make more black holes would be more common — a kind of cosmic Darwinism. It\'s speculative but not easily disproved.'},
+];
+
+const feed = document.getElementById('feed');
+const progressBar = document.getElementById('progress');
+const stashCountEl = document.getElementById('stash-count');
+const scrollTimeEl = document.getElementById('scroll-time');
+const toast = document.getElementById('toast');
+let stashCount = 0;
+let startTime = Date.now();
+
+// Build cards
+cards.forEach((c, i) => {
+  const el = document.createElement('div');
+  el.className = `card ${c.type}`;
+  el.dataset.index = i;
+
+  if (c.type === 'landing') {
+    el.innerHTML = `<div class="card-inner">
+      <div class="tagline">You're going to scroll anyway.</div>
+      <div class="sub">Paste any Wikipedia article, textbook, or PDF. We turn it into an infinite feed you can't stop swiping. You'll accidentally learn something.</div>
+      <div class="cta">START SCROLLING</div>
+      <div class="swipe-hint">↓</div>
+    </div>`;
+  } else if (c.type === 'knowledge') {
+    el.innerHTML = `<div class="card-inner"><div class="text">${c.text}</div>${c.deeper ? `<div class="deeper">${c.deeper}</div>` : ''}</div>`;
+  } else if (c.type === 'quiz') {
+    el.innerHTML = `<div class="card-inner"><div class="question">${c.question}</div><div class="options">${c.options.map((o,j) => `<button class="opt" data-idx="${j}">${o}</button>`).join('')}</div></div>`;
+    setTimeout(() => {
+      el.querySelectorAll('.opt').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.idx);
+          el.querySelectorAll('.opt').forEach(b => b.style.pointerEvents = 'none');
+          if (idx === c.answer) {
+            btn.classList.add('correct');
+          } else {
+            btn.classList.add('wrong');
+            el.querySelectorAll('.opt')[c.answer].classList.add('correct');
+          }
+        });
+      });
+    }, 0);
+  } else if (c.type === 'milestone') {
+    el.innerHTML = `<div class="card-inner"><div class="emoji">${c.emoji}</div><div class="text">${c.text}</div><button class="share">SHARE</button></div>`;
+  } else if (c.type === 'rabbit') {
+    el.innerHTML = `<div class="card-inner"><div class="text">${c.text}</div><div class="link">${c.link}</div></div>`;
+  }
+
+  feed.appendChild(el);
+});
+
+// Tap to flip (knowledge cards)
+feed.addEventListener('click', (e) => {
+  const card = e.target.closest('.card.knowledge');
+  if (card && card.querySelector('.deeper')) {
+    card.classList.toggle('flipped');
+  }
+});
+
+// Double-tap to stash
+let lastTap = 0;
+feed.addEventListener('touchend', (e) => {
+  const now = Date.now();
+  if (now - lastTap < 300) {
+    stashCount++;
+    stashCountEl.textContent = stashCount;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 800);
+  }
+  lastTap = now;
+});
+feed.addEventListener('dblclick', () => {
+  stashCount++;
+  stashCountEl.textContent = stashCount;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 800);
+});
+
+// Progress bar
+feed.addEventListener('scroll', () => {
+  const pct = (feed.scrollTop / (feed.scrollHeight - feed.clientHeight)) * 100;
+  progressBar.style.width = pct + '%';
+});
+
+// Scroll time
+setInterval(() => {
+  const mins = Math.floor((Date.now() - startTime) / 60000);
+  scrollTimeEl.textContent = mins + 'm';
+}, 10000);
+</script>
+</body>
+</html>
