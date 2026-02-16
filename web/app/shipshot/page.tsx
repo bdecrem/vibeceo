@@ -373,7 +373,7 @@ export default function ShipShotLanding() {
         zIndex: 2,
       }}>
         <p style={{ fontSize: 13, color: '#334455' }}>
-          Built by the Shipwreck crew. Powered by caffeine and questionable decisions.
+          Built by the ShipShot crew. Powered by caffeine and questionable decisions.
         </p>
       </footer>
 
