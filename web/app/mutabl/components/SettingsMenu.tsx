@@ -6,6 +6,7 @@ type Change = { id: string; request: string; summary: string; created_at: string
 
 type SettingsMenuProps = {
   userHandle: string;
+  appCode: string;
   updateAvailable: boolean;
   onUpdateSkip: () => void;
   onUpdateAccept: () => void;
@@ -17,6 +18,7 @@ type SettingsMenuProps = {
 
 export default function SettingsMenu({
   userHandle,
+  appCode,
   updateAvailable,
   onUpdateSkip,
   onUpdateAccept,
@@ -26,6 +28,8 @@ export default function SettingsMenu({
   accentColor = "#6366f1",
 }: SettingsMenuProps) {
   const [open, setOpen] = useState(false);
+  const [showSource, setShowSource] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [changes, setChanges] = useState<Change[]>([]);
   const [loadingChanges, setLoadingChanges] = useState(false);
   const [updatingAction, setUpdatingAction] = useState<string | null>(null);
@@ -221,6 +225,71 @@ export default function SettingsMenu({
                   </div>
                 </div>
               ))
+            )}
+          </div>
+
+          {/* Source */}
+          <div style={{ borderTop: "1px solid #2a2a4a" }}>
+            <button
+              onClick={() => setShowSource(!showSource)}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                background: "none",
+                border: "none",
+                color: "#888",
+                cursor: "pointer",
+                fontSize: 13,
+                textAlign: "left",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>Source code</span>
+              <span style={{ fontSize: 10, color: "#555" }}>{showSource ? "▲" : "▼"}</span>
+            </button>
+            {showSource && (
+              <div style={{ padding: "0 16px 12px" }}>
+                <pre
+                  style={{
+                    background: "#0a0a1a",
+                    border: "1px solid #2a2a4a",
+                    borderRadius: 6,
+                    padding: 12,
+                    fontSize: 11,
+                    color: "#aaa",
+                    overflow: "auto",
+                    maxHeight: 200,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                    margin: "0 0 8px",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {appCode}
+                </pre>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(appCode);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "6px 0",
+                    borderRadius: 6,
+                    background: copied ? "#10b981" : "#2a2a4a",
+                    border: "none",
+                    color: "#fff",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 500,
+                  }}
+                >
+                  {copied ? "Copied!" : "Copy to clipboard"}
+                </button>
+              </div>
             )}
           </div>
 
