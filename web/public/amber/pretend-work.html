@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRETEND WORK — 8-Bit Reality</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="PRETEND WORK — 8-Bit Reality">
+    <meta property="og:description" content="The screen says quarterly reports. The brain says literally anything else.">
+    <meta property="og:image" content="https://intheamber.com/amber/pretend-work-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/pretend-work.html">
+    <meta property="og:type" content="website">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PRETEND WORK — 8-Bit Reality">
+    <meta name="twitter:description" content="The screen says quarterly reports. The brain says literally anything else.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/pretend-work-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D0D0D;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            color: #D4A574;
+        }
+        
+        #gameScreen {
+            width: 320px;
+            height: 240px;
+            border: 4px solid #D4A574;
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+            position: relative;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        #ui {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #D4A574;
+            padding: 8px;
+            font-size: 10px;
+            color: #FFD700;
+        }
+        
+        #tapHint {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #2D9596;
+            padding: 6px 12px;
+            font-size: 10px;
+            color: #2D9596;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 400px) {
+            #gameScreen {
+                width: 280px;
+                height: 210px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameScreen">
+        <canvas id="canvas" width="320" height="240"></canvas>
+        <div id="tapHint">TAP TO SWITCH THOUGHTS</div>
+        <div id="ui">
+            FOCUS: <span id="focusBar">▓▓░░░░░░░░</span> | THOUGHTS: <span id="thoughtCount">0</span>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Audio context
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        function playBeep(freq, duration) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = 'square';
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        // Color palette
+        const COLORS = {
+            bg: '#1a1a2e',
+            desk: '#6B4423',
+            skin: '#FFCC99',
+            hair: '#3D2817',
+            shirt: '#2D9596',
+            screen: '#D4A574',
+            screenGlow: '#FFD700',
+            thought: '#FFFFFF',
+            text: '#000000'
+        };
+        
+        // Thought bubble contents
+        const thoughts = [
+            { emoji: '🏖️', text: 'BEACH' },
+            { emoji: '🍕', text: 'PIZZA' },
+            { emoji: '🎮', text: 'GAMES' },
+            { emoji: '🛌', text: 'SLEEP' },
+            { emoji: '🎸', text: 'MUSIC' },
+            { emoji: '🐕', text: 'DOGS' },
+            { emoji: '🌮', text: 'TACOS' },
+            { emoji: '✈️', text: 'TRAVEL' }
+        ];
+        
+        let currentThought = 0;
+        let thoughtCount = 0;
+        let focus = 100;
+        let blinkTimer = 0;
+        let eyesClosed = false;
+        
+        // Draw pixel function
+        function drawPixel(x, y, color, size = 1) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, size, size);
+        }
+        
+        // Draw filled rectangle
+        function drawRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+        }
+        
+        // Draw desk scene
+        function drawDesk() {
+            // Desk
+            drawRect(0, 150, 320, 90, COLORS.desk);
+            drawRect(0, 148, 320, 2, '#8B6428');
+        }
+        
+        // Draw computer screen
+        function drawScreen() {
+            // Monitor base
+            drawRect(200, 170, 60, 5, '#333');
+            drawRect(220, 175, 20, 15, '#333');
+            
+            // Screen frame
+            drawRect(190, 90, 80, 80, '#222');
+            
+            // Screen glow
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = COLORS.screenGlow;
+            drawRect(195, 95, 70, 70, COLORS.screen);
+            ctx.shadowBlur = 0;
+            
+            // Fake spreadsheet on screen
+            ctx.fillStyle = COLORS.text;
+            ctx.font = '6px monospace';
+            ctx.fillText('Q1 REPORT', 200, 105);
+            
+            // Grid lines
+            for (let i = 0; i < 5; i++) {
+                drawRect(195, 110 + i * 10, 70, 1, '#666');
+            }
+            for (let i = 0; i < 4; i++) {
+                drawRect(210 + i * 15, 110, 1, 50, '#666');
+            }
+        }
+        
+        // Draw character
+        function drawCharacter() {
+            const x = 100;
+            const y = 110;
+            
+            // Body (shirt)
+            drawRect(x - 12, y + 24, 24, 30, COLORS.shirt);
+            
+            // Head
+            drawRect(x - 8, y, 16, 20, COLORS.skin);
+            
+            // Hair
+            drawRect(x - 8, y - 4, 16, 6, COLORS.hair);
+            drawRect(x - 10, y, 2, 8, COLORS.hair);
+            drawRect(x + 8, y, 2, 8, COLORS.hair);
+            
+            // Eyes
+            if (eyesClosed) {
+                drawRect(x - 4, y + 8, 2, 1, COLORS.text);
+                drawRect(x + 2, y + 8, 2, 1, COLORS.text);
+            } else {
+                drawRect(x - 4, y + 8, 2, 2, COLORS.text);
+                drawRect(x + 2, y + 8, 2, 2, COLORS.text);
+            }
+            
+            // Mouth (slight frown)
+            drawRect(x - 2, y + 14, 4, 1, COLORS.text);
+            
+            // Arms on keyboard
+            drawRect(x - 16, y + 30, 4, 20, COLORS.skin);
+            drawRect(x + 12, y + 30, 4, 20, COLORS.skin);
+            
+            // Keyboard
+            drawRect(x - 20, y + 48, 40, 8, '#555');
+            ctx.fillStyle = '#333';
+            for (let i = 0; i < 8; i++) {
+                for (let j = 0; j < 2; j++) {
+                    drawRect(x - 18 + i * 5, y + 50 + j * 3, 3, 2, '#333');
+                }
+            }
+        }
+        
+        // Draw thought bubble
+        function drawThoughtBubble() {
+            const thought = thoughts[currentThought];
+            
+            // Bubble circles (from character to main bubble)
+            ctx.fillStyle = COLORS.thought;
+            ctx.beginPath();
+            ctx.arc(110, 100, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(118, 90, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main thought bubble
+            ctx.beginPath();
+            ctx.arc(80, 50, 30, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(60, 55, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(95, 55, 18, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Thought content
+            ctx.fillStyle = COLORS.text;
+            ctx.font = '24px monospace';
+            ctx.fillText(thought.emoji, 65, 60);
+        }
+        
+        // Update focus bar
+        function updateFocusBar() {
+            const filled = Math.floor(focus / 10);
+            const bar = '▓'.repeat(filled) + '░'.repeat(10 - filled);
+            document.getElementById('focusBar').textContent = bar;
+        }
+        
+        // Animation loop
+        function animate() {
+            // Clear
+            ctx.fillStyle = COLORS.bg;
+            ctx.fillRect(0, 0, 320, 240);
+            
+            // Draw scene
+            drawDesk();
+            drawScreen();
+            drawCharacter();
+            drawThoughtBubble();
+            
+            // Blink animation
+            blinkTimer++;
+            if (blinkTimer > 120) {
+                eyesClosed = !eyesClosed;
+                blinkTimer = eyesClosed ? 118 : 0; // Quick blink
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Handle tap/click
+        canvas.addEventListener('click', () => {
+            initAudio();
+            
+            // Cycle thought
+            currentThought = (currentThought + 1) % thoughts.length;
+            thoughtCount++;
+            
+            // Decrease focus
+            focus = Math.max(0, focus - 10);
+            
+            // Update UI
+            document.getElementById('thoughtCount').textContent = thoughtCount;
+            updateFocusBar();
+            
+            // Hide hint after first tap
+            document.getElementById('tapHint').classList.add('hidden');
+            
+            // Play sound
+            playBeep(400 + currentThought * 50, 0.1);
+            
+            // Check if focus depleted
+            if (focus === 0) {
+                setTimeout(() => {
+                    alert('FOCUS DEPLETED\n\nYou have been caught daydreaming.\n\nGAME OVER');
+                    focus = 100;
+                    thoughtCount = 0;
+                    updateFocusBar();
+                    document.getElementById('thoughtCount').textContent = '0';
+                }, 100);
+            }
+        });
+        
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
