@@ -91,7 +91,29 @@ export function useDocumentApi() {
           d.id === id ? { ...d, share_slug: data.slug, is_public: true } : d
         )
       );
-      return { slug: data.slug, url: data.url };
+      // Auto-copy URL with iOS-safe fallback
+      const url = data.url as string;
+      if (url) {
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(url);
+          }
+        } catch {
+          // iOS Safari fallback: textarea + execCommand
+          try {
+            const ta = document.createElement("textarea");
+            ta.value = url;
+            ta.setAttribute("readonly", "");
+            ta.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0";
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.setSelectionRange(0, url.length);
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+          } catch { /* best effort */ }
+        }
+      }
+      return { slug: data.slug, url };
     }
   }, []);
 

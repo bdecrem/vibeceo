@@ -54,6 +54,35 @@ const LiveBlock = memo(
   (prev, next) => prev.code === next.code
 );
 
+// iOS-safe clipboard helper — falls back to execCommand for older Safari
+async function copyToClipboard(text: string): Promise<boolean> {
+  // Try modern API first
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall through to fallback
+    }
+  }
+  // Fallback: create a temporary textarea (works on iOS Safari)
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0";
+    document.body.appendChild(ta);
+    // iOS-specific: need to select via setSelectionRange
+    ta.focus();
+    ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 export default function AppRenderer({ code, scope }: AppRendererProps) {
   // Stable scope for LiveProvider — frozen when code changes, includes
   // initial snapshot of scope values + React hooks + context accessors.
@@ -67,6 +96,7 @@ export default function AppRenderer({ code, scope }: AppRendererProps) {
       useCallback,
       useContext,
       ScopeContext,
+      copyToClipboard,
       ...scope,
     }),
     [code]
