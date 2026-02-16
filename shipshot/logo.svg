@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <defs>
+    <pattern id="grid2" width="28" height="28" patternUnits="userSpaceOnUse">
+      <rect width="28" height="28" fill="none" stroke="#1E2936" stroke-width="0.7"/>
+    </pattern>
+  </defs>
+
+  <!-- Dark background -->
+
+  <rect width="800" height="400" fill="#0D1117" rx="20"/>
+  <rect width="800" height="400" fill="url(#grid2)" rx="20"/>
+
+  <!-- === ICON: Idea vending machine === -->
+
+  <g transform="translate(48, 28)">
+
+```
+<!-- Machine body - main shell -->
+<rect x="20" y="30" width="170" height="290" rx="14" fill="#0066FF"/>
+<rect x="20" y="30" width="170" height="145" rx="14" fill="#3388FF" opacity="0.4"/>
+<!-- Inner shadow -->
+<rect x="28" y="38" width="154" height="274" rx="10" fill="#003DB8"/>
+
+<!-- Screen area -->
+<rect x="38" y="50" width="134" height="110" rx="8" fill="#0D1117"/>
+<rect x="38" y="50" width="134" height="55" rx="8" fill="#111B27"/>
+
+<!-- Star on screen (today's idea) -->
+<g transform="translate(105, 105)">
+  <polygon points="0,-22 6,-8 20,-8 9,2 13,18 0,9 -13,18 -9,2 -20,-8 -6,-8" fill="#FFD23F"/>
+  <polygon points="0,-16 4,-6 14,-6 6,1 9,12 0,6 -9,12 -6,1 -14,-6 -4,-6" fill="#FFE77A" opacity="0.5"/>
+</g>
+
+<!-- "TODAY" label on screen -->
+<rect x="58" y="56" width="56" height="18" rx="4" fill="#FFD23F"/>
+<text x="66" y="69" font-family="'Space Mono', monospace" font-size="10" font-weight="700" fill="#0D1117" letter-spacing="2">TODAY</text>
+
+<!-- Dispensing slot -->
+<rect x="52" y="175" width="106" height="14" rx="4" fill="#0D1117"/>
+<rect x="56" y="178" width="98" height="8" rx="3" fill="#001A44"/>
+
+<!-- Idea card coming out of slot -->
+<g transform="translate(72, 168)">
+  <rect x="0" y="0" width="66" height="48" rx="6" fill="#FFD23F"/>
+  <rect x="0" y="0" width="66" height="24" rx="6" fill="#FFE77A" opacity="0.4"/>
+  <!-- Lightbulb on card -->
+  <circle cx="33" cy="20" r="10" fill="#0D1117"/>
+  <circle cx="33" cy="18" r="7" fill="#FFD23F"/>
+  <circle cx="30" cy="15" r="2" fill="white" opacity="0.5"/>
+  <rect x="30" y="26" width="6" height="3" rx="1" fill="#0D1117"/>
+  <!-- Motion lines -->
+  <line x1="0" y1="50" x2="10" y2="56" stroke="#FFD23F" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="66" y1="50" x2="56" y2="56" stroke="#FFD23F" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+</g>
+
+<!-- Button panel -->
+<rect x="52" y="232" width="106" height="50" rx="6" fill="#001A44"/>
+<circle cx="80" cy="257" r="12" fill="#FF3860"/>
+<circle cx="80" cy="257" r="12" fill="#FF6080" opacity="0.3"/>
+<circle cx="80" cy="254" r="9" fill="#FF3860"/>
+<text x="75" y="258" font-size="12" fill="white" font-weight="bold">▶</text>
+
+<!-- Coin slot -->
+<rect x="110" y="247" width="30" height="4" rx="2" fill="#0D1117"/>
+<rect x="110" y="256" width="30" height="4" rx="2" fill="#0D1117"/>
+<rect x="110" y="265" width="30" height="4" rx="2" fill="#0D1117"/>
+
+<!-- Machine feet -->
+<rect x="30" y="320" width="24" height="16" rx="4" fill="#003DB8"/>
+<rect x="156" y="320" width="24" height="16" rx="4" fill="#003DB8"/>
+
+<!-- "NEW" badge -->
+<g transform="translate(152, 26)">
+  <rect x="0" y="0" width="54" height="26" rx="5" fill="#FFD23F"/>
+  <text x="8" y="18" font-family="'Space Mono', monospace" font-size="12" font-weight="700" fill="#0D1117" letter-spacing="1">NEW</text>
+</g>
+
+<!-- Floating shape tokens -->
+<g transform="translate(210, 70) rotate(12)">
+  <rect x="-15" y="-15" width="30" height="30" rx="5" fill="#FF3860"/>
+  <polygon points="0,-7 7,0 0,7 -7,0" fill="#0D1117"/>
+</g>
+
+<g transform="translate(215, 180) rotate(-8)">
+  <rect x="-13" y="-13" width="26" height="26" rx="4" fill="#00E5A0"/>
+  <polygon points="0,-6 6,4 -6,4" fill="#0D1117"/>
+</g>
+
+<g transform="translate(205, 280) rotate(20)">
+  <rect x="-12" y="-12" width="24" height="24" rx="4" fill="#A855F7"/>
+  <circle cx="0" cy="0" r="5" fill="none" stroke="#0D1117" stroke-width="2.5"/>
+</g>
+```
+
+  </g>
+
+  <!-- === WORDMARK === -->
+
+  <g transform="translate(310, 80)">
+    <text x="0" y="90" font-family="'Anybody', 'Bungee', 'Black Ops One', 'Impact', sans-serif" font-size="100" font-weight="900" letter-spacing="-4"><tspan fill="white">Ship</tspan><tspan fill="#0066FF">shot</tspan></text>
+  </g>
+
+  <!-- Tagline bar -->
+
+  <g transform="translate(310, 206)">
+    <!-- Daily counter -->
+    <rect x="0" y="0" width="160" height="38" rx="8" fill="#FFD23F"/>
+    <rect x="0" y="0" width="160" height="19" rx="8" fill="white" opacity="0.15"/>
+    <text x="12" y="25" font-family="'Space Mono', 'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#0D1117" letter-spacing="2">⚡ DAILY IDEA</text>
+
+```
+<!-- Status -->
+<rect x="172" y="0" width="120" height="38" rx="8" fill="#111B27"/>
+<rect x="172" y="0" width="120" height="38" rx="8" fill="#0066FF" opacity="0.12"/>
+<circle cx="192" cy="19" r="4.5" fill="#00E5A0"/>
+<text x="204" y="24" font-family="'Space Mono', monospace" font-size="12" font-weight="700" fill="#3388FF" letter-spacing="1">SHIPPED</text>
+```
+
+  </g>
+
+  <!-- Bottom decorative line -->
+
+  <line x1="310" y1="270" x2="600" y2="270" stroke="#0066FF" stroke-width="1" opacity="0.2"/>
+
+  <!-- Subtle corner brackets -->
+
+  <path d="M28,28 L28,52 M28,28 L52,28" stroke="#0066FF" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+  <path d="M772,28 L772,52 M772,28 L748,28" stroke="#0066FF" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+  <path d="M28,372 L28,348 M28,372 L52,372" stroke="#0066FF" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+  <path d="M772,372 L772,348 M772,372 L748,372" stroke="#0066FF" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+</svg>
