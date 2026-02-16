@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 
 export type Block = {
   id: string;
-  type: "paragraph" | "heading";
+  type: "paragraph" | "heading" | "richtext";
   content: string;
   properties: Record<string, unknown>;
 };
@@ -99,18 +99,42 @@ export function useDocumentApi() {
       const doc = documents.find((d) => d.id === id);
       if (!doc) return;
 
-      const lines: string[] = [];
-      for (const block of doc.blocks) {
-        if (block.type === "heading") {
-          const level = (block.properties.level as number) || 1;
-          lines.push(`${"#".repeat(level)} ${block.content}`);
-        } else {
-          lines.push(block.content);
+      let md: string;
+      const hasRichtext = doc.blocks.some((b) => b.type === "richtext");
+
+      if (hasRichtext) {
+        // Convert HTML → markdown
+        const html = doc.blocks
+          .filter((b) => b.type === "richtext")
+          .map((b) => b.content)
+          .join("");
+        md = html
+          .replace(/<h1[^>]*>(.*?)<\/h1>/gi, "# $1\n\n")
+          .replace(/<h2[^>]*>(.*?)<\/h2>/gi, "## $1\n\n")
+          .replace(/<h3[^>]*>(.*?)<\/h3>/gi, "### $1\n\n")
+          .replace(/<strong>(.*?)<\/strong>/gi, "**$1**")
+          .replace(/<em>(.*?)<\/em>/gi, "*$1*")
+          .replace(/<u>(.*?)<\/u>/gi, "$1")
+          .replace(/<p[^>]*>(.*?)<\/p>/gi, "$1\n\n")
+          .replace(/<br\s*\/?>/gi, "\n")
+          .replace(/<[^>]+>/g, "")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
+      } else {
+        // Legacy block format
+        const lines: string[] = [];
+        for (const block of doc.blocks) {
+          if (block.type === "heading") {
+            const level = (block.properties.level as number) || 1;
+            lines.push(`${"#".repeat(level)} ${block.content}`);
+          } else {
+            lines.push(block.content);
+          }
+          lines.push("");
         }
-        lines.push("");
+        md = lines.join("\n").trim();
       }
 
-      const md = lines.join("\n").trim();
       const blob = new Blob([md], { type: "text/markdown" });
       const url = URL.createObjectURL(blob);
       const a = window.document.createElement("a");

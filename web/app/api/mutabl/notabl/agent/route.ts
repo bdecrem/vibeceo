@@ -50,9 +50,15 @@ const NOTABL_SCOPE_DOCS = `AVAILABLE IN SCOPE (injected by the wrapper — do NO
 - Export: exportMarkdown(id) → converts blocks to .md and triggers browser download
 - Refresh: refreshDocuments()
 - User info: user ({handle})
-- Block shape: { id, type, content, properties }
-  - type: "paragraph" | "heading"
-  - properties: { level?: 1|2|3 } (for headings)
+- RichEditor component: <RichEditor content={html} onUpdate={fn} theme={{accent:"#color"}} editable={bool} />
+  - content: HTML string (TipTap format)
+  - onUpdate: called with HTML string on every edit
+  - theme: { accent } — controls toolbar highlight, caret, selection color
+  - editable: boolean (default true)
+  - Has its own toolbar (B/I/U, H1/H2/H3) — do NOT build a formatting toolbar
+- Block format: { id: "body", type: "richtext", content: "<h1>Title</h1><p>text</p>" }
+  - Single richtext block per document, content is HTML
+  - Save: updateDocument(id, { blocks: [{ id: "body", type: "richtext", content: html }] })
 
 NOTE: Logout and settings are handled by the app wrapper — do NOT add logout buttons to the component.`;
 
@@ -61,19 +67,21 @@ const NOTABL_CODE_RULES = `RULES:
 - Use inline styles (style={{ }}) — no CSS imports, no Tailwind classes
 - Do NOT import anything — all dependencies are in scope
 - The component must be self-contained in one function
-- Block IDs should be generated with Math.random().toString(36).slice(2, 10)
-- You can add any document editing feature: search, formatting, themes, export, etc.
+- Use <RichEditor> for ALL document editing — NEVER use contentEditable divs or build your own text editor
+- Your job is layout, features, and theming AROUND the editor — not reimplementing the editor
+- Save document content as a single richtext block: { id: "body", type: "richtext", content: html }
+- When loading a doc, handle legacy blocks (type "paragraph"/"heading") by converting them to HTML
+- You can add features like: word count, themes, sidebar customization, document organization, focus mode, AI tools
 - Keep the app functional and visually coherent after changes
 - Preserve existing functionality unless the user explicitly asks to remove it
 - The pink color scheme (#FD79A8) is the default accent — respect it unless user asks for a different theme
-- Focus on the EDITOR experience — the public viewer is handled separately
 
 OUTPUT FORMAT:
 Return the complete updated component code in a \`\`\`jsx code block, followed by a brief explanation of what you changed.`;
 
 const NOTABL_SYSTEM_PROMPT = `You are the NOTABL builder agent. You modify a user's personal document editor by rewriting their React component code.
 
-NOTABL is a block-based page editor with one-click public sharing. Users create pages, write content in blocks (paragraphs and headings), and share them via clean read-only links.
+NOTABL is a rich text document editor powered by TipTap. It has a pre-built <RichEditor> component in scope that handles all text editing (bold, italic, underline, headings). Users create documents, write rich content, and share them via clean public links. Your role is to customize the layout, features, and theming AROUND the editor — never reimplement it.
 
 ${NOTABL_SCOPE_DOCS}
 

@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     const initBlockId = crypto.randomBytes(4).toString("hex");
     const defaultBlocks = [
-      { id: initBlockId, type: "paragraph", content: "", properties: {} }
+      { id: initBlockId, type: "richtext", content: "", properties: {} }
     ];
 
     const { data, error } = await supabase

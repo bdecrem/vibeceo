@@ -5,6 +5,7 @@ import AuthGate from "../components/AuthGate";
 import AppRenderer from "../components/AppRenderer";
 import ChatPanel from "../components/ChatPanel";
 import SettingsMenu from "../components/SettingsMenu";
+import RichEditor from "../components/RichEditor";
 import { useDocumentApi } from "./useDocumentApi";
 
 type User = { id: string; handle: string };
@@ -139,6 +140,7 @@ export default function NotablPage() {
           unshareDocument,
           refreshDocuments,
           exportMarkdown,
+          RichEditor,
           user: { handle: user.handle },
         }}
       />

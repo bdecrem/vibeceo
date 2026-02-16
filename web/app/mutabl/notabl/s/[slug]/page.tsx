@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 type Block = {
   id: string;
-  type: "paragraph" | "heading";
+  type: "paragraph" | "heading" | "richtext";
   content: string;
   properties: { level?: number };
 };
@@ -113,9 +113,32 @@ export default async function SharedDocumentPage({
             paddingTop: "24px",
           }}
         >
-          {doc.blocks.map((block: Block) => (
-            <BlockRenderer key={block.id} block={block} />
-          ))}
+          {doc.blocks[0]?.type === "richtext" ? (
+            <>
+              <style>{`
+                .nb-public h1 { font-size: 32px; font-weight: 700; color: #fff; margin: 32px 0 12px; line-height: 1.3; }
+                .nb-public h2 { font-size: 24px; font-weight: 600; color: #fff; margin: 24px 0 10px; line-height: 1.35; }
+                .nb-public h3 { font-size: 20px; font-weight: 600; color: #fff; margin: 20px 0 8px; line-height: 1.4; }
+                .nb-public p { font-size: 16px; color: #d0d0d0; line-height: 1.7; margin: 4px 0; }
+                .nb-public strong { color: #e8e8e8; font-weight: 600; }
+                .nb-public em { font-style: italic; }
+                .nb-public u { text-decoration: underline; text-underline-offset: 3px; }
+              `}</style>
+              <div
+                className="nb-public"
+                dangerouslySetInnerHTML={{
+                  __html: doc.blocks
+                    .filter((b: Block) => b.type === "richtext")
+                    .map((b: Block) => b.content)
+                    .join(""),
+                }}
+              />
+            </>
+          ) : (
+            doc.blocks.map((block: Block) => (
+              <BlockRenderer key={block.id} block={block} />
+            ))
+          )}
         </div>
 
         <div
