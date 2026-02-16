@@ -54,33 +54,64 @@ const LiveBlock = memo(
   (prev, next) => prev.code === next.code
 );
 
-// iOS-safe clipboard helper — falls back to execCommand for older Safari
-async function copyToClipboard(text: string): Promise<boolean> {
-  // Try modern API first
-  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      // Fall through to fallback
-    }
-  }
-  // Fallback: create a temporary textarea (works on iOS Safari)
-  try {
+// Tappable copy widget — shows text and copies on tap. Works on iOS Safari
+// because the copy happens in the direct click handler (user gesture preserved).
+function CopyLink({ url, label }: { url: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleTap = () => {
+    // execCommand in a direct click handler — most reliable on iOS
     const ta = document.createElement("textarea");
-    ta.value = text;
+    ta.value = url;
     ta.setAttribute("readonly", "");
     ta.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0";
     document.body.appendChild(ta);
-    // iOS-specific: need to select via setSelectionRange
     ta.focus();
-    ta.setSelectionRange(0, text.length);
-    const ok = document.execCommand("copy");
+    ta.setSelectionRange(0, url.length);
+    document.execCommand("copy");
     document.body.removeChild(ta);
-    return ok;
-  } catch {
-    return false;
-  }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleTap}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "8px 14px",
+        background: copied ? "#1a3a1a" : "#1a1a2e",
+        border: `1px solid ${copied ? "#2d6a2d" : "#333"}`,
+        borderRadius: 8,
+        color: copied ? "#6fcf6f" : "#aaa",
+        fontSize: 13,
+        fontFamily: "monospace",
+        cursor: "pointer",
+        maxWidth: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        transition: "all 0.2s",
+      }}
+    >
+      {copied ? "✓ Copied!" : (label || url)}
+    </button>
+  );
+}
+
+// Standalone copy function (also available in scope)
+function copyToClipboard(text: string): void {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  ta.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0";
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.setSelectionRange(0, text.length);
+  document.execCommand("copy");
+  document.body.removeChild(ta);
 }
 
 export default function AppRenderer({ code, scope }: AppRendererProps) {
@@ -97,6 +128,7 @@ export default function AppRenderer({ code, scope }: AppRendererProps) {
       useContext,
       ScopeContext,
       copyToClipboard,
+      CopyLink,
       ...scope,
     }),
     [code]
