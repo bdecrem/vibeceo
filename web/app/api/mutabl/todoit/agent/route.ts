@@ -109,6 +109,7 @@ USER REQUEST: ${message.trim()}`;
       .update({
         app_code: result.code,
         version: newVersion,
+        modified: true,
         updated_at: new Date().toISOString(),
       })
       .eq("id", session.userId);

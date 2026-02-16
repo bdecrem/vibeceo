@@ -41,58 +41,62 @@ function getSession(request: NextRequest) {
   return verifySessionToken(token);
 }
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const session = getSession(request);
   if (!session) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Fetch user config and base config in parallel
-  const [userResult, baseResult] = await Promise.all([
-    supabase
-      .from("todoit_config")
-      .select("app_code, version, base_version, modified")
-      .eq("id", session.userId)
-      .single(),
-    supabase
-      .from("todoit_config")
-      .select("app_code, version")
-      .is("handle", null)
-      .single(),
-  ]);
+  const body = await request.json();
+  const { action } = body;
 
-  if (!userResult.data) {
-    return NextResponse.json({ error: "Config not found" }, { status: 404 });
+  if (action !== "skip" && action !== "accept") {
+    return NextResponse.json(
+      { error: "Action must be 'skip' or 'accept'" },
+      { status: 400 }
+    );
   }
 
-  const user = userResult.data;
-  const base = baseResult.data;
-  const baseVersion = base?.version ?? 1;
+  // Get base config for current version
+  const { data: base } = await supabase
+    .from("todoit_config")
+    .select("app_code, version")
+    .is("handle", null)
+    .single();
 
-  // Auto-update unmodified users silently
-  if (!user.modified && user.base_version < baseVersion && base) {
+  if (!base) {
+    return NextResponse.json(
+      { error: "Base config not found" },
+      { status: 500 }
+    );
+  }
+
+  if (action === "skip") {
+    // Mark as seen — set base_version to current so notification goes away
     await supabase
       .from("todoit_config")
       .update({
-        app_code: base.app_code,
-        base_version: baseVersion,
+        base_version: base.version,
         updated_at: new Date().toISOString(),
       })
       .eq("id", session.userId);
 
-    return NextResponse.json({
-      app_code: base.app_code,
-      version: user.version,
-      update_available: false,
-    });
+    return NextResponse.json({ success: true });
   }
 
-  // Modified user with pending update
-  const updateAvailable = user.modified && user.base_version < baseVersion;
+  // action === "accept" — overwrite with new base
+  await supabase
+    .from("todoit_config")
+    .update({
+      app_code: base.app_code,
+      base_version: base.version,
+      modified: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", session.userId);
 
   return NextResponse.json({
-    app_code: user.app_code,
-    version: user.version,
-    update_available: updateAvailable,
+    success: true,
+    app_code: base.app_code,
   });
 }

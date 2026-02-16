@@ -144,10 +144,10 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Get the base app_code template
+        // Get the base app_code template + current version
         const { data: baseConfig } = await supabase
           .from("todoit_config")
-          .select("app_code")
+          .select("app_code, version")
           .is("handle", null)
           .single();
 
@@ -165,6 +165,7 @@ export async function POST(request: NextRequest) {
             handle_lower: handleLower,
             code: code,
             app_code: baseConfig.app_code,
+            base_version: baseConfig.version,
           })
           .select("id, handle")
           .single();
