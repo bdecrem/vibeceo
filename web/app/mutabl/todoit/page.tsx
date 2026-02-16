@@ -138,6 +138,15 @@ export default function TodoitPage() {
     setAppCode(newCode);
   };
 
+  const logout = async () => {
+    await fetch(AUTH_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "logout" }),
+    });
+    window.location.reload();
+  };
+
   if (checking) {
     return (
       <div
@@ -202,6 +211,7 @@ export default function TodoitPage() {
           deleteTask,
           updateTask,
           user: { handle: user.handle },
+          logout,
         }}
       />
       <ChatPanel
