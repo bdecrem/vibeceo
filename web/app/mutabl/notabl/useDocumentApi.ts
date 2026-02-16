@@ -78,43 +78,60 @@ export function useDocumentApi() {
     await fetch(`${BASE}/${id}`, { method: "DELETE" });
   }, []);
 
-  const shareDocument = useCallback(async (id: string) => {
-    const res = await fetch(`${BASE}/${id}/share`, {
+  const shareDocument = useCallback((id: string) => {
+    // Build the fetch promise (not awaited yet)
+    const fetchPromise = fetch(`${BASE}/${id}/share`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "share" }),
-    });
-    if (res.ok) {
-      const data = await res.json();
+    }).then((res) => (res.ok ? res.json() : null));
+
+    // iOS Safari requires clipboard.write to be called synchronously in the
+    // user gesture — but the actual data can be a Promise. This preserves the
+    // gesture chain across the async fetch.
+    let clipboardOk = false;
+    if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+      try {
+        const textBlob = fetchPromise.then((data) =>
+          new Blob([data?.url ?? ""], { type: "text/plain" })
+        );
+        navigator.clipboard.write([
+          new ClipboardItem({ "text/plain": textBlob }),
+        ]);
+        clipboardOk = true;
+      } catch {
+        /* fall through */
+      }
+    }
+
+    // Now await the fetch and update state
+    return fetchPromise.then(async (data) => {
+      if (!data) return;
       setDocuments((prev) =>
         prev.map((d) =>
           d.id === id ? { ...d, share_slug: data.slug, is_public: true } : d
         )
       );
-      // Auto-copy URL with iOS-safe fallback
-      const url = data.url as string;
-      if (url) {
+      // Fallback copy for browsers without ClipboardItem
+      if (!clipboardOk && data.url) {
         try {
-          if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(url);
-          }
+          await navigator.clipboard.writeText(data.url);
         } catch {
-          // iOS Safari fallback: textarea + execCommand
           try {
             const ta = document.createElement("textarea");
-            ta.value = url;
+            ta.value = data.url;
             ta.setAttribute("readonly", "");
             ta.style.cssText = "position:fixed;left:-9999px;top:-9999px;opacity:0";
             document.body.appendChild(ta);
             ta.focus();
-            ta.setSelectionRange(0, url.length);
+            ta.setSelectionRange(0, data.url.length);
             document.execCommand("copy");
             document.body.removeChild(ta);
           } catch { /* best effort */ }
         }
       }
-      return { slug: data.slug, url };
-    }
+      return { slug: data.slug, url: data.url as string };
+    });
   }, []);
 
   const unshareDocument = useCallback(async (id: string) => {
