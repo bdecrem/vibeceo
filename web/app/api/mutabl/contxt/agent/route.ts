@@ -146,6 +146,7 @@ USER REQUEST: ${message.trim()}`;
       systemPrompt: CONTXT_SYSTEM_PROMPT,
       userMessage: userPrompt,
       currentCode,
+      maxTokens: 16384,
     });
 
     if (!result.ok) {

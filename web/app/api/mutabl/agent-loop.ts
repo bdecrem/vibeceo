@@ -10,6 +10,7 @@ export type AgentLoopOptions = {
   userMessage: string;
   currentCode: string;
   maxIterations?: number;
+  maxTokens?: number;
 };
 
 export type AgentLoopResult =
@@ -48,7 +49,7 @@ function validateAppCode(code: string): { valid: boolean; error?: string } {
 export async function agentLoop(
   options: AgentLoopOptions
 ): Promise<AgentLoopResult> {
-  const { systemPrompt, userMessage, maxIterations = MAX_ITERATIONS } = options;
+  const { systemPrompt, userMessage, maxIterations = MAX_ITERATIONS, maxTokens = 4096 } = options;
 
   const messages: Anthropic.MessageParam[] = [
     { role: "user", content: userMessage },
@@ -57,7 +58,7 @@ export async function agentLoop(
   for (let i = 0; i < maxIterations; i++) {
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-5-20250929",
-      max_tokens: 4096,
+      max_tokens: maxTokens,
       system: systemPrompt,
       messages,
     });
