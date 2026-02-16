@@ -200,301 +200,191 @@ function DispensedCards({ apps }: { apps: typeof APPS }) {
 }
 
 const CREW = [
-  { name: 'Drift', role: 'Signal Hunter', img: '/shipshot/crew/drift-bg.png', accent: '#00D4FF', bio: 'Scans the noise so you don\'t have to. Drift finds the signal in a sea of trends, memes, and market chatter — then distills it into one sharp insight before anyone else notices.' },
-  { name: 'Hype', role: 'Vibes Architect', img: '/shipshot/crew/hype-bg.png', accent: '#FF3366', bio: 'Turns a whisper into a roar. Hype crafts the narrative, writes the copy, and makes sure every launch feels like an event — even if it\'s a to-do list app.' },
-  { name: 'Margin', role: 'Numbers Oracle', img: '/shipshot/crew/margin-bg.png', accent: '#10B981', bio: 'The spreadsheet whisperer. Margin runs the models, stress-tests the unit economics, and tells you the hard truth about whether your idea can actually make money.' },
-  { name: 'Pixel', role: 'Design Alchemist', img: '/shipshot/crew/pixel-bg.png', accent: '#7C3AED', bio: 'Makes it beautiful or makes it weird — ideally both. Pixel handles UI, brand, and all the visual decisions that turn a prototype into something people screenshot.' },
-  { name: 'Ship', role: 'Build Machine', img: '/shipshot/crew/ship-bg.png', accent: '#0066FF', bio: 'Writes the code, wires the API, deploys to prod. Ship doesn\'t debate architecture — Ship builds the thing and fixes it live. Velocity over perfection.' },
+  { name: 'Drift', role: 'Signal Hunter', img: '/shipshot/crew/drift-bg.png', accent: '#00D4FF' },
+  { name: 'Hype', role: 'Vibes Architect', img: '/shipshot/crew/hype-bg.png', accent: '#FF3366' },
+  { name: 'Margin', role: 'Numbers Oracle', img: '/shipshot/crew/margin-bg.png', accent: '#10B981' },
+  { name: 'Pixel', role: 'Design Alchemist', img: '/shipshot/crew/pixel-bg.png', accent: '#7C3AED' },
+  { name: 'Ship', role: 'Build Machine', img: '/shipshot/crew/ship-bg.png', accent: '#0066FF' },
 ]
 
-function DossierBoard() {
-  const [openCard, setOpenCard] = useState<number | null>(null)
-  const pins = [
-    { rot: -4, pinX: '55%', stamp: 'CLEARED FOR SHIPPING', redacted: 'Subject observed near ████ at 03:00' },
-    { rot: 3, pinX: '40%', stamp: 'HIGH ENERGY ASSET', redacted: 'Known to ████████ entire marketing budgets' },
-    { rot: -2, pinX: '60%', stamp: 'NUMBERS CHECK OUT', redacted: 'Runs ██████ models before breakfast' },
-    { rot: 5, pinX: '45%', stamp: 'VISUALLY DANGEROUS', redacted: 'Last seen ████████ a perfectly good wireframe' },
-    { rot: -3, pinX: '50%', stamp: 'BUILDS ON SIGHT', redacted: 'Will deploy to prod at ████ without asking' },
+function DispensedTokens() {
+  const [flipped, setFlipped] = useState<Set<number>>(new Set())
+  const scatter = [
+    { x: '10%', y: 20, rot: -18, delay: 0 },
+    { x: '52%', y: 0, rot: 8, delay: 0.15 },
+    { x: '78%', y: 35, rot: -6, delay: 0.3 },
+    { x: '22%', y: 110, rot: 14, delay: 0.1 },
+    { x: '62%', y: 125, rot: -22, delay: 0.25 },
   ]
 
+  const toggleFlip = (i: number) => {
+    setFlipped(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i); else next.add(i)
+      return next
+    })
+  }
+
   return (
-    <div style={{ position: 'relative', zIndex: 2, padding: '80px 20px 60px', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ position: 'relative', zIndex: 2, padding: '80px 20px 60px', maxWidth: 900, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
-        <div style={{
-          display: 'inline-block',
-          fontFamily: "'Space Mono', monospace",
-          fontSize: 11,
-          letterSpacing: 4,
-          color: '#FF3860',
-          border: '1px solid #FF386044',
-          padding: '5px 14px',
-          borderRadius: 2,
-          marginBottom: 16,
-          textTransform: 'uppercase',
-        }}>
-          Classified // Internal Use Only
-        </div>
         <h2 style={{ fontFamily: "'Impact', 'Arial Black', sans-serif", fontSize: 'clamp(32px, 7vw, 52px)', fontWeight: 900, textAlign: 'center', color: '#fff', letterSpacing: -2, margin: '0 0 12px 0' }}>
           The minds behind the <span style={{ color: '#FFD23F' }}>machine</span>
         </h2>
-        <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', margin: 0 }}>
-          Five agents. One button. Infinite questionable decisions.
+        <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>
+          FLIP A COIN
         </p>
       </div>
 
-      {/* Cork board area */}
-      <div style={{
-        position: 'relative',
-        background: 'linear-gradient(135deg, #2A1F14 0%, #1E1610 50%, #2A1F14 100%)',
-        borderRadius: 12,
-        padding: '48px 24px 48px',
-        border: '2px solid #3D2E1E',
-        boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.5)',
-        overflow: 'hidden',
-      }}>
-        {/* Cork texture noise */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: `radial-gradient(circle at 20% 30%, #3D2E1E 1px, transparent 1px),
-            radial-gradient(circle at 60% 70%, #3D2E1E 1px, transparent 1px),
-            radial-gradient(circle at 80% 20%, #352818 1px, transparent 1px),
-            radial-gradient(circle at 40% 80%, #352818 1px, transparent 1px)`,
-          backgroundSize: '40px 40px, 60px 60px, 50px 50px, 45px 45px',
-          opacity: 0.4,
-        }} />
+      {/* Coin scatter area */}
+      <div style={{ position: 'relative', maxWidth: 680, margin: '0 auto', height: 380 }}>
+        {CREW.map((m, i) => {
+          const s = scatter[i]
+          const isFlipped = flipped.has(i)
+          const coinSize = 160
 
-        {/* String / yarn connecting pins */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.15 }}>
-          <line x1="18%" y1="8%" x2="38%" y2="6%" stroke="#FF3860" strokeWidth="1" strokeDasharray="4,4" />
-          <line x1="38%" y1="6%" x2="58%" y2="10%" stroke="#FF3860" strokeWidth="1" strokeDasharray="4,4" />
-          <line x1="58%" y1="10%" x2="78%" y2="5%" stroke="#FF3860" strokeWidth="1" strokeDasharray="4,4" />
-        </svg>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
-          gap: 20,
-          position: 'relative',
-          maxWidth: 860,
-          margin: '0 auto',
-        }}>
-          {CREW.map((m, i) => {
-            const p = pins[i]
-            const isOpen = openCard === i
-            return (
-              <div
-                key={m.name}
-                onClick={() => setOpenCard(isOpen ? null : i)}
-                style={{
-                  position: 'relative',
-                  transform: isOpen ? 'rotate(0deg) translateY(-16px) scale(1.06)' : `rotate(${p.rot}deg)`,
-                  transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                  cursor: 'pointer',
-                  zIndex: isOpen ? 10 : 1,
-                  animation: `slideUp 0.5s ease ${i * 0.1}s both`,
-                }}
-              >
-                {/* Push pin */}
+          return (
+            <div
+              key={m.name}
+              onClick={() => toggleFlip(i)}
+              style={{
+                position: 'absolute',
+                left: s.x,
+                top: s.y,
+                transform: `rotate(${s.rot}deg)`,
+                cursor: 'pointer',
+                perspective: 600,
+                width: coinSize,
+                height: coinSize,
+                animation: `coinDrop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${s.delay}s both`,
+              }}
+            >
+              <div style={{
+                width: '100%',
+                height: '100%',
+                position: 'relative',
+                transformStyle: 'preserve-3d',
+                transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+                transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+              }}>
+                {/* FRONT — portrait */}
                 <div style={{
-                  position: 'absolute',
-                  top: -6,
-                  left: p.pinX,
-                  transform: 'translateX(-50%)',
-                  zIndex: 5,
-                  width: 16, height: 16,
+                  position: 'absolute', inset: 0,
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle at 40% 35%, #FF6060, #CC2020)',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.3)',
-                }} />
-
-                {/* Card body */}
-                <div style={{
-                  background: '#E8DCC8',
-                  borderRadius: 2,
-                  padding: '20px 14px 16px',
-                  position: 'relative',
+                  backfaceVisibility: 'hidden',
                   overflow: 'hidden',
-                  boxShadow: isOpen
-                    ? '0 24px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.1)'
-                    : '4px 4px 12px rgba(0,0,0,0.4)',
-                  transition: 'box-shadow 0.35s ease',
+                  boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 5px #2A2A3A, inset 0 0 0 7px #1A1A28`,
                 }}>
-                  {/* Aged paper texture */}
+                  {/* Metallic rim */}
                   <div style={{
-                    position: 'absolute', inset: 0,
-                    background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 30%, rgba(0,0,0,0.04) 100%)',
-                  }} />
-                  {/* Coffee stain (subtle) */}
-                  <div style={{
-                    position: 'absolute',
-                    right: -10, bottom: -10,
-                    width: 50, height: 50,
-                    borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(139,90,43,0.08) 40%, transparent 70%)',
-                  }} />
-
-                  {/* File number */}
-                  <div style={{
-                    fontFamily: "'Space Mono', monospace",
-                    fontSize: 9,
-                    color: '#8B7355',
-                    letterSpacing: 3,
-                    marginBottom: 10,
-                    position: 'relative',
+                    position: 'absolute', inset: 0, borderRadius: '50%',
+                    background: `conic-gradient(from 0deg, #3A3A4A, #5A5A6A, #3A3A4A, #5A5A6A, #3A3A4A)`,
+                    padding: 6,
                   }}>
-                    FILE #{String(i + 1).padStart(3, '0')}-SS
-                  </div>
-
-                  {/* Photo with halftone effect */}
-                  <div style={{
-                    width: '100%',
-                    aspectRatio: '1',
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    position: 'relative',
-                    marginBottom: 12,
-                    border: '1px solid #C4B49A',
-                  }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={m.img}
-                      alt={m.name}
-                      style={{
-                        width: '100%', height: '100%', objectFit: 'cover',
-                        filter: isOpen ? 'contrast(1.1) saturate(0.85)' : 'contrast(1.1) saturate(0.7)',
-                        transition: 'filter 0.3s ease',
-                      }}
-                    />
-                    {/* Halftone dot overlay */}
                     <div style={{
-                      position: 'absolute', inset: 0,
-                      backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.15) 1px, transparent 1px)',
-                      backgroundSize: '3px 3px',
-                      mixBlendMode: 'multiply',
-                    }} />
-                    {/* Aged photo overlay */}
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      background: 'linear-gradient(135deg, rgba(200,180,140,0.12) 0%, transparent 60%)',
-                    }} />
-                  </div>
-
-                  {/* Name */}
-                  <div style={{
-                    fontFamily: "'Impact', 'Arial Black', sans-serif",
-                    fontSize: 20,
-                    color: '#1A1410',
-                    letterSpacing: -0.5,
-                    marginBottom: 2,
-                    position: 'relative',
-                  }}>
-                    {m.name.toUpperCase()}
-                  </div>
-
-                  {/* Role */}
-                  <div style={{
-                    fontFamily: "'Space Mono', monospace",
-                    fontSize: 9,
-                    color: m.accent,
-                    letterSpacing: 2,
-                    textTransform: 'uppercase',
-                    marginBottom: 10,
-                    position: 'relative',
-                  }}>
-                    {m.role}
-                  </div>
-
-                  {/* Divider */}
-                  <div style={{ height: 1, background: '#C4B49A', marginBottom: 10 }} />
-
-                  {/* Redacted text (always visible) */}
-                  <div style={{
-                    fontFamily: "'Space Mono', monospace",
-                    fontSize: 8,
-                    color: '#8B7355',
-                    lineHeight: 1.8,
-                    position: 'relative',
-                    marginBottom: isOpen ? 10 : 12,
-                  }}>
-                    {p.redacted}
-                  </div>
-
-                  {/* Expanded bio section */}
-                  <div style={{
-                    maxHeight: isOpen ? 200 : 0,
-                    opacity: isOpen ? 1 : 0,
-                    overflow: 'hidden',
-                    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                  }}>
-                    <div style={{ height: 1, background: '#C4B49A', marginBottom: 10 }} />
-                    <div style={{
-                      fontFamily: "'Space Mono', monospace",
-                      fontSize: 9,
-                      color: '#5A4A38',
-                      lineHeight: 1.7,
-                      position: 'relative',
-                      marginBottom: 12,
+                      width: '100%', height: '100%', borderRadius: '50%',
+                      overflow: 'hidden', position: 'relative',
                     }}>
-                      {m.bio}
-                    </div>
-                    <div style={{
-                      fontFamily: "'Space Mono', monospace",
-                      fontSize: 8,
-                      color: '#AA8866',
-                      letterSpacing: 1,
-                      textAlign: 'right',
-                    }}>
-                      STATUS: ACTIVE
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={m.img}
+                        alt={m.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      {/* Shine overlay */}
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(0,0,0,0.15) 100%)',
+                        borderRadius: '50%',
+                      }} />
                     </div>
                   </div>
-
-                  {/* Tap hint */}
-                  {!isOpen && (
-                    <div style={{
-                      fontFamily: "'Space Mono', monospace",
-                      fontSize: 7,
-                      color: '#AA9977',
-                      letterSpacing: 2,
-                      textAlign: 'center',
-                      textTransform: 'uppercase',
-                      position: 'relative',
-                      marginTop: 2,
-                    }}>
-                      Tap to declassify
-                    </div>
-                  )}
-
-                  {/* Stamp */}
+                  {/* Edge highlight ring */}
                   <div style={{
-                    position: 'absolute',
-                    bottom: isOpen ? 'auto' : 16,
-                    top: isOpen ? 20 : 'auto',
-                    right: 10,
-                    transform: 'rotate(-12deg)',
-                    fontFamily: "'Impact', 'Arial Black', sans-serif",
-                    fontSize: 9,
-                    color: isOpen ? '#1A8B30' : '#CC2020',
-                    letterSpacing: 2,
-                    padding: '3px 8px',
-                    border: `2px solid ${isOpen ? '#1A8B30' : '#CC2020'}`,
-                    borderRadius: 3,
-                    opacity: 0.7,
-                    textTransform: 'uppercase',
-                    transition: 'all 0.3s ease',
+                    position: 'absolute', inset: 1, borderRadius: '50%',
+                    border: '1px solid rgba(255,255,255,0.1)',
                     pointerEvents: 'none',
+                  }} />
+                </div>
+
+                {/* BACK — name & role */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  borderRadius: '50%',
+                  backfaceVisibility: 'hidden',
+                  transform: 'rotateY(180deg)',
+                  boxShadow: `0 8px 32px rgba(0,0,0,0.5), inset 0 0 0 5px #2A2A3A, inset 0 0 0 7px #1A1A28`,
+                  overflow: 'hidden',
+                }}>
+                  {/* Metallic rim + colored interior */}
+                  <div style={{
+                    position: 'absolute', inset: 0, borderRadius: '50%',
+                    background: `conic-gradient(from 0deg, #3A3A4A, #5A5A6A, #3A3A4A, #5A5A6A, #3A3A4A)`,
+                    padding: 6,
                   }}>
-                    {isOpen ? 'DECLASSIFIED' : p.stamp}
+                    <div style={{
+                      width: '100%', height: '100%', borderRadius: '50%',
+                      background: '#0D1117',
+                      display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: 'center',
+                      position: 'relative',
+                    }}>
+                      {/* Radial accent glow */}
+                      <div style={{
+                        position: 'absolute', inset: 0, borderRadius: '50%',
+                        background: `radial-gradient(circle at 50% 50%, ${m.accent}22 0%, transparent 70%)`,
+                      }} />
+                      <div style={{
+                        fontFamily: "'Impact', 'Arial Black', sans-serif",
+                        fontSize: 24,
+                        color: '#fff',
+                        letterSpacing: -1,
+                        position: 'relative',
+                        textShadow: `0 0 20px ${m.accent}66`,
+                      }}>
+                        {m.name}
+                      </div>
+                      <div style={{
+                        width: 30, height: 2,
+                        background: m.accent,
+                        borderRadius: 1,
+                        margin: '8px 0',
+                        boxShadow: `0 0 8px ${m.accent}`,
+                      }} />
+                      <div style={{
+                        fontFamily: "'Space Mono', monospace",
+                        fontSize: 9,
+                        color: m.accent,
+                        letterSpacing: 2,
+                        textTransform: 'uppercase',
+                        position: 'relative',
+                      }}>
+                        {m.role}
+                      </div>
+                    </div>
                   </div>
+                  {/* Edge highlight ring */}
+                  <div style={{
+                    position: 'absolute', inset: 1, borderRadius: '50%',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    pointerEvents: 'none',
+                  }} />
+                  {/* Shine */}
+                  <div style={{
+                    position: 'absolute', inset: 0, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%)',
+                    pointerEvents: 'none',
+                  }} />
                 </div>
               </div>
-            )
-          })}
-        </div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Footer */}
-      <div style={{ textAlign: 'center', marginTop: 48, paddingBottom: 40 }}>
+      <div style={{ textAlign: 'center', marginTop: 32, paddingBottom: 40 }}>
         <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.2)', letterSpacing: 2 }}>
           POWERED BY CAFFEINE AND QUESTIONABLE DECISIONS
         </div>
@@ -571,8 +461,8 @@ export default function ShipShotPage() {
         </div>
       )}
 
-      {/* THE CREW — Dossier Board */}
-      <DossierBoard />
+      {/* THE CREW — Dispensed Tokens */}
+      <DispensedTokens />
 
       <style>{`
         * { box-sizing: border-box; }
@@ -591,6 +481,12 @@ export default function ShipShotPage() {
         @keyframes cardDrop {
           from { opacity: 0; transform: translateY(-30px) scale(0.8); }
           to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes coinDrop {
+          0% { opacity: 0; transform: translateY(-60px) scale(0.6) rotate(0deg); }
+          60% { opacity: 1; transform: translateY(8px) scale(1.05); }
+          80% { transform: translateY(-4px) scale(0.98); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0D1117; }
