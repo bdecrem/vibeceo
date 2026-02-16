@@ -43,13 +43,17 @@ function getSession(request: NextRequest) {
 }
 
 const NOTABL_SCOPE_DOCS = `AVAILABLE IN SCOPE (injected by the wrapper — do NOT import these):
-- React hooks: useState, useEffect, useRef, useMemo, useCallback
-- Documents data: documents (array of {id, title, blocks, share_slug, is_public, created_at, updated_at})
+- React hooks: useState, useEffect, useRef, useMemo, useCallback, useContext
+- ScopeContext: React context that provides fresh dynamic data. CRITICAL: your App MUST read
+  dynamic data from context to avoid react-live re-mount flicker:
+  const { documents, addDocument, updateDocument, deleteDocument, shareDocument, unshareDocument, refreshDocuments, exportMarkdown } = useContext(ScopeContext);
+  Put this line at the TOP of your App function, before any other hooks.
+- documents: array of {id, title, blocks, share_slug, is_public, created_at, updated_at}
 - Document operations: addDocument(title), updateDocument(id, {title?, blocks?}), deleteDocument(id)
 - Share operations: shareDocument(id) → returns {slug, url}, unshareDocument(id)
 - Export: exportMarkdown(id) → converts blocks to .md and triggers browser download
 - Refresh: refreshDocuments()
-- User info: user ({handle})
+- User info: user ({handle}) — available directly from scope (stable, no context needed)
 - RichEditor component: <RichEditor content={html} onUpdate={fn} theme={{accent:"#color"}} editable={bool} />
   - content: HTML string (TipTap format)
   - onUpdate: called with HTML string on every edit
@@ -67,6 +71,7 @@ const NOTABL_CODE_RULES = `RULES:
 - Use inline styles (style={{ }}) — no CSS imports, no Tailwind classes
 - Do NOT import anything — all dependencies are in scope
 - The component must be self-contained in one function
+- FIRST LINE of App must be: const { documents, addDocument, updateDocument, deleteDocument, shareDocument, unshareDocument, refreshDocuments, exportMarkdown } = useContext(ScopeContext);
 - Use <RichEditor> for ALL document editing — NEVER use contentEditable divs or build your own text editor
 - Your job is layout, features, and theming AROUND the editor — not reimplementing the editor
 - Save document content as a single richtext block: { id: "body", type: "richtext", content: html }
