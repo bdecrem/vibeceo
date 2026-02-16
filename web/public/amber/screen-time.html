@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Screen Time Confession — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Screen Time Confession — Amber">
+  <meta property="og:description" content="What your phone says vs. what you tell people">
+  <meta property="og:image" content="https://intheamber.com/amber/screen-time-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/screen-time.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Screen Time Confession — Amber">
+  <meta name="twitter:description" content="What your phone says vs. what you tell people">
+  <meta name="twitter:image" content="https://intheamber.com/amber/screen-time-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 20px;
+    }
+    
+    #particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    
+    .content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-size: clamp(20px, 5vw, 28px);
+      color: #FFD700;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .comparison {
+      background: rgba(13, 13, 13, 0.9);
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 25px;
+      margin-bottom: 25px;
+      display: none;
+    }
+    
+    .comparison.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    
+    .truth {
+      font-size: clamp(32px, 8vw, 56px);
+      color: #FF1493;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
+    }
+    
+    .lie {
+      font-size: clamp(18px, 4vw, 24px);
+      color: #2D9596;
+      font-style: italic;
+      margin-bottom: 15px;
+    }
+    
+    .roast {
+      font-size: 14px;
+      color: #D4A574;
+      line-height: 1.6;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #333;
+    }
+    
+    .button {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+      font-family: 'Courier New', monospace;
+      width: 100%;
+      max-width: 300px;
+    }
+    
+    .button:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+    
+    .button:active {
+      transform: scale(0.98);
+    }
+    
+    .counter {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 14px;
+      color: #888;
+    }
+    
+    .intro {
+      font-size: 16px;
+      color: #888;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  
+  <div class="counter">Lies told: <span id="count">0</span></div>
+  
+  <div class="content">
+    <h1>Screen Time Confession</h1>
+    
+    <div id="intro" class="intro">
+      We all lie about our screen time.<br>
+      Tap below to see the gap between reality and what you tell your therapist.
+    </div>
+    
+    <div id="comparison" class="comparison">
+      <div class="label">What Your Phone Says:</div>
+      <div class="truth" id="truth"></div>
+      
+      <div class="label">What You Tell People:</div>
+      <div class="lie" id="lie"></div>
+      
+      <div class="roast" id="roast"></div>
+    </div>
+    
+    <button class="button" id="revealBtn">Reveal the Truth</button>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Particles
+    const particles = [];
+    for (let i = 0; i < 30; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        size: Math.random() * 2 + 1,
+        color: Math.random() > 0.5 ? '#D4A574' : '#2D9596'
+      });
+    }
+    
+    function drawParticles() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = 0.3;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+      
+      requestAnimationFrame(drawParticles);
+    }
+    drawParticles();
+    
+    // Data
+    const confessions = [
+      {
+        truth: "8h 47m",
+        lie: "Maybe 2 hours?",
+        roast: "You spent almost 9 hours staring at a glowing rectangle. That's a full workday. Your screen time has a screen time problem."
+      },
+      {
+        truth: "12h 13m",
+        lie: "I barely use my phone",
+        roast: "12 HOURS. That's half your life today. You spent more time on your phone than sleeping. Your phone should be paying YOU rent."
+      },
+      {
+        truth: "6h 34m",
+        lie: "Like 3 hours tops",
+        roast: "You doubled your estimate. Classic. If you round down on screen time, you gotta round up on that gym time you also lied about."
+      },
+      {
+        truth: "10h 2m",
+        lie: "I'm pretty good about it",
+        roast: "10 hours is 'pretty good'? That's like saying 'I only smoke a little' while chain-smoking outside a hospital. Seek help."
+      },
+      {
+        truth: "5h 18m",
+        lie: "Not that much honestly",
+        roast: "5 hours is 'not that much'? That's an entire Lord of the Rings extended edition. You could've walked to Mordor in the time you spent scrolling."
+      },
+      {
+        truth: "9h 41m",
+        lie: "I use it for work mostly",
+        roast: "Sure, 'work'. Is that what we're calling doomscrolling at 2am now? Your boss would love to know about this 9-hour work marathon."
+      },
+      {
+        truth: "7h 55m",
+        lie: "I've been cutting back",
+        roast: "Cutting back from what? 15 hours? 8 hours is still a full-time job. Your phone should be issuing you a W-2."
+      },
+      {
+        truth: "11h 27m",
+        lie: "Probably around 4 hours",
+        roast: "Off by 7 hours. That's not rounding error, that's denial. You spent more time on your phone than most people spend awake at work."
+      },
+      {
+        truth: "4h12m",
+        lie: "I try to stay off screens",
+        roast: "4 hours of 'trying to stay off screens' is actually pretty impressive. This is the least roastable confession. You're doing fine. (But we both know tomorrow will be different.)"
+      },
+      {
+        truth: "13h 44m",
+        lie: "I'm not addicted or anything",
+        roast: "First step is admitting you have a problem. 13+ hours is not 'casual use'. Your phone has Stockholm Syndrome. It wants to be free."
+      }
+    ];
+    
+    // Audio
+    let audioStarted = false;
+    let audioCtx;
+    
+    function initAudio() {
+      if (!audioStarted) {
+        audioStarted = true;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function playTone(freq, duration = 0.1) {
+      if (!audioStarted) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      gain.gain.value = 0.1;
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Interaction
+    let count = 0;
+    const btn = document.getElementById('revealBtn');
+    const intro = document.getElementById('intro');
+    const comparison = document.getElementById('comparison');
+    const truthEl = document.getElementById('truth');
+    const lieEl = document.getElementById('lie');
+    const roastEl = document.getElementById('roast');
+    const countEl = document.getElementById('count');
+    
+    btn.addEventListener('click', () => {
+      initAudio();
+      
+      if (intro.style.display !== 'none') {
+        intro.style.display = 'none';
+      }
+      
+      const confession = confessions[Math.floor(Math.random() * confessions.length)];
+      
+      truthEl.textContent = confession.truth;
+      lieEl.textContent = `"${confession.lie}"`;
+      roastEl.textContent = confession.roast;
+      
+      comparison.classList.remove('active');
+      setTimeout(() => comparison.classList.add('active'), 10);
+      
+      count++;
+      countEl.textContent = count;
+      
+      btn.textContent = 'Show Another Lie';
+      
+      playTone(400);
+    });
+    
+    // Resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
