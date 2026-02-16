@@ -1,0 +1,162 @@
+Let me put together a proper scope doc for this.The file system is being uncooperative, so here's the full scope doc directly. It's long but every section earns its place:
+
+---
+
+# Free Agent CRM — v1 Scope
+
+## The User
+
+Consultants, freelancers, solo founders, investors, community builders, creators. People whose network *is* their career infrastructure. They don't think in pipelines or deal stages — they think in relationships, contexts, and "I should really get back to that person."
+
+They currently track people in a mess of spreadsheets, Apple Notes, memory, and guilt.
+
+## The Job to Be Done
+
+**"Help me be the person who stays in touch."**
+
+Not "help me close deals." Not "help me manage customers." Help me remember who people are, how I know them, and when it's time to reach out — so that no important relationship goes cold by accident.
+
+---
+
+## V1 Feature Set
+
+### 1. Add a Person (the core object)
+
+**Fields:** Name (required), how we met / context note (freeform, optional but prompted), notes (freeform scratchpad), last contacted (date, manually set or auto-updated when logging an interaction), tags (freeform, user-created, multi-select).
+
+**What's intentionally missing from v1:** photo, phone, email, social links. These feel essential but they're *address book fields*, and the phone already has an address book. This isn't a contact manager — it's a relationship manager. If users scream for contact fields, add them in v2. Don't let the product become a worse version of Apple Contacts.
+
+**Design note:** The "how we met" field is the secret weapon. Six months later, the difference between a useful entry and a useless one is whether you wrote "Met at Dan's dinner party, works on climate policy, funny, knows Sarah" or just "Maria Chen."
+
+### 2. Log an Interaction
+
+**Fields:** Date (defaults to today), type (lightweight — coffee, call, text, email, event, other), note (freeform — what you talked about, what you promised, what you learned), people involved (can tag multiple people — group dinners are real).
+
+**Behavior:** Logging an interaction auto-updates "last contacted" for all linked people. Interactions show up on a person's detail view as a timeline. They also live in a global feed (reverse chron) so you can browse "what have I been up to."
+
+**What's intentionally missing:** Automatic logging (email sync, calendar sync). V2/v3 feature, massive scope increase. V1 is manual and that's fine — the act of writing a note is itself valuable. It forces reflection.
+
+### 3. Tags
+
+Freeform text, user-created, many-to-many with people. Created inline when adding/editing a person (type to create or select existing). Filterable — "show me everyone tagged #angel-investor." No hierarchy, no categories, no tag management UI. Just a flat namespace.
+
+**How free agents actually use tags:** by relationship type (`#mentor`, `#collaborator`, `#client`), by context (`#yc-batch`, `#climate-tech`, `#portland`), by action (`#warm-intro-possible`, `#potential-client`), by vibe (`#creative`, `#deep-thinker`, `#connector`).
+
+**Design note:** Tags and "how we met" together do the work that a rigid company/role/industry schema would do in a traditional CRM — but they're flexible enough for the way free agents actually categorize people (which is idiosyncratic and contextual).
+
+### 4. The Reconnect Queue
+
+This is the feature that makes it a product and not a spreadsheet.
+
+**How it works:** Every person has a "last contacted" date. The user sets a **desired contact frequency** per person: weekly, monthly, quarterly, yearly, or "no reminder." The app computes who is "overdue" — last contacted + desired frequency < today. The main screen surfaces a prioritized list: "People to reconnect with." Sorted by how overdue they are, most overdue first. That's it for v1 — no ML, no relationship strength score, no complexity.
+
+**Actions from the queue:**
+- **Log interaction** (I reached out, here's what happened) → clears them from the queue
+- **Snooze** (not now, remind me in 1 week / 1 month) → temporarily removes from queue
+- **Skip** (I've decided I don't need to reach out) → resets the timer without logging an interaction. Honest and non-judgmental.
+
+**Design note:** The queue should feel like a gentle nudge, not a guilt machine. Tone matters enormously. "You haven't talked to Maria in 3 months" is accusatory. "Maria — it's been a while. Coffee?" is warm. The UX copy carries real weight here.
+
+### 5. Search and Browse
+
+Search by name, tag, or freeform text across notes and interaction notes. Browse by tag (filter), by recency (last contacted), alphabetical. Person detail view shows name, tags, how-we-met note, freeform notes, and interaction timeline.
+
+That's it. No dashboards, no analytics, no visualizations. V1 is about *using* the tool daily, not admiring your network.
+
+---
+
+## Data Model
+
+```
+Person
+├── id
+├── name
+├── how_we_met (text, nullable)
+├── notes (text, nullable)
+├── last_contacted (date, nullable)
+├── desired_frequency (enum: weekly | monthly | quarterly | yearly | none)
+├── created_at
+└── updated_at
+
+Tag
+├── id
+├── label (unique, user-created)
+└── created_at
+
+PersonTag (join table)
+├── person_id → Person
+└── tag_id → Tag
+
+Interaction
+├── id
+├── date
+├── type (enum: coffee | call | text | email | event | other)
+├── note (text, nullable)
+└── created_at
+
+InteractionPerson (join table)
+├── interaction_id → Interaction
+└── person_id → Person
+```
+
+**Key modeling decisions:**
+
+**Interactions link to multiple people.** A dinner with three people is one interaction, not three. When you look at Maria's timeline and see "Dinner with Maria, James, and Aisha — talked about the nonprofit launch," that's *way* more useful than three separate entries.
+
+**No "Company" or "Context" entity in v1.** Use tags instead. `#stripe`, `#yc-w24`, `#climate-council` do the job without introducing a second entity type with its own CRUD, its own relationship to people, and its own UI. If users start wanting "show me everyone at Stripe" as a first-class feature, that's the signal to promote contexts to a real entity in v2.
+
+**Desired frequency lives on Person, not on a separate Reminder entity.** V1 doesn't need arbitrary reminders ("remind me to email James on March 15"). It needs recurring rhythms. Every person has a cadence, and the system tells you when you're behind. Arbitrary reminders are v2.
+
+**Last contacted is denormalized.** It could be computed from MAX(interaction.date), but storing it directly on Person means (a) you can set it without logging a full interaction, and (b) the reconnect queue query is trivial.
+
+---
+
+## What's Explicitly Out of Scope for V1
+
+| Feature | Why it's out | When it comes in |
+|---|---|---|
+| Contact info (phone, email, social) | Address book feature. The phone already does this. | V2, if users ask |
+| Company/org as first-class entity | Tags handle it. Orgs mean CRUD, linking UI, roles — too much surface area. | V2 |
+| Automatic interaction logging | Massive integration scope. OAuth, parsing, deduplication, privacy. | V3 at earliest |
+| Relationship strength scores | Needs data and a scoring model. Premature. | V2 |
+| Birthday tracking | Nice-to-have, not core to the JTBD. | V2 |
+| Import/export | Important for onboarding but not for validating the concept. | V2 |
+| Sharing / multiplayer | This is a personal tool. | Probably never |
+| Native mobile app | Responsive web app first. | V2 if concept validates |
+| AI features | Exciting but premature. Get the manual version right. | V2/V3 |
+
+---
+
+## The V1 Daily Loop
+
+If the daily loop doesn't feel natural, nothing else matters.
+
+**Morning (2 minutes):** Open the app. The reconnect queue is front and center. See 3 people to reconnect with. Decide: text Maria today, snooze James to next week, skip Aisha.
+
+**After a coffee/call (1 minute):** Log interaction. Select Maria, type: "Coffee at Sightglass. She's leaving Stripe, exploring climate startups. Offered to intro her to David." Maria's last-contacted updates, she drops off the queue.
+
+**Meet someone new (1 minute):** Add person: "Raj Patel." How we met: "SaaStr conference, runs a DevTools startup, knows Emily from college." Tags: `#founder`, `#devtools`, `#sastr-2025`. Set frequency: quarterly.
+
+**Weekly review (5 minutes, optional):** Browse the reconnect queue. Anyone you've been snoozing repeatedly? Either reach out or change their frequency to "yearly" or "none." Be honest with yourself.
+
+---
+
+## Success Criteria
+
+The product is working if: a user adds 20+ people in their first week, returns 3x/week to check the reconnect queue, logs 2+ interactions per week, and after 30 days would be annoyed if you took it away.
+
+The product is *not* working if: people add contacts but never come back (it's a dump, not a tool), the reconnect queue feels like a chore, or users immediately ask "but where do I put their email?" (you've built a worse address book, not a better relationship tool).
+
+---
+
+## Open Questions Before Building
+
+1. **Web or native?** Recommendation: responsive web app (PWA-capable). Validates faster, works everywhere, avoids app store friction.
+
+2. **Auth & storage?** Simple email/password auth, Postgres, REST API. The data is low-volume and highly structured. Don't overthink it.
+
+3. **Empty state problem.** The app is useless with zero people. Consider a guided "add 5 people you've been meaning to reach out to" onboarding flow.
+
+4. **Tone of voice.** The reconnect queue copy matters enormously. Workshop it. The difference between "overdue" and "it's been a while" is the difference between guilt-ware and a warm nudge.
+
+5. **Single-player forever?** If always personal, architectural decisions get simpler — no permissions, no sharing, no team features. Worth deciding explicitly now.
