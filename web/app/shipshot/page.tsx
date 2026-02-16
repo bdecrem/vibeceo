@@ -19,7 +19,7 @@ export default function ShipShotPage() {
       tagline: "You're going to scroll anyway.",
       desc: 'Paste any topic. Get a TikTok-style infinite feed of bite-sized knowledge cards. Addictive learning.',
       accent: '#B8FF57',
-      link: '/shipwreck/doomlearn',
+      link: '/shipshot/doomlearn',
       time: '20 min',
     },
     {
@@ -27,7 +27,7 @@ export default function ShipShotPage() {
       tagline: 'Your app loses 77% of users in 3 days.',
       desc: 'One script tag. AI watches where users stall, then builds the onboarding that keeps them.',
       accent: '#4F46E5',
-      link: '/shipwreck/onboard',
+      link: '/shipshot/onboard',
       time: '18 min',
     },
   ]
@@ -219,7 +219,7 @@ export default function ShipShotPage() {
           borderTop: '1px solid #1a1a1a', padding: '32px 24px', textAlign: 'center',
           fontSize: 13, color: '#444', lineHeight: 1.6,
         }}>
-          Built by the Shipwreck crew. Powered by caffeine and questionable decisions.
+          Built by the Shipshot crew. Powered by caffeine and questionable decisions.
         </footer>
       </div>
 

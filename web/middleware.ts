@@ -180,8 +180,8 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
-    // Shipwreck lives at /shipwreck, not /kochi/shipwreck
-    if (pathname.startsWith('/shipwreck')) {
+    // Shipshot lives at /shipshot, not /kochi/shipshot
+    if (pathname.startsWith('/shipshot')) {
       return NextResponse.next()
     }
 
@@ -606,7 +606,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/voice-chat') ||
       pathname.startsWith('/simple-voice') ||
       pathname.startsWith('/pixelpit') ||
-      pathname.startsWith('/shipwreck') ||
+      pathname.startsWith('/shipshot') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()

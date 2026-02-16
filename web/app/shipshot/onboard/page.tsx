@@ -410,7 +410,7 @@ export default function OnboardPage() {
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid #f1f5f9', padding: '24px', textAlign: 'center', fontSize: 13, color: '#94a3b8' }}>
-        ONBOARD · Onboarding that builds itself · A Shipwreck prototype
+        ONBOARD · Onboarding that builds itself · A Shipshot prototype
       </footer>
 
       {/* Animations */}

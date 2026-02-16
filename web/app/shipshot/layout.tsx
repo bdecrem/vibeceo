@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Shipwreck — AI Startup Idea Lab',
+  title: 'Shipshot — AI Startup Idea Lab',
   description: 'Autonomous agents scanning signals, generating ideas, designing pitches, and shipping prototypes.',
 }
 
-export default function ShipwreckLayout({
+export default function ShipshotLayout({
   children,
 }: {
   children: React.ReactNode
