@@ -2,15 +2,41 @@
 
 import { useState, useRef } from 'react'
 
-const APPS = [
-  { id: 47, name: 'QuietTab', tagline: 'A browser tab that helps you breathe between tasks', color: '#FFD23F', icon: '💨', status: 'SHIPPED', date: 'Feb 15' },
-  { id: 46, name: 'ForkIt', tagline: 'Remix any recipe by swapping one ingredient', color: '#FF3860', icon: '🍴', status: 'SHIPPED', date: 'Feb 14' },
-  { id: 45, name: 'DriftFM', tagline: 'AI radio that matches your walking speed', color: '#00E5A0', icon: '📻', status: 'SHIPPED', date: 'Feb 13' },
-  { id: 44, name: 'SnapDebt', tagline: 'Photograph a receipt, split it instantly with friends', color: '#A855F7', icon: '📸', status: 'SHIPPED', date: 'Feb 12' },
-  { id: 43, name: 'MoodBoard', tagline: 'Your daily emotion as a generated color palette', color: '#00B4D8', icon: '🎨', status: 'SHIPPED', date: 'Feb 11' },
-  { id: 42, name: 'ParkPing', tagline: 'Alerts you 5 minutes before your parking meter expires', color: '#FFD23F', icon: '🅿️', status: 'SHIPPED', date: 'Feb 10' },
-  { id: 41, name: 'TinyWin', tagline: "Log one small win per day. That's it. That's the app.", color: '#FF3860', icon: '🏆', status: 'SHIPPED', date: 'Feb 9' },
-  { id: 40, name: 'GhostNote', tagline: 'Leave voice notes at locations for friends to find', color: '#00E5A0', icon: '👻', status: 'SHIPPED', date: 'Feb 8' },
+// Today's drop — dispensed by the machine
+const TODAYS_DROP = {
+  id: 49,
+  name: 'DOOMLEARN',
+  tagline: "You're going to scroll anyway.",
+  color: '#B8FF57',
+  icon: '🧠',
+  status: 'SHIPPED',
+  date: 'Feb 15',
+  href: '/shipshot/doomlearn',
+}
+
+// Grid apps — 1 real prototype + 5 placeholders
+const GRID_APPS = [
+  { id: 48, name: 'ONBOARD', tagline: 'One line of code. Onboarding builds itself.', color: '#4F46E5', icon: '🚀', status: 'SHIPPED', date: 'Feb 15', href: '/shipshot/onboard' },
+  { id: 47, name: 'QuietTab', tagline: 'A browser tab that helps you breathe between tasks', color: '#FFD23F', icon: '💨', status: 'SHIPPED', date: 'Feb 14', href: null },
+  { id: 46, name: 'ForkIt', tagline: 'Remix any recipe by swapping one ingredient', color: '#FF3860', icon: '🍴', status: 'SHIPPED', date: 'Feb 13', href: null },
+  { id: 45, name: 'DriftFM', tagline: 'AI radio that matches your walking speed', color: '#00E5A0', icon: '📻', status: 'SHIPPED', date: 'Feb 12', href: null },
+  { id: 44, name: 'SnapDebt', tagline: 'Photograph a receipt, split it instantly with friends', color: '#A855F7', icon: '📸', status: 'SHIPPED', date: 'Feb 11', href: null },
+  { id: 43, name: 'MoodBoard', tagline: 'Your daily emotion as a generated color palette', color: '#00B4D8', icon: '🎨', status: 'SHIPPED', date: 'Feb 10', href: null },
+]
+
+// Back catalog (shown when expanded)
+const MORE_APPS = [
+  { id: 42, name: 'ParkPing', tagline: 'Alerts you 5 minutes before your parking meter expires', color: '#FFD23F', icon: '🅿️', status: 'SHIPPED', date: 'Feb 9', href: null },
+  { id: 41, name: 'TinyWin', tagline: "Log one small win per day. That's it. That's the app.", color: '#FF3860', icon: '🏆', status: 'SHIPPED', date: 'Feb 8', href: null },
+  { id: 40, name: 'GhostNote', tagline: 'Leave voice notes at locations for friends to find', color: '#00E5A0', icon: '👻', status: 'SHIPPED', date: 'Feb 7', href: null },
+]
+
+const CREW = [
+  { name: 'Drift', role: 'Signal Hunter', img: '/shipshot/crew/drift-bg.png', accent: '#00D4FF', bio: 'Scans the noise so you don\'t have to. Drift finds the signal in a sea of trends, memes, and market chatter — then distills it into one sharp insight before anyone else notices.' },
+  { name: 'Hype', role: 'Vibes Architect', img: '/shipshot/crew/hype-bg.png', accent: '#FF3366', bio: 'Turns a whisper into a roar. Hype crafts the narrative, writes the copy, and makes sure every launch feels like an event — even if it\'s a to-do list app.' },
+  { name: 'Margin', role: 'Numbers Oracle', img: '/shipshot/crew/margin-bg.png', accent: '#10B981', bio: 'The spreadsheet whisperer. Margin runs the models, stress-tests the unit economics, and tells you the hard truth about whether your idea can actually make money.' },
+  { name: 'Pixel', role: 'Design Alchemist', img: '/shipshot/crew/pixel-bg.png', accent: '#7C3AED', bio: 'Makes it beautiful or makes it weird — ideally both. Pixel handles UI, brand, and all the visual decisions that turn a prototype into something people screenshot.' },
+  { name: 'Ship', role: 'Build Machine', img: '/shipshot/crew/ship-bg.png', accent: '#0066FF', bio: 'Writes the code, wires the API, deploys to prod. Ship doesn\'t debate architecture — Ship builds the thing and fixes it live. Velocity over perfection.' },
 ]
 
 function ShapeToken({ shape, color, size = 28, style = {} }: { shape: string; color: string; size?: number; style?: React.CSSProperties }) {
@@ -50,13 +76,17 @@ function FloatingTokens() {
   )
 }
 
-function VendingMachine({ onDispense, dispensing, dispensedApp }: { onDispense: () => void; dispensing: boolean; dispensedApp: typeof APPS[0] | null }) {
+function VendingMachine({ onDispense, dispensing, dispensedApp }: {
+  onDispense: () => void
+  dispensing: boolean
+  dispensedApp: typeof TODAYS_DROP | null
+}) {
   return (
     <div style={{ position: 'relative', width: 320, margin: '0 auto' }}>
-      {/* NEW badge */}
-      <div style={{ position: 'absolute', top: -12, right: -16, background: '#FFD23F', color: '#0D1117', fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 13, letterSpacing: 2, padding: '6px 14px', borderRadius: 8, zIndex: 5 }}>
+      {/* TODAY'S DROP badge */}
+      <div style={{ position: 'absolute', top: -12, right: -16, background: '#FFD23F', color: '#0D1117', fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12, letterSpacing: 2, padding: '6px 14px', borderRadius: 8, zIndex: 5 }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'rgba(255,255,255,0.15)', borderRadius: '8px 8px 0 0' }} />
-        <span style={{ position: 'relative' }}>NEW</span>
+        <span style={{ position: 'relative' }}>{dispensedApp ? 'DROPPED' : 'NEW'}</span>
       </div>
 
       {/* Machine body */}
@@ -78,16 +108,20 @@ function VendingMachine({ onDispense, dispensing, dispensedApp }: { onDispense: 
             {/* Star / content area */}
             <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8, paddingBottom: 8 }}>
               {dispensedApp ? (
-                <div style={{ textAlign: 'center', animation: 'slideUp 0.5s ease-out' }}>
+                <a href={dispensedApp.href} style={{ textDecoration: 'none', textAlign: 'center', animation: 'slideUp 0.5s ease-out' }}>
                   <div style={{ fontSize: 48, marginBottom: 8 }}>{dispensedApp.icon}</div>
                   <div style={{ color: dispensedApp.color, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 18, letterSpacing: 1 }}>{dispensedApp.name}</div>
                   <div style={{ color: 'rgba(255,255,255,0.5)', fontFamily: "'Space Mono', monospace", fontSize: 11, marginTop: 6, maxWidth: 200, lineHeight: 1.4 }}>{dispensedApp.tagline}</div>
-                </div>
+                  <div style={{ marginTop: 12, fontFamily: "'Space Mono', monospace", fontSize: 10, color: dispensedApp.color, letterSpacing: 2, opacity: 0.8 }}>TAP TO PLAY &#x2192;</div>
+                </a>
               ) : (
-                <svg width="80" height="80" viewBox="0 0 80 80">
-                  <polygon points="40,5 48,28 72,28 52,42 58,66 40,50 22,66 28,42 8,28 32,28" fill="#FFD23F" style={{ filter: 'drop-shadow(0 0 20px rgba(255,210,63,0.3))' }} />
-                  <polygon points="40,14 46,30 60,30 48,39 53,54 40,44 27,54 32,39 20,30 34,30" fill="#FFE77A" opacity="0.5" />
-                </svg>
+                <div style={{ textAlign: 'center' }}>
+                  <svg width="64" height="64" viewBox="0 0 80 80">
+                    <polygon points="40,5 48,28 72,28 52,42 58,66 40,50 22,66 28,42 8,28 32,28" fill="#FFD23F" style={{ filter: 'drop-shadow(0 0 20px rgba(255,210,63,0.3))' }} />
+                    <polygon points="40,14 46,30 60,30 48,39 53,54 40,44 27,54 32,39 20,30 34,30" fill="#FFE77A" opacity="0.5" />
+                  </svg>
+                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 8, letterSpacing: 1 }}>What shipped today?</div>
+                </div>
               )}
             </div>
           </div>
@@ -101,19 +135,22 @@ function VendingMachine({ onDispense, dispensing, dispensedApp }: { onDispense: 
           <div style={{ background: '#001A44', borderRadius: 14, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 20 }}>
             <button
               onClick={onDispense}
-              disabled={dispensing}
+              disabled={dispensing || !!dispensedApp}
               style={{
                 width: 72, height: 72, borderRadius: '50%',
-                background: dispensing ? '#992240' : '#FF3860',
-                border: 'none', cursor: dispensing ? 'not-allowed' : 'pointer',
+                background: dispensedApp ? '#334455' : dispensing ? '#992240' : '#FF3860',
+                border: 'none',
+                cursor: dispensedApp ? 'default' : dispensing ? 'not-allowed' : 'pointer',
                 position: 'relative',
-                boxShadow: dispensing ? 'none' : '0 4px 0 #AA1530, 0 6px 20px rgba(255,56,96,0.4)',
-                transform: dispensing ? 'translateY(3px)' : 'none',
+                boxShadow: dispensedApp ? 'none' : dispensing ? 'none' : '0 4px 0 #AA1530, 0 6px 20px rgba(255,56,96,0.4)',
+                transform: (dispensing || dispensedApp) ? 'translateY(3px)' : 'none',
                 transition: 'all 0.15s ease', flexShrink: 0,
               }}
             >
-              <div style={{ position: 'absolute', inset: 6, borderRadius: '50%', background: dispensing ? 'radial-gradient(circle at 40% 35%, #BB3355, #881530)' : 'radial-gradient(circle at 40% 35%, #FF6080, #FF3860)' }} />
-              <span style={{ position: 'relative', color: 'white', fontSize: 24, fontWeight: 'bold', zIndex: 1 }}>{dispensing ? '...' : '▶'}</span>
+              <div style={{ position: 'absolute', inset: 6, borderRadius: '50%', background: dispensedApp ? 'radial-gradient(circle at 40% 35%, #445566, #334455)' : dispensing ? 'radial-gradient(circle at 40% 35%, #BB3355, #881530)' : 'radial-gradient(circle at 40% 35%, #FF6080, #FF3860)' }} />
+              <span style={{ position: 'relative', color: 'white', fontSize: 24, fontWeight: 'bold', zIndex: 1 }}>
+                {dispensedApp ? '✓' : dispensing ? '...' : '▶'}
+              </span>
             </button>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
               {[0, 1, 2, 3].map((i) => (
@@ -133,19 +170,23 @@ function VendingMachine({ onDispense, dispensing, dispensedApp }: { onDispense: 
   )
 }
 
-function AppCard({ app, index, entering }: { app: typeof APPS[0]; index: number; entering: boolean }) {
-  const rotations = [-3, 5, -7, 4, -5, 8, -4, 6]
-  const rot = rotations[index % rotations.length]
+type AppType = { id: number; name: string; tagline: string; color: string; icon: string; status: string; date: string; href: string | null }
 
-  return (
+function AppCard({ app, index, isNew }: { app: AppType; index: number; isNew?: boolean }) {
+  const rotations = [-3, 5, -7, 4, -5, 8]
+  const rot = rotations[index % rotations.length]
+  const isPlayable = !!app.href
+
+  const card = (
     <div
       style={{
         background: app.color, borderRadius: 16, padding: 20,
         position: 'relative', overflow: 'hidden',
         transform: `rotate(${rot}deg)`,
-        boxShadow: '8px 8px 0 rgba(0,0,0,0.25)',
-        transition: 'transform 0.3s ease', cursor: 'pointer',
-        animation: entering ? `cardDrop 0.6s ease-out ${index * 0.1}s both` : 'none',
+        boxShadow: isNew ? `8px 8px 0 rgba(0,0,0,0.25), 0 0 30px ${app.color}44` : '8px 8px 0 rgba(0,0,0,0.25)',
+        transition: 'transform 0.3s ease',
+        cursor: isPlayable ? 'pointer' : 'default',
+        animation: isNew ? 'cardDrop 0.6s ease-out both' : `cardDrop 0.6s ease-out ${index * 0.08}s both`,
       }}
       onMouseEnter={(e) => { e.currentTarget.style.transform = 'rotate(0deg) scale(1.05)'; e.currentTarget.style.zIndex = '10' }}
       onMouseLeave={(e) => { e.currentTarget.style.transform = `rotate(${rot}deg)`; e.currentTarget.style.zIndex = '1' }}
@@ -159,341 +200,111 @@ function AppCard({ app, index, entering }: { app: typeof APPS[0]; index: number;
         <div style={{ width: 52, height: 52, borderRadius: 14, background: '#0D1117', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, marginBottom: 14 }}>{app.icon}</div>
         <div style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 16, color: '#0D1117', marginBottom: 6 }}>{app.name}</div>
         <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: '#0D1117', opacity: 0.7, lineHeight: 1.5, marginBottom: 14 }}>{app.tagline}</div>
-        <div style={{ display: 'inline-block', background: '#0D1117', borderRadius: 6, padding: '4px 10px', fontFamily: "'Space Mono', monospace", fontSize: 9, fontWeight: 700, color: app.color, letterSpacing: 2 }}>● {app.status}</div>
-      </div>
-    </div>
-  )
-}
-
-function DispensedCards({ apps }: { apps: typeof APPS }) {
-  if (apps.length === 0) return null
-  return (
-    <div style={{ position: 'relative', zIndex: 2, padding: '0 20px' }}>
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, letterSpacing: 4, color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>SCROLL TO SEE</div>
-        <h2 style={{ fontFamily: "'Space Mono', monospace", fontSize: 28, fontWeight: 700, color: 'white', margin: 0, letterSpacing: -1 }}>
-          What we&apos;ve <span style={{ color: '#0066FF' }}>shipped</span>
-        </h2>
-        <div style={{ width: 60, height: 3, background: '#0066FF', margin: '16px auto 0', borderRadius: 2 }} />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 24, maxWidth: 800, margin: '0 auto' }}>
-        {apps.map((app, i) => (
-          <AppCard key={app.id} app={app} index={i} entering={true} />
-        ))}
-      </div>
-
-      <div style={{ textAlign: 'center', marginTop: 48, paddingBottom: 60 }}>
-        <div style={{ display: 'inline-flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <div style={{ background: '#FFD23F', borderRadius: 8, padding: '8px 16px', fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: '#0D1117', letterSpacing: 2, position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'rgba(255,255,255,0.12)' }} />
-            <span style={{ position: 'relative' }}>⚡ {apps.length} IDEAS SHIPPED</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'inline-block', background: '#0D1117', borderRadius: 6, padding: '4px 10px', fontFamily: "'Space Mono', monospace", fontSize: 9, fontWeight: 700, color: app.color, letterSpacing: 2 }}>
+            {isPlayable ? '▶ PLAY' : `● ${app.status}`}
           </div>
-          <div style={{ background: 'rgba(0,102,255,0.12)', border: '1px solid rgba(0,102,255,0.2)', borderRadius: 8, padding: '8px 16px', fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: '#3388FF', letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00E5A0' }} />
-            MORE TOMORROW
-          </div>
+          {isNew && (
+            <div style={{ background: '#0D1117', borderRadius: 6, padding: '4px 8px', fontFamily: "'Space Mono', monospace", fontSize: 8, fontWeight: 700, color: '#FFD23F', letterSpacing: 2 }}>
+              NEW
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
+
+  if (isPlayable) {
+    return <a href={app.href!} style={{ textDecoration: 'none' }}>{card}</a>
+  }
+  return card
 }
 
-const CREW = [
-  { name: 'Drift', role: 'Signal Hunter', img: '/shipshot/crew/drift-bg.png', accent: '#00D4FF', bio: 'Scans the noise so you don\'t have to. Drift finds the signal in a sea of trends, memes, and market chatter — then distills it into one sharp insight before anyone else notices.' },
-  { name: 'Hype', role: 'Vibes Architect', img: '/shipshot/crew/hype-bg.png', accent: '#FF3366', bio: 'Turns a whisper into a roar. Hype crafts the narrative, writes the copy, and makes sure every launch feels like an event — even if it\'s a to-do list app.' },
-  { name: 'Margin', role: 'Numbers Oracle', img: '/shipshot/crew/margin-bg.png', accent: '#10B981', bio: 'The spreadsheet whisperer. Margin runs the models, stress-tests the unit economics, and tells you the hard truth about whether your idea can actually make money.' },
-  { name: 'Pixel', role: 'Design Alchemist', img: '/shipshot/crew/pixel-bg.png', accent: '#7C3AED', bio: 'Makes it beautiful or makes it weird — ideally both. Pixel handles UI, brand, and all the visual decisions that turn a prototype into something people screenshot.' },
-  { name: 'Ship', role: 'Build Machine', img: '/shipshot/crew/ship-bg.png', accent: '#0066FF', bio: 'Writes the code, wires the API, deploys to prod. Ship doesn\'t debate architecture — Ship builds the thing and fixes it live. Velocity over perfection.' },
-]
-
-function DossierBoard() {
-  const [openCard, setOpenCard] = useState<number | null>(null)
-  const pins = [
-    { rot: -4, pinX: '55%', stamp: 'CLEARED FOR SHIPPING', redacted: 'Subject observed near ████ at 03:00' },
-    { rot: 3, pinX: '40%', stamp: 'HIGH ENERGY ASSET', redacted: 'Known to ████████ entire marketing budgets' },
-    { rot: -2, pinX: '60%', stamp: 'NUMBERS CHECK OUT', redacted: 'Runs ██████ models before breakfast' },
-    { rot: 5, pinX: '45%', stamp: 'VISUALLY DANGEROUS', redacted: 'Last seen ████████ a perfectly good wireframe' },
-    { rot: -3, pinX: '50%', stamp: 'BUILDS ON SIGHT', redacted: 'Will deploy to prod at ████ without asking' },
-  ]
+function CharacterSelect() {
+  const [selected, setSelected] = useState<number | null>(null)
+  const member = selected !== null ? CREW[selected] : null
 
   return (
-    <div style={{ position: 'relative', zIndex: 2, padding: '80px 20px 60px', maxWidth: 960, margin: '0 auto' }}>
-      {/* Header */}
+    <div style={{ position: 'relative', zIndex: 2, padding: '80px 20px 60px', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
         <div style={{
           display: 'inline-block',
           fontFamily: "'Space Mono', monospace",
-          fontSize: 11,
+          fontSize: 12,
           letterSpacing: 4,
-          color: '#FF3860',
-          border: '1px solid #FF386044',
-          padding: '5px 14px',
-          borderRadius: 2,
+          color: '#0066FF',
+          border: '1px solid #0066FF44',
+          padding: '6px 16px',
+          borderRadius: 4,
           marginBottom: 16,
-          textTransform: 'uppercase',
+          animation: 'pulse 2s ease-in-out infinite',
         }}>
-          Classified // Internal Use Only
+          P1 SELECT YOUR CREW
         </div>
-        <h2 style={{ fontFamily: "'Impact', 'Arial Black', sans-serif", fontSize: 'clamp(32px, 7vw, 52px)', fontWeight: 900, textAlign: 'center', color: '#fff', letterSpacing: -2, margin: '0 0 12px 0' }}>
+        <h2 style={{ fontFamily: "'Impact', 'Arial Black', sans-serif", fontSize: 'clamp(32px, 7vw, 52px)', fontWeight: 900, textAlign: 'center', color: '#fff', letterSpacing: -2, margin: 0 }}>
           The minds behind the <span style={{ color: '#FFD23F' }}>machine</span>
         </h2>
-        <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', margin: 0 }}>
-          Five agents. One button. Infinite questionable decisions.
-        </p>
       </div>
 
-      {/* Cork board area */}
-      <div style={{
-        position: 'relative',
-        background: 'linear-gradient(135deg, #2A1F14 0%, #1E1610 50%, #2A1F14 100%)',
-        borderRadius: 12,
-        padding: '48px 24px 48px',
-        border: '2px solid #3D2E1E',
-        boxShadow: 'inset 0 2px 20px rgba(0,0,0,0.5)',
-        overflow: 'hidden',
-      }}>
-        {/* Cork texture noise */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: `radial-gradient(circle at 20% 30%, #3D2E1E 1px, transparent 1px),
-            radial-gradient(circle at 60% 70%, #3D2E1E 1px, transparent 1px),
-            radial-gradient(circle at 80% 20%, #352818 1px, transparent 1px),
-            radial-gradient(circle at 40% 80%, #352818 1px, transparent 1px)`,
-          backgroundSize: '40px 40px, 60px 60px, 50px 50px, 45px 45px',
-          opacity: 0.4,
-        }} />
-
-        {/* String / yarn connecting pins */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.15 }}>
-          <line x1="18%" y1="8%" x2="38%" y2="6%" stroke="#FF3860" strokeWidth="1" strokeDasharray="4,4" />
-          <line x1="38%" y1="6%" x2="58%" y2="10%" stroke="#FF3860" strokeWidth="1" strokeDasharray="4,4" />
-          <line x1="58%" y1="10%" x2="78%" y2="5%" stroke="#FF3860" strokeWidth="1" strokeDasharray="4,4" />
-        </svg>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
-          gap: 20,
-          position: 'relative',
-          maxWidth: 860,
-          margin: '0 auto',
-        }}>
-          {CREW.map((m, i) => {
-            const p = pins[i]
-            const isOpen = openCard === i
-            return (
-              <div
-                key={m.name}
-                onClick={() => setOpenCard(isOpen ? null : i)}
-                style={{
-                  position: 'relative',
-                  transform: isOpen ? 'rotate(0deg) translateY(-16px) scale(1.06)' : `rotate(${p.rot}deg)`,
-                  transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                  cursor: 'pointer',
-                  zIndex: isOpen ? 10 : 1,
-                  animation: `slideUp 0.5s ease ${i * 0.1}s both`,
-                }}
-              >
-                {/* Push pin */}
-                <div style={{
-                  position: 'absolute',
-                  top: -6,
-                  left: p.pinX,
-                  transform: 'translateX(-50%)',
-                  zIndex: 5,
-                  width: 16, height: 16,
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle at 40% 35%, #FF6060, #CC2020)',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.3)',
-                }} />
-
-                {/* Card body */}
-                <div style={{
-                  background: '#E8DCC8',
-                  borderRadius: 2,
-                  padding: '20px 14px 16px',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  boxShadow: isOpen
-                    ? '0 24px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.1)'
-                    : '4px 4px 12px rgba(0,0,0,0.4)',
-                  transition: 'box-shadow 0.35s ease',
-                }}>
-                  {/* Aged paper texture */}
-                  <div style={{
-                    position: 'absolute', inset: 0,
-                    background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 30%, rgba(0,0,0,0.04) 100%)',
-                  }} />
-                  {/* Coffee stain (subtle) */}
-                  <div style={{
-                    position: 'absolute',
-                    right: -10, bottom: -10,
-                    width: 50, height: 50,
-                    borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(139,90,43,0.08) 40%, transparent 70%)',
-                  }} />
-
-                  {/* File number */}
-                  <div style={{
-                    fontFamily: "'Space Mono', monospace",
-                    fontSize: 9,
-                    color: '#8B7355',
-                    letterSpacing: 3,
-                    marginBottom: 10,
-                    position: 'relative',
-                  }}>
-                    FILE #{String(i + 1).padStart(3, '0')}-SS
-                  </div>
-
-                  {/* Photo with halftone effect */}
-                  <div style={{
-                    width: '100%',
-                    aspectRatio: '1',
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    position: 'relative',
-                    marginBottom: 12,
-                    border: '1px solid #C4B49A',
-                  }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={m.img}
-                      alt={m.name}
-                      style={{
-                        width: '100%', height: '100%', objectFit: 'cover',
-                        filter: isOpen ? 'contrast(1.1) saturate(0.85)' : 'contrast(1.1) saturate(0.7)',
-                        transition: 'filter 0.3s ease',
-                      }}
-                    />
-                    {/* Halftone dot overlay */}
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.15) 1px, transparent 1px)',
-                      backgroundSize: '3px 3px',
-                      mixBlendMode: 'multiply',
-                    }} />
-                    {/* Aged photo overlay */}
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      background: 'linear-gradient(135deg, rgba(200,180,140,0.12) 0%, transparent 60%)',
-                    }} />
-                  </div>
-
-                  {/* Name */}
-                  <div style={{
-                    fontFamily: "'Impact', 'Arial Black', sans-serif",
-                    fontSize: 20,
-                    color: '#1A1410',
-                    letterSpacing: -0.5,
-                    marginBottom: 2,
-                    position: 'relative',
-                  }}>
-                    {m.name.toUpperCase()}
-                  </div>
-
-                  {/* Role */}
-                  <div style={{
-                    fontFamily: "'Space Mono', monospace",
-                    fontSize: 9,
-                    color: m.accent,
-                    letterSpacing: 2,
-                    textTransform: 'uppercase',
-                    marginBottom: 10,
-                    position: 'relative',
-                  }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, maxWidth: 700, margin: '0 auto', padding: '0 8px' }}>
+        {CREW.map((m, i) => {
+          const isSelected = selected === i
+          return (
+            <div
+              key={m.name}
+              onClick={() => setSelected(isSelected ? null : i)}
+              style={{
+                flex: isSelected ? '1 1 220px' : '1 1 100px',
+                maxWidth: isSelected ? 220 : 140,
+                height: isSelected ? 320 : 260,
+                borderRadius: 12,
+                overflow: 'hidden',
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                border: isSelected ? `2px solid ${m.accent}` : '2px solid #1E293600',
+                boxShadow: isSelected ? `0 0 40px ${m.accent}44, 0 0 80px ${m.accent}18` : 'none',
+                filter: selected !== null && !isSelected ? 'brightness(0.35)' : 'brightness(1)',
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={m.img} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', transition: 'all 0.4s ease' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.9) 70%)', padding: '40px 12px 14px' }}>
+                <div style={{ fontFamily: "'Impact', 'Arial Black', sans-serif", fontSize: isSelected ? 22 : 15, color: '#fff', letterSpacing: -0.5, transition: 'font-size 0.3s ease', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+                  {m.name}
+                </div>
+                {isSelected && (
+                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: m.accent, letterSpacing: 2, textTransform: 'uppercase', marginTop: 4, animation: 'slideUp 0.3s ease' }}>
                     {m.role}
                   </div>
-
-                  {/* Divider */}
-                  <div style={{ height: 1, background: '#C4B49A', marginBottom: 10 }} />
-
-                  {/* Redacted text (always visible) */}
-                  <div style={{
-                    fontFamily: "'Space Mono', monospace",
-                    fontSize: 8,
-                    color: '#8B7355',
-                    lineHeight: 1.8,
-                    position: 'relative',
-                    marginBottom: isOpen ? 10 : 12,
-                  }}>
-                    {p.redacted}
-                  </div>
-
-                  {/* Expanded bio section */}
-                  <div style={{
-                    maxHeight: isOpen ? 200 : 0,
-                    opacity: isOpen ? 1 : 0,
-                    overflow: 'hidden',
-                    transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                  }}>
-                    <div style={{ height: 1, background: '#C4B49A', marginBottom: 10 }} />
-                    <div style={{
-                      fontFamily: "'Space Mono', monospace",
-                      fontSize: 9,
-                      color: '#5A4A38',
-                      lineHeight: 1.7,
-                      position: 'relative',
-                      marginBottom: 12,
-                    }}>
-                      {m.bio}
-                    </div>
-                    <div style={{
-                      fontFamily: "'Space Mono', monospace",
-                      fontSize: 8,
-                      color: '#AA8866',
-                      letterSpacing: 1,
-                      textAlign: 'right',
-                    }}>
-                      STATUS: ACTIVE
-                    </div>
-                  </div>
-
-                  {/* Tap hint */}
-                  {!isOpen && (
-                    <div style={{
-                      fontFamily: "'Space Mono', monospace",
-                      fontSize: 7,
-                      color: '#AA9977',
-                      letterSpacing: 2,
-                      textAlign: 'center',
-                      textTransform: 'uppercase',
-                      position: 'relative',
-                      marginTop: 2,
-                    }}>
-                      Tap to declassify
-                    </div>
-                  )}
-
-                  {/* Stamp */}
-                  <div style={{
-                    position: 'absolute',
-                    bottom: isOpen ? 'auto' : 16,
-                    top: isOpen ? 20 : 'auto',
-                    right: 10,
-                    transform: 'rotate(-12deg)',
-                    fontFamily: "'Impact', 'Arial Black', sans-serif",
-                    fontSize: 9,
-                    color: isOpen ? '#1A8B30' : '#CC2020',
-                    letterSpacing: 2,
-                    padding: '3px 8px',
-                    border: `2px solid ${isOpen ? '#1A8B30' : '#CC2020'}`,
-                    borderRadius: 3,
-                    opacity: 0.7,
-                    textTransform: 'uppercase',
-                    transition: 'all 0.3s ease',
-                    pointerEvents: 'none',
-                  }}>
-                    {isOpen ? 'DECLASSIFIED' : p.stamp}
-                  </div>
-                </div>
+                )}
               </div>
-            )
-          })}
-        </div>
+              {isSelected && (
+                <div style={{ position: 'absolute', top: 12, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+                  <div style={{ background: m.accent, color: '#000', fontFamily: "'Space Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: 3, padding: '4px 12px', borderRadius: 4, animation: 'slideUp 0.2s ease' }}>SELECTED</div>
+                </div>
+              )}
+              {isSelected && (
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: m.accent, boxShadow: `0 0 12px ${m.accent}` }} />
+              )}
+            </div>
+          )
+        })}
       </div>
 
-      {/* Footer */}
+      <div style={{ textAlign: 'center', marginTop: 24, minHeight: 40 }}>
+        {member ? (
+          <div style={{ animation: 'slideUp 0.3s ease' }}>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: member.accent }}>{member.name}</span>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: 'rgba(255,255,255,0.3)', margin: '0 10px' }}>//</span>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>{member.role}</span>
+          </div>
+        ) : (
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: 'rgba(255,255,255,0.2)', letterSpacing: 2, animation: 'pulse 2s ease-in-out infinite' }}>TAP TO SELECT</div>
+        )}
+      </div>
+
       <div style={{ textAlign: 'center', marginTop: 48, paddingBottom: 40 }}>
         <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.2)', letterSpacing: 2 }}>
           POWERED BY CAFFEINE AND QUESTIONABLE DECISIONS
@@ -505,27 +316,25 @@ function DossierBoard() {
 
 export default function ShipShotPage() {
   const [dispensing, setDispensing] = useState(false)
-  const [dispensedApp, setDispensedApp] = useState<typeof APPS[0] | null>(null)
-  const [showCards, setShowCards] = useState(false)
-  const cardsRef = useRef<HTMLDivElement>(null)
+  const [dispensedApp, setDispensedApp] = useState<typeof TODAYS_DROP | null>(null)
+  const [showExpanded, setShowExpanded] = useState(false)
+  const droppedCardRef = useRef<HTMLDivElement>(null)
 
   const handleDispense = () => {
-    if (dispensing) return
+    if (dispensing || dispensedApp) return
     setDispensing(true)
-    setDispensedApp(null)
 
     setTimeout(() => {
-      setDispensedApp(APPS[0])
+      setDispensedApp(TODAYS_DROP)
       setDispensing(false)
-    }, 1200)
-
-    setTimeout(() => {
-      setShowCards(true)
+      // Scroll to show the newly dropped card in the grid
       setTimeout(() => {
-        cardsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 300)
-    }, 2000)
+        droppedCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 400)
+    }, 1200)
   }
+
+  const totalShipped = GRID_APPS.length + MORE_APPS.length + (dispensedApp ? 1 : 0)
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: '#0D1117' }}>
@@ -550,7 +359,7 @@ export default function ShipShotPage() {
       ))}
 
       {/* Hero / Dispenser */}
-      <div style={{ position: 'relative', zIndex: 2, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+      <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px 60px' }}>
         <h1 style={{ fontFamily: "'Impact', 'Arial Black', sans-serif", fontSize: 'clamp(48px, 10vw, 80px)', fontWeight: 900, letterSpacing: -3, margin: '0 0 8px 0', textAlign: 'center', color: '#fff' }}>
           <span style={{ color: 'white' }}>Ship</span>
           <span style={{ color: '#0066FF' }}>shot</span>
@@ -560,19 +369,77 @@ export default function ShipShotPage() {
         <VendingMachine onDispense={handleDispense} dispensing={dispensing} dispensedApp={dispensedApp} />
 
         <div style={{ marginTop: 32, fontFamily: "'Space Mono', monospace", fontSize: 12, color: 'rgba(255,255,255,0.25)', textAlign: 'center', animation: dispensedApp ? 'none' : 'pulse 2s ease-in-out infinite' }}>
-          {dispensedApp ? '↓ scroll to see what we\'ve shipped' : '↑ press the button'}
+          {dispensedApp ? '↓ scroll to see what we\'ve shipped' : '↑ dispense today\'s drop'}
         </div>
       </div>
 
-      {/* Shipped cards */}
-      {showCards && (
-        <div ref={cardsRef} style={{ position: 'relative', zIndex: 2, paddingTop: 60 }}>
-          <DispensedCards apps={APPS} />
+      {/* Shipped cards grid — always visible */}
+      <div style={{ position: 'relative', zIndex: 2, padding: '40px 20px 0' }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <h2 style={{ fontFamily: "'Space Mono', monospace", fontSize: 28, fontWeight: 700, color: 'white', margin: 0, letterSpacing: -1 }}>
+            What we&apos;ve <span style={{ color: '#0066FF' }}>shipped</span>
+          </h2>
+          <div style={{ width: 60, height: 3, background: '#0066FF', margin: '16px auto 0', borderRadius: 2 }} />
         </div>
-      )}
 
-      {/* THE CREW — Dossier Board */}
-      <DossierBoard />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 24, maxWidth: 800, margin: '0 auto' }}>
+          {/* Today's dispensed card — appears at top of grid */}
+          {dispensedApp && (
+            <div ref={droppedCardRef}>
+              <AppCard app={dispensedApp} index={0} isNew />
+            </div>
+          )}
+
+          {/* Grid apps — cap at 6 total including today's drop */}
+          {GRID_APPS.slice(0, dispensedApp ? 5 : 6).map((app, i) => (
+            <AppCard key={app.id} app={app} index={dispensedApp ? i + 1 : i} />
+          ))}
+
+          {/* Expanded back catalog */}
+          {showExpanded && MORE_APPS.map((app, i) => (
+            <AppCard key={app.id} app={app} index={GRID_APPS.length + i + 1} />
+          ))}
+        </div>
+
+        {/* Expand / stats footer */}
+        <div style={{ textAlign: 'center', marginTop: 48, paddingBottom: 60 }}>
+          <div style={{ display: 'inline-flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div style={{ background: '#FFD23F', borderRadius: 8, padding: '8px 16px', fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: '#0D1117', letterSpacing: 2, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'rgba(255,255,255,0.12)' }} />
+              <span style={{ position: 'relative' }}>&#x26A1; {totalShipped} IDEAS SHIPPED</span>
+            </div>
+            {!showExpanded && MORE_APPS.length > 0 && (
+              <button
+                onClick={() => setShowExpanded(true)}
+                style={{
+                  background: 'rgba(0,102,255,0.12)',
+                  border: '1px solid rgba(0,102,255,0.3)',
+                  borderRadius: 8,
+                  padding: '8px 16px',
+                  fontFamily: "'Space Mono', monospace",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#3388FF',
+                  letterSpacing: 1,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                VIEW {MORE_APPS.length} MORE &#x2192;
+              </button>
+            )}
+            {showExpanded && (
+              <div style={{ background: 'rgba(0,102,255,0.12)', border: '1px solid rgba(0,102,255,0.2)', borderRadius: 8, padding: '8px 16px', fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: '#3388FF', letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00E5A0' }} />
+                MORE TOMORROW
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* THE CREW */}
+      <CharacterSelect />
 
       <style>{`
         * { box-sizing: border-box; }
