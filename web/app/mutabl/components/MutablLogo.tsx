@@ -42,7 +42,7 @@ export default function MutablLogo() {
       </div>
       <div className="mt-4 text-gray-400 uppercase"
            style={{ letterSpacing: "4px", fontSize: 13 }}>
-        apps that evolve
+        apps you make yours
       </div>
 
       <div className="flex mt-16" style={{ gap: 32 }}>

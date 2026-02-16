@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     template: "%s — mutabl",
     default: "mutabl",
   },
-  description: "Apps that grow new features as you chat with them",
+  description: "Apps you make yours — fully customizable by AI",
 };
 
 export default function MutableLayout({
