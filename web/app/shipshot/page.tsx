@@ -26,7 +26,7 @@ export default function ShipShotPage() {
       name: 'ONBOARD',
       tagline: 'Your app loses 77% of users in 3 days.',
       desc: 'One script tag. AI watches where users stall, then builds the onboarding that keeps them.',
-      accent: '#4F46E5',
+      accent: '#3388FF',
       link: '/shipshot/onboard',
       time: '18 min',
     },
@@ -44,30 +44,30 @@ export default function ShipShotPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#0A0A0A',
-      color: '#f0f0f0',
+      background: '#0D1117',
+      color: '#F0F0F0',
       fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
       position: 'relative',
       overflow: 'hidden',
     }}>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 
-      {/* Noise overlay */}
+      {/* Grid texture */}
       <div style={{
-        position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.03,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-        backgroundSize: '128px 128px',
+        position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.06,
+        backgroundImage: 'linear-gradient(#1E2936 1px, transparent 1px), linear-gradient(90deg, #1E2936 1px, transparent 1px)',
+        backgroundSize: '28px 28px',
       }} />
 
-      {/* Gradient blobs */}
+      {/* Glow blobs */}
       <div style={{
-        position: 'fixed', top: '-20%', right: '-10%', width: '50vw', height: '50vw',
-        background: 'radial-gradient(circle, rgba(255,51,102,.12) 0%, transparent 70%)',
+        position: 'fixed', top: '-15%', right: '-5%', width: '45vw', height: '45vw',
+        background: 'radial-gradient(circle, rgba(51,136,255,.1) 0%, transparent 70%)',
         zIndex: 0, pointerEvents: 'none',
       }} />
       <div style={{
-        position: 'fixed', bottom: '-10%', left: '-10%', width: '40vw', height: '40vw',
-        background: 'radial-gradient(circle, rgba(124,58,237,.1) 0%, transparent 70%)',
+        position: 'fixed', bottom: '-10%', left: '-5%', width: '35vw', height: '35vw',
+        background: 'radial-gradient(circle, rgba(255,210,63,.06) 0%, transparent 70%)',
         zIndex: 0, pointerEvents: 'none',
       }} />
 
@@ -77,77 +77,84 @@ export default function ShipShotPage() {
         {/* Nav */}
         <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 24 }}>🚀</span>
-            <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: -0.5, background: 'linear-gradient(135deg, #FF3366, #FFD60A)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ShipShot</span>
+            <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 900, fontSize: 20, letterSpacing: -0.5 }}>
+              <span style={{ color: '#fff' }}>Ship</span>
+              <span style={{ color: '#3388FF' }}>shot</span>
+            </span>
           </div>
         </nav>
 
         {/* Hero */}
-        <section style={{ textAlign: 'center', padding: '100px 24px 60px', maxWidth: 800, margin: '0 auto' }}>
-          <h1 style={{
-            fontSize: 'clamp(44px, 10vw, 84px)',
-            fontWeight: 900,
-            lineHeight: 1.05,
-            letterSpacing: -3,
-            marginBottom: 24,
-          }}>
-            Ideas{' '}
-            <span style={{
-              color: glitch ? '#FFD60A' : '#FF3366',
-              display: 'inline-block',
-              transform: glitch ? 'skewX(-4deg) translateX(2px)' : 'none',
-              transition: glitch ? 'none' : 'all .3s ease',
-              textShadow: glitch ? '2px 0 #7C3AED, -2px 0 #FFD60A' : 'none',
-            }}>
-              ship
-            </span>
-            {' '}here.
-          </h1>
-          <p style={{ fontSize: 'clamp(16px, 3vw, 20px)', color: '#888', lineHeight: 1.6, maxWidth: 560, margin: '0 auto 48px' }}>
-            ShipShot is an AI startup lab. We find signals, pick ideas, design them, and ship working prototypes — all before lunch.
+        <section style={{ textAlign: 'center', padding: '60px 24px 20px', maxWidth: 900, margin: '0 auto' }}>
+          {/* Logo SVG */}
+          <div style={{ maxWidth: 560, margin: '0 auto 40px' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/shipshot/logo.svg" alt="ShipShot" style={{ width: '100%', height: 'auto', borderRadius: 20 }} />
+          </div>
+
+          <p style={{ fontSize: 'clamp(16px, 3vw, 20px)', color: '#8899AA', lineHeight: 1.6, maxWidth: 520, margin: '0 auto 32px' }}>
+            From idea to prototype before your coffee gets cold.
           </p>
-          <button
-            onClick={() => document.getElementById('prototypes')?.scrollIntoView({ behavior: 'smooth' })}
-            style={{
-              background: 'transparent', border: '1px solid #333', color: '#ccc', padding: '14px 32px',
-              borderRadius: 60, fontSize: 16, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-              transition: 'all .2s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#FF3366'; e.currentTarget.style.color = '#FF3366' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#333'; e.currentTarget.style.color = '#ccc' }}
-          >
-            See what we shipped ↓
-          </button>
+
+          {/* Buttons matching brand */}
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 20 }}>
+            <button
+              onClick={() => document.getElementById('prototypes')?.scrollIntoView({ behavior: 'smooth' })}
+              style={{
+                background: '#FFD23F', color: '#0D1117', border: 'none', padding: '12px 28px',
+                borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                fontFamily: "'Space Mono', monospace", letterSpacing: 1, transition: 'transform .15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              ⚡ DAILY IDEA
+            </button>
+            <button
+              onClick={() => document.getElementById('prototypes')?.scrollIntoView({ behavior: 'smooth' })}
+              style={{
+                background: '#111B27', color: '#3388FF', border: '1px solid #222D3A', padding: '12px 28px',
+                borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                fontFamily: "'Space Mono', monospace", letterSpacing: 1, transition: 'all .15s',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.borderColor = '#3388FF' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = '#222D3A' }}
+            >
+              <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#00E5A0', display: 'inline-block' }} />
+              SHIPPED
+            </button>
+          </div>
         </section>
 
         {/* Prototypes */}
         <section id="prototypes" style={{ maxWidth: 1000, margin: '0 auto', padding: '80px 24px' }}>
           <h2 style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 800, letterSpacing: -1, marginBottom: 8, textAlign: 'center' }}>
-            Shipped <span style={{ color: '#FF3366' }}>prototypes</span>
+            Shipped <span style={{ color: '#3388FF' }}>prototypes</span>
           </h2>
-          <p style={{ textAlign: 'center', color: '#666', fontSize: 15, marginBottom: 48 }}>Each one built from scratch in a single session. More coming.</p>
+          <p style={{ textAlign: 'center', color: '#8899AA', fontSize: 15, marginBottom: 48 }}>Each one built from scratch in a single session. More coming.</p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
             {prototypes.map((p, i) => (
               <a href={p.link} key={i} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div
                   style={{
-                    background: '#141414',
+                    background: '#151B23',
                     borderRadius: 16,
-                    border: '1px solid #222',
+                    border: '1px solid #222D3A',
                     overflow: 'hidden',
                     transition: 'all .25s',
                     cursor: 'pointer',
                   }}
                   onMouseEnter={e => {
                     e.currentTarget.style.transform = 'translateY(-4px)'
-                    e.currentTarget.style.boxShadow = `0 8px 30px ${p.accent}22`
+                    e.currentTarget.style.boxShadow = `0 8px 30px ${p.accent}18`
                     e.currentTarget.style.borderColor = p.accent + '44'
                   }}
                   onMouseLeave={e => {
                     e.currentTarget.style.transform = 'translateY(0)'
                     e.currentTarget.style.boxShadow = 'none'
-                    e.currentTarget.style.borderColor = '#222'
+                    e.currentTarget.style.borderColor = '#222D3A'
                   }}
                 >
                   {/* Accent strip */}
@@ -156,15 +163,16 @@ export default function ShipShotPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                       <h3 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.5 }}>{p.name}</h3>
                       <span style={{
-                        background: '#1a1a1a', border: '1px solid #333', padding: '3px 10px',
-                        borderRadius: 20, fontSize: 11, color: '#888', fontWeight: 600,
+                        background: '#FFD23F', color: '#0D1117', padding: '3px 10px',
+                        borderRadius: 20, fontSize: 11, fontWeight: 700,
+                        fontFamily: "'Space Mono', monospace",
                       }}>
                         ⚡ {p.time}
                       </span>
                     </div>
                     <p style={{ fontSize: 14, color: p.accent, fontWeight: 600, marginBottom: 8 }}>{p.tagline}</p>
-                    <p style={{ fontSize: 14, color: '#777', lineHeight: 1.5, marginBottom: 16 }}>{p.desc}</p>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: '#ccc' }}>View Demo →</span>
+                    <p style={{ fontSize: 14, color: '#8899AA', lineHeight: 1.5, marginBottom: 16 }}>{p.desc}</p>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#F0F0F0' }}>View Demo →</span>
                   </div>
                 </div>
               </a>
@@ -172,14 +180,14 @@ export default function ShipShotPage() {
 
             {/* Coming soon placeholder */}
             <div style={{
-              background: '#0e0e0e',
+              background: '#0D1117',
               borderRadius: 16,
-              border: '1px dashed #333',
+              border: '1px dashed #222D3A',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: 220,
-              color: '#444',
+              color: '#8899AA',
               fontSize: 15,
               fontWeight: 600,
             }}>
@@ -191,9 +199,9 @@ export default function ShipShotPage() {
         {/* Crew */}
         <section style={{ padding: '60px 0 80px' }}>
           <h2 style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 800, letterSpacing: -1, marginBottom: 8, textAlign: 'center' }}>
-            The <span style={{ color: '#FFD60A' }}>crew</span>
+            The <span style={{ color: '#FFD23F' }}>crew</span>
           </h2>
-          <p style={{ textAlign: 'center', color: '#666', fontSize: 15, marginBottom: 40 }}>Six agents. One goal. Ship before anyone argues about the name.</p>
+          <p style={{ textAlign: 'center', color: '#8899AA', fontSize: 15, marginBottom: 40 }}>Six agents. One goal. Ship before anyone argues about the name.</p>
 
           <div style={{
             display: 'flex', gap: 16, overflowX: 'auto', padding: '0 24px 16px',
@@ -202,13 +210,13 @@ export default function ShipShotPage() {
           }}>
             {crew.map((c, i) => (
               <div key={i} style={{
-                flexShrink: 0, width: 180, background: '#141414', borderRadius: 14,
-                border: '1px solid #222', padding: '24px 16px', textAlign: 'center',
+                flexShrink: 0, width: 180, background: '#151B23', borderRadius: 14,
+                border: '1px solid #222D3A', padding: '24px 16px', textAlign: 'center',
                 scrollSnapAlign: 'start',
               }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>{c.emoji}</div>
                 <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 6 }}>{c.name}</div>
-                <div style={{ fontSize: 12, color: '#777', lineHeight: 1.5 }}>{c.role}</div>
+                <div style={{ fontSize: 12, color: '#8899AA', lineHeight: 1.5 }}>{c.role}</div>
               </div>
             ))}
           </div>
@@ -216,18 +224,14 @@ export default function ShipShotPage() {
 
         {/* Footer */}
         <footer style={{
-          borderTop: '1px solid #1a1a1a', padding: '32px 24px', textAlign: 'center',
-          fontSize: 13, color: '#444', lineHeight: 1.6,
+          borderTop: '1px solid #222D3A', padding: '32px 24px', textAlign: 'center',
+          fontSize: 13, color: '#8899AA', lineHeight: 1.6,
         }}>
-          Built by the Shipshot crew. Powered by caffeine and questionable decisions.
+          Built by the Shipwreck crew. Powered by caffeine and questionable decisions.
         </footer>
       </div>
 
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
         ::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
