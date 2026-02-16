@@ -124,6 +124,7 @@ export default function ContxtPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a1a" }}>
       <SettingsMenu
+        userHandle={user.handle}
         updateAvailable={updateAvailable}
         onUpdateSkip={() => setUpdateAvailable(false)}
         onUpdateAccept={() => setUpdateAvailable(false)}

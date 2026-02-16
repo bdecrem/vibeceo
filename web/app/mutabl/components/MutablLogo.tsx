@@ -48,7 +48,7 @@ export default function MutablLogo() {
       <div className="flex mt-16" style={{ gap: 32 }}>
         {[
           { name: "TODOIT", desc: "tasks, shaped by you", href: "/mutabl/todoit", color: "#6C5CE7" },
-          { name: "CONTXT", desc: "context that keeps up", href: "/mutabl/contxt", color: "#00CEC9" },
+          { name: "CONTXT", desc: "relationships, never forgotten", href: "/mutabl/contxt", color: "#00CEC9" },
         ].map((app, i) => {
           const pulse = Math.sin(tick * 0.04 + i * 2) * 0.5 + 0.5;
           return (
