@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 // Today's drop — dispensed by the machine
 const TODAYS_DROP = {
@@ -137,8 +137,14 @@ function VendingMachine({ onDispense, dispensing, dropped }: {
               }}
             >
               <div style={{ position: 'absolute', inset: 6, borderRadius: '50%', background: dropped ? 'radial-gradient(circle at 40% 35%, #445566, #334455)' : dispensing ? 'radial-gradient(circle at 40% 35%, #BB3355, #881530)' : 'radial-gradient(circle at 40% 35%, #FF6080, #FF3860)' }} />
-              <span style={{ position: 'relative', color: 'white', fontSize: 24, fontWeight: 'bold', zIndex: 1 }}>
-                {dropped ? '✓' : dispensing ? '...' : '▶'}
+              <span style={{ position: 'relative', color: 'white', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {dropped ? (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                ) : dispensing ? (
+                  <span style={{ fontSize: 24, fontWeight: 'bold' }}>...</span>
+                ) : (
+                  <svg width="22" height="24" viewBox="0 0 22 24" fill="white"><polygon points="4,2 20,12 4,22" /></svg>
+                )}
               </span>
             </button>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
@@ -307,7 +313,15 @@ export default function ShipShotPage() {
   const [dispensing, setDispensing] = useState(false)
   const [dropped, setDropped] = useState(false)
   const [showExpanded, setShowExpanded] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const droppedCardRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const handleDispense = () => {
     if (dispensing || dropped) return
@@ -323,6 +337,9 @@ export default function ShipShotPage() {
   }
 
   const totalShipped = GRID_APPS.length + MORE_APPS.length + (dropped ? 1 : 0)
+  const visibleCount = isMobile ? (dropped ? 1 : 2) : (dropped ? 5 : 6)
+  const hiddenGridApps = GRID_APPS.length - visibleCount
+  const hiddenTotal = hiddenGridApps + MORE_APPS.length
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: '#0D1117' }}>
@@ -378,15 +395,22 @@ export default function ShipShotPage() {
             </div>
           )}
 
-          {/* Grid apps — cap at 6 total including today's drop */}
-          {GRID_APPS.slice(0, dropped ? 5 : 6).map((app, i) => (
+          {/* Grid apps — 2 on mobile, 6 on desktop */}
+          {GRID_APPS.slice(0, visibleCount).map((app, i) => (
             <AppCard key={app.id} app={app} index={dropped ? i + 1 : i} />
           ))}
 
-          {/* Expanded back catalog */}
-          {showExpanded && MORE_APPS.map((app, i) => (
-            <AppCard key={app.id} app={app} index={GRID_APPS.length + i + 1} />
-          ))}
+          {/* Expanded: remaining grid apps + back catalog */}
+          {showExpanded && (
+            <>
+              {GRID_APPS.slice(visibleCount).map((app, i) => (
+                <AppCard key={app.id} app={app} index={visibleCount + i + 1} />
+              ))}
+              {MORE_APPS.map((app, i) => (
+                <AppCard key={app.id} app={app} index={GRID_APPS.length + i + 1} />
+              ))}
+            </>
+          )}
         </div>
 
         {/* Expand / stats footer */}
@@ -396,7 +420,7 @@ export default function ShipShotPage() {
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'rgba(255,255,255,0.12)' }} />
               <span style={{ position: 'relative' }}>&#x26A1; {totalShipped} IDEAS SHIPPED</span>
             </div>
-            {!showExpanded && MORE_APPS.length > 0 && (
+            {!showExpanded && hiddenTotal > 0 && (
               <button
                 onClick={() => setShowExpanded(true)}
                 style={{
@@ -413,7 +437,7 @@ export default function ShipShotPage() {
                   transition: 'all 0.2s ease',
                 }}
               >
-                VIEW {MORE_APPS.length} MORE &#x2192;
+                VIEW {hiddenTotal} MORE &#x2192;
               </button>
             )}
             {showExpanded && (
