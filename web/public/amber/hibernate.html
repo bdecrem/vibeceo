@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HIBERNATE — Amber</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="HIBERNATE">
+    <meta property="og:description" content="Slow metabolism. Deep sleep. Suspended animation.">
+    <meta property="og:image" content="https://intheamber.com/amber/hibernate-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/hibernate.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HIBERNATE">
+    <meta name="twitter:description" content="Slow metabolism. Deep sleep. Suspended animation.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/hibernate-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D0D0D;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            color: #D4A574;
+        }
+        
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 11px;
+            color: #78716c;
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+        
+        #title {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            font-weight: 700;
+            color: #D4A574;
+            text-shadow: 0 0 40px rgba(212, 165, 116, 0.6);
+            pointer-events: none;
+            z-index: 5;
+            animation: breathe 8s ease-in-out infinite;
+            letter-spacing: 8px;
+        }
+        
+        @keyframes breathe {
+            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.02); }
+        }
+        
+        @media (max-width: 768px) {
+            #title {
+                font-size: 48px;
+                letter-spacing: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="title">HIBERNATE</div>
+    <div id="info">TAP TO WAKE • ENERGY: <span id="energy">0%</span></div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const energySpan = document.getElementById('energy');
+        
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Hibernation state
+        let metabolismRate = 0.01; // Very slow
+        let bodyTemp = 5; // Deep cold (out of 100)
+        let heartRate = 2; // Beats per minute (normal is 60+)
+        let breathRate = 1; // Breaths per minute (normal is 12-20)
+        let energy = 0; // Stored energy percentage
+        
+        // Organisms in hibernation
+        const organisms = [];
+        const maxOrganisms = 30;
+        
+        // Color palette for hibernation
+        const colors = {
+            deepBlue: '#1e3a8a',
+            iceBlue: '#3b82f6',
+            darkTeal: '#0d9488',
+            amber: '#f59e0b',
+            gold: '#FFD700',
+            purple: '#8b5cf6',
+            gray: '#64748b'
+        };
+        
+        class HibernatingOrganism {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.baseRadius = 20 + Math.random() * 40;
+                this.radius = this.baseRadius;
+                this.breathPhase = Math.random() * Math.PI * 2;
+                this.breathSpeed = 0.002 + Math.random() * 0.003; // Very slow breathing
+                this.color = Math.random() > 0.5 ? colors.deepBlue : colors.darkTeal;
+                this.accentColor = Math.random() > 0.5 ? colors.iceBlue : colors.purple;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+                this.pulseSpeed = 0.001 + Math.random() * 0.002; // Very slow pulse
+                this.energy = 0;
+                this.maxEnergy = 100;
+                
+                // Frost crystals around the organism
+                this.crystals = [];
+                const crystalCount = 8 + Math.floor(Math.random() * 12);
+                for (let i = 0; i < crystalCount; i++) {
+                    const angle = (i / crystalCount) * Math.PI * 2;
+                    const distance = this.baseRadius + 10 + Math.random() * 20;
+                    this.crystals.push({
+                        angle: angle,
+                        distance: distance,
+                        size: 2 + Math.random() * 4,
+                        growSpeed: 0.001 + Math.random() * 0.002
+                    });
+                }
+            }
+            
+            update() {
+                // Slow breathing
+                this.breathPhase += this.breathSpeed;
+                const breathExpansion = Math.sin(this.breathPhase) * 3;
+                this.radius = this.baseRadius + breathExpansion;
+                
+                // Slow pulse
+                this.pulsePhase += this.pulseSpeed;
+                
+                // Accumulate energy very slowly
+                if (this.energy < this.maxEnergy) {
+                    this.energy += metabolismRate;
+                }
+                
+                // Crystals slowly grow
+                this.crystals.forEach(crystal => {
+                    crystal.distance += Math.sin(this.breathPhase) * crystal.growSpeed;
+                });
+            }
+            
+            draw() {
+                // Draw organism body with gradient
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.radius
+                );
+                gradient.addColorStop(0, this.color + '80');
+                gradient.addColorStop(0.5, this.color + '40');
+                gradient.addColorStop(1, this.color + '10');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw pulse ring
+                const pulseAlpha = (Math.sin(this.pulsePhase) * 0.3 + 0.3).toFixed(2);
+                ctx.strokeStyle = this.accentColor + Math.floor(pulseAlpha * 255).toString(16).padStart(2, '0');
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 0.7, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Draw frost crystals
+                this.crystals.forEach(crystal => {
+                    const cx = this.x + Math.cos(crystal.angle) * crystal.distance;
+                    const cy = this.y + Math.sin(crystal.angle) * crystal.distance;
+                    
+                    ctx.fillStyle = colors.iceBlue + '60';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, crystal.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Crystal lines
+                    ctx.strokeStyle = colors.iceBlue + '30';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(cx,cy);
+                    ctx.stroke();
+                });
+                
+                // Draw energy bar (very small, barely visible)
+                if (this.energy > 0) {
+                    const barWidth = 30;
+                    const barHeight = 2;
+                    const barX = this.x - barWidth / 2;
+                    const barY = this.y + this.radius + 15;
+                    
+                    // Background
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.fillRect(barX, barY, barWidth, barHeight);
+                    
+                    // Energy fill
+                    const fillWidth = (this.energy / this.maxEnergy) * barWidth;
+                    const energyGradient = ctx.createLinearGradient(barX, barY, barX + barWidth, barY);
+                    energyGradient.addColorStop(0, colors.amber);
+                    energyGradient.addColorStop(1, colors.gold);
+                    ctx.fillStyle = energyGradient;
+                    ctx.fillRect(barX, barY, fillWidth, barHeight);
+                }
+            }
+            
+            wake() {
+                // Increase metabolism temporarily
+                metabolismRate = Math.min(0.5, metabolismRate * 1.2);
+                this.energy = Math.min(this.maxEnergy, this.energy + 10);
+            }
+        }
+        
+        // Initialize organisms
+        function init() {
+            organisms.length = 0;
+            for (let i = 0; i < maxOrganisms; i++) {
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                organisms.push(new HibernatingOrganism(x, y));
+            }
+        }
+        
+        // Audio context for subtle sounds
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let audioUnlocked = false;
+        
+        function playWakeSound() {
+            if (!audioUnlocked) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.3);
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+        
+        // Animation loop
+        function animate() {
+            // Dark fade trail (very slow fade)
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.03)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Update and draw organisms
+            organisms.forEach(org => {
+                org.update();
+                org.draw();
+            });
+            
+            // Draw connection lines between nearby organisms (hibernation network)
+            ctx.strokeStyle = colors.gray + '10';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < organisms.length; i++) {
+                for (let j = i + 1; j < organisms.length; j++) {
+                    const dx = organisms[i].x - organisms[j].x;
+                    const dy = organisms[i].y - organisms[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < 200) {
+                        const alpha = (1 - dist / 200) * 0.3;
+                        ctx.strokeStyle = colors.iceBlue + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+                        ctx.beginPath();
+                        ctx.moveTo(organisms[i].x, organisms[i].y);
+                        ctx.lineTo(organisms[j].x, organisms[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            // Calculate total system energy
+            const totalEnergy = organisms.reduce((sum, org) => sum + org.energy, 0);
+            const avgEnergy = totalEnergy / (organisms.length * 100);
+            energy = Math.floor(avgEnergy * 100);
+            energySpan.textContent = energy + '%';
+            
+            // Slowly decrease metabolism back to hibernation rate
+            metabolismRate = Math.max(0.01, metabolismRate * 0.995);
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Interaction: tap to wake organisms
+        function handleInteraction(e) {
+            if (!audioUnlocked) {
+                audioCtx.resume();
+                audioUnlocked = true;
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+            
+            // Scale to canvas coordinates
+            const canvasX = (x / rect.width) * width;
+            const canvasY = (y / rect.height) * height;
+            
+            // Wake nearby organisms
+            organisms.forEach(org => {
+                const dx = org.x - canvasX;
+                const dy = org.y - canvasY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < 150) {
+                    org.wake();
+                }
+            });
+            
+            playWakeSound();
+            
+            // Spawn wake particles
+            for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 4;
+                spawnWakeParticle(canvasX, canvasY, angle, speed);
+            }
+        }
+        
+        // Wake particles
+        const wakeParticles = [];
+        
+        class WakeParticle {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.life = 1;
+                this.decay = 0.015;
+                this.size = 2 + Math.random() * 3;
+                this.color = Math.random() > 0.5 ? colors.amber : colors.gold;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+                this.life -= this.decay;
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color + Math.floor(this.life * 255).toString(16).padStart(2, '0');
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function spawnWakeParticle(x, y, angle, speed) {
+            const vx = Math.cos(angle) * speed;
+            const vy = Math.sin(angle) * speed;
+            wakeParticles.push(new WakeParticle(x, y, vx, vy));
+        }
+        
+        // Update animate loop to include wake particles
+        const originalAnimate = animate;
+        animate = function() {
+            originalAnimate();
+            
+            // Update and draw wake particles
+            for (let i = wakeParticles.length - 1; i >= 0; i--) {
+                wakeParticles[i].update();
+                wakeParticles[i].draw();
+                
+                if (wakeParticles[i].life <= 0) {
+                    wakeParticles.splice(i, 1);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        };
+        
+        canvas.addEventListener('click', handleInteraction);
+        canvas.addEventListener('touchstart', handleInteraction);
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+});
+        
+        // Start
+        init();
+        animate();
+    </script>
+</body>
+</html>
