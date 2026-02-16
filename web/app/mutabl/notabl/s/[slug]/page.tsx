@@ -8,9 +8,10 @@ type Block = {
 };
 
 async function fetchDocument(slug: string): Promise<{ title: string; blocks: Block[] } | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+    || (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null)
+    || "https://kochi.to";
 
   const res = await fetch(`${baseUrl}/api/mutabl/notabl/view/${slug}`, {
     cache: "no-store",
