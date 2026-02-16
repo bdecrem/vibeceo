@@ -186,6 +186,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // Todoit lives at /todoit
+    if (pathname.startsWith('/todoit')) {
+      return NextResponse.next()
+    }
+
     // Rewrite all other paths to /kochi/* (e.g., /peel -> /kochi/peel)
     const newUrl = new URL(`/kochi${pathname}`, request.url)
     log(`[Middleware] Kochi domain rewrite ${pathname} -> ${newUrl.pathname}`)
@@ -638,6 +643,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/simple-voice') ||
       pathname.startsWith('/pixelpit') ||
       pathname.startsWith('/shipshot') ||
+      pathname.startsWith('/todoit') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()
