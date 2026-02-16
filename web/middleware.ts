@@ -21,6 +21,7 @@ export function middleware(request: NextRequest) {
   const isKochitoLabsDomain = host === 'kochitolabs.com' || host === 'www.kochitolabs.com'
   const isPixelpitDomain = host === 'pixelpit.gg' || host === 'www.pixelpit.gg'
   const isShipShotDomain = host === 'shipshot.io' || host === 'www.shipshot.io'
+  const isMutablDomain = host === 'mutabl.io' || host === 'www.mutabl.io'
 
   // Handle token-tank domain (mirror kochi pattern)
   if (isTokenTankDomain) {
@@ -489,6 +490,36 @@ export function middleware(request: NextRequest) {
     // All other paths → /shipshot/*
     const newUrl = new URL(`/shipshot${pathname}`, request.url)
     log(`[Middleware] ShipShot domain rewrite ${pathname} -> ${newUrl.pathname}`)
+    return NextResponse.rewrite(newUrl)
+  }
+
+  // Handle mutabl.io domain
+  if (isMutablDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    // Root → /mutabl
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/mutabl', request.url)
+      log(`[Middleware] Mutabl domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    // Don't double-rewrite paths already under /mutabl
+    if (pathname.startsWith('/mutabl')) {
+      return NextResponse.next()
+    }
+
+    // All other paths → /mutabl/*  (e.g., /todoit → /mutabl/todoit)
+    const newUrl = new URL(`/mutabl${pathname}`, request.url)
+    log(`[Middleware] Mutabl domain rewrite ${pathname} -> ${newUrl.pathname}`)
     return NextResponse.rewrite(newUrl)
   }
 
