@@ -54,6 +54,8 @@ const NOTABL_SCOPE_DOCS = `AVAILABLE IN SCOPE (injected by the wrapper — do NO
 - Export: exportMarkdown(id) → converts blocks to .md and triggers browser download
 - Refresh: refreshDocuments()
 - User info: user ({handle}) — available directly from scope (stable, no context needed)
+- CopyLink component: <CopyLink url="https://..." label="optional label" /> — renders a tappable button that copies URL to clipboard on tap (works on iOS Safari). Shows "✓ Copied!" feedback. Use this for share links instead of navigator.clipboard.
+- copyToClipboard(text) — function that copies text to clipboard (iOS-safe). Use this instead of navigator.clipboard.writeText().
 - RichEditor component: <RichEditor content={html} onUpdate={fn} theme={{accent:"#color"}} editable={bool} />
   - content: HTML string (TipTap format)
   - onUpdate: called with HTML string on every edit

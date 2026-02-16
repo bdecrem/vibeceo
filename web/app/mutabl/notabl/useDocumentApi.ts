@@ -91,7 +91,14 @@ export function useDocumentApi() {
           d.id === id ? { ...d, share_slug: data.slug, is_public: true } : d
         )
       );
-      return { slug: data.slug, url: data.url };
+      // On mobile, use native share sheet (reliable on iOS)
+      const url = data.url as string;
+      if (url && typeof navigator.share === "function") {
+        try {
+          await navigator.share({ url });
+        } catch { /* user cancelled — that's fine */ }
+      }
+      return { slug: data.slug, url };
     }
   }, []);
 
