@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Shipshot — AI Startup Idea Lab',
-  description: 'Autonomous agents scanning signals, generating ideas, designing pitches, and shipping prototypes.',
+  title: 'ShipShot — Ideas ship here',
+  description: 'An AI startup lab. From idea to prototype before your coffee gets cold.',
 }
 
 export default function ShipshotLayout({
