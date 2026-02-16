@@ -267,6 +267,90 @@ export default function ShipShotPage() {
         </div>
       )}
 
+      {/* THE CREW */}
+      <div style={{ position: 'relative', zIndex: 2, padding: '80px 20px 60px', maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 12 }}>
+          <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, letterSpacing: 4, color: '#0066FF', textTransform: 'uppercase' }}>Meet the crew</span>
+        </div>
+        <h2 style={{ fontFamily: "'Impact', 'Arial Black', sans-serif", fontSize: 'clamp(32px, 7vw, 52px)', fontWeight: 900, textAlign: 'center', color: '#fff', letterSpacing: -2, margin: '0 0 12px 0' }}>
+          The minds behind the <span style={{ color: '#FFD23F' }}>machine</span>
+        </h2>
+        <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: 'rgba(255,255,255,0.35)', textAlign: 'center', margin: '0 0 48px 0' }}>
+          Six agents. One button. Infinite questionable decisions.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16, maxWidth: 720, margin: '0 auto' }}>
+          {[
+            { name: 'Drift', role: 'Signal Hunter', img: '/shipshot/crew/drift.png', color: '#1A1A2E', accent: '#00D4FF', emoji: '🌀' },
+            { name: 'Hype', role: 'Vibes Architect', img: '/shipshot/crew/hype.png', color: '#FF3366', accent: '#FF3366', emoji: '🔥' },
+            { name: 'Margin', role: 'Numbers Oracle', img: '/shipshot/crew/margin.png', color: '#0F2027', accent: '#10B981', emoji: '📊' },
+            { name: 'Pixel', role: 'Design Alchemist', img: '/shipshot/crew/pixel.png', color: '#7C3AED', accent: '#7C3AED', emoji: '🎨' },
+            { name: 'Ship', role: 'Build Machine', img: '/shipshot/crew/ship.png', color: '#0066FF', accent: '#0066FF', emoji: '🚢' },
+            { name: 'Mave', role: 'Crew Wrangler', img: '/shipshot/logo.svg', color: '#0D1117', accent: '#FFD23F', emoji: '🌊' },
+          ].map((member, i) => (
+            <div
+              key={member.name}
+              style={{
+                background: '#111820',
+                borderRadius: 16,
+                border: '1px solid #1E2936',
+                padding: '20px 12px 16px',
+                textAlign: 'center',
+                transition: 'all 0.3s ease',
+                cursor: 'default',
+                animation: `slideUp 0.5s ease ${i * 0.08}s both`,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)'
+                e.currentTarget.style.borderColor = member.accent + '66'
+                e.currentTarget.style.boxShadow = `0 12px 32px ${member.accent}22`
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)'
+                e.currentTarget.style.borderColor = '#1E2936'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <div style={{
+                width: 88,
+                height: 88,
+                borderRadius: 14,
+                background: member.color,
+                margin: '0 auto 12px',
+                overflow: 'hidden',
+                border: `2px solid ${member.accent}33`,
+                position: 'relative',
+              }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={member.img}
+                  alt={member.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+              <div style={{ fontFamily: "'Impact', 'Arial Black', sans-serif", fontSize: 16, color: '#fff', letterSpacing: -0.5, marginBottom: 2 }}>
+                {member.name}
+              </div>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 10, color: member.accent, letterSpacing: 1, textTransform: 'uppercase' }}>
+                {member.role}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Fun footer */}
+        <div style={{ textAlign: 'center', marginTop: 56, paddingBottom: 40 }}>
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.2)', letterSpacing: 2, marginBottom: 8 }}>
+            POWERED BY CAFFEINE AND QUESTIONABLE DECISIONS
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {['🌀', '🔥', '📊', '🎨', '🚢', '🌊'].map((e, i) => (
+              <span key={i} style={{ fontSize: 20, opacity: 0.5, animation: `tokenFloat ${2 + i * 0.3}s ease-in-out infinite alternate` }}>{e}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <style>{`
         * { box-sizing: border-box; }
         @keyframes tokenFloat {
