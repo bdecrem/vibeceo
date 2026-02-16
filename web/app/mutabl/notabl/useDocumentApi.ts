@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 export type Block = {
   id: string;
@@ -23,6 +23,9 @@ const BASE = "/api/mutabl/notabl/documents";
 
 export function useDocumentApi() {
   const [documents, setDocuments] = useState<Document[]>([]);
+  // Cache latest blocks per doc so export works even though block saves
+  // don't update documents state (to avoid react-live re-mount flicker)
+  const blocksCacheRef = useRef<Record<string, Block[]>>({});
 
   const refreshDocuments = useCallback(async () => {
     const res = await fetch(BASE);
@@ -47,11 +50,20 @@ export function useDocumentApi() {
 
   const updateDocument = useCallback(
     async (id: string, updates: { title?: string; blocks?: Block[] }) => {
-      setDocuments((prev) =>
-        prev.map((d) =>
-          d.id === id ? { ...d, ...updates, updated_at: new Date().toISOString() } : d
-        )
-      );
+      // Only optimistically update state for title changes.
+      // Block saves are fire-and-forget — updating documents state would
+      // cause react-live to re-mount the entire App (new scope → new eval),
+      // destroying TipTap and causing visible flicker.
+      if (updates.blocks) {
+        blocksCacheRef.current[id] = updates.blocks;
+      }
+      if (updates.title !== undefined) {
+        setDocuments((prev) =>
+          prev.map((d) =>
+            d.id === id ? { ...d, title: updates.title!, updated_at: new Date().toISOString() } : d
+          )
+        );
+      }
       await fetch(`${BASE}/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -99,12 +111,14 @@ export function useDocumentApi() {
       const doc = documents.find((d) => d.id === id);
       if (!doc) return;
 
+      // Use cached blocks if available (block saves don't update documents state)
+      const blocks = blocksCacheRef.current[id] || doc.blocks;
       let md: string;
-      const hasRichtext = doc.blocks.some((b) => b.type === "richtext");
+      const hasRichtext = blocks.some((b) => b.type === "richtext");
 
       if (hasRichtext) {
         // Convert HTML → markdown
-        const html = doc.blocks
+        const html = blocks
           .filter((b) => b.type === "richtext")
           .map((b) => b.content)
           .join("");
@@ -123,7 +137,7 @@ export function useDocumentApi() {
       } else {
         // Legacy block format
         const lines: string[] = [];
-        for (const block of doc.blocks) {
+        for (const block of blocks) {
           if (block.type === "heading") {
             const level = (block.properties.level as number) || 1;
             lines.push(`${"#".repeat(level)} ${block.content}`);
