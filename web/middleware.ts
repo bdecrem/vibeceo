@@ -186,8 +186,8 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // Todoit lives at /todoit
-    if (pathname.startsWith('/todoit')) {
+    // Mutabl apps live at /mutabl/*
+    if (pathname.startsWith('/mutabl')) {
       return NextResponse.next()
     }
 
@@ -643,7 +643,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/simple-voice') ||
       pathname.startsWith('/pixelpit') ||
       pathname.startsWith('/shipshot') ||
-      pathname.startsWith('/todoit') ||
+      pathname.startsWith('/mutabl') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()

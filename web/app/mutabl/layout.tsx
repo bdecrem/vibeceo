@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kochi.to"),
-  title: "todoit",
-  description: "Your personal todo app — fully customizable by AI",
+  title: {
+    template: "%s — mutabl",
+    default: "mutabl",
+  },
+  description: "Apps that grow new features as you chat with them",
 };
 
-export default function TodoitLayout({
+export default function MutableLayout({
   children,
 }: {
   children: React.ReactNode;

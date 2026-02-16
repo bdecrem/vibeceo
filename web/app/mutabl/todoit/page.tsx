@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AuthGate from "./components/AuthGate";
-import AppRenderer from "./components/AppRenderer";
-import ChatPanel from "./components/ChatPanel";
-import { useTaskApi } from "./components/useTaskApi";
+import AuthGate from "../components/AuthGate";
+import AppRenderer from "../components/AppRenderer";
+import ChatPanel from "../components/ChatPanel";
+import { useTaskApi } from "./useTaskApi";
 
 type User = { id: string; handle: string };
+
+const AUTH_ENDPOINT = "/api/mutabl/todoit/auth";
+const CONFIG_ENDPOINT = "/api/mutabl/todoit/config";
+const AGENT_ENDPOINT = "/api/mutabl/todoit/agent";
 
 export default function TodoitPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -15,9 +19,8 @@ export default function TodoitPage() {
   const { tasks, refreshTasks, addTask, toggleTask, deleteTask, updateTask } =
     useTaskApi();
 
-  // Check session on mount
   useEffect(() => {
-    fetch("/api/todoit/auth")
+    fetch(AUTH_ENDPOINT)
       .then((r) => r.json())
       .then((data) => {
         if (data.user) setUser(data.user);
@@ -25,11 +28,10 @@ export default function TodoitPage() {
       .finally(() => setChecking(false));
   }, []);
 
-  // Load config + tasks once authenticated
   useEffect(() => {
     if (!user) return;
     Promise.all([
-      fetch("/api/todoit/config").then((r) => r.json()),
+      fetch(CONFIG_ENDPOINT).then((r) => r.json()),
       refreshTasks(),
     ]).then(([configData]) => {
       if (configData.app_code) {
@@ -61,7 +63,14 @@ export default function TodoitPage() {
   }
 
   if (!user) {
-    return <AuthGate onAuth={setUser} />;
+    return (
+      <AuthGate
+        onAuth={setUser}
+        authEndpoint={AUTH_ENDPOINT}
+        appName="todoit"
+        tagline="your personal todo app — shaped by AI"
+      />
+    );
   }
 
   if (!appCode) {
@@ -86,14 +95,20 @@ export default function TodoitPage() {
     <div style={{ minHeight: "100vh", background: "#0a0a1a" }}>
       <AppRenderer
         code={appCode}
-        tasks={tasks}
-        addTask={addTask}
-        toggleTask={toggleTask}
-        deleteTask={deleteTask}
-        updateTask={updateTask}
-        user={{ handle: user.handle }}
+        scope={{
+          tasks,
+          addTask,
+          toggleTask,
+          deleteTask,
+          updateTask,
+          user: { handle: user.handle },
+        }}
       />
-      <ChatPanel onCodeUpdate={handleCodeUpdate} />
+      <ChatPanel
+        onCodeUpdate={handleCodeUpdate}
+        agentEndpoint={AGENT_ENDPOINT}
+        title="todoit builder"
+      />
     </div>
   );
 }

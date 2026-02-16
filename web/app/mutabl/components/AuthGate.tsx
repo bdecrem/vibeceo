@@ -4,9 +4,17 @@ import { useState } from "react";
 
 type AuthGateProps = {
   onAuth: (user: { id: string; handle: string }) => void;
+  authEndpoint?: string;
+  appName?: string;
+  tagline?: string;
 };
 
-export default function AuthGate({ onAuth }: AuthGateProps) {
+export default function AuthGate({
+  onAuth,
+  authEndpoint = "/api/mutabl/todoit/auth",
+  appName = "todoit",
+  tagline = "your personal todo app — shaped by AI",
+}: AuthGateProps) {
   const [handle, setHandle] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"handle" | "login" | "register">("handle");
@@ -18,7 +26,7 @@ export default function AuthGate({ onAuth }: AuthGateProps) {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/todoit/auth", {
+      const res = await fetch(authEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "check", handle: handle.trim() }),
@@ -38,7 +46,7 @@ export default function AuthGate({ onAuth }: AuthGateProps) {
     setLoading(true);
     try {
       const action = step === "login" ? "login" : "register";
-      const res = await fetch("/api/todoit/auth", {
+      const res = await fetch(authEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, handle: handle.trim(), code: code.trim() }),
@@ -80,10 +88,10 @@ export default function AuthGate({ onAuth }: AuthGateProps) {
             marginBottom: 8,
           }}
         >
-          todoit
+          {appName}
         </h1>
         <p style={{ color: "#666", fontSize: 13, marginBottom: 32 }}>
-          your personal todo app — shaped by AI
+          {tagline}
         </p>
 
         {step === "handle" && (

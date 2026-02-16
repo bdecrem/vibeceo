@@ -9,9 +9,17 @@ type Message = {
 
 type ChatPanelProps = {
   onCodeUpdate: (newCode: string, version: number) => void;
+  agentEndpoint?: string;
+  title?: string;
+  placeholder?: string;
 };
 
-export default function ChatPanel({ onCodeUpdate }: ChatPanelProps) {
+export default function ChatPanel({
+  onCodeUpdate,
+  agentEndpoint = "/api/mutabl/todoit/agent",
+  title = "builder",
+  placeholder = "change my app...",
+}: ChatPanelProps) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -30,7 +38,7 @@ export default function ChatPanel({ onCodeUpdate }: ChatPanelProps) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/todoit/agent", {
+      const res = await fetch(agentEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msg }),
@@ -104,7 +112,6 @@ export default function ChatPanel({ onCodeUpdate }: ChatPanelProps) {
         fontFamily: "system-ui",
       }}
     >
-      {/* Header */}
       <div
         style={{
           padding: "12px 16px",
@@ -115,7 +122,7 @@ export default function ChatPanel({ onCodeUpdate }: ChatPanelProps) {
         }}
       >
         <span style={{ color: "#eee", fontSize: 14, fontWeight: 600 }}>
-          todoit builder
+          {title}
         </span>
         <button
           onClick={() => setOpen(false)}
@@ -131,7 +138,6 @@ export default function ChatPanel({ onCodeUpdate }: ChatPanelProps) {
         </button>
       </div>
 
-      {/* Messages */}
       <div
         style={{
           flex: 1,
@@ -172,13 +178,7 @@ export default function ChatPanel({ onCodeUpdate }: ChatPanelProps) {
           </div>
         ))}
         {loading && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-start",
-              marginBottom: 10,
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 10 }}>
             <div
               style={{
                 padding: "8px 12px",
@@ -195,7 +195,6 @@ export default function ChatPanel({ onCodeUpdate }: ChatPanelProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div
         style={{
           padding: 12,
@@ -208,7 +207,7 @@ export default function ChatPanel({ onCodeUpdate }: ChatPanelProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="change my app..."
+          placeholder={placeholder}
           disabled={loading}
           style={{
             flex: 1,

@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { agentLoop, BUILDER_SYSTEM_PROMPT } from "../agent-loop";
+import { agentLoop, BUILDER_SYSTEM_PROMPT } from "../../agent-loop";
 
 export const dynamic = "force-dynamic";
 
