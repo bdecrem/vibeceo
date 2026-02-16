@@ -1,518 +1,452 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>CHARGE — Hold to power up. Release to fire.</title>
-  
-  <!-- OG Tags -->
-  <meta property="og:title" content="CHARGE — Hold to power up. Release to fire.">
-  <meta property="og:description" content="A hold-and-release power shot toy by Amber">
-  <meta property="og:image" content="https://intheamber.com/amber/charge-og.png">
-  <meta property="og:url" content="https://intheamber.com/amber/charge.html">
-  <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="CHARGE — Hold to power up. Release to fire.">
-  <meta name="twitter:description" content="A hold-and-release power shot toy by Amber">
-  <meta name="twitter:image" content="https://intheamber.com/amber/charge-og.png">
-  
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CHARGE — Hold to fill. Release at the right moment.</title>
+    <meta name="description" content="Hold to charge the power meter. Release in the green zone to score. Too early = weak. Too late = explosion.">
+    
+    <!-- OG tags -->
+    <meta property="og:title" content="CHARGE — Hold to fill. Release at the right moment.">
+    <meta property="og:description" content="A long-press toy where timing is everything. Hold to charge, release at peak power, watch the explosion.">
+    <meta property="og:image" content="https://intheamber.com/amber/charge-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/charge.html">
+    <meta property="og:type" content="website">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    body {
-      background: #000;
-      color: #D4A574;
-      font-family: 'Space Mono', monospace;
-      overflow: hidden;
-      touch-action: none;
-      width: 100vw;
-      height: 100vh;
-    }
+        body {
+            background: #000;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
 
-    #canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      cursor: crosshair;
-    }
+        #canvas {
+            display: block;
+            cursor: pointer;
+        }
 
-    #ui {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      font-size: 14px;
-      pointer-events: none;
-      z-index: 10;
-      text-shadow: 0 0 10px rgba(212, 165, 116, 0.8);
-    }
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #D4A574;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            pointer-events: none;
+        }
 
-    #charge-bar {
-      position: fixed;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 200px;
-      height: 30px;
-      border: 2px solid #D4A574;
-      border-radius: 4px;
-      overflow: hidden;
-      opacity: 0;
-      transition: opacity 0.2s;
-      pointer-events: none;
-    }
+        .score {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+            pointer-events: none;
+        }
 
-    #charge-bar.active {
-      opacity: 1;
-    }
+        .score-label {
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
-    #charge-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, #D4A574, #FFD700, #2D9596);
-      transition: width 0.05s linear;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
-    }
+        .score-value {
+            color: #FFD700;
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
 
-    #instructions {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      font-size: 18px;
-      opacity: 1;
-      transition: opacity 0.3s;
-      pointer-events: none;
-    }
+        .instruction {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #D4A574;
+            font-size: 16px;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
 
-    #instructions.hidden {
-      opacity: 0;
-    }
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: all;
+            z-index: 100;
+        }
 
-    .large {
-      font-size: 24px;
-      color: #FFD700;
-      margin-bottom: 10px;
-    }
+        .game-over h1 {
+            color: #FFD700;
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
 
-    @media (max-width: 600px) {
-      #ui {
-        font-size: 12px;
-      }
-      #charge-bar {
-        width: 160px;
-        height: 24px;
-      }
-    }
-  </style>
+        .game-over p {
+            color: #D4A574;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .game-over button {
+            background: #D4A574;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-family: 'Space Mono', monospace;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .game-over button:hover {
+            background: #FFD700;
+            transform: scale(1.05);
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
-  
-  <div id="ui">
-    <div>SCORE: <span id="score">0</span></div>
-    <div>BEST: <span id="best">0</span></div>
-    <div>COMBO: <span id="combo">0</span>x</div>
-  </div>
+    <canvas id="canvas"></canvas>
+    
+    <div class="ui">
+        <div>CHARGE</div>
+    </div>
 
-  <div id="charge-bar">
-    <div id="charge-fill"></div>
-  </div>
+    <div class="score">
+        <div class="score-label">Score</div>
+        <div class="score-value" id="scoreDisplay">0</div>
+    </div>
 
-  <div id="instructions">
-    <div class="large">HOLD TO CHARGE</div>
-    <div>Release to fire</div>
-  </div>
+    <div class="instruction" id="instruction">
+        HOLD TO CHARGE<br>
+        <span style="font-size: 12px; opacity: 0.5; margin-top: 10px; display: block;">Release in the green zone</span>
+    </div>
 
-  <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-    const bestEl = document.getElementById('best');
-    const comboEl = document.getElementById('combo');
-    const chargeBar = document.getElementById('charge-bar');
-    const chargeFill = document.getElementById('charge-fill');
-    const instructions = document.getElementById('instructions');
+    <div class="game-over hidden" id="gameOver">
+        <h1>OVERLOAD</h1>
+        <p id="finalScore">Final Score: 0</p>
+        <button id="restart">CHARGE AGAIN</button>
+    </div>
 
-    let W, H;
-    function resize() {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener('resize', resize);
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const instruction = document.getElementById('instruction');
+        const gameOverScreen = document.getElementById('gameOver');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const restartBtn = document.getElementById('restart');
 
-    // Audio context
-    let audioCtx;
-    function initAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-    }
-
-    function playTone(freq, duration = 0.1, type = 'sine', volume = 0.3) {
-      if (!audioCtx) return;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.type = type;
-      osc.frequency.value = freq;
-      gain.gain.value = volume;
-      osc.start();
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-      osc.stop(audioCtx.currentTime + duration);
-    }
-
-    // Game state
-    let score = 0;
-    let best = parseInt(localStorage.getItem('charge_best') || '0');
-    let combo = 0;
-    let targets = [];
-    let projectiles = [];
-    let particles = [];
-    let isCharging = false;
-    let chargeStart = 0;
-    let chargeAmount = 0;
-    let chargeX = 0;
-    let chargeY = 0;
-    let hasPlayed = false;
-
-    bestEl.textContent = best;
-
-    // Target class
-    class Target {
-      constructor() {
-        this.radius = 20 + Math.random() * 30;
-        this.x = this.radius + Math.random() * (W - this.radius * 2);
-        this.y = this.radius + Math.random() * (H * 0.6 - this.radius * 2);
-        this.vx = (Math.random() - 0.5) * 2;
-        this.vy = (Math.random() - 0.5) * 2;
-        this.health = Math.floor(this.radius / 10);
-        this.maxHealth = this.health;
-        this.color = '#2D9596';
-      }
-
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-
-        if (this.x - this.radius < 0 || this.x + this.radius > W) {
-          this.vx *= -1;
-          this.x = Math.max(this.radius, Math.min(W - this.radius, this.x));
-        }
-        if (this.y - this.radius < 0 || this.y + this.radius > H * 0.6) {
-          this.vy *= -1;
-          this.y = Math.max(this.radius, Math.min(H * 0.6 - this.radius, this.y));
-        }
-      }
-
-      draw() {
-        // Outer glow
-        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
-        gradient.addColorStop(0, this.color + '80');
-        gradient.addColorStop(0.7, this.color + '40');
-        gradient.addColorStop(1, this.color + '00');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
-
-        // Main circle
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Health bar
-        const barWidth = this.radius * 2;
-        const barHeight = 4;
-        const barY = this.y - this.radius - 10;
-        ctx.fillStyle = '#0D0D0D';
-        ctx.fillRect(this.x - barWidth / 2, barY, barWidth, barHeight);
-        const healthPct = this.health / this.maxHealth;
-        ctx.fillStyle = healthPct > 0.5 ? '#2D9596' : healthPct > 0.25 ? '#FFD700' : '#FF6B6B';
-        ctx.fillRect(this.x - barWidth / 2, barY, barWidth * healthPct, barHeight);
-      }
-
-      hit(damage) {
-        this.health -= damage;
-        return this.health <= 0;
-      }
-    }
-
-    // Projectile class
-    class Projectile {
-      constructor(x, y, targetX, targetY, power) {
-        this.x = x;
-        this.y = y;
-        this.power = power;
-        this.radius = 5 + power * 10;
+        let W, H;
+        let audioCtx;
         
-        const angle = Math.atan2(targetY - y, targetX - x);
-        const speed = 10 + power * 5;
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-        
-        this.life = 1;
-        this.color = power > 0.66 ? '#FFD700' : power > 0.33 ? '#D4A574' : '#2D9596';
-      }
+        function resize() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
 
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-this.life -= 0.01;
+        // Game state
+        let charging = false;
+        let charge = 0; // 0 to 1
+        let chargeSpeed = 0.006; // Per frame
+        let score = 0;
+        let round = 0;
+        let gameOver = false;
+        let particles = [];
 
-        // Check collision with targets
-        for (let i = targets.length - 1; i >= 0; i--) {
-          const t = targets[i];
-          const dx = this.x - t.x;
-          const dy = this.y - t.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+        // Zones
+        const WEAK_ZONE = 0.3;
+        const GOOD_ZONE = 0.5;
+        const PERFECT_ZONE = 0.7;
+        const DANGER_ZONE = 0.85;
+        const OVERLOAD_ZONE = 1.0;
 
-          if (dist < this.radius + t.radius) {
-            // Hit!
-            const damage = Math.ceil(this.power * 3);
-            const destroyed = t.hit(damage);
-            
-            if (destroyed) {
-              targets.splice(i, 1);
-              score += Math.ceil(t.maxHealth * 10);
-              combo++;
-              scoreEl.textContent = score;
-              comboEl.textContent = combo;
-              playTone(800 + combo * 50, 0.15, 'sine', 0.4);
-              spawnParticles(t.x, t.y, 20, '#FFD700');
-            } else {
-              playTone(400, 0.1, 'triangle', 0.3);
-              spawnParticles(this.x, this.y, 10, this.color);
+        class Particle {
+            constructor(x, y, vx, vy, color, size) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.size = size;
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.01;
             }
 
-            this.life = 0;
-            break;
-          }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2; // gravity
+                this.life -= this.decay;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+                ctx.globalAlpha = 1;
+            }
         }
 
-        return this.life > 0 && this.x > 0 && this.x < W && this.y > 0 && this.y < H;
-      }
+        function spawnParticles(x, y, count, color) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 8 + 2;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                const size = Math.random() * 8 + 4;
+                particles.push(new Particle(x, y, vx, vy, color, size));
+            }
+        }
 
-      draw() {
-        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
-        gradient.addColorStop(0, this.color);
-        gradient.addColorStop(0.5, this.color + 'CC');
-        gradient.addColorStop(1, this.color + '00');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
 
-        // Core
-        ctx.fillStyle = '#FFF';
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius * 0.3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
+        function playTone(freq, duration = 0.1, type = 'sine') {
+            if (!audioCtx) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = type;
+            osc.frequency.value = freq;
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
 
-    // Particle class
-    class Particle {
-      constructor(x, y, color) {
-        this.x = x;
-        this.y = y;
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 2 + Math.random() * 4;
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-        this.life = 1;
-        this.color = color;
-        this.size = 3 + Math.random() * 5;
-      }
+        function getZoneColor(charge) {
+            if (charge < WEAK_ZONE) return '#666';
+            if (charge < GOOD_ZONE) return '#2D9596'; // teal
+            if (charge < PERFECT_ZONE) return '#FFD700'; // gold
+            if (charge < DANGER_ZONE) return '#D4A574'; // amber - perfect zone
+            if (charge < OVERLOAD_ZONE) return '#FF4500'; // danger
+            return '#FF0000'; // overload
+        }
 
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.vy += 0.2; // gravity
-        this.life -= 0.02;
-        return this.life > 0;
-      }
+        function getScoreForCharge(charge) {
+            if (charge < WEAK_ZONE) return Math.floor(charge * 100);
+            if (charge < GOOD_ZONE) return Math.floor(100 + (charge - WEAK_ZONE) * 500);
+            if (charge < PERFECT_ZONE) return Math.floor(200 + (charge - GOOD_ZONE) * 800);
+            if (charge < DANGER_ZONE) return Math.floor(400 + (charge - PERFECT_ZONE) * 1500); // PERFECT ZONE
+            if (charge < OVERLOAD_ZONE) return Math.floor(600 + (charge - DANGER_ZONE) * 500);
+            return 0; // Overload
+        }
 
-      draw() {
-        ctx.fillStyle = this.color + Math.floor(this.life * 255).toString(16).padStart(2, '0');
-        ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
-      }
-    }
+        function handleStart(e) {
+            e.preventDefault();
+            if (gameOver) return;
+            
+            initAudio();
+            charging = true;
+            instruction.style.opacity = '0';
+        }
 
-    function spawnParticles(x, y, count, color) {
-      for (let i = 0; i < count; i++) {
-        particles.push(new Particle(x, y, color));
-      }
-    }
+        function handleEnd(e) {
+            e.preventDefault();
+            if (!charging || gameOver) return;
+            
+            charging = false;
+            
+            // Check if overload
+            if (charge >= OVERLOAD_ZONE) {
+                // GAME OVER
+                gameOver = true;
+                playTone(100, 0.5, 'sawtooth');
+                spawnParticles(W/2, H/2, 100, '#FF0000');
+                
+                gameOverScreen.classList.remove('hidden');
+                finalScoreDisplay.textContent = `Final Score: ${score}`;
+                return;
+            }
+            
+            // Score the charge
+            const points = getScoreForCharge(charge);
+            score += points;
+            scoreDisplay.textContent = score;
+            
+            // Play tone based on score
+            const freq = 200 + charge * 600;
+            playTone(freq, 0.2);
+            
+            // Spawn particles
+            const color = getZoneColor(charge);
+            const particleCount = Math.floor(charge * 50) + 10;
+            spawnParticles(W/2, H/2, particleCount, color);
+            
+            // Reset charge
+            charge = 0;
+            round++;
+            
+            // Increase difficulty
+            chargeSpeed = 0.006 + (round * 0.0005);
+        }
 
-    // Spawn initial targets
-    function spawnTargets(count) {
-      for (let i = 0; i < count; i++) {
-        targets.push(new Target());
-      }
-    }
+        // Touch/mouse events
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mouseup', handleEnd);
+        canvas.addEventListener('touchstart', handleStart);
+        canvas.addEventListener('touchend', handleEnd);
 
-    spawnTargets(5);
-
-    // Input handling
-    let isTouch = false;
-
-    function handleStart(x, y) {
-      initAudio();
-      
-      if (!hasPlayed) {
-        instructions.classList.add('hidden');
-        hasPlayed = true;
-      }
-
-      isCharging = true;
-      chargeStart = Date.now();
-      chargeAmount = 0;
-      chargeX = x;
-      chargeY = y;
-      chargeBar.classList.add('active');
-      playTone(200, 0.05, 'sine', 0.2);
-    }
-
-    function handleEnd(x, y) {
-      if (!isCharging) return;
-
-      isCharging = false;
-      chargeBar.classList.remove('active');
-      chargeFill.style.width = '0%';
-
-      // Fire projectile
-      if (chargeAmount > 0.05) {
-        projectiles.push(new Projectile(chargeX, chargeY, x, y, chargeAmount));
-        const freq = 300 + chargeAmount * 500;
-        playTone(freq, 0.2, 'square', 0.3);
-        spawnParticles(chargeX, chargeY, 8, '#D4A574');
-      }
-
-      // Check for missed shot (no targets nearby)
-      if (targets.length > 0) {
-        let nearestDist = Infinity;
-        targets.forEach(t => {
-          const dx = x - t.x;
-          const dy = y - t.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          nearestDist = Math.min(nearestDist, dist);
+        restartBtn.addEventListener('click', () => {
+            gameOver = false;
+            charging = false;
+            charge = 0;
+            score = 0;
+            round = 0;
+            chargeSpeed = 0.006;
+            particles = [];
+            scoreDisplay.textContent = '0';
+            gameOverScreen.classList.add('hidden');
+            instruction.style.opacity = '0.6';
         });
 
-        if (nearestDist > 150) {
-          combo = 0;
-          comboEl.textContent = combo;
-          playTone(150, 0.3, 'sawtooth', 0.2);
+        function draw() {
+            // Clear with fade trail
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.fillRect(0, 0, W, H);
+
+            // Update charge
+            if (charging && !gameOver) {
+                charge += chargeSpeed;
+                charge = Math.min(charge, 1.05); // Allow slight overcharge
+                
+                // Play charging sound
+                if (Math.random() < 0.1) {
+                    playTone(200 + charge * 800, 0.05);
+                }
+            }
+
+            // Draw charge meter (vertical bar in center)
+            const barWidth = 100;
+            const barHeight = H * 0.6;
+            const barX = W/2 - barWidth/2;
+            const barY = H/2 - barHeight/2;
+
+            // Draw background bar
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+
+            // Draw zone markers
+            const zones = [
+                { y: WEAK_ZONE, color: '#666', label: 'WEAK' },
+                { y: GOOD_ZONE, color: '#2D9596', label: 'GOOD' },
+                { y: PERFECT_ZONE, color: '#FFD700', label: 'GREAT' },
+                { y: DANGER_ZONE, color: '#D4A574', label: 'PERFECT' },
+                { y: OVERLOAD_ZONE, color: '#FF4500', label: 'DANGER' }
+            ];
+
+            zones.forEach(zone => {
+                const zoneY = barY + barHeight - (zone.y * barHeight);
+                ctx.strokeStyle = zone.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(barX, zoneY);
+                ctx.lineTo(barX + barWidth, zoneY);
+                ctx.stroke();
+
+                // Label
+                ctx.fillStyle = zone.color;
+                ctx.font = '10px Space Mono';
+                ctx.textAlign = 'left';
+                ctx.fillText(zone.label, barX + barWidth + 10, zoneY + 4);
+            });
+
+            // Draw charge fill
+            if (charge > 0) {
+                const fillHeight = charge * barHeight;
+                const fillY = barY + barHeight - fillHeight;
+                const fillColor = getZoneColor(charge);
+                
+                ctx.fillStyle = fillColor;
+                ctx.fillRect(barX, fillY, barWidth, fillHeight);
+                
+                // Glow effect
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = fillColor;
+                ctx.fillRect(barX, fillY, barWidth, fillHeight);
+                ctx.shadowBlur = 0;
+
+                // Pulse effect when near perfect zone
+                if (charge >= PERFECT_ZONE - 0.05 && charge < DANGER_ZONE) {
+                    const pulse = Math.sin(Date.now() * 0.01) * 0.5 + 0.5;
+                    ctx.strokeStyle = fillColor;
+                    ctx.lineWidth = 3;
+                    ctx.globalAlpha = pulse;
+                    ctx.strokeRect(barX - 5, barY - 5, barWidth + 10, barHeight + 10);
+                    ctx.globalAlpha = 1;
+                }
+
+                // Warning pulse when near overload
+                if (charge >= DANGER_ZONE) {
+                    const pulse = Math.sin(Date.now() * 0.02) * 0.5 + 0.5;
+                    ctx.strokeStyle = '#FF0000';
+                    ctx.lineWidth = 5;
+                    ctx.globalAlpha = pulse;
+                    ctx.strokeRect(barX - 10, barY - 10, barWidth + 20, barHeight + 20);
+                    ctx.globalAlpha = 1;
+                }
+            }
+
+            // Draw border
+            ctx.strokeStyle = '#D4A574';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+            // Update and draw particles
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // Show current potential score while charging
+            if (charging && charge > 0) {
+                const potentialScore = getScoreForCharge(charge);
+                ctx.fillStyle = getZoneColor(charge);
+                ctx.font = 'bold 36px Space Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText(`+${potentialScore}`, W/2, barY - 30);
+            }
+
+            requestAnimationFrame(draw);
         }
-      }
-    }
 
-    canvas.addEventListener('mousedown', (e) => {
-      if (isTouch) return;
-      handleStart(e.clientX, e.clientY);
-    });
-
-    canvas.addEventListener('mouseup', (e) => {
-      if (isTouch) return;
-      handleEnd(e.clientX, e.clientY);
-    });
-
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      isTouch = true;
-      const touch = e.touches[0];
-      handleStart(touch.clientX, touch.clientY);
-    }, { passive: false });
-
-    canvas.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      const touch = e.changedTouches[0];
-      handleEnd(touch.clientX, touch.clientY);
-    }, { passive: false });
-
-    // Game loop
-    function update() {
-      // Update charge
-      if (isCharging) {
-        const elapsed = Date.now() - chargeStart;
-        chargeAmount = Math.min(elapsed / 2000, 1); // 2 seconds to full charge
-        chargeFill.style.width = (chargeAmount * 100) + '%';
-      }
-
-      // Update targets
-      targets.forEach(t => t.update());
-
-      // Spawn new targets if needed
-      if (targets.length < 5 && Math.random() < 0.02) {
-        targets.push(new Target());
-      }
-
-      // Update projectiles
-      projectiles = projectiles.filter(p => p.update());
-
-      // Update particles
-      particles = particles.filter(p => p.update());
-
-      // Update best score
-      if (score > best) {
-        best = score;
-        bestEl.textContent = best;
-        localStorage.setItem('charge_best', best);
-      }
-    }
-
-    function draw() {
-      // Fade trail
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-      ctx.fillRect(0, 0, W, H);
-
-      // Draw targets
-      targets.forEach(t => t.draw());
-
-      // Draw projectiles
-      projectiles.forEach(p => p.draw());
-
-      // Draw particles
-      particles.forEach(p => p.draw());
-
-      // Draw charge indicator
-      if (isCharging && chargeAmount > 0.05) {
-        const radius = 20 + chargeAmount * 40;
-        const gradient = ctx.createRadialGradient(chargeX, chargeY, 0, chargeX, chargeY, radius);
-        const color = chargeAmount > 0.66 ? '#FFD700' : chargeAmount > 0.33 ? '#D4A574' : '#2D9596';
-        gradient.addColorStop(0, color + '80');
-        gradient.addColorStop(0.7, color + '40');
-        gradient.addColorStop(1, color + '00');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(chargeX, chargeY, radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Pulsing ring
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        const pulseRadius = radius * (0.8 + Math.sin(Date.now() / 100) * 0.2);
-        ctx.arc(chargeX, chargeY, pulseRadius, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-    }
-
-    function loop() {
-      update();
-      draw();
-      requestAnimationFrame(loop);
-    }
-
-    loop();
-  </script>
+        draw();
+    </script>
 </body>
 </html>
