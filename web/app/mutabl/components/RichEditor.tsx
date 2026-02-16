@@ -3,7 +3,7 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
-import { useCallback, useEffect, useId } from "react";
+import { useCallback, useEffect, useId, useRef } from "react";
 
 type RichEditorProps = {
   content: string;
@@ -20,6 +20,7 @@ export default function RichEditor({
 }: RichEditorProps) {
   const accent = theme?.accent || "#FD79A8";
   const scopeId = useId().replace(/:/g, "");
+  const isInternalUpdate = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -31,6 +32,7 @@ export default function RichEditor({
     content,
     editable,
     onUpdate: ({ editor: e }) => {
+      isInternalUpdate.current = true;
       onUpdate(e.getHTML());
     },
     editorProps: {
@@ -41,11 +43,12 @@ export default function RichEditor({
     },
   });
 
-  // Sync content from outside (e.g. switching documents)
+  // Sync content from outside (e.g. switching documents) — skip if from typing
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
+    if (editor && !isInternalUpdate.current && content !== editor.getHTML()) {
       editor.commands.setContent(content, false);
     }
+    isInternalUpdate.current = false;
   }, [content, editor]);
 
   const ToolBtn = useCallback(
