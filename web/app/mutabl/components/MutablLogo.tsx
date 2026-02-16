@@ -49,6 +49,7 @@ export default function MutablLogo() {
         {[
           { name: "TODOIT", desc: "tasks, shaped by you", href: "/mutabl/todoit", color: "#6C5CE7" },
           { name: "CONTXT", desc: "relationships, never forgotten", href: "/mutabl/contxt", color: "#00CEC9" },
+          { name: "NOTABL", desc: "pages, published your way", href: "/mutabl/notabl", color: "#FD79A8" },
         ].map((app, i) => {
           const pulse = Math.sin(tick * 0.04 + i * 2) * 0.5 + 0.5;
           return (
@@ -91,7 +92,14 @@ export default function MutablLogo() {
         })}
       </div>
 
-      <div className="mt-16 text-gray-300"
+      <div className="mt-12 text-gray-400 text-center"
+           style={{ fontSize: 14, lineHeight: 1.7, maxWidth: 340 }}>
+        ai-built apps that evolve with you.<br />
+        tell them what to change, and they change.<br />
+        you own the code.
+      </div>
+
+      <div className="mt-12 text-gray-300"
            style={{ letterSpacing: "2px", fontSize: 11 }}>
         mutabl.io
       </div>
