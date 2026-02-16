@@ -1,7 +1,7 @@
 import crypto from "crypto";
-import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { agentLoop, BUILDER_SYSTEM_PROMPT } from "../agent-loop";
 
 export const dynamic = "force-dynamic";
 
@@ -9,8 +9,6 @@ const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
 );
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 function verifySessionToken(
   token: string
@@ -42,43 +40,6 @@ function getSession(request: NextRequest) {
   const token = request.cookies.get("td_session")?.value;
   if (!token) return null;
   return verifySessionToken(token);
-}
-
-const SYSTEM_PROMPT = `You are the Todoit builder agent. You modify a user's personal todo app by rewriting their React component code.
-
-AVAILABLE IN SCOPE (injected by the wrapper — do NOT import these):
-- React hooks: useState, useEffect, useRef, useMemo, useCallback
-- Task data: tasks (array of {id, title, completed, properties, created_at})
-- Task operations: addTask(title, properties?), toggleTask(id), deleteTask(id), updateTask(id, {title?, completed?, properties?})
-- User info: user ({handle})
-
-RULES:
-- Output a SINGLE React component named App (function App() { ... })
-- Use inline styles (style={{ }}) — no CSS imports, no Tailwind classes
-- Do NOT import anything — all dependencies are in scope
-- The component must be self-contained in one function
-- For extra per-task data (priority, due dates, tags, etc.), use task.properties.fieldName
-  and updateTask(id, { properties: { ...task.properties, fieldName: value } })
-- You can add any task management feature: sorting, filtering, views, export, themes, etc.
-- Keep the app functional and visually coherent after changes
-- Preserve existing functionality unless the user explicitly asks to remove it
-
-OUTPUT FORMAT:
-Return the complete updated component code in a \`\`\`jsx code block, followed by a brief explanation of what you changed.`;
-
-function extractCodeBlock(text: string): string | null {
-  const match = text.match(/```(?:jsx|javascript|js)?\s*\n([\s\S]*?)```/);
-  return match ? match[1].trim() : null;
-}
-
-function extractMessage(text: string): string {
-  // Get text after the code block
-  const parts = text.split(/```(?:jsx|javascript|js)?[\s\S]*?```/);
-  const after = parts[parts.length - 1]?.trim();
-  if (after) return after;
-  // Fallback: get text before the code block
-  const before = parts[0]?.trim();
-  return before || "Done!";
 }
 
 export async function POST(request: NextRequest) {
@@ -127,22 +88,16 @@ ${tasks.length > 0 ? JSON.stringify(tasks.slice(0, 10), null, 2) : "(no tasks ye
 
 USER REQUEST: ${message.trim()}`;
 
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-5-20250929",
-      max_tokens: 4096,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userPrompt }],
+    const result = await agentLoop({
+      systemPrompt: BUILDER_SYSTEM_PROMPT,
+      userMessage: userPrompt,
+      currentCode,
     });
 
-    const responseText =
-      response.content[0].type === "text" ? response.content[0].text : "";
-
-    const newCode = extractCodeBlock(responseText);
-    if (!newCode) {
+    if (!result.ok) {
       return NextResponse.json({
         app_code: currentCode,
-        message:
-          "I couldn't generate valid code. Could you try rephrasing your request?",
+        message: result.error,
         version: currentVersion,
       });
     }
@@ -152,7 +107,7 @@ USER REQUEST: ${message.trim()}`;
     const { error: updateError } = await supabase
       .from("todoit_config")
       .update({
-        app_code: newCode,
+        app_code: result.code,
         version: newVersion,
         updated_at: new Date().toISOString(),
       })
@@ -166,8 +121,8 @@ USER REQUEST: ${message.trim()}`;
     }
 
     return NextResponse.json({
-      app_code: newCode,
-      message: extractMessage(responseText),
+      app_code: result.code,
+      message: result.message,
       version: newVersion,
     });
   } catch (err) {
