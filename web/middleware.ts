@@ -20,6 +20,7 @@ export function middleware(request: NextRequest) {
   const isInTheAmberDomain = host === 'intheamber.com' || host === 'www.intheamber.com'
   const isKochitoLabsDomain = host === 'kochitolabs.com' || host === 'www.kochitolabs.com'
   const isPixelpitDomain = host === 'pixelpit.gg' || host === 'www.pixelpit.gg'
+  const isShipShotDomain = host === 'shipshot.io' || host === 'www.shipshot.io'
 
   // Handle token-tank domain (mirror kochi pattern)
   if (isTokenTankDomain) {
@@ -453,6 +454,36 @@ export function middleware(request: NextRequest) {
     // All other paths → /pixelpit/*
     const newUrl = new URL(`/pixelpit${pathname}`, request.url)
     log(`[Middleware] Pixelpit domain rewrite ${pathname} -> ${newUrl.pathname}`)
+    return NextResponse.rewrite(newUrl)
+  }
+
+  // Handle shipshot.io domain
+  if (isShipShotDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    // Root → /shipshot
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/shipshot', request.url)
+      log(`[Middleware] ShipShot domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    // Don't double-rewrite paths already under /shipshot
+    if (pathname.startsWith('/shipshot')) {
+      return NextResponse.next()
+    }
+
+    // All other paths → /shipshot/*
+    const newUrl = new URL(`/shipshot${pathname}`, request.url)
+    log(`[Middleware] ShipShot domain rewrite ${pathname} -> ${newUrl.pathname}`)
     return NextResponse.rewrite(newUrl)
   }
 
