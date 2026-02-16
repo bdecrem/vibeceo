@@ -1,395 +1,293 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useRef } from 'react'
 
-const prototypes = [
-  {
-    name: 'DOOMLEARN',
-    tagline: "You're going to scroll anyway.",
-    description: 'Paste any article or PDF. Get an infinite scroll feed of bite-sized knowledge cards you can\'t stop swiping.',
-    href: '/shipshot/doomlearn',
-    accent: '#B8FF57',
-    shipped: '20 min',
-  },
-  {
-    name: 'ONBOARD',
-    tagline: 'One line of code. Onboarding builds itself.',
-    description: 'Drop a script tag. AI watches where users stall and automatically deploys the nudges that keep them.',
-    href: '/shipshot/onboard',
-    accent: '#4F46E5',
-    shipped: '25 min',
-  },
+const APPS = [
+  { id: 47, name: 'QuietTab', tagline: 'A browser tab that helps you breathe between tasks', color: '#FFD23F', icon: '💨', status: 'SHIPPED', date: 'Feb 15' },
+  { id: 46, name: 'ForkIt', tagline: 'Remix any recipe by swapping one ingredient', color: '#FF3860', icon: '🍴', status: 'SHIPPED', date: 'Feb 14' },
+  { id: 45, name: 'DriftFM', tagline: 'AI radio that matches your walking speed', color: '#00E5A0', icon: '📻', status: 'SHIPPED', date: 'Feb 13' },
+  { id: 44, name: 'SnapDebt', tagline: 'Photograph a receipt, split it instantly with friends', color: '#A855F7', icon: '📸', status: 'SHIPPED', date: 'Feb 12' },
+  { id: 43, name: 'MoodBoard', tagline: 'Your daily emotion as a generated color palette', color: '#00B4D8', icon: '🎨', status: 'SHIPPED', date: 'Feb 11' },
+  { id: 42, name: 'ParkPing', tagline: 'Alerts you 5 minutes before your parking meter expires', color: '#FFD23F', icon: '🅿️', status: 'SHIPPED', date: 'Feb 10' },
+  { id: 41, name: 'TinyWin', tagline: "Log one small win per day. That's it. That's the app.", color: '#FF3860', icon: '🏆', status: 'SHIPPED', date: 'Feb 9' },
+  { id: 40, name: 'GhostNote', tagline: 'Leave voice notes at locations for friends to find', color: '#00E5A0', icon: '👻', status: 'SHIPPED', date: 'Feb 8' },
 ]
 
-const crew = [
-  { emoji: '🌀', name: 'Drift', role: 'Signal hunter. Always online.' },
-  { emoji: '🔥', name: 'Hype', role: 'Vibes. Distribution instinct.' },
-  { emoji: '📊', name: 'Margin', role: 'Unit economics. The adult.' },
-  { emoji: '🎨', name: 'Pixel', role: 'Design. Makes it inevitable.' },
-  { emoji: '🚢', name: 'Ship', role: 'Builds it. Fast.' },
-  { emoji: '🌊', name: 'Mave', role: 'Ops. Wrangles the crew.' },
-]
-
-export default function ShipShotLanding() {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
+function ShapeToken({ shape, color, size = 28, style = {} }: { shape: string; color: string; size?: number; style?: React.CSSProperties }) {
+  const inner = size * 0.4
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#0D1117',
-      color: '#F0F0F0',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Grid texture */}
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundImage: `
-          linear-gradient(rgba(51, 136, 255, 0.04) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(51, 136, 255, 0.04) 1px, transparent 1px)
-        `,
-        backgroundSize: '28px 28px',
-        pointerEvents: 'none',
-        zIndex: 1,
-      }} />
+    <div style={{ width: size, height: size, borderRadius: size * 0.18, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', ...style }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'rgba(255,255,255,0.12)', borderRadius: `${size * 0.18}px ${size * 0.18}px 0 0` }} />
+      <svg width={inner} height={inner} viewBox="0 0 20 20" style={{ position: 'relative', zIndex: 1 }}>
+        {shape === 'diamond' && <polygon points="10,2 18,10 10,18 2,10" fill="#0D1117" />}
+        {shape === 'triangle' && <polygon points="10,3 18,17 2,17" fill="#0D1117" />}
+        {shape === 'circle' && <circle cx="10" cy="10" r="6" fill="none" stroke="#0D1117" strokeWidth="3" />}
+        {shape === 'square' && <rect x="4" y="4" width="12" height="12" rx="2" fill="#0D1117" />}
+      </svg>
+    </div>
+  )
+}
 
-      {/* Floating gem accents */}
-      <div style={{
-        position: 'fixed',
-        top: '15%',
-        right: '8%',
-        width: 12,
-        height: 12,
-        background: '#FF4081',
-        transform: 'rotate(45deg)',
-        opacity: 0.6,
-        zIndex: 1,
-        animation: mounted ? 'float1 6s ease-in-out infinite' : undefined,
-      }} />
-      <div style={{
-        position: 'fixed',
-        top: '45%',
-        left: '5%',
-        width: 10,
-        height: 10,
-        background: '#7C4DFF',
-        transform: 'rotate(45deg)',
-        opacity: 0.5,
-        zIndex: 1,
-        animation: mounted ? 'float2 7s ease-in-out infinite' : undefined,
-      }} />
-      <div style={{
-        position: 'fixed',
-        bottom: '25%',
-        right: '12%',
-        width: 8,
-        height: 8,
-        background: '#00C9A7',
-        transform: 'rotate(45deg)',
-        opacity: 0.5,
-        zIndex: 1,
-        animation: mounted ? 'float1 5s ease-in-out infinite' : undefined,
-      }} />
-
-      {/* Hero */}
-      <section style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        padding: '40px 24px',
-        position: 'relative',
-        zIndex: 2,
-      }}>
-        {/* Logo / Brand Image */}
-        <img
-          src="/shipshot/logo.svg"
-          alt="ShipShot"
-          style={{
-            width: '100%',
-            maxWidth: 600,
-            height: 'auto',
-            marginBottom: 32,
-          }}
-        />
-
-        <p style={{
-          fontSize: 'clamp(16px, 3vw, 22px)',
-          color: '#8899AA',
-          maxWidth: 500,
-          lineHeight: 1.6,
-          marginBottom: 16,
-        }}>
-          From idea to prototype before your coffee gets cold.
-        </p>
-
-        <p style={{
-          fontSize: 'clamp(14px, 2.5vw, 17px)',
-          color: '#556677',
-          maxWidth: 480,
-          lineHeight: 1.6,
-          marginBottom: 48,
-        }}>
-          An AI crew that finds signals, picks ideas, designs them, and ships working prototypes — all before lunch.
-        </p>
-
-        {/* Pill buttons like the brand */}
-        <div style={{
-          display: 'flex',
-          gap: 12,
-          marginBottom: 48,
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-        }}>
-          <span style={{
-            background: '#FFD23F',
-            color: '#0D1117',
-            padding: '10px 22px',
-            borderRadius: 24,
-            fontWeight: 700,
-            fontSize: 13,
-            letterSpacing: 1,
-            textTransform: 'uppercase',
-          }}>
-            ⚡ Daily Idea
-          </span>
-          <span style={{
-            background: '#1A2A3A',
-            color: '#00C9A7',
-            padding: '10px 22px',
-            borderRadius: 24,
-            fontWeight: 700,
-            fontSize: 13,
-            letterSpacing: 1,
-            textTransform: 'uppercase',
-            border: '1px solid #00C9A722',
-          }}>
-            ● Shipped
-          </span>
+function FloatingTokens() {
+  const tokens = [
+    { x: '8%', y: '15%', rot: -18, shape: 'diamond', color: '#FF3860', size: 32, opacity: 0.3, delay: 0 },
+    { x: '88%', y: '12%', rot: 22, shape: 'triangle', color: '#00E5A0', size: 28, opacity: 0.25, delay: 1 },
+    { x: '5%', y: '45%', rot: 10, shape: 'circle', color: '#A855F7', size: 26, opacity: 0.2, delay: 2 },
+    { x: '92%', y: '38%', rot: -14, shape: 'diamond', color: '#FFD23F', size: 30, opacity: 0.22, delay: 0.5 },
+    { x: '12%', y: '72%', rot: 8, shape: 'square', color: '#00B4D8', size: 24, opacity: 0.18, delay: 1.5 },
+    { x: '90%', y: '68%', rot: -20, shape: 'triangle', color: '#FF3860', size: 26, opacity: 0.2, delay: 3 },
+    { x: '3%', y: '88%', rot: 15, shape: 'diamond', color: '#FFD23F', size: 22, opacity: 0.15, delay: 2.5 },
+    { x: '95%', y: '85%', rot: -8, shape: 'circle', color: '#00E5A0', size: 24, opacity: 0.18, delay: 1.8 },
+  ]
+  return (
+    <>
+      {tokens.map((t, i) => (
+        <div key={i} style={{ position: 'fixed', left: t.x, top: t.y, transform: `rotate(${t.rot}deg)`, opacity: t.opacity, zIndex: 1, animation: `tokenFloat 6s ease-in-out ${t.delay}s infinite alternate` }}>
+          <ShapeToken shape={t.shape} color={t.color} size={t.size} />
         </div>
+      ))}
+    </>
+  )
+}
 
-        <a
-          href="#shipped"
-          onClick={(e) => {
-            e.preventDefault()
-            document.getElementById('shipped')?.scrollIntoView({ behavior: 'smooth' })
-          }}
-          style={{
-            color: '#3388FF',
-            fontSize: 13,
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-            textDecoration: 'none',
-            cursor: 'pointer',
-            animation: mounted ? 'bob 1.5s ease-in-out infinite' : undefined,
-          }}
-        >
-          See what we shipped ↓
-        </a>
-      </section>
+function VendingMachine({ onDispense, dispensing, dispensedApp }: { onDispense: () => void; dispensing: boolean; dispensedApp: typeof APPS[0] | null }) {
+  return (
+    <div style={{ position: 'relative', width: 320, margin: '0 auto' }}>
+      {/* NEW badge */}
+      <div style={{ position: 'absolute', top: -12, right: -16, background: '#FFD23F', color: '#0D1117', fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 13, letterSpacing: 2, padding: '6px 14px', borderRadius: 8, zIndex: 5 }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'rgba(255,255,255,0.15)', borderRadius: '8px 8px 0 0' }} />
+        <span style={{ position: 'relative' }}>NEW</span>
+      </div>
 
-      {/* Prototypes Gallery */}
-      <section id="shipped" style={{
-        padding: '80px 24px',
-        maxWidth: 900,
-        margin: '0 auto',
-        position: 'relative',
-        zIndex: 2,
-      }}>
-        <h2 style={{
-          fontSize: 13,
-          letterSpacing: 4,
-          textTransform: 'uppercase',
-          color: '#556677',
-          marginBottom: 40,
-          textAlign: 'center',
-        }}>
-          Shipped Prototypes
-        </h2>
+      {/* Machine body */}
+      <div style={{ background: '#0066FF', borderRadius: 28, padding: 14, position: 'relative', boxShadow: '12px 12px 0 rgba(0,0,0,0.3)' }}>
+        <div style={{ background: '#003DB8', borderRadius: 20, padding: 16 }}>
+          {/* Screen */}
+          <div style={{ background: '#0D1117', borderRadius: 14, padding: 20, minHeight: 180, position: 'relative', overflow: 'hidden' }}>
+            {/* Scan lines */}
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${20 + i * 20}%`, height: 1, background: 'rgba(0,102,255,0.08)' }} />
+            ))}
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-          gap: 20,
-        }}>
-          {prototypes.map((p) => (
-            <a
-              key={p.name}
-              href={p.href}
+            {/* TODAY badge */}
+            <div style={{ display: 'inline-block', background: '#FFD23F', color: '#0D1117', fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 11, letterSpacing: 3, padding: '5px 12px', borderRadius: 6, marginBottom: 16, position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'rgba(255,255,255,0.15)', borderRadius: '6px 6px 0 0' }} />
+              <span style={{ position: 'relative' }}>TODAY</span>
+            </div>
+
+            {/* Star / content area */}
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8, paddingBottom: 8 }}>
+              {dispensedApp ? (
+                <div style={{ textAlign: 'center', animation: 'slideUp 0.5s ease-out' }}>
+                  <div style={{ fontSize: 48, marginBottom: 8 }}>{dispensedApp.icon}</div>
+                  <div style={{ color: dispensedApp.color, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 18, letterSpacing: 1 }}>{dispensedApp.name}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.5)', fontFamily: "'Space Mono', monospace", fontSize: 11, marginTop: 6, maxWidth: 200, lineHeight: 1.4 }}>{dispensedApp.tagline}</div>
+                </div>
+              ) : (
+                <svg width="80" height="80" viewBox="0 0 80 80">
+                  <polygon points="40,5 48,28 72,28 52,42 58,66 40,50 22,66 28,42 8,28 32,28" fill="#FFD23F" style={{ filter: 'drop-shadow(0 0 20px rgba(255,210,63,0.3))' }} />
+                  <polygon points="40,14 46,30 60,30 48,39 53,54 40,44 27,54 32,39 20,30 34,30" fill="#FFE77A" opacity="0.5" />
+                </svg>
+              )}
+            </div>
+          </div>
+
+          {/* Dispensing slot */}
+          <div style={{ background: '#0D1117', borderRadius: 8, height: 20, margin: '14px 30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '85%', height: 10, borderRadius: 5, background: '#001A44' }} />
+          </div>
+
+          {/* Button panel */}
+          <div style={{ background: '#001A44', borderRadius: 14, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 20 }}>
+            <button
+              onClick={onDispense}
+              disabled={dispensing}
               style={{
-                background: '#151D27',
-                padding: 0,
-                textDecoration: 'none',
-                color: 'inherit',
-                display: 'block',
+                width: 72, height: 72, borderRadius: '50%',
+                background: dispensing ? '#992240' : '#FF3860',
+                border: 'none', cursor: dispensing ? 'not-allowed' : 'pointer',
                 position: 'relative',
-                overflow: 'hidden',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                border: '1px solid #1E2936',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)'
-                e.currentTarget.style.boxShadow = `0 8px 30px ${p.accent}18`
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'none'
-                e.currentTarget.style.boxShadow = 'none'
+                boxShadow: dispensing ? 'none' : '0 4px 0 #AA1530, 0 6px 20px rgba(255,56,96,0.4)',
+                transform: dispensing ? 'translateY(3px)' : 'none',
+                transition: 'all 0.15s ease', flexShrink: 0,
               }}
             >
-              <div style={{ height: 3, background: p.accent }} />
-
-              <div style={{ padding: '28px 24px' }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: 8,
-                }}>
-                  <h3 style={{
-                    fontSize: 22,
-                    fontWeight: 800,
-                    letterSpacing: '-0.02em',
-                  }}>
-                    {p.name}
-                  </h3>
-                  <span style={{
-                    fontSize: 11,
-                    color: '#FFD23F',
-                    background: '#1A2A1A',
-                    padding: '4px 10px',
-                    whiteSpace: 'nowrap',
-                    borderRadius: 12,
-                  }}>
-                    ⚡ {p.shipped}
-                  </span>
-                </div>
-
-                <p style={{
-                  fontSize: 13,
-                  color: p.accent,
-                  fontWeight: 600,
-                  marginBottom: 12,
-                }}>
-                  {p.tagline}
-                </p>
-
-                <p style={{
-                  fontSize: 14,
-                  color: '#8899AA',
-                  lineHeight: 1.5,
-                  marginBottom: 20,
-                }}>
-                  {p.description}
-                </p>
-
-                <span style={{
-                  fontSize: 13,
-                  color: '#3388FF',
-                  fontWeight: 600,
-                }}>
-                  View Demo →
-                </span>
-              </div>
-            </a>
-          ))}
-
-          {/* Coming soon */}
-          <div style={{
-            border: '1px dashed #1E2936',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 40,
-            minHeight: 200,
-          }}>
-            <span style={{ color: '#334455', fontSize: 14 }}>More shipping soon...</span>
+              <div style={{ position: 'absolute', inset: 6, borderRadius: '50%', background: dispensing ? 'radial-gradient(circle at 40% 35%, #BB3355, #881530)' : 'radial-gradient(circle at 40% 35%, #FF6080, #FF3860)' }} />
+              <span style={{ position: 'relative', color: 'white', fontSize: 24, fontWeight: 'bold', zIndex: 1 }}>{dispensing ? '...' : '▶'}</span>
+            </button>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} style={{ height: 5, borderRadius: 3, background: '#0D1117' }} />
+              ))}
+            </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Crew */}
-      <section style={{
-        padding: '60px 24px 40px',
-        maxWidth: 900,
-        margin: '0 auto',
-        position: 'relative',
-        zIndex: 2,
-      }}>
-        <h2 style={{
-          fontSize: 13,
-          letterSpacing: 4,
-          textTransform: 'uppercase',
-          color: '#556677',
-          marginBottom: 32,
-          textAlign: 'center',
-        }}>
-          The Crew
-        </h2>
+      {/* Machine legs */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 30px' }}>
+        <div style={{ width: 50, height: 24, background: '#003DB8', borderRadius: '0 0 8px 8px' }} />
+        <div style={{ width: 50, height: 24, background: '#003DB8', borderRadius: '0 0 8px 8px' }} />
+      </div>
+    </div>
+  )
+}
 
-        <div style={{
-          display: 'flex',
-          gap: 14,
-          overflowX: 'auto',
-          scrollSnapType: 'x mandatory',
-          paddingBottom: 16,
-          WebkitOverflowScrolling: 'touch',
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-        }}>
-          {crew.map((c) => (
-            <div
-              key={c.name}
-              style={{
-                flex: '0 0 auto',
-                width: 130,
-                background: '#151D27',
-                border: '1px solid #1E2936',
-                padding: '22px 14px',
-                textAlign: 'center',
-                scrollSnapAlign: 'start',
-              }}
-            >
-              <div style={{ fontSize: 30, marginBottom: 10 }}>{c.emoji}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{c.name}</div>
-              <div style={{ fontSize: 11, color: '#8899AA', lineHeight: 1.4 }}>{c.role}</div>
-            </div>
-          ))}
+function AppCard({ app, index, entering }: { app: typeof APPS[0]; index: number; entering: boolean }) {
+  const rotations = [-3, 5, -7, 4, -5, 8, -4, 6]
+  const rot = rotations[index % rotations.length]
+
+  return (
+    <div
+      style={{
+        background: app.color, borderRadius: 16, padding: 20,
+        position: 'relative', overflow: 'hidden',
+        transform: `rotate(${rot}deg)`,
+        boxShadow: '8px 8px 0 rgba(0,0,0,0.25)',
+        transition: 'transform 0.3s ease', cursor: 'pointer',
+        animation: entering ? `cardDrop 0.6s ease-out ${index * 0.1}s both` : 'none',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.transform = 'rotate(0deg) scale(1.05)'; e.currentTarget.style.zIndex = '10' }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = `rotate(${rot}deg)`; e.currentTarget.style.zIndex = '1' }}
+    >
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'rgba(255,255,255,0.12)', borderRadius: '16px 16px 0 0' }} />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: '#0D1117', letterSpacing: 2, opacity: 0.6 }}>#{String(app.id).padStart(3, '0')}</span>
+          <span style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", color: '#0D1117', opacity: 0.5 }}>{app.date}</span>
         </div>
-      </section>
+        <div style={{ width: 52, height: 52, borderRadius: 14, background: '#0D1117', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, marginBottom: 14 }}>{app.icon}</div>
+        <div style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 16, color: '#0D1117', marginBottom: 6 }}>{app.name}</div>
+        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: '#0D1117', opacity: 0.7, lineHeight: 1.5, marginBottom: 14 }}>{app.tagline}</div>
+        <div style={{ display: 'inline-block', background: '#0D1117', borderRadius: 6, padding: '4px 10px', fontFamily: "'Space Mono', monospace", fontSize: 9, fontWeight: 700, color: app.color, letterSpacing: 2 }}>● {app.status}</div>
+      </div>
+    </div>
+  )
+}
 
-      {/* Footer */}
-      <footer style={{
-        textAlign: 'center',
-        padding: '40px 24px 60px',
-        position: 'relative',
-        zIndex: 2,
-      }}>
-        <p style={{ fontSize: 13, color: '#334455' }}>
-          Built by the ShipShot crew. Powered by caffeine and questionable decisions.
-        </p>
-      </footer>
+function DispensedCards({ apps }: { apps: typeof APPS }) {
+  if (apps.length === 0) return null
+  return (
+    <div style={{ position: 'relative', zIndex: 2, padding: '0 20px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, letterSpacing: 4, color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>SCROLL TO SEE</div>
+        <h2 style={{ fontFamily: "'Space Mono', monospace", fontSize: 28, fontWeight: 700, color: 'white', margin: 0, letterSpacing: -1 }}>
+          What we&apos;ve <span style={{ color: '#0066FF' }}>shipped</span>
+        </h2>
+        <div style={{ width: 60, height: 3, background: '#0066FF', margin: '16px auto 0', borderRadius: 2 }} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 24, maxWidth: 800, margin: '0 auto' }}>
+        {apps.map((app, i) => (
+          <AppCard key={app.id} app={app} index={i} entering={true} />
+        ))}
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 48, paddingBottom: 60 }}>
+        <div style={{ display: 'inline-flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div style={{ background: '#FFD23F', borderRadius: 8, padding: '8px 16px', fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: '#0D1117', letterSpacing: 2, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'rgba(255,255,255,0.12)' }} />
+            <span style={{ position: 'relative' }}>⚡ {apps.length} IDEAS SHIPPED</span>
+          </div>
+          <div style={{ background: 'rgba(0,102,255,0.12)', border: '1px solid rgba(0,102,255,0.2)', borderRadius: 8, padding: '8px 16px', fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700, color: '#3388FF', letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00E5A0' }} />
+            MORE TOMORROW
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function ShipShotPage() {
+  const [dispensing, setDispensing] = useState(false)
+  const [dispensedApp, setDispensedApp] = useState<typeof APPS[0] | null>(null)
+  const [showCards, setShowCards] = useState(false)
+  const cardsRef = useRef<HTMLDivElement>(null)
+
+  const handleDispense = () => {
+    if (dispensing) return
+    setDispensing(true)
+    setDispensedApp(null)
+
+    setTimeout(() => {
+      setDispensedApp(APPS[0])
+      setDispensing(false)
+    }, 1200)
+
+    setTimeout(() => {
+      setShowCards(true)
+      setTimeout(() => {
+        cardsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 300)
+    }, 2000)
+  }
+
+  return (
+    <div style={{ position: 'relative', minHeight: '100vh', background: '#0D1117' }}>
+      <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+      {/* Grid background */}
+      <div style={{ position: 'fixed', inset: 0, background: '#0D1117', backgroundImage: 'linear-gradient(rgba(30,41,54,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(30,41,54,0.7) 1px, transparent 1px)', backgroundSize: '36px 36px', zIndex: 0 }} />
+
+      <FloatingTokens />
+
+      {/* Corner marks */}
+      {[
+        { top: 16, left: 16, vSide: 'left', hSide: 'top' },
+        { top: 16, right: 16, vSide: 'right', hSide: 'top' },
+        { bottom: 16, left: 16, vSide: 'left', hSide: 'bottom' },
+        { bottom: 16, right: 16, vSide: 'right', hSide: 'bottom' },
+      ].map((pos, i) => (
+        <div key={i} style={{ position: 'fixed', top: pos.top, bottom: pos.bottom, left: pos.left, right: pos.right, width: 24, height: 24, zIndex: 3 }}>
+          <div style={{ position: 'absolute', left: pos.vSide === 'left' ? 0 : undefined, right: pos.vSide === 'right' ? 0 : undefined, top: 0, width: 2, height: 20, background: '#0066FF', opacity: 0.25, borderRadius: 1 }} />
+          <div style={{ position: 'absolute', left: pos.vSide === 'left' ? 0 : undefined, right: pos.vSide === 'right' ? 0 : undefined, top: pos.hSide === 'top' ? 0 : undefined, bottom: pos.hSide === 'bottom' ? 0 : undefined, width: 20, height: 2, background: '#0066FF', opacity: 0.25, borderRadius: 1 }} />
+        </div>
+      ))}
+
+      {/* Hero / Dispenser */}
+      <div style={{ position: 'relative', zIndex: 2, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+        <h1 style={{ fontFamily: "'Impact', 'Arial Black', sans-serif", fontSize: 'clamp(48px, 10vw, 80px)', fontWeight: 900, letterSpacing: -3, margin: '0 0 8px 0', textAlign: 'center', color: '#fff' }}>
+          <span style={{ color: 'white' }}>Ship</span>
+          <span style={{ color: '#0066FF' }}>shot</span>
+        </h1>
+        <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: 'rgba(255,255,255,0.4)', letterSpacing: 3, margin: '0 0 40px 0', textAlign: 'center' }}>ONE GREAT IDEA, EVERY DAY</p>
+
+        <VendingMachine onDispense={handleDispense} dispensing={dispensing} dispensedApp={dispensedApp} />
+
+        <div style={{ marginTop: 32, fontFamily: "'Space Mono', monospace", fontSize: 12, color: 'rgba(255,255,255,0.25)', textAlign: 'center', animation: dispensedApp ? 'none' : 'pulse 2s ease-in-out infinite' }}>
+          {dispensedApp ? '↓ scroll to see what we\'ve shipped' : '↑ press the button'}
+        </div>
+      </div>
+
+      {/* Shipped cards */}
+      {showCards && (
+        <div ref={cardsRef} style={{ position: 'relative', zIndex: 2, paddingTop: 60 }}>
+          <DispensedCards apps={APPS} />
+        </div>
+      )}
 
       <style>{`
-        @keyframes bob {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(6px); }
+        * { box-sizing: border-box; }
+        @keyframes tokenFloat {
+          0% { transform: translateY(0px); }
+          100% { transform: translateY(-12px); }
         }
-        @keyframes float1 {
-          0%, 100% { transform: rotate(45deg) translateY(0); }
-          50% { transform: rotate(45deg) translateY(-12px); }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 0.6; }
         }
-        @keyframes float2 {
-          0%, 100% { transform: rotate(45deg) translateY(0); }
-          50% { transform: rotate(45deg) translateY(10px); }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes cardDrop {
+          from { opacity: 0; transform: translateY(-30px) scale(0.8); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0D1117; }
+        ::-webkit-scrollbar-thumb { background: #003DB8; border-radius: 3px; }
       `}</style>
     </div>
   )
