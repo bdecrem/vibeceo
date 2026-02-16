@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
   const isKochitoLabsDomain = host === 'kochitolabs.com' || host === 'www.kochitolabs.com'
   const isPixelpitDomain = host === 'pixelpit.gg' || host === 'www.pixelpit.gg'
   const isShipShotDomain = host === 'shipshot.io' || host === 'www.shipshot.io'
-  const isMutablDomain = host === 'mutabl.io' || host === 'www.mutabl.io'
+  const isMutablDomain = host === 'mutabl.co' || host === 'www.mutabl.co'
 
   // Handle token-tank domain (mirror kochi pattern)
   if (isTokenTankDomain) {
