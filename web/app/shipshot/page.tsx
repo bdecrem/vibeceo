@@ -222,22 +222,8 @@ function CharacterSelect() {
   return (
     <div style={{ position: 'relative', zIndex: 2, padding: '80px 20px 60px', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
-        <div style={{
-          display: 'inline-block',
-          fontFamily: "'Space Mono', monospace",
-          fontSize: 12,
-          letterSpacing: 4,
-          color: '#0066FF',
-          border: '1px solid #0066FF44',
-          padding: '6px 16px',
-          borderRadius: 4,
-          marginBottom: 16,
-          animation: 'pulse 2s ease-in-out infinite',
-        }}>
-          P1 SELECT YOUR CREW
-        </div>
         <h2 style={{ fontFamily: "'Impact', 'Arial Black', sans-serif", fontSize: 'clamp(32px, 7vw, 52px)', fontWeight: 900, textAlign: 'center', color: '#fff', letterSpacing: -2, margin: 0 }}>
-          The minds behind the <span style={{ color: '#FFD23F' }}>machine</span>
+          Meet the <span style={{ color: '#FFD23F' }}>crew</span>
         </h2>
       </div>
 
