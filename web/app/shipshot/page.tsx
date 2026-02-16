@@ -76,53 +76,42 @@ function FloatingTokens() {
   )
 }
 
-function VendingMachine({ onDispense, dispensing, dispensedApp }: {
+function VendingMachine({ onDispense, dispensing, dropped }: {
   onDispense: () => void
   dispensing: boolean
-  dispensedApp: typeof TODAYS_DROP | null
+  dropped: boolean
 }) {
   return (
     <div style={{ position: 'relative', width: 320, margin: '0 auto' }}>
-      {/* TODAY'S DROP badge */}
-      <div style={{ position: 'absolute', top: -12, right: -16, background: '#FFD23F', color: '#0D1117', fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12, letterSpacing: 2, padding: '6px 14px', borderRadius: 8, zIndex: 5 }}>
+      {/* Badge */}
+      <div style={{ position: 'absolute', top: -12, right: -16, background: dropped ? '#00E5A0' : '#FFD23F', color: '#0D1117', fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 12, letterSpacing: 2, padding: '6px 14px', borderRadius: 8, zIndex: 5, transition: 'background 0.3s ease' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'rgba(255,255,255,0.15)', borderRadius: '8px 8px 0 0' }} />
-        <span style={{ position: 'relative' }}>{dispensedApp ? 'DROPPED' : 'NEW'}</span>
+        <span style={{ position: 'relative' }}>{dropped ? 'DROPPED' : 'NEW'}</span>
       </div>
 
       {/* Machine body */}
       <div style={{ background: '#0066FF', borderRadius: 28, padding: 14, position: 'relative', boxShadow: '12px 12px 0 rgba(0,0,0,0.3)' }}>
         <div style={{ background: '#003DB8', borderRadius: 20, padding: 16 }}>
-          {/* Screen */}
+          {/* Screen — always shows today's app */}
           <div style={{ background: '#0D1117', borderRadius: 14, padding: 20, minHeight: 180, position: 'relative', overflow: 'hidden' }}>
-            {/* Scan lines */}
             {[0, 1, 2, 3, 4].map((i) => (
               <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${20 + i * 20}%`, height: 1, background: 'rgba(0,102,255,0.08)' }} />
             ))}
 
-            {/* TODAY badge */}
             <div style={{ display: 'inline-block', background: '#FFD23F', color: '#0D1117', fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 11, letterSpacing: 3, padding: '5px 12px', borderRadius: 6, marginBottom: 16, position: 'relative' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: 'rgba(255,255,255,0.15)', borderRadius: '6px 6px 0 0' }} />
               <span style={{ position: 'relative' }}>TODAY</span>
             </div>
 
-            {/* Star / content area */}
             <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8, paddingBottom: 8 }}>
-              {dispensedApp ? (
-                <a href={dispensedApp.href} style={{ textDecoration: 'none', textAlign: 'center', animation: 'slideUp 0.5s ease-out' }}>
-                  <div style={{ fontSize: 48, marginBottom: 8 }}>{dispensedApp.icon}</div>
-                  <div style={{ color: dispensedApp.color, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 18, letterSpacing: 1 }}>{dispensedApp.name}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.5)', fontFamily: "'Space Mono', monospace", fontSize: 11, marginTop: 6, maxWidth: 200, lineHeight: 1.4 }}>{dispensedApp.tagline}</div>
-                  <div style={{ marginTop: 12, fontFamily: "'Space Mono', monospace", fontSize: 10, color: dispensedApp.color, letterSpacing: 2, opacity: 0.8 }}>TAP TO PLAY &#x2192;</div>
-                </a>
-              ) : (
-                <div style={{ textAlign: 'center' }}>
-                  <svg width="64" height="64" viewBox="0 0 80 80">
-                    <polygon points="40,5 48,28 72,28 52,42 58,66 40,50 22,66 28,42 8,28 32,28" fill="#FFD23F" style={{ filter: 'drop-shadow(0 0 20px rgba(255,210,63,0.3))' }} />
-                    <polygon points="40,14 46,30 60,30 48,39 53,54 40,44 27,54 32,39 20,30 34,30" fill="#FFE77A" opacity="0.5" />
-                  </svg>
-                  <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 8, letterSpacing: 1 }}>What shipped today?</div>
-                </div>
-              )}
+              <div style={{ textAlign: 'center', opacity: dropped ? 0.35 : 1, transition: 'opacity 0.4s ease' }}>
+                <div style={{ fontSize: 48, marginBottom: 8 }}>{TODAYS_DROP.icon}</div>
+                <div style={{ color: TODAYS_DROP.color, fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 18, letterSpacing: 1 }}>{TODAYS_DROP.name}</div>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontFamily: "'Space Mono', monospace", fontSize: 11, marginTop: 6, maxWidth: 200, lineHeight: 1.4 }}>{TODAYS_DROP.tagline}</div>
+                {dropped && (
+                  <div style={{ marginTop: 10, fontFamily: "'Space Mono', monospace", fontSize: 10, color: '#00E5A0', letterSpacing: 2 }}>DISPENSED &#x2193;</div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -135,21 +124,21 @@ function VendingMachine({ onDispense, dispensing, dispensedApp }: {
           <div style={{ background: '#001A44', borderRadius: 14, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 20 }}>
             <button
               onClick={onDispense}
-              disabled={dispensing || !!dispensedApp}
+              disabled={dispensing || dropped}
               style={{
                 width: 72, height: 72, borderRadius: '50%',
-                background: dispensedApp ? '#334455' : dispensing ? '#992240' : '#FF3860',
+                background: dropped ? '#334455' : dispensing ? '#992240' : '#FF3860',
                 border: 'none',
-                cursor: dispensedApp ? 'default' : dispensing ? 'not-allowed' : 'pointer',
+                cursor: dropped ? 'default' : dispensing ? 'not-allowed' : 'pointer',
                 position: 'relative',
-                boxShadow: dispensedApp ? 'none' : dispensing ? 'none' : '0 4px 0 #AA1530, 0 6px 20px rgba(255,56,96,0.4)',
-                transform: (dispensing || dispensedApp) ? 'translateY(3px)' : 'none',
+                boxShadow: dropped ? 'none' : dispensing ? 'none' : '0 4px 0 #AA1530, 0 6px 20px rgba(255,56,96,0.4)',
+                transform: (dispensing || dropped) ? 'translateY(3px)' : 'none',
                 transition: 'all 0.15s ease', flexShrink: 0,
               }}
             >
-              <div style={{ position: 'absolute', inset: 6, borderRadius: '50%', background: dispensedApp ? 'radial-gradient(circle at 40% 35%, #445566, #334455)' : dispensing ? 'radial-gradient(circle at 40% 35%, #BB3355, #881530)' : 'radial-gradient(circle at 40% 35%, #FF6080, #FF3860)' }} />
+              <div style={{ position: 'absolute', inset: 6, borderRadius: '50%', background: dropped ? 'radial-gradient(circle at 40% 35%, #445566, #334455)' : dispensing ? 'radial-gradient(circle at 40% 35%, #BB3355, #881530)' : 'radial-gradient(circle at 40% 35%, #FF6080, #FF3860)' }} />
               <span style={{ position: 'relative', color: 'white', fontSize: 24, fontWeight: 'bold', zIndex: 1 }}>
-                {dispensedApp ? '✓' : dispensing ? '...' : '▶'}
+                {dropped ? '✓' : dispensing ? '...' : '▶'}
               </span>
             </button>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
@@ -316,25 +305,24 @@ function CharacterSelect() {
 
 export default function ShipShotPage() {
   const [dispensing, setDispensing] = useState(false)
-  const [dispensedApp, setDispensedApp] = useState<typeof TODAYS_DROP | null>(null)
+  const [dropped, setDropped] = useState(false)
   const [showExpanded, setShowExpanded] = useState(false)
   const droppedCardRef = useRef<HTMLDivElement>(null)
 
   const handleDispense = () => {
-    if (dispensing || dispensedApp) return
+    if (dispensing || dropped) return
     setDispensing(true)
 
     setTimeout(() => {
-      setDispensedApp(TODAYS_DROP)
+      setDropped(true)
       setDispensing(false)
-      // Scroll to show the newly dropped card in the grid
       setTimeout(() => {
         droppedCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 400)
     }, 1200)
   }
 
-  const totalShipped = GRID_APPS.length + MORE_APPS.length + (dispensedApp ? 1 : 0)
+  const totalShipped = GRID_APPS.length + MORE_APPS.length + (dropped ? 1 : 0)
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', background: '#0D1117' }}>
@@ -366,10 +354,10 @@ export default function ShipShotPage() {
         </h1>
         <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: 'rgba(255,255,255,0.4)', letterSpacing: 3, margin: '0 0 40px 0', textAlign: 'center' }}>ONE GREAT IDEA, EVERY DAY</p>
 
-        <VendingMachine onDispense={handleDispense} dispensing={dispensing} dispensedApp={dispensedApp} />
+        <VendingMachine onDispense={handleDispense} dispensing={dispensing} dropped={dropped} />
 
-        <div style={{ marginTop: 32, fontFamily: "'Space Mono', monospace", fontSize: 12, color: 'rgba(255,255,255,0.25)', textAlign: 'center', animation: dispensedApp ? 'none' : 'pulse 2s ease-in-out infinite' }}>
-          {dispensedApp ? '↓ scroll to see what we\'ve shipped' : '↑ dispense today\'s drop'}
+        <div style={{ marginTop: 32, fontFamily: "'Space Mono', monospace", fontSize: 12, color: 'rgba(255,255,255,0.25)', textAlign: 'center', animation: dropped ? 'none' : 'pulse 2s ease-in-out infinite' }}>
+          {dropped ? '↓ scroll to see what we\'ve shipped' : '↑ dispense today\'s drop'}
         </div>
       </div>
 
@@ -383,16 +371,16 @@ export default function ShipShotPage() {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 24, maxWidth: 800, margin: '0 auto' }}>
-          {/* Today's dispensed card — appears at top of grid */}
-          {dispensedApp && (
+          {/* Today's drop — appears at top of grid when dispensed */}
+          {dropped && (
             <div ref={droppedCardRef}>
-              <AppCard app={dispensedApp} index={0} isNew />
+              <AppCard app={TODAYS_DROP} index={0} isNew />
             </div>
           )}
 
           {/* Grid apps — cap at 6 total including today's drop */}
-          {GRID_APPS.slice(0, dispensedApp ? 5 : 6).map((app, i) => (
-            <AppCard key={app.id} app={app} index={dispensedApp ? i + 1 : i} />
+          {GRID_APPS.slice(0, dropped ? 5 : 6).map((app, i) => (
+            <AppCard key={app.id} app={app} index={dropped ? i + 1 : i} />
           ))}
 
           {/* Expanded back catalog */}
