@@ -1,29 +1,59 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AuthGate from "../components/AuthGate";
 import AppRenderer from "../components/AppRenderer";
 import ChatPanel from "../components/ChatPanel";
 import { useTaskApi } from "./useTaskApi";
 
 type User = { id: string; handle: string };
+type Change = { id: string; request: string; summary: string; created_at: string };
 
 const AUTH_ENDPOINT = "/api/mutabl/todoit/auth";
 const CONFIG_ENDPOINT = "/api/mutabl/todoit/config";
 const AGENT_ENDPOINT = "/api/mutabl/todoit/agent";
 const UPDATE_ENDPOINT = "/api/mutabl/todoit/update";
+const CHANGES_ENDPOINT = "/api/mutabl/todoit/changes";
 
-function UpdateBanner({
-  onSkip,
-  onAccept,
+function SettingsMenu({
+  updateAvailable,
+  onUpdateSkip,
+  onUpdateAccept,
+  onLogout,
 }: {
-  onSkip: () => void;
-  onAccept: () => void;
+  updateAvailable: boolean;
+  onUpdateSkip: () => void;
+  onUpdateAccept: () => void;
+  onLogout: () => void;
 }) {
-  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [changes, setChanges] = useState<Change[]>([]);
+  const [loadingChanges, setLoadingChanges] = useState(false);
+  const [updatingAction, setUpdatingAction] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const handle = async (action: "skip" | "accept") => {
-    setLoading(true);
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoadingChanges(true);
+    fetch(CHANGES_ENDPOINT)
+      .then((r) => r.json())
+      .then((data) => setChanges(data.changes || []))
+      .finally(() => setLoadingChanges(false));
+  }, [open]);
+
+  const handleUpdate = async (action: "skip" | "accept") => {
+    setUpdatingAction(action);
     const res = await fetch(UPDATE_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -31,73 +61,188 @@ function UpdateBanner({
     });
     if (res.ok) {
       if (action === "accept") {
-        const data = await res.json();
-        onAccept();
-        // Force reload to get new code
-        if (data.app_code) {
-          window.location.reload();
-        }
+        onUpdateAccept();
+        window.location.reload();
       } else {
-        onSkip();
+        onUpdateSkip();
       }
     }
-    setLoading(false);
+    setUpdatingAction(null);
+  };
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    const month = d.toLocaleString("en", { month: "short" });
+    const day = d.getDate();
+    const time = d.toLocaleString("en", { hour: "numeric", minute: "2-digit" });
+    return `${month} ${day}, ${time}`;
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 16,
-        left: "50%",
-        transform: "translateX(-50%)",
-        background: "#1a1a2e",
-        border: "1px solid #6366f1",
-        borderRadius: 10,
-        padding: "12px 20px",
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        zIndex: 9999,
-        fontFamily: "system-ui",
-        fontSize: 13,
-        color: "#ccc",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
-      }}
-    >
-      <span style={{ fontSize: 16 }}>&#x1F514;</span>
-      <span>A new version of todoit is available</span>
+    <div ref={menuRef} style={{ position: "fixed", top: 12, right: 12, zIndex: 9999, fontFamily: "system-ui" }}>
       <button
-        onClick={() => handle("skip")}
-        disabled={loading}
+        onClick={() => setOpen(!open)}
         style={{
-          background: "none",
-          border: "1px solid #444",
-          color: "#888",
-          borderRadius: 6,
-          padding: "4px 12px",
-          cursor: loading ? "wait" : "pointer",
-          fontSize: 12,
+          width: 36,
+          height: 36,
+          borderRadius: 8,
+          background: open ? "#2a2a4a" : "rgba(255,255,255,0.06)",
+          border: updateAvailable ? "1px solid #6366f1" : "1px solid transparent",
+          color: "#aaa",
+          cursor: "pointer",
+          fontSize: 18,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
         }}
+        aria-label="Settings"
       >
-        skip
+        &#x2699;
+        {updateAvailable && (
+          <span
+            style={{
+              position: "absolute",
+              top: 4,
+              right: 4,
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: "#6366f1",
+            }}
+          />
+        )}
       </button>
-      <button
-        onClick={() => handle("accept")}
-        disabled={loading}
-        style={{
-          background: "#6366f1",
-          border: "none",
-          color: "#fff",
-          borderRadius: 6,
-          padding: "4px 12px",
-          cursor: loading ? "wait" : "pointer",
-          fontSize: 12,
-          fontWeight: 600,
-        }}
-      >
-        update
-      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: 44,
+            right: 0,
+            width: 300,
+            maxHeight: "80vh",
+            background: "#141428",
+            border: "1px solid #2a2a4a",
+            borderRadius: 10,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Update section */}
+          {updateAvailable && (
+            <div style={{ padding: "14px 16px", borderBottom: "1px solid #2a2a4a" }}>
+              <div style={{ fontSize: 13, color: "#ccc", marginBottom: 10, fontWeight: 600 }}>
+                Update available
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => handleUpdate("skip")}
+                  disabled={updatingAction !== null}
+                  style={{
+                    flex: 1,
+                    padding: "6px 0",
+                    borderRadius: 6,
+                    background: "none",
+                    border: "1px solid #444",
+                    color: "#888",
+                    cursor: updatingAction ? "wait" : "pointer",
+                    fontSize: 12,
+                  }}
+                >
+                  skip
+                </button>
+                <button
+                  onClick={() => handleUpdate("accept")}
+                  disabled={updatingAction !== null}
+                  style={{
+                    flex: 1,
+                    padding: "6px 0",
+                    borderRadius: 6,
+                    background: "#6366f1",
+                    border: "none",
+                    color: "#fff",
+                    cursor: updatingAction ? "wait" : "pointer",
+                    fontSize: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  update
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Change log */}
+          <div style={{ flex: 1, overflowY: "auto", maxHeight: 320 }}>
+            <div
+              style={{
+                padding: "10px 16px 6px",
+                fontSize: 11,
+                color: "#666",
+                textTransform: "uppercase",
+                letterSpacing: 1,
+                fontWeight: 600,
+              }}
+            >
+              Change log
+            </div>
+            {loadingChanges ? (
+              <div style={{ padding: "12px 16px", fontSize: 12, color: "#555" }}>
+                loading...
+              </div>
+            ) : changes.length === 0 ? (
+              <div style={{ padding: "12px 16px", fontSize: 12, color: "#555" }}>
+                No changes yet. Use the chat to customize your app.
+              </div>
+            ) : (
+              changes.map((c) => (
+                <div
+                  key={c.id}
+                  style={{
+                    padding: "10px 16px",
+                    borderBottom: "1px solid #1a1a2e",
+                  }}
+                >
+                  <div style={{ fontSize: 13, color: "#ddd", marginBottom: 3, lineHeight: 1.4 }}>
+                    {c.request}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#888", lineHeight: 1.4 }}>
+                    {c.summary.length > 100 ? c.summary.slice(0, 100) + "..." : c.summary}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#555", marginTop: 4 }}>
+                    {formatDate(c.created_at)}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Logout */}
+          <div style={{ borderTop: "1px solid #2a2a4a" }}>
+            <button
+              onClick={() => {
+                setOpen(false);
+                onLogout();
+              }}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                background: "none",
+                border: "none",
+                color: "#888",
+                cursor: "pointer",
+                fontSize: 13,
+                textAlign: "left",
+              }}
+            >
+              Log out
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -196,12 +341,12 @@ export default function TodoitPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a1a" }}>
-      {updateAvailable && (
-        <UpdateBanner
-          onSkip={() => setUpdateAvailable(false)}
-          onAccept={() => setUpdateAvailable(false)}
-        />
-      )}
+      <SettingsMenu
+        updateAvailable={updateAvailable}
+        onUpdateSkip={() => setUpdateAvailable(false)}
+        onUpdateAccept={() => setUpdateAvailable(false)}
+        onLogout={logout}
+      />
       <AppRenderer
         code={appCode}
         scope={{
@@ -211,7 +356,6 @@ export default function TodoitPage() {
           deleteTask,
           updateTask,
           user: { handle: user.handle },
-          logout,
         }}
       />
       <ChatPanel

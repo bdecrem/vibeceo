@@ -118,7 +118,8 @@ export const SCOPE_DOCS = `AVAILABLE IN SCOPE (injected by the wrapper — do NO
 - Task data: tasks (array of {id, title, completed, properties, created_at})
 - Task operations: addTask(title, properties?), toggleTask(id), deleteTask(id), updateTask(id, {title?, completed?, properties?})
 - User info: user ({handle})
-- Auth: logout() — logs the user out and reloads the page`;
+
+NOTE: Logout and settings are handled by the app wrapper — do NOT add logout buttons to the component.`;
 
 export const CODE_RULES = `RULES:
 - Output a SINGLE React component named App (function App() { ... })

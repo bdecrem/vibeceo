@@ -121,6 +121,13 @@ USER REQUEST: ${message.trim()}`;
       );
     }
 
+    // Log the change
+    await supabase.from("todoit_changes").insert({
+      user_id: session.userId,
+      request: message.trim(),
+      summary: result.message,
+    });
+
     return NextResponse.json({
       app_code: result.code,
       message: result.message,
