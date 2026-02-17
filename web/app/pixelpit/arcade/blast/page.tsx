@@ -814,187 +814,367 @@ export default function BlastPage() {
       });
     };
 
+    // Persistent background stars (seeded once)
+    const bgStars: { x: number; y: number; r: number; a: number; speed: number }[] = [];
+    for (let i = 0; i < 60; i++) {
+      bgStars.push({
+        x: Math.random() * canvasSize.w,
+        y: Math.random() * canvasSize.h,
+        r: 0.5 + Math.random() * 1.2,
+        a: 0.15 + Math.random() * 0.35,
+        speed: 0.2 + Math.random() * 0.6,
+      });
+    }
+
+    // Helper: draw shape path (reused for fill + stroke passes)
+    const shapePath = (ctx: CanvasRenderingContext2D, type: ShapeType, r: number) => {
+      ctx.beginPath();
+      if (type === 'triangle') {
+        for (let i = 0; i < 3; i++) {
+          const a = (i * Math.PI * 2) / 3 - Math.PI / 2;
+          const px = Math.cos(a) * r, py = Math.sin(a) * r;
+          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+      } else if (type === 'square') {
+        const h = r * 0.75;
+        ctx.moveTo(-h, -h); ctx.lineTo(h, -h); ctx.lineTo(h, h); ctx.lineTo(-h, h);
+      } else {
+        for (let i = 0; i < 6; i++) {
+          const a = (i * Math.PI * 2) / 6;
+          const px = Math.cos(a) * r, py = Math.sin(a) * r;
+          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+      }
+      ctx.closePath();
+    };
+
     const draw = () => {
       const now = performance.now();
       const dt = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
-
       update(dt);
 
       const game = gameRef.current;
+      const t = now / 1000; // seconds for animations
 
-      // Screen shake offset
+      // Screen shake
       const shakeX = (Math.random() - 0.5) * game.screenShake;
       const shakeY = (Math.random() - 0.5) * game.screenShake;
-
       ctx.save();
       ctx.translate(shakeX, shakeY);
 
-      // Background
-      ctx.fillStyle = THEME.bg;
+      // ── BACKGROUND ──────────────────────────────────
+      // Deep gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, canvasSize.h);
+      bgGrad.addColorStop(0, '#06060f');
+      bgGrad.addColorStop(0.5, '#0a0a1a');
+      bgGrad.addColorStop(1, '#0f0a1e');
+      ctx.fillStyle = bgGrad;
       ctx.fillRect(-10, -10, canvasSize.w + 20, canvasSize.h + 20);
 
-      // Wave indicator
-      ctx.fillStyle = THEME.text;
-      ctx.font = 'bold 16px system-ui';
-      ctx.textAlign = 'left';
-      ctx.fillText(`WAVE ${game.wave}`, 15, 30);
+      // Drifting stars
+      for (const star of bgStars) {
+        star.y += star.speed * dt * 30;
+        if (star.y > canvasSize.h) { star.y = 0; star.x = Math.random() * canvasSize.w; }
+        const twinkle = star.a + Math.sin(t * 2 + star.x) * 0.1;
+        ctx.globalAlpha = twinkle;
+        ctx.fillStyle = '#c4b5fd';
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
 
-      // Score
+      // Subtle grid
+      ctx.strokeStyle = '#ffffff06';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvasSize.w; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvasSize.h); ctx.stroke();
+      }
+      for (let y = 0; y < canvasSize.h; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvasSize.w, y); ctx.stroke();
+      }
+
+      // ── DANGER ZONE — subtle line where enemies kill you ──
+      ctx.strokeStyle = '#ef444418';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath(); ctx.moveTo(0, canvasSize.h - 80); ctx.lineTo(canvasSize.w, canvasSize.h - 80); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // ── HUD ─────────────────────────────────────────
+      ctx.font = '600 13px "SF Mono", "Fira Code", "Consolas", monospace';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#ffffff30';
+      ctx.fillText(`WAVE`, 14, 24);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 18px "SF Mono", "Fira Code", "Consolas", monospace';
+      ctx.fillText(`${game.wave}`, 14, 44);
+
       ctx.textAlign = 'right';
-      ctx.fillText(`${game.score}`, canvasSize.w - 15, 30);
+      ctx.fillStyle = '#ffffff30';
+      ctx.font = '600 13px "SF Mono", "Fira Code", "Consolas", monospace';
+      ctx.fillText(`SCORE`, canvasSize.w - 14, 24);
+      ctx.fillStyle = THEME.slime;
+      ctx.font = '700 18px "SF Mono", "Fira Code", "Consolas", monospace';
+      ctx.fillText(`${game.score}`, canvasSize.w - 14, 44);
 
       // Combo
       if (game.combo > 1) {
-        ctx.fillStyle = THEME.slime;
-        ctx.font = 'bold 20px system-ui';
+        const comboAlpha = Math.min(game.comboTimer / 0.5, 1);
+        const comboScale = 1 + (game.combo - 1) * 0.03;
+        ctx.save();
+        ctx.translate(canvasSize.w / 2, 36);
+        ctx.scale(comboScale, comboScale);
+        ctx.globalAlpha = comboAlpha;
         ctx.textAlign = 'center';
-        ctx.fillText(`${game.combo}x COMBO!`, canvasSize.w / 2, 55);
+        ctx.font = '800 22px "SF Mono", "Fira Code", "Consolas", monospace';
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = THEME.hexagon;
+        ctx.fillStyle = THEME.hexagon;
+        ctx.fillText(`${game.combo}x`, 0, 0);
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+        ctx.restore();
       }
 
-      // Draw goos
-      ctx.fillStyle = THEME.goo;
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = THEME.goo;
+      // ── GOO PROJECTILES ─────────────────────────────
       for (const goo of game.goos) {
+        // Trail streak
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = THEME.slime;
         ctx.beginPath();
-        ctx.ellipse(goo.x, goo.y, 6, 10, 0, 0, Math.PI * 2);
+        ctx.ellipse(goo.x, goo.y + 12, 3, 16, 0, 0, Math.PI * 2);
         ctx.fill();
+        // Core
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = THEME.goo;
+        ctx.fillStyle = THEME.goo;
+        ctx.beginPath();
+        ctx.ellipse(goo.x, goo.y, 4, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Hot center
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.ellipse(goo.x, goo.y - 2, 2, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
       }
-      ctx.shadowBlur = 0;
 
-      // Draw shapes
+      // ── SHAPES ──────────────────────────────────────
       for (const shape of game.shapes) {
         const size = getShapeSize(shape.size);
         const color = getShapeColor(shape.type);
-        
+        const pulse = 1 + Math.sin(t * 3 + shape.id * 0.7) * 0.04;
+        const maxHp = getShapeHp(shape.type, shape.size);
+
         ctx.save();
         ctx.translate(shape.x, shape.y);
         ctx.rotate(shape.rotation);
-        ctx.shadowBlur = 10;
+        ctx.scale(pulse, pulse);
+
+        // Outer glow layer
+        ctx.globalAlpha = 0.15;
+        ctx.shadowBlur = 25;
         ctx.shadowColor = color;
         ctx.fillStyle = color;
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        
-        ctx.beginPath();
-        if (shape.type === 'triangle') {
-          for (let i = 0; i < 3; i++) {
-            const angle = (i * Math.PI * 2) / 3 - Math.PI / 2;
-            const x = Math.cos(angle) * size;
-            const y = Math.sin(angle) * size;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          }
-        } else if (shape.type === 'square') {
-          ctx.rect(-size * 0.7, -size * 0.7, size * 1.4, size * 1.4);
-        } else {
-          for (let i = 0; i < 6; i++) {
-            const angle = (i * Math.PI * 2) / 6;
-            const x = Math.cos(angle) * size;
-            const y = Math.sin(angle) * size;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          }
-        }
-        ctx.closePath();
+        shapePath(ctx, shape.type, size * 1.3);
         ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+
+        // Fill — hollow with colored border for indie look
+        ctx.fillStyle = color + '20';
+        shapePath(ctx, shape.type, size);
+        ctx.fill();
+
+        // Colored stroke
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        shapePath(ctx, shape.type, size);
         ctx.stroke();
 
-        // Armored indicator: double border on squares with HP > 1
+        // Inner wireframe for armored squares (hp > 1)
         if (shape.type === 'square' && shape.hp > 1) {
-          ctx.strokeStyle = '#ffffff';
+          ctx.strokeStyle = color;
           ctx.lineWidth = 1;
-          const inner = size * 0.45;
-          ctx.strokeRect(-inner, -inner, inner * 2, inner * 2);
+          ctx.globalAlpha = 0.6;
+          shapePath(ctx, shape.type, size * 0.5);
+          ctx.stroke();
+          // Cross brace
+          const h = size * 0.75;
+          ctx.beginPath();
+          ctx.moveTo(-h, -h); ctx.lineTo(h, h);
+          ctx.moveTo(h, -h); ctx.lineTo(-h, h);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
         }
 
-        // Shooter indicator: small dot under hexagons (they fire back)
-        if (shape.type === 'hexagon') {
-          ctx.fillStyle = '#ffffff';
+        // Cracked look when damaged (hp < max)
+        if (shape.hp < maxHp && shape.hp > 0) {
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = 0.7;
           ctx.beginPath();
-          ctx.arc(0, size + 6, 2, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.moveTo(-size * 0.2, -size * 0.3);
+          ctx.lineTo(size * 0.1, 0);
+          ctx.lineTo(-size * 0.05, size * 0.3);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+
+        // Hexagon shooter reticle
+        if (shape.type === 'hexagon') {
+          ctx.strokeStyle = THEME.hexagon;
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = 0.4 + Math.sin(t * 5) * 0.2;
+          ctx.beginPath();
+          ctx.arc(0, 0, size * 0.35, 0, Math.PI * 2);
+          ctx.stroke();
+          // Crosshair ticks
+          const tick = size * 0.25;
+          ctx.beginPath();
+          ctx.moveTo(0, -tick); ctx.lineTo(0, -tick * 1.6);
+          ctx.moveTo(0, tick); ctx.lineTo(0, tick * 1.6);
+          ctx.moveTo(-tick, 0); ctx.lineTo(-tick * 1.6, 0);
+          ctx.moveTo(tick, 0); ctx.lineTo(tick * 1.6, 0);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
         }
 
         ctx.restore();
       }
 
-      // Draw boss
+      // ── BOSS ────────────────────────────────────────
       if (game.boss) {
         const boss = game.boss;
+        const bossBreath = 1 + Math.sin(t * 2) * 0.04;
+
         ctx.save();
         ctx.translate(boss.x, boss.y);
-        ctx.shadowBlur = 20;
+        ctx.scale(bossBreath, bossBreath);
+
+        // Outer glow
+        ctx.globalAlpha = 0.12;
+        ctx.shadowBlur = 50;
         ctx.shadowColor = THEME.boss;
         ctx.fillStyle = THEME.boss;
-        
-        // Boss shape (big hexagon with inner detail)
         ctx.beginPath();
         for (let i = 0; i < 6; i++) {
-          const angle = (i * Math.PI * 2) / 6 + performance.now() / 1000;
-          const x = Math.cos(angle) * 50;
-          const y = Math.sin(angle) * 50;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+          const a = (i * Math.PI * 2) / 6 + t * 0.5;
+          const px = Math.cos(a) * 65, py = Math.sin(a) * 65;
+          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
         }
         ctx.closePath();
         ctx.fill();
-        
-        // HP bar
-        ctx.fillStyle = '#333';
-        ctx.fillRect(-40, 60, 80, 8);
-        ctx.fillStyle = THEME.boss;
-        ctx.fillRect(-40, 60, 80 * (boss.hp / boss.maxHp), 8);
-        
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+
+        // Body — hollow + stroke
+        ctx.fillStyle = THEME.boss + '25';
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a = (i * Math.PI * 2) / 6 + t * 0.5;
+          const px = Math.cos(a) * 50, py = Math.sin(a) * 50;
+          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = THEME.boss;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Inner rotating hex
+        ctx.strokeStyle = THEME.boss;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a = (i * Math.PI * 2) / 6 - t * 0.8;
+          const px = Math.cos(a) * 28, py = Math.sin(a) * 28;
+          i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+
         ctx.restore();
-        
-        // Boss projectiles
+
+        // HP bar — sleek
+        const barW = 80, barH = 4, barX = boss.x - barW / 2, barY = boss.y + 62;
+        ctx.fillStyle = '#ffffff10';
+        ctx.fillRect(barX, barY, barW, barH);
         ctx.fillStyle = THEME.boss;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 8;
         ctx.shadowColor = THEME.boss;
+        ctx.fillRect(barX, barY, barW * (boss.hp / boss.maxHp), barH);
+        ctx.shadowBlur = 0;
+
+        // Boss projectiles
         for (const proj of game.bossProjectiles) {
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = THEME.boss;
+          ctx.fillStyle = THEME.boss;
           ctx.beginPath();
-          ctx.arc(proj.x, proj.y, 8, 0, Math.PI * 2);
+          ctx.arc(proj.x, proj.y, 6, 0, Math.PI * 2);
           ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(proj.x, proj.y, 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
         }
       }
-      
-      // Enemy projectiles (shapes firing back, wave 3+)
-      ctx.fillStyle = THEME.triangle;
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = THEME.triangle;
-      for (const proj of game.enemyProjectiles) {
-        ctx.beginPath();
-        ctx.arc(proj.x, proj.y, 6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.shadowBlur = 0;
 
-      // Draw particles
+      // ── ENEMY PROJECTILES ───────────────────────────
+      for (const proj of game.enemyProjectiles) {
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = THEME.hexagon;
+        ctx.fillStyle = THEME.hexagon;
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        // Trail
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = THEME.hexagon;
+        ctx.beginPath();
+        ctx.ellipse(proj.x, proj.y - 8, 2, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+      }
+
+      // ── PARTICLES ───────────────────────────────────
       for (const p of game.particles) {
-        ctx.globalAlpha = p.life * 2;
+        ctx.globalAlpha = Math.min(p.life * 2, 1);
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = p.color;
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.size * Math.min(p.life * 2, 1), 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
 
-      // Draw goo trail (Dither juice)
-      ctx.fillStyle = THEME.slime;
+      // ── GOO TRAIL ───────────────────────────────────
       for (const trail of game.gooTrail) {
-        ctx.globalAlpha = trail.life * 2;
+        ctx.globalAlpha = trail.life * 1.5;
+        ctx.fillStyle = THEME.slime + '60';
         ctx.beginPath();
-        ctx.arc(trail.x, trail.y, 5 * trail.life, 0, Math.PI * 2);
+        ctx.arc(trail.x, trail.y, 4 * trail.life, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1;
-      
-      // Draw player (slime) with Dither's juice
+
+      // ── PLAYER (SLIME) ─────────────────────────────
       const player = game.player;
-      
+
       // Find nearest shape for eye tracking
       let nearestShape: Shape | null = null;
       let nearestDist = Infinity;
@@ -1003,78 +1183,107 @@ export default function BlastPage() {
         const dx = shape.x - player.x;
         const dy = shape.y - player.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < nearestDist) {
-          nearestDist = dist;
-          nearestShape = shape;
-        }
-        if (shape.y > canvasSize.h - 150) {
-          shapeNearBottom = true;
-        }
+        if (dist < nearestDist) { nearestDist = dist; nearestShape = shape; }
+        if (shape.y > canvasSize.h - 150) shapeNearBottom = true;
       }
-      
-      // Determine slime expression
+
       const isShooting = player.shootCooldown > 0.15;
       const isPanicked = shapeNearBottom;
-      
+
       ctx.save();
       ctx.translate(player.x, player.y);
       ctx.scale(1 / player.squash, player.squash);
-      
-      // Slime body
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = THEME.slime;
+
+      // Ground glow
+      ctx.globalAlpha = 0.15;
       ctx.fillStyle = THEME.slime;
       ctx.beginPath();
-      ctx.ellipse(0, 0, 25, 20, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 22, 30, 6, 0, 0, Math.PI * 2);
       ctx.fill();
-      
-      // Eyes (Dither: track nearest shape, squeeze when shooting, wide when panicked)
-      ctx.fillStyle = THEME.bg;
-      const eyeHeight = isShooting ? 3 : (isPanicked ? 8 : 6); // Squeeze/wide
-      const eyeY = -5;
+      ctx.globalAlpha = 1;
+
+      // Body glow
+      ctx.shadowBlur = 25;
+      ctx.shadowColor = THEME.slime;
+
+      // Slime body — organic blob with bezier curves
+      ctx.fillStyle = THEME.slime;
+      const wobble = Math.sin(t * 4) * 1.5;
       ctx.beginPath();
-      ctx.ellipse(-8, eyeY, 5, eyeHeight, 0, 0, Math.PI * 2);
-      ctx.ellipse(8, eyeY, 5, eyeHeight, 0, 0, Math.PI * 2);
+      ctx.moveTo(0, -18);
+      ctx.bezierCurveTo(14 + wobble, -18, 26, -8, 26, 2);
+      ctx.bezierCurveTo(26, 14, 18, 20, 0, 20);
+      ctx.bezierCurveTo(-18, 20, -26, 14, -26, 2);
+      ctx.bezierCurveTo(-26, -8, -14 - wobble, -18, 0, -18);
       ctx.fill();
-      
-      // Pupils (track nearest shape)
+      ctx.shadowBlur = 0;
+
+      // Highlight
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(-8, -10, 8, 4, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Eyes
+      const eyeY = -4;
+      const eyeH = isShooting ? 3 : (isPanicked ? 9 : 6);
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.ellipse(-9, eyeY, 5, eyeH, 0, 0, Math.PI * 2);
+      ctx.ellipse(9, eyeY, 5, eyeH, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pupils — track nearest shape
       if (!isShooting) {
-        ctx.fillStyle = '#ffffff';
-        let pupilOffsetX = 0, pupilOffsetY = 0;
+        let pupilOX = 0, pupilOY = 0;
         if (nearestShape) {
           const dx = nearestShape.x - player.x;
           const dy = nearestShape.y - player.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist > 0) {
-            pupilOffsetX = (dx / dist) * 2;
-            pupilOffsetY = Math.min((dy / dist) * 2, 1); // Limit vertical
-          }
+          if (dist > 0) { pupilOX = (dx / dist) * 2.5; pupilOY = Math.min((dy / dist) * 2, 1); }
         }
-        const pupilSize = isPanicked ? 1.5 : 2;
+        const ps = isPanicked ? 1.5 : 2.5;
+        ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(-8 + pupilOffsetX, eyeY + pupilOffsetY, pupilSize, 0, Math.PI * 2);
-        ctx.arc(8 + pupilOffsetX, eyeY + pupilOffsetY, pupilSize, 0, Math.PI * 2);
+        ctx.arc(-9 + pupilOX, eyeY + pupilOY, ps, 0, Math.PI * 2);
+        ctx.arc(9 + pupilOX, eyeY + pupilOY, ps, 0, Math.PI * 2);
         ctx.fill();
       }
-      
-      // Mouth (Dither: expressions)
-      ctx.strokeStyle = THEME.bg;
+
+      // Mouth
+      ctx.strokeStyle = '#0f172a';
       ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       ctx.beginPath();
       if (isShooting) {
-        // Open "O" (pew pew face)
         ctx.arc(0, 8, 4, 0, Math.PI * 2);
       } else if (isPanicked) {
-        // Worried frown
-        ctx.arc(0, 12, 6, Math.PI * 0.2, Math.PI * 0.8);
+        ctx.arc(0, 12, 7, Math.PI * 0.15, Math.PI * 0.85);
       } else {
-        // Happy curve :)
-        ctx.arc(0, 5, 6, Math.PI * 0.2, Math.PI * 0.8);
+        ctx.arc(0, 6, 7, Math.PI * 0.15, Math.PI * 0.85);
       }
       ctx.stroke();
-      
+
       ctx.restore();
+
+      // ── VIGNETTE ────────────────────────────────────
+      const vigGrad = ctx.createRadialGradient(
+        canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.35,
+        canvasSize.w / 2, canvasSize.h / 2, canvasSize.h * 0.75,
+      );
+      vigGrad.addColorStop(0, '#00000000');
+      vigGrad.addColorStop(1, '#000000aa');
+      ctx.fillStyle = vigGrad;
+      ctx.fillRect(-10, -10, canvasSize.w + 20, canvasSize.h + 20);
+
+      // ── SCANLINES (very subtle) ─────────────────────
+      ctx.fillStyle = '#00000012';
+      for (let y = 0; y < canvasSize.h; y += 4) {
+        ctx.fillRect(0, y, canvasSize.w, 1);
+      }
+
       ctx.restore();
 
       animationId = requestAnimationFrame(draw);
@@ -1090,35 +1299,58 @@ export default function BlastPage() {
 
       <div
         className="min-h-screen flex flex-col items-center justify-center p-4"
-        style={{ backgroundColor: THEME.bg }}
+        style={{ background: 'linear-gradient(180deg, #06060f 0%, #0a0a1a 50%, #0f0a1e 100%)' }}
       >
         {gameState === 'menu' && (
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-2" style={{ color: THEME.slime }}>
-              👾 BLAST
+          <div className="text-center" style={{ fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace" }}>
+            <div style={{ color: THEME.slime, fontSize: 14, letterSpacing: 6, opacity: 0.5, marginBottom: 12 }}>
+              PIXELPIT ARCADE
+            </div>
+            <h1 style={{
+              fontSize: 56,
+              fontWeight: 900,
+              color: THEME.slime,
+              letterSpacing: 8,
+              textShadow: `0 0 40px ${THEME.slime}66, 0 0 80px ${THEME.slime}22`,
+              marginBottom: 8,
+              lineHeight: 1,
+            }}>
+              BLAST
             </h1>
-            <p className="text-lg mb-2" style={{ color: '#9ca3af' }}>
-              Slime vs Shapes
+            <p style={{ color: '#6b7280', fontSize: 14, letterSpacing: 3, marginBottom: 24 }}>
+              SLIME VS SHAPES
             </p>
             {highScore > 0 && (
-              <p className="text-sm mb-6" style={{ color: '#6b7280' }}>
-                High Score: {highScore}
+              <p style={{ color: '#4b5563', fontSize: 12, marginBottom: 24 }}>
+                BEST: {highScore}
               </p>
             )}
             <button
               onClick={startGame}
-              className="px-8 py-4 rounded-xl text-xl font-bold"
-              style={{ backgroundColor: THEME.slime, color: THEME.bg }}
+              style={{
+                background: 'transparent',
+                border: `2px solid ${THEME.slime}`,
+                color: THEME.slime,
+                padding: '14px 40px',
+                fontSize: 16,
+                fontWeight: 700,
+                letterSpacing: 4,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = THEME.slime; e.currentTarget.style.color = THEME.bg; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = THEME.slime; }}
             >
-              Start
+              PLAY
             </button>
-            <p className="text-xs mt-4" style={{ color: '#6b7280' }}>
-              Drag to move • Tap to shoot
+            <p style={{ color: '#4b5563', fontSize: 11, marginTop: 20, letterSpacing: 2 }}>
+              DRAG TO MOVE &middot; TAP TO SHOOT
             </p>
-            <div className="flex gap-4 justify-center mt-4 text-xs" style={{ color: '#6b7280' }}>
-              <span><span style={{ color: THEME.triangle }}>&#9650;</span> fodder</span>
-              <span><span style={{ color: THEME.square }}>&#9632;</span> armored</span>
-              <span><span style={{ color: THEME.hexagon }}>&#11042;</span> shoots</span>
+            <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 16 }}>
+              <span style={{ color: THEME.triangle, fontSize: 11, letterSpacing: 1 }}>&#9650; FODDER</span>
+              <span style={{ color: THEME.square, fontSize: 11, letterSpacing: 1 }}>&#9632; ARMORED</span>
+              <span style={{ color: THEME.hexagon, fontSize: 11, letterSpacing: 1 }}>&#11042; SHOOTER</span>
             </div>
           </div>
         )}
@@ -1137,16 +1369,23 @@ export default function BlastPage() {
         )}
 
         {gameState === 'gameover' && (
-          <div className="text-center">
-            <h2 className="text-3xl font-bold mb-2" style={{ color: THEME.text }}>
+          <div className="text-center" style={{ fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace" }}>
+            <div style={{ color: '#ffffff20', fontSize: 12, letterSpacing: 6, marginBottom: 8 }}>
               GAME OVER
-            </h2>
-            <p className="text-lg mb-1" style={{ color: THEME.slime }}>
-              Wave {wave}
-            </p>
-            <p className="text-4xl font-bold mb-6" style={{ color: THEME.text }}>
+            </div>
+            <div style={{ color: '#ffffff40', fontSize: 13, letterSpacing: 3, marginBottom: 4 }}>
+              WAVE {wave}
+            </div>
+            <div style={{
+              fontSize: 64,
+              fontWeight: 900,
+              color: THEME.slime,
+              textShadow: `0 0 40px ${THEME.slime}44`,
+              lineHeight: 1,
+              marginBottom: 24,
+            }}>
               {score}
-            </p>
+            </div>
 
             <div className="w-full max-w-sm mb-4">
               <ScoreFlow
@@ -1167,20 +1406,42 @@ export default function BlastPage() {
               />
             </div>
 
-            <div className="flex gap-4 justify-center">
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
               <button
                 onClick={startGame}
-                className="px-6 py-3 rounded-xl font-bold"
-                style={{ backgroundColor: THEME.slime, color: THEME.bg }}
+                style={{
+                  background: 'transparent',
+                  border: `2px solid ${THEME.slime}`,
+                  color: THEME.slime,
+                  padding: '10px 28px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  letterSpacing: 3,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = THEME.slime; e.currentTarget.style.color = THEME.bg; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = THEME.slime; }}
               >
-                Play Again
+                AGAIN
               </button>
               <button
                 onClick={() => setShowLeaderboard(!showLeaderboard)}
-                className="px-6 py-3 rounded-xl font-bold border-2"
-                style={{ borderColor: THEME.slime, color: THEME.slime, backgroundColor: 'transparent' }}
+                style={{
+                  background: 'transparent',
+                  border: '2px solid #ffffff20',
+                  color: '#ffffff60',
+                  padding: '10px 28px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  letterSpacing: 3,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#ffffff40'; e.currentTarget.style.color = '#ffffffaa'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#ffffff20'; e.currentTarget.style.color = '#ffffff60'; }}
               >
-                {showLeaderboard ? 'Hide' : 'Leaderboard'}
+                {showLeaderboard ? 'HIDE' : 'RANKS'}
               </button>
             </div>
 
