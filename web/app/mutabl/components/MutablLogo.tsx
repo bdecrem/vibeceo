@@ -33,9 +33,13 @@ export default function MutablLogo() {
       transition: "background 0.4s ease",
     }}>
       <style>{`
-        @keyframes mutabl-l-drift {
-          0%, 100% { transform: rotate(0deg) translateY(0); }
-          50% { transform: rotate(-2.5deg) translateY(-1.5px); }
+        @keyframes mutabl-l-land {
+          0% { transform: rotate(-18deg); }
+          32% { transform: rotate(4deg); }
+          54% { transform: rotate(-1.8deg); }
+          71% { transform: rotate(0.6deg); }
+          85% { transform: rotate(-0.2deg); }
+          100% { transform: rotate(0deg); }
         }
         @keyframes mutabl-dot-breathe {
           0%, 100% { transform: scale(1); }
@@ -57,7 +61,7 @@ export default function MutablLogo() {
           display: "inline-block",
           fontSize: "96px", fontWeight: 700, lineHeight: 1,
           color: letterColor, transition: "color 0.4s ease",
-          animation: "mutabl-l-drift 8s ease-in-out infinite",
+          animation: "mutabl-l-land 0.8s ease-out 0.3s both",
           transformOrigin: "bottom center",
         }}>L</span>
         <div style={{
