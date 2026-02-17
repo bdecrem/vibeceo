@@ -10,7 +10,7 @@ export default async function Image() {
     (
       <div
         style={{
-          background: '#09090b',
+          background: 'linear-gradient(180deg, #06060f 0%, #0a0a1a 50%, #0f0a1e 100%)',
           width: '100%',
           height: '100%',
           display: 'flex',
@@ -21,29 +21,36 @@ export default async function Image() {
           overflow: 'hidden',
         }}
       >
-        {/* Enemy formation - geometric shapes */}
-        {/* Row 1 - triangles (pink) */}
-        <div style={{ position: 'absolute', top: 80, left: 300, width: 0, height: 0, borderLeft: '20px solid #00000000', borderRight: '20px solid #00000000', borderBottom: '35px solid #f472b6' }} />
-        <div style={{ position: 'absolute', top: 80, left: 420, width: 0, height: 0, borderLeft: '25px solid #00000000', borderRight: '25px solid #00000000', borderBottom: '40px solid #f472b6' }} />
-        <div style={{ position: 'absolute', top: 80, left: 540, width: 0, height: 0, borderLeft: '20px solid #00000000', borderRight: '20px solid #00000000', borderBottom: '35px solid #f472b6' }} />
-        <div style={{ position: 'absolute', top: 80, left: 660, width: 0, height: 0, borderLeft: '25px solid #00000000', borderRight: '25px solid #00000000', borderBottom: '40px solid #f472b6' }} />
-        <div style={{ position: 'absolute', top: 80, left: 780, width: 0, height: 0, borderLeft: '20px solid #00000000', borderRight: '20px solid #00000000', borderBottom: '35px solid #f472b6' }} />
-        
-        {/* Row 2 - squares (purple) */}
-        <div style={{ position: 'absolute', top: 140, left: 350, width: 35, height: 35, background: '#a78bfa', borderRadius: 4 }} />
-        <div style={{ position: 'absolute', top: 140, left: 470, width: 40, height: 40, background: '#a78bfa', borderRadius: 4 }} />
-        <div style={{ position: 'absolute', top: 140, left: 590, width: 35, height: 35, background: '#a78bfa', borderRadius: 4 }} />
-        <div style={{ position: 'absolute', top: 140, left: 710, width: 40, height: 40, background: '#a78bfa', borderRadius: 4 }} />
-        
-        {/* Row 3 - hexagons (yellow) */}
-        <div style={{ position: 'absolute', top: 200, left: 400, width: 32, height: 32, background: '#facc15', borderRadius: 8 }} />
-        <div style={{ position: 'absolute', top: 200, left: 530, width: 36, height: 36, background: '#facc15', borderRadius: 10 }} />
-        <div style={{ position: 'absolute', top: 200, left: 660, width: 32, height: 32, background: '#facc15', borderRadius: 8 }} />
+        {/* Subtle grid lines */}
+        <div style={{ position: 'absolute', top: 0, left: 200, width: 1, height: '100%', background: '#ffffff08' }} />
+        <div style={{ position: 'absolute', top: 0, left: 400, width: 1, height: '100%', background: '#ffffff08' }} />
+        <div style={{ position: 'absolute', top: 0, left: 600, width: 1, height: '100%', background: '#ffffff08' }} />
+        <div style={{ position: 'absolute', top: 0, left: 800, width: 1, height: '100%', background: '#ffffff08' }} />
+        <div style={{ position: 'absolute', top: 0, left: 1000, width: 1, height: '100%', background: '#ffffff08' }} />
 
-        {/* Goo projectiles */}
-        <div style={{ position: 'absolute', bottom: 220, left: 580, width: 18, height: 28, borderRadius: 9, background: '#22d3ee', boxShadow: '0 0 20px #22d3ee' }} />
-        <div style={{ position: 'absolute', bottom: 320, left: 500, width: 14, height: 22, borderRadius: 7, background: '#67e8f9', boxShadow: '0 0 15px #67e8f9' }} />
-        <div style={{ position: 'absolute', bottom: 380, left: 680, width: 14, height: 22, borderRadius: 7, background: '#67e8f9', boxShadow: '0 0 15px #67e8f9' }} />
+        {/* Enemy formation - wireframe shapes with glow */}
+        {/* Row 1 - triangles (pink) - using border trick */}
+        <div style={{ position: 'absolute', top: 80, left: 300, width: 0, height: 0, borderLeft: '18px solid #00000000', borderRight: '18px solid #00000000', borderBottom: '30px solid #f472b640' }} />
+        <div style={{ position: 'absolute', top: 75, left: 420, width: 0, height: 0, borderLeft: '22px solid #00000000', borderRight: '22px solid #00000000', borderBottom: '36px solid #f472b650' }} />
+        <div style={{ position: 'absolute', top: 80, left: 540, width: 0, height: 0, borderLeft: '18px solid #00000000', borderRight: '18px solid #00000000', borderBottom: '30px solid #f472b640' }} />
+        <div style={{ position: 'absolute', top: 75, left: 660, width: 0, height: 0, borderLeft: '22px solid #00000000', borderRight: '22px solid #00000000', borderBottom: '36px solid #f472b650' }} />
+        <div style={{ position: 'absolute', top: 80, left: 780, width: 0, height: 0, borderLeft: '18px solid #00000000', borderRight: '18px solid #00000000', borderBottom: '30px solid #f472b640' }} />
+
+        {/* Row 2 - squares (purple) - hollow wireframe */}
+        <div style={{ position: 'absolute', top: 140, left: 350, width: 30, height: 30, border: '2px solid #a78bfa', background: '#a78bfa15' }} />
+        <div style={{ position: 'absolute', top: 138, left: 470, width: 36, height: 36, border: '2px solid #a78bfa', background: '#a78bfa15' }} />
+        <div style={{ position: 'absolute', top: 140, left: 590, width: 30, height: 30, border: '2px solid #a78bfa', background: '#a78bfa15' }} />
+        <div style={{ position: 'absolute', top: 138, left: 710, width: 36, height: 36, border: '2px solid #a78bfa', background: '#a78bfa15' }} />
+
+        {/* Row 3 - hexagons (yellow) - using rounded squares as approximation */}
+        <div style={{ position: 'absolute', top: 200, left: 400, width: 28, height: 28, border: '2px solid #facc15', background: '#facc1515', borderRadius: 8 }} />
+        <div style={{ position: 'absolute', top: 198, left: 530, width: 32, height: 32, border: '2px solid #facc15', background: '#facc1515', borderRadius: 10 }} />
+        <div style={{ position: 'absolute', top: 200, left: 660, width: 28, height: 28, border: '2px solid #facc15', background: '#facc1515', borderRadius: 8 }} />
+
+        {/* Projectile streaks */}
+        <div style={{ position: 'absolute', bottom: 220, left: 585, width: 6, height: 30, borderRadius: 3, background: '#67e8f9', boxShadow: '0 0 20px #22d3ee' }} />
+        <div style={{ position: 'absolute', bottom: 310, left: 505, width: 5, height: 24, borderRadius: 3, background: '#67e8f9', boxShadow: '0 0 15px #22d3ee' }} />
+        <div style={{ position: 'absolute', bottom: 370, left: 685, width: 5, height: 24, borderRadius: 3, background: '#67e8f9', boxShadow: '0 0 15px #22d3ee' }} />
 
         {/* Main title */}
         <div
@@ -52,8 +59,8 @@ export default async function Image() {
             fontWeight: 700,
             color: '#22d3ee',
             letterSpacing: 20,
-            textShadow: '0 0 60px #22d3ee80',
-            marginBottom: 20,
+            textShadow: '0 0 60px #22d3ee66',
+            marginBottom: 16,
             zIndex: 10,
           }}
         >
@@ -70,28 +77,47 @@ export default async function Image() {
             zIndex: 10,
           }}
         >
-          SLIME VS SHAPES
+          BREAK THE SHAPES
         </div>
 
-        {/* Slime player at bottom */}
+        {/* Chevron hull player at bottom - wireframe chevron using borders */}
         <div
           style={{
             position: 'absolute',
-            bottom: 100,
-            left: 540,
-            width: 120,
-            height: 70,
-            background: '#22d3ee',
-            borderRadius: 60,
-            boxShadow: '0 0 40px #22d3ee60',
+            bottom: 95,
+            left: 564,
+            width: 0,
+            height: 0,
+            borderLeft: '36px solid #00000000',
+            borderRight: '36px solid #00000000',
+            borderBottom: '50px solid #22d3ee30',
           }}
         />
-        {/* Slime eyes */}
-        <div style={{ position: 'absolute', bottom: 140, left: 565, width: 18, height: 24, background: '#09090b', borderRadius: 9 }} />
-        <div style={{ position: 'absolute', bottom: 140, left: 615, width: 18, height: 24, background: '#09090b', borderRadius: 9 }} />
-        {/* Slime pupils */}
-        <div style={{ position: 'absolute', bottom: 148, left: 572, width: 8, height: 8, background: '#ffffff', borderRadius: 4 }} />
-        <div style={{ position: 'absolute', bottom: 148, left: 622, width: 8, height: 8, background: '#ffffff', borderRadius: 4 }} />
+        {/* Hull core glow */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 108,
+            left: 590,
+            width: 20,
+            height: 20,
+            borderRadius: 9999,
+            background: '#22d3ee',
+            boxShadow: '0 0 30px #22d3ee80',
+          }}
+        />
+        {/* Eye center */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 114,
+            left: 596,
+            width: 8,
+            height: 8,
+            borderRadius: 9999,
+            background: '#ffffff',
+          }}
+        />
 
         {/* Pixelpit branding */}
         <div
@@ -101,7 +127,7 @@ export default async function Image() {
             fontSize: 24,
             color: '#ffffff',
             letterSpacing: 6,
-            opacity: 0.8,
+            opacity: 0.7,
           }}
         >
           PIXELPIT ARCADE

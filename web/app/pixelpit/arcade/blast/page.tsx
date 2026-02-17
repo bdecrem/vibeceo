@@ -6,9 +6,11 @@ import {
   ScoreFlow,
   Leaderboard,
   ShareButtonContainer,
+  ShareModal,
   usePixelpitSocial,
   type ScoreFlowColors,
   type LeaderboardColors,
+  type ProgressionResult,
 } from '@/app/pixelpit/components';
 
 const GAME_ID = 'blast';
@@ -360,13 +362,14 @@ function playCombo(count: number) {
 export default function BlastPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvasSize, setCanvasSize] = useState({ w: 400, h: 600 });
-  const [gameState, setGameState] = useState<'menu' | 'playing' | 'gameover'>('menu');
+  const [gameState, setGameState] = useState<'menu' | 'playing' | 'gameover' | 'leaderboard'>('menu');
   const [score, setScore] = useState(0);
   const [wave, setWave] = useState(1);
   const [highScore, setHighScore] = useState(0);
   const [socialLoaded, setSocialLoaded] = useState(false);
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [progression, setProgression] = useState<ProgressionResult | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const gameRef = useRef({
     player: { x: 200, y: 550, squash: 1, shootCooldown: 0 },
@@ -400,7 +403,34 @@ export default function BlastPage() {
     firing: false,
   });
 
-  usePixelpitSocial(socialLoaded);
+  const { user } = usePixelpitSocial(socialLoaded);
+
+  const GAME_URL = typeof window !== 'undefined'
+    ? `${window.location.origin}/pixelpit/arcade/${GAME_ID}`
+    : `https://pixelpit.gg/pixelpit/arcade/${GAME_ID}`;
+
+  // Group code + logout URL handling
+  useEffect(() => {
+    if (!socialLoaded || typeof window === 'undefined') return;
+    if (!window.PixelpitSocial) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('logout')) {
+      window.PixelpitSocial.logout();
+      params.delete('logout');
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      window.location.reload();
+      return;
+    }
+
+    const groupCode = window.PixelpitSocial.getGroupCodeFromUrl();
+    if (groupCode) {
+      window.PixelpitSocial.storeGroupCode(groupCode);
+    }
+  }, [socialLoaded]);
 
   // Load high score
   useEffect(() => {
@@ -573,6 +603,9 @@ export default function BlastPage() {
     spawnWave(1);
     setScore(0);
     setWave(1);
+    setSubmittedEntryId(null);
+    setProgression(null);
+    setShowShareModal(false);
     setGameState('playing');
     startMusic();
   }, [canvasSize, spawnWave]);
@@ -808,7 +841,6 @@ export default function BlastPage() {
             playDeath();
             game.screenShake = 20;
             setGameState('gameover');
-            setSocialLoaded(true);
             if (game.score > highScore) {
               setHighScore(game.score);
               localStorage.setItem('blast_highscore', game.score.toString());
@@ -878,7 +910,6 @@ export default function BlastPage() {
               playDeath();
               game.screenShake = 20;
               setGameState('gameover');
-              setSocialLoaded(true);
               if (game.score > highScore) {
                 setHighScore(game.score);
                 localStorage.setItem('blast_highscore', game.score.toString());
@@ -941,7 +972,6 @@ export default function BlastPage() {
             playDeath();
             game.screenShake = 20;
             setGameState('gameover');
-            setSocialLoaded(true);
             if (game.score > highScore) {
               setHighScore(game.score);
               localStorage.setItem('blast_highscore', game.score.toString());
@@ -1495,6 +1525,7 @@ export default function BlastPage() {
   return (
     <>
       <Script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" />
+      <Script src="/pixelpit/social.js" onLoad={() => setSocialLoaded(true)} />
 
       <div
         className="min-h-screen flex flex-col items-center justify-center p-4"
@@ -1568,7 +1599,7 @@ export default function BlastPage() {
         )}
 
         {gameState === 'gameover' && (
-          <div className="text-center" style={{ fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace" }}>
+          <div className="text-center" style={{ fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace", maxWidth: 400, width: '100%' }}>
             <div style={{ color: '#ffffff20', fontSize: 12, letterSpacing: 6, marginBottom: 8 }}>
               GAME OVER
             </div>
@@ -1586,26 +1617,36 @@ export default function BlastPage() {
               {score}
             </div>
 
+            {/* Progression display */}
+            {progression && (
+              <div style={{
+                background: THEME.surface,
+                borderRadius: 12,
+                padding: '16px 24px',
+                marginBottom: 20,
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 18, color: THEME.slime, marginBottom: 8 }}>
+                  +{progression.xpEarned} XP
+                </div>
+                <div style={{ fontSize: 12, color: '#71717a' }}>
+                  Level {progression.level}{progression.streak > 1 ? ` • ${progression.multiplier}x streak` : ''}
+                </div>
+              </div>
+            )}
+
             <div className="w-full max-w-sm mb-4">
               <ScoreFlow
                 score={score}
                 gameId={GAME_ID}
                 colors={SCORE_FLOW_COLORS}
+                maxScore={500}
                 onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
+                onProgression={(prog) => setProgression(prog)}
               />
             </div>
 
-            <div className="mb-4">
-              <ShareButtonContainer
-                id="share-btn-blast"
-                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/blast/share/${score}`}
-                text={`${score} points — Wave ${wave} in BLAST`}
-                style="minimal"
-                socialLoaded={socialLoaded}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center', marginTop: 20, width: '100%' }}>
               <button
                 onClick={startGame}
                 style={{
@@ -1625,7 +1666,7 @@ export default function BlastPage() {
                 AGAIN
               </button>
               <button
-                onClick={() => setShowLeaderboard(!showLeaderboard)}
+                onClick={() => setGameState('leaderboard')}
                 style={{
                   background: 'transparent',
                   border: '2px solid #ffffff20',
@@ -1640,21 +1681,61 @@ export default function BlastPage() {
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#ffffff40'; e.currentTarget.style.color = '#ffffffaa'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#ffffff20'; e.currentTarget.style.color = '#ffffff60'; }}
               >
-                {showLeaderboard ? 'HIDE' : 'RANKS'}
+                RANKS
               </button>
-            </div>
-
-            {showLeaderboard && (
-              <div className="mt-6 w-full max-w-md">
-                <Leaderboard
-                  gameId={GAME_ID}
-                  limit={10}
-                  entryId={submittedEntryId ?? undefined}
-                  colors={LEADERBOARD_COLORS}
+              {user ? (
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  style={{
+                    background: 'transparent',
+                    border: '2px solid #ffffff20',
+                    color: '#ffffff60',
+                    padding: '10px 28px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    letterSpacing: 3,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#ffffff40'; e.currentTarget.style.color = '#ffffffaa'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#ffffff20'; e.currentTarget.style.color = '#ffffff60'; }}
+                >
+                  SHARE / GROUPS
+                </button>
+              ) : (
+                <ShareButtonContainer
+                  id="share-btn-blast"
+                  url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/blast/share/${score}` : ''}
+                  text={`${score} points — Wave ${wave} in BLAST! Can you beat me?`}
+                  style="minimal"
+                  socialLoaded={socialLoaded}
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
+        )}
+
+        {/* Leaderboard — full screen, not wrapped in custom modal */}
+        {gameState === 'leaderboard' && (
+          <Leaderboard
+            gameId={GAME_ID}
+            limit={10}
+            entryId={submittedEntryId ?? undefined}
+            colors={LEADERBOARD_COLORS}
+            onClose={() => setGameState('gameover')}
+            groupsEnabled={true}
+            gameUrl={GAME_URL}
+            socialLoaded={socialLoaded}
+          />
+        )}
+        {/* ShareModal — at component root, outside game-over div */}
+        {showShareModal && user && (
+          <ShareModal
+            gameUrl={GAME_URL}
+            score={score}
+            colors={LEADERBOARD_COLORS}
+            onClose={() => setShowShareModal(false)}
+          />
         )}
       </div>
     </>
