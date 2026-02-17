@@ -41,7 +41,11 @@ const DESCENT_STEP = 12;     // Gradual descent like classic Space Invaders
 const DESCENT_PAUSE = 200;   // Loop spec: 200ms pause on step-down
 const MAX_BULLETS = 3;       // Loop spec: max 3 on screen
 const MAX_SHAPES = 20;       // Loop spec: cap to prevent chaos
-const ENEMY_FIRE_INTERVAL = 2; // seconds, starting wave 3
+const ENEMY_FIRE_INTERVAL = 2; // seconds, hexagons only
+// Shape behavior:
+// - Triangle (pink): fodder — 1 HP, standard. Easy combo fuel.
+// - Square (purple): armored — big squares take 2 hits before splitting.
+// - Hexagon (yellow): shooter — only shape that fires back at the player.
 const SPEED_MULT_PER_KILL = 1.02; // Loop spec: 2% faster per kill
 const SPEED_CAP = 3.0;       // Loop spec: max 3x speed
 
@@ -275,6 +279,12 @@ export default function BlastPage() {
     }
   }, [gameState, score]);
 
+  // HP for a shape: squares get extra HP at big size
+  const getShapeHp = (type: ShapeType, size: ShapeSize): number => {
+    if (type === 'square' && size === 'big') return 2;
+    return 1;
+  };
+
   // Spawn wave (Loop spec)
   const spawnWave = useCallback((waveNum: number) => {
     const game = gameRef.current;
@@ -379,7 +389,7 @@ export default function BlastPage() {
           size,
           rotation: Math.random() * Math.PI * 2,
           rotationSpeed: (Math.random() - 0.5) * 2,
-          hp: 1,
+          hp: getShapeHp(type, size),
         });
         shapeIndex++;
       }
@@ -442,46 +452,59 @@ export default function BlastPage() {
     }
   }, []);
 
-  // Split shape (NO SPLITS in wave 1 - tutorial mode)
-  const splitShape = useCallback((shape: Shape) => {
+  // Hit shape — decrement HP, split/destroy when HP reaches 0
+  const hitShape = useCallback((shape: Shape) => {
     const game = gameRef.current;
     const color = getShapeColor(shape.type);
+
+    // Decrement HP — if still alive, just show hit feedback
+    shape.hp--;
+    if (shape.hp > 0) {
+      spawnParticles(shape.x, shape.y, color, 4);
+      playHit(false);
+      game.screenShake = 3;
+      return;
+    }
+
+    // Shape destroyed — particles + split
     spawnParticles(shape.x, shape.y, color, 8);
-    
-    // Wave 1: no splits, shapes just die (Tap/Loop spec)
+
+    // Wave 1: no splits, shapes just die (tutorial)
     if (game.wave === 1) {
       playHit(true);
       game.shapes = game.shapes.filter(s => s.id !== shape.id);
       return;
     }
-    
+
     if (shape.size === 'big') {
-      // Split into 2 medium (fly apart at 45° angles per Loop spec)
+      // Split into 2 medium
       for (let i = 0; i < 2; i++) {
+        const childSize: ShapeSize = 'medium';
         game.shapes.push({
           id: game.shapeIdCounter++,
           x: shape.x + (i === 0 ? -20 : 20),
           y: shape.y,
           type: shape.type,
-          size: 'medium',
+          size: childSize,
           rotation: Math.random() * Math.PI * 2,
           rotationSpeed: (Math.random() - 0.5) * 3,
-          hp: 1,
+          hp: getShapeHp(shape.type, childSize),
         });
       }
       playHit(true);
     } else if (shape.size === 'medium') {
       // Split into 2 small
       for (let i = 0; i < 2; i++) {
+        const childSize: ShapeSize = 'small';
         game.shapes.push({
           id: game.shapeIdCounter++,
           x: shape.x + (i === 0 ? -12 : 12),
           y: shape.y,
           type: shape.type,
-          size: 'small',
+          size: childSize,
           rotation: Math.random() * Math.PI * 2,
           rotationSpeed: (Math.random() - 0.5) * 4,
-          hp: 1,
+          hp: getShapeHp(shape.type, childSize),
         });
       }
       playHit(false);
@@ -489,11 +512,11 @@ export default function BlastPage() {
       // Small destroyed
       playHit(false);
     }
-    
+
     // Remove original
     game.shapes = game.shapes.filter(s => s.id !== shape.id);
-    
-    // Speed boost per kill (Loop spec: 2% per kill, cap at 3x)
+
+    // Speed boost per kill (2% per kill, cap at 3x)
     game.killsThisWave++;
     const speedMult = Math.min(Math.pow(SPEED_MULT_PER_KILL, game.killsThisWave), SPEED_CAP);
     game.enemySpeed = game.enemyBaseSpeed * speedMult;
@@ -706,8 +729,7 @@ export default function BlastPage() {
               return;
             }
           }
-          // Speed up as shapes die (Loop spec: 2% per kill, cap at 3x)
-          // Speed is recalculated in splitShape
+          // Speed recalculated in hitShape on each kill
         }
         
         // Check goo collisions
@@ -728,24 +750,24 @@ export default function BlastPage() {
                 playCombo(game.combo);
               }
               
-              splitShape(shape);
+              hitShape(shape);
               game.goos = game.goos.filter(g => g !== goo);
               break;
             }
           }
         }
         
-        // Enemy fire (Loop spec: starting wave 3, one shot per 2 seconds)
-        if (game.wave >= 3 && game.shapes.length > 0) {
+        // Enemy fire — only hexagons shoot back (starting wave 3)
+        const hexagons = game.shapes.filter(s => s.type === 'hexagon');
+        if (game.wave >= 3 && hexagons.length > 0) {
           game.enemyFireTimer -= dt;
           if (game.enemyFireTimer <= 0) {
             game.enemyFireTimer = ENEMY_FIRE_INTERVAL;
-            // Pick random shape to fire
-            const shooter = game.shapes[Math.floor(Math.random() * game.shapes.length)];
+            const shooter = hexagons[Math.floor(Math.random() * hexagons.length)];
             game.enemyProjectiles.push({
               x: shooter.x,
               y: shooter.y + getShapeSize(shooter.size),
-              vy: 150, // Slow projectile
+              vy: 150,
             });
           }
         }
@@ -878,6 +900,23 @@ export default function BlastPage() {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+
+        // Armored indicator: double border on squares with HP > 1
+        if (shape.type === 'square' && shape.hp > 1) {
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          const inner = size * 0.45;
+          ctx.strokeRect(-inner, -inner, inner * 2, inner * 2);
+        }
+
+        // Shooter indicator: small dot under hexagons (they fire back)
+        if (shape.type === 'hexagon') {
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(0, size + 6, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
         ctx.restore();
       }
 
@@ -1043,7 +1082,7 @@ export default function BlastPage() {
 
     draw();
     return () => cancelAnimationFrame(animationId);
-  }, [gameState, canvasSize, spawnWave, splitShape, spawnParticles, highScore]);
+  }, [gameState, canvasSize, spawnWave, hitShape, spawnParticles, highScore]);
 
   return (
     <>
@@ -1076,6 +1115,11 @@ export default function BlastPage() {
             <p className="text-xs mt-4" style={{ color: '#6b7280' }}>
               Drag to move • Tap to shoot
             </p>
+            <div className="flex gap-4 justify-center mt-4 text-xs" style={{ color: '#6b7280' }}>
+              <span><span style={{ color: THEME.triangle }}>&#9650;</span> fodder</span>
+              <span><span style={{ color: THEME.square }}>&#9632;</span> armored</span>
+              <span><span style={{ color: THEME.hexagon }}>&#11042;</span> shoots</span>
+            </div>
           </div>
         )}
 
