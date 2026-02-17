@@ -480,9 +480,19 @@ export default function FlopPage() {
 
   const handleUp = useCallback(() => {
     const game = gameRef.current;
+    // Tap jump on release if short hold
+    if (game.inputHoldTime < 0.15 && gameState === 'playing') {
+      const player = game.racers[0];
+      if (player && player.onGround && player.faceplantTimer <= 0 && player.hitTimer <= 0 && game.countdownTimer <= 0) {
+        player.vy = JUMP_VEL;
+        player.onGround = false;
+        player.jumping = true;
+        playBoing();
+      }
+    }
     game.inputDown = false;
     game.inputHoldTime = 0;
-  }, []);
+  }, [gameState]);
 
   // Keyboard
   useEffect(() => {
@@ -1204,36 +1214,41 @@ export default function FlopPage() {
       ctx.shadowOffsetX = 3;
       ctx.shadowOffsetY = 3;
       ctx.beginPath();
-      ctx.arc(pts[0].x, pts[0].y, 10, 0, Math.PI * 2);
+      ctx.arc(pts[0].x, pts[0].y, 10 * RAGDOLL_SCALE, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
       ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
 
-      // Googly eyes
+      // Googly eyes — BIG for comedy
       const headX = pts[0].x;
       const headY = pts[0].y;
+      const S = RAGDOLL_SCALE;
+      const eyeR = 7 * S; // big white eye radius
+      const eyeSpacing = 6 * S;
+      const eyeOffY = -2 * S;
       // White of eyes
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(headX - 4, headY - 2, 4, 0, Math.PI * 2);
-      ctx.arc(headX + 4, headY - 2, 4, 0, Math.PI * 2);
+      ctx.arc(headX - eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
+      ctx.arc(headX + eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = THEME.border;
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(headX - 4, headY - 2, 4, 0, Math.PI * 2);
+      ctx.arc(headX - eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(headX + 4, headY - 2, 4, 0, Math.PI * 2);
+      ctx.arc(headX + eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
       ctx.stroke();
       // Pupils (lag behind movement)
       ctx.fillStyle = THEME.border;
-      const pupilClamp = 2;
-      const px = Math.max(-pupilClamp, Math.min(pupilClamp, r.eyeX));
-      const py = Math.max(-pupilClamp, Math.min(pupilClamp, r.eyeY));
+      const pupilR = 3 * S;
+      const pupilClamp = 3 * S;
+      const px = Math.max(-pupilClamp, Math.min(pupilClamp, r.eyeX * S));
+      const py = Math.max(-pupilClamp, Math.min(pupilClamp, r.eyeY * S));
       ctx.beginPath();
-      ctx.arc(headX - 4 + px, headY - 2 + py, 2, 0, Math.PI * 2);
-      ctx.arc(headX + 4 + px, headY - 2 + py, 2, 0, Math.PI * 2);
+      ctx.arc(headX - eyeSpacing + px, headY + eyeOffY + py, pupilR, 0, Math.PI * 2);
+      ctx.arc(headX + eyeSpacing + px, headY + eyeOffY + py, pupilR, 0, Math.PI * 2);
       ctx.fill();
 
       // Mouth expression
@@ -1243,22 +1258,22 @@ export default function FlopPage() {
       if (r.faceplantTimer > 0) {
         // X_X face
         ctx.beginPath();
-        ctx.arc(headX, headY + 4, 3, 0, Math.PI * 2);
+        ctx.arc(headX, headY + 4 * S, 3 * S, 0, Math.PI * 2);
         ctx.stroke();
       } else if (r.hitTimer > 0) {
         // Shocked O
         ctx.beginPath();
-        ctx.arc(headX, headY + 5, 3, 0, Math.PI * 2);
+        ctx.arc(headX, headY + 5 * S, 3 * S, 0, Math.PI * 2);
         ctx.stroke();
       } else if (r.finished) {
         // Big grin
         ctx.beginPath();
-        ctx.arc(headX, headY + 2, 4, 0.1, Math.PI - 0.1);
+        ctx.arc(headX, headY + 2 * S, 4 * S, 0.1, Math.PI - 0.1);
         ctx.stroke();
       } else {
         // Running smile/determined
         ctx.beginPath();
-        ctx.arc(headX, headY + 2, 3, 0.2, Math.PI - 0.2);
+        ctx.arc(headX, headY + 2 * S, 3 * S, 0.2, Math.PI - 0.2);
         ctx.stroke();
       }
 
@@ -1296,18 +1311,34 @@ export default function FlopPage() {
       }
     };
 
-    // Tap detection: jump on pointerdown if short tap
+    // Input: TAP (< 150ms) = jump, HOLD (≥ 150ms) = sprint (no jump)
+    // Jump fires on pointerup if hold was short. Sprint activates in game loop.
     const onPointerDown = () => {
-      handleJump();
+      // Just start tracking hold — no immediate jump
+      const game = gameRef.current;
+      game.inputDown = true;
+      game.inputHoldTime = 0;
+    };
+    const onPointerUp = () => {
+      const game = gameRef.current;
+      if (game.inputHoldTime < 0.15) {
+        handleJump(); // short tap → jump
+      }
+      game.inputDown = false;
+      game.inputHoldTime = 0;
     };
 
     canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointerup', onPointerUp);
+    canvas.addEventListener('pointerleave', onPointerUp);
     canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
 
     animId = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(animId);
       canvas.removeEventListener('pointerdown', onPointerDown);
+      canvas.removeEventListener('pointerup', onPointerUp);
+      canvas.removeEventListener('pointerleave', onPointerUp);
     };
   }, [gameState, canvasSize, highScore]);
 
