@@ -2,39 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOUNCE — Drop balls and watch them dance</title>
-    <meta name="description" content="Drop golden balls and watch them bounce forever. Physics toy by Amber.">
-    <meta property="og:title" content="BOUNCE">
-    <meta property="og:description" content="Drop golden balls and watch them bounce forever. Physics toy by Amber.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BOUNCE — Tap to keep it alive</title>
+    
+    <!-- OG tags -->
+    <meta property="og:title" content="BOUNCE — Tap to keep it alive">
+    <meta property="og:description" content="Rapid tap game. Keep the ball bouncing. Miss the rhythm and it dies.">
     <meta property="og:image" content="https://intheamber.com/amber/bounce-og.png">
-    <meta property="og:url" content="https://kochi.to/amber/bounce.html">
+    <meta property="og:url" content="https://intheamber.com/amber/bounce.html">
+    <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="BOUNCE — Tap to keep it alive">
+    <meta name="twitter:description" content="Rapid tap game. Keep the ball bouncing. Miss the rhythm and it dies.">
     <meta name="twitter:image" content="https://intheamber.com/amber/bounce-og.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
+
         body {
-            background: #000;
-            color: #D4A574;
+            background: #0D0D0D;
             font-family: 'Space Mono', monospace;
+            color: #D4A574;
             overflow: hidden;
             touch-action: none;
-            -webkit-user-select: none;
             user-select: none;
         }
+
         #canvas {
             display: block;
             width: 100vw;
             height: 100vh;
-            cursor: crosshair;
+            cursor: pointer;
         }
+
         #ui {
             position: fixed;
             top: 20px;
@@ -43,156 +48,254 @@
             pointer-events: none;
             z-index: 10;
         }
+
         #score {
             font-size: 48px;
-            font-weight: 700;
+            font-weight: bold;
             color: #FFD700;
             text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
         }
-        #info {
-            font-size: 14px;
+
+        #streak {
+            font-size: 18px;
             color: #2D9596;
-            margin-top: 8px;
+            margin-top: 5px;
         }
-        #clear {
+
+        #best {
             position: fixed;
-            bottom: 20px;
+            top: 20px;
             right: 20px;
-            padding: 12px 24px;
-            background: rgba(212, 165, 116, 0.1);
-            border: 2px solid #D4A574;
-            color: #D4A574;
-            font-family: 'Space Mono', monospace;
             font-size: 14px;
-            font-weight: 700;
+            color: #D4A574;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        #hint {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            color: #D4A574;
+            opacity: 0.8;
+            text-align: center;
+            pointer-events: none;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.3; }
+        }
+
+        #gameOver {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(13, 13, 13, 0.95);
+            padding: 40px;
+            border: 2px solid #D4A574;
+            text-align: center;
+            display: none;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        #gameOver.show {
+            display: block;
+            pointer-events: all;
+        }
+
+        #gameOver h1 {
+            font-size: 36px;
+            color: #FFD700;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        #gameOver p {
+            font-size: 18px;
+            color: #D4A574;
+            margin-bottom: 30px;
+        }
+
+        #restartBtn {
+            background: #D4A574;
+            color: #0D0D0D;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-family: 'Space Mono', monospace;
+            font-weight: bold;
             cursor: pointer;
-            pointer-events: auto;
-            border-radius: 4px;
+            pointer-events: all;
             transition: all 0.2s;
         }
-        #clear:hover {
-            background: rgba(212, 165, 116, 0.2);
-            transform: scale(1.05);
-        }
-        #clear:active {
+
+        #restartBtn:active {
             transform: scale(0.95);
+            background: #FFD700;
+        }
+
+        #ground {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(to bottom, transparent, rgba(212, 165, 116, 0.1));
+            pointer-events: none;
+            border-top: 2px solid rgba(212, 165, 116, 0.3);
         }
     </style>
 </head>
 <body>
     <canvas id="canvas"></canvas>
+    
     <div id="ui">
         <div id="score">0</div>
-        <div id="info">TAP TO DROP BALLS</div>
+        <div id="streak">Streak: 0</div>
     </div>
-    <button id="clear">CLEAR</button>
+
+    <div id="best">Best: 0</div>
+    <div id="hint">TAP TO BOUNCE</div>
+    <div id="ground"></div>
+
+    <div id="gameOver">
+        <h1>GAME OVER</h1>
+        <p id="finalScore"></p>
+        <button id="restartBtn">TAP TO RESTART</button>
+    </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('score');
-        const infoEl = document.getElementById('info');
-        const clearBtn = document.getElementById('clear');
+        const streakEl = document.getElementById('streak');
+        const bestEl = document.getElementById('best');
+        const hintEl = document.getElementById('hint');
+        const gameOverEl = document.getElementById('gameOver');
+        const finalScoreEl = document.getElementById('finalScore');
+        const restartBtn = document.getElementById('restartBtn');
 
         let width, height;
-        let balls = [];
-        let score = 0;
-        let audioContext;
-        let isAudioReady = false;
+        let ball, score, streak, best, particles, rings, gameActive, audioContext, started;
 
         function resize() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
         }
-        resize();
-        window.addEventListener('resize', resize);
 
         class Ball {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * 4;
+            constructor() {
+                this.radius = 30;
+                this.x = width / 2;
+                this.y = height - 100 - this.radius;
                 this.vy = 0;
-                this.radius = 15 + Math.random() * 15;
-                this.color = Math.random() > 0.3 ? '#FFD700' : '#D4A574';
-                this.glow = this.color === '#FFD700' ? 'rgba(255, 215, 0, 0.5)' : 'rgba(212, 165, 116, 0.5)';
-                this.gravity = 0.4;
-                this.damping = 0.85;
-                this.friction = 0.99;
-                this.bounces = 0;
+                this.gravity = 0.8;
+                this.bounce = -18;
+                this.minBounce = -12;
+                this.dead = false;
+                this.groundY = height - 80;
+                this.pulsePhase = 0;
+            }
+
+            tap() {
+                if (this.dead) return;
+                
+                // Only bounce if ball is near ground
+                const distFromGround = this.groundY - this.y - this.radius;
+                if (distFromGround < 100) {
+                    this.vy = this.bounce;
+                    score++;
+                    streak++;
+                    scoreEl.textContent = score;
+                    streakEl.textContent = `Streak: ${streak}`;
+                    
+                    // Spawn particles
+                    for (let i = 0; i < 10; i++) {
+                        particles.push(new Particle(this.x, this.y + this.radius));
+                    }
+                    
+                    // Spawn ring
+                    rings.push(new Ring(this.x, this.y + this.radius));
+                    
+                    // Play sound
+                    playTone(400 + score * 10);
+                } else {
+                    // Tapped too early - penalty
+                    this.vy += 2; // Make it fall faster
+                }
             }
 
             update() {
                 this.vy += this.gravity;
-                this.x += this.vx;
                 this.y += this.vy;
+                this.pulsePhase += 0.1;
 
-                // Floor bounce
-                if (this.y + this.radius > height) {
-                    this.y = height - this.radius;
-                    this.vy *= -this.damping;
-                    this.vx *= this.friction;
-                    this.bounces++;
-                    
-                    if (Math.abs(this.vy) > 2) {
-                        playBounce(this.radius);
-                        createParticles(this.x, this.y + this.radius);
-                        score++;
-                        scoreEl.textContent = score;
-                    }
-                }
-
-                // Wall bounces
-                if (this.x - this.radius < 0) {
-                    this.x = this.radius;
-                    this.vx *= -this.damping;
-                    playBounce(this.radius);
-                } else if (this.x + this.radius > width) {
-                    this.x = width - this.radius;
-                    this.vx *= -this.damping;
-                    playBounce(this.radius);
-                }
-
-                // Ceiling bounce
-                if (this.y - this.radius < 0) {
-                    this.y = this.radius;
-                    this.vy *= -this.damping;
+                // Check if dead
+                if (this.y + this.radius >= this.groundY) {
+                    this.y = this.groundY - this.radius;
+                    this.vy = 0;
+                    this.dead = true;
+                    gameActive = false;
+                    endGame();
                 }
             }
 
             draw() {
-                // Glow
-                ctx.save();
-                ctx.shadowColor = this.glow;
-                ctx.shadowBlur = 20;
+                const pulse = 1 + Math.sin(this.pulsePhase) * 0.1;
+                const r = this.radius * pulse;
+
+                // Outer glow
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 1.5);
+                gradient.addColorStop(0, 'rgba(255, 215, 0, 0.4)');
+                gradient.addColorStop(0.5, 'rgba(212, 165, 116, 0.2)');
+                gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+                ctx.fillStyle = gradient;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
+                ctx.arc(this.x, this.y, r * 1.5, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.restore();
+
+                // Ball
+                const ballGradient = ctx.createRadialGradient(
+                    this.x - r * 0.3, 
+                    this.y - r * 0.3, 
+                    0,
+                    this.x, 
+                    this.y, 
+                    r
+                );
+                ballGradient.addColorStop(0, '#FFD700');
+                ballGradient.addColorStop(1, '#D4A574');
+                ctx.fillStyle = ballGradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+                ctx.fill();
 
                 // Highlight
-                ctx.beginPath();
-                ctx.arc(this.x - this.radius * 0.3, this.y - this.radius * 0.3, this.radius * 0.3, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(this.x - r * 0.3, this.y - r * 0.3, r * 0.3, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
-
-        let particles = [];
 
         class Particle {
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                this.vx = (Math.random() - 0.5) * 8;
-                this.vy = -Math.random() * 8 - 2;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 3 + Math.random() * 5;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed - 5;
                 this.life = 1;
                 this.decay = 0.02;
-                this.radius = 2 + Math.random() * 3;
-                this.color = Math.random() > 0.5 ? '#FFD700' : '#2D9596';
+                this.size = 3 + Math.random() * 4;
+                this.color = Math.random() > 0.5 ? '#FFD700' : '#D4A574';
             }
 
             update() {
@@ -203,136 +306,176 @@
             }
 
             draw() {
-                ctx.save();
                 ctx.globalAlpha = this.life;
-                ctx.shadowColor = this.color;
-                ctx.shadowBlur = 10;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        class Ring {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 0;
+                this.maxRadius = 80;
+                this.speed = 4;
+                this.life = 1;
+                this.decay = 0.03;
+            }
+
+            update() {
+                this.radius += this.speed;
+                this.life -= this.decay;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.life * 0.6;
+                ctx.strokeStyle = '#2D9596';
+                ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                ctx.restore();
+                ctx.stroke();
+                
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#2D9596';
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                
+                ctx.globalAlpha = 1;
             }
         }
 
-        function createParticles(x, y) {
-            for (let i = 0; i < 8; i++) {
-                particles.push(new Particle(x, y));
-            }
-        }
-
-        function initAudio() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                isAudioReady = true;
-            }
-        }
-
-        function playBounce(radius) {
-            if (!isAudioReady) return;
-
-            const now = audioContext.currentTime;
+        function playTone(freq) {
+            if (!audioContext) return;
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
-
-            // Higher pitch for smaller balls
-            const freq = 200 + (30 - radius) * 20;
-            osc.frequency.setValueAtTime(freq, now);
-            osc.frequency.exponentialRampToValueAtTime(freq * 0.5, now + 0.1);
-
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-
             osc.connect(gain);
             gain.connect(audioContext.destination);
+            osc.frequency.value = Math.min(freq, 1200);
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.1);
+        }
 
-            osc.start(now);
-            osc.stop(now + 0.1);
+        function playGameOver() {
+            if (!audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.setValueAtTime(400, audioContext.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.5);
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.15, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.5);
+        }
+
+        function init() {
+            ball = new Ball();
+            score = 0;
+            streak = 0;
+            particles = [];
+            rings = [];
+            gameActive = true;
+            started = false;
+            
+            scoreEl.textContent = score;
+            streakEl.textContent = `Streak: ${streak}`;
+            gameOverEl.classList.remove('show');
+            hintEl.style.display = 'block';
+        }
+
+        function endGame() {
+            if (score > best) {
+                best = score;
+                localStorage.setItem('bounceBest', best);
+                bestEl.textContent = `Best: ${best}`;
+            }
+            
+            finalScoreEl.textContent = `Score: ${score} • Best: ${best}`;
+            
+            setTimeout(() => {
+                gameOverEl.classList.add('show');
+                playGameOver();
+            }, 500);
         }
 
         function animate() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.2)';
             ctx.fillRect(0, 0, width, height);
 
-            // Update and draw balls
-            balls.forEach(ball => {
+            if (gameActive) {
                 ball.update();
                 ball.draw();
-            });
-
-            // Ball-to-ball collisions
-            for (let i = 0; i < balls.length; i++) {
-                for (let j = i + 1; j < balls.length; j++) {
-                    const dx = balls[j].x - balls[i].x;
-                    const dy = balls[j].y - balls[i].y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    const minDist = balls[i].radius + balls[j].radius;
-
-                    if (distance < minDist) {
-                        // Collision response
-                        const angle = Math.atan2(dy, dx);
-                        const sin = Math.sin(angle);
-                        const cos = Math.cos(angle);
-
-                        // Separate balls
-                        const overlap = minDist - distance;
-                        const separateX = (overlap * cos) / 2;
-                        const separateY = (overlap * sin) / 2;
-
-                        balls[i].x -= separateX;
-                        balls[i].y -= separateY;
-                        balls[j].x += separateX;
-                        balls[j].y += separateY;
-
-                        // Exchange velocities (simplified elastic collision)
-                        const vx1 = balls[i].vx;
-                        const vy1 = balls[i].vy;
-                        balls[i].vx = balls[j].vx * 0.9;
-                        balls[i].vy = balls[j].vy * 0.9;
-                        balls[j].vx = vx1 * 0.9;
-                        balls[j].vy = vy1 * 0.9;
-
-                        playBounce((balls[i].radius + balls[j].radius) / 2);
-                    }
-                }
+            } else if (ball) {
+                ball.draw();
             }
 
             // Update and draw particles
-            particles = particles.filter(p => p.life > 0);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Update and draw rings
+            for (let i = rings.length - 1; i >= 0; i--) {
+                rings[i].update();
+                rings[i].draw();
+                if (rings[i].life <= 0) {
+                    rings.splice(i, 1);
+                }
+            }
 
             requestAnimationFrame(animate);
         }
 
-        function addBall(x, y) {
-            initAudio();
-            balls.push(new Ball(x, y));
-            if (balls.length === 1) {
-                infoEl.textContent = 'TAP TO ADD MORE';
+        function handleTap() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            if (!started) {
+                started = true;
+                hintEl.style.display = 'none';
+            }
+
+            if (gameActive) {
+                ball.tap();
             }
         }
 
-        canvas.addEventListener('click', (e) => {
-            addBall(e.clientX, e.clientY);
-        });
-
+        // Event listeners
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            const touch = e.touches[0];
-            addBall(touch.clientX, touch.clientY);
+            handleTap();
         });
 
-        clearBtn.addEventListener('click', () => {
-            balls = [];
-            particles = [];
-            score = 0;
-            scoreEl.textContent = '0';
-            infoEl.textContent = 'TAP TO DROP BALLS';
+        canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            handleTap();
         });
 
+        restartBtn.addEventListener('click', () => {
+            init();
+        });
+
+        window.addEventListener('resize', resize);
+
+        // Initialize
+        resize();
+        best = parseInt(localStorage.getItem('bounceBest')) || 0;
+        bestEl.textContent = `Best: ${best}`;
+        init();
         animate();
     </script>
 </body>
