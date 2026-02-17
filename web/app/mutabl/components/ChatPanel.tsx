@@ -151,10 +151,11 @@ export default function ChatPanel({
     <div
       style={{
         position: "fixed",
-        bottom: 20,
-        right: 20,
+        bottom: 12,
+        right: 12,
         width: 360,
-        maxHeight: 480,
+        maxWidth: "calc(100vw - 24px)",
+        maxHeight: "calc(100dvh - 24px)",
         borderRadius: 12,
         background: "#12122a",
         border: "1px solid #2a2a4a",

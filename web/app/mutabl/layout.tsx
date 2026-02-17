@@ -14,5 +14,10 @@ export default function MutableLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      <style>{`html,body{overflow-x:hidden;overscroll-behavior-x:none;}`}</style>
+      {children}
+    </>
+  );
 }
