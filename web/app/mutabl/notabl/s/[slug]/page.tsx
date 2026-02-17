@@ -124,6 +124,16 @@ export default async function SharedDocumentPage({
                 .nb-public strong { color: #e8e8e8; font-weight: 600; }
                 .nb-public em { font-style: italic; }
                 .nb-public u { text-decoration: underline; text-underline-offset: 3px; }
+                .nb-public ul { list-style: disc; padding-left: 24px; margin: 4px 0; }
+                .nb-public ol { list-style: decimal; padding-left: 24px; margin: 4px 0; }
+                .nb-public li { margin: 2px 0; }
+                .nb-public li p { margin: 0; }
+                .nb-public blockquote { border-left: 3px solid #FD79A860; padding-left: 16px; margin: 8px 0; color: #999; font-style: italic; }
+                .nb-public pre { background: #0d0d20; border-radius: 6px; padding: 14px 16px; margin: 8px 0; overflow-x: auto; }
+                .nb-public pre code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px; color: #a0a0b0; background: none; padding: 0; }
+                .nb-public code { background: #1a1a30; padding: 2px 5px; border-radius: 3px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px; color: #c0c0d0; }
+                .nb-public hr { border: none; border-top: 1px solid #1e1e35; margin: 16px 0; }
+                .nb-public a { color: #FD79A8; text-decoration: underline; text-underline-offset: 3px; }
               `}</style>
               <div
                 className="nb-public"

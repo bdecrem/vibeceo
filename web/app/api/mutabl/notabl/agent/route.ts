@@ -56,12 +56,16 @@ const NOTABL_SCOPE_DOCS = `AVAILABLE IN SCOPE (injected by the wrapper — do NO
 - User info: user ({handle}) — available directly from scope (stable, no context needed)
 - CopyLink component: <CopyLink url="https://..." label="optional label" /> — renders a tappable button that copies URL to clipboard on tap (works on iOS Safari). Shows "✓ Copied!" feedback. Use this for share links instead of navigator.clipboard.
 - copyToClipboard(text) — function that copies text to clipboard (iOS-safe). Use this instead of navigator.clipboard.writeText().
-- RichEditor component: <RichEditor content={html} onUpdate={fn} theme={{accent:"#color"}} editable={bool} />
+- RichEditor component: <RichEditor content={html} onUpdate={fn} theme={{accent:"#color"}} editable={bool} features={[...]} />
   - content: HTML string (TipTap format)
   - onUpdate: called with HTML string on every edit
   - theme: { accent } — controls toolbar highlight, caret, selection color
   - editable: boolean (default true)
-  - Has its own toolbar (B/I/U, H1/H2/H3) — do NOT build a formatting toolbar
+  - features: optional string[] — controls which toolbar buttons appear
+    Default (no prop): ['bold','italic','underline','h1','h2','h3']
+    Valid feature names: bold, italic, underline, strike, h1, h2, h3, bulletList, orderedList, blockquote, codeBlock, horizontalRule, link
+    Example: <RichEditor features={['bold','italic','underline','h1','bulletList','orderedList','link']} ... />
+  - Customize the toolbar via the features prop — do NOT build your own formatting toolbar
 - Block format: { id: "body", type: "richtext", content: "<h1>Title</h1><p>text</p>" }
   - Single richtext block per document, content is HTML
   - Save: updateDocument(id, { blocks: [{ id: "body", type: "richtext", content: html }] })
@@ -82,6 +86,7 @@ const NOTABL_CODE_RULES = `RULES:
 - The component must be self-contained in one function
 - FIRST LINE of App must be: const { documents, addDocument, updateDocument, deleteDocument, shareDocument, unshareDocument, refreshDocuments, exportMarkdown } = useContext(ScopeContext);
 - Use <RichEditor> for ALL document editing — NEVER use contentEditable divs or build your own text editor
+- To add/remove toolbar buttons, pass the features prop to RichEditor — never build a custom formatting toolbar
 - Your job is layout, features, and theming AROUND the editor — not reimplementing the editor
 - Save document content as a single richtext block: { id: "body", type: "richtext", content: html }
 - When loading a doc, handle legacy blocks (type "paragraph"/"heading") by converting them to HTML
