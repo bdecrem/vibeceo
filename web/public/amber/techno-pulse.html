@@ -233,6 +233,8 @@ function startAudio() {
     document.getElementById('stateDisplay').textContent = 'PLAYING';
 
     ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // iOS Safari requires explicit resume inside user gesture
+    if (ctx.state === 'suspended') ctx.resume();
 
     compressor = ctx.createDynamicsCompressor();
     compressor.threshold.value = -12;
