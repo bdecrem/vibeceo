@@ -1,0 +1,79 @@
+NOTABL
+
+Got it — so the series so far is: (1) agentic to-do list, (2) finance tracker, and now (3) a mini-Notion for creating and sharing documents. Here's the one-pager:
+
+---
+
+# App #3: Mini-Notion — Architecture Scope
+
+## Concept
+
+A simple document editor where users create pages, and every page gets a shareable read-only link. The agent evolves the editor per user — adding block types, styling, layout features, etc. The sharing angle is the hook that differentiates this from the other two apps: you're not just building for yourself, you're building something others *see*.
+
+## Bounds
+
+"It's a block-based document editor with easy sharing. You can add any content block type, formatting, or layout feature — but it won't become a spreadsheet, a project management tool, or a collaborative real-time editor. Documents are single-author, read-only for viewers."
+
+## V1 Seed (Ship With)
+
+- Create/delete pages (title + content)
+- Page list / sidebar
+- Content is a flat list of blocks: paragraph, heading (h1/h2/h3)
+- Basic inline formatting: bold, italic, link
+- One-click "Share" → generates a public read-only URL
+- Shared view is clean, minimal, no editor chrome
+
+That's it. Everything else comes from the agent.
+
+## The Evolution Path (What Users Will Ask For)
+
+Early requests: "add bullet lists," "add numbered lists," "add a divider block," "add images," "add code blocks with syntax highlighting," "add a table of contents that auto-generates from my headings"
+
+Mid-tier: "add toggle/collapsible blocks," "add callout boxes," "add an embed block for YouTube," "let me reorder blocks with drag and drop," "add a cover image at the top," "add a custom favicon for shared pages"
+
+Advanced: "add a /slash command menu," "add columns (2-col layout)," "add a bookmark card that auto-fetches title + preview from a URL," "let me password-protect a shared page," "add custom CSS for my shared page," "add analytics — show me how many people viewed my page"
+
+## Data Model (Supabase)
+
+**`documents`** — the actual content
+- `id`, `user_id`, `title`, `blocks` (JSONB array — ordered list of block objects), `share_slug` (unique, nullable — populated on first share), `is_public` (boolean), `created_at`, `updated_at`
+
+Block shape: `{ id, type, content, properties }` — e.g. `{ id: "abc", type: "heading", content: "Hello", properties: { level: 2 } }`
+
+**`user_app_config`** — each user's editor definition
+- `user_id`, `block_types` (JSONB — which block types exist and how they render), `editor_config` (JSONB — toolbar, slash commands, theme), `viewer_config` (JSONB — how the shared/public view renders), `version`
+
+**`base_app_config`** — canonical upstream version, same pattern as the other apps.
+
+## Key Architectural Wrinkle: Two Renderers
+
+Unlike the to-do list (one view), this app has **two distinct render contexts**:
+
+1. **Editor view** (authed user) — editable blocks, toolbar, sidebar, chat agent
+2. **Viewer view** (public, read-only) — clean rendered output, no editor UI, shareable URL like `/s/abc123`
+
+The agent needs to reason about both. When a user says "add code blocks," the agent adds the block type to the editor *and* ensures the viewer renders it with syntax highlighting. The `viewer_config` is what makes this app interesting — users are essentially designing their own publishing theme.
+
+## Share Flow
+
+1. User clicks "Share" on a document
+2. If no `share_slug` exists, generate one (short, readable — e.g. `bright-fox-42`)
+3. Set `is_public = true`
+4. Show copyable URL: `yourapp.com/s/bright-fox-42`
+5. Viewer route reads `share_slug`, fetches doc + that user's `viewer_config`, renders read-only
+
+No auth required to view. Optional: user can toggle `is_public` off to "unshare."
+
+## Agent Boundaries (System Prompt)
+
+*"You can add, modify, or remove block types, formatting options, editor controls, toolbar items, slash commands, viewer themes, and page-level settings. Block types you can create include any content block (text, media, embed, layout). You cannot add real-time collaboration, comments, version history, multi-user editing, or features unrelated to document creation and publishing."*
+
+## Why This Is a Good #3
+
+- **New agent muscle:** The to-do app was about *data structure*, the finance tracker about *visualization*, and this one is about *content rendering and publishing*. Three different domains, three different proof points.
+- **The sharing angle is viral.** Every shared doc is a tiny billboard for the product. "Wait, this page was made in what? And you can customize the editor with AI?"
+- **AI Twitter hook:** "Everyone's mini-Notion looks different because AI built each one." Or: "I asked AI for callout boxes and a dark-mode reader view and got them in 30 seconds."
+
+---
+
+Tight enough for a Claude Code handoff. The big decision to make early: whether blocks are purely declarative config (like the to-do app's approach) or whether the agent writes actual React components for new block types (the fully agentic model from app #2). Given this is app #3 and you've got the patterns down, I'd lean toward the latter — let the agent write real block renderers. That's what makes "add a bookmark card that auto-fetches previews" possible without you pre-building it.

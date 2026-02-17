@@ -1,0 +1,151 @@
+what is the architecture of our apps: are they single files?                              
+                                                                                          
+⏺ Yes. Each user's app is literally a single function App() { ... } stored as a text string 
+  in the app_code column of *_config. It uses inline styles only, can't import anything, and
+   gets everything it needs (React hooks, data, CRUD operations, user info) injected via    
+  react-live's scope prop.                                                                
+                                                                                            
+  So when the agent rewrites the app, it returns the complete replacement string. There's no
+   file system, no modules, no routing — just one function that renders the whole UI.
+
+  This is both the strength (dead simple, instant updates, no build step) and the constraint
+   (everything in one function, inline styles only, can't use external libraries beyond
+  what's in scope).
+
+❯ hmmm. so if i want to build a full word processing app with document sharing etc etc      
+  are we running into the limitations of that approach?                                    
+                                                                                            
+⏺ Yes, honestly. Here's where the single-function approach breaks down for something like a 
+  full word processor:                                                                      
+                                                                                            
+  Hard walls:                                                                               
+  - No external libraries. You can't use TipTap, ProseMirror, Slate, or any real rich text  
+  editor from within react-live's scope. You're limited to contentEditable and hand-rolled
+  formatting, which is painful.                
+  - Code size. A word processor could easily be 15-20K+ characters. The agent has to rewrite
+   the entire thing on every chat message. More code = more tokens, more chance of breaking
+  something, slower responses.
+  - Complexity ceiling. Document list view, editor view, sharing settings, toolbar,
+  formatting state, collaboration — cramming all that into one function with no modules gets
+   unreadable fast.
+
+  What still works fine:
+  - The data layer (documents, sharing, permissions) lives in API routes / Supabase — no
+  constraint there.
+  - Simple notes apps, markdown editors — totally fine as single functions.
+
+  The interesting middle ground: inject richer building blocks into scope. Instead of the
+  user's component building a text editor from scratch, you inject a pre-built <RichEditor
+  value={} onChange={} /> component into scope alongside the data hooks. The agent can still
+   rearrange the UI, add sidebars, change themes, add features around the editor — but it
+  doesn't have to implement the editor itself.
+
+  So the pattern becomes: fixed complex components in scope, agent-customizable
+  layout/features/styling around them. The single function stays manageable because the hard
+   parts are pre-built building blocks, not raw code.
+
+  Want to go that direction for notabl?
+
+                                         
+  
+❯ is each component its own file?                                                           
+                                                                                          
+⏺ In our codebase, yes — each shared component is its own file in                           
+  web/app/mutabl/components/:                                                               
+                                                                                            
+  components/                                                                             
+    AppRenderer.tsx                                                                         
+    AuthGate.tsx                                                                          
+    ChatPanel.tsx                              
+    SettingsMenu.tsx
+    MutablLogo.tsx
+
+
+  But the user's app — the thing the agent rewrites — is not a file at all. It's a single
+  string in the app_code column of Supabase. react-live transpiles and renders it at
+  runtime. No file system, no build step.
+
+  So there are really two layers:
+
+  1. Our code (normal Next.js files) — the wrapper, shared components, API routes, data
+  hooks. This is what we edit in the repo.
+  2. The user's code (a string in a database column) — one function App() that the agent
+  rewrites. This is what the chat modifies.
+
+  The user never touches layer 1. The agent only touches layer 2.
+
+====
+
+help me think through the below: our system works, and we are keeping the promise so far: agentic apps that the user can "make theirs" ... but we do that by having single-file apps. now I want to build a more meaningful app, a word processor, and we are hitting the limitations of that approach. ADVISE on a good way to handle more ambitious apps like a simple word processing app (with a toolbar, ability to share docs etc). --- what is the architecture of our apps: are they single files?                              
+
+
+====
+
+This is a really important architectural moment for MUTABL. Let me think through it with you.
+
+## The core tension
+
+Your promise is "apps that grow new features as you chat with them." The agent rewrites the user's whole UI. That works beautifully when the UI *is* the app — Todoit is basically all UI + CRUD. But a word processor has deep internals (rich text editing, cursor management, selection, formatting commands) that no agent should be rewriting on every chat message. Those aren't "features the user would ask for" — they're infrastructure.
+
+## The scope-injection approach is the right call
+
+And I think it's worth being precise about *why* it works, because it actually **strengthens** the MUTABL promise rather than weakening it.
+
+Think of it as two layers:
+
+**Platform layer** (fixed, in scope): the hard engineering problems. A `<RichEditor>` wrapping TipTap, a `<DocumentList>`, the data hooks. These are things the user would never *want* to customize at the code level — they just want them to work.
+
+**Product layer** (agent-rewritable, the user's single function): everything the user actually *cares about* personalizing. Layout, theme, toolbar arrangement, sidebar content, document organization, what metadata is visible, focus mode, word count, AI writing tools, custom views. This is where "make it mine" lives.
+
+The key insight: **injecting richer scope components doesn't reduce what the agent can do — it raises the floor of what the agent starts with.** Right now in Todoit, the agent is spending tokens rendering `<input>` elements and toggle switches. In Notabl, it'd compose `<RichEditor>` and `<DocumentList>` into layouts that feel genuinely different per user. The customization surface is actually *larger* because the building blocks are more powerful.
+
+## What this looks like concretely for Notabl
+
+Your scope becomes something like:
+
+```
+// Pre-built complex components (new)
+<RichEditor value={} onChange={} toolbar={} theme={} />
+<DocumentList documents={} onSelect={} onDelete={} />
+
+// Data + CRUD (same pattern as todoit/contxt)
+documents, currentDocument, 
+createDocument, updateDocument, deleteDocument, selectDocument
+
+// Same React primitives you already inject
+useState, useEffect, useCallback, etc.
+
+// User context
+user: { handle }
+```
+
+The user's `App()` function orchestrates these. The agent can:
+- Redesign the document list (cards vs. compact list vs. sidebar)
+- Add a sidebar with tags, recent docs, favorites
+- Build a custom toolbar config and pass it to `<RichEditor toolbar={[...]} />`
+- Add word count, reading time, AI summary panels *around* the editor
+- Create a focus/zen mode that hides everything but the editor
+- Add document sharing UI that calls your API hooks
+- Theme the whole thing
+
+None of that requires reimplementing rich text editing.
+
+## The practical questions to sort out
+
+**Which rich text library?** TipTap is the obvious choice — it's React-native, built on ProseMirror, and its extensions model maps well to what you need (the agent could even toggle extensions via props). The catch is CSS: TipTap needs styles, and you're in react-live's inline-style world. The injected `<RichEditor>` component would need to handle its own styling internally, probably by injecting a `<style>` tag or using CSS-in-JS. This is solvable but worth spiking early.
+
+**How configurable should scope components be?** This is the design tension. If `<RichEditor>` takes 30 props, the agent has tons of control but might break things. If it takes 3 props, it's safe but limiting. I'd start minimal — `value`, `onChange`, `toolbar` (array of feature names), `theme` (object with colors/fonts) — and expand as you see what users actually ask the agent for.
+
+**Code size management.** Even with scope components, a word processor's `App()` will be bigger than Todoit's. You might want to think about whether the agent should be able to do *partial* rewrites at some point (e.g., "only change the sidebar") rather than always replacing the entire function. Not urgent, but worth keeping in the back of your mind.
+
+**SCOPE_DOCS for the agent.** This is where it'll really matter. The agent needs clear docs on what `<RichEditor>` accepts, what shape `documents` has, what the CRUD functions do. The quality of the agent's output is directly proportional to the quality of these docs. For Todoit it was straightforward; for Notabl you'll want to be really thorough.
+
+## The bigger picture for MUTABL
+
+This establishes a pattern you'll reuse: **for any app where the domain has hard technical internals, wrap those internals in scope components and let the agent compose around them.** A spreadsheet app? Inject `<DataGrid>`. A kanban board? Inject `<Board>` and `<Column>`. A calendar app? Inject `<CalendarView>`. The single-function model scales much further than it seems, as long as you're strategic about what goes into scope vs. what the agent owns.
+
+The apps where this *isn't* needed — simple tools, dashboards, trackers — keep working exactly as they do today. You end up with a natural tiering: lightweight apps are pure agent-written, ambitious apps compose pre-built blocks. Same architecture, same promise, different scope richness.
+
+---
+
+Want to start spiking the TipTap integration and figure out how it plays with react-live's rendering model? That feels like the highest-risk piece to validate first.

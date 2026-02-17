@@ -1,0 +1,112 @@
+❯ now tell me this, for our "edit agent" we use an agentic loop, and presumably that is 
+   more sophisticated and also slower. tell me this: for what kinds of chagnes is a     
+  simple LLM call (to say opus 4.6) sufficient, and for what changes is the agentic     
+  loop really much better - take notabl as the app to use for this                      
+
+⏺ Let me look at how the notabl agent actually works to give you a grounded answer.
+
+⏺ Explore(Explore notabl agent code)
+  ⎿  Done (7 tool uses · 37.6k tokens · 27s)                                                
+  (ctrl+o to expand)                                                                        
+                                                   
+⏺ Good question. Having read the implementation, here's the key insight: your current       
+  "agentic loop" isn't really agentic — it's a validation retry loop. Let me break it down.
+                                                                                            
+  What the loop actually does today                 
+                                                                                            
+  agent-loop.ts calls Sonnet 4.5 once, extracts the JSX + CSS, validates syntax via sucrase.
+   If syntax is broken, it feeds the error back and retries (up to 3 iterations). There are 
+  no tools — no file reads, no web search, no testing. It's a single-shot generation with a 
+  safety net for syntax errors.                                                             
+                                                                                            
+  For notabl, here's the split:
+
+  Single LLM call is sufficient (~80% of requests)
+
+  Anything where the full context is already in the prompt and the change is self-contained:
+
+  - Styling: "make the sidebar wider", "change accent to blue", "add rounded corners to doc
+  items"
+  - Layout: "put the title above the sidebar", "make the toolbar sticky"
+  - Simple features: "add word count", "show 'edited 3 min ago' instead of date", "add a
+  search bar to filter docs"
+  - Toggling/removing: "hide the share button", "remove the empty state icon"
+  - Copy changes: "change the empty state message", "rename NOTABL to My Notes"
+
+  These work in one shot because the model has the complete code + CSS + scope docs. Sonnet
+  (or Opus) gets it right first try. The retry loop only fires ~5-10% of the time for syntax
+   issues.
+
+  The retry loop helps (but marginally)
+
+  - Large rewrites where the model might forget a closing bracket in 280 lines of JSX
+  - Complex template literals inside JSX (backtick strings with ${} inside curly braces)
+
+  This is syntax insurance, not intelligence. It saves maybe 1 in 15 requests from failing.
+
+  Where a real agentic loop would be much better
+
+  Things the current approach can't do well because it lacks tools and multi-step reasoning:
+
+  1. Bug reports: "the content disappears when I switch documents" — needs to reason about
+  state flow, form a hypothesis, try a fix, verify it doesn't break something else. Today
+  the model just rewrites the whole component and hopes.
+  2. Features that need API understanding: "make the editor support code blocks" or "add
+  image embedding" — the model doesn't know what RichEditor actually supports. A tool to
+  read RichEditor.tsx source would let it make informed decisions instead of guessing.
+  3. Coordinated multi-step changes: "add tags to documents, let me filter by tag" — this
+  needs: (a) understand the document data shape from the actual API, (b) add tag UI, (c) add
+   filter logic, (d) make sure they work together. Today it's one big bang attempt.
+  4. Changes that depend on real data: "show me my most active writing days" — needs to see
+  actual document timestamps to know what visualization makes sense.
+  5. Iterative refinement: "make it look more like Notion" — vague requests where seeing
+  intermediate output and adjusting would produce much better results than one shot.
+
+  The practical takeaway
+
+  For notabl, you could split into two paths:
+
+  ┌─────────────────┬────────────────────────────────────────────┬───────────────┬─────────┐
+  │      Path       │                    When                    │     Model     │  Speed  │
+  ├─────────────────┼────────────────────────────────────────────┼───────────────┼─────────┤
+  │ Fast path       │ Styling, layout, simple features, copy     │ Opus 4.6 or   │ ~3-5s   │
+  │ (single call)   │ changes                                    │ Sonnet 4.5    │         │
+  ├─────────────────┼────────────────────────────────────────────┼───────────────┼─────────┤
+  │ Agent path      │ Bug fixes, features needing API knowledge, │ Opus 4.6 with │ ~15-30s │
+  │ (tools + loop)  │  multi-step changes, vague requests        │  tools        │         │
+  └─────────────────┴────────────────────────────────────────────┴───────────────┴─────────┘
+
+  The fast path would feel nearly instant. The agent path would be slower but would actually
+   succeed at things the current approach struggles with — especially anything where the
+  model needs to look something up rather than just generate from what it already knows.
+
+✻ Worked for 1m 28s                                                                         
+   
+❯ but then don't we need to add yet another thing: a classifier of some sort? what does     
+   that do to speed and complexity?                                                        
+                                                                                            
+⏺ You're right — a classifier is a tax on every request. You'd pay ~1-2s of latency +       
+  another API call just to decide which path to take. And the classifier itself can be      
+  wrong.                                                                                    
+                                               
+  Better options that avoid it:                                                             
+                                       
+  1. Just use the fast path for everything. Your current loop is already almost this — it's
+  one LLM call with syntax retry. Drop the loop, use a single Opus 4.6 call. For the 80% of
+  requests that are simple, it's faster. For the 20% that are complex, Opus does its best in
+   one shot — which is honestly about as good as the current retry loop, since the retries
+  only fix syntax, not logic.
+
+  2. Fast-first with self-escalation. Single call, but in the system prompt tell the model:
+  "If this request requires understanding code you don't have access to (like RichEditor
+  internals), say so in your response." Then the frontend can show "I'd need to look deeper
+  — want me to?" and the user triggers the slow path manually. No classifier, no wasted
+  calls. The model classifies as part of its answer.
+
+  3. Let the user choose. Two buttons in ChatPanel: a quick-send and a "deep edit" mode.
+  Users learn fast which to use. Zero AI overhead for routing.
+
+  Option 2 is probably the sweet spot — zero added latency, zero added complexity, and the
+  model is the classifier for free since it's already processing the request. You only pay
+  for the agent path when the user explicitly opts in after being told it's needed.
+
