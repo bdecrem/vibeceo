@@ -86,7 +86,7 @@ export default function ChatPanel({
           onClick={() => setOpen(true)}
           style={{
             position: "fixed",
-            bottom: 20,
+            bottom: "max(20px, env(safe-area-inset-bottom, 0px))",
             right: 20,
             width: 48,
             height: 48,
@@ -295,7 +295,7 @@ export default function ChatPanel({
             border: "1px solid #333",
             background: "#1a1a2e",
             color: "#eee",
-            fontSize: 13,
+            fontSize: 16,
             outline: "none",
           }}
         />

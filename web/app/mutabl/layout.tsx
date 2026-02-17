@@ -1,4 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kochi.to"),
@@ -16,7 +24,7 @@ export default function MutableLayout({
 }) {
   return (
     <>
-      <style>{`html,body{overflow-x:hidden;overscroll-behavior-x:none;}`}</style>
+      <style>{`html,body{margin:0;padding:0;height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none;}`}</style>
       {children}
     </>
   );

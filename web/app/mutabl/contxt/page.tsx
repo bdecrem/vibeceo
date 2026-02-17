@@ -105,7 +105,7 @@ export default function ContxtPage() {
     return (
       <div
         style={{
-          minHeight: "100vh",
+          height: "100dvh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -134,7 +134,7 @@ export default function ContxtPage() {
     return (
       <div
         style={{
-          minHeight: "100vh",
+          height: "100dvh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -149,7 +149,7 @@ export default function ContxtPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0a1a" }}>
+    <div style={{ height: "100dvh", overflow: "hidden", background: "#0a0a1a" }}>
       <SettingsMenu
         userHandle={user.handle}
         appCode={appCode}

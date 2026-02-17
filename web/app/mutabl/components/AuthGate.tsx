@@ -71,7 +71,7 @@ export default function AuthGate({
   return (
     <div
       style={{
-        minHeight: "100vh",
+        height: "100dvh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -109,7 +109,7 @@ export default function AuthGate({
                 border: "1px solid #333",
                 background: "#1a1a2e",
                 color: "#eee",
-                fontSize: 15,
+                fontSize: 16,
                 marginBottom: 12,
                 boxSizing: "border-box",
                 outline: "none",
@@ -163,7 +163,7 @@ export default function AuthGate({
                 border: "1px solid #333",
                 background: "#1a1a2e",
                 color: "#eee",
-                fontSize: 15,
+                fontSize: 16,
                 marginBottom: 12,
                 boxSizing: "border-box",
                 textAlign: "center",
