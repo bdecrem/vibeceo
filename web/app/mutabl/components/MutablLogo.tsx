@@ -3,19 +3,15 @@
 import { useState, useEffect } from "react";
 
 export default function MutablLogo() {
-  const [tick, setTick] = useState(0);
   const [dark, setDark] = useState(true);
+  const [colorIndex, setColorIndex] = useState(0);
+
+  const dotColors = ["#6C5CE7", "#00CEC9", "#FD79A8", "#FDCB6E"];
 
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 50);
+    const id = setInterval(() => setColorIndex(i => (i + 1) % dotColors.length), 4000);
     return () => clearInterval(id);
   }, []);
-
-  const letters = ["M", "U", "T", "A", "B", "L"];
-  const speeds = [0.7, 0.9, 0.6, 0.8, 1.0, 0.75];
-  const phases = [0, 1.2, 2.4, 0.8, 3.1, 1.7];
-  const dotColors = ["#6C5CE7", "#00CEC9", "#FD79A8", "#FDCB6E"];
-  const ci = Math.floor((tick / 80) % dotColors.length);
 
   const bg = dark ? "#0a0a1a" : "#fafaf9";
   const letterColor = dark ? "#e8e8e8" : "#1a1a1a";
@@ -36,28 +32,41 @@ export default function MutablLogo() {
       minHeight: "100vh", background: bg, fontFamily: "SF Mono, Fira Code, Courier New, monospace",
       transition: "background 0.4s ease",
     }}>
+      <style>{`
+        @keyframes mutabl-l-drift {
+          0%, 100% { transform: rotate(0deg) translateY(0); }
+          50% { transform: rotate(-2.5deg) translateY(-1.5px); }
+        }
+        @keyframes mutabl-dot-breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.18); }
+        }
+        @keyframes mutabl-card-dot {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
+        }
+      `}</style>
       <div style={{ display: "flex", alignItems: "baseline", gap: "2px" }}>
-        {letters.map((letter, i) => {
-          const t = tick * 0.05 * speeds[i] + phases[i];
-          const y = Math.sin(t) * 3;
-          const r = Math.sin(t * 0.7 + i) * 1.2;
-          return (
-            <span key={i} style={{
-              display: "inline-block",
-              fontSize: "96px", fontWeight: 700, lineHeight: 1,
-              color: letterColor,
-              transform: `translateY(${y}px) rotate(${r}deg)`,
-              transition: "color 0.4s ease",
-            }}>{letter}</span>
-          );
-        })}
+        {["M", "U", "T", "A", "B"].map((letter, i) => (
+          <span key={i} style={{
+            fontSize: "96px", fontWeight: 700, lineHeight: 1,
+            color: letterColor, transition: "color 0.4s ease",
+          }}>{letter}</span>
+        ))}
+        <span style={{
+          display: "inline-block",
+          fontSize: "96px", fontWeight: 700, lineHeight: 1,
+          color: letterColor, transition: "color 0.4s ease",
+          animation: "mutabl-l-drift 8s ease-in-out infinite",
+          transformOrigin: "bottom center",
+        }}>L</span>
         <div style={{
           width: 14, height: 14, borderRadius: "50%",
-          background: dotColors[ci], marginLeft: 8, marginBottom: 8,
+          background: dotColors[colorIndex], marginLeft: 8, marginBottom: 8,
           alignSelf: "flex-end",
-          transform: `scale(${1 + Math.sin(tick * 0.08) * 0.15})`,
-          boxShadow: `0 0 ${12 + Math.sin(tick * 0.08) * 6}px ${dotColors[ci]}44`,
-          transition: "background 0.5s ease"
+          animation: "mutabl-dot-breathe 3s ease-in-out infinite",
+          boxShadow: `0 0 12px ${dotColors[colorIndex]}44`,
+          transition: "background 0.8s ease, box-shadow 0.8s ease",
         }} />
       </div>
       <div style={{
@@ -72,9 +81,7 @@ export default function MutablLogo() {
           { name: "TODOIT", desc: "tasks, shaped by you", href: "/mutabl/todoit", color: "#6C5CE7" },
           { name: "CONTXT", desc: "relationships, never forgotten", href: "/mutabl/contxt", color: "#00CEC9" },
           { name: "NOTABL", desc: "pages, published your way", href: "/mutabl/notabl", color: "#FD79A8" },
-        ].map((app, i) => {
-          const pulse = Math.sin(tick * 0.04 + i * 2) * 0.5 + 0.5;
-          return (
+        ].map((app, i) => (
             <a key={app.name} href={app.href}
                style={{
                  display: "flex", flexDirection: "column", alignItems: "flex-start",
@@ -97,8 +104,8 @@ export default function MutablLogo() {
                 <div style={{
                   width: 7, height: 7, borderRadius: "50%",
                   background: app.color,
-                  opacity: 0.5 + pulse * 0.5,
-                  boxShadow: `0 0 ${4 + pulse * 4}px ${app.color}66`,
+                  animation: `mutabl-card-dot 4s ease-in-out ${i * 1.3}s infinite`,
+                  boxShadow: `0 0 6px ${app.color}66`,
                 }} />
                 <span style={{
                   fontSize: 18, fontWeight: 700, color: appNameColor,
@@ -109,8 +116,7 @@ export default function MutablLogo() {
                 {app.desc}
               </span>
             </a>
-          );
-        })}
+        ))}
       </div>
 
       <div style={{
