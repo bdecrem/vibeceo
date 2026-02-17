@@ -430,7 +430,7 @@ function generateBassPattern() {
     const root = scale[0] + track.bassOct * 12;
     const notes = [root, root, root, root, root, root, root, root];
     // Sparse chromatic movement — mostly root with occasional dissonance
-    const darkIntervals = [0, 0, 0, 1, -1, 5, 6, 12]; // root, minor 2nd, tritone, octave
+    const darkIntervals = [0, 0, 0, 0, 0, -1, 1, -12]; // mostly root, occasional minor 2nd, sub octave
     for (let i = 0; i < 8; i++) {
         if (Math.random() < 0.2) {
             notes[i] = root + pick(darkIntervals);
@@ -452,13 +452,13 @@ function makeBassNote(time, midi, dur) {
     osc2.frequency.setValueAtTime(freq * 0.998, time); // slight detune
 
     filter.type = 'lowpass';
-    const cutoff = track.style === 'acid' ? 1400 : 500;
+    const cutoff = track.style === 'acid' ? 400 : 200;
     filter.frequency.setValueAtTime(cutoff, time);
-    filter.frequency.exponentialRampToValueAtTime(120, time + dur * 0.8);
-    filter.Q.value = track.style === 'acid' ? 16 : 8;
+    filter.frequency.exponentialRampToValueAtTime(60, time + dur * 0.8);
+    filter.Q.value = track.style === 'acid' ? 4 : 2;
 
-    gain.gain.setValueAtTime(0.3, time);
-    gain.gain.setValueAtTime(0.3, time + dur * 0.7);
+    gain.gain.setValueAtTime(0.35, time);
+    gain.gain.setValueAtTime(0.35, time + dur * 0.7);
     gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
 
     osc.connect(filter);
@@ -514,19 +514,19 @@ function makeArpNote(time, midi, dur) {
     const delay = ctx.createDelay(0.5);
     const delayGain = ctx.createGain();
 
-    osc.type = 'square';
+    osc.type = 'triangle';
     osc.frequency.setValueAtTime(midiToFreq(midi), time);
 
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(1800, time);
-    filter.frequency.exponentialRampToValueAtTime(300, time + dur);
-    filter.Q.value = 6;
+    filter.frequency.setValueAtTime(600, time);
+    filter.frequency.exponentialRampToValueAtTime(150, time + dur);
+    filter.Q.value = 2;
 
-    gain.gain.setValueAtTime(0.04, time);
+    gain.gain.setValueAtTime(0.025, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
 
     delay.delayTime.value = SIXTEENTH * 3; // dotted 16th delay
-    delayGain.gain.value = 0.2;
+    delayGain.gain.value = 0.35;
 
     osc.connect(filter);
     filter.connect(gain);
@@ -575,7 +575,7 @@ function scheduleArp() {
             }
 
             // Rhythmic gate: sparse — most 16ths are silent
-            const gate = Math.random() < 0.4;
+            const gate = Math.random() < 0.2;
             if (gate) {
                 const note = getNextNote();
                 const dur = SIXTEENTH * pick([1, 2, 3]);
