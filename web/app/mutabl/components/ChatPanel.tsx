@@ -25,6 +25,13 @@ export default function ChatPanel({
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [dotColorIndex, setDotColorIndex] = useState(0);
+  const dotColors = useRef(["#6C5CE7", "#00CEC9", "#FD79A8", "#FDCB6E"]).current;
+
+  useEffect(() => {
+    const id = setInterval(() => setDotColorIndex((i) => (i + 1) % 4), 4000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -68,29 +75,75 @@ export default function ChatPanel({
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        style={{
-          position: "fixed",
-          bottom: 20,
-          right: 20,
-          width: 48,
-          height: 48,
-          borderRadius: "50%",
-          background: "#6366f1",
-          color: "#fff",
-          border: "none",
-          cursor: "pointer",
-          fontSize: 22,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 4px 20px rgba(99,102,241,0.4)",
-          zIndex: 1000,
-        }}
-      >
-        AI
-      </button>
+      <>
+        <style>{`
+          @keyframes mutabl-fab-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.35); }
+          }
+        `}</style>
+        <button
+          onClick={() => setOpen(true)}
+          style={{
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            width: 48,
+            height: 48,
+            borderRadius: "50%",
+            background: "#0f0f23",
+            border: "1px solid #2a2a4a",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: `0 4px 24px rgba(0,0,0,0.5), 0 0 20px ${dotColors[dotColorIndex]}18`,
+            zIndex: 1000,
+            padding: 0,
+            transition: "box-shadow 0.8s ease, border-color 0.3s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = `${dotColors[dotColorIndex]}60`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "#2a2a4a";
+          }}
+        >
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "flex-end",
+              gap: 2,
+              lineHeight: 1,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "'SF Mono', 'Fira Code', 'Courier New', monospace",
+                fontSize: 21,
+                fontWeight: 700,
+                color: "#e8e8e8",
+                lineHeight: 1,
+              }}
+            >
+              M
+            </span>
+            <span
+              style={{
+                display: "block",
+                width: 5,
+                height: 5,
+                borderRadius: "50%",
+                background: dotColors[dotColorIndex],
+                boxShadow: `0 0 8px ${dotColors[dotColorIndex]}88`,
+                transition: "background 0.8s ease, box-shadow 0.8s ease",
+                animation: "mutabl-fab-breathe 3s ease-in-out infinite",
+                marginBottom: 3,
+              }}
+            />
+          </span>
+        </button>
+      </>
     );
   }
 
@@ -121,8 +174,33 @@ export default function ChatPanel({
           alignItems: "center",
         }}
       >
-        <span style={{ color: "#eee", fontSize: 14, fontWeight: 600 }}>
-          {title}
+        <span style={{ display: "inline-flex", alignItems: "flex-end", gap: 3 }}>
+          <span
+            style={{
+              fontFamily: "'SF Mono', 'Fira Code', 'Courier New', monospace",
+              fontSize: 14,
+              fontWeight: 700,
+              color: "#e8e8e8",
+              lineHeight: 1,
+            }}
+          >
+            M
+          </span>
+          <span
+            style={{
+              display: "block",
+              width: 4,
+              height: 4,
+              borderRadius: "50%",
+              background: dotColors[dotColorIndex],
+              boxShadow: `0 0 6px ${dotColors[dotColorIndex]}66`,
+              transition: "background 0.8s ease, box-shadow 0.8s ease",
+              marginBottom: 2,
+            }}
+          />
+          <span style={{ color: "#666", fontSize: 12, marginLeft: 4, fontWeight: 400 }}>
+            {title}
+          </span>
         </span>
         <button
           onClick={() => setOpen(false)}

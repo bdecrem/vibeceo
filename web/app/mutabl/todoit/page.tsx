@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import AuthGate from "../components/AuthGate";
 import AppRenderer from "../components/AppRenderer";
 import ChatPanel from "../components/ChatPanel";
@@ -33,6 +33,18 @@ export default function TodoitPage() {
       .finally(() => setChecking(false));
   }, []);
 
+  const reloadConfig = useCallback(() => {
+    fetch(CONFIG_ENDPOINT)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.app_code) {
+          setAppCode(data.app_code);
+          setAppCss(data.app_css || "");
+        }
+        if (data.update_available) setUpdateAvailable(true);
+      });
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     Promise.all([
@@ -48,6 +60,18 @@ export default function TodoitPage() {
       }
     });
   }, [user, refreshTasks]);
+
+  useEffect(() => {
+    if (!user) return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        reloadConfig();
+        refreshTasks();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [user, reloadConfig, refreshTasks]);
 
   const handleCodeUpdate = (newCode: string, css: string | undefined, _version: number) => {
     setAppCode(newCode);
