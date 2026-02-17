@@ -123,7 +123,11 @@ export async function agentLoop(
 
 // Shared system prompt pieces
 export const SCOPE_DOCS = `AVAILABLE IN SCOPE (injected by the wrapper — do NOT import these):
-- React hooks: useState, useEffect, useRef, useMemo, useCallback
+- React hooks: useState, useEffect, useRef, useMemo, useCallback, useContext
+- ScopeContext: React context that provides fresh dynamic data. CRITICAL: your App MUST read
+  dynamic data from context to stay reactive:
+  const { tasks, addTask, toggleTask, deleteTask, updateTask, user } = useContext(ScopeContext);
+  Put this line at the TOP of your App function, before any other hooks.
 - Task data: tasks (array of {id, title, completed, properties, created_at})
 - Task operations: addTask(title, properties?), toggleTask(id), deleteTask(id), updateTask(id, {title?, completed?, properties?})
 - User info: user ({handle})
