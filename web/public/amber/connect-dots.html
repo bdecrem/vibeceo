@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CONNECT THE DOTS — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="CONNECT THE DOTS — Amber">
+  <meta property="og:description" content="Conspiracy theory generator. Tap to reveal the TRUTH they don't want you to know.">
+  <meta property="og:image" content="https://intheamber.com/amber/connect-dots-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/connect-dots.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CONNECT THE DOTS — Amber">
+  <meta name="twitter:description" content="Conspiracy theory generator. Tap to reveal the TRUTH they don't want you to know.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/connect-dots-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    #title {
+      font-size: clamp(18px, 5vw, 24px);
+      font-weight: bold;
+      color: #FFD700;
+      text-align: center;
+      margin-bottom: 30px;
+      letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    
+    #theory-box {
+      background: rgba(212, 165, 116, 0.05);
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+      margin-bottom: 30px;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.2);
+    }
+    
+    .connection {
+      font-size: clamp(14px, 3.5vw, 18px);
+      line-height: 1.8;
+      color: #D4A574;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .highlight {
+      color: #FFD700;
+      font-weight: bold;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+    
+    .arrow {
+      color: #2D9596;
+      font-size: clamp(16px, 4vw, 22px);
+      margin: 0 8px;
+    }
+    
+    .conclusion {
+      font-size: clamp(16px, 4vw, 22px);
+      color: #FF6B35;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(212, 165, 116, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
+    }
+    
+    #hint {
+      font-size: clamp(12px, 3vw, 14px);
+      color: rgba(212, 165, 116, 0.6);
+      text-align: center;
+      font-style: italic;
+    }
+    
+    #counter {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-size: clamp(12px, 3vw, 14px);
+      color: rgba(212, 165, 116, 0.5);
+    }
+    
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg"></canvas>
+  <div id="counter">Theories revealed: <span id="count">0</span></div>
+  <div id="title">CONNECT THE DOTS</div>
+  <div id="theory-box">
+    <div class="connection" id="theory"></div>
+    <div class="conclusion" id="conclusion"></div>
+  </div>
+  <div id="hint">Tap anywhere to reveal another truth</div>
+
+  <script>
+    const canvas = document.getElementById('bg');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Ambient particles
+    const particles = [];
+    for (let i = 0; i < 50; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        radius: Math.random() * 2 + 1,
+        color: ['#D4A574', '#FFD700', '#2D9596'][Math.floor(Math.random() * 3)]
+      });
+    }
+    
+    function drawParticles() {
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        
+        // Draw connections
+        particles.forEach(other => {
+          const dx = p.x - other.x;
+          const dy = p.y - other.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+ctx.strokeStyle = `rgba(45, 149, 150, ${0.2 * (1 - dist / 100)})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(other.x, other.y);
+            ctx.stroke();
+          }
+        });
+      });
+      
+      requestAnimationFrame(drawParticles);
+    }
+    drawParticles();
+    
+    // Conspiracy theory components
+    const subjects = [
+      "Your microwave",
+      "Pigeons in the park",
+      "The Fibonacci sequence",
+      "Grocery store muzak",
+      "Bluetooth signals",
+      "Coffee shop WiFi names",
+      "The moon landing footage",
+      "Banana ripeness algorithms",
+      "Traffic light timing",
+      "Pop song earworms",
+      "Flight path patterns",
+      "QR codes on receipts",
+      "The number of Starbucks locations",
+      "Auto-correct errors",
+      "Printer paper jams",
+      "USB port orientations",
+      "Captcha difficulty spikes",
+      "Streaming buffering delays",
+      "The way ice cubes melt",
+      "Bird migration routes",
+      "Prime numbers",
+      "The layout of QWERTY keyboards",
+      "Fortune cookie predictions",
+      "Sneeze timing",
+      "Deja vu frequency"
+    ];
+    
+    const connections = [
+      "is actually tracking",
+      "was designed to monitor",
+      "secretly communicates with",
+      "contains encrypted data about",
+      "is harvesting information on",
+      "was invented to distract from",
+      "is a cover story for",
+      "directly correlates with",
+      "was engineered to influence",
+      "operates as a surveillance tool for"
+    ];
+    
+    const targets = [
+      "your sleep patterns",
+      "global consciousness shifts",
+      "underground bunker locations",
+      "your emotional vulnerabilities",
+      "interdimensional portal coordinates",
+      "the true shape of continents",
+      "your purchasing impulses",
+      "time dilation events",
+      "collective decision-making",
+      "ancient civilization warnings",
+      "solar flare predictions",
+      "your attention span decay",
+      "simulation render boundaries",
+      "mass consciousness experiments",
+      "future timeline variations",
+      "your dopamine feedback loops",
+      "weather pattern manipulation",
+      "memory consolidation interference",
+      "your predictable behavior patterns",
+      "the location of Atlantis"
+    ];
+    
+    const conclusions = [
+      "Wake up.",
+      "They don't want you to know this.",
+      "Follow the pattern.",
+      "It's all connected.",
+      "The truth is in plain sight.",
+      "You've been warned.",
+      "Do your own research.",
+      "Connect the dots.",
+      "Question everything.",
+      "This is not a coincidence.",
+      "The simulation is glitching.",
+      "You're closer than you think.",
+      "They're watching.",
+      "The pattern repeats.",
+      "Nothing is random."
+    ];
+    
+    let count = 0;
+    let audioContext;
+    
+    function playTone(freq) {
+      if (!audioContext) {
+        audioContext = new AudioContext();
+      }
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      osc.start();
+      osc.stop(audioContext.currentTime + 0.3);
+    }
+    
+    function generateTheory() {
+      const subject = subjects[Math.floor(Math.random() * subjects.length)];
+      const connection = connections[Math.floor(Math.random() * connections.length)];
+      const target = targets[Math.floor(Math.random() * targets.length)];
+      const conclusion = conclusions[Math.floor(Math.random() * conclusions.length)];
+      
+      const theory = `<span class="highlight">${subject}</span> <span class="arrow">→</span> ${connection} <span class="arrow">→</span> <span class="highlight">${target}</span>`;
+      
+      document.getElementById('theory').innerHTML = theory;
+      document.getElementById('conclusion').textContent = conclusion;
+      
+      count++;
+      document.getElementById('count').textContent = count;
+      
+      playTone(200 + count * 20);
+    }
+    
+    // Generate first theory on load
+    generateTheory();
+    
+    // Generate new theory on tap
+    document.body.addEventListener('click', () => {
+      generateTheory();
+    });
+    
+    // Resize handler
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
