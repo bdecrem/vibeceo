@@ -1172,99 +1172,140 @@ export default function BlastPage() {
       }
       ctx.globalAlpha = 1;
 
-      // ── PLAYER (SLIME) ─────────────────────────────
+      // ── PLAYER (CHEVRON HULL) ────────────────────────
       const player = game.player;
 
-      // Find nearest shape for eye tracking
+      // Find nearest enemy for eye tracking
       let nearestShape: Shape | null = null;
       let nearestDist = Infinity;
-      let shapeNearBottom = false;
       for (const shape of game.shapes) {
         const dx = shape.x - player.x;
         const dy = shape.y - player.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < nearestDist) { nearestDist = dist; nearestShape = shape; }
-        if (shape.y > canvasSize.h - 150) shapeNearBottom = true;
       }
+      // Also track boss
+      if (game.boss) {
+        const dx = game.boss.x - player.x;
+        const dy = game.boss.y - player.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < nearestDist) { nearestDist = dist; nearestShape = null; /* use boss pos below */ }
+      }
+      const trackX = nearestShape ? nearestShape.x : (game.boss ? game.boss.x : player.x);
+      const trackY = nearestShape ? nearestShape.y : (game.boss ? game.boss.y : player.y - 100);
 
       const isShooting = player.shootCooldown > 0.15;
-      const isPanicked = shapeNearBottom;
+      // Tilt toward movement direction
+      const moveDx = inputRef.current.targetX - player.x;
+      const tilt = Math.max(-0.25, Math.min(0.25, moveDx * 0.003));
 
       ctx.save();
       ctx.translate(player.x, player.y);
       ctx.scale(1 / player.squash, player.squash);
+      ctx.rotate(tilt);
 
-      // Ground glow
-      ctx.globalAlpha = 0.15;
+      // Ground glow (reflected light on floor)
+      ctx.globalAlpha = 0.12;
       ctx.fillStyle = THEME.slime;
       ctx.beginPath();
-      ctx.ellipse(0, 22, 30, 6, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 24, 22, 5, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
 
-      // Body glow
-      ctx.shadowBlur = 25;
+      // Hull outer glow
+      ctx.globalAlpha = 0.08;
+      ctx.shadowBlur = 30;
       ctx.shadowColor = THEME.slime;
-
-      // Slime body — organic blob with bezier curves
       ctx.fillStyle = THEME.slime;
-      const wobble = Math.sin(t * 4) * 1.5;
       ctx.beginPath();
-      ctx.moveTo(0, -18);
-      ctx.bezierCurveTo(14 + wobble, -18, 26, -8, 26, 2);
-      ctx.bezierCurveTo(26, 14, 18, 20, 0, 20);
-      ctx.bezierCurveTo(-18, 20, -26, 14, -26, 2);
-      ctx.bezierCurveTo(-26, -8, -14 - wobble, -18, 0, -18);
+      ctx.moveTo(0, -22);
+      ctx.lineTo(22, 16);
+      ctx.lineTo(0, 8);
+      ctx.lineTo(-22, 16);
+      ctx.closePath();
       ctx.fill();
       ctx.shadowBlur = 0;
-
-      // Highlight
-      ctx.globalAlpha = 0.25;
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.ellipse(-8, -10, 8, 4, -0.3, 0, Math.PI * 2);
-      ctx.fill();
       ctx.globalAlpha = 1;
 
-      // Eyes
-      const eyeY = -4;
-      const eyeH = isShooting ? 3 : (isPanicked ? 9 : 6);
-      ctx.fillStyle = '#0f172a';
+      // Hull wireframe — chevron pointing up
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = THEME.slime;
+      ctx.strokeStyle = THEME.slime;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      // Main chevron shape
       ctx.beginPath();
-      ctx.ellipse(-9, eyeY, 5, eyeH, 0, 0, Math.PI * 2);
-      ctx.ellipse(9, eyeY, 5, eyeH, 0, 0, Math.PI * 2);
+      ctx.moveTo(0, -20);       // tip
+      ctx.lineTo(18, 14);       // right wing
+      ctx.lineTo(0, 6);         // inner notch
+      ctx.lineTo(-18, 14);      // left wing
+      ctx.closePath();
+      ctx.stroke();
+
+      // Muzzle flare when shooting
+      if (isShooting) {
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = THEME.goo;
+        ctx.fillStyle = THEME.goo;
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(0, -24);
+        ctx.lineTo(4, -20);
+        ctx.lineTo(-4, -20);
+        ctx.closePath();
+        ctx.fill();
+        // Bright core
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.arc(0, -22, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+      }
+
+      // Inner struts (structural detail)
+      ctx.strokeStyle = THEME.slime;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.25;
+      ctx.beginPath();
+      ctx.moveTo(0, -14);
+      ctx.lineTo(10, 10);
+      ctx.moveTo(0, -14);
+      ctx.lineTo(-10, 10);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Core eye — single glowing dot that tracks nearest enemy
+      const eyeDx = trackX - player.x;
+      const eyeDy = trackY - player.y;
+      const eyeDist = Math.sqrt(eyeDx * eyeDx + eyeDy * eyeDy);
+      const eyeMaxOffset = 4;
+      const eyeOX = eyeDist > 0 ? (eyeDx / eyeDist) * eyeMaxOffset : 0;
+      const eyeOY = eyeDist > 0 ? Math.min((eyeDy / eyeDist) * eyeMaxOffset, 2) : 0;
+
+      // Eye socket area (subtle dark)
+      ctx.fillStyle = '#00000040';
+      ctx.beginPath();
+      ctx.arc(0, -2, 6, 0, Math.PI * 2);
       ctx.fill();
 
-      // Pupils — track nearest shape
-      if (!isShooting) {
-        let pupilOX = 0, pupilOY = 0;
-        if (nearestShape) {
-          const dx = nearestShape.x - player.x;
-          const dy = nearestShape.y - player.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist > 0) { pupilOX = (dx / dist) * 2.5; pupilOY = Math.min((dy / dist) * 2, 1); }
-        }
-        const ps = isPanicked ? 1.5 : 2.5;
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(-9 + pupilOX, eyeY + pupilOY, ps, 0, Math.PI * 2);
-        ctx.arc(9 + pupilOX, eyeY + pupilOY, ps, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Mouth
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 2;
-      ctx.lineCap = 'round';
+      // Eye glow
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = THEME.slime;
+      ctx.fillStyle = THEME.slime;
       ctx.beginPath();
-      if (isShooting) {
-        ctx.arc(0, 8, 4, 0, Math.PI * 2);
-      } else if (isPanicked) {
-        ctx.arc(0, 12, 7, Math.PI * 0.15, Math.PI * 0.85);
-      } else {
-        ctx.arc(0, 6, 7, Math.PI * 0.15, Math.PI * 0.85);
-      }
-      ctx.stroke();
+      ctx.arc(eyeOX, -2 + eyeOY, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eye hot center
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(eyeOX, -2 + eyeOY, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
 
       ctx.restore();
 
@@ -1318,7 +1359,7 @@ export default function BlastPage() {
               BLAST
             </h1>
             <p style={{ color: '#6b7280', fontSize: 14, letterSpacing: 3, marginBottom: 24 }}>
-              SLIME VS SHAPES
+              BREAK THE SHAPES
             </p>
             {highScore > 0 && (
               <p style={{ color: '#4b5563', fontSize: 12, marginBottom: 24 }}>
@@ -1400,7 +1441,7 @@ export default function BlastPage() {
               <ShareButtonContainer
                 id="share-btn-blast"
                 url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/blast/share/${score}`}
-                text={`I scored ${score} in BLAST! Wave ${wave} 👾`}
+                text={`${score} points — Wave ${wave} in BLAST`}
                 style="minimal"
                 socialLoaded={socialLoaded}
               />
