@@ -18,6 +18,7 @@ const CHANGES_ENDPOINT = "/api/mutabl/todoit/changes";
 export default function TodoitPage() {
   const [user, setUser] = useState<User | null>(null);
   const [appCode, setAppCode] = useState<string | null>(null);
+  const [appCss, setAppCss] = useState<string>("");
   const [checking, setChecking] = useState(true);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const { tasks, refreshTasks, addTask, toggleTask, deleteTask, updateTask } =
@@ -40,6 +41,7 @@ export default function TodoitPage() {
     ]).then(([configData]) => {
       if (configData.app_code) {
         setAppCode(configData.app_code);
+        setAppCss(configData.app_css || "");
       }
       if (configData.update_available) {
         setUpdateAvailable(true);
@@ -47,8 +49,9 @@ export default function TodoitPage() {
     });
   }, [user, refreshTasks]);
 
-  const handleCodeUpdate = (newCode: string, _version: number) => {
+  const handleCodeUpdate = (newCode: string, css: string | undefined, _version: number) => {
     setAppCode(newCode);
+    if (css !== undefined) setAppCss(css);
   };
 
   const logout = async () => {
@@ -112,6 +115,7 @@ export default function TodoitPage() {
       <SettingsMenu
         userHandle={user.handle}
         appCode={appCode}
+        appCss={appCss}
         updateAvailable={updateAvailable}
         onUpdateSkip={() => setUpdateAvailable(false)}
         onUpdateAccept={() => setUpdateAvailable(false)}
@@ -122,6 +126,7 @@ export default function TodoitPage() {
       />
       <AppRenderer
         code={appCode}
+        css={appCss}
         scope={{
           tasks,
           addTask,

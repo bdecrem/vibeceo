@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
   const { data: base } = await supabase
     .from("contxt_config")
-    .select("app_code, version")
+    .select("app_code, app_css, version")
     .is("handle", null)
     .single();
 
@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
     .from("contxt_config")
     .update({
       app_code: base.app_code,
+      app_css: base.app_css,
       base_version: base.version,
       modified: false,
       updated_at: new Date().toISOString(),
@@ -95,5 +96,6 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     success: true,
     app_code: base.app_code,
+    app_css: base.app_css,
   });
 }

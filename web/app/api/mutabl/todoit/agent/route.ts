@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const [configResult, tasksResult] = await Promise.all([
       supabase
         .from("todoit_config")
-        .select("app_code, version")
+        .select("app_code, app_css, version")
         .eq("id", session.userId)
         .single(),
       supabase
@@ -75,14 +75,17 @@ export async function POST(request: NextRequest) {
     }
 
     const currentCode = configResult.data.app_code;
+    const currentCss = configResult.data.app_css || "";
     const currentVersion = configResult.data.version;
     const tasks = tasksResult.data || [];
+
+    const cssSection = currentCss ? `\nCURRENT APP CSS:\n\`\`\`css\n${currentCss}\n\`\`\`\n` : "";
 
     const userPrompt = `CURRENT APP CODE:
 \`\`\`jsx
 ${currentCode}
 \`\`\`
-
+${cssSection}
 CURRENT TASKS (${tasks.length} total):
 ${tasks.length > 0 ? JSON.stringify(tasks.slice(0, 10), null, 2) : "(no tasks yet)"}
 
@@ -92,6 +95,7 @@ USER REQUEST: ${message.trim()}`;
       systemPrompt: BUILDER_SYSTEM_PROMPT,
       userMessage: userPrompt,
       currentCode,
+      currentCss,
     });
 
     if (!result.ok) {
@@ -102,16 +106,20 @@ USER REQUEST: ${message.trim()}`;
       });
     }
 
-    // Save new code to Supabase
+    // Save new code + CSS to Supabase
     const newVersion = currentVersion + 1;
+    const updatePayload: Record<string, unknown> = {
+      app_code: result.code,
+      version: newVersion,
+      modified: true,
+      updated_at: new Date().toISOString(),
+    };
+    if (result.css !== undefined) {
+      updatePayload.app_css = result.css;
+    }
     const { error: updateError } = await supabase
       .from("todoit_config")
-      .update({
-        app_code: result.code,
-        version: newVersion,
-        modified: true,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", session.userId);
 
     if (updateError) {
@@ -130,6 +138,7 @@ USER REQUEST: ${message.trim()}`;
 
     return NextResponse.json({
       app_code: result.code,
+      app_css: result.css !== undefined ? result.css : currentCss,
       message: result.message,
       version: newVersion,
     });

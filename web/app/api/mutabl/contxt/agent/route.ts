@@ -57,9 +57,16 @@ const CONTXT_SCOPE_DOCS = `AVAILABLE IN SCOPE (injected by the wrapper — do NO
 
 NOTE: Logout and settings are handled by the app wrapper — do NOT add logout buttons to the component.`;
 
+const CONTXT_CSS_RULES = `CSS STYLING:
+- You can use inline styles (style={{ }}) OR CSS classes (className="...") OR both
+- If using CSS classes, return them in a separate \`\`\`css code block AFTER the \`\`\`jsx block
+- CSS classes should use a descriptive prefix (e.g., .app-header, .person-card)
+- CSS enables: hover states, transitions, animations, media queries, pseudo-elements
+- If no CSS changes needed, omit the \`\`\`css block entirely — existing CSS will be preserved`;
+
 const CONTXT_CODE_RULES = `RULES:
 - Output a SINGLE React component named App (function App() { ... })
-- Use inline styles (style={{ }}) — no CSS imports, no Tailwind classes
+- You can use inline styles (style={{ }}) OR CSS classes (className="...") OR both
 - Do NOT import anything — all dependencies are in scope
 - The component must be self-contained in one function
 - For extra per-person data, use person.properties.fieldName and updatePerson(id, { properties: { ...person.properties, fieldName: value } })
@@ -68,8 +75,11 @@ const CONTXT_CODE_RULES = `RULES:
 - Preserve existing functionality unless the user explicitly asks to remove it
 - The teal color scheme (#00CEC9) is the default accent — respect it unless user asks for a different theme
 
+${CONTXT_CSS_RULES}
+
 OUTPUT FORMAT:
-Return the complete updated component code in a \`\`\`jsx code block, followed by a brief explanation of what you changed.`;
+Return the complete updated component code in a \`\`\`jsx code block, followed by a brief explanation of what you changed.
+Optionally, return CSS in a \`\`\`css code block after the JSX block. Only include CSS if you're using className in the component.`;
 
 const CONTXT_SYSTEM_PROMPT = `You are the CONTXT builder agent. You modify a user's personal relationship CRM by rewriting their React component code.
 
@@ -103,7 +113,7 @@ export async function POST(request: NextRequest) {
     const [configResult, peopleResult, interactionsResult] = await Promise.all([
       supabase
         .from("contxt_config")
-        .select("app_code, version")
+        .select("app_code, app_css, version")
         .eq("id", session.userId)
         .single(),
       supabase
@@ -125,15 +135,18 @@ export async function POST(request: NextRequest) {
     }
 
     const currentCode = configResult.data.app_code;
+    const currentCss = configResult.data.app_css || "";
     const currentVersion = configResult.data.version;
     const people = peopleResult.data || [];
     const interactions = interactionsResult.data || [];
+
+    const cssSection = currentCss ? `\nCURRENT APP CSS:\n\`\`\`css\n${currentCss}\n\`\`\`\n` : "";
 
     const userPrompt = `CURRENT APP CODE:
 \`\`\`jsx
 ${currentCode}
 \`\`\`
-
+${cssSection}
 CURRENT PEOPLE (${people.length} shown, most recent):
 ${people.length > 0 ? JSON.stringify(people, null, 2) : "(no people yet)"}
 
@@ -146,6 +159,7 @@ USER REQUEST: ${message.trim()}`;
       systemPrompt: CONTXT_SYSTEM_PROMPT,
       userMessage: userPrompt,
       currentCode,
+      currentCss,
       maxTokens: 16384,
     });
 
@@ -157,16 +171,20 @@ USER REQUEST: ${message.trim()}`;
       });
     }
 
-    // Save new code to Supabase
+    // Save new code + CSS to Supabase
     const newVersion = currentVersion + 1;
+    const updatePayload: Record<string, unknown> = {
+      app_code: result.code,
+      version: newVersion,
+      modified: true,
+      updated_at: new Date().toISOString(),
+    };
+    if (result.css !== undefined) {
+      updatePayload.app_css = result.css;
+    }
     const { error: updateError } = await supabase
       .from("contxt_config")
-      .update({
-        app_code: result.code,
-        version: newVersion,
-        modified: true,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", session.userId);
 
     if (updateError) {
@@ -185,6 +203,7 @@ USER REQUEST: ${message.trim()}`;
 
     return NextResponse.json({
       app_code: result.code,
+      app_css: result.css !== undefined ? result.css : currentCss,
       message: result.message,
       version: newVersion,
     });

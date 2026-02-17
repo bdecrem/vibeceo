@@ -19,6 +19,7 @@ const CHANGES_ENDPOINT = "/api/mutabl/notabl/changes";
 export default function NotablPage() {
   const [user, setUser] = useState<User | null>(null);
   const [appCode, setAppCode] = useState<string | null>(null);
+  const [appCss, setAppCss] = useState<string>("");
   const [checking, setChecking] = useState(true);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const {
@@ -49,6 +50,7 @@ export default function NotablPage() {
     ]).then(([configData]) => {
       if (configData.app_code) {
         setAppCode(configData.app_code);
+        setAppCss(configData.app_css || "");
       }
       if (configData.update_available) {
         setUpdateAvailable(true);
@@ -56,8 +58,9 @@ export default function NotablPage() {
     });
   }, [user, refreshDocuments]);
 
-  const handleCodeUpdate = (newCode: string, _version: number) => {
+  const handleCodeUpdate = (newCode: string, css: string | undefined, _version: number) => {
     setAppCode(newCode);
+    if (css !== undefined) setAppCss(css);
   };
 
   const logout = async () => {
@@ -121,6 +124,7 @@ export default function NotablPage() {
       <SettingsMenu
         userHandle={user.handle}
         appCode={appCode}
+        appCss={appCss}
         updateAvailable={updateAvailable}
         onUpdateSkip={() => setUpdateAvailable(false)}
         onUpdateAccept={() => setUpdateAvailable(false)}
@@ -131,6 +135,7 @@ export default function NotablPage() {
       />
       <AppRenderer
         code={appCode}
+        css={appCss}
         scope={{
           documents,
           addDocument,

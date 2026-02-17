@@ -7,6 +7,7 @@ type Change = { id: string; request: string; summary: string; created_at: string
 type SettingsMenuProps = {
   userHandle: string;
   appCode: string;
+  appCss?: string;
   updateAvailable: boolean;
   onUpdateSkip: () => void;
   onUpdateAccept: () => void;
@@ -26,6 +27,7 @@ export default function SettingsMenu({
   changesEndpoint,
   updateEndpoint,
   accentColor = "#6366f1",
+  appCss,
 }: SettingsMenuProps) {
   const [open, setOpen] = useState(false);
   const [showSource, setShowSource] = useState(false);
@@ -251,6 +253,7 @@ export default function SettingsMenu({
             </button>
             {showSource && (
               <div style={{ padding: "0 16px 12px" }}>
+                <div style={{ fontSize: 10, color: "#555", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>JSX</div>
                 <pre
                   style={{
                     background: "#0a0a1a",
@@ -269,9 +272,33 @@ export default function SettingsMenu({
                 >
                   {appCode}
                 </pre>
+                {appCss && (
+                  <>
+                    <div style={{ fontSize: 10, color: "#555", marginBottom: 4, marginTop: 8, textTransform: "uppercase", letterSpacing: 1 }}>CSS</div>
+                    <pre
+                      style={{
+                        background: "#0a0a1a",
+                        border: "1px solid #2a2a4a",
+                        borderRadius: 6,
+                        padding: 12,
+                        fontSize: 11,
+                        color: "#aaa",
+                        overflow: "auto",
+                        maxHeight: 200,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                        margin: "0 0 8px",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {appCss}
+                    </pre>
+                  </>
+                )}
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(appCode);
+                    const full = appCss ? `${appCode}\n\n/* CSS */\n${appCss}` : appCode;
+                    navigator.clipboard.writeText(full);
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   }}

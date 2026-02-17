@@ -9,12 +9,13 @@ export type AgentLoopOptions = {
   systemPrompt: string;
   userMessage: string;
   currentCode: string;
+  currentCss?: string;
   maxIterations?: number;
   maxTokens?: number;
 };
 
 export type AgentLoopResult =
-  | { ok: true; code: string; message: string; iterations: number }
+  | { ok: true; code: string; css?: string; message: string; iterations: number }
   | { ok: false; error: string; iterations: number };
 
 function extractCodeBlock(text: string): string | null {
@@ -22,8 +23,13 @@ function extractCodeBlock(text: string): string | null {
   return match ? match[1].trim() : null;
 }
 
+function extractCssBlock(text: string): string | null {
+  const match = text.match(/```css\s*\n([\s\S]*?)```/);
+  return match ? match[1].trim() : null;
+}
+
 function extractMessage(text: string): string {
-  const parts = text.split(/```(?:jsx|javascript|js)?[\s\S]*?```/);
+  const parts = text.split(/```(?:jsx|javascript|js|css)?[\s\S]*?```/);
   const after = parts[parts.length - 1]?.trim();
   if (after) return after;
   const before = parts[0]?.trim();
@@ -66,6 +72,7 @@ export async function agentLoop(
     const responseText =
       response.content[0].type === "text" ? response.content[0].text : "";
 
+    const css = extractCssBlock(responseText);
     const code = extractCodeBlock(responseText);
 
     if (!code) {
@@ -93,6 +100,7 @@ export async function agentLoop(
       return {
         ok: true,
         code,
+        css: css || undefined,
         message: extractMessage(responseText),
         iterations: i + 1,
       };
@@ -122,9 +130,16 @@ export const SCOPE_DOCS = `AVAILABLE IN SCOPE (injected by the wrapper — do NO
 
 NOTE: Logout and settings are handled by the app wrapper — do NOT add logout buttons to the component.`;
 
+export const CSS_RULES = `CSS STYLING:
+- You can use inline styles (style={{ }}) OR CSS classes (className="...") OR both
+- If using CSS classes, return them in a separate \`\`\`css code block AFTER the \`\`\`jsx block
+- CSS classes should use a descriptive prefix (e.g., .app-header, .task-item)
+- CSS enables: hover states, transitions, animations, media queries, pseudo-elements
+- If no CSS changes needed, omit the \`\`\`css block entirely — existing CSS will be preserved`;
+
 export const CODE_RULES = `RULES:
 - Output a SINGLE React component named App (function App() { ... })
-- Use inline styles (style={{ }}) — no CSS imports, no Tailwind classes
+- You can use inline styles (style={{ }}) OR CSS classes (className="...") OR both
 - Do NOT import anything — all dependencies are in scope
 - The component must be self-contained in one function
 - For extra per-task data (priority, due dates, tags, etc.), use task.properties.fieldName
@@ -133,8 +148,11 @@ export const CODE_RULES = `RULES:
 - Keep the app functional and visually coherent after changes
 - Preserve existing functionality unless the user explicitly asks to remove it
 
+${CSS_RULES}
+
 OUTPUT FORMAT:
-Return the complete updated component code in a \`\`\`jsx code block, followed by a brief explanation of what you changed.`;
+Return the complete updated component code in a \`\`\`jsx code block, followed by a brief explanation of what you changed.
+Optionally, return CSS in a \`\`\`css code block after the JSX block. Only include CSS if you're using className in the component.`;
 
 export const BUILDER_SYSTEM_PROMPT = `You are the Todoit builder agent. You modify a user's personal todo app by rewriting their React component code.
 

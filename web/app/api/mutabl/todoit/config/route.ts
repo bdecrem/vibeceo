@@ -51,12 +51,12 @@ export async function GET(request: NextRequest) {
   const [userResult, baseResult] = await Promise.all([
     supabase
       .from("todoit_config")
-      .select("app_code, version, base_version, modified")
+      .select("app_code, app_css, version, base_version, modified")
       .eq("id", session.userId)
       .single(),
     supabase
       .from("todoit_config")
-      .select("app_code, version")
+      .select("app_code, app_css, version")
       .is("handle", null)
       .single(),
   ]);
@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
       .from("todoit_config")
       .update({
         app_code: base.app_code,
+        app_css: base.app_css,
         base_version: baseVersion,
         updated_at: new Date().toISOString(),
       })
@@ -82,6 +83,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       app_code: base.app_code,
+      app_css: base.app_css,
       version: user.version,
       update_available: false,
     });
@@ -92,6 +94,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     app_code: user.app_code,
+    app_css: user.app_css,
     version: user.version,
     update_available: updateAvailable,
   });

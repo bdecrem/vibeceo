@@ -14,6 +14,7 @@ import { LiveProvider, LivePreview, LiveError } from "react-live";
 
 type AppRendererProps = {
   code: string;
+  css?: string;
   scope: Record<string, unknown>;
 };
 
@@ -22,7 +23,7 @@ type AppRendererProps = {
 // inner App component still sees fresh data via useContext (just a re-render).
 export const ScopeContext = createContext<Record<string, unknown>>({});
 
-// Memo'd so LiveProvider only re-evaluates when code changes, never on data updates
+// Memo'd so LiveProvider only re-evaluates when code/css changes, never on data updates
 const LiveBlock = memo(
   function LiveBlock({
     code,
@@ -114,7 +115,33 @@ function copyToClipboard(text: string): void {
   document.body.removeChild(ta);
 }
 
-export default function AppRenderer({ code, scope }: AppRendererProps) {
+export default function AppRenderer({ code, css, scope }: AppRendererProps) {
+  // Inject app CSS via <style> tag, scoped with a unique class
+  const scopeClass = "mutabl-app-scope";
+  useEffect(() => {
+    if (!css) return;
+    let style = document.getElementById("mutabl-app-css") as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement("style");
+      style.id = "mutabl-app-css";
+      document.head.appendChild(style);
+    }
+    // Scope all rules under .mutabl-app-scope
+    const scoped = css.replace(/(^|\})\s*([^@{}][^{]*)\{/g, (match, prefix, selector) => {
+      const scopedSelectors = selector
+        .split(",")
+        .map((s: string) => `.${scopeClass} ${s.trim()}`)
+        .join(", ");
+      return `${prefix} ${scopedSelectors} {`;
+    });
+    style.textContent = scoped;
+    return () => {
+      if (style && style.parentNode) {
+        style.parentNode.removeChild(style);
+      }
+    };
+  }, [css, scopeClass]);
+
   // Stable scope for LiveProvider — frozen when code changes, includes
   // initial snapshot of scope values + React hooks + context accessors.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,7 +163,9 @@ export default function AppRenderer({ code, scope }: AppRendererProps) {
 
   return (
     <ScopeContext.Provider value={scope}>
-      <LiveBlock code={code} scope={stableScope} />
+      <div className={scopeClass}>
+        <LiveBlock code={code} scope={stableScope} />
+      </div>
     </ScopeContext.Provider>
   );
 }

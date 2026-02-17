@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
 
         const { data: baseConfig } = await supabase
           .from("contxt_config")
-          .select("app_code, version")
+          .select("app_code, app_css, version")
           .is("handle", null)
           .single();
 
@@ -164,6 +164,7 @@ export async function POST(request: NextRequest) {
             handle_lower: handleLower,
             code: code,
             app_code: baseConfig.app_code,
+            app_css: baseConfig.app_css,
             base_version: baseConfig.version,
           })
           .select("id, handle")

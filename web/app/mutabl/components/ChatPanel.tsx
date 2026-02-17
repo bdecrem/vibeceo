@@ -8,7 +8,7 @@ type Message = {
 };
 
 type ChatPanelProps = {
-  onCodeUpdate: (newCode: string, version: number) => void;
+  onCodeUpdate: (newCode: string, css: string | undefined, version: number) => void;
   agentEndpoint?: string;
   title?: string;
   placeholder?: string;
@@ -45,7 +45,7 @@ export default function ChatPanel({
       });
       const data = await res.json();
       if (data.app_code) {
-        onCodeUpdate(data.app_code, data.version);
+        onCodeUpdate(data.app_code, data.app_css || undefined, data.version);
         setMessages((prev) => [
           ...prev,
           { role: "agent", text: data.message || "Done!" },
