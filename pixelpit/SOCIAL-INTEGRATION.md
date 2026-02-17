@@ -500,6 +500,10 @@ All four are in `social.js`. If you ever modify auth fetch calls, always include
 2. **Add XP early** — Set `maxScore` to your game's "great score" benchmark
 3. **Consider progressive disclosure** — CAT TOWER's approach reduces friction
 
+### Component Centering
+
+`ScoreFlow` is self-centering — it uses `margin: 0 auto` and `textAlign: center` on its wrapper. Games don't need to add extra centering styles around it. The `@handle`, rank, input fields, and buttons all render centered regardless of parent layout (flex, text-align, etc.).
+
 ### maxScore (XP Normalization)
 
 Every game awards 10-50 XP per play regardless of scoring system:

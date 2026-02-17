@@ -81,7 +81,7 @@ export function ScoreFlow({ score, gameId, colors, maxScore, onRankReceived, onU
   // Already logged in user - auto-submitted, show result
   if (user) {
     return (
-      <div style={{ marginBottom: 20, width: '100%', maxWidth: 300, textAlign: 'center' }}>
+      <div style={{ marginBottom: 20, width: '100%', maxWidth: 300, margin: '0 auto 20px', textAlign: 'center' }}>
         <div style={{
           color: colors.secondary,
           marginBottom: 10,
@@ -131,7 +131,7 @@ export function ScoreFlow({ score, gameId, colors, maxScore, onRankReceived, onU
 
   // Guest flow states
   return (
-    <div style={{ marginBottom: 20, width: '100%', maxWidth: 300 }}>
+    <div style={{ marginBottom: 20, width: '100%', maxWidth: 300, margin: '0 auto 20px', textAlign: 'center' }}>
       {/* Flow: input - initial handle entry */}
       {flowState === 'input' && (
         <>

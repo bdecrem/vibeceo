@@ -1143,7 +1143,7 @@ export default function BlastPage() {
         const comboAlpha = Math.min(game.comboTimer / 0.5, 1);
         const comboScale = 1 + (game.combo - 1) * 0.03;
         ctx.save();
-        ctx.translate(canvasSize.w / 2, 66);
+        ctx.translate(canvasSize.w / 2, 74);
         ctx.scale(comboScale, comboScale);
         ctx.globalAlpha = comboAlpha;
         ctx.textAlign = 'center';
