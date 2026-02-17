@@ -11,7 +11,7 @@ type BaseTemplate = {
 const VERSIONS: Record<string, number> = {
   todoit: 5,
   contxt: 5,
-  notabl: 9,
+  notabl: 10,
 };
 
 const cache: Record<string, BaseTemplate> = {};

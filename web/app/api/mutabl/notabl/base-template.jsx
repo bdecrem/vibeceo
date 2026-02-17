@@ -21,11 +21,14 @@ function App() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  const renameRef = useRef(null);
   useEffect(() => {
-    const handleClickOutside = () => setOpenMenuId(null);
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+    if (renamingId && renameRef.current) {
+      renameRef.current.focus();
+      const val = renameRef.current.value;
+      renameRef.current.setSelectionRange(val.length, val.length);
+    }
+  }, [renamingId]);
 
   useEffect(() => {
     refreshDocuments();
@@ -79,6 +82,9 @@ function App() {
   const handleNewDoc = async () => {
     const doc = await addDocument("Untitled");
     if (doc) {
+      contentRef.current = "";
+      contentCacheRef.current[doc.id] = "";
+      setEditorContent("");
       setSelectedId(doc.id);
       if (isMobile) setSidebarOpen(false);
     }
@@ -119,42 +125,34 @@ function App() {
   const accent = "#FD79A8";
 
   const sidebar = (
-    <div style={{
+    <div className="nb-sidebar" style={{
       width: isMobile ? "280px" : "240px",
-      background: "#0c0c20",
-      borderRight: "1px solid #1a1a2e",
-      display: "flex",
-      flexDirection: "column",
-      height: "100%",
       ...(isMobile ? {
         position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 200,
         transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
         transition: "transform 0.2s ease",
       } : {}),
     }}>
-      <div style={{ padding: "16px", borderBottom: "1px solid #1a1a2e", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ color: accent, fontWeight: 700, fontSize: 15, letterSpacing: 1 }}>NOTABL</span>
+      <div className="nb-sidebar-header">
+        <span className="nb-logo">NOTABL</span>
         {isMobile && (
-          <button onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer" }}>✕</button>
+          <button onClick={() => setSidebarOpen(false)} className="nb-btn-icon" style={{ fontSize: 20 }}>✕</button>
         )}
       </div>
       <div style={{ padding: "8px" }}>
-        <button onClick={handleNewDoc} style={{
-          width: "100%", padding: "10px", background: accent + "15", border: "1px solid " + accent + "30",
-          borderRadius: 6, color: accent, cursor: "pointer", fontSize: 13, fontWeight: 600,
-        }}>+ New Document</button>
+        <button onClick={handleNewDoc} className="nb-btn-new">+ New Document</button>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "4px 8px" }}>
+        {openMenuId !== null && (
+          <div className="nb-menu-overlay" onClick={() => setOpenMenuId(null)} />
+        )}
         {documents.map(doc => (
           <div key={doc.id} style={{ position: "relative", marginBottom: 2 }}>
-            <div onClick={() => { setSelectedId(doc.id); if (isMobile) setSidebarOpen(false); }} style={{
-              padding: "10px 44px 10px 12px", borderRadius: 6, cursor: "pointer",
-              background: doc.id === selectedId ? accent + "15" : "transparent",
-              borderLeft: doc.id === selectedId ? "2px solid " + accent : "2px solid transparent",
-            }}>
+            <div onClick={() => { if (renamingId === doc.id) return; setSelectedId(doc.id); if (isMobile) setSidebarOpen(false); }}
+              className={"nb-doc-item" + (doc.id === selectedId ? " nb-doc-item-active" : "")}>
               {renamingId === doc.id ? (
                 <input
-                  autoFocus
+                  ref={renameRef}
                   defaultValue={doc.title || ""}
                   onClick={(e) => e.stopPropagation()}
                   onBlur={(e) => {
@@ -166,12 +164,7 @@ function App() {
                     if (e.key === "Enter") { e.target.blur(); }
                     if (e.key === "Escape") { setRenamingId(null); }
                   }}
-                  style={{
-                    fontSize: 13, color: "#e0e0e0", fontWeight: 600,
-                    background: "#0a0a1a", border: "1px solid " + accent,
-                    borderRadius: 4, padding: "2px 6px", width: "100%",
-                    outline: "none",
-                  }}
+                  className="nb-rename-input"
                 />
               ) : (
                 <div style={{ fontSize: 13, color: doc.id === selectedId ? "#e0e0e0" : "#888", fontWeight: doc.id === selectedId ? 600 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -183,57 +176,30 @@ function App() {
               </div>
             </div>
             <button
-              onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === doc.id ? null : doc.id); }}
-              style={{
-                position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
-                background: "none", border: "none", color: "#666", fontSize: 18,
-                cursor: "pointer", padding: "8px", borderRadius: 4, lineHeight: 1,
-              }}
+              onClick={() => setOpenMenuId(openMenuId === doc.id ? null : doc.id)}
+              className="nb-btn-menu"
             >⋯</button>
             {openMenuId === doc.id && (
-              <div onClick={(e) => e.stopPropagation()} style={{
-                position: "absolute", right: 8, top: "100%", marginTop: 4,
-                background: "#1a1a2e", border: "1px solid #2a2a3e", borderRadius: 6,
-                minWidth: 140, boxShadow: "0 4px 12px rgba(0,0,0,0.4)", zIndex: 100,
-              }}>
-                <button onClick={(e) => { e.stopPropagation(); setRenamingId(doc.id); setOpenMenuId(null); }}
-                  style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", color: "#ccc", fontSize: 13, cursor: "pointer", textAlign: "left", borderRadius: "6px 6px 0 0" }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#252535"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "none"}
-                >Rename</button>
-                <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(doc.id); setOpenMenuId(null); }}
-                  style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", color: "#d44", fontSize: 13, cursor: "pointer", textAlign: "left", borderRadius: "0 0 6px 6px" }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "#252535"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "none"}
-                >Delete</button>
+              <div className="nb-menu">
+                <button onClick={() => { setRenamingId(doc.id); setOpenMenuId(null); }}
+                  className="nb-menu-item">Rename</button>
+                <button onClick={() => { setConfirmDeleteId(doc.id); setOpenMenuId(null); }}
+                  className="nb-menu-item nb-menu-item-danger">Delete</button>
               </div>
             )}
           </div>
         ))}
-      
+
       {confirmDeleteId && (
-        <div onClick={(e) => e.stopPropagation()} style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center",
-          justifyContent: "center", zIndex: 300,
-        }}>
-          <div style={{
-            background: "#1a1a2e", border: "1px solid #2a2a3e", borderRadius: 8,
-            padding: 24, maxWidth: 400, width: "calc(100% - 32px)", margin: 16,
-          }}>
-            <div style={{ fontSize: 16, fontWeight: 600, color: "#e0e0e0", marginBottom: 12 }}>
-              Delete document?
-            </div>
+        <div onClick={(e) => e.stopPropagation()} className="nb-backdrop">
+          <div className="nb-modal">
+            <div className="nb-modal-title">Delete document?</div>
             <div style={{ fontSize: 13, color: "#888", marginBottom: 20 }}>
               This cannot be undone.
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button onClick={() => setConfirmDeleteId(null)}
-                style={{ padding: "8px 16px", background: "none", border: "1px solid #2a2a3e", borderRadius: 6, color: "#888", fontSize: 13, cursor: "pointer" }}
-              >Cancel</button>
-              <button onClick={() => handleDeleteFromSidebar(confirmDeleteId)}
-                style={{ padding: "8px 16px", background: "#d44", border: "none", borderRadius: 6, color: "#fff", fontSize: 13, cursor: "pointer", fontWeight: 600 }}
-              >Delete</button>
+              <button onClick={() => setConfirmDeleteId(null)} className="nb-btn-cancel">Cancel</button>
+              <button onClick={() => handleDeleteFromSidebar(confirmDeleteId)} className="nb-btn-delete">Delete</button>
             </div>
           </div>
         </div>
@@ -250,45 +216,33 @@ function App() {
   ) : null;
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#0a0a1a", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <div className="nb-root">
       {!isMobile && sidebar}
       {backdrop}
       {isMobile && sidebar}
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         <div style={{
-          display: "flex", alignItems: "center", gap: 8, padding: "10px 16px",
+          display: "flex", alignItems: "center", gap: 8, padding: "10px 56px 10px 16px",
           borderBottom: "1px solid #1a1a2e", flexShrink: 0,
         }}>
           {isMobile && (
-            <button onClick={() => setSidebarOpen(true)} style={{
-              background: "none", border: "none", color: "#888", fontSize: 20, cursor: "pointer", padding: "4px",
-            }}>☰</button>
+            <button onClick={() => setSidebarOpen(true)} className="nb-btn-icon" style={{ fontSize: 20 }}>☰</button>
           )}
           <div style={{ flex: 1 }} />
           {selectedDoc && (
             <>
-              <button onClick={handleShare} style={{
-                background: "none", border: "1px solid #1a1a2e", borderRadius: 6,
-                color: "#888", fontSize: 12, padding: "6px 12px", cursor: "pointer",
-              }}>Share</button>
-              <button onClick={() => exportMarkdown(selectedId)} style={{
-                background: "none", border: "1px solid #1a1a2e", borderRadius: 6,
-                color: "#888", fontSize: 12, padding: "6px 12px", cursor: "pointer",
-              }}>Export</button>
-              
+              <button onClick={handleShare} className="nb-btn-toolbar">Share</button>
+              <button onClick={() => exportMarkdown(selectedId)} className="nb-btn-toolbar">Export</button>
             </>
           )}
         </div>
 
         {shareUrl && (
-          <div style={{
-            padding: "8px 16px", background: accent + "15", borderBottom: "1px solid " + accent + "30",
-            fontSize: 12, color: accent, display: "flex", alignItems: "center", gap: 8,
-          }}>
+          <div className="nb-share-bar">
             <span>Link copied!</span>
             <span style={{ color: "#666", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shareUrl}</span>
-            <button onClick={() => setShareUrl(null)} style={{ background: "none", border: "none", color: accent, cursor: "pointer" }}>✕</button>
+            <button onClick={() => setShareUrl(null)} className="nb-btn-icon" style={{ color: accent }}>✕</button>
           </div>
         )}
 
@@ -299,13 +253,11 @@ function App() {
                 contentEditable
                 suppressContentEditableWarning
                 onBlur={handleTitleChange}
-                style={{
-                  fontSize: 32, fontWeight: 700, color: "#f0f0f0", outline: "none",
-                  marginBottom: 24, lineHeight: 1.3, minHeight: "1.3em",
-                }}
+                className="nb-title-editor"
               >{selectedDoc.title}</div>
 
               <RichEditor
+                key={selectedId}
                 content={editorContent}
                 onUpdate={handleEditorUpdate}
                 theme={{ accent }}

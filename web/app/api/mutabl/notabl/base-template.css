@@ -1,0 +1,295 @@
+/* notabl — polished dark theme with nb- prefixed classes */
+
+/* ---- Scrollbar ---- */
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 3px; }
+*::-webkit-scrollbar-thumb:hover { background: #2a2a3e; }
+
+/* ---- Animations ---- */
+@keyframes nb-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes nb-slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Root ---- */
+.nb-root {
+  display: flex;
+  height: 100vh;
+  background: #0a0a1a;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ---- Sidebar ---- */
+.nb-sidebar {
+  background: #0c0c20;
+  border-right: 1px solid #1a1a2e;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.nb-sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid #1a1a2e;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nb-logo {
+  color: #FD79A8;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+
+/* ---- New Document Button ---- */
+.nb-btn-new {
+  width: 100%;
+  padding: 10px;
+  background: rgba(253, 121, 168, 0.08);
+  border: 1px solid rgba(253, 121, 168, 0.19);
+  border-radius: 6px;
+  color: #FD79A8;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: background 0.15s, border-color 0.15s;
+}
+.nb-btn-new:hover {
+  background: rgba(253, 121, 168, 0.14);
+  border-color: rgba(253, 121, 168, 0.3);
+}
+
+/* ---- Document List Item ---- */
+.nb-doc-item {
+  padding: 10px 44px 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: background 0.15s;
+}
+.nb-doc-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.nb-doc-item-active {
+  background: rgba(253, 121, 168, 0.08);
+  border-left-color: #FD79A8;
+}
+
+/* ---- Menu Button (⋯) ---- */
+.nb-btn-menu {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  line-height: 1;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s, background 0.15s;
+}
+.nb-btn-menu:hover {
+  color: #999;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ---- Context Menu ---- */
+.nb-menu {
+  position: absolute;
+  right: 8px;
+  top: 100%;
+  margin-top: 4px;
+  background: #1a1a2e;
+  border: 1px solid #2a2a3e;
+  border-radius: 6px;
+  min-width: 140px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  animation: nb-fade-in 0.1s ease-out;
+}
+.nb-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  -webkit-tap-highlight-color: transparent;
+}
+.nb-menu-item {
+  width: 100%;
+  padding: 12px 16px;
+  min-height: 44px;
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  font-family: system-ui, -apple-system, sans-serif;
+  display: flex;
+  align-items: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s;
+}
+.nb-menu-item:first-child { border-radius: 6px 6px 0 0; }
+.nb-menu-item:last-child { border-radius: 0 0 6px 6px; }
+.nb-menu-item:hover {
+  background: #252535;
+}
+.nb-menu-item-danger {
+  color: #d44;
+}
+.nb-menu-item-danger:hover {
+  background: #252535;
+}
+
+/* ---- Rename Input ---- */
+.nb-rename-input {
+  font-size: 13px;
+  color: #e0e0e0;
+  font-weight: 600;
+  background: #0a0a1a;
+  border: 1px solid #FD79A8;
+  border-radius: 4px;
+  padding: 2px 6px;
+  width: 100%;
+  outline: none;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: box-shadow 0.2s;
+}
+.nb-rename-input:focus {
+  box-shadow: 0 0 0 2px rgba(253, 121, 168, 0.2);
+}
+
+/* ---- Toolbar Buttons ---- */
+.nb-btn-toolbar {
+  background: none;
+  border: 1px solid #1a1a2e;
+  border-radius: 6px;
+  color: #888;
+  font-size: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: border-color 0.15s, color 0.15s;
+}
+.nb-btn-toolbar:hover {
+  border-color: #2a2a3e;
+  color: #aaa;
+}
+
+/* ---- Close / Hamburger Buttons ---- */
+.nb-btn-icon {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: color 0.15s;
+}
+.nb-btn-icon:hover {
+  color: #999;
+}
+
+/* ---- Share Bar ---- */
+.nb-share-bar {
+  padding: 8px 16px;
+  background: rgba(253, 121, 168, 0.08);
+  border-bottom: 1px solid rgba(253, 121, 168, 0.19);
+  font-size: 12px;
+  color: #FD79A8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: nb-fade-in 0.2s ease-out;
+}
+
+/* ---- Modal ---- */
+.nb-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  animation: nb-fade-in 0.2s ease-out;
+}
+.nb-modal {
+  background: #1a1a2e;
+  border: 1px solid #2a2a3e;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 400px;
+  width: calc(100% - 32px);
+  margin: 16px;
+  animation: nb-slide-up 0.25s ease-out;
+}
+.nb-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin-bottom: 12px;
+}
+.nb-btn-cancel {
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid #2a2a3e;
+  border-radius: 6px;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: border-color 0.15s, color 0.15s;
+}
+.nb-btn-cancel:hover {
+  border-color: #3a3a4e;
+  color: #aaa;
+}
+.nb-btn-delete {
+  padding: 8px 16px;
+  background: #d44;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: filter 0.15s, transform 0.15s;
+}
+.nb-btn-delete:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}
+.nb-btn-delete:active {
+  transform: scale(0.98);
+}
+
+/* ---- Title Editor ---- */
+.nb-title-editor {
+  font-size: 32px;
+  font-weight: 700;
+  color: #f0f0f0;
+  outline: none;
+  margin-bottom: 24px;
+  line-height: 1.3;
+  min-height: 1.3em;
+}
