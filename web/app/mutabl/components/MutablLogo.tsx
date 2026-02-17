@@ -42,32 +42,40 @@ export default function MutablLogo() {
           100% { transform: rotate(0deg); }
         }
         @keyframes mutabl-dot-breathe {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.18); }
+          0%, 100% { transform: translateX(calc(100% + 8px)) scale(1); }
+          50% { transform: translateX(calc(100% + 8px)) scale(1.18); }
         }
         @keyframes mutabl-card-dot {
           0%, 100% { opacity: 0.5; }
           50% { opacity: 1; }
         }
+        .mutabl-letter { font-size: 96px; }
+        .mutabl-dot { width: 14px; height: 14px; }
+        @media (max-width: 520px) {
+          .mutabl-letter { font-size: 64px; }
+          .mutabl-dot { width: 10px; height: 10px; }
+        }
       `}</style>
-      <div style={{ display: "flex", alignItems: "baseline", gap: "2px" }}>
+      <div style={{ position: "relative", display: "inline-flex", alignItems: "baseline", gap: "2px" }}>
         {["M", "U", "T", "A", "B"].map((letter, i) => (
-          <span key={i} style={{
-            fontSize: "96px", fontWeight: 700, lineHeight: 1,
+          <span key={i} className="mutabl-letter" style={{
+            fontWeight: 700, lineHeight: 1,
             color: letterColor, transition: "color 0.4s ease",
           }}>{letter}</span>
         ))}
-        <span style={{
+        <span className="mutabl-letter" style={{
           display: "inline-block",
-          fontSize: "96px", fontWeight: 700, lineHeight: 1,
+          fontWeight: 700, lineHeight: 1,
           color: letterColor, transition: "color 0.4s ease",
           animation: "mutabl-l-land 0.8s ease-out 0.3s both",
           transformOrigin: "bottom center",
         }}>L</span>
-        <div style={{
-          width: 14, height: 14, borderRadius: "50%",
-          background: dotColors[colorIndex], marginLeft: 8, marginBottom: 8,
-          alignSelf: "flex-end",
+        <div className="mutabl-dot" style={{
+          position: "absolute",
+          right: 0, bottom: 8,
+          transform: "translateX(calc(100% + 8px))",
+          borderRadius: "50%",
+          background: dotColors[colorIndex],
           animation: "mutabl-dot-breathe 3s ease-in-out infinite",
           boxShadow: `0 0 12px ${dotColors[colorIndex]}44`,
           transition: "background 0.8s ease, box-shadow 0.8s ease",
