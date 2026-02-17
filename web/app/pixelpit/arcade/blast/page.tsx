@@ -108,99 +108,253 @@ const LEADERBOARD_COLORS: LeaderboardColors = {
   muted: '#71717a',
 };
 
-// Audio
+// ── AUDIO ENGINE ──────────────────────────────────────────
+// Two-tier gain: sfxGain for effects, musicGain for soundtrack
+// Both route through masterGain for global volume control.
+// iOS: resume() called on init AND on startMusic for gesture unlock.
+
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
+let sfxGain: GainNode | null = null;
+let musicGain: GainNode | null = null;
+let musicPlaying = false;
+let musicInterval: ReturnType<typeof setInterval> | null = null;
+let musicStep = 0;
 
 function initAudio() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.4;
+  masterGain.gain.value = 1.0;
   masterGain.connect(audioCtx.destination);
+  sfxGain = audioCtx.createGain();
+  sfxGain.gain.value = 0.5;
+  sfxGain.connect(masterGain);
+  musicGain = audioCtx.createGain();
+  musicGain.gain.value = 0.6;
+  musicGain.connect(masterGain);
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-function playShoot() {
-  if (!audioCtx || !masterGain) return;
+// ── MUSIC: Dark Minimal Step Sequencer ───────────────────
+// 108 BPM, Am key. Sparse kick, metallic hats, deep sub, filtered arp.
+const MUSIC = {
+  bpm: 108,
+  // 16-step patterns. 0 = silence, number = freq (Hz) or 1 = trigger.
+  kick: [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,0,0,0],
+  hat:  [0,0,1,0, 0,0,1,1, 0,0,1,0, 0,1,1,0],
+  bass: [55,0,55,0, 0,55,0,0, 52,0,52,0, 0,0,49,0],
+  arp:  [220,0,330,0, 262,0,0,196, 220,0,294,0, 262,0,0,0],
+};
+
+function musicKick() {
+  if (!audioCtx || !musicGain) return;
   const t = audioCtx.currentTime;
   const osc = audioCtx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(600, t);
-  osc.frequency.exponentialRampToValueAtTime(200, t + 0.1);
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.15, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start(t);
-  osc.stop(t + 0.1);
+  osc.connect(gain); gain.connect(musicGain);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(75, t);
+  osc.frequency.exponentialRampToValueAtTime(28, t + 0.18);
+  gain.gain.setValueAtTime(0.3, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+  osc.start(t); osc.stop(t + 0.3);
+}
+
+function musicHat() {
+  if (!audioCtx || !musicGain) return;
+  const bufLen = audioCtx.sampleRate * 0.025;
+  const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 9000;
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 12000;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.035);
+  src.connect(hp); hp.connect(lp); lp.connect(gain); gain.connect(musicGain);
+  src.start();
+}
+
+function musicBass(freq: number) {
+  if (!audioCtx || !musicGain || freq === 0) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  osc.connect(flt); flt.connect(gain); gain.connect(musicGain);
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  flt.type = 'lowpass'; flt.frequency.value = 140;
+  gain.gain.setValueAtTime(0.25, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  osc.start(t); osc.stop(t + 0.22);
+}
+
+function musicArp(freq: number) {
+  if (!audioCtx || !musicGain || freq === 0) return;
+  const t = audioCtx.currentTime;
+  // Two detuned square waves for width
+  for (const detune of [-6, 6]) {
+    const osc = audioCtx.createOscillator();
+    const flt = audioCtx.createBiquadFilter();
+    const gain = audioCtx.createGain();
+    osc.connect(flt); flt.connect(gain); gain.connect(musicGain);
+    osc.type = 'square';
+    osc.frequency.value = freq;
+    osc.detune.value = detune;
+    flt.type = 'lowpass';
+    flt.frequency.setValueAtTime(1800, t);
+    flt.frequency.exponentialRampToValueAtTime(400, t + 0.12);
+    flt.Q.value = 3;
+    gain.gain.setValueAtTime(0.04, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+    osc.start(t); osc.stop(t + 0.16);
+  }
+}
+
+function musicTick() {
+  if (!audioCtx || !musicPlaying) return;
+  const s = musicStep % 16;
+  if (MUSIC.kick[s]) musicKick();
+  if (MUSIC.hat[s]) musicHat();
+  if (musicStep % 2 === 0) musicBass(MUSIC.bass[(musicStep / 2) % 16]);
+  musicArp(MUSIC.arp[s]);
+  musicStep++;
+}
+
+function startMusic() {
+  if (musicPlaying) return;
+  initAudio();
+  if (audioCtx?.state === 'suspended') audioCtx.resume();
+  musicPlaying = true;
+  musicStep = 0;
+  const stepTime = (60 / MUSIC.bpm) * 1000 / 4; // 16th notes
+  musicInterval = setInterval(musicTick, stepTime);
+}
+
+function stopMusic() {
+  musicPlaying = false;
+  if (musicInterval) { clearInterval(musicInterval); musicInterval = null; }
+}
+
+// ── SOUND EFFECTS ────────────────────────────────────────
+
+function playShoot() {
+  if (!audioCtx || !sfxGain) return;
+  const t = audioCtx.currentTime;
+  // Laser: filtered saw sweep down
+  const osc = audioCtx.createOscillator();
+  const flt = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  osc.connect(flt); flt.connect(gain); gain.connect(sfxGain);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(900, t);
+  osc.frequency.exponentialRampToValueAtTime(200, t + 0.08);
+  flt.type = 'lowpass'; flt.frequency.value = 2000;
+  gain.gain.setValueAtTime(0.12, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  osc.start(t); osc.stop(t + 0.1);
 }
 
 function playHit(big = false) {
-  if (!audioCtx || !masterGain) return;
+  if (!audioCtx || !sfxGain) return;
   const t = audioCtx.currentTime;
-  const osc = audioCtx.createOscillator();
-  osc.type = 'square';
-  osc.frequency.setValueAtTime(big ? 150 : 300, t);
-  osc.frequency.exponentialRampToValueAtTime(big ? 80 : 150, t + 0.15);
+  // Crunch: noise burst + pitch thud
+  const bufLen = audioCtx.sampleRate * 0.06;
+  const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / bufLen);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const flt = audioCtx.createBiquadFilter();
+  flt.type = 'lowpass'; flt.frequency.value = big ? 800 : 2000;
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(big ? 0.2 : 0.12, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start(t);
-  osc.stop(t + 0.15);
+  gain.gain.setValueAtTime(big ? 0.15 : 0.08, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  src.connect(flt); flt.connect(gain); gain.connect(sfxGain);
+  src.start();
+  // Sub thud on big hits
+  if (big) {
+    const sub = audioCtx.createOscillator();
+    const subG = audioCtx.createGain();
+    sub.connect(subG); subG.connect(sfxGain);
+    sub.type = 'sine'; sub.frequency.value = 55;
+    subG.gain.setValueAtTime(0.15, t);
+    subG.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    sub.start(t); sub.stop(t + 0.18);
+  }
 }
 
 function playDeath() {
-  if (!audioCtx || !masterGain) return;
+  if (!audioCtx || !sfxGain) return;
   const t = audioCtx.currentTime;
-  [200, 150, 100, 80].forEach((freq, i) => {
-    const osc = audioCtx!.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.value = freq;
-    const gain = audioCtx!.createGain();
-    gain.gain.setValueAtTime(0.15, t + i * 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.2);
-    osc.connect(gain);
-    gain.connect(masterGain!);
-    osc.start(t + i * 0.1);
-    osc.stop(t + i * 0.1 + 0.2);
-  });
+  // Sweep down + noise wash
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(sfxGain);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(500, t);
+  osc.frequency.exponentialRampToValueAtTime(40, t + 0.7);
+  gain.gain.setValueAtTime(0.2, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+  osc.start(t); osc.stop(t + 0.7);
+  // Noise wash (darkening filter sweep)
+  const bufLen = audioCtx.sampleRate * 0.5;
+  const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / bufLen) * 0.5;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const flt = audioCtx.createBiquadFilter();
+  flt.type = 'lowpass';
+  flt.frequency.setValueAtTime(3000, t);
+  flt.frequency.exponentialRampToValueAtTime(150, t + 0.5);
+  const nG = audioCtx.createGain();
+  nG.gain.setValueAtTime(0.1, t);
+  nG.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  src.connect(flt); flt.connect(nG); nG.connect(sfxGain);
+  src.start();
 }
 
 function playWaveClear() {
-  if (!audioCtx || !masterGain) return;
+  if (!audioCtx || !sfxGain) return;
   const t = audioCtx.currentTime;
-  [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+  // Rising filtered arp: Am → C → E → A (minor triad + octave)
+  [440, 523.25, 659.25, 880].forEach((freq, i) => {
     const osc = audioCtx!.createOscillator();
+    const flt = audioCtx!.createBiquadFilter();
+    const gain = audioCtx!.createGain();
+    osc.connect(flt); flt.connect(gain); gain.connect(sfxGain!);
     osc.type = 'sine';
     osc.frequency.value = freq;
-    const gain = audioCtx!.createGain();
-    gain.gain.setValueAtTime(0.12, t + i * 0.08);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.3);
-    osc.connect(gain);
-    gain.connect(masterGain!);
-    osc.start(t + i * 0.08);
-    osc.stop(t + i * 0.08 + 0.3);
+    flt.type = 'lowpass'; flt.frequency.value = 2500;
+    gain.gain.setValueAtTime(0.1, t + i * 0.07);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.07 + 0.25);
+    osc.start(t + i * 0.07);
+    osc.stop(t + i * 0.07 + 0.28);
   });
 }
 
 function playCombo(count: number) {
-  if (!audioCtx || !masterGain) return;
+  if (!audioCtx || !sfxGain) return;
   const t = audioCtx.currentTime;
-  const freq = 400 + count * 50;
+  // Rising pitch with combo, filtered triangle wave
+  const freq = Math.min(350 + count * 60, 1200);
   const osc = audioCtx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.value = Math.min(freq, 1200);
+  const flt = audioCtx.createBiquadFilter();
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime(0.1, t);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start(t);
-  osc.stop(t + 0.1);
+  osc.connect(flt); flt.connect(gain); gain.connect(sfxGain);
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  flt.type = 'lowpass'; flt.frequency.value = 1500;
+  gain.gain.setValueAtTime(0.08, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  osc.start(t); osc.stop(t + 0.1);
 }
 
 export default function BlastPage() {
@@ -420,6 +574,7 @@ export default function BlastPage() {
     setScore(0);
     setWave(1);
     setGameState('playing');
+    startMusic();
   }, [canvasSize, spawnWave]);
 
   // Get shape color
@@ -649,6 +804,7 @@ export default function BlastPage() {
           const dy = proj.y - game.player.y;
           if (Math.sqrt(dx * dx + dy * dy) < 25) {
             // Player hit!
+            stopMusic();
             playDeath();
             game.screenShake = 20;
             setGameState('gameover');
@@ -660,7 +816,7 @@ export default function BlastPage() {
             return;
           }
         }
-        game.bossProjectiles = game.bossProjectiles.filter(p => 
+        game.bossProjectiles = game.bossProjectiles.filter(p =>
           p.y < canvasSize.h + 20 && p.x > -20 && p.x < canvasSize.w + 20
         );
         
@@ -718,6 +874,7 @@ export default function BlastPage() {
             
             // Check if shapes reached player
             if (shape.y > canvasSize.h - 80) {
+              stopMusic();
               playDeath();
               game.screenShake = 20;
               setGameState('gameover');
@@ -780,6 +937,7 @@ export default function BlastPage() {
           const dx = proj.x - game.player.x;
           const dy = proj.y - game.player.y;
           if (Math.sqrt(dx * dx + dy * dy) < 25) {
+            stopMusic();
             playDeath();
             game.screenShake = 20;
             setGameState('gameover');
