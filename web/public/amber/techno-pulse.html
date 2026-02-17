@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Techno Pulse — Amber</title>
+    <meta property="og:title" content="Techno Pulse — Amber">
+    <meta property="og:image" content="https://intheamber.com/amber/pulse-og.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg,
+                rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px,
+                transparent 1px, transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .container {
+            max-width: 800px;
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+        .timestamp {
+            font-size: 0.75rem;
+            color: #2D9596;
+            margin-bottom: 1rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #FFD700;
+            margin-bottom: 1rem;
+            letter-spacing: 0.15em;
+        }
+        .track-name {
+            font-size: 0.85rem;
+            color: #D4A574;
+            margin-bottom: 2rem;
+            opacity: 0.7;
+        }
+        .start-prompt {
+            font-size: 0.875rem;
+            color: #2D9596;
+            animation: blink 1.5s ease-in-out infinite;
+            margin-bottom: 2rem;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        .pulse-indicator {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #2D9596;
+            font-size: 0.875rem;
+            color: #888;
+        }
+        .pulse-indicator span { color: #FFD700; }
+        .bg-pulse {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(212,165,116,0.1) 0%, transparent 70%);
+            z-index: 0;
+            transition: opacity 0.1s;
+        }
+        .signature {
+            margin-top: 2rem;
+            text-align: right;
+            color: #2D9596;
+            font-size: 0.875rem;
+        }
+        canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="viz"></canvas>
+    <div class="bg-pulse" id="bgPulse"></div>
+
+    <div class="container">
+        <div class="timestamp" id="timestamp"></div>
+        <h1>TECHNO PULSE</h1>
+        <div class="track-name" id="trackName"></div>
+        <div class="start-prompt" id="startPrompt">[ tap to begin ]</div>
+
+        <div class="pulse-indicator" id="indicators" style="display:none">
+            <div>BPM: <span id="bpmDisplay">—</span></div>
+            <div>KEY: <span id="keyDisplay">—</span></div>
+            <div>STATE: <span id="stateDisplay">WAITING</span></div>
+        </div>
+
+        <div class="signature">— Amber</div>
+    </div>
+
+<script>
+// ============================================================
+// GENERATIVE BERLIN TECHNO — Web Audio API
+// Each load = different track. Never ends (loops forever).
+// ============================================================
+
+const SCALES = {
+    'Am':  [57, 59, 60, 62, 64, 65, 67],  // A minor
+    'Cm':  [60, 62, 63, 65, 67, 68, 70],  // C minor
+    'Dm':  [62, 64, 65, 67, 69, 70, 72],  // D minor
+    'Em':  [64, 66, 67, 69, 71, 72, 74],  // E minor
+    'Fm':  [65, 67, 68, 70, 72, 73, 75],  // F minor
+    'Gm':  [67, 69, 70, 72, 74, 75, 77],  // G minor
+    'Bbm': [70, 72, 73, 75, 77, 78, 80],  // Bb minor
+};
+
+const TRACK_FLAVORS = [
+    { name: 'KELLER', bpm: 132, key: 'Am', style: 'driving',  bassOct: -2, arpStyle: 'up',      padDrone: true,  hatPattern: 'offbeat' },
+    { name: 'BERGHAIN 4AM', bpm: 136, key: 'Cm', style: 'hypnotic', bassOct: -2, arpStyle: 'random',  padDrone: false, hatPattern: 'rolling' },
+    { name: 'TRESOR BASEMENT', bpm: 140, key: 'Em', style: 'acid',    bassOct: -1, arpStyle: 'down',    padDrone: true,  hatPattern: 'offbeat' },
+    { name: 'PANORAMA BAR', bpm: 128, key: 'Fm', style: 'deep',    bassOct: -2, arpStyle: 'pendulum', padDrone: true, hatPattern: 'sparse' },
+    { name: 'ABOUT BLANK', bpm: 138, key: 'Dm', style: 'raw',     bassOct: -1, arpStyle: 'up',      padDrone: false, hatPattern: 'rolling' },
+    { name: 'SISYPHOS DAWN', bpm: 126, key: 'Gm', style: 'warm',   bassOct: -2, arpStyle: 'random',  padDrone: true,  hatPattern: 'sparse' },
+    { name: 'RSO BUNKER', bpm: 142, key: 'Bbm', style: 'industrial', bassOct: -1, arpStyle: 'down', padDrone: false, hatPattern: 'rolling' },
+    { name: 'OHM RITUAL', bpm: 130, key: 'Am', style: 'minimal',  bassOct: -2, arpStyle: 'pendulum', padDrone: true, hatPattern: 'offbeat' },
+];
+
+const track = TRACK_FLAVORS[Math.floor(Math.random() * TRACK_FLAVORS.length)];
+const scale = SCALES[track.key];
+const BPM = track.bpm + Math.floor(Math.random() * 5) - 2; // ±2 variation
+const BEAT = 60 / BPM;
+const SIXTEENTH = BEAT / 4;
+
+// UI
+const now = new Date();
+document.getElementById('timestamp').textContent =
+    `${now.toISOString().slice(0,10)} • ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+document.getElementById('trackName').textContent = track.name;
+document.getElementById('bpmDisplay').textContent = BPM;
+document.getElementById('keyDisplay').textContent = track.key;
+
+function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function rng(min, max) { return Math.random() * (max - min) + min; }
+
+let ctx, master, compressor, analyser, analyserData;
+let started = false;
+
+// Visualization
+const canvas = document.getElementById('viz');
+const vctx = canvas.getContext('2d');
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function drawViz() {
+    requestAnimationFrame(drawViz);
+    if (!analyser) return;
+
+    analyser.getByteFrequencyData(analyserData);
+    vctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const bars = 64;
+    const barW = canvas.width / bars;
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+
+    // Radial bars
+    for (let i = 0; i < bars; i++) {
+        const val = analyserData[i] / 255;
+        const angle = (i / bars) * Math.PI * 2 - Math.PI / 2;
+        const innerR = 80;
+        const outerR = innerR + val * 200;
+        const x1 = cx + Math.cos(angle) * innerR;
+        const y1 = cy + Math.sin(angle) * innerR;
+        const x2 = cx + Math.cos(angle) * outerR;
+        const y2 = cy + Math.sin(angle) * outerR;
+
+        vctx.beginPath();
+        vctx.moveTo(x1, y1);
+        vctx.lineTo(x2, y2);
+        vctx.strokeStyle = `rgba(212, 165, 116, ${0.2 + val * 0.6})`;
+        vctx.lineWidth = barW * 0.6;
+        vctx.stroke();
+    }
+
+    // Center pulse
+    const bass = analyserData[1] / 255;
+    const bgPulse = document.getElementById('bgPulse');
+    bgPulse.style.opacity = 0.05 + bass * 0.4;
+}
+drawViz();
+
+// ============================================================
+// AUDIO ENGINE
+// ============================================================
+
+function startAudio() {
+    if (started) return;
+    started = true;
+
+    document.getElementById('startPrompt').style.display = 'none';
+    document.getElementById('indicators').style.display = 'flex';
+    document.getElementById('stateDisplay').textContent = 'PLAYING';
+
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.value = -12;
+    compressor.ratio.value = 8;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.1;
+    compressor.connect(ctx.destination);
+
+    master = ctx.createGain();
+    master.gain.value = 0.7;
+    master.connect(compressor);
+
+    analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    analyserData = new Uint8Array(analyser.frequencyBinCount);
+    master.connect(analyser);
+
+    // Start all layers
+    scheduleKick();
+    scheduleHats();
+    scheduleClap();
+    scheduleBass();
+    scheduleArp();
+    if (track.padDrone) schedulePad();
+    scheduleRiser();
+}
+
+document.body.addEventListener('click', startAudio);
+document.body.addEventListener('touchstart', startAudio);
+
+// ---- KICK ----
+function makeKick(time) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(160, time);
+    osc.frequency.exponentialRampToValueAtTime(40, time + 0.07);
+    gain.gain.setValueAtTime(0.9, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
+    osc.connect(gain);
+    gain.connect(master);
+    osc.start(time);
+    osc.stop(time + 0.4);
+
+    // Click layer
+    const click = ctx.createOscillator();
+    const clickGain = ctx.createGain();
+    click.type = 'square';
+    click.frequency.setValueAtTime(1200, time);
+    click.frequency.exponentialRampToValueAtTime(100, time + 0.01);
+    clickGain.gain.setValueAtTime(0.3, time);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
+    click.connect(clickGain);
+    clickGain.connect(master);
+    click.start(time);
+    click.stop(time + 0.03);
+}
+
+let kickTime;
+function scheduleKick() {
+    kickTime = ctx.currentTime + 0.05;
+    function loop() {
+        while (kickTime < ctx.currentTime + 0.2) {
+            makeKick(kickTime);
+            kickTime += BEAT;
+        }
+        setTimeout(loop, 50);
+    }
+    loop();
+}
+
+// ---- HI-HATS ----
+function makeHat(time, open) {
+    const bufSize = open ? 4410 : 1764;
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = open ? 7000 : 9000;
+
+    const gain = ctx.createGain();
+    const vol = open ? 0.12 : 0.08;
+    gain.gain.setValueAtTime(vol, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + (open ? 0.15 : 0.05));
+
+    src.connect(hp);
+    hp.connect(gain);
+    gain.connect(master);
+    src.start(time);
+}
+
+function scheduleHats() {
+    let hatTime = ctx.currentTime + 0.05;
+    const pattern = track.hatPattern;
+    let step = 0;
+
+    function loop() {
+        while (hatTime < ctx.currentTime + 0.2) {
+            let play = false;
+            let open = false;
+
+            if (pattern === 'offbeat') {
+                // Classic: closed on offbeats (8th notes between kicks)
+                if (step % 2 === 1) { play = true; }
+                if (step % 8 === 3) { open = true; play = true; }
+            } else if (pattern === 'rolling') {
+                // 16th note hats
+                play = true;
+                if (step % 4 === 0) play = false; // skip on kick
+                if (step % 16 === 6) open = true;
+            } else if (pattern === 'sparse') {
+                if (step % 4 === 2) play = true;
+                if (step % 16 === 10) { open = true; play = true; }
+                if (Math.random() < 0.15) play = true; // ghost notes
+            }
+
+            if (play) makeHat(hatTime, open);
+            hatTime += SIXTEENTH;
+            step++;
+        }
+        setTimeout(loop, 50);
+    }
+    loop();
+}
+
+// ---- CLAP ----
+function makeClap(time) {
+    const layers = 3;
+    for (let i = 0; i < layers; i++) {
+        const t = time + i * 0.008;
+        const bufSize = 2205;
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let j = 0; j < bufSize; j++) data[j] = Math.random() * 2 - 1;
+
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 1200;
+        bp.Q.value = 0.8;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.15, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+
+        src.connect(bp);
+        bp.connect(gain);
+        gain.connect(master);
+        src.start(t);
+    }
+}
+
+function scheduleClap() {
+    let clapTime = ctx.currentTime + BEAT * 2 - 0.01;
+    function loop() {
+        while (clapTime < ctx.currentTime + 0.2) {
+            makeClap(clapTime);
+            clapTime += BEAT * 2; // every 2nd beat (snare position)
+        }
+        setTimeout(loop, 50);
+    }
+    loop();
+}
+
+// ---- BASSLINE ----
+function generateBassPattern() {
+    // Generate an 8-step bass pattern using scale root + nearby notes
+    const root = scale[0] + track.bassOct * 12;
+    const notes = [root, root, root + 5, root, root + 7, root, root + 3, root];
+    // Randomize some steps
+    for (let i = 0; i < 8; i++) {
+        if (Math.random() < 0.3) {
+            notes[i] = root + pick([0, 3, 5, 7, 10, 12]);
+        }
+    }
+    return notes;
+}
+
+function makeBassNote(time, midi, dur) {
+    const osc = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    const freq = midiToFreq(midi);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, time);
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(freq * 0.998, time); // slight detune
+
+    filter.type = 'lowpass';
+    const cutoff = track.style === 'acid' ? 2000 : 800;
+    filter.frequency.setValueAtTime(cutoff, time);
+    filter.frequency.exponentialRampToValueAtTime(200, time + dur * 0.8);
+    filter.Q.value = track.style === 'acid' ? 12 : 4;
+
+    gain.gain.setValueAtTime(0.25, time);
+    gain.gain.setValueAtTime(0.25, time + dur * 0.7);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+    osc.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gain);
+    gain.connect(master);
+    osc.start(time);
+    osc2.start(time);
+    osc.stop(time + dur + 0.01);
+    osc2.stop(time + dur + 0.01);
+}
+
+function scheduleBass() {
+    let bassTime = ctx.currentTime + 0.05;
+    let pattern = generateBassPattern();
+    let step = 0;
+    let patternCount = 0;
+
+    function loop() {
+        while (bassTime < ctx.currentTime + 0.2) {
+            const idx = step % 8;
+            if (idx === 0 && step > 0) {
+                patternCount++;
+                if (patternCount % 4 === 0) pattern = generateBassPattern(); // new pattern every 4 bars
+            }
+            // Some steps are rests
+            if (Math.random() > 0.1) {
+                const dur = BEAT * (Math.random() < 0.2 ? 0.5 : 1);
+                makeBassNote(bassTime, pattern[idx], dur);
+            }
+            bassTime += BEAT;
+            step++;
+        }
+        setTimeout(loop, 50);
+    }
+    loop();
+}
+
+// ---- ARP ----
+function generateArpPattern() {
+    const len = pick([6, 8, 12, 16]);
+    const notes = [];
+    for (let i = 0; i < len; i++) {
+        notes.push(scale[Math.floor(Math.random() * scale.length)]);
+    }
+    return notes;
+}
+
+function makeArpNote(time, midi, dur) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    const delay = ctx.createDelay(0.5);
+    const delayGain = ctx.createGain();
+
+    osc.type = pick(['square', 'sawtooth', 'triangle']);
+    osc.frequency.setValueAtTime(midiToFreq(midi), time);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(3000, time);
+    filter.frequency.exponentialRampToValueAtTime(600, time + dur);
+    filter.Q.value = 2;
+
+    gain.gain.setValueAtTime(0.08, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+    delay.delayTime.value = SIXTEENTH * 3; // dotted 16th delay
+    delayGain.gain.value = 0.3;
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(master);
+    // Delay send
+    gain.connect(delay);
+    delay.connect(delayGain);
+    delayGain.connect(master);
+
+    osc.start(time);
+    osc.stop(time + dur + 0.01);
+}
+
+function scheduleArp() {
+    let arpTime = ctx.currentTime + BEAT * 8; // arp enters after 8 beats
+    let pattern = generateArpPattern();
+    let step = 0;
+    let patternCount = 0;
+    let arpIdx = 0;
+
+    function getNextNote() {
+        const len = pattern.length;
+        let note;
+        if (track.arpStyle === 'up') {
+            note = pattern[arpIdx % len];
+            arpIdx++;
+        } else if (track.arpStyle === 'down') {
+            note = pattern[(len - 1) - (arpIdx % len)];
+            arpIdx++;
+        } else if (track.arpStyle === 'pendulum') {
+            const cycle = len * 2 - 2;
+            const pos = arpIdx % cycle;
+            note = pattern[pos < len ? pos : cycle - pos];
+            arpIdx++;
+        } else {
+            note = pick(pattern);
+        }
+        return note;
+    }
+
+    function loop() {
+        while (arpTime < ctx.currentTime + 0.2) {
+            if (step % 16 === 0 && step > 0) {
+                patternCount++;
+                if (patternCount % 8 === 0) pattern = generateArpPattern();
+            }
+
+            // Rhythmic gate: not every 16th plays
+            const gate = Math.random() < 0.7;
+            if (gate) {
+                const note = getNextNote();
+                const dur = SIXTEENTH * pick([1, 2, 3]);
+                makeArpNote(arpTime, note, dur);
+            }
+
+            arpTime += SIXTEENTH;
+            step++;
+        }
+        setTimeout(loop, 50);
+    }
+    loop();
+}
+
+// ---- PAD / DRONE ----
+function schedulePad() {
+    const root = scale[0] - 12;
+    const fifth = root + 7;
+    let padTime = ctx.currentTime + BEAT * 16; // enters later
+
+    function makePadChord(time) {
+        const chordNotes = [root, fifth, root + 12, scale[2]];
+        const dur = BEAT * 16; // 4 bars
+
+        chordNotes.forEach(midi => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const filter = ctx.createBiquadFilter();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(midiToFreq(midi) + rng(-0.5, 0.5), time);
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(400, time);
+            filter.frequency.linearRampToValueAtTime(1200, time + dur * 0.3);
+            filter.frequency.linearRampToValueAtTime(400, time + dur);
+            filter.Q.value = 1;
+
+            gain.gain.setValueAtTime(0, time);
+            gain.gain.linearRampToValueAtTime(0.04, time + dur * 0.2);
+            gain.gain.linearRampToValueAtTime(0.04, time + dur * 0.7);
+            gain.gain.linearRampToValueAtTime(0, time + dur);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(master);
+            osc.start(time);
+            osc.stop(time + dur + 0.1);
+        });
+    }
+
+    function loop() {
+        while (padTime < ctx.currentTime + 1) {
+            makePadChord(padTime);
+            padTime += BEAT * 16;
+        }
+        setTimeout(loop, 500);
+    }
+    loop();
+}
+
+// ---- RISER / TENSION (every 32 bars) ----
+function scheduleRiser() {
+    let riserTime = ctx.currentTime + BEAT * 32 * 4; // first riser after 32 bars
+
+    function makeRiser(time) {
+        const dur = BEAT * 8;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, time);
+        osc.frequency.exponentialRampToValueAtTime(4000, time + dur);
+
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(0.06, time + dur * 0.8);
+        gain.gain.linearRampToValueAtTime(0, time + dur);
+
+        osc.connect(gain);
+        gain.connect(master);
+        osc.start(time);
+        osc.stop(time + dur + 0.1);
+
+        // Update state display
+        setTimeout(() => {
+            document.getElementById('stateDisplay').textContent = 'BUILDING';
+        }, (time - ctx.currentTime) * 1000);
+        setTimeout(() => {
+            document.getElementById('stateDisplay').textContent = pick(['HYPNOTIC', 'LOCKED IN', 'DEEP', 'DRIVING', 'RELENTLESS']);
+        }, (time - ctx.currentTime + dur) * 1000);
+    }
+
+    function loop() {
+        while (riserTime < ctx.currentTime + 2) {
+            makeRiser(riserTime);
+            riserTime += BEAT * 64; // every 16 bars
+        }
+        setTimeout(loop, 1000);
+    }
+    loop();
+}
+
+</script>
+</body>
+</html>
