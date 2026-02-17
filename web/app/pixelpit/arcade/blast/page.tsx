@@ -37,11 +37,11 @@ const SIZE = {
 
 // Physics (Loop spec v2)
 const PLAYER_SPEED = 400;
-const GOO_SPEED = 500;       // ~8px per frame at 60fps
+const GOO_SPEED = 750;       // Fast projectiles (was 500)
 const BASE_ENEMY_SPEED = 60; // Loop spec: 60px/sec base
 const DESCENT_STEP = 12;     // Gradual descent like classic Space Invaders
 const DESCENT_PAUSE = 200;   // Loop spec: 200ms pause on step-down
-const MAX_BULLETS = 3;       // Loop spec: max 3 on screen
+const MAX_BULLETS = 5;       // Steady stream, no burst gaps (was 3)
 const MAX_SHAPES = 20;       // Loop spec: cap to prevent chaos
 const ENEMY_FIRE_INTERVAL = 2; // seconds, hexagons only
 // Shape behavior:
@@ -393,14 +393,11 @@ export default function BlastPage() {
     moveDown: false,
     shapeIdCounter: 0,
     screenShake: 0,
-    autoFire: false,
-    isFiring: false,
     waveClearing: false,
   });
 
   const inputRef = useRef({
     targetX: 200,
-    firing: false,
   });
 
   const { user } = usePixelpitSocial(socialLoaded);
@@ -735,7 +732,6 @@ export default function BlastPage() {
     }
 
     inputRef.current.targetX = x;
-    inputRef.current.firing = true;
   }, [gameState, canvasSize, highScore]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -747,7 +743,7 @@ export default function BlastPage() {
   }, [gameState]);
 
   const handlePointerUp = useCallback(() => {
-    inputRef.current.firing = false;
+    // No-op — auto-fire means no firing state to clear
   }, []);
 
   // Game loop
@@ -776,16 +772,16 @@ export default function BlastPage() {
       }
       game.player.x = Math.max(25, Math.min(canvasSize.w - 25, game.player.x));
 
-      // Shooting (Loop spec: max 3 bullets on screen)
+      // Shooting — always auto-fire, player just positions
       game.player.shootCooldown -= dt;
-      if (input.firing && game.player.shootCooldown <= 0 && game.goos.length < MAX_BULLETS) {
+      if (game.player.shootCooldown <= 0 && game.goos.length < MAX_BULLETS) {
         game.goos.push({
           x: game.player.x,
           y: game.player.y - 20,
           vy: -GOO_SPEED,
         });
         game.player.squash = 0.7;
-        game.player.shootCooldown = 0.2;
+        game.player.shootCooldown = 0.15;
         playShoot();
       }
 
@@ -1606,7 +1602,7 @@ export default function BlastPage() {
               PLAY
             </button>
             <p style={{ color: '#4b5563', fontSize: 11, marginTop: 20, letterSpacing: 2 }}>
-              DRAG TO MOVE &middot; TAP TO SHOOT
+              DRAG TO MOVE &middot; AUTO FIRE
             </p>
             <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 16 }}>
               <span style={{ color: THEME.triangle, fontSize: 11, letterSpacing: 1 }}>&#9650; FODDER</span>
