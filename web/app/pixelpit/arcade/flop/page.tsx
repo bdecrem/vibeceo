@@ -50,14 +50,15 @@ const LEADERBOARD_COLORS: LeaderboardColors = {
 // Physics constants
 const GRAVITY = 1800;
 const GROUND_Y_RATIO = 0.78;
-const RUN_SPEED = 220;
+const RUN_SPEED = 400;
 const SPRINT_MULT = 1.6;
-const JUMP_VEL = -620;
+const JUMP_VEL = -820;
 const CONSTRAINT_ITERS = 3;
 const STUMBLE_TIME = 0.5;
 const FACEPLANT_TIME = 0.8;
-const COURSE_LENGTH = 3200;
+const COURSE_LENGTH = 8000;
 const FINISH_EXTRA = 200;
+const RAGDOLL_SCALE = 1.8;
 
 // Verlet point
 interface VPoint {
@@ -121,37 +122,38 @@ function createPoint(x: number, y: number, pinned = false): VPoint {
 }
 
 function createRagdoll(x: number, groundY: number, color: string, isAI: boolean): Ragdoll {
-  const headY = groundY - 60;
-  const neckY = groundY - 48;
-  const hipY = groundY - 20;
+  const S = RAGDOLL_SCALE;
+  const headY = groundY - 60 * S;
+  const neckY = groundY - 48 * S;
+  const hipY = groundY - 20 * S;
   const footY = groundY;
 
   const points: VPoint[] = [
     createPoint(x, headY),        // 0 head
     createPoint(x, neckY),        // 1 neck
     createPoint(x, hipY),         // 2 hip
-    createPoint(x - 14, neckY + 4),  // 3 left hand
-    createPoint(x - 7, neckY + 2),   // 4 left elbow
-    createPoint(x + 14, neckY + 4),  // 5 right hand
-    createPoint(x + 7, neckY + 2),   // 6 right elbow
-    createPoint(x - 8, footY),    // 7 left foot
-    createPoint(x - 4, hipY + 14),// 8 left knee
-    createPoint(x + 8, footY),    // 9 right foot
-    createPoint(x + 4, hipY + 14),// 10 right knee
+    createPoint(x - 14 * S, neckY + 4 * S),  // 3 left hand
+    createPoint(x - 7 * S, neckY + 2 * S),   // 4 left elbow
+    createPoint(x + 14 * S, neckY + 4 * S),  // 5 right hand
+    createPoint(x + 7 * S, neckY + 2 * S),   // 6 right elbow
+    createPoint(x - 8 * S, footY),    // 7 left foot
+    createPoint(x - 4 * S, hipY + 14 * S),// 8 left knee
+    createPoint(x + 8 * S, footY),    // 9 right foot
+    createPoint(x + 4 * S, hipY + 14 * S),// 10 right knee
   ];
 
   const constraints: VConstraint[] = [
-    { a: 0, b: 1, len: 12 },  // head-neck
-    { a: 1, b: 2, len: 28 },  // neck-hip (spine)
-    { a: 1, b: 4, len: 10 },  // neck-lelbow
-    { a: 4, b: 3, len: 10 },  // lelbow-lhand
-    { a: 1, b: 6, len: 10 },  // neck-relbow
-    { a: 6, b: 5, len: 10 },  // relbow-rhand
-    { a: 2, b: 8, len: 14 },  // hip-lknee
-    { a: 8, b: 7, len: 14 },  // lknee-lfoot
-    { a: 2, b: 10, len: 14 }, // hip-rknee
-    { a: 10, b: 9, len: 14 }, // rknee-rfoot
-    { a: 0, b: 2, len: 40 },  // head-hip (keep upright)
+    { a: 0, b: 1, len: 12 * S },  // head-neck
+    { a: 1, b: 2, len: 28 * S },  // neck-hip (spine)
+    { a: 1, b: 4, len: 10 * S },  // neck-lelbow
+    { a: 4, b: 3, len: 10 * S },  // lelbow-lhand
+    { a: 1, b: 6, len: 10 * S },  // neck-relbow
+    { a: 6, b: 5, len: 10 * S },  // relbow-rhand
+    { a: 2, b: 8, len: 14 * S },  // hip-lknee
+    { a: 8, b: 7, len: 14 * S },  // lknee-lfoot
+    { a: 2, b: 10, len: 14 * S }, // hip-rknee
+    { a: 10, b: 9, len: 14 * S }, // rknee-rfoot
+    { a: 0, b: 2, len: 40 * S },  // head-hip (keep upright)
   ];
 
   return {
@@ -182,16 +184,17 @@ function createRagdoll(x: number, groundY: number, color: string, isAI: boolean)
 }
 
 function resetRagdollPosition(r: Ragdoll, x: number, groundY: number) {
-  const headY = groundY - 60;
-  const neckY = groundY - 48;
-  const hipY = groundY - 20;
+  const S = RAGDOLL_SCALE;
+  const headY = groundY - 60 * S;
+  const neckY = groundY - 48 * S;
+  const hipY = groundY - 20 * S;
   const footY = groundY;
   const positions = [
     [x, headY], [x, neckY], [x, hipY],
-    [x - 14, neckY + 4], [x - 7, neckY + 2],
-    [x + 14, neckY + 4], [x + 7, neckY + 2],
-    [x - 8, footY], [x - 4, hipY + 14],
-    [x + 8, footY], [x + 4, hipY + 14],
+    [x - 14 * S, neckY + 4 * S], [x - 7 * S, neckY + 2 * S],
+    [x + 14 * S, neckY + 4 * S], [x + 7 * S, neckY + 2 * S],
+    [x - 8 * S, footY], [x - 4 * S, hipY + 14 * S],
+    [x + 8 * S, footY], [x + 4 * S, hipY + 14 * S],
   ];
   for (let i = 0; i < r.points.length; i++) {
     r.points[i].x = positions[i][0];
@@ -227,12 +230,13 @@ function generateCourse(raceNum: number): Obstacle[] {
     const available = Math.min(2 + Math.floor(raceNum / 2), types.length);
     const type = types[Math.floor(Math.random() * available)];
     let w = 40, h = 50, speed = 0;
+    const S = RAGDOLL_SCALE;
     switch (type) {
-      case 'hurdle': w = 12; h = 30 + Math.random() * 20; break;
-      case 'spinner': w = 60; h = 8; speed = 2 + raceNum * 0.3; break;
-      case 'mud': w = 80 + Math.random() * 40; h = 10; break;
-      case 'bouncy': w = 50; h = 14; break;
-      case 'hammer': w = 20; h = 50; speed = 1.5 + raceNum * 0.2; break;
+      case 'hurdle': w = 12 * S; h = (30 + Math.random() * 20) * S; break;
+      case 'spinner': w = 60 * S; h = 8 * S; speed = 2 + raceNum * 0.3; break;
+      case 'mud': w = (80 + Math.random() * 40) * S; h = 10 * S; break;
+      case 'bouncy': w = 50 * S; h = 14 * S; break;
+      case 'hammer': w = 20 * S; h = 50 * S; speed = 1.5 + raceNum * 0.2; break;
     }
     obstacles.push({ type, x: tx, width: w, height: h, angle: Math.random() * Math.PI * 2, speed });
   }
@@ -397,8 +401,8 @@ export default function FlopPage() {
     const handleResize = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const w = Math.min(vw - 16, 500);
-      const h = Math.min(vh - 100, 380);
+      const w = Math.min(vw - 16, 600);
+      const h = Math.min(vh - 100, 450);
       setCanvasSize({ w, h });
     };
     handleResize();
@@ -441,11 +445,12 @@ export default function FlopPage() {
     const startX = 60;
     game.racers.push(createRagdoll(startX, groundY, THEME.bubblegum, false));
     game.racers[0].lastPlaceFinishes = lastPlaceCount;
-    // 3 AI
+    // 3 AI — stagger vertically on the start line so all visible
     for (let i = 0; i < 3; i++) {
-      const r = createRagdoll(startX, groundY, shuffled[i], true);
-      // Vary AI skill
-      r.vx = RUN_SPEED * (0.85 + Math.random() * 0.3);
+      const aiX = startX + (i + 1) * 15; // slight stagger
+      const r = createRagdoll(aiX, groundY, shuffled[i], true);
+      // Vary AI skill — keep them competitive with player
+      r.vx = RUN_SPEED * (0.9 + Math.random() * 0.2);
       r.aiReaction = 0.1 + Math.random() * 0.3;
       game.racers.push(r);
     }
@@ -592,7 +597,7 @@ export default function FlopPage() {
         const newBaseY = baseY + r.vy * dt;
 
         // Ground collision
-        if (newBaseY >= groundY - 20 && r.vy > 0) {
+        if (newBaseY >= groundY - 20 * RAGDOLL_SCALE && r.vy > 0) {
           r.vy = 0;
           r.onGround = true;
           if (r.jumping && Math.abs(r.vy) < 50) {
