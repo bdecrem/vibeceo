@@ -10,7 +10,7 @@ type BaseTemplate = {
 // Version must be bumped when the corresponding base-template.jsx changes
 const VERSIONS: Record<string, number> = {
   todoit: 5,
-  contxt: 2,
+  contxt: 3,
   notabl: 9,
 };
 

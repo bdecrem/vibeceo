@@ -5,7 +5,7 @@ function App() {
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [showLogInteraction, setShowLogInteraction] = useState(false);
-  const [newPerson, setNewPerson] = useState({ name: "", how_we_met: "", notes: "", desired_frequency: "monthly", tags: "" });
+  const [newPerson, setNewPerson] = useState({ name: "", email: "", phone: "", social_links: "", how_we_met: "", notes: "", desired_frequency: "monthly", tags: "" });
   const [newInteraction, setNewInteraction] = useState({ date: new Date().toISOString().split("T")[0], type: "coffee", note: "", person_ids: [] });
 
   const accent = "#00CEC9";
@@ -20,12 +20,15 @@ function App() {
 
   const frequencyLabel = { weekly: "Weekly", monthly: "Monthly", quarterly: "Quarterly", yearly: "Yearly", none: "No reminder" };
 
-  const filteredPeople = people.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    (p.how_we_met || "").toLowerCase().includes(search.toLowerCase()) ||
-    (p.notes || "").toLowerCase().includes(search.toLowerCase()) ||
-    p.tags.some(t => t.label.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredPeople = people.filter(p => {
+    const q = search.toLowerCase();
+    return p.name.toLowerCase().includes(q) ||
+      (p.email || "").toLowerCase().includes(q) ||
+      (p.phone || "").toLowerCase().includes(q) ||
+      (p.how_we_met || "").toLowerCase().includes(q) ||
+      (p.notes || "").toLowerCase().includes(q) ||
+      p.tags.some(t => t.label.toLowerCase().includes(q));
+  });
 
   const personInteractions = selectedPerson
     ? interactions.filter(i => i.people.some(p => p.id === selectedPerson.id))
@@ -77,14 +80,25 @@ function App() {
   const handleAddPerson = async () => {
     if (!newPerson.name.trim()) return;
     const tagList = newPerson.tags.split(",").map(t => t.trim()).filter(Boolean);
+    const socialObj = {};
+    newPerson.social_links.split(",").map(s => s.trim()).filter(Boolean).forEach(link => {
+      if (link.includes("twitter.com") || link.includes("x.com")) socialObj.twitter = link;
+      else if (link.includes("linkedin.com")) socialObj.linkedin = link;
+      else if (link.includes("instagram.com")) socialObj.instagram = link;
+      else if (link.includes("github.com")) socialObj.github = link;
+      else socialObj.other = link;
+    });
     await addPerson({
       name: newPerson.name.trim(),
+      email: newPerson.email.trim() || undefined,
+      phone: newPerson.phone.trim() || undefined,
+      social_links: Object.keys(socialObj).length > 0 ? socialObj : undefined,
       how_we_met: newPerson.how_we_met.trim() || undefined,
       notes: newPerson.notes.trim() || undefined,
       desired_frequency: newPerson.desired_frequency,
       tags: tagList.length > 0 ? tagList : undefined,
     });
-    setNewPerson({ name: "", how_we_met: "", notes: "", desired_frequency: "monthly", tags: "" });
+    setNewPerson({ name: "", email: "", phone: "", social_links: "", how_we_met: "", notes: "", desired_frequency: "monthly", tags: "" });
     setShowAddPerson(false);
   };
 
@@ -126,6 +140,28 @@ function App() {
             </span>
           ))}
         </div>
+        {(p.email || p.phone || (p.social_links && Object.keys(p.social_links).length > 0)) && (
+          <div style={{ background: card, borderRadius: 10, padding: 14, marginBottom: 12, border: `1px solid ${border}`, display: "flex", flexDirection: "column", gap: 6 }}>
+            {p.email && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ color: textDim, fontSize: 11, width: 44, flexShrink: 0 }}>email</span>
+                <a href={"mailto:" + p.email} style={{ color: accent, fontSize: 13, textDecoration: "none" }}>{p.email}</a>
+              </div>
+            )}
+            {p.phone && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ color: textDim, fontSize: 11, width: 44, flexShrink: 0 }}>phone</span>
+                <a href={"tel:" + p.phone} style={{ color: accent, fontSize: 13, textDecoration: "none" }}>{p.phone}</a>
+              </div>
+            )}
+            {p.social_links && Object.entries(p.social_links).map(([platform, url]) => (
+              <div key={platform} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ color: textDim, fontSize: 11, width: 44, flexShrink: 0 }}>{platform}</span>
+                <a href={String(url).startsWith("http") ? url : "https://" + url} target="_blank" rel="noopener noreferrer" style={{ color: accent, fontSize: 13, textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{String(url).replace(/^https?:\/\/(www\.)?/, "")}</a>
+              </div>
+            ))}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 16, marginBottom: 16, fontSize: 12, color: textDim }}>
           <span>Last contact: {timeSince(p.last_contacted)}</span>
           <span>Frequency: {frequencyLabel[p.desired_frequency] || p.desired_frequency}</span>
@@ -241,6 +277,12 @@ function App() {
                     <div style={{ color: textPrimary, fontSize: 14, fontWeight: 600 }}>{p.name}</div>
                     <div style={{ color: textDim, fontSize: 11 }}>{timeSince(p.last_contacted)}</div>
                   </div>
+                  {(p.email || p.phone) && (
+                    <div style={{ color: textDim, fontSize: 11, marginTop: 3, display: "flex", gap: 10 }}>
+                      {p.email && <span>{p.email}</span>}
+                      {p.phone && <span>{p.phone}</span>}
+                    </div>
+                  )}
                   {p.how_we_met && <div style={{ color: textDim, fontSize: 12, marginTop: 3, lineHeight: 1.4 }}>{p.how_we_met.length > 60 ? p.how_we_met.slice(0, 60) + "..." : p.how_we_met}</div>}
                   {p.tags.length > 0 && (
                     <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
@@ -297,6 +339,11 @@ function App() {
             <h3 style={{ color: textPrimary, margin: "0 0 16px", fontSize: 18, fontWeight: 700 }}>Add a person</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <input placeholder="Name" value={newPerson.name} onChange={e => setNewPerson(p => ({ ...p, name: e.target.value }))} style={inputStyle} />
+              <div style={{ display: "flex", gap: 8 }}>
+                <input placeholder="Email" value={newPerson.email} onChange={e => setNewPerson(p => ({ ...p, email: e.target.value }))} style={{ ...inputStyle, flex: 1 }} />
+                <input placeholder="Phone" value={newPerson.phone} onChange={e => setNewPerson(p => ({ ...p, phone: e.target.value }))} style={{ ...inputStyle, flex: 1 }} />
+              </div>
+              <input placeholder="Social links (comma-separated URLs)" value={newPerson.social_links} onChange={e => setNewPerson(p => ({ ...p, social_links: e.target.value }))} style={inputStyle} />
               <input placeholder="How did you meet?" value={newPerson.how_we_met} onChange={e => setNewPerson(p => ({ ...p, how_we_met: e.target.value }))} style={inputStyle} />
               <textarea placeholder="Notes" value={newPerson.notes} onChange={e => setNewPerson(p => ({ ...p, notes: e.target.value }))} rows={3} style={{ ...inputStyle, resize: "vertical" }} />
               <input placeholder="Tags (comma-separated)" value={newPerson.tags} onChange={e => setNewPerson(p => ({ ...p, tags: e.target.value }))} style={inputStyle} />

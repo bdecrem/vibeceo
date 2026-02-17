@@ -52,11 +52,14 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await request.json();
-  const { name, how_we_met, notes, last_contacted, desired_frequency, properties, tags } = body;
+  const { name, email, phone, social_links, how_we_met, notes, last_contacted, desired_frequency, properties, tags } = body;
 
   // Build update object with only provided fields
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (name !== undefined) updates.name = name;
+  if (email !== undefined) updates.email = email;
+  if (phone !== undefined) updates.phone = phone;
+  if (social_links !== undefined) updates.social_links = social_links;
   if (how_we_met !== undefined) updates.how_we_met = how_we_met;
   if (notes !== undefined) updates.notes = notes;
   if (last_contacted !== undefined) updates.last_contacted = last_contacted;

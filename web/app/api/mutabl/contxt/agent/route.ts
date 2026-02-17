@@ -44,8 +44,9 @@ function getSession(request: NextRequest) {
 
 const CONTXT_SCOPE_DOCS = `AVAILABLE IN SCOPE (injected by the wrapper — do NOT import these):
 - React hooks: useState, useEffect, useRef, useMemo, useCallback
-- People data: people (array of {id, name, how_we_met, notes, last_contacted, desired_frequency, properties, tags, created_at})
-- People operations: addPerson({name, how_we_met?, notes?, desired_frequency?, tags?}), updatePerson(id, {name?, how_we_met?, notes?, desired_frequency?, properties?, tags?}), deletePerson(id)
+- People data: people (array of {id, name, email, phone, social_links, how_we_met, notes, last_contacted, desired_frequency, properties, tags, created_at})
+  - email: string|null, phone: string|null, social_links: object with platform keys (twitter, linkedin, github, instagram, other) mapping to URL strings
+- People operations: addPerson({name, email?, phone?, social_links?, how_we_met?, notes?, desired_frequency?, tags?}), updatePerson(id, {name?, email?, phone?, social_links?, how_we_met?, notes?, desired_frequency?, properties?, tags?}), deletePerson(id)
 - Interactions data: interactions (array of {id, date, type, note, people, created_at})
 - Interactions operations: addInteraction({date?, type?, note?, person_ids}), updateInteraction(id, {date?, type?, note?, person_ids?}), deleteInteraction(id)
 - Tags data: tags (array of {id, label})

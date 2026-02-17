@@ -5,6 +5,9 @@ import { useState, useCallback } from "react";
 export type Person = {
   id: string;
   name: string;
+  email: string | null;
+  phone: string | null;
+  social_links: Record<string, string>;
   how_we_met: string | null;
   notes: string | null;
   last_contacted: string | null;
@@ -86,6 +89,9 @@ export function useContxtApi() {
   const addPerson = useCallback(
     async (person: {
       name: string;
+      email?: string;
+      phone?: string;
+      social_links?: Record<string, string>;
       how_we_met?: string;
       notes?: string;
       desired_frequency?: string;
@@ -110,6 +116,9 @@ export function useContxtApi() {
       id: string,
       updates: {
         name?: string;
+        email?: string;
+        phone?: string;
+        social_links?: Record<string, string>;
         how_we_met?: string;
         notes?: string;
         desired_frequency?: string;

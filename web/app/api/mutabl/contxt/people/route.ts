@@ -60,6 +60,9 @@ export async function GET(request: NextRequest) {
   const mapped = (people || []).map((p) => ({
     id: p.id,
     name: p.name,
+    email: p.email,
+    phone: p.phone,
+    social_links: p.social_links,
     how_we_met: p.how_we_met,
     notes: p.notes,
     last_contacted: p.last_contacted,
@@ -84,7 +87,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { name, how_we_met, notes, last_contacted, desired_frequency, properties, tags } = body;
+  const { name, email, phone, social_links, how_we_met, notes, last_contacted, desired_frequency, properties, tags } = body;
 
   if (!name || typeof name !== "string" || !name.trim()) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -95,6 +98,9 @@ export async function POST(request: NextRequest) {
     .insert({
       user_id: session.userId,
       name: name.trim(),
+      email: email || null,
+      phone: phone || null,
+      social_links: social_links || {},
       how_we_met: how_we_met || null,
       notes: notes || null,
       last_contacted: last_contacted || null,
