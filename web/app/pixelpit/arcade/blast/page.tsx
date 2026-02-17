@@ -716,9 +716,27 @@ export default function BlastPage() {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // X (quit) button hit area — top-right corner
+    if (x > canvasSize.w - 48 && y < 48) {
+      const game = gameRef.current;
+      stopMusic();
+      playDeath();
+      game.screenShake = 10;
+      setScore(game.score);
+      setWave(game.wave);
+      setGameState('gameover');
+      if (game.score > highScore) {
+        setHighScore(game.score);
+        localStorage.setItem('blast_highscore', game.score.toString());
+      }
+      return;
+    }
+
     inputRef.current.targetX = x;
     inputRef.current.firing = true;
-  }, [gameState]);
+  }, [gameState, canvasSize, highScore]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (gameState !== 'playing') return;
@@ -1091,6 +1109,7 @@ export default function BlastPage() {
       ctx.setLineDash([]);
 
       // ── HUD ─────────────────────────────────────────
+      // WAVE — top left
       ctx.font = '600 13px "SF Mono", "Fira Code", "Consolas", monospace';
       ctx.textAlign = 'left';
       ctx.fillStyle = '#ffffff30';
@@ -1099,20 +1118,32 @@ export default function BlastPage() {
       ctx.font = '700 18px "SF Mono", "Fira Code", "Consolas", monospace';
       ctx.fillText(`${game.wave}`, 14, 44);
 
-      ctx.textAlign = 'right';
+      // SCORE — center
+      ctx.textAlign = 'center';
       ctx.fillStyle = '#ffffff30';
       ctx.font = '600 13px "SF Mono", "Fira Code", "Consolas", monospace';
-      ctx.fillText(`SCORE`, canvasSize.w - 14, 24);
+      ctx.fillText(`SCORE`, canvasSize.w / 2, 24);
       ctx.fillStyle = THEME.slime;
       ctx.font = '700 18px "SF Mono", "Fira Code", "Consolas", monospace';
-      ctx.fillText(`${game.score}`, canvasSize.w - 14, 44);
+      ctx.fillText(`${game.score}`, canvasSize.w / 2, 44);
 
-      // Combo
+      // X (quit) button — top right
+      ctx.strokeStyle = '#ffffff25';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(canvasSize.w - 30, 16);
+      ctx.lineTo(canvasSize.w - 18, 28);
+      ctx.moveTo(canvasSize.w - 18, 16);
+      ctx.lineTo(canvasSize.w - 30, 28);
+      ctx.stroke();
+
+      // Combo — below score
       if (game.combo > 1) {
         const comboAlpha = Math.min(game.comboTimer / 0.5, 1);
         const comboScale = 1 + (game.combo - 1) * 0.03;
         ctx.save();
-        ctx.translate(canvasSize.w / 2, 36);
+        ctx.translate(canvasSize.w / 2, 66);
         ctx.scale(comboScale, comboScale);
         ctx.globalAlpha = comboAlpha;
         ctx.textAlign = 'center';
