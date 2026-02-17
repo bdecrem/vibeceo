@@ -1,0 +1,372 @@
+/* contxt — polished dark theme with cx- prefixed classes */
+
+/* ---- Scrollbar ---- */
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: #1e1e3a; border-radius: 3px; }
+*::-webkit-scrollbar-thumb:hover { background: #2e2e4a; }
+
+/* ---- Animations ---- */
+@keyframes cx-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes cx-card-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes cx-slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Root ---- */
+.cx-root {
+  min-height: 100vh;
+  background: #0a0a1a;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ---- Typography ---- */
+.cx-title {
+  color: #e0e0e0;
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 700;
+}
+.cx-title-lg {
+  color: #e0e0e0;
+  margin: 0 0 4px;
+  font-size: 24px;
+  font-weight: 700;
+}
+.cx-subtitle {
+  color: #555;
+  font-size: 12px;
+}
+.cx-section-label {
+  font-size: 11px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+/* ---- Tabs ---- */
+.cx-tab {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 400;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.cx-tab:hover {
+  color: #bbb;
+}
+.cx-tab-active {
+  border-color: #00CEC9;
+  background: rgba(0, 206, 201, 0.125);
+  color: #00CEC9;
+  font-weight: 600;
+}
+
+/* ---- Cards ---- */
+.cx-card {
+  background: #111125;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 8px;
+  border: 1px solid #1e1e3a;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.cx-card-lg {
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 10px;
+}
+.cx-card-enter {
+  animation: cx-card-enter 0.25s ease-out both;
+}
+.cx-card-clickable {
+  cursor: pointer;
+}
+.cx-card-clickable:hover {
+  transform: translateY(-2px);
+  border-color: #2e2e4a;
+  box-shadow: 0 4px 20px rgba(0, 206, 201, 0.06);
+}
+
+/* ---- Buttons: Primary ---- */
+.cx-btn-primary {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #00CEC9;
+  border: none;
+  color: #000;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: filter 0.15s, transform 0.15s;
+}
+.cx-btn-primary:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}
+.cx-btn-primary:active {
+  transform: scale(0.98);
+}
+.cx-btn-primary:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+.cx-btn-primary:disabled:hover {
+  filter: none;
+  transform: none;
+}
+.cx-btn-primary-sm {
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: #00CEC9;
+  border: none;
+  color: #000;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: filter 0.15s, transform 0.15s;
+}
+.cx-btn-primary-sm:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}
+.cx-btn-primary-sm:active {
+  transform: scale(0.98);
+}
+
+/* ---- Buttons: Secondary ---- */
+.cx-btn-secondary {
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: none;
+  border: 1px solid #1e1e3a;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: border-color 0.15s, color 0.15s;
+}
+.cx-btn-secondary:hover {
+  border-color: #2e2e4a;
+  color: #aaa;
+}
+.cx-btn-secondary-lg {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: none;
+  border: 1px solid #1e1e3a;
+  color: #888;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: border-color 0.15s, color 0.15s;
+}
+.cx-btn-secondary-lg:hover {
+  border-color: #2e2e4a;
+  color: #aaa;
+}
+
+/* ---- Buttons: Ghost ---- */
+.cx-btn-ghost {
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: none;
+  border: 1px solid #1e1e3a;
+  color: #555;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: border-color 0.15s, color 0.15s;
+}
+.cx-btn-ghost:hover {
+  border-color: #2e2e4a;
+  color: #777;
+}
+
+/* ---- Inputs ---- */
+.cx-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #1e1e3a;
+  background: #111125;
+  color: #e0e0e0;
+  font-size: 14px;
+  font-family: system-ui, -apple-system, sans-serif;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cx-input:focus {
+  border-color: #00CEC9;
+  box-shadow: 0 0 0 2px rgba(0, 206, 201, 0.2);
+}
+
+/* ---- Tags ---- */
+.cx-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(0, 206, 201, 0.125);
+  color: #00CEC9;
+  font-size: 11px;
+  font-weight: 500;
+  transition: filter 0.15s;
+}
+.cx-tag:hover {
+  filter: brightness(1.2);
+}
+.cx-tag-sm {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(0, 206, 201, 0.125);
+  color: #00CEC9;
+  font-size: 10px;
+  transition: filter 0.15s;
+}
+.cx-tag-sm:hover {
+  filter: brightness(1.2);
+}
+
+/* ---- Modal ---- */
+.cx-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: cx-fade-in 0.2s ease-out;
+}
+.cx-modal {
+  background: #111125;
+  border-radius: 14px;
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid #1e1e3a;
+  animation: cx-slide-up 0.25s ease-out;
+}
+.cx-modal-scroll {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.cx-modal-title {
+  color: #e0e0e0;
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* ---- Back Button ---- */
+.cx-back {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 16px;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: color 0.15s;
+}
+.cx-back:hover {
+  color: #bbb;
+}
+
+/* ---- Links ---- */
+.cx-link {
+  color: #00CEC9;
+  font-size: 13px;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.cx-link:hover {
+  color: #33e8e3;
+  text-decoration: underline;
+}
+
+/* ---- Checkbox Rows ---- */
+.cx-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cx-checkbox-row:hover {
+  background: rgba(0, 206, 201, 0.06);
+}
+.cx-checkbox-active {
+  background: rgba(0, 206, 201, 0.125);
+}
+.cx-checkbox-row input[type="checkbox"] {
+  accent-color: #00CEC9;
+}
+
+/* ---- Edit Mode ---- */
+.cx-btn-icon {
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: color 0.15s, background 0.15s;
+}
+.cx-btn-icon:hover {
+  color: #aaa;
+  background: rgba(255, 255, 255, 0.05);
+}
+.cx-edit-label {
+  font-size: 11px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.cx-btn-danger {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: none;
+  border: 1px solid #2a1a1a;
+  color: #884444;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.cx-btn-danger:hover {
+  border-color: #4a2a2a;
+  color: #cc5555;
+  background: rgba(204, 68, 68, 0.06);
+}
+.cx-btn-danger-confirm {
+  border-color: #cc5555;
+  color: #ee6666;
+  background: rgba(204, 68, 68, 0.12);
+}
+.cx-btn-danger-confirm:hover {
+  background: rgba(204, 68, 68, 0.18);
+}
