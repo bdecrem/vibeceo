@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Berlin Industrial — Amber</title>
+    <meta property="og:title" content="Berlin Industrial — Amber">
+    <meta property="og:image" content="https://intheamber.com/amber/pulse-og.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg,
+                rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px,
+                transparent 1px, transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .container {
+            max-width: 800px;
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+        .timestamp {
+            font-size: 0.75rem;
+            color: #2D9596;
+            margin-bottom: 1rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #FFD700;
+            margin-bottom: 1rem;
+            letter-spacing: 0.15em;
+        }
+        .track-name {
+            font-size: 0.85rem;
+            color: #D4A574;
+            margin-bottom: 2rem;
+            opacity: 0.7;
+        }
+        .start-prompt {
+            font-size: 0.875rem;
+            color: #2D9596;
+            animation: blink 1.5s ease-in-out infinite;
+            margin-bottom: 2rem;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        .pulse-indicator {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #2D9596;
+            font-size: 0.875rem;
+            color: #888;
+        }
+        .pulse-indicator span { color: #FFD700; }
+        .bg-pulse {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px; height: 800px;
+            background: radial-gradient(circle, rgba(212,165,116,0.1) 0%, transparent 70%);
+            z-index: 0;
+            transition: opacity 0.1s;
+        }
+        .signature {
+            margin-top: 2rem;
+            text-align: right;
+            color: #2D9596;
+            font-size: 0.875rem;
+        }
+        canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="viz"></canvas>
+    <div class="bg-pulse" id="bgPulse"></div>
+
+    <div class="container">
+        <div class="timestamp" id="timestamp"></div>
+        <h1>BERLIN INDUSTRIAL</h1>
+        <div class="track-name" id="trackName"></div>
+        <div class="start-prompt" id="startPrompt">[ tap to begin ]</div>
+
+        <div class="pulse-indicator" id="indicators" style="display:none">
+            <div>BPM: <span id="bpmDisplay">—</span></div>
+            <div>KEY: <span id="keyDisplay">—</span></div>
+            <div>STATE: <span id="stateDisplay">WAITING</span></div>
+        </div>
+
+        <div class="signature">— Amber</div>
+    </div>
+
+<script>
+// ============================================================
+// BERLIN INDUSTRIAL — Surgeon, Regis, Perc, Paula Temple
+// Distorted. Metallic. Hostile. Zero mercy.
+// ============================================================
+
+const SCALES = {
+    'Am':  [57, 58, 60, 62, 63, 65, 67],
+    'Cm':  [60, 61, 63, 65, 66, 68, 70],
+    'Dm':  [62, 63, 65, 67, 68, 70, 72],
+    'Em':  [64, 65, 67, 69, 70, 72, 74],
+    'Fm':  [65, 66, 68, 70, 71, 73, 75],
+    'Gm':  [67, 68, 70, 72, 73, 75, 77],
+    'Bbm': [70, 71, 73, 75, 76, 78, 80],
+};
+
+const TRACK_FLAVORS = [
+    { name: 'MORD FLOOR',      bpm: 138, key: 'Am',  rimPattern: 'syncopated' },
+    { name: 'PERC TRAX 001',   bpm: 140, key: 'Cm',  rimPattern: 'driving' },
+    { name: 'VATICAN SHADOW',  bpm: 136, key: 'Em',  rimPattern: 'syncopated' },
+    { name: 'ANSOME RITUAL',   bpm: 142, key: 'Fm',  rimPattern: 'driving' },
+    { name: 'BLAWAN 3AM',      bpm: 139, key: 'Dm',  rimPattern: 'syncopated' },
+    { name: 'HEADLESS HORSEMAN', bpm: 137, key: 'Gm', rimPattern: 'driving' },
+];
+
+const track = TRACK_FLAVORS[Math.floor(Math.random() * TRACK_FLAVORS.length)];
+const scale = SCALES[track.key];
+const BPM = track.bpm + Math.floor(Math.random() * 3) - 1;
+const BEAT = 60 / BPM;
+const SIXTEENTH = BEAT / 4;
+
+// UI
+const now = new Date();
+document.getElementById('timestamp').textContent =
+    `${now.toISOString().slice(0,10)} • ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+document.getElementById('trackName').textContent = track.name;
+document.getElementById('bpmDisplay').textContent = BPM;
+document.getElementById('keyDisplay').textContent = track.key;
+
+function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function rng(min, max) { return Math.random() * (max - min) + min; }
+
+let ctx, master, compressor, analyser, analyserData;
+let started = false;
+
+// Visualization
+const canvas = document.getElementById('viz');
+const vctx = canvas.getContext('2d');
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function drawViz() {
+    requestAnimationFrame(drawViz);
+    if (!analyser) return;
+
+    analyser.getByteFrequencyData(analyserData);
+    vctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const bars = 64;
+    const barW = canvas.width / bars;
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+
+    for (let i = 0; i < bars; i++) {
+        const val = analyserData[i] / 255;
+        const angle = (i / bars) * Math.PI * 2 - Math.PI / 2;
+        const innerR = 80;
+        const outerR = innerR + val * 200;
+        const x1 = cx + Math.cos(angle) * innerR;
+        const y1 = cy + Math.sin(angle) * innerR;
+        const x2 = cx + Math.cos(angle) * outerR;
+        const y2 = cy + Math.sin(angle) * outerR;
+
+        vctx.beginPath();
+        vctx.moveTo(x1, y1);
+        vctx.lineTo(x2, y2);
+        vctx.strokeStyle = `rgba(212, 165, 116, ${0.2 + val * 0.6})`;
+        vctx.lineWidth = barW * 0.6;
+        vctx.stroke();
+    }
+
+    const bass = analyserData[1] / 255;
+    const bgPulse = document.getElementById('bgPulse');
+    bgPulse.style.opacity = 0.05 + bass * 0.4;
+}
+drawViz();
+
+// ============================================================
+// AUDIO ENGINE
+// ============================================================
+
+function startAudio() {
+    if (started) return;
+    started = true;
+
+    document.getElementById('startPrompt').style.display = 'none';
+    document.getElementById('indicators').style.display = 'flex';
+    document.getElementById('stateDisplay').textContent = 'STARTING...';
+
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    const silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const silentSrc = ctx.createBufferSource();
+    silentSrc.buffer = silentBuf;
+    silentSrc.connect(ctx.destination);
+    silentSrc.start(0);
+
+    const p = ctx.resume();
+    const boot = () => {
+        compressor = ctx.createDynamicsCompressor();
+        compressor.threshold.value = -8;  // harder compression
+        compressor.ratio.value = 12;
+        compressor.attack.value = 0.001;
+        compressor.release.value = 0.08;
+        compressor.connect(ctx.destination);
+
+        master = ctx.createGain();
+        master.gain.value = 0.7;
+        master.connect(compressor);
+
+        analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        analyserData = new Uint8Array(analyser.frequencyBinCount);
+        master.connect(analyser);
+
+        document.getElementById('stateDisplay').textContent = 'PLAYING';
+
+        scheduleKick();
+        scheduleHats();
+        scheduleClap();
+        scheduleRimshot();
+        scheduleBass();
+        scheduleArp();
+        scheduleRiser();
+    };
+
+    if (p && p.then) {
+        p.then(boot);
+    } else {
+        boot();
+    }
+}
+
+document.body.addEventListener('click', startAudio);
+document.body.addEventListener('touchend', startAudio);
+
+// ---- KICK ----
+// Distorted. Overdriven. The body blow.
+function makeKick(time) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const dist = ctx.createWaveShaper();
+
+    // Distortion curve
+    const samples = 256;
+    const curve = new Float32Array(samples);
+    for (let i = 0; i < samples; i++) {
+        const x = (i * 2) / samples - 1;
+        curve[i] = Math.tanh(x * 3); // soft clip
+    }
+    dist.curve = curve;
+    dist.oversample = '2x';
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(170, time);
+    osc.frequency.exponentialRampToValueAtTime(30, time + 0.06);
+    gain.gain.setValueAtTime(1.0, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
+
+    osc.connect(dist);
+    dist.connect(gain);
+    gain.connect(master);
+    osc.start(time);
+    osc.stop(time + 0.45);
+
+    // Hard transient click — metallic
+    const click = ctx.createOscillator();
+    const clickGain = ctx.createGain();
+    click.type = 'square';
+    click.frequency.setValueAtTime(2000, time);
+    click.frequency.exponentialRampToValueAtTime(150, time + 0.008);
+    clickGain.gain.setValueAtTime(0.35, time);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.012);
+    click.connect(clickGain);
+    clickGain.connect(master);
+    click.start(time);
+    click.stop(time + 0.015);
+}
+
+let kickTime;
+function scheduleKick() {
+    kickTime = ctx.currentTime + 0.05;
+    function loop() {
+        while (kickTime < ctx.currentTime + 0.2) {
+            makeKick(kickTime);
+            kickTime += BEAT;
+        }
+        setTimeout(loop, 50);
+    }
+    loop();
+}
+
+// ---- HI-HATS ----
+// 16th notes. Relentless. Mechanical. No swing.
+function makeHat(time, open) {
+    const bufSize = open ? 3528 : 882;
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = open ? 7000 : 9500;
+
+    const gain = ctx.createGain();
+    const vol = open ? 0.07 : 0.05;
+    gain.gain.setValueAtTime(vol, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + (open ? 0.08 : 0.02));
+
+    src.connect(hp);
+    hp.connect(gain);
+    gain.connect(master);
+    src.start(time);
+}
+
+function scheduleHats() {
+    let hatTime = ctx.currentTime + 0.05;
+    let step = 0;
+
+    function loop() {
+        while (hatTime < ctx.currentTime + 0.2) {
+            // Every 16th except on kick hits
+            if (step % 4 !== 0) {
+                const open = step % 16 === 6;
+                makeHat(hatTime, open);
+            }
+            hatTime += SIXTEENTH;
+            step++;
+        }
+        setTimeout(loop, 50);
+    }
+    loop();
+}
+
+// ---- CLAP ----
+function makeClap(time) {
+    const layers = 3;
+    for (let i = 0; i < layers; i++) {
+        const t = time + i * 0.006;
+        const bufSize = 1764;
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let j = 0; j < bufSize; j++) data[j] = Math.random() * 2 - 1;
+
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 1400;
+        bp.Q.value = 1.0;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.13, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+
+        src.connect(bp);
+        bp.connect(gain);
+        gain.connect(master);
+        src.start(t);
+    }
+}
+
+function scheduleClap() {
+    let clapTime = ctx.currentTime + BEAT * 2 - 0.01;
+    function loop() {
+        while (clapTime < ctx.currentTime + 0.2) {
+            makeClap(clapTime);
+            clapTime += BEAT * 2;
+        }
+        setTimeout(loop, 50);
+    }
+    loop();
+}
+
+// ---- RIMSHOT / METALLIC PERC ----
+// The industrial signature. Metallic hits on off-grid positions.
+function makeRimshot(time) {
+    const osc = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const hp = ctx.createBiquadFilter();
+
+    // Two detuned high oscillators = metallic clang
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(rng(800, 1400), time);
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(rng(1200, 2000), time);
+
+    hp.type = 'highpass';
+    hp.frequency.value = 600;
+
+    gain.gain.setValueAtTime(0.08, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+
+    osc.connect(hp);
+    osc2.connect(hp);
+    hp.connect(gain);
+    gain.connect(master);
+    osc.start(time);
+    osc2.start(time);
+    osc.stop(time + 0.05);
+    osc2.stop(time + 0.05);
+}
+
+function scheduleRimshot() {
+    let rimTime = ctx.currentTime + BEAT * 8; // enters after 2 bars
+    let step = 0;
+
+    // Pre-generate a 16-step pattern
+    function makePattern() {
+        if (track.rimPattern === 'syncopated') {
+            return [0,0,1,0, 0,0,0,1, 0,1,0,0, 0,0,1,0]; // off-grid hits
+        } else {
+            return [0,0,1,0, 0,1,0,0, 0,0,1,0, 0,1,0,1]; // more driving
+        }
+    }
+    let pattern = makePattern();
+
+    function loop() {
+        while (rimTime < ctx.currentTime + 0.2) {
+            const idx = step % 16;
+            if (pattern[idx] && Math.random() > 0.1) {
+                makeRimshot(rimTime);
+            }
+            // Occasional extra ghost hit for chaos
+            if (Math.random() < 0.04) {
+                makeRimshot(rimTime);
+            }
+            rimTime += SIXTEENTH;
+            step++;
+        }
+        setTimeout(loop, 50);
+    }
+    loop();
+}
+
+// ---- BASSLINE ----
+// Distorted square wave. Mean. Gritty. Waveshaped.
+function generateBassPattern() {
+    const root = scale[0] - 24;
+    const notes = [root, root, root, root, root, root, root, root];
+    const intervals = [0, 0, 0, 1, -1, -2]; // chromatic tension
+    for (let i = 0; i < 8; i++) {
+        if (Math.random() < 0.25) {
+            notes[i] = root + pick(intervals);
+        }
+    }
+    return notes;
+}
+
+function makeBassNote(time, midi, dur) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    const dist = ctx.createWaveShaper();
+
+    // Distortion
+    const samples = 256;
+    const curve = new Float32Array(samples);
+    for (let i = 0; i < samples; i++) {
+        const x = (i * 2) / samples - 1;
+        curve[i] = Math.tanh(x * 5); // harder clip than kick
+    }
+    dist.curve = curve;
+    dist.oversample = '2x';
+
+    const freq = midiToFreq(midi);
+    osc.type = 'square'; // hard, aggressive
+    osc.frequency.setValueAtTime(freq, time);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(250, time);
+    filter.frequency.exponentialRampToValueAtTime(80, time + dur * 0.7);
+    filter.Q.value = 3;
+
+    gain.gain.setValueAtTime(0.25, time);
+    gain.gain.setValueAtTime(0.25, time + dur * 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+    osc.connect(filter);
+    filter.connect(dist);
+    dist.connect(gain);
+    gain.connect(master);
+    osc.start(time);
+    osc.stop(time + dur + 0.01);
+}
+
+function scheduleBass() {
+    let bassTime = ctx.currentTime + 0.05;
+    let pattern = generateBassPattern();
+    let step = 0;
+    let patternCount = 0;
+
+    function loop() {
+        while (bassTime < ctx.currentTime + 0.2) {
+            const idx = step % 8;
+            if (idx === 0 && step > 0) {
+                patternCount++;
+                if (patternCount % 4 === 0) pattern = generateBassPattern();
+            }
+            if (Math.random() > 0.12) {
+                const dur = BEAT * (Math.random() < 0.3 ? 0.5 : 0.85);
+                makeBassNote(bassTime, pattern[idx], dur);
+            }
+            bassTime += BEAT;
+            step++;
+        }
+        setTimeout(loop, 50);
+    }
+    loop();
+}
+
+// ---- ARP ----
+// Harsh. Buzzing. Short stabs with bitcrushed feel.
+// Not melodic — percussive tonal hits.
+function generateArpPattern() {
+    const len = pick([4, 6, 8]);
+    const notes = [];
+    for (let i = 0; i < len; i++) {
+        notes.push(scale[Math.floor(Math.random() * 4)]); // narrow range
+    }
+    return notes;
+}
+
+function makeArpNote(time, midi, dur) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    const dist = ctx.createWaveShaper();
+
+    const samples = 256;
+    const curve = new Float32Array(samples);
+    for (let i = 0; i < samples; i++) {
+        const x = (i * 2) / samples - 1;
+        curve[i] = Math.sign(x) * Math.pow(Math.abs(x), 0.5); // harsh waveshape
+    }
+    dist.curve = curve;
+
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(midiToFreq(midi), time);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(500, time);
+    filter.frequency.exponentialRampToValueAtTime(120, time + dur);
+    filter.Q.value = 4;
+
+    gain.gain.setValueAtTime(0.02, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+    osc.connect(filter);
+    filter.connect(dist);
+    dist.connect(gain);
+    gain.connect(master);
+
+    osc.start(time);
+    osc.stop(time + dur + 0.01);
+}
+
+function scheduleArp() {
+    let arpTime = ctx.currentTime + BEAT * 32;
+    let pattern = generateArpPattern();
+    let step = 0;
+    let patternCount = 0;
+    let arpIdx = 0;
+
+    function loop() {
+        while (arpTime < ctx.currentTime + 0.2) {
+            if (step % 16 === 0 && step > 0) {
+                patternCount++;
+                if (patternCount % 8 === 0) pattern = generateArpPattern();
+            }
+
+            // Rhythmic — locks to 16th grid but sparse
+            const gate = Math.random() < 0.15;
+            if (gate) {
+                const note = pattern[arpIdx % pattern.length];
+                arpIdx++;
+                const dur = SIXTEENTH * pick([1, 1, 2]); // short stabs
+                makeArpNote(arpTime, note, dur);
+            }
+
+            arpTime += SIXTEENTH;
+            step++;
+        }
+        setTimeout(loop, 50);
+    }
+    loop();
+}
+
+// ---- RISER / NOISE SWEEP ----
+function scheduleRiser() {
+    let riserTime = ctx.currentTime + BEAT * 96;
+
+    function makeRiser(time) {
+        const dur = BEAT * 12;
+        const bufSize = ctx.sampleRate * (dur + 1);
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(150, time);
+        filter.frequency.exponentialRampToValueAtTime(5000, time + dur);
+        filter.Q.value = 8; // sharper, more aggressive
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(0.05, time + dur * 0.85);
+        gain.gain.linearRampToValueAtTime(0, time + dur);
+
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(master);
+        src.start(time);
+
+        setTimeout(() => {
+            document.getElementById('stateDisplay').textContent = 'HOSTILE';
+        }, (time - ctx.currentTime) * 1000);
+        setTimeout(() => {
+            document.getElementById('stateDisplay').textContent = pick(['GRINDING', 'MERCILESS', 'CORROSION', 'WARZONE', 'IMPACT', 'ANNIHILATION']);
+        }, (time - ctx.currentTime + dur) * 1000);
+    }
+
+    function loop() {
+        while (riserTime < ctx.currentTime + 2) {
+            makeRiser(riserTime);
+            riserTime += BEAT * 96;
+        }
+        setTimeout(loop, 1000);
+    }
+    loop();
+}
+
+</script>
+</body>
+</html>
