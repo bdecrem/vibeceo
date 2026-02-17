@@ -324,7 +324,7 @@ export default function ShipShotPage() {
   }
 
   const totalShipped = GRID_APPS.length + MORE_APPS.length + (dropped ? 1 : 0)
-  const visibleCount = isMobile ? (dropped ? 1 : 2) : (dropped ? 6 : 7)
+  const visibleCount = isMobile ? (dropped ? 1 : 2) : (dropped ? 5 : 6)
   const hiddenGridApps = GRID_APPS.length - visibleCount
   const hiddenTotal = hiddenGridApps + MORE_APPS.length
 
