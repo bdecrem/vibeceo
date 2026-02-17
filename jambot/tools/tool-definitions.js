@@ -1185,5 +1185,48 @@ export const TOOLS = [
       properties: {},
       required: []
     }
+  },
+  // AUTOMATION (per-step parameter changes — "knob mashing")
+  {
+    name: "automate",
+    description: "Add per-step parameter automation to any instrument — dynamic 'knob mashing' that changes a parameter value on every step. Provide an array of 16 values (one per step). Use null to keep the static value for that step. Uses SAME UNITS as tweak: decay/attack/tone are 0-100, level is dB (-60 to +6), tune is semitones, filterCutoff is Hz, etc.",
+    input_schema: {
+      type: "object",
+      properties: {
+        path: {
+          type: "string",
+          description: "Parameter path (same format as tweak). Examples: 'jb01.ch.decay', 'jb01.kick.attack', 'jb202.filterCutoff', 'jb202.filterResonance'"
+        },
+        values: {
+          type: "array",
+          description: "Array of values (one per step, typically 16). Use null to keep the static value. Same units as tweak. Example for decay: [20, 80, 30, 90, null, 50, 15, 95, 25, 70, 40, 85, 10, 60, 35, 75]",
+          items: { type: ["number", "null"] }
+        }
+      },
+      required: ["path", "values"]
+    }
+  },
+  {
+    name: "clear_automation",
+    description: "Clear automation from a parameter or all automation. Use before saving a pattern that should NOT have knob-mashing.",
+    input_schema: {
+      type: "object",
+      properties: {
+        path: {
+          type: "string",
+          description: "Parameter path to clear (e.g., 'jb01.ch.decay'). Omit to clear ALL automation. Use instrument prefix (e.g., 'jb01') to clear all automation for one instrument."
+        }
+      },
+      required: []
+    }
+  },
+  {
+    name: "show_automation",
+    description: "Show all active automation lanes — which parameters have per-step values.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
   }
 ];

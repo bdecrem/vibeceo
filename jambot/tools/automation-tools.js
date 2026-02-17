@@ -1,8 +1,11 @@
 /**
  * Automation Tools
  *
- * Unified automation that works on ANY parameter path.
- * Replaces drum-specific automate_drums.
+ * Per-step parameter automation ("knob mashing") for any instrument.
+ * Values are stored in producer units (same as tweak) and converted
+ * to engine units at render time by each instrument node.
+ *
+ * Tools: automate, clear_automation, show_automation
  */
 
 import { registerTools } from './index.js';
@@ -14,18 +17,13 @@ import {
 
 const automationTools = {
   /**
-   * Automate ANY parameter in the system
-   *
-   * Examples:
-   *   automate({ path: 'drums.kick.decay', values: [50, 60, 70, 80, ...] })
-   *   automate({ path: 'bass.cutoff', values: [1000, 2000, 3000, 4000, ...] })
-   *   automate({ path: 'mixer.sends.reverb1.decay', pattern: 'triangle', min: 1, max: 4 })
+   * Set per-step automation values for a parameter
    */
-  automate: async (input, session, context) => {
+  automate: async (input, session) => {
     const { path, values, pattern, min, max, steps } = input;
 
     if (!path) {
-      return 'Error: path is required (e.g., "drums.kick.decay", "bass.cutoff")';
+      return 'Error: path is required (e.g., "jb01.ch.decay", "jb202.filterCutoff")';
     }
 
     // Either provide values directly or generate from pattern
@@ -44,52 +42,66 @@ const automationTools = {
 
     // Validate the path exists
     const [nodeId] = path.split('.');
-    if (!session.params.nodes.has(nodeId)) {
-      return `Error: Unknown node "${nodeId}". Available: ${session.listNodes().join(', ')}`;
+    if (!session._nodes[nodeId]) {
+      return `Error: unknown instrument "${nodeId}"`;
     }
 
-    // Set automation
+    // Store automation in ParamSystem (producer units, full path)
     session.automate(path, automationValues);
 
-    const preview = automationValues.slice(0, 4).map(v =>
-      typeof v === 'number' ? v.toFixed(1) : v
-    ).join(', ');
-
-    return `Automated ${path}: [${preview}, ...] (${automationValues.length} steps)`;
+    const activeSteps = automationValues.filter(v => v !== null && v !== undefined).length;
+    const paramName = path.split('.').slice(1).join('.');
+    return `${nodeId} ${paramName} automation set: ${activeSteps}/${automationValues.length} steps`;
   },
 
-  // Note: clear_automation is registered in drum-tools.js
-  // It uses session.drumAutomation format which works with current session
+  /**
+   * Clear automation for a parameter, instrument, or all
+   */
+  clear_automation: async (input, session) => {
+    const { path } = input;
+
+    if (!path) {
+      // Clear ALL automation
+      session.clearAutomation();
+      return 'Cleared all automation';
+    }
+
+    // Check if it's an exact automation path
+    if (session.params.hasAutomation(path)) {
+      session.clearAutomation(path);
+      return `Cleared automation on ${path}`;
+    }
+
+    // Check if it's an instrument prefix — clear all automation for that instrument
+    clearNodeAutomation(session, path);
+    const remaining = session.params.listAutomation().filter(p => p.startsWith(path + '.'));
+    if (remaining.length === 0) {
+      return `Cleared all automation for ${path}`;
+    }
+    return `No automation found for "${path}"`;
+  },
 
   /**
-   * Show current automation
+   * Show all active automation lanes
    */
-  show_automation: async (input, session, context) => {
+  show_automation: async (input, session) => {
     const summary = getAutomationSummary(session);
     const nodes = Object.keys(summary);
 
     if (nodes.length === 0) {
-      return 'No automation set. Use automate({ path, values }) to add.';
+      return 'No active automation';
     }
 
-    const lines = ['AUTOMATION:', ''];
-
+    const lines = ['AUTOMATION:'];
     for (const [node, params] of Object.entries(summary)) {
-      lines.push(`${node.toUpperCase()}:`);
       for (const [param, values] of Object.entries(params)) {
-        const preview = values.slice(0, 4).map(v =>
-          typeof v === 'number' ? v.toFixed(1) : v
-        ).join(', ');
-        lines.push(`  ${param}: [${preview}, ...] (${values.length} steps)`);
+        const activeSteps = values.filter(v => v !== null && v !== undefined).length;
+        const viz = values.map(v => v !== null && v !== undefined ? '█' : '·').join('');
+        lines.push(`  ${node}.${param}: ${viz} (${activeSteps}/${values.length} steps)`);
       }
-      lines.push('');
     }
-
     return lines.join('\n');
   },
-
-  // Note: automate_drums and clear_automation are registered in drum-tools.js
-  // They use the session.drumAutomation format which works with the current session
 };
 
 registerTools(automationTools);

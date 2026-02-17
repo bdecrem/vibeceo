@@ -346,6 +346,16 @@ export async function renderSession(session, bars, filename) {
     } else {
       // Single pattern mode - render node's current pattern
       try {
+        // Collect automation for this instrument from ParamSystem
+        const instrumentAutomation = {};
+        for (const [path, values] of session.params.automation) {
+          if (path.startsWith(id + '.')) {
+            // Strip instrument prefix: 'jb01.kick.decay' → 'kick.decay'
+            instrumentAutomation[path.slice(id.length + 1)] = values;
+          }
+        }
+        const hasAutomation = Object.keys(instrumentAutomation).length > 0;
+
         const buffer = await renderInstrumentWithEffects(
           node,
           {
@@ -353,6 +363,7 @@ export async function renderSession(session, bars, filename) {
             stepDuration,
             swing: session.clock.swing,
             sampleRate,
+            automation: hasAutomation ? instrumentAutomation : undefined,
           },
           session.mixer?.effectChains,
           id,

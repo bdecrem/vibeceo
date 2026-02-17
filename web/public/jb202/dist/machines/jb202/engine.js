@@ -412,11 +412,12 @@ export class JB202Engine {
       stepDuration = null,
       sampleRate = this.sampleRate,
       pattern = null,
-      params = null
+      params = null,
+      automation = null
     } = options;
 
     const renderPattern = pattern ?? this.sequencer.getPattern();
-    const renderParams = params ? { ...this.params, ...params } : this.params;
+    const renderParams = params ? { ...this.params, ...params } : { ...this.params };
 
     const steps = renderPattern.length;
     const stepsPerBar = 16;
@@ -436,6 +437,21 @@ export class JB202Engine {
       const stepData = renderPattern[patternStep];
       const nextPatternStep = (patternStep + 1) % steps;
       const nextStepData = renderPattern[nextPatternStep];
+
+      // Apply per-step automation (values already in engine units)
+      if (automation) {
+        let paramsChanged = false;
+        for (const [paramId, values] of Object.entries(automation)) {
+          const val = values[patternStep % values.length];
+          if (val !== null && val !== undefined) {
+            renderParams[paramId] = val;
+            paramsChanged = true;
+          }
+        }
+        if (paramsChanged) {
+          voice.updateParams(renderParams);
+        }
+      }
 
       // Use the SAME method as real-time
       voice.processStepEvent(stepData, nextStepData);

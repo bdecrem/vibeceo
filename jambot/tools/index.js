@@ -50,6 +50,8 @@ export async function initializeTools() {
   await import('./generic-tools.js');
   await import('./analyze-tools.js');
   await import('./jp9000-tools.js');
+  await import('./jt-tools.js');
+  await import('./automation-tools.js');
 
   initialized = true;
 }

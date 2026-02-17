@@ -1016,6 +1016,96 @@ add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 45 
 add_effect({ target: 'jb01.ch', effect: 'reverb', after: 'delay', decay: 2.5, mix: 30 })
 ```
 
+## Automation (Per-Step Knob Mashing)
+
+Automation sets per-step values for any parameter — 16 values that cycle with each bar. Like turning a knob differently on every step. Works on any instrument that supports it (JB01, JB202, JT90).
+
+### Tools
+
+| Tool | Description |
+|------|-------------|
+| `automate` | Set per-step automation values for a parameter |
+| `clear_automation` | Clear automation for a parameter, instrument, or all |
+| `show_automation` | Show all active automation lanes |
+
+### Path Format
+
+Same as `tweak` paths but with the instrument prefix: `{instrument}.{voice}.{param}`
+
+```
+automate({ path: 'jb01.ch.decay', ... })     # JB01 closed hat decay
+automate({ path: 'jt90.kick.decay', ... })    # JT90 kick decay
+automate({ path: 'jb202.filterCutoff', ... }) # JB202 filter cutoff
+```
+
+### Two Ways to Set Values
+
+**1. Direct values** — provide an array of 16 producer-unit values (nulls keep the static value):
+```
+automate({ path: 'jb01.ch.decay', values: [80, 70, 60, 50, 40, 30, 20, 10, 80, 70, 60, 50, 40, 30, 20, 10] })
+```
+
+**2. Generated patterns** — use `pattern`, `min`, `max`, and optional `steps`:
+```
+automate({ path: 'jt90.kick.decay', pattern: 'ramp', min: 10, max: 80 })
+automate({ path: 'jb01.ch.decay', pattern: 'random', min: 15, max: 90 })
+automate({ path: 'jb202.filterCutoff', pattern: 'sine', min: 400, max: 4000 })
+```
+
+**Available patterns:** `ramp` (saw up), `triangle`, `random`, `sine`, `square`
+
+### Examples
+
+**Jam the decay on JT90 closed hats** (random per-step):
+```
+automate({ path: 'jt90.ch.decay', pattern: 'random', min: 10, max: 80 })
+```
+
+**Sweep the JB202 filter** (smooth sine wave):
+```
+automate({ path: 'jb202.filterCutoff', pattern: 'sine', min: 200, max: 6000 })
+```
+
+**Dynamic JB01 kick attack** (ramp up over 16 steps):
+```
+automate({ path: 'jb01.kick.attack', pattern: 'ramp', min: 10, max: 90 })
+```
+
+**Clear automation**:
+```
+clear_automation({ path: 'jb01.ch.decay' })   # Clear one parameter
+clear_automation({ path: 'jt90' })             # Clear all JT90 automation
+clear_automation({})                            # Clear everything
+```
+
+**Show active automation**:
+```
+show_automation({})
+# AUTOMATION:
+#   jb01.ch.decay: ████████████████ (16/16 steps)
+#   jt90.kick.attack: ██·██·██·██·██·██· (8/16 steps)
+```
+
+### Song Mode Integration
+
+Automation is saved/loaded with patterns. Each pattern slot captures the automation state:
+```
+save_pattern({ instrument: 'jt90', name: 'A' })    # Saves pattern + params + automation
+load_pattern({ instrument: 'jt90', name: 'A' })    # Restores everything
+```
+
+Arrangement mode uses each section's saved automation.
+
+### Supported Instruments
+
+| Instrument | Automation Paths | Example |
+|------------|-----------------|---------|
+| **JB01** | `jb01.{voice}.{param}` | `jb01.kick.decay`, `jb01.ch.level` |
+| **JB202** | `jb202.{param}` | `jb202.filterCutoff`, `jb202.drive` |
+| **JT90** | `jt90.{voice}.{param}` | `jt90.kick.decay`, `jt90.snare.tone` |
+
+Values are in **producer units** (0-100, Hz, dB) — same units as `tweak`. The system converts to engine units at render time.
+
 ## Session State
 
 ```javascript

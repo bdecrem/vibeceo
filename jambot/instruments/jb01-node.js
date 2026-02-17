@@ -290,6 +290,7 @@ export class JB01Node extends InstrumentNode {
       sampleRate = 44100,
       pattern = this._pattern,
       params = null,
+      automation = null,
     } = options;
 
     // Check if pattern has any hits
@@ -316,15 +317,44 @@ export class JB01Node extends InstrumentNode {
       }
     }
 
+    // Convert automation from producer units to engine units
+    // Automation uses node-relative paths: 'kick.decay', 'ch.level', etc.
+    // Use node's own automation if no explicit automation passed
+    const rawAutomation = automation || this._getAutomationForRender();
+    let engineAutomation = undefined;
+    if (rawAutomation && Object.keys(rawAutomation).length > 0) {
+      engineAutomation = {};
+      for (const [path, values] of Object.entries(rawAutomation)) {
+        const [voice, param] = path.split('.');
+        const paramDef = JB01_PARAMS[voice]?.[param];
+        if (paramDef && Array.isArray(values)) {
+          engineAutomation[path] = values.map(v =>
+            v !== null && v !== undefined ? toEngine(v, paramDef) : null
+          );
+        }
+      }
+    }
+
     // Render pattern
     const buffer = await engine.renderPattern(pattern, {
       bars,
       stepDuration,
       swing,
       sampleRate,
+      automation: engineAutomation,
     });
 
     return buffer;
+  }
+
+  /**
+   * Get automation data for rendering (from ParamSystem via session)
+   * Returns automation in producer units with node-relative paths
+   * @returns {Object|null}
+   */
+  _getAutomationForRender() {
+    // This is populated by render.js before calling renderPattern
+    return this._renderAutomation || null;
   }
 
   /**

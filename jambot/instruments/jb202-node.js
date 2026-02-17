@@ -240,6 +240,7 @@ export class JB202Node extends InstrumentNode {
       sampleRate = 44100,
       pattern = this._pattern,
       params = null,
+      automation = null,
     } = options;
 
     // Skip if no active notes
@@ -261,13 +262,43 @@ export class JB202Node extends InstrumentNode {
     // Set pattern on engine
     engine.setPattern(pattern);
 
+    // Convert automation from producer units to engine units
+    // Automation uses node-relative paths: 'bass.filterCutoff' or 'filterCutoff'
+    // Use node's own automation if no explicit automation passed
+    const rawAutomation = automation || this._getAutomationForRender();
+    let engineAutomation = undefined;
+    if (rawAutomation && Object.keys(rawAutomation).length > 0) {
+      engineAutomation = {};
+      for (const [path, values] of Object.entries(rawAutomation)) {
+        // Normalize path — strip 'bass.' prefix if present
+        const paramName = path.startsWith('bass.') ? path.slice(5) : path;
+        const paramDef = JB202_PARAMS.bass?.[paramName];
+        if (paramDef && Array.isArray(values)) {
+          engineAutomation[paramName] = values.map(v =>
+            v !== null && v !== undefined ? toEngine(v, paramDef) : null
+          );
+        }
+      }
+    }
+
     // Render
     const buffer = await engine.renderPattern({
       bars,
       stepDuration,
       sampleRate,
+      automation: engineAutomation,
     });
 
     return buffer;
+  }
+
+  /**
+   * Get automation data for rendering (from ParamSystem via session)
+   * Returns automation in producer units with node-relative paths
+   * @returns {Object|null}
+   */
+  _getAutomationForRender() {
+    // This is populated by render.js before calling renderPattern
+    return this._renderAutomation || null;
   }
 }

@@ -337,7 +337,8 @@ export class JT90Engine {
       bpm = null,
       sampleRate = this.sampleRate,
       pattern = null,
-      swing = null
+      swing = null,
+      automation = null,
     } = options;
 
     const renderBpm = bpm ?? this.sequencer.getBpm();
@@ -396,6 +397,21 @@ export class JT90Engine {
 
     for (let step = 0; step < totalSteps; step++) {
       const patternStep = step % stepsPerBar;
+
+      // Apply per-step automation (values already in engine units)
+      if (automation) {
+        for (const [path, values] of Object.entries(automation)) {
+          const dotIdx = path.indexOf('.');
+          if (dotIdx === -1) continue;
+          const voiceId = path.slice(0, dotIdx);
+          const paramId = path.slice(dotIdx + 1);
+          const val = values[patternStep % values.length];
+          if (val !== null && val !== undefined) {
+            const voice = voices[voiceId];
+            if (voice) voice[paramId] = val;
+          }
+        }
+      }
 
       // Collect events for this step
       const events = this._collectEventsForStep(renderPattern, patternStep);

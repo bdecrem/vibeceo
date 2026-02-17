@@ -54,27 +54,35 @@ jambot/
 │   ├── library.js      # Save/load projects
 │   └── wav.js          # WAV file encoding
 ├── instruments/
-│   ├── jb01-node.js      # JB01 drum machine
-│   ├── jb200-node.js     # JB200 bass monosynth
+│   ├── jb01-node.js      # JB01 drum machine (8 voices)
+│   ├── jb202-node.js     # JB202 bass monosynth (custom DSP)
 │   ├── sampler-node.js   # Sampler (10 slots)
-│   ├── tr909-node.js     # TR-909 drum machine (R9D9)
-│   ├── tb303-node.js     # TB-303 acid bass (R3D3)
-│   └── sh101-node.js     # SH-101 lead synth (R1D1)
+│   ├── jt10-node.js      # JT10 lead synth (101-style)
+│   ├── jt30-node.js      # JT30 acid bass (303-style)
+│   ├── jt90-node.js      # JT90 drum machine (909-style, 11 voices)
+│   └── jp9000-node.js    # JP9000 modular synth
 ├── params/
-│   ├── jb01-params.json   # Drum param definitions
-│   ├── jb200-params.json  # Synth param definitions
+│   ├── jb01-params.json   # JB01 drum param definitions
+│   ├── jb202-params.json  # JB202 bass param definitions
+│   ├── jt10-params.json   # JT10 lead param definitions
+│   ├── jt30-params.json   # JT30 acid bass param definitions
+│   ├── jt90-params.json   # JT90 drum param definitions
+│   ├── sampler-params.json # Sampler param definitions
 │   └── converters.js      # Producer units <-> engine units
 ├── tools/
 │   ├── index.js              # Tool registry + handler dispatch
-│   ├── tool-definitions.js   # 65 tool schemas for Anthropic API
+│   ├── tool-definitions.js   # Tool schemas for Anthropic API
 │   ├── generic-tools.js      # tweak, get_param, list_params (PRIMARY)
 │   ├── jb01-tools.js         # JB01-specific (kits, presets)
-│   ├── jb200-tools.js        # JB200-specific (kits, sequences)
+│   ├── jb202-tools.js        # JB202-specific (kits, sequences)
+│   ├── jt-tools.js           # JT10/JT30/JT90 tools (add, tweak)
+│   ├── jp9000-tools.js       # JP9000 modular tools
+│   ├── automation-tools.js   # automate, clear_automation, show_automation
 │   ├── song-tools.js         # Patterns, arrangement
 │   ├── session-tools.js      # render, show, create_session
 │   ├── sampler-tools.js      # R9DS sampler tools
-│   ├── routing-tools.js      # Mixer, sends, inserts
-│   └── preset-tools.js       # Preset loading
+│   ├── mixer-tools.js        # Mixer, sends, inserts
+│   └── render-tools.js       # Render + analysis tools
 ├── presets/
 │   ├── jb01/kits/         # Drum sound presets
 │   ├── jb200/kits/        # Synth sound presets
@@ -263,6 +271,46 @@ Instrument levels are plain session properties (in dB):
 - `session.samplerLevel`
 
 These could also register in ParamSystem as `levels.*` for `tweak()` access.
+
+## Automation (`core/automation.js`)
+
+Per-step parameter automation ("knob mashing"). Values stored in **producer units** in ParamSystem, converted to **engine units** at render time by each instrument node.
+
+### Architecture
+
+```
+ParamSystem.automation (Map)         # Stores: 'jb01.ch.decay' → [80, 70, 60, ...]
+        ↓
+render.js collects per-instrument    # 'jb01.ch.decay' → strips prefix → 'ch.decay'
+        ↓
+InstrumentNode.renderPattern()       # Converts producer→engine units, voice names
+        ↓
+Engine step loop                     # Applies values per step before triggers
+```
+
+### Key files
+
+- `core/automation.js` — `generateAutomation()`, `getAutomationSummary()`, `clearNodeAutomation()`
+- `core/params.js` — ParamSystem stores automation via `.automate(path, values)`, `.clearAutomation(path)`
+- `core/render.js` — Collects automation from ParamSystem, passes to instruments
+- `tools/automation-tools.js` — Agent-facing tools (automate, clear_automation, show_automation)
+
+### Per-instrument automation flow
+
+Each instrument node that supports automation:
+1. Accepts `automation` in `renderPattern(options)`
+2. Converts producer units → engine units using its local `toEngine()`
+3. For multi-voice instruments (JB01, JT90): maps user voice names to engine names
+4. Passes engine-unit automation to the engine's render loop
+
+**Supported instruments:** JB01 (`jb01-node.js`), JB202 (`jb202-node.js`), JT90 (`jt90-node.js`)
+
+### Song mode integration
+
+`song-tools.js` saves/loads automation with patterns via:
+- `getAutomationForInstrument(session, 'jb01')` — collects from ParamSystem
+- `restoreAutomation(session, 'jb01', saved.automation)` — restores to ParamSystem
+- `clearNodeAutomation(session, 'jb01')` — clears before loading
 
 ---
 
@@ -455,6 +503,50 @@ All instruments are registered and ready:
 - `jt30` — Acid bass (303-style)
 - `jt90` — Drum machine (909-style, 11 voices)
 - `jp9000` — Modular synth (patchable)
+
+## Automation (Per-Step Knob Mashing)
+
+Set per-step values for any parameter — 16 values that cycle with each bar. Like turning a knob differently on every hit.
+
+### automate
+
+Two modes: **direct values** or **generated patterns**.
+
+**Direct values** (producer units — same as `tweak`):
+```
+automate({ path: 'jb01.ch.decay', values: [80, 70, 60, 50, 40, 30, 20, 10, 80, 70, 60, 50, 40, 30, 20, 10] })
+automate({ path: 'jt90.kick.decay', values: [80, 60, 40, 20, 80, 60, 40, 20, 80, 60, 40, 20, 80, 60, 40, 20] })
+```
+
+**Generated patterns** (specify pattern, min, max):
+```
+automate({ path: 'jt90.ch.decay', pattern: 'random', min: 10, max: 80 })
+automate({ path: 'jb01.kick.attack', pattern: 'ramp', min: 10, max: 90 })
+automate({ path: 'jb202.filterCutoff', pattern: 'sine', min: 200, max: 6000 })
+```
+
+**Patterns:** `ramp`, `triangle`, `random`, `sine`, `square`
+
+### clear_automation / show_automation
+
+```
+clear_automation({ path: 'jb01.ch.decay' })   # One parameter
+clear_automation({ path: 'jt90' })             # All JT90 automation
+clear_automation({})                            # Everything
+
+show_automation({})
+# AUTOMATION:
+#   jb01.ch.decay: ████████████████ (16/16 steps)
+```
+
+### Automation paths
+
+Same format as `tweak` paths:
+- **JB01**: `jb01.{voice}.{param}` — e.g., `jb01.kick.decay`, `jb01.ch.level`
+- **JT90**: `jt90.{voice}.{param}` — e.g., `jt90.kick.decay`, `jt90.snare.tone`
+- **JB202**: `jb202.{param}` — e.g., `jb202.filterCutoff`, `jb202.drive`
+
+Automation is saved/loaded with patterns in song mode.
 
 ## Effect Chains (Flexible Routing)
 

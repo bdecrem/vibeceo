@@ -371,9 +371,11 @@ export class JT90Node extends InstrumentNode {
     const {
       bars,
       stepDuration,
+      swing = 0,
       sampleRate = 44100,
       pattern = this._pattern,
       params = null,
+      automation = null,
     } = options;
 
     // Check if any track has active steps
@@ -411,16 +413,111 @@ export class JT90Node extends InstrumentNode {
     // Set pattern
     engine.setPattern(enginePattern);
 
-    // Set swing
-    engine.setSwing(this._swing);
+    // Convert automation from producer units to engine units, user names to engine names
+    const rawAutomation = automation || this._getAutomationForRender();
+    let engineAutomation = undefined;
+    if (rawAutomation && Object.keys(rawAutomation).length > 0) {
+      engineAutomation = {};
+      for (const [path, values] of Object.entries(rawAutomation)) {
+        const [voice, param] = path.split('.');
+        const engineVoice = VOICE_TO_ENGINE[voice] || voice;
+        const paramDef = JT90_PARAMS[voice]?.[param];
+        if (paramDef && Array.isArray(values)) {
+          engineAutomation[`${engineVoice}.${param}`] = values.map(v =>
+            v !== null && v !== undefined ? toEngine(v, paramDef) : null
+          );
+        }
+      }
+    }
+
+    // Compute BPM from stepDuration (stepDuration = seconds per 16th note)
+    const bpm = stepDuration ? 60 / (stepDuration * 4) : undefined;
 
     // Render
     const buffer = await engine.renderPattern({
       bars,
-      stepDuration,
+      bpm,
+      swing: swing || this._swing,
       sampleRate,
+      automation: engineAutomation,
     });
 
     return buffer;
+  }
+
+  /**
+   * Get automation data for rendering (from ParamSystem via session)
+   * Returns automation in producer units with node-relative paths
+   * @returns {Object|null}
+   */
+  _getAutomationForRender() {
+    return this._renderAutomation || null;
+  }
+
+  /**
+   * Render each voice to a separate buffer (for per-voice effects)
+   * @param {Object} options - Same as renderPattern options
+   * @returns {Promise<Object>} Map of voice -> AudioBuffer
+   */
+  async renderVoices(options) {
+    const {
+      bars,
+      stepDuration,
+      swing = 0,
+      sampleRate = 44100,
+      pattern = this._pattern,
+      params = null,
+    } = options;
+
+    const { JT90Engine } = await import('../../web/public/jt90/dist/machines/jt90/engine.js');
+    const voiceBuffers = {};
+
+    for (const voice of VOICES) {
+      // Check if this voice has any hits
+      const trackPattern = pattern[voice];
+      const hasHits = trackPattern?.some(s => s.velocity > 0);
+      if (!hasHits) continue;
+
+      // Create a pattern with only this voice
+      const soloPattern = {};
+      for (const v of VOICES) {
+        const engineVoice = VOICE_TO_ENGINE[v] || v;
+        if (v === voice) {
+          soloPattern[engineVoice] = trackPattern;
+        } else {
+          soloPattern[engineVoice] = Array(trackPattern.length).fill(null).map(() => ({
+            velocity: 0,
+            accent: false,
+          }));
+        }
+      }
+
+      // Create engine with fresh context
+      const context = new OfflineAudioContext(2, sampleRate, sampleRate);
+      const engine = new JT90Engine({ context });
+
+      // Apply this voice's params
+      const engineVoice = VOICE_TO_ENGINE[voice] || voice;
+      const voiceParamSet = params?.[voice] || this.getVoiceParams(voice);
+      Object.entries(voiceParamSet).forEach(([paramName, value]) => {
+        engine.setVoiceParameter(engineVoice, paramName, value);
+      });
+
+      // Set pattern and render
+      engine.setPattern(soloPattern);
+      const bpm = stepDuration ? 60 / (stepDuration * 4) : undefined;
+      const buffer = await engine.renderPattern({
+        bars,
+        bpm,
+        swing: swing || this._swing,
+        sampleRate,
+      });
+
+      if (buffer) {
+        voiceBuffers[voice] = buffer;
+      }
+    }
+
+    return voiceBuffers;
   }
 }

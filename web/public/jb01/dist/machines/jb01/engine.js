@@ -153,6 +153,7 @@ export class JB01Engine extends SynthEngine {
         bars,
         stepsPerBar,
         swing,
+        automation: options.automation,
       });
     }, {
       sampleRate: options.sampleRate,
@@ -193,7 +194,7 @@ export class JB01Engine extends SynthEngine {
   /**
    * Schedule pattern in an offline context
    */
-  schedulePatternInContext({ context, pattern, stepDuration, bars, stepsPerBar, swing }) {
+  schedulePatternInContext({ context, pattern, stepDuration, bars, stepsPerBar, swing, automation }) {
     const voices = this.createVoiceMap(context);
 
     // Build audio graph
@@ -214,7 +215,26 @@ export class JB01Engine extends SynthEngine {
     // Hi-hat choke tracking for offline render
     const openHat = voices.get('oh');
 
+    // Get pattern length for automation looping
+    const patternLength = pattern.kick?.length || pattern.snare?.length || 16;
+
     for (let step = 0; step < totalSteps; step++) {
+      // Apply per-step automation (values already in engine units)
+      if (automation) {
+        const patternIdx = step % patternLength;
+        for (const [path, values] of Object.entries(automation)) {
+          const dotIdx = path.indexOf('.');
+          if (dotIdx === -1) continue;
+          const voiceId = path.slice(0, dotIdx);
+          const paramId = path.slice(dotIdx + 1);
+          const val = values[patternIdx % values.length];
+          if (val !== null && val !== undefined) {
+            const voice = voices.get(voiceId);
+            if (voice) voice.setParameter(paramId, val);
+          }
+        }
+      }
+
       const events = this.collectEventsForStep(pattern, step);
 
       // Check if we need to choke open hat

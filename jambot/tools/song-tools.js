@@ -6,9 +6,12 @@
  */
 
 import { registerTools } from './index.js';
+import { clearNodeAutomation } from '../core/automation.js';
 
 // JB01 voices
 const JB01_VOICES = ['jb01', 'kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
+// JT90 voices (user-facing names)
+const JT90_VOICES = ['jt90', 'kick', 'snare', 'clap', 'rimshot', 'lowtom', 'midtom', 'hitom', 'ch', 'oh', 'crash', 'ride'];
 // Legacy drums = jb01
 const DRUM_VOICES = ['drums', 'kick', 'snare', 'clap', 'ch', 'oh', 'lowtom', 'hitom', 'cymbal'];
 
@@ -20,6 +23,14 @@ function getInsertsForInstrument(session, inst) {
     const result = {};
     if (inserts['jb01']) result['jb01'] = JSON.parse(JSON.stringify(inserts['jb01']));
     for (const v of JB01_VOICES) {
+      if (inserts[v]) result[v] = JSON.parse(JSON.stringify(inserts[v]));
+    }
+    return Object.keys(result).length > 0 ? result : null;
+  }
+  // For jt90, include 'jt90' channel + all voice channels
+  if (inst === 'jt90') {
+    const result = {};
+    for (const v of JT90_VOICES) {
       if (inserts[v]) result[v] = JSON.parse(JSON.stringify(inserts[v]));
     }
     return Object.keys(result).length > 0 ? result : null;
@@ -48,11 +59,33 @@ function restoreInserts(session, inserts) {
   }
 }
 
+// Helper: collect automation for an instrument from ParamSystem
+function getAutomationForInstrument(session, inst) {
+  const automation = {};
+  for (const [path, values] of session.params.automation) {
+    if (path.startsWith(inst + '.')) {
+      // Store with node-relative path: 'jb01.kick.decay' → 'kick.decay'
+      automation[path.slice(inst.length + 1)] = [...values];
+    }
+  }
+  return Object.keys(automation).length > 0 ? automation : undefined;
+}
+
+// Helper: restore automation for an instrument into ParamSystem
+function restoreAutomation(session, inst, automation) {
+  if (!automation) return;
+  for (const [path, values] of Object.entries(automation)) {
+    session.params.automate(`${inst}.${path}`, [...values]);
+  }
+}
+
 // Helper: clear channel inserts for an instrument
 function clearInsertsForInstrument(session, inst) {
   if (!session.mixer?.channelInserts) return;
   if (inst === 'jb01') {
     for (const v of JB01_VOICES) delete session.mixer.channelInserts[v];
+  } else if (inst === 'jt90') {
+    for (const v of JT90_VOICES) delete session.mixer.channelInserts[v];
   } else if (inst === 'drums') {
     for (const v of DRUM_VOICES) delete session.mixer.channelInserts[v];
   } else {
@@ -120,6 +153,7 @@ const songTools = {
       session.patterns.jb01[patternName] = {
         pattern: JSON.parse(JSON.stringify(session.jb01Pattern || {})),
         params: JSON.parse(JSON.stringify(session.jb01Params || {})),
+        automation: getAutomationForInstrument(session, 'jb01'),
         channelInserts: getInsertsForInstrument(session, 'jb01'),
       };
       if (!session.currentPattern) session.currentPattern = {};
@@ -142,11 +176,27 @@ const songTools = {
       session.patterns.jb202[patternName] = {
         pattern: JSON.parse(JSON.stringify(session.jb202Pattern || [])),
         params: JSON.parse(JSON.stringify(session.jb202Params || {})),
+        automation: getAutomationForInstrument(session, 'jb202'),
         channelInserts: getInsertsForInstrument(session, 'jb202'),
       };
       if (!session.currentPattern) session.currentPattern = {};
       session.currentPattern.jb202 = patternName;
       return `Saved jb202 pattern "${patternName}"`;
+    }
+
+    if (instrument === 'jt90') {
+      if (!session.patterns.jt90) session.patterns.jt90 = {};
+      session.patterns.jt90[patternName] = {
+        pattern: JSON.parse(JSON.stringify(session.jt90Pattern || {})),
+        params: session._nodes?.jt90 ? { ...session._nodes.jt90._params } : {},
+        automation: getAutomationForInstrument(session, 'jt90'),
+        channelInserts: getInsertsForInstrument(session, 'jt90'),
+        swing: session._nodes?.jt90?.getSwing() || 0,
+        accentLevel: session._nodes?.jt90?.getAccentLevel() || 1.0,
+      };
+      if (!session.currentPattern) session.currentPattern = {};
+      session.currentPattern.jt90 = patternName;
+      return `Saved jt90 pattern "${patternName}"`;
     }
 
     return `Unknown instrument: ${instrument}`;
@@ -215,6 +265,8 @@ const songTools = {
       if (!saved) return `No jb01 pattern "${patternName}" found`;
       session.jb01Pattern = JSON.parse(JSON.stringify(saved.pattern));
       session.jb01Params = JSON.parse(JSON.stringify(saved.params));
+      clearNodeAutomation(session, 'jb01');
+      restoreAutomation(session, 'jb01', saved.automation);
       clearInsertsForInstrument(session, 'jb01');
       restoreInserts(session, saved.channelInserts);
       if (!session.currentPattern) session.currentPattern = {};
@@ -238,11 +290,32 @@ const songTools = {
       if (!saved) return `No jb202 pattern "${patternName}" found`;
       session.jb202Pattern = JSON.parse(JSON.stringify(saved.pattern));
       session.jb202Params = JSON.parse(JSON.stringify(saved.params));
+      clearNodeAutomation(session, 'jb202');
+      restoreAutomation(session, 'jb202', saved.automation);
       clearInsertsForInstrument(session, 'jb202');
       restoreInserts(session, saved.channelInserts);
       if (!session.currentPattern) session.currentPattern = {};
       session.currentPattern.jb202 = patternName;
       return `Loaded jb202 pattern "${patternName}"`;
+    }
+
+    if (instrument === 'jt90') {
+      const saved = session.patterns.jt90?.[patternName];
+      if (!saved) return `No jt90 pattern "${patternName}" found`;
+      session.jt90Pattern = JSON.parse(JSON.stringify(saved.pattern));
+      if (session._nodes?.jt90) {
+        session._nodes.jt90.setPattern(session.jt90Pattern);
+        if (saved.params) Object.assign(session._nodes.jt90._params, saved.params);
+        if (saved.swing !== undefined) session._nodes.jt90.setSwing(saved.swing);
+        if (saved.accentLevel !== undefined) session._nodes.jt90.setAccentLevel(saved.accentLevel);
+      }
+      clearNodeAutomation(session, 'jt90');
+      restoreAutomation(session, 'jt90', saved.automation);
+      clearInsertsForInstrument(session, 'jt90');
+      restoreInserts(session, saved.channelInserts);
+      if (!session.currentPattern) session.currentPattern = {};
+      session.currentPattern.jt90 = patternName;
+      return `Loaded jt90 pattern "${patternName}"`;
     }
 
     return `Unknown instrument: ${instrument}`;
@@ -267,7 +340,7 @@ const songTools = {
   list_patterns: async (input, session, context) => {
     const lines = [];
     // Active instruments first
-    for (const instrument of ['jb01', 'jb200', 'jb202', 'sampler']) {
+    for (const instrument of ['jb01', 'jb200', 'jb202', 'jt90', 'sampler']) {
       const patterns = session.patterns?.[instrument] || {};
       const names = Object.keys(patterns);
       const current = session.currentPattern?.[instrument];
@@ -301,6 +374,7 @@ const songTools = {
         jb01: s.jb01 || null,
         jb200: s.jb200 || null,
         jb202: s.jb202 || null,
+        jt90: s.jt90 || null,
         sampler: s.sampler || null,
         // Dormant instruments (legacy support)
         drums: s.drums || null,
@@ -330,7 +404,7 @@ const songTools = {
 
     // Show patterns (active instruments first)
     lines.push('PATTERNS:');
-    for (const instrument of ['jb01', 'jb200', 'jb202', 'sampler']) {
+    for (const instrument of ['jb01', 'jb200', 'jb202', 'jt90', 'sampler']) {
       const patterns = session.patterns?.[instrument] || {};
       const names = Object.keys(patterns);
       if (names.length > 0) {
@@ -354,6 +428,7 @@ const songTools = {
         if (section.patterns.jb01) parts.push(`jb01:${section.patterns.jb01}`);
         if (section.patterns.jb200) parts.push(`jb200:${section.patterns.jb200}`);
         if (section.patterns.jb202) parts.push(`jb202:${section.patterns.jb202}`);
+        if (section.patterns.jt90) parts.push(`jt90:${section.patterns.jt90}`);
         if (section.patterns.sampler) parts.push(`sampler:${section.patterns.sampler}`);
         if (section.patterns.drums) parts.push(`drums:${section.patterns.drums}`);
         if (section.patterns.bass) parts.push(`bass:${section.patterns.bass}`);
