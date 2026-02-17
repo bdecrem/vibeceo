@@ -2020,3 +2020,47 @@ export function SeanceDecorations() {
     </div>
   );
 }
+
+/**
+ * FLOP-specific decorations: ragdoll racer, hurdles, bouncy pads.
+ * PLAYROOM theme — bright, chaotic, hilarious.
+ */
+export function FlopDecorations() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+      }}
+    >
+      {/* Ground */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: '#e2e8f0' }} />
+      <div style={{ position: 'absolute', bottom: 80, left: 0, right: 0, height: 3, background: '#cbd5e1' }} />
+
+      {/* Hurdle */}
+      <div style={{ position: 'absolute', bottom: 80, left: 200, width: 10, height: 60, background: '#ef4444', borderRadius: 3 }} />
+      <div style={{ position: 'absolute', bottom: 130, left: 190, width: 30, height: 10, background: '#ef4444', borderRadius: 3 }} />
+
+      {/* Bouncy pad */}
+      <div style={{ position: 'absolute', bottom: 80, right: 250, width: 70, height: 14, background: '#22d3ee', borderRadius: 7, boxShadow: '0 0 12px #22d3ee60' }} />
+
+      {/* Mud pit */}
+      <div style={{ position: 'absolute', bottom: 72, left: 450, width: 100, height: 16, background: '#92400e', borderRadius: 8 }} />
+
+      {/* Player ragdoll silhouette (bubblegum) */}
+      <div style={{ position: 'absolute', bottom: 160, left: 350, width: 30, height: 30, background: '#f472b680', borderRadius: 15 }} />
+      <div style={{ position: 'absolute', bottom: 110, left: 356, width: 18, height: 50, background: '#f472b680', borderRadius: 6 }} />
+
+      {/* AI racer silhouette (cyan) */}
+      <div style={{ position: 'absolute', bottom: 130, right: 350, width: 24, height: 24, background: '#22d3ee60', borderRadius: 12 }} />
+      <div style={{ position: 'absolute', bottom: 90, right: 354, width: 16, height: 40, background: '#22d3ee60', borderRadius: 5 }} />
+
+      {/* Spinning bar */}
+      <div style={{ position: 'absolute', bottom: 140, right: 150, width: 80, height: 10, background: '#facc1580', borderRadius: 5 }} />
+    </div>
+  );
+}

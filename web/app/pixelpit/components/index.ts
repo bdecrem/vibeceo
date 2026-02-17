@@ -54,6 +54,7 @@ export {
   BeamDecorations,
   BlastDecorations,
   CatchDecorations,
+  FlopDecorations,
   CatTowerDecorations,
   CaveMothDecorations,
   DropDecorations,

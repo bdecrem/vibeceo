@@ -11,6 +11,8 @@ const nextConfig = {
   },
   // Transpile three.js and react-three packages to fix bundling issues
   transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
+  // Turbopack config (Next.js 16 requires this when webpack config exists)
+  turbopack: {},
   // Webpack config for three.js
   webpack: (config, { isServer }) => {
     // Fix for three.js and R3F

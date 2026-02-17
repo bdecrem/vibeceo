@@ -215,4 +215,11 @@ export const GAME_COLORS = {
     accent: '#f472b6',           // pink accent
     branding: '#f8fafc',         // white text
   },
+  flop: {
+    background: '#f8fafc',       // light playroom
+    primary: '#f472b6',          // bubblegum pink
+    secondary: '#22d3ee',        // splash cyan
+    accent: '#1e293b',           // dark text CTA
+    branding: '#64748b',         // slate gray
+  },
 };
