@@ -234,6 +234,7 @@ export default function BlastPage() {
     screenShake: 0,
     autoFire: false,
     isFiring: false,
+    waveClearing: false,
   });
 
   const inputRef = useRef({
@@ -277,6 +278,7 @@ export default function BlastPage() {
   // Spawn wave (Loop spec)
   const spawnWave = useCallback((waveNum: number) => {
     const game = gameRef.current;
+    game.waveClearing = false;
     game.shapes = [];
     game.boss = null;
     game.bossProjectiles = [];
@@ -326,8 +328,6 @@ export default function BlastPage() {
     }
     
     if (waveNum === 2) {
-      largeCount = 4; mediumCount = 2; smallCount = 0; rows = 2;
-    } else if (waveNum === 2) {
       largeCount = 4; mediumCount = 2; smallCount = 0; rows = 2;
     } else if (waveNum === 3) {
       largeCount = 5; mediumCount = 3; smallCount = 2; rows = 3;
@@ -403,6 +403,7 @@ export default function BlastPage() {
     game.combo = 0;
     game.comboTimer = 0;
     game.screenShake = 0;
+    game.waveClearing = false;
     game.enemyFireTimer = ENEMY_FIRE_INTERVAL;
     inputRef.current.targetX = canvasSize.w / 2;
     spawnWave(1);
@@ -768,8 +769,9 @@ export default function BlastPage() {
         }
         game.enemyProjectiles = game.enemyProjectiles.filter(p => p.y < canvasSize.h + 20);
         
-        // Check wave clear
-        if (game.shapes.length === 0) {
+        // Check wave clear (guard to prevent firing every frame during timeout)
+        if (game.shapes.length === 0 && !game.waveClearing) {
+          game.waveClearing = true;
           game.enemyProjectiles = []; // Clear projectiles on wave clear
           playWaveClear();
           game.wave++;
