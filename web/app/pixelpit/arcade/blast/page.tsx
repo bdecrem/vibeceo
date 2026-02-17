@@ -37,7 +37,7 @@ const SIZE = {
 const PLAYER_SPEED = 400;
 const GOO_SPEED = 500;       // ~8px per frame at 60fps
 const BASE_ENEMY_SPEED = 60; // Loop spec: 60px/sec base
-const DESCENT_STEP = 24;     // Loop spec v2: 24px step-down
+const DESCENT_STEP = 12;     // Gradual descent like classic Space Invaders
 const DESCENT_PAUSE = 200;   // Loop spec: 200ms pause on step-down
 const MAX_BULLETS = 3;       // Loop spec: max 3 on screen
 const MAX_SHAPES = 20;       // Loop spec: cap to prevent chaos
@@ -678,17 +678,19 @@ export default function BlastPage() {
         for (const shape of game.shapes) {
           shape.x += game.enemyDirection * game.enemySpeed * dt;
           shape.rotation += shape.rotationSpeed * dt;
-          
+
           const size = getShapeSize(shape.size);
           if (shape.x < size || shape.x > canvasSize.w - size) {
             hitEdge = true;
           }
         }
-        
-        // Reverse and descend
+
+        // Reverse and descend (once per direction change — clamp to prevent re-trigger)
         if (hitEdge) {
           game.enemyDirection *= -1;
           for (const shape of game.shapes) {
+            const size = getShapeSize(shape.size);
+            shape.x = Math.max(size, Math.min(canvasSize.w - size, shape.x));
             shape.y += DESCENT_STEP;
             
             // Check if shapes reached player
