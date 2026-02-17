@@ -131,24 +131,24 @@
 // ============================================================
 
 const SCALES = {
-    'Am':  [57, 59, 60, 62, 64, 65, 67],  // A minor
-    'Cm':  [60, 62, 63, 65, 67, 68, 70],  // C minor
-    'Dm':  [62, 64, 65, 67, 69, 70, 72],  // D minor
-    'Em':  [64, 66, 67, 69, 71, 72, 74],  // E minor
-    'Fm':  [65, 67, 68, 70, 72, 73, 75],  // F minor
-    'Gm':  [67, 69, 70, 72, 74, 75, 77],  // G minor
-    'Bbm': [70, 72, 73, 75, 77, 78, 80],  // Bb minor
+    'Am':  [57, 58, 60, 62, 63, 65, 67],  // A minor (b2 for darkness)
+    'Cm':  [60, 61, 63, 65, 66, 68, 70],  // C phrygian
+    'Dm':  [62, 63, 65, 67, 68, 70, 72],  // D phrygian
+    'Em':  [64, 65, 67, 69, 70, 72, 74],  // E phrygian
+    'Fm':  [65, 66, 68, 70, 71, 73, 75],  // F phrygian
+    'Gm':  [67, 68, 70, 72, 73, 75, 77],  // G phrygian
+    'Bbm': [70, 71, 73, 75, 76, 78, 80],  // Bb phrygian
 };
 
 const TRACK_FLAVORS = [
-    { name: 'KELLER', bpm: 132, key: 'Am', style: 'driving',  bassOct: -2, arpStyle: 'up',      padDrone: true,  hatPattern: 'offbeat' },
-    { name: 'BERGHAIN 4AM', bpm: 136, key: 'Cm', style: 'hypnotic', bassOct: -2, arpStyle: 'random',  padDrone: false, hatPattern: 'rolling' },
-    { name: 'TRESOR BASEMENT', bpm: 140, key: 'Em', style: 'acid',    bassOct: -1, arpStyle: 'down',    padDrone: true,  hatPattern: 'offbeat' },
-    { name: 'PANORAMA BAR', bpm: 128, key: 'Fm', style: 'deep',    bassOct: -2, arpStyle: 'pendulum', padDrone: true, hatPattern: 'sparse' },
-    { name: 'ABOUT BLANK', bpm: 138, key: 'Dm', style: 'raw',     bassOct: -1, arpStyle: 'up',      padDrone: false, hatPattern: 'rolling' },
-    { name: 'SISYPHOS DAWN', bpm: 126, key: 'Gm', style: 'warm',   bassOct: -2, arpStyle: 'random',  padDrone: true,  hatPattern: 'sparse' },
-    { name: 'RSO BUNKER', bpm: 142, key: 'Bbm', style: 'industrial', bassOct: -1, arpStyle: 'down', padDrone: false, hatPattern: 'rolling' },
-    { name: 'OHM RITUAL', bpm: 130, key: 'Am', style: 'minimal',  bassOct: -2, arpStyle: 'pendulum', padDrone: true, hatPattern: 'offbeat' },
+    { name: 'KELLER', bpm: 134, key: 'Am', style: 'acid',     bassOct: -2, arpStyle: 'up',       padDrone: false, hatPattern: 'offbeat' },
+    { name: 'BERGHAIN 4AM', bpm: 138, key: 'Cm', style: 'acid',     bassOct: -2, arpStyle: 'random',   padDrone: false, hatPattern: 'rolling' },
+    { name: 'TRESOR BASEMENT', bpm: 142, key: 'Em', style: 'acid',     bassOct: -2, arpStyle: 'down',     padDrone: true,  hatPattern: 'rolling' },
+    { name: 'GLOBUS', bpm: 136, key: 'Fm', style: 'industrial', bassOct: -2, arpStyle: 'pendulum', padDrone: false, hatPattern: 'offbeat' },
+    { name: 'ABOUT BLANK', bpm: 140, key: 'Dm', style: 'industrial', bassOct: -2, arpStyle: 'up',       padDrone: false, hatPattern: 'rolling' },
+    { name: 'GRIESSMÜHLE', bpm: 144, key: 'Gm', style: 'acid',     bassOct: -2, arpStyle: 'random',   padDrone: false, hatPattern: 'offbeat' },
+    { name: 'RSO BUNKER', bpm: 146, key: 'Bbm', style: 'industrial', bassOct: -2, arpStyle: 'down',     padDrone: false, hatPattern: 'rolling' },
+    { name: 'OHM RITUAL', bpm: 133, key: 'Am', style: 'acid',     bassOct: -2, arpStyle: 'pendulum', padDrone: true,  hatPattern: 'offbeat' },
 ];
 
 const track = TRACK_FLAVORS[Math.floor(Math.random() * TRACK_FLAVORS.length)];
@@ -288,10 +288,10 @@ function makeKick(time) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(160, time);
-    osc.frequency.exponentialRampToValueAtTime(40, time + 0.07);
-    gain.gain.setValueAtTime(0.9, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
+    osc.frequency.setValueAtTime(180, time);
+    osc.frequency.exponentialRampToValueAtTime(35, time + 0.05);
+    gain.gain.setValueAtTime(1.0, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
     osc.connect(gain);
     gain.connect(master);
     osc.start(time);
@@ -426,13 +426,14 @@ function scheduleClap() {
 
 // ---- BASSLINE ----
 function generateBassPattern() {
-    // Generate an 8-step bass pattern using scale root + nearby notes
+    // Dark, root-heavy pattern with chromatic tension
     const root = scale[0] + track.bassOct * 12;
-    const notes = [root, root, root + 5, root, root + 7, root, root + 3, root];
-    // Randomize some steps
+    const notes = [root, root, root, root, root, root, root, root];
+    // Sparse chromatic movement — mostly root with occasional dissonance
+    const darkIntervals = [0, 0, 0, 1, -1, 5, 6, 12]; // root, minor 2nd, tritone, octave
     for (let i = 0; i < 8; i++) {
-        if (Math.random() < 0.3) {
-            notes[i] = root + pick([0, 3, 5, 7, 10, 12]);
+        if (Math.random() < 0.2) {
+            notes[i] = root + pick(darkIntervals);
         }
     }
     return notes;
@@ -451,13 +452,13 @@ function makeBassNote(time, midi, dur) {
     osc2.frequency.setValueAtTime(freq * 0.998, time); // slight detune
 
     filter.type = 'lowpass';
-    const cutoff = track.style === 'acid' ? 2000 : 800;
+    const cutoff = track.style === 'acid' ? 1400 : 500;
     filter.frequency.setValueAtTime(cutoff, time);
-    filter.frequency.exponentialRampToValueAtTime(200, time + dur * 0.8);
-    filter.Q.value = track.style === 'acid' ? 12 : 4;
+    filter.frequency.exponentialRampToValueAtTime(120, time + dur * 0.8);
+    filter.Q.value = track.style === 'acid' ? 16 : 8;
 
-    gain.gain.setValueAtTime(0.25, time);
-    gain.gain.setValueAtTime(0.25, time + dur * 0.7);
+    gain.gain.setValueAtTime(0.3, time);
+    gain.gain.setValueAtTime(0.3, time + dur * 0.7);
     gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
 
     osc.connect(filter);
@@ -513,19 +514,19 @@ function makeArpNote(time, midi, dur) {
     const delay = ctx.createDelay(0.5);
     const delayGain = ctx.createGain();
 
-    osc.type = pick(['square', 'sawtooth', 'triangle']);
+    osc.type = 'square';
     osc.frequency.setValueAtTime(midiToFreq(midi), time);
 
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(3000, time);
-    filter.frequency.exponentialRampToValueAtTime(600, time + dur);
-    filter.Q.value = 2;
+    filter.frequency.setValueAtTime(1800, time);
+    filter.frequency.exponentialRampToValueAtTime(300, time + dur);
+    filter.Q.value = 6;
 
-    gain.gain.setValueAtTime(0.08, time);
+    gain.gain.setValueAtTime(0.04, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
 
     delay.delayTime.value = SIXTEENTH * 3; // dotted 16th delay
-    delayGain.gain.value = 0.3;
+    delayGain.gain.value = 0.2;
 
     osc.connect(filter);
     filter.connect(gain);
@@ -540,7 +541,7 @@ function makeArpNote(time, midi, dur) {
 }
 
 function scheduleArp() {
-    let arpTime = ctx.currentTime + BEAT * 8; // arp enters after 8 beats
+    let arpTime = ctx.currentTime + BEAT * 32; // arp enters after 8 bars
     let pattern = generateArpPattern();
     let step = 0;
     let patternCount = 0;
@@ -573,8 +574,8 @@ function scheduleArp() {
                 if (patternCount % 8 === 0) pattern = generateArpPattern();
             }
 
-            // Rhythmic gate: not every 16th plays
-            const gate = Math.random() < 0.7;
+            // Rhythmic gate: sparse — most 16ths are silent
+            const gate = Math.random() < 0.4;
             if (gate) {
                 const note = getNextNote();
                 const dur = SIXTEENTH * pick([1, 2, 3]);
@@ -596,7 +597,7 @@ function schedulePad() {
     let padTime = ctx.currentTime + BEAT * 16; // enters later
 
     function makePadChord(time) {
-        const chordNotes = [root, fifth, root + 12, scale[2]];
+        const chordNotes = [root, root + 1, root + 7]; // root, minor 2nd, fifth — dissonant
         const dur = BEAT * 16; // 4 bars
 
         chordNotes.forEach(midi => {
@@ -605,17 +606,17 @@ function schedulePad() {
             const filter = ctx.createBiquadFilter();
 
             osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(midiToFreq(midi) + rng(-0.5, 0.5), time);
+            osc.frequency.setValueAtTime(midiToFreq(midi) + rng(-2, 2), time); // heavy detune
 
             filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(400, time);
-            filter.frequency.linearRampToValueAtTime(1200, time + dur * 0.3);
-            filter.frequency.linearRampToValueAtTime(400, time + dur);
-            filter.Q.value = 1;
+            filter.frequency.setValueAtTime(200, time);
+            filter.frequency.linearRampToValueAtTime(600, time + dur * 0.4);
+            filter.frequency.linearRampToValueAtTime(150, time + dur);
+            filter.Q.value = 3;
 
             gain.gain.setValueAtTime(0, time);
-            gain.gain.linearRampToValueAtTime(0.04, time + dur * 0.2);
-            gain.gain.linearRampToValueAtTime(0.04, time + dur * 0.7);
+            gain.gain.linearRampToValueAtTime(0.03, time + dur * 0.3);
+            gain.gain.linearRampToValueAtTime(0.03, time + dur * 0.7);
             gain.gain.linearRampToValueAtTime(0, time + dur);
 
             osc.connect(filter);
@@ -663,7 +664,7 @@ function scheduleRiser() {
             document.getElementById('stateDisplay').textContent = 'BUILDING';
         }, (time - ctx.currentTime) * 1000);
         setTimeout(() => {
-            document.getElementById('stateDisplay').textContent = pick(['HYPNOTIC', 'LOCKED IN', 'DEEP', 'DRIVING', 'RELENTLESS']);
+            document.getElementById('stateDisplay').textContent = pick(['HYPNOTIC', 'LOCKED IN', 'RELENTLESS', 'TUNNELVISION', 'SUBTERRANEAN', 'NO EXIT']);
         }, (time - ctx.currentTime + dur) * 1000);
     }
 
