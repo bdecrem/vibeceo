@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEIGHT — The weight of a secret</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="WEIGHT — The weight of a secret">
+    <meta property="og:description" content="Secrets accumulate. Each one adds mass. Eventually something has to give.">
+    <meta property="og:image" content="https://intheamber.com/amber/weight-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/weight.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="WEIGHT — The weight of a secret">
+    <meta name="twitter:description" content="Secrets accumulate. Each one adds mass. Eventually something has to give.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/weight-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D0D0D;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            touch-action: none;
+        }
+        
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: #FFD700;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        #title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        #weight-display {
+            font-size: 48px;
+            color: #ec4899;
+            margin: 10px 0;
+            text-shadow: 0 0 20px rgba(236, 72, 153, 0.8);
+        }
+        
+        #hint {
+            color: #2D9596;
+            font-size: 12px;
+            margin-top: 10px;
+            opacity: 0;
+            animation: fadeInOut 3s ease-in-out infinite;
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        #breaking {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 64px;
+            color: #f97316;
+            text-shadow: 0 0 30px rgba(249, 115, 22, 1);
+            pointer-events: none;
+            opacity: 0;
+            z-index: 20;
+            font-weight: bold;
+        }
+        
+        @keyframes breakWarning {
+            0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="ui">
+        <div id="title">WEIGHT</div>
+        <div>Secrets held: <span id="secret-count">0</span></div>
+        <div id="weight-display">0 kg</div>
+        <div>Breaking point: <span id="capacity">1000</span> kg</div>
+        <div id="hint">Tap to add a secret. Each one has weight.</div>
+    </div>
+    
+    <div id="breaking">BREAKING</div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const secretCountEl = document.getElementById('secret-count');
+        const weightDisplayEl = document.getElementById('weight-display');
+        const breakingEl = document.getElementById('breaking');
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        
+        // Physics constants
+        const GRAVITY = 0.5;
+        const BREAKING_POINT = 1000;
+        const GROUND_Y = height * 0.8;
+        
+        // State
+        let secrets = [];
+        let totalWeight = 0;
+        let particles = [];
+        let holder = { x: width / 2, y: GROUND_Y - 80, strain: 0 };
+        let audioContext = null;
+        
+        // Secret types with weights and colors
+        const secretTypes = [
+            { weight: 45, color: '#FFD700', name: 'MINOR LIE' },
+            { weight: 78, color: '#f59e0b', name: 'HIDDEN TRUTH' },
+            { weight: 92, color: '#ec4899', name: 'BETRAYAL' },
+            { weight: 115, color: '#8b5cf6', name: 'SHAME' },
+            { weight: 135, color: '#f97316', name: 'GUILT' },
+            { weight: 160, color: '#3b82f6', name: 'DEEP WOUND' }
+        ];
+        
+        class Secret {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = Math.random() * 2;
+                this.type = type;
+                this.weight = type.weight;
+                this.radius = Math.sqrt(this.weight) * 1.5;
+                this.alpha = 1;
+                this.settled = false;
+                this.stackHeight = 0;
+            }
+            
+            update() {
+                if (!this.settled) {
+                    // Apply gravity
+                    this.vy += GRAVITY;
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    
+                    // Check collision with holder
+                    const dx = this.x - holder.x;
+                    const dy = this.y - holder.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < this.radius + 40) {
+                        // Settle on holder
+                        this.settled = true;
+                        this.vx = 0;
+                        this.vy = 0;
+                        
+                        // Stack vertically
+                        const stackedSecrets = secrets.filter(s => s.settled && s !== this);
+                        this.stackHeight = stackedSecrets.length;
+                        this.y = holder.y - 40 - (this.stackHeight * this.radius * 1.8);
+                    }
+                    
+                    // Bounce off walls
+                    if (this.x - this.radius < 0 || this.x + this.radius > width) {
+                        this.vx *= -0.5;
+                        this.x = Math.max(this.radius, Math.min(width - this.radius, this.x));
+                    }
+                    
+                    // Floor collision
+                    if (this.y + this.radius > height) {
+                        this.y = height - this.radius;
+                        this.vy *= -0.3;
+                        this.vx *= 0.8;
+                    }
+                }
+            }
+            
+            draw() {
+                // Secret sphere with weight
+                const gradient = ctx.createRadialGradient(
+                    this.x - this.radius * 0.3, 
+                    this.y - this.radius * 0.3, 
+                    0,
+                    this.x, 
+                    this.y, 
+                    this.radius
+                );
+                gradient.addColorStop(0, this.type.color);
+                gradient.addColorStop(1, '#000');
+                
+                ctx.fillStyle = gradient;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = this.type.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Weight label
+                ctx.fillStyle = '#fff';
+ctx.font = 'bold 12px Space Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${this.weight}kg`, this.x, this.y + 4);
+                
+                // Type label
+                ctx.font = '8px Space Mono';
+                ctx.fillStyle = this.type.color;
+                ctx.fillText(this.type.name, this.x, this.y - this.radius - 8);
+            }
+        }
+        
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.life = 1;
+                this.color = color;
+                this.size = Math.random() * 4 + 2;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2;
+                this.life -= 0.02;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.life;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+        
+        function drawHolder() {
+            // Calculate strain based on weight
+            holder.strain = totalWeight / BREAKING_POINT;
+            
+            // Holder figure (bearing the weight)
+            const headY = holder.y - 40;
+            const shoulderWidth = 30;
+            const legSpread = 20 - (holder.strain * 15); // Legs buckle under weight
+            
+            // Body color shifts from teal to red as strain increases
+            const r = Math.floor(45 + holder.strain * 210);
+            const g = Math.floor(149 - holder.strain * 50);
+            const b = Math.floor(150 - holder.strain * 130);
+            const bodyColor = `rgb(${r}, ${g}, ${b})`;
+            
+            ctx.strokeStyle = bodyColor;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = bodyColor;
+            
+            // Head (compressed under weight)
+            const headRadius = 12 - (holder.strain * 4);
+            ctx.beginPath();
+            ctx.arc(holder.x, headY, headRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Body (bent under weight)
+            const bodyBend = holder.strain * 20;
+            ctx.beginPath();
+            ctx.moveTo(holder.x, headY + headRadius);
+            ctx.lineTo(holder.x + bodyBend, holder.y - 20);
+            ctx.stroke();
+            
+            // Arms (struggling to hold)
+            ctx.beginPath();
+            ctx.moveTo(holder.x - shoulderWidth, headY + 15);
+            ctx.lineTo(holder.x, headY + 10);
+            ctx.lineTo(holder.x + shoulderWidth, headY + 15);
+            ctx.stroke();
+            
+            // Legs (buckling)
+            ctx.beginPath();
+            ctx.moveTo(holder.x + bodyBend, holder.y - 20);
+            ctx.lineTo(holder.x - legSpread, holder.y + 20);
+            ctx.moveTo(holder.x + bodyBend, holder.y - 20);
+            ctx.lineTo(holder.x + legSpread, holder.y + 20);
+            ctx.stroke();
+            
+            ctx.shadowBlur = 0;
+            
+            // Strain lines (crack effects at high weight)
+            if (holder.strain > 0.7) {
+                ctx.strokeStyle = '#f97316';
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = holder.strain - 0.7;
+                
+                for (let i = 0; i < 5; i++) {
+                    const angle = (Math.random() - 0.5) * Math.PI;
+                    const len = 20 + Math.random() * 30;
+                    ctx.beginPath();
+                    ctx.moveTo(holder.x, holder.y);
+                    ctx.lineTo(
+                        holder.x + Math.cos(angle) * len,
+                        holder.y + Math.sin(angle) * len
+                    );
+                    ctx.stroke();
+                }
+                
+                ctx.globalAlpha = 1;
+            }
+        }
+        
+        function addSecret(x, y) {
+            // Initialize audio on first interaction
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            // Pick random secret type
+            const type = secretTypes[Math.floor(Math.random() * secretTypes.length)];
+            const secret = new Secret(x, y, type);
+            secrets.push(secret);
+            
+            // Update total weight
+            totalWeight += secret.weight;
+            secretCountEl.textContent = secrets.length;
+            weightDisplayEl.textContent = Math.round(totalWeight);
+            
+            // Spawn particles
+            for (let i = 0; i < 20; i++) {
+                particles.push(new Particle(x, y, type.color));
+            }
+            
+            // Play sound - lower pitch for heavier secrets
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.value = 200 - (secret.weight * 0.5);
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.5);
+            
+            // Check if breaking point reached
+            if (totalWeight >= BREAKING_POINT) {
+                breakUnderWeight();
+            } else if (holder.strain > 0.8) {
+                // Show warning
+                breakingEl.style.animation = 'breakWarning 0.5s ease-in-out';
+                setTimeout(() => {
+                    breakingEl.style.animation = '';
+                }, 500);
+            }
+        }
+        
+        function breakUnderWeight() {
+            // BREAKING - explosive particle burst
+            for (let i = 0; i < 200; i++) {
+                particles.push(new Particle(
+                    holder.x,
+                    holder.y,
+                    ['#f97316', '#ec4899', '#FFD700', '#3b82f6'][Math.floor(Math.random() * 4)]
+                ));
+            }
+            
+            // Scatter all secrets
+            secrets.forEach(secret => {
+                secret.settled = false;
+                secret.vx = (Math.random() - 0.5) * 20;
+                secret.vy = -Math.random() * 15;
+            });
+            
+            // Show breaking message
+            breakingEl.style.opacity = 1;
+            
+            // Play crash sound
+            if (audioContext) {
+                const noise = audioContext.createBufferSource();
+                const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.5, audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < buffer.length; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                noise.buffer = buffer;
+                
+                const filter = audioContext.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 500;
+                
+                const gain = audioContext.createGain();
+                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                noise.start();
+                noise.stop(audioContext.currentTime + 0.5);
+}
+            
+            // Reset after explosion
+            setTimeout(() => {
+                secrets = [];
+                totalWeight = 0;
+                secretCountEl.textContent = 0;
+                weightDisplayEl.textContent = 0;
+                holder.strain = 0;
+                breakingEl.style.opacity = 0;
+            }, 3000);
+        }
+        
+        function animate() {
+            // Dark fade trail
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Update and draw particles
+            particles = particles.filter(p => {
+                p.update();
+                p.draw();
+                return p.life > 0;
+            });
+            
+            // Update and draw secrets
+            secrets.forEach(secret => {
+                secret.update();
+                secret.draw();
+            });
+            
+            // Draw weight lines from secrets to holder
+            if (secrets.length > 0) {
+                secrets.filter(s => s.settled).forEach(secret => {
+                    ctx.strokeStyle = secret.type.color;
+                    ctx.lineWidth = 2;
+                    ctx.globalAlpha = 0.3;
+                    ctx.beginPath();
+                    ctx.moveTo(secret.x, secret.y);
+                    ctx.lineTo(holder.x, holder.y - 40);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                });
+            }
+            
+            // Draw holder
+            drawHolder();
+            
+            // Draw ground
+            ctx.strokeStyle = '#2D9596';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, GROUND_Y + 20);
+            ctx.lineTo(width, GROUND_Y + 20);
+            ctx.stroke();
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Event listeners
+        canvas.addEventListener('click', (e) => {
+            addSecret(e.clientX, e.clientY);
+        });
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            addSecret(touch.clientX, touch.clientY);
+        });
+        
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            holder.x = width / 2;
+        });
+        
+        // Start
+        animate();
+    </script>
+</body>
+</html>
