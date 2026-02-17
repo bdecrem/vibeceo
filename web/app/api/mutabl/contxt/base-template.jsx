@@ -46,7 +46,7 @@ function App() {
   };
 
   const warmMessage = (days) => {
-    if (days > 90) return "It\'s been a while";
+    if (days > 90) return "It's been a while";
     if (days > 30) return "Time to reconnect";
     if (days > 7) return "A quick hello?";
     return "Check in soon";
@@ -129,7 +129,7 @@ function App() {
     return (
       <div style={{ minHeight: "100vh", background: bg, padding: "20px 16px", fontFamily: "system-ui", maxWidth: 600, margin: "0 auto" }}>
         <button onClick={() => setSelectedPerson(null)} style={{ background: "none", border: "none", color: textSecondary, cursor: "pointer", fontSize: 14, marginBottom: 16, padding: 0, fontFamily: "system-ui" }}>
-          \u2190 back
+          ← back
         </button>
         <h2 style={{ color: textPrimary, margin: "0 0 4px", fontSize: 24, fontWeight: 700 }}>{p.name}</h2>
         {p.how_we_met && <div style={{ color: textSecondary, fontSize: 13, marginBottom: 8, lineHeight: 1.5 }}>{p.how_we_met}</div>}
@@ -216,8 +216,8 @@ function App() {
           <div>
             {reconnectQueue.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 20px" }}>
-                <div style={{ fontSize: 36, marginBottom: 12 }}>\u2728</div>
-                <div style={{ color: textSecondary, fontSize: 15, marginBottom: 6 }}>You\'re all caught up!</div>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>✨</div>
+                <div style={{ color: textSecondary, fontSize: 15, marginBottom: 6 }}>You're all caught up!</div>
                 <div style={{ color: textDim, fontSize: 13 }}>No one is waiting for a hello right now.</div>
               </div>
             ) : (
@@ -229,7 +229,7 @@ function App() {
                         {item.name}
                       </div>
                       <div style={{ color: accent, fontSize: 12, marginBottom: 4 }}>
-                        {warmMessage(item.overdue_days)} \u2022 {timeSince(item.last_contacted)}
+                        {warmMessage(item.overdue_days)} • {timeSince(item.last_contacted)}
                       </div>
                       {item.how_we_met && <div style={{ color: textDim, fontSize: 12, lineHeight: 1.4 }}>{item.how_we_met}</div>}
                     </div>
