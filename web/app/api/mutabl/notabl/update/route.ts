@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { getBaseTemplate } from "../../base-template";
 
 export const dynamic = "force-dynamic";
 
@@ -57,18 +58,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data: base } = await supabase
-    .from("notabl_config")
-    .select("app_code, app_css, version")
-    .is("handle", null)
-    .single();
-
-  if (!base) {
-    return NextResponse.json(
-      { error: "Base config not found" },
-      { status: 500 }
-    );
-  }
+  const base = getBaseTemplate("notabl");
 
   if (action === "skip") {
     await supabase
@@ -85,8 +75,8 @@ export async function POST(request: NextRequest) {
   await supabase
     .from("notabl_config")
     .update({
-      app_code: base.app_code,
-      app_css: base.app_css,
+      app_code: base.code,
+      app_css: base.css,
       base_version: base.version,
       modified: false,
       updated_at: new Date().toISOString(),
@@ -95,7 +85,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    app_code: base.app_code,
-    app_css: base.app_css,
+    app_code: base.code,
+    app_css: base.css,
   });
 }

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { getBaseTemplate } from "../../base-template";
 
 export const dynamic = "force-dynamic";
 
@@ -144,19 +145,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Get the base app_code template + current version
-        const { data: baseConfig } = await supabase
-          .from("todoit_config")
-          .select("app_code, app_css, version")
-          .is("handle", null)
-          .single();
-
-        if (!baseConfig) {
-          return NextResponse.json(
-            { success: false, error: "Base config not found" },
-            { status: 500 }
-          );
-        }
+        const base = getBaseTemplate("todoit");
 
         const { data: newUser, error: insertError } = await supabase
           .from("todoit_config")
@@ -164,9 +153,9 @@ export async function POST(request: NextRequest) {
             handle: handle,
             handle_lower: handleLower,
             code: code,
-            app_code: baseConfig.app_code,
-            app_css: baseConfig.app_css,
-            base_version: baseConfig.version,
+            app_code: base.code,
+            app_css: base.css,
+            base_version: base.version,
           })
           .select("id, handle")
           .single();

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { getBaseTemplate } from "../../base-template";
 
 export const dynamic = "force-dynamic";
 
@@ -47,47 +48,39 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const [userResult, baseResult] = await Promise.all([
-    supabase
-      .from("notabl_config")
-      .select("app_code, app_css, version, base_version, modified")
-      .eq("id", session.userId)
-      .single(),
-    supabase
-      .from("notabl_config")
-      .select("app_code, app_css, version")
-      .is("handle", null)
-      .single(),
-  ]);
+  const userResult = await supabase
+    .from("notabl_config")
+    .select("app_code, app_css, version, base_version, modified")
+    .eq("id", session.userId)
+    .single();
 
   if (!userResult.data) {
     return NextResponse.json({ error: "Config not found" }, { status: 404 });
   }
 
   const user = userResult.data;
-  const base = baseResult.data;
-  const baseVersion = base?.version ?? 1;
+  const base = getBaseTemplate("notabl");
 
-  if (!user.modified && user.base_version < baseVersion && base) {
+  if (!user.modified && user.base_version < base.version) {
     await supabase
       .from("notabl_config")
       .update({
-        app_code: base.app_code,
-        app_css: base.app_css,
-        base_version: baseVersion,
+        app_code: base.code,
+        app_css: base.css,
+        base_version: base.version,
         updated_at: new Date().toISOString(),
       })
       .eq("id", session.userId);
 
     return NextResponse.json({
-      app_code: base.app_code,
-      app_css: base.app_css,
+      app_code: base.code,
+      app_css: base.css,
       version: user.version,
       update_available: false,
     });
   }
 
-  const updateAvailable = user.modified && user.base_version < baseVersion;
+  const updateAvailable = user.modified && user.base_version < base.version;
 
   return NextResponse.json({
     app_code: user.app_code,
