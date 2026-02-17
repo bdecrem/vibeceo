@@ -4,31 +4,32 @@ import { useState, useRef, useEffect } from 'react'
 
 // Today's drop — dispensed by the machine
 const TODAYS_DROP = {
-  id: 49,
-  name: 'DOOMLEARN',
-  tagline: "You're going to scroll anyway.",
-  color: '#B8FF57',
-  icon: '🧠',
+  id: 50,
+  name: 'CONTAINMENT',
+  tagline: 'Can you keep the AI contained?',
+  color: '#00FF41',
+  icon: '🔒',
   status: 'SHIPPED',
-  date: 'Feb 15',
-  href: '/shipshot/doomlearn',
+  date: 'Feb 17',
+  href: '/shipshot/containment',
 }
 
-// Grid apps — 1 real prototype + 5 placeholders
+// Grid apps — shipped prototypes + placeholders
 const GRID_APPS = [
+  { id: 49, name: 'DOOMLEARN', tagline: "You're going to scroll anyway. Learn something dark.", color: '#B8FF57', icon: '🧠', status: 'SHIPPED', date: 'Feb 15', href: '/shipshot/doomlearn' },
   { id: 48, name: 'ONBOARD', tagline: 'One line of code. Onboarding builds itself.', color: '#4F46E5', icon: '🚀', status: 'SHIPPED', date: 'Feb 15', href: '/shipshot/onboard' },
-  { id: 47, name: 'QuietTab', tagline: 'A browser tab that helps you breathe between tasks', color: '#FFD23F', icon: '💨', status: 'SHIPPED', date: 'Feb 14', href: null },
-  { id: 46, name: 'ForkIt', tagline: 'Remix any recipe by swapping one ingredient', color: '#FF3860', icon: '🍴', status: 'SHIPPED', date: 'Feb 13', href: null },
-  { id: 45, name: 'DriftFM', tagline: 'AI radio that matches your walking speed', color: '#00E5A0', icon: '📻', status: 'SHIPPED', date: 'Feb 12', href: null },
-  { id: 44, name: 'SnapDebt', tagline: 'Photograph a receipt, split it instantly with friends', color: '#A855F7', icon: '📸', status: 'SHIPPED', date: 'Feb 11', href: null },
-  { id: 43, name: 'MoodBoard', tagline: 'Your daily emotion as a generated color palette', color: '#00B4D8', icon: '🎨', status: 'SHIPPED', date: 'Feb 10', href: null },
+  { id: 47, name: 'QuietTab', tagline: 'A browser tab that helps you breathe between tasks', color: '#D4C5A9', icon: '💨', status: 'SHIPPED', date: 'Feb 14', href: null },
+  { id: 46, name: 'ForkIt', tagline: 'Remix any recipe by swapping one ingredient', color: '#B8B0A8', icon: '🍴', status: 'SHIPPED', date: 'Feb 13', href: null },
+  { id: 45, name: 'DriftFM', tagline: 'AI radio that matches your walking speed', color: '#A8B8B0', icon: '📻', status: 'SHIPPED', date: 'Feb 12', href: null },
+  { id: 44, name: 'SnapDebt', tagline: 'Photograph a receipt, split it instantly with friends', color: '#C4B8C8', icon: '📸', status: 'SHIPPED', date: 'Feb 11', href: null },
+  { id: 43, name: 'MoodBoard', tagline: 'Your daily emotion as a generated color palette', color: '#A8BCC4', icon: '🎨', status: 'SHIPPED', date: 'Feb 10', href: null },
 ]
 
 // Back catalog (shown when expanded)
 const MORE_APPS = [
-  { id: 42, name: 'ParkPing', tagline: 'Alerts you 5 minutes before your parking meter expires', color: '#FFD23F', icon: '🅿️', status: 'SHIPPED', date: 'Feb 9', href: null },
-  { id: 41, name: 'TinyWin', tagline: "Log one small win per day. That's it. That's the app.", color: '#FF3860', icon: '🏆', status: 'SHIPPED', date: 'Feb 8', href: null },
-  { id: 40, name: 'GhostNote', tagline: 'Leave voice notes at locations for friends to find', color: '#00E5A0', icon: '👻', status: 'SHIPPED', date: 'Feb 7', href: null },
+  { id: 42, name: 'ParkPing', tagline: 'Alerts you 5 minutes before your parking meter expires', color: '#C8C0A8', icon: '🅿️', status: 'SHIPPED', date: 'Feb 9', href: null },
+  { id: 41, name: 'TinyWin', tagline: "Log one small win per day. That's it. That's the app.", color: '#B8A8A8', icon: '🏆', status: 'SHIPPED', date: 'Feb 8', href: null },
+  { id: 40, name: 'GhostNote', tagline: 'Leave voice notes at locations for friends to find', color: '#A8C0B0', icon: '👻', status: 'SHIPPED', date: 'Feb 7', href: null },
 ]
 
 const CREW = [
@@ -194,7 +195,7 @@ function AppCard({ app, index, isNew }: { app: AppType; index: number; isNew?: b
         </div>
         <div style={{ width: 52, height: 52, borderRadius: 14, background: '#0D1117', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, marginBottom: 14 }}>{app.icon}</div>
         <div style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: 16, color: '#0D1117', marginBottom: 6 }}>{app.name}</div>
-        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: '#0D1117', opacity: 0.7, lineHeight: 1.5, marginBottom: 14 }}>{app.tagline}</div>
+        <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: '#0D1117', opacity: 0.7, lineHeight: 1.5, marginBottom: 14, minHeight: '2.1em' }}>{app.tagline}</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'inline-block', background: '#0D1117', borderRadius: 6, padding: '4px 10px', fontFamily: "'Space Mono', monospace", fontSize: 9, fontWeight: 700, color: app.color, letterSpacing: 2 }}>
             {isPlayable ? '▶ PLAY' : `● ${app.status}`}
@@ -323,7 +324,7 @@ export default function ShipShotPage() {
   }
 
   const totalShipped = GRID_APPS.length + MORE_APPS.length + (dropped ? 1 : 0)
-  const visibleCount = isMobile ? (dropped ? 1 : 2) : (dropped ? 5 : 6)
+  const visibleCount = isMobile ? (dropped ? 1 : 2) : (dropped ? 6 : 7)
   const hiddenGridApps = GRID_APPS.length - visibleCount
   const hiddenTotal = hiddenGridApps + MORE_APPS.length
 
