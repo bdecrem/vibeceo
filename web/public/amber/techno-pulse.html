@@ -230,40 +230,58 @@ function startAudio() {
 
     document.getElementById('startPrompt').style.display = 'none';
     document.getElementById('indicators').style.display = 'flex';
-    document.getElementById('stateDisplay').textContent = 'PLAYING';
+    document.getElementById('stateDisplay').textContent = 'STARTING...';
 
     ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // iOS Safari requires explicit resume inside user gesture
-    if (ctx.state === 'suspended') ctx.resume();
 
-    compressor = ctx.createDynamicsCompressor();
-    compressor.threshold.value = -12;
-    compressor.ratio.value = 8;
-    compressor.attack.value = 0.003;
-    compressor.release.value = 0.1;
-    compressor.connect(ctx.destination);
+    // iOS: create a silent buffer and play it to unlock audio
+    const silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const silentSrc = ctx.createBufferSource();
+    silentSrc.buffer = silentBuf;
+    silentSrc.connect(ctx.destination);
+    silentSrc.start(0);
 
-    master = ctx.createGain();
-    master.gain.value = 0.7;
-    master.connect(compressor);
+    // Resume and wait for it
+    const p = ctx.resume();
+    const boot = () => {
+        compressor = ctx.createDynamicsCompressor();
+        compressor.threshold.value = -12;
+        compressor.ratio.value = 8;
+        compressor.attack.value = 0.003;
+        compressor.release.value = 0.1;
+        compressor.connect(ctx.destination);
 
-    analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
-    analyserData = new Uint8Array(analyser.frequencyBinCount);
-    master.connect(analyser);
+        master = ctx.createGain();
+        master.gain.value = 0.7;
+        master.connect(compressor);
 
-    // Start all layers
-    scheduleKick();
-    scheduleHats();
-    scheduleClap();
-    scheduleBass();
-    scheduleArp();
-    if (track.padDrone) schedulePad();
-    scheduleRiser();
+        analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        analyserData = new Uint8Array(analyser.frequencyBinCount);
+        master.connect(analyser);
+
+        document.getElementById('stateDisplay').textContent = 'PLAYING';
+
+        // Start all layers
+        scheduleKick();
+        scheduleHats();
+        scheduleClap();
+        scheduleBass();
+        scheduleArp();
+        if (track.padDrone) schedulePad();
+        scheduleRiser();
+    };
+
+    if (p && p.then) {
+        p.then(boot);
+    } else {
+        boot();
+    }
 }
 
+// Use both click and touchend (not touchstart — touchstart can be unreliable as user gesture on iOS)
 document.body.addEventListener('click', startAudio);
-document.body.addEventListener('touchstart', startAudio);
+document.body.addEventListener('touchend', startAudio);
 
 // ---- KICK ----
 function makeKick(time) {
