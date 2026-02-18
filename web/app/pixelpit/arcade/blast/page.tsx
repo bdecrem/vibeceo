@@ -1106,41 +1106,21 @@ export default function BlastPage() {
       ctx.setLineDash([]);
 
       // ── HUD ─────────────────────────────────────────
-      // WAVE — top left
+      // SCORE — left
       ctx.font = '600 13px "SF Mono", "Fira Code", "Consolas", monospace';
       ctx.textAlign = 'left';
       ctx.fillStyle = '#ffffff30';
-      ctx.fillText(`WAVE`, 14, 24);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '700 18px "SF Mono", "Fira Code", "Consolas", monospace';
-      ctx.fillText(`${game.wave}`, 14, 44);
-
-      // SCORE — center
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#ffffff30';
-      ctx.font = '600 13px "SF Mono", "Fira Code", "Consolas", monospace';
-      ctx.fillText(`SCORE`, canvasSize.w / 2, 24);
+      ctx.fillText(`SCORE`, 14, 24);
       ctx.fillStyle = THEME.slime;
       ctx.font = '700 18px "SF Mono", "Fira Code", "Consolas", monospace';
-      ctx.fillText(`${game.score}`, canvasSize.w / 2, 44);
+      ctx.fillText(`${game.score}`, 14, 44);
 
-      // X (quit) button — top right
-      ctx.strokeStyle = '#ffffff25';
-      ctx.lineWidth = 2;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(canvasSize.w - 30, 16);
-      ctx.lineTo(canvasSize.w - 18, 28);
-      ctx.moveTo(canvasSize.w - 18, 16);
-      ctx.lineTo(canvasSize.w - 30, 28);
-      ctx.stroke();
-
-      // Combo — below score
+      // Combo multiplier — center, same height as score
       if (game.combo > 1) {
         const comboAlpha = Math.min(game.comboTimer / 0.5, 1);
         const comboScale = 1 + (game.combo - 1) * 0.03;
         ctx.save();
-        ctx.translate(canvasSize.w / 2, 74);
+        ctx.translate(canvasSize.w / 2, 40);
         ctx.scale(comboScale, comboScale);
         ctx.globalAlpha = comboAlpha;
         ctx.textAlign = 'center';
@@ -1153,6 +1133,26 @@ export default function BlastPage() {
         ctx.globalAlpha = 1;
         ctx.restore();
       }
+
+      // WAVE — right, just left of X
+      ctx.font = '600 13px "SF Mono", "Fira Code", "Consolas", monospace';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#ffffff30';
+      ctx.fillText(`WAVE`, canvasSize.w - 48, 24);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 18px "SF Mono", "Fira Code", "Consolas", monospace';
+      ctx.fillText(`${game.wave}`, canvasSize.w - 48, 44);
+
+      // X (quit) button — top right
+      ctx.strokeStyle = '#ffffff25';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(canvasSize.w - 30, 16);
+      ctx.lineTo(canvasSize.w - 18, 28);
+      ctx.moveTo(canvasSize.w - 18, 16);
+      ctx.lineTo(canvasSize.w - 30, 28);
+      ctx.stroke();
 
       // ── GOO PROJECTILES ─────────────────────────────
       for (const goo of game.goos) {
