@@ -477,28 +477,29 @@ export default function BlastPage() {
     game.enemyProjectiles = [];
     game.enemyFireTimer = ENEMY_FIRE_INTERVAL;
     game.killsThisWave = 0;
-    // Base speed for this wave (Loop spec: base × (1 + wave × 0.05))
-    game.enemyBaseSpeed = BASE_ENEMY_SPEED * (1 + waveNum * 0.05);
+    // Base speed for this wave — ramps faster (8% per wave instead of 5%)
+    game.enemyBaseSpeed = BASE_ENEMY_SPEED * (1 + waveNum * 0.08);
     game.enemySpeed = game.enemyBaseSpeed;
     
-    // Boss every 5 waves
-    if (waveNum % 5 === 0) {
-      const bossHp = 8 + Math.floor(waveNum / 5) * 2; // Start at 8, +2 per boss
+    // Boss every 3 waves (3, 6, 9, 12...)
+    if (waveNum >= 3 && waveNum % 3 === 0) {
+      const bossNum = Math.floor(waveNum / 3); // 1st boss at wave 3, 2nd at 6, etc.
+      const bossHp = 6 + bossNum * 4; // 10, 14, 18, 22...
       game.boss = {
         x: canvasSize.w / 2,
         y: 80,
         hp: bossHp,
         maxHp: bossHp,
-        phase: 0,
-        attackTimer: 2,
+        phase: bossNum, // Higher phase = harder behavior
+        attackTimer: 1.5,
       };
       return;
     }
-    
-    // Wave progression per Loop spec
+
+    // Wave progression — ramps quickly between boss waves
     let largeCount: number, mediumCount: number, smallCount: number, rows: number;
     if (waveNum === 1) {
-      // TUTORIAL: 3 large shapes, spread wide, center row (Tap/Loop spec)
+      // TUTORIAL: 3 large shapes, spread wide, center row
       const spacing = 80;
       const startX = (canvasSize.w - 2 * spacing) / 2;
       const types: ShapeType[] = ['triangle', 'square', 'hexagon'];
@@ -516,21 +517,19 @@ export default function BlastPage() {
       }
       game.enemySpeed = BASE_ENEMY_SPEED;
       game.enemyDirection = 1;
-      return; // Skip normal spawn logic
+      return;
     }
-    
+
     if (waveNum === 2) {
-      largeCount = 4; mediumCount = 2; smallCount = 0; rows = 2;
-    } else if (waveNum === 3) {
-      largeCount = 5; mediumCount = 3; smallCount = 2; rows = 3;
-    } else if (waveNum === 4) {
-      largeCount = 6; mediumCount = 4; smallCount = 4; rows = 3;
+      largeCount = 5; mediumCount = 3; smallCount = 0; rows = 2;
     } else {
-      // Wave 6+: scaling
-      largeCount = 6 + Math.floor((waveNum - 5) / 2);
-      mediumCount = 4 + Math.floor((waveNum - 5) / 2);
-      smallCount = 4 + Math.floor((waveNum - 5) / 3);
-      rows = Math.min(4 + Math.floor((waveNum - 5) / 3), 6);
+      // Waves 4-5, 7-8, 10-11, etc. — scale aggressively
+      const cycle = Math.floor((waveNum - 1) / 3); // Which boss cycle (0, 1, 2...)
+      const posInCycle = ((waveNum - 1) % 3); // 0=post-boss/early, 1=pre-boss
+      largeCount = 5 + cycle * 2 + posInCycle;
+      mediumCount = 3 + cycle * 2 + posInCycle;
+      smallCount = 2 + cycle * 2 + posInCycle;
+      rows = Math.min(3 + cycle + Math.floor(posInCycle / 2), 6);
     }
     
     // Create shape pool with proper size distribution
@@ -577,8 +576,8 @@ export default function BlastPage() {
       }
     }
     
-    // Speed scales with wave (Loop spec: 1 + wave × 0.05)
-    game.enemySpeed = BASE_ENEMY_SPEED * (1 + waveNum * 0.05);
+    // Speed scales with wave (8% per wave)
+    game.enemySpeed = BASE_ENEMY_SPEED * (1 + waveNum * 0.08);
     game.enemyDirection = 1;
   }, [canvasSize]);
 
@@ -826,21 +825,33 @@ export default function BlastPage() {
       if (game.boss) {
         const boss = game.boss;
         
-        // Boss movement (side to side)
-        boss.x += Math.sin(performance.now() / 500) * 2;
-        
-        // Boss attacks
+        // Boss movement — faster and wider at higher phases
+        const moveSpeed = 2 + boss.phase * 0.5;
+        const moveFreq = 500 - boss.phase * 30;
+        boss.x += Math.sin(performance.now() / Math.max(moveFreq, 200)) * moveSpeed;
+
+        // Boss attacks — faster cooldown, more projectiles at higher phases
         boss.attackTimer -= dt;
         if (boss.attackTimer <= 0) {
-          boss.attackTimer = 1.5 - game.wave * 0.05;
-          // Fire projectiles
+          const baseCooldown = Math.max(1.2 - boss.phase * 0.15, 0.4);
+          boss.attackTimer = baseCooldown;
+          const projSpeed = 200 + boss.phase * 30;
+          // Fire aimed projectile
           const angle = Math.atan2(game.player.y - boss.y, game.player.x - boss.x);
           game.bossProjectiles.push({
             x: boss.x,
             y: boss.y + 30,
-            vx: Math.cos(angle) * 200,
-            vy: Math.sin(angle) * 200,
+            vx: Math.cos(angle) * projSpeed,
+            vy: Math.sin(angle) * projSpeed,
           });
+          // Phase 2+ (wave 6+): spread shot — two extra projectiles
+          if (boss.phase >= 2) {
+            const spread = 0.3;
+            game.bossProjectiles.push(
+              { x: boss.x, y: boss.y + 30, vx: Math.cos(angle - spread) * projSpeed, vy: Math.sin(angle - spread) * projSpeed },
+              { x: boss.x, y: boss.y + 30, vx: Math.cos(angle + spread) * projSpeed, vy: Math.sin(angle + spread) * projSpeed },
+            );
+          }
         }
         
         // Boss projectiles
@@ -960,9 +971,9 @@ export default function BlastPage() {
           }
         }
         
-        // Enemy fire — only hexagons shoot back (starting wave 3)
+        // Enemy fire — only hexagons shoot back (starting wave 2)
         const hexagons = game.shapes.filter(s => s.type === 'hexagon');
-        if (game.wave >= 3 && hexagons.length > 0) {
+        if (game.wave >= 2 && hexagons.length > 0) {
           game.enemyFireTimer -= dt;
           if (game.enemyFireTimer <= 0) {
             game.enemyFireTimer = ENEMY_FIRE_INTERVAL;
