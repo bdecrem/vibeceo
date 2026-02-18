@@ -1558,7 +1558,13 @@ export default function BlastPage() {
 
       <div
         className="min-h-screen flex flex-col items-center justify-center p-4"
-        style={{ background: 'linear-gradient(180deg, #06060f 0%, #0a0a1a 50%, #0f0a1e 100%)' }}
+        style={{
+          background: 'linear-gradient(180deg, #06060f 0%, #0a0a1a 50%, #0f0a1e 100%)',
+          WebkitUserSelect: 'none',
+          userSelect: 'none',
+          WebkitTouchCallout: 'none',
+          WebkitTapHighlightColor: 'transparent',
+        } as React.CSSProperties}
       >
         {gameState === 'menu' && (
           <div className="text-center" style={{ fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace" }}>
