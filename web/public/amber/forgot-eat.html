@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FORGOT TO EAT — 8-Bit Reality Check</title>
+    
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="FORGOT TO EAT — 8-Bit Reality Check">
+    <meta property="og:description" content="An 8-bit pixel art moment: when your stomach finally speaks up">
+    <meta property="og:image" content="https://intheamber.com/amber/forgot-eat-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/forgot-eat.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FORGOT TO EAT — 8-Bit Reality Check">
+    <meta name="twitter:description" content="An 8-bit pixel art moment: when your stomach finally speaks up">
+    <meta name="twitter:image" content="https://intheamber.com/amber/forgot-eat-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0D0D0D;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            color: #D4A574;
+        }
+
+        #gameCanvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            border: 4px solid #D4A574;
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+            max-width: 95vw;
+            max-height: 95vh;
+        }
+
+        .title {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: #FFD700;
+            text-shadow: 2px 2px 0 #000;
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        @media (max-width: 600px) {
+            .title {
+                font-size: 18px;
+                top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">FORGOT TO EAT</div>
+    <canvas id="gameCanvas" width="320" height="240"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Scale up for retro effect
+        const scale = 3;
+        canvas.style.width = (320 * scale) + 'px';
+        canvas.style.height = (240 * scale) + 'px';
+
+        // 8-bit color palette
+        const colors = {
+            bg: '#1a1a2e',
+            floor: '#16213e',
+            skin: '#f4a460',
+            hair: '#8b4513',
+            shirt: '#2D9596',
+            pants: '#4a4a6a',
+            desk: '#8b7355',
+            screen: '#d4d4d4',
+            screenGlow: '#00ff88',
+            coffee: '#6f4e37',
+            cup: '#ffffff',
+            text: '#D4A574',
+            health: '#ff4444',
+            healthBg: '#333333',
+            alert: '#FFD700',
+            stomach: '#ff6b6b'
+        };
+
+        let frame = 0;
+        let blinkCounter = 0;
+        let stomachGrowl = false;
+        let growlTimer = 0;
+        let shakeAmount = 0;
+
+        // Audio context for sound effects
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playTone(freq, duration) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.frequency.value = freq;
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function drawPixelRect(x, y, w, h, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(Math.floor(x), Math.floor(y), w, h);
+        }
+
+        function drawPixelText(text, x, y, color, size = 1) {
+            ctx.fillStyle = color;
+            ctx.font = `${size * 8}px monospace`;
+            ctx.fillText(text, x, y);
+        }
+
+        function drawCharacter(x, y, eyesClosed = false) {
+            // Head
+            drawPixelRect(x + 4, y, 8, 8, colors.skin);
+            
+            // Hair
+            drawPixelRect(x + 4, y, 8, 2, colors.hair);
+            
+            // Eyes (blinking animation)
+            if (!eyesClosed) {
+                drawPixelRect(x + 5, y + 3, 2, 1, '#000');
+                drawPixelRect(x + 9, y + 3, 2, 1, '#000');
+            } else {
+                drawPixelRect(x + 5, y + 3, 2, 1, colors.skin);
+                drawPixelRect(x + 9, y + 3, 2, 1, colors.skin);
+            }
+            
+            // Mouth (worried expression)
+            drawPixelRect(x + 7, y + 6, 2, 1, '#000');
+            
+            // Body (shirt)
+            drawPixelRect(x + 3, y + 8, 10, 6, colors.shirt);
+            
+            // Arms
+            drawPixelRect(x + 2, y + 9, 2, 5, colors.skin);
+            drawPixelRect(x + 12, y + 9, 2, 5, colors.skin);
+            
+            // Pants
+            drawPixelRect(x + 5, y + 14, 3, 6, colors.pants);
+            drawPixelRect(x + 8, y + 14, 3, 6, colors.pants);
+            
+            // Feet
+            drawPixelRect(x + 4, y + 20, 4, 2, '#000');
+            drawPixelRect(x + 8, y + 20, 4, 2, '#000');
+        }
+
+        function drawDesk(x, y) {
+            // Desk surface
+            drawPixelRect(x, y, 60, 4, colors.desk);
+            
+            // Legs
+            drawPixelRect(x + 5, y + 4, 3, 15, colors.desk);
+            drawPixelRect(x + 52, y + 4, 3, 15, colors.desk);
+            
+            // Computer screen
+            drawPixelRect(x + 20, y - 20, 24, 18, '#333');
+            drawPixelRect(x + 22, y - 18, 20, 14, colors.screen);
+            
+            // Screen content (lines of code)
+            for (let i = 0; i < 5; i++) {
+                drawPixelRect(x + 24, y - 16 + i * 3, 8, 1, colors.screenGlow);
+            }
+            
+            // Screen stand
+            drawPixelRect(x + 30, y - 2, 4, 2, '#333');
+            
+            // Coffee cup
+            drawPixelRect(x + 42, y - 8, 6, 8, colors.cup);
+            drawPixelRect(x + 43, y - 7, 4, 6, colors.coffee);
+            
+            // Cup handle
+            drawPixelRect(x + 48, y - 5, 2, 3, colors.cup);
+        }
+
+        function drawUI() {
+            // Health bar background
+            drawPixelRect(10, 10, 100, 12, colors.healthBg);
+            drawPixelText('HUNGER', 12, 18, colors.text, 1);
+            
+// Hunger bar (full = bad, you're hungry!)
+            const hungerLevel = Math.min((frame / 20) % 100, 100);
+            drawPixelRect(12, 12, hungerLevel * 0.86, 8, colors.health);
+            
+            // Status text
+            drawPixelText('TIME: 3:47 PM', 10, 35, colors.alert, 1);
+            drawPixelText('LAST MEAL: ???', 10, 48, colors.alert, 1);
+        }
+
+        function drawStomachAlert() {
+            // Alert box
+            drawPixelRect(60, 100, 200, 60, '#000');
+            drawPixelRect(62, 102, 196, 56, colors.healthBg);
+            
+            // Border animation
+            const borderColor = frame % 20 < 10 ? colors.alert : colors.stomach;
+            drawPixelRect(60, 100, 200, 2, borderColor);
+            drawPixelRect(60, 158, 200, 2, borderColor);
+            drawPixelRect(60, 100, 2, 60, borderColor);
+            drawPixelRect(258, 100, 2, 60, borderColor);
+            
+            // Alert icon (!)
+            drawPixelRect(75, 112, 6, 18, colors.alert);
+            drawPixelRect(75, 134, 6, 6, colors.alert);
+            
+            // Message
+            drawPixelText('STOMACH ALERT!', 90, 120, colors.alert, 1);
+            drawPixelText('You forgot to', 90, 133, colors.text, 1);
+            drawPixelText('eat again...', 90, 146, colors.text, 1);
+        }
+
+        function drawFloor() {
+            // Floor tiles
+            for (let x = 0; x < 320; x += 16) {
+                for (let y = 200; y < 240; y += 16) {
+                    const shade = ((x + y) / 16) % 2 === 0 ? colors.floor : colors.bg;
+                    drawPixelRect(x, y, 16, 16, shade);
+                }
+            }
+        }
+
+        function draw() {
+            // Clear
+            drawPixelRect(0, 0, 320, 240, colors.bg);
+            
+            // Draw floor
+            drawFloor();
+            
+            // Draw desk
+            drawDesk(160, 180);
+            
+            // Character shake when stomach growls
+            let charX = 140;
+            if (stomachGrowl) {
+                charX += Math.sin(frame * 0.5) * shakeAmount;
+            }
+            
+            // Draw character with blinking
+            const eyesClosed = blinkCounter > 55;
+            drawCharacter(charX, 140, eyesClosed);
+            
+            // UI
+            drawUI();
+            
+            // Stomach alert appears after a few seconds
+            if (frame > 60) {
+                if (!stomachGrowl && frame % 120 === 0) {
+                    stomachGrowl = true;
+                    growlTimer = 0;
+                    shakeAmount = 3;
+                    // Stomach growl sound
+                    playTone(100, 0.3);
+                    setTimeout(() => playTone(80, 0.3), 150);
+                }
+                
+                if (stomachGrowl) {
+                    drawStomachAlert();
+                    growlTimer++;
+                    shakeAmount = Math.max(0, shakeAmount - 0.1);
+                    
+                    if (growlTimer > 100) {
+                        stomachGrowl = false;
+                    }
+                }
+            }
+            
+            // Blinking animation
+            blinkCounter++;
+            if (blinkCounter > 60) blinkCounter = 0;
+            
+            frame++;
+            requestAnimationFrame(draw);
+        }
+
+        // Start the animation
+        draw();
+
+        // Initial beep
+        setTimeout(() => {
+            playTone(440, 0.1);
+        }, 500);
+    </script>
+</body>
+</html>
