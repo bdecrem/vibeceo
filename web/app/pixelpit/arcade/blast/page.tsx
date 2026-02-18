@@ -398,6 +398,7 @@ export default function BlastPage() {
 
   const inputRef = useRef({
     targetX: 200,
+    firing: false,
   });
 
   const { user } = usePixelpitSocial(socialLoaded);
@@ -732,6 +733,7 @@ export default function BlastPage() {
     }
 
     inputRef.current.targetX = x;
+    inputRef.current.firing = true;
   }, [gameState, canvasSize, highScore]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -743,7 +745,7 @@ export default function BlastPage() {
   }, [gameState]);
 
   const handlePointerUp = useCallback(() => {
-    // No-op — auto-fire means no firing state to clear
+    inputRef.current.firing = false;
   }, []);
 
   // Game loop
@@ -772,9 +774,9 @@ export default function BlastPage() {
       }
       game.player.x = Math.max(25, Math.min(canvasSize.w - 25, game.player.x));
 
-      // Shooting — always auto-fire, player just positions
+      // Shooting — hold to fire
       game.player.shootCooldown -= dt;
-      if (game.player.shootCooldown <= 0 && game.goos.length < MAX_BULLETS) {
+      if (input.firing && game.player.shootCooldown <= 0 && game.goos.length < MAX_BULLETS) {
         game.goos.push({
           x: game.player.x,
           y: game.player.y - 20,
@@ -1602,7 +1604,7 @@ export default function BlastPage() {
               PLAY
             </button>
             <p style={{ color: '#4b5563', fontSize: 11, marginTop: 20, letterSpacing: 2 }}>
-              DRAG TO MOVE &middot; AUTO FIRE
+              DRAG TO MOVE &middot; HOLD TO FIRE
             </p>
             <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 16 }}>
               <span style={{ color: THEME.triangle, fontSize: 11, letterSpacing: 1 }}>&#9650; FODDER</span>
