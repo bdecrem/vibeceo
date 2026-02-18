@@ -1116,20 +1116,21 @@ export default function BlastPage() {
       ctx.beginPath(); ctx.moveTo(0, canvasSize.h - 80); ctx.lineTo(canvasSize.w, canvasSize.h - 80); ctx.stroke();
       ctx.setLineDash([]);
 
-      // ── HUD — all top-aligned at y=28 ────────────────
-      const hudY = 28;
-      const hudFont = '700 14px "SF Mono", "Fira Code", "Consolas", monospace';
+      // ── HUD — all top-aligned via textBaseline='top' ──
+      const hudTop = 14;
+      const hudSmall = '700 14px "SF Mono", "Fira Code", "Consolas", monospace';
+      ctx.textBaseline = 'top';
 
       // Combo multiplier — left
       if (game.combo > 1) {
         const comboAlpha = Math.min(game.comboTimer / 0.5, 1);
         const comboScale = 1 + (game.combo - 1) * 0.03;
         ctx.save();
-        ctx.translate(14, hudY);
+        ctx.translate(14, hudTop);
         ctx.scale(comboScale, comboScale);
         ctx.globalAlpha = comboAlpha;
         ctx.textAlign = 'left';
-        ctx.font = hudFont;
+        ctx.font = hudSmall;
         ctx.shadowBlur = 20;
         ctx.shadowColor = THEME.hexagon;
         ctx.fillStyle = THEME.hexagon;
@@ -1144,23 +1145,24 @@ export default function BlastPage() {
       ctx.textAlign = 'center';
       ctx.fillStyle = THEME.slime;
       ctx.font = '700 24px "SF Mono", "Fira Code", "Consolas", monospace';
-      ctx.fillText(scoreStr, canvasSize.w / 2, hudY + 4);
+      ctx.fillText(scoreStr, canvasSize.w / 2, hudTop);
 
-      // WAVE — right, just left of X
-      ctx.font = hudFont;
+      // WAVE — right, just left of X, bright
+      ctx.font = hudSmall;
       ctx.textAlign = 'right';
-      ctx.fillStyle = '#ffffff60';
-      ctx.fillText(`W${game.wave}`, canvasSize.w - 44, hudY);
+      ctx.fillStyle = THEME.teal;
+      ctx.fillText(`W${game.wave}`, canvasSize.w - 44, hudTop);
 
-      // X (quit) button — top right, vertically aligned
+      // X (quit) button — top right
+      ctx.textBaseline = 'alphabetic';
       ctx.strokeStyle = '#ffffff25';
       ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(canvasSize.w - 28, hudY - 10);
-      ctx.lineTo(canvasSize.w - 16, hudY + 2);
-      ctx.moveTo(canvasSize.w - 16, hudY - 10);
-      ctx.lineTo(canvasSize.w - 28, hudY + 2);
+      ctx.moveTo(canvasSize.w - 28, hudTop);
+      ctx.lineTo(canvasSize.w - 16, hudTop + 14);
+      ctx.moveTo(canvasSize.w - 16, hudTop);
+      ctx.lineTo(canvasSize.w - 28, hudTop + 14);
       ctx.stroke();
 
       // ── GOO PROJECTILES ─────────────────────────────
@@ -1591,7 +1593,7 @@ export default function BlastPage() {
               BLAST
             </h1>
             <p style={{ color: '#6b7280', fontSize: 14, letterSpacing: 3, marginBottom: 24 }}>
-              BREAK THE SHAPES
+              THEY COME IN WAVES
             </p>
             {highScore > 0 && (
               <p style={{ color: '#4b5563', fontSize: 12, marginBottom: 24 }}>
