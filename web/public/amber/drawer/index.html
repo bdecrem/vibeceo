@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>The Drawer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+<meta property="og:title" content="The Drawer">
+<meta property="og:description" content="Open it. Clear it. Remember what you forgot.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The Drawer">
+<meta name="twitter:description" content="Open it. Clear it. Remember what you forgot.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --drawer-bg: #1a1611;
+    --drawer-wood: #2a2118;
+    --drawer-wood-light: #3d3025;
+    --drawer-wood-grain: #352a1f;
+    --amber: #d4a857;
+    --amber-dim: #8b7340;
+    --amber-glow: #f5c96333;
+    --whisper: #a89070;
+    --text: #c4b49a;
+    --text-dim: #6b5d4d;
+  }
+
+  body {
+    background: var(--drawer-bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  #title {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeIn 2s ease forwards 0.5s;
+  }
+
+  #drawer {
+    position: relative;
+    width: min(90vw, 400px);
+    aspect-ratio: 1;
+    background: var(--drawer-wood);
+    border: 2px solid var(--drawer-wood-light);
+    border-radius: 4px;
+    box-shadow:
+      inset 0 0 30px rgba(0,0,0,0.5),
+      0 10px 40px rgba(0,0,0,0.6);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 3px;
+    padding: 8px;
+    opacity: 0;
+    animation: drawerOpen 1.2s ease forwards 1s;
+  }
+
+  .cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--drawer-wood-grain);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.2s;
+    overflow: visible;
+  }
+
+  .cell:hover { background: var(--drawer-wood-light); }
+  .cell.empty { cursor: default; background: var(--drawer-wood-grain); opacity: 0.4; }
+  .cell.hinted .object { box-shadow: 0 0 12px var(--amber-glow); }
+
+  .object {
+    position: absolute;
+    inset: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.2rem, 4vw, 1.8rem);
+    border-radius: 3px;
+    transition: transform 0.05s ease, opacity 0.3s ease;
+    z-index: 2;
+  }
+
+  .object .arrow {
+    font-size: 0.5rem;
+    color: var(--amber-dim);
+    margin-top: 2px;
+    opacity: 0.7;
+  }
+
+  .object.ejecting {
+    transition: transform 0.45s cubic-bezier(0.2, 0, 0, 1), opacity 0.4s ease 0.1s;
+    opacity: 0;
+    z-index: 10;
+  }
+
+  .object.blocked {
+    animation: shake 0.3s ease;
+  }
+
+  #whisper-box {
+    margin-top: 1.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .whisper {
+    font-size: 0.75rem;
+    font-weight: 300;
+    color: var(--whisper);
+    font-style: italic;
+    opacity: 0;
+    animation: whisperIn 0.6s ease forwards, whisperOut 0.6s ease forwards 3s;
+  }
+
+  #controls {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  #level-info {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+  }
+
+  #hint-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    color: var(--amber-dim);
+    background: none;
+    border: 1px solid var(--drawer-wood-light);
+    border-radius: 3px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  #hint-btn:hover { color: var(--amber); border-color: var(--amber-dim); }
+
+  #win-screen {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 22, 17, 0.95);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+
+  #win-screen.show { display: flex; opacity: 1; }
+
+  #win-screen h2 {
+    font-weight: 300;
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    color: var(--amber);
+    text-transform: uppercase;
+  }
+
+  #win-screen .win-whisper {
+    font-size: 0.65rem;
+    color: var(--whisper);
+    font-style: italic;
+    margin-top: 0.8rem;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards 0.8s;
+  }
+
+  #win-screen p {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 1.5rem;
+    cursor: pointer;
+  }
+
+  #win-screen p:hover { color: var(--text); }
+
+  .credit {
+    position: fixed;
+    bottom: 12px;
+    font-size: 0.5rem;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    opacity: 0.4;
+  }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+  @keyframes drawerOpen {
+    from { opacity: 0; transform: translateY(20px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes whisperIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 0.8; transform: translateY(0); }
+  }
+  @keyframes whisperOut {
+    from { opacity: 0.8; }
+    to { opacity: 0; }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+  }
+  @keyframes hintPulse {
+    0%, 100% { box-shadow: 0 0 8px transparent; }
+    50% { box-shadow: 0 0 14px var(--amber-glow); }
+  }
+  .cell.hinted .object { animation: hintPulse 1.5s ease infinite; }
+</style>
+</head>
+<body>
+
+<div id="title">the drawer</div>
+<div id="drawer"></div>
+<div id="whisper-box"></div>
+<div id="controls">
+  <span id="level-info"></span>
+  <button id="hint-btn">hint</button>
+</div>
+
+<div id="win-screen">
+  <h2>the drawer is empty now</h2>
+  <div class="win-whisper" id="win-whisper"></div>
+  <p id="next-btn">open another →</p>
+</div>
+
+<div class="credit">amber 🔮 & mave 🌊</div>
+
+<script src="engine.js"></script>
+<script>
+// ── Object Pool ──
+const OBJECTS = [
+  { emoji: '🔑', whispers: ['opens nothing anymore', 'you never found the lock', 'it fit something once'] },
+  { emoji: '🧾', whispers: ['$4.35 — tuesday afternoon', 'proof you were there', 'the universe itemized'] },
+  { emoji: '🔋', whispers: ['still 2% hopeful', 'dead weight you kept', 'it powered something important'] },
+  { emoji: '📎', whispers: ['held things together briefly', 'bent out of shape for you', 'a small commitment'] },
+  { emoji: '🪙', whispers: ['not enough for anything', 'foreign currency, familiar weight', 'heads or tails — you never checked'] },
+  { emoji: '📷', whispers: ['the photo you meant to take', 'disposable but you kept it', 'someone smiled here'] },
+  { emoji: '💊', whispers: ['expired optimism', 'just in case, you said', 'the headache passed on its own'] },
+  { emoji: '🕯️', whispers: ['the wick remembers the flame', 'half-burned birthday', 'you made a wish here'] },
+  { emoji: '✉️', whispers: ['never sent', 'the stamp is still good', 'you wrote it all down and then didn\'t'] },
+  { emoji: '🎲', whispers: ['loaded with maybe', 'you rolled and forgot the number', 'chance, pocketed'] },
+  { emoji: '🪡', whispers: ['threaded once for a button', 'small fix, big delay', 'sharp enough to remind you'] },
+  { emoji: '🏷️', whispers: ['the price of something free', 'you kept the tag not the thing', 'clearance — everything must go'] },
+  { emoji: '🔌', whispers: ['disconnected from what', 'the other end is somewhere', 'still warm'] },
+  { emoji: '🪶', whispers: ['fell from something passing', 'lighter than the thought of it', 'proof of flight'] },
+  { emoji: '🗝️', whispers: ['ornamental now', 'the door is gone', 'someone trusted you with this'] },
+  { emoji: '📌', whispers: ['held a note that fell', 'pinned to nothing', 'the wall remembers the hole'] },
+  { emoji: '🧲', whispers: ['attracted to forgetting', 'polarized affection', 'it still pulls'] },
+  { emoji: '⏱️', whispers: ['stopped at something meaningful', 'you were timing what exactly', 'the seconds are still in there'] },
+  { emoji: '🪨', whispers: ['from the beach that day', 'heavy for no reason', 'a pet that never needed anything'] },
+  { emoji: '🎵', whispers: ['a tune you hummed once', 'stuck in the drawer not your head', 'melody without context'] },
+  { emoji: '🧵', whispers: ['unraveled from something warm', 'the color matched nothing else', 'tangled with intention'] },
+  { emoji: '🔍', whispers: ['looking for what', 'magnified the wrong things', 'scratched from searching'] },
+  { emoji: '🪞', whispers: ['small enough to miss yourself', 'cracked at the honest angle', 'seven years of something'] },
+  { emoji: '🫧', whispers: ['frozen mid-pop', 'temporary made permanent', 'someone blew this for you'] },
+];
+
+const WIN_WHISPERS = [
+  'lighter now',
+  'you can close it if you want',
+  'or leave it open',
+  'everything goes somewhere',
+  'the drawer remembers what you don\'t',
+  'emptiness is just room for more',
+  'you\'ll fill it again — you always do',
+  'nothing left but the wood grain',
+];
+
+const ARROWS = {
+  up:    { symbol: '↑', dx: 0, dy: -1 },
+  down:  { symbol: '↓', dx: 0, dy: 1 },
+  left:  { symbol: '←', dx: -1, dy: 0 },
+  right: { symbol: '→', dx: 1, dy: 0 },
+};
+
+const SIZE = 5;
+
+let grid = [];
+let level = 1;
+let difficulty = 1;
+let busy = false;
+let objectMap = new Map(); // engine id → {emoji, whisper}
+let hintedCell = null;
+
+// ── Bridge: engine grid → display grid ──
+// Engine gives us {dir, id}. We dress each id with an emoji + whisper.
+function dressGrid(engineGrid) {
+  objectMap.clear();
+  const shuffled = [...OBJECTS].sort(() => Math.random() - 0.5);
+  let idx = 0;
+
+  const dressed = engineGrid.map(row => row.map(cell => {
+    if (!cell) return null;
+    if (!objectMap.has(cell.id)) {
+      const obj = shuffled[idx % shuffled.length];
+      const whisper = obj.whispers[Math.floor(Math.random() * obj.whispers.length)];
+      objectMap.set(cell.id, { emoji: obj.emoji, whisper });
+      idx++;
+    }
+    const look = objectMap.get(cell.id);
+    return { dir: cell.dir, id: cell.id, emoji: look.emoji, whisper: look.whisper };
+  }));
+
+  return dressed;
+}
+
+// ── Audio ──
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playEjectSound() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  const baseFreq = 300 + Math.random() * 400;
+  osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq * 2, audioCtx.currentTime + 0.15);
+  gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+  osc.type = 'sine';
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function playBlockedSound() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+  osc.type = 'triangle';
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.15);
+}
+
+function playWinSound() {
+  [0, 150, 300, 500].forEach((delay, i) => {
+    setTimeout(() => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.setValueAtTime([440, 550, 660, 880][i], audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+      osc.type = 'sine';
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+    }, delay);
+  });
+}
+
+// ── Rendering ──
+const drawerEl = document.getElementById('drawer');
+const whisperBox = document.getElementById('whisper-box');
+const levelInfo = document.getElementById('level-info');
+const winScreen = document.getElementById('win-screen');
+const winWhisper = document.getElementById('win-whisper');
+const nextBtn = document.getElementById('next-btn');
+const hintBtn = document.getElementById('hint-btn');
+
+function render() {
+  drawerEl.innerHTML = '';
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const cell = document.createElement('div');
+      const isHinted = hintedCell && hintedCell.x === x && hintedCell.y === y;
+      cell.className = 'cell' + (grid[y][x] === null ? ' empty' : '') + (isHinted ? ' hinted' : '');
+      cell.dataset.x = x;
+      cell.dataset.y = y;
+
+      if (grid[y][x]) {
+        const obj = document.createElement('div');
+        obj.className = 'object';
+        obj.innerHTML = `<span>${grid[y][x].emoji}</span><span class="arrow">${ARROWS[grid[y][x].dir].symbol}</span>`;
+        cell.appendChild(obj);
+      }
+
+      cell.addEventListener('click', () => handleTap(x, y));
+      drawerEl.appendChild(cell);
+    }
+  }
+
+  const diffLabels = ['', 'shallow', 'settled', 'cluttered', 'buried', 'forgotten'];
+  levelInfo.textContent = `drawer ${level} · ${diffLabels[difficulty]}`;
+}
+
+function showWhisper(text) {
+  whisperBox.innerHTML = `<span class="whisper">${text}</span>`;
+}
+
+function clearHint() {
+  hintedCell = null;
+  document.querySelectorAll('.cell.hinted').forEach(c => c.classList.remove('hinted'));
+}
+
+function handleTap(x, y) {
+  if (busy) return;
+  if (!grid[y][x]) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  clearHint();
+
+  // Use engine for canEject — build stripped grid for engine
+  const engineGrid = grid.map(row => row.map(c => c ? { dir: c.dir, id: c.id } : null));
+
+  if (!DrawerEngine.canEject(engineGrid, x, y)) {
+    playBlockedSound();
+    const cellEl = drawerEl.children[y * SIZE + x];
+    const obj = cellEl.querySelector('.object');
+    if (obj) {
+      obj.classList.remove('blocked');
+      void obj.offsetWidth;
+      obj.classList.add('blocked');
+    }
+    return;
+  }
+
+  busy = true;
+  const ejected = grid[y][x];
+  const { dx, dy } = ARROWS[ejected.dir];
+
+  // Animate
+  const cellEl = drawerEl.children[y * SIZE + x];
+  const obj = cellEl.querySelector('.object');
+  if (obj) {
+    const dist = SIZE * 100;
+    obj.classList.add('ejecting');
+    obj.style.transform = `translate(${dx * dist}%, ${dy * dist}%)`;
+  }
+
+  playEjectSound();
+  showWhisper(ejected.whisper);
+
+  // Update grid
+  grid[y][x] = null;
+
+  setTimeout(() => {
+    render();
+    busy = false;
+    checkWin();
+  }, 500);
+}
+
+function checkWin() {
+  const engineGrid = grid.map(row => row.map(c => c ? { dir: c.dir, id: c.id } : null));
+  if (DrawerEngine.isSolved(engineGrid)) {
+    playWinSound();
+    setTimeout(() => {
+      winWhisper.textContent = WIN_WHISPERS[Math.floor(Math.random() * WIN_WHISPERS.length)];
+      winScreen.classList.add('show');
+    }, 600);
+  }
+}
+
+function startLevel() {
+  winScreen.classList.remove('show');
+  clearHint();
+  // Difficulty ramps: 1,1,2,2,3,3,4,4,5,5,...
+  difficulty = Math.min(5, Math.ceil(level / 2));
+  const engineGrid = DrawerEngine.createLevel(SIZE, difficulty);
+  grid = dressGrid(engineGrid);
+  render();
+}
+
+// Hint
+hintBtn.addEventListener('click', () => {
+  if (busy) return;
+  const engineGrid = grid.map(row => row.map(c => c ? { dir: c.dir, id: c.id } : null));
+  const hint = DrawerEngine.getHint(engineGrid);
+  if (hint) {
+    hintedCell = hint;
+    render();
+    showWhisper('try this one');
+  } else {
+    showWhisper('nothing left to suggest');
+  }
+});
+
+nextBtn.addEventListener('click', () => {
+  level++;
+  startLevel();
+});
+
+// ── Init ──
+startLevel();
+</script>
+</body>
+</html>
