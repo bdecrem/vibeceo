@@ -904,7 +904,6 @@ export default function BlastPage() {
         let hitEdge = false;
         for (const shape of game.shapes) {
           shape.x += game.enemyDirection * game.enemySpeed * dt;
-          shape.rotation += shape.rotationSpeed * dt;
 
           const size = getShapeSize(shape.size);
           if (shape.x < size || shape.x > canvasSize.w - size) {
@@ -1179,16 +1178,18 @@ export default function BlastPage() {
         ctx.shadowBlur = 0;
       }
 
-      // ── SHAPES ──────────────────────────────────────
+      // ── SHAPES (creatures) ─────────────────────────
       for (const shape of game.shapes) {
         const size = getShapeSize(shape.size);
         const color = getShapeColor(shape.type);
         const pulse = 1 + Math.sin(t * 3 + shape.id * 0.7) * 0.04;
         const maxHp = getShapeHp(shape.type, shape.size);
+        // Walk cycle: legs alternate based on time + id offset
+        const legPhase = Math.sin(t * 6 + shape.id * 1.3);
 
         ctx.save();
         ctx.translate(shape.x, shape.y);
-        ctx.rotate(shape.rotation);
+        // No rotation — creatures march, they don't spin
         ctx.scale(pulse, pulse);
 
         // Outer glow layer
@@ -1201,7 +1202,7 @@ export default function BlastPage() {
         ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
 
-        // Fill — hollow with colored border for indie look
+        // Fill — hollow with colored border
         ctx.fillStyle = color + '20';
         shapePath(ctx, shape.type, size);
         ctx.fill();
@@ -1212,20 +1213,116 @@ export default function BlastPage() {
         shapePath(ctx, shape.type, size);
         ctx.stroke();
 
-        // Inner wireframe for armored squares (hp > 1)
-        if (shape.type === 'square' && shape.hp > 1) {
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 1;
-          ctx.globalAlpha = 0.6;
-          shapePath(ctx, shape.type, size * 0.5);
-          ctx.stroke();
-          // Cross brace
-          const h = size * 0.75;
+        // ── CREATURE FEATURES ──────────────────────
+        if (shape.type === 'triangle') {
+          // Two small glowing pinpoint eyes — set high in the triangle
+          const eyeY = -size * 0.15;
+          const eyeSpread = size * 0.22;
+          const eyeR = Math.max(1.5, size * 0.07);
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = '#ffffff';
+          ctx.fillStyle = '#ffffff';
           ctx.beginPath();
-          ctx.moveTo(-h, -h); ctx.lineTo(h, h);
-          ctx.moveTo(h, -h); ctx.lineTo(-h, h);
+          ctx.arc(-eyeSpread, eyeY, eyeR, 0, Math.PI * 2);
+          ctx.arc(eyeSpread, eyeY, eyeR, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // Sharp angular legs — two at the base, alternating
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.5;
+          ctx.globalAlpha = 0.7;
+          const legBase = size * 0.55;
+          const legLen = size * 0.35;
+          const legLift = legPhase * legLen * 0.3;
+          // Left leg
+          ctx.beginPath();
+          ctx.moveTo(-size * 0.35, legBase);
+          ctx.lineTo(-size * 0.5, legBase + legLen + legLift);
+          ctx.stroke();
+          // Right leg
+          ctx.beginPath();
+          ctx.moveTo(size * 0.35, legBase);
+          ctx.lineTo(size * 0.5, legBase + legLen - legLift);
           ctx.stroke();
           ctx.globalAlpha = 1;
+
+        } else if (shape.type === 'square') {
+          // Two eyes — wider set, slightly narrowed (horizontal slits)
+          const eyeY = -size * 0.15;
+          const eyeSpread = size * 0.28;
+          const eyeW = Math.max(2, size * 0.1);
+          const eyeH = Math.max(1, size * 0.05);
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = '#ffffff';
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.ellipse(-eyeSpread, eyeY, eyeW, eyeH, 0, 0, Math.PI * 2);
+          ctx.ellipse(eyeSpread, eyeY, eyeW, eyeH, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // Angry brows when armored
+          if (shape.hp > 1) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            ctx.globalAlpha = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(-eyeSpread - eyeW, eyeY - eyeH * 3);
+            ctx.lineTo(-eyeSpread + eyeW, eyeY - eyeH * 1.5);
+            ctx.moveTo(eyeSpread + eyeW, eyeY - eyeH * 3);
+            ctx.lineTo(eyeSpread - eyeW, eyeY - eyeH * 1.5);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+          }
+
+          // Stubby legs — four, alternating pairs
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.5;
+          ctx.globalAlpha = 0.7;
+          const sq = size * 0.75;
+          const sLeg = size * 0.3;
+          const sLift = legPhase * sLeg * 0.25;
+          // Pair 1
+          ctx.beginPath();
+          ctx.moveTo(-sq * 0.5, sq); ctx.lineTo(-sq * 0.6, sq + sLeg + sLift); ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(sq * 0.5, sq); ctx.lineTo(sq * 0.6, sq + sLeg - sLift); ctx.stroke();
+          // Pair 2 (inner, opposite phase)
+          ctx.beginPath();
+          ctx.moveTo(-sq * 0.15, sq); ctx.lineTo(-sq * 0.2, sq + sLeg - sLift); ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(sq * 0.15, sq); ctx.lineTo(sq * 0.2, sq + sLeg + sLift); ctx.stroke();
+          ctx.globalAlpha = 1;
+
+        } else {
+          // Hexagon — single cold targeting eye
+          const eyeR = Math.max(2.5, size * 0.18);
+          const pupilR = Math.max(1.2, size * 0.08);
+          // Outer iris ring
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = 0.4 + Math.sin(t * 5) * 0.15;
+          ctx.beginPath();
+          ctx.arc(0, 0, eyeR, 0, Math.PI * 2);
+          ctx.stroke();
+          // Pupil — tracks player (uses un-rotated coords)
+          const trkDx = game.player.x - shape.x;
+          const trkDy = game.player.y - shape.y;
+          const trkDist = Math.sqrt(trkDx * trkDx + trkDy * trkDy);
+          const trkMax = eyeR * 0.4;
+          const pupilX = trkDist > 0 ? (trkDx / trkDist) * trkMax : 0;
+          const pupilY = trkDist > 0 ? (trkDy / trkDist) * trkMax : 0;
+          ctx.globalAlpha = 1;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = THEME.hexagon;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(pupilX, pupilY, pupilR, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // No legs — hexagons hover (they're the snipers)
         }
 
         // Cracked look when damaged (hp < max)
@@ -1237,25 +1334,6 @@ export default function BlastPage() {
           ctx.moveTo(-size * 0.2, -size * 0.3);
           ctx.lineTo(size * 0.1, 0);
           ctx.lineTo(-size * 0.05, size * 0.3);
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-        }
-
-        // Hexagon shooter reticle
-        if (shape.type === 'hexagon') {
-          ctx.strokeStyle = THEME.hexagon;
-          ctx.lineWidth = 1;
-          ctx.globalAlpha = 0.4 + Math.sin(t * 5) * 0.2;
-          ctx.beginPath();
-          ctx.arc(0, 0, size * 0.35, 0, Math.PI * 2);
-          ctx.stroke();
-          // Crosshair ticks
-          const tick = size * 0.25;
-          ctx.beginPath();
-          ctx.moveTo(0, -tick); ctx.lineTo(0, -tick * 1.6);
-          ctx.moveTo(0, tick); ctx.lineTo(0, tick * 1.6);
-          ctx.moveTo(-tick, 0); ctx.lineTo(-tick * 1.6, 0);
-          ctx.moveTo(tick, 0); ctx.lineTo(tick * 1.6, 0);
           ctx.stroke();
           ctx.globalAlpha = 1;
         }
