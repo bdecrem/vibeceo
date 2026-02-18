@@ -445,9 +445,10 @@ export default function BlastPage() {
   useEffect(() => {
     const handleResize = () => {
       const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const w = Math.min(vw - 20, 450);
-      const h = Math.min(vh - 100, 700);
+      // Use dvh-equivalent: visualViewport for iOS full viewport
+      const vh = window.visualViewport?.height ?? window.innerHeight;
+      const w = Math.min(vw, 450);
+      const h = vh;
       setCanvasSize({ w, h });
     };
     handleResize();
@@ -482,8 +483,8 @@ export default function BlastPage() {
     game.enemyProjectiles = [];
     game.enemyFireTimer = ENEMY_FIRE_INTERVAL;
     game.killsThisWave = 0;
-    // Base speed for this wave — ramps faster (8% per wave instead of 5%)
-    game.enemyBaseSpeed = BASE_ENEMY_SPEED * (1 + waveNum * 0.08);
+    // Base speed for this wave — ramps faster (8% per wave), capped at wave 9
+    game.enemyBaseSpeed = BASE_ENEMY_SPEED * (1 + Math.min(waveNum, 9) * 0.08);
     game.enemySpeed = game.enemyBaseSpeed;
     
     // Boss every 3 waves (3, 6, 9, 12...)
@@ -528,12 +529,14 @@ export default function BlastPage() {
     if (waveNum === 2) {
       largeCount = 5; mediumCount = 3; smallCount = 0; rows = 2;
     } else {
-      // Waves 4-5, 7-8, 10-11, etc. — scale aggressively
-      const cycle = Math.floor((waveNum - 1) / 3); // Which boss cycle (0, 1, 2...)
-      const posInCycle = ((waveNum - 1) % 3); // 0=post-boss/early, 1=pre-boss
-      largeCount = 5 + cycle * 2 + posInCycle;
-      mediumCount = 3 + cycle * 2 + posInCycle;
-      smallCount = 2 + cycle * 2 + posInCycle;
+      // Waves 4-5, 7-8, 10-11, etc. — scale between boss waves
+      // Cap difficulty at wave 9 equivalent — after that, counts stay flat
+      const effectiveWave = Math.min(waveNum, 9);
+      const cycle = Math.floor((effectiveWave - 1) / 3); // Which boss cycle (0, 1, 2...)
+      const posInCycle = ((effectiveWave - 1) % 3); // 0=post-boss/early, 1=pre-boss
+      largeCount = 5 + cycle + posInCycle;
+      mediumCount = 3 + cycle + posInCycle;
+      smallCount = 2 + cycle + posInCycle;
       rows = Math.min(3 + cycle + Math.floor(posInCycle / 2), 6);
     }
     
@@ -561,7 +564,7 @@ export default function BlastPage() {
     const cols = Math.ceil(shapePool.length / rows);
     const spacing = 50;
     const startX = (canvasSize.w - (cols - 1) * spacing) / 2;
-    const startY = 60;
+    const startY = 80;
     
     let shapeIndex = 0;
     for (let row = 0; row < rows && shapeIndex < shapePool.length; row++) {
@@ -581,8 +584,8 @@ export default function BlastPage() {
       }
     }
     
-    // Speed scales with wave (8% per wave)
-    game.enemySpeed = BASE_ENEMY_SPEED * (1 + waveNum * 0.08);
+    // Speed scales with wave (8% per wave), capped at wave 9
+    game.enemySpeed = BASE_ENEMY_SPEED * (1 + Math.min(waveNum, 9) * 0.08);
     game.enemyDirection = 1;
   }, [canvasSize]);
 
@@ -1648,9 +1651,10 @@ export default function BlastPage() {
       <Script src="/pixelpit/social.js" onLoad={() => setSocialLoaded(true)} />
 
       <div
-        className="min-h-screen flex flex-col items-center justify-center p-4"
+        className={`flex flex-col items-center justify-center ${gameState === 'playing' ? '' : 'min-h-screen p-4'}`}
         style={{
           background: 'linear-gradient(180deg, #06060f 0%, #0a0a1a 50%, #0f0a1e 100%)',
+          ...(gameState === 'playing' ? { minHeight: '100dvh', padding: 0, overflow: 'hidden' } : {}),
           WebkitUserSelect: 'none',
           userSelect: 'none',
           WebkitTouchCallout: 'none',
