@@ -36,6 +36,26 @@ interface Project {
 
 const projects: Project[] = [
   {
+    name: "Shipshot",
+    slug: "shipshot",
+    url: "https://shipshot.io",
+    image: null,
+    shortDesc: "Your daily startup idea vending machine",
+    fullDesc: "Your daily startup idea vending machine: five agents ideate, design, and ship a playable prototype on Discord every day.",
+    status: "wip",
+    order: -2,
+  },
+  {
+    name: "Mutabl",
+    slug: "mutabl",
+    url: "https://mutabl.co",
+    image: null,
+    shortDesc: "Agentic apps that grow with you",
+    fullDesc: "Agentic apps that grow features as you ask for them: your todo list, CRM, or doc editor comes with an AI agent that evolves the app to meet your needs. Source code is yours.",
+    status: "wip",
+    order: -1,
+  },
+  {
     name: "Pixelpit",
     slug: "pixelpit",
     url: "https://pixelpit.gg",
