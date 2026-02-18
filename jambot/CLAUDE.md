@@ -27,10 +27,41 @@ npm start          # Run jambot
 npm run build      # Build for release (only when cutting a release)
 ```
 
+## Headless API (For Other Agents)
+
+`headless.js` exposes Jambot's full tool layer without the Claude agent loop or TUI. Use this when driving Jambot programmatically from another agent or script.
+
+```javascript
+import { createHeadless } from './headless.js';
+
+const jb = await createHeadless({ bpm: 128 });
+
+// All 91 tools available — same interface as the agent, producer-friendly units
+await jb.tool('add_jb01', { kick: [0, 4, 8, 12], snare: [4, 12] });
+await jb.tool('tweak', { path: 'jb01.kick.decay', value: 75 });       // 0-100
+await jb.tool('tweak', { path: 'jb01.kick.level', value: -3 });       // dB
+await jb.tool('automate', { path: 'jb01.ch.decay', values: [80,70,60,50,40,30,20,10,80,70,60,50,40,30,20,10] });
+await jb.tool('save_pattern', { instrument: 'jb01', name: 'A' });
+await jb.tool('set_arrangement', { sections: [{ bars: 4, jb01: 'A' }] });
+await jb.render('my-track', 4);
+
+// Session persists between calls — tweak and re-render without rebuilding
+// save()/load() for serialization across sessions
+const state = jb.save();
+jb.load(state);
+```
+
+**Key points:**
+- Pattern format uses step arrays (`[0, 4, 8, 12]`) — the tool layer converts
+- All values in producer units (dB, 0-100, Hz, semitones) — automatic conversion
+- Song mode (save_pattern, set_arrangement) works through `tool()` calls
+- `await jb.listTools()` to see all available tools
+
 ## Architecture
 
 Core files:
 - `jambot.js` — Agent loop, tools, WAV encoder, synth integration
+- `headless.js` — Headless API for programmatic access (no agent loop)
 - `ui.tsx` — Ink-based terminal UI
 - `project.js` — Project persistence
 - `midi.js` — MIDI file generation for exports
