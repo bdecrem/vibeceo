@@ -1144,7 +1144,7 @@ export default function BlastPage() {
       // WAVE — right, just left of X, bright
       ctx.font = hudSmall;
       ctx.textAlign = 'right';
-      ctx.fillStyle = THEME.teal;
+      ctx.fillStyle = THEME.text;
       ctx.fillText(`W${game.wave}`, canvasSize.w - 44, hudTop);
 
       // X (quit) button — top right, same font as wave
