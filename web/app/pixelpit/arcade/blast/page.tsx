@@ -1147,17 +1147,11 @@ export default function BlastPage() {
       ctx.fillStyle = THEME.teal;
       ctx.fillText(`W${game.wave}`, canvasSize.w - 44, hudTop);
 
-      // X (quit) button — top right
-      ctx.textBaseline = 'alphabetic';
-      ctx.strokeStyle = '#ffffff80';
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(canvasSize.w - 28, hudTop);
-      ctx.lineTo(canvasSize.w - 16, hudTop + 14);
-      ctx.moveTo(canvasSize.w - 16, hudTop);
-      ctx.lineTo(canvasSize.w - 28, hudTop + 14);
-      ctx.stroke();
+      // X (quit) button — top right, same font as wave
+      ctx.font = hudSmall;
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#ffffff80';
+      ctx.fillText('✕', canvasSize.w - 14, hudTop);
 
       // ── GOO PROJECTILES ─────────────────────────────
       for (const goo of game.goos) {
