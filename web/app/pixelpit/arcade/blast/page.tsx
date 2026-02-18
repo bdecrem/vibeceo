@@ -1211,12 +1211,9 @@ export default function BlastPage() {
         ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
 
-        // Body — simple rectangle
-        ctx.fillStyle = color + '18';
+        // Body — solid filled rectangle
+        ctx.fillStyle = color;
         ctx.fillRect(-w, -h, w * 2, h * 2);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(-w, -h, w * 2, h * 2);
 
         // Eyes — two dots
         const eyeR = Math.max(1.5, r * 0.08);
