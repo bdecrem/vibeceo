@@ -1116,17 +1116,20 @@ export default function BlastPage() {
       ctx.beginPath(); ctx.moveTo(0, canvasSize.h - 80); ctx.lineTo(canvasSize.w, canvasSize.h - 80); ctx.stroke();
       ctx.setLineDash([]);
 
-      // ── HUD ─────────────────────────────────────────
-      // Combo multiplier — left, smaller
+      // ── HUD — all top-aligned at y=28 ────────────────
+      const hudY = 28;
+      const hudFont = '700 14px "SF Mono", "Fira Code", "Consolas", monospace';
+
+      // Combo multiplier — left
       if (game.combo > 1) {
         const comboAlpha = Math.min(game.comboTimer / 0.5, 1);
         const comboScale = 1 + (game.combo - 1) * 0.03;
         ctx.save();
-        ctx.translate(14, 34);
+        ctx.translate(14, hudY);
         ctx.scale(comboScale, comboScale);
         ctx.globalAlpha = comboAlpha;
         ctx.textAlign = 'left';
-        ctx.font = '800 16px "SF Mono", "Fira Code", "Consolas", monospace';
+        ctx.font = hudFont;
         ctx.shadowBlur = 20;
         ctx.shadowColor = THEME.hexagon;
         ctx.fillStyle = THEME.hexagon;
@@ -1136,30 +1139,28 @@ export default function BlastPage() {
         ctx.restore();
       }
 
-      // SCORE — center, largest
+      // SCORE — center, largest, with commas
+      const scoreStr = game.score.toLocaleString();
       ctx.textAlign = 'center';
       ctx.fillStyle = THEME.slime;
       ctx.font = '700 24px "SF Mono", "Fira Code", "Consolas", monospace';
-      ctx.fillText(`${game.score}`, canvasSize.w / 2, 38);
+      ctx.fillText(scoreStr, canvasSize.w / 2, hudY + 4);
 
       // WAVE — right, just left of X
-      ctx.font = '600 13px "SF Mono", "Fira Code", "Consolas", monospace';
+      ctx.font = hudFont;
       ctx.textAlign = 'right';
-      ctx.fillStyle = '#ffffff30';
-      ctx.fillText(`WAVE`, canvasSize.w - 48, 24);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '700 18px "SF Mono", "Fira Code", "Consolas", monospace';
-      ctx.fillText(`${game.wave}`, canvasSize.w - 48, 44);
+      ctx.fillStyle = '#ffffff60';
+      ctx.fillText(`W${game.wave}`, canvasSize.w - 44, hudY);
 
-      // X (quit) button — top right
+      // X (quit) button — top right, vertically aligned
       ctx.strokeStyle = '#ffffff25';
       ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(canvasSize.w - 30, 16);
-      ctx.lineTo(canvasSize.w - 18, 28);
-      ctx.moveTo(canvasSize.w - 18, 16);
-      ctx.lineTo(canvasSize.w - 30, 28);
+      ctx.moveTo(canvasSize.w - 28, hudY - 10);
+      ctx.lineTo(canvasSize.w - 16, hudY + 2);
+      ctx.moveTo(canvasSize.w - 16, hudY - 10);
+      ctx.lineTo(canvasSize.w - 28, hudY + 2);
       ctx.stroke();
 
       // ── GOO PROJECTILES ─────────────────────────────
