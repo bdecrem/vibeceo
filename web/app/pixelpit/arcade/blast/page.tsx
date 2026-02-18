@@ -1647,7 +1647,7 @@ export default function BlastPage() {
               lineHeight: 1,
               marginBottom: 24,
             }}>
-              {score}
+              {score.toLocaleString()}
             </div>
 
             {/* Progression display */}
