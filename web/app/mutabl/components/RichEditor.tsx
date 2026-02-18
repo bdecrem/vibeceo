@@ -4,6 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
+import ResizableImage from "./ResizableImage";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 const DEFAULT_FEATURES = ["bold", "italic", "underline", "h1", "h2", "h3"];
@@ -115,6 +116,7 @@ const FEATURE_REGISTRY: FeatureEntry[] = [
     renderLabel: () => <>&#8212;</>,
   },
   // link is handled specially — not in this array
+  // image is handled specially — triggers file input, not in this array
 ];
 
 type RichEditorProps = {
@@ -123,6 +125,7 @@ type RichEditorProps = {
   theme?: { accent?: string };
   editable?: boolean;
   features?: string[];
+  onImageUpload?: (file: File) => Promise<string>;
 };
 
 export default function RichEditor({
@@ -131,15 +134,20 @@ export default function RichEditor({
   theme,
   editable = true,
   features,
+  onImageUpload,
 }: RichEditorProps) {
   const accent = theme?.accent || "#FD79A8";
   const scopeId = useId().replace(/:/g, "");
   const isInternalUpdate = useRef(false);
   const activeFeatures = features || DEFAULT_FEATURES;
   const hasLink = activeFeatures.includes("link");
+  const hasImage = activeFeatures.includes("image") && !!onImageUpload;
   const [linkInputOpen, setLinkInputOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
-  const linkInputRef = useRef<HTMLInputElement>(null);
+  const [linkText, setLinkText] = useState("");
+  const linkUrlRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -150,6 +158,9 @@ export default function RichEditor({
       Link.configure({
         openOnClick: false,
         HTMLAttributes: { class: "nb-link" },
+      }),
+      ResizableImage.configure({
+        inline: false,
       }),
     ],
     content,
@@ -173,10 +184,10 @@ export default function RichEditor({
     isInternalUpdate.current = false;
   }, [content, editor]);
 
-  // Focus the link input when it opens
+  // Focus the URL input when popup opens
   useEffect(() => {
-    if (linkInputOpen && linkInputRef.current) {
-      linkInputRef.current.focus();
+    if (linkInputOpen && linkUrlRef.current) {
+      linkUrlRef.current.focus();
     }
   }, [linkInputOpen]);
 
@@ -186,7 +197,10 @@ export default function RichEditor({
       editor.chain().focus().unsetLink().run();
       setLinkInputOpen(false);
     } else {
+      const { from, to } = editor.state.selection;
+      const selectedText = editor.state.doc.textBetween(from, to, "");
       const existing = editor.getAttributes("link").href || "";
+      setLinkText(selectedText);
       setLinkUrl(existing);
       setLinkInputOpen(true);
     }
@@ -195,7 +209,26 @@ export default function RichEditor({
   const applyLink = useCallback(() => {
     if (!editor) return;
     const url = linkUrl.trim();
-    if (url) {
+    if (!url) {
+      setLinkInputOpen(false);
+      setLinkUrl("");
+      setLinkText("");
+      return;
+    }
+    const text = linkText.trim();
+    const { from, to } = editor.state.selection;
+    const currentText = editor.state.doc.textBetween(from, to, "");
+
+    if (text && text !== currentText) {
+      // Text was changed — replace selection with new text + link
+      editor
+        .chain()
+        .focus()
+        .deleteSelection()
+        .insertContent(`<a href="${url}">${text}</a>`)
+        .run();
+    } else {
+      // Only URL changed
       editor
         .chain()
         .focus()
@@ -205,13 +238,33 @@ export default function RichEditor({
     }
     setLinkInputOpen(false);
     setLinkUrl("");
-  }, [editor, linkUrl]);
+    setLinkText("");
+  }, [editor, linkUrl, linkText]);
 
   const cancelLink = useCallback(() => {
     setLinkInputOpen(false);
     setLinkUrl("");
+    setLinkText("");
     editor?.chain().focus().run();
   }, [editor]);
+
+  const handleImageSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !editor || !onImageUpload) return;
+      e.target.value = "";
+      setImageUploading(true);
+      try {
+        const url = await onImageUpload(file);
+        editor.chain().focus().setImage({ src: url }).run();
+      } catch (err) {
+        console.error("Image upload failed:", err);
+      } finally {
+        setImageUploading(false);
+      }
+    },
+    [editor, onImageUpload]
+  );
 
   const ToolBtn = useCallback(
     ({
@@ -232,6 +285,9 @@ export default function RichEditor({
         }}
         aria-label={label}
         style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
           background: active ? `${accent}18` : "transparent",
           border: "none",
           color: active ? accent : "#777",
@@ -271,9 +327,40 @@ export default function RichEditor({
   );
 
   // Group and insert dividers
+  // Link & image are injected as their own group (1.5) between headings and lists
   const toolbarElements: React.ReactNode[] = [];
   let lastGroup = -1;
+  let linkImageInserted = false;
+
+  const insertLinkImage = () => {
+    if (linkImageInserted) return;
+    linkImageInserted = true;
+    if (!(hasLink || hasImage)) return;
+    if (lastGroup !== -1) toolbarElements.push(<Divider key="div-li" />);
+    if (hasLink) {
+      toolbarElements.push(
+        <ToolBtn key="link" active={editor.isActive("link") || linkInputOpen} onAction={handleLinkToggle} label="Link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </ToolBtn>
+      );
+    }
+    if (hasImage) {
+      toolbarElements.push(
+        <ToolBtn key="image" active={imageUploading} onAction={() => imageInputRef.current?.click()} label="Insert image">
+          {imageUploading ? <span style={{ opacity: 0.5 }}>...</span> : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          )}
+        </ToolBtn>
+      );
+    }
+    lastGroup = 1.5;
+  };
+
   registryButtons.forEach((f, i) => {
+    // Insert link/image before group 2 (lists)
+    if (!linkImageInserted && f.group >= 2) {
+      insertLinkImage();
+    }
     if (lastGroup !== -1 && f.group !== lastGroup) {
       toolbarElements.push(<Divider key={`div-${i}`} />);
     }
@@ -289,23 +376,8 @@ export default function RichEditor({
       </ToolBtn>
     );
   });
-
-  // Link button (special)
-  if (hasLink) {
-    if (registryButtons.length > 0) {
-      toolbarElements.push(<Divider key="div-link" />);
-    }
-    toolbarElements.push(
-      <ToolBtn
-        key="link"
-        active={editor.isActive("link") || linkInputOpen}
-        onAction={handleLinkToggle}
-        label="Link"
-      >
-        &#128279;
-      </ToolBtn>
-    );
-  }
+  // If no group >= 2 existed, append at end
+  insertLinkImage();
 
   return (
     <div>
@@ -375,6 +447,9 @@ export default function RichEditor({
           text-underline-offset: 3px;
           cursor: pointer;
         }
+        .nb-ed-${scopeId} .nb-img-wrap:hover .nb-resize-handle {
+          opacity: 1 !important;
+        }
       `}</style>
 
       {/* Toolbar */}
@@ -393,86 +468,115 @@ export default function RichEditor({
             {toolbarElements}
           </div>
 
-          {/* Link URL input bar */}
+          {/* Link text + URL popup */}
           {linkInputOpen && (
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "6px 0",
+                background: "#12122a",
+                border: "1px solid #2a2a45",
+                borderRadius: 8,
+                padding: 12,
                 marginBottom: 8,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
               }}
             >
-              <input
-                ref={linkInputRef}
-                type="url"
-                placeholder="https://..."
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    applyLink();
-                  } else if (e.key === "Escape") {
-                    e.preventDefault();
-                    cancelLink();
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  background: "#0d0d20",
-                  border: `1px solid ${accent}40`,
-                  borderRadius: 4,
-                  padding: "5px 10px",
-                  fontSize: 13,
-                  color: "#c8c8d0",
-                  outline: "none",
-                  fontFamily: "system-ui",
-                }}
-              />
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  applyLink();
-                }}
-                style={{
-                  background: accent,
-                  border: "none",
-                  borderRadius: 4,
-                  padding: "5px 12px",
-                  fontSize: 12,
-                  color: "#fff",
-                  cursor: "pointer",
-                  fontFamily: "system-ui",
-                  fontWeight: 600,
-                }}
-              >
-                Apply
-              </button>
-              <button
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  cancelLink();
-                }}
-                style={{
-                  background: "transparent",
-                  border: "1px solid #333",
-                  borderRadius: 4,
-                  padding: "5px 10px",
-                  fontSize: 12,
-                  color: "#777",
-                  cursor: "pointer",
-                  fontFamily: "system-ui",
-                }}
-              >
-                Cancel
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <label style={{ fontSize: 12, color: "#888", width: 36, flexShrink: 0, fontFamily: "system-ui" }}>Text</label>
+                <input
+                  type="text"
+                  placeholder="Display text"
+                  value={linkText}
+                  onChange={(e) => setLinkText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") { e.preventDefault(); cancelLink(); }
+                  }}
+                  style={{
+                    flex: 1,
+                    background: "#0d0d20",
+                    border: "1px solid #2a2a45",
+                    borderRadius: 4,
+                    padding: "5px 10px",
+                    fontSize: 13,
+                    color: "#c8c8d0",
+                    outline: "none",
+                    fontFamily: "system-ui",
+                  }}
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <label style={{ fontSize: 12, color: "#888", width: 36, flexShrink: 0, fontFamily: "system-ui" }}>URL</label>
+                <input
+                  ref={linkUrlRef}
+                  type="url"
+                  placeholder="https://..."
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); applyLink(); }
+                    else if (e.key === "Escape") { e.preventDefault(); cancelLink(); }
+                  }}
+                  style={{
+                    flex: 1,
+                    background: "#0d0d20",
+                    border: "1px solid #2a2a45",
+                    borderRadius: 4,
+                    padding: "5px 10px",
+                    fontSize: 13,
+                    color: "#c8c8d0",
+                    outline: "none",
+                    fontFamily: "system-ui",
+                  }}
+                />
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 6 }}>
+                <button
+                  onMouseDown={(e) => { e.preventDefault(); cancelLink(); }}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid #333",
+                    borderRadius: 4,
+                    padding: "5px 10px",
+                    fontSize: 12,
+                    color: "#777",
+                    cursor: "pointer",
+                    fontFamily: "system-ui",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onMouseDown={(e) => { e.preventDefault(); applyLink(); }}
+                  style={{
+                    background: accent,
+                    border: "none",
+                    borderRadius: 4,
+                    padding: "5px 12px",
+                    fontSize: 12,
+                    color: "#fff",
+                    cursor: "pointer",
+                    fontFamily: "system-ui",
+                    fontWeight: 600,
+                  }}
+                >
+                  Apply
+                </button>
+              </div>
             </div>
           )}
         </div>
       )}
 
+      {hasImage && (
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageSelect}
+          style={{ display: "none" }}
+        />
+      )}
       <EditorContent editor={editor} />
     </div>
   );

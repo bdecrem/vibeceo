@@ -134,6 +134,7 @@ export default async function SharedDocumentPage({
                 .nb-public code { background: #1a1a30; padding: 2px 5px; border-radius: 3px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px; color: #c0c0d0; }
                 .nb-public hr { border: none; border-top: 1px solid #1e1e35; margin: 16px 0; }
                 .nb-public a { color: #FD79A8; text-decoration: underline; text-underline-offset: 3px; }
+                .nb-public img { max-width: 100%; height: auto; border-radius: 6px; margin: 8px 0; display: block; }
               `}</style>
               <div
                 className="nb-public"
