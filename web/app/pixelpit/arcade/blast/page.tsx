@@ -1106,25 +1106,16 @@ export default function BlastPage() {
       ctx.setLineDash([]);
 
       // ── HUD ─────────────────────────────────────────
-      // SCORE — left
-      ctx.font = '600 13px "SF Mono", "Fira Code", "Consolas", monospace';
-      ctx.textAlign = 'left';
-      ctx.fillStyle = '#ffffff30';
-      ctx.fillText(`SCORE`, 14, 24);
-      ctx.fillStyle = THEME.slime;
-      ctx.font = '700 18px "SF Mono", "Fira Code", "Consolas", monospace';
-      ctx.fillText(`${game.score}`, 14, 44);
-
-      // Combo multiplier — center, same height as score
+      // Combo multiplier — left, smaller
       if (game.combo > 1) {
         const comboAlpha = Math.min(game.comboTimer / 0.5, 1);
         const comboScale = 1 + (game.combo - 1) * 0.03;
         ctx.save();
-        ctx.translate(canvasSize.w / 2, 40);
+        ctx.translate(14, 34);
         ctx.scale(comboScale, comboScale);
         ctx.globalAlpha = comboAlpha;
-        ctx.textAlign = 'center';
-        ctx.font = '800 22px "SF Mono", "Fira Code", "Consolas", monospace';
+        ctx.textAlign = 'left';
+        ctx.font = '800 16px "SF Mono", "Fira Code", "Consolas", monospace';
         ctx.shadowBlur = 20;
         ctx.shadowColor = THEME.hexagon;
         ctx.fillStyle = THEME.hexagon;
@@ -1133,6 +1124,12 @@ export default function BlastPage() {
         ctx.globalAlpha = 1;
         ctx.restore();
       }
+
+      // SCORE — center, largest
+      ctx.textAlign = 'center';
+      ctx.fillStyle = THEME.slime;
+      ctx.font = '700 24px "SF Mono", "Fira Code", "Consolas", monospace';
+      ctx.fillText(`${game.score}`, canvasSize.w / 2, 38);
 
       // WAVE — right, just left of X
       ctx.font = '600 13px "SF Mono", "Fira Code", "Consolas", monospace';
