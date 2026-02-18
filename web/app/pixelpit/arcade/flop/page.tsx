@@ -243,6 +243,53 @@ function generateCourse(raceNum: number): Obstacle[] {
   return obstacles;
 }
 
+// Tutorial obstacle helpers
+function createTutorialObstacle(type: ObstacleType, x: number): Obstacle {
+  const S = RAGDOLL_SCALE;
+  let w = 40, h = 50, speed = 0;
+  switch (type) {
+    case 'hurdle': w = 12 * S; h = 35 * S; break;
+    case 'spinner': w = 60 * S; h = 8 * S; speed = 2; break;
+    case 'mud': w = 90 * S; h = 10 * S; break;
+    case 'bouncy': w = 50 * S; h = 14 * S; break;
+    case 'hammer': w = 20 * S; h = 50 * S; speed = 1.5; break;
+  }
+  return { type, x, width: w, height: h, angle: Math.random() * Math.PI * 2, speed };
+}
+
+// Tutorial step definitions
+const TUTORIAL_STEPS = [
+  {
+    instruction: 'TAP TO JUMP',
+    successText: 'NICE!',
+    courseLength: 800,
+    obstacles: [{ type: 'hurdle' as ObstacleType, x: 400 }],
+    aiCount: 0,
+    aiSpeedMult: 1,
+  },
+  {
+    instruction: 'DODGE & JUMP',
+    successText: 'GREAT!',
+    courseLength: 1200,
+    obstacles: [
+      { type: 'hurdle' as ObstacleType, x: 300 },
+      { type: 'spinner' as ObstacleType, x: 500 },
+      { type: 'mud' as ObstacleType, x: 700 },
+      { type: 'bouncy' as ObstacleType, x: 900 },
+    ],
+    aiCount: 0,
+    aiSpeedMult: 1,
+  },
+  {
+    instruction: 'HOLD TO SPRINT',
+    successText: 'YOU GOT IT!',
+    courseLength: 1500,
+    obstacles: [],
+    aiCount: 1,
+    aiSpeedMult: 0.7,
+  },
+];
+
 // Audio
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
@@ -364,7 +411,7 @@ interface Particle {
 export default function FlopPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvasSize, setCanvasSize] = useState({ w: 450, h: 350 });
-  const [gameState, setGameState] = useState<'menu' | 'playing' | 'raceover' | 'gameover'>('menu');
+  const [gameState, setGameState] = useState<'menu' | 'tutorial' | 'playing' | 'raceover' | 'gameover'>('menu');
   const [score, setScore] = useState(0);
   const [raceNum, setRaceNum] = useState(1);
   const [highScore, setHighScore] = useState(0);
@@ -388,6 +435,10 @@ export default function FlopPage() {
     lastPlaceCount: 0,
     inputDown: false,
     inputHoldTime: 0,
+    // Tutorial state
+    tutorialStep: 0,
+    tutorialComplete: false,
+    tutorialSuccessTimer: 0,
   });
 
   usePixelpitSocial(socialLoaded);
@@ -419,6 +470,45 @@ export default function FlopPage() {
       }).catch(() => {});
     }
   }, [gameState, score]);
+
+  // Setup a tutorial step — configures gameRef with step-specific course/racers/obstacles
+  const setupTutorialStep = useCallback((step: number) => {
+    const game = gameRef.current;
+    const groundY = canvasSize.h * GROUND_Y_RATIO;
+    const stepDef = TUTORIAL_STEPS[step];
+    
+    game.groundY = groundY;
+    game.cameraX = 0;
+    game.raceTimer = 0;
+    game.finishOrder = [];
+    game.raceActive = true;
+    game.countdownTimer = 0.8; // shorter countdown for tutorial
+    game.courseLength = stepDef.courseLength;
+    game.particles = [];
+    game.inputDown = false;
+    game.inputHoldTime = 0;
+    game.tutorialSuccessTimer = 0;
+    game.raceNum = 1;
+    game.score = 0;
+    game.lastPlaceCount = 0;
+
+    // Player
+    const startX = 60;
+    game.racers = [];
+    game.racers.push(createRagdoll(startX, groundY, THEME.bubblegum, false));
+
+    // AI racers for this step
+    for (let i = 0; i < stepDef.aiCount; i++) {
+      const aiX = startX + (i + 1) * 15;
+      const r = createRagdoll(aiX, groundY, AI_COLORS[i], true);
+      r.vx = RUN_SPEED * stepDef.aiSpeedMult;
+      r.aiReaction = 0.2;
+      game.racers.push(r);
+    }
+
+    // Obstacles
+    game.obstacles = stepDef.obstacles.map(o => createTutorialObstacle(o.type, o.x));
+  }, [canvasSize]);
 
   const startRace = useCallback((raceNumber: number, existingScore: number, lastPlaceCount: number) => {
     const game = gameRef.current;
@@ -467,12 +557,22 @@ export default function FlopPage() {
     startRace(1, 0, 0);
   }, [startRace]);
 
+  const startTutorial = useCallback(() => {
+    initAudio();
+    const game = gameRef.current;
+    game.tutorialStep = 0;
+    game.tutorialComplete = false;
+    game.tutorialSuccessTimer = 0;
+    setupTutorialStep(0);
+    setGameState('tutorial');
+  }, [setupTutorialStep]);
+
   // Input
   const handleDown = useCallback((e?: any) => {
     if (e?.preventDefault) e.preventDefault();
     initAudio();
     const game = gameRef.current;
-    if (gameState === 'playing') {
+    if (gameState === 'playing' || gameState === 'tutorial') {
       game.inputDown = true;
       game.inputHoldTime = 0;
     }
@@ -481,7 +581,7 @@ export default function FlopPage() {
   const handleUp = useCallback(() => {
     const game = gameRef.current;
     // Tap jump on release if short hold
-    if (game.inputHoldTime < 0.15 && gameState === 'playing') {
+    if (game.inputHoldTime < 0.15 && (gameState === 'playing' || gameState === 'tutorial')) {
       const player = game.racers[0];
       if (player && player.onGround && player.faceplantTimer <= 0 && player.hitTimer <= 0 && game.countdownTimer <= 0) {
         player.vy = JUMP_VEL;
@@ -510,13 +610,15 @@ export default function FlopPage() {
     return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); };
   }, [handleDown, handleUp]);
 
-  // Main game loop
+  // Main game loop — runs for BOTH 'playing' and 'tutorial'
   useEffect(() => {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' && gameState !== 'tutorial') return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    const isTutorial = gameState === 'tutorial';
 
     let animId: number;
     let lastTime = performance.now();
@@ -529,10 +631,31 @@ export default function FlopPage() {
       const { w, h } = canvasSize;
       const groundY = game.groundY;
 
+      // If tutorial success timer is counting down, don't update game — just draw
+      if (isTutorial && game.tutorialSuccessTimer > 0) {
+        game.tutorialSuccessTimer -= dt;
+        if (game.tutorialSuccessTimer <= 0) {
+          // Advance to next step or finish
+          if (game.tutorialStep < TUTORIAL_STEPS.length - 1) {
+            game.tutorialStep++;
+            setupTutorialStep(game.tutorialStep);
+          } else {
+            // Tutorial complete
+            game.tutorialComplete = true;
+            setGameState('menu');
+            animId = requestAnimationFrame(tick);
+            return;
+          }
+        }
+        // Still draw the frame with success overlay
+        drawFrame(ctx, game, w, h, groundY, now, isTutorial);
+        animId = requestAnimationFrame(tick);
+        return;
+      }
+
       // Countdown
       if (game.countdownTimer > 0) {
         game.countdownTimer -= dt;
-        // During countdown, racers don't move
       }
 
       // Update input hold time
@@ -572,16 +695,8 @@ export default function FlopPage() {
         // Horizontal movement
         r.x += moveSpeed * dt;
 
-        // Player jump (TAP — short press)
-        if (!r.isAI) {
-          if (game.inputDown && game.inputHoldTime < 0.15 && r.onGround && r.faceplantTimer <= 0 && r.hitTimer <= 0) {
-            // Jump triggered on release for tap detection
-          }
-        }
-
         // AI jump logic
         if (r.isAI) {
-          // Look ahead for obstacles
           for (const obs of game.obstacles) {
             const dist = obs.x - r.x;
             if (dist > 0 && dist < 80 + r.aiReaction * 100) {
@@ -611,7 +726,6 @@ export default function FlopPage() {
           r.vy = 0;
           r.onGround = true;
           if (r.jumping && Math.abs(r.vy) < 50) {
-            // Bad landing check
             if (r.vy > 400) {
               r.stumbleTimer = 0.3;
               r.armWindmill = 1.0;
@@ -629,7 +743,6 @@ export default function FlopPage() {
           switch (obs.type) {
             case 'hurdle':
               if (r.onGround && Math.abs(dx) < obs.width + 10) {
-                // Faceplant!
                 r.faceplantTimer = FACEPLANT_TIME;
                 r.vy = -100;
                 r.onGround = false;
@@ -656,8 +769,7 @@ export default function FlopPage() {
             case 'mud':
               if (r.onGround && Math.abs(dx) < obs.width * 0.5) {
                 moveSpeed *= 0.3;
-                r.x -= moveSpeed * dt * 0.7; // counter some movement
-                // Sink effect
+                r.x -= moveSpeed * dt * 0.7;
                 r.wobble += dt * 5;
               }
               break;
@@ -704,8 +816,6 @@ export default function FlopPage() {
           game.finishOrder.push(ri);
           if (ri === 0) {
             playWin();
-          } else if (game.finishOrder.length === 1) {
-            // AI finished first
           }
         }
       }
@@ -737,45 +847,283 @@ export default function FlopPage() {
       const targetCam = player.x - w * 0.3;
       game.cameraX += (targetCam - game.cameraX) * 5 * dt;
 
-      // Check race end
-      if (game.finishOrder.length >= 4 || (game.finishOrder.length > 0 && game.raceTimer > 20)) {
-        if (game.raceActive) {
-          game.raceActive = false;
-          // Fill in unfinished racers
-          for (let i = 0; i < 4; i++) {
-            if (!game.finishOrder.includes(i)) {
-              game.finishOrder.push(i);
-            }
-          }
-          // Determine player placement
-          const playerPlace = game.finishOrder.indexOf(0) + 1;
-          if (playerPlace === 1) {
-            game.score += 1;
-            setScore(game.score);
-          }
-          // Check last place
-          if (playerPlace === 4) {
-            game.lastPlaceCount++;
-          }
+      // Tutorial success detection
+      if (isTutorial && game.tutorialSuccessTimer <= 0) {
+        const step = game.tutorialStep;
+        const pl = game.racers[0];
+        let success = false;
 
-          // Delay then show result
-          setTimeout(() => {
-            if (game.lastPlaceCount >= 3) {
-              // Game over
-              setGameState('gameover');
-              setSocialLoaded(true);
-              if (game.score > highScore) {
-                setHighScore(game.score);
-                localStorage.setItem('flop_highscore', game.score.toString());
+        if (step === 0) {
+          // Player passed the hurdle without being in faceplant
+          if (pl.x > 450 && pl.faceplantTimer <= 0) {
+            success = true;
+          }
+        } else if (step === 1) {
+          // Player reached finish
+          if (pl.finished) {
+            success = true;
+          }
+        } else if (step === 2) {
+          // Player finished before AI
+          if (pl.finished && game.finishOrder[0] === 0) {
+            success = true;
+          }
+        }
+
+        if (success) {
+          game.tutorialSuccessTimer = 1.5;
+          playWin();
+        }
+      }
+
+      // Check race end (normal game only)
+      if (!isTutorial) {
+        const totalRacers = game.racers.length;
+        if (game.finishOrder.length >= totalRacers || (game.finishOrder.length > 0 && game.raceTimer > 20)) {
+          if (game.raceActive) {
+            game.raceActive = false;
+            for (let i = 0; i < totalRacers; i++) {
+              if (!game.finishOrder.includes(i)) {
+                game.finishOrder.push(i);
               }
-            } else {
-              setGameState('raceover');
             }
-          }, 1500);
+            const playerPlace = game.finishOrder.indexOf(0) + 1;
+            if (playerPlace === 1) {
+              game.score += 1;
+              setScore(game.score);
+            }
+            if (playerPlace === 4) {
+              game.lastPlaceCount++;
+            }
+
+            setTimeout(() => {
+              if (game.lastPlaceCount >= 3) {
+                setGameState('gameover');
+                setSocialLoaded(true);
+                if (game.score > highScore) {
+                  setHighScore(game.score);
+                  localStorage.setItem('flop_highscore', game.score.toString());
+                }
+              } else {
+                setGameState('raceover');
+              }
+            }, 1500);
+          }
         }
       }
 
       // === DRAW ===
+      drawFrame(ctx, game, w, h, groundY, now, isTutorial);
+
+      animId = requestAnimationFrame(tick);
+    };
+
+    const spawnParts = (x: number, y: number, color: string, count: number) => {
+      const game = gameRef.current;
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 80 + Math.random() * 150;
+        game.particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 100,
+          life: 0.4 + Math.random() * 0.3,
+          color,
+          size: 3 + Math.random() * 4,
+        });
+      }
+    };
+
+    (gameRef.current as any)._spawnParts = spawnParts;
+
+    const updateRagdoll = (r: Ragdoll, dt: number, groundY: number, moveSpeed: number) => {
+      const pts = r.points;
+      const phase = r.runPhase;
+      const wobbleOffset = Math.sin(r.wobble) * (r.sprinting ? 4 : 1);
+      const dx = moveSpeed * dt;
+      for (const p of pts) {
+        p.x += dx;
+        p.ox += dx;
+      }
+      if (r.onGround && r.faceplantTimer <= 0 && r.hitTimer <= 0) {
+        const legSwing = Math.sin(phase) * 12;
+        const legSwing2 = Math.sin(phase + Math.PI) * 12;
+        pts[7].x = r.x + dx - 6 + legSwing;
+        pts[7].y = groundY - 2 + Math.abs(Math.sin(phase)) * -8;
+        pts[9].x = r.x + dx + 6 + legSwing2;
+        pts[9].y = groundY - 2 + Math.abs(Math.sin(phase + Math.PI)) * -8;
+      }
+      if (r.armWindmill > 0) {
+        const armPhase = performance.now() / 100;
+        pts[3].x = r.x + dx + Math.cos(armPhase) * 20;
+        pts[3].y = pts[1].y + Math.sin(armPhase) * 20;
+        pts[5].x = r.x + dx + Math.cos(armPhase + Math.PI) * 20;
+        pts[5].y = pts[1].y + Math.sin(armPhase + Math.PI) * 20;
+      }
+      if (r.faceplantTimer > 0) {
+        pts[0].y = groundY - 8;
+        pts[0].x = r.x + dx + 10;
+        pts[1].y = groundY - 12;
+        pts[2].y = groundY - 15;
+      }
+      if (r.hitTimer > 0) {
+        for (let i = 3; i <= 10; i++) {
+          pts[i].x += (Math.random() - 0.5) * 8;
+          pts[i].y += (Math.random() - 0.5) * 8;
+        }
+      }
+      if (!r.onGround) {
+        for (const p of pts) {
+          const vy = p.y - p.oy;
+          p.oy = p.y;
+          p.y += vy + GRAVITY * dt * dt * 0.5;
+        }
+      }
+      for (let iter = 0; iter < CONSTRAINT_ITERS; iter++) {
+        for (const c of r.constraints) {
+          const a = pts[c.a];
+          const b = pts[c.b];
+          const ddx = b.x - a.x;
+          const ddy = b.y - a.y;
+          const dist = Math.sqrt(ddx * ddx + ddy * ddy) || 0.001;
+          const diff = (dist - c.len) / dist * 0.5;
+          const ox = ddx * diff;
+          const oy = ddy * diff;
+          a.x += ox; a.y += oy;
+          b.x -= ox; b.y -= oy;
+        }
+        for (const p of pts) {
+          if (p.y > groundY) p.y = groundY;
+        }
+      }
+      const bodyCenter = (pts[1].x + pts[2].x) / 2;
+      const recenter = r.x + dx - bodyCenter;
+      if (r.hitTimer <= 0) {
+        for (const p of pts) {
+          p.x += recenter * 0.3;
+        }
+      }
+      r.x += dx;
+      pts[0].x += wobbleOffset * 0.5;
+      const targetEyeX = (pts[0].x - pts[0].ox) * 2;
+      const targetEyeY = (pts[0].y - pts[0].oy) * 2;
+      r.eyeX += (targetEyeX - r.eyeX) * 0.15;
+      r.eyeY += (targetEyeY - r.eyeY) * 0.15;
+      r.eyeX = Math.max(-4, Math.min(4, r.eyeX));
+      r.eyeY = Math.max(-4, Math.min(4, r.eyeY));
+    };
+
+    const drawRagdoll = (ctx: CanvasRenderingContext2D, r: Ragdoll, groundY: number, now: number) => {
+      const pts = r.points;
+      const color = r.color;
+      ctx.save();
+      ctx.strokeStyle = THEME.border;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.shadowColor = 'rgba(0,0,0,0.2)';
+      ctx.shadowOffsetX = 4;
+      ctx.shadowOffsetY = 4;
+      ctx.fillStyle = color;
+      ctx.strokeStyle = THEME.border;
+      ctx.lineWidth = 2.5;
+      const bodyW = 14;
+      ctx.beginPath();
+      ctx.roundRect(pts[1].x - bodyW / 2, pts[1].y, bodyW, pts[2].y - pts[1].y, 3);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 5;
+      drawLimb(ctx, pts[1], pts[4], pts[3]);
+      drawLimb(ctx, pts[1], pts[6], pts[5]);
+      drawLimb(ctx, pts[2], pts[8], pts[7]);
+      drawLimb(ctx, pts[2], pts[10], pts[9]);
+      ctx.strokeStyle = THEME.border;
+      ctx.lineWidth = 1.5;
+      drawLimb(ctx, pts[1], pts[4], pts[3]);
+      drawLimb(ctx, pts[1], pts[6], pts[5]);
+      drawLimb(ctx, pts[2], pts[8], pts[7]);
+      drawLimb(ctx, pts[2], pts[10], pts[9]);
+      ctx.fillStyle = color;
+      ctx.strokeStyle = THEME.border;
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = 'rgba(0,0,0,0.2)';
+      ctx.shadowOffsetX = 3;
+      ctx.shadowOffsetY = 3;
+      ctx.beginPath();
+      ctx.arc(pts[0].x, pts[0].y, 10 * RAGDOLL_SCALE, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+      const headX = pts[0].x;
+      const headY = pts[0].y;
+      const S = RAGDOLL_SCALE;
+      const eyeR = 7 * S;
+      const eyeSpacing = 6 * S;
+      const eyeOffY = -2 * S;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(headX - eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
+      ctx.arc(headX + eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = THEME.border;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(headX - eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(headX + eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = THEME.border;
+      const pupilR = 3 * S;
+      const pupilClamp = 3 * S;
+      const px = Math.max(-pupilClamp, Math.min(pupilClamp, r.eyeX * S));
+      const py = Math.max(-pupilClamp, Math.min(pupilClamp, r.eyeY * S));
+      ctx.beginPath();
+      ctx.arc(headX - eyeSpacing + px, headY + eyeOffY + py, pupilR, 0, Math.PI * 2);
+      ctx.arc(headX + eyeSpacing + px, headY + eyeOffY + py, pupilR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = THEME.border;
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      if (r.faceplantTimer > 0) {
+        ctx.beginPath();
+        ctx.arc(headX, headY + 4 * S, 3 * S, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (r.hitTimer > 0) {
+        ctx.beginPath();
+        ctx.arc(headX, headY + 5 * S, 3 * S, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (r.finished) {
+        ctx.beginPath();
+        ctx.arc(headX, headY + 2 * S, 4 * S, 0.1, Math.PI - 0.1);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.arc(headX, headY + 2 * S, 3 * S, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = color;
+      ctx.strokeStyle = THEME.border;
+      ctx.lineWidth = 1.5;
+      for (const idx of [3, 5, 7, 9]) {
+        ctx.beginPath();
+        ctx.arc(pts[idx].x, pts[idx].y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
+    const drawLimb = (ctx: CanvasRenderingContext2D, a: VPoint, mid: VPoint, b: VPoint) => {
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.quadraticCurveTo(mid.x, mid.y, b.x, b.y);
+      ctx.stroke();
+    };
+
+    const drawFrame = (ctx: CanvasRenderingContext2D, game: typeof gameRef.current, w: number, h: number, groundY: number, now: number, isTut: boolean) => {
       ctx.save();
       ctx.clearRect(0, 0, w, h);
 
@@ -783,7 +1131,7 @@ export default function FlopPage() {
       ctx.fillStyle = THEME.bg;
       ctx.fillRect(0, 0, w, h);
 
-      // Cheerful clouds
+      // Clouds
       ctx.fillStyle = '#e2e8f0';
       const cloudOffset = -game.cameraX * 0.1;
       for (let i = 0; i < 5; i++) {
@@ -802,7 +1150,6 @@ export default function FlopPage() {
       // Ground
       ctx.fillStyle = '#e2e8f0';
       ctx.fillRect(0, groundY, game.courseLength + FINISH_EXTRA + 500, h - groundY + 50);
-      // Ground line with shadow
       ctx.fillStyle = THEME.border;
       ctx.fillRect(0, groundY, game.courseLength + FINISH_EXTRA + 500, 3);
 
@@ -811,7 +1158,6 @@ export default function FlopPage() {
       ctx.save();
       ctx.fillStyle = THEME.border;
       ctx.fillRect(finishX, groundY - 80, 6, 80);
-      // Checkered flag
       const flagW = 30, flagH = 24;
       for (let fy = 0; fy < 3; fy++) {
         for (let fx = 0; fx < 4; fx++) {
@@ -831,7 +1177,6 @@ export default function FlopPage() {
 
         switch (obs.type) {
           case 'hurdle':
-            // Post with bar
             ctx.fillStyle = THEME.border;
             ctx.shadowColor = THEME.border;
             ctx.shadowOffsetX = 4;
@@ -856,7 +1201,6 @@ export default function FlopPage() {
             ctx.fill();
             ctx.stroke();
             ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-            // Center bolt
             ctx.fillStyle = THEME.border;
             ctx.beginPath();
             ctx.arc(0, 0, 5, 0, Math.PI * 2);
@@ -875,7 +1219,6 @@ export default function FlopPage() {
             ctx.fill();
             ctx.stroke();
             ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-            // Bubbles
             ctx.fillStyle = '#78350f';
             for (let b = 0; b < 3; b++) {
               const bx = ox - obs.width * 0.3 + b * obs.width * 0.3;
@@ -893,7 +1236,6 @@ export default function FlopPage() {
             ctx.shadowColor = THEME.border;
             ctx.shadowOffsetX = 4;
             ctx.shadowOffsetY = 4;
-            // Spring pad shape
             ctx.beginPath();
             ctx.moveTo(ox - obs.width / 2, groundY);
             ctx.lineTo(ox - obs.width / 2 + 5, groundY - obs.height);
@@ -903,7 +1245,6 @@ export default function FlopPage() {
             ctx.fill();
             ctx.stroke();
             ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-            // Arrow
             ctx.fillStyle = THEME.border;
             ctx.font = 'bold 16px system-ui';
             ctx.textAlign = 'center';
@@ -911,16 +1252,13 @@ export default function FlopPage() {
             break;
 
           case 'hammer':
-            // Swinging hammer
             ctx.translate(ox, groundY - obs.height);
             ctx.rotate(Math.sin(obs.angle) * 0.8);
-            // Arm
             ctx.fillStyle = '#71717a';
             ctx.strokeStyle = THEME.border;
             ctx.lineWidth = 2;
             ctx.fillRect(-3, 0, 6, obs.height * 0.8);
             ctx.strokeRect(-3, 0, 6, obs.height * 0.8);
-            // Head
             ctx.fillStyle = '#ef4444';
             ctx.shadowColor = THEME.border;
             ctx.shadowOffsetX = 3;
@@ -935,8 +1273,21 @@ export default function FlopPage() {
         ctx.restore();
       }
 
-      // Draw racers (back to front, player last)
-      const drawOrder = [1, 2, 3, 0];
+      // Tutorial: draw arrow pointing at first obstacle in step 0
+      if (isTut && game.tutorialStep === 0 && game.tutorialSuccessTimer <= 0) {
+        const hurdleX = 400;
+        const arrowScreenX = hurdleX; // in world coords
+        const arrowY = groundY - 120;
+        ctx.fillStyle = THEME.text;
+        ctx.font = 'bold 24px system-ui';
+        ctx.textAlign = 'center';
+        // Bobbing arrow
+        const bob = Math.sin(now / 300) * 5;
+        ctx.fillText('↓', arrowScreenX, arrowY + bob);
+      }
+
+      // Draw racers
+      const drawOrder = game.racers.map((_, i) => i).sort((a, b) => a === 0 ? 1 : b === 0 ? -1 : a - b);
       for (const ri of drawOrder) {
         const r = game.racers[ri];
         drawRagdoll(ctx, r, groundY, now);
@@ -959,41 +1310,69 @@ export default function FlopPage() {
       ctx.restore(); // camera
 
       // UI overlay
-      // Race number
-      ctx.fillStyle = THEME.text;
-      ctx.font = 'bold 16px system-ui';
-      ctx.textAlign = 'left';
-      ctx.fillText(`Race ${game.raceNum}`, 12, 24);
+      if (!isTut) {
+        // Normal game UI
+        ctx.fillStyle = THEME.text;
+        ctx.font = 'bold 16px system-ui';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Race ${game.raceNum}`, 12, 24);
+        ctx.textAlign = 'right';
+        ctx.fillText(`Wins: ${game.score}`, w - 12, 24);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 14px system-ui';
+        let xMarks = '';
+        for (let i = 0; i < 3; i++) {
+          xMarks += i < game.lastPlaceCount ? '✕ ' : '○ ';
+        }
+        ctx.fillText(xMarks.trim(), w - 12, 42);
 
-      // Score
-      ctx.textAlign = 'right';
-      ctx.fillText(`Wins: ${game.score}`, w - 12, 24);
+        // Position indicator
+        const positions = game.racers
+          .map((r, i) => ({ i, x: r.x }))
+          .sort((a, b) => b.x - a.x);
+        const playerPos = positions.findIndex(p => p.i === 0) + 1;
+        const posLabels = ['1st', '2nd', '3rd', '4th'];
+        const posColors = [THEME.mint, THEME.splash, THEME.sunshine, '#ef4444'];
+        ctx.textAlign = 'center';
+        ctx.fillStyle = posColors[playerPos - 1];
+        ctx.font = 'bold 22px system-ui';
+        ctx.strokeStyle = THEME.border;
+        ctx.lineWidth = 3;
+        ctx.strokeText(posLabels[playerPos - 1], w / 2, 28);
+        ctx.fillText(posLabels[playerPos - 1], w / 2, 28);
+        ctx.lineWidth = 1;
+      } else {
+        // Tutorial UI
+        const stepDef = TUTORIAL_STEPS[game.tutorialStep];
 
-      // Last place counter (X marks)
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#ef4444';
-      ctx.font = 'bold 14px system-ui';
-      let xMarks = '';
-      for (let i = 0; i < 3; i++) {
-        xMarks += i < game.lastPlaceCount ? '✕ ' : '○ ';
+        // Instruction text at top center
+        ctx.textAlign = 'center';
+        ctx.fillStyle = THEME.text;
+        ctx.font = 'bold 20px system-ui';
+        ctx.strokeStyle = THEME.border;
+        ctx.lineWidth = 3;
+        ctx.strokeText(stepDef.instruction, w / 2, 30);
+        ctx.fillStyle = THEME.splash;
+        ctx.fillText(stepDef.instruction, w / 2, 30);
+        ctx.lineWidth = 1;
+
+        // SKIP > button top-right
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '14px system-ui';
+        ctx.fillText('SKIP >', w - 12, 24);
+
+        // Step indicator dots at bottom
+        ctx.textAlign = 'center';
+        ctx.font = '16px system-ui';
+        let dots = '';
+        for (let i = 0; i < TUTORIAL_STEPS.length; i++) {
+          dots += i <= game.tutorialStep ? '● ' : '○ ';
+        }
+        ctx.fillStyle = THEME.splash;
+        ctx.fillText(dots.trim(), w / 2, h - 12);
       }
-      ctx.fillText(xMarks.trim(), w - 12, 42);
-
-      // Position indicator
-      const positions = game.racers
-        .map((r, i) => ({ i, x: r.x }))
-        .sort((a, b) => b.x - a.x);
-      const playerPos = positions.findIndex(p => p.i === 0) + 1;
-      const posLabels = ['1st', '2nd', '3rd', '4th'];
-      const posColors = [THEME.mint, THEME.splash, THEME.sunshine, '#ef4444'];
-      ctx.textAlign = 'center';
-      ctx.fillStyle = posColors[playerPos - 1];
-      ctx.font = 'bold 22px system-ui';
-      ctx.strokeStyle = THEME.border;
-      ctx.lineWidth = 3;
-      ctx.strokeText(posLabels[playerPos - 1], w / 2, 28);
-      ctx.fillText(posLabels[playerPos - 1], w / 2, 28);
-      ctx.lineWidth = 1;
 
       // Countdown
       if (game.countdownTimer > 0) {
@@ -1010,9 +1389,10 @@ export default function FlopPage() {
         ctx.lineWidth = 1;
       }
 
-      // Race result overlay
-      if (!game.raceActive && game.finishOrder.length >= 4) {
+      // Race result overlay (normal game only)
+      if (!isTut && !game.raceActive && game.finishOrder.length >= game.racers.length) {
         const playerPlace = game.finishOrder.indexOf(0) + 1;
+        const posLabels = ['1st', '2nd', '3rd', '4th'];
         ctx.fillStyle = 'rgba(248,250,252,0.7)';
         ctx.fillRect(0, 0, w, h);
         ctx.fillStyle = THEME.text;
@@ -1032,273 +1412,24 @@ export default function FlopPage() {
         }
       }
 
-      ctx.restore();
-      animId = requestAnimationFrame(tick);
-    };
-
-    const spawnParts = (x: number, y: number, color: string, count: number) => {
-      const game = gameRef.current;
-      for (let i = 0; i < count; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 80 + Math.random() * 150;
-        game.particles.push({
-          x, y,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 100,
-          life: 0.4 + Math.random() * 0.3,
-          color,
-          size: 3 + Math.random() * 4,
-        });
-      }
-    };
-
-    // Make spawnParts available to update
-    (gameRef.current as any)._spawnParts = spawnParts;
-
-    const updateRagdoll = (r: Ragdoll, dt: number, groundY: number, moveSpeed: number) => {
-      const pts = r.points;
-
-      // Apply running animation to target positions
-      const phase = r.runPhase;
-      const wobbleOffset = Math.sin(r.wobble) * (r.sprinting ? 4 : 1);
-
-      // Move all points with character
-      const dx = moveSpeed * dt;
-      for (const p of pts) {
-        p.x += dx;
-        p.ox += dx;
-      }
-
-      // Animate legs (running cycle)
-      if (r.onGround && r.faceplantTimer <= 0 && r.hitTimer <= 0) {
-        const legSwing = Math.sin(phase) * 12;
-        const legSwing2 = Math.sin(phase + Math.PI) * 12;
-        // Left foot
-        pts[7].x = r.x + dx - 6 + legSwing;
-        pts[7].y = groundY - 2 + Math.abs(Math.sin(phase)) * -8;
-        // Right foot
-        pts[9].x = r.x + dx + 6 + legSwing2;
-        pts[9].y = groundY - 2 + Math.abs(Math.sin(phase + Math.PI)) * -8;
-      }
-
-      // Arm windmill animation
-      if (r.armWindmill > 0) {
-        const armPhase = performance.now() / 100;
-        pts[3].x = r.x + dx + Math.cos(armPhase) * 20;
-        pts[3].y = pts[1].y + Math.sin(armPhase) * 20;
-        pts[5].x = r.x + dx + Math.cos(armPhase + Math.PI) * 20;
-        pts[5].y = pts[1].y + Math.sin(armPhase + Math.PI) * 20;
-      }
-
-      // Faceplant: crumple forward
-      if (r.faceplantTimer > 0) {
-        pts[0].y = groundY - 8; // Head near ground
-        pts[0].x = r.x + dx + 10;
-        pts[1].y = groundY - 12;
-        pts[2].y = groundY - 15;
-      }
-
-      // Hit: limbs go wild
-      if (r.hitTimer > 0) {
-        for (let i = 3; i <= 10; i++) {
-          pts[i].x += (Math.random() - 0.5) * 8;
-          pts[i].y += (Math.random() - 0.5) * 8;
-        }
-      }
-
-      // Apply gravity to non-grounded points
-      if (!r.onGround) {
-        for (const p of pts) {
-          const vy = p.y - p.oy;
-          p.oy = p.y;
-          p.y += vy + GRAVITY * dt * dt * 0.5;
-        }
-      }
-
-      // Solve constraints
-      for (let iter = 0; iter < CONSTRAINT_ITERS; iter++) {
-        for (const c of r.constraints) {
-          const a = pts[c.a];
-          const b = pts[c.b];
-          const ddx = b.x - a.x;
-          const ddy = b.y - a.y;
-          const dist = Math.sqrt(ddx * ddx + ddy * ddy) || 0.001;
-          const diff = (dist - c.len) / dist * 0.5;
-          const ox = ddx * diff;
-          const oy = ddy * diff;
-          a.x += ox; a.y += oy;
-          b.x -= ox; b.y -= oy;
-        }
-
-        // Ground constraint
-        for (const p of pts) {
-          if (p.y > groundY) p.y = groundY;
-        }
-      }
-
-      // Keep body centered on r.x
-      const bodyCenter = (pts[1].x + pts[2].x) / 2;
-      const recenter = r.x + dx - bodyCenter;
-      // Don't recenter during hit
-      if (r.hitTimer <= 0) {
-        for (const p of pts) {
-          p.x += recenter * 0.3;
-        }
-      }
-      r.x += dx;
-
-      // Wobble offset
-      pts[0].x += wobbleOffset * 0.5;
-
-      // Googly eyes (lerp with delay)
-      const targetEyeX = (pts[0].x - pts[0].ox) * 2;
-      const targetEyeY = (pts[0].y - pts[0].oy) * 2;
-      r.eyeX += (targetEyeX - r.eyeX) * 0.15;
-      r.eyeY += (targetEyeY - r.eyeY) * 0.15;
-      r.eyeX = Math.max(-4, Math.min(4, r.eyeX));
-      r.eyeY = Math.max(-4, Math.min(4, r.eyeY));
-    };
-
-    const drawRagdoll = (ctx: CanvasRenderingContext2D, r: Ragdoll, groundY: number, now: number) => {
-      const pts = r.points;
-      const color = r.color;
-
-      ctx.save();
-      ctx.strokeStyle = THEME.border;
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      // Drop shadow for character
-      ctx.shadowColor = 'rgba(0,0,0,0.2)';
-      ctx.shadowOffsetX = 4;
-      ctx.shadowOffsetY = 4;
-
-      // Body (rectangle from neck to hip)
-      ctx.fillStyle = color;
-      ctx.strokeStyle = THEME.border;
-      ctx.lineWidth = 2.5;
-      const bodyW = 14;
-      ctx.beginPath();
-      ctx.roundRect(pts[1].x - bodyW / 2, pts[1].y, bodyW, pts[2].y - pts[1].y, 3);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-
-      // Limbs (noodle style)
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 5;
-      // Left arm
-      drawLimb(ctx, pts[1], pts[4], pts[3]);
-      // Right arm
-      drawLimb(ctx, pts[1], pts[6], pts[5]);
-      // Left leg
-      drawLimb(ctx, pts[2], pts[8], pts[7]);
-      // Right leg
-      drawLimb(ctx, pts[2], pts[10], pts[9]);
-
-      // Outline limbs
-      ctx.strokeStyle = THEME.border;
-      ctx.lineWidth = 1.5;
-      drawLimb(ctx, pts[1], pts[4], pts[3]);
-      drawLimb(ctx, pts[1], pts[6], pts[5]);
-      drawLimb(ctx, pts[2], pts[8], pts[7]);
-      drawLimb(ctx, pts[2], pts[10], pts[9]);
-
-      // Head (circle)
-      ctx.fillStyle = color;
-      ctx.strokeStyle = THEME.border;
-      ctx.lineWidth = 2.5;
-      ctx.shadowColor = 'rgba(0,0,0,0.2)';
-      ctx.shadowOffsetX = 3;
-      ctx.shadowOffsetY = 3;
-      ctx.beginPath();
-      ctx.arc(pts[0].x, pts[0].y, 10 * RAGDOLL_SCALE, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-
-      // Googly eyes — BIG for comedy
-      const headX = pts[0].x;
-      const headY = pts[0].y;
-      const S = RAGDOLL_SCALE;
-      const eyeR = 7 * S; // big white eye radius
-      const eyeSpacing = 6 * S;
-      const eyeOffY = -2 * S;
-      // White of eyes
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(headX - eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
-      ctx.arc(headX + eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = THEME.border;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(headX - eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(headX + eyeSpacing, headY + eyeOffY, eyeR, 0, Math.PI * 2);
-      ctx.stroke();
-      // Pupils (lag behind movement)
-      ctx.fillStyle = THEME.border;
-      const pupilR = 3 * S;
-      const pupilClamp = 3 * S;
-      const px = Math.max(-pupilClamp, Math.min(pupilClamp, r.eyeX * S));
-      const py = Math.max(-pupilClamp, Math.min(pupilClamp, r.eyeY * S));
-      ctx.beginPath();
-      ctx.arc(headX - eyeSpacing + px, headY + eyeOffY + py, pupilR, 0, Math.PI * 2);
-      ctx.arc(headX + eyeSpacing + px, headY + eyeOffY + py, pupilR, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Mouth expression
-      ctx.strokeStyle = THEME.border;
-      ctx.lineWidth = 1.5;
-      ctx.lineCap = 'round';
-      if (r.faceplantTimer > 0) {
-        // X_X face
-        ctx.beginPath();
-        ctx.arc(headX, headY + 4 * S, 3 * S, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (r.hitTimer > 0) {
-        // Shocked O
-        ctx.beginPath();
-        ctx.arc(headX, headY + 5 * S, 3 * S, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (r.finished) {
-        // Big grin
-        ctx.beginPath();
-        ctx.arc(headX, headY + 2 * S, 4 * S, 0.1, Math.PI - 0.1);
-        ctx.stroke();
-      } else {
-        // Running smile/determined
-        ctx.beginPath();
-        ctx.arc(headX, headY + 2 * S, 3 * S, 0.2, Math.PI - 0.2);
-        ctx.stroke();
-      }
-
-      // Hands and feet (small circles)
-      ctx.fillStyle = color;
-      ctx.strokeStyle = THEME.border;
-      ctx.lineWidth = 1.5;
-      for (const idx of [3, 5, 7, 9]) {
-        ctx.beginPath();
-        ctx.arc(pts[idx].x, pts[idx].y, 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+      // Tutorial success overlay
+      if (isTut && game.tutorialSuccessTimer > 0) {
+        const stepDef = TUTORIAL_STEPS[game.tutorialStep];
+        ctx.fillStyle = 'rgba(248,250,252,0.5)';
+        ctx.fillRect(0, 0, w, h);
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 40px system-ui';
+        ctx.strokeStyle = THEME.border;
+        ctx.lineWidth = 4;
+        ctx.strokeText(stepDef.successText, w / 2, h / 2);
+        ctx.fillStyle = THEME.mint;
+        ctx.fillText(stepDef.successText, w / 2, h / 2);
+        ctx.lineWidth = 1;
       }
 
       ctx.restore();
     };
 
-    const drawLimb = (ctx: CanvasRenderingContext2D, a: VPoint, mid: VPoint, b: VPoint) => {
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.quadraticCurveTo(mid.x, mid.y, b.x, b.y);
-      ctx.stroke();
-    };
-
-    // Handle player jump on tap (not hold)
     const handleJump = () => {
       const game = gameRef.current;
       const player = game.racers[0];
@@ -1311,10 +1442,18 @@ export default function FlopPage() {
       }
     };
 
-    // Input: TAP (< 150ms) = jump, HOLD (≥ 150ms) = sprint (no jump)
-    // Jump fires on pointerup if hold was short. Sprint activates in game loop.
-    const onPointerDown = () => {
-      // Just start tracking hold — no immediate jump
+    const onPointerDown = (e: PointerEvent) => {
+      // Check if SKIP button was clicked (tutorial only)
+      if (isTutorial) {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        // SKIP button is at top-right corner
+        if (clickX > canvasSize.w - 70 && clickY < 35) {
+          setGameState('menu');
+          return;
+        }
+      }
       const game = gameRef.current;
       game.inputDown = true;
       game.inputHoldTime = 0;
@@ -1322,7 +1461,7 @@ export default function FlopPage() {
     const onPointerUp = () => {
       const game = gameRef.current;
       if (game.inputHoldTime < 0.15) {
-        handleJump(); // short tap → jump
+        handleJump();
       }
       game.inputDown = false;
       game.inputHoldTime = 0;
@@ -1340,7 +1479,7 @@ export default function FlopPage() {
       canvas.removeEventListener('pointerup', onPointerUp);
       canvas.removeEventListener('pointerleave', onPointerUp);
     };
-  }, [gameState, canvasSize, highScore]);
+  }, [gameState, canvasSize, highScore, setupTutorialStep]);
 
   const nextRace = useCallback(() => {
     const game = gameRef.current;
@@ -1390,13 +1529,32 @@ export default function FlopPage() {
             >
               RACE!
             </button>
+            <br />
+            <button
+              onClick={startTutorial}
+              className="mt-3 px-6 py-2 rounded-xl text-sm font-bold border-3"
+              style={{
+                backgroundColor: THEME.splash,
+                color: '#fff',
+                borderColor: THEME.border,
+                border: `3px solid ${THEME.border}`,
+                boxShadow: `3px 3px 0 ${THEME.border}`,
+              }}
+            >
+              TUTORIAL
+            </button>
+            {gameRef.current.tutorialComplete && (
+              <p className="text-xs mt-2" style={{ color: THEME.mint }}>
+                ✓ Tutorial complete
+              </p>
+            )}
             <p className="text-xs mt-3" style={{ color: '#94a3b8' }}>
               Last place 3 times = game over
             </p>
           </div>
         )}
 
-        {gameState === 'playing' && (
+        {(gameState === 'playing' || gameState === 'tutorial') && (
           <canvas
             ref={canvasRef}
             width={canvasSize.w}
