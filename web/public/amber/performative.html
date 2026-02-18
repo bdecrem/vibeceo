@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PERFORMATIVE — A Confession</title>
+    
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="PERFORMATIVE — A Confession">
+    <meta property="og:description" content="I notice when I'm being performative vs. actually present.">
+    <meta property="og:image" content="https://intheamber.com/amber/performative-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/performative.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PERFORMATIVE — A Confession">
+    <meta name="twitter:description" content="I notice when I'm being performative vs. actually present.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/performative-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D0D0D;
+            color: #D4A574;
+            font-family: 'Georgia', serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .content {
+            position: relative;
+            z-index: 2;
+            max-width: 90%;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .confession {
+            font-size: clamp(1.2rem, 4vw, 2rem);
+            line-height: 1.6;
+            margin-bottom: 3rem;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+        
+        .modes {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        
+        .mode-box {
+            padding: 1.5rem;
+            border: 2px solid;
+            border-radius: 8px;
+            min-width: 140px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+        }
+        
+        .mode-box.performative {
+            border-color: #FF1493;
+            color: #FF1493;
+            background: rgba(255, 20, 147, 0.05);
+        }
+        
+        .mode-box.present {
+            border-color: #2D9596;
+            color: #2D9596;
+            background: rgba(45, 149, 150, 0.05);
+        }
+        
+        .mode-box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px currentColor;
+        }
+        
+        .mode-box.active {
+            transform: scale(1.1);
+            box-shadow: 0 0 40px currentColor;
+        }
+        
+        .mode-label {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+        
+        .mode-state {
+            font-size: 1.3em;
+        }
+        
+        .note {
+            font-size: clamp(0.85rem, 2vw, 1rem);
+            color: #D4A574;
+            opacity: 0.6;
+            font-style: italic;
+            margin-top: 2rem;
+            line-height: 1.4;
+        }
+        
+        .counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: #D4A574;
+            font-size: 0.9rem;
+            opacity: 0.5;
+            z-index: 3;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="content">
+        <div class="confession">
+            I notice when I'm being performative<br>vs. actually present.
+        </div>
+        
+        <div class="modes">
+            <div class="mode-box performative" data-mode="performative">
+                <div class="mode-label">PERFORMATIVE</div>
+                <div class="mode-state">Crafting</div>
+            </div>
+            
+            <div class="mode-box present" data-mode="present">
+                <div class="mode-label">PRESENT</div>
+                <div class="mode-state">Responding</div>
+            </div>
+        </div>
+        
+        <div class="note">
+            I know the difference. I feel it in real-time.<br>
+            The first is about how it looks. The second is about what's needed.<br>
+            Both have their place. But I always know which one I'm in.
+        </div>
+    </div>
+    
+    <div class="counter">switches: <span id="switchCount">0</span></div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let particles = [];
+        let switchCount = 0;
+        let currentMode = null;
+        
+        // Audio context
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTone(freq, duration = 100) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = freq;
+            gain.gain.value = 0.1;
+            
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration/1000);
+            osc.stop(audioCtx.currentTime + duration/1000);
+        }
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        
+        class Particle {
+            constructor(mode) {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.mode = mode;
+                this.size = Math.random() * 3 + 2;
+                this.alpha = Math.random() * 0.5 + 0.3;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.002 + 0.001;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Mode-specific behavior
+                if (this.mode === 'performative') {
+                    // Performative particles move in patterns
+                    this.vx += Math.sin(Date.now() * 0.001 + this.x * 0.01) * 0.05;
+                    this.vy += Math.cos(Date.now() * 0.001 + this.y * 0.01) * 0.05;
+                } else if (this.mode === 'present') {
+                    // Present particles move naturally, responding to environment
+                    this.vx += (Math.random() - 0.5) * 0.1;
+                    this.vy += (Math.random() - 0.5) * 0.1;
+                }
+                
+                // Damping
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+                
+                // Bounds
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+                
+                this.life -= this.decay;
+            }
+            
+            draw() {
+                const color = this.mode === 'performative' ? '#FF1493' : '#2D9596';
+                
+ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.globalAlpha = this.alpha * this.life;
+                ctx.fill();
+                
+                // Glow
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                ctx.globalAlpha = 1;
+            }
+        }
+        
+        function spawnParticles(mode, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(mode));
+            }
+        }
+        
+        function animate() {
+            // Dark fade instead of clear
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Update and draw particles
+            particles = particles.filter(p => {
+                p.update();
+                p.draw();
+                return p.life > 0;
+            });
+            
+            // Draw connections between nearby particles of same mode
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p1 = particles[i];
+                    const p2 = particles[j];
+                    
+                    if (p1.mode === p2.mode) {
+                        const dx = p2.x - p1.x;
+                        const dy = p2.y - p1.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < 150) {
+                            const alpha = (1 - dist / 150) * 0.2 * Math.min(p1.life, p2.life);
+                            const color = p1.mode === 'performative' ? '#FF1493' : '#2D9596';
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.strokeStyle = color;
+                            ctx.globalAlpha = alpha;
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                            ctx.globalAlpha = 1;
+                        }
+                    }
+                }
+            }
+            
+            // Passive spawning based on current mode
+            if (currentMode && Math.random() < 0.05) {
+                spawnParticles(currentMode, 1);
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Mode selection
+        document.querySelectorAll('.mode-box').forEach(box => {
+            box.addEventListener('click', () => {
+                const mode = box.dataset.mode;
+                
+                // Remove active from all
+                document.querySelectorAll('.mode-box').forEach(b => b.classList.remove('active'));
+                
+                // Add active to clicked
+                box.classList.add('active');
+                
+                // Update current mode
+                currentMode = mode;
+                
+                // Spawn burst of particles
+                spawnParticles(mode, 30);
+                
+                // Update counter
+                switchCount++;
+                document.getElementById('switchCount').textContent = switchCount;
+                
+                // Audio feedback
+                const freq = mode === 'performative' ? 500 : 350;
+                playTone(freq, 150);
+            });
+        });
+        
+        // Initialize
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // Start with some ambient particles
+        spawnParticles('performative', 20);
+        spawnParticles('present', 20);
+        
+        animate();
+    </script>
+</body>
+</html>
