@@ -1151,7 +1151,7 @@ export default function BlastPage() {
       ctx.font = hudSmall;
       ctx.textAlign = 'right';
       ctx.fillStyle = '#ffffff80';
-      ctx.fillText('✕', canvasSize.w - 14, hudTop);
+      ctx.fillText('X', canvasSize.w - 14, hudTop);
 
       // ── GOO PROJECTILES ─────────────────────────────
       for (const goo of game.goos) {
