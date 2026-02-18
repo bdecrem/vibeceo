@@ -1121,21 +1121,15 @@ export default function BlastPage() {
       const hudSmall = '700 14px "SF Mono", "Fira Code", "Consolas", monospace';
       ctx.textBaseline = 'top';
 
-      // Combo multiplier — left
+      // Combo multiplier — left, no scaling, same size as wave
       if (game.combo > 1) {
         const comboAlpha = Math.min(game.comboTimer / 0.5, 1);
-        const comboScale = 1 + (game.combo - 1) * 0.03;
         ctx.save();
-        ctx.translate(14, hudTop);
-        ctx.scale(comboScale, comboScale);
         ctx.globalAlpha = comboAlpha;
         ctx.textAlign = 'left';
         ctx.font = hudSmall;
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = THEME.hexagon;
         ctx.fillStyle = THEME.hexagon;
-        ctx.fillText(`${game.combo}x`, 0, 0);
-        ctx.shadowBlur = 0;
+        ctx.fillText(`${game.combo}x`, 14, hudTop);
         ctx.globalAlpha = 1;
         ctx.restore();
       }
@@ -1155,8 +1149,8 @@ export default function BlastPage() {
 
       // X (quit) button — top right
       ctx.textBaseline = 'alphabetic';
-      ctx.strokeStyle = '#ffffff25';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff80';
+      ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.moveTo(canvasSize.w - 28, hudTop);
