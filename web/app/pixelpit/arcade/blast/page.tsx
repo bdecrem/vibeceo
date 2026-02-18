@@ -1184,204 +1184,72 @@ export default function BlastPage() {
         const color = getShapeColor(shape.type);
         const pulse = 1 + Math.sin(t * 3 + shape.id * 0.7) * 0.04;
         const maxHp = getShapeHp(shape.type, shape.size);
-        // Frame toggle for walk animation (2-frame like classic SI)
         const frame = Math.floor(t * 3 + shape.id * 0.5) % 2;
 
         ctx.save();
         ctx.translate(shape.x, shape.y);
         ctx.scale(pulse, pulse);
 
-        // Outer glow
+        const w = r * 0.8;
+        const h = r * 0.55;
+
+        // Glow
         ctx.globalAlpha = 0.12;
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 18;
         ctx.shadowColor = color;
         ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(0, 0, r * 1.2, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillRect(-w * 1.15, -h * 1.15, w * 2.3, h * 2.3);
         ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
 
-        ctx.strokeStyle = color;
+        // Body — simple rectangle
         ctx.fillStyle = color + '18';
+        ctx.fillRect(-w, -h, w * 2, h * 2);
+        ctx.strokeStyle = color;
         ctx.lineWidth = 2;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
+        ctx.strokeRect(-w, -h, w * 2, h * 2);
 
-        if (shape.type === 'triangle') {
-          // ── SCUTTLER — crab-like, low & wide ──
-          const w = r * 0.9, h = r * 0.55;
-          // Body: dome top, flat bottom
+        // Eyes — two dots
+        const eyeR = Math.max(1.5, r * 0.08);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-w * 0.4, -h * 0.15, eyeR, 0, Math.PI * 2);
+        ctx.arc(w * 0.4, -h * 0.15, eyeR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Feet — two tiny nubs, alternating
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.8;
+        const footLen = r * 0.25;
+        if (frame === 0) {
           ctx.beginPath();
-          ctx.moveTo(-w, h * 0.2);
-          ctx.quadraticCurveTo(-w, -h, 0, -h);
-          ctx.quadraticCurveTo(w, -h, w, h * 0.2);
-          ctx.lineTo(w, h * 0.4);
-          // Jagged bottom edge
-          ctx.lineTo(w * 0.5, h * 0.2);
-          ctx.lineTo(w * 0.2, h * 0.45);
-          ctx.lineTo(0, h * 0.15);
-          ctx.lineTo(-w * 0.2, h * 0.45);
-          ctx.lineTo(-w * 0.5, h * 0.2);
-          ctx.lineTo(-w, h * 0.4);
-          ctx.closePath();
-          ctx.fill();
+          ctx.moveTo(-w * 0.5, h); ctx.lineTo(-w * 0.7, h + footLen);
+          ctx.moveTo(w * 0.5, h); ctx.lineTo(w * 0.7, h + footLen);
           ctx.stroke();
-
-          // Eyes — two small dots
-          const eyeR = Math.max(1.5, r * 0.08);
-          ctx.fillStyle = '#ffffff';
-          ctx.shadowBlur = 6;
-          ctx.shadowColor = '#ffffff';
-          ctx.beginPath();
-          ctx.arc(-w * 0.35, -h * 0.25, eyeR, 0, Math.PI * 2);
-          ctx.arc(w * 0.35, -h * 0.25, eyeR, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-
-          // Legs — two pairs, alternating frames
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 1.5;
-          ctx.globalAlpha = 0.8;
-          if (frame === 0) {
-            // Legs out
-            ctx.beginPath();
-            ctx.moveTo(-w * 0.7, h * 0.3); ctx.lineTo(-w * 1.1, h * 0.9);
-            ctx.moveTo(-w * 0.3, h * 0.35); ctx.lineTo(-w * 0.55, h * 0.95);
-            ctx.moveTo(w * 0.7, h * 0.3); ctx.lineTo(w * 1.1, h * 0.9);
-            ctx.moveTo(w * 0.3, h * 0.35); ctx.lineTo(w * 0.55, h * 0.95);
-            ctx.stroke();
-          } else {
-            // Legs in
-            ctx.beginPath();
-            ctx.moveTo(-w * 0.7, h * 0.3); ctx.lineTo(-w * 0.9, h * 1.0);
-            ctx.moveTo(-w * 0.3, h * 0.35); ctx.lineTo(-w * 0.35, h * 1.0);
-            ctx.moveTo(w * 0.7, h * 0.3); ctx.lineTo(w * 0.9, h * 1.0);
-            ctx.moveTo(w * 0.3, h * 0.35); ctx.lineTo(w * 0.35, h * 1.0);
-            ctx.stroke();
-          }
-          ctx.globalAlpha = 1;
-
-        } else if (shape.type === 'square') {
-          // ── BRUTE — wide blocky alien, arms/wings ──
-          const w = r * 0.85, h = r * 0.65;
-          // Body: blocky with slight dome
-          ctx.beginPath();
-          ctx.moveTo(-w, h * 0.3);
-          ctx.lineTo(-w, -h * 0.3);
-          ctx.quadraticCurveTo(-w * 0.7, -h, 0, -h);
-          ctx.quadraticCurveTo(w * 0.7, -h, w, -h * 0.3);
-          ctx.lineTo(w, h * 0.3);
-          // Bottom notch
-          ctx.lineTo(w * 0.4, h * 0.3);
-          ctx.lineTo(w * 0.25, h * 0.6);
-          ctx.lineTo(-w * 0.25, h * 0.6);
-          ctx.lineTo(-w * 0.4, h * 0.3);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-
-          // Eyes — narrow slits
-          const eyeW = Math.max(2, r * 0.12);
-          const eyeH = Math.max(1, r * 0.05);
-          ctx.fillStyle = '#ffffff';
-          ctx.shadowBlur = 6;
-          ctx.shadowColor = '#ffffff';
-          ctx.beginPath();
-          ctx.ellipse(-w * 0.4, -h * 0.15, eyeW, eyeH, 0, 0, Math.PI * 2);
-          ctx.ellipse(w * 0.4, -h * 0.15, eyeW, eyeH, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-
-          // Armored: extra plating lines across body
-          if (shape.hp > 1) {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 1;
-            ctx.globalAlpha = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(-w * 0.8, 0); ctx.lineTo(w * 0.8, 0);
-            ctx.moveTo(-w * 0.6, -h * 0.5); ctx.lineTo(w * 0.6, -h * 0.5);
-            ctx.stroke();
-            ctx.globalAlpha = 1;
-          }
-
-          // Arms — angular wings that alternate
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 1.5;
-          ctx.globalAlpha = 0.8;
-          if (frame === 0) {
-            // Arms up
-            ctx.beginPath();
-            ctx.moveTo(-w, 0); ctx.lineTo(-w * 1.3, -h * 0.6); ctx.lineTo(-w * 1.15, h * 0.1);
-            ctx.moveTo(w, 0); ctx.lineTo(w * 1.3, -h * 0.6); ctx.lineTo(w * 1.15, h * 0.1);
-            ctx.stroke();
-          } else {
-            // Arms down
-            ctx.beginPath();
-            ctx.moveTo(-w, 0); ctx.lineTo(-w * 1.3, h * 0.4); ctx.lineTo(-w * 1.15, h * 0.8);
-            ctx.moveTo(w, 0); ctx.lineTo(w * 1.3, h * 0.4); ctx.lineTo(w * 1.15, h * 0.8);
-            ctx.stroke();
-          }
-          ctx.globalAlpha = 1;
-
         } else {
-          // ── WATCHER — squid-like, floats, single eye ──
-          const w = r * 0.7, h = r * 0.8;
-          // Body: tall rounded dome
           ctx.beginPath();
-          ctx.moveTo(-w, h * 0.1);
-          ctx.quadraticCurveTo(-w, -h, 0, -h);
-          ctx.quadraticCurveTo(w, -h, w, h * 0.1);
-          ctx.lineTo(w * 0.6, h * 0.1);
-          ctx.lineTo(w * 0.5, h * 0.35);
-          ctx.lineTo(w * 0.15, h * 0.15);
-          ctx.lineTo(-w * 0.15, h * 0.15);
-          ctx.lineTo(-w * 0.5, h * 0.35);
-          ctx.lineTo(-w * 0.6, h * 0.1);
-          ctx.closePath();
-          ctx.fill();
+          ctx.moveTo(-w * 0.5, h); ctx.lineTo(-w * 0.35, h + footLen);
+          ctx.moveTo(w * 0.5, h); ctx.lineTo(w * 0.35, h + footLen);
           ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
 
-          // Single eye — targeting, tracks player
-          const eyeR = Math.max(2.5, r * 0.2);
-          const pupilR = Math.max(1.2, r * 0.09);
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1;
-          ctx.globalAlpha = 0.35;
-          ctx.beginPath();
-          ctx.arc(0, -h * 0.3, eyeR, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-          // Pupil tracks player
-          const trkDx = game.player.x - shape.x;
-          const trkDy = game.player.y - shape.y;
-          const trkDist = Math.sqrt(trkDx * trkDx + trkDy * trkDy);
-          const trkMax = eyeR * 0.35;
-          const pupX = trkDist > 0 ? (trkDx / trkDist) * trkMax : 0;
-          const pupY = trkDist > 0 ? (trkDy / trkDist) * trkMax : 0;
-          ctx.fillStyle = '#ffffff';
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = THEME.hexagon;
-          ctx.beginPath();
-          ctx.arc(pupX, -h * 0.3 + pupY, pupilR, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-
-          // Tentacles — hang down, sway
+        // Armored: plating line
+        if (shape.type === 'square' && shape.hp > 1) {
           ctx.strokeStyle = color;
-          ctx.lineWidth = 1.5;
-          ctx.globalAlpha = 0.7;
-          const sway = Math.sin(t * 4 + shape.id) * w * 0.15;
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = 0.5;
           ctx.beginPath();
-          ctx.moveTo(-w * 0.45, h * 0.3); ctx.quadraticCurveTo(-w * 0.5 + sway, h * 0.7, -w * 0.35 + sway, h * 1.0);
-          ctx.moveTo(-w * 0.1, h * 0.15); ctx.quadraticCurveTo(-w * 0.05 - sway, h * 0.6, 0 - sway, h * 0.95);
-          ctx.moveTo(w * 0.1, h * 0.15); ctx.quadraticCurveTo(w * 0.05 + sway, h * 0.6, 0 + sway, h * 0.95);
-          ctx.moveTo(w * 0.45, h * 0.3); ctx.quadraticCurveTo(w * 0.5 - sway, h * 0.7, w * 0.35 - sway, h * 1.0);
+          ctx.moveTo(-w * 0.8, 0); ctx.lineTo(w * 0.8, 0);
           ctx.stroke();
           ctx.globalAlpha = 1;
         }
 
-        // Crack lines when damaged
+        // Crack when damaged
         if (shape.hp < maxHp && shape.hp > 0) {
           ctx.strokeStyle = '#ffffff';
           ctx.lineWidth = 1;
