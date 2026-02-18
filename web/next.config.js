@@ -45,6 +45,8 @@ const nextConfig = {
         // JB200 bass monosynth UI
         { source: '/jb200/ui/jb200', destination: '/jb200/ui/jb200/index.html' },
         { source: '/jb200', destination: '/jb200/ui/jb200/index.html' },
+        // Amber's Drawer puzzle game
+        { source: '/amber/drawer', destination: '/amber/drawer/index.html' },
       ],
     }
   },
