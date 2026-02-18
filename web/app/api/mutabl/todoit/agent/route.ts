@@ -2,6 +2,8 @@ import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { agentLoop, BUILDER_SYSTEM_PROMPT } from "../../agent-loop";
+import { classifyRequest } from "../../classifier";
+import { agenticLoop } from "../../agentic-loop";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,27 @@ function getSession(request: NextRequest) {
   if (!token) return null;
   return verifySessionToken(token);
 }
+
+const DEEP_SYSTEM_PROMPT = `${BUILDER_SYSTEM_PROMPT}
+
+YOU ARE IN DEEP MODE — you have tools to read source files and understand the codebase.
+
+WORKFLOW:
+1. Read the user's request carefully. If you need to understand how something works, use read_file.
+2. Key source files for todoit:
+   - app/mutabl/components/AppRenderer.tsx — renders the user's code via react-live
+   - app/mutabl/todoit/useTaskApi.ts — task CRUD hooks (what's available in ScopeContext)
+   - app/mutabl/components/ChatPanel.tsx — the chat UI
+   - app/api/mutabl/todoit/base-template.jsx — default app code
+   - app/api/mutabl/todoit/base-template.css — default CSS
+3. Use read_user_data to see the user's actual tasks if relevant.
+4. Use validate_jsx to check your code before submitting.
+5. Call submit_app with the complete, working code.
+
+IMPORTANT:
+- Always submit via the submit_app tool — never output code blocks.
+- You can read files, validate, and iterate as many times as needed.
+- Fix validation errors yourself — don't give up.`;
 
 export async function POST(request: NextRequest) {
   const session = getSession(request);
@@ -91,12 +114,25 @@ ${tasks.length > 0 ? JSON.stringify(tasks.slice(0, 10), null, 2) : "(no tasks ye
 
 USER REQUEST: ${message.trim()}`;
 
-    const result = await agentLoop({
-      systemPrompt: BUILDER_SYSTEM_PROMPT,
-      userMessage: userPrompt,
-      currentCode,
-      currentCss,
-    });
+    const mode = await classifyRequest(message.trim(), currentCode.length);
+
+    let result;
+    if (mode === "deep") {
+      result = await agenticLoop({
+        systemPrompt: DEEP_SYSTEM_PROMPT,
+        userMessage: userPrompt,
+        currentCode,
+        currentCss,
+        fetchUserData: async () => ({ tasks, taskCount: tasks.length }),
+      });
+    } else {
+      result = await agentLoop({
+        systemPrompt: BUILDER_SYSTEM_PROMPT,
+        userMessage: userPrompt,
+        currentCode,
+        currentCss,
+      });
+    }
 
     if (!result.ok) {
       return NextResponse.json({
@@ -141,6 +177,7 @@ USER REQUEST: ${message.trim()}`;
       app_css: result.css !== undefined ? result.css : currentCss,
       message: result.message,
       version: newVersion,
+      mode,
     });
   } catch (err) {
     console.error("Agent error:", err);

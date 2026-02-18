@@ -2,6 +2,8 @@ import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { agentLoop } from "../../agent-loop";
+import { classifyRequest } from "../../classifier";
+import { agenticLoop } from "../../agentic-loop";
 
 export const dynamic = "force-dynamic";
 
@@ -96,6 +98,27 @@ ${CONTXT_SCOPE_DOCS}
 
 ${CONTXT_CODE_RULES}`;
 
+const DEEP_SYSTEM_PROMPT = `${CONTXT_SYSTEM_PROMPT}
+
+YOU ARE IN DEEP MODE — you have tools to read source files and understand the codebase.
+
+WORKFLOW:
+1. Read the user's request carefully. If you need to understand how something works, use read_file.
+2. Key source files for contxt:
+   - app/mutabl/components/AppRenderer.tsx — renders the user's code via react-live
+   - app/mutabl/contxt/useContxtApi.ts — people/interactions CRUD hooks (what's available in ScopeContext)
+   - app/mutabl/components/ChatPanel.tsx — the chat UI
+   - app/api/mutabl/contxt/base-template.jsx — default app code
+   - app/api/mutabl/contxt/base-template.css — default CSS
+3. Use read_user_data to see the user's actual people/interactions if relevant.
+4. Use validate_jsx to check your code before submitting.
+5. Call submit_app with the complete, working code.
+
+IMPORTANT:
+- Always submit via the submit_app tool — never output code blocks.
+- You can read files, validate, and iterate as many times as needed.
+- Fix validation errors yourself — don't give up.`;
+
 export async function POST(request: NextRequest) {
   const session = getSession(request);
   if (!session) {
@@ -156,13 +179,26 @@ ${interactions.length > 0 ? JSON.stringify(interactions, null, 2) : "(no interac
 
 USER REQUEST: ${message.trim()}`;
 
-    const result = await agentLoop({
-      systemPrompt: CONTXT_SYSTEM_PROMPT,
-      userMessage: userPrompt,
-      currentCode,
-      currentCss,
-      maxTokens: 16384,
-    });
+    const mode = await classifyRequest(message.trim(), currentCode.length);
+
+    let result;
+    if (mode === "deep") {
+      result = await agenticLoop({
+        systemPrompt: DEEP_SYSTEM_PROMPT,
+        userMessage: userPrompt,
+        currentCode,
+        currentCss,
+        fetchUserData: async () => ({ people, interactions }),
+      });
+    } else {
+      result = await agentLoop({
+        systemPrompt: CONTXT_SYSTEM_PROMPT,
+        userMessage: userPrompt,
+        currentCode,
+        currentCss,
+        maxTokens: 16384,
+      });
+    }
 
     if (!result.ok) {
       return NextResponse.json({
@@ -207,6 +243,7 @@ USER REQUEST: ${message.trim()}`;
       app_css: result.css !== undefined ? result.css : currentCss,
       message: result.message,
       version: newVersion,
+      mode,
     });
   } catch (err) {
     console.error("Agent error:", err);
