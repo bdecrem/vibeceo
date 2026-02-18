@@ -265,10 +265,10 @@ function App() {
               />
             </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#333" }}>
+            <div onClick={handleNewDoc} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#555", cursor: "pointer" }}>
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>✎</div>
-                <div style={{ fontSize: 14 }}>Select a document or create a new one</div>
+                <div style={{ fontSize: 56, marginBottom: 16 }}>✎</div>
+                <div style={{ fontSize: 18 }}>Start writing</div>
               </div>
             </div>
           )}
