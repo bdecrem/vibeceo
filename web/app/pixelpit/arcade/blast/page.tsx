@@ -370,6 +370,7 @@ export default function BlastPage() {
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [progression, setProgression] = useState<ProgressionResult | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [lives, setLives] = useState(3);
 
   const gameRef = useRef({
     player: { x: 200, y: 550, squash: 1, shootCooldown: 0 },
@@ -394,6 +395,10 @@ export default function BlastPage() {
     shapeIdCounter: 0,
     screenShake: 0,
     waveClearing: false,
+    lives: 3,
+    invulnTimer: 0,
+    deathPause: 0,
+    deathFlash: 0,
   });
 
   const inputRef = useRef({
@@ -595,11 +600,16 @@ export default function BlastPage() {
     game.comboTimer = 0;
     game.screenShake = 0;
     game.waveClearing = false;
+    game.lives = 3;
+    game.invulnTimer = 0;
+    game.deathPause = 0;
+    game.deathFlash = 0;
     game.enemyFireTimer = ENEMY_FIRE_INTERVAL;
     inputRef.current.targetX = canvasSize.w / 2;
     spawnWave(1);
     setScore(0);
     setWave(1);
+    setLives(3);
     setSubmittedEntryId(null);
     setProgression(null);
     setShowShareModal(false);
@@ -759,9 +769,67 @@ export default function BlastPage() {
     let animationId: number;
     let lastTime = performance.now();
 
+    // Helper: handle player death (lives > 0 → animate, lives = 0 → gameover)
+    const playerDeath = (): boolean => {
+      const game = gameRef.current;
+      game.lives--;
+      setLives(game.lives);
+
+      if (game.lives <= 0) {
+        stopMusic();
+        playDeath();
+        game.screenShake = 20;
+        setScore(game.score);
+        setWave(game.wave);
+        setGameState('gameover');
+        if (game.score > highScore) {
+          setHighScore(game.score);
+          localStorage.setItem('blast_highscore', game.score.toString());
+        }
+        return true; // game over
+      }
+
+      // Still alive — death animation
+      playDeath();
+      game.deathPause = 0.6;
+      game.screenShake = 15;
+      game.deathFlash = 1.0;
+      spawnParticles(game.player.x, game.player.y, THEME.slime, 20);
+      // Clear ALL projectiles for breathing room
+      game.bossProjectiles = [];
+      game.enemyProjectiles = [];
+      return false;
+    };
+
     const update = (dt: number) => {
       const game = gameRef.current;
       const input = inputRef.current;
+
+      // Death flash decay (frame-rate driven for smooth visual)
+      if (game.deathFlash > 0) {
+        game.deathFlash *= 0.92;
+        if (game.deathFlash < 0.01) game.deathFlash = 0;
+      }
+
+      // Death pause — freeze all game logic
+      if (game.deathPause > 0) {
+        game.deathPause -= dt;
+        if (game.deathPause <= 0) {
+          // Respawn player at center-bottom
+          game.deathPause = 0;
+          game.player.x = canvasSize.w / 2;
+          game.player.y = canvasSize.h - 50;
+          game.invulnTimer = 2.0;
+          input.targetX = canvasSize.w / 2;
+        }
+        return; // Skip all game logic during freeze
+      }
+
+      // Invulnerability countdown
+      if (game.invulnTimer > 0) {
+        game.invulnTimer -= dt;
+        if (game.invulnTimer <= 0) game.invulnTimer = 0;
+      }
 
       // Move player toward target
       const dx = input.targetX - game.player.x;
@@ -859,20 +927,14 @@ export default function BlastPage() {
           proj.x += proj.vx * dt;
           proj.y += proj.vy * dt;
           
-          // Hit player
-          const dx = proj.x - game.player.x;
-          const dy = proj.y - game.player.y;
-          if (Math.sqrt(dx * dx + dy * dy) < 25) {
-            // Player hit!
-            stopMusic();
-            playDeath();
-            game.screenShake = 20;
-            setGameState('gameover');
-            if (game.score > highScore) {
-              setHighScore(game.score);
-              localStorage.setItem('blast_highscore', game.score.toString());
+          // Hit player (skip if invulnerable)
+          if (game.invulnTimer <= 0) {
+            const dx = proj.x - game.player.x;
+            const dy = proj.y - game.player.y;
+            if (Math.sqrt(dx * dx + dy * dy) < 25) {
+              if (playerDeath()) return;
+              return; // death pause active
             }
-            return;
           }
         }
         game.bossProjectiles = game.bossProjectiles.filter(p =>
@@ -932,15 +994,8 @@ export default function BlastPage() {
             
             // Check if shapes reached player
             if (shape.y > canvasSize.h - 80) {
-              stopMusic();
-              playDeath();
-              game.screenShake = 20;
-              setGameState('gameover');
-              if (game.score > highScore) {
-                setHighScore(game.score);
-                localStorage.setItem('blast_highscore', game.score.toString());
-              }
-              return;
+              if (playerDeath()) return;
+              return; // death pause active
             }
           }
           // Speed recalculated in hitShape on each kill
@@ -990,19 +1045,14 @@ export default function BlastPage() {
         for (const proj of game.enemyProjectiles) {
           proj.y += proj.vy * dt;
           
-          // Hit player
-          const dx = proj.x - game.player.x;
-          const dy = proj.y - game.player.y;
-          if (Math.sqrt(dx * dx + dy * dy) < 25) {
-            stopMusic();
-            playDeath();
-            game.screenShake = 20;
-            setGameState('gameover');
-            if (game.score > highScore) {
-              setHighScore(game.score);
-              localStorage.setItem('blast_highscore', game.score.toString());
+          // Hit player (skip if invulnerable)
+          if (game.invulnTimer <= 0) {
+            const dx = proj.x - game.player.x;
+            const dy = proj.y - game.player.y;
+            if (Math.sqrt(dx * dx + dy * dy) < 25) {
+              if (playerDeath()) return;
+              return; // death pause active
             }
-            return;
           }
         }
         game.enemyProjectiles = game.enemyProjectiles.filter(p => p.y < canvasSize.h + 20);
@@ -1140,6 +1190,40 @@ export default function BlastPage() {
       ctx.fillStyle = THEME.slime;
       ctx.font = '700 24px "SF Mono", "Fira Code", "Consolas", monospace';
       ctx.fillText(scoreStr, canvasSize.w / 2, hudTop);
+
+      // Life indicators — small chevrons below score
+      const lifeY = hudTop + 36;
+      const lifeSpacing = 20;
+      const lifeStartX = canvasSize.w / 2 - lifeSpacing; // Center 3 lives
+      for (let i = 0; i < 3; i++) {
+        const lx = lifeStartX + i * lifeSpacing;
+        ctx.save();
+        ctx.translate(lx, lifeY);
+        if (i < game.lives) {
+          // Alive — filled cyan chevron
+          ctx.fillStyle = THEME.slime;
+          ctx.shadowBlur = 6;
+          ctx.shadowColor = THEME.slime;
+        } else if (i === game.lives && game.deathFlash > 0.3) {
+          // Just lost — flash red
+          ctx.fillStyle = '#ef4444';
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = '#ef4444';
+        } else {
+          // Lost — dim outline
+          ctx.fillStyle = '#ffffff15';
+          ctx.shadowBlur = 0;
+        }
+        ctx.beginPath();
+        ctx.moveTo(0, -5);
+        ctx.lineTo(5, 4);
+        ctx.lineTo(0, 1);
+        ctx.lineTo(-5, 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
 
       // WAVE — right, just left of X, bright
       ctx.font = hudSmall;
@@ -1389,7 +1473,9 @@ export default function BlastPage() {
 
       // ── PLAYER (CHEVRON HULL) ────────────────────────
       const player = game.player;
+      const playerVisible = game.invulnTimer <= 0 || Math.sin(t * 16) > 0;
 
+      if (playerVisible) {
       // Find nearest enemy for eye tracking
       let nearestShape: Shape | null = null;
       let nearestDist = Infinity;
@@ -1523,6 +1609,7 @@ export default function BlastPage() {
       ctx.shadowBlur = 0;
 
       ctx.restore();
+      } // end playerVisible
 
       // ── VIGNETTE ────────────────────────────────────
       const vigGrad = ctx.createRadialGradient(
@@ -1533,6 +1620,12 @@ export default function BlastPage() {
       vigGrad.addColorStop(1, '#000000aa');
       ctx.fillStyle = vigGrad;
       ctx.fillRect(-10, -10, canvasSize.w + 20, canvasSize.h + 20);
+
+      // ── DEATH FLASH OVERLAY ────────────────────────
+      if (game.deathFlash > 0.01) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${game.deathFlash * 0.7})`;
+        ctx.fillRect(-10, -10, canvasSize.w + 20, canvasSize.h + 20);
+      }
 
       // ── SCANLINES (very subtle) ─────────────────────
       ctx.fillStyle = '#00000012';
