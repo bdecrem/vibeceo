@@ -282,7 +282,7 @@
       e.preventDefault();
       if (!isDragging || gamePhase !== 'playing') return;
       const t = e.touches[0];
-      const dx = (t.clientX - dragStartX) / W;
+      const dx = (t.clientX - dragStartX) / (W * 0.3);
       const active = getActiveLayer();
       if (active) {
         active.rotation += dx;
@@ -304,7 +304,7 @@
     });
     canvas.addEventListener('mousemove', (e) => {
       if (!isDragging || gamePhase !== 'playing') return;
-      const dx = (e.clientX - dragStartX) / W;
+      const dx = (e.clientX - dragStartX) / (W * 0.3);
       const active = getActiveLayer();
       if (active) {
         active.rotation += dx;
@@ -549,17 +549,23 @@
           // gap glow
           if (!l.passed) {
             ctx.fillStyle = T.slime;
-            ctx.globalAlpha = 0.15;
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = T.slime;
+            ctx.globalAlpha = 0.25;
             ctx.fillRect(gapLeft * W, ly, (gapRight - gapLeft) * W, LAYER_HEIGHT);
+            ctx.shadowBlur = 0;
           }
         } else {
           // wrapped gap
           ctx.fillRect(gapRight * W, ly, (gapLeft - gapRight) * W, LAYER_HEIGHT);
           if (!l.passed) {
             ctx.fillStyle = T.slime;
-            ctx.globalAlpha = 0.15;
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = T.slime;
+            ctx.globalAlpha = 0.25;
             ctx.fillRect(0, ly, gapRight * W, LAYER_HEIGHT);
             ctx.fillRect(gapLeft * W, ly, W - gapLeft * W, LAYER_HEIGHT);
+            ctx.shadowBlur = 0;
           }
         }
         ctx.globalAlpha = 1;
@@ -567,10 +573,36 @@
         // active layer indicator
         const active = getActiveLayer();
         if (active === l && !l.passed) {
-          ctx.strokeStyle = T.slime;
-          ctx.lineWidth = 1;
-          ctx.globalAlpha = 0.3;
-          ctx.strokeRect(0, ly - 1, W, LAYER_HEIGHT + 2);
+          // brighten the bars
+          ctx.fillStyle = l.isMagnetic ? '#f0abff' : '#55eeff';
+          ctx.globalAlpha = 0.2;
+          if (l.gapSize > 0) {
+            const gl = ((l.gapCenter - l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
+            const gr = ((l.gapCenter + l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
+            if (gl < gr) {
+              ctx.fillRect(0, ly, gl * W, LAYER_HEIGHT);
+              ctx.fillRect(gr * W, ly, W - gr * W, LAYER_HEIGHT);
+            } else {
+              ctx.fillRect(gr * W, ly, (gl - gr) * W, LAYER_HEIGHT);
+            }
+          }
+          // pulsing gap glow
+          const pulse = 0.2 + Math.sin(gameTime * 6) * 0.1;
+          ctx.fillStyle = T.slime;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = T.slime;
+          ctx.globalAlpha = pulse;
+          if (l.gapSize > 0) {
+            const gl = ((l.gapCenter - l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
+            const gr = ((l.gapCenter + l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
+            if (gl < gr) {
+              ctx.fillRect(gl * W, ly, (gr - gl) * W, LAYER_HEIGHT);
+            } else {
+              ctx.fillRect(0, ly, gr * W, LAYER_HEIGHT);
+              ctx.fillRect(gl * W, ly, W - gl * W, LAYER_HEIGHT);
+            }
+          }
+          ctx.shadowBlur = 0;
           ctx.globalAlpha = 1;
         }
       }
