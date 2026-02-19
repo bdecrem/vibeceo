@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRIBAL 909 — JT90</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    h1 {
+      font-size: 2.5rem;
+      letter-spacing: 0.5em;
+      margin-bottom: 0.3rem;
+      color: #ff6a00;
+      text-shadow: 0 0 30px rgba(255, 106, 0, 0.3);
+    }
+    .subtitle {
+      opacity: 0.4;
+      font-size: 0.75rem;
+      letter-spacing: 0.3em;
+      margin-bottom: 2.5rem;
+    }
+    .viz {
+      display: flex;
+      gap: 4px;
+      align-items: flex-end;
+      height: 120px;
+      margin-bottom: 2.5rem;
+    }
+    .bar {
+      width: 18px;
+      background: rgba(255, 106, 0, 0.15);
+      border-radius: 2px 2px 0 0;
+      transition: height 0.08s, background 0.08s;
+      min-height: 4px;
+    }
+    .bar.active {
+      background: #ff6a00;
+      box-shadow: 0 0 12px rgba(255, 106, 0, 0.5);
+    }
+    .section-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      opacity: 0.5;
+      margin-bottom: 1.5rem;
+      min-height: 1em;
+    }
+    button {
+      background: #ff6a00;
+      color: #0a0a0a;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.3em;
+      transition: all 0.2s;
+    }
+    button:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 106, 0, 0.4); }
+    button:disabled { opacity: 0.4; cursor: wait; }
+    #status {
+      margin-top: 1rem;
+      opacity: 0.5;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+    }
+  </style>
+</head>
+<body>
+  <h1>TRIBAL</h1>
+  <div class="subtitle">JT-90 · 130 BPM · HAT DECAY AUTOMATION</div>
+  <div class="viz" id="viz"></div>
+  <div class="section-label" id="section-label"></div>
+  <button id="play">PLAY</button>
+  <div id="status">kick · ch · oh</div>
+
+  <script type="module">
+    import { JT90Engine } from '/jt90/dist/machines/jt90/engine.js';
+
+    // --- ARRANGEMENT ---
+    // A: clean intro (kick + ch)
+    // B: build (kick + ch + oh, moderate decay mashing)
+    // C: peak (kick + ch + oh, wild decay swings)
+    // D: breakdown (no kick, hats only, decay ramps)
+
+    const patterns = {
+      A: { kick: hits([0,4,8,12]), ch: hits([0,2,4,6,8,10,12,14]) },
+      B: { kick: hits([0,4,8,12]), ch: hits([0,2,4,6,8,10,12,14]), oh: hits([2,10]) },
+      C: { kick: hits([0,4,8,12]), ch: hits([0,2,4,6,8,10,12,14]), oh: hits([2,10]) },
+      D: { ch: hits([0,2,4,6,8,10,12,14]), oh: hits([2,6,10,14]) },
+    };
+
+    // Decay automation per pattern (engine units 0-1)
+    const automations = {
+      A: null,
+      B: { 'ch.decay': [0.70,0.15,0.55,0.20,0.65,0.15,0.50,0.25,0.75,0.15,0.60,0.20,0.45,0.30,0.70,0.10] },
+      C: { 'ch.decay': [0.95,0.10,0.85,0.10,0.90,0.15,0.80,0.10,0.95,0.10,0.75,0.20,0.90,0.10,0.85,0.15] },
+      D: { 'ch.decay': [0.40,0.60,0.30,0.70,0.25,0.75,0.20,0.80,0.15,0.85,0.10,0.90,0.10,0.95,0.10,0.95] },
+    };
+
+    const sections = [
+      { bars: 4, pattern: 'A', label: 'INTRO' },
+      { bars: 8, pattern: 'B', label: 'BUILD' },
+      { bars: 4, pattern: 'D', label: 'BREAKDOWN' },
+      { bars: 8, pattern: 'C', label: 'PEAK' },
+      { bars: 4, pattern: 'B', label: 'PULL BACK' },
+      { bars: 4, pattern: 'A', label: 'OUTRO' },
+    ];
+
+    function hits(steps) {
+      return Array.from({ length: 16 }, (_, i) =>
+        ({ velocity: steps.includes(i) ? 0.85 : 0, accent: false })
+      );
+    }
+
+    // Create 16 bars for visualizer
+    const vizEl = document.getElementById('viz');
+    const bars = [];
+    for (let i = 0; i < 16; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = '4px';
+      vizEl.appendChild(bar);
+      bars.push(bar);
+    }
+
+    let isPlaying = false;
+
+    document.getElementById('play').addEventListener('click', async () => {
+      const btn = document.getElementById('play');
+      const status = document.getElementById('status');
+      const sectionLabel = document.getElementById('section-label');
+
+      if (isPlaying) return;
+      isPlaying = true;
+      btn.disabled = true;
+      btn.textContent = 'RENDERING...';
+
+      try {
+        const engine = new JT90Engine();
+
+        // Render each section and concatenate
+        const sectionBuffers = [];
+        for (const section of sections) {
+          engine.setPattern(patterns[section.pattern]);
+          const buffer = await engine.renderPattern({
+            bars: section.bars,
+            bpm: 130,
+            automation: automations[section.pattern],
+          });
+          sectionBuffers.push(buffer);
+        }
+
+        // Concatenate all sections into one AudioBuffer
+        const totalLength = sectionBuffers.reduce((sum, b) => sum + b.length, 0);
+        const ctx = new AudioContext();
+        const fullBuffer = ctx.createBuffer(1, totalLength, sectionBuffers[0].sampleRate);
+        const channel = fullBuffer.getChannelData(0);
+        let offset = 0;
+        for (const buf of sectionBuffers) {
+          channel.set(buf.getChannelData(0), offset);
+          offset += buf.length;
+        }
+
+        // Play
+        const source = ctx.createBufferSource();
+        source.buffer = fullBuffer;
+        source.connect(ctx.destination);
+        source.start();
+
+        btn.textContent = 'PLAYING';
+        status.textContent = '32 bars · ~1 min';
+
+        // Animate: track step position
+        const stepDuration = (60 / 130 / 4) * 1000;
+        const totalSteps = 32 * 16;
+        let step = 0;
+        let sectionIdx = 0;
+        let sectionStartStep = 0;
+
+        const iv = setInterval(() => {
+          // Update section label
+          while (sectionIdx < sections.length - 1 &&
+                 step >= sectionStartStep + sections[sectionIdx].bars * 16) {
+            sectionStartStep += sections[sectionIdx].bars * 16;
+            sectionIdx++;
+          }
+          sectionLabel.textContent = sections[sectionIdx].label;
+
+          const patternStep = step % 16;
+          const pat = patterns[sections[sectionIdx].pattern];
+          const auto = automations[sections[sectionIdx].pattern];
+
+          bars.forEach((bar, i) => {
+            const hasHit = (pat.kick?.[i]?.velocity > 0) ||
+                           (pat.ch?.[i]?.velocity > 0) ||
+                           (pat.oh?.[i]?.velocity > 0);
+            if (i === patternStep && hasHit) {
+              // Decay value drives bar height
+              let h = 40;
+              if (auto?.['ch.decay'] && pat.ch?.[i]?.velocity > 0) {
+                h = 20 + auto['ch.decay'][i] * 100;
+              }
+              if (pat.kick?.[i]?.velocity > 0) h = Math.max(h, 80);
+              bar.style.height = h + 'px';
+              bar.classList.add('active');
+            } else {
+              bar.style.height = '4px';
+              bar.classList.remove('active');
+            }
+          });
+
+          step++;
+          if (step >= totalSteps) clearInterval(iv);
+        }, stepDuration);
+
+        source.onended = () => {
+          clearInterval(iv);
+          bars.forEach(b => { b.style.height = '4px'; b.classList.remove('active'); });
+          isPlaying = false;
+          btn.disabled = false;
+          btn.textContent = 'PLAY';
+          sectionLabel.textContent = '';
+          status.textContent = 'kick · ch · oh';
+        };
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'error: ' + err.message;
+        btn.disabled = false;
+        btn.textContent = 'PLAY';
+        isPlaying = false;
+      }
+    });
+  </script>
+</body>
+</html>
