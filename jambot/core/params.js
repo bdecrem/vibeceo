@@ -109,6 +109,19 @@ export class ParamSystem {
   }
 
   /**
+   * Get a single parameter descriptor by full path
+   * Same split logic as get()/set() — one code path for everything.
+   * @param {string} path - Full dot-path (e.g., 'jb202.filterCutoff', 'jb01.kick.decay')
+   * @returns {Object|null} Descriptor or null
+   */
+  getDescriptor(path) {
+    const [nodeId, ...rest] = path.split('.');
+    const node = this.nodes.get(nodeId);
+    if (!node) return null;
+    return node.getDescriptor(rest.join('.')) || null;
+  }
+
+  /**
    * List all registered node IDs
    * @returns {string[]}
    */

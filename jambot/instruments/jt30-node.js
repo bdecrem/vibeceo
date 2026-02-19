@@ -86,6 +86,16 @@ export class JT30Node extends InstrumentNode {
   }
 
   /**
+   * Get a single parameter descriptor, normalizing shorthand paths
+   * e.g., 'cutoff' → looks up 'bass.cutoff'
+   */
+  getDescriptor(path) {
+    if (path === 'level') return super.getDescriptor(path);
+    const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
+    return this._descriptors[normalizedPath] || super.getDescriptor(path);
+  }
+
+  /**
    * Get a parameter value
    */
   getParam(path) {

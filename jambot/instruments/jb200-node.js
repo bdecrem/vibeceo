@@ -65,6 +65,16 @@ export class JB200Node extends InstrumentNode {
   }
 
   /**
+   * Get a single parameter descriptor, normalizing shorthand paths
+   * e.g., 'filterCutoff' → looks up 'bass.filterCutoff'
+   */
+  getDescriptor(path) {
+    if (path === 'level') return super.getDescriptor(path);
+    const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
+    return this._descriptors[normalizedPath] || super.getDescriptor(path);
+  }
+
+  /**
    * Get a parameter value in producer-friendly units
    * @param {string} path - e.g., 'bass.filterCutoff' or 'filterCutoff' (shorthand)
    * @returns {*}

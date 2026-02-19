@@ -73,6 +73,17 @@ export class Node {
   }
 
   /**
+   * Get a single parameter descriptor by subpath
+   * Used by ParamSystem.getDescriptor() for unit conversion lookups.
+   * Override in single-voice instruments that normalize paths.
+   * @param {string} path - Parameter subpath (e.g., 'bass.filterCutoff' or 'kick.decay')
+   * @returns {Object|undefined} Descriptor or undefined
+   */
+  getDescriptor(path) {
+    return this._descriptors[path] || undefined;
+  }
+
+  /**
    * Register a parameter descriptor
    * @param {string} path - Parameter path
    * @param {Object} descriptor - { min, max, default, unit, description }

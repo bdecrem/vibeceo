@@ -137,6 +137,15 @@ export function createSession(config = {}) {
     },
 
     /**
+     * Get a single parameter descriptor by full path
+     * @param {string} path - e.g., 'jb202.filterCutoff', 'jb01.kick.decay'
+     * @returns {Object|null}
+     */
+    getDescriptor(path) {
+      return params.getDescriptor(path);
+    },
+
+    /**
      * List all registered nodes
      * @returns {string[]}
      */

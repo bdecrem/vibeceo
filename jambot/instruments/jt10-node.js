@@ -85,6 +85,16 @@ export class JT10Node extends InstrumentNode {
   }
 
   /**
+   * Get a single parameter descriptor, normalizing shorthand paths
+   * e.g., 'cutoff' → looks up 'lead.cutoff'
+   */
+  getDescriptor(path) {
+    if (path === 'level') return super.getDescriptor(path);
+    const normalizedPath = path.startsWith('lead.') ? path : `lead.${path}`;
+    return this._descriptors[normalizedPath] || super.getDescriptor(path);
+  }
+
+  /**
    * Get a parameter value
    */
   getParam(path) {

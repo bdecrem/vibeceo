@@ -6,79 +6,7 @@
  */
 
 import { registerTools } from './index.js';
-import { getParamDef, toEngine, fromEngine, formatValue } from '../params/converters.js';
-
-/**
- * Map node IDs to synth IDs for converter lookup
- *
- * REAL INSTRUMENTS:
- *   - jb01 (drum machine)
- *   - jb202 (bass/synth)
- *   - sampler
- *
- * ALIASES (point to same instruments):
- *   - drums → jb01
- *   - bass, lead, synth → jb202
- */
-const NODE_TO_SYNTH = {
-  // Real instruments
-  jb01: 'jb01',
-  jb202: 'jb202',
-  jt10: 'jt10',
-  jt30: 'jt30',
-  jt90: 'jt90',
-  sampler: 'sampler',
-  jp9000: 'jp9000',
-  // Aliases
-  drums: 'jb01',
-  bass: 'jb202',
-  lead: 'jb202',
-  synth: 'jb202',
-};
-
-/**
- * Parse a path like 'drums.kick.decay' into { nodeId, voice, param }
- * or 'bass.cutoff' into { nodeId, voice: 'bass', param: 'cutoff' }
- */
-function parsePath(path) {
-  const parts = path.split('.');
-
-  if (parts.length < 2) {
-    return null;
-  }
-
-  const nodeId = parts[0];
-
-  // Single-voice instruments: bass.cutoff → voice='bass', param='cutoff'
-  // Multi-voice instruments: drums.kick.decay → voice='kick', param='decay'
-  // JB202: jb202.bass.filterCutoff → voice='bass', param='filterCutoff'
-
-  if (parts.length === 2) {
-    // bass.cutoff, lead.resonance
-    // For single-voice, the voice is the same as the nodeId
-    return { nodeId, voice: nodeId, param: parts[1] };
-  }
-
-  if (parts.length >= 3) {
-    // drums.kick.decay, sampler.s1.level, jb202.bass.filterCutoff
-    return { nodeId, voice: parts[1], param: parts.slice(2).join('.') };
-  }
-
-  return null;
-}
-
-/**
- * Get the descriptor for a path
- */
-function getDescriptorForPath(path) {
-  const parsed = parsePath(path);
-  if (!parsed) return null;
-
-  const synthId = NODE_TO_SYNTH[parsed.nodeId];
-  if (!synthId) return null;
-
-  return getParamDef(synthId, parsed.voice, parsed.param);
-}
+import { toEngine, fromEngine, formatValue } from '../params/converters.js';
 
 const genericTools = {
   /**
@@ -108,7 +36,7 @@ const genericTools = {
     }
 
     // Get descriptor for unit conversion
-    const descriptor = getDescriptorForPath(path);
+    const descriptor = session.getDescriptor(path);
 
     if (descriptor) {
       // Convert engine value back to producer units
@@ -160,7 +88,7 @@ const genericTools = {
     }
 
     // Get descriptor for unit conversion
-    const descriptor = getDescriptorForPath(path);
+    const descriptor = session.getDescriptor(path);
 
     let finalProducerValue;
 
@@ -212,7 +140,7 @@ const genericTools = {
     const results = [];
     for (const [path, value] of Object.entries(params)) {
       // Get descriptor for unit conversion
-      const descriptor = getDescriptorForPath(path);
+      const descriptor = session.getDescriptor(path);
 
       // Convert producer units to engine units if descriptor exists
       const engineValue = descriptor ? toEngine(value, descriptor) : value;
