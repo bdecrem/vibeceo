@@ -87,7 +87,11 @@
       if (!audioCtx) return;
       const osc = audioCtx.createOscillator();
       const g = audioCtx.createGain();
-      osc.connect(g); g.connect(audioCtx.destination);
+      const lpf = audioCtx.createBiquadFilter();
+      lpf.type = 'lowpass';
+      lpf.frequency.setValueAtTime(400, audioCtx.currentTime);
+      lpf.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.5);
+      osc.connect(lpf); lpf.connect(g); g.connect(audioCtx.destination);
       osc.type = 'sine';
       osc.frequency.setValueAtTime(120, audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.8);
@@ -232,6 +236,7 @@
     let hitStop; // freeze timer
     let screenShake; // { timer, intensity }
     let hitFlash; // timer for red flash
+    let iFrames; // invincibility after hit
 
     function initState() {
       state = {
@@ -264,6 +269,7 @@
       hitStop = 0;
       screenShake = { timer: 0, intensity: 0 };
       hitFlash = 0;
+      iFrames = 0;
       stopMusic();
       spawnObjects();
     }
@@ -447,6 +453,7 @@
       // Screen shake
       if (screenShake.timer > 0) screenShake.timer -= dt;
       if (hitFlash > 0) hitFlash -= dt;
+      if (iFrames > 0) iFrames -= dt;
 
       // Collision / absorption
       for (const obj of objects) {
@@ -456,12 +463,15 @@
         const dy = obj.y - state.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Hit bigger object — knockback + shrink
-        if (obj.r >= state.r && dist < state.r + obj.r * 0.5) {
+        // Hit bigger object — knockback + shrink (skip during i-frames)
+        if (iFrames <= 0 && obj.r >= state.r && dist < state.r + obj.r * 0.5) {
           // knockback direction: away from object
           const nx = (state.x - obj.x) / (dist || 1);
           const ny = (state.y - obj.y) / (dist || 1);
-          knockback = { vx: nx * 600, vy: ny * 600, timer: 0.15 };
+          // proportional: barely bigger = gentle, way bigger = launched
+          const sizeRatio = Math.min(obj.r / state.r, 3);
+          const force = 300 + sizeRatio * 200;
+          knockback = { vx: nx * force, vy: ny * force, timer: 0.15 };
           hitStop = 0.05; // 50ms freeze
           screenShake = { timer: 0.12, intensity: 3 };
           hitFlash = 0.07; // ~2 frames at 30fps
@@ -492,6 +502,7 @@
           // recheck tier
           currentTier = getTier(state.r);
 
+          iFrames = 0.3; // 300ms invincibility
           playHit();
           break; // one hit per frame
         }
@@ -509,14 +520,15 @@
 
           // add orbiter (decorative blob)
           if (orbiters.length < 30) {
+            const orbDist = 0.5 + Math.random() * 0.5;
             orbiters.push({
               angle: Math.random() * Math.PI * 2,
-              dist: 0.6 + Math.random() * 0.4, // fraction of player radius
-              r: Math.min(obj.r * 0.6, 8),
+              dist: orbDist,
+              r: Math.min(obj.r * 0.6, 8) * (1.2 - orbDist * 0.6), // smaller closer, bigger further
               color: obj.color,
               speed: (0.5 + Math.random() * 1.0) * (Math.random() < 0.5 ? 1 : -1),
               wobblePhase: Math.random() * Math.PI * 2,
-              wobbleAmp: 0.05 + Math.random() * 0.1,
+              wobbleAmp: 0.02 + Math.random() * 0.04, // subtle ±2px drift
             });
           }
 
@@ -686,6 +698,10 @@
       // Player blob
       const pr = state.r * pulseScale;
       const blobColor = hitFlash > 0 ? '#ef4444' : T.slime;
+      // blink during i-frames
+      if (iFrames > 0 && Math.floor(gameTime * 20) % 2 === 0) {
+        ctx.globalAlpha = 0.4;
+      }
       ctx.shadowBlur = 12;
       ctx.shadowColor = blobColor;
       ctx.fillStyle = blobColor;
@@ -698,13 +714,14 @@
       ctx.beginPath();
       ctx.arc(state.x, state.y, pr * 0.5, 0, Math.PI * 2);
       ctx.fill();
+      ctx.globalAlpha = 1;
       // orbiting absorbed blobs (amoeba look)
       for (const orb of orbiters) {
         const wobble = Math.sin(gameTime * 3 + orb.wobblePhase) * orb.wobbleAmp;
         const d = pr * (orb.dist + wobble);
         const ox = state.x + Math.cos(orb.angle) * d;
         const oy = state.y + Math.sin(orb.angle) * d;
-        ctx.globalAlpha = 0.7;
+        ctx.globalAlpha = 0.45;
         ctx.fillStyle = orb.color;
         ctx.beginPath();
         ctx.arc(ox, oy, orb.r * pulseScale, 0, Math.PI * 2);
