@@ -39,9 +39,6 @@ const nextConfig = {
         // R9-DS sampler UI
         { source: '/90s/ui/r9ds', destination: '/90s/ui/r9ds/index.html' },
         { source: '/90s', destination: '/90s/ui/r9ds/index.html' },
-        // JB01 kick synth UI
-        { source: '/jb01/ui/jb01', destination: '/jb01/ui/jb01/index.html' },
-        { source: '/jb01', destination: '/jb01/ui/jb01/index.html' },
         // JB200 bass monosynth UI
         { source: '/jb200/ui/jb200', destination: '/jb200/ui/jb200/index.html' },
         { source: '/jb200', destination: '/jb200/ui/jb200/index.html' },

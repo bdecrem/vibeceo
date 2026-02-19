@@ -21,7 +21,8 @@ const COLORS = [
   { name: 'Purple', hex: '#a78bfa' },
 ];
 
-// Physics
+// Physics (tuned for 60fps baseline, scaled by dt)
+const PHYSICS_FPS = 60;
 const HOP_FORCE = -13;
 const GRAVITY = 0.45;
 const MAX_FALL_SPEED = 12;
@@ -490,84 +491,84 @@ export default function ChromaGame() {
     nextObstacleY: 400,
     lastObstacleType: 'ring' as string,
     zone: 1,
-    lastMilestone: 0, // Track 100-point milestones for celebration SFX
-    obstacleCount: 0, // Track how many obstacles spawned for training wheels
+    ringsPassed: 0, // Score = rings landed on
+    lastMilestone: 0, // Track 10-ring milestones for celebration SFX
+    obstacleCount: 0, // Track how many obstacles spawned for zone config
   });
 
-  const getZone = useCallback((height: number) => {
-    if (height < 250) return 1;
-    if (height < 500) return 2;
-    if (height < 1000) return 3;
+  // Zone from rings passed (for music/background)
+  const getZone = useCallback((rings: number) => {
+    if (rings < 10) return 1;
+    if (rings < 25) return 2;
+    if (rings < 50) return 3;
     return 4;
   }, []);
 
-  // ZONE CONFIG (Loop spec - revised with Zone 1A/1B split)
-  // Uses distance thresholds: 0-100, 100-250, 250-500, 500-1000, 1000+
-  const getZoneConfig = (distance: number) => {
-    if (distance < 100) {
-      // Zone 1A: COLOR MATCHING (can't die, learn colors)
+  // ZONE CONFIG based on ring count (how many spawned so far)
+  const getZoneConfig = (ringCount: number) => {
+    if (ringCount < 6) {
+      // Zone 1A: TUTORIAL (can't die, learn hopping)
       return {
         zone: '1A',
-        spinMult: 0.3,  // Very slow
-        gap: 220,       // Very generous spacing
-        bugEvery: 0,    // NO BUGS - just learn colors
+        spinMult: 0.3,
+        gap: 150,
+        bugEvery: 0,
         ringChance: 1.0, barChance: 0, flowerChance: 0,
-        colorCount: 1,  // All same color = impossible to fail
+        colorCount: 1,
       };
-    } else if (distance < 250) {
-      // Zone 1B: COLOR CHANGE (introduce bugs)
+    } else if (ringCount < 16) {
+      // Zone 1B: INTRO BUGS (learn color changing)
       return {
         zone: '1B',
         spinMult: 0.4,
-        gap: 200,
-        bugEvery: 2,    // Bug every 2nd obstacle (very frequent)
+        gap: 150,
+        bugEvery: 2,
         ringChance: 1.0, barChance: 0, flowerChance: 0,
-        colorCount: 2,  // 2 colors
+        colorCount: 2,
       };
-    } else if (distance < 500) {
-      // Zone 2: UNDERSTORY
+    } else if (ringCount < 35) {
+      // Zone 2: UNDERSTORY (bars appear)
       return {
         zone: '2',
         spinMult: 0.6,
-        gap: 180,
-        bugEvery: 4,
+        gap: 140,
+        bugEvery: 3,
         ringChance: 0.7, barChance: 0.3, flowerChance: 0,
         colorCount: 2,
       };
-    } else if (distance < 1000) {
-      // Zone 3: CANOPY
+    } else if (ringCount < 60) {
+      // Zone 3: CANOPY (4 colors, flowers)
       return {
         zone: '3',
         spinMult: 0.8,
-        gap: 150,
-        bugEvery: 5,
+        gap: 130,
+        bugEvery: 4,
         ringChance: 0.5, barChance: 0.3, flowerChance: 0.2,
         colorCount: 4,
       };
     } else {
-      // Zone 4: TREETOPS
+      // Zone 4: TREETOPS (full difficulty)
       return {
         zone: '4',
         spinMult: 1.0,
         gap: 120,
-        bugEvery: 6,
+        bugEvery: 5,
         ringChance: 0.4, barChance: 0.3, flowerChance: 0.3,
         colorCount: 4,
       };
     }
   };
 
-  const getSpinSpeed = useCallback((baseSpeed: number, distance: number) => {
-    // Zone-based spin speed (Loop spec)
-    const config = getZoneConfig(distance);
+  const getSpinSpeed = useCallback((baseSpeed: number, ringCount: number) => {
+    const config = getZoneConfig(ringCount);
     return baseSpeed * config.spinMult;
   }, []);
 
-  const spawnObstacle = useCallback((y: number, playerColorIndex: number, distance: number) => {
+  const spawnObstacle = useCallback((y: number, playerColorIndex: number) => {
     const game = gameRef.current;
     game.obstacleCount++;
-    
-    const config = getZoneConfig(distance);
+
+    const config = getZoneConfig(game.obstacleCount);
     
     // Obstacle type based on zone (Loop spec)
     let type: 'ring' | 'bars' | 'flower' = 'ring';
@@ -611,7 +612,7 @@ export default function ChromaGame() {
       y,
       type,
       rotation: Math.random() * Math.PI * 2,
-      spinSpeed: getSpinSpeed(baseSpinSpeed, distance),
+      spinSpeed: getSpinSpeed(baseSpinSpeed, game.obstacleCount),
       spinDirection: Math.random() > 0.5 ? 1 : -1,
       colorOffset: 0,
       passed: false,
@@ -673,13 +674,13 @@ export default function ChromaGame() {
     game.particles = [];
     game.nextObstacleY = canvasSize.h - 250;
     game.zone = 1;
+    game.ringsPassed = 0;
     game.lastMilestone = 0;
 
     // Spawn initial rings (Zone 1A = can't die)
     const startConfig = getZoneConfig(0);
-    for (let i = 0; i < 4; i++) {
-      const spawnDistance = Math.abs(game.nextObstacleY - (canvasSize.h - 250));
-      spawnObstacle(game.nextObstacleY, game.chameleon.colorIndex, spawnDistance);
+    for (let i = 0; i < 6; i++) {
+      spawnObstacle(game.nextObstacleY, game.chameleon.colorIndex);
       game.nextObstacleY -= startConfig.gap;
     }
 
@@ -740,10 +741,11 @@ export default function ChromaGame() {
 
       const cham = game.chameleon;
 
+      const dtScale = dt * PHYSICS_FPS;
       if (cham.dead) {
         cham.deathTimer += dt;
-        cham.vy += GRAVITY;
-        cham.y += cham.vy;
+        cham.vy += GRAVITY * dtScale;
+        cham.y += cham.vy * dtScale;
         
         if (cham.deathTimer > 1.5) {
           game.running = false;
@@ -754,12 +756,12 @@ export default function ChromaGame() {
         return;
       }
 
-      // Physics - only when airborne
+      // Physics - only when airborne (scaled to 60fps baseline)
       if (!cham.onGround && !cham.currentPlatform) {
         const prevY = cham.y;
-        cham.vy += GRAVITY;
+        cham.vy += GRAVITY * dtScale;
         cham.vy = Math.min(cham.vy, MAX_FALL_SPEED);
-        cham.y += cham.vy;
+        cham.y += cham.vy * dtScale;
 
         // Landing detection — check each ring
         for (const obs of game.obstacles) {
@@ -811,6 +813,7 @@ export default function ChromaGame() {
             if (segmentColor === cham.colorIndex) {
               // Safe landing!
               cham.currentPlatform = obs;
+              if (!obs.landed) game.ringsPassed++;
               obs.landed = true;
               cham.y = landingY;
               cham.vy = 0;
@@ -900,37 +903,32 @@ export default function ChromaGame() {
         game.cameraY = targetCameraY;
       }
 
-      // Score based on height
-      const height = Math.max(0, (canvasSize.h - 150) - cham.y + game.cameraY);
-      game.score = Math.max(game.score, Math.floor(height / 10));
-      const newZone = getZone(game.score * 10);
+      // Score = rings passed
+      game.score = game.ringsPassed;
+      const newZone = getZone(game.ringsPassed);
       if (newZone !== game.zone) {
         if (newZone > game.zone) {
-          playZoneTransition(newZone); // Ascending arpeggio
+          playZoneTransition(newZone);
         }
         game.zone = newZone;
-        setMusicZone(newZone); // Update music layers
+        setMusicZone(newZone);
       }
-      
-      // Milestone celebration (every 100 points)
-      const milestone = Math.floor(game.score / 100);
+
+      // Milestone celebration (every 10 rings)
+      const milestone = Math.floor(game.ringsPassed / 10);
       if (milestone > game.lastMilestone) {
         game.lastMilestone = milestone;
         playMilestone();
       }
 
-      // Spawn new obstacles (distance-based spacing and bug frequency)
+      // Spawn new obstacles (ring-count-based zone config)
       while (game.nextObstacleY > game.cameraY - 200) {
-        // Calculate distance from start (higher Y = lower distance)
-        const spawnDistance = Math.abs(game.nextObstacleY - (canvasSize.h - 250));
-        const config = getZoneConfig(spawnDistance);
-        
-        spawnObstacle(game.nextObstacleY, cham.colorIndex, spawnDistance);
-        
-        // Zone-based gap between obstacles
+        const config = getZoneConfig(game.obstacleCount);
+
+        spawnObstacle(game.nextObstacleY, cham.colorIndex);
+
         game.nextObstacleY -= config.gap + Math.random() * 20;
 
-        // Zone-based bug frequency (0 = no bugs in Zone 1A)
         if (config.bugEvery > 0 && game.obstacleCount % config.bugEvery === 0) {
           spawnBug(game.nextObstacleY + config.gap * 0.3, cham.colorIndex);
         }
@@ -1485,7 +1483,7 @@ export default function ChromaGame() {
                 marginBottom: 20,
               }}
             >
-              <div style={{ color: '#86efac', fontSize: 14, letterSpacing: 2 }}>HEIGHT</div>
+              <div style={{ color: '#86efac', fontSize: 14, letterSpacing: 2 }}>RINGS</div>
               <div style={{ color: THEME.text, fontSize: 64, fontWeight: 'bold' }}>
                 {finalScore}
               </div>
@@ -1507,7 +1505,7 @@ export default function ChromaGame() {
               <ShareButtonContainer
                 id="share-btn-chroma"
                 url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/chroma/share/${finalScore}`}
-                text={`I climbed ${finalScore}m in CHROMA! 🦎`}
+                text={`I passed ${finalScore} rings in CHROMA! 🦎`}
                 style="minimal"
                 socialLoaded={socialLoaded}
               />

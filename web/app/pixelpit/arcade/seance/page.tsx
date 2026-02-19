@@ -633,9 +633,9 @@ export default function SeancePage() {
     const targetX = Math.round((x - offsetX - game.dragOffset.x) / cellSize);
     const targetY = Math.round((y - offsetY - game.dragOffset.y) / cellSize);
     
-    // Calculate movement delta
-    let dx = targetX - game.dragStart.x;
-    let dy = targetY - game.dragStart.y;
+    // Calculate movement delta from current position
+    let dx = targetX - piece.x;
+    let dy = targetY - piece.y;
     
     // Constrain to orientation
     if (piece.orientation === 'horizontal') dy = 0;

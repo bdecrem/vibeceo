@@ -25,10 +25,6 @@ export class HiTomVoice extends Voice {
     // Hi tom: 180Hz base (higher than low tom)
     const baseFreq = 180 * Math.pow(2, this.tune / 1200);
 
-    // Pitch envelope parameters
-    const pitchMod = 0.6;
-    const pitchEnvTime = 0.05;
-
     const masterGain = this.context.createGain();
     masterGain.gain.value = level * 0.7;
     masterGain.connect(this.output);
@@ -39,11 +35,7 @@ export class HiTomVoice extends Voice {
       osc.type = 'sine';
 
       const targetFreq = baseFreq * ratio;
-      const startFreq = targetFreq * (1 + pitchMod);
-
-      // Pitch envelope
-      osc.frequency.setValueAtTime(startFreq, time);
-      osc.frequency.exponentialRampToValueAtTime(targetFreq, time + pitchEnvTime);
+      osc.frequency.setValueAtTime(targetFreq, time);
 
       // Soft saturation
       const waveshaper = this.context.createWaveShaper();
