@@ -258,6 +258,70 @@ const LEVELS: Level[] = [
   },
 ];
 
+// Test levels — harder than level 13, start from index 15
+const TEST_LEVELS: Level[] = [
+  // T1: "The Vault" (6x6, Par: 7) — h1 blocks g1/g2 up, h2 blocks g1/g2/g3 down, f2 blocks g3 up
+  // Chain: h2 left → g3 down, g4 left → g2 up, g1 up, g4 was already moved, player right
+  {
+    grid: 6,
+    exit: { x: 5, y: 3, side: 'right' },
+    minMoves: 7,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 5, y: 4, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
+      { id: 'f2', type: 'furniture', x: 4, y: 1, width: 1, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'g1', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g2', type: 'ghost', x: 3, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g3', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
+      { id: 'g4', type: 'ghost', x: 1, y: 1, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostOrange },
+      { id: 'g5', type: 'ghost', x: 1, y: 3, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'h1', type: 'ghost', x: 2, y: 0, width: 3, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'h2', type: 'ghost', x: 1, y: 4, width: 4, height: 1, orientation: 'horizontal', color: THEME.ghostOrange },
+    ],
+  },
+  // T2: "Lockdown" (6x6, Par: 8) — every vertical ghost blocked both ways, must unlock in sequence
+  {
+    grid: 6,
+    exit: { x: 5, y: 3, side: 'right' },
+    minMoves: 8,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 5, y: 4, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
+      { id: 'f1', type: 'furniture', x: 4, y: 1, width: 1, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'f2', type: 'furniture', x: 0, y: 0, width: 1, height: 1, orientation: 'horizontal', color: THEME.furnitureDark },
+      { id: 'g1', type: 'ghost', x: 4, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g2', type: 'ghost', x: 3, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g3', type: 'ghost', x: 2, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostGreen },
+      { id: 'g4', type: 'ghost', x: 1, y: 1, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostOrange },
+      { id: 'h1', type: 'ghost', x: 2, y: 0, width: 3, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'h2', type: 'ghost', x: 1, y: 4, width: 4, height: 1, orientation: 'horizontal', color: THEME.ghostOrange },
+      { id: 'h3', type: 'ghost', x: 2, y: 5, width: 2, height: 1, orientation: 'horizontal', color: THEME.ghostGreen },
+    ],
+  },
+  // T3: "The Fortress" (6x6, Par: 9) — maximum interlock, every piece depends on another
+  {
+    grid: 6,
+    exit: { x: 5, y: 3, side: 'right' },
+    minMoves: 9,
+    pieces: [
+      { id: 'player', type: 'player', x: 0, y: 3, width: 1, height: 1, orientation: 'both', color: THEME.ghostWhite },
+      { id: 'wall1', type: 'furniture', x: 5, y: 0, width: 1, height: 3, orientation: 'vertical', color: THEME.furniture },
+      { id: 'wall2', type: 'furniture', x: 5, y: 4, width: 1, height: 2, orientation: 'vertical', color: THEME.furniture },
+      { id: 'f1', type: 'furniture', x: 4, y: 0, width: 1, height: 1, orientation: 'horizontal', color: THEME.furniture },
+      { id: 'f2', type: 'furniture', x: 0, y: 5, width: 1, height: 1, orientation: 'horizontal', color: THEME.furnitureDark },
+      { id: 'g1', type: 'ghost', x: 4, y: 1, width: 1, height: 3, orientation: 'vertical', color: THEME.ghostPink },
+      { id: 'g2', type: 'ghost', x: 3, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostCyan },
+      { id: 'g3', type: 'ghost', x: 2, y: 1, width: 1, height: 3, orientation: 'vertical', color: THEME.ghostGreen },
+      { id: 'g4', type: 'ghost', x: 1, y: 2, width: 1, height: 2, orientation: 'vertical', color: THEME.ghostOrange },
+      { id: 'h1', type: 'ghost', x: 1, y: 0, width: 3, height: 1, orientation: 'horizontal', color: THEME.ghostCyan },
+      { id: 'h2', type: 'ghost', x: 1, y: 4, width: 4, height: 1, orientation: 'horizontal', color: THEME.ghostPink },
+      { id: 'h3', type: 'ghost', x: 1, y: 5, width: 3, height: 1, orientation: 'horizontal', color: THEME.ghostOrange },
+    ],
+  },
+];
+
 // Social colors
 const SCORE_FLOW_COLORS: ScoreFlowColors = {
   bg: THEME.bg,
@@ -393,6 +457,8 @@ export default function SeancePage() {
   const [gameState, setGameState] = useState<'menu' | 'playing' | 'levelComplete' | 'gameComplete'>('menu');
   const [currentLevel, setCurrentLevel] = useState(0);
   const [moves, setMoves] = useState(0);
+  const [testMode, setTestMode] = useState(false);
+  const activeLevels = testMode ? TEST_LEVELS : LEVELS;
 
   // Debug: ?level=N jumps straight to that level
   const debugLevelRef = useRef<number | null>(null);
@@ -451,7 +517,7 @@ export default function SeancePage() {
 
   // Calculate grid cell size
   const getGridSize = useCallback(() => {
-    const level = LEVELS[currentLevel];
+    const level = activeLevels[currentLevel];
     const gridPx = Math.min(canvasSize.w - 40, canvasSize.h - 180);
     const cellSize = gridPx / level.grid;
     const offsetX = (canvasSize.w - gridPx) / 2;
@@ -462,7 +528,7 @@ export default function SeancePage() {
   // Start level
   const startLevel = useCallback((levelIndex: number) => {
     initAudio();
-    const level = LEVELS[levelIndex];
+    const level = activeLevels[levelIndex];
     const game = gameRef.current;
     game.pieces = level.pieces.map(p => ({ ...p }));
     game.dragging = null;
@@ -474,7 +540,7 @@ export default function SeancePage() {
     setCurrentLevel(levelIndex);
     setMoves(0);
     setGameState('playing');
-  }, []);
+  }, [activeLevels]);
 
   // Auto-start debug level from ?level=N
   useEffect(() => {
@@ -486,7 +552,7 @@ export default function SeancePage() {
 
   // Check win condition
   const checkWin = useCallback(() => {
-    const level = LEVELS[currentLevel];
+    const level = activeLevels[currentLevel];
     const game = gameRef.current;
     const player = game.pieces.find(p => p.type === 'player');
     if (!player) return false;
@@ -504,7 +570,7 @@ export default function SeancePage() {
 
   // Check if piece can move to position
   const canMoveTo = useCallback((piece: Piece, newX: number, newY: number) => {
-    const level = LEVELS[currentLevel];
+    const level = activeLevels[currentLevel];
     const game = gameRef.current;
     
     // Bounds check
@@ -563,7 +629,7 @@ export default function SeancePage() {
 
   // Handle level complete
   const handleLevelComplete = useCallback(() => {
-    const level = LEVELS[currentLevel];
+    const level = activeLevels[currentLevel];
     const stars = getStars(moves, level.minMoves);
     setTotalStars(s => s + stars);
     
@@ -571,7 +637,7 @@ export default function SeancePage() {
     setTimeout(() => {
       playLevelComplete();
       
-      if (currentLevel >= LEVELS.length - 1) {
+      if (currentLevel >= activeLevels.length - 1) {
         // Game complete!
         setGameState('gameComplete');
         setSocialLoaded(true);
@@ -626,7 +692,7 @@ export default function SeancePage() {
     if (!piece) return;
 
     // Player already on exit — lock in place until pointerUp triggers win
-    const level = LEVELS[currentLevel];
+    const level = activeLevels[currentLevel];
     if (piece.type === 'player' && piece.x === level.exit.x && piece.y === level.exit.y) return;
 
     // Calculate target cell
@@ -732,7 +798,7 @@ export default function SeancePage() {
       
       const game = gameRef.current;
       const { gridPx, cellSize, offsetX, offsetY, gridSize } = getGridSize();
-      const level = LEVELS[currentLevel];
+      const level = activeLevels[currentLevel];
       
       // Update spook wave
       if (game.showSpookWave) {
@@ -755,7 +821,7 @@ export default function SeancePage() {
       ctx.fillStyle = THEME.text;
       ctx.font = 'bold 24px system-ui';
       ctx.textAlign = 'center';
-      ctx.fillText(`Level ${currentLevel + 1}`, canvasSize.w / 2, 35);
+      ctx.fillText(`${testMode ? 'Test' : 'Level'} ${currentLevel + 1}`, canvasSize.w / 2, 35);
       
       // Moves counter
       ctx.font = '16px system-ui';
@@ -1050,6 +1116,13 @@ export default function SeancePage() {
             >
               Start
             </button>
+            <button
+              onClick={() => { setTestMode(true); startLevel(0); }}
+              className="block mx-auto mt-4 px-4 py-2 text-sm"
+              style={{ backgroundColor: '#333', color: '#999', border: '1px solid #555', borderRadius: 8 }}
+            >
+              Test (hard levels)
+            </button>
           </div>
         )}
         
@@ -1071,11 +1144,11 @@ export default function SeancePage() {
           <div className="text-center">
             <h2 className="text-3xl font-bold mb-4" style={{ color: THEME.text }}>Level Complete!</h2>
             <div className="text-4xl mb-4">
-              {'⭐'.repeat(getStars(moves, LEVELS[currentLevel].minMoves))}
-              {'☆'.repeat(3 - getStars(moves, LEVELS[currentLevel].minMoves))}
+              {'⭐'.repeat(getStars(moves, activeLevels[currentLevel].minMoves))}
+              {'☆'.repeat(3 - getStars(moves, activeLevels[currentLevel].minMoves))}
             </div>
             <p className="mb-6" style={{ color: '#9ca3af' }}>
-              Moves: {moves} (Par: {LEVELS[currentLevel].minMoves})
+              Moves: {moves} (Par: {activeLevels[currentLevel].minMoves})
             </p>
             <button
               onClick={() => startLevel(currentLevel + 1)}
@@ -1091,7 +1164,7 @@ export default function SeancePage() {
           <div className="text-center">
             <h2 className="text-3xl font-bold mb-4" style={{ color: THEME.text }}>🎉 All Levels Complete!</h2>
             <div className="text-2xl mb-4" style={{ color: THEME.portal }}>
-              Total Stars: {totalStars} / {LEVELS.length * 3}
+              Total Stars: {totalStars} / {activeLevels.length * 3}
             </div>
             <button
               onClick={() => {

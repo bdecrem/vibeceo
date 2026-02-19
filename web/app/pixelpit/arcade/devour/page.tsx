@@ -63,7 +63,25 @@ interface Hole {
 // Audio
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
-let droneOsc: OscillatorNode | null = null;
+let musicGain: GainNode | null = null;
+let musicPlaying = false;
+let musicInterval: ReturnType<typeof setInterval> | null = null;
+let musicStep = 0;
+let arpStep = 0;
+
+// Void soundtrack — 85 BPM, chromatic descent, gravitational pull
+const MUSIC = {
+  bpm: 85,
+  // Chromatic crawl: Bb0 → A0 → Ab0 → G0 (each held 4 steps, deep rumble)
+  bass: [29.14, 0, 0, 29.14, 0, 0, 0, 0, 27.5, 0, 0, 27.5, 0, 0, 0, 0,
+         25.96, 0, 0, 25.96, 0, 0, 0, 0, 24.5, 0, 0, 24.5, 0, 0, 0, 0],
+  // Tritone stabs — dissonant, wide intervals, each bar shifts up
+  arp: [[146.83, 207.65, 311.13], [155.56, 220, 329.63], [164.81, 233.08, 349.23], [155.56, 220, 329.63]],
+  // Irregular thud — off-grid, lopsided gravity
+  kick: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+  // Metallic ticks — sparse, unpredictable
+  hat: [0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+};
 
 function initAudio() {
   if (audioCtx) return;
@@ -71,25 +89,121 @@ function initAudio() {
   masterGain = audioCtx.createGain();
   masterGain.gain.value = 0.3;
   masterGain.connect(audioCtx.destination);
+  musicGain = audioCtx.createGain();
+  musicGain.gain.value = 1.0;
+  musicGain.connect(masterGain);
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-function startDrone() {
-  if (!audioCtx || !masterGain || droneOsc) return;
-  droneOsc = audioCtx.createOscillator();
-  droneOsc.type = 'sine';
-  droneOsc.frequency.value = 35;
-  const droneGain = audioCtx.createGain();
-  droneGain.gain.value = 0.06;
-  droneOsc.connect(droneGain);
-  droneGain.connect(masterGain);
-  droneOsc.start();
+function playMusicKick() {
+  if (!audioCtx || !musicGain) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(musicGain);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(60, t);
+  osc.frequency.exponentialRampToValueAtTime(20, t + 0.3);
+  gain.gain.setValueAtTime(0.35, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+  osc.start(t);
+  osc.stop(t + 0.4);
 }
 
-function stopDrone() {
-  if (droneOsc) {
-    try { droneOsc.stop(); } catch {}
-    droneOsc = null;
+function playMusicHat() {
+  if (!audioCtx || !musicGain) return;
+  const t = audioCtx.currentTime;
+  const bufferSize = audioCtx.sampleRate * 0.03;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 8000;
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 11000;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.04, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+  noise.connect(hp);
+  hp.connect(lp);
+  lp.connect(gain);
+  gain.connect(musicGain);
+  noise.start(t);
+}
+
+function playMusicBass(freq: number) {
+  if (!audioCtx || !musicGain || freq === 0) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const filter = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(musicGain);
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  filter.type = 'lowpass';
+  filter.frequency.value = 150;
+  gain.gain.setValueAtTime(0.2, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  osc.start(t);
+  osc.stop(t + 0.2);
+}
+
+function playMusicArp(freqs: number[]) {
+  if (!audioCtx || !musicGain) return;
+  const t = audioCtx.currentTime;
+  const freq = freqs[arpStep % freqs.length];
+  const osc = audioCtx.createOscillator();
+  const filter = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(musicGain);
+  osc.type = 'sawtooth';
+  osc.frequency.value = freq;
+  filter.type = 'lowpass';
+  filter.frequency.value = 900;
+  filter.Q.value = 5;
+  gain.gain.setValueAtTime(0.04, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  osc.start(t);
+  osc.stop(t + 0.35);
+}
+
+function musicTick() {
+  if (!audioCtx || !musicPlaying) return;
+  if (MUSIC.kick[musicStep % 16]) playMusicKick();
+  if (MUSIC.hat[musicStep % 16]) playMusicHat();
+  playMusicBass(MUSIC.bass[musicStep % 32]);
+  // Arp plays every other step for a slower, heavier feel
+  if (musicStep % 2 === 0) {
+    const barIndex = Math.floor(musicStep / 16) % 4;
+    playMusicArp(MUSIC.arp[barIndex]);
+    arpStep++;
+  }
+  musicStep++;
+}
+
+function startMusic() {
+  if (musicPlaying) return;
+  musicPlaying = true;
+  musicStep = 0;
+  arpStep = 0;
+  const stepTime = (60 / MUSIC.bpm) * 1000 / 4;
+  musicInterval = setInterval(musicTick, stepTime);
+}
+
+function stopMusic() {
+  musicPlaying = false;
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
   }
 }
 
@@ -193,6 +307,10 @@ export default function DevourGame() {
       pulseTimer: 0,
       diskAngle: 0,
     } as Hole,
+    // Round tracking for canvas draw
+    currentRound: 1,
+    totalScore: 0,
+    waveFlashTimer: 0, // counts down from 2s at wave start
     // Movement
     isDragging: false,
     targetX: 0,
@@ -205,14 +323,16 @@ export default function DevourGame() {
   });
 
   const spawnObject = useCallback((canvasW: number, canvasH: number, existingObjects: GameObject[]) => {
-    const margin = 40;
+    const marginX = 30;
+    const marginTop = 80; // below HUD
+    const marginBottom = 60; // above bottom text
     let x: number, y: number;
     let attempts = 0;
-    
+
     // Find a spot not too close to either hole or existing objects
     do {
-      x = margin + Math.random() * (canvasW - margin * 2);
-      y = margin + Math.random() * (canvasH - margin * 2);
+      x = marginX + Math.random() * (canvasW - marginX * 2);
+      y = marginTop + Math.random() * (canvasH - marginTop - marginBottom);
       attempts++;
     } while (attempts < 20 && existingObjects.some(o => 
       Math.hypot(o.x - x, o.y - y) < 40
@@ -248,25 +368,31 @@ export default function DevourGame() {
     };
   }, []);
 
-  // Get rival stats based on round - player has big advantage early, rivals catch up by round 3
+  // Get rival stats based on round - smooth ramp from easy to full strength at round 8
   const getRivalStats = useCallback((roundNum: number) => {
-    if (roundNum === 1) {
-      return { size: 8, speedMult: 0.5 };  // Tiny, slow rival
-    } else if (roundNum === 2) {
-      return { size: 12, speedMult: 0.75 }; // Medium rival
-    } else {
-      return { size: 15, speedMult: 1.0 };  // Full strength (current behavior)
-    }
+    const stats: Record<number, { size: number; speedMult: number }> = {
+      1: { size: 6,  speedMult: 0.40 },
+      2: { size: 8,  speedMult: 0.50 },
+      3: { size: 9,  speedMult: 0.58 },
+      4: { size: 10, speedMult: 0.65 },
+      5: { size: 11, speedMult: 0.72 },
+      6: { size: 12, speedMult: 0.80 },
+      7: { size: 13, speedMult: 0.90 },
+    };
+    return stats[roundNum] || { size: 15, speedMult: 1.0 }; // Full strength from round 8+
   }, []);
 
   const startGame = useCallback((startRound: number = 1) => {
     initAudio();
-    startDrone();
+    startMusic();
     const game = gameRef.current;
     game.running = true;
     game.timer = ROUND_DURATION;
     
     // Update round state
+    game.currentRound = startRound;
+    if (startRound === 1) game.totalScore = 0;
+    game.waveFlashTimer = 2.0; // flash "WAVE X" for 2 seconds
     setRound(startRound);
     
     // Get rival stats for this round
@@ -410,6 +536,8 @@ export default function DevourGame() {
           }
           
           if (isPlayer) {
+            const pts = obj.type === 'planet' ? 20 : obj.type === 'moon' ? 10 : obj.type === 'satellite' ? 5 : obj.type === 'asteroid' ? 3 : 1;
+            game.totalScore += pts;
             playConsume(obj.size);
           }
         }
@@ -455,10 +583,9 @@ export default function DevourGame() {
         }
       }
       
-      // Keep in bounds
-      const margin = 30;
-      rival.x = Math.max(margin, Math.min(canvasSize.w - margin, rival.x));
-      rival.y = Math.max(margin, Math.min(canvasSize.h - margin, rival.y));
+      // Keep in bounds (below HUD, above bottom text)
+      rival.x = Math.max(20, Math.min(canvasSize.w - 20, rival.x));
+      rival.y = Math.max(80, Math.min(canvasSize.h - 60, rival.y));
     };
 
     const update = (dt: number) => {
@@ -470,27 +597,24 @@ export default function DevourGame() {
       if (game.timer <= 0) {
         game.timer = 0;
         game.running = false;
-        stopDrone();
+        stopMusic();
         
         // Determine round winner
         if (game.player.size > game.rival.size) {
-          // Player won this round - advance to next!
+          // Player won this round - bonus points + advance
+          game.totalScore += game.currentRound * 25;
           setWinner('player');
           playWin();
           
           // Brief delay then start next round
+          const nextRound = game.currentRound + 1;
           setTimeout(() => {
-            setRound(prev => {
-              const nextRound = prev + 1;
-              startGame(nextRound);
-              return nextRound;
-            });
+            startGame(nextRound);
           }, 1500);
           return;
         } else {
           // Player lost or tied - game over
-          const finalRoundScore = game.player.size > game.rival.size ? round : round;
-          setFinalScore(round); // Score = rounds reached
+          setFinalScore(game.totalScore);
           setSubmittedEntryId(null);
           setShowLeaderboard(false);
           
@@ -512,22 +636,24 @@ export default function DevourGame() {
         return;
       }
 
+      // Wave flash countdown
+      if (game.waveFlashTimer > 0) game.waveFlashTimer -= dt;
+
       // Player movement (smooth toward target)
       if (game.isDragging) {
         const dx = game.targetX - game.player.x;
         const dy = game.targetY - game.player.y;
         const dist = Math.hypot(dx, dy);
         if (dist > 2) {
-          const speed = 150;
+          const speed = 200;
           game.player.x += (dx / dist) * speed * dt;
           game.player.y += (dy / dist) * speed * dt;
         }
       }
 
-      // Keep player in bounds
-      const margin = 30;
-      game.player.x = Math.max(margin, Math.min(canvasSize.w - margin, game.player.x));
-      game.player.y = Math.max(margin, Math.min(canvasSize.h - margin, game.player.y));
+      // Keep player in bounds (below HUD, above bottom text)
+      game.player.x = Math.max(20, Math.min(canvasSize.w - 20, game.player.x));
+      game.player.y = Math.max(80, Math.min(canvasSize.h - 60, game.player.y));
 
       // Update pulses
       updatePulse(game.player, dt);
@@ -638,33 +764,25 @@ export default function DevourGame() {
       ctx.arc(hole.x + eyeOffset, hole.y - eyeOffset * 0.2, eyeSize * 0.8, 0, Math.PI * 2);
       ctx.fill();
       
-      // Size label
-      ctx.fillStyle = isPlayer ? '#a78bfa' : '#fca5a5';
-      ctx.font = 'bold 14px ui-monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(Math.floor(hole.size).toString(), hole.x, hole.y + hole.size + 20);
+      // Size label removed — HUD meter shows the comparison
     };
 
     const draw = () => {
       const game = gameRef.current;
       
-      // Background
-      const gradient = ctx.createRadialGradient(
-        canvasSize.w / 2, canvasSize.h / 2, 0,
-        canvasSize.w / 2, canvasSize.h / 2, Math.max(canvasSize.w, canvasSize.h)
-      );
-      gradient.addColorStop(0, '#0f0520');
-      gradient.addColorStop(1, '#020108');
-      ctx.fillStyle = gradient;
+      // Background — deep purple across entire screen
+      ctx.fillStyle = '#0f0520';
       ctx.fillRect(0, 0, canvasSize.w, canvasSize.h);
 
-      // Stars
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      for (let i = 0; i < 60; i++) {
+      // Stars — subtle twinkle
+      const time = performance.now() * 0.001;
+      for (let i = 0; i < 80; i++) {
         const x = (i * 137.5) % canvasSize.w;
         const y = (i * 89.3) % canvasSize.h;
+        const flicker = 0.15 + 0.2 * Math.sin(time * (0.5 + i * 0.03) + i);
+        ctx.fillStyle = `rgba(255, 255, 255, ${flicker})`;
         ctx.beginPath();
-        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.arc(x, y, i % 7 === 0 ? 1.5 : 0.8, 0, Math.PI * 2);
         ctx.fill();
       }
 
@@ -720,63 +838,94 @@ export default function DevourGame() {
       }
       ctx.globalAlpha = 1;
 
+      // Ambient glow behind player
+      const glowGrad = ctx.createRadialGradient(
+        game.player.x, game.player.y, game.player.size,
+        game.player.x, game.player.y, game.player.size * 4
+      );
+      glowGrad.addColorStop(0, 'rgba(139, 92, 246, 0.08)');
+      glowGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowGrad;
+      ctx.beginPath();
+      ctx.arc(game.player.x, game.player.y, game.player.size * 4, 0, Math.PI * 2);
+      ctx.fill();
+
       // Draw holes (rival first so player is on top)
       drawHole(game.rival, false);
       drawHole(game.player, true);
 
-      // UI - Timer (big, centered at top)
+      // === HUD — single row: R# left, meter center, timer right ===
+      const hudY = 28;
+      const hudPad = 16;
       const timerSecs = Math.ceil(game.timer);
-      ctx.fillStyle = timerSecs <= 10 ? '#ef4444' : '#fff';
-      // Round indicator
-      ctx.font = 'bold 16px ui-monospace';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#a78bfa';
-      ctx.fillText(`ROUND ${round}`, canvasSize.w / 2, 25);
-      
-      // Timer
-      ctx.font = 'bold 48px ui-monospace';
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(0,0,0,0.5)';
-      ctx.shadowBlur = 4;
-      ctx.fillText(timerSecs.toString(), canvasSize.w / 2, 70);
-      
-      // Size comparison bar
-      const barWidth = 200;
-      const barHeight = 20;
+      const hudFont = 'bold 20px ui-monospace';
+
+      // HUD (drawn over the full background, no separate strip needed)
+
+      // Left: Total score
+      ctx.font = hudFont;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#e5e7eb';
+      ctx.fillText(`${game.totalScore}`, hudPad, hudY);
+
+      // Right: Timer
+      ctx.textAlign = 'right';
+      ctx.fillStyle = timerSecs <= 10 ? '#ef4444' : '#e5e7eb';
+      ctx.fillText(`${timerSecs}s`, canvasSize.w - hudPad, hudY);
+
+      // Center: You/Rival meter
+      const barWidth = Math.min(160, canvasSize.w - 160);
+      const barHeight = 12;
       const barX = (canvasSize.w - barWidth) / 2;
-      const barY = 95;
+      const barY = hudY - barHeight / 2 - 1;
       const total = game.player.size + game.rival.size;
       const playerRatio = game.player.size / total;
-      
-      // Bar background
+
+      // Rounded meter bar
+      const barR = barHeight / 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barWidth, barHeight, barR);
+      ctx.clip();
       ctx.fillStyle = '#27272a';
       ctx.fillRect(barX, barY, barWidth, barHeight);
-      
-      // Player portion (left, purple)
       ctx.fillStyle = '#8b5cf6';
       ctx.fillRect(barX, barY, barWidth * playerRatio, barHeight);
-      
-      // Rival portion (right, red)
       ctx.fillStyle = '#ef4444';
       ctx.fillRect(barX + barWidth * playerRatio, barY, barWidth * (1 - playerRatio), barHeight);
-      
-      // Labels
-      ctx.font = 'bold 14px ui-monospace';
-      ctx.fillStyle = '#a78bfa';
-      ctx.textAlign = 'left';
-      ctx.fillText(`YOU: ${Math.floor(game.player.size)}`, barX, barY + barHeight + 18);
-      ctx.fillStyle = '#fca5a5';
-      ctx.textAlign = 'right';
-      ctx.fillText(`RIVAL: ${Math.floor(game.rival.size)}`, barX + barWidth, barY + barHeight + 18);
-      
-      ctx.shadowBlur = 0;
+      ctx.restore();
 
-      // Instructions (brief, at bottom)
-      if (game.timer > ROUND_DURATION - 5) {
-        ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.font = '14px ui-monospace';
+      // Wave flash — scales up then fades out
+      if (game.waveFlashTimer > 0) {
+        const elapsed = 2.0 - game.waveFlashTimer;
+        const alpha = elapsed < 0.3 ? elapsed / 0.3 : Math.min(1, game.waveFlashTimer / 0.6);
+        const scale = elapsed < 0.2 ? 0.7 + 0.3 * (elapsed / 0.2) : 1.0;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(canvasSize.w / 2, canvasSize.h / 2);
+        ctx.scale(scale, scale);
+        // "WAVE" label — small, above
+        ctx.font = '600 14px ui-monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('DRAG to move • TAP to pulse', canvasSize.w / 2, canvasSize.h - 40);
+        ctx.fillStyle = '#a78bfa';
+        ctx.fillText('WAVE', 0, -30);
+        // Wave number — large, below
+        ctx.font = '900 72px ui-monospace';
+        ctx.fillStyle = '#fff';
+        ctx.fillText(`${game.currentRound}`, 0, 40);
+        ctx.restore();
+      }
+
+      // Instructions — fade out after 4 seconds
+      if (game.timer > ROUND_DURATION - 4 && game.currentRound === 1) {
+        const instrAlpha = Math.min(1, (game.timer - (ROUND_DURATION - 4)) / 1.5);
+        ctx.save();
+        ctx.globalAlpha = instrAlpha * 0.4;
+        ctx.font = '13px ui-monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#a78bfa';
+        ctx.fillText('drag to move \u00b7 tap to pulse', canvasSize.w / 2, canvasSize.h - 44);
+        ctx.restore();
       }
     };
 
@@ -889,7 +1038,7 @@ export default function DevourGame() {
 
     return () => {
       cancelAnimationFrame(animationId);
-      stopDrone();
+      stopMusic();
       canvas.removeEventListener('pointerdown', handlePointerDown);
       canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointerup', handlePointerUp);
@@ -924,47 +1073,28 @@ export default function DevourGame() {
           alignItems: 'center',
           justifyContent: 'center',
           padding: 20,
-          background: 'radial-gradient(circle at center, #0f0520 0%, #020108 100%)',
+          background: '#0f0520',
         }}>
-          <div style={{ fontSize: 80, marginBottom: 10 }}>🕳️</div>
           <h1 style={{
-            color: '#E5E7EB',
-            fontSize: 48,
-            marginBottom: 10,
+            color: '#fff',
+            fontSize: 56,
+            marginBottom: 8,
             fontWeight: 900,
+            letterSpacing: 6,
           }}>
             DEVOUR
           </h1>
 
           <p style={{
-            color: '#9CA3AF',
-            fontSize: 16,
-            marginBottom: 30,
+            color: '#a78bfa',
+            fontSize: 14,
+            marginBottom: 48,
             textAlign: 'center',
-            lineHeight: 1.6,
-            maxWidth: 280,
+            letterSpacing: 3,
+            textTransform: 'uppercase',
           }}>
-            Drag to hunt.<br />
-            Tap to devour.<br />
-            Beat the rival hole.
+            Drag &middot; Pulse &middot; Consume
           </p>
-
-          <div style={{
-            display: 'flex',
-            gap: 30,
-            marginBottom: 30,
-            fontSize: 40,
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <div>🟣</div>
-              <div style={{ fontSize: 12, color: '#a78bfa', marginTop: 5 }}>YOU</div>
-            </div>
-            <div style={{ fontSize: 24, color: '#6b7280', alignSelf: 'center' }}>vs</div>
-            <div style={{ textAlign: 'center' }}>
-              <div>🔴</div>
-              <div style={{ fontSize: 12, color: '#fca5a5', marginTop: 5 }}>RIVAL</div>
-            </div>
-          </div>
 
           <button
             onClick={() => startGame(1)}
@@ -972,32 +1102,31 @@ export default function DevourGame() {
               background: '#8B5CF6',
               color: '#fff',
               border: 'none',
-              padding: '18px 60px',
-              fontSize: 18,
+              padding: '16px 56px',
+              fontSize: 16,
               fontWeight: 700,
               cursor: 'pointer',
               borderRadius: 30,
-              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)',
+              letterSpacing: 2,
             }}
           >
-            BEGIN
+            PLAY
           </button>
 
-          {/* Leaderboard button on start - opens as modal */}
           <button
             onClick={() => setShowLeaderboard(true)}
             style={{
-              marginTop: 30,
+              marginTop: 24,
               background: 'transparent',
-              color: '#a78bfa',
-              border: '1px solid #a78bfa40',
+              color: '#6b7280',
+              border: 'none',
               padding: '10px 24px',
-              fontSize: 14,
+              fontSize: 13,
               cursor: 'pointer',
-              borderRadius: 20,
+              letterSpacing: 1,
             }}
           >
-            View Leaderboard
+            LEADERBOARD
           </button>
         </div>
       )}
@@ -1062,35 +1191,18 @@ export default function DevourGame() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'rgba(0,0,0,0.9)',
+          background: '#0f0520',
           overflowY: 'auto',
           padding: 20,
         }}>
-          <div style={{ fontSize: 60, marginBottom: 10 }}>
-            💀
+          <div style={{ color: '#6b7280', fontSize: 13, letterSpacing: 3, marginBottom: 6 }}>
+            {winner === 'rival' ? 'DEVOURED' : 'TIED'}
           </div>
-          <h1 style={{ 
-            color: '#ef4444', 
-            fontSize: 48, 
-            marginBottom: 10 
-          }}>
-            GAME OVER
-          </h1>
-          <p style={{ color: '#9CA3AF', fontSize: 16, marginBottom: 20 }}>
-            {winner === 'rival' ? 'The rival devoured you!' : 'You tied with the rival!'}
-          </p>
-          
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 20,
-          }}>
-            <div style={{ color: '#a78bfa', fontSize: 14, letterSpacing: 2 }}>ROUNDS REACHED</div>
-            <div style={{ color: '#fff', fontSize: 64, fontWeight: 'bold' }}>
-              {finalScore}
-            </div>
+          <div style={{ color: '#fff', fontSize: 72, fontWeight: 900, marginBottom: 4 }}>
+            {finalScore}
+          </div>
+          <div style={{ color: '#a78bfa', fontSize: 13, letterSpacing: 2, marginBottom: 24 }}>
+            WAVE {round}
           </div>
 
           {/* ScoreFlow */}
@@ -1108,26 +1220,26 @@ export default function DevourGame() {
             <ShareButtonContainer
               id="share-btn-devour"
               url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/devour/share/${finalScore}`}
-              text={`I reached Round ${finalScore} on DEVOUR! Can you survive longer? 🕳️`}
+              text={`I scored ${finalScore} on DEVOUR! Can you beat that? 🕳️`}
               style="minimal"
               socialLoaded={socialLoaded}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 20 }}>
             <button
               onClick={() => setShowLeaderboard(!showLeaderboard)}
               style={{
                 background: 'transparent',
-                color: '#a78bfa',
-                border: '1px solid #a78bfa',
+                color: '#6b7280',
+                border: 'none',
                 padding: '12px 20px',
-                fontSize: 14,
+                fontSize: 13,
                 cursor: 'pointer',
-                borderRadius: 20,
+                letterSpacing: 1,
               }}
             >
-              {showLeaderboard ? 'Hide' : 'Leaderboard'}
+              {showLeaderboard ? 'HIDE' : 'RANKS'}
             </button>
             <button
               onClick={() => startGame(1)}
@@ -1135,11 +1247,12 @@ export default function DevourGame() {
                 background: '#8B5CF6',
                 color: '#fff',
                 border: 'none',
-                padding: '12px 30px',
-                fontSize: 16,
-                fontWeight: 600,
+                padding: '14px 40px',
+                fontSize: 15,
+                fontWeight: 700,
                 cursor: 'pointer',
-                borderRadius: 20,
+                borderRadius: 30,
+                letterSpacing: 2,
               }}
             >
               PLAY AGAIN
