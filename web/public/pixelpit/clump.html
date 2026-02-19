@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>CLUMP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+      font-family: monospace;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    // --- THEME (Indie Bite) ---
+    const T = {
+      bg: '#0a0a0a',
+      grid: '#1a1a1a',
+      slime: '#a3e635',
+      cyan: '#22d3ee',
+      fuchsia: '#d946ef',
+      gold: '#facc15',
+      grey: '#555555',
+      text: '#ffffff',
+      red: '#1a0505',
+    };
+
+    // --- CANVAS SETUP ---
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // --- AUDIO ---
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    canvas.addEventListener('touchstart', initAudio, { once: true });
+    canvas.addEventListener('click', initAudio, { once: true });
+
+    function playAbsorb(playerRadius) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      // pitch decreases as you grow
+      osc.frequency.value = 800 - Math.min(playerRadius * 3, 600);
+      osc.type = 'triangle';
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.12);
+    }
+
+    function playHit() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15);
+      g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function playBoom() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.8);
+      g.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
+      osc.start(); osc.stop(audioCtx.currentTime + 1.2);
+      // noise layer for reverb feel
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.6, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      const src = audioCtx.createBufferSource();
+      const ng = audioCtx.createGain();
+      src.buffer = buf; src.connect(ng); ng.connect(audioCtx.destination);
+      ng.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      ng.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+      src.start();
+    }
+
+    function playLevelUp() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    // --- DRONE ---
+    let droneOsc, droneGain;
+    function startDrone() {
+      if (!audioCtx) return;
+      droneOsc = audioCtx.createOscillator();
+      droneGain = audioCtx.createGain();
+      droneOsc.connect(droneGain);
+      droneGain.connect(audioCtx.destination);
+      droneOsc.type = 'sine';
+      droneOsc.frequency.value = 65.41; // C2
+      droneGain.gain.value = 0.06;
+      droneOsc.start();
+    }
+    function stopDrone() {
+      if (droneOsc) { try { droneOsc.stop(); } catch(e){} droneOsc = null; }
+    }
+
+    // --- MUSIC LAYERS ---
+    let hihatInterval, arpInterval, beatInterval;
+    function startHihats() {
+      if (hihatInterval || !audioCtx) return;
+      hihatInterval = setInterval(() => {
+        if (!audioCtx) return;
+        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+        const src = audioCtx.createBufferSource();
+        const g = audioCtx.createGain();
+        src.buffer = buf;
+        src.connect(g);
+        g.connect(audioCtx.destination);
+        g.gain.value = 0.04;
+        src.start();
+      }, 250);
+    }
+    function startArp() {
+      if (arpInterval || !audioCtx) return;
+      const notes = [261.6, 311.1, 392.0, 523.3]; // C minor arp
+      let idx = 0;
+      arpInterval = setInterval(() => {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.value = notes[idx % notes.length];
+        g.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+        idx++;
+      }, 200);
+    }
+    function startBeat() {
+      if (beatInterval || !audioCtx) return;
+      beatInterval = setInterval(() => {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.15);
+        g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+      }, 500);
+    }
+    function stopMusic() {
+      if (hihatInterval) { clearInterval(hihatInterval); hihatInterval = null; }
+      if (arpInterval) { clearInterval(arpInterval); arpInterval = null; }
+      if (beatInterval) { clearInterval(beatInterval); beatInterval = null; }
+      stopDrone();
+    }
+
+    // --- EASING ---
+    function easeOutQuad(t) { return t * (2 - t); }
+    function easeOutElastic(t) {
+      const p = 0.3;
+      return Math.pow(2, -10 * t) * Math.sin((t - p / 4) * (2 * Math.PI) / p) + 1;
+    }
+
+    // --- WORLD ---
+    const WORLD_W = 2000;
+    const WORLD_H = 2000;
+    const GRID_SIZE = 60;
+    const GAME_DURATION = 60;
+
+    // --- OBJECTS ---
+    const TIERS = [
+      { minR: 3, maxR: 6, color: T.grey, count: 200 },
+      { minR: 8, maxR: 14, color: T.cyan, count: 80 },
+      { minR: 16, maxR: 28, color: T.fuchsia, count: 30 },
+      { minR: 32, maxR: 48, color: T.gold, count: 0 }, // spawned last 15s
+    ];
+
+    // --- STATE ---
+    let state, objects, particles, comboCount, comboTimer, lastTime;
+    let inputX, inputY, inputActive;
+    let currentTier, prevTier;
+    let pulseTimer, pulseScale;
+    let comboFlashTimer;
+    let endFreezeTimer;
+    let gamePhase; // 'start', 'playing', 'ending', 'over'
+    let tier4Spawned;
+    let musicTier;
+    let orbiters; // decorative blobs that orbit the player
+    let gameTime; // elapsed time for sin wobble
+    let knockback; // { vx, vy, timer }
+    let hitStop; // freeze timer
+    let screenShake; // { timer, intensity }
+    let hitFlash; // timer for red flash
+
+    function initState() {
+      state = {
+        x: WORLD_W / 2,
+        y: WORLD_H / 2,
+        r: 12,
+        score: 0,
+        time: GAME_DURATION,
+        speed: 200,
+      };
+      objects = [];
+      particles = [];
+      comboCount = 0;
+      comboTimer = 0;
+      comboFlashTimer = 0;
+      currentTier = 0;
+      prevTier = 0;
+      pulseTimer = 0;
+      pulseScale = 1;
+      endFreezeTimer = 0;
+      gamePhase = 'start';
+      tier4Spawned = false;
+      musicTier = -1;
+      inputX = canvas.width / 2;
+      inputY = canvas.height / 2;
+      inputActive = false;
+      orbiters = [];
+      gameTime = 0;
+      knockback = null;
+      hitStop = 0;
+      screenShake = { timer: 0, intensity: 0 };
+      hitFlash = 0;
+      stopMusic();
+      spawnObjects();
+    }
+
+    function spawnObjects() {
+      objects = [];
+      for (let ti = 0; ti < 3; ti++) {
+        const tier = TIERS[ti];
+        for (let i = 0; i < tier.count; i++) {
+          objects.push({
+            x: Math.random() * WORLD_W,
+            y: Math.random() * WORLD_H,
+            r: tier.minR + Math.random() * (tier.maxR - tier.minR),
+            color: tier.color,
+            tier: ti,
+            alive: true,
+            absorbT: -1, // absorb animation progress
+          });
+        }
+      }
+    }
+
+    function spawnTier4() {
+      if (tier4Spawned) return;
+      tier4Spawned = true;
+      const tier = TIERS[3];
+      for (let i = 0; i < 12; i++) {
+        objects.push({
+          x: Math.random() * WORLD_W,
+          y: Math.random() * WORLD_H,
+          r: tier.minR + Math.random() * (tier.maxR - tier.minR),
+          color: tier.color,
+          tier: 3,
+          alive: true,
+          absorbT: -1,
+        });
+      }
+    }
+
+    function getTier(radius) {
+      if (radius >= 60) return 3;
+      if (radius >= 30) return 2;
+      if (radius >= 16) return 1;
+      return 0;
+    }
+
+    // --- PARTICLES ---
+    function spawnParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 50 + Math.random() * 100;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r: 2 + Math.random() * 3,
+          color,
+          life: 0.3 + Math.random() * 0.2,
+          maxLife: 0.3 + Math.random() * 0.2,
+        });
+      }
+    }
+
+    // --- CAMERA ---
+    function getZoom() {
+      // zoom out as player grows
+      const minZoom = 0.3;
+      const maxZoom = 1.5;
+      const t = Math.min((state.r - 12) / 80, 1);
+      return maxZoom - (maxZoom - minZoom) * easeOutQuad(t);
+    }
+
+    // --- INPUT ---
+    function getWorldPos(cx, cy) {
+      const zoom = getZoom();
+      const camX = state.x - canvas.width / 2 / zoom;
+      const camY = state.y - canvas.height / 2 / zoom;
+      return {
+        x: camX + cx / zoom,
+        y: camY + cy / zoom,
+      };
+    }
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      inputActive = true;
+      const t = e.touches[0];
+      inputX = t.clientX; inputY = t.clientY;
+      if (gamePhase === 'start') startGame();
+      if (gamePhase === 'over') initState();
+    });
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const t = e.touches[0];
+      inputX = t.clientX; inputY = t.clientY;
+    });
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      inputActive = false;
+    });
+    canvas.addEventListener('mousedown', (e) => {
+      inputActive = true;
+      inputX = e.clientX; inputY = e.clientY;
+      if (gamePhase === 'start') startGame();
+      if (gamePhase === 'over') initState();
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      if (inputActive) { inputX = e.clientX; inputY = e.clientY; }
+    });
+    canvas.addEventListener('mouseup', () => { inputActive = false; });
+
+    function startGame() {
+      gamePhase = 'playing';
+      initAudio();
+      startDrone();
+    }
+
+    // --- UPDATE ---
+    function update(dt) {
+      if (gamePhase === 'start') return;
+
+      if (gamePhase === 'ending') {
+        endFreezeTimer += dt;
+        if (endFreezeTimer >= 2.0) {
+          gamePhase = 'over';
+        }
+        return;
+      }
+
+      if (gamePhase !== 'playing') return;
+
+      // Timer
+      state.time -= dt;
+      if (state.time <= 15 && !tier4Spawned) spawnTier4();
+      if (state.time <= 0) {
+        state.time = 0;
+        gamePhase = 'ending';
+        endFreezeTimer = 0;
+        stopMusic();
+        playBoom();
+        return;
+      }
+
+      // Movement — move toward input position (in world coords)
+      if (inputActive) {
+        const wp = getWorldPos(inputX, inputY);
+        const dx = wp.x - state.x;
+        const dy = wp.y - state.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 2) {
+          // speed decreases as you grow (heavier)
+          const spd = state.speed / (1 + state.r * 0.01);
+          const move = Math.min(spd * dt, dist);
+          state.x += (dx / dist) * move;
+          state.y += (dy / dist) * move;
+        }
+      }
+
+      // Clamp to world
+      state.x = Math.max(state.r, Math.min(WORLD_W - state.r, state.x));
+      state.y = Math.max(state.r, Math.min(WORLD_H - state.r, state.y));
+
+      // Hit-stop freeze
+      if (hitStop > 0) {
+        hitStop -= dt;
+        return;
+      }
+
+      // Knockback
+      if (knockback) {
+        knockback.timer -= dt;
+        const t = Math.max(0, knockback.timer / 0.15);
+        const speed = t * t; // easeOutQuad (decelerating)
+        state.x += knockback.vx * speed * dt;
+        state.y += knockback.vy * speed * dt;
+        state.x = Math.max(state.r, Math.min(WORLD_W - state.r, state.x));
+        state.y = Math.max(state.r, Math.min(WORLD_H - state.r, state.y));
+        if (knockback.timer <= 0) knockback = null;
+      }
+
+      // Screen shake
+      if (screenShake.timer > 0) screenShake.timer -= dt;
+      if (hitFlash > 0) hitFlash -= dt;
+
+      // Collision / absorption
+      for (const obj of objects) {
+        if (!obj.alive) continue;
+
+        const dx = obj.x - state.x;
+        const dy = obj.y - state.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Hit bigger object — knockback + shrink
+        if (obj.r >= state.r && dist < state.r + obj.r * 0.5) {
+          // knockback direction: away from object
+          const nx = (state.x - obj.x) / (dist || 1);
+          const ny = (state.y - obj.y) / (dist || 1);
+          knockback = { vx: nx * 600, vy: ny * 600, timer: 0.15 };
+          hitStop = 0.05; // 50ms freeze
+          screenShake = { timer: 0.12, intensity: 3 };
+          hitFlash = 0.07; // ~2 frames at 30fps
+
+          // lose 2-3 orbiters, scatter them back as tier 1 objects
+          const loseCount = Math.min(orbiters.length, 2 + Math.floor(Math.random() * 2));
+          for (let i = 0; i < loseCount; i++) {
+            const orb = orbiters.pop();
+            if (!orb) break;
+            const angle = Math.random() * Math.PI * 2;
+            const spawnDist = state.r + 10;
+            objects.push({
+              x: state.x + Math.cos(angle) * spawnDist,
+              y: state.y + Math.sin(angle) * spawnDist,
+              r: 4 + Math.random() * 2,
+              color: T.slime,
+              tier: 0,
+              alive: true,
+              absorbT: -1,
+            });
+            // scatter particle
+            spawnParticles(state.x + Math.cos(angle) * state.r, state.y + Math.sin(angle) * state.r, T.slime, 3);
+          }
+
+          // shrink player
+          const shrinkArea = loseCount * 25; // lose some area
+          state.r = Math.max(12, Math.sqrt(Math.max(0, state.r * state.r - shrinkArea)));
+          // recheck tier
+          currentTier = getTier(state.r);
+
+          playHit();
+          break; // one hit per frame
+        }
+
+        if (obj.r >= state.r) continue; // can only eat smaller
+        if (dist < state.r + obj.r * 0.3) {
+          // absorb!
+          obj.alive = false;
+          obj.absorbT = 0;
+          const area = obj.r * obj.r;
+          state.r = Math.sqrt(state.r * state.r + area * 0.3);
+          state.score += Math.round(obj.r);
+          spawnParticles(obj.x, obj.y, obj.color, 6);
+          playAbsorb(state.r);
+
+          // add orbiter (decorative blob)
+          if (orbiters.length < 30) {
+            orbiters.push({
+              angle: Math.random() * Math.PI * 2,
+              dist: 0.6 + Math.random() * 0.4, // fraction of player radius
+              r: Math.min(obj.r * 0.6, 8),
+              color: obj.color,
+              speed: (0.5 + Math.random() * 1.0) * (Math.random() < 0.5 ? 1 : -1),
+              wobblePhase: Math.random() * Math.PI * 2,
+              wobbleAmp: 0.05 + Math.random() * 0.1,
+            });
+          }
+
+          // combo
+          comboCount++;
+          comboTimer = 1.0;
+          if (comboCount >= 3) {
+            comboFlashTimer = 0.3;
+            state.score += comboCount * 5;
+          }
+
+          // tier check
+          currentTier = getTier(state.r);
+          if (currentTier > prevTier) {
+            prevTier = currentTier;
+            pulseTimer = 0.2;
+            playLevelUp();
+            // music layers
+            if (currentTier >= 1 && musicTier < 1) { musicTier = 1; startHihats(); }
+            if (currentTier >= 2 && musicTier < 2) { musicTier = 2; startArp(); }
+            if (currentTier >= 3 && musicTier < 3) { musicTier = 3; startBeat(); }
+          }
+        }
+      }
+
+      // absorb animation
+      for (const obj of objects) {
+        if (obj.absorbT >= 0 && obj.absorbT < 1) {
+          obj.absorbT += dt * 10; // 100ms
+          // snap toward player
+          obj.x += (state.x - obj.x) * dt * 20;
+          obj.y += (state.y - obj.y) * dt * 20;
+        }
+      }
+
+      // combo timer
+      if (comboTimer > 0) {
+        comboTimer -= dt;
+        if (comboTimer <= 0) comboCount = 0;
+      }
+      if (comboFlashTimer > 0) comboFlashTimer -= dt;
+
+      // pulse
+      if (pulseTimer > 0) {
+        pulseTimer -= dt;
+        const t = 1 - (pulseTimer / 0.2);
+        pulseScale = 1 + 0.15 * (1 - easeOutElastic(t));
+      } else {
+        pulseScale = 1;
+      }
+
+      // orbiters
+      gameTime += dt;
+      for (const orb of orbiters) {
+        orb.angle += orb.speed * dt;
+      }
+
+      // particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    // --- DRAW ---
+    function draw() {
+      const W = canvas.width;
+      const H = canvas.height;
+      const zoom = getZoom();
+      const camX = state.x - W / 2 / zoom;
+      const camY = state.y - H / 2 / zoom;
+
+      // bg — shift to red in last 10s
+      let bg = T.bg;
+      if (state.time <= 10 && gamePhase === 'playing') {
+        const t = 1 - state.time / 10;
+        const r = Math.round(10 + t * 16);
+        const g = Math.round(10 - t * 5);
+        const b = Math.round(10 - t * 5);
+        bg = `rgb(${r},${g},${b})`;
+      }
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.save();
+      // screen shake
+      if (screenShake.timer > 0) {
+        const s = screenShake.intensity * (screenShake.timer / 0.12);
+        ctx.translate(
+          (Math.random() * 2 - 1) * s,
+          (Math.random() * 2 - 1) * s
+        );
+      }
+      ctx.scale(zoom, zoom);
+      ctx.translate(-camX, -camY);
+
+      // Grid
+      ctx.strokeStyle = T.grid;
+      ctx.lineWidth = 1;
+      const startX = Math.floor(camX / GRID_SIZE) * GRID_SIZE;
+      const startY = Math.floor(camY / GRID_SIZE) * GRID_SIZE;
+      const endX = camX + W / zoom;
+      const endY = camY + H / zoom;
+      for (let x = startX; x <= endX; x += GRID_SIZE) {
+        ctx.beginPath(); ctx.moveTo(x, camY); ctx.lineTo(x, endY); ctx.stroke();
+      }
+      for (let y = startY; y <= endY; y += GRID_SIZE) {
+        ctx.beginPath(); ctx.moveTo(camX, y); ctx.lineTo(endX, y); ctx.stroke();
+      }
+
+      // heartbeat grid pulse in last 10s
+      if (state.time <= 10 && gamePhase === 'playing') {
+        const beat = Math.sin(state.time * 4) * 0.5 + 0.5;
+        ctx.strokeStyle = `rgba(239,68,68,${beat * 0.15})`;
+        ctx.lineWidth = 2;
+        for (let x = startX; x <= endX; x += GRID_SIZE) {
+          ctx.beginPath(); ctx.moveTo(x, camY); ctx.lineTo(x, endY); ctx.stroke();
+        }
+        for (let y = startY; y <= endY; y += GRID_SIZE) {
+          ctx.beginPath(); ctx.moveTo(camX, y); ctx.lineTo(endX, y); ctx.stroke();
+        }
+      }
+
+      // Objects
+      for (const obj of objects) {
+        if (obj.absorbT >= 1) continue;
+        let r = obj.r;
+        let alpha = 1;
+        if (obj.absorbT >= 0) {
+          r *= (1 - obj.absorbT);
+          alpha = 1 - obj.absorbT;
+        }
+        if (!obj.alive && obj.absorbT < 0) continue;
+
+        // cull offscreen
+        const sx = (obj.x - camX) * zoom;
+        const sy = (obj.y - camY) * zoom;
+        if (sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) continue;
+
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = obj.color;
+        if (obj.tier >= 2) {
+          ctx.shadowBlur = 6;
+          ctx.shadowColor = obj.color;
+        }
+        ctx.beginPath();
+        ctx.arc(obj.x, obj.y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      }
+
+      // Particles
+      for (const p of particles) {
+        const a = p.life / p.maxLife;
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * a, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Player blob
+      const pr = state.r * pulseScale;
+      const blobColor = hitFlash > 0 ? '#ef4444' : T.slime;
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = blobColor;
+      ctx.fillStyle = blobColor;
+      ctx.beginPath();
+      ctx.arc(state.x, state.y, pr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // inner lighter core
+      ctx.fillStyle = 'rgba(200, 255, 150, 0.3)';
+      ctx.beginPath();
+      ctx.arc(state.x, state.y, pr * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      // orbiting absorbed blobs (amoeba look)
+      for (const orb of orbiters) {
+        const wobble = Math.sin(gameTime * 3 + orb.wobblePhase) * orb.wobbleAmp;
+        const d = pr * (orb.dist + wobble);
+        const ox = state.x + Math.cos(orb.angle) * d;
+        const oy = state.y + Math.sin(orb.angle) * d;
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = orb.color;
+        ctx.beginPath();
+        ctx.arc(ox, oy, orb.r * pulseScale, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      ctx.restore();
+
+      // --- HUD ---
+      // Timer
+      ctx.fillStyle = T.text;
+      ctx.font = 'bold 28px monospace';
+      ctx.textAlign = 'center';
+      const timeLeft = Math.ceil(state.time);
+      ctx.fillText(timeLeft + 's', W / 2, 40);
+
+      // Score
+      ctx.font = '20px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('Score: ' + state.score, 16, 40);
+
+      // Combo flash
+      if (comboFlashTimer > 0) {
+        ctx.strokeStyle = T.slime;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = comboFlashTimer / 0.3;
+        ctx.strokeRect(4, 4, W - 8, H - 8);
+        ctx.globalAlpha = 1;
+
+        ctx.fillStyle = T.slime;
+        ctx.font = 'bold 32px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('COMBO x' + comboCount, W / 2, H / 2 - 60);
+      }
+
+      // --- START SCREEN ---
+      if (gamePhase === 'start') {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = T.slime;
+        ctx.font = 'bold 48px monospace';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 16;
+        ctx.shadowColor = T.slime;
+        ctx.fillText('CLUMP', W / 2, H / 2 - 30);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = T.text;
+        ctx.font = '18px monospace';
+        ctx.fillText('Absorb everything smaller than you', W / 2, H / 2 + 10);
+        ctx.fillText('Tap/click to steer • 60 seconds', W / 2, H / 2 + 36);
+        ctx.fillStyle = T.slime;
+        ctx.font = '22px monospace';
+        ctx.fillText('[ TAP TO START ]', W / 2, H / 2 + 80);
+      }
+
+      // --- ENDING / GAME OVER ---
+      if (gamePhase === 'ending') {
+        // slow zoom out effect
+        const t = Math.min(endFreezeTimer / 1.5, 1);
+        ctx.fillStyle = `rgba(0,0,0,${t * 0.5})`;
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = T.text;
+        ctx.font = 'bold 36px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText("TIME'S UP", W / 2, H / 2 - 20);
+      }
+
+      if (gamePhase === 'over') {
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = T.gold;
+        ctx.font = 'bold 48px monospace';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = T.gold;
+        ctx.fillText(state.score, W / 2, H / 2 - 20);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = T.text;
+        ctx.font = '18px monospace';
+        ctx.fillText('Final size: ' + Math.round(state.r) + 'px', W / 2, H / 2 + 20);
+        ctx.fillStyle = T.slime;
+        ctx.font = '20px monospace';
+        ctx.fillText('[ TAP TO RETRY ]', W / 2, H / 2 + 70);
+      }
+
+      ctx.textAlign = 'left';
+    }
+
+    // --- LOOP ---
+    lastTime = performance.now();
+    initState();
+
+    function loop(ts) {
+      const dt = Math.min((ts - lastTime) / 1000, 0.05); // cap dt
+      lastTime = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
