@@ -9,8 +9,8 @@
     "ltom": { "tune": 0, "decay": 1.0, "level": 1.0 },
     "mtom": { "tune": -5, "decay": 0.8, "level": 1.0 },
     "htom": { "tune": -5, "decay": 0.55, "level": 1.0 },
-    "crash": { "tune": 0, "decay": 0.7, "tone": 0.5, "level": 1.0 },
-    "ride": { "tune": 0, "decay": 0.5, "tone": 0.5, "level": 1.0 }
+    "crash": { "tune": -3, "decay": 0, "tone": 0.5, "level": 1.0 },
+    "ride": { "tune": -12, "decay": 0.45, "tone": 0.5, "level": 1.0 }
   },
   "Punchy": {
     "kick": { "tune": 0, "decay": 0.3, "attack": 0.8, "sweep": 0.7, "level": 1.0 },

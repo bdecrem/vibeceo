@@ -1,25 +1,40 @@
 /**
- * JT90 Cymbal Voice
+ * JT90 Cymbal Voice (Crash / Ride)
  *
- * 909-style cymbal (crash/ride) with:
- * - Multiple metallic oscillators
- * - High-passed noise
- * - Long decay
+ * 909-style cymbal — no-sample synthesis with 6-bit bitcrushing.
+ *
+ * CRASH: explosive, wide, sizzling
+ *   - HP noise (2kHz) is the primary body
+ *   - Brief 20ms metallic shimmer at impact
+ *   - Phase mod "shatter" transient
+ *
+ * RIDE: bell-like "ping", rhythmic, driving
+ *   - Metallic ping is the primary character (sustained)
+ *   - Less noise, more focused bell tones
+ *   - Velocity → brightness (harder = brighter)
+ *   - HP at 400Hz to stay out of kick/bass
  */
 
 import { clamp, fastTanh } from '../../../../../jb202/dist/dsp/utils/math.js';
-import { Noise } from './noise.js';
+import { Noise } from '../../../../../jb202/dist/dsp/generators/index.js';
 
-// Cymbal frequencies - higher and more complex than hi-hat
+// Crash: wide spread for "shatter"
+// Ride: tighter bell-like cluster
 const CYMBAL_FREQUENCIES = {
-  crash: [295, 410, 532, 674, 821, 996, 1178, 1367],
-  ride: [319, 456, 581, 728, 863, 1023, 1192, 1411]
+  crash: [4210, 5890, 7130, 9340],
+  ride:  [2830, 3760, 5140, 6950]
 };
+
+// Bitcrush to n-bit depth
+function bitcrush(sample, bits) {
+  const steps = Math.pow(2, bits);
+  return Math.round(sample * steps) / steps;
+}
 
 export class CymbalVoice {
   constructor(sampleRate = 44100, type = 'crash') {
     this.sampleRate = sampleRate;
-    this.type = type;  // 'crash' or 'ride'
+    this.type = type;
 
     // Parameters
     this.tune = 0;
@@ -27,17 +42,28 @@ export class CymbalVoice {
     this.tone = 0.5;
     this.level = 1.0;
 
-    // Oscillator phases
-    this.phases = new Array(8).fill(0);
+    // Crash: 4 metallic sine oscillators
+    // Ride: FM carrier + modulator (single pair, no beating)
+    this.phases = [0, 0, 0, 0];
     this.frequencies = [...(CYMBAL_FREQUENCIES[type] || CYMBAL_FREQUENCIES.crash)];
 
-    // Noise
-    this.noise = new Noise(77777);
-    this.hpFilter = 0;
-    this.lpFilter = 0;
+    // Ride FM state
+    this.carrierPhase = 0;
+    this.modPhase = 0;
+    this.fmIndex = 0;  // FM index (decays for bright→mellow)
 
-    // Envelope
+    // Noise
+    this.noise = new Noise(type === 'crash' ? 77777 : 99999);
+    this.hpState = 0;
+
+    // Phase mod noise (crash impact transient)
+    this.modNoise = new Noise(88888);
+    this.modEnvelope = 0;
+
+    // Envelopes
     this.envelope = 0;
+    this.metalEnvelope = 0;
+    this.velocity = 1.0;
 
     // State
     this.active = false;
@@ -45,21 +71,30 @@ export class CymbalVoice {
   }
 
   trigger(velocity = 1.0) {
-    this.phases = new Array(8).fill(0);
+    this.phases = [0, 0, 0, 0];
     this.sampleCount = 0;
     this.active = true;
+    this.velocity = velocity;
 
-    this.envelope = velocity * this.level;
+    const vel = velocity * this.level;
+    this.envelope = vel;
+    this.metalEnvelope = vel;
+    this.modEnvelope = vel;
+
+    // Ride FM: reset phases, set initial brightness
+    this.carrierPhase = 0;
+    this.modPhase = 0;
+    this.fmIndex = 3.0 + this.velocity * 2.0;  // Harder hit = brighter
 
     // Update frequencies based on tune
     const tuneMultiplier = Math.pow(2, this.tune / 1200);
     const baseFreqs = CYMBAL_FREQUENCIES[this.type] || CYMBAL_FREQUENCIES.crash;
     this.frequencies = baseFreqs.map(f => f * tuneMultiplier);
 
-    // Reset noise
+    // Reset
     this.noise.reset();
-    this.hpFilter = 0;
-    this.lpFilter = 0;
+    this.modNoise.reset();
+    this.hpState = 0;
   }
 
   processSample() {
@@ -67,54 +102,111 @@ export class CymbalVoice {
 
     this.sampleCount++;
 
-    // Generate metallic oscillators
+    if (this.type === 'ride') {
+      return this._processRide();
+    } else {
+      return this._processCrash();
+    }
+  }
+
+  _processCrash() {
+    // --- HP-filtered white noise (primary body, 2kHz cutoff) ---
+    let noiseSample = this.noise.nextSample();
+    const hpCut = 2000 / this.sampleRate;
+    this.hpState += hpCut * (noiseSample - this.hpState);
+    noiseSample = noiseSample - this.hpState;
+
+    // --- Phase modulation burst ("shatter" transient, ~10ms) ---
+    const modDecayRate = 1 - Math.exp(-4.6 / (0.01 * this.sampleRate));
+    this.modEnvelope *= (1 - modDecayRate);
+    const phaseMod = this.modNoise.nextSample() * this.modEnvelope * 0.5;
+
+    // --- 4 metallic sine oscillators ---
     let metallic = 0;
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 4; i++) {
       this.phases[i] += this.frequencies[i] / this.sampleRate;
       if (this.phases[i] >= 1) this.phases[i] -= 1;
-
-      // Pulse wave for richer harmonics
-      const duty = 0.3 + (i % 3) * 0.1;
-      const pulse = this.phases[i] < duty ? 1 : -1;
-      metallic += pulse / 8;
+      const phase = this.phases[i] + phaseMod;
+      metallic += Math.sin(phase * 2 * Math.PI) / 4;
     }
 
-    // Generate noise
-    let noiseSample = this.noise.nextSample();
+    // --- Metallic envelope: brief 20ms shimmer ---
+    const metalDecayRate = 1 - Math.exp(-4.6 / (0.02 * this.sampleRate));
+    this.metalEnvelope *= (1 - metalDecayRate);
 
-    // High-pass filter
-    const hpCutoff = 0.2;
-    this.hpFilter += hpCutoff * (noiseSample - this.hpFilter);
-    noiseSample = noiseSample - this.hpFilter;
+    // --- Mix: noise body + brief metallic shimmer ---
+    const metalLevel = 0.15 + this.tone * 0.25;
+    let sample = noiseSample * 0.6 + metallic * this.metalEnvelope * metalLevel;
 
-    // Low-pass based on tone
-    const lpCutoff = 0.1 + this.tone * 0.2;
-    this.lpFilter += lpCutoff * (noiseSample - this.lpFilter);
-    noiseSample = this.lpFilter;
+    // --- 6-bit bitcrushing ---
+    sample = bitcrush(sample, 6);
 
-    // Mix metallic and noise
-    const metallicMix = 0.4 + this.tone * 0.3;
-    const noiseMix = 0.6 - this.tone * 0.3;
-    let sample = metallic * metallicMix + noiseSample * noiseMix;
-
-    // Envelope - long decay for cymbals
-    const decayTime = this.type === 'crash'
-      ? 0.5 + this.decay * 2.5    // 500ms - 3s for crash
-      : 0.3 + this.decay * 1.2;   // 300ms - 1.5s for ride
-
+    // --- Main envelope ---
+    const decayTime = 0.5 + this.decay * 2.5;  // 500ms - 3s
     const decayRate = 1 - Math.exp(-4.6 / (decayTime * this.sampleRate));
     this.envelope *= (1 - decayRate);
-
     sample *= this.envelope;
 
-    // Soft saturation
-    sample = fastTanh(sample * 1.5) / fastTanh(1.5);
-
-    // Deactivate
-    if (this.envelope < 0.0001) {
-      this.active = false;
+    // --- Dusty VCA tail ---
+    if (this.envelope > 0.001) {
+      sample += this.noise.nextSample() * 0.008;
     }
 
+    sample = fastTanh(sample * 1.5) / fastTanh(1.5);
+
+    if (this.envelope < 0.0001) this.active = false;
+    return sample;
+  }
+
+  _processRide() {
+    // --- FM bell synthesis (single carrier/mod pair = no beating) ---
+    // Carrier ~3.5kHz, modulator at golden ratio (inharmonic = metallic)
+    const tuneMultiplier = Math.pow(2, this.tune / 1200);
+    const carrierFreq = 3500 * tuneMultiplier;
+    const modRatio = 1.6180339;  // Golden ratio — maximally inharmonic
+    const modFreq = carrierFreq * modRatio;
+
+    // FM index decays: bright "ping" attack → mellow sustain
+    const indexDecayRate = 1 - Math.exp(-4.6 / (0.08 * this.sampleRate));
+    this.fmIndex *= (1 - indexDecayRate);
+    // Tone adds sustained brightness
+    const fmIndex = this.fmIndex + this.tone * 1.5;
+
+    // Modulator
+    this.modPhase += modFreq / this.sampleRate;
+    if (this.modPhase >= 1) this.modPhase -= 1;
+    const modSignal = Math.sin(this.modPhase * 2 * Math.PI) * fmIndex;
+
+    // Carrier (frequency-modulated by modulator)
+    this.carrierPhase += (carrierFreq + modSignal * carrierFreq) / this.sampleRate;
+    if (this.carrierPhase >= 1) this.carrierPhase -= 1;
+    let bell = Math.sin(this.carrierPhase * 2 * Math.PI);
+
+    // --- Noise "air" layer ---
+    let noiseSample = this.noise.nextSample();
+    const hpCut = 400 / this.sampleRate;
+    this.hpState += hpCut * (noiseSample - this.hpState);
+    noiseSample = noiseSample - this.hpState;
+    noiseSample = bitcrush(noiseSample, 6);
+
+    // --- Mix: FM bell + noise air ---
+    const noiseMix = 0.1 + this.velocity * 0.15;
+    let sample = bell * 0.5 + noiseSample * noiseMix;
+
+    // --- Main envelope ---
+    const decayTime = 0.3 + this.decay * 1.2;  // 300ms - 1.5s
+    const decayRate = 1 - Math.exp(-4.6 / (decayTime * this.sampleRate));
+    this.envelope *= (1 - decayRate);
+    sample *= this.envelope;
+
+    // --- Dusty VCA tail ---
+    if (this.envelope > 0.001) {
+      sample += this.noise.nextSample() * 0.005;
+    }
+
+    sample = fastTanh(sample * 1.5) / fastTanh(1.5);
+
+    if (this.envelope < 0.0001) this.active = false;
     return sample;
   }
 

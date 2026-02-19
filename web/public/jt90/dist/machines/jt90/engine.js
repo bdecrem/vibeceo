@@ -147,13 +147,13 @@ export class JT90Engine {
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     crash: [
-      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.7 },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -3, unit: 'semitones' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     ride: [
-      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.6 },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -12, unit: 'semitones' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.45 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
   };
