@@ -1,6 +1,6 @@
 function App() {
   // Read fresh data via context bridge (avoids react-live re-mount on data changes)
-  const { documents, addDocument, updateDocument, deleteDocument, shareDocument, unshareDocument, refreshDocuments, exportMarkdown } = useContext(ScopeContext);
+  const { documents, addDocument, updateDocument, deleteDocument, shareDocument, unshareDocument, refreshDocuments, exportMarkdown, onImageUpload } = useContext(ScopeContext);
 
   const [selectedId, setSelectedId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -262,6 +262,8 @@ function App() {
                 onUpdate={handleEditorUpdate}
                 theme={{ accent }}
                 editable={true}
+                features={["bold", "italic", "underline", "strike", "h1", "h2", "h3", "bulletList", "orderedList", "blockquote", "codeBlock", "horizontalRule", "link", "image"]}
+                onImageUpload={onImageUpload}
               />
             </div>
           ) : (

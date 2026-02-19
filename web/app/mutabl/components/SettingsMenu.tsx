@@ -88,11 +88,9 @@ export default function SettingsMenu({
       <button
         onClick={() => setOpen(!open)}
         style={{
-          width: 36,
-          height: 36,
-          borderRadius: 8,
-          background: open ? "#2a2a4a" : "rgba(255,255,255,0.06)",
-          border: updateAvailable ? `1px solid ${accentColor}` : "1px solid transparent",
+          background: "none",
+          border: "none",
+          padding: 0,
           color: "#aaa",
           cursor: "pointer",
           fontSize: 18,

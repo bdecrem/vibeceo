@@ -15,6 +15,7 @@ const CONFIG_ENDPOINT = "/api/mutabl/notabl/config";
 const AGENT_ENDPOINT = "/api/mutabl/notabl/agent";
 const UPDATE_ENDPOINT = "/api/mutabl/notabl/update";
 const CHANGES_ENDPOINT = "/api/mutabl/notabl/changes";
+const IMAGE_UPLOAD_ENDPOINT = "/api/mutabl/notabl/images/upload";
 
 export default function NotablPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -96,6 +97,18 @@ export default function NotablPage() {
     window.location.reload();
   };
 
+  const onImageUpload = useCallback(async (file: File): Promise<string> => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(IMAGE_UPLOAD_ENDPOINT, { method: "POST", body: form });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Upload failed" }));
+      throw new Error(err.error || "Upload failed");
+    }
+    const data = await res.json();
+    return data.url;
+  }, []);
+
   if (checking) {
     return (
       <div
@@ -170,6 +183,7 @@ export default function NotablPage() {
           refreshDocuments,
           exportMarkdown,
           RichEditor,
+          onImageUpload,
           user: { handle: user.handle },
         }}
       />
