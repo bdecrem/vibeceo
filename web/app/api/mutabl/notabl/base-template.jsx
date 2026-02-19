@@ -113,7 +113,7 @@ function App() {
     if (result) {
       const url = window.location.origin + "/mutabl/notabl/s/" + result.slug;
       setShareUrl(url);
-      if (typeof navigator.share === "function") { try { navigator.share({ title: "notabl", url }); } catch {} }
+      if (typeof navigator.share === "function") { try { await navigator.share({ title: "notabl", url }); } catch {} }
     }
   };
 
