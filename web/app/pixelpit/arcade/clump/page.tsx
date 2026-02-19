@@ -6,9 +6,11 @@ import {
   ScoreFlow,
   Leaderboard,
   ShareButtonContainer,
+  ShareModal,
   usePixelpitSocial,
   type ScoreFlowColors,
   type LeaderboardColors,
+  type ProgressionResult,
 } from '@/app/pixelpit/components';
 
 // --- INDIE BITE THEME ---
@@ -171,8 +173,37 @@ export default function ClumpGame() {
   const [score, setScore] = useState(0);
   const [socialLoaded, setSocialLoaded] = useState(false);
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
+  const [progression, setProgression] = useState<ProgressionResult | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const { user } = usePixelpitSocial(socialLoaded);
+
+  const GAME_URL = typeof window !== 'undefined'
+    ? `${window.location.origin}/pixelpit/arcade/clump`
+    : 'https://pixelpit.gg/pixelpit/arcade/clump';
+
+  // Group code + logout URL handling
+  useEffect(() => {
+    if (!socialLoaded || typeof window === 'undefined') return;
+    if (!window.PixelpitSocial) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('logout')) {
+      window.PixelpitSocial.logout();
+      params.delete('logout');
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      window.location.reload();
+      return;
+    }
+
+    const groupCode = window.PixelpitSocial.getGroupCodeFromUrl();
+    if (groupCode) {
+      window.PixelpitSocial.storeGroupCode(groupCode);
+    }
+  }, [socialLoaded]);
 
   // All mutable game state in a ref
   const g = useRef({
@@ -464,6 +495,8 @@ export default function ClumpGame() {
     g.current.phase = 'playing';
     g.current.running = true;
     setGameState('playing');
+    setShowShareModal(false);
+    setProgression(null);
   }, [initGame, initAudio, startDrone]);
 
   const startTutorial = useCallback(() => {
@@ -562,6 +595,14 @@ export default function ClumpGame() {
           game.phase = 'over';
           setScore(game.state.score);
           setGameState('gameover');
+          // Analytics
+          if (game.state.score >= 1) {
+            fetch('/api/pixelpit/stats', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ game: GAME_ID }),
+            }).catch(() => {});
+          }
         }
         return;
       }
@@ -1260,6 +1301,7 @@ export default function ClumpGame() {
             onRankReceived={(rank, entryId) => {
               setSubmittedEntryId(entryId ?? null);
             }}
+            onProgression={(prog) => setProgression(prog)}
           />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 15, alignItems: 'center' }}>
@@ -1284,13 +1326,32 @@ export default function ClumpGame() {
             >
               leaderboard
             </button>
-            <ShareButtonContainer
-              id="share-btn-container"
-              url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/clump/share/${score}` : ''}
-              text={`I scored ${score} on CLUMP! Can you beat me?`}
-              style="minimal"
-              socialLoaded={socialLoaded}
-            />
+            {user ? (
+              <button
+                onClick={() => setShowShareModal(true)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 6,
+                  color: COLORS.muted,
+                  padding: '14px 35px',
+                  fontSize: 11,
+                  fontFamily: 'ui-monospace, monospace',
+                  cursor: 'pointer',
+                  letterSpacing: 2,
+                }}
+              >
+                share / groups
+              </button>
+            ) : (
+              <ShareButtonContainer
+                id="share-btn-container"
+                url={typeof window !== 'undefined' ? `${window.location.origin}/pixelpit/arcade/clump/share/${score}` : ''}
+                text={`I scored ${score} on CLUMP! Can you beat me?`}
+                style="minimal"
+                socialLoaded={socialLoaded}
+              />
+            )}
           </div>
         </div>
       )}
@@ -1303,6 +1364,19 @@ export default function ClumpGame() {
           entryId={submittedEntryId ?? undefined}
           colors={LEADERBOARD_COLORS}
           onClose={() => setGameState('gameover')}
+          groupsEnabled={true}
+          gameUrl={GAME_URL}
+          socialLoaded={socialLoaded}
+        />
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && user && (
+        <ShareModal
+          gameUrl={GAME_URL}
+          score={score}
+          colors={LEADERBOARD_COLORS}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </>
