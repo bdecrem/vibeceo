@@ -301,8 +301,7 @@ export async function renderSession(session, bars, filename) {
     const node = session._nodes[id];
     if (!node) continue;
 
-    const level = session.getInstrumentLevel(id);
-    const linearLevel = Math.pow(10, level / 20);
+    const linearLevel = node.getOutputGain();
 
     if (hasArrangement) {
       // Render each section where this instrument has a pattern

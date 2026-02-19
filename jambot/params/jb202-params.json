@@ -12,7 +12,7 @@
     }
   },
   "bass": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "output level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
 
     "osc1Waveform": { "unit": "choice", "options": ["sawtooth", "square", "triangle"], "default": "sawtooth", "hint": "oscillator 1 waveform" },
     "osc1Octave": { "unit": "semitones", "min": -24, "max": 24, "default": 0, "hint": "oscillator 1 octave shift" },

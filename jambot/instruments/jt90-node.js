@@ -86,6 +86,12 @@ export class JT90Node extends InstrumentNode {
    * Register all parameters from the JSON definition
    */
   _registerParams() {
+    // Register node-level output (handled by base class in dB)
+    const nodeDef = JT90_PARAMS._node;
+    if (nodeDef?.level) {
+      this.registerParam('level', nodeDef.level);
+    }
+
     for (const voice of VOICES) {
       const voiceDef = JT90_PARAMS[voice];
       if (!voiceDef) continue;
@@ -109,6 +115,7 @@ export class JT90Node extends InstrumentNode {
    * Get a parameter value
    */
   getParam(path) {
+    if (path === 'level') return super.getParam(path);
     return this._params[path];
   }
 
@@ -116,6 +123,8 @@ export class JT90Node extends InstrumentNode {
    * Set a parameter value
    */
   setParam(path, value) {
+    if (path === 'level') return super.setParam(path, value);
+
     // Handle mute for any voice
     if (path.endsWith('.mute')) {
       const voice = path.split('.')[0];
@@ -166,13 +175,6 @@ export class JT90Node extends InstrumentNode {
       result[voice] = this.getVoiceParams(voice);
     }
     return result;
-  }
-
-  /**
-   * Get node output level (master)
-   */
-  getOutputGain() {
-    return 1.0;
   }
 
   /**

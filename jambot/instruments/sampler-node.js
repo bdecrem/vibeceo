@@ -26,8 +26,8 @@ export class SamplerNode extends InstrumentNode {
     // Kit contains sample buffers
     this._kit = config.kit || null;
 
-    // Node output level in dB (-6dB default for proper gain staging)
-    this._level = -6;
+    // -6dB default for proper gain staging
+    this.setLevel(-6);
 
     // Pattern: { s1: [{step, vel}, ...], s2: [...], ... }
     this._pattern = {};
@@ -67,7 +67,7 @@ export class SamplerNode extends InstrumentNode {
    * @returns {*}
    */
   getParam(path) {
-    if (path === 'level') return this._level;
+    if (path === 'level') return super.getParam(path);
     if (path === 'kit') {
       return this._kit?.id || null;
     }
@@ -83,8 +83,7 @@ export class SamplerNode extends InstrumentNode {
    */
   setParam(path, value) {
     if (path === 'level') {
-      this._level = Math.max(-60, Math.min(6, value));
-      return true;
+      return super.setParam(path, value);
     }
     if (path === 'kit') {
       // Kit loading handled externally
@@ -148,15 +147,6 @@ export class SamplerNode extends InstrumentNode {
     }
 
     return result;
-  }
-
-  /**
-   * Get node output level as linear gain multiplier
-   * Used by render loop to apply node-level gain
-   * @returns {number} Linear gain (1.0 = unity, 2.0 = +6dB)
-   */
-  getOutputGain() {
-    return Math.pow(10, this._level / 20);
   }
 
   /**
@@ -376,7 +366,7 @@ export class SamplerNode extends InstrumentNode {
     return {
       id: this.id,
       kitId: this._kit?.id || null,
-      level: this._level !== -6 ? this._level : undefined,
+      level: this.getLevel() !== -6 ? this.getLevel() : undefined,
       pattern: Object.keys(sparsePattern).length > 0 ? sparsePattern : undefined,
       patternLength: this.getPatternLength(),
       params: Object.keys(sparseParams).length > 0 ? sparseParams : undefined,
@@ -390,7 +380,7 @@ export class SamplerNode extends InstrumentNode {
    */
   deserialize(data) {
     // Note: kit must be reloaded separately (contains audio buffers)
-    if (data.level !== undefined) this._level = data.level;
+    if (data.level !== undefined) this.setLevel(data.level);
 
     if (data.pattern) {
       const length = data.patternLength || 16;

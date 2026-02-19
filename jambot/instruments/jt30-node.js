@@ -62,10 +62,16 @@ export class JT30Node extends InstrumentNode {
    * Register all parameters from the JSON definition
    */
   _registerParams() {
+    // Register node-level output (handled by base class in dB)
+    this.registerParam('level', { min: -60, max: 6, default: 0, unit: 'dB', hint: 'node output level' });
+
     const bassDef = JT30_PARAMS.bass;
     if (!bassDef) return;
 
     for (const [paramName, paramDef] of Object.entries(bassDef)) {
+      // Skip 'level' — handled as node-level param by base class
+      if (paramName === 'level') continue;
+
       const path = `bass.${paramName}`;
       this.registerParam(path, {
         ...paramDef,
@@ -83,6 +89,7 @@ export class JT30Node extends InstrumentNode {
    * Get a parameter value
    */
   getParam(path) {
+    if (path === 'level') return super.getParam(path);
     const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
     return this._params[normalizedPath];
   }
@@ -91,11 +98,13 @@ export class JT30Node extends InstrumentNode {
    * Set a parameter value (stores ENGINE UNITS, 0-1 normalized)
    */
   setParam(path, value) {
+    if (path === 'level') return super.setParam(path, value);
+
     const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
 
     if (normalizedPath === 'bass.mute' || path === 'mute') {
       if (value) {
-        this._params['bass.level'] = 0;
+        this.setLevel(-60);
       }
       return true;
     }
@@ -131,14 +140,6 @@ export class JT30Node extends InstrumentNode {
     }
 
     return result;
-  }
-
-  /**
-   * Get node output level
-   */
-  getOutputGain() {
-    const levelEngine = this._params['bass.level'] ?? 1.0;
-    return levelEngine;
   }
 
   /**

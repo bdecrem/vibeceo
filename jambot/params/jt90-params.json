@@ -9,6 +9,9 @@
       "seconds": "Time in seconds"
     }
   },
+  "_node": {
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "node output level" }
+  },
   "kick": {
     "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "kick level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "kick pitch" },

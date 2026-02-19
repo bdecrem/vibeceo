@@ -43,8 +43,8 @@ export class JB01Node extends InstrumentNode {
 
     this._voices = VOICES;
 
-    // Node output level in dB (-6dB default for proper gain staging)
-    this._level = -6;
+    // -6dB default for proper gain staging
+    this.setLevel(-6);
 
     // Initialize pattern
     this._pattern = createEmptyPattern();
@@ -93,9 +93,9 @@ export class JB01Node extends InstrumentNode {
    * @returns {number}
    */
   getParam(path) {
-    // Node-level output is in dB, not engine units
+    // 'level' handled by base InstrumentNode
     if (path === 'level') {
-      return this.getLevel();
+      return super.getParam(path);
     }
     return this._params[path];
   }
@@ -108,10 +108,9 @@ export class JB01Node extends InstrumentNode {
    * @returns {boolean}
    */
   setParam(path, value) {
-    // Handle node-level output (in dB, not engine units)
+    // 'level' handled by base InstrumentNode
     if (path === 'level') {
-      this.setLevel(value);
-      return true;
+      return super.setParam(path, value);
     }
 
     // Handle mute (sets level to minimum engine value)
@@ -173,31 +172,6 @@ export class JB01Node extends InstrumentNode {
     }
 
     return result;
-  }
-
-  /**
-   * Get node output level as linear gain multiplier
-   * Converts from dB to linear gain
-   * @returns {number}
-   */
-  getOutputGain() {
-    return Math.pow(10, this._level / 20);
-  }
-
-  /**
-   * Set node output level in dB
-   * @param {number} dB - Level in dB (-60 to +6)
-   */
-  setLevel(dB) {
-    this._level = Math.max(-60, Math.min(6, dB));
-  }
-
-  /**
-   * Get node output level in dB
-   * @returns {number}
-   */
-  getLevel() {
-    return this._level;
   }
 
   /**

@@ -70,6 +70,7 @@ export class JB200Node extends InstrumentNode {
    * @returns {*}
    */
   getParam(path) {
+    if (path === 'level') return super.getParam(path);
     // Normalize path - add 'bass.' prefix if missing
     const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
     return this._params[normalizedPath];
@@ -83,21 +84,20 @@ export class JB200Node extends InstrumentNode {
    * @returns {boolean}
    */
   setParam(path, value) {
+    if (path === 'level') return super.setParam(path, value);
+
     // Normalize path
     const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
 
-    // Handle mute (sets level to minimum engine value)
+    // Handle mute — set node level to minimum dB
     if (normalizedPath === 'bass.mute' || path === 'mute') {
       if (value) {
-        this._params['bass.level'] = 0; // 0 = silent in engine units
+        this.setLevel(-60);
       }
       return true;
     }
 
     // Store engine value directly - no clamping needed
-    // The descriptors have producer-friendly ranges (Hz, dB, etc.)
-    // but we store engine units (0-1), so clamping against those ranges would be wrong.
-    // Tools are responsible for validation before conversion.
     this._params[normalizedPath] = value;
     return true;
   }
@@ -135,18 +135,6 @@ export class JB200Node extends InstrumentNode {
     }
 
     return result;
-  }
-
-  /**
-   * Get node output level as linear gain multiplier
-   * Level is stored in engine units (0-1 where 0.5 = 0dB = unity, 1.0 = +6dB)
-   * @returns {number} Linear gain (1.0 = unity, 2.0 = +6dB)
-   */
-  getOutputGain() {
-    // Level stored as engine units: 0-1 where 1.0 = +6dB (linear 2.0)
-    const levelEngine = this._params['bass.level'] ?? 0.5; // 0.5 = 0dB (unity)
-    const maxLinear = Math.pow(10, 6 / 20); // 2.0 for +6dB max
-    return levelEngine * maxLinear;
   }
 
   /**

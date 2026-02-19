@@ -10,7 +10,7 @@
     }
   },
   "lead": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 80, "hint": "output level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
 
     "sawLevel": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "sawtooth oscillator level" },
     "pulseLevel": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "pulse oscillator level" },

@@ -10,7 +10,7 @@
     }
   },
   "bass": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 80, "hint": "output level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
 
     "waveform": { "unit": "choice", "options": ["sawtooth", "square"], "default": "sawtooth", "hint": "oscillator waveform - saw is brighter/aggressive, square is hollow/rounder" },
 

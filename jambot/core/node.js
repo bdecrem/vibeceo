@@ -126,11 +126,65 @@ export class InstrumentNode extends Node {
   constructor(id, config = {}) {
     super(id, config);
 
+    // Node output level in dB (0 = unity gain)
+    this._level = 0;
+
     // Pattern storage
     this._pattern = null;
 
     // Voice list (for multi-voice instruments like drums)
     this._voices = [];
+  }
+
+  /**
+   * Get node output level as linear gain multiplier
+   * Converts from dB to linear gain
+   * @returns {number} Linear gain (1.0 = unity, 2.0 = +6dB)
+   */
+  getOutputGain() {
+    return Math.pow(10, this._level / 20);
+  }
+
+  /**
+   * Set node output level in dB
+   * @param {number} dB - Level in dB (-60 to +6)
+   */
+  setLevel(dB) {
+    this._level = Math.max(-60, Math.min(6, dB));
+  }
+
+  /**
+   * Get node output level in dB
+   * @returns {number}
+   */
+  getLevel() {
+    return this._level;
+  }
+
+  /**
+   * Get a parameter value — intercepts 'level' to return dB
+   * @param {string} path
+   * @returns {*}
+   */
+  getParam(path) {
+    if (path === 'level') {
+      return this.getLevel();
+    }
+    return super.getParam(path);
+  }
+
+  /**
+   * Set a parameter value — intercepts 'level' to route to setLevel()
+   * @param {string} path
+   * @param {*} value
+   * @returns {boolean}
+   */
+  setParam(path, value) {
+    if (path === 'level') {
+      this.setLevel(value);
+      return true;
+    }
+    return super.setParam(path, value);
   }
 
   /**

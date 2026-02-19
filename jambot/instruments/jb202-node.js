@@ -49,12 +49,19 @@ export class JB202Node extends InstrumentNode {
   /**
    * Register all parameters from the JSON definition
    * Stores values in ENGINE UNITS (0-1) internally for compatibility with render loop
+   * Node-level 'level' param is stored in dB and handled by base InstrumentNode
    */
   _registerParams() {
+    // Register node-level output (handled by base class in dB)
+    this.registerParam('level', { min: -60, max: 6, default: 0, unit: 'dB', hint: 'node output level' });
+
     const bassDef = JB202_PARAMS.bass;
     if (!bassDef) return;
 
     for (const [paramName, paramDef] of Object.entries(bassDef)) {
+      // Skip 'level' — handled as node-level param by base class
+      if (paramName === 'level') continue;
+
       const path = `bass.${paramName}`;
       this.registerParam(path, {
         ...paramDef,
@@ -76,6 +83,10 @@ export class JB202Node extends InstrumentNode {
    * @returns {*}
    */
   getParam(path) {
+    // Node-level output handled by base class
+    if (path === 'level') {
+      return super.getParam(path);
+    }
     // Normalize path - add 'bass.' prefix if missing
     const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
     return this._params[normalizedPath];
@@ -89,13 +100,18 @@ export class JB202Node extends InstrumentNode {
    * @returns {boolean}
    */
   setParam(path, value) {
+    // Node-level output handled by base class
+    if (path === 'level') {
+      return super.setParam(path, value);
+    }
+
     // Normalize path
     const normalizedPath = path.startsWith('bass.') ? path : `bass.${path}`;
 
-    // Handle mute (sets level to minimum engine value)
+    // Handle mute — set node level to minimum dB
     if (normalizedPath === 'bass.mute' || path === 'mute') {
       if (value) {
-        this._params['bass.level'] = 0; // 0 = silent in engine units
+        this.setLevel(-60);
       }
       return true;
     }
@@ -141,17 +157,6 @@ export class JB202Node extends InstrumentNode {
     }
 
     return result;
-  }
-
-  /**
-   * Get node output level as linear gain multiplier
-   * Level is stored in engine units (0-1 where 0.5 = 0dB = unity, 1.0 = +6dB)
-   * @returns {number} Linear gain (1.0 = unity, 2.0 = +6dB)
-   */
-  getOutputGain() {
-    // Level stored as engine units: 0-1 where 1.0 = 100%
-    const levelEngine = this._params['bass.level'] ?? 1.0;
-    return levelEngine;
   }
 
   /**

@@ -48,13 +48,8 @@ export class JP9000Node extends InstrumentNode {
    * Register node-level parameters
    */
   _registerParams() {
-    this.registerParam('modular.level', {
-      min: -60,
-      max: 6,
-      default: 0,
-      unit: 'dB',
-    });
-    this._params['modular.level'] = 0.5; // Engine units (0.5 = 0dB)
+    // Node-level output handled by base InstrumentNode (in dB)
+    this.registerParam('level', { min: -60, max: 6, default: 0, unit: 'dB', hint: 'node output level' });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -162,13 +157,18 @@ export class JP9000Node extends InstrumentNode {
 
   /**
    * Override setParam to handle both node and module params
-   * @param {string} path - e.g., 'modular.level' or 'osc1.frequency'
+   * @param {string} path - e.g., 'level', 'modular.level', or 'osc1.frequency'
    * @param {*} value
    */
   setParam(path, value) {
-    if (path.startsWith('modular.')) {
-      // Node-level param
+    // Node-level output handled by base class
+    if (path === 'level') {
       return super.setParam(path, value);
+    }
+
+    // Legacy 'modular.level' → route to base level
+    if (path === 'modular.level') {
+      return super.setParam('level', value);
     }
 
     // Module param: path is 'moduleId.param'
@@ -186,8 +186,13 @@ export class JP9000Node extends InstrumentNode {
    * @param {string} path
    */
   getParam(path) {
-    if (path.startsWith('modular.')) {
+    if (path === 'level') {
       return super.getParam(path);
+    }
+
+    // Legacy 'modular.level' → route to base level
+    if (path === 'modular.level') {
+      return super.getParam('level');
     }
 
     const [moduleId, param] = path.split('.');
@@ -275,16 +280,6 @@ export class JP9000Node extends InstrumentNode {
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDERING
   // ═══════════════════════════════════════════════════════════════════════════
-
-  /**
-   * Get node output level as linear gain multiplier
-   * @returns {number}
-   */
-  getOutputGain() {
-    const levelEngine = this._params['modular.level'] ?? 0.5;
-    const maxLinear = Math.pow(10, 6 / 20); // 2.0 for +6dB max
-    return levelEngine * maxLinear;
-  }
 
   /**
    * Render the pattern to an audio buffer
@@ -401,9 +396,9 @@ export class JP9000Node extends InstrumentNode {
 
     // Only store non-default node params
     const sparseParams = {};
-    const levelValue = this._params['modular.level'];
-    if (levelValue !== undefined && Math.abs(levelValue - 0.5) > 0.001) {
-      sparseParams['modular.level'] = levelValue;
+    const levelValue = this.getLevel();
+    if (Math.abs(levelValue) > 0.01) {
+      sparseParams['level'] = levelValue;
     }
 
     return {
@@ -446,6 +441,21 @@ export class JP9000Node extends InstrumentNode {
     }
 
     if (data.params) {
+      // Handle legacy 'modular.level' → base class level
+      if (data.params['modular.level'] !== undefined) {
+        // Legacy: was stored as engine units 0-1, convert to dB
+        // 0.5 was 0dB, 1.0 was +6dB
+        const engineVal = data.params['modular.level'];
+        const maxLinear = Math.pow(10, 6 / 20);
+        const linearGain = engineVal * maxLinear;
+        const dB = linearGain > 0 ? 20 * Math.log10(linearGain) : -60;
+        this.setLevel(dB);
+        delete data.params['modular.level'];
+      }
+      if (data.params['level'] !== undefined) {
+        this.setLevel(data.params['level']);
+        delete data.params['level'];
+      }
       Object.assign(this._params, data.params);
     }
     if (data.rack) this.rack = Rack.fromJSON(data.rack);
