@@ -528,7 +528,7 @@
               color: obj.color,
               speed: (0.5 + Math.random() * 1.0) * (Math.random() < 0.5 ? 1 : -1),
               wobblePhase: Math.random() * Math.PI * 2,
-              wobbleAmp: 0.02 + Math.random() * 0.04, // subtle ±2px drift
+              wobbleAmp: 0.08 + Math.random() * 0.15,
             });
           }
 
@@ -717,7 +717,7 @@
       ctx.globalAlpha = 1;
       // orbiting absorbed blobs (amoeba look)
       for (const orb of orbiters) {
-        const wobble = Math.sin(gameTime * 3 + orb.wobblePhase) * orb.wobbleAmp;
+        const wobble = Math.sin(gameTime * 3 * Math.abs(orb.speed) + orb.wobblePhase) * orb.wobbleAmp;
         const d = pr * (orb.dist + wobble);
         const ox = state.x + Math.cos(orb.angle) * d;
         const oy = state.y + Math.sin(orb.angle) * d;
