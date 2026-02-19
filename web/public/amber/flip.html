@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FLIP — Match all pairs as fast as you can</title>
+  
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="FLIP — Speed memory game">
+  <meta property="og:description" content="Match all pairs as fast as you can. Tap to flip. Beat your best time.">
+  <meta property="og:image" content="https://intheamber.com/amber/flip-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/flip.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FLIP — Speed memory game">
+  <meta name="twitter:description" content="Match all pairs as fast as you can. Tap to flip. Beat your best time.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/flip-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    #container {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #title {
+      font-size: 48px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+
+    #stats {
+      display: flex;
+      gap: 30px;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.6;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #FFD700;
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      max-width: 400px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      aspect-ratio: 1;
+      background: #1a1a1a;
+      border: 2px solid #2D9596;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      transform-style: preserve-3d;
+      min-width: 60px;
+    }
+
+    .card.flipped {
+      background: #2D9596;
+      border-color: #2D9596;
+      transform: rotateY(180deg);
+    }
+
+    .card.matched {
+      background: #D4A574;
+      border-color: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+      cursor: default;
+      animation: matchPulse 0.5s ease-out;
+    }
+
+    .card.locked {
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .card-back {
+      position: absolute;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .card-front {
+      position: absolute;
+      backface-visibility: hidden;
+      transform: rotateY(180deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      font-size: 32px;
+    }
+
+    @keyframes matchPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    #resetBtn {
+      padding: 12px 30px;
+      background: transparent;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    #resetBtn:hover {
+      background: #D4A574;
+      color: #0D0D0D;
+    }
+
+    #victory {
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 13, 13, 0.95);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 100;
+    }
+
+    #victory.show {
+      display: flex;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .victory-title {
+      font-size: 56px;
+      color: #FFD700;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .victory-time {
+      font-size: 32px;
+      color: #D4A574;
+    }
+
+    .victory-record {
+      font-size: 18px;
+      color: #2D9596;
+      margin-top: -10px;
+    }
+
+    .victory-btn {
+      margin-top: 20px;
+      padding: 15px 40px;
+      background: #FFD700;
+      border: none;
+      color: #0D0D0D;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    #particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    @media (max-width: 480px) {
+      #title { font-size: 36px; }
+      #grid { gap: 8px; max-width: 320px; }
+      .card { min-width: 50px; }
+      .card-front { font-size: 24px; }
+      .victory-title { font-size: 42px; }
+      .victory-time { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="title">FLIP</div>
+    
+    <div id="stats">
+      <div class="stat">
+        <div class="stat-label">Time</div>
+        <div class="stat-value" id="timer">0.0s</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Moves</div>
+        <div class="stat-value" id="moves">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Best</div>
+        <div class="stat-value" id="best">--</div>
+      </div>
+    </div>
+
+    <div id="grid"></div>
+
+    <button id="resetBtn">New Game</button>
+  </div>
+
+  <div id="victory">
+    <div class="victory-title">CLEARED!</div>
+    <div class="victory-time" id="victoryTime">12.3s</div>
+    <div class="victory-record" id="victoryRecord"></div>
+    <button class="victory-btn" id="playAgain">Play Again</button>
+  </div>
+
+  <canvas id="particles"></canvas>
+
+  <script>
+    // Audio context
+    let audioCtx;
+    const initAudio = () => {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    };
+
+    const playTone = (freq, duration = 0.1) => {
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    };
+
+    // Particle system
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 8;
+        this.vy = (Math.random() - 0.5) * 8 - 2;
+        this.life = 1;
+        this.decay = 0.02;
+        this.color = color;
+        this.size = Math.random() * 4 + 2;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2; // gravity
+        this.life -= this.decay;
+      }
+
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    const spawnParticles = (x, y, color, count = 20) => {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    };
+
+    const animateParticles = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw();
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(animateParticles);
+    };
+    animateParticles();
+
+    // Game state
+    const symbols = ['🌙', '⭐', '🔥', '💎', '🌊', '🌸', '⚡', '🎵'];
+    let cards = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let moves = 0;
+    let startTime = null;
+    let timerInterval = null;
+    let locked = false;
+
+    const gridEl = document.getElementById('grid');
+    const timerEl = document.getElementById('timer');
+    const movesEl = document.getElementById('moves');
+    const bestEl = document.getElementById('best');
+    const victoryEl = document.getElementById('victory');
+    const victoryTimeEl = document.getElementById('victoryTime');
+    const victoryRecordEl = document.getElementById('victoryRecord');
+    const resetBtn = document.getElementById('resetBtn');
+    const playAgainBtn = document.getElementById('playAgain');
+
+    // Load best time
+    const loadBest = () => {
+      const best = localStorage.getItem('flip-best');
+      if (best) {
+        bestEl.textContent = `${parseFloat(best).toFixed(1)}s`;
+      }
+    };
+    loadBest();
+
+    // Initialize game
+    const initGame = () => {
+      // Reset state
+      cards = [];
+      flippedCards = [];
+      matchedPairs = 0;
+      moves = 0;
+      startTime = null;
+      locked = false;
+      
+      movesEl.textContent = '0';
+      timerEl.textContent = '0.0s';
+      
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
+      // Create card pairs
+      const deck = [...symbols, ...symbols];
+      deck.sort(() => Math.random() - 0.5);
+
+      // Clear grid
+      gridEl.innerHTML = '';
+
+      // Create cards
+      deck.forEach((symbol, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.symbol = symbol;
+        card.dataset.index = index;
+        
+        card.innerHTML = `
+          <div class="card-back">?</div>
+          <div class="card-front">${symbol}</div>
+        `;
+
+        card.addEventListener('click', () => handleCardClick(card, symbol));
+        
+        gridEl.appendChild(card);
+        cards.push(card);
+      });
+
+      victoryEl.classList.remove('show');
+    };
+
+    // Start timer
+    const startTimer = () => {
+      if (startTime) return;
+      
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        timerEl.textContent = `${elapsed.toFixed(1)}s`;
+      }, 100);
+    };
+
+    // Handle card click
+    const handleCardClick = (card, symbol) => {
+      if (locked) return;
+      if (card.classList.contains('flipped')) return;
+      if (card.classList.contains('matched')) return;
+      if (flippedCards.length >= 2) return;
+
+      initAudio();
+      startTimer();
+
+      // Flip card
+      card.classList.add('flipped');
+      flippedCards.push({ card, symbol });
+      
+      playTone(440);
+
+      // Get card position for particles
+      const rect = card.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      spawnParticles(x, y, '#2D9596', 10);
+
+      if (flippedCards.length === 2) {
+        moves++;
+        movesEl.textContent = moves;
+        
+        const [first, second] = flippedCards;
+        
+        if (first.symbol === second.symbol) {
+          // Match!
+          setTimeout(() => {
+            first.card.classList.add('matched');
+            second.card.classList.add('matched');
+            
+            playTone(660, 0.15);
+            
+            const rect1 = first.card.getBoundingClientRect();
+            const x1 = rect1.left + rect1.width / 2;
+            const y1 = rect1.top + rect1.height / 2;
+            spawnParticles(x1, y1, '#FFD700', 30);
+            
+            const rect2 = second.card.getBoundingClientRect();
+            const x2 = rect2.left + rect2.width / 2;
+            const y2 = rect2.top + rect2.height / 2;
+            spawnParticles(x2, y2, '#FFD700', 30);
+            
+            matchedPairs++;
+            flippedCards = [];
+            
+            // Check for victory
+            if (matchedPairs === symbols.length) {
+              setTimeout(handleVictory, 500);
+            }
+          }, 300);
+        } else {
+          // No match
+          locked = true;
+          playTone(220, 0.1);
+          
+          setTimeout(() => {
+            first.card.classList.remove('flipped');
+            second.card.classList.remove('flipped');
+            flippedCards = [];
+            locked = false;
+          }, 1000);
+        }
+      }
+    };
+
+    // Handle victory
+    const handleVictory = () => {
+      clearInterval(timerInterval);
+      
+      const finalTime = (Date.now() - startTime) / 1000;
+      victoryTimeEl.textContent = `${finalTime.toFixed(1)}s`;
+      
+      // Check if new record
+      const currentBest = localStorage.getItem('flip-best');
+      if (!currentBest || finalTime < parseFloat(currentBest)) {
+        localStorage.setItem('flip-best', finalTime.toFixed(1));
+        victoryRecordEl.textContent = '🏆 NEW RECORD!';
+        bestEl.textContent = `${finalTime.toFixed(1)}s`;
+        playTone(880, 0.3);
+      } else {
+        victoryRecordEl.textContent = `Best: ${currentBest}s`;
+        playTone(660, 0.3);
+      }
+
+      // Spawn victory particles
+      for (let i = 0; i < 100; i++) {
+        setTimeout(() => {
+          const x = Math.random() * canvas.width;
+          const y = Math.random() * canvas.height;
+          const colors = ['#FFD700', '#D4A574', '#2D9596'];
+          const color = colors[Math.floor(Math.random() * colors.length)];
+          spawnParticles(x, y, color, 5);
+        }, i * 20);
+      }
+
+      victoryEl.classList.add('show');
+    };
+
+    // Event listeners
+    resetBtn.addEventListener('click', () => {
+      initAudio();
+      playTone(330);
+      initGame();
+    });
+
+    playAgainBtn.addEventListener('click', () => {
+      initAudio();
+      playTone(330);
+      initGame();
+    });
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Start game
+    initGame();
+  </script>
+</body>
+</html>
