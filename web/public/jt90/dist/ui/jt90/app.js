@@ -33,16 +33,16 @@ const VOICE_INFO = {
     synthesis: 'High sine oscillator with pitch envelope. Shortest decay of the tom family.',
   },
   ch: {
-    synthesis: 'Six square oscillators at inharmonic frequencies (205-1204 Hz). Bandpass filtered for metallic shimmer. Fast decay.',
+    synthesis: '909 ROM sample (Samples From Mars). Pitch-shifted playback with decay envelope and tone filter. Fast staccato tick.',
   },
   oh: {
-    synthesis: 'Same six oscillators as closed hat. Extended envelope for open ring. Choked when closed hat triggers.',
+    synthesis: '909 ROM sample (Samples From Mars). Extended decay envelope. Choked when closed hat triggers.',
   },
   crash: {
-    synthesis: 'Six square oscillators tuned lower (245-1225 Hz). Long decay envelope. Bandpass filtered for crash character.',
+    synthesis: '909 ROM sample (Samples From Mars). Long decay envelope with pitch control.',
   },
   ride: {
-    synthesis: 'Six square oscillators with tighter ratios (180-1080 Hz). Bell-like quality. Medium decay.',
+    synthesis: '909 ROM sample (Samples From Mars). Bell-forward character with decay and pitch control.',
   },
 };
 
@@ -1405,5 +1405,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const housePattern = JT90_SEQUENCES.find(s => s.id === 'house');
   if (housePattern) loadSequence(housePattern);
 
-  setStatus('Ready - Space to play, 1-0 for triggers');
+  // Load ROM samples (CH, OH, crash, ride)
+  engine.loadSamples().then(() => {
+    setStatus('Ready - Space to play, 1-0 for triggers');
+  }).catch(err => {
+    console.error('Failed to load samples:', err);
+    setStatus('Warning: cymbal samples failed to load');
+  });
 });

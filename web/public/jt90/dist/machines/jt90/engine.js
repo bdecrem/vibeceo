@@ -1,25 +1,31 @@
 /**
  * JT90 Drum Machine Engine
  *
- * ONE SYNTH: All voices use pure JS DSP, identical output in browser and Node.js.
- * No duplicate code paths. No drift.
+ * Hybrid drum machine: analog synthesis + ROM samples, like the real 909.
+ * - Kick, snare, clap, rimshot, toms: pure JS DSP synthesis
+ * - CH, OH, crash, ride: sample playback (909Mars WAVs)
  *
- * Voices:
- * - kick, snare, clap, rimshot
- * - ch (closed hat), oh (open hat)
- * - ltom, mtom, htom
- * - crash, ride
+ * All processing uses processSample() — identical pipeline for both types.
  */
 
 import { KickVoice } from './voices/kick.js';
 import { SnareVoice } from './voices/snare.js';
 import { ClapVoice } from './voices/clap.js';
-import { HiHatVoice } from './voices/hihat.js';
 import { TomVoice } from './voices/tom.js';
-import { CymbalVoice } from './voices/cymbal.js';
 import { RimshotVoice } from './voices/rimshot.js';
+import { SampleVoice, decodeWav } from './voices/sample-voice.js';
 import { JT90Sequencer } from './sequencer.js';
 import { clamp, fastTanh } from '../../../../jb202/dist/dsp/utils/math.js';
+
+// Sample voice configurations
+// maxDecay must be ~5-10x the sample duration so decay=1 is nearly transparent
+// CH: 192ms, OH: 590ms, Crash: 951ms, Ride: 960ms
+const SAMPLE_CONFIGS = {
+  ch:    { file: 'ch.wav',    minDecay: 0.01, maxDecay: 2.0,  hasChoke: false, hasTone: true },
+  oh:    { file: 'oh.wav',    minDecay: 0.05, maxDecay: 5.0,  hasChoke: true,  hasTone: true },
+  crash: { file: 'crash.wav', minDecay: 0.3,  maxDecay: 10.0, hasChoke: false, hasTone: false },
+  ride:  { file: 'ride.wav',  minDecay: 0.2,  maxDecay: 8.0,  hasChoke: false, hasTone: false },
+};
 
 // Voice IDs
 const VOICE_IDS = ['kick', 'snare', 'clap', 'rimshot', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'crash', 'ride'];
@@ -49,6 +55,10 @@ export class JT90Engine {
 
     // Open hi-hat tracking for choke
     this._openHatActive = false;
+
+    // Sample data for ROM voices (loaded async)
+    this._sampleData = null;   // { ch: { samples, sampleRate }, oh: ..., crash: ..., ride: ... }
+    this._samplesBasePath = options.samplesPath ?? '../../samples';
   }
 
   _ensureVoices() {
@@ -60,17 +70,91 @@ export class JT90Engine {
         snare: new SnareVoice(sr),
         clap: new ClapVoice(sr),
         rimshot: new RimshotVoice(sr),
-        ch: new HiHatVoice(sr, 'closed'),
-        oh: new HiHatVoice(sr, 'open'),
+        ch: this._createSampleVoice('ch', sr),
+        oh: this._createSampleVoice('oh', sr),
         ltom: new TomVoice(sr, 'low'),
         mtom: new TomVoice(sr, 'mid'),
         htom: new TomVoice(sr, 'high'),
-        crash: new CymbalVoice(sr, 'crash'),
-        ride: new CymbalVoice(sr, 'ride')
+        crash: this._createSampleVoice('crash', sr),
+        ride: this._createSampleVoice('ride', sr),
       };
     }
 
     return this._voices;
+  }
+
+  /**
+   * Create a SampleVoice for a ROM voice.
+   * Returns a silent stub if samples haven't loaded yet.
+   */
+  _createSampleVoice(voiceId, sampleRate) {
+    const cfg = SAMPLE_CONFIGS[voiceId];
+    const data = this._sampleData?.[voiceId];
+
+    if (!data) {
+      // Samples not loaded — return a silent stub with the right API
+      return {
+        tune: 0, decay: cfg.minDecay, tone: 0.5, level: 1.0,
+        active: false,
+        trigger() {},
+        choke() {},
+        processSample() { return 0; },
+        setParameter() {},
+        isActive() { return false; },
+      };
+    }
+
+    return new SampleVoice(sampleRate, data.samples, {
+      sampleSampleRate: data.sampleRate,
+      minDecay: cfg.minDecay,
+      maxDecay: cfg.maxDecay,
+      hasChoke: cfg.hasChoke,
+      hasTone: cfg.hasTone,
+    });
+  }
+
+  /**
+   * Load WAV samples for ROM voices (CH, OH, crash, ride).
+   * Call this before starting playback. Safe to call multiple times.
+   */
+  async loadSamples(basePath) {
+    if (this._sampleData) return;  // Already loaded
+
+    const base = basePath || this._samplesBasePath;
+    const entries = Object.entries(SAMPLE_CONFIGS);
+
+    const results = await Promise.all(
+      entries.map(async ([voiceId, cfg]) => {
+        const url = `${base}/${cfg.file}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to load sample: ${url}`);
+        const arrayBuffer = await response.arrayBuffer();
+        return [voiceId, decodeWav(arrayBuffer)];
+      })
+    );
+
+    this._sampleData = {};
+    for (const [voiceId, data] of results) {
+      this._sampleData[voiceId] = data;
+    }
+
+    // If voices were already created (as stubs), replace them
+    if (this._voices) {
+      const sr = this.context?.sampleRate ?? this.sampleRate;
+      for (const voiceId of Object.keys(SAMPLE_CONFIGS)) {
+        const newVoice = this._createSampleVoice(voiceId, sr);
+        // Apply VOICE_PARAMS defaults (stubs have no-op setParameter, so
+        // any values set via loadKit were lost — use the canonical defaults)
+        const params = JT90Engine.VOICE_PARAMS[voiceId];
+        if (params) {
+          for (const p of params) {
+            const engineVal = p.unit === 'semitones' ? p.defaultValue * 100 : p.defaultValue;
+            newVoice.setParameter(p.id, engineVal);
+          }
+        }
+        this._voices[voiceId] = newVoice;
+      }
+    }
   }
 
   // === Volume and Accent ===
@@ -121,14 +205,14 @@ export class JT90Engine {
     ],
     ch: [
       { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
-      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 1 },
+      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 1 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     oh: [
       { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.73 },
-      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.34 },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 1 },
+      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 1 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     ltom: [
@@ -147,13 +231,13 @@ export class JT90Engine {
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     crash: [
-      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -3, unit: 'semitones' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0 },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 1 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     ride: [
-      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -12, unit: 'semitones' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.45 },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 1 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
   };
@@ -369,13 +453,13 @@ export class JT90Engine {
       snare: new SnareVoice(sampleRate),
       clap: new ClapVoice(sampleRate),
       rimshot: new RimshotVoice(sampleRate),
-      ch: new HiHatVoice(sampleRate, 'closed'),
-      oh: new HiHatVoice(sampleRate, 'open'),
+      ch: this._createSampleVoice('ch', sampleRate),
+      oh: this._createSampleVoice('oh', sampleRate),
       ltom: new TomVoice(sampleRate, 'low'),
       mtom: new TomVoice(sampleRate, 'mid'),
       htom: new TomVoice(sampleRate, 'high'),
-      crash: new CymbalVoice(sampleRate, 'crash'),
-      ride: new CymbalVoice(sampleRate, 'ride')
+      crash: this._createSampleVoice('crash', sampleRate),
+      ride: this._createSampleVoice('ride', sampleRate),
     };
 
     // Copy current voice parameters
