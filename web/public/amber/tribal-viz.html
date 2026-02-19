@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TRIBAL 909 — Visualizer</title>
   <meta property="og:title" content="TRIBAL 909 — Visualizer">
-  <meta property="og:description" content="909 tribal jam. 130 BPM. Hat decay automation. Visualized.">
+  <meta property="og:description" content="909 tribal jam. 130 BPM. Hat decay automation. Late-night warehouse.">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #050505;
+      background: #0a0a12;
       overflow: hidden;
       cursor: crosshair;
       font-family: 'Courier New', monospace;
@@ -21,47 +21,39 @@
       position: fixed;
       inset: 0;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 10;
-      pointer-events: none;
     }
     #start-prompt {
-      color: #ff6a00;
-      font-size: 1.2rem;
-      letter-spacing: 0.5em;
+      color: #ff8c00;
+      font-size: 0.9rem;
+      letter-spacing: 0.6em;
       text-transform: uppercase;
-      animation: pulse 2s ease-in-out infinite;
-      pointer-events: auto;
+      opacity: 0.5;
       cursor: pointer;
-      padding: 2rem;
+      padding: 3rem;
+      transition: opacity 0.3s;
     }
+    #start-prompt:hover { opacity: 1; }
     #section-label {
       position: fixed;
       top: 2rem;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #ff6a00;
-      font-size: 0.7rem;
-      letter-spacing: 0.6em;
-      opacity: 0;
-      transition: opacity 0.5s;
+      right: 2.5rem;
+      color: rgba(224,224,224,0.2);
+      font-size: 0.55rem;
+      letter-spacing: 0.5em;
       z-index: 20;
+      transition: opacity 0.8s;
     }
     #credits {
       position: fixed;
-      bottom: 1.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      color: rgba(255,106,0,0.25);
-      font-size: 0.55rem;
-      letter-spacing: 0.3em;
+      bottom: 1.2rem;
+      left: 2rem;
+      color: rgba(224,224,224,0.12);
+      font-size: 0.5rem;
+      letter-spacing: 0.25em;
       z-index: 20;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 1; }
     }
     .hidden { display: none !important; }
   </style>
@@ -72,7 +64,7 @@
     <div id="start-prompt">▶ PLAY</div>
   </div>
   <div id="section-label"></div>
-  <div id="credits">HALLMAN · JT-90 · 909 TRIBAL · VIZ BY AMBER</div>
+  <div id="credits">HALLMAN · JT-90 · VIZ AMBER</div>
 
   <script type="module">
     import { JT90Engine } from '/jt90/dist/machines/jt90/engine.js';
@@ -99,12 +91,12 @@
     };
 
     const sections = [
-      { bars: 4, pattern: 'A', label: 'INTRO' },
-      { bars: 8, pattern: 'B', label: 'BUILD' },
-      { bars: 4, pattern: 'D', label: 'BREAKDOWN' },
-      { bars: 8, pattern: 'C', label: 'PEAK' },
-      { bars: 4, pattern: 'B', label: 'PULL BACK' },
-      { bars: 4, pattern: 'A', label: 'OUTRO' },
+      { bars: 4, pattern: 'A', label: 'INTRO', density: 0.15 },
+      { bars: 8, pattern: 'B', label: 'BUILD', density: 0.4 },
+      { bars: 4, pattern: 'D', label: 'BREAKDOWN', density: 0.25 },
+      { bars: 8, pattern: 'C', label: 'PEAK', density: 0.9 },
+      { bars: 4, pattern: 'B', label: 'PULL BACK', density: 0.35 },
+      { bars: 4, pattern: 'A', label: 'OUTRO', density: 0.08 },
     ];
 
     // ── CANVAS ──
@@ -122,175 +114,262 @@
     window.addEventListener('resize', resize);
 
     // ── COLORS ──
-    const ORANGE = '#ff6a00';
-    const DARK_ORANGE = 'rgba(255,106,0,';
+    const AMBER = '#ff8c00';
+    const WHITE = '#e0e0e0';
+    const BG = '#0a0a12';
 
-    // ── PARTICLES ──
-    const particles = [];
-    class Particle {
-      constructor(x, y, vx, vy, life, size, hue) {
+    // ── ELEMENTS ──
+    // Expanding rings (open hats)
+    const rings = [];
+    class Ring {
+      constructor(x, y) {
         this.x = x; this.y = y;
-        this.vx = vx; this.vy = vy;
-        this.life = this.maxLife = life;
-        this.size = size;
-        this.hue = hue;
+        this.r = 10;
+        this.maxR = 80 + Math.random() * 120;
+        this.speed = 1.5 + Math.random() * 1.5;
+        this.width = 0.8;
+      }
+      update() { this.r += this.speed; return this.r < this.maxR; }
+      draw() {
+        const a = 1 - (this.r / this.maxR);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,140,0,${a * 0.4})`;
+        ctx.lineWidth = this.width;
+        ctx.stroke();
+      }
+    }
+
+    // Hat particles — lines that respond to decay
+    const hatLines = [];
+    class HatLine {
+      constructor(x, y, decay) {
+        this.x = x; this.y = y;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 0.5 + Math.random() * 2;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        // decay controls length: tight (low) = short sharp, open (high) = long fluid
+        this.len = 3 + decay * 25;
+        this.life = this.maxLife = 20 + decay * 40;
+        this.decay = decay;
       }
       update() {
         this.x += this.vx;
         this.y += this.vy;
-        this.vx *= 0.98;
-        this.vy *= 0.98;
+        this.vx *= 0.97;
+        this.vy *= 0.97;
         this.life--;
+        return this.life > 0;
       }
       draw() {
-        const a = this.life / this.maxLife;
-        ctx.fillStyle = `hsla(${this.hue}, 100%, 55%, ${a})`;
-        ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size * a, this.size * a);
+        const a = (this.life / this.maxLife) * 0.6;
+        const ex = this.x + this.vx * this.len;
+        const ey = this.y + this.vy * this.len;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(ex, ey);
+        ctx.strokeStyle = `rgba(224,224,224,${a})`;
+        ctx.lineWidth = this.decay > 0.5 ? 1 : 0.5;
+        ctx.stroke();
       }
     }
 
-    function spawnBurst(x, y, count, speed, hue) {
-      for (let i = 0; i < count; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const v = speed * (0.5 + Math.random());
-        particles.push(new Particle(
-          x, y,
-          Math.cos(angle) * v, Math.sin(angle) * v,
-          30 + Math.random() * 40,
-          2 + Math.random() * 3,
-          hue
-        ));
+    // Diagonal flashes (rimshots)
+    const flashes = [];
+    class DiagFlash {
+      constructor() {
+        const side = Math.random();
+        this.x = Math.random() * W;
+        this.y = Math.random() * H;
+        this.angle = -0.3 + Math.random() * 0.6 + (Math.random() > 0.5 ? Math.PI/4 : -Math.PI/4);
+        this.len = 60 + Math.random() * 140;
+        this.life = this.maxLife = 8 + Math.random() * 6;
+      }
+      update() { this.life--; return this.life > 0; }
+      draw() {
+        const a = (this.life / this.maxLife) * 0.25;
+        const dx = Math.cos(this.angle) * this.len;
+        const dy = Math.sin(this.angle) * this.len;
+        ctx.beginPath();
+        ctx.moveTo(this.x - dx/2, this.y - dy/2);
+        ctx.lineTo(this.x + dx/2, this.y + dy/2);
+        ctx.strokeStyle = `rgba(224,224,224,${a})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
       }
     }
 
     // ── STATE ──
     let analyser, freqData, waveData;
     let playing = false;
-    let kickEnergy = 0;
-    let hatEnergy = 0;
+    let kickPulse = 0;     // 0-1, decays
+    let kickZoom = 1;
+    let sectionDensity = 0.15;
+    let targetDensity = 0.15;
+    let hatDecayValue = 0;
     let globalTime = 0;
-    let currentSection = '';
 
     // ── RENDER LOOP ──
     function draw() {
       requestAnimationFrame(draw);
       globalTime++;
 
-      // Fade trail
-      ctx.fillStyle = 'rgba(5,5,5,0.15)';
+      // Smooth density transition
+      sectionDensity += (targetDensity - sectionDensity) * 0.02;
+
+      // Background — fade with slight trail
+      const fadeAlpha = 0.12 + (1 - sectionDensity) * 0.1;
+      ctx.fillStyle = `rgba(10,10,18,${fadeAlpha})`;
       ctx.fillRect(0, 0, W, H);
+
+      // Kick pulse decay
+      kickPulse *= 0.88;
+      kickZoom += (1 - kickZoom) * 0.08;
 
       if (analyser) {
         analyser.getByteFrequencyData(freqData);
         analyser.getByteTimeDomainData(waveData);
 
-        // Energy detection
-        let lowSum = 0, highSum = 0;
-        for (let i = 0; i < 8; i++) lowSum += freqData[i];
-        for (let i = 20; i < 60; i++) highSum += freqData[i];
-        const kickTarget = lowSum / (8 * 255);
-        const hatTarget = highSum / (40 * 255);
-        kickEnergy += (kickTarget - kickEnergy) * 0.3;
-        hatEnergy += (hatTarget - hatEnergy) * 0.25;
+        // ── ENERGY DETECTION ──
+        let lowSum = 0, midSum = 0, highSum = 0;
+        for (let i = 0; i < 6; i++) lowSum += freqData[i];
+        for (let i = 8; i < 20; i++) midSum += freqData[i];
+        for (let i = 25; i < 70; i++) highSum += freqData[i];
+        const kickRaw = lowSum / (6 * 255);
+        const midRaw = midSum / (12 * 255);
+        const hatRaw = highSum / (45 * 255);
 
-        // Kick burst
-        if (kickTarget > 0.5) {
-          spawnBurst(cx, cy, 8, 4 + kickTarget * 6, 20);
+        // Kick detection
+        if (kickRaw > 0.45) {
+          kickPulse = Math.min(1, kickRaw);
+          kickZoom = 1 + kickPulse * 0.03;
         }
 
-        // ── CENTRAL RING ──
-        const baseRadius = Math.min(W, H) * 0.18;
-        const radius = baseRadius + kickEnergy * 60;
+        // Hat decay tracking
+        hatDecayValue += (hatRaw - hatDecayValue) * 0.2;
 
-        // Waveform ring
-        ctx.beginPath();
-        const sliceCount = analyser.fftSize / 2;
-        for (let i = 0; i < sliceCount; i++) {
-          const angle = (i / sliceCount) * Math.PI * 2 - Math.PI / 2;
-          const val = (waveData[i] - 128) / 128;
-          const r = radius + val * 40;
-          const x = cx + Math.cos(angle) * r;
-          const y = cy + Math.sin(angle) * r;
-          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.strokeStyle = DARK_ORANGE + (0.6 + kickEnergy * 0.4) + ')';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+        // Apply zoom
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(kickZoom, kickZoom);
+        ctx.translate(-cx, -cy);
 
-        // Inner glow
-        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-        grad.addColorStop(0, DARK_ORANGE + (0.08 + kickEnergy * 0.15) + ')');
-        grad.addColorStop(1, 'transparent');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // ── FREQUENCY BARS (radial) ──
-        const barCount = 64;
-        for (let i = 0; i < barCount; i++) {
-          const angle = (i / barCount) * Math.PI * 2 - Math.PI / 2;
-          const freqIdx = Math.floor(i * (freqData.length / barCount));
-          const val = freqData[freqIdx] / 255;
-          const barLen = val * (Math.min(W, H) * 0.25);
-          const innerR = radius + 20 + hatEnergy * 15;
-
-          const x1 = cx + Math.cos(angle) * innerR;
-          const y1 = cy + Math.sin(angle) * innerR;
-          const x2 = cx + Math.cos(angle) * (innerR + barLen);
-          const y2 = cy + Math.sin(angle) * (innerR + barLen);
-
-          const hue = 20 + val * 15; // orange-red range
-          ctx.strokeStyle = `hsla(${hue}, 100%, 55%, ${0.3 + val * 0.5})`;
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(x1, y1);
-          ctx.lineTo(x2, y2);
-          ctx.stroke();
-        }
-
-        // ── OUTER HAT DECAY RING ──
-        const outerR = radius + 20 + hatEnergy * 15 + Math.min(W,H) * 0.25;
-        ctx.beginPath();
-        ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
-        ctx.strokeStyle = DARK_ORANGE + (hatEnergy * 0.4) + ')';
-        ctx.lineWidth = 1 + hatEnergy * 3;
-        ctx.stroke();
-
-        // Hat particles on outer ring
-        if (hatTarget > 0.3) {
-          const angle = Math.random() * Math.PI * 2;
-          const px = cx + Math.cos(angle) * outerR;
-          const py = cy + Math.sin(angle) * outerR;
-          spawnBurst(px, py, 2, 1.5, 30 + Math.random() * 10);
-        }
-
-        // ── KICK FLASH ──
-        if (kickTarget > 0.6) {
-          ctx.fillStyle = DARK_ORANGE + '0.03)';
+        // ── KICK FLASH — subtle full-screen pulse ──
+        if (kickPulse > 0.2) {
+          ctx.fillStyle = `rgba(255,140,0,${kickPulse * 0.04})`;
           ctx.fillRect(0, 0, W, H);
         }
 
-        // ── ROTATING SCANLINES ──
-        const scanAngle = globalTime * 0.008;
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(scanAngle);
-        ctx.strokeStyle = DARK_ORANGE + '0.06)';
-        ctx.lineWidth = 1;
+        // ── CENTRAL OSCILLOSCOPE ──
+        const scopeWidth = W * 0.55;
+        const scopeY = cy;
+        const sliceCount = analyser.fftSize;
+
         ctx.beginPath();
-        ctx.moveTo(-W, 0);
-        ctx.lineTo(W, 0);
+        for (let i = 0; i < sliceCount; i++) {
+          const t = i / sliceCount;
+          const x = cx - scopeWidth/2 + t * scopeWidth;
+          const val = (waveData[i] - 128) / 128;
+          const y = scopeY + val * 50 * (1 + sectionDensity);
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(255,140,0,${0.35 + kickPulse * 0.4})`;
+        ctx.lineWidth = 1;
         ctx.stroke();
+
+        // Second pass — thinner ghost line, slightly offset
+        ctx.beginPath();
+        for (let i = 0; i < sliceCount; i++) {
+          const t = i / sliceCount;
+          const x = cx - scopeWidth/2 + t * scopeWidth;
+          const val = (waveData[i] - 128) / 128;
+          const y = scopeY + val * 50 * (1 + sectionDensity) + 2;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(255,140,0,${0.1 + kickPulse * 0.15})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+
+        // ── MINIMAL FREQUENCY DOTS ──
+        // Sparse dots along a horizontal line below scope
+        const dotY = cy + 80;
+        const dotCount = 32;
+        const dotSpan = W * 0.5;
+        for (let i = 0; i < dotCount; i++) {
+          const freqIdx = Math.floor(i * (freqData.length * 0.5 / dotCount));
+          const val = freqData[freqIdx] / 255;
+          if (val < 0.1) continue;
+          const x = cx - dotSpan/2 + (i / dotCount) * dotSpan;
+          const r = 0.5 + val * 2 * sectionDensity;
+          ctx.beginPath();
+          ctx.arc(x, dotY, r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(224,224,224,${val * 0.4})`;
+          ctx.fill();
+        }
+
+        // ── UPPER FREQUENCY LINE (mirror) ──
+        const dotY2 = cy - 80;
+        for (let i = 0; i < dotCount; i++) {
+          const freqIdx = Math.floor(i * (freqData.length * 0.5 / dotCount));
+          const val = freqData[freqIdx] / 255;
+          if (val < 0.15) continue;
+          const x = cx - dotSpan/2 + (i / dotCount) * dotSpan;
+          const r = 0.3 + val * 1.5 * sectionDensity;
+          ctx.beginPath();
+          ctx.arc(x, dotY2, r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(224,224,224,${val * 0.25})`;
+          ctx.fill();
+        }
+
+        // ── HAT PARTICLES ──
+        // Spawn based on hat energy, shape based on decay
+        if (hatRaw > 0.15) {
+          const count = Math.floor(1 + sectionDensity * 4 * hatRaw);
+          for (let i = 0; i < count; i++) {
+            const x = cx + (Math.random() - 0.5) * scopeWidth * 0.8;
+            const y = cy + (Math.random() - 0.5) * 60;
+            hatLines.push(new HatLine(x, y, hatDecayValue));
+          }
+        }
+
+        // ── OPEN HAT RINGS ──
+        if (hatRaw > 0.4 && hatDecayValue > 0.3) {
+          const rx = cx + (Math.random() - 0.5) * W * 0.3;
+          const ry = cy + (Math.random() - 0.5) * H * 0.2;
+          rings.push(new Ring(rx, ry));
+        }
+
+        // ── RIMSHOT / MID FLASHES ──
+        if (midRaw > 0.35 && Math.random() < sectionDensity * 0.4) {
+          flashes.push(new DiagFlash());
+        }
+
         ctx.restore();
       }
 
-      // ── PARTICLES ──
-      for (let i = particles.length - 1; i >= 0; i--) {
-        particles[i].update();
-        particles[i].draw();
-        if (particles[i].life <= 0) particles.splice(i, 1);
+      // ── DRAW ELEMENTS ──
+      for (let i = rings.length - 1; i >= 0; i--) {
+        rings[i].draw();
+        if (!rings[i].update()) rings.splice(i, 1);
+      }
+      for (let i = hatLines.length - 1; i >= 0; i--) {
+        hatLines[i].draw();
+        if (!hatLines[i].update()) hatLines.splice(i, 1);
+      }
+      for (let i = flashes.length - 1; i >= 0; i--) {
+        flashes[i].draw();
+        if (!flashes[i].update()) flashes.splice(i, 1);
+      }
+
+      // ── HORIZONTAL REFERENCE LINES (very subtle) ──
+      if (playing) {
+        ctx.strokeStyle = `rgba(224,224,224,0.03)`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(cx - W * 0.3, cy);
+        ctx.lineTo(cx + W * 0.3, cy);
+        ctx.stroke();
       }
     }
 
@@ -298,9 +377,12 @@
 
     // ── PLAY ──
     document.getElementById('start-prompt').addEventListener('click', async () => {
+      const overlay = document.getElementById('overlay');
       const prompt = document.getElementById('start-prompt');
       const labelEl = document.getElementById('section-label');
-      prompt.textContent = 'RENDERING...';
+
+      if (playing) return;
+      prompt.textContent = 'RENDERING';
 
       try {
         const engine = new JT90Engine();
@@ -328,7 +410,8 @@
 
         // Analyser
         analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 512;
+        analyser.fftSize = 1024;
+        analyser.smoothingTimeConstant = 0.75;
         freqData = new Uint8Array(analyser.frequencyBinCount);
         waveData = new Uint8Array(analyser.fftSize);
 
@@ -338,8 +421,8 @@
         analyser.connect(audioCtx.destination);
         source.start();
 
-        prompt.classList.add('hidden');
-        labelEl.style.opacity = '1';
+        overlay.classList.add('hidden');
+        playing = true;
 
         // Section tracking
         const stepMs = (60 / 130 / 4) * 1000;
@@ -354,6 +437,7 @@
             sectionIdx++;
           }
           labelEl.textContent = sections[sectionIdx].label;
+          targetDensity = sections[sectionIdx].density;
           step++;
           if (step >= 32 * 16) clearInterval(iv);
         }, stepMs);
@@ -362,12 +446,11 @@
           clearInterval(iv);
           playing = false;
           analyser = null;
-          labelEl.style.opacity = '0';
-          prompt.classList.remove('hidden');
+          targetDensity = 0;
+          labelEl.textContent = '';
+          overlay.classList.remove('hidden');
           prompt.textContent = '▶ REPLAY';
         };
-
-        playing = true;
 
       } catch (err) {
         prompt.textContent = '▶ PLAY';
