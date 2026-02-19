@@ -1,90 +1,105 @@
 /**
  * JT90 Rimshot Voice
  *
- * 909-style rimshot with:
- * - Short click transient
- * - Filtered noise burst
- * - Very short decay
+ * 909-style rimshot — the ONLY 909 voice that uses bridged-T resonators
+ * (commonly misattributed to the kick drum).
+ *
+ * Three inharmonic resonators at 220, 500, 1000 Hz excited by impulse:
+ * - Metallic bell-like timbre from inharmonic frequency ratios (1:2.27:4.55)
+ * - High Q (15-25) produces characteristic ringing
+ * - Diode clipper adds odd harmonics and saturation
+ * - VCA with 20-80ms decay
+ * - Highpass at ~300 Hz for brightness
  */
 
 import { clamp, fastTanh } from '../../../../../jb202/dist/dsp/utils/math.js';
-import { Noise } from './noise.js';
 
 export class RimshotVoice {
   constructor(sampleRate = 44100) {
     this.sampleRate = sampleRate;
 
     // Parameters
-    this.tune = 0;
-    this.decay = 0.3;
+    this.tune = 0;      // Cents offset
+    this.decay = 0.3;   // 0-1 → 20-80ms
     this.level = 1.0;
 
-    // Oscillator (high-frequency click)
-    this.phase = 0;
-    this.frequency = 1200;
+    // Three resonator base frequencies (inharmonic — metallic character)
+    this.baseFreqs = [220, 500, 1000];
+    // Q factors (higher = longer ring, narrower band)
+    this.qFactors = [20, 15, 25];
 
-    // Noise
-    this.noise = new Noise(44444);
-    this.bpFilter = 0;
+    // Per-resonator recursive oscillator state
+    this.resCoeff1 = [0, 0, 0];  // 2*r*cos(w)
+    this.resCoeff2 = [0, 0, 0];  // r^2
+    this.resPrev1 = [0, 0, 0];   // y[n-1]
+    this.resPrev2 = [0, 0, 0];   // y[n-2]
 
-    // Envelope
+    // Highpass at ~300 Hz
+    this.hpState = 0;
+    this._hpCoeff = 2 * Math.PI * 300 / sampleRate;
+
+    // VCA envelope
     this.envelope = 0;
+    this._decayRate = 0;
 
     // State
     this.active = false;
-    this.sampleCount = 0;
+    this.velocity = 1.0;
   }
 
   trigger(velocity = 1.0) {
-    this.phase = 0;
-    this.sampleCount = 0;
     this.active = true;
+    this.velocity = velocity * this.level;
+    this.envelope = 1.0;
+    this.hpState = 0;
 
-    this.envelope = velocity * this.level;
+    const tuneRatio = Math.pow(2, this.tune / 1200);
 
-    // Tune frequency
-    const tuneMultiplier = Math.pow(2, this.tune / 1200);
-    this.frequency = 1200 * tuneMultiplier;
+    // Initialize each damped sine resonator
+    for (let i = 0; i < 3; i++) {
+      const f = this.baseFreqs[i] * tuneRatio;
+      const Q = this.qFactors[i];
+      const w = 2 * Math.PI * f / this.sampleRate;
+      const r = Math.exp(-Math.PI * f / (Q * this.sampleRate));
 
-    // Reset
-    this.noise.reset();
-    this.bpFilter = 0;
+      this.resCoeff1[i] = 2 * r * Math.cos(w);
+      this.resCoeff2[i] = r * r;
+
+      // Seed with first sample of impulse response
+      this.resPrev1[i] = Math.sin(w);
+      this.resPrev2[i] = 0;
+    }
+
+    // VCA decay (20-80ms)
+    const decayTime = 0.02 + this.decay * 0.06;
+    this._decayRate = Math.exp(-1 / (decayTime * this.sampleRate));
   }
 
   processSample() {
     if (!this.active) return 0;
 
-    this.sampleCount++;
-    const time = this.sampleCount / this.sampleRate;
-
-    // High-frequency click oscillator (very short)
-    let click = 0;
-    if (time < 0.002) {  // First 2ms
-      this.phase += this.frequency / this.sampleRate;
-      if (this.phase >= 1) this.phase -= 1;
-
-      // Triangle wave for click
-      click = this.phase < 0.5 ? (this.phase * 4 - 1) : (3 - this.phase * 4);
-      click *= Math.exp(-time * 1000);  // Very fast decay
+    // Sum three ringing resonators (no Math.sin/exp — pure multiply-add)
+    let sample = 0;
+    for (let i = 0; i < 3; i++) {
+      sample += this.resPrev1[i];
+      const y = this.resCoeff1[i] * this.resPrev1[i] - this.resCoeff2[i] * this.resPrev2[i];
+      this.resPrev2[i] = this.resPrev1[i];
+      this.resPrev1[i] = y;
     }
 
-    // Filtered noise
-    const noiseSample = this.noise.nextSample();
-    const cutoff = 0.3;
-    this.bpFilter += cutoff * (noiseSample - this.bpFilter);
-
-    // Amplitude envelope (very short)
-    const decayTime = 0.01 + this.decay * 0.04;  // 10-50ms
-    const decayRate = 1 - Math.exp(-4.6 / (decayTime * this.sampleRate));
-    this.envelope *= (1 - decayRate);
-
-    let sample = (click * 0.6 + this.bpFilter * 0.4) * this.envelope;
-
-    // Saturation
+    // Diode clipper (odd harmonics + saturation)
     sample = fastTanh(sample * 2) / fastTanh(2);
 
-    // Deactivate
-    if (this.envelope < 0.0001) {
+    // VCA decay envelope (precomputed rate)
+    this.envelope *= this._decayRate;
+    sample *= this.envelope * this.velocity;
+
+    // Highpass ~300 Hz (remove low-end bleed from 220Hz resonator)
+    this.hpState += this._hpCoeff * (sample - this.hpState);
+    sample -= this.hpState;
+
+    // Deactivate when quiet
+    if (this.envelope < 0.001) {
       this.active = false;
     }
 

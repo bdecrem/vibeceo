@@ -199,8 +199,8 @@ export class JT90Engine {
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     rimshot: [
-      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.3 },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -7, unit: 'semitones' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.1 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     ch: [
