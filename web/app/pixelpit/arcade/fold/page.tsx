@@ -35,7 +35,7 @@ const LEADERBOARD_COLORS: LeaderboardColors = {
 
 const GAME_ID = 'fold';
 const PAPER_SIZE = 40;
-const LANDING_TOLERANCE = 30;
+const LANDING_TOLERANCE = 25;
 const TORQUE_FORCE = 8;
 const STAMP_SYMBOLS = ['★', '✓', '☺', '◆', '♦', '●', '▲', '✦', '⊕', '☆'];
 const STAMP_COLORS = [T.fuchsia, T.gold, T.cyan, T.slime, '#ef4444'];
@@ -255,7 +255,14 @@ export default function FoldGame() {
             }, 200);
             spawnParticles(game.paper.x, s.y, T.cyan, 8);
             game.screenShake = { timer: 0.08, intensity: 1.5 };
-            setTimeout(() => { if (game.phase === 'playing') game.paper.vy = -80; }, 500);
+            setTimeout(() => {
+              if (game.phase === 'playing') {
+                const shelfCenter = s.x + s.width / 2;
+                const dir = game.paper.x > shelfCenter ? 1 : -1;
+                game.paper.vx = dir * 40;
+                game.paper.angularVel = dir * 0.5;
+              }
+            }, 400);
           } else {
             game.phase = 'crumple'; game.deadTimer = 0;
             game.crumpleAnim = { x: game.paper.x, y: game.paper.y, r: 15, vy: -50, rotation: game.paper.angle };
