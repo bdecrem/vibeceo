@@ -421,7 +421,7 @@
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > 2) {
           // speed decreases as you grow (heavier)
-          const spd = state.speed / (1 + state.r * 0.01);
+          const spd = state.speed / (1 + state.r * 0.02);
           const move = Math.min(spd * dt, dist);
           state.x += (dx / dist) * move;
           state.y += (dy / dist) * move;
