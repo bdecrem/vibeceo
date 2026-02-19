@@ -432,12 +432,13 @@
           }
           // land on surface
           mercury.y = ly - mercury.r;
-          mercury.vy = -mercury.vy * 0.3; // small bounce
+          mercury.vy = -mercury.vy * 0.4;
           if (Math.abs(mercury.vy) < 20) mercury.vy = 0;
           combo = 0;
           mercury.glowIntensity = Math.max(0, mercury.glowIntensity - 5);
-          // squash
+          // squash + shake
           squash = { timer: 0.15, scaleX: 1.3, scaleY: 0.7 };
+          screenShake = { timer: 0.1, intensity: 2 };
         }
       }
 
