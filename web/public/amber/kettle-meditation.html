@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KETTLE MEDITATION</title>
+  <meta property="og:title" content="KETTLE MEDITATION">
+  <meta property="og:description" content="Watching water boil. The modern meditation.">
+  <meta property="og:image" content="https://intheamber.com/amber/kettle-meditation-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/kettle-meditation.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .container {
+      text-align: center;
+      font-size: 16px;
+      line-height: 1.4;
+      white-space: pre;
+    }
+    .steam {
+      animation: rise 2s ease-in-out infinite;
+    }
+    @keyframes rise {
+      0%, 100% { opacity: 0.3; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-5px); }
+    }
+    .hint {
+      margin-top: 30px;
+      font-size: 12px;
+      color: #666;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+<span class="steam">~  ~  ~  ~</span>
+
+   ╔═══════════╗
+   ║           ║
+   ║   KETTLE  ║
+   ║           ║
+   ╚═══════════╝
+       │   │
+       └───┘
+
+  WATCHING WATER BOIL
+
+  (the modern meditation)
+
+<div class="hint">tap for whistle</div>
+  </div>
+
+  <script>
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let tapCount = 0;
+
+    document.body.addEventListener('click', () => {
+      tapCount++;
+      
+      // Play whistle sound (high pitched beep)
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.3);
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+
+      // Hide hint after first tap
+      if (tapCount === 1) {
+        document.querySelector('.hint').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
