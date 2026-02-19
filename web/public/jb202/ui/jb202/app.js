@@ -6,6 +6,7 @@
 
 import { JB202Engine } from '../../dist/machines/jb202/engine.js';
 import { JB202Sequencer } from '../../dist/machines/jb202/sequencer.js';
+import { normalizedToHz, hzToNormalized } from '../../dist/dsp/filters/lowpass24.js';
 
 const STEPS = 16;
 const STORAGE_KEY = 'jb202-saved-patterns';
@@ -302,14 +303,24 @@ function updateStepIndicator(step) {
 // Knobs
 // ========================================
 
-function valueToRotation(value, min = 0, max = 1) {
-    const normalized = (value - min) / (max - min);
+function valueToRotation(value, min = 0, max = 1, isHz = false) {
+    let normalized;
+    if (isHz) {
+        // Log-scale: map Hz to 0-1 using log ratio
+        normalized = Math.log(value / min) / Math.log(max / min);
+    } else {
+        normalized = (value - min) / (max - min);
+    }
+    normalized = Math.max(0, Math.min(1, normalized));
     return -135 + normalized * 270;
 }
 
 function getKnobConfig(param) {
     if (param === 'osc1Octave' || param === 'osc2Octave') {
         return { min: -24, max: 24, isOctave: true };
+    }
+    if (param === 'filterCutoff') {
+        return { min: 20, max: 16000, isHz: true };
     }
     return { min: 0, max: 1, isOctave: false };
 }
@@ -322,11 +333,13 @@ function initKnobs() {
         if (!param || !engine) return;
 
         const config = getKnobConfig(param);
-        const value = engine.getParameter(param);
-        const rotation = valueToRotation(value, config.min, config.max);
+        const engineValue = engine.getParameter(param);
+        // For Hz knobs, convert engine's 0-1 to Hz for display
+        const displayValue = config.isHz ? normalizedToHz(engineValue) : engineValue;
+        const rotation = valueToRotation(displayValue, config.min, config.max, config.isHz);
         knob.style.transform = `rotate(${rotation}deg)`;
 
-        updateKnobDisplay(param, value);
+        updateKnobDisplay(param, displayValue);
 
         knob.addEventListener('mousedown', (e) => {
             e.preventDefault();
@@ -348,13 +361,15 @@ function initKnobs() {
 
 function startKnobDrag(clientY, knobEl, paramId) {
     if (!engine) return;
-    const currentValue = engine.getParameter(paramId);
+    const engineValue = engine.getParameter(paramId);
     const config = getKnobConfig(paramId);
 
+    // For Hz knobs, drag in normalized (0-1) space for smooth log-scale feel
     activeKnob = {
         element: knobEl,
         startY: clientY,
-        startValue: currentValue,
+        startNormalized: config.isHz ? engineValue : null,
+        startValue: config.isHz ? normalizedToHz(engineValue) : engineValue,
         paramId,
         config,
     };
@@ -367,22 +382,34 @@ function handleKnobMove(clientY) {
 
     const deltaY = activeKnob.startY - clientY;
     const config = activeKnob.config;
-    const range = config.max - config.min;
-    const sensitivity = range / 150;
 
-    let newValue = activeKnob.startValue + deltaY * sensitivity;
-    newValue = Math.max(config.min, Math.min(config.max, newValue));
+    if (config.isHz) {
+        // Drag in 0-1 normalized space for smooth log-scale movement
+        const newNorm = Math.max(0, Math.min(1, activeKnob.startNormalized + deltaY / 150));
+        const hzValue = normalizedToHz(newNorm);
 
-    if (config.isOctave) {
-        newValue = Math.round(newValue);
+        engine.setParameter(activeKnob.paramId, newNorm);
+
+        const rotation = valueToRotation(hzValue, config.min, config.max, true);
+        activeKnob.element.style.transform = `rotate(${rotation}deg)`;
+        updateKnobDisplay(activeKnob.paramId, hzValue);
+    } else {
+        const range = config.max - config.min;
+        const sensitivity = range / 150;
+
+        let newValue = activeKnob.startValue + deltaY * sensitivity;
+        newValue = Math.max(config.min, Math.min(config.max, newValue));
+
+        if (config.isOctave) {
+            newValue = Math.round(newValue);
+        }
+
+        engine.setParameter(activeKnob.paramId, newValue);
+
+        const rotation = valueToRotation(newValue, config.min, config.max);
+        activeKnob.element.style.transform = `rotate(${rotation}deg)`;
+        updateKnobDisplay(activeKnob.paramId, newValue);
     }
-
-    engine.setParameter(activeKnob.paramId, newValue);
-
-    const rotation = valueToRotation(newValue, config.min, config.max);
-    activeKnob.element.style.transform = `rotate(${rotation}deg)`;
-
-    updateKnobDisplay(activeKnob.paramId, newValue);
 }
 
 function handleKnobEnd() {
@@ -398,7 +425,14 @@ function updateKnobDisplay(paramId, value) {
 
     const config = getKnobConfig(paramId);
 
-    if (config.isOctave) {
+    if (config.isHz) {
+        const hz = Math.round(value);
+        if (hz >= 1000) {
+            valueEl.textContent = `${(hz / 1000).toFixed(1)}k`;
+        } else {
+            valueEl.textContent = `${hz}`;
+        }
+    } else if (config.isOctave) {
         valueEl.textContent = value > 0 ? `+${value}` : value.toString();
     } else if (paramId === 'filterEnvAmount') {
         const bipolar = Math.round((value - 0.5) * 200);
@@ -415,10 +449,11 @@ function resetKnob(knobEl, paramId) {
 
     engine.setParameter(paramId, defaultValue);
 
-    const rotation = valueToRotation(defaultValue, config.min, config.max);
+    const displayValue = config.isHz ? normalizedToHz(defaultValue) : defaultValue;
+    const rotation = valueToRotation(displayValue, config.min, config.max, config.isHz);
     knobEl.style.transform = `rotate(${rotation}deg)`;
 
-    updateKnobDisplay(paramId, defaultValue);
+    updateKnobDisplay(paramId, displayValue);
 }
 
 function updateKnobsFromParams(parameters) {
@@ -427,13 +462,14 @@ function updateKnobsFromParams(parameters) {
         engine.setParameter(paramId, value);
 
         const config = getKnobConfig(paramId);
+        const displayValue = config.isHz ? normalizedToHz(value) : value;
         const knob = document.querySelector(`.knob[data-param="${paramId}"]`);
         if (knob) {
-            const rotation = valueToRotation(value, config.min, config.max);
+            const rotation = valueToRotation(displayValue, config.min, config.max, config.isHz);
             knob.style.transform = `rotate(${rotation}deg)`;
         }
 
-        updateKnobDisplay(paramId, value);
+        updateKnobDisplay(paramId, displayValue);
     });
 }
 

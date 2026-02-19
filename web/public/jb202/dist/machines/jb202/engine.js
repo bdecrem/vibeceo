@@ -231,6 +231,16 @@ class SynthVoice {
     // Output level
     sample *= params.level * masterVolume;
 
+    // Soft limiter — prevents harsh clipping in WAV output
+    // Below threshold: pass through unchanged. Above: smooth compression toward ±1.0.
+    // Matches the soft limiting that browser/OS audio output provides naturally.
+    const abs = sample < 0 ? -sample : sample;
+    if (abs > 0.8) {
+      const sign = sample < 0 ? -1 : 1;
+      const excess = abs - 0.8;
+      sample = sign * (0.8 + 0.2 * fastTanh(excess / 0.2));
+    }
+
     return sample;
   }
 }
@@ -259,7 +269,9 @@ export class JB202Engine {
     this.context = options.context ?? null;
     this._scriptNode = null;
     this._isRealTimePlaying = false;
-    this._pendingRelease = null;
+
+    // Sample-accurate release scheduling (replaces setTimeout)
+    this._releaseSampleCountdown = -1; // -1 = no pending release
   }
 
   _ensureVoice() {
@@ -327,12 +339,9 @@ export class JB202Engine {
   stopSequencer() {
     this.sequencer.stop();
     this._isRealTimePlaying = false;
+    this._releaseSampleCountdown = -1;
 
     if (this._voice) this._voice.releaseNote();
-    if (this._pendingRelease) {
-      clearTimeout(this._pendingRelease);
-      this._pendingRelease = null;
-    }
 
     if (this._scriptNode) {
       setTimeout(() => {
@@ -352,20 +361,13 @@ export class JB202Engine {
     // Use the SAME method as offline
     this._voice.processStepEvent(stepData, nextStepData);
 
-    // Schedule release if needed
-    if (this._pendingRelease) {
-      clearTimeout(this._pendingRelease);
-      this._pendingRelease = null;
-    }
-
+    // Schedule sample-accurate release (counted down in _processAudio)
     if (this._voice.shouldReleaseAfterStep(stepData, nextStepData)) {
+      const sampleRate = this.context?.sampleRate ?? this.sampleRate;
       const stepDuration = 60 / this.sequencer.getBpm() / 4;
-      this._pendingRelease = setTimeout(() => {
-        if (this._voice?.gateOpen) {
-          this._voice.releaseNote();
-        }
-        this._pendingRelease = null;
-      }, stepDuration * 0.9 * 1000);
+      this._releaseSampleCountdown = Math.floor(stepDuration * 0.9 * sampleRate);
+    } else {
+      this._releaseSampleCountdown = -1;
     }
   }
 
@@ -376,6 +378,18 @@ export class JB202Engine {
     const outputR = event.outputBuffer.getChannelData(1);
 
     for (let i = 0; i < outputL.length; i++) {
+      // Sample-accurate release: same precision as offline render
+      if (this._releaseSampleCountdown >= 0) {
+        if (this._releaseSampleCountdown === 0) {
+          if (this._voice.gateOpen) {
+            this._voice.releaseNote();
+          }
+          this._releaseSampleCountdown = -1;
+        } else {
+          this._releaseSampleCountdown--;
+        }
+      }
+
       const sample = this._voice.processSample(this.masterVolume);
       outputL[i] = sample;
       outputR[i] = sample;
