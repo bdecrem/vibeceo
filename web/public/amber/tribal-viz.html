@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRIBAL 909 — Visualizer</title>
+  <meta property="og:title" content="TRIBAL 909 — Visualizer">
+  <meta property="og:description" content="909 tribal jam. 130 BPM. Hat decay automation. Visualized.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #050505;
+      overflow: hidden;
+      cursor: crosshair;
+      font-family: 'Courier New', monospace;
+    }
+    canvas { display: block; }
+    #overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #start-prompt {
+      color: #ff6a00;
+      font-size: 1.2rem;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      animation: pulse 2s ease-in-out infinite;
+      pointer-events: auto;
+      cursor: pointer;
+      padding: 2rem;
+    }
+    #section-label {
+      position: fixed;
+      top: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ff6a00;
+      font-size: 0.7rem;
+      letter-spacing: 0.6em;
+      opacity: 0;
+      transition: opacity 0.5s;
+      z-index: 20;
+    }
+    #credits {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,106,0,0.25);
+      font-size: 0.55rem;
+      letter-spacing: 0.3em;
+      z-index: 20;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="overlay">
+    <div id="start-prompt">▶ PLAY</div>
+  </div>
+  <div id="section-label"></div>
+  <div id="credits">HALLMAN · JT-90 · 909 TRIBAL · VIZ BY AMBER</div>
+
+  <script type="module">
+    import { JT90Engine } from '/jt90/dist/machines/jt90/engine.js';
+
+    // ── ARRANGEMENT ──
+    function hits(steps) {
+      return Array.from({ length: 16 }, (_, i) =>
+        ({ velocity: steps.includes(i) ? 0.85 : 0, accent: false })
+      );
+    }
+
+    const patterns = {
+      A: { kick: hits([0,4,8,12]), ch: hits([0,2,4,6,8,10,12,14]) },
+      B: { kick: hits([0,4,8,12]), ch: hits([0,2,4,6,8,10,12,14]), oh: hits([2,10]) },
+      C: { kick: hits([0,4,8,12]), ch: hits([0,2,4,6,8,10,12,14]), oh: hits([2,10]) },
+      D: { ch: hits([0,2,4,6,8,10,12,14]), oh: hits([2,6,10,14]) },
+    };
+
+    const automations = {
+      A: null,
+      B: { 'ch.decay': [0.70,0.15,0.55,0.20,0.65,0.15,0.50,0.25,0.75,0.15,0.60,0.20,0.45,0.30,0.70,0.10] },
+      C: { 'ch.decay': [0.95,0.10,0.85,0.10,0.90,0.15,0.80,0.10,0.95,0.10,0.75,0.20,0.90,0.10,0.85,0.15] },
+      D: { 'ch.decay': [0.40,0.60,0.30,0.70,0.25,0.75,0.20,0.80,0.15,0.85,0.10,0.90,0.10,0.95,0.10,0.95] },
+    };
+
+    const sections = [
+      { bars: 4, pattern: 'A', label: 'INTRO' },
+      { bars: 8, pattern: 'B', label: 'BUILD' },
+      { bars: 4, pattern: 'D', label: 'BREAKDOWN' },
+      { bars: 8, pattern: 'C', label: 'PEAK' },
+      { bars: 4, pattern: 'B', label: 'PULL BACK' },
+      { bars: 4, pattern: 'A', label: 'OUTRO' },
+    ];
+
+    // ── CANVAS ──
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    let W, H, cx, cy;
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      cx = W / 2;
+      cy = H / 2;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // ── COLORS ──
+    const ORANGE = '#ff6a00';
+    const DARK_ORANGE = 'rgba(255,106,0,';
+
+    // ── PARTICLES ──
+    const particles = [];
+    class Particle {
+      constructor(x, y, vx, vy, life, size, hue) {
+        this.x = x; this.y = y;
+        this.vx = vx; this.vy = vy;
+        this.life = this.maxLife = life;
+        this.size = size;
+        this.hue = hue;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+        this.life--;
+      }
+      draw() {
+        const a = this.life / this.maxLife;
+        ctx.fillStyle = `hsla(${this.hue}, 100%, 55%, ${a})`;
+        ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size * a, this.size * a);
+      }
+    }
+
+    function spawnBurst(x, y, count, speed, hue) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const v = speed * (0.5 + Math.random());
+        particles.push(new Particle(
+          x, y,
+          Math.cos(angle) * v, Math.sin(angle) * v,
+          30 + Math.random() * 40,
+          2 + Math.random() * 3,
+          hue
+        ));
+      }
+    }
+
+    // ── STATE ──
+    let analyser, freqData, waveData;
+    let playing = false;
+    let kickEnergy = 0;
+    let hatEnergy = 0;
+    let globalTime = 0;
+    let currentSection = '';
+
+    // ── RENDER LOOP ──
+    function draw() {
+      requestAnimationFrame(draw);
+      globalTime++;
+
+      // Fade trail
+      ctx.fillStyle = 'rgba(5,5,5,0.15)';
+      ctx.fillRect(0, 0, W, H);
+
+      if (analyser) {
+        analyser.getByteFrequencyData(freqData);
+        analyser.getByteTimeDomainData(waveData);
+
+        // Energy detection
+        let lowSum = 0, highSum = 0;
+        for (let i = 0; i < 8; i++) lowSum += freqData[i];
+        for (let i = 20; i < 60; i++) highSum += freqData[i];
+        const kickTarget = lowSum / (8 * 255);
+        const hatTarget = highSum / (40 * 255);
+        kickEnergy += (kickTarget - kickEnergy) * 0.3;
+        hatEnergy += (hatTarget - hatEnergy) * 0.25;
+
+        // Kick burst
+        if (kickTarget > 0.5) {
+          spawnBurst(cx, cy, 8, 4 + kickTarget * 6, 20);
+        }
+
+        // ── CENTRAL RING ──
+        const baseRadius = Math.min(W, H) * 0.18;
+        const radius = baseRadius + kickEnergy * 60;
+
+        // Waveform ring
+        ctx.beginPath();
+        const sliceCount = analyser.fftSize / 2;
+        for (let i = 0; i < sliceCount; i++) {
+          const angle = (i / sliceCount) * Math.PI * 2 - Math.PI / 2;
+          const val = (waveData[i] - 128) / 128;
+          const r = radius + val * 40;
+          const x = cx + Math.cos(angle) * r;
+          const y = cy + Math.sin(angle) * r;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = DARK_ORANGE + (0.6 + kickEnergy * 0.4) + ')';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Inner glow
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+        grad.addColorStop(0, DARK_ORANGE + (0.08 + kickEnergy * 0.15) + ')');
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ── FREQUENCY BARS (radial) ──
+        const barCount = 64;
+        for (let i = 0; i < barCount; i++) {
+          const angle = (i / barCount) * Math.PI * 2 - Math.PI / 2;
+          const freqIdx = Math.floor(i * (freqData.length / barCount));
+          const val = freqData[freqIdx] / 255;
+          const barLen = val * (Math.min(W, H) * 0.25);
+          const innerR = radius + 20 + hatEnergy * 15;
+
+          const x1 = cx + Math.cos(angle) * innerR;
+          const y1 = cy + Math.sin(angle) * innerR;
+          const x2 = cx + Math.cos(angle) * (innerR + barLen);
+          const y2 = cy + Math.sin(angle) * (innerR + barLen);
+
+          const hue = 20 + val * 15; // orange-red range
+          ctx.strokeStyle = `hsla(${hue}, 100%, 55%, ${0.3 + val * 0.5})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+
+        // ── OUTER HAT DECAY RING ──
+        const outerR = radius + 20 + hatEnergy * 15 + Math.min(W,H) * 0.25;
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+        ctx.strokeStyle = DARK_ORANGE + (hatEnergy * 0.4) + ')';
+        ctx.lineWidth = 1 + hatEnergy * 3;
+        ctx.stroke();
+
+        // Hat particles on outer ring
+        if (hatTarget > 0.3) {
+          const angle = Math.random() * Math.PI * 2;
+          const px = cx + Math.cos(angle) * outerR;
+          const py = cy + Math.sin(angle) * outerR;
+          spawnBurst(px, py, 2, 1.5, 30 + Math.random() * 10);
+        }
+
+        // ── KICK FLASH ──
+        if (kickTarget > 0.6) {
+          ctx.fillStyle = DARK_ORANGE + '0.03)';
+          ctx.fillRect(0, 0, W, H);
+        }
+
+        // ── ROTATING SCANLINES ──
+        const scanAngle = globalTime * 0.008;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(scanAngle);
+        ctx.strokeStyle = DARK_ORANGE + '0.06)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-W, 0);
+        ctx.lineTo(W, 0);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // ── PARTICLES ──
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    draw();
+
+    // ── PLAY ──
+    document.getElementById('start-prompt').addEventListener('click', async () => {
+      const prompt = document.getElementById('start-prompt');
+      const labelEl = document.getElementById('section-label');
+      prompt.textContent = 'RENDERING...';
+
+      try {
+        const engine = new JT90Engine();
+        const sectionBuffers = [];
+
+        for (const section of sections) {
+          engine.setPattern(patterns[section.pattern]);
+          const buffer = await engine.renderPattern({
+            bars: section.bars,
+            bpm: 130,
+            automation: automations[section.pattern],
+          });
+          sectionBuffers.push(buffer);
+        }
+
+        const totalLength = sectionBuffers.reduce((sum, b) => sum + b.length, 0);
+        const audioCtx = new AudioContext();
+        const fullBuffer = audioCtx.createBuffer(1, totalLength, sectionBuffers[0].sampleRate);
+        const channel = fullBuffer.getChannelData(0);
+        let offset = 0;
+        for (const buf of sectionBuffers) {
+          channel.set(buf.getChannelData(0), offset);
+          offset += buf.length;
+        }
+
+        // Analyser
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 512;
+        freqData = new Uint8Array(analyser.frequencyBinCount);
+        waveData = new Uint8Array(analyser.fftSize);
+
+        const source = audioCtx.createBufferSource();
+        source.buffer = fullBuffer;
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        source.start();
+
+        prompt.classList.add('hidden');
+        labelEl.style.opacity = '1';
+
+        // Section tracking
+        const stepMs = (60 / 130 / 4) * 1000;
+        let step = 0;
+        let sectionIdx = 0;
+        let sectionStart = 0;
+
+        const iv = setInterval(() => {
+          while (sectionIdx < sections.length - 1 &&
+                 step >= sectionStart + sections[sectionIdx].bars * 16) {
+            sectionStart += sections[sectionIdx].bars * 16;
+            sectionIdx++;
+          }
+          labelEl.textContent = sections[sectionIdx].label;
+          step++;
+          if (step >= 32 * 16) clearInterval(iv);
+        }, stepMs);
+
+        source.onended = () => {
+          clearInterval(iv);
+          playing = false;
+          analyser = null;
+          labelEl.style.opacity = '0';
+          prompt.classList.remove('hidden');
+          prompt.textContent = '▶ REPLAY';
+        };
+
+        playing = true;
+
+      } catch (err) {
+        prompt.textContent = '▶ PLAY';
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
