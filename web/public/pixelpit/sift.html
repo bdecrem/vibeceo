@@ -66,7 +66,6 @@
       const g = audioCtx.createGain();
       osc.connect(g); g.connect(audioCtx.destination);
       osc.type = 'sine';
-      // pitch descends with depth
       osc.frequency.value = Math.max(200, 800 - depth * 12);
       g.gain.setValueAtTime(0.12, audioCtx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
@@ -75,7 +74,6 @@
 
     function playCombo(combo) {
       if (!audioCtx) return;
-      // descending scale for combo
       for (let i = 0; i < Math.min(combo, 5); i++) {
         setTimeout(() => {
           const osc = audioCtx.createOscillator();
@@ -92,7 +90,6 @@
 
     function playShatter() {
       if (!audioCtx) return;
-      // noise burst
       const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.4, audioCtx.sampleRate);
       const data = buf.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
@@ -102,7 +99,6 @@
       g.gain.setValueAtTime(0.2, audioCtx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
       src.start();
-      // sub thud
       const osc = audioCtx.createOscillator();
       const og = audioCtx.createGain();
       osc.connect(og); og.connect(audioCtx.destination);
@@ -126,6 +122,19 @@
       osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     }
 
+    function playLevelUp() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+    }
+
     // --- DRONE ---
     let droneOsc, droneGain;
     function startDrone() {
@@ -146,18 +155,18 @@
     // --- LAYER GENERATION ---
     const LAYER_HEIGHT = 12;
     const LAYER_SPACING = 80;
-    const GAP_SIZE_MIN = 0.15; // fraction of width
+    const GAP_SIZE_MIN = 0.15;
     const GAP_SIZE_MAX = 0.25;
 
     function createLayer(index) {
       const isMagnetic = index > 5 && Math.random() < 0.15;
       const isBlack = index > 10 && Math.random() < 0.08;
       const gapSize = GAP_SIZE_MIN + Math.random() * (GAP_SIZE_MAX - GAP_SIZE_MIN);
-      const gapCenter = 0.2 + Math.random() * 0.6; // keep gaps away from edges
+      const gapCenter = 0.2 + Math.random() * 0.6;
       return {
         index,
-        y: 0, // set relative to camera
-        rotation: 0, // current rotation offset (0-1 range, fraction of width)
+        y: 0,
+        rotation: 0,
         gapCenter,
         gapSize: isBlack ? 0 : gapSize,
         color: isBlack ? T.black : (isMagnetic ? T.fuchsia : T.cyan),
@@ -168,17 +177,95 @@
       };
     }
 
+    // Tutorial-specific layer creation
+    function createTutorialLayer(index, opts) {
+      return {
+        index,
+        y: 0,
+        rotation: 0,
+        gapCenter: opts.gapCenter || 0.5,
+        gapSize: opts.gapSize || 0.22,
+        color: opts.color || T.cyan,
+        isMagnetic: opts.isMagnetic || false,
+        isBlack: opts.isBlack || false,
+        magnetDir: opts.magnetDir || 1,
+        passed: false,
+      };
+    }
+
     // --- STATE ---
     let mercury, layers, particles, shatterBeads;
     let score, combo, maxCombo, bestScore;
     let depth, cameraY;
-    let gamePhase; // 'start', 'playing', 'dead', 'over'
+    let gamePhase; // 'start', 'playing', 'tutorial', 'dead', 'over'
     let deadTimer;
     let gameTime;
     let dragStartX, isDragging, activeLayerIdx;
-    let squash; // { timer, scaleX, scaleY }
+    let squash;
     let screenShake;
     let comboFlash;
+
+    // --- TUTORIAL STATE ---
+    let tutorialStep;
+    let tutorialPhase; // 'instruction', 'playing', 'success'
+    let tutorialTimer;
+    let tutorialPassCount;
+
+    const TUTORIAL_STEPS = [
+      {
+        name: 'ROTATE',
+        instruction: 'DRAG TO ALIGN THE GAP',
+        setup() {
+          layers = [];
+          particles = [];
+          shatterBeads = [];
+          mercury = { x: W / 2, y: 100, r: 14, vy: 0, vx: 0, onSurface: false, glowIntensity: 0 };
+          depth = 0; combo = 0; score = 0; cameraY = 0;
+          tutorialPassCount = 0;
+          // 3 simple layers with offset gaps — player must rotate to align
+          layers.push(createTutorialLayer(0, { gapCenter: 0.3, gapSize: 0.25 }));
+          layers.push(createTutorialLayer(1, { gapCenter: 0.7, gapSize: 0.25 }));
+          layers.push(createTutorialLayer(2, { gapCenter: 0.4, gapSize: 0.25 }));
+        },
+        check() { return tutorialPassCount >= 2; },
+        successText: 'NICE!',
+      },
+      {
+        name: 'COMBO',
+        instruction: 'CHAIN DROPS FOR BONUS',
+        setup() {
+          layers = [];
+          particles = [];
+          mercury = { x: W / 2, y: 100, r: 14, vy: 0, vx: 0, onSurface: false, glowIntensity: 0 };
+          depth = 0; combo = 0; score = 0; cameraY = 0;
+          tutorialPassCount = 0;
+          // 4 layers with gaps already nearly aligned — easy combo chain
+          layers.push(createTutorialLayer(0, { gapCenter: 0.5, gapSize: 0.25 }));
+          layers.push(createTutorialLayer(1, { gapCenter: 0.48, gapSize: 0.25 }));
+          layers.push(createTutorialLayer(2, { gapCenter: 0.52, gapSize: 0.25 }));
+          layers.push(createTutorialLayer(3, { gapCenter: 0.5, gapSize: 0.25 }));
+        },
+        check() { return combo >= 3; },
+        successText: '3x COMBO!',
+      },
+      {
+        name: 'MAGNETS',
+        instruction: 'MAGNETIC LAYERS PULL YOU',
+        setup() {
+          layers = [];
+          particles = [];
+          mercury = { x: W / 2, y: 100, r: 14, vy: 0, vx: 0, onSurface: false, glowIntensity: 0 };
+          depth = 0; combo = 0; score = 0; cameraY = 0;
+          tutorialPassCount = 0;
+          // 1 normal layer then 1 magnetic layer — player must compensate for drift
+          layers.push(createTutorialLayer(0, { gapCenter: 0.5, gapSize: 0.25 }));
+          layers.push(createTutorialLayer(1, { gapCenter: 0.5, gapSize: 0.25, isMagnetic: true, color: T.fuchsia, magnetDir: 1 }));
+          layers.push(createTutorialLayer(2, { gapCenter: 0.35, gapSize: 0.25 }));
+        },
+        check() { return tutorialPassCount >= 2; },
+        successText: 'READY!',
+      },
+    ];
 
     function init() {
       mercury = {
@@ -206,15 +293,18 @@
       comboFlash = 0;
       isDragging = false;
       activeLayerIdx = -1;
+      tutorialStep = -1;
+      tutorialPhase = 'instruction';
+      tutorialTimer = 0;
+      tutorialPassCount = 0;
 
-      // pre-generate layers
       for (let i = 0; i < 30; i++) {
         layers.push(createLayer(i));
       }
     }
 
     function getGravity() {
-      // gravity ramps with depth
+      if (gamePhase === 'tutorial') return 200; // slower for tutorial
       return 300 + depth * 8;
     }
 
@@ -230,7 +320,6 @@
     }
 
     function getActiveLayer() {
-      // find next layer below mercury
       for (const l of layers) {
         const ly = getLayerWorldY(l);
         if (ly > mercury.y && !l.passed) return l;
@@ -269,24 +358,72 @@
       }
     }
 
+    // --- TUTORIAL FUNCTIONS ---
+    function startTutorial() {
+      gamePhase = 'tutorial';
+      tutorialStep = 0;
+      tutorialPhase = 'instruction';
+      tutorialTimer = 0;
+      initAudio();
+      startDrone();
+      TUTORIAL_STEPS[0].setup();
+    }
+
+    function skipTutorial() {
+      tutorialStep = -1;
+      stopDrone();
+      init();
+      startGame();
+    }
+
+    function advanceTutorial() {
+      tutorialStep++;
+      if (tutorialStep >= TUTORIAL_STEPS.length) {
+        tutorialStep = -1;
+        stopDrone();
+        init();
+        startGame();
+        return;
+      }
+      tutorialPhase = 'instruction';
+      tutorialTimer = 0;
+      TUTORIAL_STEPS[tutorialStep].setup();
+    }
+
     // --- INPUT ---
+    function handleStartClick(clientX, clientY) {
+      const btnY = H / 2 + 115;
+      if (Math.abs(clientY - btnY) < 20 && Math.abs(clientX - W / 2) < 80) {
+        startTutorial();
+        return;
+      }
+      startGame();
+    }
+
+    function handleTutorialClick(clientX, clientY) {
+      if (clientX > W - 80 && clientY < 45) {
+        skipTutorial();
+        return;
+      }
+    }
+
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
       const t = e.touches[0];
-      if (gamePhase === 'start') { startGame(); return; }
+      if (gamePhase === 'start') { handleStartClick(t.clientX, t.clientY); return; }
       if (gamePhase === 'over') { init(); return; }
+      if (gamePhase === 'tutorial') handleTutorialClick(t.clientX, t.clientY);
       isDragging = true;
       dragStartX = t.clientX;
     });
     canvas.addEventListener('touchmove', (e) => {
       e.preventDefault();
-      if (!isDragging || gamePhase !== 'playing') return;
+      if (!isDragging || (gamePhase !== 'playing' && !(gamePhase === 'tutorial' && tutorialPhase === 'playing'))) return;
       const t = e.touches[0];
       const dx = (t.clientX - dragStartX) / (W * 0.3);
       const active = getActiveLayer();
       if (active) {
         active.rotation += dx;
-        // wrap
         if (active.rotation > 1) active.rotation -= 1;
         if (active.rotation < 0) active.rotation += 1;
       }
@@ -297,13 +434,14 @@
       isDragging = false;
     });
     canvas.addEventListener('mousedown', (e) => {
-      if (gamePhase === 'start') { startGame(); return; }
+      if (gamePhase === 'start') { handleStartClick(e.clientX, e.clientY); return; }
       if (gamePhase === 'over') { init(); return; }
+      if (gamePhase === 'tutorial') handleTutorialClick(e.clientX, e.clientY);
       isDragging = true;
       dragStartX = e.clientX;
     });
     canvas.addEventListener('mousemove', (e) => {
-      if (!isDragging || gamePhase !== 'playing') return;
+      if (!isDragging || (gamePhase !== 'playing' && !(gamePhase === 'tutorial' && tutorialPhase === 'playing'))) return;
       const dx = (e.clientX - dragStartX) / (W * 0.3);
       const active = getActiveLayer();
       if (active) {
@@ -330,9 +468,13 @@
 
       gameTime += dt;
 
+      if (gamePhase === 'tutorial') {
+        updateTutorial(dt);
+        return;
+      }
+
       if (gamePhase === 'dead') {
         deadTimer += dt;
-        // update shatter beads
         for (const b of shatterBeads) {
           b.x += b.vx * dt;
           b.y += b.vy * dt;
@@ -351,7 +493,7 @@
       const gravity = getGravity();
       mercury.vy += gravity * dt;
 
-      // Magnetic zones — check layers near mercury
+      // Magnetic zones
       for (const l of layers) {
         if (!l.isMagnetic || l.passed) continue;
         const ly = getLayerWorldY(l);
@@ -365,46 +507,32 @@
         }
       }
 
-      // Apply velocity
       mercury.y += mercury.vy * dt;
       mercury.x += mercury.vx * dt;
-
-      // Dampen horizontal velocity
       mercury.vx *= 0.95;
-
-      // Keep mercury in bounds horizontally
       mercury.x = Math.max(mercury.r, Math.min(W - mercury.r, mercury.x));
 
-      // Check layer collisions
+      // Layer collisions
       for (const l of layers) {
         if (l.passed) continue;
         const ly = getLayerWorldY(l);
-
-        // only check if mercury is crossing this layer
         if (mercury.y + mercury.r < ly || mercury.y - mercury.r > ly + LAYER_HEIGHT) continue;
-        if (mercury.vy <= 0) continue; // only check when falling
+        if (mercury.vy <= 0) continue;
 
-        // calculate gap position with rotation
         const gapLeft = ((l.gapCenter - l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
         const gapRight = ((l.gapCenter + l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
-
-        // mercury position as fraction of screen width
         const mx = mercury.x / W;
 
-        // check if mercury is in gap
         let inGap;
         if (l.gapSize === 0) {
-          // black layer — no gap
           inGap = false;
         } else if (gapLeft < gapRight) {
           inGap = mx > gapLeft && mx < gapRight;
         } else {
-          // gap wraps around
           inGap = mx > gapLeft || mx < gapRight;
         }
 
         if (inGap) {
-          // pass through!
           l.passed = true;
           depth++;
           combo++;
@@ -417,11 +545,9 @@
             comboFlash = 0.2;
           }
           spawnParticles(mercury.x, ly, T.slime, 8);
-          // glow increases with combo
           mercury.glowIntensity = Math.min(combo * 3, 20);
         } else {
           if (l.isBlack) {
-            // SHATTER — game over
             gamePhase = 'dead';
             deadTimer = 0;
             spawnShatter(mercury.x, mercury.y);
@@ -430,50 +556,43 @@
             screenShake = { timer: 0.2, intensity: 5 };
             return;
           }
-          // land on surface
           mercury.y = ly - mercury.r;
           mercury.vy = -mercury.vy * 0.4;
           if (Math.abs(mercury.vy) < 20) mercury.vy = 0;
           combo = 0;
           mercury.glowIntensity = Math.max(0, mercury.glowIntensity - 5);
-          // squash + shake
           squash = { timer: 0.15, scaleX: 1.3, scaleY: 0.7 };
-          screenShake = { timer: 0.1, intensity: 2 };
+          screenShake = { timer: 0.08, intensity: 1 };
         }
       }
 
-      // Squash animation
+      // Squash
       if (squash.timer > 0) {
         squash.timer -= dt;
         const t = squash.timer / 0.15;
-        squash.scaleX = 1 + (0.3) * t;
-        squash.scaleY = 1 - (0.3) * t;
+        squash.scaleX = 1 + 0.3 * t;
+        squash.scaleY = 1 - 0.3 * t;
       } else {
         squash.scaleX = 1;
         squash.scaleY = 1;
       }
 
-      // Camera follows mercury
+      // Camera
       const targetCam = mercury.y - H * 0.35;
       cameraY += (targetCam - cameraY) * 3 * dt;
 
-      // Generate more layers as needed
+      // Generate layers
       const furthestLayer = layers[layers.length - 1];
       if (furthestLayer && getLayerWorldY(furthestLayer) - cameraY < H + 200) {
-        const nextIdx = furthestLayer.index + 1;
-        layers.push(createLayer(nextIdx));
+        layers.push(createLayer(furthestLayer.index + 1));
       }
-
-      // Remove layers far above camera
       while (layers.length > 0 && getLayerWorldY(layers[0]) < cameraY - 200) {
         layers.shift();
       }
 
-      // Screen shake
       if (screenShake.timer > 0) screenShake.timer -= dt;
       if (comboFlash > 0) comboFlash -= dt;
 
-      // Particles
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx * dt;
@@ -482,133 +601,189 @@
         if (p.life <= 0) particles.splice(i, 1);
       }
 
-      // Drone intensity ramps with depth
       if (droneGain) {
         droneGain.gain.value = 0.04 + Math.min(depth * 0.002, 0.1);
       }
     }
 
-    // --- DRAW ---
-    function draw() {
-      ctx.fillStyle = T.bg;
-      ctx.fillRect(0, 0, W, H);
+    // --- TUTORIAL UPDATE ---
+    function updateTutorial(dt) {
+      if (tutorialStep < 0 || tutorialStep >= TUTORIAL_STEPS.length) return;
+      const step = TUTORIAL_STEPS[tutorialStep];
 
-      if (gamePhase === 'start') {
-        drawStart();
+      if (tutorialPhase === 'instruction') {
+        tutorialTimer += dt;
+        if (tutorialTimer >= 1.2) {
+          tutorialPhase = 'playing';
+          tutorialTimer = 0;
+        }
         return;
       }
-      if (gamePhase === 'over') {
-        drawGameOver();
+
+      if (tutorialPhase === 'playing') {
+        const gravity = getGravity();
+        mercury.vy += gravity * dt;
+
+        // magnets in tutorial
+        for (const l of layers) {
+          if (!l.isMagnetic || l.passed) continue;
+          const ly = getLayerWorldY(l);
+          const dist = Math.abs(mercury.y - ly);
+          if (dist < LAYER_SPACING * 0.8) {
+            const strength = 120 * (1 - dist / (LAYER_SPACING * 0.8));
+            mercury.vx += l.magnetDir * strength * dt;
+            if (dist < LAYER_SPACING * 0.5 && Math.random() < 0.05) playMagnetHum();
+          }
+        }
+
+        mercury.y += mercury.vy * dt;
+        mercury.x += mercury.vx * dt;
+        mercury.vx *= 0.95;
+        mercury.x = Math.max(mercury.r, Math.min(W - mercury.r, mercury.x));
+
+        // collisions
+        for (const l of layers) {
+          if (l.passed) continue;
+          const ly = getLayerWorldY(l);
+          if (mercury.y + mercury.r < ly || mercury.y - mercury.r > ly + LAYER_HEIGHT) continue;
+          if (mercury.vy <= 0) continue;
+
+          const gapLeft = ((l.gapCenter - l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
+          const gapRight = ((l.gapCenter + l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
+          const mx = mercury.x / W;
+
+          let inGap;
+          if (l.gapSize === 0) {
+            inGap = false;
+          } else if (gapLeft < gapRight) {
+            inGap = mx > gapLeft && mx < gapRight;
+          } else {
+            inGap = mx > gapLeft || mx < gapRight;
+          }
+
+          if (inGap) {
+            l.passed = true;
+            depth++;
+            combo++;
+            tutorialPassCount++;
+            playPing(depth);
+            spawnParticles(mercury.x, ly, T.slime, 8);
+            mercury.glowIntensity = Math.min(combo * 3, 20);
+            if (combo >= 3) {
+              playCombo(combo);
+              comboFlash = 0.2;
+            }
+          } else {
+            mercury.y = ly - mercury.r;
+            mercury.vy = -mercury.vy * 0.4;
+            if (Math.abs(mercury.vy) < 20) mercury.vy = 0;
+            combo = 0;
+            mercury.glowIntensity = 0;
+            squash = { timer: 0.15, scaleX: 1.3, scaleY: 0.7 };
+            screenShake = { timer: 0.08, intensity: 1 };
+          }
+        }
+
+        // squash
+        if (squash.timer > 0) {
+          squash.timer -= dt;
+          const t = squash.timer / 0.15;
+          squash.scaleX = 1 + 0.3 * t;
+          squash.scaleY = 1 - 0.3 * t;
+        } else {
+          squash.scaleX = 1; squash.scaleY = 1;
+        }
+
+        // camera
+        const targetCam = mercury.y - H * 0.35;
+        cameraY += (targetCam - cameraY) * 3 * dt;
+
+        if (screenShake.timer > 0) screenShake.timer -= dt;
+        if (comboFlash > 0) comboFlash -= dt;
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx * dt; p.y += p.vy * dt;
+          p.life -= dt;
+          if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        if (step.check()) {
+          tutorialPhase = 'success';
+          tutorialTimer = 0;
+          playLevelUp();
+        }
         return;
       }
 
-      // bg gradient — redder with depth
-      const redAmount = Math.min(depth / 50, 1);
-      if (redAmount > 0) {
-        const r = Math.round(10 + redAmount * 20);
-        const g = Math.round(10 - redAmount * 5);
-        const b = Math.round(10 - redAmount * 5);
-        ctx.fillStyle = `rgb(${r},${g},${b})`;
-        ctx.fillRect(0, 0, W, H);
+      if (tutorialPhase === 'success') {
+        tutorialTimer += dt;
+        const delay = tutorialStep === TUTORIAL_STEPS.length - 1 ? 1.0 : 0.6;
+        if (tutorialTimer >= delay) {
+          advanceTutorial();
+        }
       }
+    }
 
-      ctx.save();
-      // screen shake
-      if (screenShake.timer > 0) {
-        const s = screenShake.intensity * (screenShake.timer / 0.2);
-        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
-      }
+    // --- DRAW HELPERS ---
+    function drawLayersAndMercury(isTutorial) {
+      const active = getActiveLayer();
 
-      // Draw layers
       for (const l of layers) {
         const ly = getLayerWorldY(l) - cameraY;
         if (ly < -20 || ly > H + 20) continue;
 
-        if (l.passed) {
-          // faded passed layer
-          ctx.globalAlpha = 0.15;
-        }
+        if (l.passed) ctx.globalAlpha = 0.15;
 
-        // layer bar
         const gapLeft = ((l.gapCenter - l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
         const gapRight = ((l.gapCenter + l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
 
-        ctx.fillStyle = l.color;
+        // active layer brightening
+        let barColor = l.color;
+        if (active === l && !l.passed) {
+          // lighten 20%
+          if (l.color === T.cyan) barColor = '#44e8ff';
+          else if (l.color === T.fuchsia) barColor = '#e06af5';
+          else barColor = l.color;
+        }
+
+        ctx.fillStyle = barColor;
         if (l.isMagnetic && !l.passed) {
-          // pulse
           const pulse = 0.6 + Math.sin(gameTime * 4) * 0.4;
           ctx.globalAlpha = l.passed ? 0.15 : pulse;
         }
 
         if (l.gapSize === 0) {
-          // black/solid layer
           ctx.fillRect(0, ly, W, LAYER_HEIGHT);
         } else if (gapLeft < gapRight) {
-          // normal gap
           ctx.fillRect(0, ly, gapLeft * W, LAYER_HEIGHT);
           ctx.fillRect(gapRight * W, ly, W - gapRight * W, LAYER_HEIGHT);
-          // gap glow
           if (!l.passed) {
+            const gapAlpha = active === l ? (0.2 + Math.sin(gameTime * 6) * 0.1) : 0.25;
             ctx.fillStyle = T.slime;
+            ctx.globalAlpha = gapAlpha;
             ctx.shadowBlur = 6;
             ctx.shadowColor = T.slime;
-            ctx.globalAlpha = 0.25;
             ctx.fillRect(gapLeft * W, ly, (gapRight - gapLeft) * W, LAYER_HEIGHT);
             ctx.shadowBlur = 0;
           }
         } else {
-          // wrapped gap
           ctx.fillRect(gapRight * W, ly, (gapLeft - gapRight) * W, LAYER_HEIGHT);
           if (!l.passed) {
+            const gapAlpha = active === l ? (0.2 + Math.sin(gameTime * 6) * 0.1) : 0.25;
             ctx.fillStyle = T.slime;
+            ctx.globalAlpha = gapAlpha;
             ctx.shadowBlur = 6;
             ctx.shadowColor = T.slime;
-            ctx.globalAlpha = 0.25;
             ctx.fillRect(0, ly, gapRight * W, LAYER_HEIGHT);
             ctx.fillRect(gapLeft * W, ly, W - gapLeft * W, LAYER_HEIGHT);
             ctx.shadowBlur = 0;
           }
         }
         ctx.globalAlpha = 1;
-
-        // active layer indicator
-        const active = getActiveLayer();
-        if (active === l && !l.passed) {
-          // brighten the bars
-          ctx.fillStyle = l.isMagnetic ? '#f0abff' : '#55eeff';
-          ctx.globalAlpha = 0.2;
-          if (l.gapSize > 0) {
-            const gl = ((l.gapCenter - l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
-            const gr = ((l.gapCenter + l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
-            if (gl < gr) {
-              ctx.fillRect(0, ly, gl * W, LAYER_HEIGHT);
-              ctx.fillRect(gr * W, ly, W - gr * W, LAYER_HEIGHT);
-            } else {
-              ctx.fillRect(gr * W, ly, (gl - gr) * W, LAYER_HEIGHT);
-            }
-          }
-          // pulsing gap glow
-          const pulse = 0.2 + Math.sin(gameTime * 6) * 0.1;
-          ctx.fillStyle = T.slime;
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = T.slime;
-          ctx.globalAlpha = pulse;
-          if (l.gapSize > 0) {
-            const gl = ((l.gapCenter - l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
-            const gr = ((l.gapCenter + l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
-            if (gl < gr) {
-              ctx.fillRect(gl * W, ly, (gr - gl) * W, LAYER_HEIGHT);
-            } else {
-              ctx.fillRect(0, ly, gr * W, LAYER_HEIGHT);
-              ctx.fillRect(gl * W, ly, W - gl * W, LAYER_HEIGHT);
-            }
-          }
-          ctx.shadowBlur = 0;
-          ctx.globalAlpha = 1;
-        }
       }
 
-      // Particles
+      // particles
       for (const p of particles) {
         const py = p.y - cameraY;
         ctx.globalAlpha = p.life / p.maxLife;
@@ -619,38 +794,56 @@
       }
       ctx.globalAlpha = 1;
 
-      // Mercury
-      if (gamePhase === 'playing') {
-        const my = mercury.y - cameraY;
-        const glow = mercury.glowIntensity;
+      // mercury
+      const my = mercury.y - cameraY;
+      const glow = mercury.glowIntensity;
+      ctx.save();
+      ctx.translate(mercury.x, my);
+      ctx.scale(squash.scaleX, squash.scaleY);
+      if (glow > 0) {
+        ctx.shadowBlur = glow;
+        ctx.shadowColor = glow > 12 ? T.text : T.mercury;
+      }
+      ctx.fillStyle = glow > 15 ? T.text : T.mercury;
+      ctx.beginPath();
+      ctx.arc(0, 0, mercury.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath();
+      ctx.arc(-mercury.r * 0.3, -mercury.r * 0.3, mercury.r * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
-        ctx.save();
-        ctx.translate(mercury.x, my);
-        ctx.scale(squash.scaleX, squash.scaleY);
+    // --- DRAW ---
+    function draw() {
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
 
-        // glow
-        if (glow > 0) {
-          ctx.shadowBlur = glow;
-          ctx.shadowColor = glow > 12 ? T.text : T.mercury;
-        }
+      if (gamePhase === 'start') { drawStart(); return; }
+      if (gamePhase === 'tutorial') { drawTutorial(); return; }
+      if (gamePhase === 'over') { drawGameOver(); return; }
 
-        // main body
-        ctx.fillStyle = glow > 15 ? T.text : T.mercury;
-        ctx.beginPath();
-        ctx.arc(0, 0, mercury.r, 0, Math.PI * 2);
-        ctx.fill();
-
-        // highlight
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.beginPath();
-        ctx.arc(-mercury.r * 0.3, -mercury.r * 0.3, mercury.r * 0.35, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
+      // bg red
+      const redAmount = Math.min(depth / 50, 1);
+      if (redAmount > 0) {
+        const r = Math.round(10 + redAmount * 20);
+        const g = Math.round(10 - redAmount * 5);
+        const b = Math.round(10 - redAmount * 5);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(0, 0, W, H);
       }
 
-      // Shatter beads
+      ctx.save();
+      if (screenShake.timer > 0) {
+        const s = screenShake.intensity * (screenShake.timer / 0.2);
+        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      }
+
+      drawLayersAndMercury(false);
+
+      // shatter beads
       if (gamePhase === 'dead') {
         for (const b of shatterBeads) {
           if (b.life <= 0) continue;
@@ -666,19 +859,16 @@
 
       ctx.restore();
 
-      // --- HUD ---
-      // Score
+      // HUD
       ctx.fillStyle = T.text;
       ctx.font = 'bold 28px monospace';
       ctx.textAlign = 'left';
       ctx.fillText(score + '', 16, 40);
 
-      // Depth
       ctx.font = '14px monospace';
       ctx.fillStyle = T.grey;
       ctx.fillText('depth ' + depth, 16, 60);
 
-      // Combo
       if (combo >= 3) {
         const mult = getComboMultiplier();
         ctx.fillStyle = T.slime;
@@ -687,7 +877,6 @@
         ctx.fillText(mult + 'x', W / 2, 40);
       }
 
-      // Combo flash
       if (comboFlash > 0) {
         ctx.strokeStyle = T.slime;
         ctx.lineWidth = 2;
@@ -696,7 +885,6 @@
         ctx.globalAlpha = 1;
       }
 
-      // Dead overlay
       if (gamePhase === 'dead') {
         const t = Math.min(deadTimer / 1.5, 1);
         ctx.fillStyle = `rgba(0,0,0,${t * 0.6})`;
@@ -710,13 +898,79 @@
       ctx.textAlign = 'left';
     }
 
+    // --- TUTORIAL DRAW ---
+    function drawTutorial() {
+      if (tutorialStep < 0 || tutorialStep >= TUTORIAL_STEPS.length) return;
+      const step = TUTORIAL_STEPS[tutorialStep];
+
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.save();
+      if (screenShake.timer > 0) {
+        const s = screenShake.intensity * (screenShake.timer / 0.2);
+        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      }
+
+      drawLayersAndMercury(true);
+      ctx.restore();
+
+      // step counter
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText((tutorialStep + 1) + '/' + TUTORIAL_STEPS.length, 16, 30);
+
+      // instruction
+      if (tutorialPhase === 'instruction' || tutorialPhase === 'playing') {
+        ctx.fillStyle = T.text;
+        ctx.font = 'bold 22px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(step.instruction, W / 2, 50);
+      }
+
+      // combo HUD during tutorial
+      if (combo >= 3) {
+        ctx.fillStyle = T.slime;
+        ctx.font = 'bold 20px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(getComboMultiplier() + 'x', W / 2, 80);
+      }
+
+      if (comboFlash > 0) {
+        ctx.strokeStyle = T.slime;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = comboFlash / 0.2;
+        ctx.strokeRect(2, 2, W - 4, H - 4);
+        ctx.globalAlpha = 1;
+      }
+
+      // success
+      if (tutorialPhase === 'success') {
+        ctx.fillStyle = T.slime;
+        ctx.font = 'bold 36px monospace';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = T.slime;
+        ctx.fillText(step.successText, W / 2, H / 2 - 20);
+        ctx.shadowBlur = 0;
+      }
+
+      // SKIP
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('SKIP >', W - 16, 30);
+
+      ctx.textAlign = 'left';
+    }
+
     function drawStart() {
       ctx.fillStyle = 'rgba(0,0,0,0.7)';
       ctx.fillRect(0, 0, W, H);
 
       ctx.textAlign = 'center';
 
-      // mercury drop animation
       const bobY = Math.sin(gameTime * 2) * 8;
       ctx.shadowBlur = 10;
       ctx.shadowColor = T.mercury;
@@ -745,6 +999,11 @@
       ctx.fillStyle = T.slime;
       ctx.font = '20px monospace';
       ctx.fillText('[ TAP TO START ]', W / 2, H / 2 + 85);
+
+      // TUTORIAL button
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '16px monospace';
+      ctx.fillText('[ TUTORIAL ]', W / 2, H / 2 + 115);
 
       ctx.textAlign = 'left';
     }
