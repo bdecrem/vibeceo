@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AUTOCORRECT DISASTER — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="AUTOCORRECT DISASTER — Amber">
+  <meta property="og:description" content="Watch your professional email get destroyed in real-time by autocorrect">
+  <meta property="og:image" content="https://intheamber.com/amber/autocorrect-disaster-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/autocorrect-disaster.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AUTOCORRECT DISASTER — Amber">
+  <meta name="twitter:description" content="Watch your professional email get destroyed in real-time by autocorrect">
+  <meta name="twitter:image" content="https://intheamber.com/amber/autocorrect-disaster-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #0D0D0D;
+      color: #D4A574;
+      overflow: hidden;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+    }
+    
+    #title {
+      font-size: clamp(18px, 5vw, 24px);
+      font-weight: 700;
+      color: #FFD700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    
+    #email-box {
+      background: #1a1a1a;
+      border: 2px solid #2D9596;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 0 20px rgba(45, 149, 150, 0.3);
+    }
+    
+    .email-header {
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #333;
+    }
+    
+    .email-field {
+      margin-bottom: 8px;
+    }
+    
+    .email-field strong {
+      color: #D4A574;
+    }
+    
+    #email-body {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #fff;
+      min-height: 150px;
+      margin-bottom: 20px;
+    }
+    
+    .autocorrect-word {
+      display: inline-block;
+      position: relative;
+      background: #ff1493;
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      animation: disaster-pulse 0.5s ease-out;
+    }
+    
+    @keyframes disaster-pulse {
+      0% { transform: scale(1); background: #2D9596; }
+      50% { transform: scale(1.2); background: #ff1493; }
+      100% { transform: scale(1); background: #ff1493; }
+    }
+    
+    #tap-hint {
+      font-size: clamp(14px, 3.5vw, 18px);
+      color: #D4A574;
+      text-align: center;
+      margin-top: 20px;
+      animation: pulse 2s ease-in-out infinite;
+      cursor: pointer;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    
+    #roast-box {
+      background: #2a1a1a;
+      border: 2px solid #ff6b35;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+      max-width: 600px;
+      width: 90%;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease-out;
+    }
+    
+    #roast-box.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    #roast-text {
+      font-size: clamp(13px, 3vw, 15px);
+      color: #ff6b35;
+      line-height: 1.5;
+      font-style: italic;
+    }
+    
+    #counter {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-size: 14px;
+      color: #D4A574;
+      background: rgba(13, 13, 13, 0.8);
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #D4A574;
+    }
+    
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    #container > * {
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="counter">Disasters: 0</div>
+  
+  <div id="container">
+    <div id="title">AUTOCORRECT DISASTER</div>
+    
+    <div id="email-box">
+      <div class="email-header">
+        <div class="email-field"><strong>To:</strong> <span id="recipient">boss@company.com</span></div>
+        <div class="email-field"><strong>Subject:</strong> <span id="subject">Important Update</span></div>
+      </div>
+      <div id="email-body"></div>
+    </div>
+    
+    <div id="roast-box">
+      <div id="roast-text"></div>
+    </div>
+    
+    <div id="tap-hint">TAP TO SEND EMAIL</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let disasters = 0;
+    let audioContext = null;
+    let particles = [];
+
+    const scenarios = [
+      {
+        recipient: "boss@company.com",
+        subject: "Meeting Follow-up",
+        intended: "Thanks for the productive meeting today. I'll have the report ready by Friday.",
+        autocorrected: "Thanks for the seductive meeting today. I'll have the deport ready by Friday.",
+        changes: [{word: "seductive", original: "productive"}, {word: "deport", original: "report"}],
+        roast: "You just called a meeting with your boss 'seductive'. HR wants a word. Also, you're deporting the report apparently."
+      },
+      {
+        recipient: "client@bigcorp.com",
+        subject: "Project Timeline",
+        intended: "We're excited to collaborate with your team on this project.",
+        autocorrected: "We're excited to defecate with your team on this project.",
+        changes: [{word: "defecate", original: "collaborate"}],
+        roast: "DEFECATE. You told a major client you want to DEFECATE with them. The contract is gone. Your career is gone. Everything is gone."
+      },
+      {
+        recipient: "team@startup.com",
+        subject: "Quick Update",
+        intended: "Just checking in on the deadline. Let me know if you need help.",
+        autocorrected: "Just checking in on the deadbeat. Let me know if you need herp.",
+        changes: [{word: "deadbeat", original: "deadline"}, {word: "herp", original: "help"}],
+        roast: "You called the project a 'deadbeat' and offered 'herp' instead of help. Your team is questioning your literacy."
+      },
+      {
+        recipient: "hr@company.com",
+        subject: "PTO Request",
+        intended: "I'd like to request time off next week for a family event.",
+        autocorrected: "I'd like to request time off next week for a famine event.",
+        changes: [{word: "famine", original: "family"}],
+        roast: "A famine event. HR thinks you're attending an apocalypse. They're concerned but also confused."
+      },
+      {
+        recipient: "mom@email.com",
+        subject: "Weekend Plans",
+        intended: "Looking forward to brunch this Sunday!",
+        autocorrected: "Looking forward to brawl this Sunday!",
+        changes: [{word: "brawl", original: "brunch"}],
+        roast: "You just invited your mom to a brawl. Sunday family violence. She's bringing pepper spray."
+      },
+      {
+        recipient: "colleague@work.com",
+        subject: "Presentation Feedback",
+        intended: "Great presentation! Really appreciated your insights.",
+        autocorrected: "Great presentation! Really appreciated your incest.",
+        changes: [{word: "incest", original: "insights"}],
+        roast: "INCEST. YOU WROTE INCEST. TO A COLLEAGUE. ABOUT THEIR PRESENTATION. There is no recovery from this."
+      },
+      {
+        recipient: "prof@university.edu",
+        subject: "Assignment Question",
+        intended: "I'm having trouble understanding the assignment requirements.",
+        autocorrected: "I'm having trouble understanding the assignment rectums.",
+        changes: [{word: "rectums", original: "requirements"}],
+        roast: "Assignment rectums. Your professor is tenured and they've seen some things, but never THIS."
+      },
+      {
+        recipient: "landlord@rentals.com",
+        subject: "Maintenance Request",
+        intended: "The shower drain is clogged again. Can you send someone?",
+        autocorrected: "The shower drain is clogged again. Can you send semen?",
+        changes:[{word: "semen", original: "someone"}],
+        roast: "You asked your landlord to send semen. The eviction notice is being drafted as we speak."
+      },
+      {
+        recipient: "doctor@clinic.com",
+        subject: "Appointment Confirmation",
+        intended: "Confirming my appointment for next Tuesday at 2pm.",
+        autocorrected: "Confirming my disappointment for next Tuesday at 2pm.",
+        changes: [{word: "disappointment", original: "appointment"}],
+        roast: "You scheduled a disappointment with your doctor. At least you're being honest about healthcare wait times."
+      },
+      {
+        recipient: "crush@dating.app",
+        subject: "Coffee?",
+        intended: "Would love to grab coffee sometime if you're free.",
+        autocorrected: "Would love to grab coffin sometime if you're free.",
+        changes: [{word: "coffin", original: "coffee"}],
+        roast: "You invited them to a coffin date. Gothic romance or murder threat? They've already blocked you."
+      }
+    ];
+
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playSound(frequency, duration = 0.1) {
+      if (!audioContext) return;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.frequency.value = frequency;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      osc.start();
+      osc.stop(audioContext.currentTime + duration);
+    }
+
+    function createParticleBurst(x, y, color) {
+      for (let i = 0; i < 20; i++) {
+        particles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 8,
+          vy: (Math.random() - 0.5) * 8,
+          life: 1.0,
+          color: color
+        });
+      }
+    }
+
+    function animateParticles() {
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      particles = particles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2; // gravity
+        p.life -= 0.02;
+
+        if (p.life > 0) {
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+          ctx.fill();
+          return true;
+        }
+        return false;
+      });
+
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(animateParticles);
+    }
+
+    animateParticles();
+
+    function typeText(element, text, changes, callback) {
+      element.innerHTML = '';
+      let currentIndex = 0;
+      const words = text.split(' ');
+      let changeMap = {};
+      
+      changes.forEach(change => {
+        changeMap[change.word] = change.original;
+      });
+
+      function typeNextWord() {
+        if (currentIndex >= words.length) {
+          if (callback) setTimeout(callback, 500);
+          return;
+        }
+
+        const word = words[currentIndex];
+        const isAutocorrect = changeMap.hasOwnProperty(word);
+        
+        if (element.innerHTML.length > 0) {
+          element.innerHTML += ' ';
+        }
+
+        if (isAutocorrect) {
+          const span = document.createElement('span');
+          span.className = 'autocorrect-word';
+          span.textContent = word;
+          element.appendChild(span);
+          playSound(800, 0.15);
+          
+          // Create particle burst at word location
+          const rect = span.getBoundingClientRect();
+          createParticleBurst(
+            rect.left + rect.width / 2,
+            rect.top + rect.height / 2,
+            '#ff1493'
+          );
+        } else {
+          element.innerHTML += word;
+          playSound(400, 0.05);
+        }
+
+        currentIndex++;
+        setTimeout(typeNextWord, isAutocorrect ? 300 : 80);
+      }
+
+      typeNextWord();
+    }
+
+    function showScenario() {
+      initAudio();
+      
+      const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+      const roastBox = document.getElementById('roast-box');
+      const emailBody = document.getElementById('email-body');
+      
+      roastBox.classList.remove('show');
+      document.getElementById('recipient').textContent = scenario.recipient;
+      document.getElementById('subject').textContent = scenario.subject;
+      
+      typeText(emailBody, scenario.autocorrected, scenario.changes, () => {
+        document.getElementById('roast-text').textContent = scenario.roast;
+        roastBox.classList.add('show');
+        playSound(200, 0.3);
+        
+        createParticleBurst(window.innerWidth / 2, window.innerHeight / 2, '#ff6b35');
+      });
+
+      disasters++;
+      document.getElementById('counter').textContent = `Disasters: ${disasters}`;
+    }
+
+    document.body.addEventListener('click', showScenario);
+    document.body.addEventListener('touchstart', showScenario);
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
