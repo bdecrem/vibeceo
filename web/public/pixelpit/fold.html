@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>FOLD</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+      font-family: monospace;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    // --- THEME (Indie Bite) ---
+    const T = {
+      bg: '#0a0a0a',
+      surface: '#18181b',
+      slime: '#a3e635',
+      cyan: '#22d3ee',
+      fuchsia: '#d946ef',
+      gold: '#facc15',
+      grey: '#555555',
+      text: '#ffffff',
+      paper: '#f5f0e8',
+      paperShadow: 'rgba(200,190,170,0.3)',
+      crease: '#d4cfc5',
+      shelf: '#22d3ee',
+    };
+
+    // --- CANVAS ---
+    let W, H;
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      W = canvas.width;
+      H = canvas.height;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // --- AUDIO ---
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    canvas.addEventListener('touchstart', initAudio, { once: true });
+    canvas.addEventListener('click', initAudio, { once: true });
+
+    function playFold(foldCount) {
+      if (!audioCtx) return;
+      // crisp snap — higher pitch each fold
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'square';
+      osc.frequency.value = 1200 + foldCount * 80;
+      g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+      // click layer
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.02, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length) * 0.5;
+      const src = audioCtx.createBufferSource();
+      const ng = audioCtx.createGain();
+      src.buffer = buf; src.connect(ng); ng.connect(audioCtx.destination);
+      ng.gain.value = 0.15;
+      src.start();
+    }
+
+    function playFile() {
+      if (!audioCtx) return;
+      // shhhk — filtered noise sweep
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.3, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      const src = audioCtx.createBufferSource();
+      const flt = audioCtx.createBiquadFilter();
+      const g = audioCtx.createGain();
+      src.buffer = buf;
+      flt.type = 'bandpass';
+      flt.frequency.setValueAtTime(3000, audioCtx.currentTime);
+      flt.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.25);
+      flt.Q.value = 2;
+      src.connect(flt); flt.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+      src.start();
+    }
+
+    function playStamp() {
+      if (!audioCtx) return;
+      // thunk
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.08);
+      g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function playCrumple() {
+      if (!audioCtx) return;
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.25, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        const env = (1 - i / data.length);
+        data[i] = (Math.random() * 2 - 1) * env * env;
+      }
+      const src = audioCtx.createBufferSource();
+      const flt = audioCtx.createBiquadFilter();
+      const g = audioCtx.createGain();
+      src.buffer = buf;
+      flt.type = 'lowpass'; flt.frequency.value = 2000;
+      src.connect(flt); flt.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+      src.start();
+    }
+
+    // --- STAMPS ---
+    const STAMP_SYMBOLS = ['★', '✓', '☺', '◆', '♦', '●', '▲', '✦', '⊕', '☆'];
+    const STAMP_COLORS = [T.fuchsia, T.gold, T.cyan, T.slime, '#ef4444'];
+
+    // --- CONSTANTS ---
+    const PAPER_SIZE = 40;
+    const LANDING_TOLERANCE = 30; // ±30 degrees from flat
+    const TORQUE_FORCE = 8; // radians/s² per tap
+
+    // --- STATE ---
+    let paper, shelves, particles, stamps;
+    let score, depth, foldCount;
+    let gamePhase; // 'start', 'playing', 'crumple', 'over'
+    let deadTimer, gameTime;
+    let cameraY;
+    let screenShake;
+    let fileAnim; // { shelf, timer }
+    let crumpleAnim; // { x, y, r, vy, rotation }
+
+    function init() {
+      paper = {
+        x: W / 2,
+        y: 100,
+        vy: 0,
+        vx: 0,
+        angle: 0, // radians
+        angularVel: 0,
+        width: PAPER_SIZE,
+        height: PAPER_SIZE * 0.7,
+      };
+      shelves = [];
+      particles = [];
+      stamps = [];
+      score = 0;
+      depth = 0;
+      foldCount = 0;
+      gamePhase = 'start';
+      deadTimer = 0;
+      gameTime = 0;
+      cameraY = 0;
+      screenShake = { timer: 0, intensity: 0 };
+      fileAnim = null;
+      crumpleAnim = null;
+
+      // generate shelves
+      for (let i = 0; i < 30; i++) {
+        shelves.push(createShelf(i));
+      }
+    }
+
+    function createShelf(index) {
+      // shelves get narrower and further apart with depth
+      const baseWidth = W * 0.5;
+      const minWidth = W * 0.15;
+      const widthDecay = Math.max(minWidth, baseWidth - index * 4);
+      const spacing = 150 + Math.min(index * 3, 80);
+      const hasWind = index > 8 && Math.random() < 0.2;
+      return {
+        index,
+        x: W * 0.15 + Math.random() * (W * 0.7 - widthDecay),
+        y: 300 + index * spacing,
+        width: widthDecay,
+        height: 6,
+        filed: false,
+        fileOffset: 0, // slide animation
+        windDir: hasWind ? (Math.random() < 0.5 ? -1 : 1) : 0,
+        windStrength: hasWind ? (40 + Math.random() * 60) : 0,
+      };
+    }
+
+    function getGravity() {
+      // heavier with more stamps (weight mechanic)
+      return 250 + stamps.length * 15 + depth * 5;
+    }
+
+    function getAirResistance() {
+      // paper has flutter — horizontal drift
+      return 0.92;
+    }
+
+    function normalizeAngle(a) {
+      a = a % (Math.PI * 2);
+      if (a < 0) a += Math.PI * 2;
+      return a;
+    }
+
+    function isFlat(angle) {
+      // check if angle is within tolerance of 0, 90, 180, 270
+      const deg = (normalizeAngle(angle) * 180 / Math.PI) % 90;
+      const fromFlat = Math.min(deg, 90 - deg);
+      return fromFlat <= LANDING_TOLERANCE;
+    }
+
+    // --- PARTICLES ---
+    function spawnParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 30 + Math.random() * 60;
+        const life = 0.2 + Math.random() * 0.3;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r: 1 + Math.random() * 2,
+          color, life, maxLife: life,
+        });
+      }
+    }
+
+    // --- INPUT ---
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (gamePhase === 'start') { startGame(); return; }
+      if (gamePhase === 'over') { init(); return; }
+      if (gamePhase === 'playing') {
+        // apply torque
+        paper.angularVel += TORQUE_FORCE;
+        foldCount++;
+        playFold(foldCount);
+      }
+    });
+    canvas.addEventListener('click', (e) => {
+      if (gamePhase === 'start') { startGame(); return; }
+      if (gamePhase === 'over') { init(); return; }
+      if (gamePhase === 'playing') {
+        paper.angularVel += TORQUE_FORCE;
+        foldCount++;
+        playFold(foldCount);
+      }
+    });
+
+    function startGame() {
+      init();
+      initAudio();
+      gamePhase = 'playing';
+    }
+
+    // --- UPDATE ---
+    function update(dt) {
+      if (gamePhase === 'start') { gameTime += dt; return; }
+
+      gameTime += dt;
+
+      if (gamePhase === 'crumple') {
+        deadTimer += dt;
+        if (crumpleAnim) {
+          crumpleAnim.vy += 400 * dt;
+          crumpleAnim.y += crumpleAnim.vy * dt;
+          crumpleAnim.rotation += 3 * dt;
+          crumpleAnim.r = Math.max(5, crumpleAnim.r - 10 * dt);
+        }
+        if (deadTimer >= 2.0) gamePhase = 'over';
+        return;
+      }
+
+      if (gamePhase !== 'playing') return;
+
+      // Gravity
+      const gravity = getGravity();
+      paper.vy += gravity * dt;
+
+      // Air resistance — flutter
+      paper.vx *= getAirResistance();
+      const flutter = Math.sin(gameTime * 3 + paper.y * 0.01) * 15;
+      paper.vx += flutter * dt;
+
+      // Angular damping (air resistance on rotation)
+      paper.angularVel *= 0.97;
+
+      // Wind from nearby shelves
+      for (const s of shelves) {
+        if (s.filed || s.windDir === 0) continue;
+        const dist = Math.abs(paper.y - s.y);
+        if (dist < 120) {
+          const strength = s.windStrength * (1 - dist / 120);
+          paper.vx += s.windDir * strength * dt;
+        }
+      }
+
+      // Apply velocity
+      paper.x += paper.vx * dt;
+      paper.y += paper.vy * dt;
+      paper.angle += paper.angularVel * dt;
+
+      // Keep in bounds horizontally
+      paper.x = Math.max(20, Math.min(W - 20, paper.x));
+
+      // Shelf collision
+      for (const s of shelves) {
+        if (s.filed) continue;
+        const sy = s.y;
+
+        // check if paper overlaps shelf
+        if (paper.y + paper.height / 2 >= sy &&
+            paper.y - paper.height / 2 <= sy + s.height &&
+            paper.x >= s.x - 5 &&
+            paper.x <= s.x + s.width + 5 &&
+            paper.vy > 0) {
+
+          if (isFlat(paper.angle)) {
+            // CLEAN LANDING
+            s.filed = true;
+            depth++;
+            score += 1 + stamps.length; // more stamps = more points per landing
+            paper.y = sy - paper.height / 2;
+            paper.vy = 0;
+            paper.vx = 0;
+            paper.angularVel = 0;
+            // snap angle to nearest flat
+            const deg = normalizeAngle(paper.angle) * 180 / Math.PI;
+            paper.angle = Math.round(deg / 90) * 90 * Math.PI / 180;
+
+            // file animation
+            fileAnim = { shelf: s, timer: 0.3 };
+            s.fileOffset = 0;
+            playFile();
+
+            // stamp
+            setTimeout(() => {
+              stamps.push({
+                x: -0.3 + Math.random() * 0.6,
+                y: -0.2 + Math.random() * 0.4,
+                symbol: STAMP_SYMBOLS[Math.floor(Math.random() * STAMP_SYMBOLS.length)],
+                color: STAMP_COLORS[Math.floor(Math.random() * STAMP_COLORS.length)],
+                scale: 0.6 + Math.random() * 0.4,
+                rotation: (Math.random() - 0.5) * 0.3,
+              });
+              playStamp();
+            }, 200);
+
+            spawnParticles(paper.x, sy, T.cyan, 8);
+            screenShake = { timer: 0.08, intensity: 1.5 };
+
+            // launch paper again after brief pause
+            setTimeout(() => {
+              if (gamePhase === 'playing') {
+                paper.vy = -80; // small upward push to resume falling
+              }
+            }, 500);
+
+          } else {
+            // CRUMPLE — bad landing
+            gamePhase = 'crumple';
+            deadTimer = 0;
+            crumpleAnim = {
+              x: paper.x,
+              y: paper.y,
+              r: 15,
+              vy: -50,
+              rotation: paper.angle,
+            };
+            playCrumple();
+            screenShake = { timer: 0.15, intensity: 3 };
+            return;
+          }
+        }
+      }
+
+      // Camera
+      const targetCam = paper.y - H * 0.35;
+      cameraY += (targetCam - cameraY) * 3 * dt;
+
+      // Generate more shelves
+      const lastShelf = shelves[shelves.length - 1];
+      if (lastShelf && lastShelf.y - cameraY < H + 300) {
+        const nextIdx = lastShelf.index + 1;
+        shelves.push(createShelf(nextIdx));
+      }
+
+      // Remove shelves far above
+      while (shelves.length > 0 && shelves[0].y < cameraY - 200) {
+        shelves.shift();
+      }
+
+      // File animation
+      if (fileAnim) {
+        fileAnim.timer -= dt;
+        fileAnim.shelf.fileOffset = Math.min(1, 1 - fileAnim.timer / 0.3) * -60;
+        if (fileAnim.timer <= 0) fileAnim = null;
+      }
+
+      // Screen shake
+      if (screenShake.timer > 0) screenShake.timer -= dt;
+
+      // Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    // --- DRAW ---
+    function draw() {
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      if (gamePhase === 'start') {
+        drawStart();
+        return;
+      }
+      if (gamePhase === 'over') {
+        drawGameOver();
+        return;
+      }
+
+      // Filing cabinet lines (background)
+      ctx.strokeStyle = '#151515';
+      ctx.lineWidth = 1;
+      for (let x = W * 0.1; x < W * 0.9; x += W * 0.8) {
+        const startY = Math.max(0, -cameraY % 100);
+        for (let y = startY; y < H; y += 100) {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x, y + 60);
+          ctx.stroke();
+        }
+      }
+
+      ctx.save();
+      if (screenShake.timer > 0) {
+        const s = screenShake.intensity * (screenShake.timer / 0.15);
+        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      }
+
+      // Shelves
+      for (const s of shelves) {
+        const sy = s.y - cameraY;
+        if (sy < -20 || sy > H + 20) continue;
+
+        const ox = s.filed ? s.fileOffset : 0;
+        ctx.fillStyle = s.filed ? T.grey : T.shelf;
+        ctx.globalAlpha = s.filed ? 0.3 : 1;
+
+        // shelf glow
+        if (!s.filed) {
+          ctx.shadowBlur = 4;
+          ctx.shadowColor = T.shelf;
+        }
+        ctx.fillRect(s.x + ox, sy, s.width, s.height);
+        ctx.shadowBlur = 0;
+
+        // wind indicator
+        if (s.windDir !== 0 && !s.filed) {
+          ctx.fillStyle = T.fuchsia;
+          ctx.globalAlpha = 0.3 + Math.sin(gameTime * 4) * 0.15;
+          ctx.font = '12px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(s.windDir > 0 ? '→' : '←', s.x + s.width / 2, sy - 8);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      // Particles
+      for (const p of particles) {
+        const py = p.y - cameraY;
+        ctx.globalAlpha = p.life / p.maxLife;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, py, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Paper
+      if (gamePhase === 'playing') {
+        const py = paper.y - cameraY;
+        ctx.save();
+        ctx.translate(paper.x, py);
+        ctx.rotate(paper.angle);
+
+        // shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.fillRect(-paper.width / 2 + 3, -paper.height / 2 + 3, paper.width, paper.height);
+
+        // paper body
+        ctx.fillStyle = T.paper;
+        ctx.fillRect(-paper.width / 2, -paper.height / 2, paper.width, paper.height);
+
+        // creases (one per fold, max visible 5)
+        ctx.strokeStyle = T.crease;
+        ctx.lineWidth = 0.5;
+        const visibleCreases = Math.min(foldCount, 5);
+        for (let i = 0; i < visibleCreases; i++) {
+          const offset = (i + 1) / (visibleCreases + 1);
+          if (i % 2 === 0) {
+            // horizontal crease
+            const cy = -paper.height / 2 + paper.height * offset;
+            ctx.beginPath();
+            ctx.moveTo(-paper.width / 2, cy);
+            ctx.lineTo(paper.width / 2, cy);
+            ctx.stroke();
+          } else {
+            // vertical crease
+            const cx = -paper.width / 2 + paper.width * offset;
+            ctx.beginPath();
+            ctx.moveTo(cx, -paper.height / 2);
+            ctx.lineTo(cx, paper.height / 2);
+            ctx.stroke();
+          }
+        }
+
+        // stamps on paper
+        for (const st of stamps) {
+          ctx.save();
+          ctx.translate(st.x * paper.width, st.y * paper.height);
+          ctx.rotate(st.rotation);
+          ctx.fillStyle = st.color;
+          ctx.globalAlpha = 0.7;
+          ctx.font = `${8 * st.scale}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.fillText(st.symbol, 0, 3);
+          ctx.restore();
+        }
+
+        ctx.restore();
+      }
+
+      // Crumple animation
+      if (gamePhase === 'crumple' && crumpleAnim) {
+        const cy = crumpleAnim.y - cameraY;
+        ctx.save();
+        ctx.translate(crumpleAnim.x, cy);
+        ctx.rotate(crumpleAnim.rotation);
+        ctx.fillStyle = '#a09880';
+        ctx.beginPath();
+        ctx.arc(0, 0, crumpleAnim.r, 0, Math.PI * 2);
+        ctx.fill();
+        // wrinkle lines
+        ctx.strokeStyle = '#80756a';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < 4; i++) {
+          const a = i * Math.PI / 2 + crumpleAnim.rotation;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(a) * crumpleAnim.r * 0.8, Math.sin(a) * crumpleAnim.r * 0.8);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      ctx.restore();
+
+      // --- HUD ---
+      ctx.fillStyle = T.text;
+      ctx.font = 'bold 28px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(score + '', 16, 40);
+
+      ctx.font = '14px monospace';
+      ctx.fillStyle = T.grey;
+      ctx.fillText('depth ' + depth, 16, 60);
+
+      // fold count
+      ctx.textAlign = 'right';
+      ctx.fillStyle = T.paper;
+      ctx.font = '12px monospace';
+      ctx.fillText('folds: ' + foldCount, W - 16, 30);
+
+      // stamp count
+      ctx.fillStyle = T.fuchsia;
+      ctx.fillText('stamps: ' + stamps.length, W - 16, 48);
+
+      // crumple overlay
+      if (gamePhase === 'crumple') {
+        const t = Math.min(deadTimer / 1.5, 1);
+        ctx.fillStyle = `rgba(0,0,0,${t * 0.6})`;
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = T.text;
+        ctx.font = 'bold 32px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('CRUMPLED', W / 2, H / 2 - 10);
+      }
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawStart() {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.textAlign = 'center';
+
+      // floating paper animation
+      const bobY = Math.sin(gameTime * 1.5) * 10;
+      const bobAngle = Math.sin(gameTime * 0.8) * 0.15;
+      ctx.save();
+      ctx.translate(W / 2, H / 2 - 70 + bobY);
+      ctx.rotate(bobAngle);
+      ctx.fillStyle = T.paper;
+      ctx.fillRect(-25, -18, 50, 36);
+      ctx.strokeStyle = T.crease;
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(-25, 0);
+      ctx.lineTo(25, 0);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = T.slime;
+      ctx.font = 'bold 48px monospace';
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = T.slime;
+      ctx.fillText('FOLD', W / 2, H / 2 - 15);
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = T.text;
+      ctx.font = '16px monospace';
+      ctx.fillText('Tap to fold • Land flat on shelves', W / 2, H / 2 + 15);
+      ctx.fillText('Bad angle = crumple', W / 2, H / 2 + 38);
+
+      ctx.fillStyle = T.slime;
+      ctx.font = '20px monospace';
+      ctx.fillText('[ TAP TO START ]', W / 2, H / 2 + 85);
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawGameOver() {
+      ctx.fillStyle = 'rgba(0,0,0,0.85)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.textAlign = 'center';
+
+      ctx.fillStyle = T.gold;
+      ctx.font = 'bold 56px monospace';
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = T.gold;
+      ctx.fillText(score + '', W / 2, H / 2 - 50);
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = T.text;
+      ctx.font = '16px monospace';
+      ctx.fillText('depth: ' + depth + '  |  stamps: ' + stamps.length, W / 2, H / 2 - 10);
+      ctx.fillText('folds: ' + foldCount, W / 2, H / 2 + 15);
+
+      ctx.fillStyle = T.slime;
+      ctx.font = '20px monospace';
+      ctx.fillText('[ TAP TO RETRY ]', W / 2, H / 2 + 65);
+
+      ctx.textAlign = 'left';
+    }
+
+    // --- LOOP ---
+    let lastTime = performance.now();
+    init();
+
+    function loop(ts) {
+      const dt = Math.min((ts - lastTime) / 1000, 0.05);
+      lastTime = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
