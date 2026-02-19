@@ -96,63 +96,63 @@ export class JT90Engine {
   // Voice parameter descriptors for UI
   static VOICE_PARAMS = {
     kick: [
-      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
       { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
       { id: 'attack', label: 'Attack', min: 0, max: 1, defaultValue: 0.5 },
       { id: 'sweep', label: 'Sweep', min: 0, max: 1, defaultValue: 0.5 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     snare: [
-      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
       { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.4 },
       { id: 'snappy', label: 'Snappy', min: 0, max: 1, defaultValue: 0.5 },
       { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.5 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     clap: [
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
-      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.03 },
+      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.13 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     rimshot: [
-      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
       { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.3 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     ch: [
-      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.2 },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
       { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.5 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     oh: [
-      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
-      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.73 },
+      { id: 'tone', label: 'Tone', min: 0, max: 1, defaultValue: 0.34 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     ltom: [
-      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 1 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     mtom: [
-      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -5, unit: 'semitones' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.8 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     htom: [
-      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
-      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.5 },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: -5, unit: 'semitones' },
+      { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.55 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     crash: [
-      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
       { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.7 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
     ride: [
-      { id: 'tune', label: 'Tune', min: -1200, max: 1200, defaultValue: 0, unit: 'cents' },
+      { id: 'tune', label: 'Tune', min: -12, max: 12, defaultValue: 0, unit: 'semitones' },
       { id: 'decay', label: 'Decay', min: 0, max: 1, defaultValue: 0.6 },
       { id: 'level', label: 'Level', min: 0, max: 1, defaultValue: 1 },
     ],
@@ -186,7 +186,10 @@ export class JT90Engine {
     this._ensureVoices();
     const voice = this._voices[voiceId];
     if (voice) {
-      voice.setParameter(paramId, value);
+      // Convert semitones to cents for tune parameters (voices expect cents)
+      const param = JT90Engine.VOICE_PARAMS[voiceId]?.find(p => p.id === paramId);
+      const engineValue = (param?.unit === 'semitones') ? value * 100 : value;
+      voice.setParameter(paramId, engineValue);
     }
   }
 

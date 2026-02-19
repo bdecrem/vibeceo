@@ -1,76 +1,98 @@
 /**
  * JT90 Hi-Hat Voice
  *
- * 909-style hi-hat with:
- * - 6 square wave oscillators at metallic frequencies
- * - High-pass filtered noise
- * - Short (closed) or long (open) decay
+ * 909-style hi-hat (purist synthesis, no samples):
+ * - 6 square wave oscillators at inharmonic frequencies
+ * - Ring modulation between oscillator pairs (metallic clang)
+ * - 6-bit bitcrushing (909 lo-fi ROM grit)
+ * - Per-oscillator decay stagger (shimmer)
+ * - SVF bandpass (6-10kHz based on tone)
+ * - Highpass: 5kHz closed, 500Hz open (lets body through)
+ * - White noise "air" layer
+ * - Closed hat chokes open hat
  */
 
 import { clamp, fastTanh } from '../../../../../jb202/dist/dsp/utils/math.js';
 import { Noise } from '../../../../../jb202/dist/dsp/generators/index.js';
 
-// Classic 909 hi-hat frequencies (Hz) - metallic ring
+// Inharmonic frequencies — dense non-musical spectrum
 const HIHAT_FREQUENCIES = [
-  263.0,  // Fundamental frequencies create
-  400.0,  // metallic, bell-like tones
-  421.0,
-  474.0,
-  587.0,
-  845.0
+  205.3,
+  304.4,
+  369.6,
+  522.7,
+  800.0,
+  1204.4
 ];
+
+// Bitcrush to n-bit depth
+function bitcrush(sample, bits) {
+  const steps = Math.pow(2, bits);
+  return Math.round(sample * steps) / steps;
+}
 
 export class HiHatVoice {
   constructor(sampleRate = 44100, type = 'closed') {
     this.sampleRate = sampleRate;
-    this.type = type;  // 'closed' or 'open'
+    this.type = type;
 
     // Parameters
     this.tune = 0;
     this.decay = type === 'closed' ? 0.3 : 0.7;
-    this.tone = 0.5;  // Metal vs noise mix
+    this.tone = 0.5;
     this.level = 1.0;
 
-    // Oscillator phases (6 metallic oscillators)
+    // 6 oscillator phases + per-oscillator envelopes
     this.phases = [0, 0, 0, 0, 0, 0];
+    this.oscEnvelopes = [0, 0, 0, 0, 0, 0];
     this.frequencies = [...HIHAT_FREQUENCIES];
 
     // Noise
     this.noise = new Noise(33333);
-    this.hpFilter = 0;
-    this.lpFilter = 0;
+    this.noiseEnvelope = 0;
 
-    // Envelope
+    // SVF bandpass state
+    this.bpLow = 0;
+    this.bpBand = 0;
+
+    // Highpass state
+    this.hpState = 0;
+
+    // Master envelope
     this.envelope = 0;
 
     // State
     this.active = false;
+    this.choking = false;
     this.sampleCount = 0;
-
-    // Choke callback (for closed hat cutting open hat)
-    this.onChoke = null;
   }
 
   trigger(velocity = 1.0) {
     this.phases = [0, 0, 0, 0, 0, 0];
     this.sampleCount = 0;
     this.active = true;
+    this.choking = false;
 
-    this.envelope = velocity * this.level;
+    const vel = velocity * this.level;
+    this.envelope = vel;
+    this.noiseEnvelope = vel;
+
+    // Per-oscillator envelopes all start at full
+    for (let i = 0; i < 6; i++) {
+      this.oscEnvelopes[i] = vel;
+    }
 
     // Update frequencies based on tune
     const tuneMultiplier = Math.pow(2, this.tune / 1200);
     this.frequencies = HIHAT_FREQUENCIES.map(f => f * tuneMultiplier);
 
-    // Reset noise
+    // Reset filter state
     this.noise.reset();
-    this.hpFilter = 0;
-    this.lpFilter = 0;
+    this.bpLow = 0;
+    this.bpBand = 0;
+    this.hpState = 0;
   }
 
-  /**
-   * Choke the hi-hat (used when closed hat cuts open hat)
-   */
   choke() {
     if (this.active) {
       this.choking = true;
@@ -92,46 +114,80 @@ export class HiHatVoice {
       }
     }
 
-    // Generate metallic oscillators (square waves at inharmonic frequencies)
-    let metallic = 0;
+    // --- Decay time ---
+    const decayTime = this.type === 'closed'
+      ? 0.02 + this.decay * 0.28    // 20-300ms
+      : 0.1 + this.decay * 0.9;     // 100ms-1s
+
+    // --- 6 square wave oscillators ---
+    const squares = [];
     for (let i = 0; i < 6; i++) {
       this.phases[i] += this.frequencies[i] / this.sampleRate;
       if (this.phases[i] >= 1) this.phases[i] -= 1;
+      squares[i] = this.phases[i] < 0.5 ? 1 : -1;
 
-      // Square wave with slight filtering
-      const square = this.phases[i] < 0.5 ? 1 : -1;
-      metallic += square / 6;  // Equal mix
+      // Per-oscillator staggered decay
+      const oscDecayTime = decayTime * (1 - i * 0.05);
+      const oscDecayRate = 1 - Math.exp(-4.6 / (oscDecayTime * this.sampleRate));
+      this.oscEnvelopes[i] *= (1 - oscDecayRate);
     }
 
-    // Generate noise component
+    // --- Ring modulation: multiply oscillator pairs for metallic clang ---
+    const ring0 = squares[0] * squares[1];  // 205 x 304
+    const ring1 = squares[2] * squares[3];  // 370 x 523
+    const ring2 = squares[4] * squares[5];  // 800 x 1204
+
+    // Mix: raw squares + ring mod products
+    let metallic = 0;
+    for (let i = 0; i < 6; i++) {
+      metallic += squares[i] * this.oscEnvelopes[i] / 12;
+    }
+    // Ring mod adds the dense clangorous spectrum
+    const ringEnv = (this.oscEnvelopes[0] + this.oscEnvelopes[2] + this.oscEnvelopes[4]) / 3;
+    metallic += (ring0 + ring1 + ring2) * ringEnv / 6;
+
+    // --- 6-bit bitcrushing (909 lo-fi ROM character) ---
+    metallic = bitcrush(metallic, 6);
+
+    // --- White noise "air" layer ---
     let noiseSample = this.noise.nextSample();
+    const noiseDecayRate = 1 - Math.exp(-4.6 / (decayTime * 0.5 * this.sampleRate));
+    this.noiseEnvelope *= (1 - noiseDecayRate);
+    const noiseLevel = 0.15 + this.tone * 0.25;
+    noiseSample *= this.noiseEnvelope * noiseLevel;
 
-    // High-pass filter on noise (remove low frequencies)
-    const hpCutoff = 0.3;
-    this.hpFilter += hpCutoff * (noiseSample - this.hpFilter);
-    noiseSample = noiseSample - this.hpFilter;
+    // --- Mix metallic + noise ---
+    let sample = metallic * 0.2 + noiseSample;
 
-    // Low-pass to tame harshness
-    const lpCutoff = 0.2 + this.tone * 0.3;
-    this.lpFilter += lpCutoff * (noiseSample - this.lpFilter);
-    noiseSample = this.lpFilter;
+    // --- SVF bandpass at 6-10kHz based on tone (clamped for stability) ---
+    const bpFreq = 6000 + this.tone * 4000;
+    const f = Math.min(2 * Math.sin(Math.PI * bpFreq / this.sampleRate), 1.2);
+    const q = 0.5;
 
-    // Mix metallic and noise based on tone
-    const metallicMix = 0.3 + this.tone * 0.4;
-    const noiseMix = 0.7 - this.tone * 0.4;
-    let sample = metallic * metallicMix + noiseSample * noiseMix;
+    this.bpLow += f * this.bpBand;
+    const high = sample - this.bpLow - q * this.bpBand;
+    this.bpBand += f * high;
+    sample = this.bpBand;
 
-    // Envelope decay
-    const decayTime = this.type === 'closed'
-      ? 0.02 + this.decay * 0.08    // 20-100ms for closed
-      : 0.1 + this.decay * 0.9;     // 100ms-1s for open
+    // --- Highpass: 5kHz closed (tight), 500Hz open (lets body through) ---
+    const hpFreq = this.type === 'closed' ? 5000 : 500;
+    const hpCut = hpFreq / this.sampleRate;
+    this.hpState += hpCut * (sample - this.hpState);
+    sample = sample - this.hpState;
 
-    const decayRate = 1 - Math.exp(-4.6 / (decayTime * this.sampleRate));
-    this.envelope *= (1 - decayRate);
+    // --- Master envelope ---
+    if (this.type === 'open' && !this.choking) {
+      // Linear decay for open hat (that "shhhhh" tail)
+      const linearRate = this.envelope / (decayTime * this.sampleRate);
+      this.envelope -= linearRate;
+      if (this.envelope < 0) this.envelope = 0;
+    } else {
+      // Exponential decay for closed hat
+      const masterDecayRate = 1 - Math.exp(-4.6 / (decayTime * this.sampleRate));
+      this.envelope *= (1 - masterDecayRate);
+    }
 
-    sample *= this.envelope;
-
-    // High-frequency boost for crispness
+    // Soft saturation
     sample = fastTanh(sample * 2) / fastTanh(2);
 
     // Deactivate

@@ -214,7 +214,7 @@ function renderGrid() {
 // Voice parameter formatting
 function formatParamValue(value, descriptor) {
   const unit = descriptor.unit ?? '';
-  if (unit === 'cents') {
+  if (unit === 'cents' || unit === 'semitones') {
     const rounded = Math.round(value);
     return rounded > 0 ? `+${rounded}` : `${rounded}`;
   }
