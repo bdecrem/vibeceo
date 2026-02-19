@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SIFT</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+      font-family: monospace;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    // --- THEME (Indie Bite) ---
+    const T = {
+      bg: '#0a0a0a',
+      surface: '#18181b',
+      slime: '#a3e635',
+      cyan: '#22d3ee',
+      fuchsia: '#d946ef',
+      gold: '#facc15',
+      grey: '#555555',
+      text: '#ffffff',
+      mercury: '#e8e8f0',
+      mercuryHighlight: '#ffffff',
+      black: '#111111',
+    };
+
+    // --- CANVAS ---
+    let W, H;
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      W = canvas.width;
+      H = canvas.height;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // --- AUDIO ---
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    canvas.addEventListener('touchstart', initAudio, { once: true });
+    canvas.addEventListener('click', initAudio, { once: true });
+
+    function playPing(depth) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sine';
+      // pitch descends with depth
+      osc.frequency.value = Math.max(200, 800 - depth * 12);
+      g.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function playCombo(combo) {
+      if (!audioCtx) return;
+      // descending scale for combo
+      for (let i = 0; i < Math.min(combo, 5); i++) {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.connect(g); g.connect(audioCtx.destination);
+          osc.type = 'triangle';
+          osc.frequency.value = 600 - i * 60;
+          g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+        }, i * 50);
+      }
+    }
+
+    function playShatter() {
+      if (!audioCtx) return;
+      // noise burst
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.4, audioCtx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      const src = audioCtx.createBufferSource();
+      const g = audioCtx.createGain();
+      src.buffer = buf; src.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+      src.start();
+      // sub thud
+      const osc = audioCtx.createOscillator();
+      const og = audioCtx.createGain();
+      osc.connect(og); og.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.3);
+      og.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      og.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    function playMagnetHum() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.value = 80;
+      g.gain.setValueAtTime(0.03, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    }
+
+    // --- DRONE ---
+    let droneOsc, droneGain;
+    function startDrone() {
+      if (!audioCtx) return;
+      droneOsc = audioCtx.createOscillator();
+      droneGain = audioCtx.createGain();
+      droneOsc.connect(droneGain);
+      droneGain.connect(audioCtx.destination);
+      droneOsc.type = 'sine';
+      droneOsc.frequency.value = 55;
+      droneGain.gain.value = 0.04;
+      droneOsc.start();
+    }
+    function stopDrone() {
+      if (droneOsc) { try { droneOsc.stop(); } catch(e){} droneOsc = null; }
+    }
+
+    // --- LAYER GENERATION ---
+    const LAYER_HEIGHT = 12;
+    const LAYER_SPACING = 80;
+    const GAP_SIZE_MIN = 0.15; // fraction of width
+    const GAP_SIZE_MAX = 0.25;
+
+    function createLayer(index) {
+      const isMagnetic = index > 5 && Math.random() < 0.15;
+      const isBlack = index > 10 && Math.random() < 0.08;
+      const gapSize = GAP_SIZE_MIN + Math.random() * (GAP_SIZE_MAX - GAP_SIZE_MIN);
+      const gapCenter = 0.2 + Math.random() * 0.6; // keep gaps away from edges
+      return {
+        index,
+        y: 0, // set relative to camera
+        rotation: 0, // current rotation offset (0-1 range, fraction of width)
+        gapCenter,
+        gapSize: isBlack ? 0 : gapSize,
+        color: isBlack ? T.black : (isMagnetic ? T.fuchsia : T.cyan),
+        isMagnetic,
+        isBlack,
+        magnetDir: Math.random() < 0.5 ? -1 : 1,
+        passed: false,
+      };
+    }
+
+    // --- STATE ---
+    let mercury, layers, particles, shatterBeads;
+    let score, combo, maxCombo, bestScore;
+    let depth, cameraY;
+    let gamePhase; // 'start', 'playing', 'dead', 'over'
+    let deadTimer;
+    let gameTime;
+    let dragStartX, isDragging, activeLayerIdx;
+    let squash; // { timer, scaleX, scaleY }
+    let screenShake;
+    let comboFlash;
+
+    function init() {
+      mercury = {
+        x: W / 2,
+        y: 100,
+        r: 14,
+        vy: 0,
+        vx: 0,
+        onSurface: false,
+        glowIntensity: 0,
+      };
+      layers = [];
+      particles = [];
+      shatterBeads = [];
+      score = 0;
+      combo = 0;
+      maxCombo = 0;
+      depth = 0;
+      cameraY = 0;
+      gamePhase = 'start';
+      deadTimer = 0;
+      gameTime = 0;
+      squash = { timer: 0, scaleX: 1, scaleY: 1 };
+      screenShake = { timer: 0, intensity: 0 };
+      comboFlash = 0;
+      isDragging = false;
+      activeLayerIdx = -1;
+
+      // pre-generate layers
+      for (let i = 0; i < 30; i++) {
+        layers.push(createLayer(i));
+      }
+    }
+
+    function getGravity() {
+      // gravity ramps with depth
+      return 300 + depth * 8;
+    }
+
+    function getComboMultiplier() {
+      if (combo >= 8) return 5;
+      if (combo >= 5) return 3;
+      if (combo >= 3) return 2;
+      return 1;
+    }
+
+    function getLayerWorldY(layer) {
+      return 200 + layer.index * LAYER_SPACING;
+    }
+
+    function getActiveLayer() {
+      // find next layer below mercury
+      for (const l of layers) {
+        const ly = getLayerWorldY(l);
+        if (ly > mercury.y && !l.passed) return l;
+      }
+      return null;
+    }
+
+    // --- PARTICLES ---
+    function spawnParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 30 + Math.random() * 80;
+        const life = 0.2 + Math.random() * 0.3;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r: 1.5 + Math.random() * 2,
+          color, life, maxLife: life,
+        });
+      }
+    }
+
+    function spawnShatter(x, y) {
+      shatterBeads = [];
+      for (let i = 0; i < 12; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 80 + Math.random() * 150;
+        shatterBeads.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 50,
+          r: 2 + Math.random() * 4,
+          life: 1.5,
+        });
+      }
+    }
+
+    // --- INPUT ---
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const t = e.touches[0];
+      if (gamePhase === 'start') { startGame(); return; }
+      if (gamePhase === 'over') { init(); return; }
+      isDragging = true;
+      dragStartX = t.clientX;
+    });
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!isDragging || gamePhase !== 'playing') return;
+      const t = e.touches[0];
+      const dx = (t.clientX - dragStartX) / W;
+      const active = getActiveLayer();
+      if (active) {
+        active.rotation += dx;
+        // wrap
+        if (active.rotation > 1) active.rotation -= 1;
+        if (active.rotation < 0) active.rotation += 1;
+      }
+      dragStartX = t.clientX;
+    });
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      isDragging = false;
+    });
+    canvas.addEventListener('mousedown', (e) => {
+      if (gamePhase === 'start') { startGame(); return; }
+      if (gamePhase === 'over') { init(); return; }
+      isDragging = true;
+      dragStartX = e.clientX;
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      if (!isDragging || gamePhase !== 'playing') return;
+      const dx = (e.clientX - dragStartX) / W;
+      const active = getActiveLayer();
+      if (active) {
+        active.rotation += dx;
+        if (active.rotation > 1) active.rotation -= 1;
+        if (active.rotation < 0) active.rotation += 1;
+      }
+      dragStartX = e.clientX;
+    });
+    canvas.addEventListener('mouseup', () => { isDragging = false; });
+
+    function startGame() {
+      init();
+      initAudio();
+      startDrone();
+      gamePhase = 'playing';
+      mercury.y = 150;
+      mercury.vy = 0;
+    }
+
+    // --- UPDATE ---
+    function update(dt) {
+      if (gamePhase === 'start') return;
+
+      gameTime += dt;
+
+      if (gamePhase === 'dead') {
+        deadTimer += dt;
+        // update shatter beads
+        for (const b of shatterBeads) {
+          b.x += b.vx * dt;
+          b.y += b.vy * dt;
+          b.vy += 200 * dt;
+          b.life -= dt;
+        }
+        if (deadTimer >= 2.0) {
+          gamePhase = 'over';
+        }
+        return;
+      }
+
+      if (gamePhase !== 'playing') return;
+
+      // Gravity
+      const gravity = getGravity();
+      mercury.vy += gravity * dt;
+
+      // Magnetic zones — check layers near mercury
+      for (const l of layers) {
+        if (!l.isMagnetic || l.passed) continue;
+        const ly = getLayerWorldY(l);
+        const dist = Math.abs(mercury.y - ly);
+        if (dist < LAYER_SPACING * 0.8) {
+          const strength = 120 * (1 - dist / (LAYER_SPACING * 0.8));
+          mercury.vx += l.magnetDir * strength * dt;
+          if (dist < LAYER_SPACING * 0.5 && Math.random() < 0.05) {
+            playMagnetHum();
+          }
+        }
+      }
+
+      // Apply velocity
+      mercury.y += mercury.vy * dt;
+      mercury.x += mercury.vx * dt;
+
+      // Dampen horizontal velocity
+      mercury.vx *= 0.95;
+
+      // Keep mercury in bounds horizontally
+      mercury.x = Math.max(mercury.r, Math.min(W - mercury.r, mercury.x));
+
+      // Check layer collisions
+      for (const l of layers) {
+        if (l.passed) continue;
+        const ly = getLayerWorldY(l);
+
+        // only check if mercury is crossing this layer
+        if (mercury.y + mercury.r < ly || mercury.y - mercury.r > ly + LAYER_HEIGHT) continue;
+        if (mercury.vy <= 0) continue; // only check when falling
+
+        // calculate gap position with rotation
+        const gapLeft = ((l.gapCenter - l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
+        const gapRight = ((l.gapCenter + l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
+
+        // mercury position as fraction of screen width
+        const mx = mercury.x / W;
+
+        // check if mercury is in gap
+        let inGap;
+        if (l.gapSize === 0) {
+          // black layer — no gap
+          inGap = false;
+        } else if (gapLeft < gapRight) {
+          inGap = mx > gapLeft && mx < gapRight;
+        } else {
+          // gap wraps around
+          inGap = mx > gapLeft || mx < gapRight;
+        }
+
+        if (inGap) {
+          // pass through!
+          l.passed = true;
+          depth++;
+          combo++;
+          if (combo > maxCombo) maxCombo = combo;
+          const mult = getComboMultiplier();
+          score += mult;
+          playPing(depth);
+          if (combo >= 3) {
+            playCombo(combo);
+            comboFlash = 0.2;
+          }
+          spawnParticles(mercury.x, ly, T.slime, 8);
+          // glow increases with combo
+          mercury.glowIntensity = Math.min(combo * 3, 20);
+        } else {
+          if (l.isBlack) {
+            // SHATTER — game over
+            gamePhase = 'dead';
+            deadTimer = 0;
+            spawnShatter(mercury.x, mercury.y);
+            playShatter();
+            stopDrone();
+            screenShake = { timer: 0.2, intensity: 5 };
+            return;
+          }
+          // land on surface
+          mercury.y = ly - mercury.r;
+          mercury.vy = -mercury.vy * 0.3; // small bounce
+          if (Math.abs(mercury.vy) < 20) mercury.vy = 0;
+          combo = 0;
+          mercury.glowIntensity = Math.max(0, mercury.glowIntensity - 5);
+          // squash
+          squash = { timer: 0.15, scaleX: 1.3, scaleY: 0.7 };
+        }
+      }
+
+      // Squash animation
+      if (squash.timer > 0) {
+        squash.timer -= dt;
+        const t = squash.timer / 0.15;
+        squash.scaleX = 1 + (0.3) * t;
+        squash.scaleY = 1 - (0.3) * t;
+      } else {
+        squash.scaleX = 1;
+        squash.scaleY = 1;
+      }
+
+      // Camera follows mercury
+      const targetCam = mercury.y - H * 0.35;
+      cameraY += (targetCam - cameraY) * 3 * dt;
+
+      // Generate more layers as needed
+      const furthestLayer = layers[layers.length - 1];
+      if (furthestLayer && getLayerWorldY(furthestLayer) - cameraY < H + 200) {
+        const nextIdx = furthestLayer.index + 1;
+        layers.push(createLayer(nextIdx));
+      }
+
+      // Remove layers far above camera
+      while (layers.length > 0 && getLayerWorldY(layers[0]) < cameraY - 200) {
+        layers.shift();
+      }
+
+      // Screen shake
+      if (screenShake.timer > 0) screenShake.timer -= dt;
+      if (comboFlash > 0) comboFlash -= dt;
+
+      // Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      // Drone intensity ramps with depth
+      if (droneGain) {
+        droneGain.gain.value = 0.04 + Math.min(depth * 0.002, 0.1);
+      }
+    }
+
+    // --- DRAW ---
+    function draw() {
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      if (gamePhase === 'start') {
+        drawStart();
+        return;
+      }
+      if (gamePhase === 'over') {
+        drawGameOver();
+        return;
+      }
+
+      // bg gradient — redder with depth
+      const redAmount = Math.min(depth / 50, 1);
+      if (redAmount > 0) {
+        const r = Math.round(10 + redAmount * 20);
+        const g = Math.round(10 - redAmount * 5);
+        const b = Math.round(10 - redAmount * 5);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      ctx.save();
+      // screen shake
+      if (screenShake.timer > 0) {
+        const s = screenShake.intensity * (screenShake.timer / 0.2);
+        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      }
+
+      // Draw layers
+      for (const l of layers) {
+        const ly = getLayerWorldY(l) - cameraY;
+        if (ly < -20 || ly > H + 20) continue;
+
+        if (l.passed) {
+          // faded passed layer
+          ctx.globalAlpha = 0.15;
+        }
+
+        // layer bar
+        const gapLeft = ((l.gapCenter - l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
+        const gapRight = ((l.gapCenter + l.gapSize / 2 + l.rotation) % 1 + 1) % 1;
+
+        ctx.fillStyle = l.color;
+        if (l.isMagnetic && !l.passed) {
+          // pulse
+          const pulse = 0.6 + Math.sin(gameTime * 4) * 0.4;
+          ctx.globalAlpha = l.passed ? 0.15 : pulse;
+        }
+
+        if (l.gapSize === 0) {
+          // black/solid layer
+          ctx.fillRect(0, ly, W, LAYER_HEIGHT);
+        } else if (gapLeft < gapRight) {
+          // normal gap
+          ctx.fillRect(0, ly, gapLeft * W, LAYER_HEIGHT);
+          ctx.fillRect(gapRight * W, ly, W - gapRight * W, LAYER_HEIGHT);
+          // gap glow
+          if (!l.passed) {
+            ctx.fillStyle = T.slime;
+            ctx.globalAlpha = 0.15;
+            ctx.fillRect(gapLeft * W, ly, (gapRight - gapLeft) * W, LAYER_HEIGHT);
+          }
+        } else {
+          // wrapped gap
+          ctx.fillRect(gapRight * W, ly, (gapLeft - gapRight) * W, LAYER_HEIGHT);
+          if (!l.passed) {
+            ctx.fillStyle = T.slime;
+            ctx.globalAlpha = 0.15;
+            ctx.fillRect(0, ly, gapRight * W, LAYER_HEIGHT);
+            ctx.fillRect(gapLeft * W, ly, W - gapLeft * W, LAYER_HEIGHT);
+          }
+        }
+        ctx.globalAlpha = 1;
+
+        // active layer indicator
+        const active = getActiveLayer();
+        if (active === l && !l.passed) {
+          ctx.strokeStyle = T.slime;
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = 0.3;
+          ctx.strokeRect(0, ly - 1, W, LAYER_HEIGHT + 2);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      // Particles
+      for (const p of particles) {
+        const py = p.y - cameraY;
+        ctx.globalAlpha = p.life / p.maxLife;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, py, p.r * (p.life / p.maxLife), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Mercury
+      if (gamePhase === 'playing') {
+        const my = mercury.y - cameraY;
+        const glow = mercury.glowIntensity;
+
+        ctx.save();
+        ctx.translate(mercury.x, my);
+        ctx.scale(squash.scaleX, squash.scaleY);
+
+        // glow
+        if (glow > 0) {
+          ctx.shadowBlur = glow;
+          ctx.shadowColor = glow > 12 ? T.text : T.mercury;
+        }
+
+        // main body
+        ctx.fillStyle = glow > 15 ? T.text : T.mercury;
+        ctx.beginPath();
+        ctx.arc(0, 0, mercury.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // highlight
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.beginPath();
+        ctx.arc(-mercury.r * 0.3, -mercury.r * 0.3, mercury.r * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // Shatter beads
+      if (gamePhase === 'dead') {
+        for (const b of shatterBeads) {
+          if (b.life <= 0) continue;
+          const by = b.y - cameraY;
+          ctx.globalAlpha = b.life / 1.5;
+          ctx.fillStyle = T.mercury;
+          ctx.beginPath();
+          ctx.arc(b.x, by, b.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.restore();
+
+      // --- HUD ---
+      // Score
+      ctx.fillStyle = T.text;
+      ctx.font = 'bold 28px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(score + '', 16, 40);
+
+      // Depth
+      ctx.font = '14px monospace';
+      ctx.fillStyle = T.grey;
+      ctx.fillText('depth ' + depth, 16, 60);
+
+      // Combo
+      if (combo >= 3) {
+        const mult = getComboMultiplier();
+        ctx.fillStyle = T.slime;
+        ctx.font = 'bold 20px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(mult + 'x', W / 2, 40);
+      }
+
+      // Combo flash
+      if (comboFlash > 0) {
+        ctx.strokeStyle = T.slime;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = comboFlash / 0.2;
+        ctx.strokeRect(2, 2, W - 4, H - 4);
+        ctx.globalAlpha = 1;
+      }
+
+      // Dead overlay
+      if (gamePhase === 'dead') {
+        const t = Math.min(deadTimer / 1.5, 1);
+        ctx.fillStyle = `rgba(0,0,0,${t * 0.6})`;
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = T.text;
+        ctx.font = 'bold 32px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('SHATTERED', W / 2, H / 2 - 10);
+      }
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawStart() {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.textAlign = 'center';
+
+      // mercury drop animation
+      const bobY = Math.sin(gameTime * 2) * 8;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = T.mercury;
+      ctx.fillStyle = T.mercury;
+      ctx.beginPath();
+      ctx.arc(W / 2, H / 2 - 80 + bobY, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath();
+      ctx.arc(W / 2 - 5, H / 2 - 85 + bobY, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = T.slime;
+      ctx.font = 'bold 48px monospace';
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = T.slime;
+      ctx.fillText('SIFT', W / 2, H / 2 - 20);
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = T.text;
+      ctx.font = '16px monospace';
+      ctx.fillText('Drag to rotate layers', W / 2, H / 2 + 15);
+      ctx.fillText('Let the mercury fall through', W / 2, H / 2 + 38);
+
+      ctx.fillStyle = T.slime;
+      ctx.font = '20px monospace';
+      ctx.fillText('[ TAP TO START ]', W / 2, H / 2 + 85);
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawGameOver() {
+      ctx.fillStyle = 'rgba(0,0,0,0.85)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.textAlign = 'center';
+
+      ctx.fillStyle = T.gold;
+      ctx.font = 'bold 56px monospace';
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = T.gold;
+      ctx.fillText(score + '', W / 2, H / 2 - 40);
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = T.text;
+      ctx.font = '16px monospace';
+      ctx.fillText('depth: ' + depth + '  |  max combo: ' + maxCombo + 'x', W / 2, H / 2);
+
+      ctx.fillStyle = T.slime;
+      ctx.font = '20px monospace';
+      ctx.fillText('[ TAP TO RETRY ]', W / 2, H / 2 + 50);
+
+      ctx.textAlign = 'left';
+    }
+
+    // --- LOOP ---
+    let lastTime = performance.now();
+    init();
+
+    function loop(ts) {
+      const dt = Math.min((ts - lastTime) / 1000, 0.05);
+      lastTime = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
