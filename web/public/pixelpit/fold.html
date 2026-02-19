@@ -142,7 +142,7 @@
 
     // --- CONSTANTS ---
     const PAPER_SIZE = 40;
-    const LANDING_TOLERANCE = 30; // ±30 degrees from flat
+    const LANDING_TOLERANCE = 25; // ±25 degrees from flat
     const TORQUE_FORCE = 8; // radians/s² per tap
 
     // --- STATE ---
@@ -369,12 +369,16 @@
             spawnParticles(paper.x, sy, T.cyan, 8);
             screenShake = { timer: 0.08, intensity: 1.5 };
 
-            // launch paper again after brief pause
+            // tip off shelf edge after filing — gentle push toward nearest edge
             setTimeout(() => {
               if (gamePhase === 'playing') {
-                paper.vy = -80; // small upward push to resume falling
+                const shelfCenter = s.x + s.width / 2;
+                const dir = paper.x > shelfCenter ? 1 : -1;
+                paper.vx = dir * 40; // gentle horizontal push off edge
+                paper.angularVel = dir * 0.5; // slight tumble
+                // gravity will handle the rest
               }
-            }, 500);
+            }, 400);
 
           } else {
             // CRUMPLE — bad landing
