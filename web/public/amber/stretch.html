@@ -1,76 +1,351 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STRETCH</title>
-    <meta name="description" content="ASCII graffiti. The first stretch of the morning.">
-    <meta property="og:title" content="STRETCH">
-    <meta property="og:description" content="ASCII graffiti. The first stretch of the morning.">
-    <meta property="og:image" content="https://intheamber.com/amber/stretch-og.png">
-    <meta property="og:url" content="https://kochi.to/amber/stretch.html">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://intheamber.com/amber/stretch-og.png">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            background: #000;
-            color: #D4A574;
-            font-family: 'Courier New', monospace;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            overflow: hidden;
-        }
-        #container {
-            text-align: center;
-            font-size: 14px;
-            line-height: 1.4;
-            white-space: pre;
-            animation: fadeIn 1s ease-in;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @media (max-width: 480px) {
-            #container {
-                font-size: 11px;
-            }
-        }
-        .flicker {
-            animation: flicker 3s ease-in-out infinite;
-        }
-        @keyframes flicker {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STRETCH — The sound of growing</title>
+  
+  <!-- OG Tags -->
+  <meta property="og:title" content="STRETCH — The sound of growing">
+  <meta property="og:description" content="Stems reach upward. Each growth spurt creaks. Tap to plant seeds.">
+  <meta property="og:image" content="https://intheamber.com/amber/stretch-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/stretch.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="STRETCH — The sound of growing">
+  <meta name="twitter:description" content="Stems reach upward. Each growth spurt creaks. Tap to plant seeds.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/stretch-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0D0D0D;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #84cc16;
+      font-size: 14px;
+      text-shadow: 0 0 20px rgba(132, 204, 22, 0.8);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #title {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #FFD700;
+      font-size: 16px;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+      pointer-events: none;
+      z-index: 10;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    #hint {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #84cc16;
+      font-size: 18px;
+      text-shadow: 0 0 20px rgba(132, 204, 22, 0.8);
+      pointer-events: none;
+      z-index: 10;
+      opacity: 1;
+      transition: opacity 0.5s;
+    }
+
+    #hint.hidden {
+      opacity: 0;
+    }
+  </style>
 </head>
 <body>
-    <div id="container">
-         ╔════════════════════════╗
-         ║                        ║
-         ║   body  ▒▒▒░░░         ║
-         ║   mind  ░░░░░░         ║
-         ║                        ║
-         ║   [ CONNECTING... ]    ║
-         ║                        ║
-         ║   █░░░░░░░░░░░░░ 8%    ║
-         ║                        ║
-         ║   "not yet"            ║
-         ║   "five more minutes"  ║
-         ║   "okay fine"          ║
-         ║                        ║
-         ║   <span class="flicker">↑</span>  first stretch     ║
-         ║                        ║
-         ╚════════════════════════╝
-    </div>
+  <canvas id="canvas"></canvas>
+  <div id="info">STEMS: <span id="stemCount">0</span></div>
+  <div id="title">STRETCH<br><span style="font-size: 12px; opacity: 0.6;">The sound of growing</span></div>
+  <div id="hint">Tap to plant seeds</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const hint = document.getElementById('hint');
+    const stemCountEl = document.getElementById('stemCount');
+
+    let width, height;
+    let stems = [];
+    let particles = [];
+    let audioCtx;
+    let hasInteracted = false;
+
+    // Colors for growth
+    const growthColors = [
+      '#84cc16', // lime
+      '#a3e635', // bright lime
+      '#14b8a6', // teal
+      '#f59e0b', // amber
+      '#FFD700', // gold
+    ];
+
+    // Resize canvas
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Stem class
+    class Stem {
+      constructor(x, y, angle, color, generation = 0) {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.angle = angle;
+        this.length = 0;
+        this.targetLength = 80 + Math.random() * 100;
+        this.growthSpeed = 0.5 + Math.random() * 0.8;
+        this.color = color;
+        this.generation = generation;
+        this.alive = true;
+        this.width = Math.max(2, 8 - generation);
+        this.hasBranched = false;
+        this.segments = []; // Growth segments for visual texture
+        this.lastSegmentLength = 0;
+      }
+
+      update() {
+        if (!this.alive) return;
+
+        // Grow
+        if (this.length < this.targetLength) {
+          const oldLength = this.length;
+          this.length += this.growthSpeed;
+          
+          // Update position
+          this.x = this.startX + Math.cos(this.angle) * this.length;
+          this.y = this.startY + Math.sin(this.angle) * this.length;
+
+          // Create growth segment markers every 20 units
+          if (Math.floor(this.length / 20) > Math.floor(oldLength / 20)) {
+            this.segments.push(this.length);
+            playGrowthSound(this.length / this.targetLength, this.x, this.y);
+            spawnParticles(this.x, this.y, this.color);
+          }
+
+          // Branch when reaching certain lengths
+          if (!this.hasBranched && this.length > this.targetLength * 0.6 && this.generation < 3) {
+            this.branch();
+            this.hasBranched = true;
+          }
+        } else {
+          this.alive = false;
+        }
+      }
+
+      branch() {
+        const branchCount = Math.random() > 0.5 ? 2 : 1;
+        
+        for (let i = 0; i < branchCount; i++) {
+          const branchAngle = this.angle + (Math.random() - 0.5) * Math.PI / 3;
+          const nextColor = growthColors[(growthColors.indexOf(this.color) + 1) % growthColors.length];
+          stems.push(new Stem(this.x, this.y, branchAngle, nextColor, this.generation + 1));
+        }
+      }
+
+      draw() {
+        if (this.length < 1) return;
+
+        ctx.save();
+        
+        // Draw stem
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.width;
+        ctx.lineCap = 'round';
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+        
+        ctx.beginPath();
+        ctx.moveTo(this.startX, this.startY);
+        ctx.lineTo(this.x, this.y);
+        ctx.stroke();
+
+        // Draw growth nodes
+        ctx.fillStyle = this.color;
+        this.segments.forEach(segLength => {
+          const nodeX = this.startX + Math.cos(this.angle) * segLength;
+          const nodeY = this.startY + Math.sin(this.angle) * segLength;
+          ctx.beginPath();
+          ctx.arc(nodeX, nodeY, this.width * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Glow at tip if alive
+        if (this.alive) {
+          ctx.fillStyle = this.color;
+          ctx.shadowBlur = 30;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.width * 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    // Particle class
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.life = 1;
+        this.decay = 0.02;
+        this.color = color;
+        this.size = 2 + Math.random() * 3;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Spawn particles
+    function spawnParticles(x, y, color) {
+      for (let i = 0; i < 8; i++) {
+        particles.push(new Particle(x, y, color));
+      }
+    }
+
+    // Plant a seed
+    function plantSeed(x, y) {
+      if (!hasInteracted) {
+        hasInteracted = true;
+        hint.classList.add('hidden');
+        initAudio();
+      }
+
+      const color = growthColors[Math.floor(Math.random() * growthColors.length)];
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI / 4; // Mostly upward
+      stems.push(new Stem(x, y, angle, color, 0));
+      spawnParticles(x, y, color);
+    }
+
+    // Audio initialization
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    // Play growth sound - creaking/stretching
+    function playGrowthSound(progress, x, y) {
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime;
+      
+      // Creaking tone - rises with progress
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      // Frequency rises from 200Hz to 400Hz as stem grows
+      const freq = 200 + progress * 200;
+      osc.frequency.setValueAtTime(freq, now);
+      
+      // Quick attack, medium decay
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.08, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      
+      osc.start(now);
+      osc.stop(now + 0.15);
+    }
+
+    // Auto-seed on start
+    setTimeout(() => {
+      for (let i = 0; i < 3; i++) {
+        const x = width * (0.3 + Math.random() * 0.4);
+        const y = height;
+        plantSeed(x, y);
+      }
+    }, 500);
+
+    // Interaction
+    canvas.addEventListener('click', (e) => {
+      plantSeed(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      plantSeed(touch.clientX, touch.clientY);
+    });
+
+    // Animation loop
+    function animate() {
+      // Dark fade trail
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update and draw stems
+      stems.forEach(stem => {
+        stem.update();
+        stem.draw();
+      });
+
+      // Update and draw particles
+      particles = particles.filter(p => p.life > 0);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      // Update counter
+      stemCountEl.textContent = stems.length;
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
 </body>
 </html>
