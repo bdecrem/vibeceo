@@ -18,6 +18,7 @@ const labMessages = [
 ];
 
 const games = [
+  { icon: '🕳️', name: 'Devour', href: '/pixelpit/arcade/devour', playable: true, date: 'Wed 2/18' },
   { icon: '👾', name: 'Blast', href: '/pixelpit/arcade/blast', playable: true, date: 'Tue 2/17' },
   { icon: '🧊', name: 'Melt', href: '/pixelpit/arcade/melt', playable: true, date: 'Fri 2/13' },
   { icon: '🧵', name: 'Threads', href: '/pixelpit/arcade/threads', playable: true, date: 'Thu 2/12' },
@@ -131,7 +132,7 @@ const labItems = [
   { icon: '🐢', name: 'Yertle', href: '/pixelpit/lab/yertle', date: 'Mon 2/9' },
   { icon: '🧵', name: 'Threads', href: '/pixelpit/lab/threads', date: 'Mon 2/9' },
   { icon: '🌿', name: 'The Garden', href: '/pixelpit/lab/efficiency-garden', date: 'Mon 2/9' },
-  { icon: '🕳️', name: 'Devour', href: '/pixelpit/lab/devour', date: 'Fri 2/7' },
+  { icon: '🕳️', name: 'Devour', href: '/pixelpit/lab/devour', date: 'Fri 2/7', shipped: true },
   { icon: '🏔️', name: 'Climb', href: '/pixelpit/lab/climb', date: 'Fri 2/6', shipped: true },
   { icon: '👻', name: 'Haunt', href: '/pixelpit/lab/haunt', date: 'Thu 2/5' },
   { icon: '🪙', name: 'Catch', href: '/pixelpit/lab/catch', date: 'Wed 2/4' },
