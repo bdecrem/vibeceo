@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VESPERS — Evening Bell Tower</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="VESPERS — Evening Bell Tower">
+  <meta property="og:description" content="Tap to ring the bells. Watch them swing and resonate.">
+  <meta property="og:image" content="https://intheamber.com/amber/vespers-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/vespers.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="VESPERS — Evening Bell Tower">
+  <meta name="twitter:description" content="Tap to ring the bells. Watch them swing and resonate.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/vespers-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+      cursor: default;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100vh;
+      touch-action: none;
+    }
+    
+    #title {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #D4A574;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #hint {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: rgba(212, 165, 116, 0.5);
+      pointer-events: none;
+      z-index: 10;
+      text-align: center;
+    }
+    
+    @media (max-width: 600px) {
+      #title { font-size: 20px; top: 20px; }
+      #hint { font-size: 12px; bottom: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">VESPERS</div>
+  <canvas id="canvas"></canvas>
+  <div id="hint">Tap the bells to ring them</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W, H;
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    
+    // Audio setup
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioStarted = false;
+    
+    // Bell synthesis with FM for metallic tone
+    function playBell(freq, velocity = 0.8) {
+      const now = audioCtx.currentTime;
+      
+      // Carrier oscillator
+      const carrier = audioCtx.createOscillator();
+      carrier.frequency.value = freq;
+      carrier.type = 'sine';
+      
+      // Modulator (creates inharmonic partials)
+      const mod = audioCtx.createOscillator();
+      mod.frequency.value = freq * 3.76; // inharmonic ratio for bell-like tone
+      mod.type = 'sine';
+      
+      const modGain = audioCtx.createGain();
+      modGain.gain.setValueAtTime(freq * 2.5, now);
+      modGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+      
+      mod.connect(modGain);
+      modGain.connect(carrier.frequency);
+      
+      // Envelope for bell decay
+      const env = audioCtx.createGain();
+      env.gain.setValueAtTime(velocity * 0.4, now);
+      env.gain.exponentialRampToValueAtTime(0.001, now + 4); // long decay
+      
+      // Reverb (simple delay for resonance)
+      const delay = audioCtx.createDelay();
+      delay.delayTime.value = 0.03;
+      const delayGain = audioCtx.createGain();
+      delayGain.gain.value = 0.3;
+      
+      carrier.connect(env);
+      env.connect(audioCtx.destination);
+      env.connect(delay);
+      delay.connect(delayGain);
+      delayGain.connect(audioCtx.destination);
+      
+      carrier.start(now);
+      mod.start(now);
+      carrier.stop(now + 4);
+      mod.stop(now + 4);
+    }
+    
+    // Bell data structure
+    class Bell {
+      constructor(x, y, note, freq, color) {
+        this.x = x;
+        this.y = y;
+        this.note = note;
+        this.freq = freq;
+        this.color = color;
+        this.angle = 0; // swing angle
+        this.velocity = 0; // angular velocity
+        this.damping = 0.92; // swing damping
+        this.glowIntensity = 0;
+      }
+      
+      ring(force = 1.0) {
+        // Apply impulse to swing
+        this.velocity = force * 0.3;
+        this.glowIntensity = 1.0;
+        
+        // Play sound
+        if (audioStarted) {
+          playBell(this.freq, force);
+        }
+        
+        // Spawn particles
+        for (let i = 0; i < 15; i++) {
+          const angle = (Math.random() - 0.5) * Math.PI;
+          const speed = 2 + Math.random() * 4;
+          particles.push({
+            x: this.x,
+            y: this.y + 60,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1.0,
+            decay: 0.015,
+            color: this.color
+          });
+        }
+      }
+      
+      update() {
+        // Swing physics
+        this.angle += this.velocity;
+        this.velocity *= this.damping;
+        
+        // Glow decay
+        this.glowIntensity *= 0.95;
+      }
+      
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        
+        // Hanging rope
+        ctx.strokeStyle = 'rgba(212, 165, 116, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.sin(this.angle) * 40, 60);
+        ctx.stroke();
+        
+        // Bell body (at end of rope, affected by swing)
+        ctx.translate(Math.sin(this.angle) * 40, 60);
+        ctx.rotate(this.angle);
+        
+        // Glow
+        if (this.glowIntensity > 0.01) {
+          const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 50);
+          gradient.addColorStop(0, `${this.color}${Math.floor(this.glowIntensity * 255).toString(16).padStart(2, '0')}`);
+          gradient.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(0, 0, 50, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Bell shape
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(-20, -10);
+        ctx.quadraticCurveTo(-25, 0, -22, 15);
+        ctx.lineTo(-15, 20);
+        ctx.lineTo(15, 20);
+        ctx.lineTo(22, 15);
+        ctx.quadraticCurveTo(25, 0, 20, -10);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Bell top
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(-8, -15, 16, 6);
+        
+        // Highlight
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-15, 5);
+        ctx.lineTo(-15, 12);
+        ctx.stroke();
+        
+        // Note label
+        ctx.fillStyle = 'rgba(13, 13, 13, 0.8)';
+        ctx.font = '12px Space Mono';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.note, 0, 5);
+        
+        ctx.restore();
+      }
+      
+      containsPoint(px, py) {
+        const bellX = this.x + Math.sin(this.angle) * 40;
+        const bellY = this.y + 60;
+        const dist = Math.sqrt((px - bellX) ** 2 + (py - bellY) ** 2);
+        return dist < 30;
+      }
+    }
+    
+    // Initialize bells - D minor pentatonic
+    const bells = [];
+    const notes = [
+      { note: 'D4', freq: 293.66, color: '#D4A574' }, // amber
+      { note: 'F4', freq: 349.23, color: '#FFD700' }, // gold
+      { note: 'G4', freq: 392.00, color: '#2D9596' }, // teal
+      { note: 'A4', freq: 440.00, color: '#7B68EE' }, // violet
+      { note: 'C5', freq: 523.25, color: '#FF6B9D' }, // pink
+      { note: 'D5', freq: 587.33, color: '#FFA500' }, // orange
+      { note: 'F5', freq: 698.46, color: '#00CED1' }  // cyan
+    ];
+    
+    function initBells() {
+      bells.length = 0;
+      const spacing = W / (notes.length + 1);
+      for (let i = 0; i < notes.length; i++) {
+        const x = spacing * (i + 1);
+        const y = H * 0.15;
+        bells.push(new Bell(x, y, notes[i].note, notes[i].freq, notes[i].color));
+      }
+    }
+    initBells();
+    window.addEventListener('resize', initBells);
+    
+    // Particles
+    const particles = [];
+    
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.15; // gravity
+        p.life -= p.decay;
+        
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+    
+    function drawParticles() {
+      particles.forEach(p => {
+        const alpha = Math.floor(p.life * 255).toString(16).padStart(2, '0');
+        ctx.fillStyle = `${p.color}${alpha}`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+    
+    // Interaction
+    function handleInteraction(x, y) {
+      if (!audioStarted) {
+        audioStarted = true;
+        audioCtx.resume();
+        document.getElementById('hint').style.opacity = '0.3';
+      }
+      
+      bells.forEach(bell => {
+        if (bell.containsPoint(x, y)) {
+          bell.ring();
+        }
+      });
+    }
+    
+    canvas.addEventListener('click', (e) => {
+      handleInteraction(e.clientX, e.clientY);
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      Array.from(e.touches).forEach(touch => {
+        handleInteraction(touch.clientX, touch.clientY);
+      });
+    });
+    
+    // Auto-chime animation (idle state)
+    let idleTimer = 0;
+    function autoChime() {
+      idleTimer++;
+      if (idleTimer > 180) { // every 3 seconds
+        const randomBell = bells[Math.floor(Math.random() * bells.length)];
+        randomBell.ring(0.3);
+        idleTimer = 0;
+      }
+    }
+    
+    // Animation loop
+    function animate() {
+      // Dark fade trail
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.15)';
+      ctx.fillRect(0, 0, W, H);
+      
+      // Update
+      bells.forEach(bell => bell.update());
+      updateParticles();
+      autoChime();
+      
+      // Draw
+      bells.forEach(bell => bell.draw());
+      drawParticles();
+      
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>
