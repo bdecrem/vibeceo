@@ -29,9 +29,9 @@ await esbuild.build({
   },
 });
 
-// Copy genres.json
-if (existsSync('genres.json')) {
-  copyFileSync('genres.json', 'dist/genres.json');
+// Copy library.json (unified music knowledge)
+if (existsSync('library.json')) {
+  copyFileSync('library.json', 'dist/library.json');
 }
 
 // Copy params folder (needed at runtime for instrument parameters)

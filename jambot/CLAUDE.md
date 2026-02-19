@@ -1257,26 +1257,38 @@ Each saved pattern captures the full state for that instrument:
 - **jb202**: pattern, params
 - **sampler**: pattern, params
 
-## Genre Knowledge System
+## Music Knowledge System
 
-`genres.json` contains deep production knowledge for 17 genres. When users mention a genre, the system auto-injects relevant knowledge into the agent's context.
+`library.json` (v2) contains unified music knowledge — 45 genres and 1 artist profile. When users mention a genre or artist, `core/library.js` auto-injects relevant production knowledge into the agent's context.
 
 **How it works:**
-1. `detectGenres(text)` scans user input for genre keywords
-2. `buildGenreContext(keys)` formats the genre data for the system prompt
+1. `detectLibraryKeys(text)` scans user input for genre/artist keywords
+2. `buildLibraryContext(keys)` formats the data for the system prompt
 3. Agent receives: BPM range, keys, swing, drum/bass settings, production philosophy
 
-**Supported genres:**
-- Classic House, Chicago House, Deep House, Tech House
-- Detroit Techno, Berlin Techno, Industrial Techno, Minimal
-- Acid House, Acid Techno
-- Electro, Breakbeat, Trance
-- Drum & Bass, Jungle
-- Ambient, IDM
+**Structure:** `{ _meta, genres: { key: {...} }, artists: { key: {...} } }`
 
-**Aliases:** "house" → classic_house, "techno" → berlin_techno, "acid" → acid_house, etc.
+**Three genre tiers:**
 
-**To add a genre:** Add entry to `genres.json` with name, bpm, keys, description, production, drums, bass, swing, references. Then add aliases to `GENRE_ALIASES` in `jambot.js`.
+| Tier | Count | What's included |
+|------|-------|-----------------|
+| **core** | 17 | Machine-readable drum/bass params, concise descriptions |
+| **deep** | 16 | Core + modulation, mixing, reasoning, sources |
+| **profile** | 12 | Prose-derived from research (no drum/bass params yet) |
+
+**Core genres:** Classic House, Chicago House, Deep House, Tech House, Detroit Techno, Berlin Techno, Industrial Techno, Minimal, Acid House, Acid Techno, Electro, Breakbeat, Trance, Drum & Bass, Jungle, Ambient, IDM
+
+**Deep genres:** Doomcore, Gabber, UK Funky, Footwork, Gqom, Kuduro, Afro House, Dub Techno, Microhouse, Psytrance, Reggaeton, UK Garage, Vaporwave, Witch House, Darksynth, Drill
+
+**Profile genres:** Breakcore, Complextro, Drift Phonk, Future Garage, Gym Phonk, Jersey Club, Neurofunk, Pluggnb, Rawstyle, Sigilkore, Stutterhouse, Wave
+
+**Artists:** Jeff Mills
+
+**Aliases:** "house" → classic_house, "techno" → berlin_techno, "acid" → acid_house, "phonk" → drift_phonk, "gabber" → gabber, etc.
+
+**To add a genre:** Add entry to `library.json` under `genres` with tier, name, bpm, keys, description, production, and references. For core/deep tiers include drums and bass params. Then add aliases to `LIBRARY_ALIASES` in `core/library.js`.
+
+**Source material:** `musical-knowledge/` contains the raw research files (genres.json, genres-deep.json, genres/*.md) that were merged into library.json.
 
 ## Slash Commands
 

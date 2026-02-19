@@ -4,6 +4,14 @@
  * Manages genre, artist, and mood knowledge for context injection.
  * When users mention a genre or artist, the system injects relevant
  * production knowledge into the agent's context.
+ *
+ * Library structure (v2):
+ *   { _meta, genres: { key: {...} }, artists: { key: {...} } }
+ *
+ * Three genre tiers:
+ *   core    — machine-readable drum/bass params, concise descriptions
+ *   deep    — core + modulation, mixing, reasoning, sources
+ *   profile — prose-derived from research (no drum/bass params)
  */
 
 import { readFileSync } from 'fs';
@@ -12,8 +20,8 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// === PRODUCER LIBRARY (genres, artists, moods, techniques) ===
-let LIBRARY = {};
+// === LOAD LIBRARY ===
+let LIBRARY = { genres: {}, artists: {} };
 try {
   const libraryPath = join(__dirname, '..', 'library.json');
   LIBRARY = JSON.parse(readFileSync(libraryPath, 'utf-8'));
@@ -21,65 +29,107 @@ try {
   console.warn('Could not load library.json:', e.message);
 }
 
-// Map keywords/aliases to library keys (genres, artists, moods, etc.)
+/**
+ * Resolve a library key to its entry (checks genres, then artists)
+ */
+function resolveEntry(key) {
+  return LIBRARY.genres?.[key] || LIBRARY.artists?.[key] || null;
+}
+
+// Map keywords/aliases to library keys
 const LIBRARY_ALIASES = {
-  // === GENRES ===
-  // Classic / Old School House
+  // === CORE GENRES (17) ===
   'classic house': 'classic_house',
   'old school house': 'classic_house',
   'oldschool house': 'classic_house',
   'old school': 'classic_house',
-  // Detroit Techno
   'detroit techno': 'detroit_techno',
   'detroit': 'detroit_techno',
-  // Berlin Techno
   'berlin techno': 'berlin_techno',
   'berlin': 'berlin_techno',
   'berghain': 'berlin_techno',
-  // Industrial Techno
   'industrial techno': 'industrial_techno',
   'industrial': 'industrial_techno',
-  // Chicago House
   'chicago house': 'chicago_house',
   'chicago': 'chicago_house',
-  // Deep House
   'deep house': 'deep_house',
-  'deep': 'deep_house',
-  // Tech House
   'tech house': 'tech_house',
   'tech-house': 'tech_house',
-  // Acid House
   'acid house': 'acid_house',
-  // Acid Techno
   'acid techno': 'acid_techno',
-  // Generic acid -> acid house (more common)
   'acid': 'acid_house',
-  // Electro
   'electro': 'electro',
   'electro funk': 'electro',
-  // Drum and Bass
   'drum and bass': 'drum_and_bass',
   'drum & bass': 'drum_and_bass',
   'dnb': 'drum_and_bass',
   'd&b': 'drum_and_bass',
   'drumnbass': 'drum_and_bass',
-  // Jungle
   'jungle': 'jungle',
-  // Trance
   'trance': 'trance',
-  // Minimal
   'minimal techno': 'minimal_techno',
   'minimal': 'minimal_techno',
-  // Breakbeat
   'breakbeat': 'breakbeat',
   'breaks': 'breakbeat',
   'big beat': 'breakbeat',
-  // Ambient
   'ambient': 'ambient',
-  // IDM
   'idm': 'idm',
   'intelligent dance': 'idm',
-  // Generic terms -> sensible defaults
+
+  // === DEEP GENRES (16) ===
+  'doomcore': 'doomcore',
+  'doom core': 'doomcore',
+  'gabber': 'gabber',
+  'hardcore techno': 'gabber',
+  'uk funky': 'uk_funky',
+  'funky house': 'uk_funky',
+  'footwork': 'footwork',
+  'juke': 'footwork',
+  'gqom': 'gqom',
+  'kuduro': 'kuduro',
+  'afro house': 'afro_house',
+  'afrohouse': 'afro_house',
+  'dub techno': 'dub_techno',
+  'microhouse': 'microhouse',
+  'micro house': 'microhouse',
+  'psytrance': 'psytrance',
+  'darkpsy': 'psytrance',
+  'psy trance': 'psytrance',
+  'reggaeton': 'reggaeton',
+  'uk garage': 'uk_garage',
+  '2-step': 'uk_garage',
+  '2step': 'uk_garage',
+  'ukg': 'uk_garage',
+  'vaporwave': 'vaporwave',
+  'future funk': 'vaporwave',
+  'witch house': 'witch_house',
+  'darksynth': 'darksynth',
+  'dark synthwave': 'darksynth',
+  'drill': 'drill',
+  'uk drill': 'drill',
+  'chicago drill': 'drill',
+
+  // === PROFILE GENRES (12) ===
+  'breakcore': 'breakcore',
+  'complextro': 'complextro',
+  'drift phonk': 'drift_phonk',
+  'phonk': 'drift_phonk',
+  'future garage': 'future_garage',
+  'gym phonk': 'gym_phonk',
+  'jersey club': 'jersey_club',
+  'neurofunk': 'neurofunk',
+  'neuro': 'neurofunk',
+  'pluggnb': 'pluggnb',
+  'plug': 'pluggnb',
+  'rawstyle': 'rawstyle',
+  'raw hardstyle': 'rawstyle',
+  'sigilkore': 'sigilkore',
+  'stutterhouse': 'stutterhouse',
+  'stutter house': 'stutterhouse',
+  'wave': 'wave',
+  'trap wave': 'wave',
+
+  // === GENERIC TERMS → sensible defaults ===
   'techno': 'berlin_techno',
   'house': 'classic_house',
 
@@ -102,7 +152,10 @@ export function detectLibraryKeys(text) {
   const sortedAliases = Object.keys(LIBRARY_ALIASES).sort((a, b) => b.length - a.length);
 
   for (const alias of sortedAliases) {
-    if (lower.includes(alias)) {
+    // Word boundary match to prevent "wave" matching inside "vaporwave"
+    const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`(?:^|\\W)${escaped}(?:$|\\W)`);
+    if (re.test(lower)) {
       found.add(LIBRARY_ALIASES[alias]);
     }
   }
@@ -119,26 +172,11 @@ export function buildLibraryContext(keys) {
   if (!keys.length) return '';
 
   const sections = keys.map(key => {
-    const entry = LIBRARY[key];
+    const entry = resolveEntry(key);
     if (!entry) return '';
 
-    if (entry.type === 'genre') {
-      return `
-=== ${entry.name.toUpperCase()} (Genre) ===
-BPM: ${entry.bpm[0]}-${entry.bpm[1]} | Keys: ${entry.keys.join(', ')} | Swing: ${entry.swing}%
-
-${entry.description}
-
-${entry.production}
-
-Reference settings:
-- Drums: ${JSON.stringify(entry.drums)}
-- Bass: ${JSON.stringify(entry.bass)}
-- Classic tracks: ${entry.references.join(', ')}
-`;
-    }
-
-    if (entry.type === 'artist') {
+    // --- Artist entries (in artists section) ---
+    if (LIBRARY.artists?.[key]) {
       let artistSection = `
 === ${entry.name.toUpperCase()} (Artist Style) ===
 BPM: ${entry.bpm[0]}-${entry.bpm[1]} | Swing: ${entry.swing}% | Base genre: ${entry.genre}
@@ -166,20 +204,42 @@ Drum settings: ${JSON.stringify(entry.drums)}
       return artistSection;
     }
 
-    if (entry.type === 'mood') {
-      return `
-=== ${entry.name.toUpperCase()} (Mood) ===
-${entry.description || ''}
-Adjustments: ${JSON.stringify(entry.adjustments)}
-Keywords: ${entry.keywords?.join(', ') || ''}
-`;
+    // --- Genre entries (core, deep, or profile tier) ---
+    const tier = entry.tier || 'core';
+    const header = `=== ${entry.name.toUpperCase()} (Genre — ${tier}) ===`;
+    const bpmLine = entry.bpm ? `BPM: ${entry.bpm[0]}-${entry.bpm[1]}` : '';
+    const keysLine = entry.keys?.length ? `Keys: ${entry.keys.join(', ')}` : '';
+    const swingLine = entry.swing != null ? `Swing: ${entry.swing}%` : '';
+    const meta = [bpmLine, keysLine, swingLine].filter(Boolean).join(' | ');
+
+    let section = `\n${header}\n${meta}\n`;
+
+    // Description + production (all tiers have these)
+    if (entry.description) section += `\n${entry.description}\n`;
+    if (entry.production) section += `\n${entry.production}\n`;
+
+    // Machine-readable params (core + deep tiers)
+    if (entry.drums) section += `\nReference drums: ${JSON.stringify(entry.drums)}`;
+    if (entry.bass) section += `\nReference bass: ${JSON.stringify(entry.bass)}`;
+
+    // Deep tier extras
+    if (entry.modulation) section += `\nModulation: ${JSON.stringify(entry.modulation)}`;
+    if (entry.mixing) section += `\nMixing: ${JSON.stringify(entry.mixing)}`;
+    if (entry.reasoning) section += `\nReasoning: ${entry.reasoning}`;
+
+    // Prose extras (from .md profiles)
+    if (entry.lineage) section += `\nLineage: ${entry.lineage}`;
+    if (entry.currentScene) section += `\nCurrent scene: ${entry.currentScene}`;
+
+    // References (all tiers)
+    if (entry.references?.length) {
+      section += `\nClassic tracks: ${entry.references.join(', ')}`;
+    }
+    if (entry.sources?.length) {
+      section += `\nSources: ${entry.sources.join(', ')}`;
     }
 
-    // Default fallback for unknown types
-    return `
-=== ${entry.name?.toUpperCase() || key.toUpperCase()} ===
-${JSON.stringify(entry, null, 2)}
-`;
+    return section;
   }).filter(Boolean);
 
   if (!sections.length) return '';
