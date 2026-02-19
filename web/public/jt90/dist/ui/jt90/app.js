@@ -226,6 +226,12 @@ function formatParamValue(value, descriptor) {
   return value.toFixed(1);
 }
 
+// Convert UI knob value to engine value (semitones → cents for tune params)
+function toEngineValue(value, descriptor) {
+  if (descriptor?.unit === 'semitones') return value * 100;
+  return value;
+}
+
 function valueToRotation(value, min, max) {
   const normalized = (value - min) / (max - min);
   return -135 + normalized * 270;
@@ -267,7 +273,7 @@ function updateKnobFromDrag(clientY) {
   activeKnob.element.style.setProperty('--rotation', `${rotation}`);
   activeKnob.element.style.transform = `rotate(${rotation}deg)`;
 
-  engine.setVoiceParameter(activeKnob.voiceId, activeKnob.paramId, newValue);
+  engine.setVoiceParameter(activeKnob.voiceId, activeKnob.paramId, toEngineValue(newValue, activeKnob.descriptor));
   activeKnob.valueDisplay.textContent = formatParamValue(newValue, activeKnob.descriptor);
 }
 
@@ -371,7 +377,7 @@ function renderVoiceParams() {
         const rotation = valueToRotation(param.defaultValue, param.min ?? 0, param.max ?? 1);
         knob.style.setProperty('--rotation', `${rotation}`);
         knob.style.transform = `rotate(${rotation}deg)`;
-        engine.setVoiceParameter(voice.id, param.id, param.defaultValue);
+        engine.setVoiceParameter(voice.id, param.id, toEngineValue(param.defaultValue, param));
         valueDisplay.textContent = formatParamValue(param.defaultValue, param);
       });
 
@@ -423,7 +429,7 @@ function loadKit(kit) {
   VOICES.forEach((voice) => {
     const params = engine.getVoiceParams(voice.id);
     params.forEach((param) => {
-      engine.setVoiceParameter(voice.id, param.id, param.defaultValue);
+      engine.setVoiceParameter(voice.id, param.id, toEngineValue(param.defaultValue, param));
       updateKnobUI(voice.id, param.id, param.defaultValue, param);
     });
   });
@@ -433,8 +439,8 @@ function loadKit(kit) {
     Object.entries(kit.voiceParams).forEach(([voiceId, params]) => {
       const voiceParams = engine.getVoiceParams(voiceId);
       Object.entries(params).forEach(([paramId, value]) => {
-        engine.setVoiceParameter(voiceId, paramId, value);
         const paramDesc = voiceParams.find(p => p.id === paramId);
+        engine.setVoiceParameter(voiceId, paramId, toEngineValue(value, paramDesc));
         if (paramDesc) {
           updateKnobUI(voiceId, paramId, value, paramDesc);
         }

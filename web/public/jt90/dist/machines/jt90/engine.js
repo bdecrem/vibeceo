@@ -186,10 +186,7 @@ export class JT90Engine {
     this._ensureVoices();
     const voice = this._voices[voiceId];
     if (voice) {
-      // Convert semitones to cents for tune parameters (voices expect cents)
-      const param = JT90Engine.VOICE_PARAMS[voiceId]?.find(p => p.id === paramId);
-      const engineValue = (param?.unit === 'semitones') ? value * 100 : value;
-      voice.setParameter(paramId, engineValue);
+      voice.setParameter(paramId, value);
     }
   }
 
