@@ -6,12 +6,17 @@ import {
   ScoreFlow,
   Leaderboard,
   ShareButtonContainer,
+  ShareModal,
   usePixelpitSocial,
   type ScoreFlowColors,
   type LeaderboardColors,
+  type ProgressionResult,
 } from '@/app/pixelpit/components';
 
 const GAME_ID = 'devour';
+const GAME_URL = typeof window !== 'undefined'
+  ? `${window.location.origin}/pixelpit/arcade/devour`
+  : 'https://pixelpit.gg/pixelpit/arcade/devour';
 
 // Social colors - cosmic purple theme
 const SCORE_FLOW_COLORS: ScoreFlowColors = {
@@ -284,9 +289,34 @@ export default function DevourGame() {
   const [socialLoaded, setSocialLoaded] = useState(false);
   const [submittedEntryId, setSubmittedEntryId] = useState<number | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
+  const [progression, setProgression] = useState<ProgressionResult | null>(null);
 
-  usePixelpitSocial(socialLoaded);
+  const { user } = usePixelpitSocial(socialLoaded);
+
+  // Group code + logout URL handling
+  useEffect(() => {
+    if (!socialLoaded || typeof window === 'undefined') return;
+    if (!(window as any).PixelpitSocial) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('logout')) {
+      (window as any).PixelpitSocial.logout();
+      params.delete('logout');
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      window.location.reload();
+      return;
+    }
+
+    const groupCode = (window as any).PixelpitSocial.getGroupCodeFromUrl();
+    if (groupCode) {
+      (window as any).PixelpitSocial.storeGroupCode(groupCode);
+    }
+  }, [socialLoaded]);
 
   const gameRef = useRef({
     running: false,
@@ -617,6 +647,8 @@ export default function DevourGame() {
           setFinalScore(game.totalScore);
           setSubmittedEntryId(null);
           setShowLeaderboard(false);
+          setShowShareModal(false);
+          setProgression(null);
           
           if (game.rival.size > game.player.size) {
             setWinner('rival');
@@ -627,11 +659,13 @@ export default function DevourGame() {
           }
           
           setGameState('end');
-          fetch('/api/pixelpit/stats', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ game: GAME_ID }),
-          }).catch(() => {});
+          if (game.totalScore >= 1) {
+            fetch('/api/pixelpit/stats', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ game: GAME_ID }),
+            }).catch(() => {});
+          }
         }
         return;
       }
@@ -1131,46 +1165,18 @@ export default function DevourGame() {
         </div>
       )}
 
-      {/* Leaderboard Modal - shows on start or end screen */}
+      {/* Leaderboard — renders its own full-screen layout */}
       {showLeaderboard && gameState !== 'playing' && (
-        <div
-          onClick={() => setShowLeaderboard(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.9)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            padding: 20,
-          }}
-        >
-          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 400 }}>
-            <Leaderboard
-              gameId={GAME_ID}
-              limit={10}
-              entryId={submittedEntryId ?? undefined}
-              colors={LEADERBOARD_COLORS}
-            />
-          </div>
-          <button
-            onClick={() => setShowLeaderboard(false)}
-            style={{
-              marginTop: 20,
-              background: '#8B5CF6',
-              color: '#fff',
-              border: 'none',
-              padding: '12px 30px',
-              fontSize: 14,
-              cursor: 'pointer',
-              borderRadius: 20,
-            }}
-          >
-            Close
-          </button>
-        </div>
+        <Leaderboard
+          gameId={GAME_ID}
+          limit={8}
+          entryId={submittedEntryId ?? undefined}
+          colors={LEADERBOARD_COLORS}
+          onClose={() => setShowLeaderboard(false)}
+          groupsEnabled={true}
+          gameUrl={GAME_URL}
+          socialLoaded={socialLoaded}
+        />
       )}
 
       {gameState === 'playing' && (
@@ -1190,10 +1196,10 @@ export default function DevourGame() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'safe center',
           background: '#0f0520',
           overflowY: 'auto',
-          padding: 20,
+          padding: '40px 20px',
         }}>
           <div style={{ color: '#6b7280', fontSize: 13, letterSpacing: 3, marginBottom: 6 }}>
             {winner === 'rival' ? 'DEVOURED' : 'TIED'}
@@ -1211,19 +1217,49 @@ export default function DevourGame() {
               score={finalScore}
               gameId={GAME_ID}
               colors={SCORE_FLOW_COLORS}
+              maxScore={200}
               onRankReceived={(rank, entryId) => setSubmittedEntryId(entryId ?? null)}
+              onProgression={(prog) => setProgression(prog)}
             />
           </div>
 
-          {/* Share button */}
+          {/* Progression */}
+          {progression && (
+            <div style={{ textAlign: 'center', marginTop: 12, marginBottom: 8 }}>
+              <span style={{ color: '#a78bfa', fontSize: 14, fontWeight: 700 }}>+{progression.xpEarned} XP</span>
+              <span style={{ color: '#6b7280', fontSize: 13, marginLeft: 8 }}>
+                Lv{progression.level}{progression.streak > 1 ? ` · ${progression.multiplier}x streak` : ''}
+              </span>
+            </div>
+          )}
+
+          {/* Share — user-aware */}
           <div style={{ marginTop: 15 }}>
-            <ShareButtonContainer
-              id="share-btn-devour"
-              url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/devour/share/${finalScore}`}
-              text={`I scored ${finalScore} on DEVOUR! Can you beat that? 🕳️`}
-              style="minimal"
-              socialLoaded={socialLoaded}
-            />
+            {user ? (
+              <button
+                onClick={() => setShowShareModal(true)}
+                style={{
+                  background: 'transparent',
+                  color: '#a78bfa',
+                  border: '1px solid #a78bfa40',
+                  padding: '10px 24px',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  borderRadius: 20,
+                  letterSpacing: 1,
+                }}
+              >
+                SHARE / GROUPS
+              </button>
+            ) : (
+              <ShareButtonContainer
+                id="share-btn-devour"
+                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/pixelpit/arcade/devour/share/${finalScore}`}
+                text={`I scored ${finalScore} on DEVOUR! Can you beat that? 🕳️`}
+                style="minimal"
+                socialLoaded={socialLoaded}
+              />
+            )}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginTop: 20 }}>
@@ -1262,6 +1298,16 @@ export default function DevourGame() {
         </div>
       )}
       </div>
+
+      {/* ShareModal — at component root, overlays everything */}
+      {showShareModal && user && (
+        <ShareModal
+          gameUrl={GAME_URL}
+          score={finalScore}
+          colors={LEADERBOARD_COLORS}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
     </>
   );
 }
