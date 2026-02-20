@@ -213,6 +213,7 @@
       ghost = {
         x: W / 2,
         y: 150,
+        vx: 0,
         vy: 0,
         r: 10,
         trail: [],
@@ -246,22 +247,23 @@
     const TERMINAL_VEL = 350;
 
     // --- INPUT ---
+    function handleTap(clientX) {
+      if (gamePhase === 'start') { startGame(); return; }
+      if (gamePhase === 'over') { init(); return; }
+      if (gamePhase === 'playing') {
+        ghost.vy = TAP_IMPULSE;
+        // horizontal drift toward tap position
+        const tapX = clientX !== undefined ? clientX : W / 2;
+        ghost.vx = (tapX - ghost.x) * 0.8;
+        playTap();
+      }
+    }
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      if (gamePhase === 'start') { startGame(); return; }
-      if (gamePhase === 'over') { init(); return; }
-      if (gamePhase === 'playing') {
-        ghost.vy = TAP_IMPULSE;
-        playTap();
-      }
+      handleTap(e.touches[0].clientX);
     });
     canvas.addEventListener('click', (e) => {
-      if (gamePhase === 'start') { startGame(); return; }
-      if (gamePhase === 'over') { init(); return; }
-      if (gamePhase === 'playing') {
-        ghost.vy = TAP_IMPULSE;
-        playTap();
-      }
+      handleTap(e.clientX);
     });
 
     function startGame() {
@@ -274,32 +276,40 @@
     }
 
     // --- COLLISION ---
+    // Crossing-based: check when ghost Y passes through the gear's Y band
     function checkGearCollision(gear) {
       const gy = getGearWorldY(gear);
+      const ghostTop = ghost.y - ghost.r;
+      const ghostBot = ghost.y + ghost.r;
+      const bandTop = gy - GEAR_OUTER_R;
+      const bandBot = gy + GEAR_OUTER_R;
+
+      // ghost must overlap gear's vertical band
+      if (ghostBot < bandTop || ghostTop > bandBot) return 'none';
+
+      // check horizontal distance to gear center
       const dx = ghost.x - gear.x;
       const dy = ghost.y - gy;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      // not near this gear
-      if (dist > GEAR_OUTER_R + ghost.r || dist < GEAR_INNER_R - ghost.r) return 'none';
+      // inside the inner hole — free pass (no ring here)
+      if (dist < GEAR_INNER_R - ghost.r) return 'none';
 
-      // in the ring zone
-      if (dist >= GEAR_INNER_R && dist <= GEAR_OUTER_R) {
-        // which segment is the ghost in?
-        let angle = Math.atan2(dy, dx) - gear.angle;
-        angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-        const segAngle = (Math.PI * 2) / gear.numSegments;
-        const segIdx = Math.floor(angle / segAngle);
-        const segColor = gear.segments[segIdx];
+      // outside the outer ring — no contact
+      if (dist > GEAR_OUTER_R + ghost.r) return 'none';
 
-        if (segColor === currentPhaseColor) {
-          return 'phase'; // pass through
-        } else {
-          return 'hit'; // clank
-        }
+      // in the ring zone — determine which segment
+      let angle = Math.atan2(dy, dx) - gear.angle;
+      angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      const segAngle = (Math.PI * 2) / gear.numSegments;
+      const segIdx = Math.floor(angle / segAngle);
+      const segColor = gear.segments[segIdx];
+
+      if (segColor === currentPhaseColor) {
+        return 'phase';
+      } else {
+        return 'hit';
       }
-
-      return 'none';
     }
 
     // --- UPDATE ---
@@ -321,6 +331,11 @@
       ghost.vy += GRAVITY * dt;
       if (ghost.vy > TERMINAL_VEL) ghost.vy = TERMINAL_VEL;
       ghost.y += ghost.vy * dt;
+      // horizontal drift with damping
+      ghost.x += ghost.vx * dt;
+      ghost.vx *= 0.95; // friction
+      // clamp to screen
+      ghost.x = Math.max(ghost.r, Math.min(W - ghost.r, ghost.x));
 
       // Trail
       ghost.trail.push({ x: ghost.x, y: ghost.y, life: 0.3 });
@@ -391,9 +406,9 @@
           multiplier++;
           playShift();
 
-          // regenerate upcoming gear colors for new phase
+          // regenerate ALL upcoming gear colors for new phase (including next gear)
           for (const gear of gears) {
-            if (!gear.passed && gear.index > gearsCleared + 1) {
+            if (!gear.passed) {
               const otherColors = PHASE_COLORS.filter(c => c !== currentPhaseColor);
               const matchCount = gear.index < 20 ? 2 : 1;
               const matchIndices = [];
