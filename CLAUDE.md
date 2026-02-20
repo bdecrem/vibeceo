@@ -121,6 +121,30 @@ node scripts/check-middleware-routes.cjs   # Verify all routes have middleware b
 node scripts/check-og-images.cjs           # Verify OG image exports are correct
 ```
 
+## Compound Engineering Principles
+
+This codebase should get easier to work on over time, not harder. Every session should leave the repo in better shape than it found it. Follow these principles:
+
+### 1. Don't copy — consolidate
+
+Before creating a new file by copying an existing one, stop. If two or more files share the same structure, they should probably be one file driven by config or a registry. The arcade share pages were 105 copy-pasted files before they became 3 dynamic route files + a game registry. When you spot copy-paste patterns, propose consolidation. The right number of places to update a template is one.
+
+### 2. Grow the validation scripts
+
+We have `scripts/check-middleware-routes.cjs` and `scripts/check-og-images.cjs`. These are a start. When you encounter a new category of thing that can silently break — a route that needs config in two places, an export signature that must match a framework convention, a naming pattern that other code depends on — write a new check script for it. The goal is that no class of mistake can happen twice without a script catching it. Add new scripts to the "After Making Web Changes" section and to `.github/workflows/validate.yml`.
+
+### 3. Update MISTAKES.md when you hit a wall
+
+If you spend real effort debugging something, or if a fix you tried didn't work for a non-obvious reason, add it to `MISTAKES.md` before moving on. Future sessions read that file. A five-line entry today saves an hour of debugging next month. Don't add one-off typos — add *patterns* that could recur.
+
+### 4. Shrink the codebase
+
+Less code is better code. Actively look for dead files, unused exports, and stale directories. If something hasn't been touched in months and nothing imports it, propose removing it (or moving it to `_archive/`). When adding a feature, check if it replaces something that should be deleted. The goal is for the line count to stay flat or go down even as capabilities grow.
+
+### 5. Make CLAUDE.md the single source of truth
+
+When you discover something about this repo that isn't documented — a non-obvious deploy behavior, a framework quirk, a "you have to do X whenever you do Y" pattern — add it to CLAUDE.md. Keep entries short and specific (one line if possible). This file is the first thing every agent reads. If it's not in here, it gets rediscovered from scratch every time.
+
 ## Critical Rules
 
 ### Problem Solving
