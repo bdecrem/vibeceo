@@ -48,6 +48,15 @@ export function createSession(config = {}) {
   const jt90Node = new JT90Node();
   const jp9000Node = new JP9000Node({ sampleRate: config.sampleRate || 44100 });
 
+  // Set initial levels from config (nodes own all state)
+  jb01Node.setLevel(config.jb01Level ?? 0);
+  jb202Node.setLevel(config.jb202Level ?? 0);
+  samplerNode.setLevel(config.samplerLevel ?? 0);
+  jt10Node.setLevel(config.jt10Level ?? 0);
+  jt30Node.setLevel(config.jt30Level ?? 0);
+  jt90Node.setLevel(config.jt90Level ?? 0);
+  jp9000Node.setLevel(config.jp9000Level ?? 0);
+
   // Register instruments with their canonical names
   params.register('jb01', jb01Node);
   params.register('jb202', jb202Node);
@@ -77,15 +86,6 @@ export function createSession(config = {}) {
 
     // Bars for render length
     bars: config.bars || 2,
-
-    // Instrument output levels in dB (-60 to +6, 0 = unity)
-    jb01Level: config.jb01Level ?? 0,
-    jb202Level: config.jb202Level ?? 0,
-    samplerLevel: config.samplerLevel ?? 0,
-    jt10Level: config.jt10Level ?? 0,
-    jt30Level: config.jt30Level ?? 0,
-    jt90Level: config.jt90Level ?? 0,
-    jp9000Level: config.jp9000Level ?? 0,
 
     // ParamSystem instance
     params,
@@ -455,15 +455,6 @@ export function createSession(config = {}) {
         .filter(({ node }) => node);
     },
 
-    /**
-     * Get the output level for an instrument in dB
-     * @param {string} id - Canonical instrument ID
-     * @returns {number} Level in dB
-     */
-    getInstrumentLevel(id) {
-      const key = `${id}Level`;
-      return this[key] ?? 0;
-    },
   };
 
   return session;
@@ -478,13 +469,13 @@ export function serializeSession(session) {
   return {
     clock: session.clock.serialize(),
     bars: session.bars,
-    jb01Level: session.jb01Level,
-    jb202Level: session.jb202Level,
-    samplerLevel: session.samplerLevel,
-    jt10Level: session.jt10Level,
-    jt30Level: session.jt30Level,
-    jt90Level: session.jt90Level,
-    jp9000Level: session.jp9000Level,
+    jb01Level: session._nodes.jb01.getLevel(),
+    jb202Level: session._nodes.jb202.getLevel(),
+    samplerLevel: session._nodes.sampler.getLevel(),
+    jt10Level: session._nodes.jt10.getLevel(),
+    jt30Level: session._nodes.jt30.getLevel(),
+    jt90Level: session._nodes.jt90.getLevel(),
+    jp9000Level: session._nodes.jp9000.getLevel(),
     params: session.params.serialize(),
     mixer: session.mixer,
     patterns: session.patterns,
@@ -542,13 +533,13 @@ export function restoreSessionInPlace(existingSession, data) {
 
   // Update session properties
   existingSession.bars = data.bars || 2;
-  existingSession.jb01Level = data.jb01Level ?? data.drumLevel ?? 0;
-  existingSession.jb202Level = data.jb202Level ?? data.bassLevel ?? 0;
-  existingSession.samplerLevel = data.samplerLevel ?? 0;
-  existingSession.jt10Level = data.jt10Level ?? 0;
-  existingSession.jt30Level = data.jt30Level ?? 0;
-  existingSession.jt90Level = data.jt90Level ?? 0;
-  existingSession.jp9000Level = data.jp9000Level ?? 0;
+  existingSession._nodes.jb01.setLevel(data.jb01Level ?? data.drumLevel ?? 0);
+  existingSession._nodes.jb202.setLevel(data.jb202Level ?? data.bassLevel ?? 0);
+  existingSession._nodes.sampler.setLevel(data.samplerLevel ?? 0);
+  existingSession._nodes.jt10.setLevel(data.jt10Level ?? 0);
+  existingSession._nodes.jt30.setLevel(data.jt30Level ?? 0);
+  existingSession._nodes.jt90.setLevel(data.jt90Level ?? 0);
+  existingSession._nodes.jp9000.setLevel(data.jp9000Level ?? 0);
 
   // Deserialize params into existing nodes
   if (data.params) {

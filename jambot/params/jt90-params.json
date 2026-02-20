@@ -2,7 +2,10 @@
   "_meta": {
     "name": "JT90",
     "description": "Drum Machine - 909-style drums with modular DSP voices",
-    "version": "1.1",
+    "version": "1.2",
+    "canonical": true,
+    "note": "This is the canonical parameter definition. web/public/jt90/dist/machines/jt90/param-defs.js mirrors this for the web UI.",
+    "voiceNameMapping": "lowtom/midtom/hitom here map to ltom/mtom/htom in the engine",
     "units": {
       "0-100": "Knob position (like hardware)",
       "semitones": "Pitch adjustment in semitones",
@@ -22,7 +25,7 @@
   "snare": {
     "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "snare level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "snare pitch" },
-    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "snare decay" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 40, "hint": "snare decay" },
     "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "tone vs noise balance" },
     "snappy": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "snare wire intensity" }
   },
@@ -33,8 +36,8 @@
   },
   "rimshot": {
     "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "rimshot level" },
-    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "rimshot pitch" },
-    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 30, "hint": "rimshot decay" }
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": -7, "hint": "rimshot pitch" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 10, "hint": "rimshot decay" }
   },
   "lowtom": {
     "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "low tom level" },
@@ -54,25 +57,23 @@
   "ch": {
     "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "closed hi-hat level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "hi-hat pitch" },
-    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "closed hi-hat decay" },
-    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "hi-hat brightness/noise" }
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "closed hi-hat decay" },
+    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "hi-hat brightness/noise" }
   },
   "oh": {
     "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "open hi-hat level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "hi-hat pitch" },
-    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 73, "hint": "open hi-hat decay" },
-    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 34, "hint": "hi-hat brightness/noise" }
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "open hi-hat decay" },
+    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "hi-hat brightness/noise" }
   },
   "crash": {
     "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "crash cymbal level" },
-    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": -3, "hint": "crash pitch" },
-    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 0, "hint": "crash decay" },
-    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "crash brightness" }
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "crash pitch" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "crash decay" }
   },
   "ride": {
     "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "ride cymbal level" },
-    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": -12, "hint": "ride pitch" },
-    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 45, "hint": "ride decay" },
-    "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "ride brightness" }
+    "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "ride pitch" },
+    "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "ride decay" }
   }
 }

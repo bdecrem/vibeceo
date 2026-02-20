@@ -17,6 +17,7 @@ import { OfflineAudioContext } from 'node-web-audio-api';
 
 // Load params definition
 import { createRequire } from 'module';
+import { toEngine } from '../params/converters.js';
 const require = createRequire(import.meta.url);
 const JT90_PARAMS = require('../params/jt90-params.json');
 
@@ -37,25 +38,6 @@ const VOICE_TO_ENGINE = {
   crash: 'crash',
   ride: 'ride',
 };
-
-/**
- * Convert producer units to engine units (0-1)
- */
-function toEngine(value, paramDef) {
-  if (paramDef.unit === 'choice') {
-    return value;
-  }
-  if (paramDef.unit === '0-100') {
-    return value / 100;
-  }
-  if (paramDef.unit === 'cents') {
-    // Normalize cents to 0-1 range
-    const range = paramDef.max - paramDef.min;
-    return (value - paramDef.min) / range;
-  }
-  const range = paramDef.max - paramDef.min;
-  return (value - paramDef.min) / range;
-}
 
 /**
  * Create an empty multi-track pattern

@@ -59,11 +59,15 @@ export function getParamDef(synth, voice, param) {
 }
 
 /**
- * Convert from producer units to engine units (0-1)
+ * Convert from producer units to engine units (0-1 or cents).
+ *
+ * SINGLE CONVERSION PATH: This is the ONLY function that converts
+ * producer units to engine units. No instrument node or engine should
+ * have its own conversion logic.
  *
  * @param {number|string} value - Producer-friendly value
  * @param {object} paramDef - Parameter definition from JSON
- * @returns {number} - Normalized 0-1 value for engine
+ * @returns {number} - Normalized 0-1 value for engine (cents for semitones)
  */
 export function toEngine(value, paramDef) {
   const { unit, min, max } = paramDef;

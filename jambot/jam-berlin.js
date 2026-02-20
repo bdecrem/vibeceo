@@ -41,7 +41,7 @@ jt90Pattern.clap = makeJT90Pattern([4, 12], 100);
 jt90Pattern.ch = makeJT90Pattern([2, 6, 10, 14], 70);
 jt90Pattern.ride = makeJT90Pattern([8], 40);
 
-session._nodes.jt90.setPattern(jt90Pattern);
+session.jt90Pattern = jt90Pattern;
 
 // Tune the 909 — dark and heavy
 session.set('jt90.kick.decay', 70);     // long tail
@@ -82,7 +82,7 @@ for (let i = 0; i < 16; i++) {
   }
 }
 
-session._nodes.jb202.setPattern(bassPattern);
+session.jb202Pattern = bassPattern;
 
 // Sound: dark, subby, filtered down
 session.set('jb202.osc1Waveform', 'square');
@@ -114,7 +114,7 @@ for (let i = 0; i < 16; i++) {
   }
 }
 
-session._nodes.jt30.setPattern(acidPattern);
+session.jt30Pattern = acidPattern;
 
 // Sound: dark, restrained, not screamy
 session.set('jt30.waveform', 'square');
@@ -140,10 +140,10 @@ session.mixer.channelInserts.jt30 = [
   { type: 'ducker', params: { trigger: 'kick', amount: 0.3 } }
 ];
 
-// Instrument levels (dB)
-session.jt90Level = 0;
-session.jb202Level = -3;
-session.jt30Level = -9;
+// Instrument levels (dB) — via public session API
+session.set('jt90.level', 0);
+session.set('jb202.level', -3);
+session.set('jt30.level', -9);
 
 // ============================================================
 // RENDER — 8 bars

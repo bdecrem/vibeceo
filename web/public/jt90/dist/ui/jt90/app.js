@@ -7,6 +7,10 @@
 
 import { JT90Engine } from '../../machines/jt90/engine.js';
 
+// Convert param-defs value to engine units: semitones → cents, everything else passes through.
+// Mirrors converters.js toEngine() semitones case — web can't import Node-only converters.js.
+const toEngineValue = (v, p) => p.unit === 'semitones' ? v * 100 : v;
+
 const STEPS = 16;
 
 // Voice synthesis information for info modal
@@ -224,12 +228,6 @@ function formatParamValue(value, descriptor) {
     return Math.round(value * 100).toString();
   }
   return value.toFixed(1);
-}
-
-// Convert UI knob value to engine value (semitones → cents for tune params)
-function toEngineValue(value, descriptor) {
-  if (descriptor?.unit === 'semitones') return value * 100;
-  return value;
 }
 
 function valueToRotation(value, min, max) {

@@ -13,6 +13,7 @@
 
 import { InstrumentNode } from '../core/node.js';
 import { OfflineAudioContext } from 'node-web-audio-api';
+import { toEngine } from '../params/converters.js';
 
 // Load params definition
 import { createRequire } from 'module';
@@ -21,20 +22,6 @@ const JT10_PARAMS = require('../params/jt10-params.json');
 
 // Voice (monophonic)
 const VOICES = ['lead'];
-
-/**
- * Convert producer units to engine units (0-1)
- */
-function toEngine(value, paramDef) {
-  if (paramDef.unit === 'choice') {
-    return value;
-  }
-  if (paramDef.unit === '0-100') {
-    return value / 100;
-  }
-  const range = paramDef.max - paramDef.min;
-  return (value - paramDef.min) / range;
-}
 
 /**
  * Create an empty pattern
