@@ -121,26 +121,36 @@ export class JT90Engine {
   /**
    * Load WAV samples for ROM voices (CH, OH, crash, ride).
    * Call this before starting playback. Safe to call multiple times.
+   *
+   * @param {string|Object} basePathOrData - Either a URL/path base string
+   *   (uses fetch) or a pre-decoded data object { ch: { samples, sampleRate }, ... }
+   *   for Node.js callers that load WAVs from disk.
    */
-  async loadSamples(basePath) {
+  async loadSamples(basePathOrData) {
     if (this._sampleData) return;  // Already loaded
 
-    const base = basePath || this._samplesBasePath;
-    const entries = Object.entries(SAMPLE_CONFIGS);
+    if (typeof basePathOrData === 'object' && basePathOrData !== null) {
+      // Pre-decoded sample data passed directly (Node.js path)
+      this._sampleData = basePathOrData;
+    } else {
+      // Fetch from URL (browser path)
+      const base = basePathOrData || this._samplesBasePath;
+      const entries = Object.entries(SAMPLE_CONFIGS);
 
-    const results = await Promise.all(
-      entries.map(async ([voiceId, cfg]) => {
-        const url = `${base}/${cfg.file}`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to load sample: ${url}`);
-        const arrayBuffer = await response.arrayBuffer();
-        return [voiceId, decodeWav(arrayBuffer)];
-      })
-    );
+      const results = await Promise.all(
+        entries.map(async ([voiceId, cfg]) => {
+          const url = `${base}/${cfg.file}`;
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`Failed to load sample: ${url}`);
+          const arrayBuffer = await response.arrayBuffer();
+          return [voiceId, decodeWav(arrayBuffer)];
+        })
+      );
 
-    this._sampleData = {};
-    for (const [voiceId, data] of results) {
-      this._sampleData[voiceId] = data;
+      this._sampleData = {};
+      for (const [voiceId, data] of results) {
+        this._sampleData[voiceId] = data;
+      }
     }
 
     // If voices were already created (as stubs), replace them

@@ -27,8 +27,8 @@ const SAMPLES_DIR = resolve(__dirname, '../../web/public/jt90/samples');
 const SAMPLE_FILES = ['ch.wav', 'oh.wav', 'crash.wav', 'ride.wav'];
 
 /**
- * Load JT90 sample WAVs from disk and inject into engine._sampleData.
- * This bypasses the engine's fetch-based loadSamples() for Node.js.
+ * Load JT90 sample WAVs from disk and pass to engine.loadSamples().
+ * Decodes WAVs locally and passes pre-decoded data through the public API.
  */
 async function loadSamplesFromDisk(engine) {
   const { decodeWav } = await import('../../web/public/jt90/dist/machines/jt90/voices/sample-voice.js');
@@ -39,7 +39,7 @@ async function loadSamplesFromDisk(engine) {
     const buf = readFileSync(resolve(SAMPLES_DIR, file));
     sampleData[voiceId] = decodeWav(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
   }
-  engine._sampleData = sampleData;
+  await engine.loadSamples(sampleData);
 }
 
 // All drum voices (user-facing names)
