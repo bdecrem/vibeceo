@@ -4,9 +4,11 @@ builder = "NIXPACKS"
 
 # Enable Nixpacks caching for faster builds
 [build.env]
-NIXPACKS_CACHE_KEY = "v2"
+NIXPACKS_CACHE_KEY = "v3"
 NIXPACKS_NODE_MODULES_CACHE = "true"
 NIXPACKS_NPM_CACHE = "true"
+# Cache Next.js build output for incremental compilation
+NIXPACKS_CACHE_DIRS = "web/.next/cache"
 
 [deploy]
 startCommand = "npm start"
