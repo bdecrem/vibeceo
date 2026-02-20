@@ -182,6 +182,26 @@ export default function SnipGame() {
     return w;
   }
 
+  // Find the ribbon center X at a given Y by interpolating between ribbon segments
+  function ribbonCenterAtY(py: number) {
+    const pts = g.current.ribbonPoints;
+    if (pts.length < 2) return { x: g.current.W / 2, idx: 0 };
+    // Find the segment that brackets this Y
+    for (let i = 0; i < pts.length - 1; i++) {
+      if (pts[i].y <= py && pts[i + 1].y >= py) {
+        const t = (py - pts[i].y) / (pts[i + 1].y - pts[i].y || 1);
+        return { x: pts[i].x + (pts[i + 1].x - pts[i].x) * t, idx: i };
+      }
+    }
+    // Fallback: closest point
+    let bestIdx = 0, bestDy = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      const dy = Math.abs(pts[i].y - py);
+      if (dy < bestDy) { bestDy = dy; bestIdx = i; }
+    }
+    return { x: pts[bestIdx].x, idx: bestIdx };
+  }
+
   function closestRibbonPoint(px: number, py: number) {
     const pts = g.current.ribbonPoints;
     let bestDist = Infinity, bestIdx = 0;
@@ -328,17 +348,19 @@ export default function SnipGame() {
 
       if (game.graceTimer > 0) game.graceTimer -= dt;
 
-      // collision at V junction point — only horizontal distance from ribbon center matters
-      const closest = closestRibbonPoint(game.scissors.x, game.scissors.y);
+      // collision: interpolate ribbon center at scissors Y, check horizontal distance
+      const ribbonAt = ribbonCenterAtY(game.scissors.y);
       const ribbonW = getRibbonWidth(game.scissors.y);
       const halfW = ribbonW / 2;
-      const centerDist = closest.point ? Math.abs(game.scissors.x - closest.point.x) : closest.dist;
+      const centerDist = Math.abs(game.scissors.x - ribbonAt.x);
 
       const pts = game.ribbonPoints;
-      if (pts[closest.idx + 1]) {
-        const next = pts[closest.idx + 1]; const prev = pts[Math.max(0, closest.idx - 1)];
+      if (pts[ribbonAt.idx + 1]) {
+        const next = pts[ribbonAt.idx + 1]; const prev = pts[Math.max(0, ribbonAt.idx - 1)];
         game.scissors.angle = Math.atan2(next.y - prev.y, next.x - prev.x);
       }
+      // keep closest for snap-back
+      const closest = { point: { x: ribbonAt.x, y: game.scissors.y } };
 
       if (game.holding) {
         if (centerDist < halfW) {
@@ -364,7 +386,7 @@ export default function SnipGame() {
         }
       } else {
         setCutVolume(0); game.speedMult = Math.max(1, game.speedMult - 0.8 * dt);
-        if (closest.point) game.scissors.x += (closest.point.x - game.scissors.x) * 1.5 * dt;
+        game.scissors.x += (ribbonAt.x - game.scissors.x) * 1.5 * dt;
       }
 
       if (!isTutorial) game.scrollSpeed = 120 + Math.min(game.cameraY * 0.01, 100);

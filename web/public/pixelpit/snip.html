@@ -139,6 +139,22 @@
 
     let ribbonWidthOverride = 0; // 0 = use normal
 
+    function ribbonCenterAtY(py) {
+      if (ribbonPoints.length < 2) return { x: W / 2, idx: 0 };
+      for (let i = 0; i < ribbonPoints.length - 1; i++) {
+        if (ribbonPoints[i].y <= py && ribbonPoints[i + 1].y >= py) {
+          const t = (py - ribbonPoints[i].y) / (ribbonPoints[i + 1].y - ribbonPoints[i].y || 1);
+          return { x: ribbonPoints[i].x + (ribbonPoints[i + 1].x - ribbonPoints[i].x) * t, idx: i };
+        }
+      }
+      let bestIdx = 0, bestDy = Infinity;
+      for (let i = 0; i < ribbonPoints.length; i++) {
+        const dy = Math.abs(ribbonPoints[i].y - py);
+        if (dy < bestDy) { bestDy = dy; bestIdx = i; }
+      }
+      return { x: ribbonPoints[bestIdx].x, idx: bestIdx };
+    }
+
     function closestRibbonPoint(px, py) {
       let bestDist = Infinity, bestIdx = 0;
       const startIdx = Math.max(0, Math.floor((py - 200) / RIBBON_SEGMENT_LEN));
@@ -380,17 +396,18 @@
         scissors.x += (touchX - scissors.x) * 8 * dt;
       }
 
-      // collision at V junction point — only horizontal distance from ribbon center matters
-      const closest = closestRibbonPoint(scissors.x, scissors.y);
+      // collision: interpolate ribbon center at scissors Y, check horizontal distance
+      const ribbonAt = ribbonCenterAtY(scissors.y);
       const ribbonW = ribbonWidthOverride || getRibbonWidth(scissors.y);
       const halfW = ribbonW / 2;
-      const centerDist = closest.point ? Math.abs(scissors.x - closest.point.x) : closest.dist;
+      const centerDist = Math.abs(scissors.x - ribbonAt.x);
 
-      if (ribbonPoints[closest.idx + 1]) {
-        const next = ribbonPoints[closest.idx + 1];
-        const prev = ribbonPoints[Math.max(0, closest.idx - 1)];
+      if (ribbonPoints[ribbonAt.idx + 1]) {
+        const next = ribbonPoints[ribbonAt.idx + 1];
+        const prev = ribbonPoints[Math.max(0, ribbonAt.idx - 1)];
         scissors.angle = Math.atan2(next.y - prev.y, next.x - prev.x);
       }
+      const closest = { point: { x: ribbonAt.x, y: scissors.y } };
 
       if (holding) {
         if (centerDist < halfW) {
@@ -420,7 +437,7 @@
       } else {
         setCutVolume(0);
         speedMult = Math.max(1, speedMult - 0.8 * dt);
-        if (closest.point) scissors.x += (closest.point.x - scissors.x) * 1.5 * dt;
+        scissors.x += (ribbonAt.x - scissors.x) * 1.5 * dt;
       }
 
       scrollSpeed = 120 + Math.min(cameraY * 0.01, 100);
