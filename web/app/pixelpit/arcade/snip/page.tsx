@@ -81,7 +81,7 @@ export default function SnipGame() {
     audioCtx: null as AudioContext | null,
     cutNoiseNode: null as AudioBufferSourceNode | null,
     cutNoiseGain: null as GainNode | null,
-    playTime: 0, retapAllowed: true, hasRetapped: false,
+    playTime: 0, graceTimer: 1.0,
     // tutorial
     tutorialStep: -1, tutorialPhase: 'instruction' as 'instruction' | 'playing' | 'success',
     tutorialTimer: 0, tutorialDistanceCut: 0,
@@ -212,7 +212,7 @@ export default function SnipGame() {
     game.screenShake = { timer: 0, intensity: 0 };
     game.gameTime = 0; game.deadTimer = 0;
     game.tutorialStep = -1; game.tutorialPhase = 'instruction'; game.tutorialTimer = 0; game.tutorialDistanceCut = 0;
-    game.playTime = 0; game.retapAllowed = true; game.hasRetapped = false;
+    game.playTime = 0; game.graceTimer = 1.0;
     stopCutNoise();
     generateRibbon(game.H + 500);
   }, [stopCutNoise]);
@@ -221,7 +221,7 @@ export default function SnipGame() {
     initGame(); initAudio(); startCutNoise();
     const game = g.current;
     game.phase = 'playing'; game.running = true;
-    game.playTime = 0; game.retapAllowed = true; game.hasRetapped = false;
+    game.playTime = 0; game.graceTimer = 1.0;
     setGameState('playing'); setShowShareModal(false); setProgression(null);
   }, [initGame, initAudio, startCutNoise]);
 
@@ -270,21 +270,13 @@ export default function SnipGame() {
         if (t.clientX > game.W - 80 && t.clientY < 45) { game.tutorialStep = -1; stopCutNoise(); initGame(); startPlaying(); }
       } else if (game.phase === 'playing') {
         game.holding = true; game.touchX = e.touches[0].clientX;
-        // two-chance recenter
-        if (game.hasRetapped && game.retapAllowed) {
-          const cl = closestRibbonPoint(game.scissors.x, game.scissors.y);
-          if (cl.point) game.scissors.x = cl.point.x;
-          game.retapAllowed = false;
-        }
       }
       initAudio();
     };
     const handleTouchMove = (e: TouchEvent) => { e.preventDefault(); g.current.touchX = e.touches[0].clientX; };
     const handleTouchEnd = (e: TouchEvent) => {
       e.preventDefault();
-      const game = g.current;
-      game.holding = false;
-      if (game.phase === 'playing' && game.retapAllowed && !game.hasRetapped) game.hasRetapped = true;
+      g.current.holding = false;
     };
     const handleMouseDown = (e: MouseEvent) => {
       const game = g.current;
@@ -293,19 +285,12 @@ export default function SnipGame() {
         if (game.tutorialPhase === 'playing') { game.holding = true; game.touchX = e.clientX; }
       } else if (game.phase === 'playing') {
         game.holding = true; game.touchX = e.clientX;
-        if (game.hasRetapped && game.retapAllowed) {
-          const cl = closestRibbonPoint(game.scissors.x, game.scissors.y);
-          if (cl.point) game.scissors.x = cl.point.x;
-          game.retapAllowed = false;
-        }
       }
       initAudio();
     };
     const handleMouseMove = (e: MouseEvent) => { g.current.touchX = e.clientX; };
     const handleMouseUp = () => {
-      const game = g.current;
-      game.holding = false;
-      if (game.phase === 'playing' && game.retapAllowed && !game.hasRetapped) game.hasRetapped = true;
+      g.current.holding = false;
     };
 
     canvas.addEventListener('touchstart', handleTouch, { passive: false });
@@ -341,16 +326,11 @@ export default function SnipGame() {
 
       if (game.holding) game.scissors.x += (game.touchX - game.scissors.x) * 8 * dt;
 
-      // two-chance start: allow retap in first 1s
-      if (game.retapAllowed && game.playTime > 1) game.retapAllowed = false;
+      if (game.graceTimer > 0) game.graceTimer -= dt;
 
-      // tip-only collision: only the tip of the V counts
-      const tipOffX = Math.cos(game.scissors.angle) * 28;
-      const tipOffY = Math.sin(game.scissors.angle) * 28;
-      const tipX = game.scissors.x + tipOffX;
-      const tipY = game.scissors.y + tipOffY;
-      const closest = closestRibbonPoint(tipX, tipY);
-      const ribbonW = getRibbonWidth(tipY);
+      // collision at V junction point (where the two blades meet)
+      const closest = closestRibbonPoint(game.scissors.x, game.scissors.y);
+      const ribbonW = getRibbonWidth(game.scissors.y);
       const halfW = ribbonW / 2;
       const centerDist = closest.dist;
 
@@ -375,9 +355,9 @@ export default function SnipGame() {
         } else if (centerDist < halfW + 4) {
           setCutVolume(0.01); game.speedMult = Math.max(1, game.speedMult - 1 * dt);
         } else {
-          if (isTutorial) {
+          if (isTutorial || game.graceTimer > 0) {
             game.scissors.x = closest.point ? closest.point.x : game.W / 2;
-            game.screenShake = { timer: 0.1, intensity: 2 }; playSnag(); game.holding = false;
+            if (isTutorial) { game.screenShake = { timer: 0.1, intensity: 2 }; playSnag(); game.holding = false; }
           } else {
             die(); return false;
           }
@@ -527,12 +507,23 @@ export default function SnipGame() {
       ctx!.fillStyle = T.grey; ctx!.font = '12px monospace'; ctx!.textAlign = 'left';
       ctx!.fillText('depth ' + Math.floor(game.cameraY / 10), 16, 58);
 
-      // two-chance reposition hint
-      if (game.phase === 'playing' && game.hasRetapped && game.retapAllowed && !game.holding) {
-        ctx!.fillStyle = T.grey; ctx!.font = '16px monospace'; ctx!.textAlign = 'center';
-        ctx!.globalAlpha = 0.6 + Math.sin(game.gameTime * 4) * 0.3;
-        ctx!.fillText('TAP AGAIN TO REPOSITION', game.W / 2, game.H / 2);
-        ctx!.globalAlpha = 1;
+      // grace period fingerprint indicator
+      if (game.phase === 'playing' && game.graceTimer > 0) {
+        const fpX = game.scissors.x;
+        const fpY = game.scissors.y - game.cameraY;
+        const pulse = 0.4 + Math.sin(game.gameTime * 10) * 0.4;
+        const fade = Math.min(game.graceTimer / 0.3, 1);
+        ctx!.save();
+        ctx!.globalAlpha = pulse * fade;
+        const fpR = 18;
+        ctx!.strokeStyle = '#ffffff'; ctx!.lineWidth = 1.5;
+        ctx!.beginPath(); ctx!.arc(fpX, fpY - 44, fpR, 0, Math.PI * 2); ctx!.stroke();
+        ctx!.lineWidth = 1; ctx!.strokeStyle = 'rgba(255,255,255,0.7)';
+        for (let r = 5; r <= 14; r += 3) { ctx!.beginPath(); ctx!.arc(fpX, fpY - 44, r, -Math.PI * 0.7, Math.PI * 0.7); ctx!.stroke(); }
+        ctx!.fillStyle = '#ffffff'; ctx!.beginPath(); ctx!.arc(fpX, fpY - 44, 2, 0, Math.PI * 2); ctx!.fill();
+        ctx!.fillStyle = '#ffffff'; ctx!.font = 'bold 12px monospace'; ctx!.textAlign = 'center';
+        ctx!.fillText('PLACE FINGER', fpX, fpY - 68);
+        ctx!.restore();
       }
 
       // tutorial overlay
