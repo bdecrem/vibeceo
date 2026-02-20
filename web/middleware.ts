@@ -6,753 +6,263 @@ const log = (...args: any[]) => {
   if (isDev) console.log(...args)
 }
 
-export function middleware(request: NextRequest) {
-  const { pathname, search } = request.nextUrl
-  const host = request.headers.get('host')
-
-  log(`[Middleware] Processing: ${pathname}`)
-
-  const isTokenTankDomain = host?.includes('token-tank') || host?.includes('tokentank')
-  const isB52Domain = host === 'b52s.me' || host === 'www.b52s.me'
-  const isKochiDomain = host === 'kochi.to' || host === 'www.kochi.to'
-  const isCtrlShiftDomain = host === 'ctrlshift.so' || host === 'www.ctrlshift.so' || host === 'ctrlshift.pizza' || host === 'www.ctrlshift.pizza'
-  const isRivalAlertDomain = host === 'rivalalert.ai' || host === 'www.rivalalert.ai'
-  const isInTheAmberDomain = host === 'intheamber.com' || host === 'www.intheamber.com'
-  const isKochitoLabsDomain = host === 'kochitolabs.com' || host === 'www.kochitolabs.com'
-  const isPixelpitDomain = host === 'pixelpit.gg' || host === 'www.pixelpit.gg'
-  const isShipShotDomain = host === 'shipshot.io' || host === 'www.shipshot.io'
-  const isMutablDomain = host === 'mutabl.co' || host === 'www.mutabl.co'
-
-  // Handle token-tank domain (mirror kochi pattern)
-  if (isTokenTankDomain) {
-    if (
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
-    ) {
-      return NextResponse.next()
-    }
-
-    if (pathname === '/' || pathname === '') {
-      const newUrl = new URL('/token-tank', request.url)
-      log(`[Middleware] Token Tank domain root rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    return NextResponse.next()
-  }
-
-  // Handle kochi.to domain
-  if (isKochiDomain) {
-    if (
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
-    ) {
-      return NextResponse.next()
-    }
-
-    // Amber's blog lives at /amber, not /kochi/amber
-    if (pathname.startsWith('/amber')) {
-      log(`[Middleware] Amber route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // TR-909 drum machine at /909
-    if (pathname.startsWith('/909')) {
-      log(`[Middleware] 909 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // TB-303 bass synth at /303
-    if (pathname.startsWith('/303')) {
-      log(`[Middleware] 303 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // SH-101 synth at /101
-    if (pathname.startsWith('/101')) {
-      log(`[Middleware] 101 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // 90s synth library at /90s
-    if (pathname.startsWith('/90s')) {
-      log(`[Middleware] 90s route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // Mave's space at /mave
-    if (pathname.startsWith('/mave')) {
-      log(`[Middleware] mave route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // Mixer module at /mixer
-    if (pathname.startsWith('/mixer')) {
-      log(`[Middleware] mixer route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JB200 bass monosynth at /jb200
-    if (pathname.startsWith('/jb200')) {
-      log(`[Middleware] JB200 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JB202 modular bass synth at /jb202
-    if (pathname.startsWith('/jb202')) {
-      log(`[Middleware] JB202 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JB-01 drum machine at /jb01
-    if (pathname.startsWith('/jb01')) {
-      log(`[Middleware] JB01 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JT10 lead synth at /jt10
-    if (pathname.startsWith('/jt10')) {
-      log(`[Middleware] JT10 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JT30 acid bass at /jt30
-    if (pathname.startsWith('/jt30')) {
-      log(`[Middleware] JT30 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JT90 drum machine at /jt90
-    if (pathname.startsWith('/jt90')) {
-      log(`[Middleware] JT90 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // SynthMachine landing page at /synthmachine
-    if (pathname === '/synthmachine' || pathname.startsWith('/synthmachine/')) {
-      log(`[Middleware] synthmachine route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // /links is the login-wall-free CS page, not /kochi/links
-    if (pathname === '/links' || pathname.startsWith('/links/')) {
-      log(`[Middleware] Links route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // /l/* shortlinks should not be rewritten
-    if (pathname === '/l' || pathname.startsWith('/l/')) {
-      log(`[Middleware] Shortlink route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // /music-player, /report-viewer, /voice-chat should not be rewritten
-    if (pathname === '/music-player' || pathname.startsWith('/music-player')) {
-      log(`[Middleware] Music player route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-    if (pathname === '/report-viewer' || pathname.startsWith('/report-viewer')) {
-      log(`[Middleware] Report viewer route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-    if (pathname === '/voice-chat' || pathname.startsWith('/voice-chat')) {
-      log(`[Middleware] Voice chat route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-    if (pathname === '/simple-voice' || pathname.startsWith('/simple-voice')) {
-      log(`[Middleware] Simple voice route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // /cc/* (code investigation viewer) and /code-voice should not be rewritten
-    if (pathname.startsWith('/cc/') || pathname.startsWith('/code-voice')) {
-      log(`[Middleware] Code agent route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    if (pathname === '/' || pathname === '') {
-      const newUrl = new URL('/kochi', request.url)
-      log(`[Middleware] Kochi domain root rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // Shipshot lives at /shipshot, not /kochi/shipshot
-    if (pathname.startsWith('/shipshot')) {
-      return NextResponse.next()
-    }
-
-    // Mutabl apps live at /mutabl/*
-    if (pathname.startsWith('/mutabl')) {
-      return NextResponse.next()
-    }
-
-    // Rewrite all other paths to /kochi/* (e.g., /peel -> /kochi/peel)
-    const newUrl = new URL(`/kochi${pathname}`, request.url)
-    log(`[Middleware] Kochi domain rewrite ${pathname} -> ${newUrl.pathname}`)
-    return NextResponse.rewrite(newUrl)
-  }
-
-  // Handle ctrlshift.so domain
-  if (isCtrlShiftDomain) {
-    if (
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
-    ) {
-      return NextResponse.next()
-    }
-
-    // Root → /csx
-    if (pathname === '/' || pathname === '') {
-      const newUrl = new URL('/csx', request.url)
-      log(`[Middleware] CTRL SHIFT domain root rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // /cs → rewrite to /cs (explicit rewrite needed for custom domain)
-    if (pathname === '/cs' || pathname.startsWith('/cs/')) {
-      const newUrl = new URL(pathname, request.url)
-      log(`[Middleware] CTRL SHIFT /cs rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // /rs → show terminal animation first, then click through to /csx/rs
-    if (pathname === '/rs') {
-      const newUrl = new URL('/csx?next=rs', request.url)
-      log(`[Middleware] CTRL SHIFT /rs rewrite -> ${newUrl.pathname}${newUrl.search}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // /rs/* subpaths → rewrite directly to /csx/rs/*
-    if (pathname.startsWith('/rs/')) {
-      const newUrl = new URL(`/csx${pathname}`, request.url)
-      log(`[Middleware] CTRL SHIFT /rs/ subpath rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // /lf → show terminal animation first, then click through to /csx/lf (links to /links not /cs)
-    if (pathname === '/lf') {
-      const newUrl = new URL('/csx/entry-lf', request.url)
-      log(`[Middleware] CTRL SHIFT /lf rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // /lf/* subpaths → rewrite directly to /csx/lf/*
-    if (pathname.startsWith('/lf/')) {
-      const newUrl = new URL(`/csx${pathname}`, request.url)
-      log(`[Middleware] CTRL SHIFT /lf/ subpath rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // /hiring → rewrite to /csx/hiring
-    if (pathname === '/hiring' || pathname.startsWith('/hiring/')) {
-      const newUrl = new URL(`/csx${pathname}`, request.url)
-      log(`[Middleware] CTRL SHIFT /hiring rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    return NextResponse.next()
-  }
-
-  // Handle b52s.me domain
-  if (isB52Domain) {
-    if (
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
-    ) {
-      return NextResponse.next()
-    }
-
-    if (pathname === '/' || pathname === '') {
-      const newUrl = new URL('/b52s', request.url)
-      log(`[Middleware] B52 domain root rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    return NextResponse.next()
-  }
-
-  // Handle rivalalert.ai domain (i1/Forge)
-  if (isRivalAlertDomain) {
-    if (
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
-    ) {
-      return NextResponse.next()
-    }
-
-    if (pathname === '/' || pathname === '') {
-      const newUrl = new URL('/rivalalert', request.url)
-      log(`[Middleware] RivalAlert domain root rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    return NextResponse.next()
-  }
-
-  // Handle intheamber.com domain (Amber's blog)
-  if (isInTheAmberDomain) {
-    // Only bypass Next.js internals - everything else gets /amber prefix
-    if (
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/')
-    ) {
-      return NextResponse.next()
-    }
-
-    // TR-909 drum machine at /909
-    if (pathname.startsWith('/909')) {
-      log(`[Middleware] intheamber.com 909 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // TB-303 bass synth at /303
-    if (pathname.startsWith('/303')) {
-      log(`[Middleware] intheamber.com 303 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // SH-101 synth at /101
-    if (pathname.startsWith('/101')) {
-      log(`[Middleware] intheamber.com 101 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // 90s synth library at /90s
-    if (pathname.startsWith('/90s')) {
-      log(`[Middleware] intheamber.com 90s route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // Mave's space at /mave
-    if (pathname.startsWith('/mave')) {
-      log(`[Middleware] intheamber.com mave route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // Mixer module at /mixer
-    if (pathname.startsWith('/mixer')) {
-      log(`[Middleware] intheamber.com mixer route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JB200 bass monosynth at /jb200
-    if (pathname.startsWith('/jb200')) {
-      log(`[Middleware] intheamber.com JB200 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JB202 modular bass synth at /jb202
-    if (pathname.startsWith('/jb202')) {
-      log(`[Middleware] intheamber.com JB202 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JB-01 drum machine at /jb01
-    if (pathname.startsWith('/jb01')) {
-      log(`[Middleware] intheamber.com JB01 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JT10 lead synth at /jt10
-    if (pathname.startsWith('/jt10')) {
-      log(`[Middleware] intheamber.com JT10 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JT30 acid bass at /jt30
-    if (pathname.startsWith('/jt30')) {
-      log(`[Middleware] intheamber.com JT30 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // JT90 drum machine at /jt90
-    if (pathname.startsWith('/jt90')) {
-      log(`[Middleware] intheamber.com JT90 route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // If path already starts with /amber/, don't double-prefix - pass through
-    // This handles assets like /amber/amber-avatar.png and direct links
-    if (pathname.startsWith('/amber/') || pathname === '/amber') {
-      log(`[Middleware] intheamber.com pass-through: ${pathname}`)
-      return NextResponse.next()
-    }
-
-    // Root → /amber
-    if (pathname === '/' || pathname === '') {
-      const newUrl = new URL('/amber', request.url)
-      log(`[Middleware] intheamber.com root rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // All other paths → /amber/* (including static files like .html, .js, .css)
-    const newUrl = new URL(`/amber${pathname}`, request.url)
-    log(`[Middleware] intheamber.com rewrite ${pathname} -> ${newUrl.pathname}`)
-    return NextResponse.rewrite(newUrl)
-  }
-
-  // Handle kochitolabs.com domain
-  if (isKochitoLabsDomain) {
-    if (
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
-    ) {
-      return NextResponse.next()
-    }
-
-    // Rewrite all paths to /kochitolabs/*
-    const targetPath = pathname === '/' || pathname === '' ? '/kochitolabs' : `/kochitolabs${pathname}`
-    const newUrl = new URL(targetPath, request.url)
-    log(`[Middleware] Kochito Labs domain rewrite ${pathname} -> ${newUrl.pathname}`)
-    return NextResponse.rewrite(newUrl)
-  }
-
-  // Handle pixelpit.gg domain
-  if (isPixelpitDomain) {
-    if (
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
-    ) {
-      return NextResponse.next()
-    }
-
-    // /pp/* shorthand → /pixelpit/arcade/*
-    if (pathname.startsWith('/pp/')) {
-      const rest = pathname.slice('/pp'.length) // keeps leading slash
-      const newUrl = new URL(`/pixelpit/arcade${rest}`, request.url)
-      log(`[Middleware] Pixelpit /pp/ rewrite ${pathname} -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // Root → /pixelpit
-    if (pathname === '/' || pathname === '') {
-      const newUrl = new URL('/pixelpit', request.url)
-      log(`[Middleware] Pixelpit domain root rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // Don't double-rewrite paths already under /pixelpit
-    if (pathname.startsWith('/pixelpit')) {
-      return NextResponse.next()
-    }
-
-    // All other paths → /pixelpit/*
-    const newUrl = new URL(`/pixelpit${pathname}`, request.url)
-    log(`[Middleware] Pixelpit domain rewrite ${pathname} -> ${newUrl.pathname}`)
-    return NextResponse.rewrite(newUrl)
-  }
-
-  // Handle shipshot.io domain
-  if (isShipShotDomain) {
-    if (
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
-    ) {
-      return NextResponse.next()
-    }
-
-    // Root → /shipshot
-    if (pathname === '/' || pathname === '') {
-      const newUrl = new URL('/shipshot', request.url)
-      log(`[Middleware] ShipShot domain root rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // Don't double-rewrite paths already under /shipshot
-    if (pathname.startsWith('/shipshot')) {
-      return NextResponse.next()
-    }
-
-    // All other paths → /shipshot/*
-    const newUrl = new URL(`/shipshot${pathname}`, request.url)
-    log(`[Middleware] ShipShot domain rewrite ${pathname} -> ${newUrl.pathname}`)
-    return NextResponse.rewrite(newUrl)
-  }
-
-  // Handle mutabl.io domain
-  if (isMutablDomain) {
-    if (
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
-    ) {
-      return NextResponse.next()
-    }
-
-    // Root → /mutabl
-    if (pathname === '/' || pathname === '') {
-      const newUrl = new URL('/mutabl', request.url)
-      log(`[Middleware] Mutabl domain root rewrite -> ${newUrl.pathname}`)
-      return NextResponse.rewrite(newUrl)
-    }
-
-    // Don't double-rewrite paths already under /mutabl
-    if (pathname.startsWith('/mutabl')) {
-      return NextResponse.next()
-    }
-
-    // All other paths → /mutabl/*  (e.g., /todoit → /mutabl/todoit)
-    const newUrl = new URL(`/mutabl${pathname}`, request.url)
-    log(`[Middleware] Mutabl domain rewrite ${pathname} -> ${newUrl.pathname}`)
-    return NextResponse.rewrite(newUrl)
-  }
-
-  // SPECIFIC FIX: Bypass music player route immediately
-  if (pathname === '/music-player' || pathname.startsWith('/music-player/')) {
-    log(`[Middleware] Music player bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass report viewer route immediately
-  if (pathname === '/report-viewer' || pathname.startsWith('/report-viewer/')) {
-    log(`[Middleware] Report viewer bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass webtoys-logo immediately
-  if (pathname === '/webtoys-logo' || pathname.startsWith('/webtoys-logo/')) {
-    log(`[Middleware] WEBTOYS-LOGO bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass token-tank immediately (v2 - forced rebuild)
-  if (pathname === '/token-tank' || pathname.startsWith('/token-tank/')) {
-    console.log(`[Middleware] Token Tank bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass TR-909 drum machine
-  if (pathname === '/909' || pathname.startsWith('/909/')) {
-    log(`[Middleware] TR-909 bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass TB-303 bass synth
-  if (pathname === '/303' || pathname.startsWith('/303/')) {
-    log(`[Middleware] TB-303 bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass SH-101 synth
-  if (pathname === '/101' || pathname.startsWith('/101/')) {
-    log(`[Middleware] SH-101 bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass R9-DS sampler
-  if (pathname === '/90s' || pathname.startsWith('/90s/')) {
-    log(`[Middleware] R9-DS bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass moltbook essay
-  if (pathname === '/moltbook-essay.html' || pathname === '/moltbook-essay') {
-    log(`[Middleware] Moltbook essay bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass Mave's space
-  if (pathname === '/mave' || pathname.startsWith('/mave/')) {
-    log(`[Middleware] Mave bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass mixer module
-  if (pathname === '/mixer' || pathname.startsWith('/mixer/')) {
-    log(`[Middleware] Mixer bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass JB200 bass monosynth
-  if (pathname === '/jb200' || pathname.startsWith('/jb200/')) {
-    log(`[Middleware] JB200 bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass JB202 modular bass synth
-  if (pathname === '/jb202' || pathname.startsWith('/jb202/')) {
-    log(`[Middleware] JB202 bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass JB-01 drum machine
-  if (pathname === '/jb01' || pathname.startsWith('/jb01/')) {
-    log(`[Middleware] JB-01 bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass JT10 lead synth
-  if (pathname === '/jt10' || pathname.startsWith('/jt10/')) {
-    log(`[Middleware] JT10 bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass JT30 acid bass
-  if (pathname === '/jt30' || pathname.startsWith('/jt30/')) {
-    log(`[Middleware] JT30 bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass JT90 drum machine
-  if (pathname === '/jt90' || pathname.startsWith('/jt90/')) {
-    log(`[Middleware] JT90 bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass synthmachine landing page
-  if (pathname === '/synthmachine' || pathname.startsWith('/synthmachine/')) {
-    log(`[Middleware] SynthMachine bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // SPECIFIC FIX: Bypass inspiration (TryAir v2)
-  if (pathname === '/inspiration' || pathname.startsWith('/inspiration/')) {
-    log(`[Middleware] Inspiration bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // CRITICAL FIX: Bypass ALL API routes immediately - no processing whatsoever
-  if (pathname.startsWith('/api/')) {
-    log(`[Middleware] API route bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // CRITICAL FIX: Bypass auth routes and global pages - no processing whatsoever
-  if (pathname === '/l' ||
-      pathname.startsWith('/login') ||
-      pathname.startsWith('/register') ||
-      pathname.startsWith('/link') ||
-      pathname.startsWith('/dashboard') ||
-      pathname.startsWith('/l/') ||
-      pathname.startsWith('/trending') ||
-      pathname.startsWith('/recents') ||
-      pathname.startsWith('/featured') ||
-      pathname.startsWith('/kochi') ||
-      pathname.startsWith('/about') ||
-      pathname.startsWith('/test-auth') ||
-      pathname.startsWith('/test-subscriber') ||
-      pathname.startsWith('/console') ||
-      pathname.startsWith('/webtoys-logo') ||
-      pathname.startsWith('/report-viewer') ||
-      pathname.startsWith('/reset-password') ||
-      pathname.startsWith('/payments') ||
-      pathname.startsWith('/b52s') ||
-      pathname.startsWith('/kochi') ||
-      pathname.startsWith('/token-tank') ||
-      pathname.startsWith('/rivalalert') ||
-      pathname.startsWith('/echo-gallery') ||
-      pathname.startsWith('/coinrundown') ||
-      pathname.startsWith('/amber') ||
-      pathname.startsWith('/mave') ||
-      pathname.startsWith('/voice-chat') ||
-      pathname.startsWith('/simple-voice') ||
-      pathname.startsWith('/pixelpit') ||
-      pathname.startsWith('/shipshot') ||
-      pathname.startsWith('/mutabl') ||
-      pathname.startsWith('/cs')) {
-    log(`[Middleware] Auth/global route bypassed: ${pathname}`)
-    return NextResponse.next()
-  }
-
-  // CRITICAL FIX: Also bypass Next.js internals, static files, and assets immediately
-  if (
-    pathname.startsWith('/_next/') ||
+// --- Route bypass configuration ---
+// Adding a new route? Add it here instead of writing a new if-block.
+
+// Routes that should never be rewritten, regardless of which domain is being accessed.
+// Used by domain handlers AND the default/WTAF fallback.
+const GLOBAL_BYPASS_PREFIXES = [
+  // Next.js internals & API
+  '/_next/', '/api/', '/images/', '/favicon',
+  // Synths & music tools (shared across kochi.to, intheamber.com, and default)
+  '/909', '/303', '/101', '/90s', '/mixer', '/mave',
+  '/jb200', '/jb202', '/jb01', '/jt10', '/jt30', '/jt90', '/synthmachine',
+  // Viewers & tools
+  '/music-player', '/report-viewer', '/voice-chat', '/simple-voice',
+  '/cc/', '/code-voice', '/webtoys-logo', '/inspiration',
+]
+
+// Synth routes only — used by intheamber.com which has narrower bypasses
+const SYNTH_BYPASSES = [
+  '/909', '/303', '/101', '/90s', '/mixer', '/mave',
+  '/jb200', '/jb202', '/jb01', '/jt10', '/jt30', '/jt90', '/synthmachine',
+]
+
+// Additional kochi.to bypasses — routes that live at root, not under /kochi/*
+const KOCHI_BYPASSES = [
+  '/amber', '/shipshot', '/mutabl', '/links', '/l',
+]
+
+// Default-section bypasses — prevent WTAF handler from catching known app routes
+const DEFAULT_BYPASSES = [
+  // All app roots
+  '/token-tank', '/kochi', '/amber', '/pixelpit', '/shipshot', '/mutabl',
+  '/b52s', '/rivalalert', '/echo-gallery', '/coinrundown', '/csx', '/cs',
+  // Auth & global routes
+  '/login', '/register', '/link', '/dashboard', '/l',
+  '/trending', '/recents', '/featured', '/about',
+  '/test-auth', '/test-subscriber', '/console',
+  '/reset-password', '/payments', '/moltbook-essay',
+]
+
+// --- Helper ---
+
+function isStaticAsset(pathname: string): boolean {
+  return pathname.startsWith('/_next/') ||
+    pathname.startsWith('/api/') ||
     pathname.startsWith('/images/') ||
     pathname.startsWith('/favicon') ||
     pathname.includes('.')
-  ) {
+}
+
+function matchesBypass(pathname: string, prefixes: string[]): boolean {
+  return prefixes.some(p => {
+    // Prefixes ending in / (like '/cc/') are already prefix-match-safe
+    if (p.endsWith('/')) return pathname.startsWith(p)
+    // Otherwise: exact match OR path continues with /
+    return pathname === p || pathname.startsWith(p + '/')
+  })
+}
+
+// --- Domain matchers ---
+
+function matchHost(host: string, domain: string | string[], mode: 'exact' | 'includes' = 'exact'): boolean {
+  const domains = Array.isArray(domain) ? domain : [domain]
+  if (mode === 'includes') return domains.some(d => host.includes(d))
+  return domains.some(d => host === d || host === `www.${d}`)
+}
+
+// --- Standard domain rewrite (covers 6 simple domains) ---
+
+interface SimpleDomain {
+  domain: string | string[]
+  app: string
+  match?: 'exact' | 'includes'
+}
+
+// Domains that rewrite root AND all subpaths to /app/*
+const REWRITE_ALL_DOMAINS: SimpleDomain[] = [
+  { domain: 'kochitolabs.com', app: 'kochitolabs' },
+  { domain: 'shipshot.io', app: 'shipshot' },
+  { domain: 'mutabl.co', app: 'mutabl' },
+]
+
+// Domains that ONLY rewrite root to /app, everything else passes through
+const ROOT_ONLY_DOMAINS: SimpleDomain[] = [
+  // Original: host?.includes('token-tank') || host?.includes('tokentank')
+  { domain: ['token-tank', 'tokentank'], app: 'token-tank', match: 'includes' },
+  { domain: 'b52s.me', app: 'b52s' },
+  { domain: 'rivalalert.ai', app: 'rivalalert' },
+]
+
+function handleRewriteAllDomain(app: string, pathname: string, request: NextRequest): NextResponse {
+  // Root → /app
+  if (pathname === '/' || pathname === '') {
+    return NextResponse.rewrite(new URL(`/${app}`, request.url))
+  }
+  // Don't double-rewrite paths already under the app
+  if (pathname.startsWith(`/${app}`)) {
+    return NextResponse.next()
+  }
+  // All other paths → /app/*
+  return NextResponse.rewrite(new URL(`/${app}${pathname}`, request.url))
+}
+
+// --- Main middleware ---
+
+export function middleware(request: NextRequest) {
+  const { pathname, search } = request.nextUrl
+  const host = request.headers.get('host') || ''
+
+  log(`[Middleware] Processing: ${pathname}`)
+
+  // --- Root-only domains (token-tank, b52s, rivalalert) ---
+  // These only rewrite root to /app, everything else passes through
+  for (const { domain, app, match } of ROOT_ONLY_DOMAINS) {
+    if (matchHost(host, domain, match || 'exact')) {
+      if (isStaticAsset(pathname)) return NextResponse.next()
+      if (pathname === '/' || pathname === '') {
+        return NextResponse.rewrite(new URL(`/${app}`, request.url))
+      }
+      return NextResponse.next()
+    }
+  }
+
+  // --- Rewrite-all domains (kochitolabs, shipshot, mutabl) ---
+  // These rewrite root AND all subpaths to /app/*
+  for (const { domain, app, match } of REWRITE_ALL_DOMAINS) {
+    if (matchHost(host, domain, match || 'exact')) {
+      if (isStaticAsset(pathname)) return NextResponse.next()
+      return handleRewriteAllDomain(app, pathname, request)
+    }
+  }
+
+  // --- kochi.to ---
+  if (matchHost(host, 'kochi.to')) {
+    if (isStaticAsset(pathname)) return NextResponse.next()
+    // Bypass synth routes, tools, and apps that live at root
+    if (matchesBypass(pathname, GLOBAL_BYPASS_PREFIXES) || matchesBypass(pathname, KOCHI_BYPASSES)) {
+      log(`[Middleware] kochi.to bypass: ${pathname}`)
+      return NextResponse.next()
+    }
+    // Root → /kochi
+    if (pathname === '/' || pathname === '') {
+      return NextResponse.rewrite(new URL('/kochi', request.url))
+    }
+    // Everything else → /kochi/*
+    return NextResponse.rewrite(new URL(`/kochi${pathname}`, request.url))
+  }
+
+  // --- ctrlshift.so / ctrlshift.pizza ---
+  if (matchHost(host, 'ctrlshift.so') || matchHost(host, 'ctrlshift.pizza')) {
+    if (isStaticAsset(pathname)) return NextResponse.next()
+    // Root → /csx
+    if (pathname === '/' || pathname === '') {
+      return NextResponse.rewrite(new URL('/csx', request.url))
+    }
+    // /cs → explicit rewrite (needed for custom domain)
+    if (pathname === '/cs' || pathname.startsWith('/cs/')) {
+      return NextResponse.rewrite(new URL(pathname, request.url))
+    }
+    // /rs exact → terminal animation with ?next=rs
+    if (pathname === '/rs') {
+      return NextResponse.rewrite(new URL('/csx?next=rs', request.url))
+    }
+    // /rs/* subpaths → /csx/rs/*
+    if (pathname.startsWith('/rs/')) {
+      return NextResponse.rewrite(new URL(`/csx${pathname}`, request.url))
+    }
+    // /lf exact → special entry page (NOT /csx/lf)
+    if (pathname === '/lf') {
+      return NextResponse.rewrite(new URL('/csx/entry-lf', request.url))
+    }
+    // /lf/* subpaths → /csx/lf/*
+    if (pathname.startsWith('/lf/')) {
+      return NextResponse.rewrite(new URL(`/csx${pathname}`, request.url))
+    }
+    // /hiring → /csx/hiring
+    if (pathname === '/hiring' || pathname.startsWith('/hiring/')) {
+      return NextResponse.rewrite(new URL(`/csx${pathname}`, request.url))
+    }
+    return NextResponse.next()
+  }
+
+  // --- intheamber.com ---
+  // NOTE: This domain intentionally rewrites static files (.html, .js, .css)
+  // into /amber/* namespace. Only /_next/, /api/, and synth routes are bypassed.
+  // DO NOT use isStaticAsset() or GLOBAL_BYPASS_PREFIXES here.
+  if (matchHost(host, 'intheamber.com')) {
+    if (pathname.startsWith('/_next/') || pathname.startsWith('/api/')) {
+      return NextResponse.next()
+    }
+    // Only synth routes bypass — NOT /images/, /favicon, /music-player, etc.
+    if (matchesBypass(pathname, SYNTH_BYPASSES)) {
+      log(`[Middleware] intheamber.com bypass: ${pathname}`)
+      return NextResponse.next()
+    }
+    // /amber paths pass through (prevent double-prefix)
+    if (pathname.startsWith('/amber/') || pathname === '/amber') {
+      return NextResponse.next()
+    }
+    // Root → /amber
+    if (pathname === '/' || pathname === '') {
+      return NextResponse.rewrite(new URL('/amber', request.url))
+    }
+    // All other paths → /amber/* (including static files)
+    return NextResponse.rewrite(new URL(`/amber${pathname}`, request.url))
+  }
+
+  // --- pixelpit.gg ---
+  if (matchHost(host, 'pixelpit.gg')) {
+    if (isStaticAsset(pathname)) return NextResponse.next()
+    // /pp/* shorthand → /pixelpit/arcade/*
+    if (pathname.startsWith('/pp/')) {
+      const rest = pathname.slice('/pp'.length) // keeps leading slash
+      return NextResponse.rewrite(new URL(`/pixelpit/arcade${rest}`, request.url))
+    }
+    return handleRewriteAllDomain('pixelpit', pathname, request)
+  }
+
+  // --- Default section (no custom domain matched) ---
+  // Bypass static assets
+  if (isStaticAsset(pathname)) return NextResponse.next()
+  // Bypass synth routes, tools, and all known app routes
+  if (matchesBypass(pathname, GLOBAL_BYPASS_PREFIXES) || matchesBypass(pathname, DEFAULT_BYPASSES)) {
+    log(`[Middleware] Default bypass: ${pathname}`)
     return NextResponse.next()
   }
 
   log(`[Middleware] ${host}${pathname} - Processing request`)
 
-  // Handle wtaf.me, webtoys.io, and webtoys.ai domains (both production and development)
+  // --- wtaf.me / webtoys.io / webtoys.ai ---
   const isWtafDomain = host === 'wtaf.me' || host === 'www.wtaf.me' || host === 'webtoys.io' || host === 'www.webtoys.io' || host === 'webtoys.ai' || host === 'www.webtoys.ai'
   const isDevEnvironment = host?.includes('localhost') || host?.includes('ngrok')
   const isDevWtafRoute = isDevEnvironment && pathname.startsWith('/wtaf/')
   const isDevUserRoute = isDevEnvironment && pathname.match(/^\/[a-z0-9-]+(?:\/[a-z0-9-]+)?$/) && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && pathname !== '/wtaf-landing' && pathname !== '/wtaf-landing-old' && pathname !== '/featured' && pathname !== '/featured-old' && pathname !== '/trending' && pathname !== '/trending-old' && pathname !== '/creations2' && !pathname.startsWith('/creations-old') && pathname !== '/webtoys-logo'
-  
-  // Debug logging for WTAF domain routing
+
   if (isWtafDomain) {
     log(`[Middleware] WTAF domain detected: ${host}${pathname}`)
-    log(`[Middleware] Search params: ${search}`)
-    log(`[Middleware] Full URL: ${request.url}`)
   }
-  
+
   if (isWtafDomain || isDevWtafRoute || isDevUserRoute) {
-    // Skip API routes, static files, and Next.js internals
-    if (
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
-    ) {
-      return NextResponse.next()
-    }
-
-    // Root path - serve WTAF landing page (only for wtaf.me domain, not dev routes)
+    // Root → /wtaf-landing (only on WTAF domain, not dev)
     if (pathname === '/' && isWtafDomain) {
-      const newUrl = new URL('/wtaf-landing', request.url)
-      log(`[Middleware] Serving WTAF landing page for root path`)
-      return NextResponse.rewrite(newUrl)
+      return NextResponse.rewrite(new URL('/wtaf-landing', request.url))
     }
-
-    // CRITICAL FIX: Prevent infinite loops by checking if path already starts with /wtaf/
+    // Prevent infinite loops
     if (pathname.startsWith('/wtaf/')) {
-      log(`[Middleware] Path already starts with /wtaf/, continuing normally: ${pathname}`)
       return NextResponse.next()
     }
-
-    // Handle different routing scenarios
     if (isWtafDomain) {
-      // CRITICAL FIX: Handle trailing slash properly for dynamic routes
+      // Handle trailing slash: /bart/ → /wtaf/bart
       let rewritePath = `/wtaf${pathname}`
-      
-      // If pathname ends with / and it's not just root, ensure it maps correctly
       if (pathname !== '/' && pathname.endsWith('/')) {
-        // For user paths like /bart/, rewrite to /wtaf/bart (remove trailing slash for dynamic route)
         rewritePath = `/wtaf${pathname.slice(0, -1)}`
       }
-      
-      const newUrl = new URL(`${rewritePath}${search}`, request.url)
-      log(`[Middleware] Rewriting wtaf.me ${host}${pathname} -> ${rewritePath}`)
-      log(`[Middleware] New URL: ${newUrl.toString()}`)
-      return NextResponse.rewrite(newUrl)
+      return NextResponse.rewrite(new URL(`${rewritePath}${search}`, request.url))
     } else if (isDevUserRoute) {
-      // For dev user routes (e.g., /bart or /bart/app): rewrite to /wtaf/bart or /wtaf/bart/app
-      const newUrl = new URL(`/wtaf${pathname}${search}`, request.url)
-      log(`[Middleware] Rewriting dev user route ${pathname} -> /wtaf${pathname}`)
-      return NextResponse.rewrite(newUrl)
+      return NextResponse.rewrite(new URL(`/wtaf${pathname}${search}`, request.url))
     }
-    
-    // For dev routes that are already /wtaf/..., just continue normally
     return NextResponse.next()
   }
 
@@ -761,14 +271,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }
-// Cache bust 1764888457
