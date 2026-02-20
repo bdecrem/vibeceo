@@ -117,6 +117,7 @@
     let height = canvas.height = window.innerHeight;
     
     let audioStarted = false;
+    let audioCtx;
     let synth;
     let ripples = [];
     let noteCount = 0;
@@ -209,6 +210,12 @@ const alpha = this.life * 0.8;
       
       synth = new SH101Controller();
       
+      // Ensure AudioContext is resumed (required for iOS Safari)
+      audioCtx = synth.engine.context;
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+      
       // Spawn initial ripples for ambient activity
       for (let i = 0; i < 3; i++) {
         setTimeout(() => {
@@ -251,18 +258,27 @@ const alpha = this.life * 0.8;
     function playNote(speed) {
       if (!audioStarted || !synth) return;
       
+      // Resume context if suspended (iOS can re-suspend)
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
       // Map speed to scale index (faster = higher pitch)
       const index = Math.floor((speed - 1) / 2 * scale.length);
       const note = scale[Math.min(index, scale.length - 1)];
       
-      synth.playNote(note.note, {
-        duration: 0.4,
-        velocity: 0.7,
-        cutoff: 0.6 + speed * 0.1,
-        resonance: 0.3,
-        envMod: 0.4,
-        decay: 0.3
-      });
+      // Set synth parameters before playing
+      synth.engine.setParameter('cutoff', 0.6 + speed * 0.1);
+      synth.engine.setParameter('resonance', 0.3);
+      synth.engine.setParameter('envMod', 0.4);
+      synth.engine.setParameter('decay', 0.3);
+      
+      synth.playNote(note.note, 0.7);
+      
+      // Auto note-off after duration
+      setTimeout(() => {
+        try { synth.noteOff(); } catch(e) {}
+      }, 400);
       
       noteCount++;
       updateStats();
