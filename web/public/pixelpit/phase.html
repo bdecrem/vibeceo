@@ -328,7 +328,7 @@
       if (gamePhase !== 'playing') return;
 
       // Ghost physics
-      ghost.vy += GRAVITY * dt;
+      ghost.vy += (GRAVITY + Math.min(gearsCleared * 3, 200)) * dt;
       if (ghost.vy > TERMINAL_VEL) ghost.vy = TERMINAL_VEL;
       ghost.y += ghost.vy * dt;
       // horizontal drift with damping
@@ -664,7 +664,7 @@
       }
 
       // phase shift flicker indicator
-      if (phaseShiftWarning > 0.5 && nextPhaseColor) {
+      if (phaseShiftWarning > 0 && nextPhaseColor) {
         ctx.fillStyle = nextPhaseColor;
         ctx.globalAlpha = 0.3 + Math.sin(gameTime * 6) * 0.15;
         ctx.font = '12px monospace';
