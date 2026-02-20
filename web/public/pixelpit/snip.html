@@ -161,8 +161,7 @@
     let lastSnipScore;
     let screenShake;
     let playTime; // seconds since game started (for easy start ramp)
-    let retapAllowed; // two-chance start: can retap once in first 1s
-    let hasRetapped;
+    let graceTimer; // 1s invincibility at start
 
     // --- TUTORIAL STATE ---
     let tutorialStep, tutorialPhase, tutorialTimer, tutorialDistanceCut;
@@ -250,8 +249,7 @@
       tutorialTimer = 0;
       tutorialDistanceCut = 0;
       playTime = 0;
-      retapAllowed = true;
-      hasRetapped = false;
+      graceTimer = 1.0;
       generateRibbon(H + 500);
       stopCutNoise();
     }
@@ -262,8 +260,7 @@
       startCutNoise();
       gamePhase = 'playing';
       playTime = 0;
-      retapAllowed = true;
-      hasRetapped = false;
+      graceTimer = 1.0;
     }
 
     function startTutorial() {
@@ -324,12 +321,6 @@
       }
       holding = true;
       touchX = e.touches[0].clientX;
-      // two-chance recenter on retap
-      if (hasRetapped && retapAllowed) {
-        const closest = closestRibbonPoint(scissors.x, scissors.y);
-        if (closest.point) scissors.x = closest.point.x;
-        retapAllowed = false; // locked in now
-      }
     });
     canvas.addEventListener('touchmove', (e) => {
       e.preventDefault();
@@ -338,10 +329,6 @@
     canvas.addEventListener('touchend', (e) => {
       e.preventDefault();
       holding = false;
-      // two-chance start: if released within first 1s and haven't retapped yet, allow recenter
-      if (gamePhase === 'playing' && retapAllowed && !hasRetapped) {
-        hasRetapped = true; // next tap will recenter scissors
-      }
     });
     canvas.addEventListener('mousedown', (e) => {
       if (gamePhase === 'start') { handleStartClick(e.clientX, e.clientY); return; }
@@ -353,18 +340,10 @@
       }
       holding = true;
       touchX = e.clientX;
-      if (hasRetapped && retapAllowed) {
-        const closest = closestRibbonPoint(scissors.x, scissors.y);
-        if (closest.point) scissors.x = closest.point.x;
-        retapAllowed = false;
-      }
     });
     canvas.addEventListener('mousemove', (e) => { touchX = e.clientX; });
     canvas.addEventListener('mouseup', () => {
       holding = false;
-      if (gamePhase === 'playing' && retapAllowed && !hasRetapped) {
-        hasRetapped = true;
-      }
     });
 
     // --- UPDATE ---
@@ -385,8 +364,7 @@
 
       playTime += dt;
 
-      // two-chance start: allow retap in first 1s
-      if (retapAllowed && playTime > 1) retapAllowed = false;
+      if (graceTimer > 0) graceTimer -= dt;
 
       generateRibbon(cameraY + H + 500);
 
@@ -402,13 +380,9 @@
         scissors.x += (touchX - scissors.x) * 8 * dt;
       }
 
-      // tip-only collision: only the tip of the V counts
-      const tipOffX = Math.cos(scissors.angle) * 28;
-      const tipOffY = Math.sin(scissors.angle) * 28;
-      const tipX = scissors.x + tipOffX;
-      const tipY = scissors.y + tipOffY;
-      const closest = closestRibbonPoint(tipX, tipY);
-      const ribbonW = ribbonWidthOverride || getRibbonWidth(tipY);
+      // collision at V junction point (where the two blades meet)
+      const closest = closestRibbonPoint(scissors.x, scissors.y);
+      const ribbonW = ribbonWidthOverride || getRibbonWidth(scissors.y);
       const halfW = ribbonW / 2;
       const centerDist = closest.dist;
 
@@ -438,7 +412,12 @@
           setCutVolume(0.01);
           speedMult = Math.max(1, speedMult - 1 * dt);
         } else {
-          die(); return;
+          if (graceTimer > 0) {
+            // grace period: snap back to ribbon center, don't die
+            scissors.x = closest.point ? closest.point.x : W / 2;
+          } else {
+            die(); return;
+          }
         }
       } else {
         setCutVolume(0);
@@ -666,14 +645,36 @@
       ctx.textAlign = 'left';
       ctx.fillText('depth ' + Math.floor(cameraY / 10), 16, 58);
 
-      // two-chance reposition hint
-      if (gamePhase === 'playing' && hasRetapped && retapAllowed && !holding) {
-        ctx.fillStyle = T.grey;
-        ctx.font = '16px monospace';
+      // grace period fingerprint indicator
+      if (gamePhase === 'playing' && graceTimer > 0) {
+        const sx = scissors.x;
+        const sy = scissors.y - cameraY;
+        const pulse = 0.4 + Math.sin(gameTime * 10) * 0.4; // fast blink
+        const fade = Math.min(graceTimer / 0.3, 1); // fade out in last 0.3s
+        ctx.save();
+        ctx.globalAlpha = pulse * fade;
+        // fingerprint circle
+        const fpR = 18;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(sx, sy - 44, fpR, 0, Math.PI * 2); ctx.stroke();
+        // fingerprint ridges (concentric arcs)
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        for (let r = 5; r <= 14; r += 3) {
+          ctx.beginPath();
+          ctx.arc(sx, sy - 44, r, -Math.PI * 0.7, Math.PI * 0.7);
+          ctx.stroke();
+        }
+        // small dot at center
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(sx, sy - 44, 2, 0, Math.PI * 2); ctx.fill();
+        // "PLACE FINGER" text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px monospace';
         ctx.textAlign = 'center';
-        ctx.globalAlpha = 0.6 + Math.sin(gameTime * 4) * 0.3;
-        ctx.fillText('TAP AGAIN TO REPOSITION', W / 2, H / 2);
-        ctx.globalAlpha = 1;
+        ctx.fillText('PLACE FINGER', sx, sy - 68);
+        ctx.restore();
       }
 
       // tutorial overlay
