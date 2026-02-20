@@ -25,7 +25,6 @@
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
 
-    // --- THEME ---
     const T = {
       bg: '#0a0a0a',
       gear: '#2a2a2e',
@@ -34,6 +33,7 @@
       gold: '#facc15',
       text: '#ffffff',
       grey: '#555555',
+      slime: '#a3e635',
     };
 
     const PHASE_COLORS = [T.cyan, T.fuchsia, T.gold];
@@ -57,7 +57,6 @@
     canvas.addEventListener('touchstart', initAudio, { once: true });
     canvas.addEventListener('click', initAudio, { once: true });
 
-    // chime per color: cyan=high, fuchsia=mid, gold=low
     const CHIME_FREQ = { [T.cyan]: 880, [T.fuchsia]: 587, [T.gold]: 392 };
 
     function playPhaseThrough(color) {
@@ -74,7 +73,6 @@
 
     function playClank() {
       if (!audioCtx) return;
-      // metallic clank
       const osc = audioCtx.createOscillator();
       const g = audioCtx.createGain();
       osc.connect(g); g.connect(audioCtx.destination);
@@ -84,7 +82,6 @@
       g.gain.setValueAtTime(0.2, audioCtx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
       osc.start(); osc.stop(audioCtx.currentTime + 0.2);
-      // noise layer
       const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.1, audioCtx.sampleRate);
       const data = buf.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
@@ -98,7 +95,6 @@
 
     function playShift() {
       if (!audioCtx) return;
-      // ascending chromatic sweep
       for (let i = 0; i < 4; i++) {
         setTimeout(() => {
           if (!audioCtx) return;
@@ -126,6 +122,19 @@
       osc.start(); osc.stop(audioCtx.currentTime + 0.06);
     }
 
+    function playLevelUp() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+    }
+
     // --- CLOCK TICK ---
     let tickInterval;
     function startTick(bpm) {
@@ -151,44 +160,33 @@
     const GEAR_SPACING = 140;
     const GEAR_OUTER_R = 55;
     const GEAR_INNER_R = 20;
+    const GRAVITY = 400;
+    const TAP_IMPULSE = -220;
+    const TERMINAL_VEL = 350;
 
-    function createGear(index) {
+    let currentPhaseColor;
+
+    function createGear(index, phaseColor) {
+      const color = phaseColor || currentPhaseColor;
       const numSegments = 4;
-      // difficulty ramp: 2 matching early, 1 matching later
       const matchCount = index < 20 ? 2 : 1;
-
-      // assign colors to segments
       const segments = [];
-      const otherColors = PHASE_COLORS.filter(c => c !== currentPhaseColor);
-
-      // place matching segments randomly
+      const otherColors = PHASE_COLORS.filter(c => c !== color);
       const matchIndices = [];
       while (matchIndices.length < matchCount) {
         const idx = Math.floor(Math.random() * numSegments);
         if (!matchIndices.includes(idx)) matchIndices.push(idx);
       }
-
       for (let i = 0; i < numSegments; i++) {
-        if (matchIndices.includes(i)) {
-          segments.push(currentPhaseColor);
-        } else {
-          segments.push(otherColors[Math.floor(Math.random() * otherColors.length)]);
-        }
+        segments.push(matchIndices.includes(i) ? color : otherColors[Math.floor(Math.random() * otherColors.length)]);
       }
-
-      // rotation speed increases with depth
       const baseSpeed = 0.8 + Math.min(index * 0.04, 1.5);
       const dir = Math.random() < 0.5 ? 1 : -1;
-
       return {
-        index,
-        x: W / 2,
-        y: 0, // positioned relative to camera
+        index, x: W / 2, y: 0,
         angle: Math.random() * Math.PI * 2,
         speed: baseSpeed * dir,
-        segments,
-        numSegments,
-        passed: false,
+        segments, numSegments, passed: false,
       };
     }
 
@@ -199,25 +197,85 @@
     // --- STATE ---
     let ghost, gears, particles;
     let score, gearsCleared, multiplier;
-    let currentPhaseColor, nextPhaseColor;
-    let phaseShiftWarning; // seconds until shift (0 = no warning)
-    let phaseShiftTimer;
-    let gamePhase; // 'start', 'playing', 'dead', 'over'
+    let nextPhaseColor;
+    let phaseShiftWarning, phaseShiftTimer;
+    let gamePhase; // 'start', 'playing', 'tutorial', 'dead', 'over'
     let deadTimer, gameTime;
     let cameraY;
     let screenShake;
-    let invertFlash;
-    let borderPulse;
+    let invertFlash, borderPulse;
+
+    // --- TUTORIAL STATE ---
+    let tutorialStep, tutorialPhase, tutorialTimer, tutorialGearsCleared;
+
+    const TUTORIAL_STEPS = [
+      {
+        name: 'FLOAT',
+        instruction: 'TAP TO FLOAT UP',
+        setup() {
+          gears = [];
+          particles = [];
+          gearsCleared = 0; score = 0; multiplier = 1; cameraY = 0;
+          currentPhaseColor = T.cyan;
+          nextPhaseColor = null;
+          phaseShiftWarning = 0; phaseShiftTimer = 0;
+          invertFlash = 0; borderPulse = 0;
+          tutorialGearsCleared = 0;
+          ghost = { x: W / 2, y: 150, vx: 0, vy: 0, r: 10, trail: [] };
+          // one easy gear — all segments matching, slow rotation
+          const g = createGear(0, T.cyan);
+          g.segments = [T.cyan, T.cyan, T.cyan, T.cyan]; // all matching — can't fail
+          g.speed = 0.3;
+          gears.push(g);
+        },
+        check() { return tutorialGearsCleared >= 1; },
+        successText: 'NICE!',
+      },
+      {
+        name: 'COLOR',
+        instruction: 'MATCH YOUR COLOR',
+        setup() {
+          gears = [];
+          particles = [];
+          gearsCleared = 0; score = 0; cameraY = 0;
+          tutorialGearsCleared = 0;
+          ghost = { x: W / 2, y: 150, vx: 0, vy: 0, r: 10, trail: [] };
+          // 2 gears with mixed segments — must time to hit cyan
+          for (let i = 0; i < 2; i++) {
+            const g = createGear(i, T.cyan);
+            g.speed = 0.5 * (i % 2 === 0 ? 1 : -1);
+            gears.push(g);
+          }
+        },
+        check() { return tutorialGearsCleared >= 2; },
+        successText: 'PHASED!',
+      },
+      {
+        name: 'SHIFT',
+        instruction: 'YOUR COLOR WILL CHANGE',
+        setup() {
+          gears = [];
+          particles = [];
+          gearsCleared = 0; score = 0; cameraY = 0;
+          tutorialGearsCleared = 0;
+          currentPhaseColor = T.cyan;
+          ghost = { x: W / 2, y: 150, vx: 0, vy: 0, r: 10, trail: [] };
+          // 1 cyan gear, then trigger phase shift to fuchsia, then 1 fuchsia gear
+          const g1 = createGear(0, T.cyan);
+          g1.speed = 0.4;
+          gears.push(g1);
+          // second gear will be regenerated after shift
+          const g2 = createGear(1, T.fuchsia);
+          g2.speed = -0.4;
+          gears.push(g2);
+        },
+        check() { return tutorialGearsCleared >= 2; },
+        successText: 'READY!',
+      },
+    ];
 
     function init() {
-      ghost = {
-        x: W / 2,
-        y: 150,
-        vx: 0,
-        vy: 0,
-        r: 10,
-        trail: [],
-      };
+      ghost = { x: W / 2, y: 150, vx: 0, vy: 0, r: 10, trail: [] };
       gears = [];
       particles = [];
       score = 0;
@@ -234,37 +292,13 @@
       screenShake = { timer: 0, intensity: 0 };
       invertFlash = 0;
       borderPulse = 0;
+      tutorialStep = -1;
+      tutorialPhase = 'instruction';
+      tutorialTimer = 0;
+      tutorialGearsCleared = 0;
       stopTick();
-
-      for (let i = 0; i < 20; i++) {
-        gears.push(createGear(i));
-      }
+      for (let i = 0; i < 20; i++) gears.push(createGear(i));
     }
-
-    // --- PHYSICS ---
-    const GRAVITY = 400;
-    const TAP_IMPULSE = -220;
-    const TERMINAL_VEL = 350;
-
-    // --- INPUT ---
-    function handleTap(clientX) {
-      if (gamePhase === 'start') { startGame(); return; }
-      if (gamePhase === 'over') { init(); return; }
-      if (gamePhase === 'playing') {
-        ghost.vy = TAP_IMPULSE;
-        // horizontal drift toward tap position
-        const tapX = clientX !== undefined ? clientX : W / 2;
-        ghost.vx = (tapX - ghost.x) * 0.8;
-        playTap();
-      }
-    }
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      handleTap(e.touches[0].clientX);
-    });
-    canvas.addEventListener('click', (e) => {
-      handleTap(e.clientX);
-    });
 
     function startGame() {
       init();
@@ -275,47 +309,159 @@
       startTick(60);
     }
 
+    function startTutorial() {
+      gamePhase = 'tutorial';
+      tutorialStep = 0;
+      tutorialPhase = 'instruction';
+      tutorialTimer = 0;
+      initAudio();
+      TUTORIAL_STEPS[0].setup();
+    }
+
+    function skipTutorial() {
+      tutorialStep = -1;
+      stopTick();
+      init();
+      startGame();
+    }
+
+    function advanceTutorial() {
+      tutorialStep++;
+      if (tutorialStep >= TUTORIAL_STEPS.length) {
+        tutorialStep = -1;
+        stopTick();
+        init();
+        startGame();
+        return;
+      }
+      tutorialPhase = 'instruction';
+      tutorialTimer = 0;
+      TUTORIAL_STEPS[tutorialStep].setup();
+    }
+
     // --- COLLISION ---
-    // Crossing-based: check when ghost Y passes through the gear's Y band
     function checkGearCollision(gear) {
       const gy = getGearWorldY(gear);
       const ghostTop = ghost.y - ghost.r;
       const ghostBot = ghost.y + ghost.r;
       const bandTop = gy - GEAR_OUTER_R;
       const bandBot = gy + GEAR_OUTER_R;
-
-      // ghost must overlap gear's vertical band
       if (ghostBot < bandTop || ghostTop > bandBot) return 'none';
-
-      // check horizontal distance to gear center
       const dx = ghost.x - gear.x;
       const dy = ghost.y - gy;
       const dist = Math.sqrt(dx * dx + dy * dy);
-
-      // inside the inner hole — free pass (no ring here)
       if (dist < GEAR_INNER_R - ghost.r) return 'none';
-
-      // outside the outer ring — no contact
       if (dist > GEAR_OUTER_R + ghost.r) return 'none';
-
-      // in the ring zone — determine which segment
       let angle = Math.atan2(dy, dx) - gear.angle;
       angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
       const segAngle = (Math.PI * 2) / gear.numSegments;
       const segIdx = Math.floor(angle / segAngle);
       const segColor = gear.segments[segIdx];
+      return segColor === currentPhaseColor ? 'phase' : 'hit';
+    }
 
-      if (segColor === currentPhaseColor) {
-        return 'phase';
-      } else {
-        return 'hit';
+    // --- PARTICLES ---
+    function spawnParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 40 + Math.random() * 80;
+        const life = 0.2 + Math.random() * 0.3;
+        particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, r: 1.5 + Math.random() * 2.5, color, life, maxLife: life });
       }
     }
 
+    // --- COLOR LERP ---
+    function hexToRgb(hex) {
+      return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+    }
+    function lerpColor(c1, c2, t) {
+      const [r1,g1,b1] = hexToRgb(c1);
+      const [r2,g2,b2] = hexToRgb(c2);
+      return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
+    }
+
+    // --- INPUT ---
+    function handleStartClick(clientX, clientY) {
+      const btnY = H / 2 + 115;
+      if (Math.abs(clientY - btnY) < 20 && Math.abs(clientX - W / 2) < 80) {
+        startTutorial();
+        return;
+      }
+      startGame();
+    }
+
+    function handleTutorialClick(clientX, clientY) {
+      if (clientX > W - 80 && clientY < 45) { skipTutorial(); return; }
+    }
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const t = e.touches[0];
+      if (gamePhase === 'start') { handleStartClick(t.clientX, t.clientY); return; }
+      if (gamePhase === 'over') { init(); return; }
+      if (gamePhase === 'tutorial') {
+        handleTutorialClick(t.clientX, t.clientY);
+        if (tutorialPhase === 'playing') {
+          ghost.vy = TAP_IMPULSE;
+          ghost.vx = (t.clientX - ghost.x) * 0.8;
+          playTap();
+        }
+        return;
+      }
+      if (gamePhase === 'playing') {
+        ghost.vy = TAP_IMPULSE;
+        ghost.vx = (t.clientX - ghost.x) * 0.8;
+        playTap();
+      }
+    });
+    canvas.addEventListener('click', (e) => {
+      if (gamePhase === 'start') { handleStartClick(e.clientX, e.clientY); return; }
+      if (gamePhase === 'over') { init(); return; }
+      if (gamePhase === 'tutorial') {
+        handleTutorialClick(e.clientX, e.clientY);
+        if (tutorialPhase === 'playing') {
+          ghost.vy = TAP_IMPULSE;
+          ghost.vx = (e.clientX - ghost.x) * 0.8;
+          playTap();
+        }
+        return;
+      }
+      if (gamePhase === 'playing') {
+        ghost.vy = TAP_IMPULSE;
+        ghost.vx = (e.clientX - ghost.x) * 0.8;
+        playTap();
+      }
+    });
+
     // --- UPDATE ---
+    function die() {
+      gamePhase = 'dead';
+      deadTimer = 0;
+      playClank();
+      screenShake = { timer: 0.2, intensity: 4 };
+      stopTick();
+      spawnParticles(ghost.x, ghost.y, currentPhaseColor, 12);
+    }
+
+    function updateGhostPhysics(dt, gravityMod) {
+      const grav = gravityMod || (GRAVITY + Math.min(gearsCleared * 3, 200));
+      ghost.vy += grav * dt;
+      if (ghost.vy > TERMINAL_VEL) ghost.vy = TERMINAL_VEL;
+      ghost.y += ghost.vy * dt;
+      ghost.x += ghost.vx * dt;
+      ghost.vx *= 0.95;
+      ghost.x = Math.max(ghost.r, Math.min(W - ghost.r, ghost.x));
+      // trail (fix: store x position per point)
+      ghost.trail.push({ x: ghost.x, y: ghost.y, life: 0.3 });
+      if (ghost.trail.length > 15) ghost.trail.shift();
+      for (const t of ghost.trail) t.life -= dt;
+    }
+
     function update(dt) {
       if (gamePhase === 'start') { gameTime += dt; return; }
       gameTime += dt;
+
+      if (gamePhase === 'tutorial') { updateTutorial(dt); return; }
 
       if (gamePhase === 'dead') {
         deadTimer += dt;
@@ -327,86 +473,47 @@
 
       if (gamePhase !== 'playing') return;
 
-      // Ghost physics
-      ghost.vy += (GRAVITY + Math.min(gearsCleared * 3, 200)) * dt;
-      if (ghost.vy > TERMINAL_VEL) ghost.vy = TERMINAL_VEL;
-      ghost.y += ghost.vy * dt;
-      // horizontal drift with damping
-      ghost.x += ghost.vx * dt;
-      ghost.vx *= 0.95; // friction
-      // clamp to screen
-      ghost.x = Math.max(ghost.r, Math.min(W - ghost.r, ghost.x));
+      updateGhostPhysics(dt);
 
-      // Trail
-      ghost.trail.push({ x: ghost.x, y: ghost.y, life: 0.3 });
-      if (ghost.trail.length > 15) ghost.trail.shift();
-      for (const t of ghost.trail) t.life -= dt;
+      if (ghost.y < cameraY - 100) { die(); return; }
 
-      // Death if fall off screen top
-      if (ghost.y < cameraY - 100) {
-        die();
-        return;
-      }
+      for (const g of gears) g.angle += g.speed * dt;
 
-      // Rotate gears
-      for (const g of gears) {
-        g.angle += g.speed * dt;
-      }
-
-      // Check gear collisions
       for (const gear of gears) {
         if (gear.passed) continue;
         const gy = getGearWorldY(gear);
-
-        // only check when ghost is near the gear vertically
         if (Math.abs(ghost.y - gy) > GEAR_OUTER_R + ghost.r) continue;
-
         const result = checkGearCollision(gear);
-
         if (result === 'phase') {
-          // pass through!
           gear.passed = true;
           gearsCleared++;
           score += multiplier;
           playPhaseThrough(currentPhaseColor);
           spawnParticles(ghost.x, ghost.y, currentPhaseColor, 8);
-
-          // phase shift check — trigger between gears
           if (gearsCleared > 0 && gearsCleared % 10 === 0 && phaseShiftWarning === 0 && !nextPhaseColor) {
-            // start warning
             const available = PHASE_COLORS.filter(c => c !== currentPhaseColor);
             nextPhaseColor = available[Math.floor(Math.random() * available.length)];
             phaseShiftWarning = 1.5;
             phaseShiftTimer = 0;
           }
-
-          // update tick speed
           const bpm = 60 + Math.min(gearsCleared * 2, 120);
           startTick(bpm);
         }
-
-        if (result === 'hit') {
-          die();
-          return;
-        }
+        if (result === 'hit') { die(); return; }
       }
 
-      // Phase shift warning countdown
+      // phase shift
       if (phaseShiftWarning > 0) {
         phaseShiftWarning -= dt;
         phaseShiftTimer += dt;
-
         if (phaseShiftWarning <= 0) {
-          // SHIFT!
           currentPhaseColor = nextPhaseColor;
           nextPhaseColor = null;
           phaseShiftWarning = 0;
           phaseShiftTimer = 0;
-          invertFlash = 0.05; // 1 frame at 60fps
+          invertFlash = 0.05;
           multiplier++;
           playShift();
-
-          // regenerate ALL upcoming gear colors for new phase (including next gear)
           for (const gear of gears) {
             if (!gear.passed) {
               const otherColors = PHASE_COLORS.filter(c => c !== currentPhaseColor);
@@ -417,145 +524,146 @@
                 if (!matchIndices.includes(idx)) matchIndices.push(idx);
               }
               for (let i = 0; i < gear.numSegments; i++) {
-                gear.segments[i] = matchIndices.includes(i)
-                  ? currentPhaseColor
-                  : otherColors[Math.floor(Math.random() * otherColors.length)];
+                gear.segments[i] = matchIndices.includes(i) ? currentPhaseColor : otherColors[Math.floor(Math.random() * otherColors.length)];
               }
             }
           }
         }
       }
 
-      // Border pulse (last 0.5s of warning)
-      if (phaseShiftWarning > 0 && phaseShiftWarning <= 0.5) {
-        borderPulse = Math.sin(gameTime * 12) * 0.5 + 0.5;
-      } else {
-        borderPulse = 0;
-      }
+      borderPulse = (phaseShiftWarning > 0 && phaseShiftWarning <= 0.5) ? Math.sin(gameTime * 12) * 0.5 + 0.5 : 0;
 
-      // Camera
       const targetCam = ghost.y - H * 0.35;
       cameraY += (targetCam - cameraY) * 3 * dt;
 
-      // Generate more gears
       const lastGear = gears[gears.length - 1];
-      if (lastGear && getGearWorldY(lastGear) - cameraY < H + 200) {
-        gears.push(createGear(lastGear.index + 1));
-      }
+      if (lastGear && getGearWorldY(lastGear) - cameraY < H + 200) gears.push(createGear(lastGear.index + 1));
+      while (gears.length > 0 && getGearWorldY(gears[0]) < cameraY - 200) gears.shift();
 
-      // Remove old gears
-      while (gears.length > 0 && getGearWorldY(gears[0]) < cameraY - 200) {
-        gears.shift();
-      }
-
-      // Screen shake
       if (screenShake.timer > 0) screenShake.timer -= dt;
       if (invertFlash > 0) invertFlash -= dt;
 
-      // Particles
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
+        p.x += p.vx * dt; p.y += p.vy * dt;
         p.life -= dt;
         if (p.life <= 0) particles.splice(i, 1);
       }
     }
 
-    function die() {
-      gamePhase = 'dead';
-      deadTimer = 0;
-      playClank();
-      screenShake = { timer: 0.2, intensity: 4 };
-      stopTick();
-      spawnParticles(ghost.x, ghost.y, currentPhaseColor, 12);
-    }
+    // --- TUTORIAL UPDATE ---
+    function updateTutorial(dt) {
+      if (tutorialStep < 0 || tutorialStep >= TUTORIAL_STEPS.length) return;
+      const step = TUTORIAL_STEPS[tutorialStep];
 
-    function spawnParticles(x, y, color, count) {
-      for (let i = 0; i < count; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 40 + Math.random() * 80;
-        const life = 0.2 + Math.random() * 0.3;
-        particles.push({
-          x, y,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          r: 1.5 + Math.random() * 2.5,
-          color, life, maxLife: life,
-        });
-      }
-    }
-
-    // --- COLOR LERP ---
-    function hexToRgb(hex) {
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
-      return [r, g, b];
-    }
-
-    function lerpColor(c1, c2, t) {
-      const [r1, g1, b1] = hexToRgb(c1);
-      const [r2, g2, b2] = hexToRgb(c2);
-      const r = Math.round(r1 + (r2 - r1) * t);
-      const g = Math.round(g1 + (g2 - g1) * t);
-      const b = Math.round(b1 + (b2 - b1) * t);
-      return `rgb(${r},${g},${b})`;
-    }
-
-    // --- DRAW ---
-    function draw() {
-      // invert flash
-      if (invertFlash > 0) {
-        ctx.fillStyle = T.text;
-        ctx.fillRect(0, 0, W, H);
+      if (tutorialPhase === 'instruction') {
+        tutorialTimer += dt;
+        if (tutorialTimer >= 1.2) { tutorialPhase = 'playing'; tutorialTimer = 0; }
         return;
       }
 
-      ctx.fillStyle = T.bg;
-      ctx.fillRect(0, 0, W, H);
+      if (tutorialPhase === 'playing') {
+        updateGhostPhysics(dt, 300); // slower gravity for tutorial
 
-      if (gamePhase === 'start') { drawStart(); return; }
-      if (gamePhase === 'over') { drawGameOver(); return; }
+        for (const g of gears) g.angle += g.speed * dt;
 
-      // clock tower bg lines
-      ctx.strokeStyle = '#141414';
-      ctx.lineWidth = 1;
-      for (let x = W * 0.15; x <= W * 0.85; x += W * 0.35) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, H);
-        ctx.stroke();
+        // trigger phase shift in step 3 after first gear cleared
+        if (tutorialStep === 2 && tutorialGearsCleared === 1 && phaseShiftWarning === 0 && !nextPhaseColor) {
+          nextPhaseColor = T.fuchsia;
+          phaseShiftWarning = 1.5;
+          phaseShiftTimer = 0;
+        }
+
+        // phase shift countdown
+        if (phaseShiftWarning > 0) {
+          phaseShiftWarning -= dt;
+          phaseShiftTimer += dt;
+          if (phaseShiftWarning <= 0) {
+            currentPhaseColor = nextPhaseColor;
+            nextPhaseColor = null;
+            phaseShiftWarning = 0;
+            phaseShiftTimer = 0;
+            invertFlash = 0.05;
+            playShift();
+            for (const gear of gears) {
+              if (!gear.passed) {
+                const otherColors = PHASE_COLORS.filter(c => c !== currentPhaseColor);
+                const matchIndices = [0, 1]; // generous in tutorial
+                for (let i = 0; i < gear.numSegments; i++) {
+                  gear.segments[i] = matchIndices.includes(i) ? currentPhaseColor : otherColors[Math.floor(Math.random() * otherColors.length)];
+                }
+              }
+            }
+          }
+        }
+
+        borderPulse = (phaseShiftWarning > 0 && phaseShiftWarning <= 0.5) ? Math.sin(gameTime * 12) * 0.5 + 0.5 : 0;
+
+        for (const gear of gears) {
+          if (gear.passed) continue;
+          const gy = getGearWorldY(gear);
+          if (Math.abs(ghost.y - gy) > GEAR_OUTER_R + ghost.r) continue;
+          const result = checkGearCollision(gear);
+          if (result === 'phase') {
+            gear.passed = true;
+            tutorialGearsCleared++;
+            playPhaseThrough(currentPhaseColor);
+            spawnParticles(ghost.x, ghost.y, currentPhaseColor, 8);
+          }
+          if (result === 'hit') {
+            // tutorial: bounce off, don't kill
+            ghost.vy = TAP_IMPULSE * 0.5;
+            screenShake = { timer: 0.1, intensity: 2 };
+            playClank();
+            break;
+          }
+        }
+
+        const targetCam = ghost.y - H * 0.35;
+        cameraY += (targetCam - cameraY) * 3 * dt;
+
+        if (screenShake.timer > 0) screenShake.timer -= dt;
+        if (invertFlash > 0) invertFlash -= dt;
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx * dt; p.y += p.vy * dt;
+          p.life -= dt;
+          if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        if (step.check()) {
+          tutorialPhase = 'success';
+          tutorialTimer = 0;
+          playLevelUp();
+        }
+        return;
       }
 
-      ctx.save();
-      if (screenShake.timer > 0) {
-        const s = screenShake.intensity * (screenShake.timer / 0.2);
-        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      if (tutorialPhase === 'success') {
+        tutorialTimer += dt;
+        const delay = tutorialStep === TUTORIAL_STEPS.length - 1 ? 1.0 : 0.6;
+        if (tutorialTimer >= delay) advanceTutorial();
       }
+    }
 
-      // Draw gears
+    // --- DRAW HELPERS ---
+    function drawGearsAndGhost() {
+      // gears
       for (const gear of gears) {
         const gy = getGearWorldY(gear) - cameraY;
         if (gy < -80 || gy > H + 80) continue;
-
         const segAngle = (Math.PI * 2) / gear.numSegments;
-
         for (let i = 0; i < gear.numSegments; i++) {
           const startA = gear.angle + i * segAngle;
           const endA = startA + segAngle;
-
           ctx.fillStyle = gear.passed ? T.grey : gear.segments[i];
           ctx.globalAlpha = gear.passed ? 0.15 : 0.8;
-
-          // draw arc segment
           ctx.beginPath();
           ctx.arc(gear.x, gy, GEAR_OUTER_R, startA, endA);
           ctx.arc(gear.x, gy, GEAR_INNER_R, endA, startA, true);
           ctx.closePath();
           ctx.fill();
-
-          // segment glow
           if (!gear.passed && gear.segments[i] === currentPhaseColor) {
             ctx.shadowBlur = 8;
             ctx.shadowColor = gear.segments[i];
@@ -563,8 +671,6 @@
             ctx.shadowBlur = 0;
           }
         }
-
-        // gear center
         ctx.globalAlpha = gear.passed ? 0.1 : 0.3;
         ctx.fillStyle = T.gear;
         ctx.beginPath();
@@ -573,7 +679,7 @@
         ctx.globalAlpha = 1;
       }
 
-      // Particles
+      // particles
       for (const p of particles) {
         const py = p.y - cameraY;
         ctx.globalAlpha = p.life / p.maxLife;
@@ -584,31 +690,26 @@
       }
       ctx.globalAlpha = 1;
 
-      // Ghost trail
+      // ghost trail (using stored x)
       for (const t of ghost.trail) {
         if (t.life <= 0) continue;
         const ty = t.y - cameraY;
         ctx.globalAlpha = t.life / 0.3 * 0.3;
         ctx.fillStyle = currentPhaseColor;
         ctx.beginPath();
-        ctx.arc(ghost.x, ty, ghost.r * 0.6, 0, Math.PI * 2);
+        ctx.arc(t.x, ty, ghost.r * 0.6, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1;
 
-      // Ghost
-      if (gamePhase === 'playing' || gamePhase === 'dead') {
+      // ghost
+      if (gamePhase === 'playing' || gamePhase === 'tutorial' || gamePhase === 'dead') {
         const gy = ghost.y - cameraY;
-
-        // aura color — flicker during warning
         let auraColor = currentPhaseColor;
         if (phaseShiftWarning > 0 && nextPhaseColor) {
-          // smooth oscillation between current and next
           const t = Math.sin(phaseShiftTimer * 8) * 0.5 + 0.5;
           auraColor = lerpColor(currentPhaseColor, nextPhaseColor, t);
         }
-
-        // aura glow
         ctx.shadowBlur = 16;
         ctx.shadowColor = auraColor;
         ctx.fillStyle = auraColor;
@@ -617,44 +718,60 @@
         ctx.arc(ghost.x, gy, ghost.r + 4, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = 1;
-
-        // core
-        ctx.shadowBlur = 8;
         ctx.shadowColor = T.text;
         ctx.fillStyle = T.text;
         ctx.beginPath();
         ctx.arc(ghost.x, gy, ghost.r, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
-
-        // inner color dot
         ctx.fillStyle = auraColor;
         ctx.beginPath();
         ctx.arc(ghost.x, gy, ghost.r * 0.4, 0, Math.PI * 2);
         ctx.fill();
       }
+    }
 
+    // --- DRAW ---
+    function draw() {
+      if (invertFlash > 0) { ctx.fillStyle = T.text; ctx.fillRect(0, 0, W, H); return; }
+
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      if (gamePhase === 'start') { drawStart(); return; }
+      if (gamePhase === 'tutorial') { drawTutorial(); return; }
+      if (gamePhase === 'over') { drawGameOver(); return; }
+
+      // bg lines
+      ctx.strokeStyle = '#141414';
+      ctx.lineWidth = 1;
+      for (let x = W * 0.15; x <= W * 0.85; x += W * 0.35) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+
+      ctx.save();
+      if (screenShake.timer > 0) {
+        const s = screenShake.intensity * (screenShake.timer / 0.2);
+        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      }
+
+      drawGearsAndGhost();
       ctx.restore();
 
-      // --- HUD ---
+      // HUD
       ctx.fillStyle = T.text;
       ctx.font = 'bold 28px monospace';
       ctx.textAlign = 'left';
       ctx.fillText(score + '', 16, 40);
-
       ctx.font = '14px monospace';
       ctx.fillStyle = T.grey;
       ctx.fillText('gear ' + gearsCleared, 16, 60);
-
-      // multiplier
       if (multiplier > 1) {
         ctx.fillStyle = currentPhaseColor;
         ctx.font = 'bold 18px monospace';
         ctx.textAlign = 'right';
         ctx.fillText(multiplier + 'x', W - 16, 40);
       }
-
-      // phase shift border pulse
       if (borderPulse > 0 && nextPhaseColor) {
         ctx.strokeStyle = nextPhaseColor;
         ctx.lineWidth = 3;
@@ -662,8 +779,6 @@
         ctx.strokeRect(2, 2, W - 4, H - 4);
         ctx.globalAlpha = 1;
       }
-
-      // phase shift flicker indicator
       if (phaseShiftWarning > 0 && nextPhaseColor) {
         ctx.fillStyle = nextPhaseColor;
         ctx.globalAlpha = 0.3 + Math.sin(gameTime * 6) * 0.15;
@@ -672,8 +787,6 @@
         ctx.fillText('PHASE SHIFT', W / 2, 30);
         ctx.globalAlpha = 1;
       }
-
-      // dead overlay
       if (gamePhase === 'dead') {
         const t = Math.min(deadTimer / 1.0, 1);
         ctx.fillStyle = `rgba(0,0,0,${t * 0.6})`;
@@ -683,19 +796,81 @@
         ctx.textAlign = 'center';
         ctx.fillText('CLANK', W / 2, H / 2 - 10);
       }
+      ctx.textAlign = 'left';
+    }
 
+    // --- TUTORIAL DRAW ---
+    function drawTutorial() {
+      if (tutorialStep < 0 || tutorialStep >= TUTORIAL_STEPS.length) return;
+      const step = TUTORIAL_STEPS[tutorialStep];
+
+      ctx.fillStyle = T.bg;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.save();
+      if (screenShake.timer > 0) {
+        const s = screenShake.intensity * (screenShake.timer / 0.2);
+        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      }
+      drawGearsAndGhost();
+      ctx.restore();
+
+      // border pulse during tutorial phase shift
+      if (borderPulse > 0 && nextPhaseColor) {
+        ctx.strokeStyle = nextPhaseColor;
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = borderPulse * 0.6;
+        ctx.strokeRect(2, 2, W - 4, H - 4);
+        ctx.globalAlpha = 1;
+      }
+      if (phaseShiftWarning > 0 && nextPhaseColor) {
+        ctx.fillStyle = nextPhaseColor;
+        ctx.globalAlpha = 0.3 + Math.sin(gameTime * 6) * 0.15;
+        ctx.font = '12px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('PHASE SHIFT', W / 2, 80);
+        ctx.globalAlpha = 1;
+      }
+
+      // step counter
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText((tutorialStep + 1) + '/' + TUTORIAL_STEPS.length, 16, 30);
+
+      // instruction
+      if (tutorialPhase === 'instruction' || tutorialPhase === 'playing') {
+        ctx.fillStyle = T.text;
+        ctx.font = 'bold 22px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(step.instruction, W / 2, 50);
+      }
+
+      // success
+      if (tutorialPhase === 'success') {
+        ctx.fillStyle = T.slime;
+        ctx.font = 'bold 36px monospace';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = T.slime;
+        ctx.fillText(step.successText, W / 2, H / 2 - 20);
+        ctx.shadowBlur = 0;
+      }
+
+      // SKIP
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('SKIP >', W - 16, 30);
       ctx.textAlign = 'left';
     }
 
     function drawStart() {
       ctx.fillStyle = 'rgba(0,0,0,0.7)';
       ctx.fillRect(0, 0, W, H);
-
       ctx.textAlign = 'center';
 
-      // ghost preview
       const bobY = Math.sin(gameTime * 2) * 8;
-      // aura
       ctx.shadowBlur = 16;
       ctx.shadowColor = T.cyan;
       ctx.fillStyle = T.cyan;
@@ -704,7 +879,6 @@
       ctx.arc(W / 2, H / 2 - 75 + bobY, 16, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
-      // core
       ctx.shadowColor = T.text;
       ctx.fillStyle = T.text;
       ctx.beginPath();
@@ -732,13 +906,16 @@
       ctx.font = '20px monospace';
       ctx.fillText('[ TAP TO START ]', W / 2, H / 2 + 80);
 
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '16px monospace';
+      ctx.fillText('[ TUTORIAL ]', W / 2, H / 2 + 115);
+
       ctx.textAlign = 'left';
     }
 
     function drawGameOver() {
       ctx.fillStyle = 'rgba(0,0,0,0.85)';
       ctx.fillRect(0, 0, W, H);
-
       ctx.textAlign = 'center';
 
       ctx.fillStyle = T.gold;
