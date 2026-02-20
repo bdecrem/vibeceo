@@ -3,20 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RIPPLE — Tap when the rings align</title>
+  <title>RIPPLE - Water Ripple Music Machine</title>
   
-  <!-- Open Graph tags -->
-  <meta property="og:title" content="RIPPLE — Tap when the rings align">
-  <meta property="og:description" content="A minimalist timing game. Tap when rings align. Miss the moment, lose the rhythm.">
-  <meta property="og:image" content="https://intheamber.com/amber/ripple-og.png">
-  <meta property="og:url" content="https://intheamber.com/amber/ripple.html">
-  <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="RIPPLE — Tap when the rings align">
-  <meta name="twitter:description" content="A minimalist timing game. Tap when rings align. Miss the moment, lose the rhythm.">
-  <meta name="twitter:image" content="https://intheamber.com/amber/ripple-og.png">
+  <!-- OG tags -->
+  <meta property="og:title" content="RIPPLE - Water Ripple Music Machine" />
+  <meta property="og:description" content="Tap to create ripples. When they collide or hit edges, they sing." />
+  <meta property="og:image" content="https://intheamber.com/amber/ripple-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/ripple.html" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="RIPPLE - Water Ripple Music Machine" />
+  <meta name="twitter:description" content="Tap to create ripples. When they collide or hit edges, they sing." />
+  <meta name="twitter:image" content="https://intheamber.com/amber/ripple-og.png" />
   
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    
     * {
       margin: 0;
       padding: 0;
@@ -24,11 +26,11 @@
     }
     
     body {
-      background: #000;
+      background: #0D0D0D;
       color: #D4A574;
       font-family: 'Space Mono', monospace;
       overflow: hidden;
-      touch-action: manipulation;
+      touch-action: none;
       user-select: none;
     }
     
@@ -43,87 +45,52 @@
       position: fixed;
       top: 20px;
       left: 20px;
-      right: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      pointer-events: none;
       z-index: 10;
+      pointer-events: none;
     }
     
-    .stat {
-      background: rgba(0,0,0,0.8);
-      padding: 12px 20px;
-      border: 1px solid #D4A574;
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      color: #D4A574;
+      margin-bottom: 8px;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+    }
+    
+    .subtitle {
       font-size: 14px;
+      color: #2D9596;
+      margin-bottom: 20px;
+    }
+    
+    .stats {
+      font-size: 12px;
+      color: #D4A574;
+      opacity: 0.7;
       line-height: 1.6;
     }
     
-    .stat-label {
-      opacity: 0.6;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    
-    .stat-value {
-      font-size: 24px;
-      color: #FFD700;
-    }
-    
-    #message {
+    #hint {
       position: fixed;
-      top: 50%;
+      bottom: 30px;
       left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: #2D9596;
+      opacity: 0;
+      animation: breathe 3s ease-in-out infinite;
       pointer-events: none;
-      z-index: 5;
     }
     
-    #message h1 {
-      font-size: 48px;
-      color: #FFD700;
-      margin-bottom: 20px;
-      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    @keyframes breathe {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.8; }
     }
     
-    #message p {
-      font-size: 18px;
-      margin-bottom: 10px;
-      opacity: 0.8;
-    }
-    
-    #message button {
-      margin-top: 30px;
-      padding: 15px 40px;
-      background: #000;
-      color: #FFD700;
-      border: 2px solid #FFD700;
-      font-family: 'Space Mono', monospace;
-      font-size: 16px;
-      cursor: pointer;
-      pointer-events: auto;
-      transition: all 0.2s;
-    }
-    
-    #message button:hover {
-      background: #FFD700;
-      color: #000;
-    }
-    
-    .speed-warning {
-      animation: pulse 0.5s ease-in-out;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-    }
-    
-    .perfect {
-      color: #2D9596 !important;
-      text-shadow: 0 0 20px rgba(45, 149, 150, 0.8);
+    @media (max-width: 768px) {
+      h1 { font-size: 24px; }
+      .subtitle { font-size: 12px; }
+      .stats { font-size: 11px; }
     }
   </style>
 </head>
@@ -131,305 +98,279 @@
   <canvas id="canvas"></canvas>
   
   <div id="ui">
-    <div class="stat">
-      <div class="stat-label">Score</div>
-      <div class="stat-value" id="score">0</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Speed</div>
-      <div class="stat-value" id="speed">1.0x</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Best</div>
-      <div class="stat-value" id="best">0</div>
+    <h1>RIPPLE</h1>
+    <div class="subtitle">Water Ripple Music Machine</div>
+    <div class="stats">
+      <div>RIPPLES: <span id="rippleCount">0</span></div>
+      <div>NOTES: <span id="noteCount">0</span></div>
     </div>
   </div>
   
-  <div id="message">
-    <h1>RIPPLE</h1>
-    <p>Tap when the traveling ring</p>
-    <p>aligns with the target ring</p>
-    <p style="margin-top: 20px; opacity: 0.5; font-size: 14px;">Perfect timing required</p>
-    <button id="startBtn">START</button>
-  </div>
-
-  <script>
+  <div id="hint">Tap anywhere to create ripples</div>
+  
+  <script type="module">
+    import { SH101Controller } from '/101/dist/api/index.js';
+    
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-    const speedEl = document.getElementById('speed');
-    const bestEl = document.getElementById('best');
-    const messageEl = document.getElementById('message');
-    const startBtn = document.getElementById('startBtn');
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
     
-    let width, height, centerX, centerY;
+    let audioStarted = false;
+    let synth;
+    let ripples = [];
+    let noteCount = 0;
     
-    function resize() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      centerX = width / 2;
-      centerY = height / 2;
-    }
-    resize();
-    window.addEventListener('resize', resize);
+    // E minor pentatonic scale
+    const scale = [
+      { note: 'E3', freq: 164.81 },
+      { note: 'G3', freq: 196.00 },
+      { note: 'A3', freq: 220.00 },
+      { note: 'B3', freq: 246.94 },
+      { note: 'D4', freq: 293.66 },
+      { note: 'E4', freq: 329.63 },
+      { note: 'G4', freq: 392.00 },
+      { note: 'A4', freq: 440.00 }
+    ];
     
-    // Audio context
-    let audioCtx;
-    function initAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-    }
-    
-    function playTone(freq, duration = 0.1, type = 'sine') {
-      if (!audioCtx) return;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.frequency.value = freq;
-      osc.type = type;
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-      osc.start();
-      osc.stop(audioCtx.currentTime + duration);
-    }
-    
-    // Game state
-    let gameState = 'start'; // start, playing, gameOver
-    let score = 0;
-    let speed = 1.0;
-    let bestScore = parseInt(localStorage.getItem('ripple_best') || '0');
-    bestEl.textContent = bestScore;
-    
-    // Target ring (static)
-    const targetRadius = Math.min(width, height) * 0.15;
-    
-    // Traveling ring
-    let travelRing = null;
-    
-    // Particles
-    let particles = [];
-    
-    class TravelRing {
-      constructor() {
+    class Ripple {
+      constructor(x, y, speed) {
+        this.x = x;
+        this.y = y;
         this.radius = 0;
-        this.maxRadius = Math.min(width, height) * 0.5;
-        this.speed = 2 * speed; // pixels per frame
-        this.alive = true;
+        this.speed = speed;
+        this.maxRadius = Math.max(width, height) * 0.8;
+        this.life = 1.0;
+        this.hitEdge = false;
+        this.collidedWith = new Set();
+        this.hue = Math.random() * 60 + 30; // Gold to amber range
       }
       
       update() {
         this.radius += this.speed;
-        if (this.radius > this.maxRadius) {
-          this.alive = false;
-          // Missed - game over
-          if (gameState === 'playing') {
-            gameOver();
+        this.life = 1 - (this.radius / this.maxRadius);
+        
+        // Check edge collision
+        if (!this.hitEdge && (
+          this.radius >= Math.max(
+            this.x, 
+            this.y, 
+            width - this.x, 
+            height - this.y
+          )
+        )) {
+          this.hitEdge = true;
+          playNote(this.speed);
+        }
+        
+        return this.radius < this.maxRadius;
+      }
+      
+      draw() {
+const alpha = this.life * 0.8;
+        
+        // Multiple concentric rings for depth
+        for (let i = 0; i < 3; i++) {
+          const offset = i * 8;
+          const ringAlpha = alpha * (1 - i * 0.3);
+          
+          // Outer glow
+          ctx.strokeStyle = `hsla(${this.hue}, 70%, 60%, ${ringAlpha * 0.3})`;
+          ctx.lineWidth = 4;
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = `hsla(${this.hue}, 70%, 60%, ${ringAlpha})`;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius - offset, 0, Math.PI * 2);
+          ctx.stroke();
+          
+          // Inner ring
+          ctx.strokeStyle = `hsla(${this.hue}, 80%, 70%, ${ringAlpha})`;
+          ctx.lineWidth = 2;
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius - offset, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        
+        ctx.shadowBlur = 0;
+      }
+      
+      intersects(other) {
+        const dx = this.x - other.x;
+        const dy = this.y - other.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        return Math.abs(this.radius - other.radius) < 20 && dist < Math.max(this.radius, other.radius);
+      }
+    }
+    
+    async function initAudio() {
+      if (audioStarted) return;
+      audioStarted = true;
+      
+      synth = new SH101Controller();
+      
+      // Spawn initial ripples for ambient activity
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          createRipple(
+            Math.random() * width,
+            Math.random() * height,
+            Math.random() * 1.5 + 1.5
+          );
+        }, i * 800);
+      }
+      
+      // Auto-spawn ripples periodically
+      setInterval(() => {
+        if (ripples.length < 15) {
+          createRipple(
+            Math.random() * width,
+            Math.random() * height,
+            Math.random() * 1.5 + 1.5
+          );
+        }
+      }, 2500);
+      
+      document.getElementById('hint').style.opacity = 0;
+    }
+    
+    function createRipple(x, y, speed = null) {
+      if (!speed) {
+        speed = Math.random() * 2 + 1; // 1-3 px per frame
+      }
+      
+      const ripple = new Ripple(x, y, speed);
+      ripples.push(ripple);
+      
+      // Spawn particles at touch point
+      spawnParticles(x, y, 12);
+      
+      updateStats();
+    }
+    
+    function playNote(speed) {
+      if (!audioStarted || !synth) return;
+      
+      // Map speed to scale index (faster = higher pitch)
+      const index = Math.floor((speed - 1) / 2 * scale.length);
+      const note = scale[Math.min(index, scale.length - 1)];
+      
+      synth.playNote(note.note, {
+        duration: 0.4,
+        velocity: 0.7,
+        cutoff: 0.6 + speed * 0.1,
+        resonance: 0.3,
+        envMod: 0.4,
+        decay: 0.3
+      });
+      
+      noteCount++;
+      updateStats();
+    }
+    
+    const particles = [];
+    
+    function spawnParticles(x, y, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 2 + 1;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1.0,
+          hue: Math.random() * 60 + 30
+        });
+      }
+    }
+    
+    function updateStats() {
+      document.getElementById('rippleCount').textContent = ripples.length;
+      document.getElementById('noteCount').textContent = noteCount;
+    }
+    
+    function animate() {
+      // Dark fade for trails
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.15)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update and draw ripples
+      ripples = ripples.filter(ripple => {
+        const alive = ripple.update();
+        if (alive) ripple.draw();
+        return alive;
+      });
+      
+      // Check ripple intersections
+      for (let i = 0; i < ripples.length; i++) {
+        for (let j = i + 1; j < ripples.length; j++) {
+          const r1 = ripples[i];
+          const r2 = ripples[j];
+          
+          if (r1.intersects(r2) && !r1.collidedWith.has(r2)) {
+            r1.collidedWith.add(r2);
+            r2.collidedWith.add(r1);
+            
+            // Play note on collision
+            const avgSpeed = (r1.speed + r2.speed) / 2;
+            playNote(avgSpeed);
+            
+            // Spawn particles at intersection
+            const ix = (r1.x + r2.x) / 2;
+            const iy = (r1.y + r2.y) / 2;
+            spawnParticles(ix, iy, 8);
           }
         }
       }
       
-      draw() {
-        ctx.strokeStyle = '#2D9596';
-        ctx.lineWidth = 3;
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.02;
+        p.vy += 0.1; // Gravity
+        
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+        
+        const alpha = p.life;
+        ctx.fillStyle = `hsla(${p.hue}, 80%, 70%, ${alpha})`;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = `hsla(${p.hue}, 80%, 70%, ${alpha})`;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, this.radius, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      
-      isInTargetZone() {
-        const tolerance = 15; // pixels
-        return Math.abs(this.radius - targetRadius) < tolerance;
-      }
-      
-      isPerfect() {
-        const perfectTolerance = 5; // pixels
-        return Math.abs(this.radius - targetRadius) < perfectTolerance;
-      }
-    }
-    
-    class Particle {
-      constructor(x, y, color) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 2 + Math.random() * 4;
-        this.x = x;
-        this.y = y;
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-        this.color = color;
-        this.life = 1;
-        this.decay = 0.02;
-        this.radius = 2 + Math.random() * 3;
-      }
-      
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.life -= this.decay;
-      }
-      
-      draw() {
-        ctx.fillStyle = this.color;
-        ctx.globalAlpha = this.life;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
         ctx.fill();
-        ctx.globalAlpha = 1;
       }
-    }
-    
-    function spawnRing() {
-      travelRing = new TravelRing();
-    }
-    
-    function onTap() {
-      if (gameState === 'start') return;
-      if (gameState === 'gameOver') return;
-      if (!travelRing || !travelRing.alive) return;
       
+      ctx.shadowBlur = 0;
+      
+      updateStats();
+      requestAnimationFrame(animate);
+    }
+    
+    // Event listeners
+    canvas.addEventListener('click', (e) => {
       initAudio();
-      
-      if (travelRing.isInTargetZone()) {
-        // Success!
-        const perfect = travelRing.isPerfect();
-        score++;
-        scoreEl.textContent = score;
-        
-        // Speed up every 5 points
-        if (score % 5 === 0) {
-          speed += 0.1;
-          speedEl.textContent = speed.toFixed(1) + 'x';
-          speedEl.classList.add('speed-warning');
-          setTimeout(() => speedEl.classList.remove('speed-warning'), 500);
-        }
-        
-        // Particles
-        const color = perfect ? '#2D9596' : '#FFD700';
-        for (let i = 0; i < (perfect ? 20 : 12); i++) {
-          particles.push(new Particle(centerX, centerY, color));
-        }
-        
-        // Audio
-        if (perfect) {
-          playTone(1200, 0.15);
-          scoreEl.classList.add('perfect');
-          setTimeout(() => scoreEl.classList.remove('perfect'), 300);
-        } else {
-          playTone(800, 0.1);
-        }
-        
-        // Next ring
-        travelRing = null;
-        setTimeout(spawnRing, 200 / speed);
-      } else {
-        // Missed - too early or too late
-        gameOver();
-      }
-    }
-    
-    function gameOver() {
-      gameState = 'gameOver';
-      playTone(200, 0.5, 'sawtooth');
-      
-      // Update best
-      if (score > bestScore) {
-        bestScore = score;
-        localStorage.setItem('ripple_best', bestScore.toString());
-        bestEl.textContent = bestScore;
-        messageEl.innerHTML = `
-          <h1>NEW BEST!</h1>
-          <p style="font-size: 48px; color: #2D9596; margin: 20px 0;">${score}</p>
-          <p>Perfect timing achieved</p>
-          <button id="retryBtn">RETRY</button>
-        `;
-      } else {
-        messageEl.innerHTML = `
-          <h1>MISSED</h1>
-          <p style="font-size: 36px; color: #FFD700; margin: 20px 0;">Score: ${score}</p>
-          <p style="opacity: 0.6;">Timing is everything</p>
-          <button id="retryBtn">RETRY</button>
-        `;
-      }
-      
-      messageEl.style.display = 'block';
-      document.getElementById('retryBtn').addEventListener('click', startGame);
-    }
-    
-    function startGame() {
-      initAudio();
-      gameState = 'playing';
-      score = 0;
-      speed = 1.0;
-      scoreEl.textContent = score;
-      speedEl.textContent = speed.toFixed(1) + 'x';
-      messageEl.style.display = 'none';
-      particles = [];
-      travelRing = null;
-      
-      playTone(400, 0.1);
-      spawnRing();
-    }
-    
-    startBtn.addEventListener('click', startGame);
-    canvas.addEventListener('click', onTap);
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      onTap();
+      createRipple(e.clientX, e.clientY);
     });
     
-    // Draw loop
-    function draw() {
-      // Fade background
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-      ctx.fillRect(0, 0, width, height);
-      
-      // Draw target ring (static)
-      ctx.strokeStyle = '#D4A574';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, targetRadius, 0, Math.PI * 2);
-      ctx.stroke();
-      
-      // Glow on target ring
-      ctx.strokeStyle = 'rgba(212, 165, 116, 0.3)';
-      ctx.lineWidth = 12;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, targetRadius, 0, Math.PI * 2);
-      ctx.stroke();
-      
-      // Center dot
-      ctx.fillStyle = '#FFD700';
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Traveling ring
-      if (travelRing && travelRing.alive) {
-        travelRing.update();
-        travelRing.draw();
-        
-        // Highlight when in target zone
-        if (travelRing.isInTargetZone()) {
-          ctx.strokeStyle = 'rgba(45, 149, 150, 0.5)';
-          ctx.lineWidth = 8;
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, travelRing.radius, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-      }
-      
-      // Particles
-      particles = particles.filter(p => p.life > 0);
-      particles.forEach(p => {
-        p.update();
-        p.draw();
-      });
-      
-      requestAnimationFrame(draw);
-    }
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      initAudio();
+      const touch = e.touches[0];
+      createRipple(touch.clientX, touch.clientY);
+    });
     
-    draw();
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+    
+    // Start animation
+    animate();
   </script>
 </body>
 </html>
