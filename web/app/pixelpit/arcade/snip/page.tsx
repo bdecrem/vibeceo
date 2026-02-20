@@ -363,8 +363,8 @@ export default function SnipGame() {
       const closest = { point: { x: ribbonAt.x, y: game.scissors.y } };
 
       if (game.holding) {
-        if (centerDist < halfW) {
-          // on ribbon — alive
+        if (centerDist < halfW + 10) {
+          // on ribbon — alive (10px forgiveness so it always feels fair)
           const accuracy = 1 - (centerDist / halfW);
           game.score += effectiveSpeed * dt * 0.1 * (1 + accuracy);
           if (isTutorial) game.tutorialDistanceCut += effectiveSpeed * dt;

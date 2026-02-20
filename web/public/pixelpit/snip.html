@@ -410,8 +410,8 @@
       const closest = { point: { x: ribbonAt.x, y: scissors.y } };
 
       if (holding) {
-        if (centerDist < halfW) {
-          // on ribbon — alive
+        if (centerDist < halfW + 10) {
+          // on ribbon — alive (10px forgiveness)
           const accuracy = 1 - (centerDist / halfW);
           score += effectiveSpeed * dt * 0.1 * (1 + accuracy);
           const targetSpeed = 1 + accuracy * accuracy * 0.8;
