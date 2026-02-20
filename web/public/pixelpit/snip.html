@@ -245,13 +245,15 @@
           const accuracy = 1 - (centerDist / halfW);
           score += effectiveSpeed * dt * 0.1 * (1 + accuracy);
 
-          // center accuracy -> speed boost (Loop's option 3)
-          if (accuracy > 0.8) {
-            speedMult = Math.min(speedMult + 0.3 * dt, 2.5);
-            bestCenter += dt;
+          // center accuracy -> speed boost (continuous curve)
+          // 0% accuracy = 1x target, 60% = 1.2x, 80% = 1.5x, 95%+ = 1.8x
+          const targetSpeed = 1 + accuracy * accuracy * 0.8; // quadratic: smooth ramp to 1.8x
+          if (targetSpeed > speedMult) {
+            speedMult = Math.min(speedMult + 0.4 * dt, 1.8);
           } else {
             speedMult = Math.max(1, speedMult - 0.5 * dt);
           }
+          if (accuracy > 0.8) bestCenter += dt;
 
           // cut trail
           cutTrail.push({ x: scissors.x, y: scissors.y, life: 3 });
