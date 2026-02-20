@@ -9,48 +9,59 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #0a0a0a; color: #e0e0e0; font-family: 'SF Mono', 'Fira Code', monospace;
-    overflow: hidden; cursor: crosshair;
+    background: #0a0608; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
   }
-  canvas { position: fixed; top: 0; left: 0; z-index: 0; }
+  canvas { position: fixed; top: 0; left: 0; }
 
-  #ui {
+  #overlay {
     position: fixed; inset: 0; z-index: 10;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     pointer-events: none;
   }
-  #ui > * { pointer-events: auto; }
-
-  h1 { font-size: 12px; letter-spacing: 4px; text-transform: uppercase; color: rgba(224,224,224,0.25); margin-bottom: 6px; }
-  .subtitle { font-size: 10px; color: rgba(224,224,224,0.15); margin-bottom: 36px; letter-spacing: 2px; }
-
   #play-btn {
-    width: 72px; height: 72px; border-radius: 50%; border: 1.5px solid rgba(224,224,224,0.2);
-    background: transparent; color: #e0e0e0; font-size: 22px; cursor: pointer;
-    transition: all 0.3s; display: flex; align-items: center; justify-content: center;
+    width: 64px; height: 64px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.4); color: rgba(255,255,255,0.6);
+    font-size: 20px; cursor: pointer; pointer-events: auto;
+    backdrop-filter: blur(4px);
+    transition: all 0.3s;
+    display: flex; align-items: center; justify-content: center;
   }
-  #play-btn:hover { border-color: rgba(224,224,224,0.5); }
-  #play-btn.playing { border-color: rgba(200,40,40,0.6); color: #c82828; }
+  #play-btn:hover { border-color: rgba(255,255,255,0.4); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
 
-  .section-display {
-    margin-top: 28px; font-size: 11px; color: rgba(224,224,224,0.15); letter-spacing: 3px;
-    min-height: 18px; transition: color 0.4s;
+  #hud {
+    position: fixed; bottom: 20px; left: 0; right: 0;
+    z-index: 10; pointer-events: none;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
   }
-  .section-display.active { color: rgba(224,224,224,0.4); }
-  .bar-display { font-size: 10px; color: rgba(224,224,224,0.1); margin-top: 4px; letter-spacing: 1px; }
-
-  .step-dots {
-    display: flex; gap: 6px; margin-top: 20px;
+  .section-label {
+    font-size: 10px; letter-spacing: 4px; color: rgba(255,255,255,0.25);
+    transition: color 0.3s;
   }
-  .step-dots .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: rgba(224,224,224,0.06);
-    transition: all 0.06s;
+  .step-rail {
+    display: flex; gap: 4px;
   }
-
+  .step-rail .s {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    transition: all 0.05s;
+  }
+  .bar-count {
+    font-size: 9px; letter-spacing: 2px; color: rgba(255,255,255,0.1);
+  }
   #credits {
-    position: fixed; bottom: 14px; left: 20px;
-    color: rgba(224,224,224,0.08); font-size: 9px; letter-spacing: 2px; z-index: 10;
+    position: fixed; top: 14px; right: 18px;
+    font-size: 8px; letter-spacing: 2px;
+    color: rgba(255,255,255,0.08); z-index: 10;
+  }
+
+  /* Tap anywhere to restart when stopped */
+  #restart-zone {
+    position: fixed; inset: 0; z-index: 9;
+    cursor: pointer; display: none;
   }
 </style>
 </head>
@@ -58,22 +69,24 @@
 
 <canvas id="c"></canvas>
 
-<div id="ui">
-  <h1>Hallman</h1>
-  <div class="subtitle">mills hats v1 — 133 bpm</div>
+<div id="overlay">
   <button id="play-btn">▶</button>
-  <div class="section-display" id="section-display"></div>
-  <div class="bar-display" id="bar-display"></div>
-  <div class="step-dots" id="step-dots"></div>
+</div>
+
+<div id="hud">
+  <div class="section-label" id="section-label"></div>
+  <div class="step-rail" id="step-rail"></div>
+  <div class="bar-count" id="bar-count"></div>
 </div>
 
 <div id="credits">HALLMAN · JB01 · VIZ DITHER</div>
+<div id="restart-zone"></div>
 
 <script type="module">
 import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
 
 // ══════════════════════════════════════════
-// TRACK DATA (identical to index.html)
+// TRACK DATA
 // ══════════════════════════════════════════
 const BPM = 133;
 const STEP_DUR = 60 / BPM / 4;
@@ -140,249 +153,391 @@ const patterns = {
   },
 };
 
+// Raw automation for viz (producer scale 0-100)
+const autoRaw = {
+  A: { decay: null, tone: null },
+  B: { decay: [75,15,60,20,70,15,55,25,75,10,65,20,50,30,70,15], tone: [25,85,40,80,30,85,45,75,25,90,35,80,50,70,30,85] },
+  D: { decay: [20,25,30,35,40,50,60,70,75,80,85,88,90,92,95,95], tone: [80,75,70,65,60,55,50,45,40,35,30,25,20,15,15,10] },
+  C: { decay: [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10], tone: [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85] },
+  E: { decay: [95,95,95,95,5,5,5,5,95,95,95,95,5,5,5,5], tone: [10,10,10,10,90,90,90,90,10,10,10,10,90,90,90,90] },
+  F: { decay: [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10], tone: [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85] },
+  G: { decay: [80,70,65,55,50,45,40,35,30,25,20,20,15,15,10,10], tone: [30,35,40,45,50,55,60,65,70,72,75,78,80,82,85,85] },
+};
+
 const arrangement = [
-  { bars: 4, pattern: 'A', label: 'INTRO — DRY GRID',          energy: 0.08 },
-  { bars: 4, pattern: 'B', label: 'BUILD — HATS BREATHING',    energy: 0.35 },
-  { bars: 2, pattern: 'D', label: 'BRIDGE — KICK DROPS',       energy: 0.2  },
-  { bars: 4, pattern: 'E', label: 'PEAK — BLOCK SLAMS',        energy: 0.95 },
-  { bars: 4, pattern: 'C', label: 'FULL TRIBAL — MASH',        energy: 0.8  },
-  { bars: 2, pattern: 'D', label: 'BRIDGE — RESET',            energy: 0.2  },
-  { bars: 4, pattern: 'F', label: 'PEAK 2 — MASH + CLAP',     energy: 0.95 },
-  { bars: 4, pattern: 'E', label: 'RELENTLESS — BLOCK SLAMS',  energy: 0.9  },
-  { bars: 4, pattern: 'B', label: 'PULL BACK',                 energy: 0.3  },
-  { bars: 4, pattern: 'G', label: 'OUTRO — TIGHTENING',        energy: 0.12 },
+  { bars: 4, pattern: 'A', label: 'INTRO',          energy: 0.08 },
+  { bars: 4, pattern: 'B', label: 'BUILD',           energy: 0.4  },
+  { bars: 2, pattern: 'D', label: 'BRIDGE',          energy: 0.2  },
+  { bars: 4, pattern: 'E', label: 'PEAK',            energy: 1.0  },
+  { bars: 4, pattern: 'C', label: 'TRIBAL',          energy: 0.85 },
+  { bars: 2, pattern: 'D', label: 'BRIDGE',          energy: 0.2  },
+  { bars: 4, pattern: 'F', label: 'PEAK II',         energy: 1.0  },
+  { bars: 4, pattern: 'E', label: 'RELENTLESS',      energy: 0.95 },
+  { bars: 4, pattern: 'B', label: 'PULL BACK',       energy: 0.35 },
+  { bars: 4, pattern: 'G', label: 'OUTRO',           energy: 0.1  },
 ];
 
 // ══════════════════════════════════════════
 // CANVAS
 // ══════════════════════════════════════════
 const canvas = document.getElementById('c');
-const ctx2d = canvas.getContext('2d');
-let W, H, cx, cy;
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy, diag;
 
 function resize() {
   W = canvas.width = window.innerWidth;
   H = canvas.height = window.innerHeight;
   cx = W / 2; cy = H / 2;
+  diag = Math.sqrt(W * W + H * H);
 }
 resize();
 window.addEventListener('resize', resize);
 
 // ══════════════════════════════════════════
-// VISUAL STATE — fed by the scheduler
+// COLOR ENGINE
 // ══════════════════════════════════════════
-const viz = {
-  hatDecay: 0,        // 0-100 producer scale
-  hatTone: 50,        // 0-100 producer scale
-  kickHit: 0,         // 0-1, decays
-  clapHit: 0,         // 0-1, decays
-  ohHit: 0,           // 0-1, decays
-  chHit: 0,           // 0-1, decays
-  energy: 0.08,       // section energy
-  targetEnergy: 0.08,
-  sectionLabel: '',
-  noKick: false,      // bridge mode — floating
-  stepInPattern: 0,
-  globalStep: 0,
+// Tone 0 (dark hat) → deep blood red / dark amber
+// Tone 100 (bright hat) → searing white-gold
+// Decay controls saturation & brightness spread
+
+function toneToRGB(tone01, brightness) {
+  // tone 0 = deep crimson (180, 20, 10)
+  // tone 0.5 = hot amber (255, 120, 20)
+  // tone 1 = white-gold (255, 240, 200)
+  const b = brightness || 1;
+  let r, g, bl;
+  if (tone01 < 0.5) {
+    const t2 = tone01 * 2;
+    r = (140 + t2 * 115) * b;
+    g = (12 + t2 * 108) * b;
+    bl = (8 + t2 * 12) * b;
+  } else {
+    const t2 = (tone01 - 0.5) * 2;
+    r = (255) * b;
+    g = (120 + t2 * 120) * b;
+    bl = (20 + t2 * 180) * b;
+  }
+  return [Math.min(255, Math.floor(r)), Math.min(255, Math.floor(g)), Math.min(255, Math.floor(bl))];
+}
+
+// ══════════════════════════════════════════
+// VISUAL STATE
+// ══════════════════════════════════════════
+const V = {
+  decay: 0, tone: 50,           // raw 0-100
+  smoothDecay: 0, smoothTone: 50,
+  prevDecay: 0,
+  kickHit: 0, clapHit: 0, ohHit: 0, chHit: 0,
+  energy: 0.08, targetEnergy: 0.08,
+  noKick: false,
   playing: false,
-  // smoothed
-  smoothDecay: 0,
-  smoothTone: 50,
-  prevDecay: 0,       // for slam detection
+  step: 0,
+  globalStep: 0,
+  sectionPattern: 'A',
 };
 
 // ══════════════════════════════════════════
-// VISUAL ELEMENTS
+// GEOMETRY SYSTEMS
 // ══════════════════════════════════════════
 
-// Central orb — the hat decay incarnate
-// High decay = large, soft, diffused. Low decay = pinpoint, sharp.
-function drawHatOrb() {
-  const decay = viz.smoothDecay / 100;
-  const tone = viz.smoothTone / 100;
+// ── 1. RADIAL FIELD: concentric rings that expand with decay ──
+// The whole screen pulses with these
+function drawRadialField() {
+  const decay01 = V.smoothDecay / 100;
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01);
+  const energy = V.energy;
 
-  // Size: 4px at decay=0, fills ~40% of screen at decay=1
-  const minR = 3;
-  const maxR = Math.min(W, H) * 0.22;
-  const r = minR + decay * decay * (maxR - minR); // quadratic — feels more dramatic
+  // Number of rings scales with energy
+  const ringCount = 3 + Math.floor(energy * 12);
+  const maxRadius = diag * (0.2 + decay01 * 0.5);
 
-  // Color: tone drives temperature
-  // Low tone (0) = deep red/amber, High tone (1) = near-white
-  const red = Math.floor(180 + tone * 75);
-  const green = Math.floor(20 + tone * 180);
-  const blue = Math.floor(5 + tone * 200);
+  for (let i = 0; i < ringCount; i++) {
+    const t = i / ringCount;
+    const radius = maxRadius * t;
+    if (radius < 2) continue;
 
-  // Glow layers — more diffuse at high decay
-  const layers = decay > 0.5 ? 4 : 2;
-  for (let i = layers; i >= 0; i--) {
-    const layerR = r * (1 + i * 0.6 * decay);
-    const alpha = (0.03 + decay * 0.08) / (i + 1);
-    const grad = ctx2d.createRadialGradient(cx, cy, 0, cx, cy, layerR);
-    grad.addColorStop(0, `rgba(${red},${green},${blue},${alpha * 2})`);
-    grad.addColorStop(0.4, `rgba(${red},${green},${blue},${alpha})`);
-    grad.addColorStop(1, `rgba(${red},${green},${blue},0)`);
-    ctx2d.fillStyle = grad;
-    ctx2d.fillRect(cx - layerR, cy - layerR, layerR * 2, layerR * 2);
+    // Ring alpha — outer rings fainter
+    const alpha = (1 - t) * (0.04 + decay01 * 0.12) * energy;
+    if (alpha < 0.005) continue;
+
+    // Ring width — thicker at high decay
+    const lw = 0.5 + decay01 * 3 * (1 - t * 0.5);
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+    ctx.lineWidth = lw;
+    ctx.stroke();
   }
-
-  // Hard core — small bright center
-  const coreR = Math.max(1.5, r * 0.15);
-  const coreAlpha = 0.4 + (1 - decay) * 0.5; // brighter when tight
-  ctx2d.beginPath();
-  ctx2d.arc(cx, cy, coreR, 0, Math.PI * 2);
-  ctx2d.fillStyle = `rgba(${Math.min(255, red + 40)},${Math.min(255, green + 40)},${Math.min(255, blue + 30)},${coreAlpha})`;
-  ctx2d.fill();
 }
 
-// Kick pulse — expanding ring from center
-const kickRings = [];
-class KickRing {
+// ── 2. STARBURST: radial lines from center, length = decay ──
+function drawStarburst() {
+  const decay01 = V.smoothDecay / 100;
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01, 0.8);
+  const energy = V.energy;
+
+  const count = 16 + Math.floor(energy * 32);
+  const len = 20 + decay01 * decay01 * diag * 0.45;
+  const baseAngle = V.globalStep * 0.02; // slow rotation
+
+  for (let i = 0; i < count; i++) {
+    const angle = baseAngle + (i / count) * Math.PI * 2;
+    const wobble = Math.sin(i * 7.3 + V.globalStep * 0.1) * 0.03;
+    const a = angle + wobble;
+
+    const innerR = 10 + decay01 * 30;
+    const outerR = innerR + len;
+
+    const x1 = cx + Math.cos(a) * innerR;
+    const y1 = cy + Math.sin(a) * innerR;
+    const x2 = cx + Math.cos(a) * outerR;
+    const y2 = cy + Math.sin(a) * outerR;
+
+    // Vary alpha per ray — breathing effect
+    const rayAlpha = (0.02 + decay01 * 0.06) * energy * (0.5 + Math.sin(i * 3.1 + V.globalStep * 0.05) * 0.5);
+    if (rayAlpha < 0.003) continue;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${rayAlpha})`;
+    ctx.lineWidth = 0.5 + decay01 * 1.5;
+    ctx.stroke();
+  }
+}
+
+// ── 3. FULL-SCREEN WASH: the entire bg shifts color with tone ──
+function drawWash() {
+  const decay01 = V.smoothDecay / 100;
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01);
+  const energy = V.energy;
+
+  // Radial gradient from center — intensity based on decay & energy
+  const radius = diag * (0.3 + decay01 * 0.4);
+  const alpha = (0.03 + decay01 * 0.1) * energy;
+
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+  grad.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+  grad.addColorStop(0.6, `rgba(${r},${g},${b},${alpha * 0.4})`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ── 4. BLOCK SLAM COLUMNS: vertical bands for pattern E ──
+// When decay slams between 95 and 5, fill the screen in columns
+const slamState = { alpha: 0, wide: false };
+
+function drawBlockSlam() {
+  if (slamState.alpha < 0.01) return;
+
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01, 1.2);
+
+  if (slamState.wide) {
+    // WIDE — screen floods with color in vertical bands
+    const bandCount = 8;
+    const bandW = W / bandCount;
+    for (let i = 0; i < bandCount; i++) {
+      const bandAlpha = slamState.alpha * (0.15 + Math.sin(i * 1.7) * 0.08);
+      ctx.fillStyle = `rgba(${r},${g},${b},${bandAlpha})`;
+      ctx.fillRect(i * bandW, 0, bandW * 0.85, H);
+    }
+  } else {
+    // TIGHT — sharp thin vertical slits
+    const slitCount = 16;
+    const gap = W / slitCount;
+    for (let i = 0; i < slitCount; i++) {
+      const x = gap * i + gap / 2;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.strokeStyle = `rgba(255,240,220,${slamState.alpha * 0.2})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+}
+
+// ── 5. KICK SHOCKWAVE: full-screen expanding ring ──
+const kickWaves = [];
+class KickWave {
   constructor() {
+    this.r = 0;
+    this.life = 1;
+  }
+  update() {
+    this.r += (diag * 0.4 - this.r) * 0.06 + 4;
+    this.life *= 0.94;
+    return this.life > 0.01;
+  }
+  draw() {
+    const tone01 = V.smoothTone / 100;
+    const [r, g, b] = toneToRGB(tone01, 0.5);
+    ctx.beginPath();
+    ctx.arc(cx, cy, this.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.12})`;
+    ctx.lineWidth = 2 + this.life * 4;
+    ctx.stroke();
+  }
+}
+
+// ── 6. CLAP CRACK: diagonal slash across the full screen ──
+const clapCracks = [];
+class ClapCrack {
+  constructor() {
+    this.life = 1;
+    this.angle = (Math.random() - 0.5) * 0.6;
+    this.y = cy + (Math.random() - 0.5) * H * 0.4;
+  }
+  update() {
+    this.life *= 0.82;
+    return this.life > 0.01;
+  }
+  draw() {
+    const len = W * 0.8;
+    const dx = Math.cos(this.angle) * len / 2;
+    const dy = Math.sin(this.angle) * len / 2;
+
+    // Main crack
+    ctx.beginPath();
+    ctx.moveTo(cx - dx, this.y - dy);
+    ctx.lineTo(cx + dx, this.y + dy);
+    ctx.strokeStyle = `rgba(255,250,240,${this.life * 0.7})`;
+    ctx.lineWidth = 1 + this.life * 3;
+    ctx.stroke();
+
+    // Glow
+    ctx.strokeStyle = `rgba(255,200,100,${this.life * 0.15})`;
+    ctx.lineWidth = 8 + this.life * 20;
+    ctx.stroke();
+  }
+}
+
+// ── 7. OPEN HAT HALOS: large soft expanding circles ──
+const ohHalos = [];
+class OHHalo {
+  constructor() {
+    this.x = cx + (Math.random() - 0.5) * W * 0.4;
+    this.y = cy + (Math.random() - 0.5) * H * 0.4;
     this.r = 20;
-    this.maxR = Math.min(W, H) * 0.35;
+    this.maxR = 100 + Math.random() * 200;
     this.life = 1;
   }
   update() {
     this.r += (this.maxR - this.r) * 0.04;
-    this.life *= 0.96;
+    this.life *= 0.97;
+    if (V.noKick) { this.y -= 0.8; this.r *= 1.002; } // float & expand in bridges
     return this.life > 0.01;
   }
   draw() {
-    ctx2d.beginPath();
-    ctx2d.arc(cx, cy, this.r, 0, Math.PI * 2);
-    ctx2d.strokeStyle = `rgba(140,30,20,${this.life * 0.15})`;
-    ctx2d.lineWidth = 1 + this.life * 2;
-    ctx2d.stroke();
+    const tone01 = V.smoothTone / 100;
+    const [r, g, b] = toneToRGB(tone01, 0.7);
+    const grad = ctx.createRadialGradient(this.x, this.y, this.r * 0.4, this.x, this.y, this.r);
+    grad.addColorStop(0, `rgba(${r},${g},${b},${this.life * 0.08})`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
-// Clap flash — sharp diagonal slash
-const clapFlashes = [];
-class ClapFlash {
-  constructor() {
-    this.life = 1;
-    this.angle = -0.4 + Math.random() * 0.8;
-    this.len = W * 0.6 + Math.random() * W * 0.3;
-    this.offset = (Math.random() - 0.5) * H * 0.3;
-  }
-  update() {
-    this.life *= 0.88;
-    return this.life > 0.02;
-  }
-  draw() {
-    const dx = Math.cos(this.angle) * this.len / 2;
-    const dy = Math.sin(this.angle) * this.len / 2;
-    const oy = this.offset;
-    ctx2d.beginPath();
-    ctx2d.moveTo(cx - dx, cy + oy - dy);
-    ctx2d.lineTo(cx + dx, cy + oy + dy);
-    ctx2d.strokeStyle = `rgba(240,230,220,${this.life * 0.6})`;
-    ctx2d.lineWidth = 0.5 + this.life * 2;
-    ctx2d.stroke();
-  }
-}
-
-// Open hat bloom — soft expanding halo
-const ohBlooms = [];
-class OHBloom {
-  constructor() {
-    this.r = 30 + Math.random() * 20;
-    this.maxR = 80 + Math.random() * 100;
-    this.life = 1;
-    this.x = cx + (Math.random() - 0.5) * W * 0.15;
-    this.y = cy + (Math.random() - 0.5) * H * 0.15;
-  }
-  update() {
-    this.r += (this.maxR - this.r) * 0.05;
-    this.life *= 0.965;
-    if (viz.noKick) this.y -= 0.3; // float upward in bridges
-    return this.life > 0.01;
-  }
-  draw() {
-    const grad = ctx2d.createRadialGradient(this.x, this.y, this.r * 0.5, this.x, this.y, this.r);
-    grad.addColorStop(0, `rgba(200,100,40,${this.life * 0.06})`);
-    grad.addColorStop(1, `rgba(200,100,40,0)`);
-    ctx2d.fillStyle = grad;
-    ctx2d.beginPath();
-    ctx2d.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx2d.fill();
-  }
-}
-
-// Hat scatter lines — short marks that radiate from center
+// ── 8. HAT SCATTER: marks that fly outward, density = energy ──
 const hatMarks = [];
 class HatMark {
-  constructor(decay, tone) {
+  constructor(decay01, tone01) {
     const angle = Math.random() * Math.PI * 2;
-    const dist = 30 + Math.random() * (20 + decay * 200);
+    const dist = 20 + Math.random() * diag * 0.15;
     this.x = cx + Math.cos(angle) * dist;
     this.y = cy + Math.sin(angle) * dist;
-    this.angle = angle + (Math.random() - 0.5) * 0.8;
-    this.len = 2 + decay * 20;
+    this.vx = Math.cos(angle) * (1 + decay01 * 4);
+    this.vy = Math.sin(angle) * (1 + decay01 * 4);
+    this.len = 3 + decay01 * 30;
+    this.angle = angle + (Math.random() - 0.5) * 0.5;
     this.life = 1;
-    this.decay = decay;
-    this.tone = tone;
-    this.speed = 0.5 + decay * 2;
-    this.vx = Math.cos(angle) * this.speed;
-    this.vy = Math.sin(angle) * this.speed;
+    this.decay01 = decay01;
+    this.tone01 = tone01;
   }
   update() {
     this.x += this.vx;
     this.y += this.vy;
-    this.vx *= 0.97;
-    this.vy *= 0.97;
-    if (viz.noKick) this.vy -= 0.15; // float up in bridges
-    this.life *= (0.92 + this.decay * 0.05); // longer trails at high decay
+    this.vx *= 0.96;
+    this.vy *= 0.96;
+    if (V.noKick) this.vy -= 0.3;
+    this.life *= (0.90 + this.decay01 * 0.06);
     return this.life > 0.02;
   }
   draw() {
-    const r = Math.floor(160 + this.tone * 90);
-    const g = Math.floor(30 + this.tone * 160);
-    const b = Math.floor(10 + this.tone * 180);
+    const [r, g, b] = toneToRGB(this.tone01);
     const ex = this.x + Math.cos(this.angle) * this.len;
     const ey = this.y + Math.sin(this.angle) * this.len;
-    ctx2d.beginPath();
-    ctx2d.moveTo(this.x, this.y);
-    ctx2d.lineTo(ex, ey);
-    ctx2d.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.5})`;
-    ctx2d.lineWidth = this.decay > 0.5 ? 1.2 : 0.6;
-    ctx2d.stroke();
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(ex, ey);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.5})`;
+    ctx.lineWidth = this.decay01 > 0.5 ? 1.5 : 0.7;
+    ctx.stroke();
   }
 }
 
-// Block slam overlay — for pattern E block detection
-let slamAlpha = 0;
-let slamWide = false;
+// ── 9. BRIDGE DRIFT: floating embers when kick is gone ──
+const embers = [];
+class Ember {
+  constructor() {
+    this.x = Math.random() * W;
+    this.y = H + 10;
+    this.vy = -(0.5 + Math.random() * 1.5);
+    this.vx = (Math.random() - 0.5) * 0.5;
+    this.size = 1 + Math.random() * 3;
+    this.life = 1;
+  }
+  update() {
+    this.x += this.vx + Math.sin(this.y * 0.01) * 0.3;
+    this.y += this.vy;
+    this.life -= 0.005;
+    return this.life > 0 && this.y > -20;
+  }
+  draw() {
+    const tone01 = V.smoothTone / 100;
+    const [r, g, b] = toneToRGB(tone01, 0.6);
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r},${g},${b},${this.life * 0.3})`;
+    ctx.fill();
+  }
+}
 
 // ══════════════════════════════════════════
 // STEP DOTS
 // ══════════════════════════════════════════
-const dotsEl = document.getElementById('step-dots');
+const railEl = document.getElementById('step-rail');
 for (let i = 0; i < 16; i++) {
-  const dot = document.createElement('div');
-  dot.className = 'dot';
-  dotsEl.appendChild(dot);
+  const s = document.createElement('div');
+  s.className = 's';
+  railEl.appendChild(s);
 }
-const dots = dotsEl.querySelectorAll('.dot');
+const stepDots = railEl.querySelectorAll('.s');
 
 function updateDots(stepIdx, decayRaw) {
-  // decayRaw is 0-100 producer scale for current step's automation
-  dots.forEach((dot, i) => {
+  stepDots.forEach((dot, i) => {
     if (i === stepIdx) {
-      const norm = decayRaw / 100;
-      const size = 5 + norm * 7;
-      const r = Math.floor(160 + (1 - norm) * 80);
-      const g = Math.floor(30 + (1 - norm) * 140);
-      const b = Math.floor(10 + (1 - norm) * 160);
-      const alpha = 0.3 + norm * 0.7;
+      const n = decayRaw / 100;
+      const [r, g, b] = toneToRGB(1 - n); // invert: high decay = warm, low = bright
+      const size = 6 + n * 10;
+      const alpha = 0.4 + n * 0.6;
       dot.style.width = size + 'px';
       dot.style.height = size + 'px';
       dot.style.background = `rgba(${r},${g},${b},${alpha})`;
-      dot.style.boxShadow = norm > 0.5 ? `0 0 ${4 + norm * 8}px rgba(${r},${g},${b},${alpha * 0.5})` : 'none';
+      dot.style.boxShadow = n > 0.4 ? `0 0 ${6 + n * 12}px rgba(${r},${g},${b},${alpha * 0.6})` : 'none';
     } else {
-      dot.style.width = '8px';
-      dot.style.height = '8px';
-      dot.style.background = 'rgba(224,224,224,0.06)';
+      dot.style.width = '10px';
+      dot.style.height = '10px';
+      dot.style.background = 'rgba(255,255,255,0.04)';
       dot.style.boxShadow = 'none';
     }
   });
@@ -391,125 +546,107 @@ function updateDots(stepIdx, decayRaw) {
 // ══════════════════════════════════════════
 // RENDER LOOP
 // ══════════════════════════════════════════
-let frameCount = 0;
+let frame = 0;
 
 function render() {
   requestAnimationFrame(render);
-  frameCount++;
+  frame++;
 
-  // Smooth energy
-  viz.energy += (viz.targetEnergy - viz.energy) * 0.03;
+  // Smooth values
+  V.energy += (V.targetEnergy - V.energy) * 0.025;
+  V.smoothDecay += (V.decay - V.smoothDecay) * 0.35;
+  V.smoothTone += (V.tone - V.smoothTone) * 0.35;
 
-  // Smooth decay & tone (fast follow — hat changes every step)
-  viz.smoothDecay += (viz.hatDecay - viz.smoothDecay) * 0.3;
-  viz.smoothTone += (viz.hatTone - viz.smoothTone) * 0.3;
+  // Decay impulses
+  V.kickHit *= 0.88;
+  V.clapHit *= 0.82;
+  V.ohHit *= 0.93;
+  V.chHit *= 0.88;
+  slamState.alpha *= 0.9;
 
-  // Decay hits
-  viz.kickHit *= 0.9;
-  viz.clapHit *= 0.85;
-  viz.ohHit *= 0.93;
-  viz.chHit *= 0.88;
-  slamAlpha *= 0.88;
+  // ── BACKGROUND FADE ──
+  // Longer trails in high energy, shorter in calm
+  const fade = V.noKick ? 0.04 : (0.08 + (1 - V.energy) * 0.08);
+  ctx.fillStyle = `rgba(10,6,8,${fade})`;
+  ctx.fillRect(0, 0, W, H);
 
-  // Background fade — longer trails at high energy/decay
-  const fadeSpeed = viz.noKick ? 0.06 : (0.14 - viz.energy * 0.06);
-  ctx2d.fillStyle = `rgba(10,10,10,${fadeSpeed})`;
-  ctx2d.fillRect(0, 0, W, H);
-
-  if (!viz.playing) {
-    // Idle state — barely-there breathing dot
-    const breath = Math.sin(frameCount * 0.015) * 0.5 + 0.5;
-    const r = 2 + breath * 3;
-    ctx2d.beginPath();
-    ctx2d.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx2d.fillStyle = `rgba(140,30,20,${0.15 + breath * 0.1})`;
-    ctx2d.fill();
+  if (!V.playing) {
+    // Idle: dim breathing center
+    const breath = Math.sin(frame * 0.012) * 0.5 + 0.5;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80);
+    grad.addColorStop(0, `rgba(140,20,10,${0.03 + breath * 0.02})`);
+    grad.addColorStop(1, 'rgba(140,20,10,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(cx - 80, cy - 80, 160, 160);
     return;
   }
 
-  // ── KICK PULSE — subtle screen throb ──
-  if (viz.kickHit > 0.1) {
-    ctx2d.fillStyle = `rgba(100,20,10,${viz.kickHit * 0.04})`;
-    ctx2d.fillRect(0, 0, W, H);
+  // ═══ LAYER ORDER (back to front) ═══
+
+  // 1. Full-screen color wash
+  drawWash();
+
+  // 2. Block slam bands (pattern E/F)
+  drawBlockSlam();
+
+  // 3. Kick shockwave
+  if (V.kickHit > 0.15) {
+    // Subtle screen throb
+    const [kr, kg, kb] = toneToRGB(V.smoothTone / 100, 0.3);
+    ctx.fillStyle = `rgba(${kr},${kg},${kb},${V.kickHit * 0.05})`;
+    ctx.fillRect(0, 0, W, H);
   }
 
-  // ── CLAP FLASH — screen flash ──
-  if (viz.clapHit > 0.3) {
-    ctx2d.fillStyle = `rgba(240,230,220,${viz.clapHit * 0.08})`;
-    ctx2d.fillRect(0, 0, W, H);
+  // 4. Kick waves
+  for (let i = kickWaves.length - 1; i >= 0; i--) {
+    kickWaves[i].draw();
+    if (!kickWaves[i].update()) kickWaves.splice(i, 1);
   }
 
-  // ── BLOCK SLAM OVERLAY ──
-  if (slamAlpha > 0.02) {
-    if (slamWide) {
-      // Wide block — fill with color
-      const tone = viz.smoothTone / 100;
-      const r = Math.floor(140 + (1 - tone) * 60);
-      const g = Math.floor(15 + (1 - tone) * 15);
-      ctx2d.fillStyle = `rgba(${r},${g},8,${slamAlpha * 0.06})`;
-      ctx2d.fillRect(0, 0, W, H);
-    }
+  // 5. Radial field
+  drawRadialField();
+
+  // 6. Starburst rays
+  drawStarburst();
+
+  // 7. OH halos
+  for (let i = ohHalos.length - 1; i >= 0; i--) {
+    ohHalos[i].draw();
+    if (!ohHalos[i].update()) ohHalos.splice(i, 1);
   }
 
-  // ── BRIDGE FLOAT — gravity shift ──
-  if (viz.noKick) {
-    // Subtle upward drift lines
-    if (frameCount % 3 === 0) {
-      const x = Math.random() * W;
-      const y = H;
-      ctx2d.beginPath();
-      ctx2d.moveTo(x, y);
-      ctx2d.lineTo(x + (Math.random() - 0.5) * 4, y - 10 - Math.random() * 30);
-      ctx2d.strokeStyle = `rgba(180,80,30,0.03)`;
-      ctx2d.lineWidth = 0.5;
-      ctx2d.stroke();
-    }
-  }
-
-  // ── DRAW ELEMENTS ──
-  // Hat orb — the star
-  drawHatOrb();
-
-  // Kick rings
-  for (let i = kickRings.length - 1; i >= 0; i--) {
-    kickRings[i].draw();
-    if (!kickRings[i].update()) kickRings.splice(i, 1);
-  }
-
-  // OH blooms
-  for (let i = ohBlooms.length - 1; i >= 0; i--) {
-    ohBlooms[i].draw();
-    if (!ohBlooms[i].update()) ohBlooms.splice(i, 1);
-  }
-
-  // Hat marks
+  // 8. Hat scatter marks
   for (let i = hatMarks.length - 1; i >= 0; i--) {
     hatMarks[i].draw();
     if (!hatMarks[i].update()) hatMarks.splice(i, 1);
   }
 
-  // Clap flashes
-  for (let i = clapFlashes.length - 1; i >= 0; i--) {
-    clapFlashes[i].draw();
-    if (!clapFlashes[i].update()) clapFlashes.splice(i, 1);
+  // 9. Bridge embers
+  if (V.noKick && frame % 2 === 0) {
+    embers.push(new Ember());
+  }
+  for (let i = embers.length - 1; i >= 0; i--) {
+    embers[i].draw();
+    if (!embers[i].update()) embers.splice(i, 1);
   }
 
-  // ── HORIZONTAL BREATH LINE ──
-  if (viz.energy > 0.1) {
-    const lineWidth = W * (0.1 + viz.smoothDecay / 100 * 0.4);
-    ctx2d.beginPath();
-    ctx2d.moveTo(cx - lineWidth / 2, cy);
-    ctx2d.lineTo(cx + lineWidth / 2, cy);
-    ctx2d.strokeStyle = `rgba(224,224,224,${0.02 + viz.energy * 0.02})`;
-    ctx2d.lineWidth = 0.5;
-    ctx2d.stroke();
+  // 10. Clap cracks (on top of everything)
+  for (let i = clapCracks.length - 1; i >= 0; i--) {
+    clapCracks[i].draw();
+    if (!clapCracks[i].update()) clapCracks.splice(i, 1);
+  }
+
+  // 11. Clap full-screen flash
+  if (V.clapHit > 0.2) {
+    ctx.fillStyle = `rgba(255,240,200,${V.clapHit * 0.1})`;
+    ctx.fillRect(0, 0, W, H);
   }
 }
 
 render();
 
 // ══════════════════════════════════════════
-// PLAYBACK ENGINE (from index.html + viz hooks)
+// PLAYBACK ENGINE
 // ══════════════════════════════════════════
 let audioCtx = null;
 let engine = null;
@@ -544,125 +681,93 @@ function applyAutomation(pat, stepIdx) {
   }
 }
 
-// Raw automation values (producer scale) for viz
-function getAutomationRaw(pat, stepIdx) {
-  const section = getSection();
-  const patKey = section.pattern;
-
-  // Reverse the d() and t() transforms to get producer values
-  let decayRaw = 0;
-  let toneRaw = 50;
-
-  const autoSrc = {
-    A: { decay: null, tone: null },
-    B: { decay: [75,15,60,20,70,15,55,25,75,10,65,20,50,30,70,15], tone: [25,85,40,80,30,85,45,75,25,90,35,80,50,70,30,85] },
-    D: { decay: [20,25,30,35,40,50,60,70,75,80,85,88,90,92,95,95], tone: [80,75,70,65,60,55,50,45,40,35,30,25,20,15,15,10] },
-    C: { decay: [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10], tone: [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85] },
-    E: { decay: [95,95,95,95,5,5,5,5,95,95,95,95,5,5,5,5], tone: [10,10,10,10,90,90,90,90,10,10,10,10,90,90,90,90] },
-    F: { decay: [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10], tone: [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85] },
-    G: { decay: [80,70,65,55,50,45,40,35,30,25,20,20,15,15,10,10], tone: [30,35,40,45,50,55,60,65,70,72,75,78,80,82,85,85] },
-  };
-
-  const src = autoSrc[patKey];
-  if (src && src.decay) {
-    decayRaw = src.decay[stepIdx % 16];
-    toneRaw = src.tone[stepIdx % 16];
-  }
-
-  return { decayRaw, toneRaw };
-}
-
 function scheduleStep(time) {
   const pat = getPattern();
   const stepInPattern = currentStep % 16;
   const section = getSection();
+  const patKey = section.pattern;
 
-  // Apply automation
   applyAutomation(pat, stepInPattern);
 
-  // Get raw values for visualizer
-  const { decayRaw, toneRaw } = getAutomationRaw(pat, stepInPattern);
+  // Get raw viz values
+  const src = autoRaw[patKey];
+  const decayRaw = src.decay ? src.decay[stepInPattern % 16] : 0;
+  const toneRaw = src.tone ? src.tone[stepInPattern % 16] : 50;
 
-  // Trigger voices + viz events
+  // Trigger voices
   for (const [voiceId, steps] of Object.entries(pat.voices)) {
     if (steps.includes(stepInPattern)) {
       engine.trigger(voiceId, 1, time);
     }
   }
 
-  // ── VIZ HOOKS ──
-  // Schedule visual update close to audio time
+  // Schedule visual update synced to audio
   const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
   setTimeout(() => {
-    viz.hatDecay = decayRaw;
-    viz.hatTone = toneRaw;
-    viz.stepInPattern = stepInPattern;
-    viz.noKick = !pat.voices.kick || pat.voices.kick.length === 0;
-    viz.targetEnergy = section.energy;
+    V.decay = decayRaw;
+    V.tone = toneRaw;
+    V.step = stepInPattern;
+    V.globalStep++;
+    V.noKick = !pat.voices.kick || pat.voices.kick.length === 0;
+    V.targetEnergy = section.energy;
+    V.sectionPattern = patKey;
 
-    // Block slam detection (pattern E)
-    const prevDecay = viz.prevDecay;
-    if (Math.abs(decayRaw - prevDecay) > 60) {
-      slamAlpha = 1;
-      slamWide = decayRaw > prevDecay;
+    // Block slam detection
+    if (Math.abs(decayRaw - V.prevDecay) > 50) {
+      slamState.alpha = 1;
+      slamState.wide = decayRaw > V.prevDecay;
     }
-    viz.prevDecay = decayRaw;
+    V.prevDecay = decayRaw;
+
+    const decay01 = decayRaw / 100;
+    const tone01 = toneRaw / 100;
 
     // Kick
     if (pat.voices.kick && pat.voices.kick.includes(stepInPattern)) {
-      viz.kickHit = 1;
-      kickRings.push(new KickRing());
+      V.kickHit = 1;
+      kickWaves.push(new KickWave());
     }
 
     // Clap
     if (pat.voices.clap && pat.voices.clap.includes(stepInPattern)) {
-      viz.clapHit = 1;
-      clapFlashes.push(new ClapFlash());
-      if (Math.random() < 0.5) clapFlashes.push(new ClapFlash()); // double slash
+      V.clapHit = 1;
+      clapCracks.push(new ClapCrack());
+      clapCracks.push(new ClapCrack()); // always double
     }
 
     // Open hat
     if (pat.voices.oh && pat.voices.oh.includes(stepInPattern)) {
-      viz.ohHit = 1;
-      ohBlooms.push(new OHBloom());
+      V.ohHit = 1;
+      ohHalos.push(new OHHalo());
+      if (V.energy > 0.5) ohHalos.push(new OHHalo());
     }
 
-    // Closed hat marks
+    // Closed hat — scatter marks
     if (pat.voices.ch && pat.voices.ch.includes(stepInPattern)) {
-      viz.chHit = 1;
-      const count = 1 + Math.floor(viz.energy * 4);
+      V.chHit = 1;
+      const count = 2 + Math.floor(V.energy * 8);
       for (let i = 0; i < count; i++) {
-        hatMarks.push(new HatMark(decayRaw / 100, toneRaw / 100));
+        hatMarks.push(new HatMark(decay01, tone01));
       }
     }
 
-    // Update dots
+    // Update HUD
     updateDots(stepInPattern, decayRaw);
-
-    // UI
-    document.getElementById('section-display').textContent = section.label;
-    document.getElementById('section-display').classList.add('active');
-    document.getElementById('bar-display').textContent =
-      `bar ${currentBar + 1} / ${arrangement.reduce((s, a) => s + a.bars, 0)}`;
+    document.getElementById('section-label').textContent = section.label;
+    document.getElementById('bar-count').textContent =
+      `${currentBar + 1} / ${arrangement.reduce((s, a) => s + a.bars, 0)}`;
   }, delay);
 }
 
 function advanceStep() {
   currentStep++;
-  const stepInPattern = currentStep % 16;
-
-  if (stepInPattern === 0) {
+  if (currentStep % 16 === 0) {
     currentBar++;
     let barsBeforeSection = 0;
     for (let i = 0; i < currentSectionIdx; i++) barsBeforeSection += arrangement[i].bars;
-    const barsInSection = currentBar - barsBeforeSection;
-
-    if (barsInSection >= getSection().bars) {
+    if (currentBar - barsBeforeSection >= getSection().bars) {
       currentSectionIdx++;
-      if (currentSectionIdx >= arrangement.length) {
-        stop();
-        return false;
-      }
+      if (currentSectionIdx >= arrangement.length) { stop(); return false; }
       applyParams(getPattern());
     }
   }
@@ -686,44 +791,42 @@ function start() {
   }
   if (audioCtx.state === 'suspended') audioCtx.resume();
 
-  currentStep = 0;
-  currentSectionIdx = 0;
-  currentBar = 0;
-  viz.prevDecay = 0;
-  viz.hatDecay = 0;
-  viz.hatTone = 50;
-  viz.smoothDecay = 0;
-  viz.smoothTone = 50;
-  viz.playing = true;
+  currentStep = 0; currentSectionIdx = 0; currentBar = 0;
+  V.prevDecay = 0; V.decay = 0; V.tone = 50;
+  V.smoothDecay = 0; V.smoothTone = 50;
+  V.playing = true; V.globalStep = 0;
+
+  // Clear leftover elements
+  kickWaves.length = 0; clapCracks.length = 0;
+  ohHalos.length = 0; hatMarks.length = 0; embers.length = 0;
 
   applyParams(getPattern());
   nextStepTime = audioCtx.currentTime + 0.05;
   playing = true;
-  document.getElementById('play-btn').textContent = '■';
   document.getElementById('play-btn').classList.add('playing');
+  document.getElementById('restart-zone').style.display = 'none';
   scheduler();
 }
 
 function stop() {
-  playing = false;
-  viz.playing = false;
-  viz.targetEnergy = 0;
+  playing = false; V.playing = false; V.targetEnergy = 0;
   if (schedulerTimer) clearTimeout(schedulerTimer);
-  document.getElementById('play-btn').textContent = '▶';
   document.getElementById('play-btn').classList.remove('playing');
-  document.getElementById('section-display').classList.remove('active');
-  document.getElementById('section-display').textContent = '';
-  document.getElementById('bar-display').textContent = '';
-  dots.forEach(d => {
-    d.style.width = '8px';
-    d.style.height = '8px';
-    d.style.background = 'rgba(224,224,224,0.06)';
+  document.getElementById('section-label').textContent = '';
+  document.getElementById('bar-count').textContent = '';
+  document.getElementById('restart-zone').style.display = 'block';
+  stepDots.forEach(d => {
+    d.style.width = '10px'; d.style.height = '10px';
+    d.style.background = 'rgba(255,255,255,0.04)';
     d.style.boxShadow = 'none';
   });
 }
 
 document.getElementById('play-btn').addEventListener('click', () => {
   if (playing) stop(); else start();
+});
+document.getElementById('restart-zone').addEventListener('click', () => {
+  start();
 });
 </script>
 </body>
