@@ -1,25 +1,46 @@
 /**
  * JT90Node - Drum Machine (909-style)
  *
- * Multi-voice drum machine with CUSTOM DSP components:
- *   - Kick: Triangle-to-sine with pitch envelope
- *   - Snare: Tuned oscillators + filtered noise
- *   - Clap: Multiple noise bursts
- *   - Hi-hats: 6 metallic oscillators + noise
- *   - Toms: Sine-like with pitch envelope
- *   - Cymbals: 8 metallic oscillators + noise
- *
- * Produces identical output in Web Audio (browser) and WAV rendering (Node.js).
+ * Multi-voice drum machine with hybrid synthesis + samples:
+ *   - Kick, snare, clap, rimshot, toms: pure JS DSP synthesis
+ *   - CH, OH, crash, ride: WAV sample playback (loaded from disk in Node.js)
  */
 
 import { InstrumentNode } from '../core/node.js';
 import { OfflineAudioContext } from 'node-web-audio-api';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
 // Load params definition
 import { createRequire } from 'module';
 import { toEngine } from '../params/converters.js';
 const require = createRequire(import.meta.url);
 const JT90_PARAMS = require('../params/jt90-params.json');
+
+// Path to JT90 sample WAVs
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const SAMPLES_DIR = resolve(__dirname, '../../web/public/jt90/samples');
+
+// Sample voice WAV files (must match SAMPLE_CONFIGS in engine.js)
+const SAMPLE_FILES = ['ch.wav', 'oh.wav', 'crash.wav', 'ride.wav'];
+
+/**
+ * Load JT90 sample WAVs from disk and inject into engine._sampleData.
+ * This bypasses the engine's fetch-based loadSamples() for Node.js.
+ */
+async function loadSamplesFromDisk(engine) {
+  const { decodeWav } = await import('../../web/public/jt90/dist/machines/jt90/voices/sample-voice.js');
+
+  const sampleData = {};
+  for (const file of SAMPLE_FILES) {
+    const voiceId = file.replace('.wav', '');
+    const buf = readFileSync(resolve(SAMPLES_DIR, file));
+    sampleData[voiceId] = decodeWav(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+  }
+  engine._sampleData = sampleData;
+}
 
 // All drum voices (user-facing names)
 const VOICES = ['kick', 'snare', 'clap', 'rimshot', 'lowtom', 'midtom', 'hitom', 'ch', 'oh', 'crash', 'ride'];
@@ -378,6 +399,9 @@ export class JT90Node extends InstrumentNode {
     const context = new OfflineAudioContext(2, sampleRate, sampleRate);
     const engine = new JT90Engine({ context });
 
+    // Load sample WAVs from disk (CH, OH, crash, ride need this)
+    await loadSamplesFromDisk(engine);
+
     // Apply voice params (convert voice names to engine names)
     const voiceParams = params || this.getAllVoiceParams();
     Object.entries(voiceParams).forEach(([voiceId, voiceParamSet]) => {
@@ -479,6 +503,9 @@ export class JT90Node extends InstrumentNode {
       // Create engine with fresh context
       const context = new OfflineAudioContext(2, sampleRate, sampleRate);
       const engine = new JT90Engine({ context });
+
+      // Load sample WAVs from disk (CH, OH, crash, ride need this)
+      await loadSamplesFromDisk(engine);
 
       // Apply this voice's params
       const engineVoice = VOICE_TO_ENGINE[voice] || voice;
