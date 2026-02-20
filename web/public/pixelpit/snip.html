@@ -128,7 +128,13 @@
     function getRibbonWidth(y, opts) {
       if (opts && opts.wide) return 80;
       const depth = y / 1000;
-      return Math.max(RIBBON_MIN_WIDTH, RIBBON_BASE_WIDTH - depth * 3);
+      let w = Math.max(RIBBON_MIN_WIDTH, RIBBON_BASE_WIDTH - depth * 3);
+      // easy start: extra wide for first 10s, ease to normal over 3s
+      if (typeof playTime !== 'undefined' && gamePhase === 'playing' && playTime < 13) {
+        const wideBonus = playTime < 10 ? 20 : 20 * (1 - (playTime - 10) / 3);
+        w += Math.max(0, wideBonus);
+      }
+      return w;
     }
 
     let ribbonWidthOverride = 0; // 0 = use normal
@@ -659,6 +665,16 @@
       ctx.font = '12px monospace';
       ctx.textAlign = 'left';
       ctx.fillText('depth ' + Math.floor(cameraY / 10), 16, 58);
+
+      // two-chance reposition hint
+      if (gamePhase === 'playing' && hasRetapped && retapAllowed && !holding) {
+        ctx.fillStyle = T.grey;
+        ctx.font = '16px monospace';
+        ctx.textAlign = 'center';
+        ctx.globalAlpha = 0.6 + Math.sin(gameTime * 4) * 0.3;
+        ctx.fillText('TAP AGAIN TO REPOSITION', W / 2, H / 2);
+        ctx.globalAlpha = 1;
+      }
 
       // tutorial overlay
       if (gamePhase === 'tutorial') drawTutorialOverlay();

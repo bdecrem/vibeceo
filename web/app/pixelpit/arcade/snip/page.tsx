@@ -173,7 +173,13 @@ export default function SnipGame() {
     const game = g.current;
     if (game.ribbonWidthOverride) return game.ribbonWidthOverride;
     const depth = y / 1000;
-    return Math.max(RIBBON_MIN_WIDTH, RIBBON_BASE_WIDTH - depth * 3);
+    let w = Math.max(RIBBON_MIN_WIDTH, RIBBON_BASE_WIDTH - depth * 3);
+    // easy start: extra wide for first 10s, ease to normal over 3s
+    if (game.phase === 'playing' && game.playTime < 13) {
+      const wideBonus = game.playTime < 10 ? 20 : 20 * (1 - (game.playTime - 10) / 3);
+      w += Math.max(0, wideBonus);
+    }
+    return w;
   }
 
   function closestRibbonPoint(px: number, py: number) {
@@ -520,6 +526,14 @@ export default function SnipGame() {
       }
       ctx!.fillStyle = T.grey; ctx!.font = '12px monospace'; ctx!.textAlign = 'left';
       ctx!.fillText('depth ' + Math.floor(game.cameraY / 10), 16, 58);
+
+      // two-chance reposition hint
+      if (game.phase === 'playing' && game.hasRetapped && game.retapAllowed && !game.holding) {
+        ctx!.fillStyle = T.grey; ctx!.font = '16px monospace'; ctx!.textAlign = 'center';
+        ctx!.globalAlpha = 0.6 + Math.sin(game.gameTime * 4) * 0.3;
+        ctx!.fillText('TAP AGAIN TO REPOSITION', game.W / 2, game.H / 2);
+        ctx!.globalAlpha = 1;
+      }
 
       // tutorial overlay
       if (game.phase === 'tutorial' && game.tutorialStep >= 0) {
