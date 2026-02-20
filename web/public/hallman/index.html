@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hallman — Mills Hats v1</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a; color: #e0e0e0; font-family: 'SF Mono', 'Fira Code', monospace;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px;
+  }
+  h1 { font-size: 14px; letter-spacing: 4px; text-transform: uppercase; color: #666; margin-bottom: 8px; }
+  .subtitle { font-size: 11px; color: #444; margin-bottom: 40px; letter-spacing: 2px; }
+  #play-btn {
+    width: 80px; height: 80px; border-radius: 50%; border: 2px solid #333;
+    background: transparent; color: #e0e0e0; font-size: 24px; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: #888; }
+  #play-btn.playing { border-color: #f44; }
+  .info {
+    margin-top: 40px; font-size: 11px; color: #444; text-align: center;
+    line-height: 1.8; letter-spacing: 1px;
+  }
+  .section-display {
+    margin-top: 24px; font-size: 12px; color: #666; letter-spacing: 2px;
+    min-height: 20px; transition: color 0.1s;
+  }
+  .section-display.active { color: #f44; }
+  .bar-display { font-size: 11px; color: #333; margin-top: 4px; letter-spacing: 1px; }
+  .step-dots {
+    display: flex; gap: 4px; margin-top: 16px;
+  }
+  .step-dots .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: #222; transition: background 0.05s;
+  }
+  .step-dots .dot.on { background: #f44; }
+</style>
+</head>
+<body>
+
+<h1>Hallman</h1>
+<div class="subtitle">mills hats v1 — 133 bpm</div>
+
+<button id="play-btn">▶</button>
+
+<div class="section-display" id="section-display"></div>
+<div class="bar-display" id="bar-display"></div>
+<div class="step-dots" id="step-dots"></div>
+
+<div class="info">
+  jb01 kick + closed hats + open hats + clap<br>
+  hat decay &amp; tone automation — 36 bars<br>
+  <br>
+  click to play
+</div>
+
+<script type="module">
+import { JB01Engine } from '../../public/jb01/dist/machines/jb01/engine.js';
+
+// --- TRACK DATA ---
+// All automation values in ENGINE units (0-1)
+// Decay: producer 0-100 → engine 0-2 (value / 50)
+// Tone: producer 0-100 → engine 0-1 (value / 100)
+// Level: producer dB → engine gain (10^(dB/20))
+
+const BPM = 133;
+const STEP_DUR = 60 / BPM / 4; // 16th note duration
+
+const kickLevel = Math.pow(10, -13 / 20);  // -13dB
+const clapLevel = Math.pow(10, -15 / 20);  // -15dB
+
+function d(v) { return v / 50; }   // decay producer→engine
+function t(v) { return v / 100; }  // tone producer→engine
+
+// Pattern definitions
+const patterns = {
+  A: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] },
+    automation: {},
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+  B: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [75,15,60,20,70,15,55,25,75,10,65,20,50,30,70,15].map(d),
+      'ch.tone':  [25,85,40,80,30,85,45,75,25,90,35,80,50,70,30,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+  D: {
+    voices: { ch: [0,2,4,6,8,10,12,14], oh: [2,6,10,14] },
+    automation: {
+      'ch.decay': [20,25,30,35,40,50,60,70,75,80,85,88,90,92,95,95].map(d),
+      'ch.tone':  [80,75,70,65,60,55,50,45,40,35,30,25,20,15,15,10].map(t),
+    },
+    params: { kick: { decay: d(10), level: 0 } }
+  },
+  C: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10].map(d),
+      'ch.tone':  [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+  E: {
+    voices: { kick: [0,4,8,12], clap: [4,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [95,95,95,95,5,5,5,5,95,95,95,95,5,5,5,5].map(d),
+      'ch.tone':  [10,10,10,10,90,90,90,90,10,10,10,10,90,90,90,90].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel }, clap: { level: clapLevel } }
+  },
+  F: {
+    voices: { kick: [0,4,8,12], clap: [4,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10].map(d),
+      'ch.tone':  [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel }, clap: { level: clapLevel } }
+  },
+  G: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] },
+    automation: {
+      'ch.decay': [80,70,65,55,50,45,40,35,30,25,20,20,15,15,10,10].map(d),
+      'ch.tone':  [30,35,40,45,50,55,60,65,70,72,75,78,80,82,85,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+};
+
+const arrangement = [
+  { bars: 4, pattern: 'A', label: 'INTRO — dry grid' },
+  { bars: 4, pattern: 'B', label: 'BUILD — hats breathing' },
+  { bars: 2, pattern: 'D', label: 'BRIDGE — kick drops' },
+  { bars: 4, pattern: 'E', label: 'PEAK — block slams + clap' },
+  { bars: 4, pattern: 'C', label: 'FULL TRIBAL — mash' },
+  { bars: 2, pattern: 'D', label: 'BRIDGE — reset' },
+  { bars: 4, pattern: 'F', label: 'PEAK 2 — mash + clap' },
+  { bars: 4, pattern: 'E', label: 'RELENTLESS — block slams' },
+  { bars: 4, pattern: 'B', label: 'PULL BACK' },
+  { bars: 4, pattern: 'G', label: 'OUTRO — tightening' },
+];
+
+// --- PLAYBACK ENGINE ---
+
+let ctx = null;
+let engine = null;
+let playing = false;
+let nextStepTime = 0;
+let currentStep = 0;
+let currentSectionIdx = 0;
+let currentBar = 0;
+let schedulerTimer = null;
+
+const SCHEDULE_AHEAD = 0.1; // seconds to schedule ahead
+const LOOKAHEAD = 25; // ms between scheduler calls
+
+// Build step dots
+const dotsEl = document.getElementById('step-dots');
+for (let i = 0; i < 16; i++) {
+  const dot = document.createElement('div');
+  dot.className = 'dot';
+  dotsEl.appendChild(dot);
+}
+const dots = dotsEl.querySelectorAll('.dot');
+
+function getSection() { return arrangement[currentSectionIdx]; }
+function getPattern() { return patterns[getSection().pattern]; }
+
+function applyParams(pat) {
+  for (const [voice, params] of Object.entries(pat.params || {})) {
+    for (const [param, value] of Object.entries(params)) {
+      engine.setVoiceParam(voice, param, value);
+    }
+  }
+}
+
+function applyAutomation(pat, stepIdx) {
+  for (const [path, values] of Object.entries(pat.automation || {})) {
+    const [voiceId, paramId] = path.split('.');
+    const val = values[stepIdx % values.length];
+    if (val !== null && val !== undefined) {
+      engine.setVoiceParam(voiceId, paramId, val);
+    }
+  }
+}
+
+function scheduleStep(time) {
+  const pat = getPattern();
+  const stepInPattern = currentStep % 16;
+
+  // Apply automation for this step
+  applyAutomation(pat, stepInPattern);
+
+  // Trigger voices
+  for (const [voiceId, steps] of Object.entries(pat.voices)) {
+    if (steps.includes(stepInPattern)) {
+      engine.trigger(voiceId, 1, time);
+    }
+  }
+
+  // Visual update
+  const displayStep = stepInPattern;
+  const sectionLabel = getSection().label;
+  requestAnimationFrame(() => {
+    dots.forEach((d, i) => d.classList.toggle('on', i === displayStep));
+    document.getElementById('section-display').textContent = sectionLabel;
+    document.getElementById('section-display').classList.add('active');
+    document.getElementById('bar-display').textContent =
+      `bar ${currentBar + 1} / ${arrangement.reduce((s, a) => s + a.bars, 0)}`;
+  });
+}
+
+function advanceStep() {
+  currentStep++;
+  const stepInPattern = currentStep % 16;
+
+  // New bar?
+  if (stepInPattern === 0) {
+    currentBar++;
+    const section = getSection();
+    // Check if we've passed this section's bars
+    let barsInSection = 0;
+    let barsBeforeSection = 0;
+    for (let i = 0; i < currentSectionIdx; i++) barsBeforeSection += arrangement[i].bars;
+    barsInSection = currentBar - barsBeforeSection;
+
+    if (barsInSection >= section.bars) {
+      currentSectionIdx++;
+      if (currentSectionIdx >= arrangement.length) {
+        stop();
+        return false;
+      }
+      // Apply new section's params
+      applyParams(getPattern());
+    }
+  }
+  return true;
+}
+
+function scheduler() {
+  while (nextStepTime < ctx.currentTime + SCHEDULE_AHEAD) {
+    scheduleStep(nextStepTime);
+    nextStepTime += STEP_DUR;
+    if (!advanceStep()) return;
+  }
+  schedulerTimer = setTimeout(scheduler, LOOKAHEAD);
+}
+
+function start() {
+  if (!ctx) {
+    ctx = new AudioContext({ sampleRate: 44100 });
+    engine = new JB01Engine({ context: ctx, bpm: BPM });
+    engine.output.connect(ctx.destination);
+  }
+  if (ctx.state === 'suspended') ctx.resume();
+
+  currentStep = 0;
+  currentSectionIdx = 0;
+  currentBar = 0;
+  applyParams(getPattern());
+  nextStepTime = ctx.currentTime + 0.05;
+  playing = true;
+  document.getElementById('play-btn').textContent = '■';
+  document.getElementById('play-btn').classList.add('playing');
+  scheduler();
+}
+
+function stop() {
+  playing = false;
+  if (schedulerTimer) clearTimeout(schedulerTimer);
+  document.getElementById('play-btn').textContent = '▶';
+  document.getElementById('play-btn').classList.remove('playing');
+  document.getElementById('section-display').classList.remove('active');
+  dots.forEach(d => d.classList.remove('on'));
+}
+
+document.getElementById('play-btn').addEventListener('click', () => {
+  if (playing) stop(); else start();
+});
+</script>
+</body>
+</html>

@@ -182,6 +182,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
+    // Hallman lives at /hallman
+    if (pathname.startsWith('/hallman')) {
+      return NextResponse.next()
+    }
+
     // Shipshot lives at /shipshot, not /kochi/shipshot
     if (pathname.startsWith('/shipshot')) {
       return NextResponse.next()
@@ -674,6 +679,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/simple-voice') ||
       pathname.startsWith('/pixelpit') ||
       pathname.startsWith('/shipshot') ||
+      pathname.startsWith('/hallman') ||
       pathname.startsWith('/mutabl') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hallman — Mills Hats v1 — Visualizer</title>
+<meta property="og:title" content="Hallman — Mills Hats v1">
+<meta property="og:description" content="Tribal techno. 133 BPM. Hat decay automation. The hats ARE the show.">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a; color: #e0e0e0; font-family: 'SF Mono', 'Fira Code', monospace;
+    overflow: hidden; cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; z-index: 0; }
+
+  #ui {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #ui > * { pointer-events: auto; }
+
+  h1 { font-size: 12px; letter-spacing: 4px; text-transform: uppercase; color: rgba(224,224,224,0.25); margin-bottom: 6px; }
+  .subtitle { font-size: 10px; color: rgba(224,224,224,0.15); margin-bottom: 36px; letter-spacing: 2px; }
+
+  #play-btn {
+    width: 72px; height: 72px; border-radius: 50%; border: 1.5px solid rgba(224,224,224,0.2);
+    background: transparent; color: #e0e0e0; font-size: 22px; cursor: pointer;
+    transition: all 0.3s; display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(224,224,224,0.5); }
+  #play-btn.playing { border-color: rgba(200,40,40,0.6); color: #c82828; }
+
+  .section-display {
+    margin-top: 28px; font-size: 11px; color: rgba(224,224,224,0.15); letter-spacing: 3px;
+    min-height: 18px; transition: color 0.4s;
+  }
+  .section-display.active { color: rgba(224,224,224,0.4); }
+  .bar-display { font-size: 10px; color: rgba(224,224,224,0.1); margin-top: 4px; letter-spacing: 1px; }
+
+  .step-dots {
+    display: flex; gap: 6px; margin-top: 20px;
+  }
+  .step-dots .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(224,224,224,0.06);
+    transition: all 0.06s;
+  }
+
+  #credits {
+    position: fixed; bottom: 14px; left: 20px;
+    color: rgba(224,224,224,0.08); font-size: 9px; letter-spacing: 2px; z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div id="ui">
+  <h1>Hallman</h1>
+  <div class="subtitle">mills hats v1 — 133 bpm</div>
+  <button id="play-btn">▶</button>
+  <div class="section-display" id="section-display"></div>
+  <div class="bar-display" id="bar-display"></div>
+  <div class="step-dots" id="step-dots"></div>
+</div>
+
+<div id="credits">HALLMAN · JB01 · VIZ DITHER</div>
+
+<script type="module">
+import { JB01Engine } from '../../public/jb01/dist/machines/jb01/engine.js';
+
+// ══════════════════════════════════════════
+// TRACK DATA (identical to index.html)
+// ══════════════════════════════════════════
+const BPM = 133;
+const STEP_DUR = 60 / BPM / 4;
+
+const kickLevel = Math.pow(10, -13 / 20);
+const clapLevel = Math.pow(10, -15 / 20);
+
+function d(v) { return v / 50; }
+function t(v) { return v / 100; }
+
+const patterns = {
+  A: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] },
+    automation: {},
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+  B: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [75,15,60,20,70,15,55,25,75,10,65,20,50,30,70,15].map(d),
+      'ch.tone':  [25,85,40,80,30,85,45,75,25,90,35,80,50,70,30,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+  D: {
+    voices: { ch: [0,2,4,6,8,10,12,14], oh: [2,6,10,14] },
+    automation: {
+      'ch.decay': [20,25,30,35,40,50,60,70,75,80,85,88,90,92,95,95].map(d),
+      'ch.tone':  [80,75,70,65,60,55,50,45,40,35,30,25,20,15,15,10].map(t),
+    },
+    params: { kick: { decay: d(10), level: 0 } }
+  },
+  C: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10].map(d),
+      'ch.tone':  [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+  E: {
+    voices: { kick: [0,4,8,12], clap: [4,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [95,95,95,95,5,5,5,5,95,95,95,95,5,5,5,5].map(d),
+      'ch.tone':  [10,10,10,10,90,90,90,90,10,10,10,10,90,90,90,90].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel }, clap: { level: clapLevel } }
+  },
+  F: {
+    voices: { kick: [0,4,8,12], clap: [4,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10].map(d),
+      'ch.tone':  [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel }, clap: { level: clapLevel } }
+  },
+  G: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] },
+    automation: {
+      'ch.decay': [80,70,65,55,50,45,40,35,30,25,20,20,15,15,10,10].map(d),
+      'ch.tone':  [30,35,40,45,50,55,60,65,70,72,75,78,80,82,85,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+};
+
+const arrangement = [
+  { bars: 4, pattern: 'A', label: 'INTRO — DRY GRID',          energy: 0.08 },
+  { bars: 4, pattern: 'B', label: 'BUILD — HATS BREATHING',    energy: 0.35 },
+  { bars: 2, pattern: 'D', label: 'BRIDGE — KICK DROPS',       energy: 0.2  },
+  { bars: 4, pattern: 'E', label: 'PEAK — BLOCK SLAMS',        energy: 0.95 },
+  { bars: 4, pattern: 'C', label: 'FULL TRIBAL — MASH',        energy: 0.8  },
+  { bars: 2, pattern: 'D', label: 'BRIDGE — RESET',            energy: 0.2  },
+  { bars: 4, pattern: 'F', label: 'PEAK 2 — MASH + CLAP',     energy: 0.95 },
+  { bars: 4, pattern: 'E', label: 'RELENTLESS — BLOCK SLAMS',  energy: 0.9  },
+  { bars: 4, pattern: 'B', label: 'PULL BACK',                 energy: 0.3  },
+  { bars: 4, pattern: 'G', label: 'OUTRO — TIGHTENING',        energy: 0.12 },
+];
+
+// ══════════════════════════════════════════
+// CANVAS
+// ══════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx2d = canvas.getContext('2d');
+let W, H, cx, cy;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ══════════════════════════════════════════
+// VISUAL STATE — fed by the scheduler
+// ══════════════════════════════════════════
+const viz = {
+  hatDecay: 0,        // 0-100 producer scale
+  hatTone: 50,        // 0-100 producer scale
+  kickHit: 0,         // 0-1, decays
+  clapHit: 0,         // 0-1, decays
+  ohHit: 0,           // 0-1, decays
+  chHit: 0,           // 0-1, decays
+  energy: 0.08,       // section energy
+  targetEnergy: 0.08,
+  sectionLabel: '',
+  noKick: false,      // bridge mode — floating
+  stepInPattern: 0,
+  globalStep: 0,
+  playing: false,
+  // smoothed
+  smoothDecay: 0,
+  smoothTone: 50,
+  prevDecay: 0,       // for slam detection
+};
+
+// ══════════════════════════════════════════
+// VISUAL ELEMENTS
+// ══════════════════════════════════════════
+
+// Central orb — the hat decay incarnate
+// High decay = large, soft, diffused. Low decay = pinpoint, sharp.
+function drawHatOrb() {
+  const decay = viz.smoothDecay / 100;
+  const tone = viz.smoothTone / 100;
+
+  // Size: 4px at decay=0, fills ~40% of screen at decay=1
+  const minR = 3;
+  const maxR = Math.min(W, H) * 0.22;
+  const r = minR + decay * decay * (maxR - minR); // quadratic — feels more dramatic
+
+  // Color: tone drives temperature
+  // Low tone (0) = deep red/amber, High tone (1) = near-white
+  const red = Math.floor(180 + tone * 75);
+  const green = Math.floor(20 + tone * 180);
+  const blue = Math.floor(5 + tone * 200);
+
+  // Glow layers — more diffuse at high decay
+  const layers = decay > 0.5 ? 4 : 2;
+  for (let i = layers; i >= 0; i--) {
+    const layerR = r * (1 + i * 0.6 * decay);
+    const alpha = (0.03 + decay * 0.08) / (i + 1);
+    const grad = ctx2d.createRadialGradient(cx, cy, 0, cx, cy, layerR);
+    grad.addColorStop(0, `rgba(${red},${green},${blue},${alpha * 2})`);
+    grad.addColorStop(0.4, `rgba(${red},${green},${blue},${alpha})`);
+    grad.addColorStop(1, `rgba(${red},${green},${blue},0)`);
+    ctx2d.fillStyle = grad;
+    ctx2d.fillRect(cx - layerR, cy - layerR, layerR * 2, layerR * 2);
+  }
+
+  // Hard core — small bright center
+  const coreR = Math.max(1.5, r * 0.15);
+  const coreAlpha = 0.4 + (1 - decay) * 0.5; // brighter when tight
+  ctx2d.beginPath();
+  ctx2d.arc(cx, cy, coreR, 0, Math.PI * 2);
+  ctx2d.fillStyle = `rgba(${Math.min(255, red + 40)},${Math.min(255, green + 40)},${Math.min(255, blue + 30)},${coreAlpha})`;
+  ctx2d.fill();
+}
+
+// Kick pulse — expanding ring from center
+const kickRings = [];
+class KickRing {
+  constructor() {
+    this.r = 20;
+    this.maxR = Math.min(W, H) * 0.35;
+    this.life = 1;
+  }
+  update() {
+    this.r += (this.maxR - this.r) * 0.04;
+    this.life *= 0.96;
+    return this.life > 0.01;
+  }
+  draw() {
+    ctx2d.beginPath();
+    ctx2d.arc(cx, cy, this.r, 0, Math.PI * 2);
+    ctx2d.strokeStyle = `rgba(140,30,20,${this.life * 0.15})`;
+    ctx2d.lineWidth = 1 + this.life * 2;
+    ctx2d.stroke();
+  }
+}
+
+// Clap flash — sharp diagonal slash
+const clapFlashes = [];
+class ClapFlash {
+  constructor() {
+    this.life = 1;
+    this.angle = -0.4 + Math.random() * 0.8;
+    this.len = W * 0.6 + Math.random() * W * 0.3;
+    this.offset = (Math.random() - 0.5) * H * 0.3;
+  }
+  update() {
+    this.life *= 0.88;
+    return this.life > 0.02;
+  }
+  draw() {
+    const dx = Math.cos(this.angle) * this.len / 2;
+    const dy = Math.sin(this.angle) * this.len / 2;
+    const oy = this.offset;
+    ctx2d.beginPath();
+    ctx2d.moveTo(cx - dx, cy + oy - dy);
+    ctx2d.lineTo(cx + dx, cy + oy + dy);
+    ctx2d.strokeStyle = `rgba(240,230,220,${this.life * 0.6})`;
+    ctx2d.lineWidth = 0.5 + this.life * 2;
+    ctx2d.stroke();
+  }
+}
+
+// Open hat bloom — soft expanding halo
+const ohBlooms = [];
+class OHBloom {
+  constructor() {
+    this.r = 30 + Math.random() * 20;
+    this.maxR = 80 + Math.random() * 100;
+    this.life = 1;
+    this.x = cx + (Math.random() - 0.5) * W * 0.15;
+    this.y = cy + (Math.random() - 0.5) * H * 0.15;
+  }
+  update() {
+    this.r += (this.maxR - this.r) * 0.05;
+    this.life *= 0.965;
+    if (viz.noKick) this.y -= 0.3; // float upward in bridges
+    return this.life > 0.01;
+  }
+  draw() {
+    const grad = ctx2d.createRadialGradient(this.x, this.y, this.r * 0.5, this.x, this.y, this.r);
+    grad.addColorStop(0, `rgba(200,100,40,${this.life * 0.06})`);
+    grad.addColorStop(1, `rgba(200,100,40,0)`);
+    ctx2d.fillStyle = grad;
+    ctx2d.beginPath();
+    ctx2d.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx2d.fill();
+  }
+}
+
+// Hat scatter lines — short marks that radiate from center
+const hatMarks = [];
+class HatMark {
+  constructor(decay, tone) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 30 + Math.random() * (20 + decay * 200);
+    this.x = cx + Math.cos(angle) * dist;
+    this.y = cy + Math.sin(angle) * dist;
+    this.angle = angle + (Math.random() - 0.5) * 0.8;
+    this.len = 2 + decay * 20;
+    this.life = 1;
+    this.decay = decay;
+    this.tone = tone;
+    this.speed = 0.5 + decay * 2;
+    this.vx = Math.cos(angle) * this.speed;
+    this.vy = Math.sin(angle) * this.speed;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vx *= 0.97;
+    this.vy *= 0.97;
+    if (viz.noKick) this.vy -= 0.15; // float up in bridges
+    this.life *= (0.92 + this.decay * 0.05); // longer trails at high decay
+    return this.life > 0.02;
+  }
+  draw() {
+    const r = Math.floor(160 + this.tone * 90);
+    const g = Math.floor(30 + this.tone * 160);
+    const b = Math.floor(10 + this.tone * 180);
+    const ex = this.x + Math.cos(this.angle) * this.len;
+    const ey = this.y + Math.sin(this.angle) * this.len;
+    ctx2d.beginPath();
+    ctx2d.moveTo(this.x, this.y);
+    ctx2d.lineTo(ex, ey);
+    ctx2d.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.5})`;
+    ctx2d.lineWidth = this.decay > 0.5 ? 1.2 : 0.6;
+    ctx2d.stroke();
+  }
+}
+
+// Block slam overlay — for pattern E block detection
+let slamAlpha = 0;
+let slamWide = false;
+
+// ══════════════════════════════════════════
+// STEP DOTS
+// ══════════════════════════════════════════
+const dotsEl = document.getElementById('step-dots');
+for (let i = 0; i < 16; i++) {
+  const dot = document.createElement('div');
+  dot.className = 'dot';
+  dotsEl.appendChild(dot);
+}
+const dots = dotsEl.querySelectorAll('.dot');
+
+function updateDots(stepIdx, decayRaw) {
+  // decayRaw is 0-100 producer scale for current step's automation
+  dots.forEach((dot, i) => {
+    if (i === stepIdx) {
+      const norm = decayRaw / 100;
+      const size = 5 + norm * 7;
+      const r = Math.floor(160 + (1 - norm) * 80);
+      const g = Math.floor(30 + (1 - norm) * 140);
+      const b = Math.floor(10 + (1 - norm) * 160);
+      const alpha = 0.3 + norm * 0.7;
+      dot.style.width = size + 'px';
+      dot.style.height = size + 'px';
+      dot.style.background = `rgba(${r},${g},${b},${alpha})`;
+      dot.style.boxShadow = norm > 0.5 ? `0 0 ${4 + norm * 8}px rgba(${r},${g},${b},${alpha * 0.5})` : 'none';
+    } else {
+      dot.style.width = '8px';
+      dot.style.height = '8px';
+      dot.style.background = 'rgba(224,224,224,0.06)';
+      dot.style.boxShadow = 'none';
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// RENDER LOOP
+// ══════════════════════════════════════════
+let frameCount = 0;
+
+function render() {
+  requestAnimationFrame(render);
+  frameCount++;
+
+  // Smooth energy
+  viz.energy += (viz.targetEnergy - viz.energy) * 0.03;
+
+  // Smooth decay & tone (fast follow — hat changes every step)
+  viz.smoothDecay += (viz.hatDecay - viz.smoothDecay) * 0.3;
+  viz.smoothTone += (viz.hatTone - viz.smoothTone) * 0.3;
+
+  // Decay hits
+  viz.kickHit *= 0.9;
+  viz.clapHit *= 0.85;
+  viz.ohHit *= 0.93;
+  viz.chHit *= 0.88;
+  slamAlpha *= 0.88;
+
+  // Background fade — longer trails at high energy/decay
+  const fadeSpeed = viz.noKick ? 0.06 : (0.14 - viz.energy * 0.06);
+  ctx2d.fillStyle = `rgba(10,10,10,${fadeSpeed})`;
+  ctx2d.fillRect(0, 0, W, H);
+
+  if (!viz.playing) {
+    // Idle state — barely-there breathing dot
+    const breath = Math.sin(frameCount * 0.015) * 0.5 + 0.5;
+    const r = 2 + breath * 3;
+    ctx2d.beginPath();
+    ctx2d.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx2d.fillStyle = `rgba(140,30,20,${0.15 + breath * 0.1})`;
+    ctx2d.fill();
+    return;
+  }
+
+  // ── KICK PULSE — subtle screen throb ──
+  if (viz.kickHit > 0.1) {
+    ctx2d.fillStyle = `rgba(100,20,10,${viz.kickHit * 0.04})`;
+    ctx2d.fillRect(0, 0, W, H);
+  }
+
+  // ── CLAP FLASH — screen flash ──
+  if (viz.clapHit > 0.3) {
+    ctx2d.fillStyle = `rgba(240,230,220,${viz.clapHit * 0.08})`;
+    ctx2d.fillRect(0, 0, W, H);
+  }
+
+  // ── BLOCK SLAM OVERLAY ──
+  if (slamAlpha > 0.02) {
+    if (slamWide) {
+      // Wide block — fill with color
+      const tone = viz.smoothTone / 100;
+      const r = Math.floor(140 + (1 - tone) * 60);
+      const g = Math.floor(15 + (1 - tone) * 15);
+      ctx2d.fillStyle = `rgba(${r},${g},8,${slamAlpha * 0.06})`;
+      ctx2d.fillRect(0, 0, W, H);
+    }
+  }
+
+  // ── BRIDGE FLOAT — gravity shift ──
+  if (viz.noKick) {
+    // Subtle upward drift lines
+    if (frameCount % 3 === 0) {
+      const x = Math.random() * W;
+      const y = H;
+      ctx2d.beginPath();
+      ctx2d.moveTo(x, y);
+      ctx2d.lineTo(x + (Math.random() - 0.5) * 4, y - 10 - Math.random() * 30);
+      ctx2d.strokeStyle = `rgba(180,80,30,0.03)`;
+      ctx2d.lineWidth = 0.5;
+      ctx2d.stroke();
+    }
+  }
+
+  // ── DRAW ELEMENTS ──
+  // Hat orb — the star
+  drawHatOrb();
+
+  // Kick rings
+  for (let i = kickRings.length - 1; i >= 0; i--) {
+    kickRings[i].draw();
+    if (!kickRings[i].update()) kickRings.splice(i, 1);
+  }
+
+  // OH blooms
+  for (let i = ohBlooms.length - 1; i >= 0; i--) {
+    ohBlooms[i].draw();
+    if (!ohBlooms[i].update()) ohBlooms.splice(i, 1);
+  }
+
+  // Hat marks
+  for (let i = hatMarks.length - 1; i >= 0; i--) {
+    hatMarks[i].draw();
+    if (!hatMarks[i].update()) hatMarks.splice(i, 1);
+  }
+
+  // Clap flashes
+  for (let i = clapFlashes.length - 1; i >= 0; i--) {
+    clapFlashes[i].draw();
+    if (!clapFlashes[i].update()) clapFlashes.splice(i, 1);
+  }
+
+  // ── HORIZONTAL BREATH LINE ──
+  if (viz.energy > 0.1) {
+    const lineWidth = W * (0.1 + viz.smoothDecay / 100 * 0.4);
+    ctx2d.beginPath();
+    ctx2d.moveTo(cx - lineWidth / 2, cy);
+    ctx2d.lineTo(cx + lineWidth / 2, cy);
+    ctx2d.strokeStyle = `rgba(224,224,224,${0.02 + viz.energy * 0.02})`;
+    ctx2d.lineWidth = 0.5;
+    ctx2d.stroke();
+  }
+}
+
+render();
+
+// ══════════════════════════════════════════
+// PLAYBACK ENGINE (from index.html + viz hooks)
+// ══════════════════════════════════════════
+let audioCtx = null;
+let engine = null;
+let playing = false;
+let nextStepTime = 0;
+let currentStep = 0;
+let currentSectionIdx = 0;
+let currentBar = 0;
+let schedulerTimer = null;
+
+const SCHEDULE_AHEAD = 0.1;
+const LOOKAHEAD = 25;
+
+function getSection() { return arrangement[currentSectionIdx]; }
+function getPattern() { return patterns[getSection().pattern]; }
+
+function applyParams(pat) {
+  for (const [voice, params] of Object.entries(pat.params || {})) {
+    for (const [param, value] of Object.entries(params)) {
+      engine.setVoiceParam(voice, param, value);
+    }
+  }
+}
+
+function applyAutomation(pat, stepIdx) {
+  for (const [path, values] of Object.entries(pat.automation || {})) {
+    const [voiceId, paramId] = path.split('.');
+    const val = values[stepIdx % values.length];
+    if (val !== null && val !== undefined) {
+      engine.setVoiceParam(voiceId, paramId, val);
+    }
+  }
+}
+
+// Raw automation values (producer scale) for viz
+function getAutomationRaw(pat, stepIdx) {
+  const section = getSection();
+  const patKey = section.pattern;
+
+  // Reverse the d() and t() transforms to get producer values
+  let decayRaw = 0;
+  let toneRaw = 50;
+
+  const autoSrc = {
+    A: { decay: null, tone: null },
+    B: { decay: [75,15,60,20,70,15,55,25,75,10,65,20,50,30,70,15], tone: [25,85,40,80,30,85,45,75,25,90,35,80,50,70,30,85] },
+    D: { decay: [20,25,30,35,40,50,60,70,75,80,85,88,90,92,95,95], tone: [80,75,70,65,60,55,50,45,40,35,30,25,20,15,15,10] },
+    C: { decay: [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10], tone: [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85] },
+    E: { decay: [95,95,95,95,5,5,5,5,95,95,95,95,5,5,5,5], tone: [10,10,10,10,90,90,90,90,10,10,10,10,90,90,90,90] },
+    F: { decay: [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10], tone: [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85] },
+    G: { decay: [80,70,65,55,50,45,40,35,30,25,20,20,15,15,10,10], tone: [30,35,40,45,50,55,60,65,70,72,75,78,80,82,85,85] },
+  };
+
+  const src = autoSrc[patKey];
+  if (src && src.decay) {
+    decayRaw = src.decay[stepIdx % 16];
+    toneRaw = src.tone[stepIdx % 16];
+  }
+
+  return { decayRaw, toneRaw };
+}
+
+function scheduleStep(time) {
+  const pat = getPattern();
+  const stepInPattern = currentStep % 16;
+  const section = getSection();
+
+  // Apply automation
+  applyAutomation(pat, stepInPattern);
+
+  // Get raw values for visualizer
+  const { decayRaw, toneRaw } = getAutomationRaw(pat, stepInPattern);
+
+  // Trigger voices + viz events
+  for (const [voiceId, steps] of Object.entries(pat.voices)) {
+    if (steps.includes(stepInPattern)) {
+      engine.trigger(voiceId, 1, time);
+    }
+  }
+
+  // ── VIZ HOOKS ──
+  // Schedule visual update close to audio time
+  const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
+  setTimeout(() => {
+    viz.hatDecay = decayRaw;
+    viz.hatTone = toneRaw;
+    viz.stepInPattern = stepInPattern;
+    viz.noKick = !pat.voices.kick || pat.voices.kick.length === 0;
+    viz.targetEnergy = section.energy;
+
+    // Block slam detection (pattern E)
+    const prevDecay = viz.prevDecay;
+    if (Math.abs(decayRaw - prevDecay) > 60) {
+      slamAlpha = 1;
+      slamWide = decayRaw > prevDecay;
+    }
+    viz.prevDecay = decayRaw;
+
+    // Kick
+    if (pat.voices.kick && pat.voices.kick.includes(stepInPattern)) {
+      viz.kickHit = 1;
+      kickRings.push(new KickRing());
+    }
+
+    // Clap
+    if (pat.voices.clap && pat.voices.clap.includes(stepInPattern)) {
+      viz.clapHit = 1;
+      clapFlashes.push(new ClapFlash());
+      if (Math.random() < 0.5) clapFlashes.push(new ClapFlash()); // double slash
+    }
+
+    // Open hat
+    if (pat.voices.oh && pat.voices.oh.includes(stepInPattern)) {
+      viz.ohHit = 1;
+      ohBlooms.push(new OHBloom());
+    }
+
+    // Closed hat marks
+    if (pat.voices.ch && pat.voices.ch.includes(stepInPattern)) {
+      viz.chHit = 1;
+      const count = 1 + Math.floor(viz.energy * 4);
+      for (let i = 0; i < count; i++) {
+        hatMarks.push(new HatMark(decayRaw / 100, toneRaw / 100));
+      }
+    }
+
+    // Update dots
+    updateDots(stepInPattern, decayRaw);
+
+    // UI
+    document.getElementById('section-display').textContent = section.label;
+    document.getElementById('section-display').classList.add('active');
+    document.getElementById('bar-display').textContent =
+      `bar ${currentBar + 1} / ${arrangement.reduce((s, a) => s + a.bars, 0)}`;
+  }, delay);
+}
+
+function advanceStep() {
+  currentStep++;
+  const stepInPattern = currentStep % 16;
+
+  if (stepInPattern === 0) {
+    currentBar++;
+    let barsBeforeSection = 0;
+    for (let i = 0; i < currentSectionIdx; i++) barsBeforeSection += arrangement[i].bars;
+    const barsInSection = currentBar - barsBeforeSection;
+
+    if (barsInSection >= getSection().bars) {
+      currentSectionIdx++;
+      if (currentSectionIdx >= arrangement.length) {
+        stop();
+        return false;
+      }
+      applyParams(getPattern());
+    }
+  }
+  return true;
+}
+
+function scheduler() {
+  while (nextStepTime < audioCtx.currentTime + SCHEDULE_AHEAD) {
+    scheduleStep(nextStepTime);
+    nextStepTime += STEP_DUR;
+    if (!advanceStep()) return;
+  }
+  schedulerTimer = setTimeout(scheduler, LOOKAHEAD);
+}
+
+function start() {
+  if (!audioCtx) {
+    audioCtx = new AudioContext({ sampleRate: 44100 });
+    engine = new JB01Engine({ context: audioCtx, bpm: BPM });
+    engine.output.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  currentStep = 0;
+  currentSectionIdx = 0;
+  currentBar = 0;
+  viz.prevDecay = 0;
+  viz.hatDecay = 0;
+  viz.hatTone = 50;
+  viz.smoothDecay = 0;
+  viz.smoothTone = 50;
+  viz.playing = true;
+
+  applyParams(getPattern());
+  nextStepTime = audioCtx.currentTime + 0.05;
+  playing = true;
+  document.getElementById('play-btn').textContent = '■';
+  document.getElementById('play-btn').classList.add('playing');
+  scheduler();
+}
+
+function stop() {
+  playing = false;
+  viz.playing = false;
+  viz.targetEnergy = 0;
+  if (schedulerTimer) clearTimeout(schedulerTimer);
+  document.getElementById('play-btn').textContent = '▶';
+  document.getElementById('play-btn').classList.remove('playing');
+  document.getElementById('section-display').classList.remove('active');
+  document.getElementById('section-display').textContent = '';
+  document.getElementById('bar-display').textContent = '';
+  dots.forEach(d => {
+    d.style.width = '8px';
+    d.style.height = '8px';
+    d.style.background = 'rgba(224,224,224,0.06)';
+    d.style.boxShadow = 'none';
+  });
+}
+
+document.getElementById('play-btn').addEventListener('click', () => {
+  if (playing) stop(); else start();
+});
+</script>
+</body>
+</html>
