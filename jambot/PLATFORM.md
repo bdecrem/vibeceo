@@ -4,6 +4,21 @@ A modular music production system. This document serves two audiences:
 1. **Code agents** building and maintaining the platform
 2. **Jambot** (the AI agent) making music
 
+
+**Memo to the Jambot Engineering Team — Coding Practices**
+
+**One source, one path.** Every parameter has exactly one canonical definition: the JSON file in `jambot/params/`. Web engines should read from these definitions, not maintain parallel defaults. JT90 has `param-defs.js` as a stepping stone, but the endgame is engines importing from JSON directly. When web code can't import a Node module (like `converters.js`), keep the duplicated logic as a local const with a comment pointing back to the source — never export it as a competing API. If you find yourself writing a conversion function, check `converters.js` first.
+
+**Public API only.** Use `session.set('jt90.kick.decay', 70)` and `session.jt90Pattern = pattern`, never `session._nodes`. The underscore means internal. If the public API doesn't expose what you need, add it to session.js — don't reach past it. This keeps instruments swappable: a new synth that implements `InstrumentNode` should plug in without callers knowing or caring about the underlying node.
+
+**Practical checklist for new instruments / effects:**
+- Add `params/<name>-params.json` first — this is your contract. Valid units are: `dB`, `0-100`, `semitones`, `Hz`, `pan`, `choice`.
+- Implement `InstrumentNode` interface (`getParam`, `setParam`, `getPattern`, `setPattern`, `renderPattern`, `getDescriptor`, `getPatternLength`, `getOutputGain`). Registration in `params.js` calls `validateInterface()` automatically — if your node is missing a method, you'll know immediately.
+- Add a pattern setter on `session` (e.g., `get/set myNewSynthPattern`). No raw `_nodes` access from outside session.js.
+- The consistency test (`tests/test-defaults-consistency.js`) validates your JSON automatically once you add it to `ALL_PARAMS`. The round-trip test (`test-param-roundtrip.js`) picks it up from `converters.js`. Zero test code to write for basic coverage.
+- Run `node tests/run-tests.js` before pushing. All three test files should pass.
+
+
 ---
 
 # Part 1: For Code Agents

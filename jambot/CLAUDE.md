@@ -25,7 +25,18 @@
 ```bash
 npm start          # Run jambot
 npm run build      # Build for release (only when cutting a release)
+node jambot/tests/run-tests.js   # Run architecture tests
 ```
+
+### Mandatory: Run Tests After Changes
+
+**After making ANY code changes to `jambot/` files, ALWAYS run the architecture tests before committing:**
+
+```bash
+node jambot/tests/run-tests.js
+```
+
+If any test fails, fix the issue before committing. Do not skip or ignore failures.
 
 ## Headless API (For Other Agents)
 

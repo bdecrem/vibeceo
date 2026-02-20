@@ -331,7 +331,9 @@ const songTools = {
     if (!patterns[from]) return `No ${instrument} pattern "${from}" found`;
 
     patterns[to] = JSON.parse(JSON.stringify(patterns[from]));
-    return `Copied ${instrument} pattern "${from}" to "${to}"`;
+    // Load the copy into the live node so subsequent tweaks apply to it
+    await songTools.load_pattern({ instrument, name: to }, session, context);
+    return `Copied ${instrument} pattern "${from}" to "${to}" (now active)`;
   },
 
   /**

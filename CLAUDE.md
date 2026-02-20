@@ -353,6 +353,7 @@ See `sms-bot/documentation/AMBER-SYSTEM.md` for full email setup (SendGrid confi
 **After code changes:**
 - Inform user if rebuild/restart needed
 - SMS bot changes → `cd sms-bot && npm run build` then restart listener
+- **Jambot changes → ALWAYS run `node jambot/tests/run-tests.js` before committing. Fix any failures.**
 
 ## Claude Code Subagents
 
