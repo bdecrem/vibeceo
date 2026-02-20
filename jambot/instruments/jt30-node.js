@@ -12,6 +12,7 @@
 
 import { InstrumentNode } from '../core/node.js';
 import { OfflineAudioContext } from 'node-web-audio-api';
+import { toEngine } from '../params/converters.js';
 
 // Load params definition
 import { createRequire } from 'module';
@@ -20,21 +21,6 @@ const JT30_PARAMS = require('../params/jt30-params.json');
 
 // Voice (monophonic)
 const VOICES = ['bass'];
-
-/**
- * Convert producer units to engine units (0-1)
- */
-function toEngine(value, paramDef) {
-  if (paramDef.unit === 'choice') {
-    return value;
-  }
-  if (paramDef.unit === '0-100') {
-    return value / 100;
-  }
-  // For Hz, cents, etc., normalize to 0-1
-  const range = paramDef.max - paramDef.min;
-  return (value - paramDef.min) / range;
-}
 
 /**
  * Create an empty pattern
