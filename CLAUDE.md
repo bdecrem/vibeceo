@@ -95,6 +95,127 @@ await context.route('**/*', route => route.continue({
 
 Run with: `node web/test-909-sweep.mjs`
 
+## Web Pages & Routing Guide
+
+### Two Ways to Add Web Pages
+
+**Option A: Static HTML** (standalone pages, no React needed)
+- Put `.html` files in `web/public/<folder>/`
+- URL: `kochi.to/<folder>/filename.html`
+- Good for: standalone experiments, visualizers, simple interactive pages
+- Import paths must be **absolute** from root: `/jb01/dist/...` NOT `../../public/jb01/...`
+
+**Option B: Next.js React Pages** (full app features, SSR, API routes)
+- Create `web/app/<folder>/page.tsx`
+- URL: `kochi.to/<folder>`
+- Good for: games with social integration, dynamic content, API-backed pages
+
+### ⚠️ Middleware — REQUIRED for New Routes
+
+Every new top-level route MUST be added to `web/middleware.ts` or it gets caught by the webtoys catch-all and rerouted. **Two places to update:**
+
+1. **Inside the kochi.to domain handler** (~line 180 area) — add a bypass:
+```typescript
+if (pathname.startsWith('/yourapp')) {
+  return NextResponse.next()
+}
+```
+
+2. **In the general bypass list** (~line 470 area) — add to the `pathname.startsWith(...)` chain:
+```typescript
+pathname.startsWith('/yourapp') ||
+```
+
+**Miss either one → 404 or wrong content.**
+
+### Domain Routing
+
+| Domain | Root rewrites to | Notes |
+|--------|-----------------|-------|
+| `kochi.to` | `/kochi` | Most routes bypassed, others → `/kochi/*` |
+| `pixelpit.gg` | `/pixelpit` | `/pp/*` → `/pixelpit/arcade/*` |
+| `intheamber.com` | `/amber` | All paths get `/amber` prefix except synth routes |
+| `shipshot.io` | `/shipshot` | |
+| `mutabl.co` | `/mutabl` | |
+
+### Static File Import Paths
+
+Files in `web/public/` are served from root. HTML importing JS from other public folders:
+- ✅ `/jb01/dist/machines/jb01/engine.js` (absolute from root)
+- ❌ `../../public/jb01/dist/...` (breaks depending on serving context)
+
+---
+
+## OpenGraph Images
+
+Every page/game needs OG images for social sharing.
+
+**File:** `opengraph-image.tsx` in your route folder.
+
+```tsx
+import { ImageResponse } from 'next/og';
+
+export const runtime = 'edge';
+export const alt = 'YOUR TITLE';
+export const size = { width: 1200, height: 630 };
+export const contentType = 'image/png';
+
+export default async function Image() {
+  return new ImageResponse(
+    (
+      <div style={{
+        background: '#0a0a0a',
+        width: '100%', height: '100%',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{ fontSize: 120, fontWeight: 700, color: '#ffffff' }}>TITLE</div>
+        <div style={{ fontSize: 28, color: '#888888' }}>subtitle</div>
+      </div>
+    ),
+    { ...size }
+  );
+}
+```
+
+### Score Share Routes (games)
+
+```
+arcade/[game]/share/[score]/
+├── layout.tsx           # generateMetadata()
+├── page.tsx             # Client redirect back to game
+└── opengraph-image.tsx  # Dynamic score image
+```
+
+Use `createScoreShareImage()` from `@/app/pixelpit/components` for consistent styling.
+
+### 🚨 Satori CSS Limitations (causes silent 502s)
+
+| ❌ Don't Use | ✅ Use Instead |
+|---|---|
+| `<>...</>` fragments | `<div>` wrapper |
+| `radial-gradient()` | `linear-gradient` only |
+| `rgba(r,g,b,a)` | Hex: `#rrggbbaa` |
+| `transparent` | `#00000000` |
+| `borderRadius: '50%'` | `borderRadius: 9999` |
+| `filter`, `backdrop-filter` | Remove |
+| `calc()`, CSS vars | Literal values |
+
+Hex alpha: 50%=`80`, 25%=`40`, 15%=`26`, 0%=`00`
+
+**Test:** Visit `https://domain/route/opengraph-image` directly.
+
+### metadataBase (CRITICAL)
+
+Layout MUST set this or OG URLs use wrong domain:
+```tsx
+export const metadata: Metadata = {
+  metadataBase: new URL('https://yourdomain.com'),
+};
+```
+
+---
+
 ## Essential Documentation
 
 **When user says "read the docs" or "check documentation", go to `sms-bot/documentation/`.**
