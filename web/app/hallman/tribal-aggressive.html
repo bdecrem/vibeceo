@@ -6,13 +6,6 @@
 <title>Hallman — Mills Hats v1 — Visualizer</title>
 <meta property="og:title" content="Hallman — Mills Hats v1">
 <meta property="og:description" content="Tribal techno. 133 BPM. Hat decay automation. The hats ARE the show.">
-<meta property="og:image" content="https://kochi.to/hallman/viz-og.png">
-<meta property="og:url" content="https://kochi.to/hallman/viz.html">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Hallman — Mills Hats v1">
-<meta name="twitter:description" content="Tribal techno. 133 BPM. Hat decay automation. The hats ARE the show.">
-<meta name="twitter:image" content="https://kochi.to/hallman/viz-og.png">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -65,6 +58,38 @@
     color: rgba(255,255,255,0.08); z-index: 10;
   }
 
+  /* WORD FLASH LAYER */
+  #word-layer {
+    position: fixed; inset: 0; z-index: 8;
+    pointer-events: none; overflow: hidden;
+  }
+  .flash-word {
+    position: absolute;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    white-space: nowrap;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    animation: wordFlash 0.6s ease-out forwards;
+  }
+  @keyframes wordFlash {
+    0% { opacity: 0.9; transform: scale(1.1); filter: blur(0px); }
+    30% { opacity: 0.7; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.95); filter: blur(3px); }
+  }
+
+  /* SECTION TRANSITION FLASH */
+  #section-flash {
+    position: fixed; inset: 0; z-index: 7;
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.05s;
+  }
+
+  /* SCREEN SHAKE */
+  #shake-wrapper {
+    position: fixed; inset: 0;
+  }
+
   /* Tap anywhere to restart when stopped */
   #restart-zone {
     position: fixed; inset: 0; z-index: 9;
@@ -74,7 +99,12 @@
 </head>
 <body>
 
-<canvas id="c"></canvas>
+<div id="shake-wrapper">
+  <canvas id="c"></canvas>
+</div>
+
+<div id="section-flash"></div>
+<div id="word-layer"></div>
 
 <div id="overlay">
   <button id="play-btn">▶</button>
@@ -86,7 +116,7 @@
   <div class="bar-count" id="bar-count"></div>
 </div>
 
-<div id="credits">HALLMAN · JB01 · VIZ DITHER</div>
+<div id="credits">HALLMAN · JB01 · VIZ DITHER × AMBER</div>
 <div id="restart-zone"></div>
 
 <script type="module">
@@ -160,7 +190,6 @@ const patterns = {
   },
 };
 
-// Raw automation for viz (producer scale 0-100)
 const autoRaw = {
   A: { decay: null, tone: null },
   B: { decay: [75,15,60,20,70,15,55,25,75,10,65,20,50,30,70,15], tone: [25,85,40,80,30,85,45,75,25,90,35,80,50,70,30,85] },
@@ -201,37 +230,165 @@ resize();
 window.addEventListener('resize', resize);
 
 // ══════════════════════════════════════════
-// COLOR ENGINE
+// COLOR ENGINE — EXPANDED PALETTE
 // ══════════════════════════════════════════
-// Tone 0 (dark hat) → deep blood red / dark amber
-// Tone 100 (bright hat) → searing white-gold
-// Decay controls saturation & brightness spread
+// Tone 0 (dark) → deep blood red / near-black crimson
+// Tone 50 → hot amber / orange
+// Tone 100 (bright) → electric white-blue / searing cyan-white
 
 function toneToRGB(tone01, brightness) {
-  // tone 0 = deep crimson (180, 20, 10)
-  // tone 0.5 = hot amber (255, 120, 20)
-  // tone 1 = white-gold (255, 240, 200)
   const b = brightness || 1;
   let r, g, bl;
-  if (tone01 < 0.5) {
-    const t2 = tone01 * 2;
-    r = (140 + t2 * 115) * b;
-    g = (12 + t2 * 108) * b;
-    bl = (8 + t2 * 12) * b;
+  if (tone01 < 0.35) {
+    // Deep crimson → hot red
+    const t2 = tone01 / 0.35;
+    r = (80 + t2 * 175) * b;
+    g = (5 + t2 * 20) * b;
+    bl = (5 + t2 * 5) * b;
+  } else if (tone01 < 0.65) {
+    // Hot red → amber/orange
+    const t2 = (tone01 - 0.35) / 0.3;
+    r = 255 * b;
+    g = (25 + t2 * 120) * b;
+    bl = (10 + t2 * 20) * b;
   } else {
-    const t2 = (tone01 - 0.5) * 2;
-    r = (255) * b;
-    g = (120 + t2 * 120) * b;
-    bl = (20 + t2 * 180) * b;
+    // Amber → electric white-blue
+    const t2 = (tone01 - 0.65) / 0.35;
+    r = (255 - t2 * 40) * b;
+    g = (145 + t2 * 110) * b;
+    bl = (30 + t2 * 225) * b;
   }
   return [Math.min(255, Math.floor(r)), Math.min(255, Math.floor(g)), Math.min(255, Math.floor(bl))];
+}
+
+// Secondary palette for contrast flashes
+function toneToSecondary(tone01) {
+  // Complementary: low tone = cold blue, high tone = deep magenta
+  let r, g, b;
+  if (tone01 < 0.5) {
+    const t2 = tone01 * 2;
+    r = (20 + t2 * 40);
+    g = (40 + t2 * 60);
+    b = (180 - t2 * 60);
+  } else {
+    const t2 = (tone01 - 0.5) * 2;
+    r = (60 + t2 * 160);
+    g = (100 - t2 * 80);
+    b = (120 + t2 * 60);
+  }
+  return [Math.floor(r), Math.floor(g), Math.floor(b)];
+}
+
+// ══════════════════════════════════════════
+// WORD FLASH SYSTEM
+// ══════════════════════════════════════════
+const WORDS = ['DECAY', 'TONE', 'TRIBAL', 'MACHINE', 'BREATHE', 'PULSE', 'PARAMETER', 'AUTOMATE', 'MASH', 'FILTER', 'SWEEP', 'SLAM'];
+const wordLayer = document.getElementById('word-layer');
+let lastWordTime = 0;
+
+function flashWord(energy, tone01) {
+  const now = performance.now();
+  if (now - lastWordTime < 400) return; // cooldown
+  if (Math.random() > energy * 0.6) return; // probability scales with energy
+  lastWordTime = now;
+
+  const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+  const el = document.createElement('div');
+  el.className = 'flash-word';
+  el.textContent = word;
+
+  // Position — biased toward center but with spread
+  const spreadX = 0.2 + energy * 0.6;
+  const spreadY = 0.2 + energy * 0.5;
+  const x = cx + (Math.random() - 0.5) * W * spreadX;
+  const y = cy + (Math.random() - 0.5) * H * spreadY;
+
+  const [r, g, b] = toneToRGB(tone01, 0.9);
+  const size = 14 + Math.random() * 40 + energy * 30;
+
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.fontSize = size + 'px';
+  el.style.color = `rgb(${r},${g},${b})`;
+  el.style.textShadow = `0 0 ${10 + energy * 30}px rgba(${r},${g},${b},0.6)`;
+  el.style.transform = `rotate(${(Math.random() - 0.5) * 20}deg)`;
+
+  wordLayer.appendChild(el);
+  setTimeout(() => el.remove(), 700);
+}
+
+// Big section word — full screen
+function flashSectionWord(label, tone01) {
+  const el = document.createElement('div');
+  el.className = 'flash-word';
+  el.textContent = label;
+  el.style.left = '50%';
+  el.style.top = '50%';
+  el.style.transform = 'translate(-50%, -50%)';
+  el.style.fontSize = Math.min(W * 0.12, 120) + 'px';
+  const [r, g, b] = toneToRGB(tone01, 1.2);
+  el.style.color = `rgba(${r},${g},${b},0.8)`;
+  el.style.textShadow = `0 0 60px rgba(${r},${g},${b},0.8), 0 0 120px rgba(${r},${g},${b},0.4)`;
+  el.style.animationDuration = '1.2s';
+
+  wordLayer.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+// ══════════════════════════════════════════
+// SECTION TRANSITION FLASH
+// ══════════════════════════════════════════
+const sectionFlash = document.getElementById('section-flash');
+
+function triggerSectionFlash(fromEnergy, toEnergy, tone01) {
+  const intensity = Math.abs(toEnergy - fromEnergy);
+  if (intensity < 0.15) return;
+
+  const [r, g, b] = toneToRGB(tone01, 1.5);
+
+  if (toEnergy < fromEnergy) {
+    // Dropping energy — invert flash (white → black)
+    sectionFlash.style.background = `rgba(255,255,255,${intensity * 0.6})`;
+  } else {
+    // Rising energy — colored flash
+    sectionFlash.style.background = `rgba(${r},${g},${b},${intensity * 0.5})`;
+  }
+  sectionFlash.style.opacity = '1';
+  sectionFlash.style.transition = 'opacity 0.05s';
+
+  setTimeout(() => {
+    sectionFlash.style.transition = 'opacity 0.4s';
+    sectionFlash.style.opacity = '0';
+  }, 60);
+}
+
+// ══════════════════════════════════════════
+// SCREEN SHAKE
+// ══════════════════════════════════════════
+const shakeWrapper = document.getElementById('shake-wrapper');
+let shakeIntensity = 0;
+
+function triggerShake(amount) {
+  shakeIntensity = Math.max(shakeIntensity, amount);
+}
+
+function updateShake() {
+  if (shakeIntensity > 0.5) {
+    const x = (Math.random() - 0.5) * shakeIntensity;
+    const y = (Math.random() - 0.5) * shakeIntensity;
+    shakeWrapper.style.transform = `translate(${x}px, ${y}px)`;
+    shakeIntensity *= 0.85;
+  } else {
+    shakeWrapper.style.transform = '';
+    shakeIntensity = 0;
+  }
 }
 
 // ══════════════════════════════════════════
 // VISUAL STATE
 // ══════════════════════════════════════════
 const V = {
-  decay: 0, tone: 50,           // raw 0-100
+  decay: 0, tone: 50,
   smoothDecay: 0, smoothTone: 50,
   prevDecay: 0,
   kickHit: 0, clapHit: 0, ohHit: 0, chHit: 0,
@@ -241,35 +398,35 @@ const V = {
   step: 0,
   globalStep: 0,
   sectionPattern: 'A',
+  sectionLabel: 'INTRO',
+  prevSectionIdx: -1,
+  chaosMode: false,    // true during RELENTLESS
+  blockSlam: false,    // true during PEAK patterns
 };
 
 // ══════════════════════════════════════════
 // GEOMETRY SYSTEMS
 // ══════════════════════════════════════════
 
-// ── 1. RADIAL FIELD: concentric rings that expand with decay ──
-// The whole screen pulses with these
+// ── 1. RADIAL FIELD ──
 function drawRadialField() {
   const decay01 = V.smoothDecay / 100;
   const tone01 = V.smoothTone / 100;
   const [r, g, b] = toneToRGB(tone01);
   const energy = V.energy;
 
-  // Number of rings scales with energy
-  const ringCount = 3 + Math.floor(energy * 12);
-  const maxRadius = diag * (0.2 + decay01 * 0.5);
+  const ringCount = 4 + Math.floor(energy * 18);
+  const maxRadius = diag * (0.2 + decay01 * 0.55);
 
   for (let i = 0; i < ringCount; i++) {
     const t = i / ringCount;
     const radius = maxRadius * t;
     if (radius < 2) continue;
 
-    // Ring alpha — outer rings fainter
-    const alpha = (1 - t) * (0.04 + decay01 * 0.12) * energy;
+    const alpha = (1 - t) * (0.05 + decay01 * 0.18) * energy;
     if (alpha < 0.005) continue;
 
-    // Ring width — thicker at high decay
-    const lw = 0.5 + decay01 * 3 * (1 - t * 0.5);
+    const lw = 0.5 + decay01 * 4 * (1 - t * 0.5);
 
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -279,16 +436,16 @@ function drawRadialField() {
   }
 }
 
-// ── 2. STARBURST: radial lines from center, length = decay ──
+// ── 2. STARBURST ──
 function drawStarburst() {
   const decay01 = V.smoothDecay / 100;
   const tone01 = V.smoothTone / 100;
   const [r, g, b] = toneToRGB(tone01, 0.8);
   const energy = V.energy;
 
-  const count = 16 + Math.floor(energy * 32);
-  const len = 20 + decay01 * decay01 * diag * 0.45;
-  const baseAngle = V.globalStep * 0.02; // slow rotation
+  const count = 20 + Math.floor(energy * 44);
+  const len = 30 + decay01 * decay01 * diag * 0.5;
+  const baseAngle = V.globalStep * 0.02;
 
   for (let i = 0; i < count; i++) {
     const angle = baseAngle + (i / count) * Math.PI * 2;
@@ -303,149 +460,187 @@ function drawStarburst() {
     const x2 = cx + Math.cos(a) * outerR;
     const y2 = cy + Math.sin(a) * outerR;
 
-    // Vary alpha per ray — breathing effect
-    const rayAlpha = (0.02 + decay01 * 0.06) * energy * (0.5 + Math.sin(i * 3.1 + V.globalStep * 0.05) * 0.5);
+    const rayAlpha = (0.025 + decay01 * 0.08) * energy * (0.5 + Math.sin(i * 3.1 + V.globalStep * 0.05) * 0.5);
     if (rayAlpha < 0.003) continue;
 
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.strokeStyle = `rgba(${r},${g},${b},${rayAlpha})`;
-    ctx.lineWidth = 0.5 + decay01 * 1.5;
+    ctx.lineWidth = 0.5 + decay01 * 2;
     ctx.stroke();
   }
 }
 
-// ── 3. FULL-SCREEN WASH: the entire bg shifts color with tone ──
+// ── 3. FULL-SCREEN WASH ──
 function drawWash() {
   const decay01 = V.smoothDecay / 100;
   const tone01 = V.smoothTone / 100;
   const [r, g, b] = toneToRGB(tone01);
   const energy = V.energy;
 
-  // Radial gradient from center — intensity based on decay & energy
-  const radius = diag * (0.3 + decay01 * 0.4);
-  const alpha = (0.03 + decay01 * 0.1) * energy;
+  const radius = diag * (0.3 + decay01 * 0.5);
+  const alpha = (0.04 + decay01 * 0.14) * energy;
 
   const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
   grad.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
-  grad.addColorStop(0.6, `rgba(${r},${g},${b},${alpha * 0.4})`);
+  grad.addColorStop(0.5, `rgba(${r},${g},${b},${alpha * 0.5})`);
   grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 }
 
-// ── 4. BLOCK SLAM COLUMNS: vertical bands for pattern E ──
-// When decay slams between 95 and 5, fill the screen in columns
+// ── 4. BLOCK SLAM — massively enhanced ──
 const slamState = { alpha: 0, wide: false };
 
 function drawBlockSlam() {
   if (slamState.alpha < 0.01) return;
 
   const tone01 = V.smoothTone / 100;
-  const [r, g, b] = toneToRGB(tone01, 1.2);
+  const [r, g, b] = toneToRGB(tone01, 1.4);
+  const [sr, sg, sb] = toneToSecondary(tone01);
 
   if (slamState.wide) {
-    // WIDE — screen floods with color in vertical bands
-    const bandCount = 8;
+    // WIDE SLAM — screen floods, hard vertical bands + horizontal scan lines
+    const bandCount = 6;
     const bandW = W / bandCount;
     for (let i = 0; i < bandCount; i++) {
-      const bandAlpha = slamState.alpha * (0.15 + Math.sin(i * 1.7) * 0.08);
+      const bandAlpha = slamState.alpha * (0.2 + Math.sin(i * 2.3) * 0.1);
       ctx.fillStyle = `rgba(${r},${g},${b},${bandAlpha})`;
-      ctx.fillRect(i * bandW, 0, bandW * 0.85, H);
+      ctx.fillRect(i * bandW, 0, bandW * 0.9, H);
     }
+
+    // Horizontal scan lines
+    const scanCount = 20;
+    for (let i = 0; i < scanCount; i++) {
+      const y = (i / scanCount) * H;
+      ctx.fillStyle = `rgba(${sr},${sg},${sb},${slamState.alpha * 0.08})`;
+      ctx.fillRect(0, y, W, 2);
+    }
+
+    // Center explosion
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, diag * 0.4);
+    grad.addColorStop(0, `rgba(${r},${g},${b},${slamState.alpha * 0.25})`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
   } else {
-    // TIGHT — sharp thin vertical slits
-    const slitCount = 16;
+    // TIGHT SLAM — sharp slits + screen edges glow
+    const slitCount = 24;
     const gap = W / slitCount;
     for (let i = 0; i < slitCount; i++) {
       const x = gap * i + gap / 2;
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, H);
-      ctx.strokeStyle = `rgba(255,240,220,${slamState.alpha * 0.2})`;
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(${sr},${sg},${sb},${slamState.alpha * 0.25})`;
+      ctx.lineWidth = 1.5;
       ctx.stroke();
     }
+
+    // Edge vignette inversion
+    const edgeAlpha = slamState.alpha * 0.1;
+    const edgeGrad = ctx.createRadialGradient(cx, cy, diag * 0.3, cx, cy, diag * 0.55);
+    edgeGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    edgeGrad.addColorStop(1, `rgba(${sr},${sg},${sb},${edgeAlpha})`);
+    ctx.fillStyle = edgeGrad;
+    ctx.fillRect(0, 0, W, H);
   }
 }
 
-// ── 5. KICK SHOCKWAVE: full-screen expanding ring ──
+// ── 5. KICK SHOCKWAVE — beefier ──
 const kickWaves = [];
 class KickWave {
   constructor() {
     this.r = 0;
     this.life = 1;
+    this.thick = 2 + V.energy * 6;
   }
   update() {
-    this.r += (diag * 0.4 - this.r) * 0.06 + 4;
-    this.life *= 0.94;
+    this.r += (diag * 0.45 - this.r) * 0.07 + 5;
+    this.life *= 0.92;
     return this.life > 0.01;
   }
   draw() {
     const tone01 = V.smoothTone / 100;
-    const [r, g, b] = toneToRGB(tone01, 0.5);
+    const [r, g, b] = toneToRGB(tone01, 0.6);
     ctx.beginPath();
     ctx.arc(cx, cy, this.r, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.12})`;
-    ctx.lineWidth = 2 + this.life * 4;
+    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.15})`;
+    ctx.lineWidth = this.thick + this.life * 5;
     ctx.stroke();
   }
 }
 
-// ── 6. CLAP CRACK: diagonal slash across the full screen ──
+// ── 6. CLAP CRACK — more violent ──
 const clapCracks = [];
 class ClapCrack {
   constructor() {
     this.life = 1;
-    this.angle = (Math.random() - 0.5) * 0.6;
-    this.y = cy + (Math.random() - 0.5) * H * 0.4;
+    this.angle = (Math.random() - 0.5) * 0.8;
+    this.y = cy + (Math.random() - 0.5) * H * 0.5;
+    this.branches = Math.floor(2 + Math.random() * 3);
   }
   update() {
-    this.life *= 0.82;
+    this.life *= 0.78;
     return this.life > 0.01;
   }
   draw() {
-    const len = W * 0.8;
+    const len = W * 0.9;
     const dx = Math.cos(this.angle) * len / 2;
     const dy = Math.sin(this.angle) * len / 2;
 
-    // Main crack
+    // Main crack — thicker, brighter
     ctx.beginPath();
     ctx.moveTo(cx - dx, this.y - dy);
     ctx.lineTo(cx + dx, this.y + dy);
-    ctx.strokeStyle = `rgba(255,250,240,${this.life * 0.7})`;
-    ctx.lineWidth = 1 + this.life * 3;
+    ctx.strokeStyle = `rgba(255,250,240,${this.life * 0.85})`;
+    ctx.lineWidth = 1.5 + this.life * 4;
     ctx.stroke();
 
-    // Glow
-    ctx.strokeStyle = `rgba(255,200,100,${this.life * 0.15})`;
-    ctx.lineWidth = 8 + this.life * 20;
+    // Hot glow
+    ctx.strokeStyle = `rgba(255,180,80,${this.life * 0.2})`;
+    ctx.lineWidth = 12 + this.life * 30;
     ctx.stroke();
+
+    // Branch cracks
+    for (let i = 0; i < this.branches; i++) {
+      const t = 0.3 + Math.random() * 0.4;
+      const bx = (cx - dx) + (dx * 2) * t;
+      const by = (this.y - dy) + (dy * 2) * t;
+      const bLen = 30 + Math.random() * 80;
+      const bAngle = this.angle + (Math.random() - 0.5) * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.lineTo(bx + Math.cos(bAngle) * bLen, by + Math.sin(bAngle) * bLen);
+      ctx.strokeStyle = `rgba(255,240,220,${this.life * 0.4})`;
+      ctx.lineWidth = 0.5 + this.life * 2;
+      ctx.stroke();
+    }
   }
 }
 
-// ── 7. OPEN HAT HALOS: large soft expanding circles ──
+// ── 7. OPEN HAT HALOS ──
 const ohHalos = [];
 class OHHalo {
   constructor() {
-    this.x = cx + (Math.random() - 0.5) * W * 0.4;
-    this.y = cy + (Math.random() - 0.5) * H * 0.4;
+    this.x = cx + (Math.random() - 0.5) * W * 0.5;
+    this.y = cy + (Math.random() - 0.5) * H * 0.5;
     this.r = 20;
-    this.maxR = 100 + Math.random() * 200;
+    this.maxR = 120 + Math.random() * 250;
     this.life = 1;
   }
   update() {
-    this.r += (this.maxR - this.r) * 0.04;
-    this.life *= 0.97;
-    if (V.noKick) { this.y -= 0.8; this.r *= 1.002; } // float & expand in bridges
+    this.r += (this.maxR - this.r) * 0.05;
+    this.life *= 0.96;
+    if (V.noKick) { this.y -= 1.2; this.r *= 1.003; }
     return this.life > 0.01;
   }
   draw() {
     const tone01 = V.smoothTone / 100;
     const [r, g, b] = toneToRGB(tone01, 0.7);
-    const grad = ctx.createRadialGradient(this.x, this.y, this.r * 0.4, this.x, this.y, this.r);
-    grad.addColorStop(0, `rgba(${r},${g},${b},${this.life * 0.08})`);
+    const grad = ctx.createRadialGradient(this.x, this.y, this.r * 0.3, this.x, this.y, this.r);
+    grad.addColorStop(0, `rgba(${r},${g},${b},${this.life * 0.1})`);
     grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -454,18 +649,18 @@ class OHHalo {
   }
 }
 
-// ── 8. HAT SCATTER: marks that fly outward, density = energy ──
+// ── 8. HAT SCATTER — more marks, wilder ──
 const hatMarks = [];
 class HatMark {
   constructor(decay01, tone01) {
     const angle = Math.random() * Math.PI * 2;
-    const dist = 20 + Math.random() * diag * 0.15;
+    const dist = 15 + Math.random() * diag * 0.2;
     this.x = cx + Math.cos(angle) * dist;
     this.y = cy + Math.sin(angle) * dist;
-    this.vx = Math.cos(angle) * (1 + decay01 * 4);
-    this.vy = Math.sin(angle) * (1 + decay01 * 4);
-    this.len = 3 + decay01 * 30;
-    this.angle = angle + (Math.random() - 0.5) * 0.5;
+    this.vx = Math.cos(angle) * (2 + decay01 * 6);
+    this.vy = Math.sin(angle) * (2 + decay01 * 6);
+    this.len = 4 + decay01 * 40;
+    this.angle = angle + (Math.random() - 0.5) * 0.6;
     this.life = 1;
     this.decay01 = decay01;
     this.tone01 = tone01;
@@ -473,10 +668,10 @@ class HatMark {
   update() {
     this.x += this.vx;
     this.y += this.vy;
-    this.vx *= 0.96;
-    this.vy *= 0.96;
-    if (V.noKick) this.vy -= 0.3;
-    this.life *= (0.90 + this.decay01 * 0.06);
+    this.vx *= 0.95;
+    this.vy *= 0.95;
+    if (V.noKick) this.vy -= 0.4;
+    this.life *= (0.88 + this.decay01 * 0.06);
     return this.life > 0.02;
   }
   draw() {
@@ -486,37 +681,107 @@ class HatMark {
     ctx.beginPath();
     ctx.moveTo(this.x, this.y);
     ctx.lineTo(ex, ey);
-    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.5})`;
-    ctx.lineWidth = this.decay01 > 0.5 ? 1.5 : 0.7;
+    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.6})`;
+    ctx.lineWidth = this.decay01 > 0.5 ? 2 : 1;
     ctx.stroke();
+
+    // Dot at tip for high-decay hits
+    if (this.decay01 > 0.6) {
+      ctx.beginPath();
+      ctx.arc(ex, ey, 1.5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r},${g},${b},${this.life * 0.4})`;
+      ctx.fill();
+    }
   }
 }
 
-// ── 9. BRIDGE DRIFT: floating embers when kick is gone ──
+// ── 9. BRIDGE EMBERS ──
 const embers = [];
 class Ember {
   constructor() {
     this.x = Math.random() * W;
     this.y = H + 10;
-    this.vy = -(0.5 + Math.random() * 1.5);
-    this.vx = (Math.random() - 0.5) * 0.5;
-    this.size = 1 + Math.random() * 3;
+    this.vy = -(0.6 + Math.random() * 2);
+    this.vx = (Math.random() - 0.5) * 0.6;
+    this.size = 1 + Math.random() * 4;
     this.life = 1;
   }
   update() {
-    this.x += this.vx + Math.sin(this.y * 0.01) * 0.3;
+    this.x += this.vx + Math.sin(this.y * 0.01) * 0.4;
     this.y += this.vy;
-    this.life -= 0.005;
+    this.life -= 0.004;
     return this.life > 0 && this.y > -20;
   }
   draw() {
     const tone01 = V.smoothTone / 100;
-    const [r, g, b] = toneToRGB(tone01, 0.6);
+    const [r, g, b] = toneToRGB(tone01, 0.7);
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${r},${g},${b},${this.life * 0.3})`;
+    ctx.fillStyle = `rgba(${r},${g},${b},${this.life * 0.4})`;
     ctx.fill();
   }
+}
+
+// ── 10. CHAOS GLITCH — horizontal tear lines during high energy ──
+function drawChaosGlitch() {
+  if (!V.chaosMode || V.energy < 0.7) return;
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01, 1.3);
+
+  const tearCount = 2 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < tearCount; i++) {
+    const y = Math.random() * H;
+    const h = 1 + Math.random() * 4;
+    const offset = (Math.random() - 0.5) * 40;
+    const alpha = 0.1 + Math.random() * 0.2;
+
+    // Shift a horizontal strip
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(canvas, 0, y, W, h, offset, y, W, h);
+    ctx.restore();
+
+    // Color tear line
+    ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 0.6})`;
+    ctx.fillRect(0, y, W, 1);
+  }
+}
+
+// ── 11. EDGE PULSE — screen border glow synced to energy ──
+function drawEdgePulse() {
+  if (V.energy < 0.3) return;
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01, 0.5);
+  const alpha = (V.energy - 0.3) * 0.12;
+  const size = 40 + V.energy * 80;
+
+  // Top
+  const gt = ctx.createLinearGradient(0, 0, 0, size);
+  gt.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+  gt.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gt;
+  ctx.fillRect(0, 0, W, size);
+
+  // Bottom
+  const gb = ctx.createLinearGradient(0, H, 0, H - size);
+  gb.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+  gb.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gb;
+  ctx.fillRect(0, H - size, W, size);
+
+  // Left
+  const gl = ctx.createLinearGradient(0, 0, size, 0);
+  gl.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.7})`);
+  gl.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gl;
+  ctx.fillRect(0, 0, size, H);
+
+  // Right
+  const gr = ctx.createLinearGradient(W, 0, W - size, 0);
+  gr.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.7})`);
+  gr.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gr;
+  ctx.fillRect(W - size, 0, size, H);
 }
 
 // ══════════════════════════════════════════
@@ -534,13 +799,13 @@ function updateDots(stepIdx, decayRaw) {
   stepDots.forEach((dot, i) => {
     if (i === stepIdx) {
       const n = decayRaw / 100;
-      const [r, g, b] = toneToRGB(1 - n); // invert: high decay = warm, low = bright
-      const size = 6 + n * 10;
+      const [r, g, b] = toneToRGB(1 - n);
+      const size = 6 + n * 12;
       const alpha = 0.4 + n * 0.6;
       dot.style.width = size + 'px';
       dot.style.height = size + 'px';
       dot.style.background = `rgba(${r},${g},${b},${alpha})`;
-      dot.style.boxShadow = n > 0.4 ? `0 0 ${6 + n * 12}px rgba(${r},${g},${b},${alpha * 0.6})` : 'none';
+      dot.style.boxShadow = n > 0.3 ? `0 0 ${8 + n * 16}px rgba(${r},${g},${b},${alpha * 0.7})` : 'none';
     } else {
       dot.style.width = '10px';
       dot.style.height = '10px';
@@ -560,94 +825,98 @@ function render() {
   frame++;
 
   // Smooth values
-  V.energy += (V.targetEnergy - V.energy) * 0.025;
-  V.smoothDecay += (V.decay - V.smoothDecay) * 0.35;
-  V.smoothTone += (V.tone - V.smoothTone) * 0.35;
+  V.energy += (V.targetEnergy - V.energy) * 0.03;
+  V.smoothDecay += (V.decay - V.smoothDecay) * 0.4;
+  V.smoothTone += (V.tone - V.smoothTone) * 0.4;
 
   // Decay impulses
-  V.kickHit *= 0.88;
-  V.clapHit *= 0.82;
-  V.ohHit *= 0.93;
-  V.chHit *= 0.88;
-  slamState.alpha *= 0.9;
+  V.kickHit *= 0.86;
+  V.clapHit *= 0.78;
+  V.ohHit *= 0.92;
+  V.chHit *= 0.86;
+  slamState.alpha *= 0.88;
+
+  // Screen shake
+  updateShake();
 
   // ── BACKGROUND FADE ──
-  // Longer trails in high energy, shorter in calm
-  const fade = V.noKick ? 0.04 : (0.08 + (1 - V.energy) * 0.08);
+  const fade = V.noKick ? 0.035 : (0.06 + (1 - V.energy) * 0.08);
   ctx.fillStyle = `rgba(10,6,8,${fade})`;
   ctx.fillRect(0, 0, W, H);
 
   if (!V.playing) {
-    // Idle: dim breathing center
     const breath = Math.sin(frame * 0.012) * 0.5 + 0.5;
-    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80);
-    grad.addColorStop(0, `rgba(140,20,10,${0.03 + breath * 0.02})`);
-    grad.addColorStop(1, 'rgba(140,20,10,0)');
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 100);
+    grad.addColorStop(0, `rgba(80,5,5,${0.04 + breath * 0.03})`);
+    grad.addColorStop(1, 'rgba(80,5,5,0)');
     ctx.fillStyle = grad;
-    ctx.fillRect(cx - 80, cy - 80, 160, 160);
+    ctx.fillRect(cx - 100, cy - 100, 200, 200);
     return;
   }
 
-  // ═══ LAYER ORDER (back to front) ═══
+  // ═══ LAYER ORDER ═══
 
-  // 1. Full-screen color wash
+  // 1. Color wash
   drawWash();
 
-  // 2. Block slam bands (pattern E/F)
+  // 2. Edge pulse
+  drawEdgePulse();
+
+  // 3. Block slam
   drawBlockSlam();
 
-  // 3. Kick shockwave
-  if (V.kickHit > 0.15) {
-    // Subtle screen throb
-    const [kr, kg, kb] = toneToRGB(V.smoothTone / 100, 0.3);
-    ctx.fillStyle = `rgba(${kr},${kg},${kb},${V.kickHit * 0.05})`;
+  // 4. Kick screen throb
+  if (V.kickHit > 0.12) {
+    const [kr, kg, kb] = toneToRGB(V.smoothTone / 100, 0.4);
+    ctx.fillStyle = `rgba(${kr},${kg},${kb},${V.kickHit * 0.07})`;
     ctx.fillRect(0, 0, W, H);
   }
 
-  // 4. Kick waves
+  // 5. Kick waves
   for (let i = kickWaves.length - 1; i >= 0; i--) {
     kickWaves[i].draw();
     if (!kickWaves[i].update()) kickWaves.splice(i, 1);
   }
 
-  // 5. Radial field
+  // 6. Radial field
   drawRadialField();
 
-  // 6. Starburst rays
+  // 7. Starburst
   drawStarburst();
 
-  // 7. OH halos
+  // 8. OH halos
   for (let i = ohHalos.length - 1; i >= 0; i--) {
     ohHalos[i].draw();
     if (!ohHalos[i].update()) ohHalos.splice(i, 1);
   }
 
-  // 8. Hat scatter marks
+  // 9. Hat scatter
   for (let i = hatMarks.length - 1; i >= 0; i--) {
     hatMarks[i].draw();
     if (!hatMarks[i].update()) hatMarks.splice(i, 1);
   }
 
-  // 9. Bridge embers
-  if (V.noKick && frame % 2 === 0) {
-    embers.push(new Ember());
-  }
+  // 10. Embers
+  if (V.noKick && frame % 2 === 0) embers.push(new Ember());
   for (let i = embers.length - 1; i >= 0; i--) {
     embers[i].draw();
     if (!embers[i].update()) embers.splice(i, 1);
   }
 
-  // 10. Clap cracks (on top of everything)
+  // 11. Clap cracks
   for (let i = clapCracks.length - 1; i >= 0; i--) {
     clapCracks[i].draw();
     if (!clapCracks[i].update()) clapCracks.splice(i, 1);
   }
 
-  // 11. Clap full-screen flash
-  if (V.clapHit > 0.2) {
-    ctx.fillStyle = `rgba(255,240,200,${V.clapHit * 0.1})`;
+  // 12. Clap full-screen flash
+  if (V.clapHit > 0.15) {
+    ctx.fillStyle = `rgba(255,240,200,${V.clapHit * 0.15})`;
     ctx.fillRect(0, 0, W, H);
   }
+
+  // 13. Chaos glitch (top layer)
+  drawChaosGlitch();
 }
 
 render();
@@ -696,19 +965,16 @@ function scheduleStep(time) {
 
   applyAutomation(pat, stepInPattern);
 
-  // Get raw viz values
   const src = autoRaw[patKey];
   const decayRaw = src.decay ? src.decay[stepInPattern % 16] : 0;
   const toneRaw = src.tone ? src.tone[stepInPattern % 16] : 50;
 
-  // Trigger voices
   for (const [voiceId, steps] of Object.entries(pat.voices)) {
     if (steps.includes(stepInPattern)) {
       engine.trigger(voiceId, 1, time);
     }
   }
 
-  // Schedule visual update synced to audio
   const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
   setTimeout(() => {
     V.decay = decayRaw;
@@ -718,11 +984,28 @@ function scheduleStep(time) {
     V.noKick = !pat.voices.kick || pat.voices.kick.length === 0;
     V.targetEnergy = section.energy;
     V.sectionPattern = patKey;
+    V.sectionLabel = section.label;
+    V.chaosMode = section.label === 'RELENTLESS' || section.label === 'PEAK' || section.label === 'PEAK II';
+    V.blockSlam = patKey === 'E';
 
-    // Block slam detection
-    if (Math.abs(decayRaw - V.prevDecay) > 50) {
-      slamState.alpha = 1;
+    // Section transition detection
+    if (currentSectionIdx !== V.prevSectionIdx) {
+      const prevEnergy = V.prevSectionIdx >= 0 ? arrangement[V.prevSectionIdx].energy : 0;
+      triggerSectionFlash(prevEnergy, section.energy, toneRaw / 100);
+      flashSectionWord(section.label, toneRaw / 100);
+      V.prevSectionIdx = currentSectionIdx;
+
+      // Big shake on section transitions
+      const diff = Math.abs(section.energy - prevEnergy);
+      if (diff > 0.3) triggerShake(diff * 20);
+    }
+
+    // Block slam detection — enhanced
+    const decayDelta = Math.abs(decayRaw - V.prevDecay);
+    if (decayDelta > 40) {
+      slamState.alpha = Math.min(1, decayDelta / 60);
       slamState.wide = decayRaw > V.prevDecay;
+      triggerShake(decayDelta * 0.15);
     }
     V.prevDecay = decayRaw;
 
@@ -733,34 +1016,45 @@ function scheduleStep(time) {
     if (pat.voices.kick && pat.voices.kick.includes(stepInPattern)) {
       V.kickHit = 1;
       kickWaves.push(new KickWave());
+      triggerShake(3 + V.energy * 5);
     }
 
     // Clap
     if (pat.voices.clap && pat.voices.clap.includes(stepInPattern)) {
       V.clapHit = 1;
       clapCracks.push(new ClapCrack());
-      clapCracks.push(new ClapCrack()); // always double
+      clapCracks.push(new ClapCrack());
+      if (V.energy > 0.8) clapCracks.push(new ClapCrack()); // triple at peak
+      triggerShake(8 + V.energy * 6);
     }
 
     // Open hat
     if (pat.voices.oh && pat.voices.oh.includes(stepInPattern)) {
       V.ohHit = 1;
       ohHalos.push(new OHHalo());
-      if (V.energy > 0.5) ohHalos.push(new OHHalo());
+      if (V.energy > 0.4) ohHalos.push(new OHHalo());
     }
 
-    // Closed hat — scatter marks
+    // Closed hat — more scatter at higher energy
     if (pat.voices.ch && pat.voices.ch.includes(stepInPattern)) {
       V.chHit = 1;
-      const count = 2 + Math.floor(V.energy * 8);
+      const count = 3 + Math.floor(V.energy * 12);
       for (let i = 0; i < count; i++) {
         hatMarks.push(new HatMark(decay01, tone01));
       }
+      // Flash words on high-energy hat hits
+      flashWord(V.energy, tone01);
     }
 
     // Update HUD
     updateDots(stepInPattern, decayRaw);
-    document.getElementById('section-label').textContent = section.label;
+
+    const labelEl = document.getElementById('section-label');
+    labelEl.textContent = section.label;
+    // Section label color matches tone
+    const [lr, lg, lb] = toneToRGB(tone01, 0.6);
+    labelEl.style.color = `rgba(${lr},${lg},${lb},0.4)`;
+
     document.getElementById('bar-count').textContent =
       `${currentBar + 1} / ${arrangement.reduce((s, a) => s + a.bars, 0)}`;
   }, delay);
@@ -802,8 +1096,8 @@ function start() {
   V.prevDecay = 0; V.decay = 0; V.tone = 50;
   V.smoothDecay = 0; V.smoothTone = 50;
   V.playing = true; V.globalStep = 0;
+  V.prevSectionIdx = -1;
 
-  // Clear leftover elements
   kickWaves.length = 0; clapCracks.length = 0;
   ohHalos.length = 0; hatMarks.length = 0; embers.length = 0;
 
