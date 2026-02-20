@@ -1,323 +1,1134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TRIBAL III — JB01</title>
-  <meta property="og:title" content="TRIBAL III — Aggressive Hat Mashing">
-  <meta property="og:description" content="JB01 tribal techno. 133 BPM. Decay + tone automation. Parametric minimalism.">
-  <meta property="og:type" content="website">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #0a0a0a;
-      color: #e0e0e0;
-      font-family: 'Space Mono', monospace;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-    h1 {
-      font-size: 3rem;
-      letter-spacing: 0.6em;
-      color: #ff3300;
-      text-shadow: 0 0 40px rgba(255, 51, 0, 0.4);
-      margin-bottom: 0.3rem;
-      z-index: 2;
-    }
-    .subtitle {
-      opacity: 0.4;
-      font-size: 0.7rem;
-      letter-spacing: 0.3em;
-      margin-bottom: 2rem;
-      z-index: 2;
-    }
-    #flash-word {
-      position: fixed;
-      font-size: 6rem;
-      font-weight: 700;
-      letter-spacing: 0.3em;
-      opacity: 0;
-      pointer-events: none;
-      z-index: 10;
-      mix-blend-mode: screen;
-      transition: opacity 0.05s;
-    }
-    .viz-container {
-      position: relative;
-      width: 90vw;
-      max-width: 800px;
-      height: 200px;
-      margin-bottom: 2rem;
-      z-index: 2;
-    }
-    .viz {
-      display: flex;
-      gap: 3px;
-      align-items: center;
-      height: 100%;
-      justify-content: center;
-    }
-    .bar {
-      width: 20px;
-      border-radius: 2px;
-      transition: height 0.06s, background 0.06s;
-      min-height: 2px;
-    }
-    .section-label {
-      font-size: 0.8rem;
-      letter-spacing: 0.3em;
-      opacity: 0.6;
-      margin-bottom: 1.5rem;
-      min-height: 1.2em;
-      z-index: 2;
-    }
-    button {
-      background: #ff3300;
-      color: #0a0a0a;
-      border: none;
-      padding: 1rem 3rem;
-      font-size: 1rem;
-      font-family: inherit;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 0.3em;
-      z-index: 2;
-    }
-    button:hover { transform: scale(1.05); box-shadow: 0 0 50px rgba(255, 51, 0, 0.5); }
-    button:disabled { opacity: 0.4; cursor: wait; }
-    #status { margin-top: 1rem; opacity: 0.4; font-size: 0.65rem; letter-spacing: 0.15em; z-index: 2; }
-    .bg-flash {
-      position: fixed;
-      top: 0; left: 0; width: 100vw; height: 100vh;
-      opacity: 0;
-      pointer-events: none;
-      z-index: 1;
-      transition: opacity 0.05s;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hallman — Mills Hats v1 — Visualizer</title>
+<meta property="og:title" content="Hallman — Mills Hats v1">
+<meta property="og:description" content="Tribal techno. 133 BPM. Hat decay automation. The hats ARE the show.">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0608; overflow: hidden;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    cursor: crosshair;
+  }
+  canvas { position: fixed; top: 0; left: 0; }
+
+  #overlay {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #play-btn {
+    width: 64px; height: 64px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.4); color: rgba(255,255,255,0.6);
+    font-size: 20px; cursor: pointer; pointer-events: auto;
+    backdrop-filter: blur(4px);
+    transition: all 0.3s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #play-btn:hover { border-color: rgba(255,255,255,0.4); }
+  #play-btn.playing { opacity: 0; pointer-events: none; }
+
+  #hud {
+    position: fixed; bottom: 20px; left: 0; right: 0;
+    z-index: 10; pointer-events: none;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .section-label {
+    font-size: 10px; letter-spacing: 4px; color: rgba(255,255,255,0.25);
+    transition: color 0.3s;
+  }
+  .step-rail {
+    display: flex; gap: 4px;
+  }
+  .step-rail .s {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    transition: all 0.05s;
+  }
+  .bar-count {
+    font-size: 9px; letter-spacing: 2px; color: rgba(255,255,255,0.1);
+  }
+  #credits {
+    position: fixed; top: 14px; right: 18px;
+    font-size: 8px; letter-spacing: 2px;
+    color: rgba(255,255,255,0.08); z-index: 10;
+  }
+
+  /* WORD FLASH LAYER */
+  #word-layer {
+    position: fixed; inset: 0; z-index: 8;
+    pointer-events: none; overflow: hidden;
+  }
+  .flash-word {
+    position: absolute;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    white-space: nowrap;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    animation: wordFlash 0.6s ease-out forwards;
+  }
+  @keyframes wordFlash {
+    0% { opacity: 0.9; transform: scale(1.1); filter: blur(0px); }
+    30% { opacity: 0.7; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.95); filter: blur(3px); }
+  }
+
+  /* SECTION TRANSITION FLASH */
+  #section-flash {
+    position: fixed; inset: 0; z-index: 7;
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.05s;
+  }
+
+  /* SCREEN SHAKE */
+  #shake-wrapper {
+    position: fixed; inset: 0;
+  }
+
+  /* Tap anywhere to restart when stopped */
+  #restart-zone {
+    position: fixed; inset: 0; z-index: 9;
+    cursor: pointer; display: none;
+  }
+</style>
 </head>
 <body>
-  <div class="bg-flash" id="bg-flash"></div>
-  <div id="flash-word"></div>
-  <h1>TRIBAL</h1>
-  <div class="subtitle">JB01 · 133 BPM · DECAY + TONE AUTOMATION · PARAMETRIC MINIMALISM</div>
-  <div class="viz-container"><div class="viz" id="viz"></div></div>
+
+<div id="shake-wrapper">
+  <canvas id="c"></canvas>
+</div>
+
+<div id="section-flash"></div>
+<div id="word-layer"></div>
+
+<div id="overlay">
+  <button id="play-btn">▶</button>
+</div>
+
+<div id="hud">
   <div class="section-label" id="section-label"></div>
-  <button id="play">PLAY</button>
-  <div id="status">kick · ch · oh — two knobs, infinite texture</div>
+  <div class="step-rail" id="step-rail"></div>
+  <div class="bar-count" id="bar-count"></div>
+</div>
 
-  <script type="module">
-    // Track data — patterns + automation baked in
-    const PATTERNS = {
-      A: {
-        kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [],
-        chDecay: [95,5,95,5,95,5,95,5,95,5,95,5,95,5,95,5],
-        chTone:  [10,95,10,95,10,95,10,95,10,95,10,95,10,95,10,95]
-      },
-      B: {
-        kick: [], ch: [0,2,4,6,8,10,12,14], oh: [],
-        chDecay: [5,10,15,20,30,40,50,60,70,80,85,90,93,95,98,100],
-        chTone:  [95,90,85,80,70,60,50,40,35,30,25,20,15,10,8,5]
-      },
-      C: {
-        kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10],
-        chDecay: [100,100,100,100,5,5,5,5,100,100,100,100,5,5,5,5],
-        chTone:  [5,5,5,5,95,95,95,95,5,5,5,5,95,95,95,95]
-      },
-      D: {
-        kick: [0,4,8,12], ch: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], oh: [4,12],
-        chDecay: [72,15,88,42,95,8,61,33,79,22,50,91,12,67,44,85],
-        chTone:  [28,82,45,71,9,58,93,17,66,38,84,11,52,76,23,90]
-      }
-    };
+<div id="credits">HALLMAN · JB01 · VIZ DITHER × AMBER</div>
+<div id="restart-zone"></div>
 
-    const SECTIONS = [
-      { bars: 8, pattern: 'A', label: 'ALTERNATING EXTREMES' },
-      { bars: 4, pattern: 'B', label: 'BREAKDOWN' },
-      { bars: 8, pattern: 'C', label: 'BLOCK SLAM' },
-      { bars: 4, pattern: 'D', label: 'CHAOS' },
-      { bars: 4, pattern: 'C', label: 'PULL BACK' },
-      { bars: 4, pattern: 'A', label: 'OUTRO' }
-    ];
+<script type="module">
+import { JB01Engine } from '/jb01/dist/machines/jb01/engine.js';
 
-    const WORDS = ['DECAY','TONE','TRIBAL','MACHINE','BREATHE','PULSE','TENSION','RELEASE','MINIMAL','PARAMETER','AUTOMATE','MASH'];
-    const COLORS = ['#ff3300','#ff6600','#ff0066','#ff0000','#cc0000','#ff3300','#ff4400','#ee2200'];
+// ══════════════════════════════════════════
+// TRACK DATA
+// ══════════════════════════════════════════
+const BPM = 133;
+const STEP_DUR = 60 / BPM / 4;
 
-    // Create bars
-    const vizEl = document.getElementById('viz');
-    const bars = [];
-    for (let i = 0; i < 16; i++) {
-      const bar = document.createElement('div');
-      bar.className = 'bar';
-      bar.style.height = '2px';
-      bar.style.background = '#ff3300';
-      vizEl.appendChild(bar);
-      bars.push(bar);
+const kickLevel = Math.pow(10, -13 / 20);
+const clapLevel = Math.pow(10, -15 / 20);
+
+function d(v) { return v / 50; }
+function t(v) { return v / 100; }
+
+const patterns = {
+  A: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] },
+    automation: {},
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+  B: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [75,15,60,20,70,15,55,25,75,10,65,20,50,30,70,15].map(d),
+      'ch.tone':  [25,85,40,80,30,85,45,75,25,90,35,80,50,70,30,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+  D: {
+    voices: { ch: [0,2,4,6,8,10,12,14], oh: [2,6,10,14] },
+    automation: {
+      'ch.decay': [20,25,30,35,40,50,60,70,75,80,85,88,90,92,95,95].map(d),
+      'ch.tone':  [80,75,70,65,60,55,50,45,40,35,30,25,20,15,15,10].map(t),
+    },
+    params: { kick: { decay: d(10), level: 0 } }
+  },
+  C: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10].map(d),
+      'ch.tone':  [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+  E: {
+    voices: { kick: [0,4,8,12], clap: [4,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [95,95,95,95,5,5,5,5,95,95,95,95,5,5,5,5].map(d),
+      'ch.tone':  [10,10,10,10,90,90,90,90,10,10,10,10,90,90,90,90].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel }, clap: { level: clapLevel } }
+  },
+  F: {
+    voices: { kick: [0,4,8,12], clap: [4,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10] },
+    automation: {
+      'ch.decay': [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10].map(d),
+      'ch.tone':  [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel }, clap: { level: clapLevel } }
+  },
+  G: {
+    voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] },
+    automation: {
+      'ch.decay': [80,70,65,55,50,45,40,35,30,25,20,20,15,15,10,10].map(d),
+      'ch.tone':  [30,35,40,45,50,55,60,65,70,72,75,78,80,82,85,85].map(t),
+    },
+    params: { kick: { decay: d(10), level: kickLevel } }
+  },
+};
+
+const autoRaw = {
+  A: { decay: null, tone: null },
+  B: { decay: [75,15,60,20,70,15,55,25,75,10,65,20,50,30,70,15], tone: [25,85,40,80,30,85,45,75,25,90,35,80,50,70,30,85] },
+  D: { decay: [20,25,30,35,40,50,60,70,75,80,85,88,90,92,95,95], tone: [80,75,70,65,60,55,50,45,40,35,30,25,20,15,15,10] },
+  C: { decay: [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10], tone: [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85] },
+  E: { decay: [95,95,95,95,5,5,5,5,95,95,95,95,5,5,5,5], tone: [10,10,10,10,90,90,90,90,10,10,10,10,90,90,90,90] },
+  F: { decay: [95,5,90,5,95,10,85,5,95,5,80,15,95,5,90,10], tone: [10,90,15,90,10,85,20,90,10,90,25,80,10,90,15,85] },
+  G: { decay: [80,70,65,55,50,45,40,35,30,25,20,20,15,15,10,10], tone: [30,35,40,45,50,55,60,65,70,72,75,78,80,82,85,85] },
+};
+
+const arrangement = [
+  { bars: 4, pattern: 'A', label: 'INTRO',          energy: 0.08 },
+  { bars: 4, pattern: 'B', label: 'BUILD',           energy: 0.4  },
+  { bars: 2, pattern: 'D', label: 'BRIDGE',          energy: 0.2  },
+  { bars: 4, pattern: 'E', label: 'PEAK',            energy: 1.0  },
+  { bars: 4, pattern: 'C', label: 'TRIBAL',          energy: 0.85 },
+  { bars: 2, pattern: 'D', label: 'BRIDGE',          energy: 0.2  },
+  { bars: 4, pattern: 'F', label: 'PEAK II',         energy: 1.0  },
+  { bars: 4, pattern: 'E', label: 'RELENTLESS',      energy: 0.95 },
+  { bars: 4, pattern: 'B', label: 'PULL BACK',       energy: 0.35 },
+  { bars: 4, pattern: 'G', label: 'OUTRO',           energy: 0.1  },
+];
+
+// ══════════════════════════════════════════
+// CANVAS
+// ══════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, cx, cy, diag;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  cx = W / 2; cy = H / 2;
+  diag = Math.sqrt(W * W + H * H);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ══════════════════════════════════════════
+// COLOR ENGINE — EXPANDED PALETTE
+// ══════════════════════════════════════════
+// Tone 0 (dark) → deep blood red / near-black crimson
+// Tone 50 → hot amber / orange
+// Tone 100 (bright) → electric white-blue / searing cyan-white
+
+function toneToRGB(tone01, brightness) {
+  const b = brightness || 1;
+  let r, g, bl;
+  if (tone01 < 0.35) {
+    // Deep crimson → hot red
+    const t2 = tone01 / 0.35;
+    r = (80 + t2 * 175) * b;
+    g = (5 + t2 * 20) * b;
+    bl = (5 + t2 * 5) * b;
+  } else if (tone01 < 0.65) {
+    // Hot red → amber/orange
+    const t2 = (tone01 - 0.35) / 0.3;
+    r = 255 * b;
+    g = (25 + t2 * 120) * b;
+    bl = (10 + t2 * 20) * b;
+  } else {
+    // Amber → electric white-blue
+    const t2 = (tone01 - 0.65) / 0.35;
+    r = (255 - t2 * 40) * b;
+    g = (145 + t2 * 110) * b;
+    bl = (30 + t2 * 225) * b;
+  }
+  return [Math.min(255, Math.floor(r)), Math.min(255, Math.floor(g)), Math.min(255, Math.floor(bl))];
+}
+
+// Secondary palette for contrast flashes
+function toneToSecondary(tone01) {
+  // Complementary: low tone = cold blue, high tone = deep magenta
+  let r, g, b;
+  if (tone01 < 0.5) {
+    const t2 = tone01 * 2;
+    r = (20 + t2 * 40);
+    g = (40 + t2 * 60);
+    b = (180 - t2 * 60);
+  } else {
+    const t2 = (tone01 - 0.5) * 2;
+    r = (60 + t2 * 160);
+    g = (100 - t2 * 80);
+    b = (120 + t2 * 60);
+  }
+  return [Math.floor(r), Math.floor(g), Math.floor(b)];
+}
+
+// ══════════════════════════════════════════
+// WORD FLASH SYSTEM
+// ══════════════════════════════════════════
+const WORDS = ['DECAY', 'TONE', 'TRIBAL', 'MACHINE', 'BREATHE', 'PULSE', 'PARAMETER', 'AUTOMATE', 'MASH', 'FILTER', 'SWEEP', 'SLAM'];
+const wordLayer = document.getElementById('word-layer');
+let lastWordTime = 0;
+
+function flashWord(energy, tone01) {
+  const now = performance.now();
+  if (now - lastWordTime < 400) return; // cooldown
+  if (Math.random() > energy * 0.6) return; // probability scales with energy
+  lastWordTime = now;
+
+  const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+  const el = document.createElement('div');
+  el.className = 'flash-word';
+  el.textContent = word;
+
+  // Position — biased toward center but with spread
+  const spreadX = 0.2 + energy * 0.6;
+  const spreadY = 0.2 + energy * 0.5;
+  const x = cx + (Math.random() - 0.5) * W * spreadX;
+  const y = cy + (Math.random() - 0.5) * H * spreadY;
+
+  const [r, g, b] = toneToRGB(tone01, 0.9);
+  const size = 14 + Math.random() * 40 + energy * 30;
+
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.fontSize = size + 'px';
+  el.style.color = `rgb(${r},${g},${b})`;
+  el.style.textShadow = `0 0 ${10 + energy * 30}px rgba(${r},${g},${b},0.6)`;
+  el.style.transform = `rotate(${(Math.random() - 0.5) * 20}deg)`;
+
+  wordLayer.appendChild(el);
+  setTimeout(() => el.remove(), 700);
+}
+
+// Big section word — full screen
+function flashSectionWord(label, tone01) {
+  const el = document.createElement('div');
+  el.className = 'flash-word';
+  el.textContent = label;
+  el.style.left = '50%';
+  el.style.top = '50%';
+  el.style.transform = 'translate(-50%, -50%)';
+  el.style.fontSize = Math.min(W * 0.12, 120) + 'px';
+  const [r, g, b] = toneToRGB(tone01, 1.2);
+  el.style.color = `rgba(${r},${g},${b},0.8)`;
+  el.style.textShadow = `0 0 60px rgba(${r},${g},${b},0.8), 0 0 120px rgba(${r},${g},${b},0.4)`;
+  el.style.animationDuration = '1.2s';
+
+  wordLayer.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}
+
+// ══════════════════════════════════════════
+// SECTION TRANSITION FLASH
+// ══════════════════════════════════════════
+const sectionFlash = document.getElementById('section-flash');
+
+function triggerSectionFlash(fromEnergy, toEnergy, tone01) {
+  const intensity = Math.abs(toEnergy - fromEnergy);
+  if (intensity < 0.15) return;
+
+  const [r, g, b] = toneToRGB(tone01, 1.5);
+
+  if (toEnergy < fromEnergy) {
+    // Dropping energy — invert flash (white → black)
+    sectionFlash.style.background = `rgba(255,255,255,${intensity * 0.6})`;
+  } else {
+    // Rising energy — colored flash
+    sectionFlash.style.background = `rgba(${r},${g},${b},${intensity * 0.5})`;
+  }
+  sectionFlash.style.opacity = '1';
+  sectionFlash.style.transition = 'opacity 0.05s';
+
+  setTimeout(() => {
+    sectionFlash.style.transition = 'opacity 0.4s';
+    sectionFlash.style.opacity = '0';
+  }, 60);
+}
+
+// ══════════════════════════════════════════
+// SCREEN SHAKE
+// ══════════════════════════════════════════
+const shakeWrapper = document.getElementById('shake-wrapper');
+let shakeIntensity = 0;
+
+function triggerShake(amount) {
+  shakeIntensity = Math.max(shakeIntensity, amount);
+}
+
+function updateShake() {
+  if (shakeIntensity > 0.5) {
+    const x = (Math.random() - 0.5) * shakeIntensity;
+    const y = (Math.random() - 0.5) * shakeIntensity;
+    shakeWrapper.style.transform = `translate(${x}px, ${y}px)`;
+    shakeIntensity *= 0.85;
+  } else {
+    shakeWrapper.style.transform = '';
+    shakeIntensity = 0;
+  }
+}
+
+// ══════════════════════════════════════════
+// VISUAL STATE
+// ══════════════════════════════════════════
+const V = {
+  decay: 0, tone: 50,
+  smoothDecay: 0, smoothTone: 50,
+  prevDecay: 0,
+  kickHit: 0, clapHit: 0, ohHit: 0, chHit: 0,
+  energy: 0.08, targetEnergy: 0.08,
+  noKick: false,
+  playing: false,
+  step: 0,
+  globalStep: 0,
+  sectionPattern: 'A',
+  sectionLabel: 'INTRO',
+  prevSectionIdx: -1,
+  chaosMode: false,    // true during RELENTLESS
+  blockSlam: false,    // true during PEAK patterns
+};
+
+// ══════════════════════════════════════════
+// GEOMETRY SYSTEMS
+// ══════════════════════════════════════════
+
+// ── 1. RADIAL FIELD ──
+function drawRadialField() {
+  const decay01 = V.smoothDecay / 100;
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01);
+  const energy = V.energy;
+
+  const ringCount = 4 + Math.floor(energy * 18);
+  const maxRadius = diag * (0.2 + decay01 * 0.55);
+
+  for (let i = 0; i < ringCount; i++) {
+    const t = i / ringCount;
+    const radius = maxRadius * t;
+    if (radius < 2) continue;
+
+    const alpha = (1 - t) * (0.05 + decay01 * 0.18) * energy;
+    if (alpha < 0.005) continue;
+
+    const lw = 0.5 + decay01 * 4 * (1 - t * 0.5);
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+    ctx.lineWidth = lw;
+    ctx.stroke();
+  }
+}
+
+// ── 2. STARBURST ──
+function drawStarburst() {
+  const decay01 = V.smoothDecay / 100;
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01, 0.8);
+  const energy = V.energy;
+
+  const count = 20 + Math.floor(energy * 44);
+  const len = 30 + decay01 * decay01 * diag * 0.5;
+  const baseAngle = V.globalStep * 0.02;
+
+  for (let i = 0; i < count; i++) {
+    const angle = baseAngle + (i / count) * Math.PI * 2;
+    const wobble = Math.sin(i * 7.3 + V.globalStep * 0.1) * 0.03;
+    const a = angle + wobble;
+
+    const innerR = 10 + decay01 * 30;
+    const outerR = innerR + len;
+
+    const x1 = cx + Math.cos(a) * innerR;
+    const y1 = cy + Math.sin(a) * innerR;
+    const x2 = cx + Math.cos(a) * outerR;
+    const y2 = cy + Math.sin(a) * outerR;
+
+    const rayAlpha = (0.025 + decay01 * 0.08) * energy * (0.5 + Math.sin(i * 3.1 + V.globalStep * 0.05) * 0.5);
+    if (rayAlpha < 0.003) continue;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${rayAlpha})`;
+    ctx.lineWidth = 0.5 + decay01 * 2;
+    ctx.stroke();
+  }
+}
+
+// ── 3. FULL-SCREEN WASH ──
+function drawWash() {
+  const decay01 = V.smoothDecay / 100;
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01);
+  const energy = V.energy;
+
+  const radius = diag * (0.3 + decay01 * 0.5);
+  const alpha = (0.04 + decay01 * 0.14) * energy;
+
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+  grad.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+  grad.addColorStop(0.5, `rgba(${r},${g},${b},${alpha * 0.5})`);
+  grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ── 4. BLOCK SLAM — massively enhanced ──
+const slamState = { alpha: 0, wide: false };
+
+function drawBlockSlam() {
+  if (slamState.alpha < 0.01) return;
+
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01, 1.4);
+  const [sr, sg, sb] = toneToSecondary(tone01);
+
+  if (slamState.wide) {
+    // WIDE SLAM — screen floods, hard vertical bands + horizontal scan lines
+    const bandCount = 6;
+    const bandW = W / bandCount;
+    for (let i = 0; i < bandCount; i++) {
+      const bandAlpha = slamState.alpha * (0.2 + Math.sin(i * 2.3) * 0.1);
+      ctx.fillStyle = `rgba(${r},${g},${b},${bandAlpha})`;
+      ctx.fillRect(i * bandW, 0, bandW * 0.9, H);
     }
 
-    let isPlaying = false;
+    // Horizontal scan lines
+    const scanCount = 20;
+    for (let i = 0; i < scanCount; i++) {
+      const y = (i / scanCount) * H;
+      ctx.fillStyle = `rgba(${sr},${sg},${sb},${slamState.alpha * 0.08})`;
+      ctx.fillRect(0, y, W, 2);
+    }
 
-    document.getElementById('play').addEventListener('click', async () => {
-      const btn = document.getElementById('play');
-      const status = document.getElementById('status');
-      const sectionLabel = document.getElementById('section-label');
-      const flashWord = document.getElementById('flash-word');
-      const bgFlash = document.getElementById('bg-flash');
+    // Center explosion
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, diag * 0.4);
+    grad.addColorStop(0, `rgba(${r},${g},${b},${slamState.alpha * 0.25})`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    // TIGHT SLAM — sharp slits + screen edges glow
+    const slitCount = 24;
+    const gap = W / slitCount;
+    for (let i = 0; i < slitCount; i++) {
+      const x = gap * i + gap / 2;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.strokeStyle = `rgba(${sr},${sg},${sb},${slamState.alpha * 0.25})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
 
-      if (isPlaying) return;
-      isPlaying = true;
-      btn.disabled = true;
-      btn.textContent = 'LOADING...';
+    // Edge vignette inversion
+    const edgeAlpha = slamState.alpha * 0.1;
+    const edgeGrad = ctx.createRadialGradient(cx, cy, diag * 0.3, cx, cy, diag * 0.55);
+    edgeGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    edgeGrad.addColorStop(1, `rgba(${sr},${sg},${sb},${edgeAlpha})`);
+    ctx.fillStyle = edgeGrad;
+    ctx.fillRect(0, 0, W, H);
+  }
+}
 
-      try {
-        // Import and render
-        const { JB01Engine } = await import('/jb01/dist/machines/jb01/engine.js');
-        const engine = new JB01Engine();
+// ── 5. KICK SHOCKWAVE — beefier ──
+const kickWaves = [];
+class KickWave {
+  constructor() {
+    this.r = 0;
+    this.life = 1;
+    this.thick = 2 + V.energy * 6;
+  }
+  update() {
+    this.r += (diag * 0.45 - this.r) * 0.07 + 5;
+    this.life *= 0.92;
+    return this.life > 0.01;
+  }
+  draw() {
+    const tone01 = V.smoothTone / 100;
+    const [r, g, b] = toneToRGB(tone01, 0.6);
+    ctx.beginPath();
+    ctx.arc(cx, cy, this.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.15})`;
+    ctx.lineWidth = this.thick + this.life * 5;
+    ctx.stroke();
+  }
+}
 
-        btn.textContent = 'RENDERING...';
+// ── 6. CLAP CRACK — more violent ──
+const clapCracks = [];
+class ClapCrack {
+  constructor() {
+    this.life = 1;
+    this.angle = (Math.random() - 0.5) * 0.8;
+    this.y = cy + (Math.random() - 0.5) * H * 0.5;
+    this.branches = Math.floor(2 + Math.random() * 3);
+  }
+  update() {
+    this.life *= 0.78;
+    return this.life > 0.01;
+  }
+  draw() {
+    const len = W * 0.9;
+    const dx = Math.cos(this.angle) * len / 2;
+    const dy = Math.sin(this.angle) * len / 2;
 
-        // Render each section
-        const sectionBuffers = [];
-        for (const section of SECTIONS) {
-          const pat = PATTERNS[section.pattern];
-          const pattern = {};
-          const voices = ['kick','ch','oh'];
-          for (const v of voices) {
-            if (pat[v] && pat[v].length > 0) {
-              pattern[v] = Array.from({length:16}, (_,i) =>
-                ({velocity: pat[v].includes(i) ? 0.85 : 0, accent: false})
-              );
-            }
-          }
-          engine.setPattern(pattern);
+    // Main crack — thicker, brighter
+    ctx.beginPath();
+    ctx.moveTo(cx - dx, this.y - dy);
+    ctx.lineTo(cx + dx, this.y + dy);
+    ctx.strokeStyle = `rgba(255,250,240,${this.life * 0.85})`;
+    ctx.lineWidth = 1.5 + this.life * 4;
+    ctx.stroke();
 
-          // Build automation
-          const automation = {};
-          if (pat.chDecay) automation['ch.decay'] = pat.chDecay.map(v => v/100);
-          if (pat.chTone) automation['ch.tone'] = pat.chTone.map(v => v/100);
+    // Hot glow
+    ctx.strokeStyle = `rgba(255,180,80,${this.life * 0.2})`;
+    ctx.lineWidth = 12 + this.life * 30;
+    ctx.stroke();
 
-          const buffer = await engine.renderPattern({
-            bars: section.bars,
-            bpm: 133,
-            automation
-          });
-          sectionBuffers.push(buffer);
-        }
+    // Branch cracks
+    for (let i = 0; i < this.branches; i++) {
+      const t = 0.3 + Math.random() * 0.4;
+      const bx = (cx - dx) + (dx * 2) * t;
+      const by = (this.y - dy) + (dy * 2) * t;
+      const bLen = 30 + Math.random() * 80;
+      const bAngle = this.angle + (Math.random() - 0.5) * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.lineTo(bx + Math.cos(bAngle) * bLen, by + Math.sin(bAngle) * bLen);
+      ctx.strokeStyle = `rgba(255,240,220,${this.life * 0.4})`;
+      ctx.lineWidth = 0.5 + this.life * 2;
+      ctx.stroke();
+    }
+  }
+}
 
-        // Concatenate
-        const totalLength = sectionBuffers.reduce((s,b) => s + b.length, 0);
-        const ctx = new AudioContext();
-        const fullBuffer = ctx.createBuffer(1, totalLength, sectionBuffers[0].sampleRate);
-        const channel = fullBuffer.getChannelData(0);
-        let offset = 0;
-        for (const buf of sectionBuffers) {
-          channel.set(buf.getChannelData(0), offset);
-          offset += buf.length;
-        }
+// ── 7. OPEN HAT HALOS ──
+const ohHalos = [];
+class OHHalo {
+  constructor() {
+    this.x = cx + (Math.random() - 0.5) * W * 0.5;
+    this.y = cy + (Math.random() - 0.5) * H * 0.5;
+    this.r = 20;
+    this.maxR = 120 + Math.random() * 250;
+    this.life = 1;
+  }
+  update() {
+    this.r += (this.maxR - this.r) * 0.05;
+    this.life *= 0.96;
+    if (V.noKick) { this.y -= 1.2; this.r *= 1.003; }
+    return this.life > 0.01;
+  }
+  draw() {
+    const tone01 = V.smoothTone / 100;
+    const [r, g, b] = toneToRGB(tone01, 0.7);
+    const grad = ctx.createRadialGradient(this.x, this.y, this.r * 0.3, this.x, this.y, this.r);
+    grad.addColorStop(0, `rgba(${r},${g},${b},${this.life * 0.1})`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
 
-        // Play
-        const source = ctx.createBufferSource();
-        source.buffer = fullBuffer;
-        source.connect(ctx.destination);
-        source.start();
+// ── 8. HAT SCATTER — more marks, wilder ──
+const hatMarks = [];
+class HatMark {
+  constructor(decay01, tone01) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 15 + Math.random() * diag * 0.2;
+    this.x = cx + Math.cos(angle) * dist;
+    this.y = cy + Math.sin(angle) * dist;
+    this.vx = Math.cos(angle) * (2 + decay01 * 6);
+    this.vy = Math.sin(angle) * (2 + decay01 * 6);
+    this.len = 4 + decay01 * 40;
+    this.angle = angle + (Math.random() - 0.5) * 0.6;
+    this.life = 1;
+    this.decay01 = decay01;
+    this.tone01 = tone01;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vx *= 0.95;
+    this.vy *= 0.95;
+    if (V.noKick) this.vy -= 0.4;
+    this.life *= (0.88 + this.decay01 * 0.06);
+    return this.life > 0.02;
+  }
+  draw() {
+    const [r, g, b] = toneToRGB(this.tone01);
+    const ex = this.x + Math.cos(this.angle) * this.len;
+    const ey = this.y + Math.sin(this.angle) * this.len;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(ex, ey);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.6})`;
+    ctx.lineWidth = this.decay01 > 0.5 ? 2 : 1;
+    ctx.stroke();
 
-        btn.textContent = 'PLAYING';
-        status.textContent = '32 bars · ~1 min';
+    // Dot at tip for high-decay hits
+    if (this.decay01 > 0.6) {
+      ctx.beginPath();
+      ctx.arc(ex, ey, 1.5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r},${g},${b},${this.life * 0.4})`;
+      ctx.fill();
+    }
+  }
+}
 
-        // Animate
-        const stepDuration = (60 / 133 / 4) * 1000;
-        const totalSteps = 32 * 16;
-        let step = 0;
-        let sectionIdx = 0;
-        let sectionStartStep = 0;
-        let lastWordTime = 0;
+// ── 9. BRIDGE EMBERS ──
+const embers = [];
+class Ember {
+  constructor() {
+    this.x = Math.random() * W;
+    this.y = H + 10;
+    this.vy = -(0.6 + Math.random() * 2);
+    this.vx = (Math.random() - 0.5) * 0.6;
+    this.size = 1 + Math.random() * 4;
+    this.life = 1;
+  }
+  update() {
+    this.x += this.vx + Math.sin(this.y * 0.01) * 0.4;
+    this.y += this.vy;
+    this.life -= 0.004;
+    return this.life > 0 && this.y > -20;
+  }
+  draw() {
+    const tone01 = V.smoothTone / 100;
+    const [r, g, b] = toneToRGB(tone01, 0.7);
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${r},${g},${b},${this.life * 0.4})`;
+    ctx.fill();
+  }
+}
 
-        const iv = setInterval(() => {
-          while (sectionIdx < SECTIONS.length - 1 &&
-                 step >= sectionStartStep + SECTIONS[sectionIdx].bars * 16) {
-            sectionStartStep += SECTIONS[sectionIdx].bars * 16;
-            sectionIdx++;
-          }
-          sectionLabel.textContent = SECTIONS[sectionIdx].label;
+// ── 10. CHAOS GLITCH — horizontal tear lines during high energy ──
+function drawChaosGlitch() {
+  if (!V.chaosMode || V.energy < 0.7) return;
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01, 1.3);
 
-          const patternStep = step % 16;
-          const pat = PATTERNS[SECTIONS[sectionIdx].pattern];
-          const decay = pat.chDecay[patternStep] / 100;
-          const tone = pat.chTone[patternStep] / 100;
-          const hasKick = pat.kick.includes(patternStep);
-          const hasCh = pat.ch.includes(patternStep);
-          const hasOh = pat.oh.includes(patternStep);
+  const tearCount = 2 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < tearCount; i++) {
+    const y = Math.random() * H;
+    const h = 1 + Math.random() * 4;
+    const offset = (Math.random() - 0.5) * 40;
+    const alpha = 0.1 + Math.random() * 0.2;
 
-          // Color based on tone
-          const r = Math.floor(255 * (1 - tone * 0.5));
-          const g = Math.floor(51 * tone);
-          const b = Math.floor(20 + tone * 80);
-          const color = `rgb(${r},${g},${b})`;
+    // Shift a horizontal strip
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(canvas, 0, y, W, h, offset, y, W, h);
+    ctx.restore();
 
-          bars.forEach((bar, i) => {
-            if (i === patternStep) {
-              let h = 4;
-              if (hasCh) h = 20 + decay * 160;
-              if (hasKick) h = Math.max(h, 120);
-              if (hasOh) h = Math.max(h, 80);
-              bar.style.height = h + 'px';
-              bar.style.background = hasKick ? '#ffffff' : color;
-            } else {
-              bar.style.height = '2px';
-              bar.style.background = '#1a0500';
-            }
-          });
+    // Color tear line
+    ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 0.6})`;
+    ctx.fillRect(0, y, W, 1);
+  }
+}
 
-          // Background flash on kick
-          if (hasKick) {
-            bgFlash.style.background = `radial-gradient(circle, ${color}22 0%, transparent 70%)`;
-            bgFlash.style.opacity = '1';
-            setTimeout(() => bgFlash.style.opacity = '0', 80);
-          }
+// ── 11. EDGE PULSE — screen border glow synced to energy ──
+function drawEdgePulse() {
+  if (V.energy < 0.3) return;
+  const tone01 = V.smoothTone / 100;
+  const [r, g, b] = toneToRGB(tone01, 0.5);
+  const alpha = (V.energy - 0.3) * 0.12;
+  const size = 40 + V.energy * 80;
 
-          // Flash words on section transitions and random moments
-          const now = Date.now();
-          if ((patternStep === 0 && step % 64 === 0) || (Math.random() < 0.02 && now - lastWordTime > 2000)) {
-            const word = WORDS[Math.floor(Math.random() * WORDS.length)];
-            const wcolor = COLORS[Math.floor(Math.random() * COLORS.length)];
-            flashWord.textContent = word;
-            flashWord.style.color = wcolor;
-            flashWord.style.top = (10 + Math.random() * 60) + 'vh';
-            flashWord.style.left = (5 + Math.random() * 60) + 'vw';
-            flashWord.style.opacity = '0.7';
-            lastWordTime = now;
-            setTimeout(() => flashWord.style.opacity = '0', 150);
-          }
+  // Top
+  const gt = ctx.createLinearGradient(0, 0, 0, size);
+  gt.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+  gt.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gt;
+  ctx.fillRect(0, 0, W, size);
 
-          step++;
-          if (step >= totalSteps) clearInterval(iv);
-        }, stepDuration);
+  // Bottom
+  const gb = ctx.createLinearGradient(0, H, 0, H - size);
+  gb.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+  gb.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gb;
+  ctx.fillRect(0, H - size, W, size);
 
-        source.onended = () => {
-          clearInterval(iv);
-          bars.forEach(b => { b.style.height = '2px'; b.style.background = '#1a0500'; });
-          bgFlash.style.opacity = '0';
-          flashWord.style.opacity = '0';
-          isPlaying = false;
-          btn.disabled = false;
-          btn.textContent = 'PLAY';
-          sectionLabel.textContent = '';
-          status.textContent = 'kick · ch · oh — two knobs, infinite texture';
-        };
+  // Left
+  const gl = ctx.createLinearGradient(0, 0, size, 0);
+  gl.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.7})`);
+  gl.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gl;
+  ctx.fillRect(0, 0, size, H);
 
-      } catch (err) {
-        console.error(err);
-        status.textContent = 'error: ' + err.message;
-        btn.disabled = false;
-        btn.textContent = 'PLAY';
-        isPlaying = false;
+  // Right
+  const gr = ctx.createLinearGradient(W, 0, W - size, 0);
+  gr.addColorStop(0, `rgba(${r},${g},${b},${alpha * 0.7})`);
+  gr.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gr;
+  ctx.fillRect(W - size, 0, size, H);
+}
+
+// ══════════════════════════════════════════
+// STEP DOTS
+// ══════════════════════════════════════════
+const railEl = document.getElementById('step-rail');
+for (let i = 0; i < 16; i++) {
+  const s = document.createElement('div');
+  s.className = 's';
+  railEl.appendChild(s);
+}
+const stepDots = railEl.querySelectorAll('.s');
+
+function updateDots(stepIdx, decayRaw) {
+  stepDots.forEach((dot, i) => {
+    if (i === stepIdx) {
+      const n = decayRaw / 100;
+      const [r, g, b] = toneToRGB(1 - n);
+      const size = 6 + n * 12;
+      const alpha = 0.4 + n * 0.6;
+      dot.style.width = size + 'px';
+      dot.style.height = size + 'px';
+      dot.style.background = `rgba(${r},${g},${b},${alpha})`;
+      dot.style.boxShadow = n > 0.3 ? `0 0 ${8 + n * 16}px rgba(${r},${g},${b},${alpha * 0.7})` : 'none';
+    } else {
+      dot.style.width = '10px';
+      dot.style.height = '10px';
+      dot.style.background = 'rgba(255,255,255,0.04)';
+      dot.style.boxShadow = 'none';
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// RENDER LOOP
+// ══════════════════════════════════════════
+let frame = 0;
+
+function render() {
+  requestAnimationFrame(render);
+  frame++;
+
+  // Smooth values
+  V.energy += (V.targetEnergy - V.energy) * 0.03;
+  V.smoothDecay += (V.decay - V.smoothDecay) * 0.4;
+  V.smoothTone += (V.tone - V.smoothTone) * 0.4;
+
+  // Decay impulses
+  V.kickHit *= 0.86;
+  V.clapHit *= 0.78;
+  V.ohHit *= 0.92;
+  V.chHit *= 0.86;
+  slamState.alpha *= 0.88;
+
+  // Screen shake
+  updateShake();
+
+  // ── BACKGROUND FADE ──
+  const fade = V.noKick ? 0.035 : (0.06 + (1 - V.energy) * 0.08);
+  ctx.fillStyle = `rgba(10,6,8,${fade})`;
+  ctx.fillRect(0, 0, W, H);
+
+  if (!V.playing) {
+    const breath = Math.sin(frame * 0.012) * 0.5 + 0.5;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 100);
+    grad.addColorStop(0, `rgba(80,5,5,${0.04 + breath * 0.03})`);
+    grad.addColorStop(1, 'rgba(80,5,5,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(cx - 100, cy - 100, 200, 200);
+    return;
+  }
+
+  // ═══ LAYER ORDER ═══
+
+  // 1. Color wash
+  drawWash();
+
+  // 2. Edge pulse
+  drawEdgePulse();
+
+  // 3. Block slam
+  drawBlockSlam();
+
+  // 4. Kick screen throb
+  if (V.kickHit > 0.12) {
+    const [kr, kg, kb] = toneToRGB(V.smoothTone / 100, 0.4);
+    ctx.fillStyle = `rgba(${kr},${kg},${kb},${V.kickHit * 0.07})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // 5. Kick waves
+  for (let i = kickWaves.length - 1; i >= 0; i--) {
+    kickWaves[i].draw();
+    if (!kickWaves[i].update()) kickWaves.splice(i, 1);
+  }
+
+  // 6. Radial field
+  drawRadialField();
+
+  // 7. Starburst
+  drawStarburst();
+
+  // 8. OH halos
+  for (let i = ohHalos.length - 1; i >= 0; i--) {
+    ohHalos[i].draw();
+    if (!ohHalos[i].update()) ohHalos.splice(i, 1);
+  }
+
+  // 9. Hat scatter
+  for (let i = hatMarks.length - 1; i >= 0; i--) {
+    hatMarks[i].draw();
+    if (!hatMarks[i].update()) hatMarks.splice(i, 1);
+  }
+
+  // 10. Embers
+  if (V.noKick && frame % 2 === 0) embers.push(new Ember());
+  for (let i = embers.length - 1; i >= 0; i--) {
+    embers[i].draw();
+    if (!embers[i].update()) embers.splice(i, 1);
+  }
+
+  // 11. Clap cracks
+  for (let i = clapCracks.length - 1; i >= 0; i--) {
+    clapCracks[i].draw();
+    if (!clapCracks[i].update()) clapCracks.splice(i, 1);
+  }
+
+  // 12. Clap full-screen flash
+  if (V.clapHit > 0.15) {
+    ctx.fillStyle = `rgba(255,240,200,${V.clapHit * 0.15})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // 13. Chaos glitch (top layer)
+  drawChaosGlitch();
+}
+
+render();
+
+// ══════════════════════════════════════════
+// PLAYBACK ENGINE
+// ══════════════════════════════════════════
+let audioCtx = null;
+let engine = null;
+let playing = false;
+let nextStepTime = 0;
+let currentStep = 0;
+let currentSectionIdx = 0;
+let currentBar = 0;
+let schedulerTimer = null;
+
+const SCHEDULE_AHEAD = 0.1;
+const LOOKAHEAD = 25;
+
+function getSection() { return arrangement[currentSectionIdx]; }
+function getPattern() { return patterns[getSection().pattern]; }
+
+function applyParams(pat) {
+  for (const [voice, params] of Object.entries(pat.params || {})) {
+    for (const [param, value] of Object.entries(params)) {
+      engine.setVoiceParam(voice, param, value);
+    }
+  }
+}
+
+function applyAutomation(pat, stepIdx) {
+  for (const [path, values] of Object.entries(pat.automation || {})) {
+    const [voiceId, paramId] = path.split('.');
+    const val = values[stepIdx % values.length];
+    if (val !== null && val !== undefined) {
+      engine.setVoiceParam(voiceId, paramId, val);
+    }
+  }
+}
+
+function scheduleStep(time) {
+  const pat = getPattern();
+  const stepInPattern = currentStep % 16;
+  const section = getSection();
+  const patKey = section.pattern;
+
+  applyAutomation(pat, stepInPattern);
+
+  const src = autoRaw[patKey];
+  const decayRaw = src.decay ? src.decay[stepInPattern % 16] : 0;
+  const toneRaw = src.tone ? src.tone[stepInPattern % 16] : 50;
+
+  for (const [voiceId, steps] of Object.entries(pat.voices)) {
+    if (steps.includes(stepInPattern)) {
+      engine.trigger(voiceId, 1, time);
+    }
+  }
+
+  const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
+  setTimeout(() => {
+    V.decay = decayRaw;
+    V.tone = toneRaw;
+    V.step = stepInPattern;
+    V.globalStep++;
+    V.noKick = !pat.voices.kick || pat.voices.kick.length === 0;
+    V.targetEnergy = section.energy;
+    V.sectionPattern = patKey;
+    V.sectionLabel = section.label;
+    V.chaosMode = section.label === 'RELENTLESS' || section.label === 'PEAK' || section.label === 'PEAK II';
+    V.blockSlam = patKey === 'E';
+
+    // Section transition detection
+    if (currentSectionIdx !== V.prevSectionIdx) {
+      const prevEnergy = V.prevSectionIdx >= 0 ? arrangement[V.prevSectionIdx].energy : 0;
+      triggerSectionFlash(prevEnergy, section.energy, toneRaw / 100);
+      flashSectionWord(section.label, toneRaw / 100);
+      V.prevSectionIdx = currentSectionIdx;
+
+      // Big shake on section transitions
+      const diff = Math.abs(section.energy - prevEnergy);
+      if (diff > 0.3) triggerShake(diff * 20);
+    }
+
+    // Block slam detection — enhanced
+    const decayDelta = Math.abs(decayRaw - V.prevDecay);
+    if (decayDelta > 40) {
+      slamState.alpha = Math.min(1, decayDelta / 60);
+      slamState.wide = decayRaw > V.prevDecay;
+      triggerShake(decayDelta * 0.15);
+    }
+    V.prevDecay = decayRaw;
+
+    const decay01 = decayRaw / 100;
+    const tone01 = toneRaw / 100;
+
+    // Kick
+    if (pat.voices.kick && pat.voices.kick.includes(stepInPattern)) {
+      V.kickHit = 1;
+      kickWaves.push(new KickWave());
+      triggerShake(3 + V.energy * 5);
+    }
+
+    // Clap
+    if (pat.voices.clap && pat.voices.clap.includes(stepInPattern)) {
+      V.clapHit = 1;
+      clapCracks.push(new ClapCrack());
+      clapCracks.push(new ClapCrack());
+      if (V.energy > 0.8) clapCracks.push(new ClapCrack()); // triple at peak
+      triggerShake(8 + V.energy * 6);
+    }
+
+    // Open hat
+    if (pat.voices.oh && pat.voices.oh.includes(stepInPattern)) {
+      V.ohHit = 1;
+      ohHalos.push(new OHHalo());
+      if (V.energy > 0.4) ohHalos.push(new OHHalo());
+    }
+
+    // Closed hat — more scatter at higher energy
+    if (pat.voices.ch && pat.voices.ch.includes(stepInPattern)) {
+      V.chHit = 1;
+      const count = 3 + Math.floor(V.energy * 12);
+      for (let i = 0; i < count; i++) {
+        hatMarks.push(new HatMark(decay01, tone01));
       }
-    });
-  </script>
+      // Flash words on high-energy hat hits
+      flashWord(V.energy, tone01);
+    }
+
+    // Update HUD
+    updateDots(stepInPattern, decayRaw);
+
+    const labelEl = document.getElementById('section-label');
+    labelEl.textContent = section.label;
+    // Section label color matches tone
+    const [lr, lg, lb] = toneToRGB(tone01, 0.6);
+    labelEl.style.color = `rgba(${lr},${lg},${lb},0.4)`;
+
+    document.getElementById('bar-count').textContent =
+      `${currentBar + 1} / ${arrangement.reduce((s, a) => s + a.bars, 0)}`;
+  }, delay);
+}
+
+function advanceStep() {
+  currentStep++;
+  if (currentStep % 16 === 0) {
+    currentBar++;
+    let barsBeforeSection = 0;
+    for (let i = 0; i < currentSectionIdx; i++) barsBeforeSection += arrangement[i].bars;
+    if (currentBar - barsBeforeSection >= getSection().bars) {
+      currentSectionIdx++;
+      if (currentSectionIdx >= arrangement.length) { stop(); return false; }
+      applyParams(getPattern());
+    }
+  }
+  return true;
+}
+
+function scheduler() {
+  while (nextStepTime < audioCtx.currentTime + SCHEDULE_AHEAD) {
+    scheduleStep(nextStepTime);
+    nextStepTime += STEP_DUR;
+    if (!advanceStep()) return;
+  }
+  schedulerTimer = setTimeout(scheduler, LOOKAHEAD);
+}
+
+function start() {
+  if (!audioCtx) {
+    audioCtx = new AudioContext({ sampleRate: 44100 });
+    engine = new JB01Engine({ context: audioCtx, bpm: BPM });
+    engine.output.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  currentStep = 0; currentSectionIdx = 0; currentBar = 0;
+  V.prevDecay = 0; V.decay = 0; V.tone = 50;
+  V.smoothDecay = 0; V.smoothTone = 50;
+  V.playing = true; V.globalStep = 0;
+  V.prevSectionIdx = -1;
+
+  kickWaves.length = 0; clapCracks.length = 0;
+  ohHalos.length = 0; hatMarks.length = 0; embers.length = 0;
+
+  applyParams(getPattern());
+  nextStepTime = audioCtx.currentTime + 0.05;
+  playing = true;
+  document.getElementById('play-btn').classList.add('playing');
+  document.getElementById('restart-zone').style.display = 'none';
+  scheduler();
+}
+
+function stop() {
+  playing = false; V.playing = false; V.targetEnergy = 0;
+  if (schedulerTimer) clearTimeout(schedulerTimer);
+  document.getElementById('play-btn').classList.remove('playing');
+  document.getElementById('section-label').textContent = '';
+  document.getElementById('bar-count').textContent = '';
+  document.getElementById('restart-zone').style.display = 'block';
+  stepDots.forEach(d => {
+    d.style.width = '10px'; d.style.height = '10px';
+    d.style.background = 'rgba(255,255,255,0.04)';
+    d.style.boxShadow = 'none';
+  });
+}
+
+document.getElementById('play-btn').addEventListener('click', () => {
+  if (playing) stop(); else start();
+});
+document.getElementById('restart-zone').addEventListener('click', () => {
+  start();
+});
+</script>
 </body>
 </html>
