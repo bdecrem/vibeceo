@@ -74,7 +74,6 @@
       g.gain.setValueAtTime(0.2, audioCtx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
       osc.start(); osc.stop(audioCtx.currentTime + 0.25);
-      // crunch
       const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
       const data = buf.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
@@ -84,43 +83,58 @@
       ng.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15); src.start();
     }
 
-    // --- RIBBON ---
-    // Ribbon is a series of control points forming a smooth path.
-    // We generate it procedurally as the player advances.
+    function playLevelUp() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+    }
 
+    // --- RIBBON ---
     const RIBBON_BASE_WIDTH = 50;
     const RIBBON_MIN_WIDTH = 18;
-    const RIBBON_SEGMENT_LEN = 10; // pixels between sample points
+    const RIBBON_SEGMENT_LEN = 10;
 
-    let ribbonPoints = []; // {x, y} centerline points
-    let ribbonGenY = 0; // last Y generated to
+    let ribbonPoints = [];
+    let ribbonGenY = 0;
 
-    function generateRibbon(toY) {
+    function generateRibbon(toY, opts) {
+      const wide = opts && opts.wide;
+      const straight = opts && opts.straight;
       if (ribbonPoints.length === 0) {
         ribbonPoints.push({ x: W / 2, y: 0 });
         ribbonGenY = 0;
       }
       while (ribbonGenY < toY) {
-        const last = ribbonPoints[ribbonPoints.length - 1];
-        const depth = ribbonGenY / 1000; // difficulty scale
-        // wave amplitude increases, frequency varies
-        const amp = 60 + Math.min(depth * 20, 120);
-        const freq = 0.003 + Math.min(depth * 0.0005, 0.003);
+        const depth = ribbonGenY / 1000;
+        let amp, freq;
+        if (straight) {
+          amp = 10; freq = 0.001;
+        } else {
+          amp = 60 + Math.min(depth * 20, 120);
+          freq = 0.003 + Math.min(depth * 0.0005, 0.003);
+        }
         const nx = W / 2 + Math.sin(ribbonGenY * freq) * amp + Math.sin(ribbonGenY * freq * 2.3 + 1.7) * amp * 0.4;
         ribbonGenY += RIBBON_SEGMENT_LEN;
         ribbonPoints.push({ x: Math.max(40, Math.min(W - 40, nx)), y: ribbonGenY });
       }
     }
 
-    function getRibbonWidth(y) {
+    function getRibbonWidth(y, opts) {
+      if (opts && opts.wide) return 80;
       const depth = y / 1000;
       return Math.max(RIBBON_MIN_WIDTH, RIBBON_BASE_WIDTH - depth * 3);
     }
 
-    // find closest point on ribbon centerline to a position
+    let ribbonWidthOverride = 0; // 0 = use normal
+
     function closestRibbonPoint(px, py) {
       let bestDist = Infinity, bestIdx = 0;
-      // search around current area only
       const startIdx = Math.max(0, Math.floor((py - 200) / RIBBON_SEGMENT_LEN));
       const endIdx = Math.min(ribbonPoints.length - 1, startIdx + 60);
       for (let i = startIdx; i <= endIdx; i++) {
@@ -141,6 +155,69 @@
     let lastSnipScore;
     let screenShake;
 
+    // --- TUTORIAL STATE ---
+    let tutorialStep, tutorialPhase, tutorialTimer, tutorialDistanceCut;
+
+    const TUTORIAL_STEPS = [
+      {
+        name: 'CUT',
+        instruction: 'HOLD TO CUT THE RIBBON',
+        setup() {
+          scissors = { x: W / 2, y: 80, angle: 0 };
+          cutTrail = []; particles = [];
+          score = 0; bestCenter = 0; speedMult = 1;
+          cameraY = 0; scrollSpeed = 80; // slower
+          holding = false; lastSnipScore = 0;
+          screenShake = { timer: 0, intensity: 0 };
+          ribbonPoints = []; ribbonGenY = 0;
+          ribbonWidthOverride = 80; // extra wide, can't miss
+          generateRibbon(H + 500, { straight: true, wide: true });
+          tutorialDistanceCut = 0;
+          startCutNoise();
+        },
+        check() { return tutorialDistanceCut > 300; }, // ~3-4 seconds of cutting
+        successText: 'NICE!',
+      },
+      {
+        name: 'STEER',
+        instruction: 'FOLLOW THE CURVE',
+        setup() {
+          scissors = { x: W / 2, y: 80, angle: 0 };
+          cutTrail = []; particles = [];
+          score = 0; bestCenter = 0; speedMult = 1;
+          cameraY = 0; scrollSpeed = 90;
+          holding = false; lastSnipScore = 0;
+          screenShake = { timer: 0, intensity: 0 };
+          ribbonPoints = []; ribbonGenY = 0;
+          ribbonWidthOverride = 60; // still generous
+          generateRibbon(H + 500);
+          tutorialDistanceCut = 0;
+          startCutNoise();
+        },
+        check() { return tutorialDistanceCut > 400; },
+        successText: 'SMOOTH!',
+      },
+      {
+        name: 'BOOST',
+        instruction: 'HUG THE CENTER LINE',
+        setup() {
+          scissors = { x: W / 2, y: 80, angle: 0 };
+          cutTrail = []; particles = [];
+          score = 0; bestCenter = 0; speedMult = 1;
+          cameraY = 0; scrollSpeed = 100;
+          holding = false; lastSnipScore = 0;
+          screenShake = { timer: 0, intensity: 0 };
+          ribbonPoints = []; ribbonGenY = 0;
+          ribbonWidthOverride = 50; // normal width
+          generateRibbon(H + 500);
+          tutorialDistanceCut = 0;
+          startCutNoise();
+        },
+        check() { return speedMult >= 1.4; }, // hit the boost
+        successText: 'READY!',
+      },
+    ];
+
     function init() {
       scissors = { x: W / 2, y: 80, angle: 0 };
       cutTrail = [];
@@ -152,23 +229,84 @@
       gameTime = 0;
       deadTimer = 0;
       cameraY = 0;
-      scrollSpeed = 120; // pixels per second base
+      scrollSpeed = 120;
       holding = false;
       lastSnipScore = 0;
       screenShake = { timer: 0, intensity: 0 };
       ribbonPoints = [];
       ribbonGenY = 0;
+      ribbonWidthOverride = 0;
+      tutorialStep = -1;
+      tutorialPhase = 'instruction';
+      tutorialTimer = 0;
+      tutorialDistanceCut = 0;
       generateRibbon(H + 500);
       stopCutNoise();
+    }
+
+    function startGame() {
+      init();
+      initAudio();
+      startCutNoise();
+      gamePhase = 'playing';
+    }
+
+    function startTutorial() {
+      gamePhase = 'tutorial';
+      tutorialStep = 0;
+      tutorialPhase = 'instruction';
+      tutorialTimer = 0;
+      initAudio();
+      TUTORIAL_STEPS[0].setup();
+    }
+
+    function skipTutorial() {
+      tutorialStep = -1;
+      stopCutNoise();
+      init();
+      startGame();
+    }
+
+    function advanceTutorial() {
+      tutorialStep++;
+      if (tutorialStep >= TUTORIAL_STEPS.length) {
+        tutorialStep = -1;
+        stopCutNoise();
+        init();
+        startGame();
+        return;
+      }
+      tutorialPhase = 'instruction';
+      tutorialTimer = 0;
+      TUTORIAL_STEPS[tutorialStep].setup();
     }
 
     // --- INPUT ---
     let touchX = W / 2;
 
+    function handleStartClick(clientX, clientY) {
+      const btnY = H / 2 + 130;
+      if (Math.abs(clientY - btnY) < 20 && Math.abs(clientX - W / 2) < 80) {
+        startTutorial();
+        return;
+      }
+      startGame();
+    }
+
+    function handleTutorialInput(isStart) {
+      if (isStart && tutorialPhase === 'instruction') return; // wait for instruction to finish
+    }
+
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      if (gamePhase === 'start') { startGame(); return; }
+      if (gamePhase === 'start') { handleStartClick(e.touches[0].clientX, e.touches[0].clientY); return; }
       if (gamePhase === 'over') { init(); return; }
+      if (gamePhase === 'tutorial') {
+        const t = e.touches[0];
+        if (t.clientX > W - 80 && t.clientY < 45) { skipTutorial(); return; }
+        if (tutorialPhase === 'playing') { holding = true; touchX = t.clientX; }
+        return;
+      }
       holding = true;
       touchX = e.touches[0].clientX;
     });
@@ -181,25 +319,25 @@
       holding = false;
     });
     canvas.addEventListener('mousedown', (e) => {
-      if (gamePhase === 'start') { startGame(); return; }
+      if (gamePhase === 'start') { handleStartClick(e.clientX, e.clientY); return; }
       if (gamePhase === 'over') { init(); return; }
+      if (gamePhase === 'tutorial') {
+        if (e.clientX > W - 80 && e.clientY < 45) { skipTutorial(); return; }
+        if (tutorialPhase === 'playing') { holding = true; touchX = e.clientX; }
+        return;
+      }
       holding = true;
       touchX = e.clientX;
     });
     canvas.addEventListener('mousemove', (e) => { touchX = e.clientX; });
     canvas.addEventListener('mouseup', () => { holding = false; });
 
-    function startGame() {
-      init();
-      initAudio();
-      startCutNoise();
-      gamePhase = 'playing';
-    }
-
     // --- UPDATE ---
     function update(dt) {
       if (gamePhase === 'start') { gameTime += dt; return; }
       gameTime += dt;
+
+      if (gamePhase === 'tutorial') { updateTutorial(dt); return; }
 
       if (gamePhase === 'dead') {
         deadTimer += dt;
@@ -210,30 +348,23 @@
 
       if (gamePhase !== 'playing') return;
 
-      // generate ribbon ahead
       generateRibbon(cameraY + H + 500);
 
-      // scroll
       const effectiveSpeed = scrollSpeed * speedMult;
       cameraY += effectiveSpeed * dt;
 
-      // scissors position: follows touch X when holding, otherwise drifts
-      const worldY = cameraY + 120; // scissors at ~120px from top of screen
+      const worldY = cameraY + 120;
       scissors.y = worldY;
 
       if (holding) {
-        // move toward touch X
-        const targetX = touchX;
-        scissors.x += (targetX - scissors.x) * 8 * dt;
+        scissors.x += (touchX - scissors.x) * 8 * dt;
       }
 
-      // check ribbon relationship
       const closest = closestRibbonPoint(scissors.x, scissors.y);
-      const ribbonW = getRibbonWidth(scissors.y);
+      const ribbonW = ribbonWidthOverride || getRibbonWidth(scissors.y);
       const halfW = ribbonW / 2;
       const centerDist = closest.dist;
 
-      // angle scissors toward movement direction
       if (ribbonPoints[closest.idx + 1]) {
         const next = ribbonPoints[closest.idx + 1];
         const prev = ribbonPoints[Math.max(0, closest.idx - 1)];
@@ -241,74 +372,46 @@
       }
 
       if (holding) {
-        // cutting mode
         if (centerDist < halfW - 4) {
-          // on ribbon — scoring!
           const accuracy = 1 - (centerDist / halfW);
           score += effectiveSpeed * dt * 0.1 * (1 + accuracy);
-
-          // center accuracy -> speed boost (continuous curve)
-          // 0% accuracy = 1x target, 60% = 1.2x, 80% = 1.5x, 95%+ = 1.8x
-          const targetSpeed = 1 + accuracy * accuracy * 0.8; // quadratic: smooth ramp to 1.8x
+          const targetSpeed = 1 + accuracy * accuracy * 0.8;
           if (targetSpeed > speedMult) {
             speedMult = Math.min(speedMult + 0.4 * dt, 1.8);
           } else {
             speedMult = Math.max(1, speedMult - 0.5 * dt);
           }
           if (accuracy > 0.8) bestCenter += dt;
-
-          // cut trail
           cutTrail.push({ x: scissors.x, y: scissors.y, life: 3 });
-
-          // snip sound on milestones
           if (Math.floor(score) > lastSnipScore && Math.floor(score) % 5 === 0) {
-            playSnip();
-            lastSnipScore = Math.floor(score);
+            playSnip(); lastSnipScore = Math.floor(score);
           }
-
-          // cutting audio volume based on accuracy
           setCutVolume(0.03 + accuracy * 0.04);
         } else if (centerDist < halfW + 4) {
-          // near edge — danger zone
           setCutVolume(0.01);
           speedMult = Math.max(1, speedMult - 1 * dt);
         } else {
-          // hit the edge or beyond — SNAG
-          die();
-          return;
+          die(); return;
         }
       } else {
-        // gliding in air
         setCutVolume(0);
         speedMult = Math.max(1, speedMult - 0.8 * dt);
-        // drift scissors back toward ribbon center
-        if (closest.point) {
-          scissors.x += (closest.point.x - scissors.x) * 1.5 * dt;
-        }
+        if (closest.point) scissors.x += (closest.point.x - scissors.x) * 1.5 * dt;
       }
 
-      // base scroll speed increases with depth
       scrollSpeed = 120 + Math.min(cameraY * 0.01, 100);
 
-      // trim old trail
       for (let i = cutTrail.length - 1; i >= 0; i--) {
         cutTrail[i].life -= dt;
         if (cutTrail[i].life <= 0) cutTrail.splice(i, 1);
       }
-
-      // particles
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
         if (p.life <= 0) particles.splice(i, 1);
       }
-
       if (screenShake.timer > 0) screenShake.timer -= dt;
-
-      // prune old ribbon points
-      while (ribbonPoints.length > 2 && ribbonPoints[0].y < cameraY - 100) {
-        ribbonPoints.shift();
-      }
+      while (ribbonPoints.length > 2 && ribbonPoints[0].y < cameraY - 100) ribbonPoints.shift();
     }
 
     function die() {
@@ -316,11 +419,105 @@
       deadTimer = 0;
       screenShake = { timer: 0.15, intensity: 3 };
       playSnag();
-      // sparks
       for (let i = 0; i < 10; i++) {
         const a = Math.random() * Math.PI * 2;
         const s = 30 + Math.random() * 60;
         particles.push({ x: scissors.x, y: scissors.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, r: 1 + Math.random() * 2, color: T.danger, life: 0.3 + Math.random() * 0.2, maxLife: 0.5 });
+      }
+    }
+
+    // --- TUTORIAL UPDATE ---
+    function updateTutorial(dt) {
+      if (tutorialStep < 0 || tutorialStep >= TUTORIAL_STEPS.length) return;
+      const step = TUTORIAL_STEPS[tutorialStep];
+
+      if (tutorialPhase === 'instruction') {
+        tutorialTimer += dt;
+        if (tutorialTimer >= 1.2) { tutorialPhase = 'playing'; tutorialTimer = 0; }
+        return;
+      }
+
+      if (tutorialPhase === 'playing') {
+        // generate ribbon ahead
+        const genOpts = tutorialStep === 0 ? { straight: true, wide: true } : {};
+        generateRibbon(cameraY + H + 500, genOpts);
+
+        const effectiveSpeed = scrollSpeed * speedMult;
+        cameraY += effectiveSpeed * dt;
+
+        const worldY = cameraY + 120;
+        scissors.y = worldY;
+
+        if (holding) {
+          scissors.x += (touchX - scissors.x) * 8 * dt;
+        }
+
+        const closest = closestRibbonPoint(scissors.x, scissors.y);
+        const ribbonW = ribbonWidthOverride || getRibbonWidth(scissors.y);
+        const halfW = ribbonW / 2;
+        const centerDist = closest.dist;
+
+        if (ribbonPoints[closest.idx + 1]) {
+          const next = ribbonPoints[closest.idx + 1];
+          const prev = ribbonPoints[Math.max(0, closest.idx - 1)];
+          scissors.angle = Math.atan2(next.y - prev.y, next.x - prev.x);
+        }
+
+        if (holding) {
+          if (centerDist < halfW - 4) {
+            const accuracy = 1 - (centerDist / halfW);
+            score += effectiveSpeed * dt * 0.1 * (1 + accuracy);
+            tutorialDistanceCut += effectiveSpeed * dt;
+
+            const targetSpeed = 1 + accuracy * accuracy * 0.8;
+            if (targetSpeed > speedMult) {
+              speedMult = Math.min(speedMult + 0.4 * dt, 1.8);
+            } else {
+              speedMult = Math.max(1, speedMult - 0.5 * dt);
+            }
+            if (accuracy > 0.8) bestCenter += dt;
+            cutTrail.push({ x: scissors.x, y: scissors.y, life: 3 });
+            setCutVolume(0.03 + accuracy * 0.04);
+          } else if (centerDist < halfW + 4) {
+            setCutVolume(0.01);
+            speedMult = Math.max(1, speedMult - 1 * dt);
+          } else {
+            // tutorial: bounce back to center, don't kill
+            scissors.x = closest.point ? closest.point.x : W / 2;
+            screenShake = { timer: 0.1, intensity: 2 };
+            playSnag();
+            holding = false; // force release
+          }
+        } else {
+          setCutVolume(0);
+          speedMult = Math.max(1, speedMult - 0.8 * dt);
+          if (closest.point) scissors.x += (closest.point.x - scissors.x) * 1.5 * dt;
+        }
+
+        for (let i = cutTrail.length - 1; i >= 0; i--) {
+          cutTrail[i].life -= dt;
+          if (cutTrail[i].life <= 0) cutTrail.splice(i, 1);
+        }
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+          if (p.life <= 0) particles.splice(i, 1);
+        }
+        if (screenShake.timer > 0) screenShake.timer -= dt;
+        while (ribbonPoints.length > 2 && ribbonPoints[0].y < cameraY - 100) ribbonPoints.shift();
+
+        if (step.check()) {
+          tutorialPhase = 'success';
+          tutorialTimer = 0;
+          playLevelUp();
+        }
+        return;
+      }
+
+      if (tutorialPhase === 'success') {
+        tutorialTimer += dt;
+        const delay = tutorialStep === TUTORIAL_STEPS.length - 1 ? 1.0 : 0.6;
+        if (tutorialTimer >= delay) advanceTutorial();
       }
     }
 
@@ -378,7 +575,7 @@
       ctx.globalAlpha = 1;
 
       // scissors
-      if (gamePhase === 'playing' || gamePhase === 'dead') {
+      if (gamePhase === 'playing' || gamePhase === 'dead' || gamePhase === 'tutorial') {
         const sx = scissors.x;
         const sy = scissors.y - cameraY;
 
@@ -386,30 +583,17 @@
         ctx.translate(sx, sy);
         ctx.rotate(scissors.angle - Math.PI / 2);
 
-        // scissors V shape — wider when cutting, closed when gliding
         const bladeSpread = holding ? 12 : 5;
         ctx.strokeStyle = T.slime;
         ctx.lineWidth = 3.5;
         ctx.shadowBlur = holding ? 8 : 0;
         ctx.shadowColor = T.slime;
 
-        // left blade
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(-bladeSpread, -28);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-bladeSpread, -28); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(bladeSpread, -28); ctx.stroke();
 
-        // right blade
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(bladeSpread, -28);
-        ctx.stroke();
-
-        // pivot
         ctx.fillStyle = T.slime;
-        ctx.beginPath();
-        ctx.arc(0, 0, 3, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fill();
 
         ctx.shadowBlur = 0;
         ctx.restore();
@@ -423,7 +607,6 @@
       ctx.textAlign = 'left';
       ctx.fillText(Math.floor(score) + '', 16, 40);
 
-      // speed indicator
       if (speedMult > 1.1) {
         ctx.fillStyle = T.slime;
         ctx.font = 'bold 16px monospace';
@@ -431,11 +614,13 @@
         ctx.fillText(speedMult.toFixed(1) + 'x', W - 16, 40);
       }
 
-      // depth
       ctx.fillStyle = T.grey;
       ctx.font = '12px monospace';
       ctx.textAlign = 'left';
       ctx.fillText('depth ' + Math.floor(cameraY / 10), 16, 58);
+
+      // tutorial overlay
+      if (gamePhase === 'tutorial') drawTutorialOverlay();
 
       // dead overlay
       if (gamePhase === 'dead') {
@@ -451,10 +636,56 @@
       ctx.textAlign = 'left';
     }
 
+    function drawTutorialOverlay() {
+      if (tutorialStep < 0 || tutorialStep >= TUTORIAL_STEPS.length) return;
+      const step = TUTORIAL_STEPS[tutorialStep];
+
+      // step counter
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText((tutorialStep + 1) + '/' + TUTORIAL_STEPS.length, 16, 78);
+
+      // instruction
+      if (tutorialPhase === 'instruction' || tutorialPhase === 'playing') {
+        ctx.fillStyle = T.text;
+        ctx.font = 'bold 22px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(step.instruction, W / 2, 50);
+      }
+
+      // boost hint on step 3
+      if (tutorialStep === 2 && tutorialPhase === 'playing' && speedMult > 1.1) {
+        ctx.fillStyle = T.slime;
+        ctx.font = 'bold 16px monospace';
+        ctx.textAlign = 'center';
+        ctx.globalAlpha = 0.6 + Math.sin(gameTime * 4) * 0.3;
+        ctx.fillText('BOOSTING ' + speedMult.toFixed(1) + 'x', W / 2, H - 60);
+        ctx.globalAlpha = 1;
+      }
+
+      // success
+      if (tutorialPhase === 'success') {
+        ctx.fillStyle = T.slime;
+        ctx.font = 'bold 36px monospace';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = T.slime;
+        ctx.fillText(step.successText, W / 2, H / 2 - 20);
+        ctx.shadowBlur = 0;
+      }
+
+      // SKIP
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '14px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText('SKIP >', W - 16, 30);
+      ctx.textAlign = 'left';
+    }
+
     function drawRibbon() {
       if (ribbonPoints.length < 2) return;
 
-      // draw filled ribbon with edge highlights
       for (let i = 0; i < ribbonPoints.length - 1; i++) {
         const p1 = ribbonPoints[i];
         const p2 = ribbonPoints[i + 1];
@@ -463,10 +694,9 @@
 
         if (sy2 < -20 || sy1 > H + 20) continue;
 
-        const w1 = getRibbonWidth(p1.y) / 2;
-        const w2 = getRibbonWidth(p2.y) / 2;
+        const w1 = (ribbonWidthOverride || getRibbonWidth(p1.y)) / 2;
+        const w2 = (ribbonWidthOverride || getRibbonWidth(p2.y)) / 2;
 
-        // direction perpendicular
         const dx = p2.x - p1.x;
         const dy = p2.y - p1.y;
         const len = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -475,7 +705,7 @@
 
         // ribbon body
         ctx.fillStyle = T.gold;
-        ctx.globalAlpha = 0.7;
+        ctx.globalAlpha = 0.85;
         ctx.beginPath();
         ctx.moveTo(p1.x + nx * w1, sy1 + ny * w1);
         ctx.lineTo(p2.x + nx * w2, sy2 + ny * w2);
@@ -484,22 +714,20 @@
         ctx.closePath();
         ctx.fill();
 
-        // edges (darker, thinner)
+        // edges
         ctx.strokeStyle = T.goldDark;
         ctx.lineWidth = 1.5;
         ctx.globalAlpha = 0.9;
-        // left edge
         ctx.beginPath();
         ctx.moveTo(p1.x + nx * w1, sy1 + ny * w1);
         ctx.lineTo(p2.x + nx * w2, sy2 + ny * w2);
         ctx.stroke();
-        // right edge
         ctx.beginPath();
         ctx.moveTo(p1.x - nx * w1, sy1 - ny * w1);
         ctx.lineTo(p2.x - nx * w2, sy2 - ny * w2);
         ctx.stroke();
 
-        // center line — the target
+        // center line
         ctx.strokeStyle = speedMult > 1.3 ? T.gold : T.goldDark;
         ctx.lineWidth = 1;
         ctx.globalAlpha = speedMult > 1.3 ? 0.5 + Math.sin(gameTime * 6) * 0.15 : 0.5;
@@ -545,6 +773,10 @@
       ctx.fillStyle = T.slime;
       ctx.font = '20px monospace';
       ctx.fillText('[ HOLD TO START ]', W / 2, H / 2 + 100);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '16px monospace';
+      ctx.fillText('[ TUTORIAL ]', W / 2, H / 2 + 130);
 
       ctx.textAlign = 'left';
     }
