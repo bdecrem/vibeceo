@@ -117,8 +117,8 @@ Read these before making changes:
 Run these checks after modifying anything in `web/`:
 
 ```bash
-node scripts/check-middleware-routes.js   # Verify all routes have middleware bypass
-node scripts/check-og-images.js           # Verify OG image exports are correct
+node scripts/check-middleware-routes.cjs   # Verify all routes have middleware bypass
+node scripts/check-og-images.cjs           # Verify OG image exports are correct
 ```
 
 ## Critical Rules
