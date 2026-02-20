@@ -139,6 +139,7 @@
     let cameraY, scrollSpeed;
     let holding;
     let lastSnipScore;
+    let screenShake;
 
     function init() {
       scissors = { x: W / 2, y: 80, angle: 0 };
@@ -154,6 +155,7 @@
       scrollSpeed = 120; // pixels per second base
       holding = false;
       lastSnipScore = 0;
+      screenShake = { timer: 0, intensity: 0 };
       ribbonPoints = [];
       ribbonGenY = 0;
       generateRibbon(H + 500);
@@ -301,6 +303,8 @@
         if (p.life <= 0) particles.splice(i, 1);
       }
 
+      if (screenShake.timer > 0) screenShake.timer -= dt;
+
       // prune old ribbon points
       while (ribbonPoints.length > 2 && ribbonPoints[0].y < cameraY - 100) {
         ribbonPoints.shift();
@@ -310,6 +314,7 @@
     function die() {
       gamePhase = 'dead';
       deadTimer = 0;
+      screenShake = { timer: 0.15, intensity: 3 };
       playSnag();
       // sparks
       for (let i = 0; i < 10; i++) {
@@ -326,6 +331,12 @@
 
       if (gamePhase === 'start') { drawStart(); return; }
       if (gamePhase === 'over') { drawGameOver(); return; }
+
+      ctx.save();
+      if (screenShake.timer > 0) {
+        const s = screenShake.intensity * (screenShake.timer / 0.15);
+        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      }
 
       // grid
       ctx.strokeStyle = '#111111';
@@ -375,33 +386,36 @@
         ctx.translate(sx, sy);
         ctx.rotate(scissors.angle - Math.PI / 2);
 
-        // scissors V shape
+        // scissors V shape — wider when cutting, closed when gliding
+        const bladeSpread = holding ? 12 : 5;
         ctx.strokeStyle = T.slime;
-        ctx.lineWidth = 2.5;
-        ctx.shadowBlur = holding ? 6 : 0;
+        ctx.lineWidth = 3.5;
+        ctx.shadowBlur = holding ? 8 : 0;
         ctx.shadowColor = T.slime;
 
         // left blade
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(-6, -14);
+        ctx.lineTo(-bladeSpread, -28);
         ctx.stroke();
 
         // right blade
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(6, -14);
+        ctx.lineTo(bladeSpread, -28);
         ctx.stroke();
 
         // pivot
         ctx.fillStyle = T.slime;
         ctx.beginPath();
-        ctx.arc(0, 0, 2, 0, Math.PI * 2);
+        ctx.arc(0, 0, 3, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.shadowBlur = 0;
         ctx.restore();
       }
+
+      ctx.restore();
 
       // HUD
       ctx.fillStyle = T.text;
@@ -485,10 +499,10 @@
         ctx.lineTo(p2.x - nx * w2, sy2 - ny * w2);
         ctx.stroke();
 
-        // center line (faint)
-        ctx.strokeStyle = T.goldDark;
-        ctx.lineWidth = 0.5;
-        ctx.globalAlpha = 0.3;
+        // center line — the target
+        ctx.strokeStyle = speedMult > 1.3 ? T.gold : T.goldDark;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = speedMult > 1.3 ? 0.5 + Math.sin(gameTime * 6) * 0.15 : 0.5;
         ctx.beginPath();
         ctx.moveTo(p1.x, sy1);
         ctx.lineTo(p2.x, sy2);
