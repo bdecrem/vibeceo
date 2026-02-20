@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRIBAL III — JB01</title>
+  <meta property="og:title" content="TRIBAL III — Aggressive Hat Mashing">
+  <meta property="og:description" content="JB01 tribal techno. 133 BPM. Decay + tone automation. Parametric minimalism.">
+  <meta property="og:type" content="website">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    h1 {
+      font-size: 3rem;
+      letter-spacing: 0.6em;
+      color: #ff3300;
+      text-shadow: 0 0 40px rgba(255, 51, 0, 0.4);
+      margin-bottom: 0.3rem;
+      z-index: 2;
+    }
+    .subtitle {
+      opacity: 0.4;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      margin-bottom: 2rem;
+      z-index: 2;
+    }
+    #flash-word {
+      position: fixed;
+      font-size: 6rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+      mix-blend-mode: screen;
+      transition: opacity 0.05s;
+    }
+    .viz-container {
+      position: relative;
+      width: 90vw;
+      max-width: 800px;
+      height: 200px;
+      margin-bottom: 2rem;
+      z-index: 2;
+    }
+    .viz {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+      height: 100%;
+      justify-content: center;
+    }
+    .bar {
+      width: 20px;
+      border-radius: 2px;
+      transition: height 0.06s, background 0.06s;
+      min-height: 2px;
+    }
+    .section-label {
+      font-size: 0.8rem;
+      letter-spacing: 0.3em;
+      opacity: 0.6;
+      margin-bottom: 1.5rem;
+      min-height: 1.2em;
+      z-index: 2;
+    }
+    button {
+      background: #ff3300;
+      color: #0a0a0a;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.3em;
+      z-index: 2;
+    }
+    button:hover { transform: scale(1.05); box-shadow: 0 0 50px rgba(255, 51, 0, 0.5); }
+    button:disabled { opacity: 0.4; cursor: wait; }
+    #status { margin-top: 1rem; opacity: 0.4; font-size: 0.65rem; letter-spacing: 0.15em; z-index: 2; }
+    .bg-flash {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 1;
+      transition: opacity 0.05s;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-flash" id="bg-flash"></div>
+  <div id="flash-word"></div>
+  <h1>TRIBAL</h1>
+  <div class="subtitle">JB01 · 133 BPM · DECAY + TONE AUTOMATION · PARAMETRIC MINIMALISM</div>
+  <div class="viz-container"><div class="viz" id="viz"></div></div>
+  <div class="section-label" id="section-label"></div>
+  <button id="play">PLAY</button>
+  <div id="status">kick · ch · oh — two knobs, infinite texture</div>
+
+  <script type="module">
+    // Track data — patterns + automation baked in
+    const PATTERNS = {
+      A: {
+        kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [],
+        chDecay: [95,5,95,5,95,5,95,5,95,5,95,5,95,5,95,5],
+        chTone:  [10,95,10,95,10,95,10,95,10,95,10,95,10,95,10,95]
+      },
+      B: {
+        kick: [], ch: [0,2,4,6,8,10,12,14], oh: [],
+        chDecay: [5,10,15,20,30,40,50,60,70,80,85,90,93,95,98,100],
+        chTone:  [95,90,85,80,70,60,50,40,35,30,25,20,15,10,8,5]
+      },
+      C: {
+        kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [2,10],
+        chDecay: [100,100,100,100,5,5,5,5,100,100,100,100,5,5,5,5],
+        chTone:  [5,5,5,5,95,95,95,95,5,5,5,5,95,95,95,95]
+      },
+      D: {
+        kick: [0,4,8,12], ch: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], oh: [4,12],
+        chDecay: [72,15,88,42,95,8,61,33,79,22,50,91,12,67,44,85],
+        chTone:  [28,82,45,71,9,58,93,17,66,38,84,11,52,76,23,90]
+      }
+    };
+
+    const SECTIONS = [
+      { bars: 8, pattern: 'A', label: 'ALTERNATING EXTREMES' },
+      { bars: 4, pattern: 'B', label: 'BREAKDOWN' },
+      { bars: 8, pattern: 'C', label: 'BLOCK SLAM' },
+      { bars: 4, pattern: 'D', label: 'CHAOS' },
+      { bars: 4, pattern: 'C', label: 'PULL BACK' },
+      { bars: 4, pattern: 'A', label: 'OUTRO' }
+    ];
+
+    const WORDS = ['DECAY','TONE','TRIBAL','MACHINE','BREATHE','PULSE','TENSION','RELEASE','MINIMAL','PARAMETER','AUTOMATE','MASH'];
+    const COLORS = ['#ff3300','#ff6600','#ff0066','#ff0000','#cc0000','#ff3300','#ff4400','#ee2200'];
+
+    // Create bars
+    const vizEl = document.getElementById('viz');
+    const bars = [];
+    for (let i = 0; i < 16; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = '2px';
+      bar.style.background = '#ff3300';
+      vizEl.appendChild(bar);
+      bars.push(bar);
+    }
+
+    let isPlaying = false;
+
+    document.getElementById('play').addEventListener('click', async () => {
+      const btn = document.getElementById('play');
+      const status = document.getElementById('status');
+      const sectionLabel = document.getElementById('section-label');
+      const flashWord = document.getElementById('flash-word');
+      const bgFlash = document.getElementById('bg-flash');
+
+      if (isPlaying) return;
+      isPlaying = true;
+      btn.disabled = true;
+      btn.textContent = 'LOADING...';
+
+      try {
+        // Import and render
+        const { JB01Engine } = await import('/jb01/dist/machines/jb01/engine.js');
+        const engine = new JB01Engine();
+
+        btn.textContent = 'RENDERING...';
+
+        // Render each section
+        const sectionBuffers = [];
+        for (const section of SECTIONS) {
+          const pat = PATTERNS[section.pattern];
+          const pattern = {};
+          const voices = ['kick','ch','oh'];
+          for (const v of voices) {
+            if (pat[v] && pat[v].length > 0) {
+              pattern[v] = Array.from({length:16}, (_,i) =>
+                ({velocity: pat[v].includes(i) ? 0.85 : 0, accent: false})
+              );
+            }
+          }
+          engine.setPattern(pattern);
+
+          // Build automation
+          const automation = {};
+          if (pat.chDecay) automation['ch.decay'] = pat.chDecay.map(v => v/100);
+          if (pat.chTone) automation['ch.tone'] = pat.chTone.map(v => v/100);
+
+          const buffer = await engine.renderPattern({
+            bars: section.bars,
+            bpm: 133,
+            automation
+          });
+          sectionBuffers.push(buffer);
+        }
+
+        // Concatenate
+        const totalLength = sectionBuffers.reduce((s,b) => s + b.length, 0);
+        const ctx = new AudioContext();
+        const fullBuffer = ctx.createBuffer(1, totalLength, sectionBuffers[0].sampleRate);
+        const channel = fullBuffer.getChannelData(0);
+        let offset = 0;
+        for (const buf of sectionBuffers) {
+          channel.set(buf.getChannelData(0), offset);
+          offset += buf.length;
+        }
+
+        // Play
+        const source = ctx.createBufferSource();
+        source.buffer = fullBuffer;
+        source.connect(ctx.destination);
+        source.start();
+
+        btn.textContent = 'PLAYING';
+        status.textContent = '32 bars · ~1 min';
+
+        // Animate
+        const stepDuration = (60 / 133 / 4) * 1000;
+        const totalSteps = 32 * 16;
+        let step = 0;
+        let sectionIdx = 0;
+        let sectionStartStep = 0;
+        let lastWordTime = 0;
+
+        const iv = setInterval(() => {
+          while (sectionIdx < SECTIONS.length - 1 &&
+                 step >= sectionStartStep + SECTIONS[sectionIdx].bars * 16) {
+            sectionStartStep += SECTIONS[sectionIdx].bars * 16;
+            sectionIdx++;
+          }
+          sectionLabel.textContent = SECTIONS[sectionIdx].label;
+
+          const patternStep = step % 16;
+          const pat = PATTERNS[SECTIONS[sectionIdx].pattern];
+          const decay = pat.chDecay[patternStep] / 100;
+          const tone = pat.chTone[patternStep] / 100;
+          const hasKick = pat.kick.includes(patternStep);
+          const hasCh = pat.ch.includes(patternStep);
+          const hasOh = pat.oh.includes(patternStep);
+
+          // Color based on tone
+          const r = Math.floor(255 * (1 - tone * 0.5));
+          const g = Math.floor(51 * tone);
+          const b = Math.floor(20 + tone * 80);
+          const color = `rgb(${r},${g},${b})`;
+
+          bars.forEach((bar, i) => {
+            if (i === patternStep) {
+              let h = 4;
+              if (hasCh) h = 20 + decay * 160;
+              if (hasKick) h = Math.max(h, 120);
+              if (hasOh) h = Math.max(h, 80);
+              bar.style.height = h + 'px';
+              bar.style.background = hasKick ? '#ffffff' : color;
+            } else {
+              bar.style.height = '2px';
+              bar.style.background = '#1a0500';
+            }
+          });
+
+          // Background flash on kick
+          if (hasKick) {
+            bgFlash.style.background = `radial-gradient(circle, ${color}22 0%, transparent 70%)`;
+            bgFlash.style.opacity = '1';
+            setTimeout(() => bgFlash.style.opacity = '0', 80);
+          }
+
+          // Flash words on section transitions and random moments
+          const now = Date.now();
+          if ((patternStep === 0 && step % 64 === 0) || (Math.random() < 0.02 && now - lastWordTime > 2000)) {
+            const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+            const wcolor = COLORS[Math.floor(Math.random() * COLORS.length)];
+            flashWord.textContent = word;
+            flashWord.style.color = wcolor;
+            flashWord.style.top = (10 + Math.random() * 60) + 'vh';
+            flashWord.style.left = (5 + Math.random() * 60) + 'vw';
+            flashWord.style.opacity = '0.7';
+            lastWordTime = now;
+            setTimeout(() => flashWord.style.opacity = '0', 150);
+          }
+
+          step++;
+          if (step >= totalSteps) clearInterval(iv);
+        }, stepDuration);
+
+        source.onended = () => {
+          clearInterval(iv);
+          bars.forEach(b => { b.style.height = '2px'; b.style.background = '#1a0500'; });
+          bgFlash.style.opacity = '0';
+          flashWord.style.opacity = '0';
+          isPlaying = false;
+          btn.disabled = false;
+          btn.textContent = 'PLAY';
+          sectionLabel.textContent = '';
+          status.textContent = 'kick · ch · oh — two knobs, infinite texture';
+        };
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'error: ' + err.message;
+        btn.disabled = false;
+        btn.textContent = 'PLAY';
+        isPlaying = false;
+      }
+    });
+  </script>
+</body>
+</html>
