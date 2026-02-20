@@ -18,7 +18,6 @@ const labMessages = [
 ];
 
 const games = [
-  { icon: '👻', name: 'Phase', href: '/pixelpit/arcade/phase', playable: true, date: 'Fri 2/20' },
   { icon: '✂️', name: 'Snip', href: '/pixelpit/arcade/snip', playable: true, date: 'Fri 2/20' },
   { icon: '🧲', name: 'Clump', href: '/pixelpit/arcade/clump', playable: true, date: 'Thu 2/19' },
   { icon: '🕳️', name: 'Devour', href: '/pixelpit/arcade/devour', playable: true, date: 'Wed 2/18' },
@@ -124,7 +123,7 @@ const _makers = [
 
 const labItems = [
   { icon: '✂️', name: 'Snip', href: '/pixelpit/lab/snip', date: 'Fri 2/20', shipped: true },
-  { icon: '👻', name: 'Phase', href: '/pixelpit/lab/phase', date: 'Fri 2/20', shipped: true },
+  { icon: '👻', name: 'Phase', href: '/pixelpit/lab/phase', date: 'Fri 2/20' },
   { icon: '📄', name: 'Fold', href: '/pixelpit/lab/fold', date: 'Thu 2/19' },
   { icon: '🧪', name: 'Sift', href: '/pixelpit/lab/sift', date: 'Thu 2/19' },
   { icon: '🧲', name: 'Clump', href: '/pixelpit/lab/clump', date: 'Thu 2/19', shipped: true },
