@@ -16,63 +16,63 @@
     "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "node output level" }
   },
   "kick": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "kick level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "kick level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "kick pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "kick decay" },
     "attack": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "kick click/attack" },
     "sweep": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "pitch envelope depth" }
   },
   "snare": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "snare level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "snare level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "snare pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 40, "hint": "snare decay" },
     "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "tone vs noise balance" },
     "snappy": { "unit": "0-100", "min": 0, "max": 100, "default": 50, "hint": "snare wire intensity" }
   },
   "clap": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "clap level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "clap level" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 3, "hint": "clap decay" },
     "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 13, "hint": "clap tone" }
   },
   "rimshot": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "rimshot level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "rimshot level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": -7, "hint": "rimshot pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 10, "hint": "rimshot decay" }
   },
   "lowtom": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "low tom level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "low tom level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "low tom pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "low tom decay" }
   },
   "midtom": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "mid tom level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "mid tom level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": -5, "hint": "mid tom pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 80, "hint": "mid tom decay" }
   },
   "hitom": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "high tom level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "high tom level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": -5, "hint": "high tom pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 55, "hint": "high tom decay" }
   },
   "ch": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "closed hi-hat level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "closed hi-hat level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "hi-hat pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "closed hi-hat decay" },
     "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "hi-hat brightness/noise" }
   },
   "oh": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "open hi-hat level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "open hi-hat level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "hi-hat pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "open hi-hat decay" },
     "tone": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "hi-hat brightness/noise" }
   },
   "crash": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "crash cymbal level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "crash cymbal level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "crash pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "crash decay" }
   },
   "ride": {
-    "level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "ride cymbal level" },
+    "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "ride cymbal level" },
     "tune": { "unit": "semitones", "min": -12, "max": 12, "default": 0, "hint": "ride pitch" },
     "decay": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "ride decay" }
   }
