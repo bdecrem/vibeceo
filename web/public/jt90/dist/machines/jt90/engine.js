@@ -16,7 +16,11 @@ import { RimshotVoice } from './voices/rimshot.js';
 import { SampleVoice, decodeWav } from './voices/sample-voice.js';
 import { JT90Sequencer } from './sequencer.js';
 import { clamp, fastTanh } from '../../../../jb202/dist/dsp/utils/math.js';
-import { VOICE_PARAM_DEFS, toEngineDefault } from './param-defs.js';
+import { VOICE_PARAM_DEFS } from './param-defs.js';
+
+// Convert param-defs value to engine units: semitones → cents, everything else passes through.
+// Mirrors converters.js toEngine() semitones case — web can't import Node-only converters.js.
+const toEngineVal = (v, p) => p.unit === 'semitones' ? v * 100 : v;
 
 // Sample voice configurations
 // maxDecay must be ~5-10x the sample duration so decay=1 is nearly transparent
@@ -149,7 +153,7 @@ export class JT90Engine {
         const params = JT90Engine.VOICE_PARAMS[voiceId];
         if (params) {
           for (const p of params) {
-            newVoice.setParameter(p.id, toEngineDefault(p.defaultValue, p));
+            newVoice.setParameter(p.id, toEngineVal(p.defaultValue, p));
           }
         }
         this._voices[voiceId] = newVoice;
@@ -193,7 +197,7 @@ export class JT90Engine {
       result[voiceId] = {};
       for (const param of params) {
         const value = this._voices[voiceId]?.[param.id];
-        if (value !== undefined && value !== toEngineDefault(param.defaultValue, param)) {
+        if (value !== undefined && value !== toEngineVal(param.defaultValue, param)) {
           result[voiceId][param.id] = value;
         }
       }

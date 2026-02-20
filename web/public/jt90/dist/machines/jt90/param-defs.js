@@ -5,7 +5,7 @@
  * and the web UI (for knobs) import from this file.
  *
  * Units: Parameters are defined in producer-friendly units (semitones, 0-1).
- * Conversion to engine units happens at call sites via toEngineDefault().
+ * Conversion to engine units happens at call sites (semitones * 100 = cents).
  *
  * The canonical JSON source is jambot/params/jt90-params.json (producer units:
  * 0-100 for knobs, semitones for tune). This file mirrors those definitions
@@ -80,11 +80,3 @@ export const VOICE_PARAM_DEFS = {
   ],
 };
 
-/**
- * Convert a producer-facing value to engine units.
- * Semitones -> cents, everything else passes through.
- */
-export function toEngineDefault(value, paramDef) {
-  if (paramDef.unit === 'semitones') return value * 100;
-  return value;
-}

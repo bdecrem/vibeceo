@@ -6,7 +6,10 @@
  */
 
 import { JT90Engine } from '../../machines/jt90/engine.js';
-import { toEngineDefault as toEngineValue } from '../../machines/jt90/param-defs.js';
+
+// Convert param-defs value to engine units: semitones → cents, everything else passes through.
+// Mirrors converters.js toEngine() semitones case — web can't import Node-only converters.js.
+const toEngineValue = (v, p) => p.unit === 'semitones' ? v * 100 : v;
 
 const STEPS = 16;
 
