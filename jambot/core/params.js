@@ -28,6 +28,10 @@ export class ParamSystem {
     if (this.nodes.has(id)) {
       console.warn(`ParamSystem: Node "${id}" is being re-registered`);
     }
+    // Validate interface at registration time (catches drift early)
+    if (typeof node.validateInterface === 'function') {
+      node.validateInterface();
+    }
     this.nodes.set(id, node);
   }
 

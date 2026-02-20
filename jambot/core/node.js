@@ -245,6 +245,29 @@ export class InstrumentNode extends Node {
   }
 
   /**
+   * Validate that this node implements the required InstrumentNode interface.
+   * Called at registration time to catch drift early instead of at render time.
+   *
+   * Required: getParam, setParam, getPattern, setPattern, renderPattern,
+   *           getDescriptor, getPatternLength, getOutputGain
+   * Optional: renderVoices, resizePattern, getVoices, hasVoice
+   *
+   * @throws {Error} If required methods are missing
+   */
+  validateInterface() {
+    const required = [
+      'getParam', 'setParam', 'getPattern', 'setPattern',
+      'renderPattern', 'getDescriptor', 'getPatternLength', 'getOutputGain',
+    ];
+    const missing = required.filter(name => typeof this[name] !== 'function');
+    if (missing.length > 0) {
+      throw new Error(
+        `InstrumentNode "${this.id}": missing required methods: ${missing.join(', ')}`
+      );
+    }
+  }
+
+  /**
    * Serialize instrument state including pattern
    * @returns {Object}
    */
