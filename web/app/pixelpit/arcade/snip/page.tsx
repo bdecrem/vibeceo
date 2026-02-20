@@ -328,11 +328,11 @@ export default function SnipGame() {
 
       if (game.graceTimer > 0) game.graceTimer -= dt;
 
-      // collision at V junction point (where the two blades meet)
+      // collision at V junction point — only horizontal distance from ribbon center matters
       const closest = closestRibbonPoint(game.scissors.x, game.scissors.y);
       const ribbonW = getRibbonWidth(game.scissors.y);
       const halfW = ribbonW / 2;
-      const centerDist = closest.dist;
+      const centerDist = closest.point ? Math.abs(game.scissors.x - closest.point.x) : closest.dist;
 
       const pts = game.ribbonPoints;
       if (pts[closest.idx + 1]) {

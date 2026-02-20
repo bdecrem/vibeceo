@@ -380,11 +380,11 @@
         scissors.x += (touchX - scissors.x) * 8 * dt;
       }
 
-      // collision at V junction point (where the two blades meet)
+      // collision at V junction point — only horizontal distance from ribbon center matters
       const closest = closestRibbonPoint(scissors.x, scissors.y);
       const ribbonW = ribbonWidthOverride || getRibbonWidth(scissors.y);
       const halfW = ribbonW / 2;
-      const centerDist = closest.dist;
+      const centerDist = closest.point ? Math.abs(scissors.x - closest.point.x) : closest.dist;
 
       if (ribbonPoints[closest.idx + 1]) {
         const next = ribbonPoints[closest.idx + 1];
