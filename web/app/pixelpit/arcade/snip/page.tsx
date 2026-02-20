@@ -81,6 +81,7 @@ export default function SnipGame() {
     audioCtx: null as AudioContext | null,
     cutNoiseNode: null as AudioBufferSourceNode | null,
     cutNoiseGain: null as GainNode | null,
+    playTime: 0, retapAllowed: true, hasRetapped: false,
     // tutorial
     tutorialStep: -1, tutorialPhase: 'instruction' as 'instruction' | 'playing' | 'success',
     tutorialTimer: 0, tutorialDistanceCut: 0,
@@ -205,13 +206,16 @@ export default function SnipGame() {
     game.screenShake = { timer: 0, intensity: 0 };
     game.gameTime = 0; game.deadTimer = 0;
     game.tutorialStep = -1; game.tutorialPhase = 'instruction'; game.tutorialTimer = 0; game.tutorialDistanceCut = 0;
+    game.playTime = 0; game.retapAllowed = true; game.hasRetapped = false;
     stopCutNoise();
     generateRibbon(game.H + 500);
   }, [stopCutNoise]);
 
   const startPlaying = useCallback(() => {
     initGame(); initAudio(); startCutNoise();
-    g.current.phase = 'playing'; g.current.running = true;
+    const game = g.current;
+    game.phase = 'playing'; game.running = true;
+    game.playTime = 0; game.retapAllowed = true; game.hasRetapped = false;
     setGameState('playing'); setShowShareModal(false); setProgression(null);
   }, [initGame, initAudio, startCutNoise]);
 
@@ -260,11 +264,22 @@ export default function SnipGame() {
         if (t.clientX > game.W - 80 && t.clientY < 45) { game.tutorialStep = -1; stopCutNoise(); initGame(); startPlaying(); }
       } else if (game.phase === 'playing') {
         game.holding = true; game.touchX = e.touches[0].clientX;
+        // two-chance recenter
+        if (game.hasRetapped && game.retapAllowed) {
+          const cl = closestRibbonPoint(game.scissors.x, game.scissors.y);
+          if (cl.point) game.scissors.x = cl.point.x;
+          game.retapAllowed = false;
+        }
       }
       initAudio();
     };
     const handleTouchMove = (e: TouchEvent) => { e.preventDefault(); g.current.touchX = e.touches[0].clientX; };
-    const handleTouchEnd = (e: TouchEvent) => { e.preventDefault(); g.current.holding = false; };
+    const handleTouchEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      const game = g.current;
+      game.holding = false;
+      if (game.phase === 'playing' && game.retapAllowed && !game.hasRetapped) game.hasRetapped = true;
+    };
     const handleMouseDown = (e: MouseEvent) => {
       const game = g.current;
       if (game.phase === 'tutorial') {
@@ -272,11 +287,20 @@ export default function SnipGame() {
         if (game.tutorialPhase === 'playing') { game.holding = true; game.touchX = e.clientX; }
       } else if (game.phase === 'playing') {
         game.holding = true; game.touchX = e.clientX;
+        if (game.hasRetapped && game.retapAllowed) {
+          const cl = closestRibbonPoint(game.scissors.x, game.scissors.y);
+          if (cl.point) game.scissors.x = cl.point.x;
+          game.retapAllowed = false;
+        }
       }
       initAudio();
     };
     const handleMouseMove = (e: MouseEvent) => { g.current.touchX = e.clientX; };
-    const handleMouseUp = () => { g.current.holding = false; };
+    const handleMouseUp = () => {
+      const game = g.current;
+      game.holding = false;
+      if (game.phase === 'playing' && game.retapAllowed && !game.hasRetapped) game.hasRetapped = true;
+    };
 
     canvas.addEventListener('touchstart', handleTouch, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -303,14 +327,24 @@ export default function SnipGame() {
       const genOpts = isTutorial && game.tutorialStep === 0 ? { straight: true, wide: true } : {};
       generateRibbon(game.cameraY + game.H + 500, genOpts);
 
-      const effectiveSpeed = game.scrollSpeed * game.speedMult;
+      // easy start: 40% speed for first 3s, ramp to 100% by 10s
+      const startRamp = isTutorial ? 1 : (game.playTime < 3 ? 0.4 : Math.min(1, 0.4 + (game.playTime - 3) * 0.086));
+      const effectiveSpeed = game.scrollSpeed * game.speedMult * startRamp;
       game.cameraY += effectiveSpeed * dt;
       game.scissors.y = game.cameraY + 120;
 
       if (game.holding) game.scissors.x += (game.touchX - game.scissors.x) * 8 * dt;
 
-      const closest = closestRibbonPoint(game.scissors.x, game.scissors.y);
-      const ribbonW = getRibbonWidth(game.scissors.y);
+      // two-chance start: allow retap in first 1s
+      if (game.retapAllowed && game.playTime > 1) game.retapAllowed = false;
+
+      // tip-only collision: only the tip of the V counts
+      const tipOffX = Math.cos(game.scissors.angle) * 28;
+      const tipOffY = Math.sin(game.scissors.angle) * 28;
+      const tipX = game.scissors.x + tipOffX;
+      const tipY = game.scissors.y + tipOffY;
+      const closest = closestRibbonPoint(tipX, tipY);
+      const ribbonW = getRibbonWidth(tipY);
       const halfW = ribbonW / 2;
       const centerDist = closest.dist;
 
@@ -399,6 +433,7 @@ export default function SnipGame() {
       }
 
       if (game.phase !== 'playing') return;
+      game.playTime += dt;
       updateScissors(dt, false);
     }
 

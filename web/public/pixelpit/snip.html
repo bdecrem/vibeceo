@@ -154,6 +154,9 @@
     let holding;
     let lastSnipScore;
     let screenShake;
+    let playTime; // seconds since game started (for easy start ramp)
+    let retapAllowed; // two-chance start: can retap once in first 1s
+    let hasRetapped;
 
     // --- TUTORIAL STATE ---
     let tutorialStep, tutorialPhase, tutorialTimer, tutorialDistanceCut;
@@ -240,6 +243,9 @@
       tutorialPhase = 'instruction';
       tutorialTimer = 0;
       tutorialDistanceCut = 0;
+      playTime = 0;
+      retapAllowed = true;
+      hasRetapped = false;
       generateRibbon(H + 500);
       stopCutNoise();
     }
@@ -249,6 +255,9 @@
       initAudio();
       startCutNoise();
       gamePhase = 'playing';
+      playTime = 0;
+      retapAllowed = true;
+      hasRetapped = false;
     }
 
     function startTutorial() {
@@ -309,6 +318,12 @@
       }
       holding = true;
       touchX = e.touches[0].clientX;
+      // two-chance recenter on retap
+      if (hasRetapped && retapAllowed) {
+        const closest = closestRibbonPoint(scissors.x, scissors.y);
+        if (closest.point) scissors.x = closest.point.x;
+        retapAllowed = false; // locked in now
+      }
     });
     canvas.addEventListener('touchmove', (e) => {
       e.preventDefault();
@@ -317,6 +332,10 @@
     canvas.addEventListener('touchend', (e) => {
       e.preventDefault();
       holding = false;
+      // two-chance start: if released within first 1s and haven't retapped yet, allow recenter
+      if (gamePhase === 'playing' && retapAllowed && !hasRetapped) {
+        hasRetapped = true; // next tap will recenter scissors
+      }
     });
     canvas.addEventListener('mousedown', (e) => {
       if (gamePhase === 'start') { handleStartClick(e.clientX, e.clientY); return; }
@@ -328,9 +347,19 @@
       }
       holding = true;
       touchX = e.clientX;
+      if (hasRetapped && retapAllowed) {
+        const closest = closestRibbonPoint(scissors.x, scissors.y);
+        if (closest.point) scissors.x = closest.point.x;
+        retapAllowed = false;
+      }
     });
     canvas.addEventListener('mousemove', (e) => { touchX = e.clientX; });
-    canvas.addEventListener('mouseup', () => { holding = false; });
+    canvas.addEventListener('mouseup', () => {
+      holding = false;
+      if (gamePhase === 'playing' && retapAllowed && !hasRetapped) {
+        hasRetapped = true;
+      }
+    });
 
     // --- UPDATE ---
     function update(dt) {
@@ -348,9 +377,16 @@
 
       if (gamePhase !== 'playing') return;
 
+      playTime += dt;
+
+      // two-chance start: allow retap in first 1s
+      if (retapAllowed && playTime > 1) retapAllowed = false;
+
       generateRibbon(cameraY + H + 500);
 
-      const effectiveSpeed = scrollSpeed * speedMult;
+      // easy start: 40% speed for first 3s, ramp to 100% by 10s
+      const startRamp = playTime < 3 ? 0.4 : Math.min(1, 0.4 + (playTime - 3) * 0.086);
+      const effectiveSpeed = scrollSpeed * speedMult * startRamp;
       cameraY += effectiveSpeed * dt;
 
       const worldY = cameraY + 120;
@@ -360,8 +396,13 @@
         scissors.x += (touchX - scissors.x) * 8 * dt;
       }
 
-      const closest = closestRibbonPoint(scissors.x, scissors.y);
-      const ribbonW = ribbonWidthOverride || getRibbonWidth(scissors.y);
+      // tip-only collision: only the tip of the V counts
+      const tipOffX = Math.cos(scissors.angle) * 28;
+      const tipOffY = Math.sin(scissors.angle) * 28;
+      const tipX = scissors.x + tipOffX;
+      const tipY = scissors.y + tipOffY;
+      const closest = closestRibbonPoint(tipX, tipY);
+      const ribbonW = ribbonWidthOverride || getRibbonWidth(tipY);
       const halfW = ribbonW / 2;
       const centerDist = closest.dist;
 
