@@ -393,7 +393,8 @@
       }
 
       if (holding) {
-        if (centerDist < halfW - 4) {
+        if (centerDist < halfW) {
+          // on ribbon — alive
           const accuracy = 1 - (centerDist / halfW);
           score += effectiveSpeed * dt * 0.1 * (1 + accuracy);
           const targetSpeed = 1 + accuracy * accuracy * 0.8;
@@ -408,12 +409,9 @@
             playSnip(); lastSnipScore = Math.floor(score);
           }
           setCutVolume(0.03 + accuracy * 0.04);
-        } else if (centerDist < halfW + 4) {
-          setCutVolume(0.01);
-          speedMult = Math.max(1, speedMult - 1 * dt);
         } else {
+          // off ribbon — die (or grace save)
           if (graceTimer > 0) {
-            // grace period: snap back to ribbon center, don't die
             scissors.x = closest.point ? closest.point.x : W / 2;
           } else {
             die(); return;

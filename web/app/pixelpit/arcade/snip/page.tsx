@@ -341,7 +341,8 @@ export default function SnipGame() {
       }
 
       if (game.holding) {
-        if (centerDist < halfW - 4) {
+        if (centerDist < halfW) {
+          // on ribbon — alive
           const accuracy = 1 - (centerDist / halfW);
           game.score += effectiveSpeed * dt * 0.1 * (1 + accuracy);
           if (isTutorial) game.tutorialDistanceCut += effectiveSpeed * dt;
@@ -352,9 +353,8 @@ export default function SnipGame() {
           game.cutTrail.push({ x: game.scissors.x, y: game.scissors.y, life: 3 });
           if (Math.floor(game.score) > game.lastSnipScore && Math.floor(game.score) % 5 === 0) { playSnip(); game.lastSnipScore = Math.floor(game.score); }
           setCutVolume(0.03 + accuracy * 0.04);
-        } else if (centerDist < halfW + 4) {
-          setCutVolume(0.01); game.speedMult = Math.max(1, game.speedMult - 1 * dt);
         } else {
+          // off ribbon — die (or grace/tutorial save)
           if (isTutorial || game.graceTimer > 0) {
             game.scissors.x = closest.point ? closest.point.x : game.W / 2;
             if (isTutorial) { game.screenShake = { timer: 0.1, intensity: 2 }; playSnag(); game.holding = false; }
