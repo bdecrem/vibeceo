@@ -6,6 +6,7 @@
  */
 
 import { JT90Engine } from '../../machines/jt90/engine.js';
+import { toEngineDefault as toEngineValue } from '../../machines/jt90/param-defs.js';
 
 const STEPS = 16;
 
@@ -224,12 +225,6 @@ function formatParamValue(value, descriptor) {
     return Math.round(value * 100).toString();
   }
   return value.toFixed(1);
-}
-
-// Convert UI knob value to engine value (semitones → cents for tune params)
-function toEngineValue(value, descriptor) {
-  if (descriptor?.unit === 'semitones') return value * 100;
-  return value;
 }
 
 function valueToRotation(value, min, max) {
