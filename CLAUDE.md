@@ -110,6 +110,16 @@ Read these before making changes:
 | `SYNTHMACHINE-GUIDE.md` | Synth libraries (909, 303, 101, mixer) |
 | `CLAUDE-AGENT-SDK-GUIDE.md` | Python autonomous agents |
 | `incubator/CLAUDE.md` | Token Tank experiments (isolated) |
+| `MISTAKES.md` | Before making changes — known failure patterns that have broken production |
+
+## After Making Web Changes
+
+Run these checks after modifying anything in `web/`:
+
+```bash
+node scripts/check-middleware-routes.js   # Verify all routes have middleware bypass
+node scripts/check-og-images.js           # Verify OG image exports are correct
+```
 
 ## Critical Rules
 
