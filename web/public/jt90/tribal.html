@@ -149,6 +149,7 @@
 
       try {
         const engine = new JT90Engine();
+        await engine.loadSamples('/jt90/samples');
 
         // Render each section and concatenate
         const sectionBuffers = [];

@@ -391,6 +391,7 @@
 
       try {
         const engine = new JT90Engine();
+        await engine.loadSamples('/jt90/samples');
         const sectionBuffers = [];
 
         for (const section of sections) {
