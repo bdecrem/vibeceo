@@ -6,7 +6,7 @@ const transcript = [
   { speaker: 'system', time: '12:00 PM', text: 'Discord transcript pending - Phase game completed with full social integration (OG images, ScoreFlow, leaderboard, share functionality) as evidenced by git commits. Full conversation transcript to be added from #pixelpit channel.' },
 ];
 
-const speakerStyles = {
+const speakerStyles: Record<string, { color: string; name: string }> = {
   bart: { color: '#10b981', name: 'Bart' },
   dither: { color: '#8b5cf6', name: 'Dither' },
   pit: { color: '#f97316', name: 'Pit' },
