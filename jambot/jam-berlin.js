@@ -140,10 +140,10 @@ session.mixer.channelInserts.jt30 = [
   { type: 'ducker', params: { trigger: 'kick', amount: 0.3 } }
 ];
 
-// Instrument levels (dB)
-session.jt90Level = 0;
-session.jb202Level = -3;
-session.jt30Level = -9;
+// Instrument levels (dB) — set on nodes (single source of truth)
+session._nodes.jt90.setLevel(0);
+session._nodes.jb202.setLevel(-3);
+session._nodes.jt30.setLevel(-9);
 
 // ============================================================
 // RENDER — 8 bars
