@@ -1,13 +1,11 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-export const alt = 'SHINE Score - Pixelpit Arcade';
+export const alt = 'SHINE - Pixelpit Arcade';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
-export default async function Image({ params }: { params: { score: string } }) {
-  const score = params.score;
-
+export default async function Image() {
   return new ImageResponse(
     (
       <div
@@ -23,57 +21,44 @@ export default async function Image({ params }: { params: { score: string } }) {
           overflow: 'hidden',
         }}
       >
-        {/* Warm ambient bands — linear only */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(135deg, #D4A57420, #00000000, #2D959620)', display: 'flex' }} />
+        {/* Warm ambient bands */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(135deg, #D4A57415, #00000000, #2D959615)', display: 'flex' }} />
 
         {/* Gem icon */}
         <div
           style={{
-            width: 50,
-            height: 50,
+            width: 60,
+            height: 60,
             borderRadius: 9999,
             background: 'linear-gradient(135deg, #FFD700, #D4A574)',
-            marginBottom: 25,
+            marginBottom: 30,
             display: 'flex',
           }}
         />
 
-        {/* Score */}
-        <div
-          style={{
-            fontSize: 160,
-            fontWeight: 700,
-            color: '#FFD700',
-            letterSpacing: 10,
-            lineHeight: 1,
-            marginBottom: 10,
-          }}
-        >
-          {score}
-        </div>
-
         {/* Game name */}
         <div
           style={{
-            fontSize: 48,
-            fontWeight: 600,
-            color: '#D4A574',
-            letterSpacing: 12,
+            fontSize: 120,
+            fontWeight: 700,
+            color: '#FFD700',
+            letterSpacing: 20,
+            lineHeight: 1,
             marginBottom: 15,
           }}
         >
           SHINE
         </div>
 
-        {/* Challenge */}
+        {/* Tagline */}
         <div
           style={{
-            fontSize: 28,
-            color: '#2D9596',
-            letterSpacing: 8,
+            fontSize: 32,
+            color: '#D4A574',
+            letterSpacing: 10,
           }}
         >
-          CAN YOU BEAT ME?
+          COLLECT THE GLOW
         </div>
 
         {/* Branding */}
@@ -82,8 +67,9 @@ export default async function Image({ params }: { params: { score: string } }) {
             position: 'absolute',
             bottom: 40,
             fontSize: 22,
-            color: '#ffffff80',
+            color: '#ffffff',
             letterSpacing: 6,
+            opacity: 0.5,
             display: 'flex',
           }}
         >
