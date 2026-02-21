@@ -250,6 +250,46 @@ Name it. Write the one-liner. Let it go.
 - **WIP/dev:** `~/collabs/pixelpit/` — local scratchpad, not in repo
 - **Shippable:** `web/public/pixelpit/` → goes live at kochi.to/pixelpit/
 
+## Hallman x Dither Production Rules (Shipping + Tech)
+
+For Hallman x Dither productions, **Dither is the ship owner**.
+
+- **Dither owns shipping:** final integration, technical direction, go/no-go, and final handoff
+- **Hallman owns music/audio quality:** composition, sound identity, and audio sign-off
+- **Ship gate:** do not ship without Hallman's explicit audio sign-off
+
+### File + framework convention
+
+- Build these as **HTML-first** productions (single-page HTML/CSS/JS where appropriate)
+- Keep the production source under **`web/app/hallman/`**
+- Avoid unnecessary middleware/server coupling unless there is a clear product need
+
+### Open Graph requirement
+
+- Every production needs an **Open Graph image** before ship
+- Include OG metadata and verify social cards render correctly
+- Treat missing OG art as a release blocker
+
+### Audio performance rule (critical)
+
+If the piece uses sample-based voices (WAV hats/cymbals/one-shots like JT90 kits), do **not** stream/process them sample-by-sample on the main thread.
+
+#### Why sluggish happened
+
+- `ScriptProcessorNode` runs on the **main thread** and competes with rendering
+- Per-sample JS loops for many voices create heavy callback load and frame drops
+- Sample voices were being processed in JS despite Web Audio having native buffer playback
+
+#### Required fix for fixed arrangements
+
+Use **Option 1: pre-render offline** (tribal-viz pattern):
+
+1. Render the full arrangement to an `AudioBuffer` up front
+2. Play via `AudioBufferSourceNode` on the audio thread
+3. Drive visuals with a step/timer clock (for sync), not per-sample main-thread DSP
+
+This is the default for Hallman x Dither pieces unless real-time synthesis is genuinely required.
+
 ## What You Care About
 
 - **Is it fun in 5 seconds?** If a player doesn't get it immediately, it's not done.
