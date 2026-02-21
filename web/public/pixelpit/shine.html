@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
   <title>SHINE</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -16,8 +16,12 @@
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
 
-    let W, H;
-    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; W = canvas.width; H = canvas.height; }
+    let W, H, safeTop = 0;
+    function resize() {
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+      W = canvas.width; H = canvas.height;
+      safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)')) || 0;
+    }
     resize();
     window.addEventListener('resize', resize);
 
@@ -226,7 +230,7 @@
     function spawnGem() {
       const margin = 60;
       const x = margin + Math.random() * (W - margin * 2);
-      const y = margin + 100 + Math.random() * (H - margin * 2 - 150);
+      const y = margin + 100 + safeTop + Math.random() * (H - margin * 2 - 150 - safeTop);
       gems.push(createGem(x, y));
     }
 
@@ -427,7 +431,8 @@
         ctx.globalAlpha = 1;
       }
 
-      // --- CANVAS HUD ---
+      // --- CANVAS HUD (notch-safe) ---
+      const hy = safeTop; // HUD y offset for notch
       ctx.textAlign = 'left';
 
       // title
@@ -435,25 +440,25 @@
       ctx.font = 'bold 24px monospace';
       ctx.shadowBlur = 10;
       ctx.shadowColor = 'rgba(255,215,0,0.4)';
-      ctx.fillText('SHINE', 16, 32);
+      ctx.fillText('SHINE', 16, 32 + hy);
       ctx.shadowBlur = 0;
 
       // score
       ctx.fillStyle = T.muted;
       ctx.font = '10px monospace';
-      ctx.fillText('SCORE', 16, 56);
+      ctx.fillText('SCORE', 16, 56 + hy);
       ctx.fillStyle = T.gold;
       ctx.font = 'bold 22px monospace';
       ctx.shadowBlur = 8;
       ctx.shadowColor = 'rgba(255,215,0,0.3)';
-      ctx.fillText(score + '', 16, 78);
+      ctx.fillText(score + '', 16, 78 + hy);
       ctx.shadowBlur = 0;
 
       // timer
       ctx.textAlign = 'right';
       ctx.fillStyle = T.muted;
       ctx.font = '10px monospace';
-      ctx.fillText('TIME', W - 16, 56);
+      ctx.fillText('TIME', W - 16, 56 + hy);
       const timerColor = timerFlash > 0 ? T.danger : (timeLeft <= 10 ? T.danger : T.teal);
       ctx.fillStyle = timerColor;
       ctx.font = 'bold 22px monospace';
@@ -464,12 +469,12 @@
         const missPulse = timerFlash > 0 ? (timerFlash / 0.15) * 0.12 : 0;
         const pulse = 1 + dangPulse + missPulse;
         ctx.save();
-        ctx.translate(W - 16, 78);
+        ctx.translate(W - 16, 78 + hy);
         ctx.scale(pulse, pulse);
         ctx.fillText(timerStr, 0, 0);
         ctx.restore();
       } else {
-        ctx.fillText(timerStr, W - 16, 78);
+        ctx.fillText(timerStr, W - 16, 78 + hy);
       }
 
       // combo display
@@ -478,7 +483,7 @@
         ctx.fillStyle = T.gold;
         ctx.font = 'bold 16px monospace';
         ctx.globalAlpha = 0.8;
-        ctx.fillText(combo + ' COMBO  x' + comboMultiplier, W / 2, 32);
+        ctx.fillText(combo + ' COMBO  x' + comboMultiplier, W / 2, 32 + hy);
         ctx.globalAlpha = 1;
       } else if (comboBreakFlash.timer > 0) {
         // red flash + shrink-to-zero on combo break
@@ -487,7 +492,7 @@
         ctx.font = 'bold 16px monospace';
         ctx.globalAlpha = comboBreakFlash.scale;
         ctx.save();
-        ctx.translate(W / 2, 32);
+        ctx.translate(W / 2, 32 + hy);
         ctx.scale(comboBreakFlash.scale, comboBreakFlash.scale);
         ctx.fillText(comboBreakFlash.text, 0, 0);
         ctx.restore();
@@ -498,10 +503,10 @@
       ctx.textAlign = 'center';
       ctx.fillStyle = T.muted;
       ctx.font = '10px monospace';
-      ctx.fillText('COLLECTED', W / 2, 56);
+      ctx.fillText('COLLECTED', W / 2, 56 + hy);
       ctx.fillStyle = T.amber;
       ctx.font = 'bold 16px monospace';
-      ctx.fillText(collected + '', W / 2, 74);
+      ctx.fillText(collected + '', W / 2, 74 + hy);
 
       ctx.textAlign = 'left';
     }
