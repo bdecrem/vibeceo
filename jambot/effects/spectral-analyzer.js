@@ -14,6 +14,18 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 
 /**
+ * Clamp a dB value to a sane range, replacing NaN/Infinity with -120.
+ * For RMS/peak levels (stats output), use maxDb=6.
+ * For spectral magnitudes (stat -freq output), use maxDb=200 (FFT bins can be large).
+ * @param {number} v - dB value
+ * @param {number} maxDb - Upper bound (default 6 for level measurements)
+ * @returns {number}
+ */
+function clampDb(v, maxDb = 6) {
+  return isFinite(v) ? Math.max(-120, Math.min(maxDb, v)) : -120;
+}
+
+/**
  * Convert Hz to musical note with cents deviation
  * @param {number} hz - Frequency in Hz
  * @returns {{ note: string, hz: number, cents: number, midiNote: number }}
@@ -114,18 +126,22 @@ export class SpectralAnalyzer {
     const output = this.runSox(`"${wavPath}" -n stat -freq`);
 
     // Parse the frequency data
-    // sox stat -freq outputs lines like: "100.0 -25.3" (freq amplitude)
+    // sox stat -freq outputs lines like: "100.0 12345.6" (freq, linear magnitude)
+    // Convert linear magnitude to dB: 20 * log10(amplitude)
     const lines = output.split('\n');
     const spectrumData = [];
 
     for (const line of lines) {
-      const match = line.trim().match(/^([\d.]+)\s+([-\d.]+)/);
+      const match = line.trim().match(/^([\d.]+)\s+([-\d.eE+]+)/);
       if (match) {
         const freq = parseFloat(match[1]);
-        const amplitude = parseFloat(match[2]);
+        const linearAmp = parseFloat(match[2]);
 
-        if (freq >= minFreq && freq <= maxFreq && amplitude >= minPeakDb && isFinite(amplitude)) {
-          spectrumData.push({ freq, amplitude });
+        // Convert linear magnitude to dB (spectral magnitude — can be 100+ dB for FFT bins)
+        const amplitudeDb = linearAmp > 0 ? clampDb(20 * Math.log10(linearAmp), 200) : -120;
+
+        if (freq >= minFreq && freq <= maxFreq && amplitudeDb >= minPeakDb && isFinite(amplitudeDb)) {
+          spectrumData.push({ freq, amplitude: amplitudeDb });
         }
       }
     }
@@ -154,7 +170,7 @@ export class SpectralAnalyzer {
           const noteInfo = hzToNote(curr.freq);
           peaks.push({
             freq: curr.freq,
-            amplitudeDb: Math.round(curr.amplitude * 10) / 10,
+            amplitudeDb: Math.round(clampDb(curr.amplitude, 200) * 10) / 10,
             note: noteInfo.note,
             midiNote: noteInfo.midiNote,
             cents: noteInfo.cents,
@@ -215,11 +231,11 @@ export class SpectralAnalyzer {
     const prominentPeaks = [];
     for (const peak of allPeaks) {
       const prominence = peak.amplitudeDb - avgAmplitude;
-      if (prominence >= minProminence) {
+      if (isFinite(prominence) && prominence >= minProminence) {
         prominentPeaks.push({
           freq: peak.freq,
           note: peak.note,
-          prominenceDb: Math.round(prominence * 10) / 10,
+          prominenceDb: Math.round(Math.min(prominence, 60) * 10) / 10,
           amplitudeDb: peak.amplitudeDb,
         });
       }
@@ -290,8 +306,9 @@ export class SpectralAnalyzer {
       // Use sox sinc filter to isolate the band and get stats
       const output = this.runSox(`"${wavPath}" -n sinc ${lowFreq}-${highFreq} stats`);
 
-      const rmsMatch = output.match(/RMS lev dB\s+([-\d.]+)/);
-      const rmsDb = rmsMatch ? parseFloat(rmsMatch[1]) : -60;
+      const rmsMatch = output.match(/RMS lev dB\s+([-\d.inf]+)/);
+      const rawRms = rmsMatch ? parseFloat(rmsMatch[1]) : -60;
+      const rmsDb = clampDb(rawRms);
 
       const noteInfo = hzToNote(centerFreq);
       bands.push({
@@ -403,9 +420,9 @@ export class SpectralAnalyzer {
       const start = i * step;
       const output = this.runSox(`"${wavPath}" -n trim ${start.toFixed(3)} ${windowSec.toFixed(3)} sinc ${freqLow}-${freqHigh} stats`);
 
-      const rmsMatch = output.match(/RMS lev dB\s+([-\d.]+)/);
-      const rmsDb = rmsMatch ? parseFloat(rmsMatch[1]) : -60;
-      windowRms.push(rmsDb);
+      const rmsMatch = output.match(/RMS lev dB\s+([-\d.inf]+)/);
+      const rawRms = rmsMatch ? parseFloat(rmsMatch[1]) : -60;
+      windowRms.push(clampDb(rawRms));
     }
 
     // Calculate flux as the average absolute difference between adjacent windows
@@ -497,3 +514,6 @@ export class SpectralAnalyzer {
 
 // Export singleton instance for easy use
 export const spectralAnalyzer = new SpectralAnalyzer();
+
+// Export clampDb for use by analyze-node.js
+export { clampDb };

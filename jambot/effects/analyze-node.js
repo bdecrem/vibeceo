@@ -21,6 +21,12 @@ import { Node } from '../core/node.js';
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { basename } from 'path';
+import { clampDb } from './spectral-analyzer.js';
+
+/** Safe toFixed that handles NaN/Infinity */
+function safeFixed(v, digits = 1) {
+  return isFinite(v) ? v.toFixed(digits) : '-120.0';
+}
 
 export class AnalyzeNode extends Node {
   constructor(id = 'analyze', config = {}) {
@@ -123,12 +129,13 @@ export class AnalyzeNode extends Node {
     // Get audio stats
     const statsOutput = this.runSox(`"${wavPath}" -n stats`);
 
-    const peakMatch = statsOutput.match(/Pk lev dB\s+([-\d.]+)/);
-    const rmsMatch = statsOutput.match(/RMS lev dB\s+([-\d.]+)/);
+    const peakMatch = statsOutput.match(/Pk lev dB\s+([-\d.inf]+)/);
+    const rmsMatch = statsOutput.match(/RMS lev dB\s+([-\d.inf]+)/);
 
-    const peakLevel = peakMatch ? parseFloat(peakMatch[1]) : 0;
-    const rmsLevel = rmsMatch ? parseFloat(rmsMatch[1]) : 0;
-    const dynamicRange = Math.abs(peakLevel - rmsLevel);
+    const peakLevel = clampDb(peakMatch ? parseFloat(peakMatch[1]) : -120);
+    const rmsLevel = clampDb(rmsMatch ? parseFloat(rmsMatch[1]) : -120);
+    const dynamicRange = isFinite(peakLevel) && isFinite(rmsLevel) ? Math.abs(peakLevel - rmsLevel) : 0;
+    const isSilent = peakLevel < -80;
 
     return {
       file: basename(wavPath),
@@ -139,6 +146,7 @@ export class AnalyzeNode extends Node {
       peakLevel,
       rmsLevel,
       dynamicRange,
+      isSilent,
     };
   }
 
@@ -150,25 +158,25 @@ export class AnalyzeNode extends Node {
   analyzeFrequencyBalance(wavPath) {
     // Low: 20-250 Hz (kick, bass)
     const lowOutput = this.runSox(`"${wavPath}" -n sinc 20-250 stats 2>&1`);
-    const lowRms = lowOutput.match(/RMS lev dB\s+([-\d.]+)/);
+    const lowRms = lowOutput.match(/RMS lev dB\s+([-\d.inf]+)/);
 
     // Low-mid: 250-1000 Hz (bass harmonics, mud zone)
     const lowMidOutput = this.runSox(`"${wavPath}" -n sinc 250-1000 stats 2>&1`);
-    const lowMidRms = lowMidOutput.match(/RMS lev dB\s+([-\d.]+)/);
+    const lowMidRms = lowMidOutput.match(/RMS lev dB\s+([-\d.inf]+)/);
 
     // High-mid: 1000-4000 Hz (presence, vocals)
     const highMidOutput = this.runSox(`"${wavPath}" -n sinc 1000-4000 stats 2>&1`);
-    const highMidRms = highMidOutput.match(/RMS lev dB\s+([-\d.]+)/);
+    const highMidRms = highMidOutput.match(/RMS lev dB\s+([-\d.inf]+)/);
 
     // High: 4000-20000 Hz (air, hats, cymbals)
     const highOutput = this.runSox(`"${wavPath}" -n sinc 4000-20000 stats 2>&1`);
-    const highRms = highOutput.match(/RMS lev dB\s+([-\d.]+)/);
+    const highRms = highOutput.match(/RMS lev dB\s+([-\d.inf]+)/);
 
     return {
-      low: lowRms ? parseFloat(lowRms[1]) : -60,
-      lowMid: lowMidRms ? parseFloat(lowMidRms[1]) : -60,
-      highMid: highMidRms ? parseFloat(highMidRms[1]) : -60,
-      high: highRms ? parseFloat(highRms[1]) : -60,
+      low: clampDb(lowRms ? parseFloat(lowRms[1]) : -120),
+      lowMid: clampDb(lowMidRms ? parseFloat(lowMidRms[1]) : -120),
+      highMid: clampDb(highMidRms ? parseFloat(highMidRms[1]) : -120),
+      high: clampDb(highRms ? parseFloat(highRms[1]) : -120),
     };
   }
 
@@ -180,6 +188,17 @@ export class AnalyzeNode extends Node {
    */
   detectSidechain(wavPath, bpm = 128) {
     const duration = parseFloat(this.runSox(`--info -D "${wavPath}"`).trim());
+
+    // Guard: need valid duration and minimum 2 seconds for sidechain detection
+    if (isNaN(duration) || duration <= 2) {
+      return {
+        detected: false,
+        avgDuckingDb: 0,
+        duckingPattern: 'unknown',
+        confidence: 0,
+      };
+    }
+
     const beatsPerSecond = bpm / 60;
 
     const segmentDuration = 0.05; // 50ms segments
@@ -193,9 +212,10 @@ export class AnalyzeNode extends Node {
       const start = i * segmentDuration;
       try {
         const output = this.runSox(`"${wavPath}" -n trim ${start.toFixed(3)} ${segmentDuration} stats 2>&1`);
-        const rmsMatch = output.match(/RMS lev dB\s+([-\d.]+)/);
+        const rmsMatch = output.match(/RMS lev dB\s+([-\d.inf]+)/);
         if (rmsMatch) {
-          amplitudes.push(parseFloat(rmsMatch[1]));
+          const rms = parseFloat(rmsMatch[1]);
+          amplitudes.push(isFinite(rms) ? rms : -120);
         }
       } catch {
         // Skip failed segments
@@ -217,18 +237,36 @@ export class AnalyzeNode extends Node {
       diffs.push(amplitudes[i] - amplitudes[i - 1]);
     }
 
-    // Count significant dips and rises (> 3dB)
-    const significantDips = diffs.filter(d => d < -3).length;
-    const significantRises = diffs.filter(d => d > 3).length;
+    // Count significant dips and rises (> 6dB — raised from 3dB to avoid false positives on percussive material)
+    const significantDips = diffs.filter(d => d < -6).length;
+    const significantRises = diffs.filter(d => d > 6).length;
 
     const dipRatio = Math.min(significantDips, significantRises) / Math.max(significantDips, significantRises, 1);
     const totalDips = significantDips + significantRises;
 
     // Calculate average ducking depth
-    const negativeDiffs = diffs.filter(d => d < -2);
+    const negativeDiffs = diffs.filter(d => d < -4);
     const avgDucking = negativeDiffs.length > 0
       ? negativeDiffs.reduce((a, b) => a + b, 0) / negativeDiffs.length
       : 0;
+
+    // Regularity check: true sidechain has periodic dips
+    // Count dip positions and check spacing variance
+    const dipPositions = [];
+    for (let i = 0; i < diffs.length; i++) {
+      if (diffs[i] < -6) dipPositions.push(i);
+    }
+    let regularityScore = 0;
+    if (dipPositions.length >= 3) {
+      const spacings = [];
+      for (let i = 1; i < dipPositions.length; i++) {
+        spacings.push(dipPositions[i] - dipPositions[i - 1]);
+      }
+      const avgSpacing = spacings.reduce((a, b) => a + b, 0) / spacings.length;
+      const variance = spacings.reduce((sum, s) => sum + (s - avgSpacing) ** 2, 0) / spacings.length;
+      const cv = Math.sqrt(variance) / (avgSpacing || 1); // coefficient of variation
+      regularityScore = cv < 0.3 ? 0.3 : cv < 0.5 ? 0.15 : 0;
+    }
 
     // Estimate pattern based on frequency of dips
     const dipsPerSecond = significantDips / duration;
@@ -242,13 +280,14 @@ export class AnalyzeNode extends Node {
     }
 
     const confidence = Math.min(1,
-      (dipRatio * 0.5) +
-      (totalDips > 10 ? 0.3 : totalDips / 30) +
-      (Math.abs(avgDucking) > 4 ? 0.2 : 0)
+      (dipRatio * 0.4) +
+      (totalDips > 10 ? 0.2 : totalDips / 50) +
+      (Math.abs(avgDucking) > 6 ? 0.2 : 0) +
+      regularityScore
     );
 
     return {
-      detected: confidence > 0.5 && Math.abs(avgDucking) > 3,
+      detected: confidence > 0.6 && Math.abs(avgDucking) > 6,
       avgDuckingDb: Math.abs(avgDucking),
       duckingPattern: pattern,
       confidence: Math.round(confidence * 100) / 100,
@@ -587,30 +626,41 @@ export class AnalyzeNode extends Node {
   formatAnalysis(analysis) {
     const lines = [
       `File: ${analysis.file}`,
-      `Duration: ${analysis.duration.toFixed(2)}s`,
+      `Duration: ${safeFixed(analysis.duration, 2)}s`,
       `Format: ${analysis.sampleRate}Hz, ${analysis.channels}ch, ${analysis.bitDepth}-bit`,
       '',
+    ];
+
+    if (analysis.isSilent) {
+      lines.push('LEVELS:');
+      lines.push('  Signal is silent or near-silent');
+      lines.push(`  Peak: ${safeFixed(analysis.peakLevel)} dB`);
+      lines.push('');
+      return lines.join('\n');
+    }
+
+    lines.push(
       'LEVELS:',
-      `  Peak: ${analysis.peakLevel.toFixed(1)} dB`,
-      `  RMS: ${analysis.rmsLevel.toFixed(1)} dB`,
-      `  Dynamic Range: ${analysis.dynamicRange.toFixed(1)} dB`,
+      `  Peak: ${safeFixed(analysis.peakLevel)} dB`,
+      `  RMS: ${safeFixed(analysis.rmsLevel)} dB`,
+      `  Dynamic Range: ${safeFixed(analysis.dynamicRange)} dB`,
       '',
       'FREQUENCY BALANCE:',
-      `  Low (20-250Hz):     ${analysis.frequencyBalance.low.toFixed(1)} dB`,
-      `  Low-Mid (250-1kHz): ${analysis.frequencyBalance.lowMid.toFixed(1)} dB`,
-      `  High-Mid (1-4kHz):  ${analysis.frequencyBalance.highMid.toFixed(1)} dB`,
-      `  High (4-20kHz):     ${analysis.frequencyBalance.high.toFixed(1)} dB`,
+      `  Low (20-250Hz):     ${safeFixed(analysis.frequencyBalance.low)} dB`,
+      `  Low-Mid (250-1kHz): ${safeFixed(analysis.frequencyBalance.lowMid)} dB`,
+      `  High-Mid (1-4kHz):  ${safeFixed(analysis.frequencyBalance.highMid)} dB`,
+      `  High (4-20kHz):     ${safeFixed(analysis.frequencyBalance.high)} dB`,
       '',
       'SIDECHAIN:',
       `  Detected: ${analysis.sidechain.detected ? 'YES' : 'NO'}`,
-    ];
+    );
 
     if (analysis.sidechain.detected) {
-      lines.push(`  Avg Ducking: ${analysis.sidechain.avgDuckingDb.toFixed(1)} dB`);
+      lines.push(`  Avg Ducking: ${safeFixed(analysis.sidechain.avgDuckingDb)} dB`);
       lines.push(`  Pattern: ${analysis.sidechain.duckingPattern}`);
     }
 
-    lines.push(`  Confidence: ${(analysis.sidechain.confidence * 100).toFixed(0)}%`);
+    lines.push(`  Confidence: ${safeFixed(analysis.sidechain.confidence * 100, 0)}%`);
 
     if (analysis.spectrogramPath) {
       lines.push('');
@@ -627,6 +677,11 @@ export class AnalyzeNode extends Node {
    */
   getRecommendations(analysis) {
     const recommendations = [];
+
+    // Silence check — skip all analysis for silent/near-silent files
+    if (analysis.isSilent || analysis.peakLevel < -60) {
+      return ['Signal too quiet or silent for reliable analysis.'];
+    }
 
     // Check headroom
     if (analysis.peakLevel > -1) {

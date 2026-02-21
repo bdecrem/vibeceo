@@ -14,6 +14,7 @@ const tests = [
   'test-interface-contract.js',
   'test-defaults-consistency.js',
   'test-platform-rules.js',
+  'test-analyze.js',
 ];
 
 let allPassed = true;
