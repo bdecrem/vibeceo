@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SHINE</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #000; overflow: hidden; touch-action: none; font-family: monospace; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    let W, H;
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; W = canvas.width; H = canvas.height; }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // --- THEME: warm amber/gold on black ---
+    const T = {
+      bg: '#000000',
+      amber: '#D4A574',
+      gold: '#FFD700',
+      teal: '#2D9596',
+      violet: '#7B68EE',
+      pink: '#FF69B4',
+      text: '#FFD700',
+      muted: '#888888',
+      danger: '#FF6B6B',
+    };
+
+    // --- AUDIO ---
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSound(freq, duration, type, vol) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = type || 'sine'; osc.frequency.value = freq;
+      g.gain.setValueAtTime(vol || 0.15, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (duration || 0.15));
+      osc.start(); osc.stop(audioCtx.currentTime + (duration || 0.15));
+    }
+
+    function playCollect(freq) { playSound(freq, 0.15, 'sine', 0.15); }
+
+    function playComboBreak() {
+      // descending tone
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.2);
+      g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+    }
+
+    function playMissThud() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.15);
+      g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    // --- GEM TYPES ---
+    const gemTypes = [
+      { color: T.amber,  points: 1,  freq: 440, name: 'amber' },
+      { color: T.gold,   points: 2,  freq: 550, name: 'gold' },
+      { color: T.teal,   points: 3,  freq: 660, name: 'teal' },
+      { color: T.violet, points: 5,  freq: 770, name: 'violet' },
+      { color: T.pink,   points: 10, freq: 880, name: 'pink' },
+    ];
+
+    function selectGemType() {
+      const r = Math.random();
+      if (r < 0.40) return gemTypes[0];
+      if (r < 0.70) return gemTypes[1];
+      if (r < 0.85) return gemTypes[2];
+      if (r < 0.95) return gemTypes[3];
+      return gemTypes[4];
+    }
+
+    // --- STATE ---
+    let gems, particles, floatingTexts;
+    let score, collected, timeLeft, gameTime;
+    let combo, comboTimer, comboMultiplier, maxCombo;
+    let phase; // 'start', 'playing', 'over'
+    let screenShake, hitFreeze, missDarken;
+    let bestScore;
+    let spawnTimer;
+
+    function init() {
+      gems = []; particles = []; floatingTexts = [];
+      score = 0; collected = 0; timeLeft = 30; gameTime = 0;
+      combo = 0; comboTimer = 0; comboMultiplier = 1; maxCombo = 0;
+      phase = 'start';
+      screenShake = { timer: 0, intensity: 0 };
+      hitFreeze = 0;
+      missDarken = 0;
+      spawnTimer = 0;
+      bestScore = parseInt(localStorage.getItem('shine_best') || '0');
+    }
+
+    // --- DIFFICULTY RAMP ---
+    function getSpawnInterval() {
+      // lerp 0.8 → 0.5 over 30s
+      const t = Math.min(gameTime / 30, 1);
+      return 0.8 - t * 0.3;
+    }
+
+    function getGemLifetime() {
+      // lerp 2.5 → 1.8 over 30s
+      const t = Math.min(gameTime / 30, 1);
+      return 2.5 - t * 0.7;
+    }
+
+    // --- COMBO ---
+    function getComboMultiplier(c) {
+      if (c >= 8) return 2.0;
+      if (c >= 5) return 1.5;
+      if (c >= 3) return 1.2;
+      return 1.0;
+    }
+
+    // --- GEM CLASS ---
+    function createGem(x, y) {
+      const type = selectGemType();
+      return {
+        x, y, type,
+        radius: 25,
+        age: 0,
+        maxLife: getGemLifetime(),
+        pulse: 0,
+        alive: true,
+      };
+    }
+
+    function updateGem(gem, dt) {
+      gem.age += dt;
+      gem.pulse = Math.sin(gem.age * 5) * 0.2 + 1;
+      if (gem.age >= gem.maxLife) {
+        gem.alive = false;
+        return false;
+      }
+      return true;
+    }
+
+    function drawGem(gem) {
+      const life = 1 - gem.age / gem.maxLife;
+      const alpha = Math.max(0, life);
+      const size = gem.radius * gem.pulse;
+
+      // outer glow
+      const grad = ctx.createRadialGradient(gem.x, gem.y, 0, gem.x, gem.y, size * 2);
+      const hexAlpha1 = Math.floor(alpha * 255).toString(16).padStart(2, '0');
+      const hexAlpha2 = Math.floor(alpha * 100).toString(16).padStart(2, '0');
+      grad.addColorStop(0, gem.type.color + hexAlpha1);
+      grad.addColorStop(0.5, gem.type.color + hexAlpha2);
+      grad.addColorStop(1, gem.type.color + '00');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(gem.x, gem.y, size * 2, 0, Math.PI * 2); ctx.fill();
+
+      // core
+      ctx.fillStyle = gem.type.color;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath(); ctx.arc(gem.x, gem.y, size, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // sparkle cross
+      if (alpha > 0.7) {
+        ctx.strokeStyle = '#fff';
+        ctx.globalAlpha = (Math.sin(gem.age * 10) * 0.3 + 0.5) * alpha;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(gem.x - size * 0.6, gem.y); ctx.lineTo(gem.x + size * 0.6, gem.y);
+        ctx.moveTo(gem.x, gem.y - size * 0.6); ctx.lineTo(gem.x, gem.y + size * 0.6);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function gemContains(gem, x, y) {
+      const dx = x - gem.x, dy = y - gem.y;
+      return dx * dx + dy * dy < gem.radius * gem.radius;
+    }
+
+    // --- PARTICLES ---
+    function spawnParticles(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x, y,
+          vx: (Math.random() - 0.5) * 8,
+          vy: (Math.random() - 0.5) * 8,
+          life: 1, color,
+          size: Math.random() * 4 + 2,
+        });
+      }
+    }
+
+    // --- FLOATING TEXT ---
+    function spawnFloatingText(x, y, text, color) {
+      floatingTexts.push({ x, y, text, color, life: 1, vy: -1.5 });
+    }
+
+    // --- SPAWN ---
+    function spawnGem() {
+      const margin = 60;
+      const x = margin + Math.random() * (W - margin * 2);
+      const y = margin + 100 + Math.random() * (H - margin * 2 - 150);
+      gems.push(createGem(x, y));
+    }
+
+    // --- INPUT ---
+    function handleTap(x, y) {
+      initAudio();
+      if (phase === 'start') { phase = 'playing'; return; }
+      if (phase === 'over') { init(); return; }
+
+      // check gem hit (reverse order = top first)
+      for (let i = gems.length - 1; i >= 0; i--) {
+        const gem = gems[i];
+        if (gemContains(gem, x, y)) {
+          // collect
+          const mult = comboMultiplier;
+          const pts = Math.round(gem.type.points * mult);
+          score += pts;
+          collected++;
+
+          // combo
+          combo++;
+          comboTimer = 0.9; // 900ms window
+          comboMultiplier = getComboMultiplier(combo);
+          if (combo > maxCombo) maxCombo = combo;
+
+          // particles
+          spawnParticles(gem.x, gem.y, gem.type.color, 20);
+
+          // floating text
+          const comboText = mult > 1 ? ` x${mult}` : '';
+          spawnFloatingText(gem.x, gem.y - 30, `+${pts}${comboText}`, gem.type.color);
+
+          // combo counter
+          if (combo >= 3) {
+            spawnFloatingText(W / 2, H * 0.15, `${combo} COMBO!`, T.gold);
+          }
+
+          // sound
+          playCollect(gem.type.freq);
+
+          // juice: hit freeze + shake on rare gems (violet/pink)
+          if (gem.type.points >= 5) {
+            hitFreeze = 0.03; // 30ms
+            screenShake = { timer: 0.08, intensity: 2 };
+          }
+
+          gems.splice(i, 1);
+          break;
+        }
+      }
+    }
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleTap(e.touches[0].clientX, e.touches[0].clientY);
+    });
+    canvas.addEventListener('click', (e) => {
+      handleTap(e.clientX, e.clientY);
+    });
+
+    // --- UPDATE ---
+    let realTimeAccum = 0; // for timer (not affected by hitFreeze)
+
+    function update(dt) {
+      if (phase === 'start') { gameTime += dt; return; }
+      if (phase === 'over') return;
+
+      // hit freeze
+      if (hitFreeze > 0) { hitFreeze -= dt; return; }
+
+      gameTime += dt;
+
+      // timer (real-time second ticks)
+      realTimeAccum += dt;
+      while (realTimeAccum >= 1) {
+        realTimeAccum -= 1;
+        timeLeft--;
+        if (timeLeft <= 0) { timeLeft = 0; endGame(); return; }
+      }
+
+      // combo timer
+      if (comboTimer > 0) {
+        comboTimer -= dt;
+        if (comboTimer <= 0) {
+          // combo break
+          if (combo >= 3) {
+            playComboBreak();
+          }
+          combo = 0;
+          comboMultiplier = 1;
+        }
+      }
+
+      // spawn gems
+      spawnTimer += dt;
+      const interval = getSpawnInterval();
+      if (spawnTimer >= interval) {
+        spawnGem();
+        spawnTimer -= interval;
+      }
+
+      // update gems
+      for (let i = gems.length - 1; i >= 0; i--) {
+        if (!updateGem(gems[i], dt)) {
+          // gem faded — MISS PENALTY
+          timeLeft = Math.max(0, timeLeft - 0.35);
+          missDarken = 0.1;
+          playMissThud();
+          if (timeLeft <= 0) { timeLeft = 0; endGame(); return; }
+          gems.splice(i, 1);
+        }
+      }
+
+      // particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.2;
+        p.life -= 0.02;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      // floating text
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y += ft.vy;
+        ft.life -= dt * 1.5;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+      }
+
+      // screen shake / darken decay
+      if (screenShake.timer > 0) screenShake.timer -= dt;
+      if (missDarken > 0) missDarken -= dt;
+    }
+
+    function endGame() {
+      phase = 'over';
+      const isNew = score > bestScore;
+      if (isNew) {
+        bestScore = score;
+        localStorage.setItem('shine_best', bestScore.toString());
+      }
+    }
+
+    // --- DRAW ---
+    function draw() {
+      // clear with slight trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+      ctx.fillRect(0, 0, W, H);
+
+      if (phase === 'start') { drawStart(); return; }
+      if (phase === 'over') { drawGameOver(); return; }
+
+      ctx.save();
+      if (screenShake.timer > 0) {
+        const s = screenShake.intensity * (screenShake.timer / 0.08);
+        ctx.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      }
+
+      // gems
+      for (const gem of gems) drawGem(gem);
+
+      // particles
+      for (const p of particles) {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      ctx.restore();
+
+      // floating text
+      for (const ft of floatingTexts) {
+        ctx.fillStyle = ft.color;
+        ctx.globalAlpha = ft.life;
+        ctx.font = 'bold 18px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.globalAlpha = 1;
+      }
+
+      // miss darken overlay
+      if (missDarken > 0) {
+        ctx.fillStyle = `rgba(0,0,0,${missDarken * 3})`;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // combo border flash
+      if (combo >= 3) {
+        ctx.strokeStyle = T.gold;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.3 + Math.sin(gameTime * 8) * 0.15;
+        ctx.strokeRect(2, 2, W - 4, H - 4);
+        ctx.globalAlpha = 1;
+      }
+
+      // --- CANVAS HUD ---
+      ctx.textAlign = 'left';
+
+      // title
+      ctx.fillStyle = T.gold;
+      ctx.font = 'bold 24px monospace';
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = 'rgba(255,215,0,0.4)';
+      ctx.fillText('SHINE', 16, 32);
+      ctx.shadowBlur = 0;
+
+      // score
+      ctx.fillStyle = T.muted;
+      ctx.font = '10px monospace';
+      ctx.fillText('SCORE', 16, 56);
+      ctx.fillStyle = T.gold;
+      ctx.font = 'bold 22px monospace';
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = 'rgba(255,215,0,0.3)';
+      ctx.fillText(score + '', 16, 78);
+      ctx.shadowBlur = 0;
+
+      // timer
+      ctx.textAlign = 'right';
+      ctx.fillStyle = T.muted;
+      ctx.font = '10px monospace';
+      ctx.fillText('TIME', W - 16, 56);
+      const timerColor = timeLeft <= 10 ? T.danger : T.teal;
+      ctx.fillStyle = timerColor;
+      ctx.font = 'bold 22px monospace';
+      // pulse timer when danger
+      if (timeLeft <= 10) {
+        const pulse = 1 + Math.sin(gameTime * 6) * 0.05;
+        ctx.save();
+        ctx.translate(W - 16, 78);
+        ctx.scale(pulse, pulse);
+        ctx.fillText(Math.ceil(timeLeft) + '', 0, 0);
+        ctx.restore();
+      } else {
+        ctx.fillText(Math.ceil(timeLeft) + '', W - 16, 78);
+      }
+
+      // combo display
+      if (combo >= 3) {
+        ctx.textAlign = 'center';
+        ctx.fillStyle = T.gold;
+        ctx.font = 'bold 16px monospace';
+        ctx.globalAlpha = 0.8;
+        ctx.fillText(combo + ' COMBO  x' + comboMultiplier, W / 2, 32);
+        ctx.globalAlpha = 1;
+      }
+
+      // collected count
+      ctx.textAlign = 'center';
+      ctx.fillStyle = T.muted;
+      ctx.font = '10px monospace';
+      ctx.fillText('COLLECTED', W / 2, 56);
+      ctx.fillStyle = T.amber;
+      ctx.font = 'bold 16px monospace';
+      ctx.fillText(collected + '', W / 2, 74);
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawStart() {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.textAlign = 'center';
+
+      // animated gem preview
+      const bobY = Math.sin(gameTime * 2) * 6;
+      const grad = ctx.createRadialGradient(W / 2, H / 2 - 70 + bobY, 0, W / 2, H / 2 - 70 + bobY, 40);
+      grad.addColorStop(0, T.gold + 'cc');
+      grad.addColorStop(0.5, T.gold + '44');
+      grad.addColorStop(1, T.gold + '00');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(W / 2, H / 2 - 70 + bobY, 40, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = T.gold;
+      ctx.beginPath(); ctx.arc(W / 2, H / 2 - 70 + bobY, 16, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = T.gold;
+      ctx.font = 'bold 48px monospace';
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(255,215,0,0.5)';
+      ctx.fillText('SHINE', W / 2, H / 2 - 10);
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = T.amber;
+      ctx.font = '14px monospace';
+      ctx.fillText('Tap gems before they fade', W / 2, H / 2 + 18);
+      ctx.fillText('Build combos for multipliers', W / 2, H / 2 + 38);
+
+      ctx.fillStyle = T.gold;
+      ctx.font = '18px monospace';
+      ctx.fillText('[ TAP TO START ]', W / 2, H / 2 + 80);
+
+      if (bestScore > 0) {
+        ctx.fillStyle = T.muted;
+        ctx.font = '14px monospace';
+        ctx.fillText('Best: ' + bestScore, W / 2, H / 2 + 110);
+      }
+
+      ctx.textAlign = 'left';
+    }
+
+    function drawGameOver() {
+      ctx.fillStyle = 'rgba(0,0,0,0.9)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.textAlign = 'center';
+
+      ctx.fillStyle = T.muted;
+      ctx.font = '14px monospace';
+      ctx.fillText('GAME OVER', W / 2, H / 2 - 70);
+
+      ctx.fillStyle = T.gold;
+      ctx.font = 'bold 56px monospace';
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = 'rgba(255,215,0,0.5)';
+      ctx.fillText(score + '', W / 2, H / 2 - 20);
+      ctx.shadowBlur = 0;
+
+      if (score >= bestScore && score > 0) {
+        ctx.fillStyle = T.gold;
+        ctx.font = 'bold 16px monospace';
+        ctx.fillText('NEW RECORD!', W / 2, H / 2 + 5);
+      }
+
+      ctx.fillStyle = T.teal;
+      ctx.font = '14px monospace';
+      ctx.fillText('Best: ' + bestScore, W / 2, H / 2 + 28);
+
+      ctx.fillStyle = T.muted;
+      ctx.font = '12px monospace';
+      ctx.fillText('collected: ' + collected + '  |  max combo: ' + maxCombo, W / 2, H / 2 + 50);
+
+      ctx.fillStyle = T.gold;
+      ctx.font = '18px monospace';
+      ctx.fillText('[ TAP TO RETRY ]', W / 2, H / 2 + 90);
+
+      ctx.textAlign = 'left';
+    }
+
+    // --- LOOP ---
+    let lastTime = performance.now();
+    init();
+
+    // spawn a few initial gems for the start screen
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => {
+        if (phase === 'start') spawnGem();
+      }, i * 300);
+    }
+
+    function loop(ts) {
+      const dt = Math.min((ts - lastTime) / 1000, 0.05);
+      lastTime = ts;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
