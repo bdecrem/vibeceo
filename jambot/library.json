@@ -192,7 +192,7 @@
           ],
           "decay": 0.6,
           "tune": -4,
-          "level": 1.0
+          "level": 1
         },
         "clap": {
           "pattern": [
@@ -261,7 +261,7 @@
           ],
           "decay": 0.5,
           "tune": -2,
-          "level": 1.0
+          "level": 1
         },
         "snare": {
           "pattern": [
@@ -4081,6 +4081,52 @@
         "The Jungle",
         "Sonic Destroyer",
         "Changes of Life"
+      ]
+    },
+    "hannes_bieger": {
+      "name": "Hannes Bieger",
+      "genre": "melodic_techno",
+      "bpm": [
+        122,
+        130
+      ],
+      "swing": 0,
+      "description": "Berlin-based producer/mix engineer known for tight low-end, tuned drums, and club-translation-focused melodic techno workflows.",
+      "philosophy": "Choose sounds in context, tune everything (especially kick), keep sub information controlled/mono, and use subtle automation to create movement without clutter.",
+      "productionPrinciples": [
+        "Tune drums to the track before detailed processing (kick first).",
+        "Select kick+bass together; avoid solo-sound bias when picking sources.",
+        "Keep low end mono below ~100Hz for reliable club translation.",
+        "Remove sub frequencies below musically useful fundamentals to clean headroom.",
+        "Prevent kick-tail overlap when sequencing one-shots to avoid low-end wobble/mud.",
+        "Use subtle delay and automation for groove movement; avoid over-processing.",
+        "Use filtered-kick sections (HP kick) for arrangement tension before drop returns.",
+        "Reference often and cross-check low-end on high-quality headphones."
+      ],
+      "drumGuidance": {
+        "kick": {
+          "focus": "Tuning + envelope shape over raw loudness",
+          "notes": "Shorter decay for definition, longer decay only when arrangement leaves room; align transient and tail to bass movement."
+        },
+        "hats": {
+          "focus": "Transient control and decay micro-variation",
+          "notes": "Use small decay moves and occasional delay/automation for perceived groove changes."
+        },
+        "lowEnd": {
+          "monoBelowHz": 100,
+          "notes": "Keep subs centered; verify translation on monitors + headphones."
+        }
+      },
+      "workflowChecks": [
+        "Run low-end sanity checks after kick tune/decay changes.",
+        "Compare reference tracks at matched loudness during arrangement milestones.",
+        "Prefer 1-2 meaningful processing moves over long plugin chains."
+      ],
+      "references": [
+        "Magnetic Magazine — 20 Techno Tips by Hannes Bieger",
+        "Native Instruments Blog — Drum processing with Hannes Bieger",
+        "Electronic Groove — Studio tips by Hannes Bieger",
+        "Aulart — Kick & bass tips with Hannes Bieger"
       ]
     }
   }

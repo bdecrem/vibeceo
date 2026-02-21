@@ -1293,13 +1293,39 @@ Each saved pattern captures the full state for that instrument:
 
 **Profile genres:** Breakcore, Complextro, Drift Phonk, Future Garage, Gym Phonk, Jersey Club, Neurofunk, Pluggnb, Rawstyle, Sigilkore, Stutterhouse, Wave
 
-**Artists:** Jeff Mills
+**Artists:** Jeff Mills, Hannes Bieger
 
 **Aliases:** "house" → classic_house, "techno" → berlin_techno, "acid" → acid_house, "phonk" → drift_phonk, "gabber" → gabber, etc.
 
 **To add a genre:** Add entry to `library.json` under `genres` with tier, name, bpm, keys, description, production, and references. For core/deep tiers include drums and bass params. Then add aliases to `LIBRARY_ALIASES` in `core/library.js`.
 
 **Source material:** `musical-knowledge/` contains the raw research files (genres.json, genres-deep.json, genres/*.md) that were merged into library.json.
+
+### Hannes Bieger-Inspired Test Pack (for tool validation)
+
+When validating new synths/modules with analysis tools, use these repeatable checks:
+
+1. **Kick Tune Sweep**
+   - Render same pattern at kick tune `-12, -6, 0, +6, +12`
+   - Verify `get_spectral_peaks` tracks expected fundamental/harmonic shifts
+
+2. **Kick Decay Sweep**
+   - Render same pattern with decay `10` vs `90`
+   - Verify `analyze_render` shows expected RMS/DR changes (long decay = higher RMS, lower DR)
+
+3. **Mono Low-End Validation**
+   - For tracks with bass modules/EQ available: keep low end mono below ~100Hz
+   - Verify mud/resonance changes with `detect_mud`/`detect_resonance`
+
+4. **Filtered-Kick Arrangement Tension**
+   - Test bridges with high-passed kick rather than full mute
+   - Verify movement and contrast with `measure_spectral_flux` and `show_spectrum`
+
+5. **Reference Workflow**
+   - Compare against reference tracks at matched loudness after major arrangement milestones
+   - Cross-check lows on headphones for translation
+
+Use this pack to catch analyzer regressions and to produce more mix-translation-ready defaults.
 
 ## Slash Commands
 
