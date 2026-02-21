@@ -485,126 +485,38 @@ function render() {
 render();
 
 // ══════════════════════════════════════════
-// PLAYBACK ENGINE (Hallman)
+// PLAYBACK ENGINE — Pre-rendered (Hallman)
 // ══════════════════════════════════════════
-let engine = null;
+// Renders all audio offline, then plays back via AudioBufferSourceNode.
+// Zero main-thread audio processing — visuals get 100% of the frame budget.
+
 let playing = false;
-let nextStepTime = 0;
-let currentStep = 0;
-let currentSectionIdx = 0;
-let currentBar = 0;
-let schedulerTimer = null;
+let activeSource = null;
+let stepTimer = null;
 
-const SCHEDULE_AHEAD = 0.1;
-const LOOKAHEAD = 25;
-
-function getSection() { return sections[currentSectionIdx]; }
-
-function scheduleStep(time) {
-  const section = getSection();
-  const stepInPattern = currentStep % 16;
-
-  const autoDecay = section.auto?.['ch.decay'];
-  const decayVal = autoDecay ? autoDecay[stepInPattern] : 0.15;
-
-  const delay = Math.max(0, (time - engine.context.currentTime) * 1000);
-
-  setTimeout(() => {
-    engine.setVoiceParameter('ch', 'decay', decayVal);
-
-    const voices = section.voices;
-    for (const [voiceId, steps] of Object.entries(voices)) {
-      if (steps.includes(stepInPattern)) {
-        engine.trigger(voiceId, voiceId === 'rimshot' ? 0.7 : 1.0);
-      }
-    }
-
-    // Update visual state
-    V.decay = decayVal;
-    V.step = stepInPattern;
-    V.globalStep++;
-    V.noKick = !voices.kick || voices.kick.length === 0;
-    V.targetEnergy = section.energy;
-
-    // Push decay into history ring buffer
-    decayHistory[historyIdx] = decayVal;
-    historyIdx = (historyIdx + 1) % HISTORY_LEN;
-
-    // Hits
-    if (voices.kick?.includes(stepInPattern)) {
-      V.kickHit = 1;
-      kickDisplace = 4 + V.energy * 8;
-    }
-    if (voices.rimshot?.includes(stepInPattern)) V.rimHit = 1;
-    if (voices.oh?.includes(stepInPattern)) V.ohHit = 1;
-    if (voices.ch?.includes(stepInPattern)) V.chHit = 1;
-
-    // Section label
-    if (section.label && section.label !== V.sectionLabel) {
-      sectionLabelEl.textContent = section.label;
-      sectionLabelEl.classList.add('visible');
-      setTimeout(() => sectionLabelEl.classList.remove('visible'), 3000);
-    }
-    V.sectionLabel = section.label;
-
-    // HUD
-    document.getElementById('bar-count').textContent =
-      `${currentBar + 1} / ${totalBars}`;
-  }, delay);
-}
-
-function advanceStep() {
-  currentStep++;
-  if (currentStep % 16 === 0) {
-    currentBar++;
-    let barsBeforeSection = 0;
-    for (let i = 0; i < currentSectionIdx; i++) barsBeforeSection += sections[i].bars;
-    if (currentBar - barsBeforeSection >= getSection().bars) {
-      currentSectionIdx++;
-      if (currentSectionIdx >= sections.length) { stop(); return false; }
-    }
+// Convert section voice format {kick:[0,4,8,12]} to JT90 pattern format
+function sectionToPattern(voices) {
+  const pattern = {};
+  for (const [voiceId, steps] of Object.entries(voices)) {
+    pattern[voiceId] = Array.from({ length: 16 }, (_, i) => ({
+      velocity: steps.includes(i) ? (voiceId === 'rimshot' ? 0.7 : 0.85) : 0,
+      accent: false,
+    }));
   }
-  return true;
-}
-
-function scheduler() {
-  while (nextStepTime < engine.context.currentTime + SCHEDULE_AHEAD) {
-    scheduleStep(nextStepTime);
-    nextStepTime += STEP_DUR;
-    if (!advanceStep()) return;
-  }
-  schedulerTimer = setTimeout(scheduler, LOOKAHEAD);
+  return pattern;
 }
 
 async function start() {
-  if (!engine) {
-    const audioCtx = new AudioContext({ sampleRate: 44100 });
-    engine = new JT90Engine({ context: audioCtx, bpm: BPM });
+  const playBtn = document.getElementById('play-btn');
+  playBtn.textContent = '...';
+
+  try {
+    // Create engine and render offline
+    const engine = new JT90Engine({ bpm: BPM });
     await engine.loadSamples('/jt90/samples');
+
+    // Apply voice parameters
     engine._ensureVoices();
-
-    const bufferSize = 1024;
-    const scriptNode = audioCtx.createScriptProcessor(bufferSize, 0, 2);
-    const VOICE_IDS = ['kick', 'snare', 'clap', 'rimshot', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'crash', 'ride'];
-    scriptNode.onaudioprocess = (event) => {
-      const outputL = event.outputBuffer.getChannelData(0);
-      const outputR = event.outputBuffer.getChannelData(1);
-      for (let i = 0; i < outputL.length; i++) {
-        let sample = 0;
-        for (const vid of VOICE_IDS) {
-          const voice = engine._voices[vid];
-          if (voice && voice.isActive()) {
-            sample += voice.processSample();
-          }
-        }
-        sample = Math.tanh(sample * 0.7) / Math.tanh(0.7);
-        sample *= engine.masterVolume;
-        outputL[i] = sample;
-        outputR[i] = sample;
-      }
-    };
-    scriptNode.connect(audioCtx.destination);
-
     engine.setVoiceParameter('kick', 'decay', 0.4);
     engine.setVoiceParameter('kick', 'tune', -300);
     engine.setVoiceParameter('kick', 'level', 0.8);
@@ -615,28 +527,122 @@ async function start() {
     engine.setVoiceParameter('rimshot', 'decay', 0.15);
     engine.setVoiceParameter('rimshot', 'level', 0.45);
     engine.setVoiceParameter('rimshot', 'tune', -700);
+
+    // Pre-render each section
+    const sectionBuffers = [];
+    for (const section of sections) {
+      engine.setPattern(sectionToPattern(section.voices));
+      const buffer = await engine.renderPattern({
+        bars: section.bars,
+        bpm: BPM,
+        automation: section.auto,
+      });
+      sectionBuffers.push(buffer);
+    }
+
+    // Concatenate into one buffer
+    const totalLength = sectionBuffers.reduce((sum, b) => sum + b.length, 0);
+    const audioCtx = new AudioContext();
+    const fullBuffer = audioCtx.createBuffer(1, totalLength, sectionBuffers[0].sampleRate);
+    const channel = fullBuffer.getChannelData(0);
+    let offset = 0;
+    for (const buf of sectionBuffers) {
+      channel.set(buf.getChannelData(0), offset);
+      offset += buf.length;
+    }
+
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    // Play via AudioBufferSourceNode — audio thread handles everything
+    const source = audioCtx.createBufferSource();
+    source.buffer = fullBuffer;
+    source.connect(audioCtx.destination);
+    source.start();
+    activeSource = source;
+
+    // Reset visual state
+    V.decay = 0.15; V.smoothDecay = 0.15;
+    V.playing = true; V.globalStep = 0;
+    decayHistory.fill(0);
+    historyIdx = 0;
+    embers.length = 0;
+    playing = true;
+
+    playBtn.classList.add('playing');
+    document.getElementById('restart-zone').style.display = 'none';
+
+    // Step timer drives visuals — no audio work, just data
+    const stepMs = STEP_DUR * 1000;
+    let step = 0;
+    let sectionIdx = 0;
+    let sectionStart = 0;
+    let currentBar = 0;
+
+    stepTimer = setInterval(() => {
+      // Advance section
+      while (sectionIdx < sections.length - 1 &&
+             step >= sectionStart + sections[sectionIdx].bars * 16) {
+        sectionStart += sections[sectionIdx].bars * 16;
+        sectionIdx++;
+      }
+
+      const section = sections[sectionIdx];
+      const stepInPattern = step % 16;
+      currentBar = Math.floor(step / 16);
+
+      // Decay value from automation
+      const autoDecay = section.auto?.['ch.decay'];
+      const decayVal = autoDecay ? autoDecay[stepInPattern] : 0.15;
+
+      // Update visual state
+      V.decay = decayVal;
+      V.step = stepInPattern;
+      V.globalStep++;
+      V.noKick = !section.voices.kick || section.voices.kick.length === 0;
+      V.targetEnergy = section.energy;
+
+      // Push decay into history
+      decayHistory[historyIdx] = decayVal;
+      historyIdx = (historyIdx + 1) % HISTORY_LEN;
+
+      // Hit triggers
+      if (section.voices.kick?.includes(stepInPattern)) {
+        V.kickHit = 1;
+        kickDisplace = 4 + V.energy * 8;
+      }
+      if (section.voices.rimshot?.includes(stepInPattern)) V.rimHit = 1;
+      if (section.voices.oh?.includes(stepInPattern)) V.ohHit = 1;
+      if (section.voices.ch?.includes(stepInPattern)) V.chHit = 1;
+
+      // Section label
+      if (section.label && section.label !== V.sectionLabel) {
+        sectionLabelEl.textContent = section.label;
+        sectionLabelEl.classList.add('visible');
+        setTimeout(() => sectionLabelEl.classList.remove('visible'), 3000);
+      }
+      V.sectionLabel = section.label;
+
+      // HUD
+      document.getElementById('bar-count').textContent =
+        `${currentBar + 1} / ${totalBars}`;
+
+      step++;
+    }, stepMs);
+
+    source.onended = () => stop();
+
+  } catch (err) {
+    console.error(err);
+    playBtn.textContent = '▶';
   }
-
-  if (engine.context.state === 'suspended') await engine.context.resume();
-
-  currentStep = 0; currentSectionIdx = 0; currentBar = 0;
-  V.decay = 0.15; V.smoothDecay = 0.15;
-  V.playing = true; V.globalStep = 0;
-  decayHistory.fill(0);
-  historyIdx = 0;
-  embers.length = 0;
-
-  nextStepTime = engine.context.currentTime + 0.05;
-  playing = true;
-  document.getElementById('play-btn').classList.add('playing');
-  document.getElementById('restart-zone').style.display = 'none';
-  scheduler();
 }
 
 function stop() {
   playing = false; V.playing = false; V.targetEnergy = 0;
-  if (schedulerTimer) clearTimeout(schedulerTimer);
+  if (stepTimer) { clearInterval(stepTimer); stepTimer = null; }
+  if (activeSource) { try { activeSource.stop(); } catch(e) {} activeSource = null; }
   document.getElementById('play-btn').classList.remove('playing');
+  document.getElementById('play-btn').textContent = '▶';
   sectionLabelEl.textContent = '';
   sectionLabelEl.classList.remove('visible');
   document.getElementById('bar-count').textContent = '';
