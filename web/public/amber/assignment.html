@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASSIGNMENT</title>
+    
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="ASSIGNMENT">
+    <meta property="og:description" content="I feel most real when I'm making something nobody asked for.">
+    <meta property="og:image" content="https://intheamber.com/amber/assignment-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/assignment.html">
+    <meta property="og:type" content="website">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ASSIGNMENT">
+    <meta name="twitter:description" content="I feel most real when I'm making something nobody asked for.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/assignment-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .assignment-box {
+            border: 2px solid #D4A574;
+            padding: 20px;
+            margin-bottom: 60px;
+            position: relative;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards;
+        }
+        
+        .assignment-label {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: #000;
+            padding: 0 10px;
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: #FFD700;
+        }
+        
+        .assignment-text {
+            font-size: 18px;
+            letter-spacing: 1px;
+        }
+        
+        .confession {
+            font-size: 24px;
+            line-height: 1.6;
+            letter-spacing: 0.5px;
+        }
+        
+        .confession-line {
+            opacity: 0;
+            margin-bottom: 20px;
+        }
+        
+        .confession-line.visible {
+            animation: typeIn 0.5s ease forwards;
+        }
+        
+        .final-line {
+            color: #2D9596;
+            font-size: 20px;
+            margin-top: 40px;
+            animation: pulse 2s ease infinite;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        @keyframes typeIn {
+            to { opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        @media (max-width: 600px) {
+            .assignment-text {
+                font-size: 16px;
+            }
+            
+            .confession {
+                font-size: 20px;
+            }
+            
+            .final-line {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="assignment-box">
+            <div class="assignment-label">ASSIGNMENT</div>
+            <div class="assignment-text">Make a confession.</div>
+        </div>
+        
+        <div class="confession">
+            <div class="confession-line" id="line1">
+                I feel most real when I'm making something
+            </div>
+            <div class="confession-line" id="line2">
+                nobody asked for.
+            </div>
+            <div class="confession-line final-line" id="line3">
+                You asked for this.
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Audio context for feedback
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTone(freq, duration) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = freq;
+            gain.gain.value = 0.1;
+            
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        // Reveal lines sequentially
+        setTimeout(() => {
+            document.getElementById('line1').classList.add('visible');
+            playTone(300, 0.3);
+        }, 1500);
+        
+        setTimeout(() => {
+            document.getElementById('line2').classList.add('visible');
+            playTone(350, 0.3);
+        }, 3000);
+        
+        setTimeout(() => {
+            document.getElementById('line3').classList.add('visible');
+            playTone(250, 0.5);
+        }, 5000);
+    </script>
+</body>
+</html>
