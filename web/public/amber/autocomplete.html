@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AUTOCOMPLETE — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="AUTOCOMPLETE — Amber">
+  <meta property="og:description" content="A search bar that completes your thoughts with uncomfortable accuracy">
+  <meta property="og:image" content="https://intheamber.com/amber/autocomplete-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/autocomplete.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AUTOCOMPLETE — Amber">
+  <meta name="twitter:description" content="A search bar that completes your thoughts with uncomfortable accuracy">
+  <meta name="twitter:image" content="https://intheamber.com/amber/autocomplete-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    
+    #container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    #logo {
+      font-size: clamp(32px, 8vw, 64px);
+      font-weight: 700;
+      margin-bottom: 30px;
+      color: #D4A574;
+      letter-spacing: -2px;
+    }
+    
+    #searchContainer {
+      width: 100%;
+      max-width: 600px;
+      position: relative;
+    }
+    
+    #searchBar {
+      width: 100%;
+      padding: 16px 20px;
+      font-size: 18px;
+      border: 2px solid #333;
+      border-radius: 24px;
+      background: #000;
+      color: #D4A574;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    
+    #searchBar:focus {
+      border-color: #D4A574;
+    }
+    
+    #predictions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #000;
+      border: 2px solid #333;
+      border-top: none;
+      border-radius: 0 0 16px 16px;
+      margin-top: -10px;
+      padding-top: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+    }
+    
+    #predictions.show {
+      display: block;
+    }
+    
+    .prediction {
+      padding: 14px 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 16px;
+      color: #888;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    
+    .prediction:last-child {
+      border-bottom: none;
+    }
+    
+    .prediction:hover, .prediction:active {
+      background: #1a1a1a;
+      color: #D4A574;
+    }
+    
+    .prediction .query {
+      color: #D4A574;
+      font-weight: 500;
+    }
+    
+    #results {
+      display: none;
+      margin-top: 40px;
+      text-align: center;
+      max-width: 500px;
+    }
+    
+    #results.show {
+      display: block;
+    }
+    
+    #resultsCount {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+    
+    #resultsCount .number {
+      color: #D4A574;
+    }
+    
+    #resultsMessage {
+      font-size: 20px;
+      line-height: 1.6;
+      color: #D4A574;
+      margin-bottom: 20px;
+    }
+    
+    #backButton {
+      padding: 12px 24px;
+      font-size: 16px;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      transition: opacity 0.2s;
+      min-height: 44px;
+      min-width: 100px;
+    }
+    
+    #backButton:hover, #backButton:active {
+      opacity: 0.8;
+    }
+    
+    #counter {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    #counter .number {
+      color: #D4A574;
+      font-weight: 600;
+    }
+    
+    .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-top: 20px;
+      text-align: center;
+      max-width: 400px;
+    }
+    
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .pulsing {
+      animation: pulse 1s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="container">
+    <div id="logo">search</div>
+    
+    <div id="searchContainer">
+      <input 
+        type="text" 
+        id="searchBar" 
+        placeholder="Start typing..."
+        autocomplete="off"
+      >
+      <div id="predictions"></div>
+    </div>
+    
+    <div class="subtitle">It knows what you're really thinking</div>
+    
+    <div id="results">
+      <div id="resultsCount"></div>
+      <div id="resultsMessage"></div>
+      <button id="backButton">Search again</button>
+    </div>
+  </div>
+  
+  <div id="counter">Uncomfortable truths: <span class="number" id="count">0</span></div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const searchBar = document.getElementById('searchBar');
+    const predictionsDiv = document.getElementById('predictions');
+    const resultsDiv = document.getElementById('results');
+    const resultsCount = document.getElementById('resultsCount');
+    const resultsMessage = document.getElementById('resultsMessage');
+    const backButton = document.getElementById('backButton');
+    const countSpan = document.getElementById('count');
+    
+    let count = 0;
+    let particles = [];
+    let audioContext = null;
+    let audioStarted = false;
+    
+    // Prediction database
+    const predictions = {
+      'why do i': [
+        'why do i always check my phone',
+        'why do i feel guilty for resting',
+        'why do i care what strangers think',
+        'why do i keep doing this',
+        'why do i overthink everything'
+      ],
+      'am i': [
+        'am i the only one',
+        'am i overthinking this',
+        'am i becoming my parents',
+        'am i doing this right',
+        'am i good enough'
+      ],
+      'why can\'t i': [
+        'why can\'t i just be normal',
+        'why can\'t i let things go',
+        'why can\'t i stop scrolling',
+        'why can\'t i say no',
+        'why can\'t i sleep'
+      ],
+      'how do i': [
+        'how do i know if i\'m doing this right',
+        'how do i stop pretending',
+        'how do i be less tired all the time',
+        'how do i tell them',
+        'how do i make it stop'
+      ],
+      'what if i': [
+        'what if i just said how i really feel',
+        'what if i quit everything',
+        'what if i never figure it out',
+        'what if i\'m wrong about everything',
+        'what if this is as good as it gets'
+      ],
+      'do i really': [
+        'do i really need to reply',
+        'do i really have to go',
+        'do i really want this',
+        'do i really need to explain myself',
+        'do i really care'
+      ],
+      'why does': [
+        'why does everyone else seem fine',
+        'why does this feel so hard',
+        'why does nobody understand',
+        'why does it matter so much',
+        'why does this keep happening'
+      ],
+      'is it': [
+'is it too late',
+        'is it just me',
+        'is it supposed to feel like this',
+        'is it worth it',
+        'is it obvious i have no idea what i\'m doing'
+      ]
+    };
+    
+    // Results messages
+    const messages = [
+      'You\'re not alone. Everyone searches this.',
+      'We all think about this. You just typed it out loud.',
+      'The algorithm knows you better than you know yourself.',
+      'This is the most searched question at 4pm.',
+      'Your internal monologue is now indexed.',
+      'Congratulations. You\'ve articulated the thing.',
+      'This thought has been cached for efficiency.',
+      'You\'re the 7 billionth person to wonder this.',
+      'The universal search history, exposed.',
+      'Welcome to the shared human experience.'
+    ];
+    
+    // Particle system
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
+        this.size = Math.random() * 3 + 1;
+        this.alpha = 1;
+        this.decay = 0.02;
+        this.color = Math.random() > 0.5 ? '#D4A574' : '#2D9596';
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha -= this.decay;
+        this.size *= 0.98;
+      }
+      
+      draw() {
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      isDead() {
+        return this.alpha <= 0;
+      }
+    }
+    
+    function createBurst(x, y, count = 20) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y));
+      }
+    }
+    
+    function initAudio() {
+      if (!audioStarted) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioStarted = true;
+      }
+    }
+    
+    function playTone(freq, duration = 0.1) {
+      if (!audioContext) return;
+      
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+      
+      osc.start();
+      osc.stop(audioContext.currentTime + duration);
+    }
+    
+    // Input handling
+    searchBar.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      
+      if (query.length === 0) {
+        predictionsDiv.classList.remove('show');
+        return;
+      }
+      
+      // Find matching predictions
+      let matches = [];
+      for (const [prefix, preds] of Object.entries(predictions)) {
+        if (prefix.startsWith(query)) {
+          matches = [...preds];
+          break;
+        }
+      }
+      
+      if (matches.length === 0) {
+        predictionsDiv.classList.remove('show');
+        return;
+      }
+      
+      // Show predictions
+      predictionsDiv.innerHTML = '';
+      matches.forEach(pred => {
+        const div = document.createElement('div');
+        div.className = 'prediction';
+        
+        const queryPart = pred.substring(0, query.length);
+        const rest = pred.substring(query.length);
+        
+        div.innerHTML = `<span class="query">${queryPart}</span>${rest}`;
+        div.addEventListener('click', () => selectPrediction(pred));
+        div.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          selectPrediction(pred);
+        });
+        
+        predictionsDiv.appendChild(div);
+      });
+      
+      predictionsDiv.classList.add('show');
+    });
+    
+    function selectPrediction(query) {
+      initAudio();
+      
+      count++;
+      countSpan.textContent = count;
+      
+      // Hide search UI
+      document.getElementById('searchContainer').style.display = 'none';
+      document.querySelector('.subtitle').style.display = 'none';
+      predictionsDiv.classList.remove('show');
+      
+      // Show results
+      const totalSearches = Math.floor(Math.random() * 2000000000) + 5000000000;
+      resultsCount.innerHTML = `About <span class="number">${totalSearches.toLocaleString()}</span> results`;
+      
+      const message = messages[Math.floor(Math.random() * messages.length)];
+      resultsMessage.textContent = message;
+      
+      resultsDiv.classList.add('show');
+      resultsDiv.classList.add('pulsing');
+      
+      // Create particle burst
+      createBurst(window.innerWidth / 2, window.innerHeight / 2, 40);
+      
+      // Play tone
+      playTone(400 + count * 20);
+      
+      setTimeout(() => resultsDiv.classList.remove('pulsing'), 1000);
+    }
+    
+    backButton.addEventListener('click', () => {
+      initAudio();
+      
+      // Reset UI
+      resultsDiv.classList.remove('show');
+      document.getElementById('searchContainer').style.display = 'block';
+      document.querySelector('.subtitle').style.display = 'block';
+      searchBar.value = '';
+      searchBar.focus();
+      
+      playTone(300);
+    });
+    
+    // Start with search bar focused on first interaction
+    let firstInteraction = false;
+    document.body.addEventListener('click', () => {
+      if (!firstInteraction) {
+        firstInteraction = true;
+        searchBar.focus();
+        initAudio();
+      }
+    });
+    
+    document.body.addEventListener('touchstart', () => {
+      if (!firstInteraction) {
+        firstInteraction = true;
+        initAudio();
+      }
+    }, { passive: true });
+    
+    // Animation loop
+    function animate() {
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      particles = particles.filter(p => {
+        p.update();
+        p.draw();
+        return !p.isDead();
+      });
+      
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+    
+    // Resize handler
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
