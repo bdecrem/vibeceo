@@ -4,7 +4,7 @@ _Last updated: 2026-02-21_
 
 ## Summary
 
-### ✅ Fully working
+### ✅ Works reliably
 - JB01
 - JT90
 - Delay effect

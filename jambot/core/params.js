@@ -4,7 +4,7 @@
  * Every parameter in the system is addressable via a dot-path:
  *   session.get('drums.kick.decay')
  *   session.set('bass.cutoff', 0.7)
- *   session.get('mixer.sends.reverb1.decay')
+ *   session.get('fx.master.reverb1.decay')
  *
  * Nodes (instruments, effects, mixer sections) register themselves
  * and handle their own parameter access.
@@ -13,10 +13,41 @@
 export class ParamSystem {
   constructor() {
     // Registered nodes: 'drums' -> JB01, 'bass' -> JB200, etc.
+    // Node IDs can be multi-segment (e.g., 'fx.jb01.ch.reverb1')
     this.nodes = new Map();
 
     // Automation data: 'drums.kick.decay' -> [values array]
     this.automation = new Map();
+  }
+
+  /**
+   * Resolve a dot-path to { node, paramPath } by trying progressively
+   * longer prefixes as node IDs. Supports both simple IDs ('jb01') and
+   * multi-segment IDs ('fx.jb01.ch.reverb1').
+   *
+   * For path 'fx.jb01.ch.reverb1.decay', tries:
+   *   'fx' → 'fx.jb01' → 'fx.jb01.ch' → 'fx.jb01.ch.reverb1' ✓
+   *
+   * @param {string} path - Full dot-separated path
+   * @returns {{ node: Node, nodeId: string, paramPath: string } | null}
+   */
+  _resolveNode(path) {
+    const segments = path.split('.');
+
+    // Try progressively longer prefixes (shortest first for backwards compat)
+    for (let i = 1; i <= segments.length; i++) {
+      const candidateId = segments.slice(0, i).join('.');
+      const node = this.nodes.get(candidateId);
+      if (node) {
+        return {
+          node,
+          nodeId: candidateId,
+          paramPath: segments.slice(i).join('.'),
+        };
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -55,15 +86,14 @@ export class ParamSystem {
    * @returns {*} Parameter value, or undefined if not found
    */
   get(path) {
-    const [nodeId, ...rest] = path.split('.');
-    const node = this.nodes.get(nodeId);
+    const resolved = this._resolveNode(path);
 
-    if (!node) {
-      console.warn(`ParamSystem: Unknown node "${nodeId}"`);
+    if (!resolved) {
+      console.warn(`ParamSystem: No node found for path "${path}"`);
       return undefined;
     }
 
-    return node.getParam(rest.join('.'));
+    return resolved.node.getParam(resolved.paramPath);
   }
 
   /**
@@ -73,15 +103,14 @@ export class ParamSystem {
    * @returns {boolean} True if successful
    */
   set(path, value) {
-    const [nodeId, ...rest] = path.split('.');
-    const node = this.nodes.get(nodeId);
+    const resolved = this._resolveNode(path);
 
-    if (!node) {
-      console.warn(`ParamSystem: Unknown node "${nodeId}"`);
+    if (!resolved) {
+      console.warn(`ParamSystem: No node found for path "${path}"`);
       return false;
     }
 
-    return node.setParam(rest.join('.'), value);
+    return resolved.node.setParam(resolved.paramPath, value);
   }
 
   /**
@@ -119,10 +148,9 @@ export class ParamSystem {
    * @returns {Object|null} Descriptor or null
    */
   getDescriptor(path) {
-    const [nodeId, ...rest] = path.split('.');
-    const node = this.nodes.get(nodeId);
-    if (!node) return null;
-    return node.getDescriptor(rest.join('.')) || null;
+    const resolved = this._resolveNode(path);
+    if (!resolved) return null;
+    return resolved.node.getDescriptor(resolved.paramPath) || null;
   }
 
   /**
@@ -140,9 +168,9 @@ export class ParamSystem {
    */
   automate(path, values) {
     // Validate the path exists
-    const [nodeId] = path.split('.');
-    if (!this.nodes.has(nodeId)) {
-      console.warn(`ParamSystem: Cannot automate unknown node "${nodeId}"`);
+    const resolved = this._resolveNode(path);
+    if (!resolved) {
+      console.warn(`ParamSystem: Cannot automate unknown path "${path}"`);
       return false;
     }
 

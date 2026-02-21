@@ -48,7 +48,10 @@ const EFFECT_PROCESSORS = {
  * @returns {Object} Processed buffer
  */
 async function applyEffect(buffer, effect, sampleRate, bpm) {
-  const { type, params = {} } = effect;
+  const { type } = effect;
+  // Read live params from effect node when available (keeps ParamSystem in sync),
+  // fall back to static params object for backwards compatibility
+  const params = effect._node ? effect._node.getParams() : (effect.params || {});
   const processor = EFFECT_PROCESSORS[type];
 
   if (!processor) {
