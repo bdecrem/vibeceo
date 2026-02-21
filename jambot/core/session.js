@@ -22,6 +22,65 @@ import { JT10Node } from '../instruments/jt10-node.js';
 import { JT30Node } from '../instruments/jt30-node.js';
 import { JT90Node } from '../instruments/jt90-node.js';
 import { JP9000Node } from '../instruments/jp9000-node.js';
+import { ReverbNode } from '../effects/reverb-node.js';
+import { DelayNode } from '../effects/delay-node.js';
+import { EQNode } from '../effects/eq-node.js';
+import { FilterNode } from '../effects/filter-node.js';
+import { SidechainNode } from '../effects/sidechain-node.js';
+
+// Map effect type string to node class (shared with mixer-tools.js)
+const EFFECT_NODE_CLASSES = {
+  reverb: ReverbNode,
+  delay: DelayNode,
+  eq: EQNode,
+  filter: FilterNode,
+  sidechain: SidechainNode,
+};
+
+/**
+ * Serialize effect chains, stripping _node references
+ * @param {Object} effectChains
+ * @returns {Object}
+ */
+function serializeEffectChains(effectChains) {
+  if (!effectChains) return {};
+  const result = {};
+  for (const [target, chain] of Object.entries(effectChains)) {
+    result[target] = chain.map(e => ({
+      id: e.id,
+      type: e.type,
+      params: { ...e.params },
+    }));
+  }
+  return result;
+}
+
+/**
+ * Reconstruct effect nodes from serialized chain data and register in ParamSystem
+ * @param {Object} effectChains - Serialized effect chains
+ * @param {ParamSystem} params - ParamSystem to register nodes in
+ * @returns {Object} Effect chains with _node references restored
+ */
+function reconstructEffectNodes(effectChains, params) {
+  if (!effectChains) return {};
+  const result = {};
+  for (const [target, chain] of Object.entries(effectChains)) {
+    result[target] = chain.map(e => {
+      const NodeClass = EFFECT_NODE_CLASSES[e.type];
+      if (!NodeClass) {
+        // Unknown type — keep data but no node
+        return { id: e.id, type: e.type, params: { ...e.params } };
+      }
+      const node = new NodeClass(e.id);
+      for (const [key, value] of Object.entries(e.params || {})) {
+        node.setParam(key, value);
+      }
+      params.register(`fx.${target}.${e.id}`, node);
+      return { id: e.id, type: e.type, params: { ...e.params }, _node: node };
+    });
+  }
+  return result;
+}
 
 /**
  * Create a new session with ParamSystem integration
@@ -415,16 +474,14 @@ export function createSession(config = {}) {
     get jt90AccentLevel() { return jt90Node.getAccentLevel(); },
     set jt90AccentLevel(v) { jt90Node.setAccentLevel(v); },
 
-    // Mixer (placeholder)
+    // Mixer state
     mixer: {
-      sends: {},
-      voiceRouting: {},
       channelInserts: {},
       masterInserts: [],
       masterVolume: 0.8,
-      // Effect chains for flexible routing (delay, reverb, etc.)
-      // Structure: { 'target': [{ id, type, params }, ...] }
+      // Effect chains: { 'target': [{ id, type, params, _node }, ...] }
       // Targets: 'jb01.ch', 'jb01.kick', 'jb202', 'master'
+      // Each effect is addressable via ParamSystem: fx.{target}.{effectId}
       effectChains: {},
     },
 
@@ -472,6 +529,12 @@ export function createSession(config = {}) {
  * @returns {Object}
  */
 export function serializeSession(session) {
+  // Serialize mixer with effect chains stripped of _node references
+  const mixerData = {
+    ...session.mixer,
+    effectChains: serializeEffectChains(session.mixer.effectChains),
+  };
+
   return {
     clock: session.clock.serialize(),
     bars: session.bars,
@@ -483,7 +546,7 @@ export function serializeSession(session) {
     jt90Level: session._nodes.jt90.getLevel(),
     jp9000Level: session._nodes.jp9000.getLevel(),
     params: session.params.serialize(),
-    mixer: session.mixer,
+    mixer: mixerData,
     patterns: session.patterns,
     currentPattern: session.currentPattern,
     arrangement: session.arrangement,
@@ -515,7 +578,12 @@ export function deserializeSession(data) {
     session.params.deserialize(data.params);
   }
 
-  if (data.mixer) session.mixer = data.mixer;
+  if (data.mixer) {
+    session.mixer = {
+      ...data.mixer,
+      effectChains: reconstructEffectNodes(data.mixer.effectChains, session.params),
+    };
+  }
   if (data.patterns) session.patterns = data.patterns;
   if (data.currentPattern) session.currentPattern = data.currentPattern;
   if (data.arrangement) session.arrangement = data.arrangement;
@@ -552,8 +620,13 @@ export function restoreSessionInPlace(existingSession, data) {
     existingSession.params.deserialize(data.params);
   }
 
-  // Update mixer, patterns, etc.
-  if (data.mixer) existingSession.mixer = data.mixer;
+  // Update mixer (reconstruct effect nodes), patterns, etc.
+  if (data.mixer) {
+    existingSession.mixer = {
+      ...data.mixer,
+      effectChains: reconstructEffectNodes(data.mixer.effectChains, existingSession.params),
+    };
+  }
   if (data.patterns) existingSession.patterns = data.patterns;
   if (data.currentPattern) existingSession.currentPattern = data.currentPattern;
   if (data.arrangement) existingSession.arrangement = data.arrangement;

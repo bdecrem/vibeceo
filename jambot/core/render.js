@@ -25,6 +25,21 @@ import { processDelay } from '../effects/delay.js';
 import { generatePlateReverbIR } from '../effects/reverb.js';
 
 /**
+ * Effect processor registry — maps effect type to processing function.
+ * Adding a new effect type is a one-liner registration here.
+ */
+const EFFECT_PROCESSORS = {
+  delay: (buffer, params, sampleRate, bpm) => {
+    return processDelay(buffer, params, sampleRate, bpm);
+  },
+  reverb: (buffer, params, sampleRate, bpm) => {
+    const context = new OfflineAudioContext(2, buffer.length, sampleRate);
+    const ir = generatePlateReverbIR(context, params);
+    return applyConvolution(buffer, ir, params.mix ?? 0.3, sampleRate);
+  },
+};
+
+/**
  * Apply a single effect to a buffer
  * @param {Object} buffer - Audio buffer with getChannelData()
  * @param {Object} effect - Effect config { id, type, params }
@@ -34,27 +49,14 @@ import { generatePlateReverbIR } from '../effects/reverb.js';
  */
 async function applyEffect(buffer, effect, sampleRate, bpm) {
   const { type, params = {} } = effect;
+  const processor = EFFECT_PROCESSORS[type];
 
-  switch (type) {
-    case 'delay':
-      return processDelay(buffer, params, sampleRate, bpm);
-
-    case 'reverb':
-      // Create a context for IR generation
-      const context = new OfflineAudioContext(2, buffer.length, sampleRate);
-      const ir = generatePlateReverbIR(context, params);
-
-      // Apply convolution reverb
-      return applyConvolution(buffer, ir, params.mix ?? 0.3, sampleRate);
-
-    // Future effects can be added here
-    // case 'filter':
-    // case 'eq':
-
-    default:
-      console.warn(`Unknown effect type: ${type}`);
-      return buffer;
+  if (!processor) {
+    console.warn(`Unknown effect type: ${type}`);
+    return buffer;
   }
+
+  return processor(buffer, params, sampleRate, bpm);
 }
 
 /**

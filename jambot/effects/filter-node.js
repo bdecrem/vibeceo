@@ -86,18 +86,6 @@ export class FilterNode extends EffectNode {
     return this._preset;
   }
 
-  /**
-   * Get all params as an object for render
-   * @returns {Object}
-   */
-  getParams() {
-    const result = {};
-    for (const path of Object.keys(this._descriptors)) {
-      result[path] = this._params[path];
-    }
-    return result;
-  }
-
   serialize() {
     return {
       ...super.serialize(),

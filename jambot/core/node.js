@@ -304,6 +304,36 @@ export class EffectNode extends Node {
   }
 
   /**
+   * Get all params as an object for render
+   * @returns {Object}
+   */
+  getParams() {
+    const result = {};
+    for (const path of Object.keys(this._descriptors)) {
+      result[path] = this._params[path];
+    }
+    return result;
+  }
+
+  /**
+   * Validate that this node implements the required EffectNode interface.
+   * Called at registration time to catch drift early.
+   *
+   * Required: getParam, setParam, getParameterDescriptors, getParams
+   *
+   * @throws {Error} If required methods are missing
+   */
+  validateInterface() {
+    const required = ['getParam', 'setParam', 'getParameterDescriptors', 'getParams'];
+    const missing = required.filter(name => typeof this[name] !== 'function');
+    if (missing.length > 0) {
+      throw new Error(
+        `EffectNode "${this.id}": missing required methods: ${missing.join(', ')}`
+      );
+    }
+  }
+
+  /**
    * Connect effect to audio graph
    * Override in subclasses
    * @param {AudioNode} input - Input audio node

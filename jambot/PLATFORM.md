@@ -11,12 +11,19 @@ A modular music production system. This document serves two audiences:
 
 **Public API only.** Use `session.set('jt90.kick.decay', 70)` and `session.jt90Pattern = pattern`, never `session._nodes`. The underscore means internal. If the public API doesn't expose what you need, add it to session.js — don't reach past it. This keeps instruments swappable: a new synth that implements `InstrumentNode` should plug in without callers knowing or caring about the underlying node.
 
-**Practical checklist for new instruments / effects:**
+**Practical checklist for new instruments:**
 - Add `params/<name>-params.json` first — this is your contract. Valid units are: `dB`, `0-100`, `semitones`, `Hz`, `pan`, `choice`.
 - Implement `InstrumentNode` interface (`getParam`, `setParam`, `getPattern`, `setPattern`, `renderPattern`, `getDescriptor`, `getPatternLength`, `getOutputGain`). Registration in `params.js` calls `validateInterface()` automatically — if your node is missing a method, you'll know immediately.
 - Add a pattern setter on `session` (e.g., `get/set myNewSynthPattern`). No raw `_nodes` access from outside session.js.
 - The consistency test (`tests/test-defaults-consistency.js`) validates your JSON automatically once you add it to `ALL_PARAMS`. The round-trip test (`test-param-roundtrip.js`) picks it up from `converters.js`. Zero test code to write for basic coverage.
 - Run `node tests/run-tests.js` before pushing. All three test files should pass.
+
+**Practical checklist for new effects:**
+- Extend `EffectNode` from `core/node.js`. Register params inline via `registerParams()` (only 5 effect types — 3x-before-abstracting rule applies, no JSON files needed yet).
+- `EffectNode` provides `getParams()` and `validateInterface()` — do not duplicate in subclasses.
+- Add a processor function to `EFFECT_PROCESSORS` in `render.js` (one-liner).
+- Add the node class to `EFFECT_NODE_CLASSES` in both `mixer-tools.js` and `session.js`.
+- Effects are instantiated and registered in ParamSystem by `add_effect` — path: `fx.{target}.{effectId}`. This makes `tweak()` work for free.
 
 
 ---
@@ -239,53 +246,65 @@ clock.samplesPerStep;  // For sample-accurate timing
 
 The generic tools (`tweak`, `get_param`) will automatically work once the node is registered.
 
-## Sends & Effects
+## Effect Chains
 
-**No formal Mixer component.** Sends and effects register directly in ParamSystem when created.
+Effects are modular plugins, just like instruments. Each effect extends `EffectNode` and registers in ParamSystem when added via `add_effect`.
 
 ### How it works
 
 ```javascript
-// When create_send() runs:
-create_send({ name: 'delay', effect: 'delay', time: 'triplet' })
-  → session.mixer.sends.delay = { effect: 'delay', params: {...} }
-  → params.register('sends.delay', delayEffect)  // Registers in ParamSystem
+// When add_effect() runs:
+add_effect({ target: 'master', effect: 'reverb', decay: 2, mix: 0.3 })
+  → Instantiates ReverbNode, applies params
+  → Calls node.validateInterface()
+  → Registers in ParamSystem: params.register('fx.master.reverb1', node)
+  → Stores in session.mixer.effectChains.master
 
-// Now tweak() works:
-tweak({ path: 'sends.delay.mix', value: 30 })
-tweak({ path: 'sends.delay.feedback', value: 65 })
+// Now tweak() works for free — effects are addressable:
+tweak({ path: 'fx.master.reverb1.decay', value: 4 })
+tweak({ path: 'fx.master.reverb1.mix', value: 0.5 })
+get_param({ path: 'fx.master.reverb1.decay' })  // Returns 4
 ```
+
+### Addressing convention
+
+Effects are addressed via `fx.{target}.{effectId}`:
+- `fx.master.reverb1` — first reverb on master
+- `fx.jb01.ch.delay1` — first delay on JB01 closed hats
+- `fx.jb202.delay1` — first delay on JB202
 
 ### Signal flow
 
 ```
-voice → [voice level] → [channel inserts] → instrument output
-                                                    ↓
-                                              [send buses]
-                                                    ↓
-                                             [master inserts]
-                                                    ↓
-                                                 output
+voice (jb01.ch) → [voice effect chain] ─┐
+voice (jb01.kick) ──────────────────────┼→ [instrument effect chain] → mix
+voice (jb01.snare) ─────────────────────┘                               ↓
+                                                                  [master chain]
+                                                                        ↓
+                                                                      output
 ```
 
-### Routing
+### Effect processor registry
+
+`render.js` uses an `EFFECT_PROCESSORS` map instead of a hardcoded switch. Adding a new effect type is a one-liner:
 
 ```javascript
-// Route closed hats to delay
-route_to_send({ source: 'drums.ch', send: 'delay', amount: 0.6 })
-
-// Chain effects: delay → reverb
-route_to_send({ source: 'sends.delay', send: 'reverb', amount: 0.4 })
+const EFFECT_PROCESSORS = {
+  delay: (buffer, params, sampleRate, bpm) => processDelay(buffer, params, sampleRate, bpm),
+  reverb: (buffer, params, sampleRate, bpm) => { /* IR + convolution */ },
+  // Adding filter/EQ/sidechain: register here
+};
 ```
+
+### Serialization
+
+Effect chain entries with `_node` references are serialized as `{ id, type, params }` only. On load, nodes are reconstructed from the saved type+params and re-registered in ParamSystem.
 
 ### Volumes
 
-Instrument levels are plain session properties (in dB):
-- `session.jb01Level`
-- `session.jb200Level`
-- `session.samplerLevel`
-
-These could also register in ParamSystem as `levels.*` for `tweak()` access.
+Instrument levels are addressable via ParamSystem (in dB):
+- `tweak({ path: 'jb01.level', value: -3 })`
+- `tweak({ path: 'jb202.level', value: -6 })`
 
 ## Automation (`core/automation.js`)
 

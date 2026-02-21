@@ -120,6 +120,28 @@ for (const file of toolFiles) {
 }
 
 // ============================================================
+// Rule: No references to session.mixer.sends in tool code
+// Dead send bus API was removed — guard against regression.
+// ============================================================
+
+for (const file of toolFiles) {
+  test(`${file.name}: no session.mixer.sends references`, () => {
+    const lines = file.content.split('\n');
+    const violations = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes('session.mixer.sends') || lines[i].includes('session.mixer.voiceRouting')) {
+        violations.push(`  line ${i + 1}: ${lines[i].trim()}`);
+      }
+    }
+    if (violations.length > 0) {
+      throw new Error(
+        `Dead send bus code found (session.mixer.sends/voiceRouting removed — use add_effect + effect chains):\n${violations.join('\n')}`
+      );
+    }
+  });
+}
+
+// ============================================================
 // Summary
 // ============================================================
 

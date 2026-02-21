@@ -585,59 +585,6 @@ export const TOOLS = [
   },
   // === MIXER TOOLS ===
   {
-    name: "create_send",
-    description: "Create a send bus with an effect. For reverb: Dattorro plate algorithm with full controls. Multiple voices can send to the same bus.",
-    input_schema: {
-      type: "object",
-      properties: {
-        name: { type: "string", description: "Name for the send bus (e.g., 'reverb', 'delay')" },
-        effect: { type: "string", enum: ["reverb", "eq"], description: "Type of effect for the bus" },
-        // Plate reverb parameters
-        decay: { type: "number", description: "Reverb tail length in seconds (0.5-10, default 2). Short for tight drums, long for pads." },
-        damping: { type: "number", description: "High-frequency rolloff (0-1, default 0.5). 0=bright/shimmery, 1=dark/warm." },
-        predelay: { type: "number", description: "Gap before reverb starts in ms (0-100, default 20). Adds clarity, separates dry from wet." },
-        modulation: { type: "number", description: "Subtle pitch wobble (0-1, default 0.3). Adds movement and shimmer." },
-        lowcut: { type: "number", description: "Remove low frequencies from reverb in Hz (20-500, default 100). Keeps bass tight." },
-        highcut: { type: "number", description: "Remove high frequencies from reverb in Hz (2000-20000, default 8000). Tames harshness." },
-        width: { type: "number", description: "Stereo spread (0-1, default 1). 0=mono, 1=full stereo." },
-        mix: { type: "number", description: "Wet/dry balance (0-1, default 0.3). How much reverb in the send output." }
-      },
-      required: ["name", "effect"]
-    }
-  },
-  {
-    name: "tweak_reverb",
-    description: "Adjust reverb parameters on an existing send bus. Use this to fine-tune the reverb sound.",
-    input_schema: {
-      type: "object",
-      properties: {
-        send: { type: "string", description: "Name of the reverb send bus to tweak" },
-        decay: { type: "number", description: "Tail length in seconds (0.5-10)" },
-        damping: { type: "number", description: "High-frequency rolloff (0-1). 0=bright, 1=dark." },
-        predelay: { type: "number", description: "Gap before reverb in ms (0-100)" },
-        modulation: { type: "number", description: "Pitch wobble for shimmer (0-1)" },
-        lowcut: { type: "number", description: "Low cut frequency in Hz (20-500)" },
-        highcut: { type: "number", description: "High cut frequency in Hz (2000-20000)" },
-        width: { type: "number", description: "Stereo spread (0-1)" },
-        mix: { type: "number", description: "Wet/dry balance (0-1)" }
-      },
-      required: ["send"]
-    }
-  },
-  {
-    name: "route_to_send",
-    description: "Route a voice or channel to a send bus. Use this to add reverb/effects to specific sounds.",
-    input_schema: {
-      type: "object",
-      properties: {
-        voice: { type: "string", description: "Voice to route (e.g., 'kick', 'snare', 'ch', 'oh', 'jb202', 'sampler')" },
-        send: { type: "string", description: "Name of the send bus to route to" },
-        level: { type: "number", description: "Send level (0-1, default 0.3)" }
-      },
-      required: ["voice", "send"]
-    }
-  },
-  {
     name: "add_channel_insert",
     description: "Add an insert effect to a channel or individual drum voice. Supports per-voice filtering on drums (kick, snare, ch, etc).",
     input_schema: {

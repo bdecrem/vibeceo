@@ -1,106 +1,34 @@
 /**
  * Mixer Tools
  *
- * Tools for DAW-like mixing: create_send, route_to_send, tweak_reverb,
- * add_channel_insert, remove_channel_insert, add_sidechain, add_master_insert, show_mixer
+ * Tools for DAW-like mixing: effect chains, channel inserts, sidechain,
+ * master inserts, and mixer display.
  */
 
 import { registerTools } from './index.js';
+import { ReverbNode } from '../effects/reverb-node.js';
+import { DelayNode } from '../effects/delay-node.js';
+import { EQNode } from '../effects/eq-node.js';
+import { FilterNode } from '../effects/filter-node.js';
+import { SidechainNode } from '../effects/sidechain-node.js';
+
+// Map effect type string to node class
+const EFFECT_NODE_CLASSES = {
+  reverb: ReverbNode,
+  delay: DelayNode,
+  eq: EQNode,
+  filter: FilterNode,
+  sidechain: SidechainNode,
+};
 
 // Helper to ensure mixer state exists
 function ensureMixerState(session) {
   if (!session.mixer) {
-    session.mixer = { sends: {}, voiceRouting: {}, channelInserts: {}, masterInserts: [], masterVolume: 0.8 };
+    session.mixer = { channelInserts: {}, masterInserts: [], masterVolume: 0.8, effectChains: {} };
   }
 }
 
 const mixerTools = {
-  /**
-   * Create a send bus with reverb
-   */
-  create_send: async (input, session, context) => {
-    const { name: busName, effect } = input;
-
-    ensureMixerState(session);
-
-    if (session.mixer.sends[busName]) {
-      return `Send bus "${busName}" already exists. Use route_to_send to add sources or tweak_reverb to adjust.`;
-    }
-
-    // Store all reverb parameters
-    const params = {
-      decay: input.decay,
-      damping: input.damping,
-      predelay: input.predelay,
-      modulation: input.modulation,
-      lowcut: input.lowcut,
-      highcut: input.highcut,
-      width: input.width,
-      mix: input.mix ?? 0.3
-    };
-
-    // Remove undefined values (will use defaults in generatePlateReverbIR)
-    Object.keys(params).forEach(k => params[k] === undefined && delete params[k]);
-
-    session.mixer.sends[busName] = { effect, params };
-
-    const paramList = Object.entries(params)
-      .filter(([k, v]) => k !== 'mix' && v !== undefined)
-      .map(([k, v]) => `${k}=${v}`)
-      .join(', ');
-
-    return `Created send bus "${busName}" with plate reverb${paramList ? ` (${paramList})` : ''}. Use route_to_send to send voices to it.`;
-  },
-
-  /**
-   * Tweak reverb parameters on existing send
-   */
-  tweak_reverb: async (input, session, context) => {
-    const { send: busName } = input;
-
-    if (!session.mixer?.sends?.[busName]) {
-      return `Error: Send bus "${busName}" doesn't exist. Use create_send first.`;
-    }
-
-    if (session.mixer.sends[busName].effect !== 'reverb') {
-      return `Error: "${busName}" is not a reverb bus.`;
-    }
-
-    const params = session.mixer.sends[busName].params || {};
-    const tweaks = [];
-
-    ['decay', 'damping', 'predelay', 'modulation', 'lowcut', 'highcut', 'width', 'mix'].forEach(p => {
-      if (input[p] !== undefined) {
-        params[p] = input[p];
-        tweaks.push(`${p}=${input[p]}`);
-      }
-    });
-
-    session.mixer.sends[busName].params = params;
-
-    return `Tweaked reverb "${busName}": ${tweaks.join(', ')}`;
-  },
-
-  /**
-   * Route a voice to a send bus
-   */
-  route_to_send: async (input, session, context) => {
-    const { voice, send, level } = input;
-
-    if (!session.mixer?.sends?.[send]) {
-      return `Error: Send bus "${send}" doesn't exist. Use create_send first.`;
-    }
-
-    if (!session.mixer.voiceRouting) session.mixer.voiceRouting = {};
-    if (!session.mixer.voiceRouting[voice]) {
-      session.mixer.voiceRouting[voice] = { sends: {}, inserts: [] };
-    }
-
-    session.mixer.voiceRouting[voice].sends[send] = level ?? 0.3;
-
-    return `Routing ${voice} → ${send} at ${((level ?? 0.3) * 100).toFixed(0)}% level`;
-  },
-
   /**
    * Add channel insert (EQ, filter, etc.) - replaces existing insert of same type
    */
@@ -212,8 +140,6 @@ const mixerTools = {
 
     // Check if mixer has any other config
     const hasConfig = session.mixer && (
-      Object.keys(session.mixer.sends || {}).length > 0 ||
-      Object.keys(session.mixer.voiceRouting || {}).length > 0 ||
       Object.keys(session.mixer.channelInserts || {}).length > 0 ||
       Object.keys(session.mixer.effectChains || {}).length > 0 ||
       (session.mixer.masterInserts || []).length > 0
@@ -221,11 +147,11 @@ const mixerTools = {
 
     if (!hasConfig) {
       lines.push('Use tweak({ path: "drums.level", value: -3 }) to adjust levels.');
-      lines.push('Use create_send, add_channel_insert, add_effect, or add_sidechain for more routing.');
+      lines.push('Use add_channel_insert, add_effect, or add_sidechain for more routing.');
       return lines.join('\n');
     }
 
-    // Effect chains (new flexible routing)
+    // Effect chains
     const effectChains = Object.entries(session.mixer.effectChains || {});
     if (effectChains.length > 0) {
       lines.push('EFFECT CHAINS:');
@@ -236,32 +162,9 @@ const mixerTools = {
             .slice(0, 2)
             .map(([k, v]) => `${k}=${v}`)
             .join(', ');
-          return `${e.type}${e.params?.mode ? `(${e.params.mode})` : ''}${params ? ` [${params}]` : ''}`;
+          return `${e.id}: ${e.type}${e.params?.mode ? `(${e.params.mode})` : ''}${params ? ` [${params}]` : ''}`;
         }).join(' → ');
         lines.push(`  ${target}: ${chainStr}`);
-      });
-      lines.push('');
-    }
-
-    // Sends
-    const sends = Object.entries(session.mixer.sends || {});
-    if (sends.length > 0) {
-      lines.push('SEND BUSES:');
-      sends.forEach(([name, config]) => {
-        lines.push(`  ${name}: ${config.effect}${config.params?.preset ? ` (${config.params.preset})` : ''}`);
-      });
-      lines.push('');
-    }
-
-    // Voice routing
-    const routing = Object.entries(session.mixer.voiceRouting || {});
-    if (routing.length > 0) {
-      lines.push('VOICE ROUTING:');
-      routing.forEach(([voice, config]) => {
-        const sendInfo = Object.entries(config.sends || {})
-          .map(([bus, level]) => `${bus} @ ${(level * 100).toFixed(0)}%`)
-          .join(', ');
-        if (sendInfo) lines.push(`  ${voice} → ${sendInfo}`);
       });
       lines.push('');
     }
@@ -301,8 +204,9 @@ const mixerTools = {
     }
 
     // Validate effect type
-    const validEffects = ['delay', 'reverb', 'filter', 'eq'];
-    if (!validEffects.includes(effect)) {
+    const NodeClass = EFFECT_NODE_CLASSES[effect];
+    if (!NodeClass) {
+      const validEffects = Object.keys(EFFECT_NODE_CLASSES);
       return `Error: Unknown effect type "${effect}". Valid types: ${validEffects.join(', ')}`;
     }
 
@@ -316,22 +220,37 @@ const mixerTools = {
     const effectCount = chain.filter(e => e.type === effect).length;
     const effectId = `${effect}${effectCount + 1}`;
 
+    // Instantiate the effect node and apply user params
+    const node = new NodeClass(effectId);
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined) {
+        node.setParam(key, value);
+      }
+    }
+
+    // Validate interface at registration time
+    node.validateInterface();
+
+    // Register in ParamSystem: fx.{target}.{effectId}
+    const paramPath = `fx.${target}.${effectId}`;
+    session.params.register(paramPath, node);
+
     const newEffect = {
       id: effectId,
       type: effect,
-      params: { ...params },
+      params: node.getParams(),
+      _node: node,
     };
 
     // Handle positioning
     if (after) {
-      // Find the effect to insert after
       const afterIndex = chain.findIndex(e => e.type === after || e.id === after);
       if (afterIndex === -1) {
+        session.params.unregister(paramPath);
         return `Error: Cannot find "${after}" in ${target} chain to insert after`;
       }
       chain.splice(afterIndex + 1, 0, newEffect);
     } else {
-      // Append to end
       chain.push(newEffect);
     }
 
@@ -342,7 +261,7 @@ const mixerTools = {
       .join(', ');
 
     const positionStr = after ? ` after ${after}` : '';
-    return `Added ${effect}${params.mode ? ` (${params.mode})` : ''} to ${target}${positionStr}${paramStr ? ` [${paramStr}]` : ''}`;
+    return `Added ${effect}${params.mode ? ` (${params.mode})` : ''} to ${target}${positionStr}${paramStr ? ` [${paramStr}]` : ''} (addressable as ${paramPath})`;
   },
 
   /**
@@ -363,19 +282,26 @@ const mixerTools = {
     const chain = session.mixer.effectChains[target];
 
     if (!effect || effect === 'all') {
-      // Remove entire chain
+      // Unregister all from ParamSystem
+      for (const e of chain) {
+        session.params.unregister(`fx.${target}.${e.id}`);
+      }
       const count = chain.length;
       delete session.mixer.effectChains[target];
       return `Removed all ${count} effect(s) from ${target}`;
     }
 
-    // Remove specific effect (by type or ID)
-    const beforeLen = chain.length;
+    // Find effects to remove (by type or ID)
+    const toRemove = chain.filter(e => e.type === effect || e.id === effect);
     session.mixer.effectChains[target] = chain.filter(e => e.type !== effect && e.id !== effect);
-    const removed = beforeLen - session.mixer.effectChains[target].length;
 
-    if (removed === 0) {
+    if (toRemove.length === 0) {
       return `No ${effect} found on ${target}`;
+    }
+
+    // Unregister removed effects from ParamSystem
+    for (const e of toRemove) {
+      session.params.unregister(`fx.${target}.${e.id}`);
     }
 
     // Clean up empty chains
@@ -438,10 +364,13 @@ const mixerTools = {
       return `No ${effect} found on ${target}`;
     }
 
-    // Update params
+    // Update params via node if available, keep effectObj.params in sync
     const tweaked = [];
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) {
+        if (effectObj._node) {
+          effectObj._node.setParam(key, value);
+        }
         effectObj.params[key] = value;
         tweaked.push(`${key}=${value}`);
       }
