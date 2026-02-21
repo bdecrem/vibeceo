@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SHINE — Collect the light before it fades</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="SHINE — Collect the light before it fades">
+  <meta property="og:description" content="Tap glowing gems before they fade. Fast reflexes, satisfying sounds, pure collecting dopamine.">
+  <meta property="og:image" content="https://intheamber.com/amber/shine-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/shine.html">
+  <meta property="og:type" content="website">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SHINE — Collect the light before it fades">
+  <meta name="twitter:description" content="Tap glowing gems before they fade. Fast reflexes, satisfying sounds, pure collecting dopamine.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/shine-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    #title {
+      font-size: 28px;
+      font-weight: bold;
+      color: #FFD700;
+      margin-bottom: 8px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    #subtitle {
+      font-size: 14px;
+      color: #D4A574;
+      opacity: 0.8;
+      margin-bottom: 20px;
+    }
+    
+    #stats {
+      display: flex;
+      gap: 30px;
+      font-size: 16px;
+    }
+    
+    .stat-label {
+      color: #888;
+      font-size: 12px;
+    }
+    
+    .stat-value {
+      color: #FFD700;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+    }
+    
+    #timer {
+      color: #2D9596;
+    }
+    
+    #timer.danger {
+      color: #FF6B6B;
+      animation: pulse 0.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    
+    #gameover {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      border: 2px solid #D4A574;
+      padding: 40px;
+      text-align: center;
+      display: none;
+      z-index: 20;
+      box-shadow: 0 0 50px rgba(212, 165, 116, 0.3);
+    }
+    
+    #gameover.show {
+      display: block;
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    
+    #finalScore {
+      font-size: 48px;
+      color: #FFD700;
+      margin: 20px 0;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    }
+    
+    #bestScore {
+      font-size: 18px;
+      color: #2D9596;
+      margin-bottom: 30px;
+    }
+    
+    #newRecord {
+      color: #FFD700;
+      font-size: 20px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    #newRecord.show {
+      display: block;
+      animation: recordPulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes recordPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    button {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 15px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      pointer-events: all;
+      transition: all 0.2s;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+    }
+    
+    button:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    }
+    
+    button:active {
+      transform: scale(0.95);
+    }
+    
+    #hint {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #888;
+      font-size: 14px;
+      animation: breathe 2s ease-in-out infinite;
+      pointer-events: none;
+    }
+    
+    @keyframes breathe {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="title">SHINE</div>
+    <div id="subtitle">Collect the light before it fades</div>
+    <div id="stats">
+      <div>
+        <div class="stat-label">SCORE</div>
+        <div class="stat-value" id="score">0</div>
+      </div>
+      <div>
+        <div class="stat-label">TIME</div>
+        <div class="stat-value" id="timer">30</div>
+      </div>
+      <div>
+        <div class="stat-label">COLLECTED</div>
+        <div class="stat-value" id="collected">0</div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="gameover">
+    <div style="color: #888; font-size: 14px; margin-bottom: 10px;">GAME OVER</div>
+    <div id="finalScore">0</div>
+    <div id="newRecord">🏆 NEW RECORD!</div>
+    <div id="bestScore">Best: 0</div>
+    <button id="playAgain">PLAY AGAIN</button>
+  </div>
+  
+  <div id="hint">Tap the glowing gems to collect</div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Audio context
+    let audioCtx = null;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+    
+    function playSound(freq, duration = 0.1) {
+      if (!audioCtx) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+    
+    // Game state
+    let score = 0;
+    let collected = 0;
+    let timeLeft = 30;
+    let gameStarted = false;
+    let gameOver = false;
+    let bestScore = parseInt(localStorage.getItem('shine_best') || '0');
+    
+    // Gem types with colors and point values
+    const gemTypes = [
+      { color: '#D4A574', points: 1, freq: 440 },  // Amber
+      { color: '#FFD700', points: 2, freq: 550 },  // Gold
+      { color: '#2D9596', points: 3, freq: 660 },  // Teal
+      { color: '#7B68EE', points: 5, freq: 770 },  // Violet
+      { color: '#FF69B4', points: 10, freq: 880 }  // Hot Pink
+    ];
+    
+    // Entities
+    const gems = [];
+    const particles = [];
+    
+    class Gem {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.type = this.selectType();
+        this.radius = 25;
+        this.life = 1;
+        this.maxLife = 2.5;
+        this.age = 0;
+this.pulse = 0;
+      }
+      
+      selectType() {
+        // Weighted selection - rare gems are less common
+        const rand = Math.random();
+        if (rand < 0.4) return gemTypes[0];  // 40% amber
+        if (rand < 0.7) return gemTypes[1];  // 30% gold
+        if (rand < 0.85) return gemTypes[2]; // 15% teal
+        if (rand < 0.95) return gemTypes[3]; // 10% violet
+        return gemTypes[4];                   // 5% hot pink
+      }
+      
+      update(dt) {
+        this.age += dt;
+        this.life = 1 - (this.age / this.maxLife);
+        this.pulse = Math.sin(this.age * 5) * 0.2 + 1;
+        return this.life > 0;
+      }
+      
+      draw() {
+        const alpha = Math.max(0, this.life);
+        const size = this.radius * this.pulse;
+        
+        // Outer glow
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, size * 2);
+        gradient.addColorStop(0, this.type.color + Math.floor(alpha * 255).toString(16).padStart(2, '0'));
+        gradient.addColorStop(0.5, this.type.color + Math.floor(alpha * 100).toString(16).padStart(2, '0'));
+        gradient.addColorStop(1, this.type.color + '00');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, size * 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Core
+        ctx.fillStyle = this.type.color;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        
+        // Sparkle
+        if (alpha > 0.7) {
+          ctx.strokeStyle = '#FFF';
+          ctx.globalAlpha = (Math.sin(this.age * 10) * 0.3 + 0.5) * alpha;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(this.x - size * 0.6, this.y);
+          ctx.lineTo(this.x + size * 0.6, this.y);
+          ctx.moveTo(this.x, this.y - size * 0.6);
+          ctx.lineTo(this.x, this.y + size * 0.6);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      }
+      
+      contains(x, y) {
+        const dx = x - this.x;
+        const dy = y - this.y;
+        return dx * dx + dy * dy < this.radius * this.radius;
+      }
+    }
+    
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 8;
+        this.vy = (Math.random() - 0.5) * 8;
+        this.life = 1;
+        this.color = color;
+        this.size = Math.random() * 4 + 2;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2;  // Gravity
+        this.life -= 0.02;
+        return this.life > 0;
+      }
+      
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.life;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+    
+    // Spawn gems
+    let spawnTimer = 0;
+    const spawnInterval = 0.8;  // Spawn every 0.8 seconds
+    
+    function spawnGem() {
+      const margin = 60;
+      const x = margin + Math.random() * (canvas.width - margin * 2);
+      const y = margin + 100 + Math.random() * (canvas.height - margin * 2 - 150);
+      gems.push(new Gem(x, y));
+    }
+    
+    // Timer
+    let timerInterval = null;
+    
+    function startTimer() {
+      if (timerInterval) return;
+      timerInterval = setInterval(() => {
+        if (!gameStarted || gameOver) return;
+        timeLeft--;
+        document.getElementById('timer').textContent = timeLeft;
+        
+        if (timeLeft <= 10) {
+          document.getElementById('timer').classList.add('danger');
+        }
+        
+        if (timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+    
+    function endGame() {
+      gameOver = true;
+      clearInterval(timerInterval);
+      
+      // Check for new record
+      const isNewRecord = score > bestScore;
+      if (isNewRecord) {
+        bestScore = score;
+        localStorage.setItem('shine_best', bestScore.toString());
+        document.getElementById('newRecord').classList.add('show');
+      }
+      
+      document.getElementById('finalScore').textContent = score;
+      document.getElementById('bestScore').textContent = `Best: ${bestScore}`;
+      document.getElementById('gameover').classList.add('show');
+      document.getElementById('hint').style.display = 'none';
+    }
+    
+    function resetGame() {
+      score = 0;
+      collected = 0;
+      timeLeft = 30;
+      gameStarted = false;
+      gameOver = false;
+      gems.length = 0;
+      particles.length = 0;
+      spawnTimer = 0;
+      
+      document.getElementById('score').textContent = '0';
+      document.getElementById('collected').textContent = '0';
+      document.getElementById('timer').textContent = '30';
+      document.getElementById('timer').classList.remove('danger');
+      document.getElementById('gameover').classList.remove('show');
+      document.getElementById('newRecord').classList.remove('show');
+      document.getElementById('hint').style.display = 'block';
+      
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+    
+    // Input handling
+    function handleTap(x, y) {
+      initAudio();
+      
+      if (!gameStarted) {
+        gameStarted = true;
+        startTimer();
+        document.getElementById('hint').style.display = 'none';
+      }
+      
+      if (gameOver) return;
+      
+      // Check if tapped on a gem
+      for (let i = gems.length - 1; i >= 0; i--) {
+        const gem = gems[i];
+        if (gem.contains(x, y)) {
+          // Collect!
+          score += gem.type.points;
+          collected++;
+          
+          document.getElementById('score').textContent = score;
+          document.getElementById('collected').textContent = collected;
+          
+          // Particles
+          for (let j = 0; j < 20; j++) {
+            particles.push(new Particle(gem.x, gem.y, gem.type.color));
+          }
+          
+          // Sound
+          playSound(gem.type.freq, 0.15);
+          
+          // Remove gem
+          gems.splice(i, 1);
+          break;
+        }
+      }
+    }
+    
+    canvas.addEventListener('click', (e) => {
+      handleTap(e.clientX, e.clientY);
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleTap(touch.clientX, touch.clientY);
+    });
+    
+    document.getElementById('playAgain').addEventListener('click', () => {
+      resetGame();
+    });
+    
+    // Game loop
+    let lastTime = performance.now();
+    
+    function animate(currentTime) {
+      const dt = (currentTime - lastTime) / 1000;
+      lastTime = currentTime;
+      
+      // Clear with fade
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Update and draw gems
+      for (let i = gems.length - 1; i >= 0; i--) {
+        const gem = gems[i];
+        if (!gem.update(dt)) {
+          gems.splice(i, 1);
+        } else {
+          gem.draw();
+        }
+      }
+      
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        if (!p.update()) {
+          particles.splice(i, 1);
+        } else {
+          p.draw();
+        }
+      }
+      
+      // Spawn gems
+      if (gameStarted && !gameOver) {
+        spawnTimer += dt;
+        if (spawnTimer >= spawnInterval) {
+          spawnGem();
+          spawnTimer = 0;
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+    
+    // Start
+    animate(performance.now());
+    
+    // Spawn initial gems
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => spawnGem(), i * 300);
+    }
+    
+    // Resize handler
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+});
+  </script>
+</body>
+</html>
