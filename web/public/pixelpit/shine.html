@@ -105,6 +105,7 @@
     let bestScore;
     let spawnTimer;
     let comboBreakFlash; // { timer, scale } for red flash + shrink
+    let timerFlash; // red flash timer on miss
 
     function init() {
       gems = []; particles = []; floatingTexts = [];
@@ -116,6 +117,7 @@
       missDarken = 0;
       spawnTimer = 0;
       comboBreakFlash = { timer: 0, scale: 1, text: '', mult: 1 };
+      timerFlash = 0;
       bestScore = parseInt(localStorage.getItem('shine_best') || '0');
     }
 
@@ -330,6 +332,7 @@
           // gem faded — MISS PENALTY
           timeLeft = Math.max(0, timeLeft - 0.35);
           missDarken = 0.1;
+          timerFlash = 0.15;
           playMissThud();
           if (timeLeft <= 0) { timeLeft = 0; endGame(); return; }
           gems.splice(i, 1);
@@ -359,6 +362,7 @@
         comboBreakFlash.timer -= dt;
         comboBreakFlash.scale = Math.max(0, comboBreakFlash.timer / 0.12);
       }
+      if (timerFlash > 0) timerFlash -= dt;
     }
 
     function endGame() {
@@ -450,13 +454,15 @@
       ctx.fillStyle = T.muted;
       ctx.font = '10px monospace';
       ctx.fillText('TIME', W - 16, 56);
-      const timerColor = timeLeft <= 10 ? T.danger : T.teal;
+      const timerColor = timerFlash > 0 ? T.danger : (timeLeft <= 10 ? T.danger : T.teal);
       ctx.fillStyle = timerColor;
       ctx.font = 'bold 22px monospace';
-      // pulse timer when danger, show 1 decimal under 10s
+      // pulse timer when danger, show 1 decimal under 10s, flash red on miss
       const timerStr = timeLeft < 10 ? timeLeft.toFixed(1) : Math.ceil(timeLeft) + '';
-      if (timeLeft <= 10) {
-        const pulse = 1 + Math.sin(gameTime * 6) * 0.05;
+      if (timeLeft <= 10 || timerFlash > 0) {
+        const dangPulse = timeLeft <= 10 ? Math.sin(gameTime * 6) * 0.05 : 0;
+        const missPulse = timerFlash > 0 ? (timerFlash / 0.15) * 0.12 : 0;
+        const pulse = 1 + dangPulse + missPulse;
         ctx.save();
         ctx.translate(W - 16, 78);
         ctx.scale(pulse, pulse);
