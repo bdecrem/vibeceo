@@ -534,7 +534,7 @@ Or just talk:
   > make me a techno beat at 128
   > add a bass line
   > tweak the kick decay
-  > add reverb to the hats
+  > add delay to the hats
 `;
 
 export const CHANGELOG_TEXT = `
@@ -553,7 +553,7 @@ Changelog
 
   Features
   • Song mode with patterns and arrangements
-  • Effect chains (delay works, reverb exists)
+  • Effect chains (delay, EQ, filter, sidechain)
   • Analyze tools (spectral analysis, mixing feedback)
   • Project persistence to ~/Documents/Jambot/
   • Web UIs at kochi.to/jb01, /jb202, etc.

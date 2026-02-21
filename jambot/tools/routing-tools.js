@@ -95,7 +95,6 @@ const routingTools = {
    * Add a send bus (with effect)
    *
    * Examples:
-   *   add_send({ id: 'reverb1', effect: 'reverb', decay: 2.5 })
    *   add_send({ id: 'delay1', effect: 'delay', time: 375 })
    */
   add_send: async (input, session, context) => {
@@ -111,9 +110,9 @@ const routingTools = {
       return `Send "${id}" already exists`;
     }
 
-    routing.addSend(id, effect || 'reverb', params);
+    routing.addSend(id, effect || 'delay', params);
 
-    return `Added send "${id}" with ${effect || 'reverb'}`;
+    return `Added send "${id}" with ${effect || 'delay'}`;
   },
 
   /**
@@ -144,7 +143,7 @@ const routingTools = {
     const sends = routing.listSends();
 
     if (sends.length === 0) {
-      return 'No sends. Use add_send({ id: "reverb1", effect: "reverb" }) to create one.';
+      return 'No sends. Use add_send({ id: "delay1", effect: "delay" }) to create one.';
     }
 
     const lines = ['SENDS:', ''];
@@ -160,8 +159,8 @@ const routingTools = {
    * Route a track to a send
    *
    * Examples:
-   *   route({ track: 'drums', send: 'reverb1', level: 0.3 })
-   *   route({ track: 'ch', send: 'reverb1', level: 0.5 })
+   *   route({ track: 'drums', send: 'delay1', level: 0.3 })
+   *   route({ track: 'ch', send: 'delay1', level: 0.5 })
    */
   route: async (input, session, context) => {
     const { track, send, level } = input;

@@ -22,7 +22,6 @@ globalThis.AudioContext = AudioContext;
 // Local modules
 import { audioBufferToWav } from './wav.js';
 import { processDelay } from '../effects/delay.js';
-import { generatePlateReverbIR } from '../effects/reverb.js';
 
 /**
  * Effect processor registry — maps effect type to processing function.
@@ -31,11 +30,6 @@ import { generatePlateReverbIR } from '../effects/reverb.js';
 const EFFECT_PROCESSORS = {
   delay: (buffer, params, sampleRate, bpm) => {
     return processDelay(buffer, params, sampleRate, bpm);
-  },
-  reverb: (buffer, params, sampleRate, bpm) => {
-    const context = new OfflineAudioContext(2, buffer.length, sampleRate);
-    const ir = generatePlateReverbIR(context, params);
-    return applyConvolution(buffer, ir, params.mix ?? 0.3, sampleRate);
   },
 };
 
@@ -60,54 +54,6 @@ async function applyEffect(buffer, effect, sampleRate, bpm) {
   }
 
   return processor(buffer, params, sampleRate, bpm);
-}
-
-/**
- * Apply convolution reverb to a buffer
- * @param {Object} inputBuffer - Input audio buffer
- * @param {AudioBuffer} ir - Impulse response buffer
- * @param {number} mix - Wet/dry mix (0-1)
- * @param {number} sampleRate - Sample rate
- * @returns {Object} Processed buffer
- */
-function applyConvolution(inputBuffer, ir, mix, sampleRate) {
-  const length = inputBuffer.length;
-  const irLength = ir.length;
-  const outputLength = length + irLength - 1;
-
-  const outputL = new Float32Array(outputLength);
-  const outputR = new Float32Array(outputLength);
-
-  const inputL = inputBuffer.getChannelData(0);
-  const inputR = inputBuffer.numberOfChannels > 1 ? inputBuffer.getChannelData(1) : inputL;
-  const irL = ir.getChannelData(0);
-  const irR = ir.numberOfChannels > 1 ? ir.getChannelData(1) : irL;
-
-  // Simple convolution (can be optimized with FFT for longer IRs)
-  for (let i = 0; i < length; i++) {
-    for (let j = 0; j < irLength; j++) {
-      outputL[i + j] += inputL[i] * irL[j];
-      outputR[i + j] += inputR[i] * irR[j];
-    }
-  }
-
-  // Mix dry and wet, trim to original length
-  const dryGain = 1 - mix;
-  const wetGain = mix;
-  const resultL = new Float32Array(length);
-  const resultR = new Float32Array(length);
-
-  for (let i = 0; i < length; i++) {
-    resultL[i] = inputL[i] * dryGain + outputL[i] * wetGain;
-    resultR[i] = inputR[i] * dryGain + outputR[i] * wetGain;
-  }
-
-  return {
-    numberOfChannels: 2,
-    length,
-    sampleRate,
-    getChannelData: (ch) => ch === 0 ? resultL : resultR,
-  };
 }
 
 /**

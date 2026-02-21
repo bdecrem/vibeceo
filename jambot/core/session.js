@@ -22,7 +22,6 @@ import { JT10Node } from '../instruments/jt10-node.js';
 import { JT30Node } from '../instruments/jt30-node.js';
 import { JT90Node } from '../instruments/jt90-node.js';
 import { JP9000Node } from '../instruments/jp9000-node.js';
-import { ReverbNode } from '../effects/reverb-node.js';
 import { DelayNode } from '../effects/delay-node.js';
 import { EQNode } from '../effects/eq-node.js';
 import { FilterNode } from '../effects/filter-node.js';
@@ -30,7 +29,6 @@ import { SidechainNode } from '../effects/sidechain-node.js';
 
 // Map effect type string to node class (shared with mixer-tools.js)
 const EFFECT_NODE_CLASSES = {
-  reverb: ReverbNode,
   delay: DelayNode,
   eq: EQNode,
   filter: FilterNode,

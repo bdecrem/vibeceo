@@ -633,8 +633,8 @@ export const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        effect: { type: "string", enum: ["eq", "reverb"], description: "Type of effect" },
-        preset: { type: "string", description: "Effect preset (eq: 'master', reverb: 'plate'/'room')" },
+        effect: { type: "string", enum: ["eq"], description: "Type of effect" },
+        preset: { type: "string", description: "Effect preset (eq: 'master')" },
         params: { type: "object", description: "Effect parameters" }
       },
       required: ["effect"]
@@ -795,7 +795,7 @@ export const TOOLS = [
       type: "object",
       properties: {
         target: { type: "string", description: "Target for effect: instrument (jb01, jb202), voice (jb01.ch, jb01.kick, jb01.snare), or 'master'" },
-        effect: { type: "string", enum: ["delay", "reverb"], description: "Type of effect to add" },
+        effect: { type: "string", enum: ["delay"], description: "Type of effect to add" },
         after: { type: "string", description: "Insert after this effect type/ID (for ordering). Omit to append." },
         // Delay params
         mode: { type: "string", enum: ["analog", "pingpong"], description: "Delay mode: analog (mono+saturation) or pingpong (stereo bounce)" },
@@ -806,13 +806,7 @@ export const TOOLS = [
         lowcut: { type: "number", description: "Remove mud from feedback, Hz (default 80)" },
         highcut: { type: "number", description: "Tame harshness, Hz (default 8000)" },
         saturation: { type: "number", description: "Analog warmth 0-100 (analog mode only, default 20)" },
-        spread: { type: "number", description: "Stereo width 0-100 (pingpong mode only, default 100)" },
-        // Reverb params
-        decay: { type: "number", description: "Reverb tail length in seconds (0.5-10, default 2)" },
-        damping: { type: "number", description: "High-frequency rolloff (0-1, default 0.5)" },
-        predelay: { type: "number", description: "Gap before reverb in ms (0-100, default 10)" },
-        modulation: { type: "number", description: "Pitch wobble for shimmer (0-1, default 0.2)" },
-        width: { type: "number", description: "Stereo spread (0-1, default 1)" }
+        spread: { type: "number", description: "Stereo width 0-100 (pingpong mode only, default 100)" }
       },
       required: ["target", "effect"]
     }
@@ -855,12 +849,7 @@ export const TOOLS = [
         lowcut: { type: "number", description: "Lowcut frequency Hz" },
         highcut: { type: "number", description: "Highcut frequency Hz" },
         saturation: { type: "number", description: "Analog warmth 0-100" },
-        spread: { type: "number", description: "Stereo width 0-100" },
-        decay: { type: "number", description: "Reverb tail seconds" },
-        damping: { type: "number", description: "Reverb damping 0-1" },
-        predelay: { type: "number", description: "Reverb predelay ms" },
-        modulation: { type: "number", description: "Reverb modulation 0-1" },
-        width: { type: "number", description: "Reverb stereo width 0-1" }
+        spread: { type: "number", description: "Stereo width 0-100" }
       },
       required: ["target", "effect"]
     }

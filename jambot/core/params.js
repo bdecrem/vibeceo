@@ -4,7 +4,7 @@
  * Every parameter in the system is addressable via a dot-path:
  *   session.get('drums.kick.decay')
  *   session.set('bass.cutoff', 0.7)
- *   session.get('fx.master.reverb1.decay')
+ *   session.get('fx.master.delay1.feedback')
  *
  * Nodes (instruments, effects, mixer sections) register themselves
  * and handle their own parameter access.
@@ -13,7 +13,7 @@
 export class ParamSystem {
   constructor() {
     // Registered nodes: 'drums' -> JB01, 'bass' -> JB200, etc.
-    // Node IDs can be multi-segment (e.g., 'fx.jb01.ch.reverb1')
+    // Node IDs can be multi-segment (e.g., 'fx.jb01.ch.delay1')
     this.nodes = new Map();
 
     // Automation data: 'drums.kick.decay' -> [values array]
@@ -23,10 +23,10 @@ export class ParamSystem {
   /**
    * Resolve a dot-path to { node, paramPath } by trying progressively
    * longer prefixes as node IDs. Supports both simple IDs ('jb01') and
-   * multi-segment IDs ('fx.jb01.ch.reverb1').
+   * multi-segment IDs ('fx.jb01.ch.delay1').
    *
-   * For path 'fx.jb01.ch.reverb1.decay', tries:
-   *   'fx' → 'fx.jb01' → 'fx.jb01.ch' → 'fx.jb01.ch.reverb1' ✓
+   * For path 'fx.jb01.ch.delay1.feedback', tries:
+   *   'fx' → 'fx.jb01' → 'fx.jb01.ch' → 'fx.jb01.ch.delay1' ✓
    *
    * @param {string} path - Full dot-separated path
    * @returns {{ node: Node, nodeId: string, paramPath: string } | null}

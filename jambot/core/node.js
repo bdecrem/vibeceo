@@ -3,7 +3,7 @@
  *
  * Base interface for all components in the system:
  * - Instruments (drums, bass, lead, sampler)
- * - Effects (reverb, EQ, filter, sidechain)
+ * - Effects (delay, EQ, filter, sidechain)
  * - Mixer sections
  *
  * All nodes expose parameters through the same interface,
@@ -384,7 +384,7 @@ export class MixerNode extends Node {
 
   /**
    * Get a parameter, handling nested mixer paths
-   * @param {string} path - e.g., 'tracks.drums.volume', 'sends.reverb1.decay', 'master.volume'
+   * @param {string} path - e.g., 'tracks.drums.volume', 'sends.delay1.feedback', 'master.volume'
    * @returns {*}
    */
   getParam(path) {
@@ -429,7 +429,7 @@ export class MixerNode extends Node {
     if (parts[0] === 'sends' && parts.length >= 3) {
       let send = this._sends.get(parts[1]);
       if (!send) {
-        send = { effect: 'reverb', params: {} };
+        send = { effect: 'delay', params: {} };
         this._sends.set(parts[1], send);
       }
       send.params[parts[2]] = value;

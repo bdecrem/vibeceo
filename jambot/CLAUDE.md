@@ -6,7 +6,7 @@
 
 - **Instruments** are plugins. Add a new synth → it exposes voices and parameters through the standard interface. The system doesn't care if it's a 909, FM synth, or something that doesn't exist yet.
 
-- **Effects** are plugins. Add a new effect → it exposes parameters the same way. Reverb, delay, granular — all plug in identically.
+- **Effects** are plugins. Add a new effect → it exposes parameters the same way. Delay, EQ, filter — all plug in identically.
 
 - **Tracks and routing** are dynamic. Create a track, route a voice to a bus, add a send — operations on a graph, not hardcoded paths.
 
@@ -14,7 +14,7 @@
 
 - **The agent** is just a user. It sees the current configuration, reads and writes parameters, renders audio. No special code per instrument — same interface for everything.
 
-**The Core Requirement:** The agent must be able to **read and write ANY parameter** in the system. Everything is addressable (jb01.kick.decay, jb202.filterCutoff, mixer.reverb.decay, master.volume). One way to read, one way to write. If a value exists, the agent can see it.
+**The Core Requirement:** The agent must be able to **read and write ANY parameter** in the system. Everything is addressable (jb01.kick.decay, jb202.filterCutoff, fx.master.delay1.feedback, master.volume). One way to read, one way to write. If a value exists, the agent can see it.
 
 **When adding anything new:** It plugs into the existing architecture. New synth? Same interface. New effect? Same interface. New service? Works on everything. Never write bespoke code that only works for one thing.
 
@@ -809,9 +809,6 @@ tweak({ path: 'sampler.s1.level', value: 0 })        → Sets sampler slot 1 to 
 
 | Tool | Description |
 |------|-------------|
-| `create_send` | Create send bus with plate reverb (full param control) |
-| `tweak_reverb` | Adjust reverb parameters on existing send |
-| `route_to_send` | Route a voice to a send bus |
 | `add_channel_insert` | Add EQ/filter/ducker to channel OR individual drum voice |
 | `remove_channel_insert` | Remove EQ/filter/ducker from channel or drum voice |
 | `add_sidechain` | Sidechain ducking (bass ducks on kick) |
@@ -845,24 +842,6 @@ tweak({ path: 'sampler.s1.level', value: 0 })        → Sets sampler slot 1 to 
 ## Mixer (DAW-like Routing)
 
 Jambot includes a virtual mixer for professional mixing:
-
-### Send Buses (Reverb)
-```
-create_send(name: 'reverb', effect: 'reverb', decay: 2, damping: 0.5)
-route_to_send(voice: 'ch', send: 'reverb', level: 0.4)
-route_to_send(voice: 'clap', send: 'reverb', level: 0.3)
-tweak_reverb(send: 'reverb', decay: 3, highcut: 6000)
-```
-
-Reverb parameters (Dattorro plate algorithm):
-- `decay` (0.5-10s) - Tail length
-- `damping` (0-1) - High-frequency rolloff (0=bright, 1=dark)
-- `predelay` (0-100ms) - Gap before reverb
-- `modulation` (0-1) - Pitch wobble for shimmer
-- `lowcut` (20-500Hz) - Remove mud
-- `highcut` (2000-20000Hz) - Tame harshness
-- `width` (0-1) - Stereo spread
-- `mix` (0-1) - Wet/dry balance
 
 ### Channel EQ
 ```
@@ -977,14 +956,12 @@ Note: For multi-voice instruments (jb01, sampler), this is separate from per-voi
 
 ### Signal Flow
 ```
-voice → [voice level] → [channel EQ/Filter] → [ducker] → node level → [effect chain] → [send] → master → [master chain] → output
-                                                                                          ↓
-                                                                                    send bus (reverb) → master
+voice → [voice level] → [channel EQ/Filter] → [ducker] → node level → [effect chain] → master → [master chain] → output
 ```
 
 ## Effect Chains (Flexible Routing)
 
-Add effects to any instrument, voice, or master in any order. Effect chains provide delay, reverb, and more.
+Add effects to any instrument, voice, or master in any order. Effect chains currently provide delay.
 
 ### Targets
 - **Instrument**: `jb01`, `jb202`, `sampler` — affects entire instrument
@@ -994,9 +971,7 @@ Add effects to any instrument, voice, or master in any order. Effect chains prov
 ### Adding Effects
 ```
 add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 50, mix: 30 })
-add_effect({ target: 'jb01.ch', effect: 'reverb', after: 'delay', decay: 2, mix: 20 })
 add_effect({ target: 'jb202', effect: 'delay', mode: 'analog', time: 500 })
-add_effect({ target: 'master', effect: 'reverb', decay: 1.5, mix: 15 })
 ```
 
 ### Delay Parameters
@@ -1028,8 +1003,8 @@ remove_effect({ target: 'jb01', effect: 'all' })       # Remove all effects
 ```
 show_effects()
 # Output:
-# jb01: delay(pingpong) [feedback=50, mix=30] → reverb [decay=2, mix=20]
-# master: reverb [decay=1.5, mix=15]
+# jb01.ch: delay(pingpong) [feedback=50, mix=30]
+# jb202: delay(analog) [time=500]
 ```
 
 ### Use Cases
@@ -1039,25 +1014,9 @@ show_effects()
 add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'analog', time: 375, feedback: 60, mix: 25 })
 ```
 
-**Reverb on snare only**: Space on snare, dry kick
-```
-add_effect({ target: 'jb01.snare', effect: 'reverb', decay: 1.5, mix: 30 })
-```
-
 **Acid bass with ping-pong**: Bouncing echoes on the synth
 ```
 add_effect({ target: 'jb202', effect: 'delay', mode: 'pingpong', time: 250, feedback: 40, mix: 20 })
-```
-
-**Master reverb for glue**: Subtle reverb on everything
-```
-add_effect({ target: 'master', effect: 'reverb', decay: 1.2, mix: 10 })
-```
-
-**Chained effects on hats**: Delay into reverb for spacious sound
-```
-add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 45 })
-add_effect({ target: 'jb01.ch', effect: 'reverb', after: 'delay', decay: 2.5, mix: 30 })
 ```
 
 ## Automation (Per-Step Knob Mashing)
@@ -1167,8 +1126,7 @@ session = {
   samplerParams: { s1: { level, tune, attack, decay, filter, pan }, ... },
   // Mixer
   mixer: {
-    sends: { 'reverb': { effect: 'reverb', params: { mix: 0.3 } } },
-    voiceRouting: { 'ch': { sends: { 'reverb': 0.4 } } },
+    effectChains: { 'jb01.ch': [{ id: 'delay1', type: 'delay', params: { mode: 'pingpong', mix: 0.3 } }] },
     channelInserts: { 'jb202': [{ type: 'ducker', params: { trigger: 'kick', amount: 0.5 } }] },
     masterInserts: [{ type: 'eq', preset: 'master' }],
     masterVolume: 0.8,

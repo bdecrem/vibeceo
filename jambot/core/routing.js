@@ -5,7 +5,7 @@
  * Tracks route to sends, sends have effects, all feeds to master.
  */
 
-import { ReverbNode } from '../effects/reverb-node.js';
+import { DelayNode } from '../effects/delay-node.js';
 import { EQNode } from '../effects/eq-node.js';
 import { FilterNode } from '../effects/filter-node.js';
 import { SidechainNode } from '../effects/sidechain-node.js';
@@ -32,7 +32,7 @@ export function createTrack(id, config = {}) {
 /**
  * Create a new send bus
  * @param {string} id - Send identifier
- * @param {string} effectType - 'reverb', 'delay', etc.
+ * @param {string} effectType - 'delay', 'eq', etc.
  * @param {Object} params - Effect parameters
  * @returns {Object} Send config
  */
@@ -40,11 +40,11 @@ export function createSend(id, effectType, params = {}) {
   // Create appropriate effect node
   let effectNode;
   switch (effectType) {
-    case 'reverb':
-      effectNode = new ReverbNode(id, params);
+    case 'delay':
+      effectNode = new DelayNode(id, params);
       break;
     default:
-      effectNode = new ReverbNode(id, params);  // Default to reverb
+      effectNode = new DelayNode(id, params);  // Default to delay
   }
 
   return {
@@ -160,7 +160,7 @@ export class RoutingManager {
 
   // === SENDS ===
 
-  addSend(id, effectType = 'reverb', params = {}) {
+  addSend(id, effectType = 'delay', params = {}) {
     const send = createSend(id, effectType, params);
     this.sends.set(id, send);
     return send;

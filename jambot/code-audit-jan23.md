@@ -11,7 +11,6 @@ The architecture is **real and implemented**, not just documented aspirations. H
 | **JB01** (drums) | ✅ Fully integrated | Extends `InstrumentNode`, uses `ParamSystem`, has `renderPattern()` AND `renderVoices()` for per-voice effects |
 | **JB200** (bass) | ✅ Fully integrated | Extends `InstrumentNode`, uses `ParamSystem`, has `renderPattern()` |
 | **Delay effect** | ✅ Working DSP | `effects/delay.js` has real analog + ping pong algorithms, processed in `render.js` |
-| **Reverb effect** | ✅ Working DSP | `effects/reverb.js` generates IRs, convolution in `render.js` |
 | **ParamSystem** | ✅ Used by instruments | `session.get()`/`session.set()` unified access, nodes register properly |
 | **Effect chains** | ✅ Implemented | `session.mixer.effectChains` with `add_effect` tool, processed in render loop |
 | **Per-voice routing** | ✅ Implemented | `jb01.ch`, `jb01.kick` etc. supported via `renderVoices()` in JB01Node |
@@ -37,7 +36,7 @@ jb200 ──[instrument effects]────────────────
 
 ```javascript
 add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 50, mix: 30 })
-add_effect({ target: 'jb01.ch', effect: 'reverb', after: 'delay', decay: 2, mix: 20 })
+add_effect({ target: 'jb01', effect: 'delay', mode: 'analog', time: 250 })
 ```
 
 This stores to `session.mixer.effectChains['jb01.ch']`, which `render.js` finds and processes via `getVoiceEffectChains()`.
@@ -68,7 +67,7 @@ This stores to `session.mixer.effectChains['jb01.ch']`, which `render.js` finds 
 
 You have **a working pluggable DAW system** with:
 - ✅ Two proper synths using the unified architecture
-- ✅ Two proper effects (delay + reverb) with real DSP
+- ✅ Delay effect with real DSP
 - ✅ Flexible routing including per-voice effects for JB01
 - ✅ Standardized parameter system that generic tools use
 - ✅ Pattern that new instruments/effects can follow

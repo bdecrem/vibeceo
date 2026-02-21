@@ -6,7 +6,6 @@
  */
 
 import { registerTools } from './index.js';
-import { ReverbNode } from '../effects/reverb-node.js';
 import { DelayNode } from '../effects/delay-node.js';
 import { EQNode } from '../effects/eq-node.js';
 import { FilterNode } from '../effects/filter-node.js';
@@ -14,7 +13,6 @@ import { SidechainNode } from '../effects/sidechain-node.js';
 
 // Map effect type string to node class
 const EFFECT_NODE_CLASSES = {
-  reverb: ReverbNode,
   delay: DelayNode,
   eq: EQNode,
   filter: FilterNode,

@@ -7,7 +7,6 @@
 import { strict as assert } from 'node:assert';
 import { createSession } from '../core/session.js';
 import { InstrumentNode, EffectNode } from '../core/node.js';
-import { ReverbNode } from '../effects/reverb-node.js';
 import { DelayNode } from '../effects/delay-node.js';
 import { EQNode } from '../effects/eq-node.js';
 import { FilterNode } from '../effects/filter-node.js';
@@ -89,7 +88,6 @@ test('Missing renderPattern throws on validateInterface', async () => {
 // === EffectNode interface validation ===
 
 const EFFECT_NODES = [
-  { name: 'ReverbNode', NodeClass: ReverbNode },
   { name: 'DelayNode', NodeClass: DelayNode },
   { name: 'EQNode', NodeClass: EQNode },
   { name: 'FilterNode', NodeClass: FilterNode },

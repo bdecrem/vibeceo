@@ -19,7 +19,7 @@ A modular music production system. This document serves two audiences:
 - Run `node tests/run-tests.js` before pushing. All three test files should pass.
 
 **Practical checklist for new effects:**
-- Extend `EffectNode` from `core/node.js`. Register params inline via `registerParams()` (only 5 effect types — 3x-before-abstracting rule applies, no JSON files needed yet).
+- Extend `EffectNode` from `core/node.js`. Register params inline via `registerParams()` (only 4 effect types — 3x-before-abstracting rule applies, no JSON files needed yet).
 - `EffectNode` provides `getParams()` and `validateInterface()` — do not duplicate in subclasses.
 - Add a processor function to `EFFECT_PROCESSORS` in `render.js` (one-liner).
 - Add the node class to `EFFECT_NODE_CLASSES` in both `mixer-tools.js` and `session.js`.
@@ -110,8 +110,6 @@ jambot/
 │   ├── jb200/kits/        # Synth sound presets
 │   └── jb200/sequences/   # Pattern presets
 ├── effects/
-│   ├── reverb.js          # Plate reverb IR generator
-│   ├── reverb-node.js     # Reverb effect (registers in ParamSystem)
 │   ├── eq-node.js         # EQ effect
 │   └── filter-node.js     # Filter effect
 ├── jambot.js              # Main entry point
@@ -254,24 +252,24 @@ Effects are modular plugins, just like instruments. Each effect extends `EffectN
 
 ```javascript
 // When add_effect() runs:
-add_effect({ target: 'master', effect: 'reverb', decay: 2, mix: 0.3 })
-  → Instantiates ReverbNode, applies params
+add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 50, mix: 30 })
+  → Instantiates DelayNode, applies params
   → Calls node.validateInterface()
-  → Registers in ParamSystem: params.register('fx.master.reverb1', node)
-  → Stores in session.mixer.effectChains.master
+  → Registers in ParamSystem: params.register('fx.jb01.ch.delay1', node)
+  → Stores in session.mixer.effectChains['jb01.ch']
 
 // Now tweak() works for free — effects are addressable:
-tweak({ path: 'fx.master.reverb1.decay', value: 4 })
-tweak({ path: 'fx.master.reverb1.mix', value: 0.5 })
-get_param({ path: 'fx.master.reverb1.decay' })  // Returns 4
+tweak({ path: 'fx.jb01.ch.delay1.feedback', value: 70 })
+tweak({ path: 'fx.jb01.ch.delay1.time', value: 250 })
+get_param({ path: 'fx.jb01.ch.delay1.feedback' })  // Returns 70
 ```
 
 ### Addressing convention
 
 Effects are addressed via `fx.{target}.{effectId}`:
-- `fx.master.reverb1` — first reverb on master
 - `fx.jb01.ch.delay1` — first delay on JB01 closed hats
 - `fx.jb202.delay1` — first delay on JB202
+- `fx.master.delay1` — first delay on master
 
 ### Signal flow
 
@@ -291,8 +289,7 @@ voice (jb01.snare) ────────────────────�
 ```javascript
 const EFFECT_PROCESSORS = {
   delay: (buffer, params, sampleRate, bpm) => processDelay(buffer, params, sampleRate, bpm),
-  reverb: (buffer, params, sampleRate, bpm) => { /* IR + convolution */ },
-  // Adding filter/EQ/sidechain: register here
+  // Adding new effects: register here
 };
 ```
 
@@ -606,7 +603,6 @@ Add effects to any target (instrument, voice, or master) in any order. Effects a
 | Effect | Parameters |
 |--------|------------|
 | `delay` | mode (analog/pingpong), time (ms), sync, feedback (0-100), mix (0-100), lowcut (Hz), highcut (Hz), saturation (0-100), spread (0-100) |
-| `reverb` | decay (s), damping (0-1), predelay (ms), modulation (0-1), lowcut (Hz), highcut (Hz), width (0-1), mix (0-1) |
 
 ### Examples
 
@@ -614,17 +610,11 @@ Add effects to any target (instrument, voice, or master) in any order. Effects a
 # Add ping pong delay to closed hats only
 add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 50, mix: 30 })
 
-# Add reverb AFTER the delay on hats
-add_effect({ target: 'jb01.ch', effect: 'reverb', after: 'delay', decay: 2, mix: 20 })
-
 # Add delay to entire JB01 (affects all voices)
 add_effect({ target: 'jb01', effect: 'delay', mode: 'analog', time: 250 })
 
 # Add analog delay to bass
 add_effect({ target: 'jb200', effect: 'delay', mode: 'analog', time: 500, saturation: 30 })
-
-# Master reverb
-add_effect({ target: 'master', effect: 'reverb', decay: 1.5, mix: 15 })
 
 # Tweak existing delay
 tweak_effect({ target: 'jb01.ch', effect: 'delay', feedback: 70, time: 250 })
@@ -635,9 +625,8 @@ remove_effect({ target: 'jb01.ch', effect: 'delay' })
 # Show all chains
 show_effects()
 # Output:
-# jb01.ch: delay(pingpong) [feedback=50, mix=30] → reverb [decay=2, mix=20]
+# jb01.ch: delay(pingpong) [feedback=50, mix=30]
 # jb01: delay(analog) [time=250]
-# master: reverb [decay=1.5, mix=15]
 ```
 
 ### Signal Flow

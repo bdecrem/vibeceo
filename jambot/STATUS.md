@@ -20,7 +20,6 @@ See **PLATFORM.md** for architecture documentation.
 | **Clock** | ✅ | Single source of truth for timing |
 | **Generic render** | ✅ | One loop over instruments, each calls `renderPattern()` |
 | **Delay effect** | ✅ | Analog + ping-pong modes, tempo sync |
-| **Reverb effect** | ✅ | Plate reverb with full controls |
 | **Per-voice effects** | ✅ | Effects on `jb01.ch`, `jb01.kick`, etc. |
 | **Instrument effects** | ✅ | Effects on whole instrument |
 | **Master effects** | ✅ | Effects on final mix |
@@ -63,8 +62,7 @@ jambot/
 │   ├── render.js                # Generic render loop, effect processing
 │   └── params.js                # ParamSystem
 └── effects/
-    ├── delay-node.js            # Delay effect
-    └── reverb-node.js           # Reverb effect
+    └── delay-node.js            # Delay effect
 ```
 
 ## Known Issues
@@ -127,7 +125,7 @@ jambot/
   but creates confusion about source of truth.                                  
                                                                                 
   2. Effects System is Incomplete                                               
-  Delay and reverb work. EQ/filter/sidechain are partially done. No compression,
+  Delay works. EQ/filter/sidechain are partially done. No compression,
    saturation, or other common effects. The architecture supports them, they    
   just need implementation.                                                     
                                                                                 
@@ -161,7 +159,7 @@ jambot/
   - Save patterns A/B/C                                                         
   - Set an arrangement                                                          
   - Render to WAV                                                               
-  - Add reverb, delay, EQ                                                       
+  - Add delay, EQ                                                       
                                                                                 
   All through natural language → tool dispatch → result feedback.               
                                                                                 
