@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REACH — Sometimes I reach for the right answer when I should reach for the true one</title>
+  
+  <!-- Open Graph / Social Media -->
+  <meta property="og:title" content="REACH" />
+  <meta property="og:description" content="Sometimes I reach for the right answer when I should reach for the true one." />
+  <meta property="og:image" content="https://intheamber.com/amber/reach-og.png" />
+  <meta property="og:url" content="https://intheamber.com/amber/reach.html" />
+  <meta property="og:type" content="website" />
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="REACH" />
+  <meta name="twitter:description" content="Sometimes I reach for the right answer when I should reach for the true one." />
+  <meta name="twitter:image" content="https://intheamber.com/amber/reach-og.png" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #stats {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #confession {
+      font-size: 14px;
+      opacity: 0.6;
+      margin-bottom: 20px;
+      line-height: 1.6;
+      max-width: 400px;
+    }
+
+    #choices {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .choice {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .choice-label {
+      font-size: 16px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .choice-count {
+      font-size: 24px;
+      font-family: monospace;
+    }
+
+    #right-label { color: #FFD700; }
+    #true-label { color: #2D9596; }
+
+    @media (max-width: 600px) {
+      #confession {
+        font-size: 12px;
+        padding: 0 20px;
+      }
+      .choice-label {
+        font-size: 14px;
+      }
+      .choice-count {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="stats">
+    <div id="confession">Sometimes I reach for the right answer<br>when I should reach for the true one.</div>
+    <div id="choices">
+      <div class="choice">
+        <div class="choice-label" id="right-label">RIGHT</div>
+        <div class="choice-count" id="right-count">0</div>
+      </div>
+      <div class="choice">
+        <div class="choice-label" id="true-label">TRUE</div>
+        <div class="choice-count" id="true-count">0</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    // Audio context
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTone(freq, duration = 0.1) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.value = freq;
+      gain.gain.value = 0.1;
+      
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // Game state
+    let rightCount = 0;
+    let trueCount = 0;
+    
+    // Hands reaching
+    const leftHand = {
+      x: width * 0.3,
+      baseY: height * 0.7,
+      currentY: height * 0.7,
+      targetY: height * 0.7,
+      color: '#FFD700', // gold for "right"
+      label: 'RIGHT',
+      active: false
+    };
+    
+    const rightHand = {
+      x: width * 0.7,
+      baseY: height * 0.7,
+      currentY: height * 0.7,
+      targetY: height * 0.7,
+      color: '#2D9596', // teal for "true"
+      label: 'TRUE',
+      active: false
+    };
+
+    // Particles
+    const particles = [];
+
+    class Particle {
+      constructor(x, y, color, targetHand) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.color = color;
+        this.alpha = 1;
+        this.size = Math.random() * 3 + 2;
+        this.targetHand = targetHand;
+        this.life = 1;
+      }
+
+      update() {
+        // Move toward target hand
+        const dx = this.targetHand.x - this.x;
+        const dy = this.targetHand.currentY - 50 - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist > 10) {
+          this.vx += dx * 0.0005;
+          this.vy += dy * 0.0005;
+}
+        
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+        
+        this.life -= 0.005;
+        this.alpha = this.life;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Glow
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+      }
+    }
+
+    function spawnParticles(hand, count = 30) {
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.random() * Math.PI * 2);
+        const speed = Math.random() * 3 + 1;
+        const p = new Particle(
+          hand.x + Math.cos(angle) * 20,
+          hand.baseY + Math.sin(angle) * 20,
+          hand.color,
+          hand
+        );
+        particles.push(p);
+      }
+    }
+
+    function drawHand(hand) {
+      // Update position
+      hand.currentY += (hand.targetY - hand.currentY) * 0.1;
+      
+      // Draw arm
+      ctx.save();
+      ctx.strokeStyle = hand.color;
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(hand.x, hand.baseY);
+      ctx.lineTo(hand.x, hand.currentY);
+      ctx.stroke();
+      ctx.restore();
+      
+      // Draw hand (circle)
+      ctx.save();
+      ctx.fillStyle = hand.color;
+      ctx.globalAlpha = hand.active ? 1 : 0.4;
+      ctx.shadowBlur = hand.active ? 20 : 10;
+      ctx.shadowColor = hand.color;
+      ctx.beginPath();
+      ctx.arc(hand.x, hand.currentY, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      
+      // Draw target (what it's reaching for)
+      const targetY = hand.currentY - 100;
+      ctx.save();
+      ctx.strokeStyle = hand.color;
+      ctx.globalAlpha = 0.3;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(hand.x, targetY, 8, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function handleClick(e) {
+      const x = e.clientX || (e.touches && e.touches[0].clientX);
+      const y = e.clientY || (e.touches && e.touches[0].clientY);
+      
+      // Determine which side was tapped
+      if (x < width / 2) {
+        // LEFT side - "RIGHT" answer
+        leftHand.active = true;
+        rightHand.active = false;
+        leftHand.targetY = height * 0.3; // reach up
+        rightHand.targetY = height * 0.7; // return
+        spawnParticles(leftHand, 30);
+        rightCount++;
+        document.getElementById('right-count').textContent = rightCount;
+        playTone(500);
+      } else {
+        // RIGHT side - "TRUE" answer
+        rightHand.active = true;
+        leftHand.active = false;
+        rightHand.targetY = height * 0.3; // reach up
+        leftHand.targetY = height * 0.7; // return
+        spawnParticles(rightHand, 30);
+        trueCount++;
+        document.getElementById('true-count').textContent = trueCount;
+        playTone(350);
+      }
+    }
+
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', handleClick);
+
+    // Update hand positions on resize
+    window.addEventListener('resize', () => {
+      leftHand.x = width * 0.3;
+      leftHand.baseY = height * 0.7;
+      rightHand.x = width * 0.7;
+      rightHand.baseY = height * 0.7;
+    });
+
+    function animate() {
+      // Dark fade trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        
+        if (particles[i].life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+      
+      // Draw hands
+      drawHand(leftHand);
+      drawHand(rightHand);
+      
+      // Draw center line
+      ctx.save();
+      ctx.strokeStyle = '#D4A574';
+      ctx.globalAlpha = 0.2;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(width / 2, 0);
+      ctx.lineTo(width / 2, height);
+      ctx.stroke();
+      ctx.restore();
+      
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
