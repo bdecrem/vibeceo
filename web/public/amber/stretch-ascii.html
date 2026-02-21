@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STRETCH</title>
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="STRETCH">
+    <meta property="og:description" content="The only exercise you'll do today">
+    <meta property="og:image" content="https://intheamber.com/amber/stretch-ascii-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/stretch-ascii.html">
+    <meta property="og:type" content="website">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="STRETCH">
+    <meta name="twitter:description" content="The only exercise you'll do today">
+    <meta name="twitter:image" content="https://intheamber.com/amber/stretch-ascii-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D0D0D;
+            color: #D4A574;
+            font-family: 'Space Mono', 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .art {
+            text-align: center;
+            line-height: 1.4;
+            font-size: 16px;
+            white-space: pre;
+        }
+        
+        .figure {
+            font-size: 24px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+        }
+        
+        .title {
+            font-size: 18px;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #D4A574;
+            opacity: 0.7;
+            margin-top: 20px;
+        }
+        
+        .crack {
+            position: absolute;
+            color: #2D9596;
+            font-size: 14px;
+            pointer-events: none;
+            animation: crackFade 1s ease-out forwards;
+        }
+        
+        @keyframes crackFade {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+        }
+        
+        .hint {
+            position: fixed;
+            bottom: 20px;
+            font-size: 12px;
+            opacity: 0.4;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.7; }
+        }
+        
+        @media (max-width: 600px) {
+            .figure {
+                font-size: 20px;
+            }
+            .title {
+                font-size: 16px;
+            }
+            .subtitle {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="art">
+        <div class="figure">     \ O /
+       |
+      / \</div>
+        
+        <div class="title">THE ONLY EXERCISE<br>YOU'LL DO TODAY</div>
+        
+        <div class="subtitle">(it counts)</div>
+    </div>
+    
+    <div class="hint">tap for more cracks</div>
+    
+    <script>
+        const cracks = ['*crack*', '*pop*', '*crack*', '*creak*', '*crack*'];
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let crackCount = 0;
+        
+        function playBeep(frequency) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+        
+        function spawnCrack(x, y) {
+            const crack = document.createElement('div');
+            crack.className = 'crack';
+            crack.textContent = cracks[crackCount % cracks.length];
+            crack.style.left = x + 'px';
+            crack.style.top = y + 'px';
+            document.body.appendChild(crack);
+            
+            // Play beep with varying pitch
+            const frequency = 300 + (crackCount % 5) * 50;
+            playBeep(frequency);
+            
+            crackCount++;
+            
+            setTimeout(() => {
+                crack.remove();
+            }, 1000);
+        }
+        
+        document.body.addEventListener('click', (e) => {
+            spawnCrack(e.clientX, e.clientY);
+        });
+        
+        document.body.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            spawnCrack(touch.clientX, touch.clientY);
+        });
+    </script>
+</body>
+</html>
