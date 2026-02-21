@@ -93,11 +93,15 @@ export default function ShineGame() {
     gems: [] as Gem[], particles: [] as Particle[], floatingTexts: [] as FloatingText[],
     score: 0, collected: 0, timeLeft: 30, gameTime: 0,
     combo: 0, comboTimer: 0, comboMultiplier: 1, maxCombo: 0,
-    phase: 'start' as 'start' | 'playing' | 'over',
+    phase: 'start' as 'start' | 'playing' | 'over' | 'tutorial',
     screenShake: { timer: 0, intensity: 0 },
     hitFreeze: 0, missDarken: 0, spawnTimer: 0,
     comboBreakFlash: { timer: 0, scale: 1, text: '', mult: 1 },
     timerFlash: 0, safeTop: 0,
+    // tutorial state
+    tutStep: 0, tutGems: [] as Gem[], tutCollected: 0, tutCombo: 0,
+    tutSuccess: false, tutSuccessTimer: 0, tutMissShown: false,
+    tutTimeLeft: 0,
     audioCtx: null as AudioContext | null,
     running: false, W: 0, H: 0,
   });
@@ -167,11 +171,32 @@ export default function ShineGame() {
     game.timerFlash = 0;
   }, []);
 
+  const playSound = useCallback((freq: number, duration: number, type: OscillatorType, vol: number) => {
+    const ctx = g.current.audioCtx; if (!ctx) return;
+    const osc = ctx.createOscillator(); const gn = ctx.createGain();
+    osc.connect(gn); gn.connect(ctx.destination); osc.type = type; osc.frequency.value = freq;
+    gn.gain.setValueAtTime(vol, ctx.currentTime);
+    gn.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(); osc.stop(ctx.currentTime + duration);
+  }, []);
+
   const startGame = useCallback(() => {
     initGame(); initAudio();
     g.current.phase = 'playing'; g.current.running = true;
     setGameState('playing'); setShowShareModal(false); setProgression(null);
   }, [initGame, initAudio]);
+
+  const startTutorial = useCallback(() => {
+    const game = g.current;
+    initAudio();
+    game.phase = 'tutorial'; game.running = true;
+    game.tutStep = 0; game.tutSuccess = false; game.tutSuccessTimer = 0;
+    game.score = 0; game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1;
+    game.gems = []; game.particles = []; game.floatingTexts = [];
+    game.comboBreakFlash = { timer: 0, scale: 1, text: '', mult: 1 };
+    // setup step 0 happens in the useEffect via setupTutorialStep
+    setGameState('playing'); setShowShareModal(false); setProgression(null);
+  }, [initAudio]);
 
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return;
@@ -202,12 +227,103 @@ export default function ShineGame() {
       game.floatingTexts.push({ x, y, text, color, life: 1, vy: -1.5 });
     }
 
+    // --- TUTORIAL HELPERS ---
+    function setupTutorialStep(game: typeof g.current) {
+      const W = game.W, H = game.H;
+      game.tutGems = []; game.tutCollected = 0;
+      switch (game.tutStep) {
+        case 0: // TAP TO COLLECT
+          game.tutGems.push({ x: W / 2, y: H / 2, type: gemTypes[1], radius: 30, age: 0, maxLife: 999, pulse: 0, alive: true });
+          break;
+        case 1: // GEM VALUES
+          [gemTypes[0], gemTypes[2], gemTypes[4]].forEach((t, i) => {
+            game.tutGems.push({ x: [W * 0.25, W * 0.5, W * 0.75][i], y: H / 2, type: t, radius: 28, age: 0, maxLife: 999, pulse: 0, alive: true });
+          });
+          break;
+        case 2: // COMBOS
+          game.tutCombo = 0;
+          [[-50, -40], [50, -40], [-50, 40], [50, 40]].forEach(([ox, oy]) => {
+            game.tutGems.push({ x: W / 2 + ox, y: H / 2 + oy, type: gemTypes[1], radius: 26, age: 0, maxLife: 999, pulse: 0, alive: true });
+          });
+          break;
+        case 3: // MISS PENALTY
+          game.tutMissShown = false; game.tutTimeLeft = 15;
+          game.tutGems.push({ x: W / 2, y: H * 0.4, type: gemTypes[0], radius: 25, age: 0, maxLife: 2.0, pulse: 0, alive: true });
+          break;
+        case 4: // READY
+          game.tutTimeLeft = 10; game.tutCombo = 0; game.spawnTimer = 0;
+          break;
+      }
+    }
+
+    function advanceTutorial(game: typeof g.current) {
+      game.tutStep++; game.tutSuccess = false; game.tutSuccessTimer = 0;
+      if (game.tutStep >= 5) {
+        game.phase = 'playing';
+        game.gems = []; game.particles = []; game.floatingTexts = [];
+        game.score = 0; game.collected = 0; game.timeLeft = 30; game.gameTime = 0;
+        game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1; game.maxCombo = 0;
+        game.spawnTimer = 0;
+        return;
+      }
+      game.gems = []; game.particles = []; game.floatingTexts = [];
+      game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1;
+      game.comboBreakFlash = { timer: 0, scale: 1, text: '', mult: 1 };
+      setupTutorialStep(game);
+    }
+
+    const STEP_NAMES = ['TAP TO COLLECT', 'GEM VALUES', 'COMBOS', 'MISS PENALTY', 'READY?'];
+    const STEP_INSTRUCTIONS = ['TAP THE GEM', 'RARER GEMS = MORE POINTS', 'TAP FAST FOR MULTIPLIERS', 'MISSED GEMS COST TIME', 'SURVIVE 10 SECONDS'];
+
+    function checkTutorialStep(game: typeof g.current): boolean {
+      switch (game.tutStep) {
+        case 0: return game.tutCollected >= 1;
+        case 1: return game.tutCollected >= 3;
+        case 2: return game.tutCombo >= 3;
+        case 3: return game.tutMissShown && game.tutCollected >= 1;
+        case 4: return game.tutTimeLeft <= 0;
+        default: return false;
+      }
+    }
+
+    // setup first tutorial step if we're starting in tutorial mode
+    if (g.current.phase === 'tutorial') setupTutorialStep(g.current);
+
     const handleTap = (e: TouchEvent | MouseEvent) => {
       if (e instanceof TouchEvent) e.preventDefault();
       const game = g.current;
       const px = e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
       const py = e instanceof TouchEvent ? e.touches[0].clientY : e.clientY;
       initAudio();
+
+      if (game.phase === 'tutorial') {
+        if (game.tutSuccess) return;
+        // SKIP button
+        if (px >= game.W - 80 && py <= 50) {
+          game.phase = 'playing';
+          game.gems = []; game.particles = []; game.floatingTexts = [];
+          game.score = 0; game.collected = 0; game.timeLeft = 30; game.gameTime = 0;
+          game.combo = 0; game.comboTimer = 0; game.comboMultiplier = 1; game.maxCombo = 0;
+          game.spawnTimer = 0;
+          return;
+        }
+        const activeGems = game.tutStep === 4 ? game.gems : game.tutGems;
+        for (let i = activeGems.length - 1; i >= 0; i--) {
+          const gem = activeGems[i];
+          const dx = px - gem.x, dy = py - gem.y;
+          if (dx * dx + dy * dy < gem.radius * gem.radius) {
+            game.score += gem.type.points; game.tutCollected++;
+            if (game.tutStep === 2) { game.tutCombo++; game.combo++; game.comboTimer = 0.9; game.comboMultiplier = getComboMultiplier(game.combo); }
+            spawnParticles(game, gem.x, gem.y, gem.type.color, 15);
+            spawnFloatingText(game, gem.x, gem.y - 30, '+' + gem.type.points, gem.type.color);
+            playCollect(gem.type.freq);
+            if (gem.type.points >= 5) { game.hitFreeze = 0.03; game.screenShake = { timer: 0.08, intensity: 2 }; }
+            activeGems.splice(i, 1);
+            break;
+          }
+        }
+        return;
+      }
 
       if (game.phase !== 'playing') return;
 
@@ -242,9 +358,72 @@ export default function ShineGame() {
 
     let lastTime = performance.now(); let animId: number;
 
+    function updateTutorial(dt: number) {
+      const game = g.current;
+      game.gameTime += dt;
+      if (game.hitFreeze > 0) { game.hitFreeze -= dt; return; }
+
+      if (!game.tutSuccess && checkTutorialStep(game)) {
+        game.tutSuccess = true; game.tutSuccessTimer = 1.5;
+        playSound(880, 0.3, 'sine', 0.2);
+      }
+      if (game.tutSuccess) {
+        game.tutSuccessTimer -= dt;
+        if (game.tutSuccessTimer <= 0) advanceTutorial(game);
+      }
+
+      // step 3: miss penalty demo
+      if (game.tutStep === 3 && !game.tutSuccess) {
+        for (let i = game.tutGems.length - 1; i >= 0; i--) {
+          const gem = game.tutGems[i];
+          gem.age += dt; gem.pulse = Math.sin(gem.age * 5) * 0.2 + 1;
+          if (gem.age >= gem.maxLife) {
+            game.tutTimeLeft = Math.max(0, game.tutTimeLeft - 0.35);
+            game.missDarken = 0.1; game.timerFlash = 0.15;
+            playMissThud(); game.tutMissShown = true;
+            game.tutGems.splice(i, 1);
+            setTimeout(() => {
+              if (game.phase === 'tutorial' && game.tutStep === 3) {
+                game.tutGems.push({ x: game.W / 2, y: game.H * 0.6, type: gemTypes[2], radius: 28, age: 0, maxLife: 999, pulse: 0, alive: true });
+              }
+            }, 500);
+          }
+        }
+      }
+
+      // step 4: mini round
+      if (game.tutStep === 4 && !game.tutSuccess) {
+        game.tutTimeLeft -= dt;
+        if (game.tutTimeLeft <= 0) game.tutTimeLeft = 0;
+        game.spawnTimer += dt;
+        if (game.spawnTimer >= 0.7) { spawnGem(game); game.spawnTimer = 0; }
+        for (let i = game.gems.length - 1; i >= 0; i--) {
+          const gem = game.gems[i]; gem.age += dt; gem.pulse = Math.sin(gem.age * 5) * 0.2 + 1;
+          if (gem.age >= gem.maxLife) game.gems.splice(i, 1);
+        }
+        if (game.comboTimer > 0) {
+          game.comboTimer -= dt;
+          if (game.comboTimer <= 0) { if (game.combo >= 3) playComboBreak(); game.combo = 0; game.comboMultiplier = 1; }
+        }
+      }
+
+      // pulse non-step3/4 gems
+      if (game.tutStep !== 3 && game.tutStep !== 4) {
+        for (const gem of game.tutGems) { gem.age += dt; gem.pulse = Math.sin(gem.age * 5) * 0.2 + 1; }
+      }
+
+      // particles + floating text
+      for (let i = game.particles.length - 1; i >= 0; i--) { const p = game.particles[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life -= 0.02; if (p.life <= 0) game.particles.splice(i, 1); }
+      for (let i = game.floatingTexts.length - 1; i >= 0; i--) { const ft = game.floatingTexts[i]; ft.y += ft.vy; ft.life -= dt * 1.5; if (ft.life <= 0) game.floatingTexts.splice(i, 1); }
+      if (game.screenShake.timer > 0) game.screenShake.timer -= dt;
+      if (game.missDarken > 0) game.missDarken -= dt;
+      if (game.timerFlash > 0) game.timerFlash -= dt;
+    }
+
     function update(dt: number) {
       const game = g.current;
       if (game.phase === 'start' || game.phase === 'over') return;
+      if (game.phase === 'tutorial') { updateTutorial(dt); return; }
       if (game.hitFreeze > 0) { game.hitFreeze -= dt; return; }
       game.gameTime += dt;
 
@@ -310,9 +489,85 @@ export default function ShineGame() {
       if (game.score >= 1) fetch('/api/pixelpit/stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: GAME_ID }) }).catch(() => {});
     }
 
+    function drawGem(c: CanvasRenderingContext2D, gem: Gem) {
+      const life = 1 - gem.age / gem.maxLife;
+      const alpha = Math.max(0, life);
+      const size = gem.radius * gem.pulse;
+      const hexA1 = Math.floor(alpha * 255).toString(16).padStart(2, '0');
+      const hexA2 = Math.floor(alpha * 100).toString(16).padStart(2, '0');
+      const grad = c.createRadialGradient(gem.x, gem.y, 0, gem.x, gem.y, size * 2);
+      grad.addColorStop(0, gem.type.color + hexA1); grad.addColorStop(0.5, gem.type.color + hexA2); grad.addColorStop(1, gem.type.color + '00');
+      c.fillStyle = grad; c.beginPath(); c.arc(gem.x, gem.y, size * 2, 0, Math.PI * 2); c.fill();
+      c.fillStyle = gem.type.color; c.globalAlpha = alpha;
+      c.beginPath(); c.arc(gem.x, gem.y, size, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
+      if (alpha > 0.7) {
+        c.strokeStyle = '#fff'; c.globalAlpha = (Math.sin(gem.age * 10) * 0.3 + 0.5) * alpha; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(gem.x - size * 0.6, gem.y); c.lineTo(gem.x + size * 0.6, gem.y);
+        c.moveTo(gem.x, gem.y - size * 0.6); c.lineTo(gem.x, gem.y + size * 0.6); c.stroke(); c.globalAlpha = 1;
+      }
+    }
+
+    function drawTutorial() {
+      const game = g.current; const W = game.W, H = game.H;
+      ctx!.fillStyle = 'rgba(0, 0, 0, 0.3)'; ctx!.fillRect(0, 0, W, H);
+      const hy = game.safeTop;
+
+      ctx!.save();
+      if (game.screenShake.timer > 0) {
+        const s = game.screenShake.intensity * (game.screenShake.timer / 0.08);
+        ctx!.translate((Math.random() * 2 - 1) * s, (Math.random() * 2 - 1) * s);
+      }
+      const activeGems = game.tutStep === 4 ? game.gems : game.tutGems;
+      for (const gem of activeGems) drawGem(ctx!, gem);
+      for (const p of game.particles) { ctx!.fillStyle = p.color; ctx!.globalAlpha = p.life; ctx!.beginPath(); ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx!.fill(); ctx!.globalAlpha = 1; }
+      ctx!.restore();
+      for (const ft of game.floatingTexts) { ctx!.fillStyle = ft.color; ctx!.globalAlpha = ft.life; ctx!.font = 'bold 18px monospace'; ctx!.textAlign = 'center'; ctx!.fillText(ft.text, ft.x, ft.y); ctx!.globalAlpha = 1; }
+      if (game.missDarken > 0) { ctx!.fillStyle = `rgba(0,0,0,${game.missDarken * 3})`; ctx!.fillRect(0, 0, W, H); }
+
+      // HUD
+      ctx!.textAlign = 'center';
+      ctx!.fillStyle = T.muted; ctx!.font = '12px monospace';
+      ctx!.fillText('TUTORIAL ' + (game.tutStep + 1) + ' / 5', W / 2, 28 + hy);
+      ctx!.fillStyle = T.gold; ctx!.font = 'bold 20px monospace';
+      ctx!.shadowBlur = 10; ctx!.shadowColor = 'rgba(255,215,0,0.4)';
+      ctx!.fillText(STEP_NAMES[game.tutStep], W / 2, 52 + hy); ctx!.shadowBlur = 0;
+
+      if (!game.tutSuccess) {
+        ctx!.fillStyle = T.amber; ctx!.font = '16px monospace';
+        const instrY = game.tutStep === 4 ? H - 60 : H * 0.22;
+        ctx!.fillText(STEP_INSTRUCTIONS[game.tutStep], W / 2, instrY);
+        if (game.tutStep === 1) {
+          for (const gem of game.tutGems) { ctx!.fillStyle = gem.type.color; ctx!.font = 'bold 14px monospace'; ctx!.fillText(gem.type.points + ' PT' + (gem.type.points > 1 ? 'S' : ''), gem.x, gem.y - 45); }
+        }
+        if (game.tutStep === 2 && game.combo >= 1) { ctx!.fillStyle = T.gold; ctx!.font = 'bold 16px monospace'; ctx!.fillText(game.combo + ' / 3 COMBO', W / 2, H * 0.78); }
+        if ((game.tutStep === 3 || game.tutStep === 4) && game.tutTimeLeft !== undefined) {
+          ctx!.textAlign = 'right'; ctx!.fillStyle = game.timerFlash > 0 ? T.danger : T.teal; ctx!.font = 'bold 20px monospace';
+          ctx!.fillText(game.tutTimeLeft.toFixed(1), W - 16, 52 + hy); ctx!.textAlign = 'center';
+        }
+        if (game.tutStep === 3 && game.tutMissShown && game.tutGems.length > 0) { ctx!.fillStyle = T.teal; ctx!.font = '14px monospace'; ctx!.fillText('NOW TAP THE GEM', W / 2, H * 0.78); }
+      }
+
+      if (game.tutSuccess) {
+        const a = Math.min(1, game.tutSuccessTimer);
+        ctx!.globalAlpha = a; ctx!.fillStyle = T.gold; ctx!.font = 'bold 28px monospace';
+        ctx!.shadowBlur = 15; ctx!.shadowColor = 'rgba(255,215,0,0.6)';
+        ctx!.fillText(game.tutStep === 4 ? 'GO!' : 'NICE!', W / 2, H / 2);
+        ctx!.shadowBlur = 0; ctx!.globalAlpha = 1;
+      }
+
+      // SKIP button
+      ctx!.textAlign = 'right'; ctx!.fillStyle = T.muted; ctx!.font = '12px monospace';
+      ctx!.fillText('SKIP >', W - 16, 28 + hy);
+      // Score
+      ctx!.textAlign = 'left'; ctx!.fillStyle = T.muted; ctx!.font = '10px monospace'; ctx!.fillText('SCORE', 16, H - 24);
+      ctx!.fillStyle = T.gold; ctx!.font = 'bold 16px monospace'; ctx!.fillText(game.score + '', 16, H - 8);
+      ctx!.textAlign = 'left';
+    }
+
     function draw() {
       const game = g.current;
       if (game.phase === 'start' || game.phase === 'over') return;
+      if (game.phase === 'tutorial') { drawTutorial(); return; }
       const W = game.W, H = game.H;
 
       ctx!.fillStyle = 'rgba(0, 0, 0, 0.25)'; ctx!.fillRect(0, 0, W, H);
@@ -324,31 +579,7 @@ export default function ShineGame() {
       }
 
       // gems
-      for (const gem of game.gems) {
-        const life = 1 - gem.age / gem.maxLife;
-        const alpha = Math.max(0, life);
-        const size = gem.radius * gem.pulse;
-        const hexA1 = Math.floor(alpha * 255).toString(16).padStart(2, '0');
-        const hexA2 = Math.floor(alpha * 100).toString(16).padStart(2, '0');
-        const grad = ctx!.createRadialGradient(gem.x, gem.y, 0, gem.x, gem.y, size * 2);
-        grad.addColorStop(0, gem.type.color + hexA1);
-        grad.addColorStop(0.5, gem.type.color + hexA2);
-        grad.addColorStop(1, gem.type.color + '00');
-        ctx!.fillStyle = grad;
-        ctx!.beginPath(); ctx!.arc(gem.x, gem.y, size * 2, 0, Math.PI * 2); ctx!.fill();
-        ctx!.fillStyle = gem.type.color; ctx!.globalAlpha = alpha;
-        ctx!.beginPath(); ctx!.arc(gem.x, gem.y, size, 0, Math.PI * 2); ctx!.fill();
-        ctx!.globalAlpha = 1;
-        if (alpha > 0.7) {
-          ctx!.strokeStyle = '#fff';
-          ctx!.globalAlpha = (Math.sin(gem.age * 10) * 0.3 + 0.5) * alpha;
-          ctx!.lineWidth = 2;
-          ctx!.beginPath();
-          ctx!.moveTo(gem.x - size * 0.6, gem.y); ctx!.lineTo(gem.x + size * 0.6, gem.y);
-          ctx!.moveTo(gem.x, gem.y - size * 0.6); ctx!.lineTo(gem.x, gem.y + size * 0.6);
-          ctx!.stroke(); ctx!.globalAlpha = 1;
-        }
-      }
+      for (const gem of game.gems) drawGem(ctx!, gem);
 
       // particles
       for (const p of game.particles) {
@@ -439,7 +670,7 @@ export default function ShineGame() {
 
     return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); canvas.removeEventListener('touchstart', handleTap); canvas.removeEventListener('click', handleTap); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initAudio, playCollect, playComboBreak, playMissThud]);
+  }, [initAudio, playCollect, playComboBreak, playMissThud, playSound]);
 
   return (
     <>
@@ -455,6 +686,7 @@ export default function ShineGame() {
               tap gems before they fade<br />build combos for multipliers<br />missed gems cost time
             </p>
             <button onClick={startGame} style={{ background: T.gold, color: COLORS.bg, border: 'none', padding: '16px 50px', fontSize: 16, fontFamily: 'ui-monospace, monospace', fontWeight: 600, cursor: 'pointer', borderRadius: 8, letterSpacing: 2, boxShadow: `0 8px 30px rgba(255,215,0,0.3)` }}>play</button>
+            <button onClick={startTutorial} style={{ background: 'transparent', border: `1px solid ${T.muted}`, color: T.muted, padding: '10px 30px', fontSize: 12, fontFamily: 'ui-monospace, monospace', cursor: 'pointer', borderRadius: 6, letterSpacing: 2, marginTop: 12 }}>tutorial</button>
           </div>
           <div style={{ marginTop: 30, fontSize: 12, fontFamily: 'ui-monospace, monospace', letterSpacing: 3 }}>
             <span style={{ color: T.gold }}>pixel</span><span style={{ color: T.teal }}>pit</span><span style={{ color: COLORS.text, opacity: 0.4 }}> arcade</span>
