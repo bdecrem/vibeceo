@@ -101,7 +101,7 @@
   <div class="start-prompt" id="startPrompt">TAP TO BEGIN</div>
 
   <script type="module">
-    import { SH101Controller } from '/101/dist/api/index.js';
+    import { JB202Engine } from '/jb202/dist/index.js';
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -153,22 +153,51 @@
         }, i * 500);
       }
 
-      // Handle start
+      // iOS-safe input handling: unlock audio on first direct touch/pointer interaction
       startPrompt.addEventListener('click', startAudio);
+      startPrompt.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startAudio();
+      }, { passive: false });
+
       canvas.addEventListener('click', handleClick);
-      canvas.addEventListener('touchstart', handleTouch);
+      canvas.addEventListener('touchstart', handleTouch, { passive: false });
+      canvas.addEventListener('pointerdown', handlePointerDown);
     }
 
     function startAudio() {
-      if (!audioStarted) {
-        audioStarted = true;
-        synth = new SH101Controller();
-        synth.masterVolume.value = 0.4;
-        startPrompt.style.display = 'none';
-      }
+      if (audioStarted) return;
+
+      audioStarted = true;
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      synth = new JB202Engine({ context: audioCtx, bpm: 120, sampleRate: audioCtx.sampleRate, masterVolume: 0.35 });
+
+      // Shape a plucky, responsive tone for short impact notes.
+      synth.setParameter('osc1Waveform', 'triangle');
+      synth.setParameter('osc2Waveform', 'square');
+      synth.setParameter('osc1Level', 0.7);
+      synth.setParameter('osc2Level', 0.35);
+      synth.setParameter('filterCutoff', 0.55);
+      synth.setParameter('filterResonance', 0.18);
+      synth.setParameter('filterEnvAmount', 0.65);
+      synth.setParameter('ampAttack', 0.01);
+      synth.setParameter('ampDecay', 0.22);
+      synth.setParameter('ampSustain', 0.0);
+      synth.setParameter('ampRelease', 0.12);
+      synth.setParameter('drive', 0.12);
+
+      // Tiny note poke to guarantee AudioContext unlock on iOS user gesture.
+      synth.playNote('D3', false, false);
+
+      startPrompt.style.display = 'none';
     }
 
     function handleClick(e) {
+      startAudio();
+      spawnCascade(e.clientX, true);
+    }
+
+    function handlePointerDown(e) {
       startAudio();
       spawnCascade(e.clientX, true);
     }
@@ -210,15 +239,18 @@
     function playNote(freq, note) {
       if (!audioStarted || !synth) return;
 
-      const cutoff = 0.3 + Math.random() * 0.4;
-      const resonance = 0.2 + Math.random() * 0.3;
+      const cutoff = 0.35 + Math.random() * 0.3;
+      const resonance = 0.08 + Math.random() * 0.18;
+      const envAmt = 0.45 + Math.random() * 0.25;
 
-      synth.triggerAttackRelease(note, 0.3, {
-        cutoff,
-        resonance,
-        envMod: 0.4,
-        decay: 0.2
-      });
+      // JB202 params (engine units 0-1)
+      synth.setParameter('filterCutoff', cutoff);
+      synth.setParameter('filterResonance', resonance);
+      synth.setParameter('filterEnvAmount', envAmt);
+      synth.setParameter('ampDecay', 0.16 + Math.random() * 0.12);
+
+      // accent=false, slide=false
+      synth.playNote(note, false, false);
 
       notesPlayed++;
       document.getElementById('notes').textContent = notesPlayed;
