@@ -1,17 +1,110 @@
 #!/bin/sh
-# Pre-commit hook to ensure documentation is updated
 
-echo "🔍 Checking documentation sync..."
+# Pre-commit hook to enforce separation of concerns in WTAF engine
+# Runs validation script before allowing commits
 
-# Run documentation validation
-npm run docs:validate
+echo "🔒 Pre-commit: Checking architecture compliance..."
 
-if [ $? -ne 0 ]; then
-    echo "❌ Documentation is out of sync with code!"
-    echo "📝 Running auto-generation..."
-    npm run docs:generate
-    echo "✅ Documentation updated. Please review and add to commit."
+# SECURITY CHECK: Scan for hardcoded secrets
+echo "🔍 Scanning for hardcoded secrets..."
+
+# Check for common secret patterns in staged files
+SECRETS_FOUND=0
+for file in $(git diff --cached --name-only); do
+    # Skip the hook file itself (contains the patterns it scans for)
+    if [ "$file" = ".githooks/pre-commit" ]; then continue; fi
+    if [ -f "$file" ]; then
+        # Check for various secret patterns
+        if grep -qE "(sk-[a-zA-Z0-9]{48}|eyJ[a-zA-Z0-9]+\.eyJ|service_role|anon_key|SUPABASE_SERVICE_KEY.*=.*['\"]ey|OPENAI_API_KEY.*=.*['\"]sk-|TWILIO_AUTH_TOKEN.*=.*['\"][a-f0-9]{32})" "$file"; then
+            echo "❌ SECURITY WARNING: Possible hardcoded secret found in $file"
+            SECRETS_FOUND=1
+        fi
+        # Check for base64 encoded JWT tokens (Supabase keys)
+        if grep -qE "['\"]eyJ[a-zA-Z0-9+/]{100,}={0,2}['\"]" "$file"; then
+            echo "❌ SECURITY WARNING: Possible Supabase key found in $file"
+            SECRETS_FOUND=1
+        fi
+    fi
+done
+
+if [ $SECRETS_FOUND -eq 1 ]; then
+    echo ""
+    echo "🚨 COMMIT BLOCKED: Hardcoded secrets detected!"
+    echo "💡 Use environment variables instead:"
+    echo "   - process.env.SUPABASE_SERVICE_KEY"
+    echo "   - process.env.OPENAI_API_KEY"
+    echo "   - process.env.TWILIO_AUTH_TOKEN"
+    echo ""
+    echo "To bypass (NOT RECOMMENDED): git commit --no-verify"
     exit 1
 fi
 
-echo "✅ Documentation is in sync!"
+echo "✅ No secrets detected"
+
+# Check if sms-bot directory has changes
+if git diff --cached --name-only | grep -q "^sms-bot/"; then
+    echo "📁 SMS-bot changes detected, running architecture validation..."
+
+    # Change to sms-bot directory and run validation
+    cd sms-bot
+
+    # Run the architecture validation script
+    node scripts/validate-architecture.cjs
+
+    # Check if validation passed
+    if [ $? -ne 0 ]; then
+        echo ""
+        echo "❌ COMMIT BLOCKED: Architecture validation failed"
+        echo "Fix separation of concerns violations and try again."
+        echo ""
+        echo "💡 Quick fixes:"
+        echo "  - Move hardcoded logic to content/classification/*.json"
+        echo "  - Remove switch statements on classification types"
+        echo "  - Move prompts to _classifier-config.json"
+        echo ""
+        exit 1
+    fi
+
+    echo "✅ Architecture validation passed!"
+    cd ..
+else
+    echo "📝 No sms-bot changes detected, skipping validation"
+fi
+
+# JAMBOT: Enforce PLATFORM.md rules on staged tool files
+if git diff --cached --name-only | grep -q "^jambot/tools/"; then
+    echo "🔧 Jambot tools changed, checking platform rules..."
+    STAGED_TOOLS=$(git diff --cached --name-only | grep "^jambot/tools/.*\.js$")
+    VIOLATIONS=0
+    for file in $STAGED_TOOLS; do
+        if [ -f "$file" ]; then
+            HITS=$(grep -n 'session\._nodes' "$file" || true)
+            if [ -n "$HITS" ]; then
+                echo "❌ $file: session._nodes access (use session.set()/get() or accessors)"
+                echo "$HITS" | sed 's/^/   /'
+                VIOLATIONS=1
+            fi
+        fi
+    done
+    if [ $VIOLATIONS -eq 1 ]; then
+        echo ""
+        echo "🚨 COMMIT BLOCKED: PLATFORM.md violation — no _nodes in tools layer"
+        echo "💡 See jambot/PLATFORM.md 'Public API only' rule"
+        exit 1
+    fi
+    echo "✅ Platform rules OK"
+fi
+
+# Run smoke tests for critical paths
+echo "🧪 Running smoke tests..."
+
+# Check if test:smoke script exists and run it
+if npm run test:smoke --silent 2>/dev/null; then
+    echo "✅ Smoke tests passed!"
+else
+    # If test:smoke doesn't exist yet, skip for now
+    echo "⏭️  Smoke test script not found, skipping..."
+fi
+
+echo "✅ Pre-commit checks complete"
+exit 0

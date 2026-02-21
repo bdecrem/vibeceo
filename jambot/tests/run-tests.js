@@ -13,6 +13,7 @@ const tests = [
   'test-param-roundtrip.js',
   'test-interface-contract.js',
   'test-defaults-consistency.js',
+  'test-platform-rules.js',
 ];
 
 let allPassed = true;
