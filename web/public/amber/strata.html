@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STRATA — The texture of regret, compressed into layers</title>
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="STRATA — The texture of regret, compressed into layers">
+    <meta property="og:description" content="Amber art. An accumulating cross-section of regrets forming geological strata.">
+    <meta property="og:image" content="https://intheamber.com/amber/strata-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/strata.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="STRATA — The texture of regret, compressed into layers">
+    <meta name="twitter:description" content="Amber art. An accumulating cross-section of regrets forming geological strata.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/strata-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D0D0D;
+            color: #D4A574;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+        
+        .ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 14px;
+            color: #D4A574;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+            z-index: 10;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #FFD700;
+        }
+        
+        .subtitle {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 12px;
+        }
+        
+        .instruction {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            color: #2D9596;
+            opacity: 0.8;
+            text-align: center;
+            pointer-events: none;
+        }
+        
+        .depth-labels {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: #78716c;
+            pointer-events: none;
+            text-align: right;
+        }
+        
+        .depth-label {
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="ui">
+        <div class="title">STRATA</div>
+        <div class="subtitle">The texture of regret, compressed into layers</div>
+        <div id="stats">Layers: <span id="count">0</span></div>
+    </div>
+    
+    <div class="instruction">
+        Tap to deposit regret · Watch it compress into sediment
+    </div>
+    
+    <div class="depth-labels">
+        <div class="depth-label">← fresh</div>
+        <div class="depth-label"></div>
+        <div class="depth-label"></div>
+        <div class="depth-label">← settled</div>
+        <div class="depth-label"></div>
+        <div class="depth-label"></div>
+        <div class="depth-label">← ancient</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const countEl = document.getElementById('count');
+        
+        // Set canvas to full window size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Audio context
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let audioUnlocked = false;
+        
+        function unlockAudio() {
+            if (!audioUnlocked) {
+                const osc = audioCtx.createOscillator();
+                osc.connect(audioCtx.destination);
+                osc.start();
+                osc.stop();
+                audioUnlocked = true;
+            }
+        }
+        
+        // Layers array
+        const layers = [];
+        let layerCount = 0;
+        
+        // Regret types with colors and textures
+        const regretTypes = [
+            { name: 'Words unsaid', color: '#ec4899', texture: 'dots' },
+            { name: 'Words said', color: '#f97316', texture: 'lines' },
+            { name: 'Paths not taken', color: '#FFD700', texture: 'stipple' },
+            { name: 'Bridges burned', color: '#f59e0b', texture: 'cracks' },
+            { name: 'Time wasted', color: '#D4A574', texture: 'waves' },
+            { name: 'Promises broken', color: '#2D9596', texture: 'dots' },
+            { name: 'Lies told', color: '#3b82f6', texture: 'cross' },
+            { name: 'Truths hidden', color: '#8b5cf6', texture: 'lines' },
+            { name: 'Chances missed', color: '#a855f7', texture: 'stipple' },
+            { name: 'Love unexpressed', color: '#6366f1', texture: 'cracks' }
+        ];
+        
+        class Layer {
+            constructor(x, type) {
+                this.x = x;
+                this.type = type;
+                this.y = canvas.height; // Start at bottom
+                this.targetY = canvas.height - 50; // Will be adjusted based on existing layers
+                this.thickness = 15 + Math.random() * 25;
+                this.age = 0;
+                this.settled = false;
+                this.compression = 1;
+                this.opacity = 1;
+                
+                // Create irregularity in the layer
+                this.irregularity = [];
+                for (let i = 0; i < canvas.width; i += 10) {
+                    this.irregularity.push(Math.random() * 3 - 1.5);
+                }
+            }
+            
+            update() {
+                // Settle into position
+                if (!this.settled) {
+                    const speed = 0.5;
+                    this.y -= speed;
+                    if (this.y <= this.targetY) {
+                        this.y = this.targetY;
+                        this.settled = true;
+                    }
+                }
+                
+                // Age and compress
+                this.age += 0.01;
+                
+                // Older layers compress more
+                if (this.settled) {
+                    const compressionTarget = Math.max(0.3, 1 - this.age * 0.1);
+                    this.compression += (compressionTarget - this.compression) * 0.02;
+                }
+            }
+            
+            draw() {
+                ctx.save();
+                
+                const currentThickness = this.thickness * this.compression;
+                
+                // Draw thelayer base
+                ctx.globalAlpha = this.opacity;
+                
+                // Create gradient
+                const gradient = ctx.createLinearGradient(0, this.y, 0, this.y + currentThickness);
+                gradient.addColorStop(0, this.type.color);
+                gradient.addColorStop(1, this.adjustColor(this.type.color, -30));
+                
+                ctx.fillStyle = gradient;
+                
+                // Draw irregular layer shape
+                ctx.beginPath();
+                ctx.moveTo(0, this.y);
+                
+                for (let i = 0; i < canvas.width; i += 10) {
+                    const idx = Math.floor(i / 10);
+                    const irregularity = this.irregularity[idx] || 0;
+                    ctx.lineTo(i, this.y + irregularity);
+                }
+                
+                ctx.lineTo(canvas.width, this.y + currentThickness);
+                ctx.lineTo(0, this.y + currentThickness);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Add glow on fresh layers
+                if (this.age < 1) {
+                    ctx.shadowBlur = 20 * (1 - this.age);
+                    ctx.shadowColor = this.type.color;
+                }
+                
+                // Draw texture
+                this.drawTexture(currentThickness);
+                
+                ctx.restore();
+            }
+            
+            drawTexture(thickness) {
+                ctx.save();
+                ctx.globalAlpha = 0.4;
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 0.5;
+                
+                const y = this.y;
+                const density = Math.max(15, 30 * this.compression);
+                
+                switch(this.type.texture) {
+                    case 'dots':
+                        for (let x = 0; x < canvas.width; x += density) {
+                            for (let dy = 0; dy < thickness; dy += density) {
+                                if (Math.random() > 0.5) {
+                                    ctx.beginPath();
+                                    ctx.arc(x + Math.random() * density, y + dy, 1, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+                            }
+                        }
+                        break;
+                    
+                    case 'lines':
+                        for (let dy = 0; dy < thickness; dy += density / 2) {
+                            ctx.beginPath();
+                            ctx.moveTo(0, y + dy);
+                            ctx.lineTo(canvas.width, y + dy);
+                            ctx.stroke();
+                        }
+                        break;
+                    
+                    case 'stipple':
+                        for (let i = 0; i < canvas.width * thickness / 100; i++) {
+                            const px = Math.random() * canvas.width;
+                            const py = y + Math.random() * thickness;
+                            ctx.fillRect(px, py, 1, 1);
+                        }
+                        break;
+                    
+                    case 'cracks':
+                        for (let x = 0; x < canvas.width; x += density * 3) {
+                            if (Math.random() > 0.7) {
+                                ctx.beginPath();
+                                ctx.moveTo(x, y);
+                                const crackLength = Math.random() * thickness;
+                                ctx.lineTo(x + Math.random() * 10 - 5, y + crackLength);
+                                ctx.stroke();
+                            }
+                        }
+                        break;
+                    
+                    case 'waves':
+                        ctx.beginPath();
+                        for (let x = 0; x < canvas.width; x += 5) {
+                            const wave = Math.sin(x / 20 + this.age) * 2;
+                            const yPos = y + thickness / 2 + wave;
+                            if (x === 0) ctx.moveTo(x, yPos);
+                            else ctx.lineTo(x, yPos);
+                        }
+                        ctx.stroke();
+                        break;
+                    
+                    case 'cross':
+                        for (let x = 0; x < canvas.width; x += density) {
+                            for (let dy = 0; dy < thickness; dy += density) {
+                                if (Math.random() > 0.6) {
+                                    ctx.beginPath();
+                                    ctx.moveTo(x - 3, y + dy);
+                                    ctx.lineTo(x + 3, y + dy);
+                                    ctx.moveTo(x, y + dy - 3);
+                                    ctx.lineTo(x, y + dy + 3);
+                                    ctx.stroke();
+                                }
+                            }
+                        }
+                        break;
+                }
+                
+                ctx.restore();
+            }
+            
+            adjustColor(color, amount) {
+                const num = parseInt(color.replace('#', ''), 16);
+                const r = Math.max(0, Math.min(255, (num >> 16) + amount));
+                const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
+                const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
+                return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+            }
+        }
+        
+        function addLayer(x) {
+            unlockAudio();
+            
+            const type = regretTypes[Math.floor(Math.random() * regretTypes.length)];
+            const layer = new Layer(x, type);
+            
+            // Calculate target Y based on existing layers
+            const totalThickness = layers.reduce((sum, l) => sum + (l.thickness * l.compression), 0);
+            layer.targetY = canvas.height - totalThickness - layer.thickness;
+            
+            // Compress older layers slightly
+            layers.forEach(l => {
+                if (l.settled) {
+                    l.targetY -= layer.thickness * 0.1;
+                }
+            });
+            
+            layers.push(layer);
+            layerCount++;
+            countEl.textContent = layerCount;
+            
+            // Play sound - deeper tones for older layers
+            playSound(150 + layers.length * 20);
+        }
+        
+        function playSound(freq) {
+            if (!audioUnlocked) return;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+        
+        function animate() {
+            // Dark fade instead of clear
+            ctx.fillStyle = 'rgba(13, 13, 13, 0.02)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Update and draw all layers
+            layers.forEach(layer => {
+                layer.update();
+                layer.draw();
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Auto-add layers
+        setInterval(() => {
+            const randomX = Math.random() * canvas.width;
+            addLayer(randomX);
+        }, 2500);
+        
+        // Add initial layers
+        setTimeout(() => addLayer(canvas.width * 0.3), 500);
+        setTimeout(() => addLayer(canvas.width * 0.7), 1000);
+        setTimeout(() => addLayer(canvas.width * 0.5), 1500);
+        
+        // Interaction
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            addLayer(x);
+        });
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            addLayer(x);
+        });
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
