@@ -437,8 +437,8 @@ Path format: `drums.{voice}.{param}` (e.g., `drums.kick.decay`, `drums.snare.lev
 | filterCutoff | Hz | 20-20000 | Filter frequency |
 | filterResonance | 0-100 | 0-100 | Filter resonance |
 | filterEnvMod | 0-100 | 0-100 | Envelope to filter |
-| osc1Waveform | choice | saw/square/triangle | Oscillator 1 |
-| osc2Waveform | choice | saw/square/triangle | Oscillator 2 |
+| osc1Waveform | choice | saw/square/triangle/sine | Oscillator 1 |
+| osc2Waveform | choice | saw/square/triangle/sine | Oscillator 2 |
 | osc2Detune | cents | -100 to +100 | Detune amount |
 | attack | 0-100 | 0-100 | Amp attack |
 | decay | 0-100 | 0-100 | Amp decay |

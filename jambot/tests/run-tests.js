@@ -15,6 +15,7 @@ const tests = [
   'test-defaults-consistency.js',
   'test-platform-rules.js',
   'test-analyze.js',
+  'test-oscillators.js',
 ];
 
 let allPassed = true;

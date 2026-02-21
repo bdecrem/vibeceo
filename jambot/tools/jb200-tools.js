@@ -232,64 +232,57 @@ const jb200Tools = {
   },
   /**
    * Render a test tone for audio analysis
-   * Pure A440 saw wave, flat envelope, 1 second
+   * Pure oscillator output — no filter, no drive, no envelope
+   * Tests oscillators IN ISOLATION using DSP library
    */
   test_tone: async (input, session, context) => {
-    const { OfflineAudioContext } = await import('node-web-audio-api');
-    const { writeFileSync } = await import('fs');
+    const { writeFileSync, mkdirSync } = await import('fs');
     const { join, dirname } = await import('path');
+    const { createOscillatorSync } = await import('../../web/public/jb202/dist/dsp/oscillators/index.js');
+    const { noteToMidi, midiToFreq } = await import('../../web/public/jb202/dist/dsp/utils/note.js');
+    const { audioBufferToWav } = await import('../core/wav.js');
 
     const note = input.note || 'A4';
+    const waveform = input.waveform || 'sawtooth';
     const duration = input.duration || 1.0;
     const sampleRate = 44100;
 
-    // Note to frequency
-    const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    const match = note.match(/^([A-G]#?)(\d+)$/);
-    if (!match) return 'Invalid note format (e.g., A4)';
-    const noteName = match[1];
-    const octave = parseInt(match[2]);
-    const midi = noteNames.indexOf(noteName) + (octave + 1) * 12;
-    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+    const validWaveforms = ['sawtooth', 'square', 'triangle', 'sine'];
+    if (!validWaveforms.includes(waveform)) {
+      return `Invalid waveform: ${waveform}. Use: ${validWaveforms.join(', ')}`;
+    }
 
-    // Create offline context
+    const freq = midiToFreq(noteToMidi(note));
     const totalSamples = Math.ceil(duration * sampleRate);
-    const offlineContext = new OfflineAudioContext(2, totalSamples, sampleRate);
 
-    // Create oscillator
-    const osc = offlineContext.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.value = freq;
+    // Generate using DSP oscillator directly — no signal chain
+    const osc = createOscillatorSync(waveform, sampleRate);
+    osc.setFrequency(freq);
+    const samples = osc.generate(totalSamples);
 
-    // Create gain
-    const gain = offlineContext.createGain();
-    gain.gain.value = 0.8;
+    // Scale to 0.8 amplitude
+    for (let i = 0; i < totalSamples; i++) {
+      samples[i] *= 0.8;
+    }
 
-    // Connect
-    osc.connect(gain);
-    gain.connect(offlineContext.destination);
-
-    // Schedule
-    osc.start(0);
-    osc.stop(duration);
-
-    // Render
-    const buffer = await offlineContext.startRendering();
-
-    // Encode to WAV
-    const { audioBufferToWav } = await import('../core/wav.js');
+    // Wrap as audio buffer for WAV encoder
+    const buffer = {
+      sampleRate,
+      length: totalSamples,
+      duration,
+      numberOfChannels: 1,
+      getChannelData: (ch) => ch === 0 ? samples : null,
+    };
     const wavData = audioBufferToWav(buffer);
 
     // Save to project folder, or ~/Documents/Jambot if no project
-    const filename = `test-${note.toLowerCase()}-saw.wav`;
+    const filename = `test-${note.toLowerCase()}-${waveform}.wav`;
     const { homedir } = await import('os');
-    const { mkdirSync } = await import('fs');
 
     let filepath;
     if (context.renderPath) {
       filepath = join(dirname(context.renderPath), filename);
     } else {
-      // No project - save to ~/Documents/Jambot/
       const defaultDir = join(homedir(), 'Documents', 'Jambot');
       mkdirSync(defaultDir, { recursive: true });
       filepath = join(defaultDir, filename);
@@ -297,7 +290,7 @@ const jb200Tools = {
 
     writeFileSync(filepath, Buffer.from(wavData));
 
-    return `Test tone exported: ${filepath} (${note} = ${freq.toFixed(2)}Hz, ${duration}s)`;
+    return `Test tone exported: ${filepath} (${note} = ${freq.toFixed(2)}Hz, ${waveform}, ${duration}s)`;
   },
 };
 

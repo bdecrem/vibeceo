@@ -10,19 +10,22 @@ export { SawtoothOscillator, createSawtooth } from './sawtooth.js';
 export { SquareOscillator, createSquare } from './square.js';
 export { TriangleOscillator, createTriangle } from './triangle.js';
 export { PulseOscillator, createPulse } from './pulse.js';
+export { SineOscillator, createSine } from './sine.js';
 
 // Import classes for factory
 import { SawtoothOscillator } from './sawtooth.js';
 import { SquareOscillator } from './square.js';
 import { TriangleOscillator } from './triangle.js';
 import { PulseOscillator } from './pulse.js';
+import { SineOscillator } from './sine.js';
 
 // Waveform type constants
 export const WAVEFORMS = {
   SAWTOOTH: 'sawtooth',
   SQUARE: 'square',
   TRIANGLE: 'triangle',
-  PULSE: 'pulse'
+  PULSE: 'pulse',
+  SINE: 'sine'
 };
 
 // Factory: create oscillator by type name
@@ -39,6 +42,9 @@ export function createOscillatorSync(type, sampleRate = 44100) {
     case 'triangle':
     case 'tri':
       return new TriangleOscillator(sampleRate);
+    case 'sine':
+    case 'sin':
+      return new SineOscillator(sampleRate);
     default:
       throw new Error(`Unknown oscillator type: ${type}`);
   }

@@ -9,6 +9,7 @@ import {
   SawtoothOscillator,
   SquareOscillator,
   TriangleOscillator,
+  SineOscillator,
   createOscillatorSync
 } from '../../dsp/oscillators/index.js';
 import { MoogLadderFilter, normalizedToHz } from '../../dsp/filters/index.js';
@@ -101,7 +102,7 @@ class SynthVoice {
     // Recreate if waveform changed
     const osc1Type = this.osc1.constructor.name.toLowerCase().replace('oscillator', '');
     const osc2Type = this.osc2.constructor.name.toLowerCase().replace('oscillator', '');
-    const waveformMap = { sawtooth: 'sawtooth', square: 'square', triangle: 'triangle' };
+    const waveformMap = { sawtooth: 'sawtooth', square: 'square', triangle: 'triangle', sine: 'sine' };
 
     if (waveformMap[osc1Type] !== params.osc1Waveform) {
       this.osc1 = createOscillatorSync(params.osc1Waveform, this.sampleRate);
@@ -495,11 +496,11 @@ export class JB202Engine {
   }
 
   async renderTestTone(options = {}) {
-    const { note = 'A4', duration = 1.0, sampleRate = this.sampleRate } = options;
+    const { note = 'A4', duration = 1.0, sampleRate = this.sampleRate, waveform = 'sawtooth' } = options;
     const totalSamples = Math.ceil(duration * sampleRate);
     const output = new Float32Array(totalSamples);
 
-    const osc = new SawtoothOscillator(sampleRate);
+    const osc = createOscillatorSync(waveform, sampleRate);
     osc.setFrequency(midiToFreq(noteToMidi(note)));
 
     for (let i = 0; i < totalSamples; i++) {

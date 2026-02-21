@@ -14,12 +14,12 @@
   "bass": {
     "level": { "unit": "dB", "min": -60, "max": 6, "default": 0, "hint": "output level" },
 
-    "osc1Waveform": { "unit": "choice", "options": ["sawtooth", "square", "triangle"], "default": "sawtooth", "hint": "oscillator 1 waveform" },
+    "osc1Waveform": { "unit": "choice", "options": ["sawtooth", "square", "triangle", "sine"], "default": "sawtooth", "hint": "oscillator 1 waveform" },
     "osc1Octave": { "unit": "semitones", "min": -24, "max": 24, "default": 0, "hint": "oscillator 1 octave shift" },
     "osc1Detune": { "unit": "bipolar", "min": -50, "max": 50, "default": 0, "hint": "oscillator 1 fine tune (cents)" },
     "osc1Level": { "unit": "0-100", "min": 0, "max": 100, "default": 63, "hint": "oscillator 1 level" },
 
-    "osc2Waveform": { "unit": "choice", "options": ["sawtooth", "square", "triangle"], "default": "sawtooth", "hint": "oscillator 2 waveform" },
+    "osc2Waveform": { "unit": "choice", "options": ["sawtooth", "square", "triangle", "sine"], "default": "sawtooth", "hint": "oscillator 2 waveform" },
     "osc2Octave": { "unit": "semitones", "min": -24, "max": 24, "default": 0, "hint": "oscillator 2 octave shift" },
     "osc2Detune": { "unit": "bipolar", "min": -50, "max": 50, "default": 7, "hint": "oscillator 2 fine tune (cents)" },
     "osc2Level": { "unit": "0-100", "min": 0, "max": 100, "default": 100, "hint": "oscillator 2 level" },

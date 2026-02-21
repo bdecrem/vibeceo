@@ -134,11 +134,12 @@ export const TOOLS = [
   },
   {
     name: "test_tone",
-    description: "Render a pure test tone for audio analysis. Outputs a clean saw wave with flat envelope (no ADSR shaping). Default is A440 (A4) for 1 second.",
+    description: "Render a pure test tone for audio analysis. Uses DSP oscillators IN ISOLATION — no filter, no drive, no envelope. Default is A440 sawtooth for 1 second.",
     input_schema: {
       type: "object",
       properties: {
         note: { type: "string", description: "Note name (default 'A4' = 440Hz)" },
+        waveform: { type: "string", enum: ["sawtooth", "square", "triangle", "sine"], description: "Oscillator waveform (default 'sawtooth')" },
         duration: { type: "number", description: "Duration in seconds (default 1.0)" }
       }
     }
@@ -176,11 +177,11 @@ export const TOOLS = [
         mute: { type: "boolean", description: "Mute bass (sets level to -60dB)" },
         level: { type: "number", description: "Output level in dB (-60 to +6, 0=unity gain)" },
         levelDelta: { type: "number", description: "Relative level adjustment in dB (e.g., -5 to reduce by 5dB, +3 to boost by 3dB)" },
-        osc1Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 1 waveform" },
+        osc1Waveform: { type: "string", enum: ["sawtooth", "square", "triangle", "sine"], description: "Osc 1 waveform" },
         osc1Octave: { type: "number", description: "Osc 1 octave shift in semitones (-24 to +24)" },
         osc1Detune: { type: "number", description: "Osc 1 fine tune (-50 to +50)" },
         osc1Level: { type: "number", description: "Osc 1 level 0-100" },
-        osc2Waveform: { type: "string", enum: ["sawtooth", "square", "triangle"], description: "Osc 2 waveform" },
+        osc2Waveform: { type: "string", enum: ["sawtooth", "square", "triangle", "sine"], description: "Osc 2 waveform" },
         osc2Octave: { type: "number", description: "Osc 2 octave shift in semitones (-24 to +24)" },
         osc2Detune: { type: "number", description: "Osc 2 fine tune (-50 to +50). 5-10 adds fatness" },
         osc2Level: { type: "number", description: "Osc 2 level 0-100" },

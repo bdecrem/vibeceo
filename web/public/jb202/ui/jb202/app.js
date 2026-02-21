@@ -488,7 +488,7 @@ document.addEventListener('touchend', handleKnobEnd);
 // ========================================
 
 function setupWaveformToggles() {
-    const osc1Btns = document.querySelectorAll('#osc1-saw, #osc1-square, #osc1-tri');
+    const osc1Btns = document.querySelectorAll('#osc1-saw, #osc1-square, #osc1-tri, #osc1-sine');
     osc1Btns.forEach(btn => {
         btn.addEventListener('click', () => {
             if (!engine) return;
@@ -501,7 +501,7 @@ function setupWaveformToggles() {
         });
     });
 
-    const osc2Btns = document.querySelectorAll('#osc2-saw, #osc2-square, #osc2-tri');
+    const osc2Btns = document.querySelectorAll('#osc2-saw, #osc2-square, #osc2-tri, #osc2-sine');
     osc2Btns.forEach(btn => {
         btn.addEventListener('click', () => {
             if (!engine) return;
@@ -516,10 +516,10 @@ function setupWaveformToggles() {
 }
 
 function updateWaveformUI(osc1Wave, osc2Wave) {
-    document.querySelectorAll('#osc1-saw, #osc1-square, #osc1-tri').forEach(btn => {
+    document.querySelectorAll('#osc1-saw, #osc1-square, #osc1-tri, #osc1-sine').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.wave === osc1Wave);
     });
-    document.querySelectorAll('#osc2-saw, #osc2-square, #osc2-tri').forEach(btn => {
+    document.querySelectorAll('#osc2-saw, #osc2-square, #osc2-tri, #osc2-sine').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.wave === osc2Wave);
     });
 }

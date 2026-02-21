@@ -147,11 +147,11 @@ drive.process(samples);
 
 | Parameter | Range (Engine) | Description |
 |-----------|---------------|-------------|
-| `osc1Waveform` | sawtooth/square/triangle | Oscillator 1 type |
+| `osc1Waveform` | sawtooth/square/triangle/sine | Oscillator 1 type |
 | `osc1Octave` | -24 to +24 | Oscillator 1 octave (semitones) |
 | `osc1Detune` | 0-1 (0.5 = center) | Oscillator 1 fine tune |
 | `osc1Level` | 0-1 | Oscillator 1 volume |
-| `osc2Waveform` | sawtooth/square/triangle | Oscillator 2 type |
+| `osc2Waveform` | sawtooth/square/triangle/sine | Oscillator 2 type |
 | `osc2Octave` | -24 to +24 | Oscillator 2 octave |
 | `osc2Detune` | 0-1 | Oscillator 2 fine tune |
 | `osc2Level` | 0-1 | Oscillator 2 volume |

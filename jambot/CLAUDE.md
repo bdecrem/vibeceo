@@ -253,7 +253,7 @@ This folder contains the canonical shared DSP primitives for all instruments. De
 
 | Category | Modules |
 |----------|---------|
-| **Oscillators** | `SawtoothOscillator`, `SquareOscillator`, `TriangleOscillator`, `PulseOscillator` (PolyBLEP) |
+| **Oscillators** | `SawtoothOscillator`, `SquareOscillator`, `TriangleOscillator`, `SineOscillator`, `PulseOscillator` (PolyBLEP) |
 | **Filters** | `Lowpass24Filter`, `BiquadFilter`, `MoogLadderFilter` |
 | **Envelopes** | `ADSREnvelope` |
 | **Effects** | `Drive` (soft-clip saturation) |
@@ -547,7 +547,7 @@ params/
 - `filterCutoff` (Hz): 20-16000
 - `filterResonance` (0-100): 0=clean, 100=resonant
 - `drive` (0-100): soft-clip saturation
-- `osc1Waveform`, `osc2Waveform`: sawtooth/square/triangle
+- `osc1Waveform`, `osc2Waveform`: sawtooth/square/triangle/sine
 - All ADSR envelopes (0-100): filterAttack/Decay/Sustain/Release, ampAttack/Decay/Sustain/Release
 
 **Sampler:**
