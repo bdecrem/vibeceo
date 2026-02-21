@@ -46,14 +46,6 @@
     transition: color 1.5s ease;
   }
   .section-label.visible { color: rgba(255,255,255,0.12); }
-  .step-rail {
-    display: flex; gap: 3px;
-  }
-  .step-rail .s {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: rgba(255,255,255,0.02);
-    transition: all 0.08s;
-  }
   .bar-count {
     font-size: 8px; letter-spacing: 3px; color: rgba(255,255,255,0.06);
   }
@@ -68,11 +60,11 @@
     color: rgba(255,255,255,0.05); z-index: 10;
   }
 
-  /* Decay readout — the ONE knob */
+  /* Decay readout — ghost number */
   #decay-readout {
     position: fixed; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 11px; letter-spacing: 8px;
+    transform: translate(-50%, calc(-50% + 40px));
+    font-size: 10px; letter-spacing: 8px;
     color: rgba(255,255,255,0.0);
     z-index: 10; pointer-events: none;
     transition: color 0.15s;
@@ -97,12 +89,11 @@
 
 <div id="hud">
   <div class="section-label" id="section-label"></div>
-  <div class="step-rail" id="step-rail"></div>
   <div class="bar-count" id="bar-count"></div>
 </div>
 
 <div id="title-card">NINE HUNDRED</div>
-<div id="credits">HALLMAN · JT90</div>
+<div id="credits">HALLMAN · JT90 · DITHER · AMBER</div>
 <div id="restart-zone"></div>
 
 <script type="module">
@@ -113,27 +104,20 @@ import { JT90Engine } from '/jt90/dist/machines/jt90/engine.js';
 // ══════════════════════════════════════════
 // The machine teaches you to listen.
 // One decay knob on closed hats. That's the whole composition.
+//
+// Visual concept (Dither): one horizontal line. That's it.
+// Decay drives the line's displacement. Monochrome.
+// The ONLY color is amber — and only on rimshot.
 
 const BPM = 126;
 const STEP_DUR = 60 / BPM / 4;
 
 // ══════════════════════════════════════════
-// ARRANGEMENT
+// ARRANGEMENT (Hallman)
 // ══════════════════════════════════════════
-// The track is about patience and subtlety.
-// Bar 1-8: kick + hats, decay ramp already moving
-// Bar 9-16: open hats enter — trained ears notice
-// Bar 17-24: decay gets more extreme, pattern breathes
-// Bar 25-28: rimshot appears — two hits — feels like an event
-// Bar 29-30: THE VOID — kick disappears, only hats remain
-// Bar 31-36: kick returns — you hear everything differently now
-// Bar 37-40: fade — decay narrows to nothing
-
-// CH decay automation per section (0-1 engine scale)
-// These are the 16 steps of the hat pattern. The decay value IS the music.
 
 const sections = [
-  // ── ACT I: BARE (bars 1-8) — kick and hats, decay ramp barely visible ──
+  // ACT I: BARE (bars 1-8)
   {
     bars: 4, label: '', energy: 0.05,
     voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] },
@@ -151,7 +135,7 @@ const sections = [
     }
   },
 
-  // ── ACT II: OPEN (bars 9-16) — open hats enter, decay starts swinging ──
+  // ACT II: OPEN (bars 9-16)
   {
     bars: 4, label: 'OPEN', energy: 0.15,
     voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [6,14] },
@@ -169,7 +153,7 @@ const sections = [
     }
   },
 
-  // ── ACT III: BREATHE (bars 17-24) — decay gets wider, pattern breathes ──
+  // ACT III: BREATHE (bars 17-24)
   {
     bars: 4, label: 'BREATHE', energy: 0.35,
     voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [6,14] },
@@ -187,7 +171,7 @@ const sections = [
     }
   },
 
-  // ── ACT IV: RIMSHOT (bars 25-28) — two rimshot hits, maximum contrast ──
+  // ACT IV: RIMSHOT (bars 25-28)
   {
     bars: 4, label: 'RIMSHOT', energy: 0.6,
     voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [6,14], rimshot: [4,12] },
@@ -197,7 +181,7 @@ const sections = [
     }
   },
 
-  // ── ACT V: THE VOID (bars 29-30) — kick disappears ──
+  // ACT V: THE VOID (bars 29-30)
   {
     bars: 2, label: 'VOID', energy: 0.15,
     voices: { ch: [0,2,4,6,8,10,12,14], oh: [6,14] },
@@ -207,7 +191,7 @@ const sections = [
     }
   },
 
-  // ── ACT VI: RETURN (bars 31-36) — kick returns, everything sounds different ──
+  // ACT VI: RETURN (bars 31-36)
   {
     bars: 2, label: 'RETURN', energy: 0.3,
     voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14], oh: [6,14] },
@@ -225,7 +209,7 @@ const sections = [
     }
   },
 
-  // ── ACT VII: FADE (bars 37-40) — decay narrows, silence approaches ──
+  // ACT VII: FADE (bars 37-40)
   {
     bars: 4, label: 'FADE', energy: 0.08,
     voices: { kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] },
@@ -256,17 +240,14 @@ window.addEventListener('resize', resize);
 // ══════════════════════════════════════════
 // VISUAL STATE
 // ══════════════════════════════════════════
-// This viz is about RESTRAINT. The less there is, the more you see.
-// Everything maps to one parameter: hat decay.
 
 const V = {
-  decay: 0.15,       // current hat decay (0-1)
+  decay: 0.15,
   smoothDecay: 0.15,
-  prevDecay: 0.15,
   energy: 0.05,
   targetEnergy: 0.05,
   kickHit: 0,
-  rimHit: 0,
+  rimHit: 0,       // the ONE color moment
   ohHit: 0,
   chHit: 0,
   playing: false,
@@ -277,219 +258,159 @@ const V = {
   bar: 0,
 };
 
-// ══════════════════════════════════════════
-// COLOR: monochrome with warmth
-// ══════════════════════════════════════════
-// Low decay = cool grey. High decay = warm white-amber.
-// The color shift is so subtle you barely notice — until you do.
-
-function decayToRGB(d, brightness = 1) {
-  // d: 0-1 decay value
-  // 0 = dim cool grey (140, 140, 150)
-  // 0.5 = neutral white (200, 195, 190)
-  // 1 = warm amber-white (255, 230, 200)
-  const b = brightness;
-  let r, g, bl;
-  if (d < 0.5) {
-    const t = d * 2;
-    r = (100 + t * 100) * b;
-    g = (100 + t * 95) * b;
-    bl = (110 + t * 80) * b;
-  } else {
-    const t = (d - 0.5) * 2;
-    r = (200 + t * 55) * b;
-    g = (195 - t * 10) * b;  // slightly less green at top
-    bl = (190 - t * 40) * b; // less blue = warmer
-  }
-  return [Math.min(255, Math.floor(r)), Math.min(255, Math.floor(g)), Math.min(255, Math.floor(bl))];
-}
+// History: store last 128 decay values to draw the line as a waveform
+const HISTORY_LEN = 128;
+const decayHistory = new Float32Array(HISTORY_LEN);
+let historyIdx = 0;
 
 // ══════════════════════════════════════════
-// GEOMETRY: minimal, decay-driven
+// THE LINE
 // ══════════════════════════════════════════
+// One horizontal line across the screen.
+// Each point's Y-displacement = that moment's decay value.
+// The line IS the music. Nothing else.
 
-// ── 1. CENTER CIRCLE: decay controls radius ──
-// The one visual that's always there. A single circle, breathing with decay.
-function drawBreathCircle() {
-  const d = V.smoothDecay;
-  const [r, g, b] = decayToRGB(d);
+function drawTheLine() {
   const energy = V.energy;
+  const baseAlpha = 0.12 + energy * 0.25;
 
-  // Radius: small at low decay, large at high
-  const minR = 8;
-  const maxR = Math.min(W, H) * 0.3;
-  const radius = minR + d * d * (maxR - minR); // quadratic — subtle at low, dramatic at high
+  // The line spans the full width
+  // Each segment maps to a history entry
+  const segW = W / HISTORY_LEN;
 
-  // Alpha: always faint, slightly stronger with energy
-  const alpha = 0.015 + energy * 0.03 + d * 0.02;
+  // White line — #e0e0e0 at base
+  const r = 224, g = 224, b = 224;
 
-  // Soft glow
-  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-  grad.addColorStop(0, `rgba(${r},${g},${b},${alpha * 2})`);
-  grad.addColorStop(0.5, `rgba(${r},${g},${b},${alpha})`);
-  grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-  ctx.fillStyle = grad;
+  // Main trace
   ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-  ctx.fill();
+  for (let i = 0; i < HISTORY_LEN; i++) {
+    // Read from history ring buffer
+    const idx = (historyIdx + i) % HISTORY_LEN;
+    const d = decayHistory[idx];
 
-  // Thin ring at the edge
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-  ctx.strokeStyle = `rgba(${r},${g},${b},${alpha * 1.5})`;
-  ctx.lineWidth = 0.5;
+    const x = i * segW;
+    // Displacement: decay 0 = flat at center, decay 1 = full swing
+    // Alternate positive/negative for waveform feel
+    const swing = d * d * H * 0.35; // quadratic — subtle at low, dramatic at high
+    const phase = Math.sin(i * 0.15 + V.globalStep * 0.08);
+    const y = cy + phase * swing;
+
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = `rgba(${r},${g},${b},${baseAlpha})`;
+  ctx.lineWidth = 0.8 + energy * 0.7;
+  ctx.stroke();
+
+  // Subtle glow duplicate — wider, fainter
+  ctx.strokeStyle = `rgba(${r},${g},${b},${baseAlpha * 0.15})`;
+  ctx.lineWidth = 3 + energy * 4;
   ctx.stroke();
 }
 
-// ── 2. STEP TICKS: 16 marks around the circle ──
-// Each tick's length = that step's decay value. You SEE the pattern.
-const stepDecays = new Float32Array(16); // stores last-played decay per step
+// ══════════════════════════════════════════
+// KICK: subtle vertical displacement pulse
+// ══════════════════════════════════════════
+// The line jumps slightly on each kick. Not a separate element —
+// just the existing line getting nudged.
+let kickDisplace = 0;
 
-function drawStepTicks() {
-  const [r, g, b] = decayToRGB(V.smoothDecay);
-  const energy = V.energy;
-  const baseRadius = 8 + V.smoothDecay * V.smoothDecay * Math.min(W, H) * 0.3;
+// ══════════════════════════════════════════
+// RIMSHOT: THE ONE COLOR
+// ══════════════════════════════════════════
+// Amber. Only on rimshot. The only non-white element in the piece.
+// A horizontal slash that appears and fades. Lightning in a calm sky.
 
-  for (let i = 0; i < 16; i++) {
-    const angle = (i / 16) * Math.PI * 2 - Math.PI / 2; // 12 o'clock start
-    const d = stepDecays[i];
-    const tickLen = 4 + d * 60; // short tick at 0, long at 1
-    const isCurrent = i === V.step;
+function drawRimshotFlash() {
+  if (V.rimHit < 0.005) return;
 
-    const x1 = cx + Math.cos(angle) * (baseRadius + 6);
-    const y1 = cy + Math.sin(angle) * (baseRadius + 6);
-    const x2 = cx + Math.cos(angle) * (baseRadius + 6 + tickLen);
-    const y2 = cy + Math.sin(angle) * (baseRadius + 6 + tickLen);
+  // Amber: rgb(255, 180, 80)
+  const alpha = V.rimHit * 0.5;
+  const spread = W * (0.3 + V.rimHit * 0.7);
 
-    const alpha = isCurrent ? (0.15 + energy * 0.3) : (0.02 + d * 0.06);
-
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
-    ctx.lineWidth = isCurrent ? 1.5 : 0.5;
-    ctx.stroke();
-
-    // Current step: small dot at end
-    if (isCurrent) {
-      ctx.beginPath();
-      ctx.arc(x2, y2, 1.5 + d * 2, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${r},${g},${b},${alpha * 0.8})`;
-      ctx.fill();
-    }
-  }
-}
-
-// ── 3. KICK PULSE: subtle expansion of the center ──
-function drawKickPulse() {
-  if (V.kickHit < 0.01) return;
-  const [r, g, b] = decayToRGB(V.smoothDecay, 0.6);
-  const radius = V.kickHit * 60;
-  const alpha = V.kickHit * 0.06;
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-  ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
-  ctx.lineWidth = 1 + V.kickHit * 2;
-  ctx.stroke();
-}
-
-// ── 4. RIMSHOT FLASH: a single horizontal line across the screen ──
-// It appears so rarely that when it does, it's an EVENT.
-function drawRimshotLine() {
-  if (V.rimHit < 0.01) return;
-  const [r, g, b] = decayToRGB(0.8, 1.2); // always warm
-  const alpha = V.rimHit * 0.35;
-  const spread = W * V.rimHit;
+  // The amber line — same Y as center, cuts across
   ctx.beginPath();
   ctx.moveTo(cx - spread / 2, cy);
   ctx.lineTo(cx + spread / 2, cy);
-  ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+  ctx.strokeStyle = `rgba(255,180,80,${alpha})`;
   ctx.lineWidth = 1;
   ctx.stroke();
-  // Glow
-  ctx.strokeStyle = `rgba(${r},${g},${b},${alpha * 0.3})`;
-  ctx.lineWidth = 6;
+
+  // Warm glow
+  ctx.strokeStyle = `rgba(255,160,60,${alpha * 0.25})`;
+  ctx.lineWidth = 8 + V.rimHit * 16;
+  ctx.stroke();
+
+  // Full-screen amber wash — barely there
+  const washAlpha = V.rimHit * 0.03;
+  ctx.fillStyle = `rgba(255,180,80,${washAlpha})`;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ══════════════════════════════════════════
+// OH: the line exhales — brief widening of the glow
+// ══════════════════════════════════════════
+function drawOHBreath() {
+  if (V.ohHit < 0.01) return;
+  // Redraw the line path with extra glow width
+  const segW = W / HISTORY_LEN;
+  ctx.beginPath();
+  for (let i = 0; i < HISTORY_LEN; i++) {
+    const idx = (historyIdx + i) % HISTORY_LEN;
+    const d = decayHistory[idx];
+    const x = i * segW;
+    const swing = d * d * H * 0.35;
+    const phase = Math.sin(i * 0.15 + V.globalStep * 0.08);
+    const y = cy + phase * swing;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = `rgba(200,200,210,${V.ohHit * 0.04})`;
+  ctx.lineWidth = 10 + V.ohHit * 20;
   ctx.stroke();
 }
 
-// ── 5. OH HALO: soft expanding ring, infrequent ──
-const ohRings = [];
-class OHRing {
-  constructor() {
-    this.r = 20;
-    this.maxR = 80 + Math.random() * 120;
-    this.life = 1;
-  }
-  update() {
-    this.r += (this.maxR - this.r) * 0.03;
-    this.life *= 0.975;
-    return this.life > 0.01;
-  }
-  draw() {
-    const [r, g, b] = decayToRGB(V.smoothDecay, 0.5);
-    ctx.beginPath();
-    ctx.arc(cx, cy, this.r, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(${r},${g},${b},${this.life * 0.08})`;
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
-  }
-}
-
-// ── 6. VOID EMBERS: when kick disappears, faint particles drift up ──
+// ══════════════════════════════════════════
+// VOID EMBERS: when kick disappears, faint dots drift from the line
+// ══════════════════════════════════════════
 const embers = [];
 class Ember {
   constructor() {
-    this.x = cx + (Math.random() - 0.5) * 100;
-    this.y = cy + 30;
-    this.vy = -(0.2 + Math.random() * 0.6);
-    this.vx = (Math.random() - 0.5) * 0.3;
+    this.x = Math.random() * W;
+    this.y = cy + (Math.random() - 0.5) * 20;
+    this.vy = -(0.15 + Math.random() * 0.4);
+    this.vx = (Math.random() - 0.5) * 0.2;
     this.life = 1;
-    this.size = 0.5 + Math.random() * 1.5;
+    this.size = 0.5 + Math.random() * 1;
   }
   update() {
     this.x += this.vx;
     this.y += this.vy;
-    this.life -= 0.008;
+    this.life -= 0.006;
     return this.life > 0;
   }
   draw() {
-    const [r, g, b] = decayToRGB(V.smoothDecay, 0.4);
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${r},${g},${b},${this.life * 0.15})`;
+    ctx.fillStyle = `rgba(180,180,190,${this.life * 0.1})`;
     ctx.fill();
   }
 }
 
 // ══════════════════════════════════════════
-// STEP DOTS HUD
+// STEP POSITION MARKER
 // ══════════════════════════════════════════
-const railEl = document.getElementById('step-rail');
-for (let i = 0; i < 16; i++) {
-  const s = document.createElement('div');
-  s.className = 's';
-  railEl.appendChild(s);
-}
-const stepDots = railEl.querySelectorAll('.s');
+// A single faint vertical hairline showing current position on the line
 
-function updateDots(stepIdx) {
-  const d = V.decay;
-  const [r, g, bl] = decayToRGB(d);
-  stepDots.forEach((dot, i) => {
-    if (i === stepIdx) {
-      const size = 4 + d * 8;
-      const alpha = 0.2 + d * 0.5;
-      dot.style.width = size + 'px';
-      dot.style.height = size + 'px';
-      dot.style.background = `rgba(${r},${g},${bl},${alpha})`;
-      dot.style.boxShadow = d > 0.3 ? `0 0 ${4 + d * 8}px rgba(${r},${g},${bl},${alpha * 0.4})` : 'none';
-    } else {
-      dot.style.width = '6px';
-      dot.style.height = '6px';
-      dot.style.background = 'rgba(255,255,255,0.02)';
-      dot.style.boxShadow = 'none';
-    }
-  });
+function drawPositionMarker() {
+  const x = ((V.globalStep % HISTORY_LEN) / HISTORY_LEN) * W;
+  const alpha = 0.03 + V.energy * 0.04;
+  ctx.beginPath();
+  ctx.moveTo(x, cy - 30);
+  ctx.lineTo(x, cy + 30);
+  ctx.strokeStyle = `rgba(224,224,224,${alpha})`;
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
 }
 
 // ══════════════════════════════════════════
@@ -508,59 +429,55 @@ function render() {
   V.smoothDecay += (V.decay - V.smoothDecay) * 0.25;
 
   // Decay impulses
-  V.kickHit *= 0.9;
-  V.rimHit *= 0.85;
-  V.ohHit *= 0.94;
-  V.chHit *= 0.9;
+  V.kickHit *= 0.88;
+  V.rimHit *= 0.82;
+  V.ohHit *= 0.93;
+  V.chHit *= 0.88;
+  kickDisplace *= 0.85;
 
-  // ── BACKGROUND: near-black, very slow fade ──
-  const fade = V.noKick ? 0.025 : 0.05;
+  // ── BACKGROUND: near-black, slow fade ──
+  // In the void, fade slower — let traces linger
+  const fade = V.noKick ? 0.02 : 0.04;
   ctx.fillStyle = `rgba(5,5,5,${fade})`;
   ctx.fillRect(0, 0, W, H);
 
   if (!V.playing) {
-    // Idle: barely-there breathing dot
-    const breath = Math.sin(frame * 0.008) * 0.5 + 0.5;
-    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 30);
-    grad.addColorStop(0, `rgba(150,145,140,${0.01 + breath * 0.015})`);
-    grad.addColorStop(1, 'rgba(150,145,140,0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(cx - 30, cy - 30, 60, 60);
+    // Idle: a single flat line, barely visible, breathing
+    const breath = Math.sin(frame * 0.006) * 0.5 + 0.5;
+    const alpha = 0.02 + breath * 0.02;
+    ctx.beginPath();
+    ctx.moveTo(W * 0.3, cy);
+    ctx.lineTo(W * 0.7, cy);
+    ctx.strokeStyle = `rgba(200,200,200,${alpha})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
     return;
   }
 
-  // ═══ LAYERS (back to front) ═══
+  // ═══ LAYERS ═══
 
-  // 1. Center breath circle
-  drawBreathCircle();
+  // 1. OH breath glow (behind the line)
+  drawOHBreath();
 
-  // 2. Step ticks around circle
-  drawStepTicks();
+  // 2. THE LINE — the only visual that matters
+  drawTheLine();
 
-  // 3. Kick pulse
-  drawKickPulse();
+  // 3. Position marker
+  drawPositionMarker();
 
-  // 4. OH rings
-  for (let i = ohRings.length - 1; i >= 0; i--) {
-    ohRings[i].draw();
-    if (!ohRings[i].update()) ohRings.splice(i, 1);
-  }
-
-  // 5. Void embers
-  if (V.noKick && frame % 4 === 0) {
-    embers.push(new Ember());
-  }
+  // 4. Void embers
+  if (V.noKick && frame % 5 === 0) embers.push(new Ember());
   for (let i = embers.length - 1; i >= 0; i--) {
     embers[i].draw();
     if (!embers[i].update()) embers.splice(i, 1);
   }
 
-  // 6. Rimshot line (on top — it's rare and sacred)
-  drawRimshotLine();
+  // 5. Rimshot flash — THE color moment (on top of everything)
+  drawRimshotFlash();
 
-  // Decay readout — ghost of the number, barely visible
+  // Decay readout
   const dPct = Math.round(V.decay * 100);
-  const readoutAlpha = 0.04 + V.energy * 0.06;
+  const readoutAlpha = 0.03 + V.energy * 0.04;
   decayReadout.style.color = `rgba(255,255,255,${readoutAlpha})`;
   decayReadout.textContent = String(dPct).padStart(3, ' ');
 }
@@ -568,7 +485,7 @@ function render() {
 render();
 
 // ══════════════════════════════════════════
-// PLAYBACK ENGINE
+// PLAYBACK ENGINE (Hallman)
 // ══════════════════════════════════════════
 let engine = null;
 let playing = false;
@@ -587,19 +504,14 @@ function scheduleStep(time) {
   const section = getSection();
   const stepInPattern = currentStep % 16;
 
-  // Apply hat decay automation
   const autoDecay = section.auto?.['ch.decay'];
   const decayVal = autoDecay ? autoDecay[stepInPattern] : 0.15;
 
-  // Schedule triggers
   const delay = Math.max(0, (time - engine.context.currentTime) * 1000);
 
-  // Set decay before triggering
   setTimeout(() => {
-    // Set hat decay
     engine.setVoiceParameter('ch', 'decay', decayVal);
 
-    // Trigger voices
     const voices = section.voices;
     for (const [voiceId, steps] of Object.entries(voices)) {
       if (steps.includes(stepInPattern)) {
@@ -613,16 +525,21 @@ function scheduleStep(time) {
     V.globalStep++;
     V.noKick = !voices.kick || voices.kick.length === 0;
     V.targetEnergy = section.energy;
-    stepDecays[stepInPattern] = decayVal;
+
+    // Push decay into history ring buffer
+    decayHistory[historyIdx] = decayVal;
+    historyIdx = (historyIdx + 1) % HISTORY_LEN;
 
     // Hits
-    if (voices.kick?.includes(stepInPattern)) V.kickHit = 1;
+    if (voices.kick?.includes(stepInPattern)) {
+      V.kickHit = 1;
+      kickDisplace = 4 + V.energy * 8;
+    }
     if (voices.rimshot?.includes(stepInPattern)) V.rimHit = 1;
     if (voices.oh?.includes(stepInPattern)) V.ohHit = 1;
     if (voices.ch?.includes(stepInPattern)) V.chHit = 1;
-    if (voices.oh?.includes(stepInPattern)) ohRings.push(new OHRing());
 
-    // Section label — fade in on change, then fade out
+    // Section label
     if (section.label && section.label !== V.sectionLabel) {
       sectionLabelEl.textContent = section.label;
       sectionLabelEl.classList.add('visible');
@@ -631,7 +548,6 @@ function scheduleStep(time) {
     V.sectionLabel = section.label;
 
     // HUD
-    updateDots(stepInPattern);
     document.getElementById('bar-count').textContent =
       `${currentBar + 1} / ${totalBars}`;
   }, delay);
@@ -667,7 +583,6 @@ async function start() {
     await engine.loadSamples('/jt90/samples');
     engine._ensureVoices();
 
-    // Connect audio output
     const bufferSize = 1024;
     const scriptNode = audioCtx.createScriptProcessor(bufferSize, 0, 2);
     const VOICE_IDS = ['kick', 'snare', 'clap', 'rimshot', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'crash', 'ride'];
@@ -682,7 +597,6 @@ async function start() {
             sample += voice.processSample();
           }
         }
-        // Soft limit
         sample = Math.tanh(sample * 0.7) / Math.tanh(0.7);
         sample *= engine.masterVolume;
         outputL[i] = sample;
@@ -691,9 +605,8 @@ async function start() {
     };
     scriptNode.connect(audioCtx.destination);
 
-    // Set initial voice params
     engine.setVoiceParameter('kick', 'decay', 0.4);
-    engine.setVoiceParameter('kick', 'tune', -300); // cents: -3 semitones
+    engine.setVoiceParameter('kick', 'tune', -300);
     engine.setVoiceParameter('kick', 'level', 0.8);
     engine.setVoiceParameter('ch', 'level', 0.7);
     engine.setVoiceParameter('ch', 'tone', 0.4);
@@ -701,18 +614,16 @@ async function start() {
     engine.setVoiceParameter('oh', 'level', 0.5);
     engine.setVoiceParameter('rimshot', 'decay', 0.15);
     engine.setVoiceParameter('rimshot', 'level', 0.45);
-    engine.setVoiceParameter('rimshot', 'tune', -700); // low rimshot
+    engine.setVoiceParameter('rimshot', 'tune', -700);
   }
 
   if (engine.context.state === 'suspended') await engine.context.resume();
 
-  // Reset state
   currentStep = 0; currentSectionIdx = 0; currentBar = 0;
-  V.decay = 0.15; V.smoothDecay = 0.15; V.prevDecay = 0.15;
+  V.decay = 0.15; V.smoothDecay = 0.15;
   V.playing = true; V.globalStep = 0;
-  stepDecays.fill(0);
-  kickWavesArr?.splice(0);
-  ohRings.length = 0;
+  decayHistory.fill(0);
+  historyIdx = 0;
   embers.length = 0;
 
   nextStepTime = engine.context.currentTime + 0.05;
@@ -731,11 +642,6 @@ function stop() {
   document.getElementById('bar-count').textContent = '';
   decayReadout.style.color = 'rgba(255,255,255,0)';
   document.getElementById('restart-zone').style.display = 'block';
-  stepDots.forEach(d => {
-    d.style.width = '6px'; d.style.height = '6px';
-    d.style.background = 'rgba(255,255,255,0.02)';
-    d.style.boxShadow = 'none';
-  });
 }
 
 document.getElementById('play-btn').addEventListener('click', () => {
