@@ -1353,6 +1353,8 @@ Must fit 80x24 terminal. Currently 21 lines + prompt.
 
 **Daily development**: Edit `jambot.js` / `ui.tsx`, commit/push. No builds needed.
 
+**Tool health tracking**: Keep current tool validation status in `TOOLING-STATUS.md` (in this `jambot/` folder). Update it whenever testing changes confidence in a tool area.
+
 **Cutting a release**: See RELEASE-ENGINEERING.md.
 
 ## Code Review
