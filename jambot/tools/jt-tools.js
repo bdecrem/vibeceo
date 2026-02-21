@@ -56,11 +56,6 @@ const jtTools = {
 
     session.jt10Pattern = normalized;
 
-    // Also update the node's pattern
-    if (session._nodes?.jt10) {
-      session._nodes.jt10.setPattern(normalized);
-    }
-
     const activeSteps = normalized.filter(s => s.gate).length;
     return `JT10: ${activeSteps} notes programmed`;
   },
@@ -73,10 +68,10 @@ const jtTools = {
 
     // Mute/unmute
     if (input.mute === true) {
-      session._nodes?.jt10?.setParam('lead.level', 0);
+      session.set('jt10.lead.level', 0);
       tweaks.push('muted');
     } else if (input.mute === false) {
-      session._nodes?.jt10?.setParam('lead.level', 0.8);
+      session.set('jt10.lead.level', 0.8);
       tweaks.push('unmuted');
     }
 
@@ -113,7 +108,7 @@ const jtTools = {
           value = toEngine(value, def);
         }
 
-        session._nodes?.jt10?.setParam(`lead.${engineKey}`, value);
+        session.set(`jt10.lead.${engineKey}`, value);
         tweaks.push(`${inputKey}=${input[inputKey]}`);
       }
     }
@@ -145,11 +140,6 @@ const jtTools = {
 
     session.jt30Pattern = normalized;
 
-    // Also update the node's pattern
-    if (session._nodes?.jt30) {
-      session._nodes.jt30.setPattern(normalized);
-    }
-
     const activeSteps = normalized.filter(s => s.gate).length;
     return `JT30: ${activeSteps} notes programmed`;
   },
@@ -162,10 +152,10 @@ const jtTools = {
 
     // Mute/unmute
     if (input.mute === true) {
-      session._nodes?.jt30?.setParam('bass.level', 0);
+      session.set('jt30.bass.level', 0);
       tweaks.push('muted');
     } else if (input.mute === false) {
-      session._nodes?.jt30?.setParam('bass.level', 1.0);
+      session.set('jt30.bass.level', 1.0);
       tweaks.push('unmuted');
     }
 
@@ -192,7 +182,7 @@ const jtTools = {
           value = toEngine(value, def);
         }
 
-        session._nodes?.jt30?.setParam(`bass.${engineKey}`, value);
+        session.set(`jt30.bass.${engineKey}`, value);
         tweaks.push(`${inputKey}=${input[inputKey]}`);
       }
     }
@@ -255,11 +245,6 @@ const jtTools = {
       }
     }
 
-    // Also update the node's pattern
-    if (session._nodes?.jt90) {
-      session._nodes.jt90.setPattern(session.jt90Pattern);
-    }
-
     if (added.length === 0) {
       return 'JT90: no pattern changes';
     }
@@ -282,10 +267,10 @@ const jtTools = {
 
     // Mute/unmute
     if (input.mute === true) {
-      session._nodes?.jt90?.setParam(`${voice}.level`, 0);
+      session.set(`jt90.${voice}.level`, 0);
       tweaks.push('muted');
     } else if (input.mute === false) {
-      session._nodes?.jt90?.setParam(`${voice}.level`, 1.0);
+      session.set(`jt90.${voice}.level`, 1.0);
       tweaks.push('unmuted');
     }
 
@@ -293,7 +278,7 @@ const jtTools = {
     if (input.level !== undefined) {
       const def = getParamDef('jt90', voice, 'level');
       const value = def ? toEngine(input.level, def) : input.level / 100;
-      session._nodes?.jt90?.setParam(`${voice}.level`, value);
+      session.set(`jt90.${voice}.level`, value);
       tweaks.push(`level=${input.level}`);
     }
 
@@ -301,7 +286,7 @@ const jtTools = {
     if (input.tune !== undefined) {
       const def = getParamDef('jt90', voice, 'tune');
       const value = def ? toEngine(input.tune, def) : input.tune;
-      session._nodes?.jt90?.setParam(`${voice}.tune`, value);
+      session.set(`jt90.${voice}.tune`, value);
       tweaks.push(`tune=${input.tune}c`);
     }
 
@@ -309,7 +294,7 @@ const jtTools = {
     if (input.decay !== undefined) {
       const def = getParamDef('jt90', voice, 'decay');
       const value = def ? toEngine(input.decay, def) : input.decay / 100;
-      session._nodes?.jt90?.setParam(`${voice}.decay`, value);
+      session.set(`jt90.${voice}.decay`, value);
       tweaks.push(`decay=${input.decay}`);
     }
 
@@ -317,7 +302,7 @@ const jtTools = {
     if (input.attack !== undefined && voice === 'kick') {
       const def = getParamDef('jt90', voice, 'attack');
       const value = def ? toEngine(input.attack, def) : input.attack / 100;
-      session._nodes?.jt90?.setParam(`${voice}.attack`, value);
+      session.set(`jt90.${voice}.attack`, value);
       tweaks.push(`attack=${input.attack}`);
     }
 
@@ -325,7 +310,7 @@ const jtTools = {
     if (input.tone !== undefined) {
       const def = getParamDef('jt90', voice, 'tone');
       const value = def ? toEngine(input.tone, def) : input.tone / 100;
-      session._nodes?.jt90?.setParam(`${voice}.tone`, value);
+      session.set(`jt90.${voice}.tone`, value);
       tweaks.push(`tone=${input.tone}`);
     }
 
@@ -333,7 +318,7 @@ const jtTools = {
     if (input.snappy !== undefined && voice === 'snare') {
       const def = getParamDef('jt90', voice, 'snappy');
       const value = def ? toEngine(input.snappy, def) : input.snappy / 100;
-      session._nodes?.jt90?.setParam(`${voice}.snappy`, value);
+      session.set(`jt90.${voice}.snappy`, value);
       tweaks.push(`snappy=${input.snappy}`);
     }
 

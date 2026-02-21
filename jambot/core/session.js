@@ -409,6 +409,12 @@ export function createSession(config = {}) {
       }
     },
 
+    // JT90 swing and accent level
+    get jt90Swing() { return jt90Node.getSwing(); },
+    set jt90Swing(v) { jt90Node.setSwing(v); },
+    get jt90AccentLevel() { return jt90Node.getAccentLevel(); },
+    set jt90AccentLevel(v) { jt90Node.setAccentLevel(v); },
+
     // Mixer (placeholder)
     mixer: {
       sends: {},

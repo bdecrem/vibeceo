@@ -191,8 +191,8 @@ const songTools = {
         params: JSON.parse(JSON.stringify(session.jt90Params || {})),
         automation: getAutomationForInstrument(session, 'jt90'),
         channelInserts: getInsertsForInstrument(session, 'jt90'),
-        swing: session._nodes?.jt90?.getSwing() || 0,
-        accentLevel: session._nodes?.jt90?.getAccentLevel() || 1.0,
+        swing: session.jt90Swing || 0,
+        accentLevel: session.jt90AccentLevel || 1.0,
       };
       if (!session.currentPattern) session.currentPattern = {};
       session.currentPattern.jt90 = patternName;
@@ -304,9 +304,8 @@ const songTools = {
       if (!saved) return `No jt90 pattern "${patternName}" found`;
       session.jt90Pattern = JSON.parse(JSON.stringify(saved.pattern));
       if (saved.params) session.jt90Params = JSON.parse(JSON.stringify(saved.params));
-      // swing/accentLevel are JT90-specific (no session-level accessor yet)
-      if (saved.swing !== undefined) session._nodes?.jt90?.setSwing(saved.swing);
-      if (saved.accentLevel !== undefined) session._nodes?.jt90?.setAccentLevel(saved.accentLevel);
+      if (saved.swing !== undefined) session.jt90Swing = saved.swing;
+      if (saved.accentLevel !== undefined) session.jt90AccentLevel = saved.accentLevel;
       clearNodeAutomation(session, 'jt90');
       restoreAutomation(session, 'jt90', saved.automation);
       clearInsertsForInstrument(session, 'jt90');
