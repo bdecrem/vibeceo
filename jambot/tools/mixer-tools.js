@@ -22,31 +22,65 @@ const EFFECT_NODE_CLASSES = {
 // Helper to ensure mixer state exists
 function ensureMixerState(session) {
   if (!session.mixer) {
-    session.mixer = { channelInserts: {}, masterInserts: [], masterVolume: 0.8, effectChains: {} };
+    session.mixer = { masterVolume: 0.8, effectChains: {} };
   }
 }
 
 const mixerTools = {
   /**
    * Add channel insert (EQ, filter, etc.) - replaces existing insert of same type
+   * Routes through effectChains for actual DSP processing at render time.
    */
   add_channel_insert: async (input, session, context) => {
-    const { channel, effect, preset, params } = input;
+    const { channel, effect, preset, params: userParams } = input;
+
+    const NodeClass = EFFECT_NODE_CLASSES[effect];
+    if (!NodeClass) {
+      return `Error: Unknown effect type "${effect}". Valid types: ${Object.keys(EFFECT_NODE_CLASSES).join(', ')}`;
+    }
 
     ensureMixerState(session);
-    if (!session.mixer.channelInserts) session.mixer.channelInserts = {};
-    if (!session.mixer.channelInserts[channel]) session.mixer.channelInserts[channel] = [];
+    if (!session.mixer.effectChains) session.mixer.effectChains = {};
+    if (!session.mixer.effectChains[channel]) session.mixer.effectChains[channel] = [];
 
-    // Remove existing insert of the same type (replace, don't duplicate)
-    session.mixer.channelInserts[channel] = session.mixer.channelInserts[channel].filter(i => i.type !== effect);
+    const chain = session.mixer.effectChains[channel];
 
-    session.mixer.channelInserts[channel].push({
+    // Remove existing effect of same type (replace, don't duplicate)
+    const existing = chain.filter(e => e.type === effect);
+    for (const e of existing) {
+      session.params.unregister(`fx.${channel}.${e.id}`);
+    }
+    const updatedChain = chain.filter(e => e.type !== effect);
+    session.mixer.effectChains[channel] = updatedChain;
+
+    // Create new effect node
+    const effectCount = updatedChain.filter(e => e.type === effect).length;
+    const effectId = `${effect}${effectCount + 1}`;
+    const node = new NodeClass(effectId);
+
+    // Apply preset first, then user params on top
+    if (preset && typeof node.loadPreset === 'function') {
+      node.loadPreset(preset);
+    }
+    if (userParams) {
+      for (const [key, value] of Object.entries(userParams)) {
+        if (value !== undefined) node.setParam(key, value);
+      }
+    }
+
+    node.validateInterface();
+
+    const paramPath = `fx.${channel}.${effectId}`;
+    session.params.register(paramPath, node);
+
+    updatedChain.push({
+      id: effectId,
       type: effect,
-      preset,
-      params: params || {}
+      params: node.getParams(),
+      _node: node,
     });
 
-    return `Added ${effect}${preset ? ` (${preset})` : ''} insert to ${channel} channel`;
+    return `Added ${effect}${preset ? ` (${preset})` : ''} insert to ${channel} (addressable as ${paramPath})`;
   },
 
   /**
@@ -55,38 +89,48 @@ const mixerTools = {
   remove_channel_insert: async (input, session, context) => {
     const { channel, effect } = input;
 
-    if (!session.mixer.channelInserts?.[channel]) {
-      return `No inserts on ${channel} channel`;
+    if (!session.mixer?.effectChains?.[channel]) {
+      return `No inserts on ${channel}`;
     }
 
+    const chain = session.mixer.effectChains[channel];
+
     if (effect === 'all' || !effect) {
-      // Remove all inserts for this channel
-      const count = session.mixer.channelInserts[channel].length;
-      delete session.mixer.channelInserts[channel];
-      return `Removed all ${count} insert(s) from ${channel} channel`;
-    } else {
-      // Remove specific effect type
-      const before = session.mixer.channelInserts[channel].length;
-      session.mixer.channelInserts[channel] = session.mixer.channelInserts[channel].filter(i => i.type !== effect);
-      const removed = before - session.mixer.channelInserts[channel].length;
-      if (removed === 0) {
-        return `No ${effect} insert found on ${channel} channel`;
+      for (const e of chain) {
+        session.params.unregister(`fx.${channel}.${e.id}`);
       }
-      return `Removed ${effect} insert from ${channel} channel`;
+      const count = chain.length;
+      delete session.mixer.effectChains[channel];
+      return `Removed all ${count} insert(s) from ${channel}`;
+    } else {
+      const toRemove = chain.filter(e => e.type === effect || e.id === effect);
+      if (toRemove.length === 0) {
+        return `No ${effect} insert found on ${channel}`;
+      }
+      for (const e of toRemove) {
+        session.params.unregister(`fx.${channel}.${e.id}`);
+      }
+      session.mixer.effectChains[channel] = chain.filter(e => e.type !== effect && e.id !== effect);
+      if (session.mixer.effectChains[channel].length === 0) {
+        delete session.mixer.effectChains[channel];
+      }
+      return `Removed ${effect} insert from ${channel}`;
     }
   },
 
   /**
    * Add sidechain ducking (bass ducks on kick, etc.)
+   * Note: ducker DSP is not yet implemented — this stores the config for future processing.
    */
   add_sidechain: async (input, session, context) => {
     const { target, trigger, amount } = input;
 
     ensureMixerState(session);
-    if (!session.mixer.channelInserts) session.mixer.channelInserts = {};
-    if (!session.mixer.channelInserts[target]) session.mixer.channelInserts[target] = [];
+    if (!session.mixer.effectChains) session.mixer.effectChains = {};
+    if (!session.mixer.effectChains[target]) session.mixer.effectChains[target] = [];
 
-    session.mixer.channelInserts[target].push({
+    session.mixer.effectChains[target].push({
+      id: `ducker${session.mixer.effectChains[target].filter(e => e.type === 'ducker').length + 1}`,
       type: 'ducker',
       params: {
         trigger,
@@ -99,20 +143,47 @@ const mixerTools = {
 
   /**
    * Add effect to master bus
+   * Routes through effectChains['master'] for actual DSP processing at render time.
    */
   add_master_insert: async (input, session, context) => {
-    const { effect, preset, params } = input;
+    const { effect, preset, params: userParams } = input;
+
+    const NodeClass = EFFECT_NODE_CLASSES[effect];
+    if (!NodeClass) {
+      return `Error: Unknown effect type "${effect}". Valid types: ${Object.keys(EFFECT_NODE_CLASSES).join(', ')}`;
+    }
 
     ensureMixerState(session);
-    if (!session.mixer.masterInserts) session.mixer.masterInserts = [];
+    if (!session.mixer.effectChains) session.mixer.effectChains = {};
+    if (!session.mixer.effectChains.master) session.mixer.effectChains.master = [];
 
-    session.mixer.masterInserts.push({
+    const chain = session.mixer.effectChains.master;
+    const effectCount = chain.filter(e => e.type === effect).length;
+    const effectId = `${effect}${effectCount + 1}`;
+
+    const node = new NodeClass(effectId);
+    if (preset && typeof node.loadPreset === 'function') {
+      node.loadPreset(preset);
+    }
+    if (userParams) {
+      for (const [key, value] of Object.entries(userParams)) {
+        if (value !== undefined) node.setParam(key, value);
+      }
+    }
+
+    node.validateInterface();
+
+    const paramPath = `fx.master.${effectId}`;
+    session.params.register(paramPath, node);
+
+    chain.push({
+      id: effectId,
       type: effect,
-      preset,
-      params: params || {}
+      params: node.getParams(),
+      _node: node,
     });
 
-    return `Added ${effect}${preset ? ` (${preset})` : ''} to master bus`;
+    return `Added ${effect}${preset ? ` (${preset})` : ''} to master bus (addressable as ${paramPath})`;
   },
 
   /**
@@ -138,9 +209,7 @@ const mixerTools = {
 
     // Check if mixer has any other config
     const hasConfig = session.mixer && (
-      Object.keys(session.mixer.channelInserts || {}).length > 0 ||
-      Object.keys(session.mixer.effectChains || {}).length > 0 ||
-      (session.mixer.masterInserts || []).length > 0
+      Object.keys(session.mixer.effectChains || {}).length > 0
     );
 
     if (!hasConfig) {
@@ -165,24 +234,6 @@ const mixerTools = {
         lines.push(`  ${target}: ${chainStr}`);
       });
       lines.push('');
-    }
-
-    // Channel inserts
-    const inserts = Object.entries(session.mixer.channelInserts || {});
-    if (inserts.length > 0) {
-      lines.push('CHANNEL INSERTS:');
-      inserts.forEach(([channel, effects]) => {
-        const effectList = effects.map(e => e.type + (e.preset ? ` (${e.preset})` : '')).join(' → ');
-        lines.push(`  ${channel}: ${effectList}`);
-      });
-      lines.push('');
-    }
-
-    // Master inserts
-    if ((session.mixer.masterInserts || []).length > 0) {
-      const masterEffects = session.mixer.masterInserts.map(e => e.type + (e.preset ? ` (${e.preset})` : '')).join(' → ');
-      lines.push('MASTER BUS:');
-      lines.push(`  ${masterEffects}`);
     }
 
     return lines.join('\n');

@@ -110,8 +110,12 @@ jambot/
 │   ├── jb200/kits/        # Synth sound presets
 │   └── jb200/sequences/   # Pattern presets
 ├── effects/
-│   ├── eq-node.js         # EQ effect
-│   └── filter-node.js     # Filter effect
+│   ├── delay-node.js      # Delay effect node (EffectNode)
+│   ├── delay.js           # Delay DSP processor
+│   ├── eq-node.js         # EQ effect node (EffectNode)
+│   ├── eq.js              # EQ DSP processor (4-band parametric biquad)
+│   ├── filter-node.js     # Filter effect node (EffectNode, no DSP yet)
+│   └── sidechain-node.js  # Sidechain effect node (EffectNode, no DSP yet)
 ├── jambot.js              # Main entry point
 └── ui.tsx                 # Terminal UI
 ```
@@ -289,6 +293,7 @@ voice (jb01.snare) ────────────────────�
 ```javascript
 const EFFECT_PROCESSORS = {
   delay: (buffer, params, sampleRate, bpm) => processDelay(buffer, params, sampleRate, bpm),
+  eq: (buffer, params, sampleRate) => processEq(buffer, params, sampleRate),
   // Adding new effects: register here
 };
 ```
@@ -603,6 +608,7 @@ Add effects to any target (instrument, voice, or master) in any order. Effects a
 | Effect | Parameters |
 |--------|------------|
 | `delay` | mode (analog/pingpong), time (ms), sync, feedback (0-100), mix (0-100), lowcut (Hz), highcut (Hz), saturation (0-100), spread (0-100) |
+| `eq` | highpass (Hz, 20-2000), lowGain (dB, -12 to +12), midFreq (Hz, 100-10000), midGain (dB, -12 to +12), midQ (0.1-10), highGain (dB, -12 to +12) |
 
 ### Examples
 

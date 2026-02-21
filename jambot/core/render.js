@@ -22,6 +22,8 @@ globalThis.AudioContext = AudioContext;
 // Local modules
 import { audioBufferToWav } from './wav.js';
 import { processDelay } from '../effects/delay.js';
+import { processEq } from '../effects/eq.js';
+import { processReverb } from '../effects/reverb.js';
 
 /**
  * Effect processor registry — maps effect type to processing function.
@@ -30,6 +32,12 @@ import { processDelay } from '../effects/delay.js';
 const EFFECT_PROCESSORS = {
   delay: (buffer, params, sampleRate, bpm) => {
     return processDelay(buffer, params, sampleRate, bpm);
+  },
+  eq: (buffer, params, sampleRate) => {
+    return processEq(buffer, params, sampleRate);
+  },
+  reverb: (buffer, params, sampleRate) => {
+    return processReverb(buffer, params, sampleRate);
   },
 };
 

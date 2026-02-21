@@ -961,7 +961,7 @@ voice → [voice level] → [channel EQ/Filter] → [ducker] → node level → 
 
 ## Effect Chains (Flexible Routing)
 
-Add effects to any instrument, voice, or master in any order. Effect chains currently provide delay.
+Add effects to any instrument, voice, or master in any order. Effect chains currently provide delay and EQ.
 
 ### Targets
 - **Instrument**: `jb01`, `jb202`, `sampler` — affects entire instrument
@@ -972,6 +972,8 @@ Add effects to any instrument, voice, or master in any order. Effect chains curr
 ```
 add_effect({ target: 'jb01.ch', effect: 'delay', mode: 'pingpong', feedback: 50, mix: 30 })
 add_effect({ target: 'jb202', effect: 'delay', mode: 'analog', time: 500 })
+add_effect({ target: 'jb202', effect: 'eq', highpass: 30, lowGain: 2, midFreq: 800, midGain: 3 })
+add_effect({ target: 'master', effect: 'eq', preset: 'master' })
 ```
 
 ### Delay Parameters
