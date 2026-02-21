@@ -753,6 +753,20 @@ export const TOOLS = [
     }
   },
   {
+    name: "show_scope",
+    description: "Generate an oscilloscope PNG from a WAV file. Shows the time-domain waveform trace — useful for visually verifying synth output shape, checking for clipping, and debugging synthesis. Auto-detects fundamental frequency for clean cycle display.",
+    input_schema: {
+      type: "object",
+      properties: {
+        filename: { type: "string", description: "Path to WAV file (defaults to last rendered)" },
+        output: { type: "string", description: "Output path for scope PNG (defaults to <filename>-scope.png)" },
+        cycles: { type: "number", description: "Number of waveform cycles to display (default: 5)" },
+        startMs: { type: "number", description: "Start time in ms (default: auto-detect stable region, skipping attack transients)" }
+      },
+      required: []
+    }
+  },
+  {
     name: "show_spectrum",
     description: "Display a full-range ASCII spectrum analyzer visualization, like an EQ plugin. Shows energy across 8 frequency bands from Sub (20Hz) to Air (20kHz) as a vertical bar graph.",
     input_schema: {

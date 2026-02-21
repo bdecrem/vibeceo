@@ -19,8 +19,9 @@
 
 import { Node } from '../core/node.js';
 import { execSync } from 'child_process';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { basename } from 'path';
+import zlib from 'zlib';
 import { clampDb } from './spectral-analyzer.js';
 
 /** Safe toFixed that handles NaN/Infinity */
@@ -600,6 +601,281 @@ export class AnalyzeNode extends Node {
     score += 1 - Math.min(1, chars.symmetryError * 2);
 
     return score / 4;
+  }
+
+  /**
+   * Generate an oscilloscope PNG from a WAV file
+   * @param {string} wavPath - Path to WAV file
+   * @param {Object} options
+   * @param {string} [options.output] - Output path (default: <filename>-scope.png)
+   * @param {number} [options.cycles] - Number of waveform cycles to display (default: 5)
+   * @param {number} [options.startMs] - Start time in ms (default: auto-detect stable region)
+   * @returns {string|null} Path to generated PNG
+   */
+  generateScope(wavPath, options = {}) {
+    const { output, cycles = 5, startMs } = options;
+    const outPath = output || wavPath.replace(/\.wav$/i, '-scope.png');
+
+    if (!existsSync(wavPath)) {
+      throw new Error(`File not found: ${wavPath}`);
+    }
+
+    // Read WAV file and parse RIFF chunks properly
+    const buffer = readFileSync(wavPath);
+    const wavInfo = this._parseWavChunks(buffer);
+    const { numChannels, sampleRate, bitsPerSample, dataOffset } = wavInfo;
+    const bytesPerSample = bitsPerSample / 8;
+
+    // Read all samples (mono / first channel)
+    const totalSamples = Math.floor((buffer.length - dataOffset) / (bytesPerSample * numChannels));
+    const samples = new Float64Array(totalSamples);
+    for (let i = 0; i < totalSamples; i++) {
+      const offset = dataOffset + i * bytesPerSample * numChannels;
+      if (offset + bytesPerSample > buffer.length) break;
+      if (bitsPerSample === 16) {
+        samples[i] = buffer.readInt16LE(offset) / 32768;
+      } else if (bitsPerSample === 32) {
+        samples[i] = buffer.readFloatLE(offset);
+      } else {
+        samples[i] = (buffer.readUInt8(offset) - 128) / 128;
+      }
+    }
+
+    if (samples.length < 256) {
+      throw new Error('Not enough samples for scope display');
+    }
+
+    // Determine start position
+    let scopeStart;
+    if (startMs !== undefined) {
+      scopeStart = Math.floor((startMs / 1000) * sampleRate);
+    } else {
+      // Skip first 10% to avoid attack transients, find stable region
+      scopeStart = Math.floor(samples.length * 0.1);
+    }
+    scopeStart = Math.max(0, Math.min(scopeStart, samples.length - 256));
+
+    // Detect fundamental period via zero crossings (positive-going)
+    const searchWindow = Math.min(4096, samples.length - scopeStart);
+    const crossings = [];
+    for (let i = scopeStart + 1; i < scopeStart + searchWindow; i++) {
+      if (samples[i - 1] <= 0 && samples[i] > 0) {
+        crossings.push(i);
+      }
+    }
+
+    let samplesPerCycle;
+    if (crossings.length >= 3) {
+      // Average period from positive-going zero crossings
+      const periods = [];
+      for (let i = 1; i < crossings.length; i++) {
+        periods.push(crossings[i] - crossings[i - 1]);
+      }
+      // Use median for robustness
+      periods.sort((a, b) => a - b);
+      samplesPerCycle = periods[Math.floor(periods.length / 2)];
+    } else {
+      // Fallback: show 5ms worth of audio per "cycle"
+      samplesPerCycle = Math.floor(sampleRate * 0.005);
+    }
+
+    // Calculate window: N cycles starting from a positive-going zero crossing
+    const windowSamples = samplesPerCycle * cycles;
+    const windowStart = crossings.length > 0 ? crossings[0] : scopeStart;
+    const windowEnd = Math.min(windowStart + windowSamples, samples.length);
+    const window = samples.slice(windowStart, windowEnd);
+
+    if (window.length < 16) {
+      throw new Error('Window too small for scope display');
+    }
+
+    // Render PNG: 800x300, dark bg, green trace
+    const W = 800, H = 300;
+    const bgR = 10, bgG = 10, bgB = 10;       // #0a0a0a
+    const traceR = 0, traceG = 255, traceB = 136; // #00ff88
+    const gridR = 30, gridG = 30, gridB = 30;  // subtle grid
+
+    // Build pixel buffer (RGB)
+    const pixels = Buffer.alloc(W * H * 3);
+    // Fill background
+    for (let i = 0; i < W * H; i++) {
+      pixels[i * 3] = bgR;
+      pixels[i * 3 + 1] = bgG;
+      pixels[i * 3 + 2] = bgB;
+    }
+
+    // Draw grid lines (center horizontal + cycle boundaries)
+    const centerY = Math.floor(H / 2);
+    for (let x = 0; x < W; x++) {
+      const idx = (centerY * W + x) * 3;
+      pixels[idx] = gridR; pixels[idx + 1] = gridG; pixels[idx + 2] = gridB;
+    }
+    // Vertical grid lines at each cycle boundary
+    for (let c = 0; c <= cycles; c++) {
+      const x = Math.floor((c / cycles) * (W - 1));
+      for (let y = 0; y < H; y++) {
+        const idx = (y * W + x) * 3;
+        pixels[idx] = gridR; pixels[idx + 1] = gridG; pixels[idx + 2] = gridB;
+      }
+    }
+
+    // Find peak amplitude for normalization
+    let peak = 0;
+    for (let i = 0; i < window.length; i++) {
+      const a = Math.abs(window[i]);
+      if (a > peak) peak = a;
+    }
+    if (peak < 0.001) peak = 1; // avoid div by zero for silence
+
+    // Draw waveform trace with anti-aliased vertical lines between consecutive points
+    const margin = 10; // top/bottom margin in pixels
+    const drawH = H - margin * 2;
+    let prevY = null;
+    for (let x = 0; x < W; x++) {
+      // Map pixel x to sample index
+      const sampleIdx = Math.floor((x / (W - 1)) * (window.length - 1));
+      const val = window[sampleIdx] / peak; // normalized -1..1
+      const y = Math.round(margin + (1 - val) * drawH / 2);
+      const clampedY = Math.max(0, Math.min(H - 1, y));
+
+      if (prevY !== null) {
+        // Draw vertical line between prevY and clampedY for continuity
+        const yMin = Math.min(prevY, clampedY);
+        const yMax = Math.max(prevY, clampedY);
+        for (let dy = yMin; dy <= yMax; dy++) {
+          const idx = (dy * W + x) * 3;
+          pixels[idx] = traceR; pixels[idx + 1] = traceG; pixels[idx + 2] = traceB;
+        }
+      } else {
+        const idx = (clampedY * W + x) * 3;
+        pixels[idx] = traceR; pixels[idx + 1] = traceG; pixels[idx + 2] = traceB;
+      }
+      prevY = clampedY;
+    }
+
+    // Encode as PNG
+    const png = this._encodePng(W, H, pixels);
+    writeFileSync(outPath, png);
+    return outPath;
+  }
+
+  /**
+   * Parse WAV RIFF chunks to find fmt and data sections
+   * Handles extended fmt chunks correctly
+   * @param {Buffer} buffer
+   * @returns {{ numChannels: number, sampleRate: number, bitsPerSample: number, dataOffset: number }}
+   */
+  _parseWavChunks(buffer) {
+    let numChannels = 2, sampleRate = 44100, bitsPerSample = 16, dataOffset = 44;
+    let pos = 12; // Skip RIFF header + WAVE
+    while (pos < buffer.length - 8) {
+      const chunkId = buffer.toString('ascii', pos, pos + 4);
+      const chunkSize = buffer.readUInt32LE(pos + 4);
+      if (chunkId === 'fmt ') {
+        numChannels = buffer.readUInt16LE(pos + 10);
+        sampleRate = buffer.readUInt32LE(pos + 12);
+        bitsPerSample = buffer.readUInt16LE(pos + 22);
+      } else if (chunkId === 'data') {
+        dataOffset = pos + 8;
+        break;
+      }
+      pos += 8 + chunkSize;
+      // Chunks are word-aligned
+      if (chunkSize % 2 !== 0) pos++;
+    }
+    return { numChannels, sampleRate, bitsPerSample, dataOffset };
+  }
+
+  /**
+   * Minimal PNG encoder (RGB, 8-bit)
+   * @param {number} width
+   * @param {number} height
+   * @param {Buffer} pixels - RGB pixel data (width * height * 3 bytes)
+   * @returns {Buffer}
+   */
+  _encodePng(width, height, pixels) {
+    // PNG signature
+    const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+
+    // IHDR chunk
+    const ihdrData = Buffer.alloc(13);
+    ihdrData.writeUInt32BE(width, 0);
+    ihdrData.writeUInt32BE(height, 4);
+    ihdrData[8] = 8;  // bit depth
+    ihdrData[9] = 2;  // color type: RGB
+    ihdrData[10] = 0;  // compression
+    ihdrData[11] = 0;  // filter
+    ihdrData[12] = 0;  // interlace
+    const ihdr = this._pngChunk('IHDR', ihdrData);
+
+    // IDAT chunk — filtered scanlines (filter byte 0 = None per row)
+    const rawData = Buffer.alloc(height * (1 + width * 3));
+    for (let y = 0; y < height; y++) {
+      const rowOffset = y * (1 + width * 3);
+      rawData[rowOffset] = 0; // filter: None
+      pixels.copy(rawData, rowOffset + 1, y * width * 3, (y + 1) * width * 3);
+    }
+    const compressed = zlib.deflateRawSync(rawData);
+    // Wrap in zlib stream: CMF + FLG header + deflate data + Adler32
+    const zlibHeader = Buffer.from([0x78, 0x01]); // deflate, no dict, fastest
+    const adler = this._adler32(rawData);
+    const adlerBuf = Buffer.alloc(4);
+    adlerBuf.writeUInt32BE(adler, 0);
+    const zlibData = Buffer.concat([zlibHeader, compressed, adlerBuf]);
+    const idat = this._pngChunk('IDAT', zlibData);
+
+    // IEND chunk
+    const iend = this._pngChunk('IEND', Buffer.alloc(0));
+
+    return Buffer.concat([signature, ihdr, idat, iend]);
+  }
+
+  /**
+   * Build a PNG chunk: length + type + data + CRC
+   */
+  _pngChunk(type, data) {
+    const typeBytes = Buffer.from(type, 'ascii');
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length, 0);
+    const crcInput = Buffer.concat([typeBytes, data]);
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(this._crc32(crcInput) >>> 0, 0);
+    return Buffer.concat([length, typeBytes, data, crc]);
+  }
+
+  /**
+   * CRC32 for PNG chunks
+   */
+  _crc32(buf) {
+    // Build table on first call
+    if (!AnalyzeNode._crc32Table) {
+      const table = new Uint32Array(256);
+      for (let n = 0; n < 256; n++) {
+        let c = n;
+        for (let k = 0; k < 8; k++) {
+          c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        }
+        table[n] = c;
+      }
+      AnalyzeNode._crc32Table = table;
+    }
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < buf.length; i++) {
+      crc = AnalyzeNode._crc32Table[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  /**
+   * Adler32 checksum for zlib
+   */
+  _adler32(buf) {
+    let a = 1, b = 0;
+    for (let i = 0; i < buf.length; i++) {
+      a = (a + buf[i]) % 65521;
+      b = (b + a) % 65521;
+    }
+    return ((b << 16) | a) >>> 0;
   }
 
   /**

@@ -455,6 +455,31 @@ const analyzeTools = {
   },
 
   /**
+   * Generate an oscilloscope PNG from a WAV file
+   * Shows time-domain waveform trace — useful for visually verifying synth output shape
+   */
+  show_scope: async (input, session, context) => {
+    const { filename, output, cycles, startMs } = input;
+    const wavPath = filename || session.lastRenderedFile;
+
+    if (!wavPath) {
+      return 'No WAV file to analyze. Render first, or provide a filename.';
+    }
+
+    try {
+      const scopePath = analyzeNode.generateScope(wavPath, { output, cycles, startMs });
+
+      if (scopePath) {
+        return `Oscilloscope generated: ${scopePath}`;
+      } else {
+        return 'Failed to generate oscilloscope image.';
+      }
+    } catch (e) {
+      return `Oscilloscope error: ${e.message}`;
+    }
+  },
+
+  /**
    * Get spectral peaks - find dominant frequencies
    *
    * Returns the loudest frequency peaks in the spectrum with their

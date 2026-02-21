@@ -831,6 +831,7 @@ tweak({ path: 'sampler.s1.level', value: 0 })        → Sets sampler slot 1 to 
 | `detect_waveform` | Identify waveform type (saw, square, triangle, sine) |
 | `verify_waveform` | Verify expected waveform type matches actual |
 | `generate_spectrogram` | Generate spectrogram image from WAV |
+| `show_scope` | Generate oscilloscope PNG — time-domain waveform trace |
 
 **Effect chain tools (flexible routing):**
 
@@ -947,6 +948,7 @@ show_spectrum()            // ASCII 8-band spectrum analyzer
 get_spectral_peaks()       // Dominant frequencies with note names
 measure_spectral_flux()    // Filter movement detection
 detect_waveform()          // Identify saw/square/triangle/sine
+show_scope()               // Oscilloscope PNG — time-domain waveform
 ```
 
 **Resonance detection** identifies acid squelch — prominent filter resonance peaks above the average spectrum. Returns peak frequencies with their musical note names and prominence in dB.
