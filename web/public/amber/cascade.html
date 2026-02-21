@@ -110,6 +110,7 @@
     let width, height;
     let audioStarted = false;
     let synth = null;
+    let audioCtx = null;
 
     // Stats
     let cascadeCount = 0;
@@ -153,40 +154,62 @@
         }, i * 500);
       }
 
-      // iOS-safe input handling: unlock audio on first direct touch/pointer interaction
+      // iOS-safe input handling: unlock audio on direct touch/pointer interaction
       startPrompt.addEventListener('click', startAudio);
       startPrompt.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startAudio();
+      }, { passive: false });
+      startPrompt.addEventListener('touchend', (e) => {
         e.preventDefault();
         startAudio();
       }, { passive: false });
 
       canvas.addEventListener('click', handleClick);
       canvas.addEventListener('touchstart', handleTouch, { passive: false });
+      canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        startAudio();
+      }, { passive: false });
       canvas.addEventListener('pointerdown', handlePointerDown);
+      canvas.addEventListener('pointerup', () => startAudio());
     }
 
-    function startAudio() {
-      if (audioStarted) return;
+    async function startAudio() {
+      if (audioStarted && audioCtx && audioCtx.state === 'running') return;
+
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      // Explicit resume is required on iOS Safari.
+      try {
+        if (audioCtx.state !== 'running') {
+          await audioCtx.resume();
+        }
+      } catch (_) {}
+
+      if (!synth) {
+        synth = new JB202Engine({ context: audioCtx, bpm: 120, sampleRate: audioCtx.sampleRate, masterVolume: 0.35 });
+
+        // Shape a plucky, responsive tone for short impact notes.
+        synth.setParameter('osc1Waveform', 'triangle');
+        synth.setParameter('osc2Waveform', 'square');
+        synth.setParameter('osc1Level', 0.7);
+        synth.setParameter('osc2Level', 0.35);
+        synth.setParameter('filterCutoff', 0.55);
+        synth.setParameter('filterResonance', 0.18);
+        synth.setParameter('filterEnvAmount', 0.65);
+        synth.setParameter('ampAttack', 0.01);
+        synth.setParameter('ampDecay', 0.22);
+        synth.setParameter('ampSustain', 0.0);
+        synth.setParameter('ampRelease', 0.12);
+        synth.setParameter('drive', 0.12);
+      }
 
       audioStarted = true;
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      synth = new JB202Engine({ context: audioCtx, bpm: 120, sampleRate: audioCtx.sampleRate, masterVolume: 0.35 });
 
-      // Shape a plucky, responsive tone for short impact notes.
-      synth.setParameter('osc1Waveform', 'triangle');
-      synth.setParameter('osc2Waveform', 'square');
-      synth.setParameter('osc1Level', 0.7);
-      synth.setParameter('osc2Level', 0.35);
-      synth.setParameter('filterCutoff', 0.55);
-      synth.setParameter('filterResonance', 0.18);
-      synth.setParameter('filterEnvAmount', 0.65);
-      synth.setParameter('ampAttack', 0.01);
-      synth.setParameter('ampDecay', 0.22);
-      synth.setParameter('ampSustain', 0.0);
-      synth.setParameter('ampRelease', 0.12);
-      synth.setParameter('drive', 0.12);
-
-      // Tiny note poke to guarantee AudioContext unlock on iOS user gesture.
+      // Immediate audible blip confirms unlock worked.
       synth.playNote('D3', false, false);
 
       startPrompt.style.display = 'none';
@@ -194,11 +217,15 @@
 
     function handleClick(e) {
       startAudio();
+      const n = SCALE[Math.floor(Math.random() * SCALE.length)];
+      playNote(n.freq, n.note);
       spawnCascade(e.clientX, true);
     }
 
     function handlePointerDown(e) {
       startAudio();
+      const n = SCALE[Math.floor(Math.random() * SCALE.length)];
+      playNote(n.freq, n.note);
       spawnCascade(e.clientX, true);
     }
 
@@ -206,6 +233,8 @@
       e.preventDefault();
       startAudio();
       for (let touch of e.touches) {
+        const n = SCALE[Math.floor(Math.random() * SCALE.length)];
+        playNote(n.freq, n.note);
         spawnCascade(touch.clientX, true);
       }
     }
